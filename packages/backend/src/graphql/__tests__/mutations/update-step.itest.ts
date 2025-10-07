@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -14,8 +15,10 @@ import { generateMockFlow, generateMockStep } from '../mutations/flow.mock'
 
 import { generateMockContext } from './tiles/table.mock'
 import { generateMockUser } from './flow.mock'
+import { mockConnectionsRelatedQuery } from './related-query-mock'
 import {
   createMockWithAccessibleConnections,
+  createMockWithAccessibleFlowConnections,
   createMockWithAccessibleSteps,
   setAssertNotUpdatedSinceSpy,
   setPatchLastUpdatedSpy,
@@ -123,6 +126,17 @@ describe('updateStep mutation', () => {
         connectionKey: 'postman',
         connectionId: mockConnectionId,
       })
+
+    context.currentUser.withAccessibleFlowConnections =
+      createMockWithAccessibleFlowConnections({
+        connectionKey: 'postman',
+        connectionId: mockConnectionId,
+      })
+
+    mockConnectionsRelatedQuery(context.currentUser, {
+      connectionKey: 'postman',
+      connectionId: mockConnectionId,
+    })
   })
 
   it('should successfully update a step', async () => {
@@ -171,15 +185,14 @@ describe('updateStep mutation', () => {
       connection: { id: randomUUID() },
     }
 
-    context.currentUser.withAccessibleConnections =
-      createMockWithAccessibleConnections({
-        connectionId: mockConnectionId,
-        connectionKey: 'postman',
-        connectionNotFound: true,
-      })
+    mockConnectionsRelatedQuery(context.currentUser, {
+      connectionId: mockConnectionId,
+      connectionKey: 'postman',
+      connectionNotFound: true,
+    })
 
-    await expect(updateStep(null, { input }, context)).rejects.toThrowError(
-      BadUserInputError,
+    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+      NotFoundError,
     )
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
   })
@@ -444,11 +457,10 @@ describe('updateStep mutation', () => {
           },
         )
 
-        context.currentUser.withAccessibleConnections =
-          createMockWithAccessibleConnections({
-            connectionId: mockConnectionId,
-            connectionKey: 'postman',
-          })
+        mockConnectionsRelatedQuery(context.currentUser, {
+          connectionId: mockConnectionId,
+          connectionKey: 'postman',
+        })
 
         await expect(
           updateStep(null, { input }, context),
@@ -487,17 +499,10 @@ describe('updateStep mutation', () => {
         flowUpdatedAt: testFlowISODateString,
       })
 
-      context.currentUser.withAccessibleConnections =
-        createMockWithAccessibleConnections({
-          connectionKey: 'slack',
-          connectionId: mockConnectionId,
-        })
-
-      context.currentUser.withAccessibleConnections =
-        createMockWithAccessibleConnections({
-          connectionId: mockConnectionId,
-          connectionKey: 'slack',
-        })
+      mockConnectionsRelatedQuery(context.currentUser, {
+        connectionKey: 'slack',
+        connectionId: mockConnectionId,
+      })
     })
 
     it('should call patchFlowConnectionMetadata when its an excel app', async () => {
@@ -510,17 +515,10 @@ describe('updateStep mutation', () => {
         flowUpdatedAt: testFlowISODateString,
       })
 
-      context.currentUser.withAccessibleConnections =
-        createMockWithAccessibleConnections({
-          connectionKey: 'm365-excel',
-          connectionId: mockConnectionId,
-        })
-
-      context.currentUser.withAccessibleConnections =
-        createMockWithAccessibleConnections({
-          connectionId: mockConnectionId,
-          connectionKey: 'm365-excel',
-        })
+      mockConnectionsRelatedQuery(context.currentUser, {
+        connectionKey: 'm365-excel',
+        connectionId: mockConnectionId,
+      })
 
       const input = {
         ...genericInputParams,
@@ -606,6 +604,12 @@ describe('updateStep mutation', () => {
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
       }
+
+      context.currentUser.withAccessibleFlowConnections =
+        createMockWithAccessibleFlowConnections({
+          connectionKey: 'slack',
+          connectionId: mockConnectionId,
+        })
 
       await updateStep(null, { input }, context)
 

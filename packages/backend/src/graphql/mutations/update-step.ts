@@ -37,6 +37,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
         context,
         connectionId: input.connection.id,
         flowId: input.flow.id,
+        role: step.flow.role,
         requiredRole: 'editor',
         trx,
       })

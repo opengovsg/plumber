@@ -1,10 +1,9 @@
 import { raw } from 'objection'
 
-import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
-import Connection from '@/models/connection'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
-import { getFlowConnection } from '@/services/connection'
+import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -32,36 +31,20 @@ const createStep: MutationResolvers['createStep'] = async (
     // and the user has the appropriate permissions to use it
     // user has to be an editor in the pipe
     if (input.connection?.id) {
-      let connection: Connection
       /**
        * NOTE: with collaborators,
        * Owner can use existing connections or add new connections to the pipe
        * Editor can only use existing connections that have been shared to the pipe
        * (TODO: phase 2) Editor will be able to add their own connections
        */
-      if (flow.role === 'owner') {
-        connection = await context.currentUser
-          .$relatedQuery('connections')
-          .findOne({ id: input.connection.id })
-      } else if (flow.role === 'editor') {
-        const flowConnection = await getFlowConnection({
-          context,
-          connectionId: input.connection.id,
-          flowId: flow.id,
-          requiredRole: 'editor',
-          trx,
-        })
-        if (!flowConnection) {
-          throw new ForbiddenError(
-            'User does not have permission to add connection',
-          )
-        }
-        connection = flowConnection.connection
-      } else {
-        throw new ForbiddenError(
-          'User does not have permission to add connection',
-        )
-      }
+      const connection = await getConnection({
+        context,
+        connectionId: input.connection.id,
+        flowId: flow.id,
+        role: flow.role,
+        requiredRole: 'editor',
+        trx,
+      })
 
       if (!connection) {
         throw new BadUserInputError('Connection not found')

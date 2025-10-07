@@ -360,7 +360,7 @@ describe('createStep mutation integration tests', async () => {
     }
 
     await expect(createStep(null, params, context)).rejects.toThrow(
-      BadUserInputError,
+      NotFoundError,
     )
   })
 
@@ -392,7 +392,7 @@ describe('createStep mutation integration tests', async () => {
     }
 
     await expect(createStep(null, params, context)).rejects.toThrow(
-      BadUserInputError,
+      NotFoundError,
     )
   })
 
@@ -424,7 +424,7 @@ describe('createStep mutation integration tests', async () => {
     }
 
     await expect(createStep(null, params, context)).rejects.toThrow(
-      BadUserInputError,
+      NotFoundError,
     )
   })
 

@@ -1,8 +1,7 @@
 import { IFlowCollabRole } from '@plumber/types'
 
-import { Transaction } from 'objection'
+import { NotFoundError, Transaction } from 'objection'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
 import Context from '@/types/express/context'
 
 type GetConnectionParams = {
@@ -10,6 +9,7 @@ type GetConnectionParams = {
   connectionId: string
   flowId: string
   requiredRole: IFlowCollabRole
+  role?: IFlowCollabRole
   trx?: Transaction
 }
 
@@ -22,35 +22,41 @@ type GetFlowConnectionParams = {
 }
 
 /**
- * NOTE: with the introduction of collaborators, we first look for the
- * connection in the flow_connections table as this would contain all the
- * connections that have been shared within a pipe.
- *
- * However, there may be connections that have not been shared yet
- * (e.g., when the owner is adding a new connection to the pipe) so
- * we need to fallback to the direct connection method.
+ * NOTE: with the introduction of collaborators, we use this helper function to fetch the connection
  */
 export const getConnection = async (params: GetConnectionParams) => {
-  const { context, connectionId, requiredRole, trx } = params
-  let connection
+  const { context, connectionId, role, trx, flowId } = params
+  let userRole = role
 
-  const flowConnection = await getFlowConnection(params)
+  // flowId is only present within the editor, which means we should know the role.
+  // the only time we would not know the role is when the connection is being added to the pipe
+  // so we fetch the role from the flow
+  if (flowId && !role) {
+    const flow = await context.currentUser
+      .withAccessibleFlows({ requiredRole: 'editor', trx })
+      .findOne({ 'flows.id': flowId })
+      .throwIfNotFound({ message: 'Flow not found' })
 
-  if (flowConnection) {
-    // shared connection
-    connection = flowConnection.connection
-  } else {
-    // connection has not been shared yet
-    connection = await context.currentUser
-      .withAccessibleConnections({ requiredRole, trx })
+    userRole = flow.role
+  }
+
+  // there are two scenarios where we can directly fetch the connection from the user
+  // 1. when flowId is not present, which means the connection is being retrieved from the my apps page
+  // 2. when the user is the owner of the pipe
+  // TODO (kevinkim-ogp): phase 2 will allow editors to add their own connections, so owner's connections
+  // will need to include connections from the flow_connections table
+  if (!flowId || userRole === 'owner') {
+    return context.currentUser
+      .$relatedQuery('connections', trx)
       .findOne({ 'connections.id': connectionId })
+      .throwIfNotFound({ message: 'Connection not found' })
   }
 
-  if (!connection) {
-    throw new BadUserInputError('Connection not found')
+  if (userRole === 'editor') {
+    return getFlowConnection(params)
   }
 
-  return connection
+  throw new NotFoundError({ message: 'Connection not found' })
 }
 
 /**
@@ -75,5 +81,5 @@ export const getFlowConnection = async ({
       'flow_connections.flow_id': flowId ?? null,
     })
 
-  return flowConnection
+  return flowConnection?.connection
 }
