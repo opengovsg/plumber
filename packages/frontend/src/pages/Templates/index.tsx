@@ -40,7 +40,9 @@ export default function Templates(): JSX.Element {
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
 
-  const { data: appsData, loading: appsLoading } = useQuery(GET_APPS)
+  const { data: appsData, loading: appsLoading } = useQuery(GET_APPS, {
+    fetchPolicy: 'cache-first',
+  })
   const apps: IApp[] = appsData?.getApps ?? []
 
   return (

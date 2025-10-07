@@ -160,7 +160,9 @@ export const EditorProvider = ({
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
-  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
+  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS, {
+    fetchPolicy: 'cache-first',
+  })
 
   const steps = flow?.steps ?? []
   const isEmptyPipe =
