@@ -275,7 +275,6 @@ export default function EditorLayout() {
       </Flex>
 
       <EditorSnackbar
-        isButtonDisabled={flow.role === 'viewer'}
         isOpen={!!flow?.active}
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       />
