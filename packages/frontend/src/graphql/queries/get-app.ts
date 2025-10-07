@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client'
 
 export const GET_APP = gql`
-  query GetApp($key: String!, $flowId: String) {
-    getApp(key: $key, flowId: $flowId) {
+  query GetApp($key: String!) {
+    getApp(key: $key) {
       name
       key
       iconUrl
@@ -54,27 +54,6 @@ export const GET_APP = gql`
               value
             }
           }
-        }
-      }
-      connections {
-        id
-      }
-      triggers {
-        name
-        key
-        type
-        pollInterval
-        description
-        substeps {
-          name
-        }
-      }
-      actions {
-        name
-        key
-        description
-        substeps {
-          name
         }
       }
     }
