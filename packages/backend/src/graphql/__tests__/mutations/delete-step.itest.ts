@@ -90,7 +90,7 @@ describe('deleteStep mutation', () => {
 
   it('should throw error when no steps to delete', async () => {
     await expect(
-      deleteStep(null, { input: { ids: [] } }, context),
+      deleteStep(null, { input: { ids: [], ...defaultFlowInput } }, context),
     ).rejects.toThrow('Nothing to delete')
   })
 
