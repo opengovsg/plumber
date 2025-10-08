@@ -11,7 +11,7 @@ const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
 ) => {
   const execution = await context.currentUser
     .withAccessibleExecutions({ requiredRole: 'viewer' })
-    .join('execution_steps', 'execution_steps.execution_id', 'executions.id')
+    .withGraphFetched({ executionSteps: true })
     .withSoftDeleted()
     .findById(params.executionId)
     .throwIfNotFound()
