@@ -32,6 +32,7 @@ export const GET_APPS = gql`
       auth {
         connectionType
         connectionRegistrationType
+        autoCheckStep
         fields {
           key
           label

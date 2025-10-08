@@ -50,7 +50,13 @@ interface IEditorContextValue {
   shouldWarnOnLeave: boolean
   stepsWithVars: StepWithVariables[]
   varInfoMap: VariableInfoMap
-  executeTestStep: (testRunMetadata?: Record<string, unknown>) => Promise<void>
+  executeTestStep: ({
+    testRunMetadata,
+    stepId,
+  }: {
+    testRunMetadata?: Record<string, unknown>
+    stepId?: string | null
+  }) => Promise<void>
   onDrawerOpen: () => void
   onDrawerClose: () => void
   setCurrentStepId: (stepId: string | null) => void
@@ -344,12 +350,21 @@ export const EditorProvider = ({
   )
 
   const executeTestStep = useCallback(
-    async (testRunMetadata?: Record<string, unknown>) => {
+    async ({
+      testRunMetadata,
+      stepId = currentStepId,
+    }: {
+      testRunMetadata?: Record<string, unknown>
+      stepId?: string | null
+    }) => {
+      if (!stepId) {
+        throw new Error('Step ID is required')
+      }
       try {
         await executeStep({
           variables: {
             input: {
-              stepId: currentStepId,
+              stepId,
               testRunMetadata,
             },
           },
