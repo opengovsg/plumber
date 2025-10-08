@@ -53,7 +53,7 @@ export function useExecutionStepStatus({
     !isStepSuccessful &&
     !!jobId &&
     hasExecutionFailed &&
-    execution?.role !== 'viewer'
+    execution?.flow?.role !== 'viewer'
 
   const statusIcon = useMemo(() => {
     if (isPartialSuccess) {

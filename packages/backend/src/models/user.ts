@@ -150,6 +150,26 @@ class User extends Base {
   }
 
   /**
+   * Generic method to add flow role information to any query that has a flow relation
+   * This can be used with modifyGraph to add role information to flow relations
+   */
+  withFlowRole(query: AnyQueryBuilder): AnyQueryBuilder {
+    const userId = this.id
+    return query
+      .withGraphFetched('flow')
+      .modifyGraph('flow', (flowQuery: any) => {
+        // this.applyFlowRoleSelection(flowQuery, userId)
+        flowQuery
+          .leftJoin('flow_collaborators as fc', function () {
+            this.on('fc.flow_id', 'flows.id')
+              .andOnNull('fc.deleted_at')
+              .andOnVal('fc.user_id', userId)
+          })
+          .select('flows.*', Flow.raw(ROLE_STMT, [userId]))
+      })
+  }
+
+  /**
    * we use this filter to check for two things:
    * 1. user is a valid owner or collaborator on this pipe
    * 2. user has the required permissions to work on this pipe
@@ -214,11 +234,10 @@ class User extends Base {
   }) {
     const userId = this.id
     const baseQuery = queryBuilder || Step.query(trx)
-    baseQuery
-      .select('steps.*', Step.raw(ROLE_STMT, [userId]))
-      .join('flows', 'flows.id', 'steps.flow_id')
+    baseQuery.select('steps.*').join('flows', 'flows.id', 'steps.flow_id')
 
     this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
+    this.withFlowRole(baseQuery)
     return baseQuery
   }
 
@@ -235,20 +254,8 @@ class User extends Base {
     const baseQuery = queryBuilder || Connection.query(trx)
     const allowedRoles = getAllowedCollaboratorRoles(requiredRole)
 
-    return baseQuery
-      .select(
-        'connections.*',
-        Connection.raw(
-          `
-          CASE
-            WHEN connections.user_id = ? THEN 'owner'
-            WHEN flows.user_id = ? THEN 'owner'
-            ELSE fc.role
-          END as role
-          `,
-          [userId, userId],
-        ),
-      )
+    baseQuery
+      .select('connections.*')
       .leftJoin(
         'flow_connections',
         'flow_connections.connection_id',
@@ -269,6 +276,9 @@ class User extends Base {
             this.whereNotNull('fc.role').andWhere('fc.role', 'in', allowedRoles)
           })
       })
+
+    this.withFlowRole(baseQuery)
+    return baseQuery
   }
 
   withAccessibleFlowConnections({
@@ -283,12 +293,13 @@ class User extends Base {
     const userId = this.id
     const baseQuery = queryBuilder || FlowConnections.query(trx)
     baseQuery
-      .select('flow_connections.*', FlowConnections.raw(ROLE_STMT, [userId]))
+      .select('flow_connections.*')
       .join('flows', 'flows.id', 'flow_connections.flow_id')
 
     if (requiredRole) {
       this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
     }
+    this.withFlowRole(baseQuery)
     return baseQuery
   }
 
@@ -304,10 +315,11 @@ class User extends Base {
     const userId = this.id
     const baseQuery = queryBuilder || Execution.query(trx)
     baseQuery
-      .select('executions.*', Execution.raw(ROLE_STMT, [userId]))
+      .select('executions.*')
       .join('flows', 'flows.id', 'executions.flow_id')
 
     this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
+    this.withFlowRole(baseQuery)
     return baseQuery
   }
 }
