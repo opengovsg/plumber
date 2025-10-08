@@ -11,6 +11,7 @@ import {
 
 import InputCreator from '@/components/InputCreator'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { EditorContext } from '@/contexts/Editor'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
@@ -42,6 +43,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
   const { modalState, patchModalState } = useContext(
     FlowStepConfigurationContext,
   )
+  const { flowId } = useContext(EditorContext)
   const { selectedApp } = modalState
   const { name, authDocUrl, key, auth } = selectedApp || {}
 
@@ -129,6 +131,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
       const response: Response = {
         key,
         fields: data,
+        flowId,
       }
 
       let stepIndex = 0
@@ -157,7 +160,7 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
 
       setInProgress(false)
     },
-    [key, steps, handleAddConnection],
+    [steps, key, flowId, handleAddConnection],
   )
 
   const onBack = () => patchModalState({ currentScreen: 'choose-connection' })
