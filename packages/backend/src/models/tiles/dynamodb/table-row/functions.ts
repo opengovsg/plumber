@@ -121,7 +121,10 @@ const addFiltersToQuery = (
 ): void => {
   if (filters?.length) {
     query.where(
-      ({ data }, { eq, begins, contains, gt, gte, lt, lte, notExists }) => {
+      (
+        { data },
+        { eq, begins, contains, gt, gte, lt, lte, notExists, type },
+      ) => {
         const whereExpressions: string[] = []
         for (const filter of filters) {
           const { columnId, operator, value } = filter
@@ -150,7 +153,9 @@ const addFiltersToQuery = (
               break
             case TableRowFilterOperator.IsEmpty:
               whereExpressions.push(
-                `(${eq(data[columnId], '')} OR ${notExists(data[columnId])})`,
+                `(${eq(data[columnId], '')} OR ${notExists(
+                  data[columnId],
+                )} OR ${type(data[columnId], 'NULL')})`,
               )
               break
           }
