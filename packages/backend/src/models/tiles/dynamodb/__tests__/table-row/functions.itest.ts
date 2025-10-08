@@ -258,6 +258,34 @@ describe('dynamodb table row functions', () => {
       expect(rows8.length).toEqual(1000)
     })
 
+    it('empty filter should work with empty string, null and undefined', async () => {
+      const dataArray: any[] = []
+      ;['', null, 123, 'abc'].forEach((value, index) => {
+        dataArray.push({
+          a: `${index}`,
+          b: value,
+        })
+      })
+      dataArray.push({
+        a: `undefined value`,
+      })
+      await createTableRows({ tableId: dummyTable.id, dataArray })
+
+      // Empty
+      const { rows } = await getTableRows({
+        tableId: dummyTable.id,
+        columnIds: ['a', 'b'],
+        filters: [
+          {
+            columnId: 'b',
+            operator: TableRowFilterOperator.IsEmpty,
+            value: '',
+          },
+        ],
+      })
+      expect(rows.length).toEqual(3)
+    })
+
     it('should get relevant rows based on composite filters', async () => {
       const dataArray = []
       for (let i = 0; i < 1000; i++) {
