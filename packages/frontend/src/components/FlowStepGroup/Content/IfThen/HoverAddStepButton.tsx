@@ -83,7 +83,9 @@ export function HoverAddStepButton(
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           w={
-            (shouldShowDragHandle || canChildStepsReorder) && !isDrawerOpen
+            (shouldShowDragHandle || canChildStepsReorder) &&
+            !isDrawerOpen &&
+            !readOnly
               ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
               : 'full'
           }
