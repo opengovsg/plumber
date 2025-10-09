@@ -24,7 +24,7 @@ type FlowSubstepProps = {
 
 function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const { isTrigger, substep, step, selectedActionOrTrigger } = props
-  const { flags } = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
   const {
     executeTestStep,
@@ -63,13 +63,14 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const argsToDisplay = useMemo(
     () =>
       args?.filter((arg) => {
-        if (!flags) {
-          return true
-        }
-        const flag = getInputFlag(selectedActionOrTrigger?.key ?? '', arg.key)
-        return !flags[flag] || +step.createdAt <= flags[flag]
+        const inputFlag = getInputFlag(
+          selectedActionOrTrigger?.key ?? '',
+          arg.key,
+        )
+        const flagValue = getFlagValue(inputFlag, false)
+        return !flagValue || +step.createdAt <= flagValue
       }) || [],
-    [args, flags, step.createdAt, selectedActionOrTrigger],
+    [args, step.createdAt, selectedActionOrTrigger, getFlagValue],
   )
 
   useEffect(() => {

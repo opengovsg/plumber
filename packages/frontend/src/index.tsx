@@ -40,6 +40,7 @@ if (['prod', 'staging'].includes(appConfig.env)) {
     // set tracking consent to not-granted by default
     // only start tracking when user is authenticated
     trackingConsent: 'not-granted' as const,
+    enableExperimentalFeatures: ['feature_flags'],
   })
 }
 root.render(

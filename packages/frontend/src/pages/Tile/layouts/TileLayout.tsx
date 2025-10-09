@@ -1,9 +1,6 @@
-import { Suspense, useContext } from 'react'
-import { Center } from '@chakra-ui/react'
+import { Suspense } from 'react'
 
-import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import useAuthentication from '@/hooks/useAuthentication'
 
 type TileLayoutProps = {
@@ -16,15 +13,6 @@ export default function TileLayout({
   publicLayout,
 }: TileLayoutProps): JSX.Element {
   const { currentUser } = useAuthentication()
-  const { flags, isLoading: isFlagsLoading } = useContext(LaunchDarklyContext)
-
-  if (isFlagsLoading || !flags) {
-    return (
-      <Center h="100vh">
-        <PrimarySpinner fontSize="6xl" />
-      </Center>
-    )
-  }
 
   if (!publicLayout && !currentUser) {
     return <RedirectToLogin />

@@ -21,14 +21,12 @@ interface ChooseEventProps {
 export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
   const { onSelectAppEvent } = props
 
-  const launchDarkly = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   const { modalState, isTrigger, patchModalState } = useContext(
     FlowStepConfigurationContext,
   )
   const { selectedApp } = modalState
-
-  const isLoading = launchDarkly.isLoading
 
   const filteredTriggersOrActions = useMemo(() => {
     if (!selectedApp) {
@@ -40,15 +38,15 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
       : selectedApp.actions ?? []
     return triggersOrActions?.filter((triggerOrAction: ITrigger | IAction) => {
       // Filter away triggers or actions hidden behind feature flags
-      if (isLoading || !launchDarkly.flags || !selectedApp.key) {
+      if (!selectedApp.key) {
         return true
       }
       const launchDarklyKey = isTrigger
         ? getAppTriggerFlag(selectedApp.key, triggerOrAction.key)
         : getAppActionFlag(selectedApp.key, triggerOrAction.key)
-      return launchDarkly.flags[launchDarklyKey] ?? true
+      return getFlagValue(launchDarklyKey, true)
     })
-  }, [selectedApp, isTrigger, launchDarkly.flags, isLoading])
+  }, [selectedApp, isTrigger, getFlagValue])
 
   const onBack = useCallback(() => {
     patchModalState({
