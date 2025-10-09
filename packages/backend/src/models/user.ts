@@ -60,6 +60,11 @@ class User extends Base {
   }
 
   static relationMappings = () => ({
+    /**
+     * NOTE: retain _connections_ and _flows_ relations as they are used to get the owner's
+     * connections and flows.
+     * It is displayed in the My Apps page.
+     */
     connections: {
       relation: Base.HasManyRelation,
       modelClass: Connection,
@@ -74,18 +79,6 @@ class User extends Base {
       join: {
         from: 'users.id',
         to: 'flows.user_id',
-      },
-    },
-    steps: {
-      relation: Base.ManyToManyRelation,
-      modelClass: Step,
-      join: {
-        from: 'users.id',
-        through: {
-          from: 'flows.user_id',
-          to: 'flows.id',
-        },
-        to: 'steps.flow_id',
       },
     },
     executions: {
