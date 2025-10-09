@@ -55,7 +55,7 @@ export const getConnection = async (params: GetConnectionParams) => {
   /**
    * NOTE: editor and viewer can only access shared connections from the flow_connections table
    */
-  const connection = getFlowConnection(params)
+  const connection = await getFlowConnection(params)
   if (!connection) {
     throw new NotFoundError({ message: 'Connection not found' })
   }
