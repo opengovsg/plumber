@@ -196,4 +196,10 @@ describe('removeProblematicWhitespace', () => {
     const input = 'Hello World'
     expect(removeProblematicWhitespace(input)).toEqual(input)
   })
+
+  it('should handle text with control characters', () => {
+    const input = 'Hello\x00World'
+    const expected = 'HelloWorld'
+    expect(removeProblematicWhitespace(input)).toEqual(expected)
+  })
 })
