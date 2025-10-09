@@ -194,7 +194,7 @@ const Editor = ({
       }
       onChange(
         isRich
-          ? editor.getHTML()
+          ? removeProblematicWhitespace(editor.getHTML())
           : removeProblematicWhitespace(editor.getText()),
       )
     },
