@@ -1,6 +1,6 @@
 import { IFlow } from '@plumber/types'
 
-import { BiCog, BiInfoCircle } from 'react-icons/bi'
+import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
 import { Hide, HStack, MenuButton, MenuList, Show } from '@chakra-ui/react'
@@ -101,6 +101,45 @@ const SettingsItem = ({
   )
 }
 
+const ExecutionsItem = ({
+  flowId,
+  type,
+}: {
+  flowId: string
+  type: 'icon' | 'button'
+}) => {
+  if (type === 'button') {
+    return (
+      <Button
+        variant="clear"
+        aria-label="executions"
+        colorScheme="secondary"
+        as={Link}
+        to={URLS.EXECUTIONS_FOR_FLOW(flowId)}
+        w="100%"
+      >
+        Executions
+      </Button>
+    )
+  }
+  return (
+    <TouchableTooltip label="Executions" aria-label="executions-tooltip">
+      <IconButton
+        as={Link}
+        to={URLS.EXECUTIONS_FOR_FLOW(flowId)}
+        variant="clear"
+        aria-label="executions"
+        _hover={{
+          color: 'primary.500',
+          bg: 'interaction.muted.main.hover',
+        }}
+        icon={<BiHistory />}
+        colorScheme="secondary"
+      />
+    </TouchableTooltip>
+  )
+}
+
 interface EditorToolbarProps {
   flowId: string
   flow: IFlow
@@ -119,6 +158,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
     <>
       <Show above="md">
         <HStack>
+          <ExecutionsItem {...props} type="icon" />
           <GuideItem type="icon" />
           <SettingsItem {...props} type="icon" />
           <PublishButton {...props} />
@@ -140,6 +180,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
             gap={2}
             px={2}
           >
+            <ExecutionsItem {...props} type="button" />
             <GuideItem type="button" />
             <SettingsItem {...props} type="button" />
             <PublishButton {...props} />

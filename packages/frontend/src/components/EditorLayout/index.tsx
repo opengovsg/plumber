@@ -279,7 +279,8 @@ export default function EditorLayout() {
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       />
 
-      {shouldOpenAnnouncementModal && (
+      {/* hardcoded to false to always hide announcement modal for now*/}
+      {shouldOpenAnnouncementModal && false && (
         <AnnouncementModal
           isOpen={shouldOpenAnnouncementModal}
           onClose={handleCloseAnnouncementModal}
