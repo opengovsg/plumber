@@ -33,7 +33,7 @@ export const getConnection = async (params: GetConnectionParams) => {
   // so we fetch the role from the flow
   if (flowId && !role) {
     const flow = await context.currentUser
-      .withAccessibleFlows({ requiredRole: 'editor', trx })
+      .withAccessibleFlows({ requiredRole: 'viewer', trx })
       .findOne({ 'flows.id': flowId })
       .throwIfNotFound({ message: 'Flow not found' })
 
