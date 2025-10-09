@@ -270,7 +270,8 @@ class User extends Base {
           })
       })
 
-    this.withFlowRole(baseQuery)
+    // Note: withFlowRole is not called here because Connection model doesn't have a 'flow' relation
+    // The role information is already handled through the joins above
     return baseQuery
   }
 
