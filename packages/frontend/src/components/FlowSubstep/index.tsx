@@ -11,7 +11,6 @@ import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
-import { isIfThenStep } from '@/helpers/toolbox'
 import { validateStepParams } from '@/helpers/validateStepParams'
 
 type FlowSubstepProps = {
@@ -74,11 +73,12 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     [args, flags, step.createdAt, selectedActionOrTrigger],
   )
 
+  /**
+   * We show the test result right after a chek step is run
+   * i.e. isTestExecuting = true --> isTestExecuting = false
+   */
   useEffect(() => {
-    if (isTestExecuting || previousIsTestExecuting !== true) {
-      return
-    }
-    if (!isIfThenStep(step)) {
+    if (isTestExecuting === false && previousIsTestExecuting === true) {
       onTestResultOpen()
     }
   }, [isTestExecuting, onTestResultOpen, step, previousIsTestExecuting])

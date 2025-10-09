@@ -9,7 +9,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import type { Variable } from '@/helpers/variables'
 
-import { getForEachDataMessage, getIfThenOutput } from './utils'
+import { getForEachDataMessage } from './utils'
 
 function getNoOutputMessage(
   selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
@@ -79,13 +79,7 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     }
 
     if (isIfThenStep) {
-      const isConditionMet = variables?.[0]?.value as boolean
-      const [variant, message] = getIfThenOutput(isConditionMet, step.id)
-      return (
-        <Infobox variant={variant} width="full">
-          <Box>{message}</Box>
-        </Infobox>
-      )
+      return null
     }
 
     return (
@@ -107,6 +101,14 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
   return (
     <Collapse
       in={isOpen}
+      transition={{
+        enter: {
+          type: false,
+        },
+        exit: {
+          type: false,
+        },
+      }}
       style={{
         width: '100%',
         marginTop: 0,
