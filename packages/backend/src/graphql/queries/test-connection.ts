@@ -68,7 +68,11 @@ const testConnection: QueryResolvers['testConnection'] = async (
   })
 
   // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
-  if (!isStillVerified || !params.flowId || userRole !== 'owner') {
+  if (
+    !isStillVerified ||
+    !params.flowId ||
+    !params.supportsConnectionRegistration
+  ) {
     return { connectionVerified: isStillVerified, message: errorMessage }
   }
 
