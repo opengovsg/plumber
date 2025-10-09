@@ -158,8 +158,11 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
 
                 // update or create flow connection using the duplicated connection
                 if (existingFlowConnection) {
-                  await FlowConnections.query(trx)
-                    .updateAndFetch({ connectionId: newConnectionId })
+                  await existingFlowConnection
+                    .$query(trx)
+                    .patchAndFetch({
+                      connectionId: newConnectionId,
+                    })
                     .where({
                       flow_id: flow.id,
                       connection_id: connectionId,

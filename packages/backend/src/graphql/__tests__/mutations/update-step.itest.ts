@@ -172,7 +172,7 @@ describe('updateStep mutation', () => {
     }
 
     mockConnectionsRelatedQuery(context.currentUser, {
-      connectionId: mockConnectionId,
+      connectionId: randomUUID(),
       connectionKey: 'postman',
       connectionNotFound: true,
     })

@@ -1,5 +1,6 @@
 import { Transaction } from 'objection'
 
+import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Context from '@/types/express/context'
 
@@ -20,13 +21,25 @@ export const getConnection = async (params: GetConnectionParams) => {
   const { context, connectionId, includeOwnConnections, trx, flowId } = params
 
   if (includeOwnConnections) {
-    // this means that the user is the owner of the pipe
-    // it could be their own connection or a shared connection
+    // there are 2 types of connections that an owner can access:
+    // 1. the user is the owner of the pipe
+    //    it could be their own connection or a shared connection
+    // 2. the user is the owner of a pipe that has been transferred to them
+    //    it should include connections from the flow_connections table as well
     // TODO (kevinkim-ogp): phase 2 will allow editors to add their own connections, so owner's connections
     // will need to include connections from the flow_connections table
-    return await context.currentUser
-      .$relatedQuery('connections', trx)
-      .findOne({ 'connections.id': connectionId })
+
+    return await Connection.query(trx)
+      .findById(connectionId)
+      .where(function () {
+        // connection is either owned by the user
+        this.where('connections.user_id', context.currentUser.id).orWhereExists(
+          // or accessible via flow_connections table
+          FlowConnections.query(trx)
+            .whereColumn('flow_connections.connection_id', 'connections.id')
+            .where('flow_connections.flow_id', flowId),
+        )
+      })
       .throwIfNotFound({ message: 'Connection not found' })
   }
 
