@@ -18,7 +18,7 @@ export const RetryAllIterationsButton = ({
   execution,
 }: RetryAllIterationsButtonProps) => {
   const executionId = execution.id
-  const { flags } = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
   const toast = useToast()
   const [isBulkRetrying, setIsBulkRetrying] = useState(false)
   const [hasBulkRetried, setHasBulkRetried] = useState(false)
@@ -61,7 +61,7 @@ export const RetryAllIterationsButton = ({
     }
   }, [toast, executionId, bulkRetryIterations])
 
-  if (!flags?.[BULK_RETRY_EXECUTIONS_FLAG]) {
+  if (!getFlagValue(BULK_RETRY_EXECUTIONS_FLAG, false)) {
     return null
   }
 

@@ -1,7 +1,6 @@
 import { IFlow, IStep } from '@plumber/types'
 
 import { useContext } from 'react'
-import { LDFlagSet } from 'launchdarkly-js-client-sdk'
 
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
 import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
@@ -97,18 +96,21 @@ function isIfThenSelectable({
   depth,
   hasIfThen,
   isLastStep,
-  ldFlags,
+  getFlagValue,
 }: {
   depth: number
   hasIfThen: boolean
   isLastStep: boolean
-  ldFlags: LDFlagSet | null
+  getFlagValue: (
+    flagKey: string,
+    defaultValue?: boolean | string,
+  ) => boolean | string
 }) {
   if (!isLastStep || hasIfThen) {
     return false
   }
 
-  const canUseNestedBranch = ldFlags?.[NESTED_IFTHEN_FEATURE_FLAG] ?? false
+  const canUseNestedBranch = getFlagValue(NESTED_IFTHEN_FEATURE_FLAG, false)
   if (canUseNestedBranch) {
     return true
   }
@@ -128,14 +130,14 @@ export const useIsAppSelectable = ({
 }): Record<string, boolean> => {
   const { depth } = useContext(BranchContext)
   const { flow, hasIfThen } = useContext(EditorContext)
-  const { flags: ldFlags } = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   return {
     [TOOLBOX_ACTIONS.IfThen]: isIfThenSelectable({
       depth,
       hasIfThen,
       isLastStep,
-      ldFlags,
+      getFlagValue,
     }),
     [TOOLBOX_ACTIONS.ForEach]: isForEachSelectable({
       flow,
