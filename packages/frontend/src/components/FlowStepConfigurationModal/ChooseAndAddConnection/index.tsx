@@ -64,8 +64,14 @@ export default function ChooseAndAddConnection(
   props: ChooseAndAddConnectionProps,
 ) {
   const { onClose } = props
-  const { flowId, onCreateStep, onDrawerOpen, onUpdateStep, setCurrentStepId } =
-    useContext(EditorContext)
+  const {
+    flowId,
+    onCreateStep,
+    onDrawerOpen,
+    onUpdateStep,
+    setCurrentStepId,
+    executeTestStep,
+  } = useContext(EditorContext)
   const { modalState, patchModalState, step, prevStepId } = useContext(
     FlowStepConfigurationContext,
   )
@@ -136,6 +142,11 @@ export default function ChooseAndAddConnection(
         onClose()
         onDrawerOpen()
         setCurrentStepId(newStepId)
+        if (selectedApp?.auth?.autoCheckStep && newStepId) {
+          // need to deliberately set the step id because
+          // closure of executeTestStep may still hold reference to old step id
+          executeTestStep({ stepId: newStepId })
+        }
       } catch (error) {
         console.error('Error selecting app and event', error)
       } finally {
@@ -149,10 +160,11 @@ export default function ChooseAndAddConnection(
       prevStepId,
       step,
       onClose,
-      onCreateStep,
-      onUpdateStep,
       onDrawerOpen,
       setCurrentStepId,
+      onCreateStep,
+      onUpdateStep,
+      executeTestStep,
     ],
   )
 

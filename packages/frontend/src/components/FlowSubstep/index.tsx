@@ -2,7 +2,7 @@ import type { IAction, IStep, ISubstep, ITrigger } from '@plumber/types'
 
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
-import { Box, Stack, useDisclosure } from '@chakra-ui/react'
+import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
@@ -11,7 +11,6 @@ import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
-import { isIfThenStep } from '@/helpers/toolbox'
 import { validateStepParams } from '@/helpers/validateStepParams'
 
 type FlowSubstepProps = {
@@ -31,6 +30,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     onUpdateStep,
     setShouldWarnOnLeave,
     testExecutionSteps,
+    isTestExecuting,
   } = useContext(EditorContext)
   const {
     isOpen: isTestResultOpen,
@@ -45,6 +45,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     validateSubstep(substep, formContext.getValues() as IStep),
   )
   const [hasDeletedVars, setHasDeletedVars] = useState(false)
+  const previousIsTestExecuting = usePrevious(isTestExecuting)
 
   /*
    * NOTE: we use dirtyFields instead of isDirty because dirtyFields only tracks
@@ -72,6 +73,16 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       }) || [],
     [args, step.createdAt, selectedActionOrTrigger, getFlagValue],
   )
+
+  /**
+   * We show the test result right after a chek step is run
+   * i.e. isTestExecuting = true --> isTestExecuting = false
+   */
+  useEffect(() => {
+    if (isTestExecuting === false && previousIsTestExecuting === true) {
+      onTestResultOpen()
+    }
+  }, [isTestExecuting, onTestResultOpen, step, previousIsTestExecuting])
 
   useEffect(() => {
     function validate(step: unknown) {
@@ -123,15 +134,12 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     async (testRunMetadata?: Record<string, unknown>) => {
       try {
         await saveStep()
-        await executeTestStep(testRunMetadata)
-        if (!isIfThenStep(step)) {
-          onTestResultOpen()
-        }
+        await executeTestStep({ testRunMetadata })
       } catch (error) {
         console.error('Error saving and test step')
       }
     },
-    [saveStep, executeTestStep, step, onTestResultOpen],
+    [saveStep, executeTestStep],
   )
 
   return (
