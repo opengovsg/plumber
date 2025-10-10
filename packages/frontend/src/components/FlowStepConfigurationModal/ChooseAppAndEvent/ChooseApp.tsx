@@ -44,7 +44,7 @@ interface ChooseAppProps {
 
 export default function ChooseApp(props: ChooseAppProps) {
   const { apps, onSelectAppEvent } = props
-  const launchDarkly = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
   const { patchModalState, isTrigger, isLastStep, step, prevStepId } =
     useContext(FlowStepConfigurationContext)
 
@@ -55,7 +55,7 @@ export default function ChooseApp(props: ChooseAppProps) {
   })
 
   const [_, isInitializingIfThen] = useIfThenInitializer()
-  const isLoading = launchDarkly.isLoading || isInitializingIfThen
+  const isLoading = isInitializingIfThen
 
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -81,12 +81,12 @@ export default function ChooseApp(props: ChooseAppProps) {
   )
 
   const toolboxActionsToDisplay = useMemo(() => {
-    if (isLoading || !launchDarkly.flags) {
+    if (isLoading) {
       return []
     }
 
     const ldToolboxAppFlag = getAppFlag(TOOLBOX_APP_KEY)
-    if (!launchDarkly.flags[ldToolboxAppFlag]) {
+    if (!getFlagValue(ldToolboxAppFlag, false)) {
       return []
     }
 
@@ -94,12 +94,12 @@ export default function ChooseApp(props: ChooseAppProps) {
       apps?.find((app) => app.key === TOOLBOX_APP_KEY)?.actions ?? []
     const filteredToolboxActions = toolboxActions.filter((action) => {
       // Filter away actions hidden behind feature flags
-      if (isLoading || !launchDarkly.flags) {
+      if (isLoading) {
         return true
       }
 
       const ldToolboxActionFlag = getAppActionFlag(TOOLBOX_APP_KEY, action.key)
-      return launchDarkly.flags[ldToolboxActionFlag] ?? true
+      return getFlagValue(ldToolboxActionFlag, true)
     })
 
     const fuzzySearchToolboxActions = fuzzysort
@@ -111,17 +111,17 @@ export default function ChooseApp(props: ChooseAppProps) {
       .map((result) => result.obj)
 
     return fuzzySearchToolboxActions
-  }, [apps, isLoading, launchDarkly.flags, searchQuery])
+  }, [apps, isLoading, getFlagValue, searchQuery])
 
   // Combine filtering and grouping logic into a single operation
   const groupedApps = useMemo(() => {
     const filteredApps = apps?.filter((app) => {
       // Filter away apps hidden behind feature flags
-      if (isLoading || !launchDarkly.flags || !app?.key) {
+      if (isLoading || !app?.key) {
         return true
       }
       const ldAppFlag = getAppFlag(app.key)
-      return launchDarkly.flags[ldAppFlag] ?? true
+      return getFlagValue(ldAppFlag, true)
     })
 
     // Note: Separate toolbox app from other apps because we filter toolbox actions separately
@@ -160,13 +160,7 @@ export default function ChooseApp(props: ChooseAppProps) {
       }
       return a[0].localeCompare(b[0])
     })
-  }, [
-    apps,
-    launchDarkly.flags,
-    isLoading,
-    searchQuery,
-    toolboxActionsToDisplay,
-  ])
+  }, [apps, getFlagValue, isLoading, searchQuery, toolboxActionsToDisplay])
 
   return (
     <>

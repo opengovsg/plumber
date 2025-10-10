@@ -16,7 +16,7 @@ interface RetryAllButtonProps {
 
 export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
   const flowId = execution.flow?.id
-  const { flags } = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
   const toast = useToast()
   const [isBulkRetrying, setIsBulkRetrying] = useState(false)
   const [hasBulkRetried, setHasBulkRetried] = useState(false)
@@ -53,7 +53,7 @@ export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
     }
   }, [flowId, bulkRetryExecutions, toast])
 
-  if (!flags?.[BULK_RETRY_EXECUTIONS_FLAG]) {
+  if (!getFlagValue(BULK_RETRY_EXECUTIONS_FLAG, false)) {
     return null
   }
 

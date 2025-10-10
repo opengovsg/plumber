@@ -278,11 +278,11 @@ type ConnectionModalLabel {
 type AppAuth {
   connectionType: String!
   connectionRegistrationType: String
-
   fields: [Field] # Only for user-added connections
   authenticationSteps: [AuthenticationStep]
   reconnectionSteps: [ReconnectionStep]
   connectionModalLabel: ConnectionModalLabel
+  autoCheckStep: Boolean
 }
 
 enum ArgumentEnumType {

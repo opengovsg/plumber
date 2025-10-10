@@ -648,6 +648,7 @@ interface IBaseAuth {
     $: IGlobalVariable,
   ): Promise<IVerifyConnectionRegistrationOutput>
   connectionModalLabel?: IConnectionModalLabel
+  autoCheckStep?: boolean
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {

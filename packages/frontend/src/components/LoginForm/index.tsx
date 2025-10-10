@@ -17,7 +17,7 @@ import SgidLoginSection from './SgidLoginSection'
 import SsoLoginSection from './SsoLoginSection'
 
 export const LoginForm = (): JSX.Element => {
-  const { flags } = useContext(LaunchDarklyContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   const headers = useResponseHeaders()
 
@@ -55,12 +55,12 @@ export const LoginForm = (): JSX.Element => {
     }
   }
 
-  const shouldShowSgidLogin = flags?.[SGID_FEATURE_FLAG]
+  const shouldShowSgidLogin = getFlagValue(SGID_FEATURE_FLAG, false)
   // show sso login if request is from OGP office wifi or in dev
   const shouldShowSsoLogin =
     (headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true' ||
       appConfig.isDev) &&
-    flags?.[SSO_FEATURE_FLAG]
+    getFlagValue(SSO_FEATURE_FLAG, false)
 
   return (
     <form onSubmit={handleSubmit}>

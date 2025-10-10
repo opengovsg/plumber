@@ -5,6 +5,7 @@ import get from 'lodash.get'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import Step, { StepContext } from '@/models/step'
 
 export async function throwSendMessageError(
@@ -14,16 +15,34 @@ export async function throwSendMessageError(
   testRun: boolean,
 ): Promise<never> {
   const position = step.position
+  logger.error('Telegram bot error', {
+    error: err,
+  })
   // catch telegram errors with different error format for ETIMEDOUT and ECONNRESET: e.g. details: { error: 'connect ECONNREFUSED 127.0.0.1:3002' }
   const errorString = JSON.stringify(get(err, 'details.error', ''))
-  if (errorString.includes('ECONNRESET') || errorString.includes('ETIMEDOUT')) {
-    throw new StepError(
-      'Connection issues',
-      'Please retry in a few minutes because telegram is currently experiencing issues.',
-      position,
-      appName,
-      err,
-    )
+  if (
+    errorString.includes('ECONNRESET') ||
+    errorString.includes('ETIMEDOUT') ||
+    err.message.includes('ETIMEDOUT') ||
+    err.code === 'ETIMEDOUT'
+  ) {
+    throw new RetriableError({
+      error: 'Timeout error. Telegram may be experiencing issues.',
+      delayInMs: 'default',
+      delayType: 'step',
+    })
+  }
+
+  /**
+   * TODO: Temporary error handling since I cant find a way to catch the ETIMEDOUT error
+   */
+  const errorDetails = JSON.stringify(get(err, 'details', {}))
+  if (errorDetails === '{"error": "Error"}') {
+    throw new RetriableError({
+      error: 'Timeout error. Telegram may be experiencing issues.',
+      delayInMs: 'default',
+      delayType: 'step',
+    })
   }
 
   // catch telegram errors with proper http error format

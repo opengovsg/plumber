@@ -115,7 +115,7 @@ describe('send message', () => {
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
       await expect(sendMessageAction.run($)).rejects.toThrowError(
-        'Connection issues',
+        RetriableError,
       )
     },
   )
