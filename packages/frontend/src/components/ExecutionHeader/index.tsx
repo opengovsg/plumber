@@ -4,7 +4,7 @@ import { Fragment, ReactElement, useCallback } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Flex, Icon, Link, Stack, Text } from '@chakra-ui/react'
-import { Button, Tooltip } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 import * as URLS from '@/config/urls'
@@ -92,15 +92,11 @@ function ExecutionId(props: Pick<IExecution, 'id'>) {
 
 function ExecutionDate(props: Pick<IExecution, 'createdAt'>) {
   const createdAt = DateTime.fromMillis(parseInt(props.createdAt, 10))
-  const relativeCreatedAt = createdAt.toRelative()
 
   return (
-    <Tooltip
-      label={createdAt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}
-      aria-label="Created at tooltip"
-    >
-      <Text textStyle="body-1">{relativeCreatedAt}</Text>
-    </Tooltip>
+    <Text textStyle="body-1">
+      {createdAt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}
+    </Text>
   )
 }
 

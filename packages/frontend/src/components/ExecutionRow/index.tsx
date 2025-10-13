@@ -32,7 +32,6 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
   const { flow, executionSteps } = execution
 
   const createdAt = DateTime.fromMillis(parseInt(execution.createdAt, 10))
-  const relativeCreatedAt = createdAt.toRelative()
 
   return (
     <Link
@@ -102,7 +101,7 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
                   color="base.content.medium"
                   textStyle="body-2"
                 >
-                  executed {relativeCreatedAt}
+                  {createdAt.toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}
                 </Text>
               </VStack>
             </GridItem>
