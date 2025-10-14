@@ -65,15 +65,18 @@ export default function Step(props: StepProps): React.ReactElement | null {
     const isGatherSGWithUrl = step.appKey === 'gathersg' && step?.webhookUrl
     const isTestStep = substep.key === 'testStep'
     const isChooseConnection = substep.key === 'chooseConnection'
+    const isSetUpTrigger = substep.key === 'setUpTrigger'
 
     // webhook should show test step
     if (isWebhookWithUrl) {
       return true
     }
 
-    // GatherSG should only show testStep and not chooseConnection
+    // GatherSG should only show setUpTrigger, not chooseConnection
     if (isGatherSGWithUrl) {
-      return isTestStep
+      if (substep.key === 'setUpTrigger') {
+        return isSetUpTrigger
+      }
     }
 
     // Default: show all substeps except chooseConnection and testStep

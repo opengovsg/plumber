@@ -55,12 +55,16 @@ export const processTrigger = async (
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
 
-  const { shouldProceed, data } = await shouldTriggerProceed({
-    ...options,
-    stepAppKey: step.appKey,
-  })
-  if (!shouldProceed) {
-    return data
+  // only need to check if can proceed if there is no error
+  // if error, skip and let the error throw
+  if (!error) {
+    const { shouldProceed, data } = await shouldTriggerProceed({
+      ...options,
+      stepAppKey: step.appKey,
+    })
+    if (!shouldProceed) {
+      return data
+    }
   }
 
   // non-FormSG triggers or test runs proceed without advisory lock

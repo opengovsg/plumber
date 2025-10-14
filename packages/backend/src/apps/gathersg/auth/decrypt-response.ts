@@ -2,7 +2,6 @@ import { IGlobalVariable } from '@plumber/types'
 
 import crypto from 'crypto'
 
-import appConfig from '@/config/app'
 import logger from '@/helpers/logger'
 
 /**
@@ -17,20 +16,15 @@ export async function decryptResponse(
 ): Promise<{ verified: boolean; internalId: string | null }> {
   try {
     const { app, encryptedData, signature, timestamp } = $.request.body
+    const { encryptionKey } = $.step.parameters
 
-    if (encryptedData) {
-      if (!appConfig.isDev) {
-        throw new Error(
-          'Plumber does not support encryption yet, remove the encryption key and try again.',
-        )
-      }
-
+    if (encryptedData && encryptionKey) {
       const input = Buffer.from(encryptedData, 'base64')
       const iv = input.subarray(0, 16)
       const cipherText = input.subarray(16)
       const cipherKey = crypto
         .createHash('sha256')
-        .update(process.env.GATHERSG_DEV_ENCRYPTION_KEY)
+        .update(encryptionKey as string)
         .digest()
 
       const decipher = crypto.createDecipheriv('aes-256-ctr', cipherKey, iv)

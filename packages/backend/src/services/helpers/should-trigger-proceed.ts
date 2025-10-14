@@ -110,7 +110,7 @@ export const shouldTriggerProceed = async (
        * and we do not execute the flow.
        */
 
-      // if the use has not triggered the webhook, the payload will be an empty object
+      // if the user has not triggered the webhook, the payload will be an empty object
       if (Object.keys(triggerItem.raw).length === 0) {
         return { shouldProceed: true, data: null }
       }
