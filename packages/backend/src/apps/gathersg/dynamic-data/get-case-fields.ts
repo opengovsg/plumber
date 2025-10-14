@@ -6,6 +6,7 @@ import {
 
 import HttpError from '@/errors/http'
 
+import { fetchCaseFields } from '../common/fetch-case-fields'
 import { GatherSGError } from '../common/types'
 
 /**
@@ -31,6 +32,27 @@ const dynamicData: IDynamicData = {
   name: 'Get Case Fields',
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     try {
+      const { caseType: caseTypeUuid } = $.step.parameters
+
+      if (caseTypeUuid) {
+        const { filteredFields } = await fetchCaseFields({
+          $,
+          caseTypeUuid: caseTypeUuid as string,
+        })
+
+        return {
+          data: filteredFields.map((field) => {
+            return {
+              name: field.name,
+              value: field.name,
+            }
+          }),
+        }
+      }
+
+      // TODO (kevinkim-ogp): this needs to be updated to use the caseUuid to fetch the fields
+      // of that specific case using /cases/{caseUuid}
+      // need to figure out how to do this with both string and computed parameters if the UUID is a variable
       const { data: searchResult } = await $.http.post<{
         traceId: string
         total: number
