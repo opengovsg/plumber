@@ -55,3 +55,20 @@ export interface FormSchema {
     }
   }
 }
+
+/**
+ * This will be stored in the step's parameters and
+ * not modifiable by the user
+ */
+export interface ParsedMrfWorkflowStep {
+  defaultStepName: string
+  formWorkflowStepId: string
+  type: 'static' | 'dynamic' | 'conditional'
+  fields?: string[]
+  approvalField?: string
+}
+
+export interface ParsedMrfWorkflow {
+  trigger: Omit<ParsedMrfWorkflowStep, 'approvalField'>
+  actions: ParsedMrfWorkflowStep[]
+}
