@@ -1,6 +1,7 @@
 import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import App from '@/models/app'
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -11,6 +12,18 @@ const createStep: MutationResolvers['createStep'] = async (
   context,
 ) => {
   const { input } = params
+
+  const triggerOrAction = await App.findTriggerOrActionByKey(
+    input.appKey,
+    input.key,
+  )
+
+  if (!triggerOrAction) {
+    throw new BadUserInputError('No such trigger or action')
+  }
+  if ('hiddenFromUser' in triggerOrAction && triggerOrAction.hiddenFromUser) {
+    throw new BadUserInputError('Action can only be created by system')
+  }
 
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')

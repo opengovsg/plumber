@@ -177,6 +177,7 @@ export const GET_APPS = gql`
         groupsLaterSteps
         isNew
         linkToGuide
+        hiddenFromUser
         substeps {
           key
           name

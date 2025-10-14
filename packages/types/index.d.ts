@@ -774,6 +774,8 @@ export interface IActionItem {
 export interface IBaseAction {
   name: string
   key: string
+  // can only be created by backend, not by user
+  hiddenFromUser?: boolean
   description: string
   isNew?: boolean
   run?(

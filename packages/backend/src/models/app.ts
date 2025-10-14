@@ -1,4 +1,4 @@
-import { IApp } from '@plumber/types'
+import { IAction, IApp, ITrigger } from '@plumber/types'
 
 import { memoize } from 'lodash'
 
@@ -35,6 +35,17 @@ class App {
     const rawAppData = await getApp(key, stripFuncs)
 
     return appInfoConverter(rawAppData)
+  }
+
+  static async findTriggerOrActionByKey(
+    appKey: string,
+    key: string,
+  ): Promise<ITrigger | IAction> {
+    const app = await this.findOneByKey(appKey)
+    return (
+      app.triggers?.find((trigger) => trigger.key === key) ||
+      app.actions?.find((action) => action.key === key)
+    )
   }
 
   static getAllAppsWithFunctions = memoize(async () => {

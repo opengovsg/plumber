@@ -275,13 +275,17 @@ export default function ChooseApp(props: ChooseAppProps) {
 
                     const triggersOrActions = isTrigger
                       ? app.triggers
-                      : app.actions
+                      : app.actions?.filter((action) => !action.hiddenFromUser)
                     const singleTriggerOrAction =
                       triggersOrActions?.length === 1
                         ? triggersOrActions[0]
                         : null
 
                     const isAppDisabled = appSelectableMap?.[app.key] === false
+
+                    if (!triggersOrActions?.length) {
+                      return null
+                    }
 
                     return (
                       <Flex
