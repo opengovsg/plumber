@@ -17,7 +17,8 @@ export function useTestDetails(
   allApps: IApp[],
 ): UseTestDetailsResult {
   const isWebhookSubstep =
-    step.appKey === 'webhook' && Boolean(step?.webhookUrl)
+    (step.appKey === 'webhook' || step.appKey === 'gathersg') &&
+    Boolean(step?.webhookUrl)
 
   if (!isSameAppAndAppKey(step, currentTestExecutionStep)) {
     return {

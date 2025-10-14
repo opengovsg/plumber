@@ -37,6 +37,7 @@ export const TRIGGER_APPS_RANKING = [
   formsgApp.key,
   schedulerApp.key,
   webhookApp.key,
+  gathersgApp.key,
 ]
 export const ACTION_APPS_RANKING = [
   postmanApp.key,

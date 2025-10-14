@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Execution from '@/models/execution'
 import Step from '@/models/step'
@@ -96,5 +96,65 @@ describe('processTrigger', () => {
     // Verify that the rejected request has no execution step
     const rejectedResult = result1.shouldExecute ? result2 : result1
     expect(rejectedResult.executionStep).toBeNull()
+  })
+
+  describe('GatherSG', () => {
+    const flowId = randomUUID()
+    const stepId = randomUUID()
+    const internalId = randomUUID()
+    beforeEach(async () => {
+      // Mock Step query
+      const mockStep = {
+        id: stepId,
+        appKey: 'gathersg',
+        parameters: {},
+      }
+      vi.spyOn(Step, 'query').mockReturnValue({
+        findById: vi.fn().mockReturnValue({
+          throwIfNotFound: vi.fn().mockResolvedValue(mockStep),
+        }),
+      } as any)
+    })
+
+    it('should allow user triggered workflow to execute for GatherSG', async () => {
+      const triggerItem = {
+        raw: {
+          app: 'gathersg',
+          data: {
+            type: 'case',
+            case: { uuid: randomUUID() },
+            updatedBy: { email: 'user@tech.gov.sg', name: 'Test User' },
+          },
+        },
+        meta: { internalId },
+      }
+
+      const options = {
+        flowId,
+        stepId,
+        triggerItem,
+        testRun: false,
+      }
+
+      const result = await processTrigger(options)
+      expect(result.shouldExecute).toBe(true)
+    })
+
+    it('should not allow api triggered workflow to execute for GatherSG', async () => {
+      const triggerItem = {
+        raw: { app: 'gathersg' },
+        meta: { internalId },
+      }
+
+      const options = {
+        flowId,
+        stepId,
+        triggerItem,
+        testRun: false,
+      }
+
+      const result = await processTrigger(options)
+      expect(result.shouldExecute).toBe(false)
+    })
   })
 })
