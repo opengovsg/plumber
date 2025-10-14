@@ -25,7 +25,10 @@ export const fetchCaseFields = async ({
   caseTypeUuid: string
 }) => {
   const { data } = await $.http.get<GatherSGCaseFields>(
-    `/admin/caseTypes/${caseTypeUuid}`,
+    `/admin/caseTypes/:caseTypeUuid`,
+    {
+      urlPathParams: { caseTypeUuid },
+    },
   )
 
   const filteredFields = data.data.fields.filter(
