@@ -3,6 +3,7 @@ import { IGlobalVariable } from '@plumber/types'
 import { DateTime } from 'luxon'
 import { customAlphabet } from 'nanoid/async'
 
+import logger from '@/helpers/logger'
 import { COMMON_S3_MOCK_FOLDER_PREFIX } from '@/helpers/s3'
 
 import { filterNric } from '../../auth/decrypt-form-response'
@@ -93,94 +94,104 @@ function generateMockPaymentData(products: Partial<PaymentProduct>[]) {
   }
 }
 
-async function getMockData($: IGlobalVariable) {
-  try {
-    const { formId } = getFormDetailsFromGlobalVariable($)
-
-    const [{ data }, { data: formDetails }] = await Promise.all([
-      $.http.get('/v3/forms/:formId/sample-submission', {
-        urlPathParams: {
-          formId,
-        },
-      }),
-      $.http.get('/v3/forms/:formId', {
-        urlPathParams: {
-          formId,
-        },
-      }),
-    ])
-
-    const formFields = formDetails.form.form_fields as Array<FormField>
-    for (let i = 0; i < formFields.length; i++) {
-      if (data.responses[formFields[i]._id]) {
-        // forcefully include all checkbox options in the correct order
-        if (data.responses[formFields[i]._id].fieldType === 'checkbox') {
-          data.responses[formFields[i]._id].answerArray =
-            formFields[i].fieldOptions
-          // include the others option if available
-          if (formFields[i].othersRadioButton) {
-            data.responses[formFields[i]._id].answerArray.push(
-              'Others: Sample Input',
-            )
-          }
-        }
-
-        // formsg payload doesnt contain this anyways, so we dont return in mock data
-        if (data.responses[formFields[i]._id].fieldType === 'statement') {
-          delete data.responses[formFields[i]._id]
-          continue
-        }
-
-        if (data.responses[formFields[i]._id].fieldType === 'address') {
-          data.responses[formFields[i]._id].answerArray =
-            generateMockAddressData()
-        }
-
-        if (data.responses[formFields[i]._id].fieldType === 'attachment') {
-          data.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
-        }
-
-        if (data.responses[formFields[i]._id].fieldType === 'nric') {
-          data.responses[formFields[i]._id].answer = filterNric(
-            $,
-            data.responses[formFields[i]._id].answer,
+function patchMockData(
+  mockData: Record<string, any>,
+  formDetails: Record<string, any>,
+  $: IGlobalVariable,
+) {
+  const formFields = formDetails.form.form_fields as Array<FormField>
+  for (let i = 0; i < formFields.length; i++) {
+    if (mockData.responses[formFields[i]._id]) {
+      // forcefully include all checkbox options in the correct order
+      if (mockData.responses[formFields[i]._id].fieldType === 'checkbox') {
+        mockData.responses[formFields[i]._id].answerArray =
+          formFields[i].fieldOptions
+        // include the others option if available
+        if (formFields[i].othersRadioButton) {
+          mockData.responses[formFields[i]._id].answerArray.push(
+            'Others: Sample Input',
           )
         }
-
-        if (data.responses[formFields[i]._id].fieldType === 'email') {
-          data.responses[formFields[i]._id].answer = $.user.email
-        }
-
-        // add a stringified version of the table data to the mock data
-        if (data.responses[formFields[i]._id].fieldType === 'table') {
-          const answerArray = data.responses[formFields[i]._id]
-            .answerArray as string[][]
-          const question = data.responses[formFields[i]._id].question
-          data.responses[formFields[i]._id].answer =
-            convertTableAnswerArrayToTableObject(question, answerArray)
-        }
-
-        data.responses[formFields[i]._id].order = i + 1
-        data.responses[formFields[i]._id].id = undefined
       }
+
+      // formsg payload doesnt contain this anyways, so we dont return in mock data
+      if (mockData.responses[formFields[i]._id].fieldType === 'statement') {
+        delete mockData.responses[formFields[i]._id]
+        continue
+      }
+
+      if (mockData.responses[formFields[i]._id].fieldType === 'address') {
+        mockData.responses[formFields[i]._id].answerArray =
+          generateMockAddressData()
+      }
+
+      if (mockData.responses[formFields[i]._id].fieldType === 'attachment') {
+        mockData.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
+      }
+
+      if (mockData.responses[formFields[i]._id].fieldType === 'nric') {
+        mockData.responses[formFields[i]._id].answer = filterNric(
+          $,
+          mockData.responses[formFields[i]._id].answer,
+        )
+      }
+
+      if (mockData.responses[formFields[i]._id].fieldType === 'email') {
+        mockData.responses[formFields[i]._id].answer = $.user.email
+      }
+
+      // add a stringified version of the table data to the mock data
+      if (mockData.responses[formFields[i]._id].fieldType === 'table') {
+        const answerArray = mockData.responses[formFields[i]._id]
+          .answerArray as string[][]
+        const question = mockData.responses[formFields[i]._id].question
+        mockData.responses[formFields[i]._id].answer =
+          convertTableAnswerArrayToTableObject(question, answerArray)
+      }
+
+      mockData.responses[formFields[i]._id].order = i + 1
+      mockData.responses[formFields[i]._id].id = undefined
     }
+  }
+  // There's actually no need to return since it's modifying in place
+  return mockData
+}
+
+async function getMockData(
+  $: IGlobalVariable,
+  formSchema: Record<string, any>,
+) {
+  const { formId } = getFormDetailsFromGlobalVariable($)
+  try {
+    const { data } = await $.http.get('/v3/forms/:formId/sample-submission', {
+      urlPathParams: {
+        formId,
+      },
+    })
 
     // generate bson-objectid using nanoid to avoid extra dependency
     const hexAlphabets = '0123456789abcdef'
     const idLength = 24
     const generateIdAsync = customAlphabet(hexAlphabets, idLength)
 
+    // this modifies (in-place) some of the values that formsg provides
+    patchMockData(data, formSchema, $)
+
     return {
       fields: data.responses,
       submissionId: await generateIdAsync(),
       submissionTime: DateTime.now().toISO(),
       formId,
-      ...(formDetails.form.isSubmitterIdCollectionEnabled &&
-        generateVerifiedSubmitterInfoData(formDetails.form.authType, $)),
-      ...(formDetails.form.payments_field.enabled &&
-        generateMockPaymentData(formDetails.form.payments_field.products)),
+      ...(formSchema.form.isSubmitterIdCollectionEnabled &&
+        generateVerifiedSubmitterInfoData(formSchema.form.authType, $)),
+      ...(formSchema.form.payments_field?.enabled &&
+        generateMockPaymentData(formSchema.form.payments_field.products)),
     }
   } catch (e) {
+    logger.error('Mock data generation error', {
+      error: e,
+      formId: formId,
+    })
     throw new Error(
       'Unable to generate mock form data. Please make an actual submission to proceed.',
     )

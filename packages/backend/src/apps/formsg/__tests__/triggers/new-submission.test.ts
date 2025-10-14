@@ -17,13 +17,26 @@ const getLastExecutionStepMock = vi.fn()
 const mocks = vi.hoisted(() => ({
   getMockData: vi.fn(),
   getFormDetailsFromGlobalVariable: vi.fn(),
+  fetchFormSchema: vi.fn(() => {
+    return {
+      form: {
+        responseMode: 'storage',
+      },
+    }
+  }),
 }))
 
 vi.mock('../../triggers/new-submission/get-mock-data', () => ({
   default: mocks.getMockData,
 }))
 
+vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
+  fetchFormSchema: mocks.fetchFormSchema,
+}))
+
 vi.mock('../../common/webhook-settings', () => ({
+  registerWebhookUrl: vi.fn(),
+  verifyWebhookUrl: vi.fn(),
   getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
 }))
 
