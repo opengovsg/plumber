@@ -1,6 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import { UNSUPPORTED_FIELDS } from './constants'
+import { GatherSGCase } from './types'
 
 export type GatherSGCaseField = {
   name: string
@@ -39,4 +40,20 @@ export const fetchCaseFields = async ({
     filteredFields,
     caseTypeName: data.data.name,
   }
+}
+
+export const fetchCaseData = async ({
+  $,
+  caseUuid,
+}: {
+  $: IGlobalVariable
+  caseUuid: string
+}) => {
+  const { data } = await $.http.get<{ data: GatherSGCase }>(
+    `/cases/:caseUuid`,
+    {
+      urlPathParams: { caseUuid },
+    },
+  )
+  return data.data
 }

@@ -6,7 +6,7 @@ import { fromZodError } from 'zod-validation-error'
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
-import { fetchCaseFields } from '../../common/fetch-case-fields'
+import { fetchCaseFields } from '../../common/fetch-case-data'
 import { buildFieldsSchema } from '../../common/schema-builder'
 import throwGatherSGStepError from '../../common/throw-errors'
 

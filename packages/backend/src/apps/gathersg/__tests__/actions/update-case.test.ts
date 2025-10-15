@@ -13,23 +13,55 @@ const MOCK_RESPONSE = {
 }
 
 const MOCK_CASE_UUID = '1234567890abcdefghijkl' // have to be 22 characters long
+const MOCK_CASE_TYPE_UUID = 'uuid-1234567890'
 const MOCK_CASE_STATUS = 'PENDING'
 const MOCK_CASE_FIELDS = [
-  { field: 'name', fieldType: 'string', value: 'Peter Parker' },
-  { field: 'age', fieldType: 'number', value: '30' },
-  { field: 'notes', fieldType: 'null', value: '' },
+  { field: 'name', value: 'Peter Parker' },
+  { field: 'age', value: '30' },
+  { field: 'notes', value: '' },
 ]
 
 const mocks = vi.hoisted(() => ({
   httpPatch: vi.fn(() => ({
     data: MOCK_RESPONSE,
   })),
+  httpGet: vi.fn(),
 }))
 
 describe('update case', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    // Reset mocks before each test
+    vi.clearAllMocks()
+
+    // Set up the httpGet mock implementations
+    mocks.httpGet
+      .mockImplementationOnce(() => ({
+        data: {
+          data: {
+            uuid: MOCK_CASE_UUID,
+            type: {
+              uuid: MOCK_CASE_TYPE_UUID,
+            },
+          },
+        },
+      }))
+      .mockImplementationOnce(() => ({
+        data: {
+          data: {
+            uuid: MOCK_CASE_TYPE_UUID,
+            name: 'Case A',
+            version: 1,
+            fields: [
+              { name: 'name', type: 'text', optional: true },
+              { name: 'age', type: 'number', optional: true },
+              { name: 'notes', type: 'text', optional: true },
+            ],
+          },
+        },
+      }))
+
     $ = {
       auth: {
         set: vi.fn(),
@@ -52,6 +84,7 @@ describe('update case', () => {
       },
       http: {
         patch: mocks.httpPatch,
+        get: mocks.httpGet,
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
@@ -68,12 +101,11 @@ describe('update case', () => {
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
       {
-        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {
           name: 'Peter Parker',
           age: 30,
-          notes: null,
+          notes: '',
         },
       },
       {
@@ -92,7 +124,6 @@ describe('update case', () => {
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
       {
-        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {},
       },
@@ -111,11 +142,10 @@ describe('update case', () => {
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
       {
-        caseUuid: MOCK_CASE_UUID,
         fields: {
           name: 'Peter Parker',
           age: 30,
-          notes: null,
+          notes: '',
         },
       },
       {
@@ -135,25 +165,43 @@ describe('update case', () => {
     })
   })
 
+  it('fetches case data and case fields before updating', async () => {
+    await updateCaseAction.run($)
+
+    // Verify that fetchCaseData is called (first GET call)
+    expect(mocks.httpGet).toHaveBeenNthCalledWith(1, '/cases/:caseUuid', {
+      urlPathParams: { caseUuid: MOCK_CASE_UUID },
+    })
+
+    // Verify that fetchCaseFields is called (second GET call)
+    expect(mocks.httpGet).toHaveBeenNthCalledWith(
+      2,
+      '/admin/caseTypes/:caseTypeUuid',
+      {
+        urlPathParams: { caseTypeUuid: MOCK_CASE_TYPE_UUID },
+      },
+    )
+  })
+
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please enter a valid case uuid',
+      'caseUuid: Invalid case uuid',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please do not leave the case uuid empty',
+      'caseUuid: Empty case uuid',
     )
   })
 
   it('should throw step error for empty field', async () => {
-    $.step.parameters.caseFields = [
-      { field: '', fieldType: 'string', value: 'test' },
-    ]
-    await expect(updateCaseAction.run($)).rejects.toThrow('Field empty')
+    $.step.parameters.caseFields = [{ field: '', value: 'test' }]
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'caseFields: Field empty',
+    )
   })
 
   it('should throw step error for duplicate fields', async () => {
@@ -162,17 +210,13 @@ describe('update case', () => {
       { field: 'name', fieldType: 'string', value: 'Mary' },
     ]
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'name field is repeated',
+      'field: name field is repeated',
     )
   })
 
   it('should throw step error for invalid number field type', async () => {
-    $.step.parameters.caseFields = [
-      { field: 'age', fieldType: 'number', value: 'not-a-number' },
-    ]
-    await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Invalid number type for field: age',
-    )
+    $.step.parameters.caseFields = [{ field: 'age', value: 'not-a-number' }]
+    await expect(updateCaseAction.run($)).rejects.toThrow('age: Invalid number')
   })
 
   it('should throw step error for case not found', async () => {
@@ -259,46 +303,22 @@ describe('update case', () => {
     )
   })
 
-  it('should handle null field type correctly', async () => {
-    $.step.parameters.caseFields = [
-      { field: 'deleted_at', fieldType: 'null', value: '' },
-    ]
-    await updateCaseAction.run($)
-
-    expect(mocks.httpPatch).toHaveBeenCalledWith(
-      '/cases/:caseUuid',
-      {
-        caseUuid: MOCK_CASE_UUID,
-        status: MOCK_CASE_STATUS,
-        fields: {
-          deleted_at: null,
-        },
-      },
-      {
-        urlPathParams: {
-          caseUuid: MOCK_CASE_UUID,
-        },
-      },
-    )
-  })
-
-  it('should handle mixed field types correctly', async () => {
+  it('backward compatibility: should still handle field types correctly', async () => {
     $.step.parameters.caseFields = [
       { field: 'name', fieldType: 'string', value: 'Bruce Wayne' },
       { field: 'age', fieldType: 'number', value: '25' },
-      { field: 'is_active', fieldType: 'null', value: '' },
+      { field: 'notes', value: 'Some notes' },
     ]
     await updateCaseAction.run($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
       {
-        caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {
           name: 'Bruce Wayne',
           age: 25,
-          is_active: null,
+          notes: 'Some notes',
         },
       },
       {

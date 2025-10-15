@@ -242,7 +242,7 @@ describe('buildFieldsSchema behavior', () => {
         { field: 'unknown', value: 1 },
       ]),
     )
-    const issue = issues.find((i) => i.path.join('.') === '1.field')
+    const issue = issues.find((i) => i.path.join('.') === 'caseFields')
     expect(issue?.message).toBe('Unrecognized field: "unknown"')
   })
 

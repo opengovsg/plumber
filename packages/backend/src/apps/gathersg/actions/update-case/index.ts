@@ -5,11 +5,12 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
-import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
+import { fetchCaseData, fetchCaseFields } from '../../common/fetch-case-data'
+import { buildFieldsSchema } from '../../common/schema-builder'
 import throwGatherSGStepError from '../../common/throw-errors'
 
-import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
+import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Update case',
@@ -23,6 +24,7 @@ const action: IRawAction = {
       description: 'Enter the case uuid you want to update',
       required: true,
       variables: true,
+      singleVariableSelection: true,
     },
     // TODO: see if it is possible to get all possible statuses from the API
     {
@@ -49,7 +51,6 @@ const action: IRawAction = {
           showOptionValue: false,
           required: true,
           variables: false,
-          allowArbitrary: true,
           source: {
             type: 'query' as const,
             name: 'getDynamicData' as const,
@@ -58,33 +59,13 @@ const action: IRawAction = {
                 name: 'key',
                 value: 'getCaseFields',
               },
+              {
+                name: 'parameters.caseUuid',
+                value: '{parameters.caseUuid}',
+              },
             ],
           },
           customStyle: { flex: 2 },
-        },
-        {
-          placeholder: 'Field type',
-          key: 'fieldType',
-          type: 'dropdown' as const,
-          showOptionValue: false,
-          required: true,
-          value: 'string',
-          variables: false,
-          options: [
-            {
-              label: 'Text',
-              value: ensureZodEnumValue(fieldTypeEnum, 'string'),
-            },
-            {
-              label: 'Number',
-              value: ensureZodEnumValue(fieldTypeEnum, 'number'),
-            },
-            {
-              label: 'Null',
-              value: ensureZodEnumValue(fieldTypeEnum, 'null'),
-            },
-          ],
-          customStyle: { flex: 1, maxWidth: 140 },
         },
         {
           placeholder: 'Value',
@@ -105,11 +86,28 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const payload = requestSchema.parse($.step.parameters)
+      const parameters = requestSchema.parse($.step.parameters)
+      const { caseUuid, caseStatus, caseFields } = parameters
+
+      // Fetch case data to get the case type UUID
+      const caseData = await fetchCaseData({ $, caseUuid })
+      const caseTypeUuid = caseData.type.uuid
+      const { filteredFields } = await fetchCaseFields({
+        $,
+        caseTypeUuid,
+      })
+
+      // based on the fields in the case, we build the schema to parse the case fields
+      const fieldsSchema = buildFieldsSchema(filteredFields)
+      const fields = fieldsSchema.parse(caseFields)
+
+      const payload = {
+        ...(caseStatus && { status: caseStatus }),
+        fields,
+      }
+
       const rawResponse = await $.http.patch('/cases/:caseUuid', payload, {
-        urlPathParams: {
-          caseUuid: $.step.parameters.caseUuid,
-        },
+        urlPathParams: { caseUuid },
       })
       const response = responseSchema.parse(rawResponse.data)
 
@@ -122,7 +120,7 @@ const action: IRawAction = {
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError(
-          `${firstError.message}`,
+          `${firstError.path[0]}: ${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,

@@ -5,7 +5,7 @@ import {
   isValidDateTimeString,
   isValidTimeString,
 } from './datetime-validators'
-import { GatherSGCaseField } from './fetch-case-fields'
+import { GatherSGCaseField } from './fetch-case-data'
 
 const numberString = z.preprocess((val) => {
   if (typeof val === 'string') {
@@ -106,15 +106,29 @@ export const buildFieldsSchema = (
   return (
     z
       .array(entry)
-      // 1) Catch unknown field names early
+      // 1) Catch unknown field names and duplicate fields early
       .superRefine((entries, ctx) => {
-        entries.forEach((e, i) => {
+        const seenFields = new Set<string>()
+
+        entries.forEach((e) => {
+          // Check for unknown field names
           if (!fieldNames.has(e.field)) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              path: [i, 'field'],
+              path: ['caseFields'],
               message: `Unrecognized field: "${e.field}"`,
             })
+          }
+
+          // Check for duplicate field names
+          if (seenFields.has(e.field)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['field'],
+              message: `${e.field} field is repeated`,
+            })
+          } else {
+            seenFields.add(e.field)
           }
         })
       })

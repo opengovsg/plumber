@@ -5,26 +5,25 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import computeParameters, { variableRegExp } from '@/helpers/compute-parameters'
+import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
-import { fetchCaseFields } from '../common/fetch-case-fields'
+import {
+  fetchCaseData,
+  fetchCaseFields,
+  GatherSGCaseField,
+} from '../common/fetch-case-data'
 import { GatherSGError } from '../common/types'
 
-/**
- * Subset of result
- */
-interface GatherSGCase {
-  uuid: string
-  createdAt: string
-  updatedAt: string
-  status: {
-    uuid: string
-    name: string
-    color: string
-    isFinal: boolean
+const processCaseFields = (caseFields: GatherSGCaseField[]) => {
+  return {
+    data: caseFields.map((field) => {
+      return {
+        name: field.name,
+        value: field.name,
+      }
+    }),
   }
-  caseRef: string
-  fields: Record<string, string | string[] | null | number>
-  tags: string[]
 }
 
 const dynamicData: IDynamicData = {
@@ -32,60 +31,48 @@ const dynamicData: IDynamicData = {
   name: 'Get Case Fields',
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     try {
-      const { caseType: caseTypeUuid } = $.step.parameters
+      const { caseType: caseTypeUuid, caseUuid: rawCaseUuid } =
+        $.step.parameters
 
+      let targetCaseTypeUuid: string
+
+      // Determine the case type UUID to use
       if (caseTypeUuid) {
-        const { filteredFields } = await fetchCaseFields({
-          $,
-          caseTypeUuid: caseTypeUuid as string,
-        })
+        // if the case type uuid is provided, we use it directly
+        // this happens for:
+        // - create case
+        targetCaseTypeUuid = caseTypeUuid as string
+      } else {
+        // if the case type uuid is not provided, we need to get it from the case uuid
+        // this happens for:
+        // - update case
+        let caseUuid = rawCaseUuid as string
 
-        return {
-          data: filteredFields.map((field) => {
-            return {
-              name: field.name,
-              value: field.name,
-            }
-          }),
+        if (typeof caseUuid === 'string' && caseUuid.match(variableRegExp)) {
+          // if the case uuid is a variable, we need to compute the value
+          const testExecutionSteps = await getTestExecutionSteps($.flow.id)
+          const { caseUuid: computedCaseUuid } = computeParameters(
+            { caseUuid },
+            testExecutionSteps,
+          )
+
+          caseUuid = computedCaseUuid as string
         }
+
+        // Fetch case data to get the case type UUID
+        const caseData = await fetchCaseData({ $, caseUuid })
+
+        // set the target case type uuid
+        targetCaseTypeUuid = caseData.type.uuid
       }
 
-      // TODO (kevinkim-ogp): this needs to be updated to use the caseUuid to fetch the fields
-      // of that specific case using /cases/{caseUuid}
-      // need to figure out how to do this with both string and computed parameters if the UUID is a variable
-      const { data: searchResult } = await $.http.post<{
-        traceId: string
-        total: number
-        data: GatherSGCase[]
-      }>('/cases/search', {
-        page: 1,
-        size: 1,
-        sort: 'createdAt',
-        order: 'desc',
+      // Fetch case fields using the determined case type UUID
+      const { filteredFields } = await fetchCaseFields({
+        $,
+        caseTypeUuid: targetCaseTypeUuid,
       })
 
-      /**
-       * No cases found
-       */
-      if (searchResult.data.length === 0) {
-        return {
-          data: [],
-        }
-      }
-
-      const caseFields: object = searchResult.data[0].fields
-      const updatedCaseFields: { name: string; value: string }[] = []
-      for (const [field, value] of Object.entries(caseFields)) {
-        // Right now, we cannot support adding of array of objects as a value so just going to exclude to not cause errors unnecessarily
-        if (Array.isArray(value)) {
-          continue
-        }
-        updatedCaseFields.push({ name: field, value: field })
-      }
-
-      return {
-        data: updatedCaseFields,
-      }
+      return processCaseFields(filteredFields)
     } catch (error) {
       if (error instanceof HttpError) {
         /**
