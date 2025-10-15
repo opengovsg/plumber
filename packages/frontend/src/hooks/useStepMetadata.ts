@@ -18,6 +18,7 @@ interface UseStepMetadataResult {
   stepName: string
   substeps: ISubstep[]
   shouldShowDragHandle?: boolean
+  isMrfStep: boolean
 }
 
 export function useStepMetadata(
@@ -31,6 +32,7 @@ export function useStepMetadata(
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
   const isIfThenStep = step ? checkIfThenStep(step) : false
+  const isMrfStep = step?.key === 'mrfSubmission'
 
   const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
@@ -88,6 +90,7 @@ export function useStepMetadata(
     hasConnection,
     isCompleted,
     isIfThenStep,
+    isMrfStep,
     isTrigger,
     position: step?.position ?? 0,
     stepName: step?.config?.stepName

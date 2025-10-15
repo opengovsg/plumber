@@ -28,7 +28,13 @@ export function CheckAgainButton(props: CheckAgainButtonProps) {
   const { isUnstyledInfobox, onClick, isLoading, isDisabled, step } = props
   const isFormSgTrigger =
     step.appKey === 'formsg' && step.key === 'newSubmission'
+  const isFormSgAction =
+    step.appKey === 'formsg' && step.key === 'mrfSubmission'
+
   if (isFormSgTrigger) {
+    return <FormSGCheckAgainButton {...props} />
+  }
+  if (isFormSgAction) {
     return <FormSGCheckAgainButton {...props} />
   }
   return (
