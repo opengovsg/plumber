@@ -138,8 +138,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendMessage',
+        appKey: 'telegram-bot',
         parameters: { newParam: 'value' },
       },
     }
@@ -149,8 +149,8 @@ describe('createStep mutation integration tests', async () => {
     // Ensure the new step is returned as expected.
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('newStep')
-    expect(newStep.appKey).toBe('test-app')
+    expect(newStep.key).toBe('sendMessage')
+    expect(newStep.appKey).toBe('telegram-bot')
     // New step's position should be previousStep.position + 1.
     expect(newStep.position).toBe(existingSteps[0].position + 1)
 

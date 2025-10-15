@@ -206,20 +206,43 @@ describe('updateStep mutation', () => {
   it('should set status to incomplete when key or appKey changes', async () => {
     const input = {
       ...genericInputParams,
-      key: 'newKey',
+      key: 'sendMessage',
+      appKey: 'telegram-bot',
+      //  remove connection from input for testing purposes
+      connection: { id: null } as any,
     }
 
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'newKey',
-      appKey: 'postman',
-      connectionId: mockConnectionId,
+      key: 'sendMessage',
+      appKey: 'telegram-bot',
+      connectionId: null,
       parameters: { testParam: 'value' },
       status: 'incomplete',
       config: {},
       updatedBy: context.currentUser.id,
     })
+  })
+
+  it('should throw an error if the key or appKey is not found', async () => {
+    const input = {
+      ...genericInputParams,
+      key: 'invalidKey',
+    }
+
+    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+      BadUserInputError,
+    )
+
+    const input2 = {
+      ...genericInputParams,
+      appKey: 'invalidAppKey',
+    }
+
+    await expect(updateStep(null, { input: input2 }, context)).rejects.toThrow(
+      BadUserInputError,
+    )
   })
 
   it('should set status to incomplete when explicitly requested', async () => {
