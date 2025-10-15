@@ -79,6 +79,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     async (app: IApp, triggerOrAction: ITrigger | IAction) => {
       if (
         app.auth &&
+        !triggerOrAction.noAuthRequired &&
         app.key !== APP_ALLOWING_EMPTY_CONNECTION &&
         !excelConnection?.verified
       ) {

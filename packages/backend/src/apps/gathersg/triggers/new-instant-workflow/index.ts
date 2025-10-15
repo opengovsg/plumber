@@ -10,6 +10,7 @@ const trigger: IRawTrigger = {
   name: 'New instant workflow',
   key: 'newInstantWorkflow',
   type: 'webhook',
+  noAuthRequired: true,
   description:
     'Executes this Pipe when an instant workflow is triggered from GatherSG',
   webhookTriggerInstructions: {

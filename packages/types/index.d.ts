@@ -726,6 +726,9 @@ export interface IBaseTrigger {
 
   // link that is used in the infobox. meant for new actions / triggers
   linkToGuide?: string
+
+  // if true, the trigger does not require authentication
+  noAuthRequired?: boolean
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -831,6 +834,9 @@ export interface IBaseAction {
 
   // link that is used in the infobox. meant for new actions / triggers
   linkToGuide?: string
+
+  // if true, the action does not require authentication
+  noAuthRequired?: boolean
 }
 
 export interface IRawAction extends IBaseAction {
