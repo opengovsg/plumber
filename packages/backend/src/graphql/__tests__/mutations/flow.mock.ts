@@ -42,7 +42,8 @@ export async function generateMockStep(
     | 'catchRawWebhook'
     | 'newSubmission'
     | 'findSingleRow'
-    | 'performCalculation',
+    | 'performCalculation'
+    | 'mrfSubmission',
   appKey:
     | null
     | 'slack'
