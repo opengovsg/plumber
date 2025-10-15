@@ -21,7 +21,7 @@ const action: IRawAction = {
       label: 'Case UUID',
       key: 'caseUuid',
       type: 'string' as const,
-      description: 'Enter the case uuid you want to update',
+      description: 'Select the case uuid you want to update',
       required: true,
       variables: true,
       singleVariableSelection: true,
