@@ -13,18 +13,19 @@ const createStep: MutationResolvers['createStep'] = async (
 ) => {
   const { input } = params
 
-  const triggerOrAction = await App.findTriggerOrActionByKey(
-    input.appKey,
-    input.key,
-  )
+  /**
+   * appKey and key are optional, we allow creating of empty step for if-then branches
+   */
+  if (input.appKey && input.key) {
+    const triggerOrAction = await App.findTriggerOrActionByKey(
+      input.appKey,
+      input.key,
+    )
 
-  if (!triggerOrAction) {
-    throw new BadUserInputError('No such trigger or action')
+    if ('hiddenFromUser' in triggerOrAction && triggerOrAction.hiddenFromUser) {
+      throw new BadUserInputError('Action can only be created by system')
+    }
   }
-  if ('hiddenFromUser' in triggerOrAction && triggerOrAction.hiddenFromUser) {
-    throw new BadUserInputError('Action can only be created by system')
-  }
-
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
