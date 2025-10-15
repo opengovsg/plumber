@@ -91,6 +91,17 @@ const action: IRawAction = {
 
   preprocessVariable(parameterKey: string, variableValue: unknown) {
     if (parameterKey === 'data' && typeof variableValue === 'string') {
+      // check if the variable is a valid JSON
+      if (variableValue.startsWith('{') || variableValue.endsWith('}')) {
+        try {
+          JSON.parse(variableValue as string)
+          // its a valid JSON, don't need to do anything extra
+          return variableValue
+        } catch (e) {
+          // not a valid JSON, remove the " from the start and end of the string
+          return JSON.stringify(variableValue).slice(1, -1)
+        }
+      }
       // NOTE: this removes the " from the start and end of the string
       // as it is already added in the user input
       return JSON.stringify(variableValue).slice(1, -1)

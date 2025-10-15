@@ -132,8 +132,9 @@ export default function FlowStepTestController(
       currentTestExecutionStep?.dataIn,
       formValues.parameters,
       varInfoMap,
+      step.appKey,
     )
-  }, [currentTestExecutionStep, formContext, varInfoMap])
+  }, [currentTestExecutionStep?.dataIn, formContext, step.appKey, varInfoMap])
 
   const [infoBoxVariant, infoBoxText] = getInfoBoxDetails({
     isDirty,

@@ -27,10 +27,28 @@ export const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 export function simpleSubstitute(
   original: string,
   varInfo: VariableInfoMap,
+  key?: string,
+  appKey?: string,
 ): string {
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
     const varInfoForNode = varInfo.get(`{{${id}}}`)
+
+    /**
+     * NOTE: special handling for custom api data
+     * the parameter value may be escaped so that the data is a valid JSON
+     */
+    if (key === 'data' && appKey === 'custom-api') {
+      const subStitutedValue = varInfoForNode?.testRunValue || ''
+      try {
+        JSON.parse(subStitutedValue as string)
+        // its a valid JSON, don't need to do anything extra
+        return subStitutedValue
+      } catch (e) {
+        // not a valid JSON, remove the " from the start and end of the string
+        return JSON.stringify(subStitutedValue).slice(1, -1)
+      }
+    }
     return varInfoForNode?.testRunValue || ''
   })
 }
