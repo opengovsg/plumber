@@ -67,6 +67,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
   return (
     <>
       <Flex w="100%" flexDir="column">
+        {/* {JSON.stringify(substeps)} */}
         <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
           <Form
             key={`${step.id}-${resetTimestamp}`}
@@ -91,8 +92,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
                 substep.key &&
                 // NOTE: webhook trigger is a special case where we want to show the step configuration immediately
                 ((step.appKey === 'webhook' && step?.webhookUrl) ||
-                  ['chooseConnection', 'testStep'].includes(substep.key) ===
-                    false) && (
+                  ['chooseConnection'].includes(substep.key) === false) && (
                   <FlowSubstep
                     key={substep.key}
                     hasConnection={hasConnection}

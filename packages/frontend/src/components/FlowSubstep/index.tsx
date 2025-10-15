@@ -22,7 +22,7 @@ type FlowSubstepProps = {
 }
 
 function FlowSubstep(props: FlowSubstepProps): JSX.Element {
-  const { isTrigger, substep, step, selectedActionOrTrigger } = props
+  const { substep, step, selectedActionOrTrigger } = props
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const formContext = useFormContext()
   const {
@@ -133,18 +133,24 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const handleSaveAndTest = useCallback(
     async (testRunMetadata?: Record<string, unknown>) => {
       try {
-        await saveStep()
+        if (
+          !selectedActionOrTrigger ||
+          !('hiddenFromUser' in selectedActionOrTrigger) ||
+          selectedActionOrTrigger.hiddenFromUser !== true
+        ) {
+          await saveStep()
+        }
         await executeTestStep({ testRunMetadata })
       } catch (error) {
         console.error('Error saving and test step')
       }
     },
-    [saveStep, executeTestStep],
+    [selectedActionOrTrigger, executeTestStep, saveStep],
   )
 
   return (
     <Box position="relative" display="flex" flexDirection="column">
-      {(!isTrigger || argsToDisplay.length > 0) && (
+      {argsToDisplay.length > 0 && (
         <Box flex="1" p={0} pb={4}>
           <Stack w="100%" spacing={4}>
             {argsToDisplay.map((argument) => (

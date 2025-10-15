@@ -67,6 +67,7 @@ function ChooseConnectionSubstep(
       flowId: supportsConnectionRegistration ? step.flowId : undefined,
     },
     skip: !connection?.id,
+    fetchPolicy: 'cache-first',
   })
 
   const isTestStepValid = useMemo(() => {
