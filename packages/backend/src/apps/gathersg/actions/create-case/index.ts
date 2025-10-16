@@ -5,12 +5,12 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
+import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
 import { fetchCaseFields } from '../../common/fetch-case-fields'
-import { buildFieldsSchema } from '../../common/schema-builder'
 import throwGatherSGStepError from '../../common/throw-errors'
 
-import { requestSchema, responseSchema } from './schema'
+import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Create case',
@@ -91,6 +91,30 @@ const action: IRawAction = {
           customStyle: { flex: 2 },
         },
         {
+          placeholder: 'Field type',
+          key: 'fieldType',
+          type: 'dropdown' as const,
+          showOptionValue: false,
+          required: true,
+          value: 'string',
+          variables: false,
+          options: [
+            {
+              label: 'Text',
+              value: ensureZodEnumValue(fieldTypeEnum, 'string'),
+            },
+            {
+              label: 'Number',
+              value: ensureZodEnumValue(fieldTypeEnum, 'number'),
+            },
+            {
+              label: 'Null',
+              value: ensureZodEnumValue(fieldTypeEnum, 'null'),
+            },
+          ],
+          customStyle: { flex: 1, maxWidth: 140 },
+        },
+        {
           placeholder: 'Value',
           key: 'value',
           type: 'string' as const,
@@ -110,20 +134,13 @@ const action: IRawAction = {
   async run($) {
     try {
       const paramaters = requestSchema.parse($.step.parameters)
-      const { caseType, caseStatus, caseFields } = paramaters
+      const { caseType: caseTypeUuid, status, fields } = paramaters
 
-      // NOTE: extra step to retrieve the case type name using the caseTypeUuid
-      const { filteredFields, caseTypeName } = await fetchCaseFields({
-        $,
-        caseTypeUuid: caseType,
-      })
-
-      // based on the fields in the case, we build the schema to parse the case fields
-      const fieldsSchema = buildFieldsSchema(filteredFields)
-      const fields = fieldsSchema.parse(caseFields)
+      // get the case type name from the case type uuid
+      const { caseTypeName } = await fetchCaseFields({ $, caseTypeUuid })
 
       const payload = {
-        ...(caseStatus && { status: caseStatus }),
+        ...(status && { status }),
         fields,
         type: caseTypeName,
       }
