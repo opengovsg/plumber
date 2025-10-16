@@ -10,6 +10,7 @@ import { ensureZodEnumValue } from '@/helpers/zod-utils'
 import { fetchCaseFields } from '../../common/fetch-case-fields'
 import throwGatherSGStepError from '../../common/throw-errors'
 
+import getDataOutMetadata from './get-data-out-metadata'
 import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
@@ -131,6 +132,8 @@ const action: IRawAction = {
     },
   ],
 
+  getDataOutMetadata,
+
   async run($) {
     try {
       const paramaters = requestSchema.parse($.step.parameters)
@@ -146,11 +149,11 @@ const action: IRawAction = {
       }
 
       const rawResponse = await $.http.post('/cases', payload)
-      const response = responseSchema.parse(rawResponse.data)
+      const { data } = responseSchema.parse(rawResponse.data)
 
       $.setActionItem({
         raw: {
-          response,
+          data,
         },
       })
     } catch (error) {
