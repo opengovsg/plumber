@@ -19,14 +19,18 @@ export async function createMrfSteps(
   await Step.transaction(async (trx) => {
     const triggerStepName = `MRF: ${trigger.defaultStepName}`
     // Update the trigger step parameters
-    await Step.query(trx).patchAndFetchById($.step.id, {
-      parameters: {
-        mrf: trigger,
+    const updatedTriggerStep = await Step.query(trx).patchAndFetchById(
+      $.step.id,
+      {
+        parameters: {
+          mrf: trigger,
+        },
+        config: raw(
+          `jsonb_set(config, '{stepName}', to_jsonb(?::text), true)`,
+          [triggerStepName],
+        ),
       },
-      config: raw(`jsonb_set(config, '{stepName}', to_jsonb(?::text), true)`, [
-        triggerStepName,
-      ]),
-    })
+    )
 
     const existingMrfSteps = await Step.query(trx)
       .where('flow_id', $.flow.id)
@@ -84,6 +88,7 @@ export async function createMrfSteps(
         const updatedStep = await Step.query(trx).patchAndFetchById(
           existingStep.id,
           {
+            connectionId: updatedTriggerStep.connectionId,
             parameters,
             config: raw(
               `jsonb_set(config, '{stepName}', to_jsonb(?::text), true)`,
@@ -106,6 +111,7 @@ export async function createMrfSteps(
           appKey: MRF_APP_KEY,
           key: MRF_KEY,
           position: newStepPosition,
+          connectionId: updatedTriggerStep.connectionId,
           parameters,
           config: {
             stepName,

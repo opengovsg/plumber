@@ -710,7 +710,6 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
-  mockDataMsg: String
 }
 
 type StepTransferDetails {

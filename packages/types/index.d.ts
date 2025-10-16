@@ -681,7 +681,6 @@ export type ITriggerInstructions = Partial<{
   afterUrlMsg: string
   hideWebhookUrl: boolean
   errorMsg: string
-  mockDataMsg: string
 }>
 
 // TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
@@ -769,6 +768,7 @@ export interface IActionOutput {
 
 export interface IActionItem {
   raw: IJSONObject
+  meta?: IExecutionStepMetadata
 }
 
 export interface IBaseAction {

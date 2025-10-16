@@ -10,7 +10,7 @@ import {
 import logger from '@/helpers/logger'
 import { parseS3Id } from '@/helpers/s3'
 
-import { ADDRESS_LABELS } from '../../common/constants'
+import { ADDRESS_LABELS } from './constants'
 
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
@@ -301,6 +301,7 @@ async function getDataOutMetadata(
   executionStep: IExecutionStep,
 ): Promise<IDataOutMetadata> {
   const data = executionStep.dataOut
+
   if (!data || !data.fields) {
     return null
   }
