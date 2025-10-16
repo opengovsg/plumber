@@ -39,13 +39,19 @@ const action: IRawAction = {
     {
       label: 'Case status',
       key: 'caseStatus',
-      type: 'string' as const,
-      description: 'Enter the status you want to update the case to.',
+      type: 'dropdown' as const,
+      description: 'Select the status you want to update the case to.',
       required: false,
       variables: true,
+      showOptionValue: false,
       hiddenIf: {
         fieldKey: 'caseType',
         op: 'is_empty',
+      },
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [{ name: 'key', value: 'getCaseStatuses' }],
       },
     },
     {
