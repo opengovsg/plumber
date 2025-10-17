@@ -69,7 +69,7 @@ export default function ExecutionStep({
         <HStack p={4} alignItems="center" justifyContent="space-between">
           <HStack gap={2}>
             <AppIconWithStatus
-              iconUrl={app.iconUrl}
+              iconUrl={app?.iconUrl}
               appName={appName}
               statusIcon={statusIcon}
             />

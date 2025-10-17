@@ -60,7 +60,11 @@ export default function Application(): React.ReactElement | null {
     <>
       <Container>
         <Flex gap={4} mb={3} px={4} alignItems="center">
-          <AppIcon url={app.iconUrl} color={app.primaryColor} name={app.name} />
+          <AppIcon
+            url={app?.iconUrl}
+            color={app.primaryColor}
+            name={app.name}
+          />
           <Text textStyle="h4">{app.name}</Text>
         </Flex>
 
