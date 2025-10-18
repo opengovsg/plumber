@@ -44,7 +44,8 @@ export function useConnectionVerification(
       const { data } = await testConnectionQuery({
         variables: {
           connectionId,
-          flowId: supportsConnectionRegistration ? flowId : undefined,
+          flowId,
+          supportsConnectionRegistration,
         },
       })
       return data?.testConnection

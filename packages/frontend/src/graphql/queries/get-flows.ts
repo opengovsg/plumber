@@ -32,6 +32,7 @@ export const GET_FLOWS = gql`
           pendingTransfer {
             id
           }
+          role
         }
       }
     }

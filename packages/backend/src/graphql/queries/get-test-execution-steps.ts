@@ -8,9 +8,9 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
   context,
 ) => {
   const { flowId } = params
-  // For checking if flow belongs to the user
+  // For checking if user is a collaborator
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows({ requiredRole: 'viewer' })
     .withGraphFetched({
       steps: true,
     })

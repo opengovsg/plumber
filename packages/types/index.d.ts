@@ -233,6 +233,7 @@ export type IFlowCollabRole = 'owner' | 'editor' | 'viewer'
 export interface IFlowCollaborator {
   email?: string // Populated by GraphQL resolver
   role: IFlowCollabRole
+  user?: IUser
 }
 
 export interface IFlow {
