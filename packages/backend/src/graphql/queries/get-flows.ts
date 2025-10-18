@@ -1,5 +1,4 @@
 import paginate from '@/helpers/pagination'
-import Flow from '@/models/flow'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -8,9 +7,15 @@ const getFlows: QueryResolvers['getFlows'] = async (
   params,
   context,
 ) => {
+  // Get the base query with role selection and accessibility filtering
+  const baseQuery = context.currentUser.withAccessibleFlows({
+    requiredRole: 'viewer',
+  })
+
+  // Apply additional filters to the base query
   const filteredFlowIds = (
-    await context.currentUser
-      .$relatedQuery('flows')
+    await baseQuery
+      .clone()
       .distinct('id')
       .where((builder) => {
         if (params.name) {
@@ -29,7 +34,8 @@ const getFlows: QueryResolvers['getFlows'] = async (
     }
   }
 
-  const flowsQuery = Flow.query()
+  const flowsQuery = baseQuery
+    .clone()
     .with('filtered_steps', (builder) => {
       builder
         .distinct('flow_id')
@@ -49,14 +55,13 @@ const getFlows: QueryResolvers['getFlows'] = async (
         .whereIn('flow_id', filteredFlowIds)
         .withSoftDeleted()
     })
-    .innerJoin('filtered_steps', 'id', 'filtered_steps.flow_id')
+    .innerJoin('filtered_steps', 'flows.id', 'filtered_steps.flow_id')
+
+  flowsQuery
     .withGraphFetched({
-      steps: {
-        connection: true,
-      },
-      pendingTransfer: true,
+      steps: true,
     })
-    .groupBy('id')
+    .groupBy('flows.id', 'fc.role')
     .orderBy('active', 'desc')
     .orderBy('updated_at', 'desc')
 
