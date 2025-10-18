@@ -12,14 +12,14 @@ describe('deleteStep mutation', () => {
   let context: Context
   let testFlow: Flow
   let testSteps: Step[]
-  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
+  const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   beforeEach(async () => {
     vi.resetAllMocks()
 
-    // Mock the patchFlowLastUpdated method
-    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockImplementation(
-      patchFlowLastUpdatedSpy,
+    // Mock the patchLastUpdated method
+    vi.spyOn(Flow.prototype, 'patchLastUpdated').mockImplementation(
+      patchLastUpdatedSpy,
     )
 
     // Clear out all rows
@@ -176,17 +176,17 @@ describe('deleteStep mutation', () => {
     expect(invalidatedStep.status).toBe('incomplete')
   })
 
-  it('should call patchFlowLastUpdated when deleting trigger step', async () => {
+  it('should call patchLastUpdated when deleting trigger step', async () => {
     await deleteStep(null, { input: { ids: [testSteps[0].id] } }, context)
-    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('should call patchFlowLastUpdated when deleting action steps', async () => {
+  it('should call patchLastUpdated when deleting action steps', async () => {
     await deleteStep(
       null,
       { input: { ids: [testSteps[1].id, testSteps[2].id] } },
       context,
     )
-    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 })
