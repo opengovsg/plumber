@@ -704,6 +704,7 @@ enum StepEnumType {
 
 input StepFlowInput {
   id: String
+  updatedAt: String
 }
 
 input StepInput {

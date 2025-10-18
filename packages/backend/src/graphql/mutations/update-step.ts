@@ -14,6 +14,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
       .$relatedQuery('steps', trx)
+      .withGraphFetched('flow')
       .findOne({
         'steps.id': input.id,
         flow_id: input.flow.id,
@@ -63,7 +64,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
       .withGraphFetched('connection')
 
     // update the flow's last updated
-    await step.patchFlowLastUpdated(trx)
+    await step.flow.patchLastUpdated({ flowId: step.flowId, trx })
 
     return updatedStep
   })

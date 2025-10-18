@@ -147,7 +147,9 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
     cache.writeQuery({
       query: GET_FLOW,
       variables: { id: flowId },
-      data: { getFlow: { ...flow, steps } },
+      data: {
+        getFlow: { ...flow, updatedAt: createdStep.flow.updatedAt, steps },
+      },
     })
   }
 }
@@ -233,12 +235,22 @@ export const EditorProvider = ({
       eventKey: string,
       connectionId?: string,
     ) => {
+      // NOTE: we read from the cache instead of the prop to get
+      // the updatedAt of the flow, which is updated by the createStep mutation.
+      // this is used to prevent users from updating the pipe when the steps are
+      // outdated.
+      const { getFlow: cachedFlow } = client.readQuery({
+        query: GET_FLOW,
+        variables: { id: flowId },
+      })
+
       const mutationInput = {
         previousStep: {
           id: previousStepId,
         },
         flow: {
           id: flowId,
+          updatedAt: cachedFlow.updatedAt,
         },
         appKey,
         key: eventKey,
