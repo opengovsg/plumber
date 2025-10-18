@@ -16,6 +16,9 @@ export const CREATE_STEP = gql`
       config {
         stepName
       }
+      flow {
+        updatedAt
+      }
     }
   }
 `

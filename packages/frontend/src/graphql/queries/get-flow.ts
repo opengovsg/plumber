@@ -5,6 +5,7 @@ export const FLOW_FIELDS = gql`
     id
     name
     active
+    updatedAt
     steps {
       id
       type
