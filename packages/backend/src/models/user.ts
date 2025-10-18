@@ -1,4 +1,4 @@
-import { ITableCollabRole } from '@plumber/types'
+import { IFlowCollabRole, ITableCollabRole } from '@plumber/types'
 
 import crypto from 'crypto'
 import {
@@ -7,6 +7,8 @@ import {
   QueryContext,
   Transaction,
 } from 'objection'
+
+import { getAllowedCollaboratorRoles } from '@/helpers/check-user-permission'
 
 import Base from './base'
 import Connection from './connection'
@@ -17,6 +19,13 @@ import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
 import TableCollaborator from './table-collaborators'
 import TableMetadata from './table-metadata'
+
+const ROLE_STMT = `
+  CASE
+    WHEN flows.user_id = ? THEN 'owner'
+    ELSE fc.role
+  END as role
+`
 
 class User extends Base {
   id!: string
@@ -139,31 +148,125 @@ class User extends Base {
     await super.$beforeUpdate(opt, queryContext)
   }
 
+  /**
+   * we use this filter to check for two things:
+   * 1. user is a valid owner or collaborator on this pipe
+   * 2. user has the required permissions to work on this pipe
+   */
+  private applyAccessibilityFilter(
+    query: AnyQueryBuilder,
+    userId: string,
+    requiredRole: IFlowCollabRole,
+  ) {
+    query.leftJoin('flow_collaborators as fc', function () {
+      this.on('fc.flow_id', 'flows.id')
+        .andOnNull('fc.deleted_at')
+        .andOnVal('fc.user_id', userId)
+    })
+
+    if (requiredRole === 'owner') {
+      query.where('flows.user_id', userId)
+      return
+    }
+
+    const allowedRoles = getAllowedCollaboratorRoles(requiredRole)
+
+    query.where(function () {
+      this.where('flows.user_id', userId)
+        .orWhereNotNull('fc.role')
+        .andWhere(function () {
+          this.select('*')
+            .from('flow_collaborators as fc')
+            .whereRaw('fc.flow_id = flows.id')
+            .where('fc.user_id', userId)
+            .whereIn('fc.role', allowedRoles)
+            .whereNull('fc.deleted_at')
+        })
+    })
+  }
+
   withAccessibleFlows({
+    requiredRole,
     queryBuilder,
     trx,
   }: {
+    requiredRole: IFlowCollabRole
     queryBuilder?: ExtendedQueryBuilder<Flow, Flow[]>
     trx?: Transaction
-  } = {}) {
+  }) {
     const userId = this.id
     const baseQuery = queryBuilder || Flow.query(trx)
+    baseQuery.select('flows.*', Flow.raw(ROLE_STMT, [userId]))
+
+    this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
     return baseQuery
-      .select('flows.*')
-      .leftJoin('flow_collaborators as fc', function () {
-        this.on('fc.flow_id', 'flows.id').andOnNull('fc.deleted_at')
-      })
+  }
+
+  withAccessibleSteps({
+    queryBuilder,
+    requiredRole,
+    trx,
+  }: {
+    queryBuilder?: ExtendedQueryBuilder<Step, Step[]>
+    requiredRole: IFlowCollabRole
+    trx?: Transaction
+  }) {
+    const userId = this.id
+    const baseQuery = queryBuilder || Step.query(trx)
+    baseQuery
+      .select('steps.*', Step.raw(ROLE_STMT, [userId]))
+      .join('flows', 'flows.id', 'steps.flow_id')
+
+    this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
+    return baseQuery
+  }
+
+  withAccessibleConnections({
+    requiredRole,
+    queryBuilder,
+    trx,
+  }: {
+    requiredRole: IFlowCollabRole
+    queryBuilder?: ExtendedQueryBuilder<Connection, Connection[]>
+    trx?: Transaction
+  }) {
+    const userId = this.id
+    const baseQuery = queryBuilder || Connection.query(trx)
+    const allowedRoles = getAllowedCollaboratorRoles(requiredRole)
+
+    return baseQuery
       .select(
-        Flow.raw(
-          `CASE
-          WHEN flows.user_id = ? THEN 'owner'
-          ELSE fc.role
-        END as role`,
-          [userId],
+        'connections.*',
+        Connection.raw(
+          `
+          CASE
+            WHEN connections.user_id = ? THEN 'owner'
+            WHEN flows.user_id = ? THEN 'owner'
+            ELSE fc.role
+          END as role
+          `,
+          [userId, userId],
         ),
       )
+      .leftJoin(
+        'flow_connections',
+        'flow_connections.connection_id',
+        'connections.id',
+      )
+      .leftJoin('flows', 'flows.id', 'flow_connections.flow_id')
+      .leftJoin('flow_collaborators as fc', function () {
+        this.on('fc.flow_id', 'flows.id')
+          .andOnNull('fc.deleted_at')
+          .andOnVal('fc.user_id', userId)
+      })
       .where(function () {
-        this.where('flows.user_id', userId).orWhereNotNull('fc.role')
+        // direct ownership OR access through flow_connections
+        this.where('connections.user_id', userId)
+          .orWhere('flows.user_id', userId)
+          .orWhere(function () {
+            // collaborator access
+            this.whereNotNull('fc.role').andWhere('fc.role', 'in', allowedRoles)
+          })
       })
   }
 }

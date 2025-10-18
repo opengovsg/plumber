@@ -6,7 +6,11 @@ type Query {
   ): [App]
   getApp(key: String!): App
   getConnectedApps: [App]
-  testConnection(connectionId: String!, flowId: String): TestConnectionResult
+  testConnection(
+    connectionId: String!
+    flowId: String
+    supportsConnectionRegistration: Boolean
+  ): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
     limit: Int!

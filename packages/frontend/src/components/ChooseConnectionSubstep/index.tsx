@@ -62,7 +62,8 @@ function ChooseConnectionSubstep(
   }>(TEST_CONNECTION, {
     variables: {
       connectionId: connection?.id,
-      flowId: supportsConnectionRegistration ? step.flowId : undefined,
+      flowId: step.flowId,
+      supportsConnectionRegistration,
     },
     skip: !connection?.id,
   })
