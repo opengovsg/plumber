@@ -40,6 +40,7 @@ class Step extends Base {
   executionSteps: ExecutionStep[]
   config: IStepConfig
   role?: IFlowCollabRole
+  updatedBy?: string
 
   static tableName = 'steps'
 
