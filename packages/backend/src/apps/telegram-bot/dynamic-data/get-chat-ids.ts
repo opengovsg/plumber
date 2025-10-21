@@ -4,6 +4,8 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
+import logger from '@/helpers/logger'
+
 import {
   HasTelegramChat,
   TelegramGetUpdatesResponse,
@@ -49,9 +51,11 @@ const dynamicData: IDynamicData = {
     const chatIdsMap: { name: string; value: string }[] = []
     const chatIdsSet = new Set<number>()
     try {
-      const { data } = await $.http.get<TelegramGetUpdatesResponse>(
+      const { data, request } = await $.http.get<TelegramGetUpdatesResponse>(
         getUpdatesApi,
       )
+      // logging for debugging
+      logger.info(`Telegram ip success: ${request?.socket?.remoteAddress}`)
 
       if (!data.result) {
         return {

@@ -7,6 +7,7 @@ import BaseError from './base'
 export default class HttpError extends BaseError {
   response: AxiosResponse
   code?: string
+  resolvedIp?: string
 
   constructor(error: AxiosError) {
     const computedError =
@@ -25,6 +26,9 @@ export default class HttpError extends BaseError {
 
     // Pass code along
     this.code = error.code
+
+    // add resolved ip for debugging
+    this.resolvedIp = error.request?.socket?.remoteAddress
 
     //
     // Only preserve selected headers to avoid storing sensitive data.

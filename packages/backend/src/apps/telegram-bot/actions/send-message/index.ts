@@ -1,6 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 
 import { escapeMarkdown, sanitizeMarkdown } from '../../common/markdown-v1'
 import { throwSendMessageError } from '../../common/throw-errors'
@@ -88,6 +89,10 @@ const action: IRawAction = {
     }
     try {
       const response = await $.http.post('/sendMessage', payload)
+      // logging for debugging
+      logger.info(
+        `Telegram ip success: ${response.request?.socket?.remoteAddress}`,
+      )
       $.setActionItem({
         raw: response.data,
       })
