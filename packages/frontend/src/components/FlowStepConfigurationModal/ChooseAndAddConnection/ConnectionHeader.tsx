@@ -43,7 +43,7 @@ export default function ConnectionHeader(props: ConnectionHeaderProps) {
       <Flex justifyContent="center" alignItems="center" gap={2} mt={2}>
         <AppLogoBox imageUrl={mainLogo} />
         <Icon as={BiTransferAlt} boxSize={6} color="base.content.default" />
-        <AppLogoBox imageUrl={selectedApp.iconUrl} />
+        <AppLogoBox imageUrl={selectedApp?.iconUrl} />
       </Flex>
       <Text textStyle="h4">{headerText}</Text>
     </Flex>

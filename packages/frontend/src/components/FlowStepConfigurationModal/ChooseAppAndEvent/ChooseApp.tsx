@@ -319,7 +319,7 @@ export default function ChooseApp(props: ChooseAppProps) {
                       >
                         <Flex alignItems="center" gap={4}>
                           <Image
-                            src={app.iconUrl}
+                            src={app?.iconUrl}
                             boxSize={8}
                             borderStyle="solid"
                             fit="contain"

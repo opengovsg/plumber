@@ -3,7 +3,7 @@ import { Box } from '@chakra-ui/react'
 import AppIcon from '@/components/AppIcon'
 
 interface AppIconWithStatusProps {
-  iconUrl: string
+  iconUrl?: string
   appName: string
   statusIcon: React.ReactElement
 }
