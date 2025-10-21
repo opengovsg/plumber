@@ -33,12 +33,6 @@ interface MockWithAccessibleStepsOptions {
   flowUpdatedAt?: string
 }
 
-interface MockWithAccessibleConnectionsOptions {
-  connectionId: string
-  connectionKey: string
-  connectionNotFound?: boolean
-}
-
 export function createMockWithAccessibleSteps({
   owner,
   currentUser,
@@ -83,63 +77,6 @@ export function createMockWithAccessibleSteps({
                 assertNotUpdatedSinceSpy || vi.fn().mockResolvedValue({}),
               patchLastUpdated:
                 patchLastUpdatedSpy || vi.fn().mockResolvedValue({}),
-            },
-          }),
-        }
-      },
-    )
-}
-
-export function createMockWithAccessibleConnections({
-  connectionId,
-  connectionKey,
-  connectionNotFound = false,
-}: MockWithAccessibleConnectionsOptions) {
-  return vi
-    .fn()
-    .mockImplementation(
-      (_args?: { queryBuilder?: any; requiredRole?: string; trx?: any }) => {
-        if (connectionNotFound) {
-          return {
-            withGraphFetched: vi.fn().mockReturnThis(),
-            findOne: vi.fn().mockResolvedValue(null),
-          }
-        }
-
-        return {
-          withGraphFetched: vi.fn().mockReturnThis(),
-          findOne: vi.fn().mockResolvedValue({
-            // when using withAccessibleFlowConnections, getFlowConnection returns the related `connection`
-            id: connectionId,
-            key: connectionKey,
-          }),
-        }
-      },
-    )
-}
-
-export function createMockWithAccessibleFlowConnections({
-  connectionId,
-  connectionKey,
-  connectionNotFound = false,
-}: MockWithAccessibleConnectionsOptions) {
-  return vi
-    .fn()
-    .mockImplementation(
-      (_args?: { queryBuilder?: any; requiredRole?: string; trx?: any }) => {
-        if (connectionNotFound) {
-          return {
-            withGraphFetched: vi.fn().mockReturnThis(),
-            findOne: vi.fn().mockResolvedValue(null),
-          }
-        }
-
-        return {
-          withGraphFetched: vi.fn().mockReturnThis(),
-          findOne: vi.fn().mockResolvedValue({
-            connection: {
-              id: connectionId,
-              key: connectionKey,
             },
           }),
         }

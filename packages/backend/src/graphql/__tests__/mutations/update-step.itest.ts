@@ -17,8 +17,6 @@ import { generateMockContext } from './tiles/table.mock'
 import { generateMockUser } from './flow.mock'
 import { mockConnectionsRelatedQuery } from './related-query-mock'
 import {
-  createMockWithAccessibleConnections,
-  createMockWithAccessibleFlowConnections,
   createMockWithAccessibleSteps,
   setAssertNotUpdatedSinceSpy,
   setPatchLastUpdatedSpy,
@@ -120,18 +118,6 @@ describe('updateStep mutation', () => {
       stepConnection: { id: mockConnectionId, userId: owner.id },
       flowUpdatedAt: testFlowISODateString,
     })
-
-    context.currentUser.withAccessibleConnections =
-      createMockWithAccessibleConnections({
-        connectionKey: 'postman',
-        connectionId: mockConnectionId,
-      })
-
-    context.currentUser.withAccessibleFlowConnections =
-      createMockWithAccessibleFlowConnections({
-        connectionKey: 'postman',
-        connectionId: mockConnectionId,
-      })
 
     mockConnectionsRelatedQuery(context.currentUser, {
       connectionKey: 'postman',
@@ -598,18 +584,24 @@ describe('updateStep mutation', () => {
         flowUpdatedAt: testFlowISODateString,
       })
 
+      // Mock FlowConnections query for getConnection validation
+      // Since role is 'editor', getConnection will query FlowConnections table
+      vi.spyOn(FlowConnections, 'query').mockReturnValue({
+        findOne: vi.fn().mockReturnValue({
+          withGraphFetched: vi.fn().mockReturnValue({
+            throwIfNotFound: vi.fn().mockResolvedValue({
+              connection: { id: mockConnectionId, key: 'slack' },
+            }),
+          }),
+        }),
+      } as any)
+
       const input = {
         ...genericInputParams,
         appKey: 'slack',
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
       }
-
-      context.currentUser.withAccessibleFlowConnections =
-        createMockWithAccessibleFlowConnections({
-          connectionKey: 'slack',
-          connectionId: mockConnectionId,
-        })
 
       await updateStep(null, { input }, context)
 
@@ -681,12 +673,6 @@ describe('updateStep mutation', () => {
         stepRole: 'owner',
         flowUpdatedAt: testFlowISODateString,
       })
-
-      context.currentUser.withAccessibleConnections =
-        createMockWithAccessibleConnections({
-          connectionId: mockConnectionId,
-          connectionKey: 'tiles',
-        })
 
       const input = {
         ...genericInputParams,

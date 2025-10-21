@@ -1,6 +1,5 @@
 import { raw } from 'objection'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -37,18 +36,13 @@ const createStep: MutationResolvers['createStep'] = async (
        * Editor can only use existing connections that have been shared to the pipe
        * (TODO: phase 2) Editor will be able to add their own connections
        */
-      const connection = await getConnection({
+      await getConnection({
         context,
         connectionId: input.connection.id,
         flowId: flow.id,
-        role: flow.role,
-        requiredRole: 'editor',
+        includeOwnConnections: flow.role === 'owner',
         trx,
       })
-
-      if (!connection) {
-        throw new BadUserInputError('Connection not found')
-      }
     }
 
     const previousStep = await flow
