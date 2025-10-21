@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { Button, FormLabel, Input } from '@opengovsg/design-system-react'
 
+import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
 import client from '@/graphql/client'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { UPDATE_TABLE } from '@/graphql/mutations/tiles/update-table'
@@ -129,7 +130,9 @@ function AddNewOptionalModal({
               <FormLabel isRequired>Name your tile</FormLabel>
               <Input
                 autoFocus
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) =>
+                  setInputValue(removeProblematicWhitespace(e.target.value))
+                }
                 value={inputValue}
               />
               <Button

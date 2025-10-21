@@ -11,6 +11,7 @@ import {
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
 
+import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
 import { EditorContext } from '@/contexts/Editor'
 
 const FIELD_MAX_LENGTH = {
@@ -26,9 +27,7 @@ type TextFieldProps = {
   description?: string
   required?: boolean
   multiline?: boolean
-  onChange?: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => void
+  onChange?: (value: string) => void
   onBlur?: (
     event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void
@@ -91,9 +90,12 @@ export default function TextField(props: TextFieldProps): React.ReactElement {
             <SelectedComponent
               {...field}
               placeholder={placeholder}
-              onChange={(...args) => {
-                controllerOnChange(...args)
-                onChange?.(...args)
+              onChange={(event) => {
+                const sanitised = removeProblematicWhitespace(
+                  event.target.value,
+                )
+                controllerOnChange(sanitised)
+                onChange?.(sanitised)
               }}
               onBlur={(...args) => {
                 controllerOnBlur()

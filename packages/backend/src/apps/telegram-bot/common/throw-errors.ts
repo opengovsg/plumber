@@ -26,6 +26,7 @@ export async function throwSendMessageError(
     err.message.includes('ETIMEDOUT') ||
     err.code === 'ETIMEDOUT'
   ) {
+    logger.error(`Telegram ip error: ${err.resolvedIp}`)
     throw new RetriableError({
       error: 'Timeout error. Telegram may be experiencing issues.',
       delayInMs: 'default',

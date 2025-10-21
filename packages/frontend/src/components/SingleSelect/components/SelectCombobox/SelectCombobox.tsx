@@ -9,6 +9,8 @@ import {
 } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
 
+import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
+
 import { useSelectContext } from '../../SelectContext'
 import { itemToIcon, itemToLabelString } from '../../utils/itemUtils'
 
@@ -130,6 +132,9 @@ export const SelectCombobox = forwardRef<HTMLInputElement>(
               readOnly: !isSearchable || isReadOnly,
               required: isRequired,
               'aria-expanded': !!isOpen,
+              // NOTE: we need to sanitise here because
+              // the form's fieldValue is separate from this inputValue
+              value: removeProblematicWhitespace(inputValue),
             })}
           />
           <ToggleChevron />
