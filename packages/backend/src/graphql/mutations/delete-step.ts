@@ -20,7 +20,8 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
   params,
   context,
 ) => {
-  if (params.input.ids.length === 0) {
+  const { input } = params
+  if (input.ids.length === 0) {
     throw new Error('Nothing to delete')
   }
 
@@ -28,17 +29,20 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
     // Include SELECTs in transaction too just in case there's concurrent modification.
     const steps = await context.currentUser
-      .$relatedQuery('steps', trx)
+      .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
-      .whereIn('steps.id', params.input.ids)
+      .whereIn('steps.id', input.ids)
       .orderBy('steps.position', 'asc')
-      .throwIfNotFound()
+      .throwIfNotFound({
+        message: 'Step not found. Refresh the page and try again.',
+      })
+
+    const flow = steps[0].flow
+    flow.assertNotUpdatedSince(input.flow.updatedAt)
 
     if (!steps.every((step) => step.flowId === steps[0].flowId)) {
       throw new Error('All steps to be deleted must be from the same pipe!')
     }
-
-    const flow = steps[0].flow
 
     //
     // ** IMPORTANT NOTE **
