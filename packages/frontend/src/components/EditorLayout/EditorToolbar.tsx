@@ -1,5 +1,4 @@
-import { IFlow } from '@plumber/types'
-
+import { useContext } from 'react'
 import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
@@ -12,6 +11,7 @@ import {
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
+import { EditorContext } from '@/contexts/Editor'
 
 import PublishButton from './PublishButton'
 
@@ -51,16 +51,15 @@ const GuideItem = ({ type }: { type: 'icon' | 'button' }) => {
 }
 
 const SettingsItem = ({
-  flowId,
   type,
   setLeaveToUrl,
   handleWarnOnLeave,
 }: {
-  flowId: string
   type: 'icon' | 'button'
   setLeaveToUrl: (url: string) => void
   handleWarnOnLeave: (e: React.MouseEvent<HTMLButtonElement>) => void
 }) => {
+  const { flowId } = useContext(EditorContext)
   if (type === 'button') {
     return (
       <Button
@@ -101,13 +100,8 @@ const SettingsItem = ({
   )
 }
 
-const ExecutionsItem = ({
-  flowId,
-  type,
-}: {
-  flowId: string
-  type: 'icon' | 'button'
-}) => {
+const ExecutionsItem = ({ type }: { type: 'icon' | 'button' }) => {
+  const { flowId } = useContext(EditorContext)
   if (type === 'button') {
     return (
       <Button
@@ -141,10 +135,6 @@ const ExecutionsItem = ({
 }
 
 interface EditorToolbarProps {
-  flowId: string
-  flow: IFlow
-  isFlowIncomplete: boolean
-  hasFlowTransfer: boolean
   loading: boolean
   shouldWarnOnLeave: boolean
   setShouldWarnOnPublish: (shouldWarnOnPublish: boolean) => void
@@ -158,7 +148,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
     <>
       <Show above="md">
         <HStack>
-          <ExecutionsItem {...props} type="icon" />
+          <ExecutionsItem type="icon" />
           <GuideItem type="icon" />
           <SettingsItem {...props} type="icon" />
           <PublishButton {...props} />
@@ -180,7 +170,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
             gap={2}
             px={2}
           >
-            <ExecutionsItem {...props} type="button" />
+            <ExecutionsItem type="button" />
             <GuideItem type="button" />
             <SettingsItem {...props} type="button" />
             <PublishButton {...props} />

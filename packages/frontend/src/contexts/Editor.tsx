@@ -72,6 +72,8 @@ interface IEditorContextValue {
   allApps: IApp[]
   resetForm: () => void
   resetTimestamp: number
+  isLoading: boolean
+  hasFlowTransfer: boolean
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
@@ -101,11 +103,12 @@ export const EditorContext = createContext<IEditorContextValue>({
   allApps: [],
   resetForm: () => null,
   resetTimestamp: 0,
+  isLoading: true,
+  hasFlowTransfer: false,
 })
 
 type EditorProviderProps = {
   children: ReactNode
-  readOnly: boolean
   flow: IFlow
   shouldWarnOnLeave: boolean
   setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
@@ -158,7 +161,6 @@ function updateHandlerFactory(
 }
 
 export const EditorProvider = ({
-  readOnly,
   flow,
   shouldWarnOnLeave,
   setShouldWarnOnLeave,
@@ -166,6 +168,11 @@ export const EditorProvider = ({
   children,
 }: EditorProviderProps) => {
   const isMobile = useIsMobile()
+
+  // flow transfer phase 1: add check to prevent user from publishing pipe after submitting request
+  const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
+  const hasFlowTransfer = requestedEmail !== ''
+  const readOnly = hasFlowTransfer || flow?.active || flow?.role === 'viewer'
 
   const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
@@ -185,14 +192,13 @@ export const EditorProvider = ({
     [getAppsData?.getApps],
   )
 
-  const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
-    GET_TEST_EXECUTION_STEPS,
-    {
-      variables: {
-        flowId,
-      },
+  const { data, loading: isLoadingTestExecutionSteps } = useQuery<{
+    getTestExecutionSteps: IExecutionStep[]
+  }>(GET_TEST_EXECUTION_STEPS, {
+    variables: {
+      flowId,
     },
-  )
+  })
 
   const testExecutionSteps = useMemo(
     () => data?.getTestExecutionSteps ?? [],
@@ -226,9 +232,11 @@ export const EditorProvider = ({
    * CreateStep mutation
    */
 
-  const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
+  const [createStep, { loading: isCreatingStep }] = useMutation(CREATE_STEP, {
+    refetchQueries: [GET_FLOW],
+  })
 
-  const [initializeIfThen] = useIfThenInitializer()
+  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
 
   // Add a step to the flow with the given appKey and eventKey
   const onCreateStep = useCallback(
@@ -300,7 +308,7 @@ export const EditorProvider = ({
   /**
    * UpdateStep mutation
    */
-  const [updateStep] = useMutation(UPDATE_STEP)
+  const [updateStep, { loading: isUpdatingStep }] = useMutation(UPDATE_STEP)
   const onUpdateStep = useCallback(
     async (step: IStep, onCompleted?: () => void) => {
       const mutationInput: Record<string, unknown> = {
@@ -428,7 +436,7 @@ export const EditorProvider = ({
         flowId,
         currentTestExecutionStep,
         isTestExecuting,
-        readOnly: readOnly || flow.role === 'viewer',
+        readOnly,
         shouldWarnOnLeave,
         stepsWithVars,
         testExecutionSteps,
@@ -442,6 +450,13 @@ export const EditorProvider = ({
         setShouldWarnOnLeave,
         resetForm,
         resetTimestamp,
+        isLoading:
+          isLoadingAllApps ||
+          isLoadingTestExecutionSteps ||
+          isCreatingStep ||
+          isUpdatingStep ||
+          isInitializingIfThen,
+        hasFlowTransfer,
       }}
     >
       {children}

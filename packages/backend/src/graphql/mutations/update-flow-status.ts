@@ -39,7 +39,7 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   context,
 ) => {
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
       'flows.id': params.input.id,
     })
@@ -52,6 +52,8 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
     return flow
   }
 
+  flow.assertNotUpdatedSince(params.input.updatedAt)
+
   if (params.input.active) {
     validateFlowSteps(flow.steps)
   }
@@ -59,6 +61,7 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   await flow.$query().patch({
     active: params.input.active,
     publishedAt: params.input.active ? new Date().toISOString() : null,
+    updatedBy: context.currentUser.id,
     config: {
       ...flow.config,
       // When publishing: set to true if undefined else false
