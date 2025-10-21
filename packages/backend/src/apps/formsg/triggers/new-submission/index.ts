@@ -13,6 +13,7 @@ import { createMrfSteps } from './create-mrf-steps'
 import { fetchFormSchema } from './fetch-form-schema'
 import getMockData from './get-mock-data'
 import { parseWorkflowData } from './get-workflow-data'
+import { removeMrfSteps } from './remove-mrf-steps'
 
 const formsgTestRunMetadataSchema = z
   .object({
@@ -114,6 +115,9 @@ const trigger: IRawTrigger = {
       // Create MRF steps for multirespondent forms
       const mrfWorkflowData = await parseWorkflowData($, formSchema)
       await createMrfSteps($, mrfWorkflowData)
+    } else {
+      // remove mrf object from parameters and remove mrf steps (if any)
+      await removeMrfSteps($)
     }
 
     // if test with mock data is selected OR no past submission exists
