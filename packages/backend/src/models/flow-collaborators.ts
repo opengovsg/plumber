@@ -118,6 +118,18 @@ class FlowCollaborator extends Base {
       return collaborator.role
     }
   }
+
+  static getCollaborators = async ({
+    flowId,
+    trx,
+  }: {
+    flowId: string
+    trx?: Transaction
+  }) => {
+    return await this.query(trx)
+      .where({ flow_id: flowId })
+      .withGraphFetched('user')
+  }
 }
 
 export default FlowCollaborator
