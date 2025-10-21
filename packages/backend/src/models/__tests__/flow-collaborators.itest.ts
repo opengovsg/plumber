@@ -109,4 +109,37 @@ describe('flow collaborators model', () => {
       }),
     ).rejects.toThrow('Flow not found')
   })
+
+  describe('getCollaborators', () => {
+    it('should return all collaborators for a flow', async () => {
+      const collaborators = await FlowCollaborator.getCollaborators({
+        flowId,
+      })
+
+      expect(collaborators).toHaveLength(2)
+      expect(collaborators.map((c) => c.userId)).toContain(editorUserId)
+      expect(collaborators.map((c) => c.userId)).toContain(viewerUserId)
+      expect(collaborators.map((c) => c.role)).toContain('editor')
+      expect(collaborators.map((c) => c.role)).toContain('viewer')
+      expect(collaborators[0].user).toBeDefined()
+      expect(collaborators[0].user.email).toBeDefined()
+      expect(collaborators[1].user).toBeDefined()
+      expect(collaborators[1].user.email).toBeDefined()
+    })
+
+    it('should return empty array when flow has no collaborators', async () => {
+      const newFlowId = randomUUID()
+      await Flow.query().insert({
+        id: newFlowId,
+        name: 'empty flow',
+        userId: ownerUserId,
+      })
+
+      const collaborators = await FlowCollaborator.getCollaborators({
+        flowId: newFlowId,
+      })
+
+      expect(collaborators).toHaveLength(0)
+    })
+  })
 })

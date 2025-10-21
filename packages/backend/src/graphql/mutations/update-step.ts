@@ -1,6 +1,10 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import App from '@/models/app'
+import FlowCollaborator from '@/models/flow-collaborators'
+import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -13,19 +17,24 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
-      .$relatedQuery('steps', trx)
+      .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
       .findOne({
         'steps.id': input.id,
-        flow_id: input.flow.id,
+        'steps.flow_id': input.flow.id,
       })
-      .throwIfNotFound({ message: 'Step not found' })
+
+    if (!step) {
+      throw new BadUserInputError('Step not found')
+    }
+
+    step.flow.assertNotUpdatedSince(input.flow.updatedAt)
 
     if (input.connection.id) {
-      // if connectionId is specified, verify that the connection exists and belongs to the user
+      // if connectionId is specified, verify that the connection exists
       const connection = await context.currentUser
-        .$relatedQuery('connections')
-        .findOne({ id: input.connection.id })
+        .withAccessibleConnections({ requiredRole: 'editor' })
+        .findOne({ 'connections.id': input.connection.id })
       // we check that the connection exists and is the same app
       if (!connection || connection.key !== input.appKey) {
         throw new BadUserInputError('Connection not found')
@@ -61,12 +70,80 @@ const updateStep: MutationResolvers['updateStep'] = async (
           ...(stepName !== undefined ? { stepName } : {}),
         },
       })
-      .withGraphFetched('connection')
+      .withGraphFetched({
+        connection: true,
+        flow: true,
+      })
+
+    /**
+     * NOTE: we need to update flow connections for specific apps:
+     *
+     * Tiles:
+     * 1. add the collaborator to the flow connections table
+     * 2. add the collaborator to the table collaborators table
+     *
+     * Other connections:
+     * 1. add the collaborator to the flow connections table
+     */
+    if (step.role === 'owner') {
+      if (updatedStep.appKey === 'tiles' && updatedStep?.parameters?.tableId) {
+        await FlowConnections.addFlowConnection({
+          flowId: updatedStep.flowId,
+          connectionId: updatedStep.parameters.tableId as string,
+          addedBy: context.currentUser.id,
+          connectionType: 'table',
+        })
+
+        const collaborators = await FlowCollaborator.getCollaborators({
+          flowId: updatedStep.flowId,
+          trx,
+        })
+
+        /**
+         * use Promise.all so that we use the addCollaborator function, which checks
+         * if the collaborator already exists to avoid duplicates
+         */
+        await Promise.all(
+          collaborators.map(async ({ userId, role }) => {
+            await TableCollaborator.addCollaborator({
+              userId,
+              tableId: updatedStep.parameters.tableId as string,
+              role,
+              trx,
+            })
+          }),
+        )
+      } else if (APP_CONNECTION_FIELDS[updatedStep.appKey]) {
+        const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
+
+        const userId = updatedStep?.connection?.userId
+        const connectionId = updatedStep?.connectionId
+
+        if (updatedStep.parameters[parameterKey]) {
+          await FlowConnections.patchFlowConnectionMetadata({
+            flowId: updatedStep.flowId,
+            connectionId,
+            parameterKey,
+            parameterValue: updatedStep.parameters[parameterKey] as string,
+          })
+        } else {
+          await FlowConnections.addFlowConnection({
+            flowId: updatedStep.flowId,
+            connectionId,
+            addedBy: userId,
+            connectionType: 'connection',
+          })
+        }
+      }
+    }
 
     // update the flow's last updated
-    await step.flow.patchLastUpdated({ flowId: step.flowId, trx })
+    const updatedFlow = await step.flow.patchLastUpdated({
+      flowId: step.flowId,
+      trx,
+    })
 
-    return updatedStep
+    return { ...updatedStep, flow: { updatedAt: updatedFlow.updatedAt } }
   })
 
   return step

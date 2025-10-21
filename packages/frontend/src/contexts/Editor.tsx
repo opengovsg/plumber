@@ -113,18 +113,19 @@ type EditorProviderProps = {
 /**
  * Helper function to update the flow in the cache
  */
-function updateHandlerFactory(flowId: string, previousStepId: string) {
-  return function createStepUpdateHandler(cache: any, mutationResult: any) {
+function updateHandlerFactory(
+  flow: IFlow,
+  flowId: string,
+  previousStepId: string,
+  mutationType: 'createStep' | 'updateStep' = 'createStep',
+) {
+  return function stepUpdateHandler(cache: any, mutationResult: any) {
     const { data } = mutationResult
-    const { createStep: createdStep } = data
-    const { getFlow: flow } = cache.readQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-    })
+    const stepData = data[mutationType]
 
     // getFlow requires certain attributes to be returned
-    const completeCreatedStep = {
-      ...createdStep,
+    const completeStep = {
+      ...stepData,
       iconUrl: null,
       webhookUrl: null,
       config: {
@@ -137,8 +138,8 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
     }
 
     const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
-      if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, completeCreatedStep]
+      if (mutationType === 'createStep' && currentStep.id === previousStepId) {
+        return [...steps, currentStep, completeStep]
       }
 
       return [...steps, currentStep]
@@ -148,7 +149,7 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
       query: GET_FLOW,
       variables: { id: flowId },
       data: {
-        getFlow: { ...flow, updatedAt: createdStep.flow.updatedAt, steps },
+        getFlow: { ...flow, updatedAt: stepData.flow.updatedAt, steps },
       },
     })
   }
@@ -235,22 +236,13 @@ export const EditorProvider = ({
       eventKey: string,
       connectionId?: string,
     ) => {
-      // NOTE: we read from the cache instead of the prop to get
-      // the updatedAt of the flow, which is updated by the createStep mutation.
-      // this is used to prevent users from updating the pipe when the steps are
-      // outdated.
-      const { getFlow: cachedFlow } = client.readQuery({
-        query: GET_FLOW,
-        variables: { id: flowId },
-      })
-
       const mutationInput = {
         previousStep: {
           id: previousStepId,
         },
         flow: {
           id: flowId,
-          updatedAt: cachedFlow.updatedAt,
+          updatedAt: flow.updatedAt,
         },
         appKey,
         key: eventKey,
@@ -259,7 +251,12 @@ export const EditorProvider = ({
 
       const createdStep = await createStep({
         variables: { input: mutationInput },
-        update: updateHandlerFactory(flowId, previousStepId),
+        update: updateHandlerFactory(
+          flow,
+          flowId,
+          previousStepId,
+          'createStep',
+        ),
       })
 
       const newStep = createdStep.data.createStep
@@ -281,6 +278,9 @@ export const EditorProvider = ({
           const completeStepWithFlow = {
             ...completeStep,
             flowId: flowId,
+            flow: {
+              updatedAt: newStep.flow.updatedAt,
+            },
           }
           if (eventKey === TOOLBOX_ACTIONS.IfThen) {
             return (await initializeIfThen(
@@ -292,7 +292,7 @@ export const EditorProvider = ({
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeIfThen],
+    [createStep, flow, flowId, initializeIfThen],
   )
 
   /**
@@ -310,6 +310,7 @@ export const EditorProvider = ({
         },
         flow: {
           id: flowId,
+          updatedAt: flow.updatedAt,
         },
         config: {
           // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
@@ -326,11 +327,12 @@ export const EditorProvider = ({
 
       const updatedStep = await updateStep({
         variables: { input: mutationInput },
+        update: updateHandlerFactory(flow, flowId, step.id, 'updateStep'),
       })
 
       return updatedStep.data?.updateStep as IStep
     },
-    [updateStep, flowId],
+    [flow, flowId, updateStep],
   )
 
   /**
