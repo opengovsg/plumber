@@ -96,20 +96,24 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
       const isSubStepValid = validateSubstep(substep, currentStep)
-      const result = await onUpdateStep({
-        ...currentStep,
-        status: isSubStepValid ? 'completed' : 'incomplete',
-      })
+      const result = await onUpdateStep(
+        {
+          ...currentStep,
+          status: isSubStepValid ? 'completed' : 'incomplete',
+        },
+        () => {
+          toast({
+            title: 'Step saved successfully!',
+            status: 'success',
+            duration: 2000,
+            isClosable: true,
+          })
+        },
+      )
 
       if (!result) {
         throw new Error('Failed to save step')
       }
-      toast({
-        title: 'Step saved successfully!',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      })
     } catch (error) {
       console.error('Error saving step', error)
       throw error // Re-throw the error so calling functions know saveStep failed

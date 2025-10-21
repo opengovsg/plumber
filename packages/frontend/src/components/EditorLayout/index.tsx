@@ -182,13 +182,17 @@ export default function EditorLayout() {
   // navigate user to not found page if flow does not belong to the user
   if (
     error instanceof ApolloError &&
-    error?.graphQLErrors?.find((e) => e.message === 'NotFoundError')
+    error?.graphQLErrors?.find(
+      (e) =>
+        e.message === 'NotFoundError' ||
+        e.message === 'You do not have sufficient permissions for this pipe',
+    )
   ) {
     return <InvalidEditorPage />
   }
 
-  const isEditorReadOnly = hasFlowTransfer || flow?.active
-
+  const isEditorReadOnly =
+    hasFlowTransfer || flow?.active || flow?.role === 'viewer'
   if (!flowId || !flow) {
     return null
   }

@@ -40,6 +40,7 @@ interface IEditorContextValue {
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
+  hasEditPermission: boolean
   hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
@@ -61,7 +62,7 @@ interface IEditorContextValue {
     eventKey: string,
     connectionId?: string,
   ) => Promise<IStep>
-  onUpdateStep: (step: IStep) => Promise<IStep>
+  onUpdateStep: (step: IStep, onCompleted?: () => void) => Promise<IStep>
   allApps: IApp[]
   resetForm: () => void
   resetTimestamp: number
@@ -71,6 +72,7 @@ export const EditorContext = createContext<IEditorContextValue>({
   flow: {} as IFlow,
   flowId: '',
   currentStepId: null,
+  hasEditPermission: false,
   hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
@@ -294,7 +296,7 @@ export const EditorProvider = ({
    */
   const [updateStep] = useMutation(UPDATE_STEP)
   const onUpdateStep = useCallback(
-    async (step: IStep) => {
+    async (step: IStep, onCompleted?: () => void) => {
       const mutationInput: Record<string, unknown> = {
         id: step.id,
         key: step.key,
@@ -322,6 +324,7 @@ export const EditorProvider = ({
       const updatedStep = await updateStep({
         variables: { input: mutationInput },
         update: updateHandlerFactory(flow, flowId, step.id, 'updateStep'),
+        onCompleted: () => onCompleted?.(),
       })
 
       return updatedStep.data?.updateStep as IStep
@@ -400,6 +403,7 @@ export const EditorProvider = ({
       value={{
         allApps,
         currentStepId,
+        hasEditPermission: flow.role === 'owner' || flow.role === 'editor',
         hasForEach,
         hasIfThen,
         isDrawerOpen,
@@ -409,7 +413,7 @@ export const EditorProvider = ({
         flowId,
         currentTestExecutionStep,
         isTestExecuting,
-        readOnly,
+        readOnly: readOnly || flow.role === 'viewer',
         shouldWarnOnLeave,
         stepsWithVars,
         testExecutionSteps,
