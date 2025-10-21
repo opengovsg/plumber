@@ -27,6 +27,7 @@ class Flow extends Base {
   testExecution?: Execution
   user: User
   collaborators?: FlowCollaborator[]
+  updatedBy?: string
 
   // for typescript support when creating FlowCollaborator row in insertGraph
   role?: IFlowCollabRole
