@@ -13,7 +13,7 @@ const executeStep: MutationResolvers['executeStep'] = async (
 
   // Just checking for permissions here
   const stepToTest = await context.currentUser
-    .$relatedQuery('steps')
+    .withAccessibleSteps({ requiredRole: 'editor' })
     .withGraphFetched('flow')
     .findById(stepId)
     .throwIfNotFound()

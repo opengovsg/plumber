@@ -1,4 +1,5 @@
 import apps from '@/apps'
+import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import globalVariable from '@/helpers/global-variable'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
@@ -48,7 +49,63 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
   }
 
   const fetchedData = await command.run($)
-  // TODO (kevinkim-ogp): should filter out data that is not accessible to the user
+
+  /**
+   * COLLABORATORS
+   * filter out the dynamic data to only show the options that have been shared with the user
+   *
+   * Tiles:
+   * - only show the Tiles that have been shared
+   *
+   * Other connections:
+   * - only show the connections that have been shared
+   *
+   * TODO (kevinkim-ogp): phase 2
+   * - collaborator should be able to add their own Tiles
+   */
+  if (
+    step.role !== 'owner' &&
+    APP_CONNECTION_FIELDS[step.appKey] &&
+    APP_CONNECTION_FIELDS[step.appKey]?.dynamicDataKey === dynamicDataKey
+  ) {
+    switch (step.appKey) {
+      case 'tiles': {
+        const flowConnections = await context.currentUser
+          .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+          .where({
+            connection_type: 'table',
+            'flow_connections.flow_id': step.flowId,
+          })
+
+        return fetchedData.data.filter((data) =>
+          flowConnections.some(
+            (flowConnection) => flowConnection.connectionId === data.value,
+          ),
+        )
+      }
+
+      default: {
+        const flowConnections = await context.currentUser
+          .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+          .where({
+            connection_id: step.connectionId,
+            'flow_connections.flow_id': step.flowId,
+          })
+
+        const allowedValues = flowConnections
+          .map((flowConnection) => {
+            return flowConnection.metadata[
+              APP_CONNECTION_FIELDS[step.appKey].parameterKey
+            ]
+          })
+          .flat()
+
+        return fetchedData.data.filter((data) =>
+          allowedValues.includes(data.value),
+        )
+      }
+    }
+  }
 
   if (fetchedData.error) {
     throw new Error(JSON.stringify(fetchedData.error))

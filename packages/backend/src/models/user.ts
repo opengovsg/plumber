@@ -14,6 +14,7 @@ import Base from './base'
 import Connection from './connection'
 import Execution from './execution'
 import Flow from './flow'
+import FlowConnections from './flow-connections'
 import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
@@ -268,6 +269,25 @@ class User extends Base {
             this.whereNotNull('fc.role').andWhere('fc.role', 'in', allowedRoles)
           })
       })
+  }
+
+  withAccessibleFlowConnections({
+    requiredRole,
+    queryBuilder,
+    trx,
+  }: {
+    requiredRole: IFlowCollabRole
+    queryBuilder?: ExtendedQueryBuilder<FlowConnections, FlowConnections[]>
+    trx?: Transaction
+  }) {
+    const userId = this.id
+    const baseQuery = queryBuilder || FlowConnections.query(trx)
+    baseQuery
+      .select('flow_connections.*', FlowConnections.raw(ROLE_STMT, [userId]))
+      .join('flows', 'flows.id', 'flow_connections.flow_id')
+
+    this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
+    return baseQuery
   }
 }
 
