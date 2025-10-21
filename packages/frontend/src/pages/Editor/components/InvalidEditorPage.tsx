@@ -35,7 +35,10 @@ export default function InvalidEditorPage() {
             textAlign={{ base: 'center', md: 'left' }}
             fontWeight="normal"
           >
-            Pipe not found, you may have transferred it to someone else 🤔
+            Pipe not found.
+            <br />
+            It might have been transferred to someone else, or you may no longer
+            have access. 🤔
           </Text>
           <Link
             textStyle="h6"
