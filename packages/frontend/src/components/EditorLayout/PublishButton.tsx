@@ -25,7 +25,9 @@ export default function PublishButton({
   return (
     <TouchableTooltip
       label={
-        hasFlowTransfer
+        flow.role === 'viewer'
+          ? 'You do not have permission to edit this pipe'
+          : hasFlowTransfer
           ? 'You cannot publish a pipe with a pending transfer'
           : isFlowIncomplete
           ? 'Set up for all steps must be completed before you can publish your pipe'
@@ -34,7 +36,9 @@ export default function PublishButton({
       wrapperStyles={{ width: '100%' }}
     >
       <Button
-        isDisabled={isFlowIncomplete || hasFlowTransfer}
+        isDisabled={
+          isFlowIncomplete || hasFlowTransfer || flow.role === 'viewer'
+        }
         isLoading={loading}
         spinner={<Spinner fontSize={24} />}
         size="sm"

@@ -55,6 +55,7 @@ export default function DisallowRequestInfobox() {
           onClick={onFlowTransferStatusUpdate}
           variant="clear"
           colorScheme="secondary"
+          isDisabled={flow.role !== 'owner'}
         >
           Cancel
         </Button>
