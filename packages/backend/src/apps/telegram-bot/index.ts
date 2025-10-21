@@ -3,6 +3,7 @@ import { IApp } from '@plumber/types'
 import { getGenericAppQueue } from '@/queues/helpers/get-generic-app-queue'
 
 import addAuthHeader from './common/add-auth-header'
+import forceIpv4 from './common/force-ipv4'
 import rateLimitHandler from './common/interceptor/rate-limit'
 import actions from './actions'
 import auth from './auth'
@@ -17,7 +18,7 @@ const app: IApp = {
   baseUrl: 'https://telegram.org',
   apiBaseUrl: 'https://api.telegram.org',
   primaryColor: '2AABEE',
-  beforeRequest: [addAuthHeader],
+  beforeRequest: [forceIpv4, addAuthHeader],
   requestErrorHandler: rateLimitHandler,
   dynamicData,
   auth,
