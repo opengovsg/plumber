@@ -25,6 +25,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
 
   const { depth } = useContext(BranchContext)
   const {
+    flow,
     flowId,
     readOnly: isEditorReadOnly,
     setCurrentStepId,
@@ -60,6 +61,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           },
           flow: {
             id: flowId,
+            updatedAt: flow.updatedAt,
           },
           parameters: {
             depth,
@@ -79,6 +81,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           },
           flow: {
             id: flowId,
+            updatedAt: branchStep.data.createStep.flow.updatedAt,
           },
         },
       },
@@ -95,6 +98,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
     numBranches,
     onDrawerOpen,
     setCurrentStepId,
+    flow.updatedAt,
   ])
 
   return (

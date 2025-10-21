@@ -600,6 +600,7 @@ input UpdateStepPositionsInput {
 
 input DeleteStepInput {
   ids: [String!]!
+  flow: StepFlowInput!
 }
 
 input RequestOtpInput {
