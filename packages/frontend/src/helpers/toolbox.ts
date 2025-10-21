@@ -159,6 +159,7 @@ export function useIfThenInitializer(): [
             key: TOOLBOX_ACTIONS.IfThen,
             flow: {
               id: currStep.flowId,
+              updatedAt: currStep.flow.updatedAt,
             },
             parameters: {
               branchName: 'Branch 1',
@@ -170,6 +171,7 @@ export function useIfThenInitializer(): [
           },
         },
       })
+      const updatedFirstBranch = updateFirstBranch?.data?.updateStep
       const createSecondBranch = await createStep({
         variables: {
           input: {
@@ -180,6 +182,7 @@ export function useIfThenInitializer(): [
             },
             flow: {
               id: currStep.flowId,
+              updatedAt: updatedFirstBranch?.flow?.updatedAt,
             },
             parameters: {
               depth,
@@ -188,6 +191,7 @@ export function useIfThenInitializer(): [
           },
         },
       })
+      const createdSecondBranch = createSecondBranch?.data?.createStep
       const [_firstBranch, secondBranch] = await Promise.all([
         updateFirstBranch,
         createSecondBranch,
@@ -199,7 +203,7 @@ export function useIfThenInitializer(): [
       //
       // FIXME (ogp-weeloong): Intentionally serial; need to fix createSteps to
       // enable concurrent updates on same pipe.
-      await createStep({
+      const createFirstStep = await createStep({
         variables: {
           input: {
             previousStep: {
@@ -207,10 +211,12 @@ export function useIfThenInitializer(): [
             },
             flow: {
               id: currStep.flowId,
+              updatedAt: createdSecondBranch.flow.updatedAt,
             },
           },
         },
       })
+      const createdFirstStep = createFirstStep?.data?.createStep
       await createStep({
         variables: {
           input: {
@@ -219,6 +225,7 @@ export function useIfThenInitializer(): [
             },
             flow: {
               id: currStep.flowId,
+              updatedAt: createdFirstStep?.flow?.updatedAt,
             },
           },
         },

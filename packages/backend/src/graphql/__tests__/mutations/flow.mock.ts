@@ -11,7 +11,7 @@ export async function generateMockFlow(
   id: string,
   config?: Record<string, any>,
 ) {
-  await Flow.query().insert({
+  return await Flow.query().insertAndFetch({
     id,
     name: 'Test Flow',
     userId: context.currentUser.id,
