@@ -108,6 +108,7 @@ type EditorProviderProps = {
  * Helper function to update the flow in the cache
  */
 function updateHandlerFactory(
+  flow: IFlow,
   flowId: string,
   previousStepId: string,
   mutationType: 'createStep' | 'updateStep' = 'createStep',
@@ -115,10 +116,6 @@ function updateHandlerFactory(
   return function stepUpdateHandler(cache: any, mutationResult: any) {
     const { data } = mutationResult
     const stepData = data[mutationType]
-    const { getFlow: flow } = cache.readQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-    })
 
     // getFlow requires certain attributes to be returned
     const completeStep = {
@@ -248,7 +245,12 @@ export const EditorProvider = ({
 
       const createdStep = await createStep({
         variables: { input: mutationInput },
-        update: updateHandlerFactory(flowId, previousStepId, 'createStep'),
+        update: updateHandlerFactory(
+          flow,
+          flowId,
+          previousStepId,
+          'createStep',
+        ),
       })
 
       const newStep = createdStep.data.createStep
@@ -319,12 +321,12 @@ export const EditorProvider = ({
 
       const updatedStep = await updateStep({
         variables: { input: mutationInput },
-        update: updateHandlerFactory(flowId, step.id, 'updateStep'),
+        update: updateHandlerFactory(flow, flowId, step.id, 'updateStep'),
       })
 
       return updatedStep.data?.updateStep as IStep
     },
-    [flowId, flow.updatedAt, updateStep],
+    [flow, flowId, updateStep],
   )
 
   /**
