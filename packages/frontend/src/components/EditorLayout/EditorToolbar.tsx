@@ -1,5 +1,4 @@
-import { IFlow } from '@plumber/types'
-
+import { useContext } from 'react'
 import { BiCog, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
 import { Link } from 'react-router-dom'
@@ -12,6 +11,7 @@ import {
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
+import { EditorContext } from '@/contexts/Editor'
 
 import PublishButton from './PublishButton'
 
@@ -51,16 +51,15 @@ const GuideItem = ({ type }: { type: 'icon' | 'button' }) => {
 }
 
 const SettingsItem = ({
-  flowId,
   type,
   setLeaveToUrl,
   handleWarnOnLeave,
 }: {
-  flowId: string
   type: 'icon' | 'button'
   setLeaveToUrl: (url: string) => void
   handleWarnOnLeave: (e: React.MouseEvent<HTMLButtonElement>) => void
 }) => {
+  const { flowId } = useContext(EditorContext)
   if (type === 'button') {
     return (
       <Button
@@ -102,10 +101,6 @@ const SettingsItem = ({
 }
 
 interface EditorToolbarProps {
-  flowId: string
-  flow: IFlow
-  isFlowIncomplete: boolean
-  hasFlowTransfer: boolean
   loading: boolean
   shouldWarnOnLeave: boolean
   setShouldWarnOnPublish: (shouldWarnOnPublish: boolean) => void

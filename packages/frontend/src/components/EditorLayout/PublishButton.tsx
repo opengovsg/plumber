@@ -1,27 +1,41 @@
-import { IFlow } from '@plumber/types'
-
+import { useContext, useMemo } from 'react'
 import { Skeleton, Spinner, Text } from '@chakra-ui/react'
 import { Button, TouchableTooltip } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
+import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+
 export default function PublishButton({
-  flow,
-  hasFlowTransfer,
-  isFlowIncomplete,
   loading,
   shouldWarnOnLeave,
   handleWarnOnLeave,
   onFlowStatusUpdate,
   setShouldWarnOnPublish,
 }: {
-  flow: IFlow
-  hasFlowTransfer: boolean
-  isFlowIncomplete: boolean
   loading: boolean
   shouldWarnOnLeave: boolean
   handleWarnOnLeave: (e: React.MouseEvent<HTMLButtonElement>) => void
   onFlowStatusUpdate: (active: boolean) => void
   setShouldWarnOnPublish: (shouldWarnOnPublish: boolean) => void
 }) {
+  const {
+    flow,
+    hasFlowTransfer,
+    isLoading: isEditorContextLoading,
+  } = useContext(EditorContext)
+
+  // disallow user from publishing pipe if any step is incomplete
+  const isFlowIncomplete = useMemo(
+    () =>
+      flow?.steps.length < 2 ||
+      flow?.steps.some((step) => step.status === 'incomplete') ||
+      // NOTE: toolbox apps should have action steps after them
+      // this is relevant in the for-each action where we use the EmptyFlowStepHeader
+      // instead of creating an empty step
+      flow?.steps[flow?.steps.length - 1].appKey === TOOLBOX_APP_KEY,
+    [flow?.steps],
+  )
+
   return (
     <TouchableTooltip
       label={
@@ -39,7 +53,7 @@ export default function PublishButton({
         isDisabled={
           isFlowIncomplete || hasFlowTransfer || flow.role === 'viewer'
         }
-        isLoading={loading}
+        isLoading={loading || isEditorContextLoading}
         spinner={<Spinner fontSize={24} />}
         size="sm"
         minW="120px" // set this to avoid button width changing on publish/unpublish
