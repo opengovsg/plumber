@@ -1,10 +1,10 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
-import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
+import {
+  addFlowConnection,
+  addFlowTableConnection,
+} from '@/helpers/add-flow-connection'
 import App from '@/models/app'
-import FlowCollaborator from '@/models/flow-collaborators'
-import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
-import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -64,6 +64,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
         connectionId: input.connection.id,
         parameters: input.parameters,
         status: shouldInvalidate ? 'incomplete' : step.status,
+        updatedBy: context.currentUser.id,
         config: {
           ...existingConfig,
           // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
@@ -76,64 +77,39 @@ const updateStep: MutationResolvers['updateStep'] = async (
       })
 
     /**
-     * NOTE: we need to update flow connections for specific apps:
-     *
+     * NOTE: we need to update flow connections for apps with connections:
      * Tiles:
      * 1. add the collaborator to the flow connections table
      * 2. add the collaborator to the table collaborators table
      *
+     * TODO (kevinkim-ogp): phase 2
+     * collaborator should be able to add their own tiles,
+     * and the owner will be added as an editor to the Tile
+     *
      * Other connections:
      * 1. add the collaborator to the flow connections table
+     *
+     * TODO (kevinkim-ogp): phase 2
+     * collaborator should be able to add their own connections,
+     * it will be tied to this specific flow only
      */
     if (step.role === 'owner') {
-      if (updatedStep.appKey === 'tiles' && updatedStep?.parameters?.tableId) {
-        await FlowConnections.addFlowConnection({
-          flowId: updatedStep.flowId,
-          connectionId: updatedStep.parameters.tableId as string,
-          addedBy: context.currentUser.id,
-          connectionType: 'table',
-        })
+      const appKey = updatedStep?.appKey
 
-        const collaborators = await FlowCollaborator.getCollaborators({
+      // tiles special handling
+      if (appKey === 'tiles' && updatedStep?.parameters?.tableId) {
+        await addFlowTableConnection({
           flowId: updatedStep.flowId,
+          tableId: updatedStep.parameters.tableId as string,
+          addedBy: context.currentUser.id,
           trx,
         })
-
-        /**
-         * use Promise.all so that we use the addCollaborator function, which checks
-         * if the collaborator already exists to avoid duplicates
-         */
-        await Promise.all(
-          collaborators.map(async ({ userId, role }) => {
-            await TableCollaborator.addCollaborator({
-              userId,
-              tableId: updatedStep.parameters.tableId as string,
-              role,
-              trx,
-            })
-          }),
-        )
-      } else if (APP_CONNECTION_FIELDS[updatedStep.appKey]) {
-        const { parameterKey } = APP_CONNECTION_FIELDS[updatedStep.appKey]
-
-        const userId = updatedStep?.connection?.userId
-        const connectionId = updatedStep?.connectionId
-
-        if (updatedStep.parameters[parameterKey]) {
-          await FlowConnections.patchFlowConnectionMetadata({
-            flowId: updatedStep.flowId,
-            connectionId,
-            parameterKey,
-            parameterValue: updatedStep.parameters[parameterKey] as string,
-          })
-        } else {
-          await FlowConnections.addFlowConnection({
-            flowId: updatedStep.flowId,
-            connectionId,
-            addedBy: userId,
-            connectionType: 'connection',
-          })
-        }
+      } else if (updatedStep?.connectionId) {
+        await addFlowConnection({
+          step: updatedStep,
+          addedBy: context.currentUser.id,
+          trx,
+        })
       }
     }
 

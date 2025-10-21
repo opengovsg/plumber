@@ -1,6 +1,7 @@
 import { IFlowCollabRole } from '@plumber/types'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { addFlowTableConnection } from '@/helpers/add-flow-connection'
 import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
@@ -8,7 +9,6 @@ import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import FlowConnections from '@/models/flow-connections'
-import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -71,26 +71,15 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
           // add all connections to the flow_connections table
           // first time sharing is always by the owner
           // so we use the flow user_id
-          const connectionInserts = [
-            // Handle regular connections
-            ...Object.entries(connectionDetails.connection).map(
-              ([connectionId, metadata]) => ({
-                flowId,
-                connectionId,
-                addedBy: flow.userId,
-                connectionType: 'connection' as const,
-                metadata,
-              }),
-            ),
-            // Handle table connections (Tiles)
-            ...connectionDetails.table.map((tableId) => ({
-              flowId,
-              connectionId: tableId,
-              addedBy: flow.userId,
-              connectionType: 'table' as const,
-              metadata: {},
-            })),
-          ]
+          const connectionInserts = Object.entries(
+            connectionDetails.connection,
+          ).map(([connectionId, metadata]) => ({
+            flowId,
+            connectionId,
+            addedBy: flow.userId,
+            connectionType: 'connection' as const,
+            metadata,
+          }))
 
           if (connectionInserts.length > 0) {
             await FlowConnections.query(trx)
@@ -131,20 +120,17 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
         }
 
         /**
-         * NOTE: we automatically add the collaborator as a collaborator to the Tile(s)
-         * this ensures that the Tile appears in the dropdown when they are working
-         * on the flow
-         *
-         * use Promise.all so that we use the addCollaborator function, which checks
-         * if the collaborator already exists to avoid duplicates
+         * use Promise.all so that we use the addFlowTableConnection function, which checks
+         * if the collaborator already exists to avoid duplicates and adds the tile to
+         * flow_connections at the same time
          */
         if (connectionDetails.table.length > 0) {
           await Promise.all(
             connectionDetails.table.map(async (tableId) => {
-              await TableCollaborator.addCollaborator({
-                userId: collaboratorUser.id,
+              await addFlowTableConnection({
+                flowId,
                 tableId,
-                role,
+                addedBy: context.currentUser.id,
                 trx,
               })
             }),

@@ -7,7 +7,10 @@ export const MIN_FLOW_STEP_WIDTH = '320px'
 
 /**
  * NOTE: there are certain fields that behave like connections
- * such as excel files
+ * we use this to manage two things:
+ * 1. which apps do not allow collaborators to edit their connections
+ * 2. which fields behave like connections
+ *
  * we do not allow collaborators to edit these fields
  * we use both the label and key as there are some
  * actions that have the same key but use different labels
