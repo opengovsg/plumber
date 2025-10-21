@@ -514,6 +514,7 @@ input UpdateFlowInput {
 input UpdateFlowStatusInput {
   id: String!
   active: Boolean!
+  updatedAt: String!
 }
 
 enum NotificationFrequency {
