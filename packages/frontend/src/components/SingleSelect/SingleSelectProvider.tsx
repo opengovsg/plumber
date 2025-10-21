@@ -17,6 +17,8 @@ import {
   type UseComboboxStateChangeOptions,
 } from 'downshift'
 
+import { removeProblematicWhitespace } from '../RichTextEditor/utils'
+
 import { useLookupItems } from './hooks/useLookupItems'
 import { defaultFilter } from './utils/defaultFilter'
 import {
@@ -200,12 +202,15 @@ export const SingleSelectProvider = ({
 
   const handleInputChange = useCallback(
     (inputValue: string | undefined) => {
-      const filteredItems = getFilteredItems(inputValue)
+      const sanitisedInput = inputValue
+        ? removeProblematicWhitespace(inputValue)
+        : inputValue // if its undefined, we leave it as is
+      const filteredItems = getFilteredItems(sanitisedInput)
       if (freeSolo) {
-        addFreeSoloItem(filteredItems, inputValue)
+        addFreeSoloItem(filteredItems, sanitisedInput)
       }
       if (addNew?.type === 'inline') {
-        addInlineNewOption(filteredItems, inputValue)
+        addInlineNewOption(filteredItems, sanitisedInput)
       }
       setFilteredItems(filteredItems)
     },

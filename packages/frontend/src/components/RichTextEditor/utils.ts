@@ -256,5 +256,8 @@ export function removeProblematicWhitespace(text: string): string {
       .replace(/(\u200B|\uFEFF|\u200C|\u200D|\u200E)/g, '')
       // Replace non-breaking space with regular space
       .replace(/\u00A0/g, ' ')
+      // Remove null character that breaks DB/JSON
+      // eslint-disable-next-line no-control-regex
+      .replace(/\x00/g, '')
   )
 }
