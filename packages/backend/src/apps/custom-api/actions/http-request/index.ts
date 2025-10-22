@@ -157,9 +157,10 @@ const action: IRawAction = {
         const redirectMethod =
           response.status === 301 || response.status === 302 ? 'GET' : method
 
-        if (redirectMethod === 'GET' && customHeaders) {
-          delete customHeaders['content-type']
-          delete customHeaders['Content-Type']
+        const redirectHeaders = customHeaders ? { ...customHeaders } : {}
+        if (redirectMethod === 'GET' && redirectHeaders) {
+          delete redirectHeaders['content-type']
+          delete redirectHeaders['Content-Type']
         }
 
         response = await $.http.request({
@@ -167,7 +168,7 @@ const action: IRawAction = {
           method: redirectMethod,
           // Only include data if the redirect method is not GET
           ...(redirectMethod !== 'GET' && { data: parsedData }),
-          headers: customHeaders,
+          headers: redirectHeaders,
           timeout,
           // Prevent calling of internal IPs, e.g. aws metadata endpoint
           lookup: safeAxiosLookup,
