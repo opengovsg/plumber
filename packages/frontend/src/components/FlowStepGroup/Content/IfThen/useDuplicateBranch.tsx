@@ -5,10 +5,8 @@ import { useMutation } from '@apollo/client'
 import { useDisclosure } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
-import client from '@/graphql/client'
-import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { DUPLICATE_BRANCH } from '@/graphql/mutations/duplicate-branch'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 export default function useDuplicateBranch(branchSteps: IStep[]) {
   const {
@@ -21,7 +19,10 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
   const { flow, isDrawerOpen, onDrawerOpen, setCurrentStepId } =
     useContext(EditorContext)
 
-  const [createStep] = useMutation(CREATE_STEP, { fetchPolicy: 'no-cache' })
+  const [duplicateBranch] = useMutation(DUPLICATE_BRANCH, {
+    fetchPolicy: 'no-cache',
+    refetchQueries: [GET_FLOW],
+  })
 
   const canDuplicateBranch = useMemo(() => {
     return (
@@ -30,7 +31,7 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
     )
   }, [branchSteps])
 
-  const duplicateBranch = async () => {
+  const onDuplicateBranch = async () => {
     closeDuplicateConfirmation()
 
     if (branchSteps.length < 2) {
@@ -40,48 +41,37 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
     setIsDuplicatingBranch(true)
 
     try {
-      let newConditionId = null
-      let previousStepId = branchSteps[branchSteps.length - 1]?.id
+      const previousStepId = branchSteps[branchSteps.length - 1]?.id
       if (!previousStepId) {
         return
       }
-      // Create steps sequentially to avoid serialization conflicts
-      for (const step of branchSteps) {
-        const { appKey, key, connection, parameters } = step
-        const { branchName, ...restParameters } = parameters
 
-        // use a new branch name
-        const newBranchName = `[COPY] ${branchName}`
-
-        const mutationInput = {
-          previousStep: { id: previousStepId },
-          flow: { id: flow.id },
-          appKey,
-          key,
-          ...(connection && { connection: { id: connection.id } }),
-          parameters: {
-            ...restParameters,
-            ...(branchName && { branchName: newBranchName }),
-          },
-        }
-
-        const createdStep = await createStep({
-          fetchPolicy: 'no-cache',
-          variables: { input: mutationInput },
-        })
-
-        if (key === TOOLBOX_ACTIONS.IfThen) {
-          newConditionId = createdStep.data.createStep.id
-        }
-
-        // use the new step id as the previous step id for the next step
-        previousStepId = createdStep.data.createStep.id
+      const mutationInput = {
+        flow: { id: flow.id, updatedAt: flow.updatedAt },
+        previousStep: { id: previousStepId },
+        steps: branchSteps.map((step) => {
+          const { appKey, key, connection, parameters } = step
+          const { branchName, ...restParameters } = parameters
+          const newBranchName = `[COPY] ${branchName}`
+          return {
+            key,
+            appKey,
+            ...(connection && { connection: { id: connection.id } }),
+            parameters: {
+              ...restParameters,
+              ...(branchName && { branchName: newBranchName }),
+            },
+          }
+        }),
       }
 
-      // Refetch flow data only once after all steps are created
-      await client.refetchQueries({ include: [GET_FLOW] })
+      const duplicatedBranch = await duplicateBranch({
+        variables: { input: mutationInput },
+      })
 
-      setCurrentStepId(newConditionId)
+      const newSteps = duplicatedBranch.data.duplicateBranch.steps
+
+      setCurrentStepId(newSteps[0].id)
       if (!isDrawerOpen) {
         onDrawerOpen()
       }
@@ -101,7 +91,7 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
     duplicateConfirmationIsOpen,
     isDuplicatingBranch,
     closeDuplicateConfirmation,
-    duplicateBranch,
+    duplicateBranch: onDuplicateBranch,
     openDuplicateConfirmation,
   }
 }
