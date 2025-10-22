@@ -64,8 +64,14 @@ export default function ChooseAndAddConnection(
   props: ChooseAndAddConnectionProps,
 ) {
   const { onClose } = props
-  const { flowId, onCreateStep, onDrawerOpen, onUpdateStep, setCurrentStepId } =
-    useContext(EditorContext)
+  const {
+    flow,
+    flowId,
+    onCreateStep,
+    onDrawerOpen,
+    onUpdateStep,
+    setCurrentStepId,
+  } = useContext(EditorContext)
   const { modalState, patchModalState, step, prevStepId } = useContext(
     FlowStepConfigurationContext,
   )
@@ -76,7 +82,10 @@ export default function ChooseAndAddConnection(
     loading: appConnectionsLoading,
     refetch,
   } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: selectedApp?.key },
+    variables: {
+      key: selectedApp?.key,
+      flowId: flow.role !== 'owner' ? flowId : undefined,
+    },
     skip: !selectedApp,
   })
 

@@ -36,9 +36,9 @@ function ChooseConnectionDropdown({
     [onChange],
   )
 
-  const items = [...connectionOptions]
   const canAddNew =
     application?.auth?.connectionType === 'user-added' && flow.role === 'owner'
+  const items = [...connectionOptions]
 
   return (
     <>
