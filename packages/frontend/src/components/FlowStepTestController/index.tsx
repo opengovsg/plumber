@@ -359,7 +359,9 @@ export default function FlowStepTestController(
               </Box>
             )}
             <HStack w="100%" justifyContent="flex-end">
-              {!step.webhookUrl && (
+              {/* gathersg is a special case where there is a webhook url and the save step button
+              needs to be shown to save the encryption key */}
+              {(!step.webhookUrl || step.appKey === 'gathersg') && (
                 <Button
                   isDisabled={readOnly || isSaving || !isDirty}
                   isLoading={isSaving}
