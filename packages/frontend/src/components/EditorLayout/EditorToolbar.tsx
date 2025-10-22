@@ -148,11 +148,10 @@ interface EditorToolbarProps {
 export default function EditorToolbar(props: EditorToolbarProps) {
   const { flowId } = useContext(EditorContext)
   // TODO: remove this once we open collaborators to all users
-  const { flags, isLoading: isFlagsLoading } = useContext(LaunchDarklyContext)
-  const settingsLink =
-    !isFlagsLoading && flags?.collaborators
-      ? URLS.FLOW_EDITOR_SHARE(flowId)
-      : URLS.FLOW_EDITOR_TRANSFERS(flowId)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const settingsLink = getFlagValue('collaborators', false)
+    ? URLS.FLOW_EDITOR_SHARE(flowId)
+    : URLS.FLOW_EDITOR_TRANSFERS(flowId)
 
   return (
     <>

@@ -48,8 +48,8 @@ export default function EditorSettingsLayout(
   const { currentUser } = useAuthentication()
 
   // TODO: remove this once we open collaborators to all users
-  const { flags, isLoading: isFlagsLoading } = useContext(LaunchDarklyContext)
-  const showCollaborators = !isFlagsLoading && flags?.collaborators
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const showCollaborators = getFlagValue('collaborators', false)
 
   const { flowId } = useParams()
   const { data, loading, error } = useQuery(GET_FLOW_WITH_COLLABORATORS, {
