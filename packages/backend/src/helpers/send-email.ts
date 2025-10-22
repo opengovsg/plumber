@@ -10,6 +10,7 @@ export interface PostmanEmailRequestBody {
   body: string
   recipient: string
   replyTo?: string
+  cc?: string[]
 }
 
 export async function sendEmail({
@@ -17,6 +18,7 @@ export async function sendEmail({
   body,
   recipient,
   replyTo,
+  cc,
 }: PostmanEmailRequestBody): Promise<void> {
   try {
     await axios.post(
@@ -28,6 +30,7 @@ export async function sendEmail({
         from: `Plumber <${appConfig.postman.fromAddress}>`,
         ...(replyTo && { reply_to: replyTo }),
         disable_tracking: true,
+        ...(cc && { cc }),
       },
       {
         headers: {

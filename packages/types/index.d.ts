@@ -211,8 +211,10 @@ export interface IFlowConfig {
   attachments?: IFlowAttachmentsConfig[]
 }
 
+export type NotificationRecipients = 'editor' | 'viewer'
 export interface IFlowErrorConfig {
   notificationFrequency: 'once_per_day' | 'always'
+  notificationRecipients: NotificationRecipients[]
 }
 
 export interface IFlowTemplateConfig {

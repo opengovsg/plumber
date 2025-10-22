@@ -1,8 +1,13 @@
-import { useCallback, useContext, useMemo, useState } from 'react'
-import { useMutation } from '@apollo/client'
-import { Flex, Skeleton, Stack, Text } from '@chakra-ui/react'
-import { Menu, useToast } from '@opengovsg/design-system-react'
+import { NotificationRecipients } from '@plumber/types'
 
+import { useCallback, useContext } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import { useMutation } from '@apollo/client'
+import { Flex, FormControl, Skeleton, Stack, Text } from '@chakra-ui/react'
+import { Button, Checkbox, useToast } from '@opengovsg/design-system-react'
+
+import Form from '@/components/Form'
+import { SingleSelect } from '@/components/SingleSelect'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 
@@ -24,22 +29,105 @@ const frequencyOptions = [
 
 const DEFAULT_FREQUENCY = Frequency.Once
 
+function NotificationFormFields() {
+  const { flow } = useContext(EditorSettingsContext)
+  const hasCollaborators =
+    flow?.collaborators?.length && flow?.collaborators?.length > 1
+  const isReadOnly = flow?.role === 'viewer'
+
+  const {
+    control,
+    register,
+    formState: { isDirty },
+  } = useFormContext()
+
+  return (
+    <Stack gap={2}>
+      <Text textStyle="subhead-1">Frequency</Text>
+      <FormControl key="frequency">
+        <Skeleton isLoaded={!!flow}>
+          <Controller
+            name="frequency"
+            control={control}
+            render={({ field: { onChange, value, name } }) => (
+              <SingleSelect
+                items={frequencyOptions}
+                isSearchable={false}
+                onChange={onChange}
+                value={value}
+                name={name}
+                isClearable={false}
+                colorScheme="secondary"
+                isDisabled={isReadOnly}
+              />
+            )}
+          />
+        </Skeleton>
+      </FormControl>
+      {hasCollaborators && (
+        <Stack gap={0}>
+          <Text textStyle="subhead-1">Notify collaborators</Text>
+          <Text textStyle="body-1">
+            Collaborators will be CC-ed by default.
+          </Text>
+          <FormControl key="editors">
+            <Checkbox {...register('notifyEditors')} isDisabled={isReadOnly}>
+              Notify editor(s)
+            </Checkbox>
+          </FormControl>
+          <FormControl key="viewers">
+            <Checkbox {...register('notifyViewers')} isDisabled={isReadOnly}>
+              Notify viewer(s)
+            </Checkbox>
+          </FormControl>
+        </Stack>
+      )}
+      <Button
+        size="sm"
+        w="fit-content"
+        type="submit"
+        isDisabled={!isDirty || isReadOnly}
+      >
+        {isDirty ? 'Save' : 'Saved'}
+      </Button>
+    </Stack>
+  )
+}
+
 export default function Notifications() {
   const { flow } = useContext(EditorSettingsContext)
 
   const frequency =
     flow?.config?.errorConfig?.notificationFrequency ?? DEFAULT_FREQUENCY
+  const notificationRecipients =
+    flow?.config?.errorConfig?.notificationRecipients ?? []
+
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+
+  // Empty array or no recipients = notify everyone (both checked)
+  const notifyEveryone =
+    !notificationRecipients || notificationRecipients.length === 0
+
+  const defaultValues = {
+    frequency,
+    notifyEditors: notifyEveryone || notificationRecipients.includes('editor'),
+    notifyViewers: notifyEveryone || notificationRecipients.includes('viewer'),
+  }
 
   const onFlowConfigUpdate = useCallback(
-    async (frequency: Frequency) => {
+    async (
+      frequency: Frequency,
+      newNotificationRecipients: NotificationRecipients[],
+    ) => {
       await updateFlowConfig({
         variables: {
           input: {
             id: flow.id,
             notificationFrequency: frequency,
+            ...(newNotificationRecipients.length > 0
+              ? { notificationRecipients: newNotificationRecipients }
+              : {}),
           },
         },
         optimisticResponse: {
@@ -49,18 +137,17 @@ export default function Notifications() {
             config: {
               errorConfig: {
                 notificationFrequency: frequency,
+                ...(newNotificationRecipients.length > 0
+                  ? { notificationRecipients: newNotificationRecipients }
+                  : {}),
               },
             },
           },
         },
       })
 
-      const displayLabel = frequencyOptions
-        .find((option) => option.value === frequency)
-        ?.label.toLowerCase()
-
       toast({
-        title: `You will now receive an email notification for ${displayLabel}`,
+        title: `Notifications settings saved!`,
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -68,21 +155,6 @@ export default function Notifications() {
       })
     },
     [flow.id, updateFlowConfig, toast],
-  )
-
-  const handleClick = useCallback(
-    (frequencyOption: Frequency) => {
-      // only update flow config if a different option is selected
-      if (frequencyOption !== frequency) {
-        onFlowConfigUpdate(frequencyOption)
-      }
-    },
-    [onFlowConfigUpdate, frequency],
-  )
-
-  const frequencyLabel = useMemo(
-    () => frequencyOptions.find((option) => option.value === frequency)?.label,
-    [frequency],
   )
 
   return (
@@ -103,42 +175,25 @@ export default function Notifications() {
         </Text>
       </Stack>
       <Stack>
-        <Text textStyle="subhead-1">Frequency</Text>
-        <Menu isStretch>
-          <Menu.Button variant="outline" colorScheme="secondary">
-            <Skeleton isLoaded={!!flow}>
-              <Text
-                textStyle="body-1"
-                color="base.content.default"
-                whiteSpace="nowrap"
-                overflow="hidden"
-                textOverflow="ellipsis"
-              >
-                {frequencyLabel}
-              </Text>
-            </Skeleton>
-          </Menu.Button>
-          <Menu.List>
-            {frequencyOptions.map((option, index) => (
-              <Menu.Item
-                key={index}
-                onClick={() => handleClick(option.value)}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
-                sx={{
-                  bg:
-                    hoveredIndex === index ||
-                    (hoveredIndex === null && option.label === frequencyLabel)
-                      ? 'interaction.tinted.main.hover'
-                      : 'transparent',
-                  color: 'base.content.default',
-                }}
-              >
-                {option.label}
-              </Menu.Item>
-            ))}
-          </Menu.List>
-        </Menu>
+        <Form
+          defaultValues={defaultValues}
+          onSubmit={(data: any) => {
+            const newNotificationRecipients =
+              data.notifyEditors && data.notifyViewers
+                ? [] // Both selected = notify everyone (default)
+                : [
+                    ...(data.notifyEditors ? ['editor'] : []),
+                    ...(data.notifyViewers ? ['viewer'] : []),
+                  ]
+
+            onFlowConfigUpdate(
+              data.frequency as Frequency,
+              newNotificationRecipients as NotificationRecipients[],
+            )
+          }}
+        >
+          <NotificationFormFields />
+        </Form>
       </Stack>
     </Flex>
   )

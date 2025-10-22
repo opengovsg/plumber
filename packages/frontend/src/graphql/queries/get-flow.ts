@@ -36,6 +36,7 @@ export const FLOW_FIELDS = gql`
     config {
       errorConfig {
         notificationFrequency
+        notificationRecipients
       }
       templateConfig {
         templateId

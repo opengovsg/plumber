@@ -271,7 +271,12 @@ export function makeActionWorker(
 
       const flow = await Flow.query()
         .findById(job.data.flowId)
-        .withGraphFetched('user')
+        .withGraphFetched({
+          user: true,
+          collaborators: {
+            user: true,
+          },
+        })
         .throwIfNotFound()
 
       const shouldAlwaysSendEmail =
