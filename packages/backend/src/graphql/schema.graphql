@@ -455,6 +455,7 @@ type Execution {
   status: String
   flow: Flow
   executionSteps: [ExecutionStep]
+  role: String
 }
 
 type BulkRetryExecutionsResult {

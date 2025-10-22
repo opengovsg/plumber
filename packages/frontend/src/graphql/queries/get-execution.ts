@@ -13,6 +13,7 @@ export const GET_EXECUTION = gql`
         active
       }
       status
+      role
     }
   }
 `
