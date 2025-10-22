@@ -15,7 +15,7 @@ const trigger: IRawTrigger = {
     'Executes this Pipe when an instant workflow is triggered from GatherSG',
   webhookTriggerInstructions: {
     beforeUrlMsg: `# 1. Configure your instant workflow using this webhook URL.`,
-    afterUrlMsg: `# 2. Make an update to your case. Then, click check step.`,
+    afterUrlMsg: `# 2. Trigger the instant workflow. Then, click check step.`,
   },
   arguments: [
     {
@@ -23,7 +23,7 @@ const trigger: IRawTrigger = {
       key: 'encryptionKey',
       type: 'string' as const,
       description:
-        'Enter the encryption key for your instant workflow. It must be 12-20 characters long and include at least one number, one uppercase letter, and one special character (e.g., %, $, #).',
+        'Enter the encryption key for your instant workflow and save it.',
       required: false,
       variables: false,
     },
