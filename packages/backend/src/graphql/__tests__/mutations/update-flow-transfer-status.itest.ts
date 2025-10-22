@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto'
+import { AES } from 'crypto-js'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import appConfig from '@/config/app'
 import updateFlowTransferStatus from '@/graphql/mutations/update-flow-transfer-status'
 import Connection from '@/models/connection'
 import Execution from '@/models/execution'
@@ -189,7 +191,10 @@ describe('updateFlowTransferStatus', () => {
       await Connection.query().insert({
         id: excelConnectionId,
         key: 'm365-excel',
-        data: JSON.stringify({ accessToken: 'test-token' }),
+        data: AES.encrypt(
+          JSON.stringify({ accessToken: 'test-token' }),
+          appConfig.encryptionKey,
+        ).toString(),
         userId: owner.id,
       })
 
