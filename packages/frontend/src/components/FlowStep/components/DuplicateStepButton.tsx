@@ -74,6 +74,7 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
       },
       flow: {
         id: flow.id,
+        updatedAt: flow.updatedAt,
       },
       appKey: step.appKey,
       key: step.key,
@@ -94,7 +95,7 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
     const newStep = createdStep.data.createStep
     setCurrentStepId(newStep.id)
     onDrawerOpen()
-  }, [flow.id, step, createStep, setCurrentStepId, onDrawerOpen])
+  }, [flow, step, createStep, setCurrentStepId, onDrawerOpen])
 
   const {
     cancelRef,
