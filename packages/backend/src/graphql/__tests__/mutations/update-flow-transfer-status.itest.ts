@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import updateFlowTransferStatus from '@/graphql/mutations/update-flow-transfer-status'
 import Connection from '@/models/connection'
+import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import FlowTransfer from '@/models/flow-transfers'
 import Step from '@/models/step'
@@ -176,6 +178,108 @@ describe('updateFlowTransferStatus', () => {
         expect(dupConn).toBeTruthy()
         expect(dupConn?.userId).toBeNull()
       }
+    })
+
+    it('marks excel steps as incomplete, nullifies connections, and deletes execution steps', async () => {
+      const excelConnectionId = randomUUID()
+      const excelStepId = randomUUID()
+      const executionId = randomUUID()
+
+      // Create an Excel connection
+      await Connection.query().insert({
+        id: excelConnectionId,
+        key: 'm365-excel',
+        data: JSON.stringify({ accessToken: 'test-token' }),
+        userId: owner.id,
+      })
+
+      // Create Excel step with connection and completed status
+
+      await Step.query().insert({
+        id: excelStepId,
+        flowId: mockFlow.id,
+        key: 'getTableRows',
+        appKey: 'm365-excel',
+        type: 'action',
+        position: 2,
+        parameters: { workbookId: 'test-wb', worksheetId: 'test-ws' },
+        status: 'completed',
+        connectionId: excelConnectionId,
+      })
+
+      // Create execution steps for both the Excel step and the original Slack step
+
+      await Execution.query().insert({
+        id: executionId,
+        flowId: mockFlow.id,
+        status: 'success',
+        testRun: false,
+      })
+      await ExecutionStep.query().insert({
+        id: randomUUID(),
+        executionId,
+        stepId: excelStepId,
+        status: 'success',
+        dataOut: { rows: [] },
+      })
+
+      const slackStepId = (
+        await Step.query()
+          .findOne({ flow_id: mockFlow.id, app_key: 'slack' })
+          .throwIfNotFound()
+      ).id
+
+      await ExecutionStep.query().insert({
+        id: randomUUID(),
+        executionId,
+        stepId: slackStepId,
+        status: 'success',
+        dataOut: { message: 'sent' },
+      })
+
+      // Verify initial state: Excel step has connection and is completed
+      const initialExcelStep = await Step.query().findById(excelStepId)
+      expect(initialExcelStep.connectionId).toBe(excelConnectionId)
+      expect(initialExcelStep.status).toBe('completed')
+
+      // Verify execution steps exist
+      const initialExecutionSteps = await ExecutionStep.query().whereIn(
+        'step_id',
+        [excelStepId, slackStepId],
+      )
+      expect(initialExecutionSteps.length).toBe(2)
+
+      // Approve the transfer
+      context.currentUser = newOwner
+      const result = await updateFlowTransferStatus(
+        null,
+        { input: { id: transfer.id, status: 'approved' } },
+        context,
+      )
+      expect(result.status).toBe('approved')
+
+      // Verify Excel step is marked as incomplete and connection is nullified
+      const updatedExcelStep = await Step.query().findById(excelStepId)
+      expect(updatedExcelStep.status).toBe('incomplete')
+      expect(updatedExcelStep.connectionId).toBeNull()
+
+      // Verify all execution steps for Excel step are deleted
+      const excelExecutionSteps = await ExecutionStep.query().where(
+        'step_id',
+        excelStepId,
+      )
+      expect(excelExecutionSteps.length).toBe(0)
+
+      // Verify the original Excel connection still exists with userId intact
+      const originalConnection = await Connection.query().findById(
+        excelConnectionId,
+      )
+      expect(originalConnection).toBeTruthy()
+      expect(originalConnection.userId).toBe(owner.id)
+
+      // Verify non-Excel steps remain unaffected (Slack step should still work normally)
+      const slackStep = await Step.query().findById(slackStepId)
+      expect(slackStep.status).toBe('completed')
     })
   })
 })

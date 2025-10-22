@@ -2,6 +2,7 @@ import { BadUserInputError } from '@/errors/graphql-errors'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
+import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import FlowConnections from '@/models/flow-connections'
@@ -101,29 +102,24 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       // PRE-TRANSFER WORK
       // nullify connections for M365-excel
       // excel connections cannot be shared; the new owner should use their own connection
+      const excelStepIds = flow.steps
+        .filter((step) => step.appKey === 'm365-excel')
+        .map((step) => step.id)
       const numExcelNullified = await Step.query(trx)
         .patch({ connection: null, connectionId: null, status: 'incomplete' })
         .where('flow_id', flow.id)
         .whereNotNull('connection_id')
         .andWhere('app_key', 'm365-excel')
 
+      // invalidate the execution steps for the m365-excel actions
+      // so that it does not show as an error in the pipe editor
+      // there is no impact to executions history as they will still be visible
+      await ExecutionStep.query(trx).delete().whereIn('step_id', excelStepIds)
+
       // sanity check that only the connections belonging to the flow is nullified
-      if (numExcelNullified > flow.steps.length) {
+      if (numExcelNullified !== excelStepIds.length) {
         throw new Error(
           'Update query went wrong, please contact plumber@open.gov.sg for more support',
-        )
-      }
-
-      // set tiles actions to incomplete
-      const numIncompleteForTiles = await Step.query(trx)
-        .patch({ status: 'incomplete' })
-        .where('flow_id', flow.id)
-        .andWhere('app_key', 'tiles')
-
-      // sanity check
-      if (numIncompleteForTiles > flow.steps.length) {
-        throw new Error(
-          'Update tiles status query went wrong, please contact plumber@open.gov.sg for more support',
         )
       }
 
