@@ -4,7 +4,7 @@ type Query {
     onlyWithTriggers: Boolean
     onlyWithActions: Boolean
   ): [App]
-  getApp(key: String!): App
+  getApp(key: String!, flowId: String): App
   getConnectedApps: [App]
   testConnection(
     connectionId: String!

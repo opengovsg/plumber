@@ -65,6 +65,7 @@ export default function ChooseAndAddConnection(
 ) {
   const { onClose } = props
   const {
+    flow,
     flowId,
     onCreateStep,
     onDrawerOpen,
@@ -82,7 +83,10 @@ export default function ChooseAndAddConnection(
     loading: appConnectionsLoading,
     refetch,
   } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: selectedApp?.key },
+    variables: {
+      key: selectedApp?.key,
+      flowId: flow.role !== 'owner' ? flowId : undefined,
+    },
     skip: !selectedApp,
   })
 
