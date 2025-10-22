@@ -85,7 +85,7 @@ type Mutation {
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
-  updateStepPositions(input: UpdateStepPositionsInput): [Step]
+  updateStepPositions(input: UpdateStepPositionsInput): Flow
   deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
@@ -597,6 +597,7 @@ input StepPositionInput {
 
 input UpdateStepPositionsInput {
   stepPositions: [StepPositionInput!]!
+  flow: StepFlowInput!
 }
 
 input DeleteStepInput {
