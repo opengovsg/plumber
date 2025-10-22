@@ -4,6 +4,18 @@ import crypto from 'crypto'
 
 import logger from '@/helpers/logger'
 
+function getInternalId(data: any) {
+  let internalId
+  if ('updatedAt' in data) {
+    // try to find the updatedAt first
+    internalId = `${data.uuid}-${data.updatedAt}`
+  } else if ('createdAt' in data) {
+    // otherwise fallback to createdAt, for newly created cases
+    internalId = `${data.uuid}-${data.createdAt}`
+  }
+  return internalId
+}
+
 /**
  * NOTE: GatherSG may return encrypted data if the encryption key is specified.
  * It is not necessary when the webhook URL is a gov.sg URL,
@@ -15,7 +27,7 @@ export async function decryptResponse(
   $: IGlobalVariable,
 ): Promise<{ verified: boolean; internalId: string | null }> {
   try {
-    const { app, encryptedData, signature, timestamp } = $.request.body
+    const { app, data, encryptedData, signature, timestamp } = $.request.body
     const { encryptionKey } = $.step.parameters
 
     if (encryptedData && encryptionKey) {
@@ -43,12 +55,12 @@ export async function decryptResponse(
 
       return {
         verified: true,
-        internalId: `${decryptedData.uuid}-${timestamp}`,
+        internalId: getInternalId(decryptedData),
       }
     } else {
       return {
         verified: true,
-        internalId: `${app}-${timestamp}`,
+        internalId: getInternalId(data),
       }
     }
   } catch (err) {
