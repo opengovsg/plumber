@@ -1,6 +1,6 @@
 import { IFlow } from '@plumber/types'
 
-import { ElementType, ReactNode, useMemo, useState } from 'react'
+import { ElementType, ReactNode, useContext, useMemo, useState } from 'react'
 import { BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
@@ -16,6 +16,7 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 import useAuthentication from '@/hooks/useAuthentication'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
@@ -46,6 +47,10 @@ export default function EditorSettingsLayout(
 
   const { currentUser } = useAuthentication()
 
+  // TODO: remove this once we open collaborators to all users
+  const { flags, isLoading: isFlagsLoading } = useContext(LaunchDarklyContext)
+  const showCollaborators = !isFlagsLoading && flags?.collaborators
+
   const { flowId } = useParams()
   const { data, loading, error } = useQuery(GET_FLOW_WITH_COLLABORATORS, {
     variables: { id: flowId },
@@ -60,7 +65,7 @@ export default function EditorSettingsLayout(
         {
           group: 'Manage Access',
           links: [
-            {
+            showCollaborators && {
               Icon: BiUserPlus,
               text: 'Collaborators',
               to: URLS.FLOW_EDITOR_SHARE(flowId),
@@ -72,7 +77,7 @@ export default function EditorSettingsLayout(
               to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
               group: 'Manage Access' as const,
             },
-          ],
+          ].filter(Boolean),
         },
         {
           group: 'Notifications',
@@ -89,7 +94,7 @@ export default function EditorSettingsLayout(
       () => setDrawerOpen(true),
       () => setDrawerOpen(false),
     ],
-    [flowId, setDrawerOpen],
+    [flowId, setDrawerOpen, showCollaborators],
   )
 
   const drawerComponent = useBreakpointValue({
