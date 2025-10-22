@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { ReactElement } from 'react'
-import { BiChevronRight } from 'react-icons/bi'
+import { BiChevronRight, BiSolidGroup } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
   Box,
@@ -14,7 +14,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { Badge } from '@opengovsg/design-system-react'
+import { Badge, IconButton } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 import FlowAppIcons from '@/components/FlowAppIcons'
@@ -40,17 +40,32 @@ function FlowRowTitle({
   const relativeUpdatedAt = updatedAt.toRelative()
   return (
     <VStack alignItems="flex-start" justifyContent="center" maxW="100%">
-      <Text
-        whiteSpace="nowrap"
-        overflow="hidden"
-        textOverflow="ellipsis"
-        display="inline-block"
-        w="100%"
-        maxW="100%"
-        textStyle="subhead-1"
-      >
-        {flow?.name}
-      </Text>
+      <Flex alignItems="center" gap={2} w="100%">
+        <Text
+          whiteSpace="nowrap"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          display="inline-block"
+          w="100%"
+          maxW="100%"
+          textStyle="subhead-1"
+        >
+          {flow?.name}
+        </Text>
+        {flow?.collaborators?.length && flow?.collaborators?.length > 1 && (
+          <>
+            <Icon boxSize={5} as={BiSolidGroup} />
+            <Badge
+              colorScheme="secondary"
+              size="sm"
+              variant="subtle"
+              textTransform="capitalize"
+            >
+              {flow.role}
+            </Badge>
+          </>
+        )}
+      </Flex>
       {showTimestamp && (
         <Text
           display="inline-block"
@@ -114,24 +129,22 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
 
             <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
               <Badge
-                colorScheme={
-                  flow?.active && flow.role !== 'viewer' ? 'success' : 'grey'
-                }
+                colorScheme={flow?.active ? 'success' : 'grey'}
                 variant="subtle"
               >
-                <Text>
-                  {flow.role === 'viewer'
-                    ? 'View Only'
-                    : flow?.active
-                    ? 'Published'
-                    : 'Draft'}
-                </Text>
+                <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
               </Badge>
 
               {showMenu ? (
                 <FlowContextMenu flow={flow} />
               ) : (
-                <Icon boxSize={5} as={BiChevronRight} />
+                <IconButton
+                  aria-label="View Flow"
+                  colorScheme="secondary"
+                  icon={<BiChevronRight />}
+                  variant="clear"
+                  _hover={{}}
+                />
               )}
             </Flex>
           </Flex>
