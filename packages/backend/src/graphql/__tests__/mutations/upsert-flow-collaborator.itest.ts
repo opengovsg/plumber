@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import upsertFlowCollaborator from '@/graphql/mutations/upsert-flow-collaborator'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -14,6 +14,14 @@ import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import { generateMockContext } from './tiles/table.mock'
+
+const mocks = vi.hoisted(() => ({
+  getLdFlagValue: vi.fn().mockResolvedValue(true),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
 
 describe('upsert flow collaborator', () => {
   let context: Context
@@ -639,5 +647,18 @@ describe('upsert flow collaborator', () => {
       })
       expect(tableCollaborators).toHaveLength(1)
     })
+  })
+
+  it('should not allow adding collaborators if collaborators flag is false', async () => {
+    mocks.getLdFlagValue.mockResolvedValue(false)
+    await expect(
+      upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      ),
+    ).rejects.toThrow(ForbiddenError)
   })
 })

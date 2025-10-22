@@ -12,6 +12,7 @@ import {
 
 import * as URLS from '@/config/urls'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
 import PublishButton from './PublishButton'
 
@@ -54,12 +55,13 @@ const SettingsItem = ({
   type,
   setLeaveToUrl,
   handleWarnOnLeave,
+  settingsLink,
 }: {
   type: 'icon' | 'button'
   setLeaveToUrl: (url: string) => void
   handleWarnOnLeave: (e: React.MouseEvent<HTMLButtonElement>) => void
+  settingsLink: string
 }) => {
-  const { flowId } = useContext(EditorContext)
   if (type === 'button') {
     return (
       <Button
@@ -67,10 +69,10 @@ const SettingsItem = ({
         aria-label="settings"
         colorScheme="secondary"
         as={Link}
-        to={URLS.FLOW_EDITOR_SHARE(flowId)}
+        to={settingsLink}
         w="100%"
         onClick={(e) => {
-          setLeaveToUrl(URLS.FLOW_EDITOR_SHARE(flowId))
+          setLeaveToUrl(settingsLink)
           handleWarnOnLeave(e)
         }}
       >
@@ -82,7 +84,7 @@ const SettingsItem = ({
     <TouchableTooltip label="Settings" aria-label="settings tooltip">
       <IconButton
         as={Link}
-        to={URLS.FLOW_EDITOR_SHARE(flowId)}
+        to={settingsLink}
         variant="clear"
         aria-label="settings"
         icon={<BiCog />}
@@ -92,7 +94,7 @@ const SettingsItem = ({
           bg: 'interaction.muted.main.hover',
         }}
         onClick={(e) => {
-          setLeaveToUrl(URLS.FLOW_EDITOR_SHARE(flowId))
+          setLeaveToUrl(settingsLink)
           handleWarnOnLeave(e)
         }}
       />
@@ -144,13 +146,21 @@ interface EditorToolbarProps {
 }
 
 export default function EditorToolbar(props: EditorToolbarProps) {
+  const { flowId } = useContext(EditorContext)
+  // TODO: remove this once we open collaborators to all users
+  const { flags, isLoading: isFlagsLoading } = useContext(LaunchDarklyContext)
+  const settingsLink =
+    !isFlagsLoading && flags?.collaborators
+      ? URLS.FLOW_EDITOR_SHARE(flowId)
+      : URLS.FLOW_EDITOR_TRANSFERS(flowId)
+
   return (
     <>
       <Show above="md">
         <HStack>
           <ExecutionsItem type="icon" />
           <GuideItem type="icon" />
-          <SettingsItem {...props} type="icon" />
+          <SettingsItem {...props} type="icon" settingsLink={settingsLink} />
           <PublishButton {...props} />
         </HStack>
       </Show>
@@ -172,7 +182,11 @@ export default function EditorToolbar(props: EditorToolbarProps) {
           >
             <ExecutionsItem type="button" />
             <GuideItem type="button" />
-            <SettingsItem {...props} type="button" />
+            <SettingsItem
+              {...props}
+              type="button"
+              settingsLink={settingsLink}
+            />
             <PublishButton {...props} />
           </MenuList>
         </Menu>
