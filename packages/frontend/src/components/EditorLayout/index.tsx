@@ -222,7 +222,7 @@ export default function EditorLayout() {
               <EditableInput
                 value={flow?.name}
                 onSave={onFlowNameUpdate}
-                readOnly={loading}
+                readOnly={loading || flow?.role === 'viewer'}
               />
             </Flex>
           </Flex>
@@ -244,7 +244,9 @@ export default function EditorLayout() {
           overflowY="auto"
         >
           <Editor />
-          {flow.active && flow.config?.showSurvey && <LensSurvey />}
+          {flow.active && flow.config?.showSurvey && flow.role !== 'viewer' && (
+            <LensSurvey />
+          )}
         </Container>
       </Flex>
 
