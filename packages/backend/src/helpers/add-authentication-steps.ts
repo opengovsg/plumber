@@ -23,6 +23,10 @@ const authenticationStepsWithoutAuthUrl = [
         name: 'formattedData',
         value: '{fields.all}',
       },
+      {
+        name: 'flowId',
+        value: '{flowId}',
+      },
     ],
   },
   {
@@ -49,6 +53,10 @@ const authenticationStepsWithAuthUrl = [
       {
         name: 'formattedData',
         value: '{fields.all}',
+      },
+      {
+        name: 'flowId',
+        value: '{flowId}',
       },
     ],
   },
