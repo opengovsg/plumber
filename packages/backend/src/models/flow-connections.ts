@@ -1,3 +1,5 @@
+import { IFlowCollabRole } from '@plumber/types'
+
 import { Transaction } from 'objection'
 
 import Base from './base'
@@ -19,6 +21,8 @@ class FlowConnections extends Base {
   connection?: Connection
   table?: TableMetadata
   metadata: Record<string, any>
+
+  role?: IFlowCollabRole
 
   static tableName = 'flow_connections'
 

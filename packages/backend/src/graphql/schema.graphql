@@ -470,6 +470,7 @@ type BulkRetryIterationsResult {
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
+  flowId: String
 }
 
 input GenerateAuthUrlInput {

@@ -1,4 +1,5 @@
 import App from '@/models/app'
+import FlowConnections from '@/models/flow-connections'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -12,11 +13,29 @@ const createConnection: MutationResolvers['createConnection'] = async (
 ) => {
   await App.findOneByKey(params.input.key)
 
-  return await context.currentUser.$relatedQuery('connections').insert({
-    key: params.input.key,
-    formattedData: params.input.formattedData,
-    verified: false,
-  })
+  const newConnection = await context.currentUser
+    .$relatedQuery('connections')
+    .insert({
+      key: params.input.key,
+      formattedData: params.input.formattedData,
+      verified: false,
+    })
+
+  /**
+   * COLLABORATORS
+   * If the flowId is provided and the flow has collaborators, we add this to the flow_connections table.
+   * We add regardless of whether its a draft, so that it can be used by collaborators later.
+   */
+  if (params.input.flowId) {
+    await FlowConnections.addFlowConnection({
+      flowId: params.input.flowId,
+      connectionId: newConnection.id,
+      addedBy: context.currentUser.id,
+      connectionType: 'connection',
+    })
+  }
+
+  return newConnection
 }
 
 export default createConnection

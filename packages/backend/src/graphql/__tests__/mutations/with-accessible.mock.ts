@@ -33,12 +33,6 @@ interface MockWithAccessibleStepsOptions {
   flowUpdatedAt?: string
 }
 
-interface MockWithAccessibleConnectionsOptions {
-  connectionId: string
-  connectionKey: string
-  connectionNotFound?: boolean
-}
-
 export function createMockWithAccessibleSteps({
   owner,
   currentUser,
@@ -78,36 +72,12 @@ export function createMockWithAccessibleSteps({
             flow: {
               userId: owner.id,
               updatedAt: flowUpdatedAt,
+              role: stepRole,
               assertNotUpdatedSince:
                 assertNotUpdatedSinceSpy || vi.fn().mockResolvedValue({}),
               patchLastUpdated:
                 patchLastUpdatedSpy || vi.fn().mockResolvedValue({}),
             },
-          }),
-        }
-      },
-    )
-}
-
-export function createMockWithAccessibleConnections({
-  connectionId,
-  connectionKey,
-  connectionNotFound = false,
-}: MockWithAccessibleConnectionsOptions) {
-  return vi
-    .fn()
-    .mockImplementation(
-      (_args?: { queryBuilder?: any; requiredRole?: string; trx?: any }) => {
-        if (connectionNotFound) {
-          return {
-            findOne: vi.fn().mockResolvedValue(null),
-          }
-        }
-
-        return {
-          findOne: vi.fn().mockResolvedValue({
-            id: connectionId,
-            key: connectionKey,
           }),
         }
       },

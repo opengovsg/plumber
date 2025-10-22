@@ -1,7 +1,9 @@
 import apps from '@/apps'
+import { ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import User from '@/models/user'
+import { getConnection } from '@/services/connection'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
@@ -10,13 +12,41 @@ const testConnection: QueryResolvers['testConnection'] = async (
   params,
   context,
 ) => {
-  let connection = await context.currentUser
-    .withAccessibleConnections({ requiredRole: 'viewer' })
-    .findOne({
-      'connections.id': params.connectionId,
+  const { flowId, connectionId, supportsConnectionRegistration } = params
+  let connection
+  let flow
+  let userRole
+
+  if (flowId) {
+    // flowId is only provided when testing connection from the pipe editor
+    // check if user has access to the flow first
+    flow = await context.currentUser
+      .withAccessibleFlows({ requiredRole: 'viewer' })
+      .findById(flowId)
+
+    if (!flow) {
+      throw new ForbiddenError(
+        'You do not have sufficient permissions for this pipe',
+      )
+    }
+
+    userRole = flow.role
+
+    connection = await getConnection({
+      context,
+      connectionId: params.connectionId,
+      flowId: params.flowId,
+      includeOwnConnections: userRole === 'owner',
     })
-    .throwIfNotFound()
-  const userRole = connection.role
+  } else {
+    // if flowId is undefined, it is always the owner's connections
+    // as we testing from the My Apps page
+    connection = await context.currentUser
+      .$relatedQuery('connections')
+      .findOne({ id: connectionId })
+      .throwIfNotFound()
+    userRole = 'owner'
+  }
 
   const app = apps[connection.key]
   let $ = await globalVariable({
@@ -30,14 +60,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
           }),
   })
 
-  if (params.flowId) {
-    // flowId is supplied when testing within the pipe editor
-    // it's used for formsg webhook verification for now
-    const flow = await context.currentUser
-      .withAccessibleFlows({ requiredRole: 'viewer' })
-      .findById(params.flowId)
-      .throwIfNotFound()
-
+  if (flowId) {
     $ = await globalVariable({
       connection,
       app,
@@ -54,9 +77,9 @@ const testConnection: QueryResolvers['testConnection'] = async (
   } catch (err) {
     isStillVerified = false
     errorMessage = err.message
-    logger.error(`Error verifying CONNECTION ID: ${params.connectionId}`, {
+    logger.error(`Error verifying CONNECTION ID: ${connectionId}`, {
       event: 'test-connection',
-      flowId: params.flowId,
+      flowId: flowId,
       errMessage: err.message,
       errStack: err.stack,
     })
@@ -68,11 +91,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
   })
 
   // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
-  if (
-    !isStillVerified ||
-    !params.flowId ||
-    !params.supportsConnectionRegistration
-  ) {
+  if (!isStillVerified || !flowId || !supportsConnectionRegistration) {
     return { connectionVerified: isStillVerified, message: errorMessage }
   }
 
