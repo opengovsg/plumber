@@ -1,6 +1,6 @@
 import { IFlowCollabRole } from '@plumber/types'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { addFlowTableConnection } from '@/helpers/add-flow-connection'
 import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
@@ -28,7 +28,7 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
       false,
     )
     if (!collaboratorsFlag) {
-      throw new BadUserInputError(' You are not allowed to add collaborators.')
+      throw new ForbiddenError(' You are not allowed to add collaborators.')
     }
 
     const validatedEmail = await validateAndParseEmail(email)

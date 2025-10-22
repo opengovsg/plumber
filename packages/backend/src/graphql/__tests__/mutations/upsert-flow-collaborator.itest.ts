@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import upsertFlowCollaborator from '@/graphql/mutations/upsert-flow-collaborator'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -659,6 +659,6 @@ describe('upsert flow collaborator', () => {
         },
         context,
       ),
-    ).rejects.toThrow(BadUserInputError)
+    ).rejects.toThrow(ForbiddenError)
   })
 })
