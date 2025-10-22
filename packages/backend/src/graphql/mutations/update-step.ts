@@ -125,7 +125,9 @@ const updateStep: MutationResolvers['updateStep'] = async (
       trx,
     })
 
-    return { ...updatedStep, flow: { updatedAt: updatedFlow.updatedAt } }
+    // do this instead of spreading the updatedStep so that it preserves the Model instance
+    updatedStep.flow.updatedAt = updatedFlow.updatedAt
+    return updatedStep
   })
 
   return step
