@@ -21,6 +21,26 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
   }
 
   if (app.auth?.connectionType === 'user-added') {
+    // NOTE: only have flowId if the user is a collaborator
+    if (params.flowId) {
+      const flowConnections = await context.currentUser
+        .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+        .join('connections', 'connections.id', 'flow_connections.connection_id')
+        .withGraphJoined('connection')
+        .where({
+          'flows.id': params.flowId,
+          'connections.key': params.key,
+          'connections.draft': false,
+        })
+
+      return {
+        ...app,
+        connections: flowConnections.map(
+          (flowConnection) => flowConnection.connection,
+        ),
+      }
+    }
+
     const connections = await context.currentUser
       .$relatedQuery('connections')
       .select('connections.*')

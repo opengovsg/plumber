@@ -98,6 +98,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
               APP_CONNECTION_FIELDS[step.appKey].parameterKey
             ]
           })
+          .filter((value) => value !== undefined)
           .flat()
 
         return fetchedData.data.filter((data) =>
