@@ -9,8 +9,10 @@ import {
 
 import logger from '@/helpers/logger'
 import { parseS3Id } from '@/helpers/s3'
+import Step from '@/models/step'
 
 import { ADDRESS_LABELS } from './constants'
+import { ParsedMrfWorkflowStep } from './types'
 
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
@@ -41,7 +43,7 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       answer['type'] = 'file'
       // We encode the question as the label because we hide the actual question
       // as a variable.
-      answer['label'] = fieldData.question as string
+      answer['label'] = `${fieldData.order}. ${fieldData.question}` as string
       // For attachments, answer is one of:
       // 1. An S3 ID (if we stored the attachment into S3).
       // 2. An empty string (if attachment field is optional).
@@ -306,6 +308,18 @@ async function getDataOutMetadata(
     return null
   }
 
+  const { parameters } = await Step.query()
+    .findById(executionStep.stepId)
+    .throwIfNotFound()
+
+  let questionIdsToShowForMrf: Set<string> | undefined
+
+  if (parameters.mrf) {
+    questionIdsToShowForMrf = new Set(
+      (parameters.mrf as ParsedMrfWorkflowStep).fields,
+    )
+  }
+
   const fieldMetadata: IDataOutMetadata = Object.create(null)
 
   const fields = Object.entries(data.fields).sort((a, b) => {
@@ -318,35 +332,35 @@ async function getDataOutMetadata(
   })
 
   /**
-   * This is a hack to match the question number to the form as closely as possible.
-   * In formsg, the headers are not numbered, so we need to exclude them from the question number.
-   * But we also need to keep track of the headers between questions, so we can order them correctly.
-   * The regenerated order will be like so:
-   * Example given form:
-   * Header 0.9991
-   * Header 0.9992
-   * Question 1
-   * Question 2
-   * Sub Heading 2.9991
-   * Question 3
-   * Header 3.9991
-   * Sub Heading 3.9992
-   * Question 4
-   * Sub Heading 4.9991
-   * Question 4
+   * We ignore all 'image' and 'section' (aka headers) field types
+   * Paragraphs are not returned in encryptedContent
    */
   let questionOrder = 0
-  let headerOrderBetweenQuestions = 0
   for (const [fieldId, fieldData] of fields) {
-    if (fieldData.fieldType !== 'section') {
-      // reset order between questions (altho not necessary)
-      headerOrderBetweenQuestions = 0
-      questionOrder++
-      fieldData.order = questionOrder
-    } else {
-      headerOrderBetweenQuestions++
-      fieldData.order = questionOrder + +`0.999${headerOrderBetweenQuestions}`
+    // ignore image fields, dont even increment question order
+    if (fieldData.fieldType === 'image' || fieldData.fieldType === 'section') {
+      fieldMetadata[fieldId] = { isHidden: true }
+      continue
     }
+
+    // increment question order for each field
+    questionOrder++
+    fieldData.order = questionOrder
+
+    // if this is an MRF step, we only show the fields that are editable
+    if (questionIdsToShowForMrf && !questionIdsToShowForMrf.has(fieldId)) {
+      fieldMetadata[fieldId] = {
+        question: { isHidden: true },
+        answer: { isHidden: true },
+        fieldType: { isHidden: true },
+        order: { isHidden: true },
+        myInfo: { attr: { isHidden: true } },
+        isVisible: { isHidden: true },
+        isHeader: { isHidden: true },
+      }
+      continue
+    }
+
     fieldMetadata[fieldId] = {
       question: buildQuestionMetadatum(fieldData),
       answer: buildAnswerMetadatum(fieldData),

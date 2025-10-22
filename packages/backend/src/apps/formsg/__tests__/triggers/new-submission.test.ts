@@ -8,6 +8,8 @@ import {
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
+
 import { ADDRESS_LABELS } from '../../common/constants'
 import trigger from '../../triggers/new-submission'
 
@@ -24,6 +26,7 @@ const mocks = vi.hoisted(() => ({
       },
     }
   }),
+  removeMrfSteps: vi.fn(),
 }))
 
 vi.mock('../../triggers/new-submission/get-mock-data', () => ({
@@ -34,10 +37,24 @@ vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
   fetchFormSchema: mocks.fetchFormSchema,
 }))
 
+vi.mock('../../triggers/new-submission/remove-mrf-steps', () => ({
+  removeMrfSteps: mocks.removeMrfSteps,
+}))
+
 vi.mock('../../common/webhook-settings', () => ({
   registerWebhookUrl: vi.fn(),
   verifyWebhookUrl: vi.fn(),
   getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
+}))
+
+vi.mock('../../../../models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: vi.fn(() => ({ parameters: {} })),
+      })),
+    })),
+  },
 }))
 
 describe('new submission trigger', () => {
@@ -72,12 +89,24 @@ describe('new submission trigger', () => {
     } as unknown as IExecutionStep
   })
 
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('testRun', () => {
     const $ = {
       auth: { data: { formId: '123' } },
       user: { email: 'test@test.com' },
+      step: {
+        id: '123',
+        position: 1,
+      },
+      flow: {
+        id: 'flow-id',
+      },
       pushTriggerItem: pushTriggerItemMock,
       getLastExecutionStep: getLastExecutionStepMock,
+      app: apps.formsg,
     } as unknown as IGlobalVariable
 
     const mockData = {
@@ -106,10 +135,6 @@ describe('new submission trigger', () => {
       mocks.getFormDetailsFromGlobalVariable.mockReturnValue({
         formId: '123',
       })
-    })
-
-    afterEach(() => {
-      vi.clearAllMocks()
     })
 
     it('should use mock data if preferMock is true and there is no past submission', async () => {
@@ -222,6 +247,12 @@ describe('new submission trigger', () => {
           ).toISOString(),
         },
       })
+    })
+
+    it('should call remove MRF steps function if the form is storage mode', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, { preferMock: false })
+      expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
     })
   })
   describe('dataOut metadata', () => {
@@ -355,7 +386,7 @@ describe('new submission trigger', () => {
       )
     })
 
-    it('sets label to the associated question for attachment answers', async () => {
+    it('sets label to the associated question for attachment answers with question number', async () => {
       executionStep.dataOut.fields = {
         fileFieldId: {
           question: 'Attach a file.',
@@ -365,14 +396,14 @@ describe('new submission trigger', () => {
       }
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(metadata.fields.fileFieldId.answer.label).toEqual('Attach a file.')
+      expect(metadata.fields.fileFieldId.answer.label).toEqual(
+        '1. Attach a file.',
+      )
     })
 
-    it('collapses header fields', async () => {
+    it('hides header fields', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(
-        metadata.fields.headerFieldId.question.isCollapsedByDefault,
-      ).toEqual(true)
+      expect(metadata.fields.headerFieldId.isHidden).toEqual(true)
     })
 
     it('collapses question variables', async () => {
