@@ -286,6 +286,27 @@ class User extends Base {
       .select('flow_connections.*', FlowConnections.raw(ROLE_STMT, [userId]))
       .join('flows', 'flows.id', 'flow_connections.flow_id')
 
+    if (requiredRole) {
+      this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
+    }
+    return baseQuery
+  }
+
+  withAccessibleExecutions({
+    requiredRole,
+    queryBuilder,
+    trx,
+  }: {
+    requiredRole: IFlowCollabRole
+    queryBuilder?: ExtendedQueryBuilder<Execution, Execution[]>
+    trx?: Transaction
+  }) {
+    const userId = this.id
+    const baseQuery = queryBuilder || Execution.query(trx)
+    baseQuery
+      .select('executions.*', Execution.raw(ROLE_STMT, [userId]))
+      .join('flows', 'flows.id', 'executions.flow_id')
+
     this.applyAccessibilityFilter(baseQuery, userId, requiredRole)
     return baseQuery
   }
