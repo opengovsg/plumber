@@ -30,7 +30,7 @@ export function parseWorkflowData(
     parsedSteps.push({
       defaultStepName: step.step_name ?? `Step ${parsedSteps.length + 1}`,
       type: step.workflow_type,
-      fields: populatedFields,
+      fields: [...populatedFields],
       formWorkflowStepId: step._id,
       approvalField: step.approval_field,
     })
