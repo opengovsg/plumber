@@ -16,6 +16,11 @@ enum Frequency {
   Always = 'always',
 }
 
+enum Recipient {
+  Editor = 'editor',
+  Viewer = 'viewer',
+}
+
 const frequencyOptions = [
   {
     label: 'First error on this pipe, one email notification per day',
@@ -26,6 +31,19 @@ const frequencyOptions = [
     value: Frequency.Always,
   },
 ]
+
+const recipientOptions = [
+  {
+    label: 'editor(s)',
+    value: 'editor',
+  },
+  {
+    label: 'viewer(s)',
+    value: 'viewer',
+  },
+]
+
+const DEFAULT_RECIPIENTS: NotificationRecipients[] = []
 
 const DEFAULT_FREQUENCY = Frequency.Once
 
@@ -70,16 +88,13 @@ function NotificationFormFields() {
           <Text textStyle="body-1">
             Collaborators will be CC-ed by default.
           </Text>
-          <FormControl key="editors">
-            <Checkbox {...register('notifyEditors')} isDisabled={isReadOnly}>
-              Notify editor(s)
-            </Checkbox>
-          </FormControl>
-          <FormControl key="viewers">
-            <Checkbox {...register('notifyViewers')} isDisabled={isReadOnly}>
-              Notify viewer(s)
-            </Checkbox>
-          </FormControl>
+          {recipientOptions.map((recipient) => (
+            <FormControl key={recipient.value}>
+              <Checkbox {...register(recipient.value)} isDisabled={isReadOnly}>
+                Notify {recipient.label}
+              </Checkbox>
+            </FormControl>
+          ))}
         </Stack>
       )}
       <Button
@@ -87,6 +102,7 @@ function NotificationFormFields() {
         w="fit-content"
         type="submit"
         isDisabled={!isDirty || isReadOnly}
+        alignSelf="flex-end"
       >
         {isDirty ? 'Save' : 'Saved'}
       </Button>
@@ -100,7 +116,7 @@ export default function Notifications() {
   const frequency =
     flow?.config?.errorConfig?.notificationFrequency ?? DEFAULT_FREQUENCY
   const notificationRecipients =
-    flow?.config?.errorConfig?.notificationRecipients ?? []
+    flow?.config?.errorConfig?.notificationRecipients ?? DEFAULT_RECIPIENTS
 
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
@@ -111,8 +127,8 @@ export default function Notifications() {
 
   const defaultValues = {
     frequency,
-    notifyEditors: notifyEveryone || notificationRecipients.includes('editor'),
-    notifyViewers: notifyEveryone || notificationRecipients.includes('viewer'),
+    editor: notifyEveryone || notificationRecipients.includes(Recipient.Editor),
+    viewer: notifyEveryone || notificationRecipients.includes(Recipient.Viewer),
   }
 
   const onFlowConfigUpdate = useCallback(
@@ -120,14 +136,16 @@ export default function Notifications() {
       frequency: Frequency,
       newNotificationRecipients: NotificationRecipients[],
     ) => {
+      const notificationRecipients =
+        newNotificationRecipients.length > 0
+          ? { notificationRecipients: newNotificationRecipients }
+          : undefined
       await updateFlowConfig({
         variables: {
           input: {
             id: flow.id,
             notificationFrequency: frequency,
-            ...(newNotificationRecipients.length > 0
-              ? { notificationRecipients: newNotificationRecipients }
-              : {}),
+            ...(notificationRecipients ? notificationRecipients : {}),
           },
         },
         optimisticResponse: {
@@ -137,9 +155,7 @@ export default function Notifications() {
             config: {
               errorConfig: {
                 notificationFrequency: frequency,
-                ...(newNotificationRecipients.length > 0
-                  ? { notificationRecipients: newNotificationRecipients }
-                  : {}),
+                ...(notificationRecipients ? notificationRecipients : {}),
               },
             },
           },
@@ -179,11 +195,11 @@ export default function Notifications() {
           defaultValues={defaultValues}
           onSubmit={(data: any) => {
             const newNotificationRecipients =
-              data.notifyEditors && data.notifyViewers
-                ? [] // Both selected = notify everyone (default)
+              data.editor && data.viewer
+                ? DEFAULT_RECIPIENTS // Both selected = notify everyone (default)
                 : [
-                    ...(data.notifyEditors ? ['editor'] : []),
-                    ...(data.notifyViewers ? ['viewer'] : []),
+                    ...(data.editor ? [Recipient.Editor] : []),
+                    ...(data.viewer ? [Recipient.Viewer] : []),
                   ]
 
             onFlowConfigUpdate(
