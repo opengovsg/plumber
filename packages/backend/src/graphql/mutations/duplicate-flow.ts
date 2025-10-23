@@ -32,7 +32,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       },
     })
 
-    // duplicate the flow with the previous config (only keep notification frequency)
+    // duplicate the flow with the previous config (only keep notification frequency and notification recipients)
     delete prevConfig['duplicateCount']
     delete prevConfig['templateConfig']
     delete prevConfig['showSurvey']
