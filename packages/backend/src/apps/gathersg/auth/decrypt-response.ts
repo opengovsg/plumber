@@ -2,18 +2,48 @@ import { IGlobalVariable } from '@plumber/types'
 
 import crypto from 'crypto'
 
+import appConfig from '@/config/app'
 import logger from '@/helpers/logger'
+
+import schema from './schema'
 
 function getInternalId(data: any) {
   let internalId
   if ('updatedAt' in data) {
     // try to find the updatedAt first
-    internalId = `${data.uuid}-${data.updatedAt}`
+    internalId = `${data?.uuid}-${data.updatedAt}`
   } else if ('createdAt' in data) {
     // otherwise fallback to createdAt, for newly created cases
-    internalId = `${data.uuid}-${data.createdAt}`
+    internalId = `${data?.uuid}-${data.createdAt}`
   }
   return internalId
+}
+
+function validateData(data: any, flowId: string, app: string) {
+  const validationResult = schema.safeParse(data)
+  if (!validationResult.success) {
+    logger.error(
+      `GatherSG: potential infinite loop! Webhook not triggered by user! flowId: ${flowId}. app: ${app}. case type: ${data?.type}. case uuid: ${data?.uuid}`,
+    )
+    throw new Error(
+      'GatherSG: potential infinite loop! Webhook not triggered by user!',
+    )
+  }
+}
+
+function verifySignature(signature: string, basestring: string) {
+  const verify = crypto.createVerify('sha256')
+  verify.write(basestring)
+  verify.end()
+
+  const publicKey = Buffer.from(appConfig.gathersg.publicKey, 'base64')
+  const verified = verify.verify(publicKey, Buffer.from(signature, 'base64'))
+
+  if (!verified) {
+    throw new Error('Unable to verify GatherSG webhook signature')
+  }
+
+  return verified
 }
 
 /**
@@ -29,6 +59,8 @@ export async function decryptResponse(
   try {
     const { app, data, encryptedData, signature, timestamp } = $.request.body
     const { encryptionKey } = $.step.parameters
+
+    verifySignature(signature, `${$.webhookUrl}.${app}.${timestamp}`)
 
     if (encryptedData && encryptionKey) {
       const input = Buffer.from(encryptedData, 'base64')
@@ -46,6 +78,8 @@ export async function decryptResponse(
       ]).toString()
       const decryptedData = JSON.parse(decryptedStr)
 
+      validateData(decryptedData, $.flow.id, app)
+
       $.request.body = {
         app,
         data: decryptedData,
@@ -58,6 +92,8 @@ export async function decryptResponse(
         internalId: getInternalId(decryptedData),
       }
     } else {
+      validateData(data, $.flow.id, app)
+
       return {
         verified: true,
         internalId: getInternalId(data),

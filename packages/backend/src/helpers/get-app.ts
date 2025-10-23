@@ -79,9 +79,9 @@ function addStaticSubsteps(
       name: 'Set up step',
       arguments: step.arguments,
     })
+  } else {
+    computedStep.substeps.push(testStep)
   }
-
-  computedStep.substeps.push(testStep)
 
   return computedStep
 }

@@ -55,15 +55,15 @@ export const processTrigger = async (
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
 
-  // only need to check if can proceed if there is no error
+  // only need to check if can proceed if there is no error and not a test run
   // if error, skip and let the error throw
-  if (!error) {
-    const { shouldProceed, data } = await shouldTriggerProceed({
+  if (!error && !testRun) {
+    const result = await shouldTriggerProceed({
       ...options,
       stepAppKey: step.appKey,
     })
-    if (!shouldProceed) {
-      return data
+    if (!result?.shouldExecute) {
+      return result
     }
   }
 
