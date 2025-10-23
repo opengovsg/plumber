@@ -17,24 +17,10 @@ const action: IRawAction = {
   description: 'Update a case based on the case uuid',
   arguments: [
     {
-      label: 'Case type',
-      key: 'caseType',
-      type: 'dropdown' as const,
-      description: 'Select the type of case you want to update',
-      required: false,
-      variables: false,
-      showOptionValue: false,
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [{ name: 'key', value: 'getCaseTypes' }],
-      },
-    },
-    {
       label: 'Case UUID',
       key: 'caseUuid',
       type: 'string' as const,
-      description: 'Enter the case uuid you want to update',
+      description: 'Select the case uuid you want to update.',
       required: true,
       variables: true,
       // we intentionally disable typing for case uuid as it is used in
@@ -46,7 +32,7 @@ const action: IRawAction = {
       label: 'Case status',
       key: 'caseStatus',
       type: 'dropdown' as const,
-      description: 'Enter the status you want to update the case to.',
+      description: 'Select the status you want to update the case to.',
       required: false,
       variables: false,
       showOptionValue: false,
@@ -82,8 +68,8 @@ const action: IRawAction = {
                 value: 'getCaseFields',
               },
               {
-                name: 'parameters.caseType',
-                value: '{parameters.caseType}',
+                name: 'parameters.caseUuid',
+                value: '{parameters.caseUuid}',
               },
             ],
           },
