@@ -33,6 +33,7 @@ const dynamicData: IDynamicData = {
     } catch (error) {
       return {
         data: [],
+        error: error?.message || error?.code || 'Unknown error',
       }
     }
   },

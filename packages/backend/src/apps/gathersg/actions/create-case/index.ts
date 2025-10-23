@@ -5,6 +5,7 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
+import logger from '@/helpers/logger'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
 import { fetchCaseFields } from '../../common/fetch-case-fields'
@@ -136,8 +137,8 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const paramaters = requestSchema.parse($.step.parameters)
-      const { caseType: caseTypeUuid, status, fields } = paramaters
+      const parameters = requestSchema.parse($.step.parameters)
+      const { caseType: caseTypeUuid, status, fields } = parameters
 
       // get the case type name from the case type uuid
       const { caseTypeName } = await fetchCaseFields({ $, caseTypeUuid })
@@ -157,7 +158,7 @@ const action: IRawAction = {
         },
       })
     } catch (error) {
-      console.error('error', error)
+      logger.error('Failed to create case on GatherSG:', error)
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError(

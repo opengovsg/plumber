@@ -11,7 +11,7 @@ export const requestSchema = z
         z.object({
           field: z.string().trim().min(1, 'Field empty'),
           // we add nullish here because defaultValue or value doesnt work properly in dropdown
-          fieldType: fieldTypeEnum.nullish(),
+          fieldType: fieldTypeEnum.nullish().default('string'),
           value: z.string().trim().nullish(),
         }),
       )
