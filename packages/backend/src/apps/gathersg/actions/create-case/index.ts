@@ -23,7 +23,7 @@ const action: IRawAction = {
       label: 'Case type',
       key: 'caseType',
       type: 'dropdown' as const,
-      description: 'Enter the type of the case you want to create',
+      description: 'Select the type of the case you want to create',
       required: true,
       variables: false,
       showOptionValue: false,

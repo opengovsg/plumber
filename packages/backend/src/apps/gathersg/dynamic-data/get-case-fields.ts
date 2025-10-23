@@ -6,25 +6,18 @@ import {
 
 import HttpError from '@/errors/http'
 
-import { fetchCaseFields } from '../common/fetch-case-fields'
-import { GatherSGError } from '../common/types'
+import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
+import { GatherSGCase, GatherSGError } from '../common/types'
 
-/**
- * Subset of result
- */
-interface GatherSGCase {
-  uuid: string
-  createdAt: string
-  updatedAt: string
-  status: {
-    uuid: string
-    name: string
-    color: string
-    isFinal: boolean
+const processCaseFields = (caseFields: GatherSGCaseField[]) => {
+  return {
+    data: caseFields.map((field) => {
+      return {
+        name: field.name,
+        value: field.name,
+      }
+    }),
   }
-  caseRef: string
-  fields: Record<string, string | string[] | null | number>
-  tags: string[]
 }
 
 const dynamicData: IDynamicData = {
@@ -35,24 +28,16 @@ const dynamicData: IDynamicData = {
       const { caseType: caseTypeUuid } = $.step.parameters
 
       if (caseTypeUuid) {
+        // Fetch case fields using the determined case type UUID
         const { filteredFields } = await fetchCaseFields({
           $,
           caseTypeUuid: caseTypeUuid as string,
         })
 
-        return {
-          data: filteredFields.map((field) => {
-            return {
-              name: field.name,
-              value: field.name,
-            }
-          }),
-        }
+        return processCaseFields(filteredFields)
       }
 
-      // TODO (kevinkim-ogp): this needs to be updated to use the caseUuid to fetch the fields
-      // of that specific case using /cases/{caseUuid}
-      // need to figure out how to do this with both string and computed parameters if the UUID is a variable
+      // BACKWARD COMPATIBILITY: this gets the case fields from the latest case in gathersg
       const { data: searchResult } = await $.http.post<{
         traceId: string
         total: number

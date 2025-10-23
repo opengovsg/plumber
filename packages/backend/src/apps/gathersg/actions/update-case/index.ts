@@ -17,15 +17,31 @@ const action: IRawAction = {
   description: 'Update a case based on the case uuid',
   arguments: [
     {
+      label: 'Case type',
+      key: 'caseType',
+      type: 'dropdown' as const,
+      description: 'Select the type of case you want to update',
+      required: false,
+      variables: false,
+      showOptionValue: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [{ name: 'key', value: 'getCaseTypes' }],
+      },
+    },
+    {
       label: 'Case UUID',
       key: 'caseUuid',
       type: 'string' as const,
       description: 'Enter the case uuid you want to update',
       required: true,
       variables: true,
+      // we intentionally disable typing for case uuid as it is used in
+      // to get dynamic data for case fields
+      // it can still be pasted via mouse click
       singleVariableSelection: true,
     },
-    // TODO: see if it is possible to get all possible statuses from the API
     {
       label: 'Case status',
       key: 'caseStatus',
@@ -64,6 +80,10 @@ const action: IRawAction = {
               {
                 name: 'key',
                 value: 'getCaseFields',
+              },
+              {
+                name: 'parameters.caseType',
+                value: '{parameters.caseType}',
               },
             ],
           },
