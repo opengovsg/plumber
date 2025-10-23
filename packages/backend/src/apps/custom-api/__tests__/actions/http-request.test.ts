@@ -163,10 +163,14 @@ describe('make http request', () => {
     expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
   })
 
-  it('should follow redirect with GET if 301 or 302', async () => {
+  it('should follow redirect with GET if 301 or 302 without body and content-type header', async () => {
     mocks.isUrlAllowed.mockResolvedValueOnce(false)
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
+    $.step.parameters.customHeaders = [
+      { key: 'Content-Type', value: 'plain/text' },
+      { key: 'Key2', value: 'Value2' },
+    ]
     $.step.parameters.url = 'http://test.local/endpoint?1234'
     mocks.httpRequest.mockResolvedValue({
       status: 301,
@@ -180,6 +184,10 @@ describe('make http request', () => {
       expect.objectContaining({
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
+        headers: {
+          'Content-Type': 'plain/text',
+          Key2: 'Value2',
+        },
         data: 'meep meep',
         responseType: 'stream',
       }),
@@ -188,7 +196,9 @@ describe('make http request', () => {
       expect.objectContaining({
         url: 'https://redirect.com',
         method: 'GET',
-        data: 'meep meep',
+        headers: {
+          Key2: 'Value2',
+        },
         responseType: 'stream',
       }),
     )

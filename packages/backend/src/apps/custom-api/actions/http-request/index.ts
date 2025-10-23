@@ -100,7 +100,6 @@ const action: IRawAction = {
 
   async run($) {
     const method = $.step.parameters.method as TMethod
-    const data = $.step.parameters.data as string
     const url = $.step.parameters.url as string
 
     // Check if the step has an admin override for the timeout
@@ -149,14 +148,30 @@ const action: IRawAction = {
         if (!response.headers?.location) {
           throw new Error('No location header')
         }
+
+        // ref: https://github.com/follow-redirects/follow-redirects/blob/21ef28a544c5e57f4c34b8476d75f2144609a1eb/index.js#L442
+        // if redirect method is GET, we need to delete the content-type header
+        // and drop body
+        // technically content-length header should also be dropped, but we dont set it
+        // manually
+        const redirectMethod =
+          response.status === 301 || response.status === 302 ? 'GET' : method
+
+        const redirectHeaders = customHeaders ? { ...customHeaders } : {}
+        if (redirectMethod === 'GET' && redirectHeaders) {
+          delete redirectHeaders['content-type']
+          delete redirectHeaders['Content-Type']
+        }
+
         response = await $.http.request({
           url: response.headers.location,
-          method:
-            response.status === 301 || response.status === 302 ? 'GET' : method,
-          data,
+          method: redirectMethod,
+          // Only include data if the redirect method is not GET
+          ...(redirectMethod !== 'GET' && { data: parsedData }),
+          headers: redirectHeaders,
+          timeout,
           // Prevent calling of internal IPs, e.g. aws metadata endpoint
           lookup: safeAxiosLookup,
-          headers: customHeaders,
           maxRedirects: 0,
           // stream the response for custom api to protect against gzip bombs
           responseType: 'stream',
