@@ -84,10 +84,7 @@ function NotificationFormFields() {
       </FormControl>
       {hasCollaborators && (
         <Stack gap={0}>
-          <Text textStyle="subhead-1">Notify collaborators</Text>
-          <Text textStyle="body-1">
-            Collaborators will be CC-ed by default.
-          </Text>
+          <Text textStyle="subhead-1">Collaborators</Text>
           {recipientOptions.map((recipient) => (
             <FormControl key={recipient.value}>
               <Checkbox {...register(recipient.value)} isDisabled={isReadOnly}>
@@ -121,31 +118,23 @@ export default function Notifications() {
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
 
-  // Empty array or no recipients = notify everyone (both checked)
-  const notifyEveryone =
-    !notificationRecipients || notificationRecipients.length === 0
-
   const defaultValues = {
     frequency,
-    editor: notifyEveryone || notificationRecipients.includes(Recipient.Editor),
-    viewer: notifyEveryone || notificationRecipients.includes(Recipient.Viewer),
+    editor: notificationRecipients.includes(Recipient.Editor),
+    viewer: notificationRecipients.includes(Recipient.Viewer),
   }
 
   const onFlowConfigUpdate = useCallback(
     async (
       frequency: Frequency,
-      newNotificationRecipients: NotificationRecipients[],
+      notificationRecipients: NotificationRecipients[],
     ) => {
-      const notificationRecipients =
-        newNotificationRecipients.length > 0
-          ? { notificationRecipients: newNotificationRecipients }
-          : undefined
       await updateFlowConfig({
         variables: {
           input: {
             id: flow.id,
             notificationFrequency: frequency,
-            ...(notificationRecipients ? notificationRecipients : {}),
+            notificationRecipients,
           },
         },
         optimisticResponse: {
@@ -155,7 +144,7 @@ export default function Notifications() {
             config: {
               errorConfig: {
                 notificationFrequency: frequency,
-                ...(notificationRecipients ? notificationRecipients : {}),
+                notificationRecipients,
               },
             },
           },
@@ -194,17 +183,14 @@ export default function Notifications() {
         <Form
           defaultValues={defaultValues}
           onSubmit={(data: any) => {
-            const newNotificationRecipients =
-              data.editor && data.viewer
-                ? DEFAULT_RECIPIENTS // Both selected = notify everyone (default)
-                : [
-                    ...(data.editor ? [Recipient.Editor] : []),
-                    ...(data.viewer ? [Recipient.Viewer] : []),
-                  ]
+            const newNotificationRecipients = [
+              ...(data.editor ? [Recipient.Editor] : []),
+              ...(data.viewer ? [Recipient.Viewer] : []),
+            ]
 
             onFlowConfigUpdate(
               data.frequency as Frequency,
-              newNotificationRecipients as NotificationRecipients[],
+              newNotificationRecipients,
             )
           }}
         >

@@ -9,7 +9,6 @@ export const DUPLICATE_FLOW = gql`
       config {
         errorConfig {
           notificationFrequency
-          notificationRecipients
         }
         duplicateCount
       }

@@ -74,10 +74,14 @@ export async function sendErrorEmail(flow: Flow) {
   const currDatetime = DateTime.now()
   const ccList: string[] = []
 
-  // check which collaborators to CC in the error email
-  if (flow.collaborators && flow.collaborators.length > 0) {
-    const notificationRecipients = flow.config?.errorConfig
-      ?.notificationRecipients ?? ['editor', 'viewer']
+  // default to notify owner only if no collaborators are specified
+  const notificationRecipients =
+    flow.config?.errorConfig?.notificationRecipients ?? []
+  if (
+    notificationRecipients.length > 0 &&
+    flow.collaborators &&
+    flow.collaborators.length > 0
+  ) {
     const collaboratorsToCC = flow.collaborators
       .filter((collaborator) =>
         notificationRecipients.includes(
