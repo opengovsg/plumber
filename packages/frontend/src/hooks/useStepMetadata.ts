@@ -1,8 +1,9 @@
 import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
 
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import get from 'lodash/get'
 
+import { EditorContext } from '@/contexts/Editor'
 import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
 import getStepName from '@/helpers/getStepName'
 import {
@@ -31,11 +32,10 @@ interface UseStepMetadataResult {
 export function useStepMetadata(
   allApps: IApp[],
   step: IStep | undefined,
-  readOnly?: boolean,
   allowReorder?: boolean,
-  isMobile?: boolean,
-  isDrawerOpen?: boolean,
 ): UseStepMetadataResult {
+  const { readOnly, isMobile, isDrawerOpen } = useContext(EditorContext)
+
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
   const isIfThenStep = step ? checkIfThenStep(step) : false
