@@ -166,6 +166,12 @@ describe('upsert flow collaborator', () => {
         db: 'pg',
       })
 
+      await TableCollaborator.query().insert({
+        tableId: tilesTableId,
+        userId: context.currentUser.id,
+        role: 'owner',
+      })
+
       await Step.query().insert([
         {
           id: randomUUID(),
@@ -646,6 +652,90 @@ describe('upsert flow collaborator', () => {
         user_id: editor.id,
       })
       expect(tableCollaborators).toHaveLength(1)
+    })
+
+    it('should not allow adding collaborators if they are not an owner or editor of the tile', async () => {
+      // add a Tile step
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: tilesTableId1 },
+        position: 1,
+      })
+
+      // add the editor as a collaborator of the Pipe first
+      await FlowCollaborator.query().insert({
+        flowId: dummyFlow.id,
+        userId: editor.id,
+        role: 'editor',
+        updatedBy: context.currentUser.id,
+      })
+
+      // editor should not be able to add the viewer as the editor is not a collaborator of the tile
+      context.currentUser = editor
+      await expect(
+        upsertFlowCollaborator(
+          null,
+          {
+            input: {
+              flowId: dummyFlow.id,
+              email: viewer.email,
+              role: 'viewer',
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrow('You do not have sufficient permissions for this tile')
+    })
+
+    it('should not downgrade the role on Tiles when the Pipe collaborator is being downgraded from an Editor to a Viewer', async () => {
+      // add a Tile step
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: tilesTableId1 },
+        position: 1,
+      })
+
+      // add the editor as a collaborator of the Pipe first
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that only one table collaborator was added (duplicates should be handled)
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+      expect(tableCollaborators).toHaveLength(1)
+      expect(tableCollaborators[0].tableId).toBe(tilesTableId1)
+      expect(tableCollaborators[0].role).toBe('editor')
+
+      // now we downgrade the Pipe collaborator from an Editor to a Viewer
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'viewer' },
+        },
+        context,
+      )
+
+      // Check that the table collaborator role was not downgraded
+      const tableCollaborators2 = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+      expect(tableCollaborators2).toHaveLength(1)
+      expect(tableCollaborators2[0].tableId).toBe(tilesTableId1)
+      expect(tableCollaborators2[0].role).toBe('editor')
     })
   })
 

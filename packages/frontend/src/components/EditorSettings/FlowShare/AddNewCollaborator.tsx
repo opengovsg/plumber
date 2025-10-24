@@ -72,12 +72,17 @@ const AddNewCollaborator = ({
   )
 
   const onConfirm = useCallback(async () => {
-    setIsAdding(true)
-    const email = getValues('email')
-    await onAdd(email, role)
-    resetField('email')
-    onClose()
-    setIsAdding(false)
+    try {
+      setIsAdding(true)
+      const email = getValues('email')
+      await onAdd(email, role)
+      resetField('email')
+    } catch (error) {
+      console.error(error)
+    } finally {
+      onClose()
+      setIsAdding(false)
+    }
   }, [onAdd, getValues, role, onClose, resetField])
 
   return (

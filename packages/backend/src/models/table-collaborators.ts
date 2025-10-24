@@ -112,6 +112,17 @@ class TableCollaborator extends Base {
       if (existingCollaborator.role === 'owner') {
         throw new BadUserInputError('Cannot change owner role')
       }
+
+      /**
+       * COLLABORATORS:
+       * should not downgrade the role on Tiles when the Pipe collaborator is being
+       * downgraded from an Editor to a Viewer.
+       * Tile Owner / Editor should do that manually.
+       */
+      if (role === 'viewer' && existingCollaborator.role === 'editor') {
+        return
+      }
+
       await existingCollaborator
         .$query(trx)
         .patchAndFetch({
