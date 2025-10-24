@@ -6,7 +6,6 @@ import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { MarkdownRenderer } from '@/exports/components'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
@@ -31,7 +30,6 @@ import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
   step: IStep
-  isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
   allowReorder?: boolean
@@ -70,7 +68,6 @@ export default function FlowStep(
     setCurrentStepId,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
-  const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const {
     app,
     caption,
@@ -79,6 +76,7 @@ export default function FlowStep(
     selectedActionOrTrigger,
     substeps,
     shouldShowDragHandle,
+    isDeletable,
   } = useStepMetadata(
     allApps,
     step,
@@ -98,11 +96,6 @@ export default function FlowStep(
   } = useUnsavedChanges({
     onProceed: onModalOpen,
   })
-
-  const isDeletable =
-    displayOverrides?.disableDelete === true
-      ? false
-      : !readOnly && props.isDeletable
 
   const { shouldTestStepAgain, isTestSuccessful } = useMemo(
     () => validateStepParams(step, testExecutionSteps, substeps),

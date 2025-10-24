@@ -712,6 +712,7 @@ export interface IBaseTrigger {
   description: string
   isNew?: boolean
   webhookTriggerInstructions?: ITriggerInstructions
+  hiddenFromUser?: boolean
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?(

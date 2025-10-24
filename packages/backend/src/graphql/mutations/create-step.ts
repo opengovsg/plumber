@@ -34,7 +34,7 @@ const createStep: MutationResolvers['createStep'] = async (
       throw new BadUserInputError('No such trigger or action')
     }
 
-    if ('hiddenFromUser' in triggerOrAction && triggerOrAction.hiddenFromUser) {
+    if (triggerOrAction?.hiddenFromUser) {
       throw new BadUserInputError('Action can only be created by system')
     }
   }
