@@ -8,7 +8,6 @@ import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
-import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
 import { generateValidationSchema } from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
@@ -30,20 +29,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { allApps, onUpdateStep, testExecutionSteps, resetTimestamp } =
-    useContext(EditorContext)
-
-  // This includes all steps that run even after the current step, but within the same branch.
-  const stepExecutionsToInclude = useContext(StepExecutionsToIncludeContext)
-  const priorExecutionSteps = useMemo(
-    () =>
-      testExecutionSteps.filter(
-        (stepExecution) =>
-          stepExecutionsToInclude?.has(stepExecution.stepId) &&
-          stepExecution.step.position < step.position,
-      ),
-    [step.position, stepExecutionsToInclude, testExecutionSteps],
-  )
+  const { allApps, onUpdateStep, resetTimestamp } = useContext(EditorContext)
 
   const { app, hasConnection, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(allApps, step)
@@ -67,8 +53,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
   return (
     <>
       <Flex w="100%" flexDir="column">
-        {/* {JSON.stringify(substeps)} */}
-        <StepExecutionsProvider priorExecutionSteps={priorExecutionSteps}>
+        <StepExecutionsProvider currentStep={step}>
           <Form
             key={`${step.id}-${resetTimestamp}`}
             defaultValues={step}
