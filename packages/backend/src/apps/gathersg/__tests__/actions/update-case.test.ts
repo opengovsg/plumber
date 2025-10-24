@@ -216,7 +216,7 @@ describe('update case', () => {
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrowError(
-      'Check that you have entered the correct value type for the following fields: age, score',
+      'Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: age, score',
     )
   })
 

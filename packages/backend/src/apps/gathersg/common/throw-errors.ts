@@ -32,8 +32,8 @@ export default function throwGatherSGStepError({
   if (errorStatus === 422 && code === 'INVALID_INPUT') {
     const invalidFields = details?.fields as string[]
     throw new StepError(
-      'Invalid field value type entered (between numbers, strings, etc)',
-      `Check that you have entered the correct value type for the following fields: ${invalidFields.join(
+      'Invalid or missing field values',
+      `Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: ${invalidFields.join(
         ', ',
       )}`,
       position,
