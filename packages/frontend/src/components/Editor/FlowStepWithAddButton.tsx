@@ -5,6 +5,9 @@ import { useContext, useMemo } from 'react'
 import { EditorContext } from '@/contexts/Editor'
 import { FlowStep } from '@/exports/components'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useStepMetadata } from '@/hooks/useStepMetadata'
+
+import { ApproveReject } from '../FlowStep/components/ApproveReject'
 
 import { AddStepButton } from './AddStepButton'
 
@@ -23,7 +26,9 @@ export default function FlowStepWithAddButton({
   groupedSteps: IStep[][]
   showAddButton?: boolean
 }) {
-  const { readOnly } = useContext(EditorContext)
+  const { readOnly, allApps } = useContext(EditorContext)
+
+  const { isApprovalStep } = useStepMetadata(allApps, step)
 
   const nonIfThenActionSteps = stepsBeforeGroup.filter(
     (step) => step.type === 'action' && step.key !== TOOLBOX_ACTIONS.IfThen,
@@ -59,12 +64,13 @@ export default function FlowStepWithAddButton({
     <>
       <FlowStep
         step={step}
-        isDeletable={true}
         isLastStep={isLastStep}
         isNested={isNested}
         // only allow reordering if there are more than 1 action steps
         allowReorder={nonIfThenActionSteps.length > 1}
       />
+      {isApprovalStep && <ApproveReject />}
+
       {showAddButton && (
         <AddStepButton {...getAddStepButtonProps(isLastStep, step.id)} />
       )}
