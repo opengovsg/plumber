@@ -5,8 +5,9 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 import { computeForEachParameters } from '@/helpers/compute-for-each-parameters'
-import computeParameters, { variableRegExp } from '@/helpers/compute-parameters'
+import computeParameters from '@/helpers/compute-parameters'
 import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
 import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
@@ -16,7 +17,6 @@ const getCaseUuidFromVariable = async (
   $: IGlobalVariable,
   variable: string,
 ) => {
-  let computedCaseUuid
   const testExecutionSteps = await getTestExecutionSteps($.flow.id)
 
   if (/items.columns/.test(variable)) {
@@ -28,7 +28,11 @@ const getCaseUuidFromVariable = async (
       return executionStep.stepId === stepId
     })
 
-    computedCaseUuid = computeForEachParameters({
+    if (!executionStep) {
+      return ''
+    }
+
+    return computeForEachParameters({
       data: executionStep?.dataOut,
       keyPath: keyPaths.join('.'),
       executionSteps: testExecutionSteps,
@@ -48,10 +52,8 @@ const getCaseUuidFromVariable = async (
       { caseUuid: variable },
       testExecutionSteps,
     )
-    computedCaseUuid = caseUuid
+    return caseUuid
   }
-
-  return computedCaseUuid ?? '`'
 }
 
 const processCaseFields = (caseFields: GatherSGCaseField[]) => {
@@ -81,7 +83,10 @@ const dynamicData: IDynamicData = {
 
         return processCaseFields(filteredFields)
       } else if (caseUuid) {
-        if (typeof caseUuid === 'string' && caseUuid.match(variableRegExp)) {
+        if (
+          typeof caseUuid === 'string' &&
+          caseUuid.match(`^${VARIABLE_REGEX.source}$`)
+        ) {
           // if the case uuid is a variable, we need to compute the value
           const computedCaseUuid = await getCaseUuidFromVariable($, caseUuid)
 

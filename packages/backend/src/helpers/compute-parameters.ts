@@ -11,7 +11,7 @@ import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
 
-export const variableRegExp =
+const variableRegExp =
   /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/g
 
 function findAndSubstituteVariables(
