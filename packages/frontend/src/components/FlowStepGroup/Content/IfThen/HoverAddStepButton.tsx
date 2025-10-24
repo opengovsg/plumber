@@ -40,16 +40,8 @@ export function HoverAddStepButton(
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isHovered, setIsHovered] = useState(false)
 
-  const { allApps, readOnly, isMobile, isDrawerOpen } =
-    useContext(EditorContext)
-  const { shouldShowDragHandle } = useStepMetadata(
-    allApps,
-    step,
-    readOnly,
-    allowReorder,
-    isMobile,
-    isDrawerOpen,
-  )
+  const { allApps, readOnly, isDrawerOpen } = useContext(EditorContext)
+  const { shouldShowDragHandle } = useStepMetadata(allApps, step, allowReorder)
 
   const {
     cancelRef,
