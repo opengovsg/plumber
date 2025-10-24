@@ -99,9 +99,18 @@ export function useStepMetadata(
       !isMobile &&
       !isIfThenStep &&
       allowReorder &&
-      !isDrawerOpen
+      !isDrawerOpen &&
+      !isMrfStep
     )
-  }, [readOnly, isTrigger, isMobile, isIfThenStep, allowReorder, isDrawerOpen])
+  }, [
+    readOnly,
+    isTrigger,
+    isMobile,
+    isIfThenStep,
+    allowReorder,
+    isDrawerOpen,
+    isMrfStep,
+  ])
 
   return {
     app,

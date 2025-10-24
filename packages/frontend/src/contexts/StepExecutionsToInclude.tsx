@@ -3,22 +3,40 @@ import type { IStep } from '@plumber/types'
 import type { ReactNode } from 'react'
 import { createContext } from 'react'
 
-export type StepExecutionsToIncludeContextData = ReadonlySet<IStep['id']>
-
-export const StepExecutionsToIncludeContext =
-  createContext<StepExecutionsToIncludeContextData>(new Set())
-
-type StepExecutionsProviderProps = {
-  children: ReactNode
-  value: StepExecutionsToIncludeContextData
+export type StepExecutionsToIncludeContextData = {
+  triggerStep: IStep | null
+  actionStepsBeforeGroup: IStep[]
+  groupedSteps: IStep[][]
 }
 
-export function StepExecutionsToIncludeProvider(
-  props: StepExecutionsProviderProps,
-): JSX.Element {
-  const { children, value } = props
+export const StepExecutionsToIncludeContext =
+  createContext<StepExecutionsToIncludeContextData>({
+    triggerStep: null,
+    actionStepsBeforeGroup: [],
+    groupedSteps: [],
+  })
+
+interface StepExecutionsProviderProps {
+  children: ReactNode
+  triggerStep: IStep | null
+  actionStepsBeforeGroup: IStep[]
+  groupedSteps: IStep[][]
+}
+
+export function StepExecutionsToIncludeProvider({
+  children,
+  triggerStep,
+  actionStepsBeforeGroup,
+  groupedSteps,
+}: StepExecutionsProviderProps): JSX.Element {
   return (
-    <StepExecutionsToIncludeContext.Provider value={value}>
+    <StepExecutionsToIncludeContext.Provider
+      value={{
+        triggerStep,
+        actionStepsBeforeGroup,
+        groupedSteps,
+      }}
+    >
       {children}
     </StepExecutionsToIncludeContext.Provider>
   )
