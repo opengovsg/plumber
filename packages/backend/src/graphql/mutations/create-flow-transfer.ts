@@ -1,4 +1,5 @@
 import FlowTransfer from '@/models/flow-transfers'
+import TableCollaborator from '@/models/table-collaborators'
 import User from '@/models/user'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -11,8 +12,9 @@ const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
   const { flowId, newOwnerEmail } = params.input
 
   // check if flow belongs to the old owner first
-  await context.currentUser
+  const flow = await context.currentUser
     .$relatedQuery('flows')
+    .withGraphFetched('steps')
     .where('id', flowId)
     .throwIfNotFound('This pipe does not belong to you.')
 
@@ -46,6 +48,24 @@ const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
   if (hasExistingTransfer) {
     throw new Error(
       'Transfer has already been made. Please get the new owner to approve it.',
+    )
+  }
+
+  // COLLABORATORS:
+  // check that the current owner has the rights to make the new owner
+  // an editor of the Tile (if any)
+  const tilesSteps = flow?.[0].steps?.filter((step) => step.appKey === 'tiles')
+  if (tilesSteps.length > 0) {
+    // check that the current owner has the rights to make the new owner
+    // an editor of all the Tiles in the Pipe
+    await Promise.all(
+      tilesSteps.map(async (step) => {
+        await TableCollaborator.hasAccess(
+          context.currentUser.id,
+          step.parameters.tableId as string,
+          'editor',
+        )
+      }),
     )
   }
 

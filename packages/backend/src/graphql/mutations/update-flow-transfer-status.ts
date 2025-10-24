@@ -1,4 +1,4 @@
-import { BadUserInputError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
@@ -201,6 +201,13 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
         const tableInserts = await Promise.all(
           sharedTables.map(async (tableId) => {
             try {
+              // the old owner should have the permissions to add the new owner as an editor of the table
+              await TableCollaborator.hasAccess(
+                flowTransfer.oldOwnerId,
+                tableId,
+                'editor',
+              )
+
               // there may be instances where the new pipe owner is already the owner of the table
               // we catch the error but do nothing`
               await TableCollaborator.addCollaborator({
@@ -210,6 +217,11 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
                 trx,
               })
             } catch (e) {
+              if (e instanceof ForbiddenError) {
+                throw new Error(
+                  'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
+                )
+              }
               // do nothing if the new owner of the pipe is already the owner of the tile
               if (
                 !(e instanceof BadUserInputError) &&
