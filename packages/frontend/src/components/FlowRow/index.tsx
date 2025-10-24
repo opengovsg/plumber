@@ -46,24 +46,13 @@ function FlowRowTitle({
           overflow="hidden"
           textOverflow="ellipsis"
           display="inline-block"
-          w="100%"
           maxW="100%"
           textStyle="subhead-1"
         >
           {flow?.name}
         </Text>
         {flow?.collaborators?.length && flow?.collaborators?.length > 1 && (
-          <>
-            <Icon boxSize={5} as={BiSolidGroup} />
-            <Badge
-              colorScheme="secondary"
-              size="sm"
-              variant="subtle"
-              textTransform="capitalize"
-            >
-              {flow.role}
-            </Badge>
-          </>
+          <Icon boxSize={5} as={BiSolidGroup} />
         )}
       </Flex>
       {showTimestamp && (
@@ -128,6 +117,17 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
             <Spacer />
 
             <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
+              {flow?.collaborators?.length &&
+                flow?.collaborators?.length > 1 && (
+                  <Badge
+                    colorScheme="secondary"
+                    size="sm"
+                    variant="subtle"
+                    textTransform="capitalize"
+                  >
+                    {flow.role}
+                  </Badge>
+                )}
               <Badge
                 colorScheme={flow?.active ? 'success' : 'grey'}
                 variant="subtle"
