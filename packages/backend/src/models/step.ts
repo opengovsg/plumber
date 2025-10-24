@@ -100,7 +100,7 @@ class Step extends Base {
 
   get webhookUrl() {
     if (
-      !['webhook', 'formsg'].includes(this.appKey) ||
+      !['webhook', 'formsg', 'gathersg'].includes(this.appKey) ||
       this.type === 'action'
     ) {
       return null

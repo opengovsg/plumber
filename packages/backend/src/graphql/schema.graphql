@@ -702,6 +702,7 @@ type Trigger {
   webhookTriggerInstructions: TriggerInstructions
   substeps: [TriggerSubstep]
   isNew: Boolean
+  noAuthRequired: Boolean
 }
 
 type TriggerInstructions {
