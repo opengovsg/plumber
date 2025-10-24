@@ -88,6 +88,7 @@ export const GET_APPS = gql`
         pollInterval
         description
         isNew
+        noAuthRequired
         setupMessage {
           variant
           messageBody
