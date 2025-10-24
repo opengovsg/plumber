@@ -23,15 +23,22 @@ const action: IRawAction = {
       description: 'Enter the case uuid you want to update',
       required: true,
       variables: true,
+      singleVariableSelection: true,
     },
     // TODO: see if it is possible to get all possible statuses from the API
     {
       label: 'Case status',
       key: 'caseStatus',
-      type: 'string' as const,
+      type: 'dropdown' as const,
       description: 'Enter the status you want to update the case to.',
       required: false,
-      variables: true,
+      variables: false,
+      showOptionValue: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [{ name: 'key', value: 'getCaseStatuses' }],
+      },
     },
     {
       label: 'Case fields',
