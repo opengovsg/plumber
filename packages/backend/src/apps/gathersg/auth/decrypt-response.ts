@@ -8,15 +8,14 @@ import logger from '@/helpers/logger'
 import schema from './schema'
 
 function getInternalId(data: any) {
-  let internalId
-  if ('updatedAt' in data) {
+  if (data?.updatedAt) {
     // try to find the updatedAt first
-    internalId = `${data?.uuid}-${data.updatedAt}`
-  } else if ('createdAt' in data) {
+    return `${data?.uuid}-${data.updatedAt}`
+  } else if (data?.createdAt) {
     // otherwise fallback to createdAt, for newly created cases
-    internalId = `${data?.uuid}-${data.createdAt}`
+    return `${data?.uuid}-${data.createdAt}`
   }
-  return internalId
+  return ''
 }
 
 function validateData(data: any, flowId: string, app: string) {
