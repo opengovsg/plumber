@@ -20,17 +20,19 @@ const action: IRawAction = {
       label: 'Case UUID',
       key: 'caseUuid',
       type: 'string' as const,
-      description: 'Enter the case uuid you want to update',
+      description: 'Select the case uuid you want to update.',
       required: true,
       variables: true,
+      // we intentionally disable typing for case uuid as it is used in
+      // to get dynamic data for case fields
+      // it can still be pasted via mouse click
       singleVariableSelection: true,
     },
-    // TODO: see if it is possible to get all possible statuses from the API
     {
       label: 'Case status',
       key: 'caseStatus',
       type: 'dropdown' as const,
-      description: 'Enter the status you want to update the case to.',
+      description: 'Select the status you want to update the case to.',
       required: false,
       variables: false,
       showOptionValue: false,
@@ -64,6 +66,10 @@ const action: IRawAction = {
               {
                 name: 'key',
                 value: 'getCaseFields',
+              },
+              {
+                name: 'parameters.caseUuid',
+                value: '{parameters.caseUuid}',
               },
             ],
           },
