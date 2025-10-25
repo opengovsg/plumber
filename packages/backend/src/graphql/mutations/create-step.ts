@@ -2,6 +2,7 @@ import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
+import { validateApprovalConfig } from '@/helpers/validate-approval-config'
 import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
@@ -76,6 +77,14 @@ const createStep: MutationResolvers['createStep'] = async (
         id: input.previousStep.id,
       })
       .throwIfNotFound()
+
+    const isApprovalConfigValid = validateApprovalConfig(
+      input.config,
+      previousStep,
+    )
+    if (!isApprovalConfigValid) {
+      throw new BadUserInputError('Invalid approval config')
+    }
 
     await flow
       .$relatedQuery('steps', trx)

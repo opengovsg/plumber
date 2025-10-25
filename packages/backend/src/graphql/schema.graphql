@@ -590,8 +590,19 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
+enum StepApprovalBranch {
+  approve
+  reject
+}
+
+input StepApprovalConfigInput {
+  branch: StepApprovalBranch!
+  stepId: String!
+}
+
 input StepConfigInput {
   stepName: String
+  approval: StepApprovalConfigInput
 }
 
 input UpdateStepInput {
@@ -710,10 +721,16 @@ type Step {
 type StepConfig {
   templateConfig: StepTemplateConfig
   stepName: String
+  approval: StepApprovalConfig
 }
 
 type StepTemplateConfig {
   appEventKey: String
+}
+
+type StepApprovalConfig {
+  branch: String
+  stepId: String
 }
 
 input StepConnectionInput {
