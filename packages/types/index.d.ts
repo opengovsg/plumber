@@ -166,6 +166,8 @@ export interface IExecution {
   createdAt: string
 }
 
+export type IStepApprovalBranch = 'approve' | 'reject'
+
 export interface IStepConfig {
   stepName?: string
   templateConfig?: IStepTemplateConfig
