@@ -50,3 +50,8 @@ export interface ParsedMrfWorkflow {
   trigger: Omit<ParsedMrfWorkflowStep, 'approvalField'>
   actions: ParsedMrfWorkflowStep[]
 }
+
+export const stepApprovalConfigSchema = z.object({
+  branch: z.enum(['approve', 'reject']),
+  stepId: z.string().uuid(),
+})

@@ -39,6 +39,16 @@ const createStep: MutationResolvers['createStep'] = async (
       throw new BadUserInputError('Action can only be created by system')
     }
   }
+  if (input.connection?.id) {
+    // if connectionId is specified, verify that the connection exists and belongs to the user
+    const connection = await context.currentUser
+      .$relatedQuery('connections')
+      .findOne({ id: input.connection.id })
+    if (!connection) {
+      throw new BadUserInputError('Connection not found')
+    }
+  }
+
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
@@ -78,11 +88,11 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
-    const isApprovalConfigValid = validateApprovalConfig(
+    const validationResult = await validateApprovalConfig(
       input.config,
       previousStep,
     )
-    if (!isApprovalConfigValid) {
+    if (!validationResult.isApprovalConfigValid) {
       throw new BadUserInputError('Invalid approval config')
     }
 
@@ -91,13 +101,13 @@ const createStep: MutationResolvers['createStep'] = async (
       .patch({
         position: raw(`position + 1`),
       })
-      .where('position', '>=', previousStep.position + 1)
+      .where('position', '>=', validationResult.newStepPosition)
 
     const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
       key: input.key,
       appKey: input.appKey,
       type: 'action',
-      position: previousStep.position + 1,
+      position: validationResult.newStepPosition,
       parameters: input.parameters,
       connectionId: input.connection?.id,
       config: input.config,
