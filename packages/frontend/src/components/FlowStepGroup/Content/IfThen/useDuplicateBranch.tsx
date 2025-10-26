@@ -61,6 +61,9 @@ export default function useDuplicateBranch(branchSteps: IStep[]) {
               ...restParameters,
               ...(branchName && { branchName: newBranchName }),
             },
+            config: {
+              approval: step.config?.approval,
+            },
           }
         }),
       }

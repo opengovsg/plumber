@@ -70,6 +70,8 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     (step) => step.key === TOOLBOX_ACTIONS.ForEach,
   )
 
+  const approvalBranch = groupedSteps[0]?.[0]?.config?.approval?.branch
+
   return (
     <Flex
       w={
@@ -85,6 +87,10 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
         display={isMobile ? 'block' : 'flex'}
         w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
         minW={MIN_FLOW_STEP_WIDTH}
+        // approval branch can be approve, reject or undefined
+        // boxShadow specified in theme/foundations/shadows.ts
+        // we display for entire group instead of individual nested steps
+        boxShadow={approvalBranch}
       >
         <Box {...flowStepGroupStyles.header} w="100%">
           <Flex

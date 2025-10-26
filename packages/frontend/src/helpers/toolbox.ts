@@ -188,6 +188,9 @@ export function useIfThenInitializer(): [
               depth,
               branchName: 'Branch 2',
             },
+            config: {
+              approval: currStep.config?.approval,
+            },
           },
         },
       })

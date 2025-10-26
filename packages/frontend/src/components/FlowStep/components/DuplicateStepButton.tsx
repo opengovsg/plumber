@@ -39,6 +39,10 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
         templateConfig: {
           appEventKey: null,
         },
+        approval: {
+          branch: createdStep?.config?.approval?.branch ?? null,
+          stepId: createdStep?.config?.approval?.stepId ?? null,
+        },
       },
       createdAt: new Date().toISOString(),
     }
@@ -65,9 +69,13 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
   const { flow, isMobile, onDrawerOpen, setCurrentStepId } =
     useContext(EditorContext)
 
-  const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
-
+  const [createStep] = useMutation(CREATE_STEP)
   const onDuplicateStep = useCallback(async () => {
+    const duplicateConfig = { ...step.config }
+    if (step.config?.stepName) {
+      duplicateConfig.stepName = `[COPY] ${step.config.stepName}`
+    }
+
     const mutationInput = {
       previousStep: {
         id: step.id,
@@ -80,11 +88,7 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
       key: step.key,
       connection: { id: step.connection?.id },
       parameters: { ...step.parameters },
-      ...(step.config?.stepName && {
-        config: {
-          stepName: `[COPY] ${step.config.stepName}`,
-        },
-      }),
+      config: duplicateConfig,
     }
 
     const createdStep = await createStep({
