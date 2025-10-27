@@ -77,7 +77,6 @@ export default function FlowStep(
     substeps,
     shouldShowDragHandle,
     isDeletable,
-    approvalBranch,
   } = useStepMetadata(step, allowReorder)
 
   const {
@@ -233,9 +232,6 @@ export default function FlowStep(
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
               h={isNested ? '48px' : '64px'}
               w={headerWidth}
-              // approval branch can be approve, reject or undefined
-              // boxShadow specified in theme/foundations/shadows.ts
-              boxShadow={isNested ? 'none' : approvalBranch ?? undefined}
             >
               <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
                 <StepAppIcon
