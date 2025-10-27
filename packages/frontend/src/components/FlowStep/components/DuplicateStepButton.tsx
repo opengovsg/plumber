@@ -71,9 +71,13 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
 
   const [createStep] = useMutation(CREATE_STEP)
   const onDuplicateStep = useCallback(async () => {
-    const duplicateConfig = { ...step.config }
-    if (step.config?.stepName) {
-      duplicateConfig.stepName = `[COPY] ${step.config.stepName}`
+    const duplicateConfig = {
+      ...(step.config?.approval && {
+        approval: step.config?.approval,
+      }),
+      ...(step.config?.stepName && {
+        stepName: `[COPY] ${step.config.stepName}`,
+      }),
     }
 
     const mutationInput = {
