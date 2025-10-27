@@ -1,6 +1,7 @@
 import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
+import { removeTypenameFromVariables } from '@apollo/client/link/remove-typename'
 
 import { INVALID_TILE_VIEW_KEY, NOT_AUTHORISED } from '@/config/errors'
 import * as URLS from '@/config/urls'
@@ -62,7 +63,13 @@ const createLink = (options: CreateLinkOptions): ApolloLink => {
 
   const httpOptions = { uri, token }
 
-  return from([createErrorLink(onError), createHttpLink(httpOptions)])
+  return from([
+    // this removes the __typename from variables before sending to the server,
+    // which prevents validation errors especially when duplicating steps
+    removeTypenameFromVariables(),
+    createErrorLink(onError),
+    createHttpLink(httpOptions),
+  ])
 }
 
 export default createLink

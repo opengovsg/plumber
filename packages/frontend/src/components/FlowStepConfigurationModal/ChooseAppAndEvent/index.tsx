@@ -5,7 +5,9 @@ import { useQuery } from '@apollo/client'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
+import client from '@/graphql/client'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
 import {
   TOOLBOX_ACTIONS,
@@ -120,10 +122,11 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             app.key,
             triggerOrAction.key,
             excelConnection?.id || undefined,
-            { approval: approvalConfig },
+            approvalConfig && { approval: approvalConfig },
           )
           newStepId = createdStep.id
         } else if (step) {
+          // This part of the code happens when updating an empty step
           // account for the if-then edge case
           if (
             app.key === TOOLBOX_APP_KEY &&
@@ -142,6 +145,8 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             })
             newStepId = updatedStep.id
           }
+          // we refetch GET_FLOW after everything is completed
+          await client.refetchQueries({ include: [GET_FLOW] })
         }
         onClose()
         onDrawerOpen()
