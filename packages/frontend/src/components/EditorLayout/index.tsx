@@ -18,8 +18,8 @@ import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
+import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
-import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
 
 import AnnouncementModal, {
   LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,

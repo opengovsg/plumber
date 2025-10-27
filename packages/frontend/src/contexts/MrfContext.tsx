@@ -1,9 +1,11 @@
 import { IStep, IStepApprovalBranch } from '@plumber/types'
 
-import { createContext, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 import get from 'lodash/get'
 
 import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
+
+import { EditorContext } from './Editor'
 
 interface MrfContextReturnValue {
   mrfSteps: IStep[]
@@ -23,14 +25,12 @@ export const MrfContext = createContext<MrfContextReturnValue>({
 
 interface MrfContextProviderProps {
   children: React.ReactNode
-  steps: IStep[]
 }
 
-export const MrfContextProvider = ({
-  children,
-  steps,
-}: MrfContextProviderProps) => {
-  const mrfSteps = steps.filter(
+export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
+  const { flow } = useContext(EditorContext)
+
+  const mrfSteps = flow.steps.filter(
     (step) => step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY,
   )
 
