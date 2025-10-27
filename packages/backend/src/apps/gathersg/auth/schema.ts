@@ -19,10 +19,16 @@ const schema = z
         name: z.string().min(1).optional(),
       })
       .optional(),
+    formsg: z
+      .object({
+        formId: z.string().min(1),
+        submissionId: z.string().min(1),
+      })
+      .optional(),
   })
   .refine(
     (data) => {
-      const { updatedBy, createdBy } = data || {}
+      const { updatedBy, createdBy, formsg } = data || {}
 
       // if both updatedBy and createdBy exist, only check updatedBy.email
       if (updatedBy && createdBy) {
@@ -36,6 +42,17 @@ const schema = z
 
       // if only createdBy exists, check for createdBy.email
       if (createdBy) {
+        // when the createdBy.name is 'FormSG', there will not be a createdBy.email
+        // as the case is created by a FormSG submission.
+        if (
+          createdBy?.name === 'FormSG' &&
+          formsg?.formId &&
+          formsg?.submissionId
+        ) {
+          return true
+        }
+
+        // otherwise, check for createdBy.email
         return !!createdBy.email
       }
 

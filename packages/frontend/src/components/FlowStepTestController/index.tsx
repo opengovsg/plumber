@@ -318,6 +318,7 @@ export default function FlowStepTestController(
                       isDisabled={!isDirty}
                       mr={2}
                       w="auto"
+                      data-test="flow-substep-save-without-checking-button"
                     >
                       {!isDirty ? 'Saved' : 'Save without checking'}
                     </Button>
@@ -367,6 +368,7 @@ export default function FlowStepTestController(
                   isLoading={isSaving}
                   variant="clear"
                   onClick={handleSave}
+                  data-test="flow-substep-save-button"
                 >
                   {isDirty ? 'Save' : 'Saved'}
                 </Button>
