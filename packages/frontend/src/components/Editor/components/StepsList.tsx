@@ -6,7 +6,7 @@ import { Center, Flex } from '@chakra-ui/react'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
-import { StepExecutionsToIncludeContext } from '@/contexts/StepExecutionsToInclude'
+import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
@@ -28,7 +28,7 @@ export function StepsList({ isNested }: StepsListProps) {
     groupedSteps,
     appsWithActions,
     groupingActions,
-  } = useContext(StepExecutionsToIncludeContext)
+  } = useContext(StepsToDisplayContext)
   const { flow, isDrawerOpen, isMobile, readOnly } = useContext(EditorContext)
 
   const { handleReorderUpdate } = useReorderSteps(flow.id)

@@ -7,7 +7,7 @@ import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import { EditorContext } from './Editor'
 
-export type StepExecutionsToIncludeContextData = {
+export type StepToDisplayContextValue = {
   triggerStep: IStep | null
   actionStepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
@@ -15,20 +15,19 @@ export type StepExecutionsToIncludeContextData = {
   groupingActions: Set<string> | null
 }
 
-export const StepExecutionsToIncludeContext =
-  createContext<StepExecutionsToIncludeContextData>({
-    triggerStep: null,
-    actionStepsBeforeGroup: [],
-    groupedSteps: [],
-    appsWithActions: [],
-    groupingActions: null,
-  })
+export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
+  triggerStep: null,
+  actionStepsBeforeGroup: [],
+  groupedSteps: [],
+  appsWithActions: [],
+  groupingActions: null,
+})
 
 interface StepExecutionsProviderProps {
   children: ReactNode
 }
 
-export function StepExecutionsToIncludeProvider({
+export function StepsToDisplayProvider({
   children,
 }: StepExecutionsProviderProps): JSX.Element {
   const { allApps, flow } = useContext(EditorContext)
@@ -85,7 +84,7 @@ export function StepExecutionsToIncludeProvider({
   }, [groupingActions, steps])
 
   return (
-    <StepExecutionsToIncludeContext.Provider
+    <StepsToDisplayContext.Provider
       value={{
         triggerStep,
         actionStepsBeforeGroup,
@@ -95,6 +94,6 @@ export function StepExecutionsToIncludeProvider({
       }}
     >
       {children}
-    </StepExecutionsToIncludeContext.Provider>
+    </StepsToDisplayContext.Provider>
   )
 }

@@ -4,7 +4,7 @@ import { Flex } from '@chakra-ui/react'
 import EditorRightDrawer from '@/components/EditorRightDrawer'
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContextProvider } from '@/contexts/MrfContext'
-import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
+import { StepsToDisplayProvider } from '@/contexts/StepsToDisplay'
 
 import { StepsList } from './components/StepsList'
 import { EDITOR_RIGHT_DRAWER_WIDTH } from './constants'
@@ -41,7 +41,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
       }}
     >
       <MrfContextProvider>
-        <StepExecutionsToIncludeProvider>
+        <StepsToDisplayProvider>
           <StepsList isNested={isNested} />
           {/** HACKFIX (kevinkim-ogp): to ensure that the transitions are smooth */}
           <Flex
@@ -58,7 +58,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
           >
             <EditorRightDrawer step={currentStep} />
           </Flex>
-        </StepExecutionsToIncludeProvider>
+        </StepsToDisplayProvider>
       </MrfContextProvider>
     </Flex>
   )
