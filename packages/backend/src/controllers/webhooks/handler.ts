@@ -92,8 +92,9 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  const isFormsgApp = triggerApp.key === 'formsg'
-  const isWebhookApp = triggerApp.key === 'webhook' || isFormsgApp
+  const isWebhookApp = ['formsg', 'webhook', 'gathersg'].includes(
+    triggerApp.key,
+  )
 
   if (!isWebhookApp) {
     logger.info(`Invalid trigger app for flow${flowId}`)

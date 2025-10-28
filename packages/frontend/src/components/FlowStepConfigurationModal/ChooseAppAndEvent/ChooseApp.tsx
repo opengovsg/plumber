@@ -114,7 +114,7 @@ export default function ChooseApp(props: ChooseAppProps) {
   }, [apps, isLoading, getFlagValue, searchQuery])
 
   // Combine filtering and grouping logic into a single operation
-  const groupedApps = useMemo(() => {
+  const groupedApps: [string, IApp[]][] = useMemo(() => {
     const filteredApps = apps?.filter((app) => {
       // Filter away apps hidden behind feature flags
       if (isLoading || !app?.key) {
@@ -144,6 +144,12 @@ export default function ChooseApp(props: ChooseAppProps) {
         ? [...fuzzySearchApps, toolboxApp]
         : fuzzySearchApps
 
+    // group all triggers under the 'Other' category
+    // return early as some triggers may have categories
+    if (isTrigger) {
+      return [[OTHERS_CATEGORY, remainingApps]]
+    }
+
     // Group the filtered apps
     const grouped = groupBy(
       remainingApps,
@@ -160,7 +166,14 @@ export default function ChooseApp(props: ChooseAppProps) {
       }
       return a[0].localeCompare(b[0])
     })
-  }, [apps, getFlagValue, isLoading, searchQuery, toolboxActionsToDisplay])
+  }, [
+    apps,
+    getFlagValue,
+    isLoading,
+    isTrigger,
+    searchQuery,
+    toolboxActionsToDisplay,
+  ])
 
   return (
     <>

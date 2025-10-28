@@ -1,6 +1,6 @@
 import type { IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
@@ -91,8 +91,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
                 substep.key &&
                 // NOTE: webhook trigger is a special case where we want to show the step configuration immediately
                 ((step.appKey === 'webhook' && step?.webhookUrl) ||
-                  ['chooseConnection', 'testStep'].includes(substep.key) ===
-                    false) && (
+                  substep.key !== 'chooseConnection') && (
                   <FlowSubstep
                     key={substep.key}
                     hasConnection={hasConnection}

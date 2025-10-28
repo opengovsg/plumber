@@ -1,5 +1,6 @@
 import { IUserAddedConnectionAuth } from '@plumber/types'
 
+import { decryptResponse } from './decrypt-response'
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'
 
@@ -26,6 +27,7 @@ const auth: IUserAddedConnectionAuth = {
   ],
 
   verifyCredentials,
+  verifyWebhook: decryptResponse,
   isStillVerified,
   connectionModalLabel: {
     chooseConnectionLabel: 'Connect to GatherSG',
