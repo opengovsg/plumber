@@ -48,7 +48,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
   const newRowDefaultValue = useMemo(() => {
     const result: Record<string, unknown> = {}
     for (const subField of subFields) {
-      result[subField.key] = undefined
+      result[subField.key] = subField.value ?? undefined
     }
     return result
   }, [subFields])
