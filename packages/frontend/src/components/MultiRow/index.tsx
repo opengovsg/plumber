@@ -83,8 +83,10 @@ function MultiRow(props: MultiRowProps): JSX.Element {
       defaultValue={required ? [{ ...newRowDefaultValue }] : []}
       render={({ field: { value: fallbackRows } }): JSX.Element => {
         // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
-        // `fallbackRows` on the 1st render.
-        const actualRows: typeof rows = rows.length === 0 ? fallbackRows : rows
+        // `fallbackRows` on the 1st render. Only use fallback for required fields
+        // to allow proper deletion of rows in optional fields.
+        const actualRows: typeof rows =
+          rows.length === 0 && required ? fallbackRows : rows
 
         // If field is required, don't allow removal if there is only 1 row
         // remaining.
