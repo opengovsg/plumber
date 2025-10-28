@@ -15,7 +15,7 @@ import logger from '@/helpers/logger'
 const router = Router()
 const uploadNone = multer().none()
 
-router.use((req, res, _next) => {
+router.use((req, res, next) => {
   uploadNone(req, res, (err) => {
     // file upload is not supported
     // handle error to prevent http 500 error
@@ -32,7 +32,19 @@ router.use((req, res, _next) => {
       res.status(415).send('Invalid request, file upload is not supported.')
       return
     }
-    res.status(400).send('Invalid multipart data')
+    if (err) {
+      logger.error({
+        req: {
+          body: req.body,
+          headers: req.headers,
+          url: req.url,
+        },
+        err,
+        msg: 'Invalid request: multipart error',
+      })
+      return res.status(400).send('Invalid multipart data')
+    }
+    next()
   })
 })
 
