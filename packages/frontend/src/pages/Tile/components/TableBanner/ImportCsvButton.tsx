@@ -52,10 +52,28 @@ const MAX_FILE_SIZE = {
   [DatabaseType.Pg]: 2 * 1000 * 1000,
   [DatabaseType.Ddb]: 2 * 1000 * 1000,
 }
+
 // Add row chunk size
-const IMPORT_CHUNK_SIZE = {
+const DEFAULT_IMPORT_CHUNK_SIZE = {
   [DatabaseType.Pg]: 1000,
   [DatabaseType.Ddb]: 100,
+}
+const MIN_IMPORT_CHUNK_SIZE = {
+  [DatabaseType.Pg]: 100,
+  [DatabaseType.Ddb]: 50,
+}
+
+function calculateChunkSize(databaseType: DatabaseType, numberOfCols: number) {
+  // If the number of columns is less than or equal to 10, we use the default chunk size
+  if (numberOfCols <= 10) {
+    return DEFAULT_IMPORT_CHUNK_SIZE[databaseType]
+  }
+  // Otherwise, we want to reduce the chunk size as the number of columns increases
+  const chunkSize = Math.floor(
+    DEFAULT_IMPORT_CHUNK_SIZE[databaseType] * (10 / numberOfCols),
+  )
+  // Set the minimum chunk size
+  return Math.max(chunkSize, MIN_IMPORT_CHUNK_SIZE[databaseType])
 }
 
 const ImportStatus = ({
@@ -262,7 +280,8 @@ export const ImportCsvModalContent = ({
         setImportStatus('importing')
         setRowsToImport(mappedData.length)
         setRowsImported(0)
-        const chunkedData = chunk(mappedData, IMPORT_CHUNK_SIZE[databaseType])
+        const chunkSize = calculateChunkSize(databaseType, allColumns.length)
+        const chunkedData = chunk(mappedData, chunkSize)
 
         for (let i = 0; i < chunkedData.length; i++) {
           await createRows({
@@ -276,7 +295,7 @@ export const ImportCsvModalContent = ({
           if (i === chunkedData.length - 1 && !onPreImport) {
             await refetch()
           }
-          setRowsImported((i + 1) * IMPORT_CHUNK_SIZE[databaseType])
+          setRowsImported((i + 1) * chunkSize)
         }
       }
       setImportStatus('completed')

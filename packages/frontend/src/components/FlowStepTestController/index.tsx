@@ -318,6 +318,7 @@ export default function FlowStepTestController(
                       isDisabled={!isDirty}
                       mr={2}
                       w="auto"
+                      data-test="flow-substep-save-without-checking-button"
                     >
                       {!isDirty ? 'Saved' : 'Save without checking'}
                     </Button>
@@ -359,12 +360,15 @@ export default function FlowStepTestController(
               </Box>
             )}
             <HStack w="100%" justifyContent="flex-end">
-              {!step.webhookUrl && (
+              {/* gathersg is a special case where there is a webhook url and the save step button
+              needs to be shown to save the encryption key */}
+              {(!step.webhookUrl || step.appKey === 'gathersg') && (
                 <Button
                   isDisabled={readOnly || isSaving || !isDirty}
                   isLoading={isSaving}
                   variant="clear"
                   onClick={handleSave}
+                  data-test="flow-substep-save-button"
                 >
                   {isDirty ? 'Save' : 'Saved'}
                 </Button>

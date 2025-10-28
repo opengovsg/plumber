@@ -1,32 +1,42 @@
-import type { IRawAction } from '@plumber/types'
+import { IRawAction } from '@plumber/types'
 
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
+import logger from '@/helpers/logger'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
+import { fetchCaseFields } from '../../common/fetch-case-fields'
 import throwGatherSGStepError from '../../common/throw-errors'
 
+import getDataOutMetadata from './get-data-out-metadata'
 import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'Update case',
-  key: 'updateCase',
-  description: 'Update a case based on the case uuid',
+  name: 'Create case',
+  key: 'createCase',
+  description: 'Create a case',
   arguments: [
     {
-      label: 'Case UUID',
-      key: 'caseUuid',
-      type: 'string' as const,
-      description: 'Select the case uuid you want to update.',
+      label: 'Case type',
+      key: 'caseType',
+      type: 'dropdown' as const,
+      description: 'Select the type of the case you want to create',
       required: true,
-      variables: true,
-      // we intentionally disable typing for case uuid as it is used in
-      // to get dynamic data for case fields
-      // it can still be pasted via mouse click
-      singleVariableSelection: true,
+      variables: false,
+      showOptionValue: false,
+      source: {
+        type: 'query' as const,
+        name: 'getDynamicData' as const,
+        arguments: [
+          {
+            name: 'key',
+            value: 'getCaseTypes',
+          },
+        ],
+      },
     },
     {
       label: 'Case status',
@@ -34,8 +44,12 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       description: 'Select the status you want to update the case to.',
       required: false,
-      variables: false,
+      variables: true,
       showOptionValue: false,
+      hiddenIf: {
+        fieldKey: 'caseType',
+        op: 'is_empty',
+      },
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
@@ -46,10 +60,13 @@ const action: IRawAction = {
       label: 'Case fields',
       key: 'caseFields',
       type: 'multirow-multicol' as const,
-      required: false,
+      required: true,
       description:
         'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet.',
-
+      hiddenIf: {
+        fieldKey: 'caseType',
+        op: 'is_empty',
+      },
       subFields: [
         {
           placeholder: 'Field',
@@ -68,8 +85,8 @@ const action: IRawAction = {
                 value: 'getCaseFields',
               },
               {
-                name: 'parameters.caseUuid',
-                value: '{parameters.caseUuid}',
+                name: 'parameters.caseType',
+                value: '{parameters.caseType}',
               },
             ],
           },
@@ -116,36 +133,44 @@ const action: IRawAction = {
     },
   ],
 
+  getDataOutMetadata,
+
   async run($) {
     try {
-      const payload = requestSchema.parse($.step.parameters)
-      const rawResponse = await $.http.patch('/cases/:caseUuid', payload, {
-        urlPathParams: {
-          caseUuid: $.step.parameters.caseUuid,
-        },
-      })
-      const response = responseSchema.parse(rawResponse.data)
+      const parameters = requestSchema.parse($.step.parameters)
+      const { caseType: caseTypeUuid, status, fields } = parameters
+
+      // get the case type name from the case type uuid
+      const { caseTypeName } = await fetchCaseFields({ $, caseTypeUuid })
+
+      const payload = {
+        ...(status && { status }),
+        fields,
+        type: caseTypeName,
+      }
+
+      const rawResponse = await $.http.post('/cases', payload)
+      const { data } = responseSchema.parse(rawResponse.data)
 
       $.setActionItem({
         raw: {
-          ...response,
+          data,
         },
       })
     } catch (error) {
+      logger.error('Failed to create case on GatherSG:', error)
       if (error instanceof ZodError) {
         const firstError = fromZodError(error).details[0]
         throw new StepError(
-          `${firstError.message}`,
+          `${firstError.path[0]}: ${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
           $.step.position,
           $.app.name,
         )
       }
-
       if (error instanceof HttpError) {
         throwGatherSGStepError({ $, error })
       }
-
       throw new StepError(
         `An error occurred: '${error.message}'`,
         'Please check that you have configured your step correctly',

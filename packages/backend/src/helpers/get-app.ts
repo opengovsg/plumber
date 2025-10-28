@@ -69,7 +69,7 @@ function addStaticSubsteps(
 
   computedStep.substeps = []
 
-  if (appData.auth) {
+  if (appData.auth && !step.noAuthRequired) {
     computedStep.substeps.push(chooseConnectionStep)
   }
 
@@ -79,9 +79,9 @@ function addStaticSubsteps(
       name: 'Set up step',
       arguments: step.arguments,
     })
+  } else {
+    computedStep.substeps.push(testStep)
   }
-
-  computedStep.substeps.push(testStep)
 
   return computedStep
 }

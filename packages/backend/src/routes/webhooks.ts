@@ -32,7 +32,19 @@ router.use((req, res, next) => {
       res.status(415).send('Invalid request, file upload is not supported.')
       return
     }
-    next(err)
+    if (err) {
+      logger.error({
+        req: {
+          body: req.body,
+          headers: req.headers,
+          url: req.url,
+        },
+        err,
+        msg: 'Invalid request: multipart error',
+      })
+      return res.status(400).send('Invalid multipart data')
+    }
+    next()
   })
 })
 

@@ -61,6 +61,9 @@ type AppConfig = {
     clientSecret: string
     discoveryUrl: string
   }
+  gathersg: {
+    publicKey: string
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -135,6 +138,9 @@ const appConfig: AppConfig = {
     clientSecret: process.env.SSO_CLIENT_SECRET,
     discoveryUrl: process.env.SSO_DISCOVERY_URL,
   },
+  gathersg: {
+    publicKey: process.env.GATHERSG_PUBLIC_KEY,
+  },
 }
 
 if (!appConfig.encryptionKey) {
@@ -185,6 +191,10 @@ if (
 
 if (!appConfig.s3CommonBucket) {
   throw new Error('S3_COMMON_BUCKET environment variable needs to be set!')
+}
+
+if (!appConfig.gathersg.publicKey) {
+  throw new Error('GATHERSG_PUBLIC_KEY environment variable needs to be set!')
 }
 
 // Force SGT date-time formatting no matter what
