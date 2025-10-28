@@ -48,7 +48,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
   const newRowDefaultValue = useMemo(() => {
     const result: Record<string, unknown> = {}
     for (const subField of subFields) {
-      result[subField.key] = null
+      result[subField.key] = undefined
     }
     return result
   }, [subFields])
@@ -80,15 +80,12 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     <Controller
       name={name}
       control={control}
-      defaultValue={required ? [{ ...newRowDefaultValue }] : []}
-      render={({ field: { value: fallbackRows } }): JSX.Element => {
-        // HACKFIX (ogp-weeloong): I don't know why `rows` lags behind
-        // `fallbackRows` on the 1st render.
-        const actualRows: typeof rows = rows.length === 0 ? fallbackRows : rows
-
+      render={(): JSX.Element => {
         // If field is required, don't allow removal if there is only 1 row
         // remaining.
-        const canRemoveRow = !required || actualRows.length > 1
+        const rowsToRender =
+          !rows.length && required ? [{ ...newRowDefaultValue }] : rows
+        const canRemoveRow = !required || rowsToRender.length > 1
 
         return (
           <Flex flexDir="column">
@@ -103,7 +100,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               {label}
             </FormLabel>
 
-            {actualRows.map((row, index) => {
+            {rowsToRender.map((row, index) => {
               const namePrefix = `${name}.${index}`
               return (
                 <Flex
@@ -119,14 +116,14 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                         subFields={subFields}
                         canRemoveRow={canRemoveRow}
                         isEditorReadOnly={isEditorReadOnly}
-                        remove={remove}
+                        remove={() => remove(index)}
                         index={index}
                         {...forwardedInputCreatorProps}
                       />
                       {/*
                        * "And" divider
                        */}
-                      {showDivider && index !== actualRows.length - 1 && (
+                      {showDivider && index !== rowsToRender.length - 1 && (
                         <RowDivider />
                       )}
                     </>
@@ -167,7 +164,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                       {/*
                        * "And" divider
                        */}
-                      {index !== actualRows.length - 1 && <RowDivider />}
+                      {index !== rowsToRender.length - 1 && <RowDivider />}
                     </>
                   )}
                 </Flex>
