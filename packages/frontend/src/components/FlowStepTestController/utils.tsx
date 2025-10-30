@@ -259,7 +259,6 @@ export const matchParamsToDataIn = (
     }
 
     const substitutedParamValue = simpleSubstitute(paramValue, varInfoMap)
-
     return substitutedParamValue === lastTest
   })
 }

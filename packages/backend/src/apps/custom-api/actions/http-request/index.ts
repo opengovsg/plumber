@@ -104,6 +104,8 @@ const action: IRawAction = {
       }
       // NOTE: this removes the " from the start and end of the string
       // as it is already added in the user input
+      // when user forms the JSON on the frontend:
+      // {"key": "<variable>"}
       return JSON.stringify(variableValue).slice(1, -1)
     }
     return variableValue

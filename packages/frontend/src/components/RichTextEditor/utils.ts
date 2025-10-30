@@ -31,7 +31,6 @@ export function simpleSubstitute(
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
     const varInfoForNode = varInfo.get(`{{${id}}}`)
-
     return varInfoForNode?.testRunValue || ''
   })
 }
