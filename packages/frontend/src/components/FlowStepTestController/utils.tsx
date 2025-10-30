@@ -128,7 +128,6 @@ export const matchParamsToDataIn = (
   dataIn?: IJSONObject,
   params?: IJSONObject,
   varInfoMap?: VariableInfoMap,
-  appKey?: string,
 ) => {
   if (!dataIn || !params || !varInfoMap) {
     return false
@@ -259,12 +258,8 @@ export const matchParamsToDataIn = (
       return false
     }
 
-    const substitutedParamValue = simpleSubstitute(
-      paramValue,
-      varInfoMap,
-      key,
-      appKey ?? '',
-    )
+    const substitutedParamValue = simpleSubstitute(paramValue, varInfoMap)
+
     return substitutedParamValue === lastTest
   })
 }
