@@ -30,6 +30,12 @@
       "@graphql-tools/utils": {
         "graphql": "16.11.0"
       }
+    },
+    "dd-trace": {
+      "@opentelemetry/core": "2.2.0"
+    },
+    "@opentelemetry/core": {
+      "@opentelemetry/semantic-conventions": "1.37.0"
     }
   },
   "devDependencies": {
