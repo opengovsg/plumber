@@ -3,6 +3,7 @@ import type { IApp } from '@plumber/types'
 import aisayApp from '@/apps/aisay'
 import calculatorApp from '@/apps/calculator'
 import customApiApp from '@/apps/custom-api'
+import databricksApp from '@/apps/databricks'
 import delayApp from '@/apps/delay'
 import formatterApp from '@/apps/formatter'
 import formsgApp from '@/apps/formsg/'
@@ -43,6 +44,7 @@ export const ACTION_APPS_RANKING = [
   postmanApp.key,
   tilesApp.key,
   m365ExcelApp.key,
+  databricksApp.key,
   toolboxApp.key,
   formatterApp.key,
   calculatorApp.key,

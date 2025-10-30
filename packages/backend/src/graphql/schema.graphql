@@ -97,6 +97,7 @@ type Mutation {
   bulkRetryIterations(
     input: BulkRetryIterationsInput
   ): BulkRetryIterationsResult!
+  dynamicAction(input: DynamicActionInput!): JSONObject!
   logout: LogoutResult
   loginWithSgid(input: OidcLoginInput!): LoginWithSgidResult!
   loginWithSso(input: OidcLoginInput!): Boolean!
@@ -474,6 +475,12 @@ type BulkRetryExecutionsResult {
 type BulkRetryIterationsResult {
   numFailedIterations: Int!
   allSuccessfullyRetried: Boolean!
+}
+
+input DynamicActionInput {
+  stepId: String!
+  key: String!
+  parameters: JSONObject!
 }
 
 input CreateConnectionInput {

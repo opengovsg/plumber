@@ -1,6 +1,6 @@
 import type { DropdownAddNewId, ITableColumnMetadata } from '@plumber/types'
 
-import { type FormEvent, useCallback, useState } from 'react'
+import { type FormEvent, useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import {
   FormControl,
@@ -14,7 +14,9 @@ import {
 import { Button, FormLabel, Input } from '@opengovsg/design-system-react'
 
 import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
+import { EditorContext } from '@/contexts/Editor'
 import client from '@/graphql/client'
+import { DYNAMIC_ACTION } from '@/graphql/mutations/dynamic-action'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { UPDATE_TABLE } from '@/graphql/mutations/tiles/update-table'
 import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
@@ -32,8 +34,10 @@ interface CreateNewOptionProps {
 }
 
 export function useCreateNewOption(setValue: (newValue: string) => void) {
+  const { currentStepId } = useContext(EditorContext)
   const [createTable] = useMutation(CREATE_TABLE)
   const [updateTable] = useMutation(UPDATE_TABLE)
+  const [dynamicAction] = useMutation(DYNAMIC_ACTION)
   const [isCreatingNewOption, setIsCreatingNewOption] = useState(false)
   const createNewOption = useCallback(
     async ({ inputValue, addNewId, parameters }: CreateNewOptionProps) => {
@@ -76,6 +80,45 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
             )?.id
             break
           }
+
+          case 'databricks-createTable': {
+            if (!currentStepId) {
+              return
+            }
+            const { data } = await dynamicAction({
+              variables: {
+                input: {
+                  stepId: currentStepId ?? '',
+                  key: addNewId,
+                  parameters: {
+                    tableName: inputValue.trim(),
+                  },
+                },
+              },
+            })
+            newValue = data?.dynamicAction?.newValue as string
+            break
+          }
+          case 'databricks-createTableColumn': {
+            const tableName = parameters?.tableName as string
+            if (!tableName || !currentStepId) {
+              return
+            }
+            const { data } = await dynamicAction({
+              variables: {
+                input: {
+                  stepId: currentStepId ?? '',
+                  key: addNewId,
+                  parameters: {
+                    tableName: parameters?.tableName as string,
+                    columnName: inputValue.trim(),
+                  },
+                },
+              },
+            })
+            newValue = data?.dynamicAction?.newValue as string
+            break
+          }
           default:
             break
         }
@@ -87,7 +130,7 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
         setIsCreatingNewOption(false)
       }
     },
-    [createTable, setValue, updateTable],
+    [createTable, setValue, updateTable, dynamicAction, currentStepId],
   )
   return { createNewOption, isCreatingNewOption }
 }
@@ -127,7 +170,7 @@ function AddNewOptionalModal({
           <ModalBody pb={8}>
             <FormControl display="flex" flexDir="column" gap={2}>
               {/* This is hardcoded for now, will change when there are more of such actions */}
-              <FormLabel isRequired>Name your tile</FormLabel>
+              <FormLabel isRequired>Name your new table</FormLabel>
               <Input
                 autoFocus
                 onChange={(e) =>

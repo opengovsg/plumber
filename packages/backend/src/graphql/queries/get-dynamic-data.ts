@@ -1,4 +1,7 @@
+import { IDynamicData } from '@plumber/types'
+
 import apps from '@/apps'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import globalVariable from '@/helpers/global-variable'
 
@@ -41,7 +44,13 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
     user: step.flow.user,
   })
 
-  const command = app.dynamicData.find((data) => data.key === dynamicDataKey)
+  const command = app.dynamicData.find(
+    (data) => data.key === dynamicDataKey,
+  ) as IDynamicData | undefined
+
+  if (!command) {
+    throw new BadUserInputError(`Dynamic data ${dynamicDataKey} not found`)
+  }
 
   for (const parameterKey in parameters) {
     const parameterValue = parameters[parameterKey]
