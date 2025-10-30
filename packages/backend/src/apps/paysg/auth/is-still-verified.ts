@@ -8,7 +8,7 @@ export default async function isStillVerified(
   try {
     await verifyCredentials($)
     return true
-  } catch (e) {
+  } catch {
     return false
   }
 }

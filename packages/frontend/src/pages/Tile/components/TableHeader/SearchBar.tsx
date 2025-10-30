@@ -187,7 +187,11 @@ export default function SearchBar({ table, rowVirtualizer }: SearchBarProps) {
     // not importing from React to prevent disambiguation with default KeyboardEvent
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        e.shiftKey ? searchReverse() : search()
+        if (e.shiftKey) {
+          searchReverse()
+        } else {
+          search()
+        }
       }
     },
     [search, searchReverse],

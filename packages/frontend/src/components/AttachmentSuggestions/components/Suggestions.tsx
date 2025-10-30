@@ -97,7 +97,9 @@ export default function Suggestions(props: SuggestionsProps) {
                           values.includes(`{{${name}}}`)
                         }
                         onClick={(variable, checked) => {
-                          !readOnly && onSuggestionClick(variable, checked)
+                          if (!readOnly) {
+                            onSuggestionClick(variable, checked)
+                          }
                         }}
                         onDelete={onDelete}
                       />
@@ -135,7 +137,9 @@ export default function Suggestions(props: SuggestionsProps) {
           <Box sx={boxStyles} onClick={openSuggestions}>
             <TagList
               onClick={(option) => {
-                !readOnly && onSuggestionClick(option, false)
+                if (!readOnly) {
+                  onSuggestionClick(option, false)
+                }
               }}
               tags={tags}
             />

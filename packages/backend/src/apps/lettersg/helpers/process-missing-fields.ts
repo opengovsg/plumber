@@ -24,7 +24,7 @@ export async function processMissingFields(
       inputFieldsSet.add(param['field'])
     }
     return allTemplateFields.filter((field) => !inputFieldsSet.has(field))
-  } catch (err) {
+  } catch {
     // not crucial so we don't alarm the user and return an empty array for the missing fields instead
     return []
   }
