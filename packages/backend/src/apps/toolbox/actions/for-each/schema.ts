@@ -86,7 +86,7 @@ export const inputSchema = z
           },
           iterations: rows.length,
         }
-      } catch (e) {
+      } catch {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Invalid input',

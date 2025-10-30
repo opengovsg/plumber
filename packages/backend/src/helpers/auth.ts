@@ -58,7 +58,7 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
       userId: string
     }
     return User.query().findById(userId)
-  } catch (err) {
+  } catch {
     return null
   }
 }

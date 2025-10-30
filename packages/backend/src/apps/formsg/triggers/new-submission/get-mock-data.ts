@@ -180,7 +180,7 @@ async function getMockData($: IGlobalVariable) {
       ...(formDetails.form.payments_field.enabled &&
         generateMockPaymentData(formDetails.form.payments_field.products)),
     }
-  } catch (e) {
+  } catch {
     throw new Error(
       'Unable to generate mock form data. Please make an actual submission to proceed.',
     )
