@@ -128,8 +128,15 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  # Ai builder mutations
+  generateAiSteps(input: GenerateAiStepsInput!): JSONObject
   # Admin mutations
   admin: AdminMutation!
+}
+
+input GenerateAiStepsInput {
+  trigger: String!
+  actions: String!
 }
 
 type AdminMutation {
