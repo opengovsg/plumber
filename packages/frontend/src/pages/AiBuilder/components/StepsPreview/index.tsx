@@ -15,6 +15,8 @@ import { Button, useIsMobile } from '@opengovsg/design-system-react'
 import Error from '@/components/FlowStepGroup/Content/Error'
 import { MultiStepLoader } from '@/components/MultiStepLoader'
 import PrimarySpinner from '@/components/PrimarySpinner'
+import * as URLS from '@/config/urls'
+import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-steps'
 import { GENERATE_AI_STEPS } from '@/graphql/mutations/generate-ai-steps'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
@@ -37,7 +39,9 @@ export default function StepsPreview() {
   const location = useLocation()
   const {
     formInput,
+    flowName,
     output,
+    steps,
     triggerStep,
     actionSteps,
     stepsBeforeGroup,
@@ -90,6 +94,10 @@ export default function StepsPreview() {
     onGenerateAiSteps()
   }, [onGenerateAiSteps, output])
 
+  const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
+    CREATE_FLOW_WITH_STEPS,
+  )
+
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
   const ifThenSteps = useMemo(() => {
@@ -98,6 +106,33 @@ export default function StepsPreview() {
     }
     return groupedSteps.slice(1)
   }, [groupedSteps])
+
+  const onCreateFlow = useCallback(async () => {
+    const { data } = await createFlowWithSteps({
+      variables: {
+        input: {
+          flowName: flowName || 'Name your Pipe',
+          steps: steps?.map((step) => ({
+            type: step.type,
+            appKey: step.appKey,
+            key: step.key,
+            config: step?.config?.stepName
+              ? {
+                  stepName: step?.config?.stepName || null,
+                }
+              : {},
+            position: step.position,
+          })),
+        },
+      },
+    })
+
+    const flowId = data?.createFlowWithSteps?.id
+
+    navigate(URLS.FLOW_EDITOR(flowId), {
+      replace: true,
+    })
+  }, [steps, createFlowWithSteps, flowName, navigate])
 
   const onUpdatePrompt = async (formData: AiFormData) => {
     const aiSteps = await generateAiSteps(formData)
@@ -137,7 +172,7 @@ export default function StepsPreview() {
 
   return (
     <>
-      <Box pos="relative" w="100%">
+      <Box opacity={isCreatingFlow ? 0.4 : 1} pos="relative" w="100%">
         <Step step={triggerStep} />
         {stepsBeforeGroup.map((action) => (
           <Fragment key={`${action.position}-${action.appKey}`}>
@@ -208,10 +243,28 @@ export default function StepsPreview() {
             <Button variant="outline" onClick={onOpen}>
               Make changes
             </Button>
-            <Button variant="outline">Create this workflow</Button>
+            <Button variant="outline" onClick={onCreateFlow}>
+              Create this workflow
+            </Button>
           </HStack>
         </VStack>
       </Box>
+      {isCreatingFlow && (
+        <Flex
+          pos="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          zIndex={10}
+          flexDir="column"
+          alignItems="center"
+          justifyContent="center"
+          gap={4}
+        >
+          <PrimarySpinner fontSize="4xl" thickness="4px" />
+          <Text textStyle="h6">Creating workflow...</Text>
+        </Flex>
+      )}
 
       <ModifyPromptModal
         isOpen={isOpen}
