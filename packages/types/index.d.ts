@@ -209,6 +209,7 @@ export interface IFlowConfig {
   templateConfig?: IFlowTemplateConfig
   showSurvey?: boolean
   attachments?: IFlowAttachmentsConfig[]
+  aiBuilder?: boolean
 }
 
 export type NotificationRecipients = 'editor' | 'viewer'
