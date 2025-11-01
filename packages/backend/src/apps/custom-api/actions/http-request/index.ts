@@ -97,7 +97,7 @@ const action: IRawAction = {
           JSON.parse(variableValue as string)
           // its a valid JSON, don't need to do anything extra
           return variableValue
-        } catch (e) {
+        } catch {
           // not a valid JSON, remove the " from the start and end of the string
           return JSON.stringify(variableValue).slice(1, -1)
         }
