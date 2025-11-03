@@ -20,11 +20,22 @@ const formsgTriggerSchema = baseTriggerSchema.extend({
 // Scheduler trigger schema
 const schedulerTriggerSchema = baseTriggerSchema.extend({
   appKey: z.literal('scheduler'),
-  key: z.enum(['everyDay', 'everyHour', 'everyWeek']),
+  key: z.enum(['everyDay', 'everyHour', 'everyWeek', 'everyMonth']),
   description: z
     .string()
     .describe(
       'This is a scheduler trigger, which starts the workflow at a specified interval based on the event',
+    ),
+})
+
+// GatherSG trigger schema
+const gathersgTriggerSchema = baseTriggerSchema.extend({
+  appKey: z.literal('gathersg'),
+  key: z.literal('newInstantWorkflow'),
+  description: z
+    .string()
+    .describe(
+      'This is a GatherSG trigger, which starts the workflow when an instant workflow is triggered from GatherSG',
     ),
 })
 
@@ -44,6 +55,7 @@ export const TRIGGER_SCHEMA = z.discriminatedUnion('appKey', [
   formsgTriggerSchema,
   schedulerTriggerSchema,
   webhookTriggerSchema,
+  gathersgTriggerSchema,
 ])
 
 // Type inference for TypeScript

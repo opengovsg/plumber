@@ -102,6 +102,12 @@ const toolboxActionSchema = baseActionSchema.extend({
   }),
 })
 
+// GatherSG action schema
+const gathersgActionSchema = baseActionSchema.extend({
+  appKey: z.literal('gathersg'),
+  key: z.enum(['updateCase', 'tagOrUntagCase', 'createCase']),
+})
+
 export const ACTION_SCHEMA = z.discriminatedUnion('appKey', [
   customApiActionSchema,
   delayActionSchema,
@@ -115,6 +121,7 @@ export const ACTION_SCHEMA = z.discriminatedUnion('appKey', [
   telegramBotActionSchema,
   tilesActionSchema,
   toolboxActionSchema,
+  gathersgActionSchema,
 ])
 
 // Type inference for TypeScript
