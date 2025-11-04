@@ -7,7 +7,7 @@ import appConfig from '@/config/app'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { langfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
-import { model } from '@/helpers/pair'
+import { model, MODEL_TYPE } from '@/helpers/pair'
 import JSONObject from '@/types/interfaces/json-object'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
@@ -36,7 +36,10 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
       throw new ForbiddenError('Not authorised!')
     }
 
-    const { prompt: systemPrompt } = await langfuseClient.prompt.get(promptName)
+    // NOTE: we get the entire prompt object so that we can pass it to generation.update
+    // to link the generation to the prompt in Rome (Langfuse)
+    const prompt = await langfuseClient.prompt.get(promptName)
+    const { prompt: systemPrompt } = prompt
 
     const result = await startActiveObservation(
       'generate-ai-steps',
@@ -52,6 +55,20 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
             prompt: userPrompt,
           },
         })
+
+        const generation = trace.startObservation(
+          'ai-stream-generation',
+          {
+            model: MODEL_TYPE,
+            input: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+          },
+          { asType: 'generation' },
+        )
+
+        generation.update({ prompt })
 
         const { object } = await generateObject({
           model,
@@ -73,6 +90,8 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
             actions: object.actions,
           },
         })
+
+        generation.update({ output: object }).end()
 
         return object
       },
