@@ -2,12 +2,10 @@ import { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import { z } from 'zod'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
-import { createClient } from '../auth/create-client'
-import { getSchemaName } from '../common/get-schema-name'
+import { createSession } from '../auth/create-client'
 
 const insertRowSchema = z.object({
   tableName: z.string().min(1),
@@ -108,12 +106,8 @@ const createRowAction: IRawAction = {
           $.app.name,
         )
       }
-      const client = await createClient($)
+      const { session, endSession } = await createSession($)
       const { tableName, rowData } = parametersParseResult.data
-      const session = await client.openSession({
-        initialSchema: getSchemaName($),
-        initialCatalog: databricksConfig.catalog,
-      })
       const columnNames = rowData.map((row) => row.columnName)
       const columnValues = rowData.map((row) => row.columnValue)
 
@@ -125,8 +119,7 @@ const createRowAction: IRawAction = {
         .join(',')})`
       const operation = await session.executeStatement(statement)
       await operation.fetchAll()
-      await session.close()
-      await client.close()
+      await endSession()
       $.setActionItem({
         raw: {
           success: true,

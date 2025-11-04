@@ -4,11 +4,9 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
-import { createClient } from '../auth/create-client'
-import { getSchemaName } from '../common/get-schema-name'
+import { createSession } from '../auth/create-client'
 import { DatabrickColumnRes } from '../common/types'
 
 const dynamicData: IDynamicData = {
@@ -26,19 +24,14 @@ const dynamicData: IDynamicData = {
           },
         }
       }
-      const client = await createClient($)
-      const session = await client.openSession({
-        initialSchema: getSchemaName($),
-        initialCatalog: databricksConfig.catalog,
-      })
+      const { session, endSession } = await createSession($)
       const operation = await session.getColumns({
         tableName: $.step.parameters.tableName as string,
       })
       const columns = (await operation.fetchAll({
         maxRows: 1000,
       })) as DatabrickColumnRes[]
-      await session.close()
-      await client.close()
+      await endSession()
       return {
         data: columns.map((column) => ({
           name: column.COLUMN_NAME,

@@ -5,7 +5,7 @@ import { DBSQLClient, LogLevel } from '@databricks/sql'
 import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
-export const createClient = async ($: IGlobalVariable) => {
+export const createSession = async ($: IGlobalVariable) => {
   const token = $.auth.data.token
   if (typeof token !== 'string') {
     throw new Error('Databricks personal access token is required')
@@ -14,16 +14,14 @@ export const createClient = async ($: IGlobalVariable) => {
   const client: DBSQLClient = new DBSQLClient({
     logger: {
       log(level: LogLevel, message: string) {
-        if (level <= LogLevel.info) {
-          logger[level]({
-            userId: $.user?.id,
-            stepId: $.step?.id,
-            flowId: $.flow?.id,
-            testRun: $.execution?.testRun,
-            event: 'databricks-client-log',
-            message,
-          })
-        }
+        logger[level]({
+          userId: $.user?.id,
+          stepId: $.step?.id,
+          flowId: $.flow?.id,
+          testRun: $.execution?.testRun,
+          event: 'databricks-client-log',
+          message,
+        })
       },
     },
   })
@@ -37,7 +35,16 @@ export const createClient = async ($: IGlobalVariable) => {
 
   try {
     const connectedClient = await client.connect(connectOptions)
-    return connectedClient
+    const session = await connectedClient.openSession({
+      initialSchema: $.auth.data.schema as string,
+      initialCatalog: databricksConfig.catalog,
+    })
+    const endSession = async () => {
+      await session.close()
+      await connectedClient.close()
+    }
+
+    return { session, endSession }
   } catch (error) {
     throw new Error('Failed to connect to Databricks')
   }

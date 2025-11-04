@@ -2,12 +2,10 @@ import { IDynamicAction, IGlobalVariable, IJSONObject } from '@plumber/types'
 
 import { z } from 'zod'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
 
-import { createClient } from '../auth/create-client'
-import { getSchemaName } from '../common/get-schema-name'
+import { createSession } from '../auth/create-client'
 
 const createTableSchema = z.object({
   // table name must be lowercase and can only contain underscores
@@ -44,17 +42,12 @@ const dynamicData: IDynamicAction = {
 
       const { tableName, columnName } = parametersParseResult.data
 
-      const client = await createClient($)
-      const session = await client.openSession({
-        initialSchema: getSchemaName($),
-        initialCatalog: databricksConfig.catalog,
-      })
+      const { session, endSession } = await createSession($)
       // TODO: properly prepare this statement
       const statement = `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` STRING;`
       const operation = await session.executeStatement(statement)
       await operation.fetchAll()
-      await session.close()
-      await client.close()
+      await endSession()
       return {
         newValue: columnName,
       }

@@ -3,21 +3,16 @@ import { IGlobalVariable } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { validateAuthData } from './auth-data'
-import { createClient } from './create-client'
+import { createSession } from './create-client'
 
 const verifyCredentials = async ($: IGlobalVariable) => {
   try {
     validateAuthData($)
-    const client = await createClient($)
-    const session = await client.openSession({
-      initialCatalog: databricksConfig.catalog,
-    })
-    await session.close()
-    await client.close()
+    const { endSession } = await createSession($)
+    await endSession()
   } catch (error) {
     if (error instanceof ZodError) {
       // Auth data validation failed: throws message from first error

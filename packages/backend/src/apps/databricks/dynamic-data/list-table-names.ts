@@ -7,8 +7,7 @@ import {
 import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
-import { createClient } from '../auth/create-client'
-import { getSchemaName } from '../common/get-schema-name'
+import { createSession } from '../auth/create-client'
 import { DatabrickTableRes } from '../common/types'
 
 const dynamicData: IDynamicData = {
@@ -17,16 +16,16 @@ const dynamicData: IDynamicData = {
 
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     try {
-      const client = await createClient($)
-      const session = await client.openSession()
+      const { session, endSession } = await createSession($)
       const operation = await session.getTables({
         catalogName: databricksConfig.catalog,
-        schemaName: getSchemaName($),
+        schemaName: $.auth.data.schema as string,
         tableTypes: ['TABLE'],
       })
       const tables = (await operation.fetchAll({
         maxRows: 1000,
       })) as DatabrickTableRes[]
+      await endSession()
       return {
         data: tables.map((row) => ({
           name: row.TABLE_NAME,

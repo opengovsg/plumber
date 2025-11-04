@@ -15,6 +15,13 @@ const auth: IUserAddedConnectionAuth = {
       readOnly: false,
     },
     {
+      key: 'schema',
+      label: 'Schema',
+      type: 'string' as const,
+      required: true,
+      readOnly: false,
+    },
+    {
       key: 'token',
       label: 'Personal Access Token',
       docUrl:
