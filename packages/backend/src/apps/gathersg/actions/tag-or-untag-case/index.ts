@@ -22,6 +22,7 @@ const action: IRawAction = {
       description: 'Enter the case uuid you want to tag or untag',
       required: true,
       variables: true,
+      singleVariableSelection: true,
     },
     {
       label: 'Tag or untag',
