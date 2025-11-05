@@ -72,7 +72,7 @@ async function handleChatStream(req: Request, res: Response) {
           sessionId: sessionId || 'unknown',
           userId: userId || 'anonymous',
           input: { messages, prompt: lastUserMessage },
-          tags: ['sse', 'stream', 'rest-api'],
+          tags: ['stream', 'rest-api'],
           environment: appConfig.appEnv,
         })
 
