@@ -448,6 +448,10 @@ export interface IFieldMultiRow extends IBaseField {
 export interface IFieldRichText extends IBaseField {
   type: 'rich-text'
   value?: string
+
+  // Specifies the order and what menu options to show in the RTE
+  // 'divider' is specified manually to determine when a divider should be shown
+  customRteMenuOptions?: string[]
 }
 
 export interface IFieldDragDrop extends IBaseField {
@@ -612,7 +616,7 @@ export interface IApp {
   setupMessage?: SetupMessage
 }
 
-export type AppCategory = 'data' | 'communication' | 'logic' | 'others'
+export type AppCategory = 'data' | 'communication' | 'logic' | 'others' | 'ai'
 
 export type TBeforeRequest = (
   $: IGlobalVariable,

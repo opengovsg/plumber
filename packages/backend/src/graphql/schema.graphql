@@ -228,6 +228,9 @@ type ActionSubstepArgument {
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
+
+  # Only for rich text
+  customRteMenuOptions: [String]
 }
 
 type DropdownClickableLink {
@@ -270,6 +273,7 @@ enum AppCategory {
   data
   communication
   logic
+  ai
   others
 }
 

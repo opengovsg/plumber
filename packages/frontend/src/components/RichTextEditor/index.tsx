@@ -100,6 +100,7 @@ interface EditorProps {
   autoFocus?: boolean
   singleVariableSelection?: boolean
   noVariablesMessage?: string
+  customRteMenuOptions?: string[]
 }
 const Editor = ({
   onChange,
@@ -114,6 +115,7 @@ const Editor = ({
   singleVariableSelection,
   autoFocus = false,
   noVariablesMessage,
+  customRteMenuOptions,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { allApps } = useContext(EditorContext)
@@ -292,6 +294,7 @@ const Editor = ({
                 editor={editor}
                 variableMap={varInfo}
                 editable={editable ?? false}
+                customMenuOptions={customRteMenuOptions}
               />
             )}
             <EditorContent
@@ -348,6 +351,7 @@ interface RichTextEditorProps {
   autoFocus?: boolean
   singleVariableSelection?: boolean
   noVariablesMessage?: string
+  customRteMenuOptions?: string[]
 }
 const RichTextEditor = ({
   required,
@@ -365,6 +369,7 @@ const RichTextEditor = ({
   autoFocus,
   singleVariableSelection,
   noVariablesMessage,
+  customRteMenuOptions,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -413,6 +418,7 @@ const RichTextEditor = ({
             autoFocus={shouldAutoFocus}
             singleVariableSelection={singleVariableSelection}
             noVariablesMessage={noVariablesMessage}
+            customRteMenuOptions={customRteMenuOptions}
           />
         )}
       />
