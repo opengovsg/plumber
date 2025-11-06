@@ -121,6 +121,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         variablesEnabled={variables}
         isRich
         noVariablesMessage={noVariablesMessage}
+        customRteMenuOptions={schema?.customRteMenuOptions}
       />
     )
   }

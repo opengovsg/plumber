@@ -63,7 +63,7 @@ enum MenuLabels {
   Undo = 'Undo',
   Redo = 'Redo',
 }
-const menuButtons = [
+const DEFAULT_MENU_BUTTONS = [
   {
     label: MenuLabels.Bold,
     onClick: (editor: Editor) => editor.chain().focus().toggleBold().run(),
@@ -238,9 +238,15 @@ interface MenuBarProps {
   editor: Editor | null
   variableMap: VariableInfoMap
   editable: boolean
+  customMenuOptions?: string[]
 }
 
-export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
+export const MenuBar = ({
+  editor,
+  variableMap,
+  editable,
+  customMenuOptions,
+}: MenuBarProps) => {
   const {
     isOpen: isDialogOpen,
     onClose,
@@ -320,6 +326,18 @@ export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
     }),
     [editor, dialogValue, onDialogClose],
   )
+
+  const menuButtons = useMemo(() => {
+    if (customMenuOptions) {
+      return customMenuOptions
+        .map((option) =>
+          DEFAULT_MENU_BUTTONS.find(({ label }) => label === option),
+        )
+        .filter((button): button is NonNullable<typeof button> => !!button)
+    }
+
+    return DEFAULT_MENU_BUTTONS
+  }, [customMenuOptions])
 
   if (!editor) {
     return null
