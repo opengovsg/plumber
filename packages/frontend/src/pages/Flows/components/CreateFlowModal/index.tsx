@@ -63,7 +63,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
     [createFlow, navigate],
   )
 
-  const handleSubmit = (_event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     const trimmedFlowName = inputRef.current?.value.trim()
     if (!trimmedFlowName) {
       return
@@ -76,13 +76,15 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       return
     }
 
-    // TODO: Add AI chat mode
-    // if (createMode === 'ai-chat') {
-    //   onClose()
-    //   navigate(`${URLS.EDITOR}/ai`, {
-    //     state: { flowName: trimmedFlowName },
-    //   })
-    // }
+    if (createMode === 'ai-chat') {
+      event.preventDefault()
+      onClose()
+      navigate(`${URLS.EDITOR}/ai`, {
+        state: { flowName: trimmedFlowName, isFormMode: false },
+        replace: true,
+      })
+      return
+    }
 
     // default to new flow
     onCreateFlow(trimmedFlowName)
