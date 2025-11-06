@@ -47,13 +47,24 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
       },
     })
 
-    const stepsToInsert = steps.map((step: StepInput) => ({
-      type: step.type,
-      appKey: step.appKey,
-      key: step.key,
-      config: step?.config || {},
-      position: step.position,
-    }))
+    const stepsToInsert = steps.map((step: StepInput) => {
+      // add a check that if step.appKey === 'toolbox', it should have step.parameters with depth and branchname
+      if (
+        step.key === 'ifThen' &&
+        (step.parameters?.depth == null || step.parameters?.branchName == null)
+      ) {
+        throw new Error('If-then step must have depth and branch parameters')
+      }
+
+      return {
+        type: step.type,
+        appKey: step.appKey,
+        key: step.key,
+        config: step?.config || {},
+        parameters: step?.parameters || {},
+        position: step.position,
+      }
+    })
 
     await flow.$relatedQuery('steps', trx).insert(stepsToInsert)
 

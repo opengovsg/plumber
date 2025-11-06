@@ -452,4 +452,213 @@ describe('createFlowWithSteps mutation integration tests', () => {
     const flows = await Flow.query()
     expect(flows).toHaveLength(0)
   })
+
+  describe('if-then step validation', () => {
+    it('should successfully create flow with valid if-then steps', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow with If-Then',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'every-hour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                depth: 0,
+                branchName: 'If',
+              },
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'gmail',
+              key: 'send-email',
+              position: 3,
+              config: {},
+              parameters: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 4,
+              config: {},
+              parameters: {
+                depth: 0,
+                branchName: 'Else',
+              },
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'slack',
+              key: 'send-message',
+              position: 5,
+              config: {},
+              parameters: {
+                depth: 1,
+                branchName: 'Else',
+              },
+            },
+          ],
+        },
+      }
+
+      const result = await createFlowWithSteps(null, params, context)
+
+      expect(result).toBeDefined()
+      expect(result.name).toBe('Test Flow with If-Then')
+
+      const steps = await Step.query()
+        .where('flow_id', result.id)
+        .orderBy('position', 'asc')
+
+      expect(steps).toHaveLength(5)
+      expect(steps[1].key).toBe('ifThen')
+      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'If' })
+      expect(steps[3].key).toBe('ifThen')
+      expect(steps[3].parameters).toEqual({ depth: 0, branchName: 'Else' })
+    })
+
+    it('should throw error when if-then step is missing depth parameter', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'every-hour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                branchName: 'If',
+                // missing depth
+              },
+            },
+          ],
+        },
+      }
+
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'If-then step must have depth and branch parameters',
+      )
+
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
+
+    it('should throw error when if-then step is missing branchName parameter', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'every-hour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                depth: 0,
+                // missing branchName
+              },
+            },
+          ],
+        },
+      }
+
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'If-then step must have depth and branch parameters',
+      )
+
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
+
+    it('should throw error when if-then step has no parameters', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'every-hour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              // missing parameters entirely
+            },
+          ],
+        },
+      }
+
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'If-then step must have depth and branch parameters',
+      )
+
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
+
+    it('should throw error when if-then step has empty parameters object', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'every-hour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {},
+            },
+          ],
+        },
+      }
+
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'If-then step must have depth and branch parameters',
+      )
+
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
+  })
 })

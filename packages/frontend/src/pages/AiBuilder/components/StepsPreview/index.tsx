@@ -121,6 +121,8 @@ export default function StepsPreview() {
                   stepName: step?.config?.stepName || null,
                 }
               : {},
+            // NOTE: we need to pass the parameters especially for if-then branches
+            parameters: step?.parameters || {},
             position: step.position,
           })),
         },
