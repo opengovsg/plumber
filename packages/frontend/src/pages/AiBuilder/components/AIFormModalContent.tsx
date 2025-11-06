@@ -6,6 +6,7 @@ import {
   FormControl,
   FormErrorMessage,
   ModalBody,
+  ModalCloseButton,
   ModalFooter,
   ModalHeader,
   Text,
@@ -79,12 +80,15 @@ export const AIFormModalContent = ({
     setValue('actions', (idea as AiFormIdea).actions, { shouldValidate: true })
   }
 
+  const isCreate = type === 'create'
+
   return (
     <>
       <Form onSubmit={handleSubmit(onSubmit)}>
         <ModalHeader p="2.5rem 2rem 1.5rem">
           <Text textStyle="h4">Build with AI</Text>
         </ModalHeader>
+        {!isCreate && <ModalCloseButton onClick={onBack} />}
         <ModalBody>
           <Flex gap={4} flexDir="column">
             {AI_FORM_FIELDS.map((field) => (
@@ -109,7 +113,7 @@ export const AIFormModalContent = ({
                 )}
               </FormControl>
             ))}
-            {type === 'create' && (
+            {isCreate && (
               <IdeaButtons
                 ideas={AI_FORM_IDEAS}
                 onClick={(idea: AiChatIdea | AiFormIdea) =>
@@ -130,11 +134,17 @@ export const AIFormModalContent = ({
               </Flex>
             )}
             <Flex gap={4}>
-              <Button variant="clear" colorScheme="secondary" onClick={onBack}>
-                Back
-              </Button>
+              {isCreate && (
+                <Button
+                  variant="clear"
+                  colorScheme="secondary"
+                  onClick={onBack}
+                >
+                  Back
+                </Button>
+              )}
               <Button type="submit" isDisabled={!isValid}>
-                {type === 'update' ? 'Update workflow' : 'Create'}
+                {isCreate ? 'Create' : 'Update'}
               </Button>
             </Flex>
           </Flex>
