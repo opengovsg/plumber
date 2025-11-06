@@ -1,6 +1,6 @@
 import { IStepConfig } from '@plumber/types'
 
-import { Fragment, useCallback, useEffect, useMemo } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -54,6 +54,7 @@ export default function StepsPreview() {
     ddSessionId,
   } = useAiBuilderContext()
 
+  const [error, setError] = useState<boolean>(false)
   const { isOpen, onClose, onOpen } = useDisclosure()
   const isMobile = useIsMobile()
   const navigate = useNavigate()
@@ -180,7 +181,19 @@ export default function StepsPreview() {
   if (isGeneratingSteps || !output) {
     return (
       <Center h="100%">
-        {output && !isGeneratingSteps ? (
+        {error ? (
+          <Flex
+            flexDir="column"
+            alignItems="center"
+            justifyContent="center"
+            gap={4}
+            w="100%"
+            maxW="400px"
+          >
+            <Text>Something went wrong</Text>
+            <Button onClick={() => setError(false)}>Try again</Button>
+          </Flex>
+        ) : output && !isGeneratingSteps ? (
           <PrimarySpinner fontSize="4xl" />
         ) : (
           <MultiStepLoader
@@ -262,12 +275,21 @@ export default function StepsPreview() {
           </GroupedStepContainer>
         )}
         <VStack mt={10} gap={2}>
-          <Text textStyle="subhead-2">How does this workflow look?</Text>
+          {isFormMode ? (
+            <Text textStyle="subhead-2">How does this workflow look?</Text>
+          ) : (
+            <Text textStyle="body-1">Looks good?</Text>
+          )}
           <HStack alignItems="center" justifyContent="center" gap={2}>
-            <Button variant="outline" onClick={onOpen}>
-              Make changes
-            </Button>
-            <Button variant="outline" onClick={onCreateFlowWithSteps}>
+            {isFormMode && (
+              <Button variant="outline" onClick={onOpen}>
+                Make changes
+              </Button>
+            )}
+            <Button
+              variant={isFormMode ? 'outline' : 'solid'}
+              onClick={onCreateFlowWithSteps}
+            >
               Create this workflow
             </Button>
           </HStack>

@@ -1,20 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { IoChevronDown } from 'react-icons/io5'
+import { useNavigate } from 'react-router-dom'
 import { Box, Flex, IconButton, Text } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 
+import { parseWorkflow } from '@/components/AiBuilder/helpers/parseMarkdown'
+import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
+import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 
-import { useAiBuilderContext } from '../../AiBuilderContext'
-
 import PromptInput from './PromptInput'
+import SideDrawer from './SideDrawer'
 
 export default function ChatInterface() {
-  const { ddSessionId } = useAiBuilderContext()
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const { ddSessionId, flowName, formInput } = useAiBuilderContext()
+
   const { messages, currentResponse, isStreaming, sendMessage, cancelStream } =
     useChatStream({ ddSessionId })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [showScrollButton, setShowScrollButton] = useState(false)
 
   // Check if user is near bottom of scroll
@@ -59,7 +67,27 @@ export default function ChatInterface() {
   const hasMessages = messages.length > 0 || isStreaming
 
   const handleOpenPreview = () => {
-    // TODO: implement steps preview
+    const { trigger, actions } = parseWorkflow(
+      messages[messages.length - 1].text,
+    )
+
+    // NOTE: only need to update the location state if there has been changes
+    // if the user just closed and open the side drawer, we don't need to update
+    // as we don't want to generate the ai steps again
+    if (formInput?.trigger !== trigger || formInput?.actions !== actions) {
+      navigate(`${URLS.EDITOR}/ai`, {
+        state: {
+          flowName,
+          isFormMode: false,
+          formInput: {
+            trigger,
+            actions,
+          },
+        },
+        replace: true,
+      })
+    }
+    setIsDrawerOpen(true)
   }
 
   // Initial empty state - centered layout
@@ -92,14 +120,15 @@ export default function ChatInterface() {
 
   // Chat layout - messages with input at bottom
   return (
-    <Flex h="100%" w="full" position="relative">
+    <Flex h="100%" w="full" position="relative" overflow="hidden">
       {/* Main Chat Area */}
       <Flex
         h="100%"
-        w="100%"
+        w="full"
         flexDir="column"
-        transition="width 0.3s ease-in-out"
         position="relative"
+        pr={isDrawerOpen && !isMobile ? '50%' : '0'}
+        transition="padding-right 0.3s ease-in-out"
       >
         {/* Messages Area */}
         <ChatMessages
@@ -152,7 +181,10 @@ export default function ChatInterface() {
         </Box>
       </Flex>
 
-      {/* TODO: Add Side Drawer */}
+      <SideDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
     </Flex>
   )
 }
