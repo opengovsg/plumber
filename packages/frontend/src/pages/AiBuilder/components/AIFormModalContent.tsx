@@ -17,7 +17,9 @@ import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import { AI_FORM_SCHEMA, AiFormData } from '@/pages/AiBuilder/schema'
-import { AI_FORM_IDEAS } from '@/pages/Flows/constants'
+import { AI_FORM_IDEAS, AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
+
+import IdeaButtons from './IdeaButtons'
 
 const AI_FORM_FIELDS = [
   {
@@ -72,9 +74,9 @@ export const AIFormModalContent = ({
     },
   })
 
-  const handleIdeaClick = (idea: (typeof AI_FORM_IDEAS)[number]) => {
-    setValue('trigger', idea.trigger, { shouldValidate: true })
-    setValue('actions', idea.actions, { shouldValidate: true })
+  const handleIdeaClick = (idea: AiChatIdea | AiFormIdea) => {
+    setValue('trigger', (idea as AiFormIdea).trigger, { shouldValidate: true })
+    setValue('actions', (idea as AiFormIdea).actions, { shouldValidate: true })
   }
 
   return (
@@ -107,51 +109,26 @@ export const AIFormModalContent = ({
                 )}
               </FormControl>
             ))}
-            <Flex flexDir="row" alignItems="center">
-              <FormLabel
-                isRequired
-                style={{ margin: 0, marginRight: '0.5rem' }}
-              >
-                {/* arbitrary isRequired to hide optional text */}
-                Try:
-              </FormLabel>
-              <Flex
-                flexDir="row"
-                gap={2}
-                justifyContent="space-between"
-                flexWrap="wrap"
-              >
-                {AI_FORM_IDEAS.map((idea) => (
-                  <Button
-                    key={idea.label}
-                    size="sm"
-                    bgColor="interaction.sub-subtle.default"
-                    color="gray.600"
-                    variant="clear"
-                    _hover={{
-                      bgColor: 'interaction.sub-subtle.hover',
-                    }}
-                    onClick={() => handleIdeaClick(idea)}
-                    px={3}
-                    minH={4}
-                    w={isMobile ? 'calc(50% - 4px)' : 'auto'}
-                    flexShrink={0}
-                  >
-                    <Text textStyle="caption-1">{idea.label}</Text>
-                  </Button>
-                ))}
-              </Flex>
-            </Flex>
+            {type === 'create' && (
+              <IdeaButtons
+                ideas={AI_FORM_IDEAS}
+                onClick={(idea: AiChatIdea | AiFormIdea) =>
+                  handleIdeaClick(idea)
+                }
+              />
+            )}
           </Flex>
         </ModalBody>
         <ModalFooter>
           <Flex justifyContent="space-between" alignItems="center" w="100%">
-            <Flex gap={1} alignItems="center">
-              <Text fontSize="xs" color="gray.500">
-                Powered by{' '}
-              </Text>
-              <ImageBox imageUrl={pairLogo} boxSize={6} />
-            </Flex>
+            {!isMobile && (
+              <Flex gap={1} alignItems="center" justifyContent="center">
+                <Text fontSize="xs" color="gray.500">
+                  Powered by{' '}
+                </Text>
+                <ImageBox imageUrl={pairLogo} boxSize={6} />
+              </Flex>
+            )}
             <Flex gap={4}>
               <Button variant="clear" colorScheme="secondary" onClick={onBack}>
                 Back

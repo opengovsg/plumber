@@ -29,7 +29,7 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
             key={idea.label}
             size="sm"
             bgColor="interaction.sub-subtle.default"
-            color="#5D6785"
+            color="gray.600"
             variant="clear"
             _hover={{
               bgColor: 'interaction.sub-subtle.hover',
