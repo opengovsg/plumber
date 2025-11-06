@@ -30,9 +30,9 @@ interface AiBuilderStep extends IStep {
 
 interface AIBuilderContextValue extends AIBuilderSharedProps {
   allApps: IApp[]
-  isMobile: boolean
   triggerStep: IStep | null
   steps: AiBuilderStep[]
+  isMobile: boolean
   actionSteps: IStep[]
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
