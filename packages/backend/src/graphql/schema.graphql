@@ -223,6 +223,7 @@ type ActionSubstepArgument {
 
   # Only for rich text
   customRteMenuOptions: [String]
+  returnMarkdown: Boolean
 }
 
 type DropdownClickableLink {

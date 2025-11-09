@@ -53,6 +53,7 @@
     "remark-breaks": "3.0.3",
     "remark-gfm": "3.0.1",
     "sass": "1.69.4",
+    "tiptap-markdown": "0.8.10",
     "typescript": "^5.5.4",
     "yup": "^0.32.11"
   },

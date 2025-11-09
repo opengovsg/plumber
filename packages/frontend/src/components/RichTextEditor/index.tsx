@@ -28,6 +28,7 @@ import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import escapeHtml from 'escape-html'
+import { Markdown } from 'tiptap-markdown'
 
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
@@ -85,6 +86,7 @@ const RICH_TEXT_EXTENSIONS = [
   ImageResize.configure({
     inline: true,
   }),
+  Markdown,
 ]
 
 interface EditorProps {
@@ -101,6 +103,7 @@ interface EditorProps {
   singleVariableSelection?: boolean
   noVariablesMessage?: string
   customRteMenuOptions?: string[]
+  returnMarkdown?: boolean
 }
 const Editor = ({
   onChange,
@@ -116,6 +119,7 @@ const Editor = ({
   autoFocus = false,
   noVariablesMessage,
   customRteMenuOptions,
+  returnMarkdown,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { allApps } = useContext(EditorContext)
@@ -196,7 +200,9 @@ const Editor = ({
       }
       onChange(
         isRich
-          ? removeProblematicWhitespace(editor.getHTML())
+          ? returnMarkdown
+            ? editor.storage.markdown.getMarkdown()
+            : removeProblematicWhitespace(editor.getHTML())
           : removeProblematicWhitespace(editor.getText()),
       )
     },
@@ -352,6 +358,7 @@ interface RichTextEditorProps {
   singleVariableSelection?: boolean
   noVariablesMessage?: string
   customRteMenuOptions?: string[]
+  returnMarkdown?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -370,6 +377,7 @@ const RichTextEditor = ({
   singleVariableSelection,
   noVariablesMessage,
   customRteMenuOptions,
+  returnMarkdown,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -419,6 +427,7 @@ const RichTextEditor = ({
             singleVariableSelection={singleVariableSelection}
             noVariablesMessage={noVariablesMessage}
             customRteMenuOptions={customRteMenuOptions}
+            returnMarkdown={returnMarkdown}
           />
         )}
       />
