@@ -452,6 +452,7 @@ export interface IFieldRichText extends IBaseField {
   // Specifies the order and what menu options to show in the RTE
   // 'divider' is specified manually to determine when a divider should be shown
   customRteMenuOptions?: string[]
+  returnMarkdown?: boolean
 }
 
 export interface IFieldDragDrop extends IBaseField {

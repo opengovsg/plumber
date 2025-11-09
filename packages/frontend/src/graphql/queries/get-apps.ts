@@ -227,6 +227,7 @@ export const GET_APPS = gql`
             }
             singleVariableSelection
             customRteMenuOptions
+            returnMarkdown
             # Only for multi-row
             subFields {
               label
