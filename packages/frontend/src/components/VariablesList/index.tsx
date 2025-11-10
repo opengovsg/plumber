@@ -50,6 +50,12 @@ function VariableTag({
           label: 'Tile Row ID',
           tooltip: `This variable can be used in Tile's Update Single Row action`,
         }
+      case 'ai_response':
+        return {
+          label: 'AI response',
+          tooltip:
+            'This variable is AI-generated. Check for errors before using it.',
+        }
       default:
         return {
           label: null,
