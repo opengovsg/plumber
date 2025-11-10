@@ -5,6 +5,11 @@ import { useMemo } from 'react'
 import getStepName from '@/helpers/getStepName'
 import { isIfThenStep as checkIfThenStep } from '@/helpers/toolbox'
 
+enum AI_ACTIONS {
+  Pair = 'pair',
+  Aisay = 'aisay',
+}
+
 interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
@@ -18,6 +23,11 @@ interface UseStepMetadataResult {
   stepName: string
   substeps: ISubstep[]
   shouldShowDragHandle?: boolean
+  isAiStep: boolean
+}
+
+function isAiStep(step: IStep): boolean {
+  return Object.values(AI_ACTIONS).includes(step?.appKey as AI_ACTIONS) ?? false
 }
 
 export function useStepMetadata(
@@ -95,5 +105,6 @@ export function useStepMetadata(
       : defaultCaption ?? '',
     substeps,
     shouldShowDragHandle,
+    isAiStep: step ? isAiStep(step) : false,
   }
 }

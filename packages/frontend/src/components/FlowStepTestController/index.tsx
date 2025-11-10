@@ -108,8 +108,13 @@ export default function FlowStepTestController(
   } = useContext(EditorContext)
   const formContext = useFormContext()
 
-  const { isIfThenStep, isTrigger, selectedActionOrTrigger, substeps } =
-    useStepMetadata(allApps, step)
+  const {
+    isIfThenStep,
+    isTrigger,
+    selectedActionOrTrigger,
+    substeps,
+    isAiStep,
+  } = useStepMetadata(allApps, step)
 
   const {
     isTestSuccessful,
@@ -143,6 +148,7 @@ export default function FlowStepTestController(
     isTestExecuting,
     stepId: step.id,
     testVariables,
+    isAiStep,
   })
 
   const infoBoxIcon = useMemo(() => {
@@ -154,6 +160,13 @@ export default function FlowStepTestController(
     if (infoBoxVariant === 'unstyled') {
       return <></>
     }
+
+    // NOTE: for any AI step, always show the warning info circle
+    // put this after 'unstyled' so that the loading state does not show the warning icon
+    if (isAiStep) {
+      return <Icon as={BxsInfoCircle} color="yellow.100" {...props} />
+    }
+
     if (infoBoxVariant === 'error') {
       return <Icon as={BxsErrorCircle} color="red.500" {...props} />
     }
@@ -161,7 +174,7 @@ export default function FlowStepTestController(
       return <Icon as={BxsCheckCircle} color="green.500" {...props} />
     }
     return <Icon as={BxsInfoCircle} color="blue.500" {...props} />
-  }, [infoBoxVariant])
+  }, [infoBoxVariant, isAiStep])
 
   const isStepUnchecked = infoBoxVariant === 'unstyled'
 
