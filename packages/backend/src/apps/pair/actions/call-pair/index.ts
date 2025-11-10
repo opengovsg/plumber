@@ -2,6 +2,8 @@ import { IRawAction } from '@plumber/types'
 
 import { fromZodError } from 'zod-validation-error'
 
+import generateObject from '@/apps/pair/common/generateObject'
+import { generateSchemaFromFields } from '@/apps/pair/common/generateSchema'
 import generateText from '@/apps/pair/common/generateText'
 import StepError, { GenericSolution } from '@/errors/step'
 
@@ -56,6 +58,64 @@ const action: IRawAction = {
       ],
       returnMarkdown: true,
     },
+    {
+      label: 'How do you want the response?',
+      key: 'responseFormat',
+      type: 'dropdown' as const,
+      required: true,
+      showOptionValue: false,
+      options: [
+        { label: 'A single text response', value: 'singleField' },
+        {
+          label: 'Separate fields (split into multiple outputs)',
+          value: 'multipleFields',
+        },
+      ],
+    },
+    {
+      label: 'Response fields',
+      key: 'responseFields',
+      type: 'multirow-multicol' as const,
+      required: true,
+      hiddenIf: {
+        fieldKey: 'responseFormat',
+        fieldValue: 'multipleFields',
+        op: 'not_equals',
+      },
+      subFields: [
+        {
+          placeholder: 'Field name',
+          key: 'fieldName',
+          type: 'string' as const,
+          required: true,
+          variables: false,
+        },
+        {
+          placeholder: 'Field type',
+          key: 'fieldType',
+          type: 'dropdown' as const,
+          required: true,
+          showOptionValue: false,
+          options: [
+            { label: 'Text', value: 'text' },
+            { label: 'Number', value: 'number' },
+            { label: 'Category', value: 'category' },
+          ],
+        },
+        {
+          placeholder: 'Categories (comma-separated)',
+          key: 'fieldCategories',
+          type: 'string' as const,
+          variables: true,
+          hiddenIf: {
+            fieldKey: 'fieldType',
+            fieldValue: 'category',
+            op: 'not_equals',
+          },
+          customStyle: { flex: 3 },
+        },
+      ],
+    },
   ],
 
   async run($) {
@@ -71,8 +131,20 @@ const action: IRawAction = {
       )
     }
 
-    const { prompt } = validatedParameters.data
+    const { prompt, responseFormat, responseFields } = validatedParameters.data
 
+    // if its multipleFields, dynamically generate the schema and generate the object
+    if (responseFormat === 'multipleFields') {
+      const dynamicSchema = generateSchemaFromFields(responseFields)
+      const response = await generateObject(prompt, dynamicSchema, $)
+
+      $.setActionItem({
+        raw: { ...response },
+      })
+      return
+    }
+
+    // else, fallback to a single field response
     const response = await generateText(prompt, $)
 
     $.setActionItem({
