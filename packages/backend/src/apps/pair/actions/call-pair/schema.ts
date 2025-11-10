@@ -23,7 +23,7 @@ export const schema = z
               .max(64)
               .regex(
                 /^[a-zA-Z0-9_-]+$/,
-                'Field name can only contain letters, numbers, underscores, and hyphens',
+                'Field name cannot contain spaces. Use only letters, numbers, underscores (_), and hyphens (-)',
               ),
             fieldType: z.enum(['text', 'number', 'category']),
             fieldCategories: z.string().optional(),
