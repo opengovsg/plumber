@@ -15,7 +15,7 @@ async function generateText(prompt: string, $: IGlobalVariable) {
         trace.updateTrace({
           userId: $.user.email,
           environment: appConfig.appEnv,
-          tags: ['pair', 'action'],
+          tags: ['pair', 'action', 'generate-text'],
         })
 
         trace.update({ input: prompt })
