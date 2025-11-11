@@ -7,10 +7,16 @@ import { AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
 interface IdeaButtonsProps {
   ideas: AiChatIdea[] | AiFormIdea[]
   onClick: (idea: AiChatIdea | AiFormIdea) => void
+  builderType: 'chat' | 'form'
 }
 
-export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
+export default function IdeaButtons({
+  ideas,
+  onClick,
+  builderType,
+}: IdeaButtonsProps) {
   const isMobile = useIsMobile()
+  const isForm = builderType === 'form'
 
   return (
     <Flex flexDir="row" alignItems="center">
@@ -35,13 +41,13 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
               bgColor: 'interaction.sub-subtle.hover',
             }}
             onClick={() => onClick(idea)}
-            px={3}
+            px={isForm ? 2 : 3}
             minH={4}
             w={isMobile ? 'calc(50% - 4px)' : 'auto'}
             flexShrink={0}
           >
             <TemplateIcon iconName={idea.icon} fontSize="1rem" />
-            <Text textStyle="caption-1" ml="0.25rem">
+            <Text textStyle="caption-1" ml={isForm ? 0 : '0.25rem'}>
               {idea.label}
             </Text>
           </Button>
