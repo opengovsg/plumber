@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { BiSolidMagicWand } from 'react-icons/bi'
 import { IoChevronDown } from 'react-icons/io5'
-import { Box, Flex, Icon, IconButton, Text } from '@chakra-ui/react'
-import { Tag } from '@opengovsg/design-system-react'
+import { Box, Flex, IconButton, Text } from '@chakra-ui/react'
 
 import { useChatStream } from '@/hooks/useChatStream'
 
@@ -74,19 +72,7 @@ export default function ChatInterface() {
         px={4}
       >
         {messages.length === 0 && (
-          <>
-            <Tag
-              colorScheme="secondary"
-              _hover={{}}
-              _active={{}}
-              gap={2}
-              size="lg"
-            >
-              <Icon as={BiSolidMagicWand} />
-              Build with AI
-            </Tag>
-            <Text textStyle="h3">What happens in your workflow?</Text>
-          </>
+          <Text textStyle="h3">What happens in your workflow?</Text>
         )}
         <Box w="full" maxW="2xl" overflowY="auto" maxH="100vh">
           <PromptInput

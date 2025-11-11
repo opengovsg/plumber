@@ -67,14 +67,12 @@ export default function PromptInput({
         bg="white"
         border="1px"
         borderColor="gray.200"
-        borderRadius="3xl"
-        boxShadow="lg"
-        _hover={{ boxShadow: 'xl' }}
-        transition="box-shadow 0.2s"
+        borderRadius="16px"
+        boxShadow="sm"
         p={2}
         w="full"
-        minH="50px"
-        style={{ height: 'auto' }}
+        minH={showIdeas ? '120px' : '50px'}
+        height="auto"
         mb={3}
       >
         <Textarea
@@ -95,7 +93,6 @@ export default function PromptInput({
           _disabled={{ opacity: 1, bg: 'transparent', color: 'gray.900' }}
           fontSize="base"
           lineHeight="6"
-          minH="50px"
           maxH="calc(40vh - 100px)"
           rows={1}
           overflowY="auto"

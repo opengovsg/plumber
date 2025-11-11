@@ -1,5 +1,7 @@
 import { Flex, Text } from '@chakra-ui/react'
-import { Button, FormLabel } from '@opengovsg/design-system-react'
+import { Button, FormLabel, useIsMobile } from '@opengovsg/design-system-react'
+
+import { TemplateIcon } from '@/helpers/flow-templates'
 
 import { AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
 
@@ -9,26 +11,40 @@ interface IdeaButtonsProps {
 }
 
 export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
+  const isMobile = useIsMobile()
+
   return (
     <Flex flexDir="column">
       <FormLabel isRequired>
         {/* arbitrary isRequired to hide optional text */}
         Need inspiration? Try one of these:
       </FormLabel>
-      <Flex flexDir="row" gap={2} justifyContent="space-between">
+      <Flex
+        flexDir="row"
+        gap={2}
+        justifyContent="space-between"
+        flexWrap="wrap"
+      >
         {ideas.map((idea) => (
           <Button
             key={idea.label}
-            size="xs"
-            bgColor="interaction.muted.main.active"
-            color="primary.500"
+            size="sm"
+            bgColor="interaction.sub-subtle.default"
+            color="#5D6785"
             variant="clear"
             _hover={{
-              bgColor: 'primary.200',
+              bgColor: 'interaction.sub-subtle.hover',
             }}
             onClick={() => onClick(idea)}
+            px={3}
+            minH={4}
+            w={isMobile ? 'calc(50% - 4px)' : 'auto'}
+            flexShrink={0}
           >
-            <Text textStyle="caption-1">{idea.label}</Text>
+            <TemplateIcon iconName={idea.icon} fontSize="1rem" />
+            <Text textStyle="caption-1" ml="0.25rem">
+              {idea.label}
+            </Text>
           </Button>
         ))}
       </Flex>
