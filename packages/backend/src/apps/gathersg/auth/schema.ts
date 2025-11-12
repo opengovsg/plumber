@@ -1,22 +1,5 @@
 import { z } from 'zod'
 
-function validateUpdatedBy(updatedBy: { email?: string; name?: string }) {
-  /**
-   * SPECIAL CASE
-   * if the workflow had an update step before sending the webhook,
-   * the webhook will return with:
-   * {
-   *   updatedBy: {
-   *     name: 'Workflow',
-   *   },
-   * }
-   */
-  if (updatedBy.name === 'Workflow') {
-    return !updatedBy.email
-  }
-  return !!updatedBy.email
-}
-
 /**
  * check for potential infinite loop
  * if the webhook is not triggered by a user, it will not contain
@@ -50,7 +33,20 @@ const schema = z
 
       // if updatedBy exists, check updatedBy first
       if (updatedBy) {
-        return validateUpdatedBy(updatedBy)
+        if (updatedBy.name === 'Workflow') {
+          /**
+           * SPECIAL CASE
+           * if the workflow had an update step before sending the webhook,
+           * the webhook will return with:
+           * {
+           *   updatedBy: {
+           *     name: 'Workflow',
+           *   },
+           * }
+           */
+          return !updatedBy.email
+        }
+        return !!updatedBy.email
       }
 
       // if only createdBy exists, check for createdBy.email
