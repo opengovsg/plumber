@@ -1,6 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { IconType } from 'react-icons/lib'
 import {
   Accordion,
@@ -25,6 +25,7 @@ import TableVariableItem from './TableVariableItem'
 
 const VARIABLE_ITEM_HEIGHT = 77
 const SUGGESTION_VARIABLE_ITEM_HEIGHT = 61
+const CHARACTER_LIMIT = 100
 
 function VariableTag({
   type,
@@ -92,12 +93,17 @@ export function VariableItem({
   isLast?: boolean
   withIcon?: IconType
 }): JSX.Element {
+  const [isExpanded, setIsExpanded] = useState(false)
   const shouldShowBottomBorder = !withIcon && (onClick || isLast)
 
   const displayValue =
     variable.displayedValue ?? variable.value?.toString() ?? ''
 
   const isSuggestionVariable = onClick && !withIcon
+
+  const shouldShowToggle =
+    variable.type === 'ai_response' && displayValue.length > CHARACTER_LIMIT
+
   return (
     <Box
       key={`suggestion-${variable.name}`}
@@ -105,11 +111,15 @@ export function VariableItem({
       h={
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          : shouldShowToggle
+          ? 'auto'
           : VARIABLE_ITEM_HEIGHT
       }
       maxH={
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          : shouldShowToggle
+          ? 'auto'
           : VARIABLE_ITEM_HEIGHT
       }
       overflowY="hidden"
@@ -149,23 +159,41 @@ export function VariableItem({
       >
         {variable.label ?? variable.name} <VariableTag type={variable.type} />
       </Text>
-      <Flex alignItems="center" gap={2}>
-        <Text
-          textStyle="body-2"
-          color="base.content.medium"
-          whiteSpace="nowrap"
-          overflow="hidden"
-          textOverflow="ellipsis"
-          textDecoration={withIcon ? 'underline' : undefined}
-        >
-          {displayValue.length ? (
-            displayValue
-          ) : (
-            // padding right to ensure the 'y' is not cut off
-            <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
-          )}
-        </Text>
-        {withIcon && <Icon as={withIcon} />}
+      <Flex flexDirection="column" gap={1}>
+        <Flex alignItems="center" gap={2}>
+          <Text
+            textStyle="body-2"
+            color="base.content.medium"
+            whiteSpace={isExpanded ? 'pre-wrap' : 'nowrap'}
+            overflow={isExpanded ? 'visible' : 'hidden'}
+            textOverflow={isExpanded ? 'clip' : 'ellipsis'}
+            textDecoration={withIcon ? 'underline' : undefined}
+          >
+            {displayValue.length ? (
+              displayValue
+            ) : (
+              <i style={{ opacity: 0.5 }}>empty</i>
+            )}
+          </Text>
+          {withIcon && <Icon as={withIcon} />}
+        </Flex>
+        {shouldShowToggle && (
+          <Text
+            textStyle="body-2"
+            color="primary.500"
+            cursor="pointer"
+            _hover={{ textDecoration: 'underline' }}
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsExpanded(!isExpanded)
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+            }}
+          >
+            {isExpanded ? 'Show less' : 'Show more'}
+          </Text>
+        )}
       </Flex>
     </Box>
   )
