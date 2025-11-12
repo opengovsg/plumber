@@ -130,6 +130,58 @@ class FlowCollaborator extends Base {
       .where({ flow_id: flowId })
       .withGraphFetched('user')
   }
+
+  static deleteCollaborator = async ({
+    userId,
+    flowId,
+    trx,
+  }: {
+    userId: string
+    flowId: string
+    trx?: Transaction
+  }) => {
+    return await this.query(trx)
+      .delete()
+      .where({ user_id: userId, flow_id: flowId })
+      .returning('*')
+      .throwIfNotFound({ message: 'No such collaborator found' })
+  }
+
+  static upsertCollaborator = async ({
+    userId,
+    flowId,
+    role,
+    updatedBy,
+    trx,
+  }: {
+    userId: string
+    flowId: string
+    role: IFlowCollabRole
+    updatedBy: string
+    trx?: Transaction
+  }) => {
+    const collaboratorExists = await this.query(trx)
+      .findOne({ user_id: userId, flow_id: flowId })
+      .withSoftDeleted()
+
+    if (collaboratorExists) {
+      return await collaboratorExists
+        .$query(trx)
+        .patchAndFetch({
+          role,
+          deletedAt: null,
+          updatedBy,
+        })
+        .withSoftDeleted()
+    } else {
+      return await this.query(trx).insert({
+        userId,
+        flowId,
+        role,
+        updatedBy,
+      })
+    }
+  }
 }
 
 export default FlowCollaborator

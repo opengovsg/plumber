@@ -111,9 +111,10 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           isClosable: true,
           position: 'top',
         })
+        onDialogClose()
       },
     })
-  }, [duplicateFlow, flow.id, toast])
+  }, [duplicateFlow, flow.id, toast, onDialogClose])
 
   const onDuplicateButtonClick = useCallback(
     (event: MouseEvent) => {

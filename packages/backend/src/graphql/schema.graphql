@@ -327,6 +327,7 @@ type Connection {
   app: App
   createdAt: String
   flowCount: Int
+  description: String
 }
 
 type ConnectionData {
