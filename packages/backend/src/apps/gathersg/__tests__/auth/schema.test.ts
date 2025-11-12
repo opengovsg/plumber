@@ -308,5 +308,39 @@ describe('gathersg auth schema', () => {
       })
       expect(result.success).toBe(false)
     })
+
+    it('rejects Workflow updatedBy without createdBy', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Workflow',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects Workflow updatedBy when createdBy is missing email', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Workflow',
+        },
+        createdBy: {
+          name: 'Creator',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects Workflow updatedBy when createdBy email is null', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Workflow',
+        },
+        createdBy: {
+          email: null,
+          name: 'Creator',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
   })
 })

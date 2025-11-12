@@ -36,15 +36,19 @@ const schema = z
         if (updatedBy.name === 'Workflow') {
           /**
            * SPECIAL CASE
-           * if the workflow had an update step before sending the webhook,
+           * if the workflow has an update step before calling the webhook,
            * the webhook will return with:
            * {
            *   updatedBy: {
            *     name: 'Workflow',
            *   },
            * }
+           *
+           * Best effort check that createdBy must contain both email and name
+           * to know that its not an API creating the case and an instant workflow
+           * calling Plumber again.
            */
-          return !updatedBy.email
+          return !updatedBy.email && !!createdBy?.email && !!createdBy?.name
         }
         return !!updatedBy.email
       }
