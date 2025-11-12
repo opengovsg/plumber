@@ -1,5 +1,6 @@
 import type { IApp } from '@plumber/types'
 
+import aibotsApp from './aibots'
 import aisayApp from './aisay'
 import calculatorApp from './calculator'
 import customApiApp from './custom-api'
@@ -42,6 +43,7 @@ const apps: Record<string, IApp> = {
   [twilioApp.key]: twilioApp,
   [vaultWorkspaceApp.key]: vaultWorkspaceApp,
   [webhookApp.key]: webhookApp,
+  [aibotsApp.key]: aibotsApp,
   [aisayApp.key]: aisayApp,
   [gathersgApp.key]: gathersgApp,
 }
