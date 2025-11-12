@@ -12,19 +12,19 @@ const schema = z
         email: z.string().min(1),
         name: z.string().min(1),
       })
-      .optional(),
+      .nullish(),
     createdBy: z
       .object({
         email: z.string().min(1).optional(),
         name: z.string().min(1).optional(),
       })
-      .optional(),
+      .nullish(),
     formsg: z
       .object({
         formId: z.string().min(1),
         submissionId: z.string().min(1),
       })
-      .optional(),
+      .nullish(),
   })
   .refine(
     (data) => {
