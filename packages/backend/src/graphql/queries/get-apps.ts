@@ -1,5 +1,6 @@
 import type { IApp } from '@plumber/types'
 
+import aibotsApp from '@/apps/aibots'
 import aisayApp from '@/apps/aisay'
 import calculatorApp from '@/apps/calculator'
 import customApiApp from '@/apps/custom-api'
@@ -52,6 +53,7 @@ export const ACTION_APPS_RANKING = [
   postmanSmsApp.key,
   telegramBotApp.key,
   slackApp.key,
+  aibotsApp.key,
   aisayApp.key,
   gathersgApp.key,
   customApiApp.key,
