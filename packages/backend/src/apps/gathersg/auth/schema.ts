@@ -16,8 +16,8 @@ const schema = z
       .nullish(),
     createdBy: z
       .object({
-        email: z.string().min(1).optional(),
-        name: z.string().min(1).optional(),
+        email: z.string().min(1).nullish(),
+        name: z.string().min(1).nullish(),
       })
       .nullish(),
     formsg: z

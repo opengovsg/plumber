@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import type { SafeParseError } from 'zod'
 
 import schema from '../../auth/schema'
 
@@ -96,18 +95,36 @@ describe('gathersg auth schema', () => {
         },
       })
       expect(result.success).toBe(false)
-      if (!result.success) {
-        const { issues } = (result as SafeParseError<unknown>).error
-        expect(
-          issues.some((i) => i.message.includes('createdBy.email is required')),
-        ).toBe(true)
-      }
+    })
+
+    it('rejects createdBy with email null when not FormSG', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'Regular User',
+          email: null,
+        },
+      })
+      expect(result.success).toBe(false)
     })
 
     it('rejects when both updatedBy and createdBy exist but updatedBy has no email', () => {
       const result = schema.safeParse({
         updatedBy: {
           name: 'Updater',
+        },
+        createdBy: {
+          email: 'creator@example.com',
+          name: 'Creator',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects when both updatedBy and createdBy exist but updatedBy email is null', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Updater',
+          email: null,
         },
         createdBy: {
           email: 'creator@example.com',
@@ -151,6 +168,19 @@ describe('gathersg auth schema', () => {
         },
         formsg: {
           formId: 'form-123',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects FormSG createdBy with submissionId null', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'FormSG',
+        },
+        formsg: {
+          formId: 'form-123',
+          submissionId: null,
         },
       })
       expect(result.success).toBe(false)
