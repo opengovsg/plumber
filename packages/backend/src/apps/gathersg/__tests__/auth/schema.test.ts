@@ -64,6 +64,19 @@ describe('gathersg auth schema', () => {
       })
       expect(result.success).toBe(true)
     })
+
+    it('accepts Workflow updatedBy with createdBy', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Workflow',
+        },
+        createdBy: {
+          email: 'creator@example.com',
+          name: 'Creator',
+        },
+      })
+      expect(result.success).toBe(true)
+    })
   })
 
   describe('invalid cases - missing email', () => {
@@ -231,6 +244,32 @@ describe('gathersg auth schema', () => {
       const result = schema.safeParse({
         updatedBy: {
           name: 'Updater',
+        },
+        createdBy: {
+          email: 'creator@example.com',
+          name: 'Creator',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('Workflow invalid case', () => {
+    it('rejects updatedBy with name "Workflow" when email is present', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Workflow',
+          email: 'workflow@example.com',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects Workflow updatedBy when email is present even with valid createdBy', () => {
+      const result = schema.safeParse({
+        updatedBy: {
+          name: 'Workflow',
+          email: 'workflow@example.com',
         },
         createdBy: {
           email: 'creator@example.com',
