@@ -78,7 +78,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.5.1",
     "type-fest": "4.10.3",
-    "vite": "^6.3.6",
+    "vite": "^6.4.1",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-package-version": "1.1.0",
     "vite-tsconfig-paths": "^5.1.4"
