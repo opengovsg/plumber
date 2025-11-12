@@ -47,6 +47,7 @@ export interface IConnection {
   flowCount?: number
   appData?: IApp
   createdAt: string
+  description?: string
 }
 
 /**

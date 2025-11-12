@@ -109,6 +109,17 @@ class FlowConnections extends Base {
     })
 
     if (hasCollaborators) {
+      // NOTE: somehow .onConflict().ignore() does not return an empty array
+      // on conflict, but actually returns the row its trying to insert
+      const existing = await this.query(trx).findOne({
+        flow_id: flowId,
+        connection_id: connectionId,
+      })
+
+      if (existing) {
+        return null
+      }
+
       return await this.query(trx)
         .insert({
           flowId,

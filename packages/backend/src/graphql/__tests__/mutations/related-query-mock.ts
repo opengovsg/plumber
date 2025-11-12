@@ -1,6 +1,7 @@
 import { NotFoundError } from 'objection'
 import { vi } from 'vitest'
 
+import Connection from '@/models/connection'
 import User from '@/models/user'
 
 interface MockConnectionsRelatedQueryOptions {
@@ -17,17 +18,9 @@ export function mockConnectionsRelatedQuery(
     connectionNotFound = false,
   }: MockConnectionsRelatedQueryOptions,
 ) {
-  currentUser.$relatedQuery = vi.fn().mockImplementation((relation: string) => {
-    if (relation !== 'connections') {
-      return {
-        findOne: vi.fn().mockReturnValue({
-          throwIfNotFound: vi.fn().mockResolvedValue(null),
-        }),
-      }
-    }
-
-    return {
-      findOne: vi.fn().mockReturnValue({
+  vi.spyOn(Connection, 'query').mockReturnValue({
+    findById: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
         throwIfNotFound: connectionNotFound
           ? vi
               .fn()
@@ -36,6 +29,6 @@ export function mockConnectionsRelatedQuery(
               )
           : vi.fn().mockResolvedValue({ id: connectionId, key: connectionKey }),
       }),
-    }
-  })
+    }),
+  } as any)
 }

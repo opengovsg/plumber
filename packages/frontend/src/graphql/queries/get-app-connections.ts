@@ -13,6 +13,7 @@ export const GET_APP_CONNECTIONS = gql`
           screenName
           env
         }
+        description
         createdAt
       }
     }
