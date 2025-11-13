@@ -1,9 +1,4 @@
-import type {
-  IFlowCollabRole,
-  IJSONObject,
-  IStep,
-  IStepConfig,
-} from '@plumber/types'
+import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
 
 import {
   raw,
@@ -39,7 +34,6 @@ class Step extends Base {
   flow: Flow
   executionSteps: ExecutionStep[]
   config: IStepConfig
-  role?: IFlowCollabRole
   updatedBy?: string
 
   static tableName = 'steps'

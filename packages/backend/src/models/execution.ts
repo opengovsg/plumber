@@ -1,5 +1,3 @@
-import { IFlowCollabRole } from '@plumber/types'
-
 import Base from './base'
 import ExecutionStep from './execution-step'
 import Flow from './flow'
@@ -13,7 +11,6 @@ class Execution extends Base {
   flow: Flow
   executionSteps: ExecutionStep[]
   status: ExecutionStatus
-  role?: IFlowCollabRole
 
   static tableName = 'executions'
 

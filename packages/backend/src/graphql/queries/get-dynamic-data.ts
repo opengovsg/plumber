@@ -64,7 +64,7 @@ const getDynamicData: QueryResolvers['getDynamicData'] = async (
    * - collaborator should be able to add their own Tiles
    */
   if (
-    step.role !== 'owner' &&
+    step.flow.role !== 'owner' &&
     APP_CONNECTION_FIELDS[step.appKey] &&
     APP_CONNECTION_FIELDS[step.appKey]?.dynamicDataKey === dynamicDataKey
   ) {
