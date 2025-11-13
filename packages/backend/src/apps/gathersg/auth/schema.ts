@@ -25,6 +25,7 @@ const schema = z
         submissionId: z.string().min(1),
       })
       .nullish(),
+    fields: z.record(z.string(), z.any()).nullish(),
   })
   .refine(
     (data) => {
@@ -64,5 +65,26 @@ const schema = z
         'When only createdBy exists, createdBy.email is required. When updatedBy exists, updatedBy.email is required.',
     },
   )
+  .transform((data) => {
+    /**
+     * GatherSG fields need to be hex-encoded as the field names
+     * could contain special characters that break our step variable.
+     *
+     * e.g., NRIC/FIN field name will break the step variable.
+     */
+    const hexEncodedFields: Record<string, any> = {}
+
+    if (data.fields) {
+      for (const [key, value] of Object.entries(data.fields)) {
+        const hexKey = Buffer.from(key).toString('hex')
+        hexEncodedFields[hexKey] = value
+      }
+    }
+
+    return {
+      ...data,
+      fields: hexEncodedFields,
+    }
+  })
 
 export default schema

@@ -28,6 +28,7 @@ function validateData(data: any, flowId: string, app: string) {
       'GatherSG: potential infinite loop! Webhook not triggered by user!',
     )
   }
+  return validationResult.data
 }
 
 function verifySignature(signature: string, basestring: string) {
@@ -77,11 +78,11 @@ export async function decryptResponse(
       ]).toString()
       const decryptedData = JSON.parse(decryptedStr)
 
-      validateData(decryptedData, $.flow.id, app)
+      const validatedData = validateData(decryptedData, $.flow.id, app)
 
       $.request.body = {
         app,
-        data: decryptedData,
+        data: validatedData, // use validatedData as it hex-encodes the field names
         signature,
         timestamp,
       }
@@ -91,7 +92,14 @@ export async function decryptResponse(
         internalId: getInternalId(decryptedData),
       }
     } else {
-      validateData(data, $.flow.id, app)
+      const validatedData = validateData(data, $.flow.id, app)
+
+      $.request.body = {
+        app,
+        data: validatedData, // use validatedData as it hex-encodes the field names
+        signature,
+        timestamp,
+      }
 
       return {
         verified: true,
