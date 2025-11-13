@@ -19,7 +19,6 @@ const updateStep: MutationResolvers['updateStep'] = async (
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
-      .withGraphFetched('flow')
       .findOne({
         'steps.id': input.id,
         'steps.flow_id': input.flow.id,
@@ -37,7 +36,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
         context,
         connectionId: input.connection.id,
         flowId: input.flow.id,
-        includeOwnConnections: step.role === 'owner',
+        includeOwnConnections: step.flow.role === 'owner',
         trx,
       })
 
@@ -99,7 +98,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
      * collaborator should be able to add their own connections,
      * it will be tied to this specific flow only
      */
-    if (step.role === 'owner') {
+    if (step.flow.role === 'owner') {
       const appKey = updatedStep?.appKey
 
       // tiles special handling

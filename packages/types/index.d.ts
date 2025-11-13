@@ -164,7 +164,6 @@ export interface IExecution {
   executionSteps: IExecutionStep[]
   updatedAt: string
   createdAt: string
-  role?: IFlowCollabRole
 }
 
 export interface IStepConfig {

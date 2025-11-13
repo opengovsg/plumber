@@ -1,4 +1,4 @@
-import { IFlowCollabRole, IJSONObject } from '@plumber/types'
+import { IJSONObject } from '@plumber/types'
 
 import { AES, enc } from 'crypto-js'
 import type { RelationMappings, Transaction } from 'objection'
@@ -7,6 +7,7 @@ import { ModelOptions, QueryContext } from 'objection'
 import appConfig from '@/config/app'
 
 import Base from './base'
+import Flow from './flow'
 import Step from './step'
 import User from './user'
 
@@ -20,7 +21,7 @@ class Connection extends Base {
   draft: boolean
   count?: number
   flowCount?: number
-  role?: IFlowCollabRole
+  flow?: Flow
   description?: string
 
   static tableName = 'connections'
