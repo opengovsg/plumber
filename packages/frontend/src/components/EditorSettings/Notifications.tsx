@@ -49,6 +49,7 @@ const DEFAULT_FREQUENCY = Frequency.Once
 
 function NotificationFormFields() {
   const { flow } = useContext(EditorSettingsContext)
+  // NOTE: check is for greater than 1 because collaborators includes the owner
   const hasCollaborators =
     flow?.collaborators?.length && flow?.collaborators?.length > 1
   const isReadOnly = flow?.role === 'viewer'
@@ -182,7 +183,7 @@ export default function Notifications() {
       <Stack>
         <Form
           defaultValues={defaultValues}
-          onSubmit={(data: any) => {
+          onSubmit={(data) => {
             const newNotificationRecipients = [
               ...(data.editor ? [Recipient.Editor] : []),
               ...(data.viewer ? [Recipient.Viewer] : []),

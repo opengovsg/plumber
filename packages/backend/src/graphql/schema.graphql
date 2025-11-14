@@ -433,7 +433,7 @@ type FlowConfig {
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
-  notificationRecipients: [NotificationRecipients]
+  notificationRecipients: [NotificationRecipients]!
 }
 
 type FlowTemplateConfig {

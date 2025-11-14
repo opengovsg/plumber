@@ -37,7 +37,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['templateConfig']
     delete prevConfig['showSurvey']
     delete prevConfig['attachments']
-    delete prevConfig['errorConfig']['notificationRecipients']
+    delete prevConfig['errorConfig']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
