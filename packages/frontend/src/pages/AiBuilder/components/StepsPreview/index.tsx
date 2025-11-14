@@ -58,7 +58,9 @@ export default function StepsPreview() {
   const { isOpen, onClose, onOpen } = useDisclosure()
   const isMobile = useIsMobile()
   const navigate = useNavigate()
-
+  const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
+    CREATE_FLOW_WITH_STEPS,
+  )
   const [generateAiStepsMutation, { loading: isGeneratingSteps }] =
     useMutation(GENERATE_AI_STEPS)
 
@@ -97,9 +99,10 @@ export default function StepsPreview() {
     onGenerateAiSteps()
   }, [onGenerateAiSteps, output])
 
-  const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
-    CREATE_FLOW_WITH_STEPS,
-  )
+  const retryGenerateAiSteps = useCallback(async () => {
+    setError(false)
+    await generateAiSteps(formInput)
+  }, [generateAiSteps, formInput])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
@@ -178,31 +181,35 @@ export default function StepsPreview() {
     })
   }
 
-  if (isGeneratingSteps || !output) {
+  if (error) {
     return (
       <Center h="100%">
-        {error ? (
-          <Flex
-            flexDir="column"
-            alignItems="center"
-            justifyContent="center"
-            gap={4}
-            w="100%"
-            maxW="400px"
-          >
-            <Text>Something went wrong</Text>
-            <Button onClick={() => setError(false)}>Try again</Button>
-          </Flex>
-        ) : output && !isGeneratingSteps ? (
-          <PrimarySpinner fontSize="4xl" />
-        ) : (
-          <MultiStepLoader
-            loadingStates={LOADING_STATES}
-            loading={isGeneratingSteps}
-            duration={1500}
-            loop={false}
-          />
-        )}
+        <Flex
+          flexDir="column"
+          alignItems="center"
+          justifyContent="center"
+          gap={4}
+          w="100%"
+          maxW="400px"
+        >
+          <Text textStyle="h4" fontWeight="normal">
+            Something went wrong
+          </Text>
+          <Button onClick={retryGenerateAiSteps}>Try again</Button>
+        </Flex>
+      </Center>
+    )
+  }
+
+  if (isGeneratingSteps) {
+    return (
+      <Center h="100%">
+        <MultiStepLoader
+          loadingStates={LOADING_STATES}
+          loading={isGeneratingSteps}
+          duration={1500}
+          loop={false}
+        />
       </Center>
     )
   }
