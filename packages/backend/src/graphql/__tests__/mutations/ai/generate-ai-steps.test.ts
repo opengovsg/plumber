@@ -7,6 +7,7 @@ import { Trigger } from '@/graphql/mutations/ai/schemas/triggers.zod'
 const mocks = vi.hoisted(() => ({
   generateObject: vi.fn(),
   langfusePromptGet: vi.fn(),
+  getLdFlagValue: vi.fn(),
 }))
 
 vi.mock('ai', () => ({
@@ -22,7 +23,7 @@ vi.mock('@/helpers/langfuse', () => ({
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: vi.fn().mockResolvedValue('aids-v0'),
+  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 const DEFAULT_MOCKED_TRIGGER = {
@@ -83,6 +84,10 @@ describe('generateAiSteps mutation', () => {
     vi.resetAllMocks()
 
     mocks.langfusePromptGet.mockResolvedValue({ prompt: 'system prompt' })
+    mocks.getLdFlagValue.mockResolvedValue({
+      objectPrompt: 'ai-builder/form',
+      version: 'production',
+    })
 
     context = {
       currentUser: {
