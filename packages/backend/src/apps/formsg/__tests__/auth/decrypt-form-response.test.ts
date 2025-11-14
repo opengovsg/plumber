@@ -894,4 +894,69 @@ describe('decrypt form response', () => {
       )
     })
   })
+
+  describe('signature field', () => {
+    it('should handle signature field', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'signatureField',
+            fieldType: 'signature',
+            question: 'What is your signature?',
+            answerArray: [
+              'draw',
+              '[[[337.0390625,117.26171875,0.5],[337.40625,116.76953125,0.5],[346.09375,111.29296875,0.5],[365.546875,100.91796875,0.5],[384.28125,92.1328125,0.5]],[[398.95703125,140.91796875,0.5],[399.18359375,140.80078125,0.5]]]',
+            ],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            signatureField: {
+              fieldType: 'signature',
+              question: 'What is your signature?',
+              answer: 'Signature captured',
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+
+    it('should handle emptys ignature field', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'signatureField',
+            fieldType: 'signature',
+            question: 'What is your signature?',
+            answerArray: [],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            signatureField: {
+              fieldType: 'signature',
+              question: 'What is your signature?',
+              answer: '',
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+  })
 })

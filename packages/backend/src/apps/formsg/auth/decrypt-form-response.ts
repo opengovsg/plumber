@@ -120,6 +120,25 @@ export async function decryptFormResponse(
         rest.answer = rest.answer.replaceAll('\u0000', '')
       }
 
+      /**
+       * NOTE: special handling for signature field.
+       * FormSG returns an array of [['draw', <stringified array of coordinates>]] in the payload.
+       * However, it is reflected as 'Signature captured' when user downloads the submission
+       * data in csv directly from FormSG.
+       *
+       * To make this field usable, we do the same and return:
+       * - 'Signature captured' when the array is not empty.
+       * - '' when the array is empty.
+       */
+      if (formField.fieldType === 'signature') {
+        if (rest.answerArray.length === 0) {
+          rest.answer = ''
+        } else {
+          rest.answer = 'Signature captured'
+        }
+        delete rest.answerArray
+      }
+
       if (rest.answerArray && rest.answerArray.length > 0) {
         // Could be an array of strings (checkbox/address field) or a 2-D array of strings (table field)
         if (
