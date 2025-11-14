@@ -3,7 +3,6 @@ import type { IAction, IStep, ISubstep, ITrigger } from '@plumber/types'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
-import { useToast } from '@opengovsg/design-system-react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
@@ -39,7 +38,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = useDisclosure()
 
   const { arguments: args } = substep
-  const toast = useToast()
   const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
@@ -108,20 +106,10 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
       const isSubStepValid = validateSubstep(substep, currentStep)
-      const result = await onUpdateStep(
-        {
-          ...currentStep,
-          status: isSubStepValid ? 'completed' : 'incomplete',
-        },
-        () => {
-          toast({
-            title: 'Step saved successfully!',
-            status: 'success',
-            duration: 2000,
-            isClosable: true,
-          })
-        },
-      )
+      const result = await onUpdateStep({
+        ...currentStep,
+        status: isSubStepValid ? 'completed' : 'incomplete',
+      })
 
       if (!result) {
         throw new Error('Failed to save step')
@@ -132,7 +120,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     } finally {
       setIsSaving(false)
     }
-  }, [formContext, onUpdateStep, substep, toast])
+  }, [formContext, onUpdateStep, substep])
 
   const handleSaveAndTest = useCallback(
     async (testRunMetadata?: Record<string, unknown>) => {

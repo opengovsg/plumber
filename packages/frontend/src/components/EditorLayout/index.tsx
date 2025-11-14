@@ -244,9 +244,9 @@ export default function EditorLayout() {
           overflowY="auto"
         >
           <Editor />
-          {flow.active && flow.config?.showSurvey && flow.role !== 'viewer' && (
-            <LensSurvey />
-          )}
+          {flow?.active &&
+            flow?.config?.showSurvey &&
+            flow?.role !== 'viewer' && <LensSurvey />}
         </Container>
       </Flex>
 
