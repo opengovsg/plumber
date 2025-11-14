@@ -21,11 +21,15 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
   params,
   context,
 ) => {
-  const promptName = await getLdFlagValue(
-    'ai-steps-prompt-name',
+  const promptConfig = await getLdFlagValue(
+    'ai-builder-prompt-config',
     context.currentUser.email,
-    'aids-v0',
+    {
+      objectPrompt: 'ai-builder/form',
+      version: 'production',
+    },
   )
+  const { objectPrompt: promptName, version } = promptConfig
 
   try {
     const validatedInput = INPUT_SCHEMA.parse(params.input)
@@ -38,7 +42,9 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
 
     // NOTE: we get the entire prompt object so that we can pass it to generation.update
     // to link the generation to the prompt in Rome (Langfuse)
-    const prompt = await langfuseClient.prompt.get(promptName)
+    const prompt = await langfuseClient.prompt.get(promptName, {
+      label: version,
+    })
     const { prompt: systemPrompt } = prompt
 
     const result = await startActiveObservation(
