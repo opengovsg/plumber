@@ -160,6 +160,10 @@ async function getMockData($: IGlobalVariable) {
             convertTableAnswerArrayToTableObject(question, answerArray)
         }
 
+        if (data.responses[formFields[i]._id].fieldType === 'signature') {
+          data.responses[formFields[i]._id].answer = 'Signature captured'
+        }
+
         data.responses[formFields[i]._id].order = i + 1
         data.responses[formFields[i]._id].id = undefined
       }
