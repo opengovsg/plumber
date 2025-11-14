@@ -2,7 +2,6 @@ import { IStep } from '@plumber/types'
 
 import { useContext } from 'react'
 import { useMutation } from '@apollo/client'
-import { useToast } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
@@ -16,7 +15,6 @@ interface StepPositionInput {
 }
 
 const useReorderSteps = (flowId: string) => {
-  const toast = useToast()
   const { flow } = useContext(EditorContext)
   const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
     refetchQueries: [GET_FLOW],
@@ -74,21 +72,6 @@ const useReorderSteps = (flowId: string) => {
               },
             })
           }
-        },
-        onError: (error) => {
-          toast({
-            title: 'Failed to reorder steps',
-            description: 'Your changes have been reverted. Please try again.',
-            status: 'error',
-            duration: 5000,
-            isClosable: true,
-            position: 'top',
-          })
-          console.error(
-            'Error updating step positions: ',
-            error,
-            JSON.stringify(stepPositions),
-          )
         },
       })
     } catch (error) {

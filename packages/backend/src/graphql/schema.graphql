@@ -103,6 +103,7 @@ type Mutation {
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
+  duplicateBranch(input: DuplicateBranchInput): DuplicateBranchResult
   duplicateFlow(input: DuplicateFlowInput): Flow
   # Flow collaborators
   upsertFlowCollaborator(input: FlowCollaboratorInput!): Boolean!
@@ -550,6 +551,12 @@ input DeleteFlowInput {
   id: String!
 }
 
+input DuplicateBranchInput {
+  flow: StepFlowInput
+  previousStep: PreviousStepInput
+  steps: [CreateStepInput]
+}
+
 input DuplicateFlowInput {
   id: String!
 }
@@ -829,6 +836,11 @@ type PaginatedExecutions {
 type PaginatedExecutionSteps {
   edges: [ExecutionStepEdge]!
   pageInfo: PageInfo!
+}
+
+type DuplicateBranchResult {
+  flow: Flow
+  steps: [Step]
 }
 
 enum DatabaseType {

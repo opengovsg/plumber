@@ -11,6 +11,7 @@ import deleteFlow from './mutations/delete-flow'
 import deleteFlowCollaborator from './mutations/delete-flow-collaborator'
 import deleteStep from './mutations/delete-step'
 import deleteUploadedFile from './mutations/delete-uploaded-file'
+import duplicateBranch from './mutations/duplicate-branch'
 import duplicateFlow from './mutations/duplicate-flow'
 import executeStep from './mutations/execute-step'
 import generateAuthUrl from './mutations/generate-auth-url'
@@ -86,6 +87,7 @@ export default {
   loginWithSso,
   createFlowTransfer,
   updateFlowTransferStatus,
+  duplicateBranch,
   duplicateFlow,
   deleteUploadedFile,
   generatePresignedPost,
