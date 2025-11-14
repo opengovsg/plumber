@@ -1,18 +1,23 @@
 import { useContext } from 'react'
 import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
+import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link } from 'react-router-dom'
 import { Hide, HStack, MenuButton, MenuList, Show } from '@chakra-ui/react'
 import {
   Button,
   IconButton,
   Menu,
+  Tag,
+  TagLabel,
+  TagLeftIcon,
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { tagStyles } from '@/pages/Tiles/components/style'
 
 import PublishButton from './PublishButton'
 
@@ -136,6 +141,15 @@ const ExecutionsItem = ({ type }: { type: 'icon' | 'button' }) => {
   )
 }
 
+const ViewOnlyTag = () => {
+  return (
+    <Tag {...tagStyles}>
+      <TagLeftIcon as={MdOutlineRemoveRedEye} />
+      <TagLabel>View only</TagLabel>
+    </Tag>
+  )
+}
+
 interface EditorToolbarProps {
   loading: boolean
   shouldWarnOnLeave: boolean
@@ -146,7 +160,7 @@ interface EditorToolbarProps {
 }
 
 export default function EditorToolbar(props: EditorToolbarProps) {
-  const { flowId } = useContext(EditorContext)
+  const { flow, flowId } = useContext(EditorContext)
   // TODO: remove this once we open collaborators to all users
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const settingsLink = getFlagValue('collaborators', false)
@@ -160,7 +174,11 @@ export default function EditorToolbar(props: EditorToolbarProps) {
           <ExecutionsItem type="icon" />
           <GuideItem type="icon" />
           <SettingsItem {...props} type="icon" settingsLink={settingsLink} />
-          <PublishButton {...props} />
+          {flow?.role === 'viewer' ? (
+            <ViewOnlyTag />
+          ) : (
+            <PublishButton {...props} />
+          )}
         </HStack>
       </Show>
       <Hide above="md">
@@ -186,7 +204,11 @@ export default function EditorToolbar(props: EditorToolbarProps) {
               type="button"
               settingsLink={settingsLink}
             />
-            <PublishButton {...props} />
+            {flow?.role === 'viewer' ? (
+              <ViewOnlyTag />
+            ) : (
+              <PublishButton {...props} />
+            )}
           </MenuList>
         </Menu>
       </Hide>

@@ -29,6 +29,10 @@ export const GET_FLOWS = gql`
           steps {
             iconUrl
           }
+          collaborators {
+            email
+            role
+          }
           pendingTransfer {
             id
           }

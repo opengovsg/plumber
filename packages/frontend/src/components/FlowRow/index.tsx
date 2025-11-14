@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { ReactElement } from 'react'
-import { BiChevronRight } from 'react-icons/bi'
+import { BiChevronRight, BiSolidGroup } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
   Box,
@@ -14,7 +14,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { Badge } from '@opengovsg/design-system-react'
+import { Badge, IconButton } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 import FlowAppIcons from '@/components/FlowAppIcons'
@@ -27,12 +27,14 @@ type FlowRowProps = {
   isExecution?: boolean
   showMenu?: boolean
   showTimestamp?: boolean
+  isShared?: boolean
 }
 
 function FlowRowTitle({
   flow,
   showTimestamp,
-}: Pick<FlowRowProps, 'flow' | 'showTimestamp'>) {
+  isShared,
+}: Pick<FlowRowProps, 'flow' | 'showTimestamp' | 'isShared'>) {
   const createdAt = DateTime.fromMillis(parseInt(flow.createdAt, 10))
   const updatedAt = DateTime.fromMillis(parseInt(flow.updatedAt, 10))
   const isUpdated = updatedAt > createdAt
@@ -40,17 +42,19 @@ function FlowRowTitle({
   const relativeUpdatedAt = updatedAt.toRelative()
   return (
     <VStack alignItems="flex-start" justifyContent="center" maxW="100%">
-      <Text
-        whiteSpace="nowrap"
-        overflow="hidden"
-        textOverflow="ellipsis"
-        display="inline-block"
-        w="100%"
-        maxW="100%"
-        textStyle="subhead-1"
-      >
-        {flow?.name}
-      </Text>
+      <Flex alignItems="center" gap={2} w="100%">
+        <Text
+          whiteSpace="nowrap"
+          overflow="hidden"
+          textOverflow="ellipsis"
+          display="inline-block"
+          maxW="100%"
+          textStyle="subhead-1"
+        >
+          {flow?.name}
+        </Text>
+        {isShared && <Icon boxSize={5} as={BiSolidGroup} />}
+      </Flex>
       {showTimestamp && (
         <Text
           display="inline-block"
@@ -74,6 +78,11 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
     isExecution = false,
     showTimestamp = true,
   } = props
+
+  // NOTE: check is for greater than 1 because collaborators includes the owner
+  const isShared = !!(
+    flow?.collaborators?.length && flow?.collaborators?.length > 1
+  )
 
   return (
     <>
@@ -107,31 +116,43 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
             </HStack>
 
             <Box display={{ base: 'none', md: 'inline-flex' }} minWidth="0">
-              <FlowRowTitle flow={flow} showTimestamp={showTimestamp} />
+              <FlowRowTitle
+                flow={flow}
+                showTimestamp={showTimestamp}
+                isShared={isShared}
+              />
             </Box>
 
             <Spacer />
 
             <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
+              {isShared && (
+                <Badge
+                  colorScheme="secondary"
+                  size="sm"
+                  variant="subtle"
+                  textTransform="capitalize"
+                >
+                  {flow.role}
+                </Badge>
+              )}
               <Badge
-                colorScheme={
-                  flow?.active && flow.role !== 'viewer' ? 'success' : 'grey'
-                }
+                colorScheme={flow?.active ? 'success' : 'grey'}
                 variant="subtle"
               >
-                <Text>
-                  {flow.role === 'viewer'
-                    ? 'View Only'
-                    : flow?.active
-                    ? 'Published'
-                    : 'Draft'}
-                </Text>
+                <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
               </Badge>
 
               {showMenu ? (
                 <FlowContextMenu flow={flow} />
               ) : (
-                <Icon boxSize={5} as={BiChevronRight} />
+                <IconButton
+                  aria-label="View Flow"
+                  colorScheme="secondary"
+                  icon={<BiChevronRight />}
+                  variant="clear"
+                  _hover={{}}
+                />
               )}
             </Flex>
           </Flex>
