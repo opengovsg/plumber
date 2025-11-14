@@ -27,7 +27,7 @@ async function handleChatStream(req: Request, res: Response) {
     'ai-builder-prompt-config',
     context.currentUser.email,
     {
-      chatPrompt: 'aids-chat-v0',
+      chatPrompt: 'ai-builder/chat',
       version: 'production',
     },
   )
