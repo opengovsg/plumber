@@ -6,7 +6,7 @@ const updateFlow: MutationResolvers['updateFlow'] = async (
   context,
 ) => {
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
       id: params.input.id,
     })
