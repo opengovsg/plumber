@@ -127,7 +127,7 @@ async function getMockData($: IGlobalVariable) {
         }
 
         if (fieldType === 'signature') {
-          data.responses[formFields[i]._id].answer = 'signed' // mock this to always be present regardless of whether the user has signed or not
+          data.responses[formFields[i]._id].answer = 'Signature captured' // mock this to always be present regardless of whether the user has signed or not
           continue
         }
 

@@ -168,7 +168,7 @@ export async function decryptFormResponse(
       // Add signature status to the response regardless of whether the user has signed or not (optional field)
       if (rest.fieldType === 'signature') {
         const isSignaturePresent = (rest.answerArray as string[]).length > 0
-        rest.answer = isSignaturePresent ? 'signed' : 'unsigned'
+        rest.answer = isSignaturePresent ? 'Signature captured' : ''
       }
 
       // Note: the order may not be sequential; fields (e.g. NRIC) can be
