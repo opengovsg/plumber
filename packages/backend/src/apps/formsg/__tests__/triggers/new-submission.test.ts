@@ -543,6 +543,15 @@ describe('new submission trigger for answer array fields', () => {
             order: 5,
             answerArray: ['51', 'BRAS BASAH ROAD', '', '', '189554'], // Some empty fields
           },
+          signatureField: {
+            question: 'Sign here',
+            fieldType: 'signature',
+            order: 6,
+            answerArray: [
+              'draw',
+              '[[123.45, 123.45, 0.5], [543.21, 543.21, 0.5]]',
+            ],
+          },
         },
       },
     } as unknown as IExecutionStep
@@ -620,6 +629,17 @@ describe('new submission trigger for answer array fields', () => {
         expect(addressMetadata[index].label).toEqual(
           `5.${index + 1}. ${label} - What is your address?`,
         )
+      })
+    })
+
+    it('Signature type: includes all metadata for signature fields but it is hidden', async () => {
+      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const signatureMetadata = metadata.fields.signatureField
+        .answerArray as IDataOutMetadatum[]
+      expect(signatureMetadata).toHaveLength(2)
+      signatureMetadata.forEach((metadata, index) => {
+        expect(metadata.isHidden).toEqual(true)
+        expect(metadata.label).toEqual(`6.${index + 1}. Sign here`)
       })
     })
   })

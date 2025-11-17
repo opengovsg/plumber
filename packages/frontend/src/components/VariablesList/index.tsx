@@ -156,7 +156,8 @@ export function VariableItem({
           {displayValue.length ? (
             displayValue
           ) : (
-            <i style={{ opacity: 0.5 }}>empty</i>
+            // padding right to ensure the 'y' is not cut off
+            <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
           )}
         </Text>
         {withIcon && <Icon as={withIcon} />}

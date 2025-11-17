@@ -136,7 +136,9 @@ export async function decryptFormResponse(
           )
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>
-            answer.replaceAll('\u0000', ''),
+            typeof answer === 'string'
+              ? answer.replaceAll('\u0000', '')
+              : answer,
           )
         }
       }
@@ -163,6 +165,13 @@ export async function decryptFormResponse(
 
       if (rest.fieldType === 'address') {
         rest.answerArray = processLocalAddress(rest.answerArray as string[])
+      }
+
+      // Add signature status to the response regardless of whether the user has signed or not (optional field)
+      if (rest.fieldType === 'signature') {
+        const isSignaturePresent = (rest.answerArray as string[])?.length > 0
+        rest.answer = isSignaturePresent ? 'Signature captured' : ''
+        delete rest.answerArray // we dont need to store it
       }
 
       // Note: the order may not be sequential; fields (e.g. NRIC) can be
