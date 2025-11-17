@@ -54,20 +54,20 @@ const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
   // COLLABORATORS:
   // check that the current owner has the rights to make the new owner
   // an editor of the Tile (if any)
-  const tilesSteps = flow?.[0].steps?.filter((step) => step.appKey === 'tiles')
-  if (tilesSteps.length > 0) {
-    // check that the current owner has the rights to make the new owner
-    // an editor of all the Tiles in the Pipe
-    await Promise.all(
-      tilesSteps.map(async (step) => {
-        await TableCollaborator.hasAccess(
-          context.currentUser.id,
-          step.parameters.tableId as string,
-          'editor',
-        )
-      }),
-    )
-  }
+  const tilesSteps =
+    flow?.[0].steps?.filter((step) => step.appKey === 'tiles') ?? []
+
+  // check that the current owner has the rights to make the new owner
+  // an editor of all the Tiles in the Pipe
+  await Promise.all(
+    tilesSteps.map(async (step) => {
+      await TableCollaborator.hasAccess(
+        context.currentUser.id,
+        step.parameters.tableId as string,
+        'editor',
+      )
+    }),
+  )
 
   const newTransfer: FlowTransfer = await context.currentUser
     .$relatedQuery('sentFlowTransfers')
