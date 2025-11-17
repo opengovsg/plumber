@@ -88,8 +88,8 @@ export default function createHttpClient({
 
       if (
         (status === 401 || status === 403) &&
-        $.app.auth.refreshToken &&
-        !$.app.auth.isRefreshTokenRequested
+        $.app?.auth?.refreshToken &&
+        !$.app?.auth?.isRefreshTokenRequested
       ) {
         $.app.auth.isRefreshTokenRequested = true
         await $.app.auth.refreshToken($)
