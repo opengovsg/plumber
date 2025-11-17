@@ -8,11 +8,14 @@ const app: IApp = {
   description: 'Integrate with your customised AI Bot',
   iconUrl: '{BASE_URL}/apps/aibots/assets/favicon.svg',
   authDocUrl: '',
-  baseUrl: '',
-  apiBaseUrl: '',
+  baseUrl: 'https://aibots.gov.sg',
+  apiBaseUrl: 'https://api.uat.aibots.gov.sg/v1.0/api',
   primaryColor: '',
   category: 'ai',
   // TODO: add the actual auth here
+  // there is currently no verification available for aibots
+  // its done directly in the action itself
+  // (as requested by AiBots team)
   // auth,
   actions,
 }
