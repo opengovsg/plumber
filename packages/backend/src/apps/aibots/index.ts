@@ -8,6 +8,7 @@ const app: IApp = {
   description: 'Integrate with your customised AI Bot',
   iconUrl: '{BASE_URL}/apps/aibots/assets/favicon.svg',
   authDocUrl: '',
+  // TODO: update this to PROD once aibots releases the PROD API
   baseUrl: 'https://aibots.gov.sg',
   apiBaseUrl: 'https://api.uat.aibots.gov.sg/v1.0/api',
   primaryColor: '',
