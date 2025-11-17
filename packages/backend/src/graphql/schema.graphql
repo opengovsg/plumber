@@ -433,6 +433,7 @@ type FlowConfig {
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
+  notificationRecipients: [NotificationRecipients]!
 }
 
 type FlowTemplateConfig {
@@ -526,6 +527,11 @@ enum NotificationFrequency {
   always
 }
 
+enum NotificationRecipients {
+  editor
+  viewer
+}
+
 input FlowAttachmentsConfigInput {
   name: String!
   displayedValue: String!
@@ -537,6 +543,7 @@ input FlowAttachmentsConfigInput {
 input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
+  notificationRecipients: [NotificationRecipients]
   showSurvey: Boolean
   hasLoadedOnce: Boolean
   attachments: [FlowAttachmentsConfigInput]

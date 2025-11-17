@@ -7,6 +7,7 @@ export const UPDATE_FLOW_CONFIG = gql`
       config {
         errorConfig {
           notificationFrequency
+          notificationRecipients
         }
       }
     }

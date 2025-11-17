@@ -1,3 +1,5 @@
+import { NotificationRecipients } from '@plumber/types'
+
 import { DateTime } from 'luxon'
 
 import appConfig from '@/config/app'
@@ -70,6 +72,25 @@ export async function sendErrorEmail(flow: Flow) {
   const userEmail = flow.user.email
   const errorKey = `error-alert:${flowId}`
   const currDatetime = DateTime.now()
+  const ccList: string[] = []
+
+  // default to notify owner only if no collaborators are specified
+  const notificationRecipients =
+    flow.config?.errorConfig?.notificationRecipients ?? []
+  if (
+    notificationRecipients.length > 0 &&
+    flow.collaborators &&
+    flow.collaborators.length > 0
+  ) {
+    const collaboratorsToCC = flow.collaborators
+      .filter((collaborator) =>
+        notificationRecipients.includes(
+          collaborator.role as NotificationRecipients,
+        ),
+      )
+      .map((collaborator) => collaborator.user.email)
+    ccList.push(...collaboratorsToCC)
+  }
 
   const errorDetails = {
     flowId,
@@ -83,6 +104,7 @@ export async function sendErrorEmail(flow: Flow) {
     body: createBodyErrorMessage(truncatedFlowName, flowId),
     recipient: userEmail,
     replyTo: 'support@plumber.gov.sg',
+    ...(ccList.length > 0 && { cc: ccList }),
   })
 
   await redisClient

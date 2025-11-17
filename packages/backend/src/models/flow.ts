@@ -66,6 +66,13 @@ class Flow extends Base {
               notificationFrequency: {
                 type: 'string',
               },
+              notificationRecipients: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['editor', 'viewer'],
+                },
+              },
             },
           },
         },

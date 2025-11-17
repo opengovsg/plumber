@@ -10,6 +10,7 @@ type Params = {
   input: {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
+    notificationRecipients: IFlowErrorConfig['notificationRecipients']
     showSurvey: boolean
     attachments?: IFlowAttachmentsConfig[]
   }
@@ -35,6 +36,13 @@ const updateFlowConfig = async (
     newConfig.errorConfig = {
       ...newConfig.errorConfig, // If ever undefined (should never be), it gets set to an empty object first
       notificationFrequency: params.input.notificationFrequency,
+    }
+  }
+
+  if (params.input.notificationRecipients !== undefined) {
+    newConfig.errorConfig = {
+      ...newConfig.errorConfig, // If ever undefined (should never be), it gets set to an empty object first
+      notificationRecipients: params.input.notificationRecipients,
     }
   }
 
