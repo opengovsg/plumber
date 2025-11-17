@@ -13,4 +13,4 @@ export const UNSUPPORTED_FIELDS = [
 ]
 
 // Prefix for hex encoding field names that contain special characters
-export const HEX_ENCODED_FIELD_PREFIX = '__hexEncoded__'
+export const HEX_ENCODED_FIELD_PREFIX = '__HEX_ENCODED__'
