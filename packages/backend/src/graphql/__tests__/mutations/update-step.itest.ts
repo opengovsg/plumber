@@ -640,10 +640,12 @@ describe('updateStep mutation', () => {
     })
 
     it('should call add to flow_connections and add table collaborator for tiles app with tableId parameter', async () => {
-      const mockTableId = 'table-123'
+      const mockTableId = randomUUID()
       const { default: FlowConnections } = await import(
         '@/models/flow-connections'
       )
+      // mock the check that the user has access to the tile
+      vi.spyOn(TableCollaborator, 'hasAccess').mockResolvedValue(undefined)
       const addCollaboratorSpy = vi
         .spyOn(TableCollaborator, 'addCollaborator')
         .mockResolvedValue(undefined)

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { AES } from 'crypto-js'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import appConfig from '@/config/app'
 import updateFlowTransferStatus from '@/graphql/mutations/update-flow-transfer-status'
@@ -10,10 +10,11 @@ import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import FlowTransfer from '@/models/flow-transfers'
 import Step from '@/models/step'
+import TableCollaborator from '@/models/table-collaborators'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
+import { generateMockContext, generateMockTable } from './tiles/table.mock'
 import { generateMockFlow, generateMockUser } from './flow.mock'
 
 describe('updateFlowTransferStatus', () => {
@@ -285,6 +286,109 @@ describe('updateFlowTransferStatus', () => {
       // Verify non-Excel steps remain unaffected (Slack step should still work normally)
       const slackStep = await Step.query().findById(slackStepId)
       expect(slackStep.status).toBe('completed')
+    })
+
+    it('verifies old owner has editor access to table before adding new owner as collaborator', async () => {
+      const { table } = await generateMockTable({
+        userId: owner.id,
+        databaseType: 'pg',
+      })
+
+      // Create a tiles step that references the table
+      const tilesStepId = randomUUID()
+      await Step.query().insert({
+        id: tilesStepId,
+        flowId: mockFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        position: 2,
+        parameters: { rowData: [], tableId: table.id },
+        status: 'completed',
+      })
+
+      // Spy on hasAccess to verify it's called with correct parameters
+      const hasAccessSpy = vi
+        .spyOn(TableCollaborator, 'hasAccess')
+        .mockResolvedValue(undefined)
+
+      const addCollaboratorSpy = vi
+        .spyOn(TableCollaborator, 'addCollaborator')
+        .mockResolvedValue(undefined)
+
+      // Approve the transfer as new owner
+      context.currentUser = newOwner
+      const result = await updateFlowTransferStatus(
+        null,
+        { input: { id: transfer.id, status: 'approved' } },
+        context,
+      )
+
+      expect(result.status).toBe('approved')
+
+      // Verify hasAccess was called with old owner's ID and 'editor' role
+      expect(hasAccessSpy).toHaveBeenCalledWith(
+        owner.id, // oldOwnerId
+        table.id, // tableId
+        'editor', // required role
+      )
+
+      // Verify addCollaborator was called to add new owner as editor
+      expect(addCollaboratorSpy).toHaveBeenCalledWith({
+        userId: newOwner.id,
+        tableId: table.id,
+        role: 'editor',
+        trx: expect.anything(),
+      })
+
+      hasAccessSpy.mockRestore()
+      addCollaboratorSpy.mockRestore()
+    })
+
+    it('throws error when old owner does not have editor access to table', async () => {
+      const { table } = await generateMockTable({
+        userId: owner.id,
+        databaseType: 'pg',
+      })
+
+      // Create a tiles step that references the table
+      const tilesStepId = randomUUID()
+      await Step.query().insert({
+        id: tilesStepId,
+        flowId: mockFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        position: 2,
+        parameters: { rowData: [], tableId: table.id },
+        status: 'completed',
+      })
+
+      // Mock hasAccess to throw ForbiddenError (old owner doesn't have access)
+      const { ForbiddenError } = await import('@/errors/graphql-errors')
+      const hasAccessSpy = vi
+        .spyOn(TableCollaborator, 'hasAccess')
+        .mockRejectedValue(
+          new ForbiddenError(
+            'You do not have sufficient permissions for this tile',
+          ),
+        )
+
+      // Approve the transfer as new owner
+      context.currentUser = newOwner
+
+      // Should throw an error indicating old owner lacks permissions
+      await expect(
+        updateFlowTransferStatus(
+          null,
+          { input: { id: transfer.id, status: 'approved' } },
+          context,
+        ),
+      ).rejects.toThrow(
+        'Previous owner does not have sufficient permissions to add you as an Editor of the Tile.',
+      )
+
+      hasAccessSpy.mockRestore()
     })
   })
 })
