@@ -894,4 +894,66 @@ describe('decrypt form response', () => {
       )
     })
   })
+
+  describe('signature field', () => {
+    it('should handle signature field with signature captured', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'signatureField',
+            fieldType: 'signature',
+            question: 'Please sign here',
+            answerArray: [1.1, 1.2, 1.3],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            signatureField: {
+              fieldType: 'signature',
+              question: 'Please sign here',
+              answer: 'Signature captured',
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+
+    it('should handle signature field without signature', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'signatureField',
+            fieldType: 'signature',
+            question: 'Please sign here',
+            answerArray: [],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            signatureField: {
+              fieldType: 'signature',
+              question: 'Please sign here',
+              answer: '',
+              order: 1,
+            },
+          },
+        }),
+      )
+    })
+  })
 })

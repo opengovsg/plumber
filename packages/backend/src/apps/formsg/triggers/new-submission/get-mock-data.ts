@@ -128,7 +128,6 @@ async function getMockData($: IGlobalVariable) {
 
         if (fieldType === 'signature') {
           data.responses[formFields[i]._id].answer = 'Signature captured' // mock this to always be present regardless of whether the user has signed or not
-          continue
         }
 
         // formsg payload doesnt contain this anyways, so we dont return in mock data
