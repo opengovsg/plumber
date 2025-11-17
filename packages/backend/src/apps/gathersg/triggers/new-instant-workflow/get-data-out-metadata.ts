@@ -1,5 +1,7 @@
 import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 
+import { HEX_ENCODED_FIELD_PREFIX } from '../../common/constants'
+
 import { dataOutSchema } from './schema'
 
 async function getDataOutMetadata(
@@ -51,14 +53,31 @@ async function getDataOutMetadata(
     updatedByMetadata = { isHidden: true }
   }
 
+  // handle finalisedBy field
+  let finalisedByMetadata = Object.create(null)
+  if (dataOut.finalisedBy) {
+    finalisedByMetadata.email = { label: 'Finalised by (email)' }
+    finalisedByMetadata.name = { label: 'Finalised by (name)' }
+  } else {
+    finalisedByMetadata = { isHidden: true }
+  }
+
   // handle hex-encoded field names from dataOut
   const fieldsMetadata = Object.create(null)
   if (dataOut.fields) {
-    for (const hexKey of Object.keys(dataOut.fields)) {
+    for (const key of Object.keys(dataOut.fields)) {
       try {
-        // decode hex key to get the original column name
-        const decodedLabel = Buffer.from(hexKey, 'hex').toString('utf-8')
-        const fieldValue = dataOut.fields[hexKey]
+        // decode hex encoded field name to get the original field name
+        let decodedLabel: string
+        if (key.startsWith(HEX_ENCODED_FIELD_PREFIX)) {
+          decodedLabel = Buffer.from(
+            key.replace(HEX_ENCODED_FIELD_PREFIX, ''),
+            'hex',
+          ).toString('utf-8')
+        } else {
+          decodedLabel = key
+        }
+        const fieldValue = dataOut.fields[decodedLabel]
 
         // check if the value is an array
         if (Array.isArray(fieldValue)) {
@@ -88,18 +107,18 @@ async function getDataOutMetadata(
               rowsMetadata[i] = rowMetadata
             }
 
-            fieldsMetadata[hexKey] = rowsMetadata
+            fieldsMetadata[key] = rowsMetadata
           } else {
             // array of primitives (strings, numbers, etc.) - treat as simple field
-            fieldsMetadata[hexKey] = { label: decodedLabel }
+            fieldsMetadata[key] = { label: decodedLabel }
           }
         } else {
           // not an array - treat as simple field
-          fieldsMetadata[hexKey] = { label: decodedLabel }
+          fieldsMetadata[key] = { label: decodedLabel }
         }
       } catch (error) {
         // if decoding fails, use the hex key as-is
-        fieldsMetadata[hexKey] = { label: hexKey }
+        fieldsMetadata[key] = { label: key }
       }
     }
   }
@@ -110,7 +129,18 @@ async function getDataOutMetadata(
       fields: fieldsMetadata,
       formsg: formSgMetadata,
       createdBy: createdByMetadata,
+      finalisedBy: finalisedByMetadata,
       updatedBy: updatedByMetadata,
+
+      caseRef: { label: 'Case ref' },
+      createdAt: { label: 'Created at' },
+      email: { isHidden: true }, // hide to avoid confusing user in case there is an email field
+      finalisedAt: { label: 'Finalised at' },
+      source: { label: 'Source' },
+      status: { label: 'Status' },
+      type: { label: 'Case type' },
+      updatedAt: { label: 'Updated at' },
+      uuid: { label: 'UUID' },
     },
   }
 }

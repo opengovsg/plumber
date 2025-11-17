@@ -11,3 +11,6 @@ export const UNSUPPORTED_FIELDS = [
   'table', // array of objects
   'attachment',
 ]
+
+// Prefix for hex encoding field names that contain special characters
+export const HEX_ENCODED_FIELD_PREFIX = '__hexEncoded__'
