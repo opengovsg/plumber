@@ -35,7 +35,7 @@ function validateData(data: any, flowId: string, app: string) {
 
 export function processFields(fields: Record<string, any>) {
   const processedFields: Record<string, any> = {}
-  const invalidCharRegex = /[^\da-zA-Z0-9-_ ]/
+  const invalidCharRegex = /[^a-zA-Z0-9-_ ]/
   for (const [key, value] of Object.entries(fields)) {
     if (invalidCharRegex.test(key)) {
       const hexKey = `${HEX_ENCODED_FIELD_PREFIX}${Buffer.from(key).toString(
