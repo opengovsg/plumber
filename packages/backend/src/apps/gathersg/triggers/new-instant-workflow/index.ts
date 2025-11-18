@@ -4,6 +4,7 @@ import { type SafeParseError, type ZodIssue } from 'zod'
 
 import StepError from '@/errors/step'
 
+import getDataOutMetadata from './get-data-out-metadata'
 import { encryptionKeySchema } from './schema'
 
 const trigger: IRawTrigger = {
@@ -28,6 +29,8 @@ const trigger: IRawTrigger = {
       variables: false,
     },
   ],
+
+  getDataOutMetadata,
 
   async testRun($: IGlobalVariable) {
     const { encryptionKey } = $.step.parameters

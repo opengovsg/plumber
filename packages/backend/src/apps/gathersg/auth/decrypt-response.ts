@@ -5,6 +5,8 @@ import crypto from 'crypto'
 import appConfig from '@/config/app'
 import logger from '@/helpers/logger'
 
+import { HEX_ENCODED_FIELD_PREFIX } from '../common/constants'
+
 import schema from './schema'
 
 function getInternalId(data: any) {
@@ -28,6 +30,23 @@ function validateData(data: any, flowId: string, app: string) {
       'GatherSG: potential infinite loop! Webhook not triggered by user!',
     )
   }
+  return validationResult.data
+}
+
+export function processFields(fields: Record<string, any>) {
+  const processedFields: Record<string, any> = {}
+  const invalidCharRegex = /[^a-zA-Z0-9-_ ]/
+  for (const [key, value] of Object.entries(fields)) {
+    if (invalidCharRegex.test(key)) {
+      const hexKey = `${HEX_ENCODED_FIELD_PREFIX}${Buffer.from(key).toString(
+        'hex',
+      )}`
+      processedFields[hexKey] = value
+    } else {
+      processedFields[key] = value
+    }
+  }
+  return processedFields
 }
 
 function verifySignature(signature: string, basestring: string) {
@@ -76,12 +95,16 @@ export async function decryptResponse(
         decipher.final(),
       ]).toString()
       const decryptedData = JSON.parse(decryptedStr)
-
       validateData(decryptedData, $.flow.id, app)
+
+      const processedFields = processFields(decryptedData.fields)
 
       $.request.body = {
         app,
-        data: decryptedData,
+        data: {
+          ...decryptedData,
+          fields: processedFields,
+        },
         signature,
         timestamp,
       }
@@ -92,6 +115,16 @@ export async function decryptResponse(
       }
     } else {
       validateData(data, $.flow.id, app)
+      const processedFields = processFields(data.fields)
+      $.request.body = {
+        app,
+        data: {
+          ...data,
+          fields: processedFields,
+        },
+        signature,
+        timestamp,
+      }
 
       return {
         verified: true,
