@@ -53,8 +53,7 @@ function VariableTag({
       case 'ai_response':
         return {
           label: 'AI response',
-          tooltip:
-            'This variable is AI-generated. Check for errors before using it.',
+          tooltip: 'This is AI-generated. Check for errors before using it.',
         }
       default:
         return {
