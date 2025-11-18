@@ -290,7 +290,8 @@ export function getInfoBoxDetails({
     return [
       'warning',
       <Text key={`${stepId}-ai-warning-text`}>
-        AI can make mistakes. Check your responses across multiple test cases.
+        AI can make mistakes. Check the response{' '}
+        {!isDirty && 'across multiple test cases'}
       </Text>,
     ]
   }
