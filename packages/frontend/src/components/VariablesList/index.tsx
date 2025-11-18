@@ -1,6 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { IconType } from 'react-icons/lib'
 import {
   Accordion,
@@ -25,7 +25,6 @@ import TableVariableItem from './TableVariableItem'
 
 const VARIABLE_ITEM_HEIGHT = 77
 const SUGGESTION_VARIABLE_ITEM_HEIGHT = 61
-const CHARACTER_LIMIT = 100
 
 function VariableTag({
   type,
@@ -99,6 +98,8 @@ export function VariableItem({
   withIcon?: IconType
 }): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
   const shouldShowBottomBorder = !withIcon && (onClick || isLast)
 
   const displayValue =
@@ -106,8 +107,18 @@ export function VariableItem({
 
   const isSuggestionVariable = onClick && !withIcon
 
-  const shouldShowToggle =
-    variable.type === 'ai_response' && displayValue.length > CHARACTER_LIMIT
+  // Check if text is overflowing after render
+  useEffect(() => {
+    if (variable.type === 'ai_response' && textRef.current && !isExpanded) {
+      const element = textRef.current
+      const isTextOverflowing =
+        element.scrollHeight > element.clientHeight ||
+        element.scrollWidth > element.clientWidth
+      setIsOverflowing(isTextOverflowing)
+    }
+  }, [variable.type, isExpanded])
+
+  const shouldShowToggle = variable.type === 'ai_response' && isOverflowing
 
   return (
     <Box
@@ -124,10 +135,10 @@ export function VariableItem({
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
           : shouldShowToggle
-          ? 'auto'
+          ? undefined
           : VARIABLE_ITEM_HEIGHT
       }
-      overflowY="hidden"
+      overflowY={shouldShowToggle && isExpanded ? 'visible' : 'hidden'}
       padding={isSuggestionVariable ? '0.5rem 1rem' : '1rem'}
       borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
@@ -167,6 +178,7 @@ export function VariableItem({
       <Flex flexDirection="column" gap={1}>
         <Flex alignItems="center" gap={2}>
           <Text
+            ref={textRef}
             textStyle="body-2"
             color="base.content.medium"
             whiteSpace={isExpanded ? 'pre-wrap' : 'nowrap'}
@@ -241,6 +253,7 @@ export default function VariablesList(props: VariablesListProps) {
     getScrollElement: () => parentRef.current,
     estimateSize: () =>
       onClick ? SUGGESTION_VARIABLE_ITEM_HEIGHT : VARIABLE_ITEM_HEIGHT,
+    measureElement: (element) => element.getBoundingClientRect().height,
     overscan: 50,
   })
 
@@ -266,6 +279,7 @@ export default function VariablesList(props: VariablesListProps) {
             <Box
               key={virtualItem.key}
               data-index={virtualItem.index}
+              ref={virtualizer.measureElement}
               position="absolute"
               top={0}
               left={0}
