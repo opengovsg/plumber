@@ -34,26 +34,26 @@ export const AI_CHAT_IDEAS = [
     label: 'Route support enquiries',
     icon: 'BiDirections',
     input:
-      'When a new support enquiry is submitted, if the query is related to IT, route to the IT department. If the query is related to HR, route to the HR department. If the query is related to Finance, route to the Finance department.',
+      'I have a FormSG that I am using to track attendance. I need this workflow to track who has signed up and is present. It should also note down if this person is a new registrant.',
   },
   {
     label: 'Schedule reminders',
     icon: 'BiCalendar',
     input:
-      'Every day at 09:00 AM, find rows in Tiles where the RSVPed column is Yes and the Reminder sent column is empty. For each row, send a reminder email to the attendee. Mark the row as Reminder sent.',
+      'I need to remind supervisors who have pending cases to act on them 3 days before the due date. The pending cases are recorded in a table.',
   },
   {
     label: 'Attendance taking',
     icon: 'BiCheckDouble',
     input:
-      "When a new event attendance is received, find the attendee in Tiles. If the attendee is found, update the Attended? column to Yes. If the attendee is not found, create a new row in Tiles with the attendee's details.",
+      'I have a FormSG that I am using to track attendance. I need this workflow to track who has signed up and is present. It should also note down if this person is a new registrant.',
   },
-  {
-    label: 'Send follow ups',
-    icon: 'BiEnvelope',
-    input:
-      'When a new form submission is received, send a follow up email to the customer.',
-  },
+  // {
+  //   label: 'Send follow ups',
+  //   icon: 'BiEnvelope',
+  //   input:
+  //     'When a new form submission is received, send a follow up email to the customer.',
+  // },
 ]
 
 export type AiChatIdea = {
