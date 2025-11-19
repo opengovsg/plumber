@@ -68,7 +68,7 @@ export default function ChatInterface() {
         flexDir="column"
         alignItems="center"
         justifyContent="center"
-        gap={4}
+        gap="1.5rem"
         px={4}
       >
         {messages.length === 0 && (
@@ -80,6 +80,7 @@ export default function ChatInterface() {
             isStreaming={isStreaming}
             cancelStream={cancelStream}
             showIdeas={true}
+            placeholder="Tell us step-by-step what happens in your workflow"
           />
         </Box>
       </Flex>

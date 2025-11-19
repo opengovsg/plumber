@@ -18,6 +18,7 @@ import IdeaButtons from '../IdeaButtons'
 interface PromptInputProps {
   isStreaming: boolean
   showIdeas?: boolean
+  placeholder?: string
   sendMessage: (message: string) => void
   cancelStream: () => void
 }
@@ -25,6 +26,7 @@ interface PromptInputProps {
 export default function PromptInput({
   isStreaming,
   showIdeas = false,
+  placeholder = 'Send a message',
   sendMessage,
   cancelStream,
 }: PromptInputProps) {
@@ -73,7 +75,7 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        mb={3}
+        mb={6}
       >
         <Textarea
           ref={textareaRef}
@@ -81,7 +83,7 @@ export default function PromptInput({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder="Tell us step-by-step what happens in your workflow."
+          placeholder={placeholder}
           w="full"
           resize="none"
           border="none"

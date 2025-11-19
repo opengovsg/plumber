@@ -14,10 +14,10 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
   const isMobile = useIsMobile()
 
   return (
-    <Flex flexDir="column">
-      <FormLabel isRequired>
+    <Flex flexDir="row" alignItems="center">
+      <FormLabel isRequired style={{ margin: 0, marginRight: '0.5rem' }}>
         {/* arbitrary isRequired to hide optional text */}
-        Need inspiration? Try one of these:
+        Try:
       </FormLabel>
       <Flex
         flexDir="row"
