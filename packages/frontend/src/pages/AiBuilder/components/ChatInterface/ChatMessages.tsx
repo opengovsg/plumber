@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Box, Flex, Image, ImageProps, Text, VStack } from '@chakra-ui/react'
 
 import plumberLogo from '@/assets/plumber-logo.svg'
@@ -56,10 +55,8 @@ export default function ChatMessages({
   isStreaming,
   messagesEndRef,
   messagesContainerRef,
-  onOpenDrawer,
+  onOpenDrawer: _onOpenDrawer, // TODO: Implement preview drawer
 }: ChatMessagesProps) {
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
-
   return (
     <Flex
       ref={messagesContainerRef}
@@ -94,13 +91,7 @@ export default function ChatMessages({
                     <ChakraStreamdown isAnimating={false}>
                       {message.text || ''}
                     </ChakraStreamdown>
-                    <ChatMessageToolbar
-                      message={message}
-                      index={index}
-                      copiedIndex={copiedIndex}
-                      setCopiedIndex={setCopiedIndex}
-                      onOpenDrawer={onOpenDrawer}
-                    />
+                    <ChatMessageToolbar />
                   </Box>
                 </Flex>
               )}
