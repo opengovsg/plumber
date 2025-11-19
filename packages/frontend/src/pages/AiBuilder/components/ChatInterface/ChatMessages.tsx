@@ -86,7 +86,7 @@ export default function ChatMessages({
                 </Flex>
               ) : (
                 <Flex gap={3} w="full" align="start">
-                  <PlumberAvatar mt={1} />
+                  <PlumberAvatar mt={3} />
                   <Box flex={1} color="gray.900">
                     <ChakraStreamdown isAnimating={false}>
                       {message.text || ''}

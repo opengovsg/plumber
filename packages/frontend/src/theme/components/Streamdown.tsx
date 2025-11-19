@@ -14,12 +14,12 @@ export function ChakraStreamdown({
     <Streamdown
       isAnimating={isAnimating}
       components={{
-        h1: (props) => <Text textStyle="h1" mb={4} {...props} />,
-        h2: (props) => <Text textStyle="h2" mb={4} {...props} />,
-        h3: (props) => <Text textStyle="h3" mb={4} {...props} />,
-        h4: (props) => <Text textStyle="h4" mb={4} {...props} />,
-        h5: (props) => <Text textStyle="h5" mb={4} {...props} />,
-        h6: (props) => <Text textStyle="h6" mb={4} {...props} />,
+        h1: (props) => <Text textStyle="h1" {...props} />,
+        h2: (props) => <Text textStyle="h2" mb={2} {...props} />,
+        h3: (props) => <Text textStyle="h3" mt={2} mb={2} {...props} />,
+        h4: (props) => <Text textStyle="h4" mt={2} mb={2} {...props} />,
+        h5: (props) => <Text textStyle="h5" mt={2} mb={2} {...props} />,
+        h6: (props) => <Text textStyle="h6" mt={2} mb={2} {...props} />,
         p: (props) => <Text {...props} />,
         code: (props) => <Code colorScheme="gray" {...props} />,
         a: (props) => <Link color="blue.500" {...props} />,
