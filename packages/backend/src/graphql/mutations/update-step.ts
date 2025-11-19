@@ -28,7 +28,10 @@ const updateStep: MutationResolvers['updateStep'] = async (
       throw new BadUserInputError('Step not found')
     }
 
-    step.flow.assertNotUpdatedSince(input.flow.updatedAt)
+    step.flow.assertNotUpdatedSince(
+      input.flow.updatedAt,
+      context.currentUser.id,
+    )
 
     if (input.connection.id) {
       // if connectionId is specified, verify that the connection exists
@@ -121,11 +124,13 @@ const updateStep: MutationResolvers['updateStep'] = async (
     // update the flow's last updated
     const updatedFlow = await step.flow.patchLastUpdated({
       flowId: step.flowId,
+      updatedBy: context.currentUser.id,
       trx,
     })
 
     // do this instead of spreading the updatedStep so that it preserves the Model instance
     updatedStep.flow.updatedAt = updatedFlow.updatedAt
+    updatedStep.flow.updatedBy = context.currentUser.id
     return updatedStep
   })
 

@@ -50,6 +50,7 @@ class Flow extends Base {
       userId: { type: 'string', format: 'uuid' },
       remoteWebhookId: { type: 'string' },
       active: { type: 'boolean' },
+      updatedBy: { type: 'string', format: 'uuid' },
 
       config: {
         type: 'object',
@@ -251,19 +252,30 @@ class Flow extends Base {
 
   async patchLastUpdated({
     flowId,
+    updatedBy,
     trx,
   }: {
     flowId: string
+    updatedBy: string
     trx?: Transaction
   }) {
     return await this.$query(trx).patchAndFetchById(flowId, {
       updatedAt: new Date().toISOString(),
+      updatedBy,
     })
   }
 
-  assertNotUpdatedSince(clientUpdatedAt: string) {
+  assertNotUpdatedSince(clientUpdatedAt: string, updatedBy: string) {
     const inputTimestamp = Number(clientUpdatedAt)
     const flowTimestamp = new Date(this.updatedAt).getTime()
+    const flowLastUpdatedBy = this.updatedBy
+
+    // return early if the flow was last updated by the same user
+    // avoid potential issues where its a valid update by the same user
+    // but the client timestamp is not updated due to race condition or network issues
+    if (flowLastUpdatedBy === updatedBy) {
+      return true
+    }
 
     if (isNaN(inputTimestamp) || inputTimestamp !== flowTimestamp) {
       throw new BadUserInputError(

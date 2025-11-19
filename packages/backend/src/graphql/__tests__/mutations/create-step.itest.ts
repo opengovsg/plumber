@@ -67,6 +67,7 @@ describe('createStep mutation integration tests', async () => {
     testFlow = await testUser.$relatedQuery('flows').insertAndFetch({
       name: 'Test Flow',
       // additional flow properties as needed
+      updatedBy: owner.id,
     })
     testFlowTimestampString = String(new Date(testFlow.updatedAt).getTime())
 
@@ -448,7 +449,7 @@ describe('createStep mutation integration tests', async () => {
     expect((newStep as any).connectionId).toBeNull()
   })
 
-  describe('updatedAt validation', () => {
+  describe('updatedAt and updatedBy validation', () => {
     it('should succeed when input.flow.updatedAt matches flow.updatedAt (timestamp string)', async () => {
       const params = {
         input: {
@@ -469,10 +470,34 @@ describe('createStep mutation integration tests', async () => {
       expect(newStep.key).toBe('newStep')
     })
 
-    it('should throw when input.flow.updatedAt is different from flow.updatedAt (timestamp string)', async () => {
+    it('should succeed when input.flow.updatedAt is different from flow.updatedAt for same user', async () => {
       const futureTimestamp = (
         new Date(testFlow.updatedAt).getTime() + 1000
       ).toString()
+      const params = {
+        input: {
+          flow: {
+            id: testFlow.id,
+            updatedAt: futureTimestamp,
+          },
+          previousStep: { id: existingSteps[0].id },
+          key: 'newStep',
+          appKey: 'test-app',
+          parameters: { newParam: 'value' },
+        },
+      }
+
+      const newStep = await createStep(null, params, context)
+
+      expect(newStep).toBeDefined()
+      expect(newStep.key).toBe('newStep')
+    })
+
+    it('should throw when input.flow.updatedAt is different from flow.updatedAt for different user', async () => {
+      const futureTimestamp = (
+        new Date(testFlow.updatedAt).getTime() + 1000
+      ).toString()
+      context.currentUser = editor
       const params = {
         input: {
           flow: {
@@ -494,35 +519,11 @@ describe('createStep mutation integration tests', async () => {
       )
     })
 
-    it('should throw when input.flow.updatedAt is different from flow.updatedAt (unix timestamp string)', async () => {
-      const futureUnixTimestamp = Math.floor(
-        (new Date(testFlow.updatedAt).getTime() + 1000) / 1000,
-      ).toString()
-      const params = {
-        input: {
-          flow: {
-            id: testFlow.id,
-            updatedAt: futureUnixTimestamp,
-          },
-          previousStep: { id: existingSteps[0].id },
-          key: 'newStep',
-          appKey: 'test-app',
-          parameters: { newParam: 'value' },
-        },
-      }
-
-      await expect(createStep(null, params, context)).rejects.toThrow(
-        BadUserInputError,
-      )
-      await expect(createStep(null, params, context)).rejects.toThrow(
-        REFRESH_PIPE_MESSAGE,
-      )
-    })
-
-    it('should throw when input.flow.updatedAt is older than flow.updatedAt (timestamp string)', async () => {
+    it('should throw when input.flow.updatedAt is older than flow.updatedAt for different user', async () => {
       const oldTimestamp = (
         new Date(testFlow.updatedAt).getTime() - 5000
       ).toString()
+      context.currentUser = editor
       const params = {
         input: {
           flow: {
@@ -544,7 +545,7 @@ describe('createStep mutation integration tests', async () => {
       )
     })
 
-    it('should throw when input.flow.updatedAt is an invalid timestamp string', async () => {
+    it('should not throw when input.flow.updatedAt is an invalid timestamp string', async () => {
       const params = {
         input: {
           flow: {
@@ -558,12 +559,10 @@ describe('createStep mutation integration tests', async () => {
         },
       }
 
-      await expect(createStep(null, params, context)).rejects.toThrow(
-        BadUserInputError,
-      )
-      await expect(createStep(null, params, context)).rejects.toThrow(
-        REFRESH_PIPE_MESSAGE,
-      )
+      const newStep = await createStep(null, params, context)
+
+      expect(newStep).toBeDefined()
+      expect(newStep.key).toBe('newStep')
     })
   })
 })
