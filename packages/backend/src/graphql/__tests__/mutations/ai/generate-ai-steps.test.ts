@@ -121,7 +121,7 @@ describe('generateAiSteps mutation', () => {
         },
         context,
       ),
-    ).rejects.toThrow('Trigger description must be at least 15 characters')
+    ).rejects.toThrow('Description must be at least 15 characters')
   })
 
   it('should throw an error if the input is invalid', async () => {
@@ -136,7 +136,7 @@ describe('generateAiSteps mutation', () => {
         },
         context,
       ),
-    ).rejects.toThrow('Actions description must be at least 30 characters')
+    ).rejects.toThrow('Description must be at least 30 characters')
   })
 
   it('should map step positions correctly', async () => {
