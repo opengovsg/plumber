@@ -25,10 +25,11 @@ export default function IdeaButtons({
         Try:
       </FormLabel>
       <Flex
-        flexDir="row"
+        flexDir={isMobile ? 'column' : 'row'}
         gap={2}
         justifyContent="space-between"
         flexWrap="wrap"
+        w={isMobile ? 'full' : 'auto'}
       >
         {ideas.map((idea) => (
           <Button
@@ -43,7 +44,7 @@ export default function IdeaButtons({
             onClick={() => onClick(idea)}
             px={isForm ? 2 : 3}
             minH={4}
-            w={isMobile ? 'calc(50% - 4px)' : 'auto'}
+            w={isMobile ? 'full' : 'auto'}
             flexShrink={0}
           >
             <TemplateIcon iconName={idea.icon} fontSize="1rem" />

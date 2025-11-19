@@ -125,7 +125,11 @@ export const AIFormModalContent = ({
           </Flex>
         </ModalBody>
         <ModalFooter>
-          <Flex justifyContent="space-between" alignItems="center" w="100%">
+          <Flex
+            justifyContent={isMobile ? 'flex-end' : 'space-between'}
+            alignItems="center"
+            w="100%"
+          >
             {!isMobile && (
               <Flex gap={1} alignItems="center" justifyContent="center">
                 <Text fontSize="xs" color="gray.500">
