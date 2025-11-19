@@ -12,6 +12,14 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2025-11-21',
+    tag: NEW_FEATURE_TAG,
+    title: 'Collaborators — add editors and viewers to your pipes',
+    details: dedent`
+      With collaborators, you can add editors or viewers to help build or troubleshoot your pipe. Read more about permissions and set up in our guide.
+    `,
+  },
+  {
     date: '2025-09-22',
     tag: NEW_FEATURE_TAG,
     title: `For each item — automate reminders for events, tasks and more!`,
