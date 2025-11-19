@@ -116,11 +116,10 @@ const AddNewCollaborator = ({
             {role === 'editor' && <SharedConnections />}
 
             <Button
-              variant={role === 'owner' ? 'solid' : 'outline'}
-              colorScheme="red"
               type="submit"
               isLoading={isAdding}
               isDisabled={!isValid}
+              alignSelf="flex-end"
             >
               Add collaborator
             </Button>
