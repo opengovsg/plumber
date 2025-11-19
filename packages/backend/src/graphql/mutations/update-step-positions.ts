@@ -50,7 +50,7 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
     }
 
     const flow = steps[0].flow
-    flow.assertNotUpdatedSince(input.flow.updatedAt)
+    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
 
     const foundStepIds = steps.map((step) => step.id)
     const missingStepIds = stepIds.filter(
