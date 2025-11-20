@@ -514,6 +514,7 @@ input CreateTemplatedFlowInput {
 input UpdateFlowInput {
   id: String!
   name: String!
+  updatedAt: String!
 }
 
 input UpdateFlowStatusInput {
