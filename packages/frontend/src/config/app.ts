@@ -57,7 +57,7 @@ function getAppConfig(): AppConfig {
         ssoHostname: 'https://sso.open.gov.sg',
         // TODO: update to use Rome when ready
         pairRomeBaseUrl: 'https://istanbul.pair.gov.sg',
-        pairRomePublicKey: 'pk-lf-3874d01f-530f-42f9-afd7-ea46d1bcfac3',
+        pairRomePublicKey: 'pk-lf-1f6acb1e-85c0-4af7-bea7-6f465f7c0141',
         ...commonEnv,
       }
     default:
@@ -70,7 +70,7 @@ function getAppConfig(): AppConfig {
         ssoHostname: 'http://localhost:5354',
         // TODO: update to use Rome when ready
         pairRomeBaseUrl: 'https://istanbul.pair.gov.sg',
-        pairRomePublicKey: 'pk-lf-3874d01f-530f-42f9-afd7-ea46d1bcfac3',
+        pairRomePublicKey: 'pk-lf-1f6acb1e-85c0-4af7-bea7-6f465f7c0141',
         ...commonEnv,
       }
   }
