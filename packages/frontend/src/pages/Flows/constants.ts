@@ -34,7 +34,7 @@ export const AI_CHAT_IDEAS = [
     label: 'Route support enquiries',
     icon: 'BiDirections',
     input:
-      'I have a FormSG that I am using to track attendance. I need this workflow to track who has signed up and is present. It should also note down if this person is a new registrant.',
+      'Route FormSG support requests to different teams based on the issue type selected - technical issues go to IT, billing questions to Finance, and general enquiries to Customer Service.',
   },
   {
     label: 'Schedule reminders',
