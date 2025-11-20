@@ -18,6 +18,9 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     details: dedent`
       With collaborators, you can add editors or viewers to help build or troubleshoot your pipe. Read more about permissions and set up in our guide.
     `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-collaborators-whats-new.png',
+    },
   },
   {
     date: '2025-09-22',
