@@ -332,6 +332,7 @@ describe('updateFlowStatus', () => {
       expect(result).toEqual(fakeFlow)
       expect(fakeFlow.assertNotUpdatedSince).toHaveBeenCalledWith(
         defaultInput.updatedAt,
+        editor.id,
       )
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,

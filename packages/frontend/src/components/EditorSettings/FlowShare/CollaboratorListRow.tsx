@@ -61,7 +61,7 @@ const CollaboratorListRow = ({
   }
 
   return (
-    <Flex alignItems="center" w="100%" py={1} px={4}>
+    <Flex alignItems="center" w="100%" py={1}>
       <Text flex={1}>
         {collaborator.email}{' '}
         {isSelf && (

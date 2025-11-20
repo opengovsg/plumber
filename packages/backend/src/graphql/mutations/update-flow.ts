@@ -12,8 +12,12 @@ const updateFlow: MutationResolvers['updateFlow'] = async (
     })
     .throwIfNotFound()
 
+  flow.assertNotUpdatedSince(params.input.updatedAt, context.currentUser.id)
+
   return await flow.$query().patchAndFetch({
     name: params.input.name,
+    updatedAt: new Date().toISOString(),
+    updatedBy: context.currentUser.id,
   })
 }
 

@@ -24,7 +24,7 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
-    flow.assertNotUpdatedSince(input.flow.updatedAt)
+    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
 
     // if connectionId is specified, verify that the connection exists
     // and the user has the appropriate permissions to use it
@@ -84,7 +84,11 @@ const createStep: MutationResolvers['createStep'] = async (
       })
     }
 
-    const updatedFlow = await flow.patchLastUpdated({ flowId: flow.id, trx })
+    const updatedFlow = await flow.patchLastUpdated({
+      flowId: flow.id,
+      updatedBy: context.currentUser.id,
+      trx,
+    })
 
     return {
       ...step,

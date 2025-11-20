@@ -25,7 +25,7 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
       })
       .throwIfNotFound()
 
-    flow.assertNotUpdatedSince(input.flow.updatedAt)
+    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
 
     // create all the steps in the transaction so that if any fails
     // this entire query fails
@@ -90,7 +90,11 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
       // was created in the original branch
     }
 
-    const updatedFlow = await flow.patchLastUpdated({ flowId: flow.id, trx })
+    const updatedFlow = await flow.patchLastUpdated({
+      flowId: flow.id,
+      updatedBy: context.currentUser.id,
+      trx,
+    })
 
     return {
       steps: newSteps,

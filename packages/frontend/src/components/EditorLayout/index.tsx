@@ -83,13 +83,7 @@ export default function EditorLayout() {
           input: {
             id: flowId,
             name,
-          },
-        },
-        optimisticResponse: {
-          updateFlow: {
-            __typename: 'Flow',
-            id: flow?.id,
-            name,
+            updatedAt: flow?.updatedAt,
           },
         },
       })

@@ -38,7 +38,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
       })
 
     const flow = steps[0].flow
-    flow.assertNotUpdatedSince(input.flow.updatedAt)
+    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
 
     if (!steps.every((step) => step.flowId === steps[0].flowId)) {
       throw new Error('All steps to be deleted must be from the same pipe!')
@@ -114,7 +114,11 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
         .patch({ position: raw(`position - ${steps.length}`) })
     }
 
-    await flow.patchLastUpdated({ flowId: flow.id, trx })
+    await flow.patchLastUpdated({
+      flowId: flow.id,
+      updatedBy: context.currentUser.id,
+      trx,
+    })
 
     return await flow
       .$query(trx)

@@ -1,9 +1,12 @@
+import { randomUUID } from 'crypto'
 import { describe, expect, it } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors/bad-user-input'
 import Flow from '@/models/flow'
 
 describe('flow model', () => {
+  const updatedBy = randomUUID()
+
   describe('assertNotUpdatedSince', () => {
     it('should not throw when timestamps match', () => {
       const flow = new Flow()
@@ -13,7 +16,9 @@ describe('flow model', () => {
 
       const clientUpdatedAt = String(updatedAt.getTime())
 
-      expect(() => flow.assertNotUpdatedSince(clientUpdatedAt)).not.toThrow()
+      expect(() =>
+        flow.assertNotUpdatedSince(clientUpdatedAt, updatedBy),
+      ).not.toThrow()
     })
 
     it('should throw BadUserInputError when timestamps mismatch', () => {
@@ -24,10 +29,10 @@ describe('flow model', () => {
 
       const mismatched = String(updatedAt.getTime() + 1)
 
-      expect(() => flow.assertNotUpdatedSince(mismatched)).toThrowError(
-        BadUserInputError,
-      )
-      expect(() => flow.assertNotUpdatedSince(mismatched)).toThrow(
+      expect(() =>
+        flow.assertNotUpdatedSince(mismatched, updatedBy),
+      ).toThrowError(BadUserInputError)
+      expect(() => flow.assertNotUpdatedSince(mismatched, updatedBy)).toThrow(
         'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.',
       )
     })
@@ -38,10 +43,12 @@ describe('flow model', () => {
 
       flow.updatedAt = updatedAt.toISOString()
 
-      expect(() => flow.assertNotUpdatedSince('not-a-number')).toThrowError(
-        BadUserInputError,
-      )
-      expect(() => flow.assertNotUpdatedSince('not-a-number')).toThrow(
+      expect(() =>
+        flow.assertNotUpdatedSince('not-a-number', updatedBy),
+      ).toThrowError(BadUserInputError)
+      expect(() =>
+        flow.assertNotUpdatedSince('not-a-number', updatedBy),
+      ).toThrow(
         'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.',
       )
     })

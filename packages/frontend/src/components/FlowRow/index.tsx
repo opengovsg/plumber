@@ -1,7 +1,7 @@
 import type { IFlow } from '@plumber/types'
 
 import { ReactElement } from 'react'
-import { BiChevronRight, BiSolidGroup } from 'react-icons/bi'
+import { BiChevronRight, BiGroup } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 import {
   Box,
@@ -53,7 +53,7 @@ function FlowRowTitle({
         >
           {flow?.name}
         </Text>
-        {isShared && <Icon boxSize={5} as={BiSolidGroup} />}
+        {isShared && <Icon boxSize={5} as={BiGroup} />}
       </Flex>
       {showTimestamp && (
         <Text
