@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import { Router } from 'express'
 
+import appConfig from '@/config/app'
 import { langfuseClient } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
 
@@ -27,6 +28,7 @@ const handleChatFeedback = async (
     langfuseClient.score.create({
       traceId,
       id: `feedback-${traceId}-${context.currentUser.email}`,
+      environment: appConfig.appEnv,
       name: 'user-feedback',
       value: 0, // 1 for positive, 0 for negative
       comment: feedback,
