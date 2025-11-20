@@ -13,15 +13,21 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
 
   const onError = React.useCallback(
     (message: string) => {
-      toast({
-        title: message,
-        description:
-          'If this error persists, contact us at support@plumber.gov.sg.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-        position: 'top',
-      })
+      // HACKFIX: we use this toast.isActive to prevent duplicate toasts from being shown.
+      // there should be a better way to handle this from the ApolloClient.
+      const id = `graphql-error-${message.slice(0, 15)}`
+      if (!toast.isActive(id)) {
+        toast({
+          id,
+          title: message,
+          description:
+            'If this error persists, contact us at support@plumber.gov.sg.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+          position: 'top',
+        })
+      }
     },
     [toast],
   )
