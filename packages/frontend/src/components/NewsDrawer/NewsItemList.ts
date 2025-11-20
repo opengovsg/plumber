@@ -16,7 +16,7 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     tag: NEW_FEATURE_TAG,
     title: 'Collaborators — add editors and viewers to your pipes',
     details: dedent`
-      With collaborators, you can add editors or viewers to help build or troubleshoot your pipe. Read more about permissions and set up in our guide.
+      With collaborators, you can add editors or viewers to help build or troubleshoot your pipe. Read more about permissions and set up [here](https://guide.plumber.gov.sg/user-guides/pipe-settings#collaborators).
     `,
     multimedia: {
       url: 'https://file.go.gov.sg/plumber-collaborators-whats-new.png',
