@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import type { UIMessage as AIMessage } from '@ai-sdk/react'
+import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
 import { DefaultChatTransport } from 'ai'
@@ -11,15 +11,21 @@ export interface Message {
   isUser: boolean
 }
 
+// Custom message type with metadata
+type CustomUIMessage = UIMessage<{
+  traceId?: string
+}>
+
 export function useChatStream() {
   const toast = useToast()
+
   const {
     messages: aiMessages,
     sendMessage,
     status,
     error: aiError,
     stop,
-  } = useChat({
+  } = useChat<CustomUIMessage>({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       credentials: 'include',
@@ -27,8 +33,7 @@ export function useChatStream() {
         // Send all messages to maintain conversation context
         const body = {
           messages: messages,
-          userId: 'user-123',
-          sessionId: 'session-456',
+          sessionId: '',
         }
         return { body }
       },
@@ -45,7 +50,7 @@ export function useChatStream() {
   })
 
   // Helper function to extract text content from UIMessage
-  const extractTextContent = useCallback((msg: AIMessage): string => {
+  const extractTextContent = useCallback((msg: CustomUIMessage): string => {
     return msg.parts
       .filter((part) => part.type === 'text')
       .map((part) => (part as any).text)
@@ -69,12 +74,16 @@ export function useChatStream() {
       }
     }
 
-    return messagesToTransform.map((msg: AIMessage) => ({
-      text: extractTextContent(msg),
-      isUser: msg.role === 'user',
-      traceId: undefined,
-      generationId: undefined,
-    }))
+    return messagesToTransform.map((msg) => {
+      // Extract traceId from message metadata
+      const traceId = msg.metadata?.traceId
+
+      return {
+        text: extractTextContent(msg),
+        isUser: msg.role === 'user',
+        traceId: traceId,
+      }
+    })
   }, [aiMessages, extractTextContent, status])
 
   // Get the current streaming response (last assistant message that's still being streamed)
