@@ -35,7 +35,7 @@ async function handleChatStream(req: Request, res: Response) {
   const { chatPrompt, version } = promptConfig
 
   try {
-    const { messages: rawMessages, userId, sessionId } = req.body as ChatRequest
+    const { messages: rawMessages, sessionId } = req.body as ChatRequest
 
     if (
       !rawMessages ||
@@ -61,7 +61,6 @@ async function handleChatStream(req: Request, res: Response) {
     })
 
     let traceId = ''
-    let generationId = ''
 
     // Setup observation and stream using AI SDK
     const result = await startActiveObservation(
@@ -70,7 +69,7 @@ async function handleChatStream(req: Request, res: Response) {
         trace.updateTrace({
           name: 'ai-chat-stream',
           sessionId: sessionId || 'unknown',
-          userId: userId || 'anonymous',
+          userId: context.currentUser.email || 'anonymous',
           input: { messages, prompt: lastUserMessage },
           tags: ['stream', 'rest-api'],
           environment: appConfig.appEnv,
@@ -91,8 +90,6 @@ async function handleChatStream(req: Request, res: Response) {
 
         // Capture IDs for client
         traceId = trace.traceId
-        // @ts-expect-error - observationId exists but not in types
-        generationId = generation.observationId
 
         return streamText({
           model,
@@ -106,8 +103,12 @@ async function handleChatStream(req: Request, res: Response) {
           onFinish: (event) => {
             logger.info('Stream finished', {
               traceId,
-              generationId,
               textLength: event.text.length,
+            })
+
+            trace.update({
+              output: { result: event.text },
+              level: 'DEFAULT',
             })
 
             generation
@@ -120,11 +121,6 @@ async function handleChatStream(req: Request, res: Response) {
                 },
               })
               .end()
-
-            trace.update({
-              output: { result: event.text },
-              level: 'DEFAULT',
-            })
           },
           onError: (error) => {
             const errorMessage =
@@ -132,8 +128,12 @@ async function handleChatStream(req: Request, res: Response) {
 
             logger.error('Error generating chat response', {
               traceId,
-              generationId,
               error: errorMessage,
+            })
+
+            trace.update({
+              output: { error: errorMessage },
+              level: 'ERROR',
             })
 
             generation
@@ -142,11 +142,6 @@ async function handleChatStream(req: Request, res: Response) {
                 level: 'ERROR',
               })
               .end()
-
-            trace.update({
-              output: { error: errorMessage },
-              level: 'ERROR',
-            })
           },
         })
       },
@@ -155,9 +150,11 @@ async function handleChatStream(req: Request, res: Response) {
     // Pipe the UI message stream to Express response
     // This uses the data stream protocol that DefaultChatTransport expects
     result.pipeUIMessageStreamToResponse(res, {
-      headers: {
-        ...(traceId && { 'X-Trace-Id': traceId }),
-        ...(generationId && { 'X-Generation-Id': generationId }),
+      messageMetadata: () => {
+        return {
+          traceId,
+          model: MODEL_TYPE,
+        }
       },
     })
   } catch (error) {
