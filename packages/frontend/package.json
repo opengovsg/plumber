@@ -41,7 +41,6 @@
     "dedent": "1.5.1",
     "escape-html": "1.0.3",
     "file-saver": "2.0.5",
-    "langfuse": "3.38.6",
     "lens-widget": "^1.37.0",
     "lodash": "^4.17.21",
     "lottie-web": "5.12.2",

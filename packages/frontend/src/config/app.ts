@@ -7,8 +7,6 @@ interface AppConfig {
   lensSurveyClientKey: string
   ssoClientId: string
   ssoHostname: string
-  pairRomeBaseUrl: string
-  pairRomePublicKey: string
 }
 
 function getAppConfig(): AppConfig {
@@ -30,8 +28,6 @@ function getAppConfig(): AppConfig {
         lensSurveyClientKey: 'cm85ca2f300053ooz4vydrmyw',
         ssoClientId: 'plumber-prod',
         ssoHostname: 'https://sso.open.gov.sg',
-        pairRomeBaseUrl: 'https://rome.pair.gov.sg',
-        pairRomePublicKey: '', // TODO: add public key
         ...commonEnv,
       }
     // UAT and staging differ for the lens survey client key only
@@ -43,8 +39,6 @@ function getAppConfig(): AppConfig {
         lensSurveyClientKey: 'cm8fp8i030008zm2tbuc07xe5',
         ssoClientId: 'plumber-uat',
         ssoHostname: 'https://sso.open.gov.sg',
-        pairRomeBaseUrl: 'https://rome.pair.gov.sg',
-        pairRomePublicKey: '', // TODO: add public key
         ...commonEnv,
       }
     case 'staging':
@@ -55,9 +49,6 @@ function getAppConfig(): AppConfig {
         lensSurveyClientKey: 'cm86psst900052orfqetz3gz5',
         ssoClientId: 'plumber-staging',
         ssoHostname: 'https://sso.open.gov.sg',
-        // TODO: update to use Rome when ready
-        pairRomeBaseUrl: 'https://istanbul.pair.gov.sg',
-        pairRomePublicKey: 'pk-lf-1f6acb1e-85c0-4af7-bea7-6f465f7c0141',
         ...commonEnv,
       }
     default:
@@ -68,9 +59,6 @@ function getAppConfig(): AppConfig {
         lensSurveyClientKey: 'cm8fpeah2000gzm2t572lhfti',
         ssoClientId: 'plumber-local',
         ssoHostname: 'http://localhost:5354',
-        // TODO: update to use Rome when ready
-        pairRomeBaseUrl: 'https://istanbul.pair.gov.sg',
-        pairRomePublicKey: 'pk-lf-1f6acb1e-85c0-4af7-bea7-6f465f7c0141',
         ...commonEnv,
       }
   }

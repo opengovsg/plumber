@@ -18,14 +18,6 @@ import {
   Textarea,
   useDisclosure,
 } from '@chakra-ui/react'
-import { LangfuseWeb } from 'langfuse'
-
-import appConfig from '@/config/app'
-
-const langfuse = new LangfuseWeb({
-  baseUrl: appConfig.pairRomeBaseUrl,
-  publicKey: appConfig.pairRomePublicKey,
-})
 
 interface ChatMessageToolbarProps {
   traceId: string
@@ -38,22 +30,23 @@ export default function ChatMessageToolbar({
   const firstFieldRef = React.useRef(null)
   const [comment, setComment] = useState('')
 
-  const handleSubmitFeedback = (comment: string) => {
+  const handleSubmitFeedback = async (comment: string) => {
     try {
       if (!traceId) {
         return
       }
 
-      // Send feedback to Rome / Istanbul
-      langfuse.score({
-        traceId,
-        id: `user-feedback-${traceId}`,
-        name: 'user-feedback',
-        value: 0, // 1 for positive, 0 for negative
-        comment,
+      // NOTE: we send feedback to the backend instead of using Langfuse directly
+      // as there are additional headers required to call Rome/Istanbul endpoints
+      // that should not be exposed to the frontend
+      await fetch('/api/chat-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ traceId, feedback: comment }),
       })
-    } catch (error) {
-      console.error('Error submitting feedback:', error)
+    } catch {
+      // don't throw error if feedback submission fails
+      // as it is not critical to the user experience
     } finally {
       onClose()
       setComment('')
