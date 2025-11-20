@@ -27,13 +27,6 @@ const langfuse = new LangfuseWeb({
   publicKey: appConfig.pairRomePublicKey,
 })
 
-const DEFAULT_BUTTON_PROPS = {
-  size: 'xs',
-  variant: 'clear',
-  color: 'gray.500',
-  _hover: { color: 'gray.700', bg: 'gray.100' },
-}
-
 interface ChatMessageToolbarProps {
   traceId: string
 }
@@ -77,7 +70,8 @@ export default function ChatMessageToolbar({
       >
         <PopoverTrigger>
           <IconButton
-            {...DEFAULT_BUTTON_PROPS}
+            variant="clear"
+            colorScheme="secondary"
             aria-label="Thumbs down"
             icon={<Icon as={FaRegThumbsDown} />}
             onClick={onOpen}
