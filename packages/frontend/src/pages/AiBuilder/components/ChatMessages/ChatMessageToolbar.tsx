@@ -63,6 +63,7 @@ export default function ChatMessageToolbar({
       console.error('Error submitting feedback:', error)
     } finally {
       onClose()
+      setComment('')
     }
   }
 
