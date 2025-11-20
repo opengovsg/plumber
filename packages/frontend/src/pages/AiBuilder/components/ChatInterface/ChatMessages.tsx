@@ -34,20 +34,27 @@ const PlumberAvatar = (props: ImageProps) => {
   )
 }
 
-const StreamingMessage = ({ currentResponse }: StreamingMessageProps) => (
-  <Flex gap={3} w="full" align="start">
-    <PlumberAvatar mt={1} />
-    {currentResponse ? (
-      <Box flex={1} color="gray.900">
-        <ChakraStreamdown isAnimating={true}>
-          {currentResponse}
-        </ChakraStreamdown>
-      </Box>
-    ) : (
+const StreamingMessage = ({ currentResponse }: StreamingMessageProps) => {
+  if (currentResponse) {
+    return (
+      <Flex gap={3} w="full" align="start">
+        <PlumberAvatar mt={3} />
+        <Box flex={1} color="gray.900">
+          <ChakraStreamdown isAnimating={true}>
+            {currentResponse}
+          </ChakraStreamdown>
+        </Box>
+      </Flex>
+    )
+  }
+
+  return (
+    <Flex gap={3} w="full" alignItems="center">
+      <PlumberAvatar />
       <Loader />
-    )}
-  </Flex>
-)
+    </Flex>
+  )
+}
 
 export default function ChatMessages({
   messages,

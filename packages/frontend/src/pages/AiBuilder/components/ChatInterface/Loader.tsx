@@ -21,7 +21,7 @@ function Dot({ animation }: { animation: string }) {
 
 export default function Loader() {
   return (
-    <Flex gap={1} align="center" mt={3}>
+    <Flex gap={1} align="center">
       <Dot animation={`${dotFlashing} 1.4s infinite ease-in-out`} />
       <Dot animation={`${dotFlashing} 1.4s infinite ease-in-out 0.2s`} />
       <Dot animation={`${dotFlashing} 1.4s infinite ease-in-out 0.4s`} />
