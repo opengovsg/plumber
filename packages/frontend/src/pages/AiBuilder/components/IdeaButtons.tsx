@@ -2,7 +2,6 @@ import { Flex, Text } from '@chakra-ui/react'
 import { Button, FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 
 import { TemplateIcon } from '@/helpers/flow-templates'
-
 import { AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
 
 interface IdeaButtonsProps {
