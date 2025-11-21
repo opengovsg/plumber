@@ -5,6 +5,7 @@ import Step from '@/models/step'
 
 import Execution from '../execution'
 import Flow from '../flow'
+import User from '../user'
 
 const flowId = randomUUID()
 const stepId = randomUUID()
@@ -15,9 +16,14 @@ describe('step model', () => {
   let step: Step
 
   beforeEach(async () => {
+    const user = await User.query().insert({
+      id: randomUUID(),
+      email: 'test@example.com',
+    })
     await Flow.query().insert({
       id: flowId,
       name: 'test flow',
+      userId: user.id,
     })
     step = await Step.query()
       .insert({
@@ -167,12 +173,15 @@ describe('step model', () => {
     })
   })
 
-  describe('patchFlowLastUpdated', () => {
+  describe('patchLastUpdated', () => {
     it('should patch the flow last updated', async () => {
       const flow = await step.$relatedQuery('flow')
       const originalUpdatedAt = flow.updatedAt
-
-      await step.patchFlowLastUpdated()
+      const updatedBy = flow.userId
+      await flow.patchLastUpdated({
+        flowId: flow.id,
+        updatedBy,
+      })
 
       const updatedFlow = await step.$relatedQuery('flow')
 
@@ -180,6 +189,7 @@ describe('step model', () => {
       expect(new Date(updatedFlow.updatedAt).getTime()).toBeGreaterThan(
         new Date(originalUpdatedAt).getTime(),
       )
+      expect(updatedFlow.updatedBy).toBe(updatedBy)
     })
   })
 })

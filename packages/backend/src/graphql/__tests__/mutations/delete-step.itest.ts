@@ -1,3 +1,4 @@
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import deleteStep from '@/graphql/mutations/delete-step'
@@ -6,39 +7,52 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockStep } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
+import {
+  generateMockCollaborator,
+  generateMockStep,
+  generateMockUser,
+} from './flow.mock'
 
 describe('deleteStep mutation', () => {
   let context: Context
   let testFlow: Flow
   let testSteps: Step[]
-  const patchFlowLastUpdatedSpy = vi.fn().mockResolvedValue({})
+  let owner: User
+  let editor: User
+  let viewer: User
+  let nonCollaborator: User
+  let defaultFlowInput: { flow: { updatedAt: string } }
+  const patchLastUpdatedSpy = vi.fn().mockResolvedValue({})
 
   beforeEach(async () => {
     vi.resetAllMocks()
 
-    // Mock the patchFlowLastUpdated method
-    vi.spyOn(Step.prototype, 'patchFlowLastUpdated').mockImplementation(
-      patchFlowLastUpdatedSpy,
+    // Mock the patchLastUpdated method
+    vi.spyOn(Flow.prototype, 'patchLastUpdated').mockImplementation(
+      patchLastUpdatedSpy,
     )
 
     // Clear out all rows
     await Step.query().delete()
     await Flow.query().delete()
 
-    const testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
-    context = {
-      req: null,
-      currentUser: testUser,
-      res: null,
-      isAdminOperation: false,
-    }
+    context = await generateMockContext()
+
+    owner = context.currentUser
+    editor = await generateMockUser('editor')
+    viewer = await generateMockUser('viewer')
+    nonCollaborator = await generateMockUser('nonCollaborator')
 
     // Create a flow associated with the test user.
-    testFlow = await testUser.$relatedQuery('flows').insertAndFetch({
+    testFlow = await owner.$relatedQuery('flows').insertAndFetch({
       name: 'Test Flow',
       // additional flow properties as needed
     })
+    defaultFlowInput = { flow: { updatedAt: testFlow.updatedAt } }
+
+    await generateMockCollaborator(testFlow.id, editor.id, owner.id, 'editor')
+    await generateMockCollaborator(testFlow.id, viewer.id, owner.id, 'viewer')
 
     // Create test steps
     testSteps = await Promise.all([
@@ -76,7 +90,7 @@ describe('deleteStep mutation', () => {
 
   it('should throw error when no steps to delete', async () => {
     await expect(
-      deleteStep(null, { input: { ids: [] } }, context),
+      deleteStep(null, { input: { ids: [], ...defaultFlowInput } }, context),
     ).rejects.toThrow('Nothing to delete')
   })
 
@@ -100,14 +114,20 @@ describe('deleteStep mutation', () => {
     await expect(
       deleteStep(
         null,
-        { input: { ids: [testSteps[0].id, otherStep.id] } },
+        {
+          input: { ids: [testSteps[0].id, otherStep.id], ...defaultFlowInput },
+        },
         context,
       ),
     ).rejects.toThrow('All steps to be deleted must be from the same pipe!')
   })
 
   it('should delete a single trigger step and create a new one', async () => {
-    await deleteStep(null, { input: { ids: [testSteps[0].id] } }, context)
+    await deleteStep(
+      null,
+      { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
+      context,
+    )
 
     // Verify the trigger step was deleted and a new one was created
     const steps = await testFlow
@@ -123,7 +143,9 @@ describe('deleteStep mutation', () => {
   it('should delete contiguous action steps and update positions', async () => {
     await deleteStep(
       null,
-      { input: { ids: [testSteps[1].id, testSteps[2].id] } },
+      {
+        input: { ids: [testSteps[1].id, testSteps[2].id], ...defaultFlowInput },
+      },
       context,
     )
 
@@ -151,7 +173,9 @@ describe('deleteStep mutation', () => {
     await expect(
       deleteStep(
         null,
-        { input: { ids: [testSteps[1].id, fourthStep.id] } },
+        {
+          input: { ids: [testSteps[1].id, fourthStep.id], ...defaultFlowInput },
+        },
         context,
       ),
     ).rejects.toThrow('Must delete contiguous action steps!')
@@ -169,24 +193,93 @@ describe('deleteStep mutation', () => {
       { subject: `some subject {{step.${testSteps[1].id}.foo}}` },
     )
 
-    await deleteStep(null, { input: { ids: [testSteps[1].id] } }, context)
+    await deleteStep(
+      null,
+      { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
+      context,
+    )
 
     // Verify the referencing step was invalidated
     const invalidatedStep = await Step.query().findById(referencingStep.id)
     expect(invalidatedStep.status).toBe('incomplete')
   })
 
-  it('should call patchFlowLastUpdated when deleting trigger step', async () => {
-    await deleteStep(null, { input: { ids: [testSteps[0].id] } }, context)
-    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
-  })
-
-  it('should call patchFlowLastUpdated when deleting action steps', async () => {
+  it('should call patchLastUpdated when deleting trigger step', async () => {
     await deleteStep(
       null,
-      { input: { ids: [testSteps[1].id, testSteps[2].id] } },
+      { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
       context,
     )
-    expect(patchFlowLastUpdatedSpy).toHaveBeenCalledTimes(1)
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('should call patchLastUpdated when deleting action steps', async () => {
+    await deleteStep(
+      null,
+      {
+        input: { ids: [testSteps[1].id, testSteps[2].id], ...defaultFlowInput },
+      },
+      context,
+    )
+    expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('should allow owner to delete steps', async () => {
+    await deleteStep(
+      null,
+      { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
+      context,
+    )
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+
+    expect(steps).toHaveLength(2)
+    expect(steps[0].type).toBe('trigger')
+    expect(steps[0].position).toBe(1)
+  })
+
+  it('should allow editor to delete steps', async () => {
+    context.currentUser = editor
+    await deleteStep(
+      null,
+      { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
+      context,
+    )
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+
+    expect(steps).toHaveLength(2)
+    expect(steps[0].type).toBe('trigger')
+    expect(steps[0].position).toBe(1)
+  })
+
+  it('should not allow non-collaborator to delete steps', async () => {
+    context.currentUser = nonCollaborator
+    await expect(
+      deleteStep(
+        null,
+        { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
+
+    const steps = await testFlow
+      .$relatedQuery('steps')
+      .orderBy('position', 'asc')
+
+    expect(steps).toHaveLength(3)
+  })
+
+  it('should not allow viewer to delete steps', async () => {
+    context.currentUser = viewer
+    await expect(
+      deleteStep(
+        null,
+        { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
   })
 })

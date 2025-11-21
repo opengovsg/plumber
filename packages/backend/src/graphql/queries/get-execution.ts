@@ -6,7 +6,7 @@ const getExecution: QueryResolvers['getExecution'] = async (
   context,
 ) => {
   const execution = await context.currentUser
-    .$relatedQuery('executions')
+    .withAccessibleExecutions({ requiredRole: 'viewer' })
     .withGraphFetched({
       flow: {
         steps: true,

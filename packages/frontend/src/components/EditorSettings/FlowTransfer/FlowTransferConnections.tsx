@@ -1,8 +1,8 @@
 import { ITransferDetails } from '@plumber/types'
 
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { useQuery } from '@apollo/client'
-import { Center, Flex, Text } from '@chakra-ui/react'
+import { Box, Center, Flex, Link, Text } from '@chakra-ui/react'
 import { Badge, Infobox } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -11,6 +11,7 @@ import { GET_FLOW_TRANSFER_DETAILS } from '@/graphql/queries/get-flow-transfer-d
 
 function StepConnectionDisplay(props: ITransferDetails) {
   const { appName, position, connectionName, instructions } = props
+
   return (
     <Flex flexDir="column" gap={2}>
       <Badge colorScheme="warning">
@@ -28,6 +29,7 @@ function StepConnectionDisplay(props: ITransferDetails) {
 
 export default function FlowTransferConnections() {
   const { flow } = useContext(EditorSettingsContext)
+  const [showConnections, setShowConnections] = useState(false)
   // phase 1: just retrieve all transfer details to display (without instructions)
   const { data, loading } = useQuery(GET_FLOW_TRANSFER_DETAILS, {
     variables: {
@@ -51,22 +53,33 @@ export default function FlowTransferConnections() {
 
   return (
     <Infobox variant="warning">
-      <Flex flexDir="column" gap={6}>
+      <Flex flexDir="column" gap={2}>
         <Text textStyle="subhead-1">
           You will need to manually add the following connections on the new
           pipe owner&apos;s account for the pipe to continue working.
         </Text>
-
-        {flowTransferDetails.map(
-          ({ appName, position, connectionName, instructions }, index) => (
-            <StepConnectionDisplay
-              key={index}
-              appName={appName}
-              position={position}
-              connectionName={connectionName}
-              instructions={instructions}
-            />
-          ),
+        <Text
+          textStyle="body-1"
+          color="base.content.default"
+          as={Link}
+          onClick={() => setShowConnections(!showConnections)}
+        >
+          {showConnections ? 'Hide connections' : 'Show connections'}
+        </Text>
+        {showConnections && (
+          <Box>
+            {flowTransferDetails.map(
+              ({ appName, position, connectionName, instructions }, index) => (
+                <StepConnectionDisplay
+                  key={index}
+                  appName={appName}
+                  position={position}
+                  connectionName={connectionName}
+                  instructions={instructions}
+                />
+              ),
+            )}
+          </Box>
         )}
       </Flex>
     </Infobox>

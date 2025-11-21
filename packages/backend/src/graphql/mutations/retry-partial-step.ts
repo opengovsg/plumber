@@ -16,7 +16,7 @@ const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
     .withGraphJoined('execution')
     .whereExists(
       context.currentUser
-        .$relatedQuery('executions')
+        .withAccessibleExecutions({ requiredRole: 'editor' })
         .select(1)
         .where('executions.id', ref('execution_steps.execution_id')),
     )

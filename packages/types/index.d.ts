@@ -47,6 +47,7 @@ export interface IConnection {
   flowCount?: number
   appData?: IApp
   createdAt: string
+  description?: string
 }
 
 /**
@@ -210,8 +211,10 @@ export interface IFlowConfig {
   attachments?: IFlowAttachmentsConfig[]
 }
 
+export type NotificationRecipients = 'editor' | 'viewer'
 export interface IFlowErrorConfig {
   notificationFrequency: 'once_per_day' | 'always'
+  notificationRecipients: NotificationRecipients[]
 }
 
 export interface IFlowTemplateConfig {
@@ -228,6 +231,14 @@ export interface IFlowAttachmentsConfig {
   updatedAt: string
 }
 
+export type IFlowCollabRole = 'owner' | 'editor' | 'viewer'
+
+export interface IFlowCollaborator {
+  email?: string // Populated by GraphQL resolver
+  role: IFlowCollabRole
+  user?: IUser
+}
+
 export interface IFlow {
   id: string
   name: string
@@ -241,6 +252,8 @@ export interface IFlow {
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
   template?: ITemplate
+  collaborators?: IFlowCollaborator[]
+  role?: string
 }
 
 export interface IUser {

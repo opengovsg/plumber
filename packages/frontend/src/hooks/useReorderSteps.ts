@@ -1,8 +1,9 @@
 import { IStep } from '@plumber/types'
 
+import { useContext } from 'react'
 import { useMutation } from '@apollo/client'
-import { useToast } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
@@ -14,19 +15,26 @@ interface StepPositionInput {
 }
 
 const useReorderSteps = (flowId: string) => {
-  const toast = useToast()
-  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS)
+  const { flow } = useContext(EditorContext)
+  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
+    refetchQueries: [GET_FLOW],
+  })
 
   const handleReorderUpdate = async (stepPositions: StepPositionInput[]) => {
     try {
       await updateStepPositions({
-        variables: { input: { stepPositions } },
+        variables: {
+          input: { stepPositions, flow: { updatedAt: flow.updatedAt } },
+        },
         optimisticResponse: {
-          updateStepPositions: stepPositions.map((sp) => ({
-            id: sp.id,
-            position: sp.position,
-            __typename: 'Step' as const,
-          })),
+          updateStepPositions: {
+            updatedAt: flow.updatedAt,
+            steps: stepPositions.map((sp) => ({
+              id: sp.id,
+              position: sp.position,
+              __typename: 'Step' as const,
+            })),
+          },
         },
         update: (cache: any) => {
           // Update the cache with the new step positions optimistically
@@ -64,21 +72,6 @@ const useReorderSteps = (flowId: string) => {
               },
             })
           }
-        },
-        onError: (error) => {
-          toast({
-            title: 'Failed to reorder steps',
-            description: 'Your changes have been reverted. Please try again.',
-            status: 'error',
-            duration: 5000,
-            isClosable: true,
-            position: 'top',
-          })
-          console.error(
-            'Error updating step positions: ',
-            error,
-            JSON.stringify(stepPositions),
-          )
         },
       })
     } catch (error) {

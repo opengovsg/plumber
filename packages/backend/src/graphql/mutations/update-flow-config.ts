@@ -10,6 +10,7 @@ type Params = {
   input: {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
+    notificationRecipients: IFlowErrorConfig['notificationRecipients']
     showSurvey: boolean
     attachments?: IFlowAttachmentsConfig[]
   }
@@ -21,11 +22,11 @@ const updateFlowConfig = async (
   context: Context,
 ) => {
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
       id: params.input.id,
     })
-    .throwIfNotFound()
+    .throwIfNotFound({ message: 'Not authorised!' })
 
   const newConfig: IFlowConfig = {
     ...flow.config,
@@ -35,6 +36,13 @@ const updateFlowConfig = async (
     newConfig.errorConfig = {
       ...newConfig.errorConfig, // If ever undefined (should never be), it gets set to an empty object first
       notificationFrequency: params.input.notificationFrequency,
+    }
+  }
+
+  if (params.input.notificationRecipients !== undefined) {
+    newConfig.errorConfig = {
+      ...newConfig.errorConfig, // If ever undefined (should never be), it gets set to an empty object first
+      notificationRecipients: params.input.notificationRecipients,
     }
   }
 

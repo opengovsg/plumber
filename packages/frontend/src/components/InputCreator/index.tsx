@@ -1,5 +1,7 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
+import { useContext } from 'react'
+
 import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
 import DragDropInput from '@/components/DragDropInput'
@@ -7,8 +9,11 @@ import MultiRow from '@/components/MultiRow'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
 import TextField from '@/components/TextField'
+import { EditorContext } from '@/contexts/Editor'
 import { useIsFieldHidden } from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
+
+import { NON_EDITABLE_CONNECTION_FIELDS } from '../Editor/constants'
 
 import BooleanRadio from './BooleanRadio'
 
@@ -45,6 +50,20 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     tooltipText,
     noVariablesMessage,
   } = schema
+
+  /**
+   * there are some fields that collaborators cannot edit
+   * such as slack channels, telegram chats, and excel files
+   */
+  const { flow } = useContext(EditorContext)
+
+  const canCollaboratorAddNew =
+    !NON_EDITABLE_CONNECTION_FIELDS.find(
+      (item) => item.label === label && item.key === name,
+    ) && flow?.role === 'editor'
+  const isReadOnly =
+    // flow is an empty object if it is not in the editor
+    (Object.keys(flow).length > 0 && flow?.role !== 'owner') || readOnly
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
   const { data, loading, refetch } = useDynamicData(
@@ -101,7 +120,12 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         // if schema source is defined, dynamic data is supported
         onRefresh={schema.source ? () => refetch() : undefined}
         showOptionValue={schema.showOptionValue ?? true}
-        addNewOption={schema.addNewOption}
+        addNewOption={
+          schema.addNewOption &&
+          (flow.role === 'owner' || canCollaboratorAddNew)
+            ? schema.addNewOption
+            : undefined
+        }
         clickableLink={schema.clickableLink}
         label={label}
         placeholder={placeholder}
@@ -151,7 +175,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         defaultValue={value}
         required={required}
         placeholder={placeholder}
-        readOnly={readOnly}
+        readOnly={isReadOnly}
         name={computedName}
         label={label}
         multiline={type === 'multiline'}

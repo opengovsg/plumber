@@ -3,7 +3,6 @@ import type { IAction, IStep, ISubstep, ITrigger } from '@plumber/types'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
-import { useToast } from '@opengovsg/design-system-react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
@@ -39,7 +38,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = useDisclosure()
 
   const { arguments: args } = substep
-  const toast = useToast()
   const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
@@ -108,10 +106,14 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       setIsSaving(true)
       const currentStep = formContext.getValues() as IStep
       const isSubStepValid = validateSubstep(substep, currentStep)
-      await onUpdateStep({
+      const result = await onUpdateStep({
         ...currentStep,
         status: isSubStepValid ? 'completed' : 'incomplete',
       })
+
+      if (!result) {
+        throw new Error('Failed to save step')
+      }
     } catch (error) {
       console.error('Error saving step', error)
       throw error // Re-throw the error so calling functions know saveStep failed
@@ -119,16 +121,6 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       setIsSaving(false)
     }
   }, [formContext, onUpdateStep, substep])
-
-  const handleSave = useCallback(async () => {
-    await saveStep()
-    toast({
-      title: 'Step saved successfully!',
-      status: 'success',
-      duration: 2000,
-      isClosable: true,
-    })
-  }, [saveStep, toast])
 
   const handleSaveAndTest = useCallback(
     async (testRunMetadata?: Record<string, unknown>) => {
@@ -164,7 +156,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         isSaving={isSaving}
         isTestResultOpen={isTestResultOpen}
         step={step}
-        handleSave={handleSave}
+        handleSave={saveStep}
         handleSaveAndTest={handleSaveAndTest}
         onTestResultOpen={onTestResultOpen}
         onTestResultClose={onTestResultClose}

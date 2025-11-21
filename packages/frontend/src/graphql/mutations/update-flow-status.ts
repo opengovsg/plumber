@@ -5,6 +5,7 @@ export const UPDATE_FLOW_STATUS = gql`
     updateFlowStatus(input: $input) {
       id
       active
+      updatedAt
     }
   }
 `

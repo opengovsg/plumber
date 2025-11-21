@@ -1,17 +1,23 @@
-import { IFlow } from '@plumber/types'
-
+import { useContext } from 'react'
 import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
+import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link } from 'react-router-dom'
 import { Hide, HStack, MenuButton, MenuList, Show } from '@chakra-ui/react'
 import {
   Button,
   IconButton,
   Menu,
+  Tag,
+  TagLabel,
+  TagLeftIcon,
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
+import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { tagStyles } from '@/pages/Tiles/components/style'
 
 import PublishButton from './PublishButton'
 
@@ -51,15 +57,15 @@ const GuideItem = ({ type }: { type: 'icon' | 'button' }) => {
 }
 
 const SettingsItem = ({
-  flowId,
   type,
   setLeaveToUrl,
   handleWarnOnLeave,
+  settingsLink,
 }: {
-  flowId: string
   type: 'icon' | 'button'
   setLeaveToUrl: (url: string) => void
   handleWarnOnLeave: (e: React.MouseEvent<HTMLButtonElement>) => void
+  settingsLink: string
 }) => {
   if (type === 'button') {
     return (
@@ -68,10 +74,10 @@ const SettingsItem = ({
         aria-label="settings"
         colorScheme="secondary"
         as={Link}
-        to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
+        to={settingsLink}
         w="100%"
         onClick={(e) => {
-          setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
+          setLeaveToUrl(settingsLink)
           handleWarnOnLeave(e)
         }}
       >
@@ -83,7 +89,7 @@ const SettingsItem = ({
     <TouchableTooltip label="Settings" aria-label="settings tooltip">
       <IconButton
         as={Link}
-        to={URLS.FLOW_EDITOR_NOTIFICATIONS(flowId)}
+        to={settingsLink}
         variant="clear"
         aria-label="settings"
         icon={<BiCog />}
@@ -93,7 +99,7 @@ const SettingsItem = ({
           bg: 'interaction.muted.main.hover',
         }}
         onClick={(e) => {
-          setLeaveToUrl(URLS.FLOW_EDITOR_NOTIFICATIONS(flowId))
+          setLeaveToUrl(settingsLink)
           handleWarnOnLeave(e)
         }}
       />
@@ -101,13 +107,8 @@ const SettingsItem = ({
   )
 }
 
-const ExecutionsItem = ({
-  flowId,
-  type,
-}: {
-  flowId: string
-  type: 'icon' | 'button'
-}) => {
+const ExecutionsItem = ({ type }: { type: 'icon' | 'button' }) => {
+  const { flowId } = useContext(EditorContext)
   if (type === 'button') {
     return (
       <Button
@@ -140,11 +141,16 @@ const ExecutionsItem = ({
   )
 }
 
+const ViewOnlyTag = () => {
+  return (
+    <Tag {...tagStyles}>
+      <TagLeftIcon as={MdOutlineRemoveRedEye} />
+      <TagLabel>View only</TagLabel>
+    </Tag>
+  )
+}
+
 interface EditorToolbarProps {
-  flowId: string
-  flow: IFlow
-  isFlowIncomplete: boolean
-  hasFlowTransfer: boolean
   loading: boolean
   shouldWarnOnLeave: boolean
   setShouldWarnOnPublish: (shouldWarnOnPublish: boolean) => void
@@ -154,14 +160,25 @@ interface EditorToolbarProps {
 }
 
 export default function EditorToolbar(props: EditorToolbarProps) {
+  const { flow, flowId } = useContext(EditorContext)
+  // TODO: remove this once we open collaborators to all users
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const settingsLink = getFlagValue('collaborators', false)
+    ? URLS.FLOW_EDITOR_SHARE(flowId)
+    : URLS.FLOW_EDITOR_TRANSFERS(flowId)
+
   return (
     <>
       <Show above="md">
         <HStack>
-          <ExecutionsItem {...props} type="icon" />
+          <ExecutionsItem type="icon" />
           <GuideItem type="icon" />
-          <SettingsItem {...props} type="icon" />
-          <PublishButton {...props} />
+          <SettingsItem {...props} type="icon" settingsLink={settingsLink} />
+          {flow?.role === 'viewer' ? (
+            <ViewOnlyTag />
+          ) : (
+            <PublishButton {...props} />
+          )}
         </HStack>
       </Show>
       <Hide above="md">
@@ -180,10 +197,18 @@ export default function EditorToolbar(props: EditorToolbarProps) {
             gap={2}
             px={2}
           >
-            <ExecutionsItem {...props} type="button" />
+            <ExecutionsItem type="button" />
             <GuideItem type="button" />
-            <SettingsItem {...props} type="button" />
-            <PublishButton {...props} />
+            <SettingsItem
+              {...props}
+              type="button"
+              settingsLink={settingsLink}
+            />
+            {flow?.role === 'viewer' ? (
+              <ViewOnlyTag />
+            ) : (
+              <PublishButton {...props} />
+            )}
           </MenuList>
         </Menu>
       </Hide>

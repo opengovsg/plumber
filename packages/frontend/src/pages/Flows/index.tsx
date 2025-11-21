@@ -66,7 +66,7 @@ function FlowsList({
   return (
     <Box>
       {flows.map((flow) => (
-        <FlowRow key={flow.id} flow={flow} />
+        <FlowRow key={flow.id} flow={flow} showMenu={flow.role === 'owner'} />
       ))}
     </Box>
   )

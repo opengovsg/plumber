@@ -49,7 +49,11 @@ export function useExecutionStepStatus({
   const isStepSuccessful = status === 'success'
   const hasExecutionFailed = execution?.status === 'failure'
   const isPartialSuccess = status === 'success' && hasError
-  const canRetry = !isStepSuccessful && !!jobId && hasExecutionFailed
+  const canRetry =
+    !isStepSuccessful &&
+    !!jobId &&
+    hasExecutionFailed &&
+    execution?.flow?.role !== 'viewer'
 
   const statusIcon = useMemo(() => {
     if (isPartialSuccess) {
