@@ -13,6 +13,7 @@ import {
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
 
 import microsoftFolder from '@/assets/microsoft-folder.svg'
+import { EditorContext } from '@/contexts/Editor'
 import useAuthentication from '@/hooks/useAuthentication'
 
 import BackButton from '../BackButton'
@@ -134,6 +135,7 @@ export default function ConfigureExcelConnection(
   props: ConfigureExcelConnectionProps,
 ) {
   const { onBack, onCreateOrUpdateStep } = props
+  const { flow } = useContext(EditorContext)
   const { modalState, step } = useContext(FlowStepConfigurationContext)
   const { selectedApp, selectedConnectionId } = modalState
   const connectionModalLabel = selectedApp?.auth?.connectionModalLabel
@@ -190,6 +192,8 @@ export default function ConfigureExcelConnection(
               await onCreateOrUpdateStep(selectedConnectionId)
             }
           />
+        ) : flow.role !== 'owner' && !selectedConnectionId ? (
+          <>Only the owner of this Pipe can create an Excel connection</>
         ) : (
           <ConfigurationConnectionContent
             userEmail={currentUser?.email ?? ''}

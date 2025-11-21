@@ -1,20 +1,72 @@
 import App from '@/models/app'
 import Connection from '@/models/connection'
+import Context from '@/types/express/context'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
+const getSharedConnections = async (
+  context: Context,
+  flowId: string,
+  key: string,
+  isDraft: boolean,
+) => {
+  const flow = await context.currentUser
+    .withAccessibleFlows({ requiredRole: 'viewer' })
+    .findById(flowId)
+    .throwIfNotFound({ message: 'Pipe not found' })
+
+  const flowConnections = await context.currentUser
+    .withAccessibleFlowConnections({ requiredRole: 'viewer' })
+    .join('connections', 'connections.id', 'flow_connections.connection_id')
+    .withGraphFetched('connection')
+    .where({
+      'flows.id': flowId,
+      'connections.key': key,
+      'connections.draft': isDraft,
+    })
+
+  return {
+    flowRole: flow.role,
+    sharedConnections: flowConnections.map((flowConnection) =>
+      Object.assign(flowConnection.connection, {
+        description: 'This connection can only be used in this pipe.',
+      }),
+    ),
+  }
+}
+
 const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
-  const app = await App.findOneByKey(params.key)
+  const { flowId, key } = params
+  const app = await App.findOneByKey(key)
 
   if (!context.currentUser) {
     return app
   }
 
   if (app.auth?.connectionType === 'system-added') {
+    /**
+     * NOTE: flow id is only provided in the pipe editor.
+     * it is not provided at the 'My Apps' page, so no need to fetch shared connections
+     */
+    if (flowId) {
+      const { sharedConnections, flowRole } = await getSharedConnections(
+        context,
+        flowId,
+        key,
+        true,
+      )
+
+      if (flowRole === 'editor') {
+        return { ...app, connections: sharedConnections }
+      }
+    }
+
     const connections = await app.auth.getSystemAddedConnections(
       context.currentUser,
     )
 
+    // NOTE: we don't merge the connections as only one system-added connection is allowed in a Pipe.
+    // for example, you cannot use two different Excel connections in one Pipe.
     return {
       ...app,
       connections,
@@ -29,28 +81,12 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
      */
 
     if (params.flowId) {
-      const flow = await context.currentUser
-        .withAccessibleFlows({ requiredRole: 'viewer' })
-        .findById(params.flowId)
-        .throwIfNotFound({ message: 'Pipe not found' })
+      const { sharedConnections: sharedConnectionsFromFlow, flowRole } =
+        await getSharedConnections(context, flowId, key, false)
 
-      const flowConnections = await context.currentUser
-        .withAccessibleFlowConnections({ requiredRole: 'viewer' })
-        .join('connections', 'connections.id', 'flow_connections.connection_id')
-        .withGraphFetched('connection')
-        .where({
-          'flows.id': params.flowId,
-          'connections.key': params.key,
-          'connections.draft': false,
-        })
+      sharedConnections = sharedConnectionsFromFlow
 
-      sharedConnections = flowConnections.map((flowConnection) =>
-        Object.assign(flowConnection.connection, {
-          description: 'This connection can only be used in this pipe.',
-        }),
-      )
-
-      if (flow.role === 'editor') {
+      if (flowRole === 'editor') {
         return {
           ...app,
           connections: sharedConnections,
