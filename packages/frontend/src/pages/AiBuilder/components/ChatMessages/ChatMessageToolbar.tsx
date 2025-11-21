@@ -18,6 +18,7 @@ import {
   Textarea,
   useDisclosure,
 } from '@chakra-ui/react'
+import { useToast } from '@opengovsg/design-system-react'
 
 interface ChatMessageToolbarProps {
   traceId: string
@@ -27,6 +28,7 @@ export default function ChatMessageToolbar({
   traceId,
 }: ChatMessageToolbarProps) {
   const { onOpen, onClose, isOpen } = useDisclosure()
+  const toast = useToast()
   const firstFieldRef = React.useRef(null)
   const [comment, setComment] = useState('')
 
@@ -50,6 +52,13 @@ export default function ChatMessageToolbar({
     } finally {
       onClose()
       setComment('')
+      toast({
+        title: "Thank you! We've sent your feeback to the Plumber team.",
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+        position: 'top',
+      })
     }
   }
 
