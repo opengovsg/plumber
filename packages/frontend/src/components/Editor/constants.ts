@@ -17,6 +17,7 @@ export const MIN_FLOW_STEP_WIDTH = '320px'
  */
 const NON_EDITABLE_APPS_FIELDS: Record<string, Record<string, string>[]> = {
   'm365-excel': [],
+  tiles: [{ label: 'Select Tile', key: 'tableId' }],
 }
 
 export const NON_EDITABLE_APP_CONNECTIONS = Object.keys(
