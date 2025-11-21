@@ -491,7 +491,7 @@ describe('updateStep mutation', () => {
       })
     })
 
-    it('should call patchFlowConnectionMetadata when its an excel app', async () => {
+    it('should call patchFlowConnectionMetadata or addFlowConnection when its an excel app', async () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: context.currentUser,
@@ -519,9 +519,10 @@ describe('updateStep mutation', () => {
         connectionId: mockConnectionId,
         parameterKey: 'fileId',
         parameterValue: '1234567890',
+        addedBy: owner.id,
         trx: expect.anything(),
       })
-      expect(addSpy).not.toHaveBeenCalled()
+      expect(addSpy).toHaveBeenCalled()
     })
 
     it('should call patchFlowConnectionMetadata when app has connection fields and parameter exists', async () => {
