@@ -25,13 +25,25 @@ const getSharedConnections = async (
       'connections.draft': isDraft,
     })
 
+  if (flowConnections.length === 0) {
+    return {
+      flowRole: flow.role,
+      sharedConnections: [],
+    }
+  }
+
   return {
     flowRole: flow.role,
-    sharedConnections: flowConnections.map((flowConnection) =>
-      Object.assign(flowConnection.connection, {
-        description: 'This connection can only be used in this pipe.',
-      }),
-    ),
+    sharedConnections: flowConnections
+      // in the rare case that the connection was deleted or not found
+      // flowConnection.connection is null, which will throw error
+      // when we attempt to assign the description
+      .filter((flowConnection) => flowConnection?.connection)
+      .map((flowConnection) =>
+        Object.assign(flowConnection?.connection, {
+          description: 'This connection can only be used in this pipe.',
+        }),
+      ),
   }
 }
 
