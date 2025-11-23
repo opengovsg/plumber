@@ -3,7 +3,10 @@ import sortBy from 'lodash/sortBy'
 import { TEMPLATES } from '@/db/storage'
 import FlowCollaborator from '@/models/flow-collaborators'
 
-import type { Resolvers } from '../__generated__/types.generated'
+import type {
+  FlowErrorConfigResolvers,
+  Resolvers,
+} from '../__generated__/types.generated'
 
 type FlowResolver = Resolvers['Flow']
 
@@ -44,6 +47,20 @@ const collaborators: FlowResolver['collaborators'] = async (parent) => {
 const role: FlowResolver['role'] = async (parent) => {
   // Return the computed role from the query
   return (parent as any)?.role || 'viewer'
+}
+
+// in collaborators, we introduced the concept of notificationRecipients,
+// which is an array that may contain 'editor' and/or 'viewer'.
+// however, there may be existing flows that already have errorConfig.notificationFrequency
+// and when returning, may not contain this `notificationRecipients` field
+// to avoid gql errors, we force it to return an empty array
+const notificationRecipients: FlowErrorConfigResolvers['notificationRecipients'] =
+  (parent) => {
+    return parent?.notificationRecipients ?? []
+  }
+
+export const FlowErrorConfig: FlowErrorConfigResolvers = {
+  notificationRecipients,
 }
 
 export default {
