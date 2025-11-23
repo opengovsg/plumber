@@ -1,6 +1,6 @@
 import { NotificationRecipients } from '@plumber/types'
 
-import { useCallback, useContext } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { useMutation } from '@apollo/client'
 import { Flex, FormControl, Skeleton, Stack, Text } from '@chakra-ui/react'
@@ -119,11 +119,14 @@ export default function Notifications() {
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const toast = useToast()
 
-  const defaultValues = {
-    frequency,
-    editor: notificationRecipients.includes(Recipient.Editor),
-    viewer: notificationRecipients.includes(Recipient.Viewer),
-  }
+  const defaultValues = useMemo(
+    () => ({
+      frequency,
+      editor: notificationRecipients.includes(Recipient.Editor),
+      viewer: notificationRecipients.includes(Recipient.Viewer),
+    }),
+    [frequency, notificationRecipients],
+  )
 
   const onFlowConfigUpdate = useCallback(
     async (
