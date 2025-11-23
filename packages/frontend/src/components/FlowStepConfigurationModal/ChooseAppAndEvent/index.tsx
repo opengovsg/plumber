@@ -31,6 +31,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     allApps,
     onDrawerOpen,
     setCurrentStepId,
+    flowId,
   } = useContext(EditorContext)
 
   const { modalState, patchModalState, prevStepId, isTrigger, step } =
@@ -44,7 +45,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
 
   // This is used for specifically Excel connections (to skip the connection configuration modal)
   const { data: appConnectionsData } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: selectedApp?.key },
+    variables: { key: selectedApp?.key, flowId },
     skip: selectedApp?.key !== EXCEL_APP_KEY,
   })
   // Check and return the one and only Excel connection

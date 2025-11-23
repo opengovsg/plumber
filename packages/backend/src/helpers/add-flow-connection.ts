@@ -40,6 +40,7 @@ async function addFlowConnection({
       connectionId,
       parameterKey,
       parameterValue: step.parameters[parameterKey] as string,
+      addedBy,
       trx,
     })
   } else {

@@ -13,7 +13,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { useIsFieldHidden } from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
 
-import { NON_EDITABLE_CONNECTION_FIELDS } from '../Editor/constants'
+import { COLLABORATOR_RESTRICTED_FIELDS } from '../Editor/constants'
 
 import BooleanRadio from './BooleanRadio'
 
@@ -58,7 +58,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const { flow } = useContext(EditorContext)
 
   const canCollaboratorAddNew =
-    !NON_EDITABLE_CONNECTION_FIELDS.find(
+    !COLLABORATOR_RESTRICTED_FIELDS.find(
       (item) => item.label === label && item.key === name,
     ) && flow?.role === 'editor'
   const isReadOnly =

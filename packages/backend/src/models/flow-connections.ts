@@ -134,25 +134,39 @@ class FlowConnections extends Base {
     connectionId,
     parameterKey,
     parameterValue,
+    addedBy,
     trx,
   }: {
     flowId: string
     connectionId: string
     parameterKey: string
     parameterValue: string
+    addedBy: string
     trx?: Transaction
   }) => {
-    return await this.query(trx)
-      .where({
-        flow_id: flowId,
-        connection_id: connectionId,
-      })
-      .patch({
-        // ensure distinct metadata values, we do it in the query to avoid
-        // having additional queries to get the array, de-duplicate and then
-        // update the DB
-        metadata: FlowConnections.raw(
-          `
+    /**
+     * EDGE CASE
+     * handle edge case where if we delete the M365-Excel connection and add it back via an update step, we need to ensure that the connection exists first.
+     * new M365-Excel connection will have a new connection id, so it will not exist for patching.
+     * we need to insert it instead.
+     */
+    const exists = await this.query(trx).findOne({
+      flow_id: flowId,
+      connection_id: connectionId,
+    })
+
+    if (exists) {
+      return await this.query(trx)
+        .where({
+          flow_id: flowId,
+          connection_id: connectionId,
+        })
+        .patch({
+          // ensure distinct metadata values, we do it in the query to avoid
+          // having additional queries to get the array, de-duplicate and then
+          // update the DB
+          metadata: FlowConnections.raw(
+            `
             jsonb_set(
               metadata,
               ?::text[],
@@ -165,9 +179,18 @@ class FlowConnections extends Base {
               true
             )
             `,
-          [`{${parameterKey}}`, parameterKey, parameterValue],
-        ),
-      })
+            [`{${parameterKey}}`, parameterKey, parameterValue],
+          ),
+        })
+    }
+
+    return await this.addFlowConnection({
+      flowId,
+      connectionId,
+      addedBy,
+      connectionType: 'connection',
+      trx,
+    })
   }
 
   /**

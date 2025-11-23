@@ -88,7 +88,7 @@ export default function EditorLayout() {
         },
       })
     },
-    [flow?.id, flowId, updateFlow],
+    [flow?.updatedAt, flowId, updateFlow],
   )
 
   const onFlowStatusUpdate = useCallback(
