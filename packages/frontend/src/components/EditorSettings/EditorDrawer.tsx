@@ -11,17 +11,17 @@ import {
 import { IconButton } from '@opengovsg/design-system-react'
 
 import EditorSidebar from './EditorSidebar'
-import { DrawerLink } from '.'
+import { GroupedDrawerLinks } from '.'
 
 interface EditorDrawerProps {
-  links: DrawerLink[]
+  groupedLinks: GroupedDrawerLinks[]
   isDrawerOpen: boolean
   openDrawer: () => void
   closeDrawer: () => void
 }
 
 export default function EditorDrawer(props: EditorDrawerProps) {
-  const { links, isDrawerOpen, openDrawer, closeDrawer } = props
+  const { groupedLinks, isDrawerOpen, openDrawer, closeDrawer } = props
 
   return (
     <>
@@ -48,7 +48,10 @@ export default function EditorDrawer(props: EditorDrawerProps) {
             color="base.content.strong"
           />
           <DrawerBody p={4}>
-            <EditorSidebar links={links} closeDrawer={closeDrawer} />
+            <EditorSidebar
+              groupedLinks={groupedLinks}
+              closeDrawer={closeDrawer}
+            />
           </DrawerBody>
         </DrawerContent>
       </Drawer>

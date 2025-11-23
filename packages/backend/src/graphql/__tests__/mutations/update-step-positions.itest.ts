@@ -81,6 +81,7 @@ describe('updateStepPositions mutation', () => {
       $query: vi.fn().mockReturnValue({
         patchAndFetch: flowPatchAndFetchSpy,
       }),
+      assertNotUpdatedSince: vi.fn(),
     }
 
     // Create fake steps with flow reference
@@ -115,7 +116,7 @@ describe('updateStepPositions mutation', () => {
 
     context = {
       currentUser: {
-        $relatedQuery: vi.fn().mockReturnValue(fakeQuery),
+        withAccessibleSteps: vi.fn().mockReturnValue(fakeQuery),
       },
     }
   })
@@ -139,6 +140,9 @@ describe('updateStepPositions mutation', () => {
           type: 'action' as const,
         },
       ],
+      flow: {
+        updatedAt: new Date().toISOString(),
+      },
     }
 
     await updateStepPositions(null, { input }, context)
@@ -240,6 +244,9 @@ describe('updateStepPositions mutation', () => {
           type: 'action' as const,
         },
       ],
+      flow: {
+        updatedAt: new Date().toISOString(),
+      },
     } as any
 
     await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
@@ -302,6 +309,9 @@ describe('updateStepPositions mutation', () => {
           type: 'action' as const,
         },
       ],
+      flow: {
+        updatedAt: '2021-01-01T00:00:00.000Z',
+      },
     }
 
     await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(

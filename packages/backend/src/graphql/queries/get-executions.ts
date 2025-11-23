@@ -11,7 +11,7 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
 ) => {
   const filterBuilder = (builder: ExtendedQueryBuilder<Execution>) => {
     builder.where('test_run', false)
-    builder.where('flow_id', params.flowId)
+    builder.where('executions.flow_id', params.flowId)
 
     // null status means waiting
     if (params.status === null) {
@@ -22,7 +22,7 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
   }
 
   const executionsQuery = context.currentUser
-    .$relatedQuery('executions')
+    .withAccessibleExecutions({ requiredRole: 'viewer' })
     .withGraphFetched({
       executionSteps: true,
     })

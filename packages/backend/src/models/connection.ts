@@ -1,12 +1,13 @@
 import { IJSONObject } from '@plumber/types'
 
 import { AES, enc } from 'crypto-js'
-import type { RelationMappings } from 'objection'
+import type { RelationMappings, Transaction } from 'objection'
 import { ModelOptions, QueryContext } from 'objection'
 
 import appConfig from '@/config/app'
 
 import Base from './base'
+import Flow from './flow'
 import Step from './step'
 import User from './user'
 
@@ -20,6 +21,8 @@ class Connection extends Base {
   draft: boolean
   count?: number
   flowCount?: number
+  flow?: Flow
+  description?: string
 
   static tableName = 'connections'
 
@@ -32,7 +35,7 @@ class Connection extends Base {
       key: { type: 'string', minLength: 1, maxLength: 255 },
       data: { type: 'string' },
       formattedData: { type: 'object' },
-      userId: { type: 'string', format: 'uuid' },
+      userId: { type: 'string', format: 'uuid', nullable: true },
       verified: { type: 'boolean', default: false },
       draft: { type: 'boolean' },
     },
@@ -107,6 +110,39 @@ class Connection extends Base {
 
   async $afterFind(): Promise<void> {
     this.decryptData()
+  }
+
+  /**
+   * Duplicates a connection and sets the user id to null
+   * This is used during pipe transfer to ensure that the connection is still valid and
+   * can be used by the new owner even if the old owner is deleted
+   */
+  static duplicate = async (
+    connectionId: string,
+    trx?: Transaction,
+  ): Promise<Connection> => {
+    const connection = await this.query(trx).findOne({ id: connectionId })
+
+    if (!connection) {
+      throw new Error('Connection not found')
+    }
+
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      userId,
+      ...rest
+    } = connection
+
+    // only need to duplicate if the connection has a user id
+    // it could already be null if the pipe has been transferred before
+    if (userId) {
+      return this.query(trx).insertAndFetch({
+        ...rest,
+        userId: null,
+      })
+    }
   }
 }
 

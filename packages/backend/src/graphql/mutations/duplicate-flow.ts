@@ -37,6 +37,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['templateConfig']
     delete prevConfig['showSurvey']
     delete prevConfig['attachments']
+    delete prevConfig['errorConfig']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
@@ -49,14 +50,19 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     // duplicate the steps and the variables
     const oldToNewStepIdsMap: Record<string, string> = {}
     for (const oldStep of flow.steps) {
+      // NOTE: should not duplicate connections that are shared
+      // userId is null in connections if the connection was shared in a Pipe
+      // and the pipe was subsequently transferred to another user
+      const shouldDuplicateConnection = oldStep.connection?.userId != null
+
       const duplicatedStep = await duplicatedFlow
         .$relatedQuery('steps', trx)
         .insert({
           key: oldStep.key,
           appKey: oldStep.appKey,
           type: oldStep.type,
-          connectionId: oldStep.connectionId,
-          connection: oldStep.connection,
+          connectionId: shouldDuplicateConnection ? oldStep.connectionId : null,
+          connection: shouldDuplicateConnection ? oldStep.connection : null,
           position: oldStep.position,
           parameters: updateStepVariables(
             oldStep.parameters,

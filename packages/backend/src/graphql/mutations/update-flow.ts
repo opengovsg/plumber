@@ -6,14 +6,18 @@ const updateFlow: MutationResolvers['updateFlow'] = async (
   context,
 ) => {
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
       id: params.input.id,
     })
     .throwIfNotFound()
 
+  flow.assertNotUpdatedSince(params.input.updatedAt, context.currentUser.id)
+
   return await flow.$query().patchAndFetch({
     name: params.input.name,
+    updatedAt: new Date().toISOString(),
+    updatedBy: context.currentUser.id,
   })
 }
 

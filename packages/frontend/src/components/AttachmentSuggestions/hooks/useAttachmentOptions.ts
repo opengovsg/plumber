@@ -3,7 +3,7 @@ import { IExecutionStep, TDataOutMetadatumType } from '@plumber/types'
 import { useContext, useMemo, useState } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { GetFlowQuery } from '@/graphql/__generated__/graphql'
+import { Flow } from '@/graphql/__generated__/graphql'
 import {
   extractVariables,
   filterVariables,
@@ -15,7 +15,7 @@ import { CheckboxVariable } from '../components/Checkbox'
 import { reformatToCheckboxVariables } from '../utils'
 
 export function useAttachmentOptions(
-  flowData: GetFlowQuery,
+  flowConfig: Flow['config'],
   priorExecutionSteps: IExecutionStep[],
   variableTypes: TDataOutMetadatumType[] | null,
 ) {
@@ -23,10 +23,9 @@ export function useAttachmentOptions(
   const [options, setOptions] = useState<CheckboxVariable[]>([])
 
   const uploadedItems = useMemo(() => {
-    const attachmentsConfig =
-      flowData?.getFlow?.config?.attachments?.filter(Boolean) ?? []
+    const attachmentsConfig = flowConfig?.attachments?.filter(Boolean) ?? []
     return reformatToCheckboxVariables(attachmentsConfig as CheckboxVariable[])
-  }, [flowData])
+  }, [flowConfig])
 
   const suggestions = useMemo(() => {
     const filteredVars = filterVariables(

@@ -1,5 +1,8 @@
+import { useContext } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+
+import { EditorContext } from '@/contexts/Editor'
 
 interface EditorSnackbarProps {
   isOpen: boolean
@@ -8,6 +11,7 @@ interface EditorSnackbarProps {
 
 export default function EditorSnackbar(props: EditorSnackbarProps) {
   const { isOpen, handleUnpublish } = props
+  const { hasEditPermission } = useContext(EditorContext)
   const snackbarText = 'To edit this pipe, you need to unpublish it first'
   return (
     <Box
@@ -31,6 +35,7 @@ export default function EditorSnackbar(props: EditorSnackbarProps) {
           colorScheme="inverse"
           onClick={handleUnpublish}
           size={{ sm: 'sm', md: 'md' }}
+          isDisabled={!hasEditPermission}
         >
           Unpublish
         </Button>

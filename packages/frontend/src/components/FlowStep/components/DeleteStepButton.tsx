@@ -70,7 +70,12 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
     async (e) => {
       e.stopPropagation()
 
-      await deleteStep({ variables: { input: { ids: [step.id] } } })
+      const deletedStep = await deleteStep({
+        variables: {
+          input: { ids: [step.id], flow: { updatedAt: flow.updatedAt } },
+        },
+      })
+      const updatedFlow = deletedStep.data?.deleteStep
       const { previousStep, nextStep } = findAdjacentSteps(
         flow?.steps,
         step.position,
@@ -82,7 +87,10 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
           variables: {
             input: {
               previousStep: { id: previousStep?.id },
-              flow: { id: flow.id },
+              flow: {
+                id: flow.id,
+                updatedAt: updatedFlow?.updatedAt,
+              },
             },
           },
         })

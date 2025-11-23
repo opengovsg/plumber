@@ -37,7 +37,7 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
     const steps = await context.currentUser
-      .$relatedQuery('steps', trx)
+      .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
       .whereIn('steps.id', stepIds)
       .orderBy('steps.position', 'asc')
@@ -48,6 +48,9 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
         'Pipe is active. Cannot update step in active pipe!',
       )
     }
+
+    const flow = steps[0].flow
+    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
 
     const foundStepIds = steps.map((step) => step.id)
     const missingStepIds = stepIds.filter(
@@ -72,8 +75,6 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
       )
     }
 
-    const flow = steps[0].flow
-
     // Patch each step individually with its new position
     for (const stepPosition of stepPositions) {
       await Step.query(trx).findById(stepPosition.id).patch({
@@ -90,7 +91,7 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
       .withGraphFetched('steps')
       .orderBy('steps.position', 'asc')
 
-    return updatedFlow.steps
+    return updatedFlow
   })
 
   return updatedPositions

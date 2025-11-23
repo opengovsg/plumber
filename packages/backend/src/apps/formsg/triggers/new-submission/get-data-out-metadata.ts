@@ -24,7 +24,10 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
     question.label = 'Header'
   }
 
-  if (fieldData.fieldType === 'attachment') {
+  if (
+    fieldData.fieldType === 'attachment' ||
+    fieldData.fieldType === 'signature'
+  ) {
     question['isHidden'] = true
   }
 
@@ -69,8 +72,8 @@ function isAnswerArrayValid(fieldData: IJSONObject): boolean {
   if (!fieldData.answerArray) {
     return false
   }
-  // strict check for only table, checkbox and address variables
-  const answerArrayFields = ['table', 'checkbox', 'address']
+  // strict check for only table, checkbox, address and signature variables
+  const answerArrayFields = ['table', 'checkbox', 'address', 'signature']
   return answerArrayFields.includes(fieldData.fieldType as string)
 }
 
@@ -83,6 +86,20 @@ function buildAnswerArrayForAddress(fieldData: IJSONObject): IDataOutMetadata {
     type: 'text',
     label: `${order}.${index + 1}. ${label} - ${question}`,
     order: order ? `${order}.${index + 1}` : null,
+  }))
+}
+
+// Hide all the labels for the signature field
+function buildAnswerArrayForSignature(
+  fieldData: IJSONObject,
+): IDataOutMetadata {
+  const { order, question } = fieldData
+  const answerArray = fieldData.answerArray as IJSONArray
+  return answerArray.map((_, index) => ({
+    type: 'text',
+    label: `${order}.${index + 1}. ${question}`,
+    order: order ? `${order}.${index + 1}` : null,
+    isHidden: true,
   }))
 }
 
@@ -209,6 +226,8 @@ function buildAnswerArrayMetadatum(
       return buildAnswerArrayForTable(fieldData)
     case 'address':
       return buildAnswerArrayForAddress(fieldData)
+    case 'signature':
+      return buildAnswerArrayForSignature(fieldData)
     default:
       logger.warn(`Answer array unknown fieldtype: ${fieldType}`, {
         fieldType,

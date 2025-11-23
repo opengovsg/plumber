@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -16,7 +16,6 @@ import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
@@ -36,7 +35,9 @@ export default function EditorLayout() {
   const { flowId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const [updateFlow] = useMutation(UPDATE_FLOW)
+  const [updateFlow] = useMutation(UPDATE_FLOW, {
+    refetchQueries: [GET_FLOW], // need to refetch flow to get the latest updatedAt
+  })
   const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
     refetchQueries: [GET_FLOW],
   })
@@ -75,10 +76,6 @@ export default function EditorLayout() {
   const shouldOpenAnnouncementModal =
     localLatestTimestamp !== LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP
 
-  // phase 1: add check to prevent user from publishing pipe after submitting request
-  const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
-  const hasFlowTransfer = requestedEmail !== ''
-
   const onFlowNameUpdate = useCallback(
     async (name: string) => {
       await updateFlow({
@@ -86,18 +83,12 @@ export default function EditorLayout() {
           input: {
             id: flowId,
             name,
-          },
-        },
-        optimisticResponse: {
-          updateFlow: {
-            __typename: 'Flow',
-            id: flow?.id,
-            name,
+            updatedAt: flow?.updatedAt,
           },
         },
       })
     },
-    [flow?.id, flowId, updateFlow],
+    [flow?.updatedAt, flowId, updateFlow],
   )
 
   const onFlowStatusUpdate = useCallback(
@@ -107,18 +98,12 @@ export default function EditorLayout() {
           input: {
             id: flowId,
             active,
-          },
-        },
-        optimisticResponse: {
-          updateFlowStatus: {
-            __typename: 'Flow',
-            id: flow?.id,
-            active,
+            updatedAt: flow?.updatedAt,
           },
         },
       })
     },
-    [flow?.id, flowId, updateFlowStatus],
+    [flow?.updatedAt, flowId, updateFlowStatus],
   )
 
   const handleWarningClose = useCallback(() => {
@@ -151,18 +136,6 @@ export default function EditorLayout() {
     shouldWarnOnPublish,
   ])
 
-  // disallow user from publishing pipe if any step is incomplete
-  const isFlowIncomplete = useMemo(
-    () =>
-      flow?.steps.length < 2 ||
-      flow?.steps.some((step) => step.status === 'incomplete') ||
-      // NOTE: toolbox apps should have action steps after them
-      // this is relevant in the for-each action where we use the EmptyFlowStepHeader
-      // instead of creating an empty step
-      flow?.steps[flow?.steps.length - 1].appKey === TOOLBOX_APP_KEY,
-    [flow?.steps],
-  )
-
   // warn user of unsaved changes when they try to close or reload the browser
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -180,12 +153,14 @@ export default function EditorLayout() {
   // navigate user to not found page if flow does not belong to the user
   if (
     error instanceof ApolloError &&
-    error?.graphQLErrors?.find((e) => e.message === 'NotFoundError')
+    error?.graphQLErrors?.find(
+      (e) =>
+        e.message === 'NotFoundError' ||
+        e.message === 'You do not have sufficient permissions for this pipe',
+    )
   ) {
     return <InvalidEditorPage />
   }
-
-  const isEditorReadOnly = hasFlowTransfer || flow?.active
 
   if (!flowId || !flow) {
     return null
@@ -197,7 +172,12 @@ export default function EditorLayout() {
   const shouldOpenDemoModal = showDemo === 'true' && !!demoVideoDetails
 
   return (
-    <>
+    <EditorProvider
+      flow={flow}
+      shouldWarnOnLeave={shouldWarnOnLeave}
+      setShouldWarnOnLeave={setShouldWarnOnLeave}
+      resetFormRef={resetFormRef}
+    >
       <Helmet>
         <title>{flow?.name} | Pipe</title>
       </Helmet>
@@ -236,15 +216,11 @@ export default function EditorLayout() {
               <EditableInput
                 value={flow?.name}
                 onSave={onFlowNameUpdate}
-                readOnly={loading}
+                readOnly={loading || flow?.role === 'viewer'}
               />
             </Flex>
           </Flex>
           <EditorToolbar
-            flowId={flowId}
-            flow={flow}
-            isFlowIncomplete={isFlowIncomplete}
-            hasFlowTransfer={hasFlowTransfer}
             loading={loading}
             shouldWarnOnLeave={shouldWarnOnLeave}
             setShouldWarnOnPublish={setShouldWarnOnPublish}
@@ -261,16 +237,10 @@ export default function EditorLayout() {
           flex={1}
           overflowY="auto"
         >
-          <EditorProvider
-            readOnly={isEditorReadOnly}
-            flow={flow}
-            shouldWarnOnLeave={shouldWarnOnLeave}
-            setShouldWarnOnLeave={setShouldWarnOnLeave}
-            resetFormRef={resetFormRef}
-          >
-            <Editor />
-            {flow.active && flow.config?.showSurvey && <LensSurvey />}
-          </EditorProvider>
+          <Editor />
+          {flow?.active &&
+            flow?.config?.showSurvey &&
+            flow?.role !== 'viewer' && <LensSurvey />}
         </Container>
       </Flex>
 
@@ -300,6 +270,6 @@ export default function EditorLayout() {
         onClose={handleWarningClose}
         onLeave={onDiscardChanges}
       />
-    </>
+    </EditorProvider>
   )
 }

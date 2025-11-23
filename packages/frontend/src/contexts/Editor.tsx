@@ -40,6 +40,7 @@ interface IEditorContextValue {
   readOnly: boolean
   testExecutionSteps: IExecutionStep[]
   currentStepId: string | null
+  hasEditPermission: boolean
   hasForEach: boolean
   hasIfThen: boolean
   currentTestExecutionStep: IExecutionStep | null
@@ -67,16 +68,19 @@ interface IEditorContextValue {
     eventKey: string,
     connectionId?: string,
   ) => Promise<IStep>
-  onUpdateStep: (step: IStep) => Promise<IStep>
+  onUpdateStep: (step: IStep, onCompleted?: () => void) => Promise<IStep>
   allApps: IApp[]
   resetForm: () => void
   resetTimestamp: number
+  isLoading: boolean
+  hasFlowTransfer: boolean
 }
 
 export const EditorContext = createContext<IEditorContextValue>({
   flow: {} as IFlow,
   flowId: '',
   currentStepId: null,
+  hasEditPermission: false,
   hasForEach: false,
   hasIfThen: false,
   currentTestExecutionStep: null,
@@ -99,11 +103,12 @@ export const EditorContext = createContext<IEditorContextValue>({
   allApps: [],
   resetForm: () => null,
   resetTimestamp: 0,
+  isLoading: true,
+  hasFlowTransfer: false,
 })
 
 type EditorProviderProps = {
   children: ReactNode
-  readOnly: boolean
   flow: IFlow
   shouldWarnOnLeave: boolean
   setShouldWarnOnLeave: (shouldWarnOnLeave: boolean) => void
@@ -113,18 +118,27 @@ type EditorProviderProps = {
 /**
  * Helper function to update the flow in the cache
  */
-function updateHandlerFactory(flowId: string, previousStepId: string) {
-  return function createStepUpdateHandler(cache: any, mutationResult: any) {
+function updateHandlerFactory(
+  flowId: string,
+  previousStepId: string,
+  mutationType: 'createStep' | 'updateStep' = 'createStep',
+) {
+  return function stepUpdateHandler(cache: any, mutationResult: any) {
     const { data } = mutationResult
-    const { createStep: createdStep } = data
+    const stepData = data[mutationType]
+
+    // read the flow from the cache to avoid stale data when creating or updating steps
+    // we read from the cache instead of firing a getFlow query on every update
+    // to reduce the UI flicker
+    // TODO (kevinkim-ogp): should just be able to use the flow from the context
     const { getFlow: flow } = cache.readQuery({
       query: GET_FLOW,
       variables: { id: flowId },
     })
 
     // getFlow requires certain attributes to be returned
-    const completeCreatedStep = {
-      ...createdStep,
+    const completeStep = {
+      ...stepData,
       iconUrl: null,
       webhookUrl: null,
       config: {
@@ -137,8 +151,8 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
     }
 
     const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
-      if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, completeCreatedStep]
+      if (mutationType === 'createStep' && currentStep.id === previousStepId) {
+        return [...steps, currentStep, completeStep]
       }
 
       return [...steps, currentStep]
@@ -147,13 +161,14 @@ function updateHandlerFactory(flowId: string, previousStepId: string) {
     cache.writeQuery({
       query: GET_FLOW,
       variables: { id: flowId },
-      data: { getFlow: { ...flow, steps } },
+      data: {
+        getFlow: { ...flow, updatedAt: stepData.flow.updatedAt, steps },
+      },
     })
   }
 }
 
 export const EditorProvider = ({
-  readOnly,
   flow,
   shouldWarnOnLeave,
   setShouldWarnOnLeave,
@@ -161,6 +176,11 @@ export const EditorProvider = ({
   children,
 }: EditorProviderProps) => {
   const isMobile = useIsMobile()
+
+  // flow transfer phase 1: add check to prevent user from publishing pipe after submitting request
+  const requestedEmail = flow?.pendingTransfer?.newOwner.email ?? ''
+  const hasFlowTransfer = requestedEmail !== ''
+  const readOnly = hasFlowTransfer || flow?.active || flow?.role === 'viewer'
 
   const flowId = flow.id
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
@@ -180,14 +200,13 @@ export const EditorProvider = ({
     [getAppsData?.getApps],
   )
 
-  const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
-    GET_TEST_EXECUTION_STEPS,
-    {
-      variables: {
-        flowId,
-      },
+  const { data, loading: isLoadingTestExecutionSteps } = useQuery<{
+    getTestExecutionSteps: IExecutionStep[]
+  }>(GET_TEST_EXECUTION_STEPS, {
+    variables: {
+      flowId,
     },
-  )
+  })
 
   const testExecutionSteps = useMemo(
     () => data?.getTestExecutionSteps ?? [],
@@ -221,9 +240,11 @@ export const EditorProvider = ({
    * CreateStep mutation
    */
 
-  const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
+  const [createStep, { loading: isCreatingStep }] = useMutation(CREATE_STEP, {
+    refetchQueries: [GET_FLOW],
+  })
 
-  const [initializeIfThen] = useIfThenInitializer()
+  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
 
   // Add a step to the flow with the given appKey and eventKey
   const onCreateStep = useCallback(
@@ -239,6 +260,7 @@ export const EditorProvider = ({
         },
         flow: {
           id: flowId,
+          updatedAt: flow.updatedAt,
         },
         appKey,
         key: eventKey,
@@ -247,7 +269,7 @@ export const EditorProvider = ({
 
       const createdStep = await createStep({
         variables: { input: mutationInput },
-        update: updateHandlerFactory(flowId, previousStepId),
+        update: updateHandlerFactory(flowId, previousStepId, 'createStep'),
       })
 
       const newStep = createdStep.data.createStep
@@ -269,6 +291,9 @@ export const EditorProvider = ({
           const completeStepWithFlow = {
             ...completeStep,
             flowId: flowId,
+            flow: {
+              updatedAt: newStep.flow.updatedAt,
+            },
           }
           if (eventKey === TOOLBOX_ACTIONS.IfThen) {
             return (await initializeIfThen(
@@ -280,15 +305,15 @@ export const EditorProvider = ({
 
       return newStep as IStep
     },
-    [createStep, flowId, initializeIfThen],
+    [createStep, flow, flowId, initializeIfThen],
   )
 
   /**
    * UpdateStep mutation
    */
-  const [updateStep] = useMutation(UPDATE_STEP)
+  const [updateStep, { loading: isUpdatingStep }] = useMutation(UPDATE_STEP)
   const onUpdateStep = useCallback(
-    async (step: IStep) => {
+    async (step: IStep, onCompleted?: () => void) => {
       const mutationInput: Record<string, unknown> = {
         id: step.id,
         key: step.key,
@@ -298,6 +323,7 @@ export const EditorProvider = ({
         },
         flow: {
           id: flowId,
+          updatedAt: flow.updatedAt,
         },
         config: {
           // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
@@ -314,11 +340,13 @@ export const EditorProvider = ({
 
       const updatedStep = await updateStep({
         variables: { input: mutationInput },
+        update: updateHandlerFactory(flowId, step.id, 'updateStep'),
+        onCompleted: () => onCompleted?.(),
       })
 
       return updatedStep.data?.updateStep as IStep
     },
-    [updateStep, flowId],
+    [flow, flowId, updateStep],
   )
 
   /**
@@ -401,6 +429,7 @@ export const EditorProvider = ({
       value={{
         allApps,
         currentStepId,
+        hasEditPermission: flow.role === 'owner' || flow.role === 'editor',
         hasForEach,
         hasIfThen,
         isDrawerOpen,
@@ -424,6 +453,13 @@ export const EditorProvider = ({
         setShouldWarnOnLeave,
         resetForm,
         resetTimestamp,
+        isLoading:
+          isLoadingAllApps ||
+          isLoadingTestExecutionSteps ||
+          isCreatingStep ||
+          isUpdatingStep ||
+          isInitializingIfThen,
+        hasFlowTransfer,
       }}
     >
       {children}

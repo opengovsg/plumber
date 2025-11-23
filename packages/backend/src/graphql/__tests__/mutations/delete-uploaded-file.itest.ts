@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ForbiddenError } from '@/errors/graphql-errors'
 import deleteUploadedFile from '@/graphql/mutations/delete-uploaded-file'
 import Flow from '@/models/flow'
+import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 import { generateMockContext } from './tiles/table.mock'
@@ -91,9 +92,7 @@ describe('deleteFromS3', () => {
     })
 
     await deleteUploadedFile(null, { id: fileToDelete }, context)
-    const postDeleteSteps = await context.currentUser
-      .$relatedQuery('steps')
-      .where({ flow_id: mockFlowId })
+    const postDeleteSteps = await Step.query().where({ flow_id: mockFlowId })
 
     postDeleteSteps.forEach((step) => {
       expect(step.parameters.attachments).not.toContain(fileToDelete)

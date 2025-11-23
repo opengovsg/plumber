@@ -11,8 +11,10 @@ export const GET_EXECUTION = gql`
         id
         name
         active
+        role
       }
       status
+      role
     }
   }
 `

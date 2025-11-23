@@ -1,7 +1,8 @@
 import { raw } from 'objection'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
+import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
+import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -15,23 +16,34 @@ const createStep: MutationResolvers['createStep'] = async (
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
-    if (input.connection?.id) {
-      // if connectionId is specified, verify that the connection exists and belongs to the user
-      const connection = await context.currentUser
-        .$relatedQuery('connections')
-        .findOne({ id: input.connection.id })
-      if (!connection) {
-        throw new BadUserInputError('Connection not found')
-      }
-    }
-
     // Put SELECTs in transaction just in case there's concurrent modification.
     const flow = await context.currentUser
-      .$relatedQuery('flows', trx)
+      .withAccessibleFlows({ trx, requiredRole: 'editor' })
       .findOne({
         id: input.flow.id,
       })
       .throwIfNotFound()
+
+    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+
+    // if connectionId is specified, verify that the connection exists
+    // and the user has the appropriate permissions to use it
+    // user has to be an editor in the pipe
+    if (input.connection?.id) {
+      /**
+       * NOTE: with collaborators,
+       * Owner can use existing connections or add new connections to the pipe
+       * Editor can only use existing connections that have been shared to the pipe
+       * (TODO: phase 2) Editor will be able to add their own connections
+       */
+      await getConnection({
+        context,
+        connectionId: input.connection.id,
+        flowId: flow.id,
+        includeOwnConnections: flow.role === 'owner',
+        trx,
+      })
+    }
 
     const previousStep = await flow
       .$relatedQuery('steps', trx)
@@ -57,9 +69,33 @@ const createStep: MutationResolvers['createStep'] = async (
       config: input.config,
     })
 
-    await step.patchFlowLastUpdated(trx)
+    // NOTE: add flow connection to the flow_connections table
+    // only add by default if the user is the owner of the flow
+    // TODO (kevinkim-ogp): enhance this to allow editors to add connections
+    if (input.connection?.id && flow.userId === context.currentUser.id) {
+      await FlowConnections.addFlowConnection({
+        flowId: flow.id,
+        connectionId: input.connection.id,
+        addedBy: context.currentUser.id,
+        // it is always connection when creating a step since table is selected
+        // only after the step is created
+        connectionType: 'connection',
+        trx,
+      })
+    }
 
-    return step
+    const updatedFlow = await flow.patchLastUpdated({
+      flowId: flow.id,
+      updatedBy: context.currentUser.id,
+      trx,
+    })
+
+    return {
+      ...step,
+      flow: {
+        updatedAt: updatedFlow.updatedAt,
+      },
+    }
   })
 }
 

@@ -4,9 +4,13 @@ type Query {
     onlyWithTriggers: Boolean
     onlyWithActions: Boolean
   ): [App]
-  getApp(key: String!): App
+  getApp(key: String!, flowId: String): App
   getConnectedApps: [App]
-  testConnection(connectionId: String!, flowId: String): TestConnectionResult
+  testConnection(
+    connectionId: String!
+    flowId: String
+    supportsConnectionRegistration: Boolean
+  ): TestConnectionResult
   getFlow(id: String!): Flow
   getFlows(
     limit: Int!
@@ -81,7 +85,7 @@ type Mutation {
   deleteFlow(input: DeleteFlowInput): Boolean
   createStep(input: CreateStepInput): Step
   updateStep(input: UpdateStepInput): Step
-  updateStepPositions(input: UpdateStepPositionsInput): [Step]
+  updateStepPositions(input: UpdateStepPositionsInput): Flow
   deleteStep(input: DeleteStepInput): Flow
   requestOtp(input: RequestOtpInput): Boolean
   verifyOtp(input: VerifyOtpInput): Boolean
@@ -99,7 +103,11 @@ type Mutation {
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
+  duplicateBranch(input: DuplicateBranchInput): DuplicateBranchResult
   duplicateFlow(input: DuplicateFlowInput): Flow
+  # Flow collaborators
+  upsertFlowCollaborator(input: FlowCollaboratorInput!): Boolean!
+  deleteFlowCollaborator(input: DeleteFlowCollaboratorInput!): Boolean!
   # S3 operations
   generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!): Boolean
@@ -320,6 +328,7 @@ type Connection {
   app: App
   createdAt: String
   flowCount: Int
+  description: String
 }
 
 type ConnectionData {
@@ -393,6 +402,24 @@ type Flow {
   userId: String
   pendingTransfer: FlowTransfer
   template: Template
+  collaborators: [FlowCollaborator!]
+  role: String
+}
+
+type FlowCollaborator {
+  role: String!
+  email: String!
+}
+
+input FlowCollaboratorInput {
+  flowId: String!
+  email: String!
+  role: String!
+}
+
+input DeleteFlowCollaboratorInput {
+  flowId: String!
+  email: String!
 }
 
 # Rate limiting config is omitted here e.g. maxQps
@@ -406,6 +433,7 @@ type FlowConfig {
 
 type FlowErrorConfig {
   notificationFrequency: NotificationFrequency!
+  notificationRecipients: [NotificationRecipients]!
 }
 
 type FlowTemplateConfig {
@@ -430,6 +458,7 @@ type Execution {
   status: String
   flow: Flow
   executionSteps: [ExecutionStep]
+  role: String
 }
 
 type BulkRetryExecutionsResult {
@@ -445,6 +474,7 @@ type BulkRetryIterationsResult {
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
+  flowId: String
 }
 
 input GenerateAuthUrlInput {
@@ -484,16 +514,23 @@ input CreateTemplatedFlowInput {
 input UpdateFlowInput {
   id: String!
   name: String!
+  updatedAt: String!
 }
 
 input UpdateFlowStatusInput {
   id: String!
   active: Boolean!
+  updatedAt: String!
 }
 
 enum NotificationFrequency {
   once_per_day
   always
+}
+
+enum NotificationRecipients {
+  editor
+  viewer
 }
 
 input FlowAttachmentsConfigInput {
@@ -507,6 +544,7 @@ input FlowAttachmentsConfigInput {
 input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
+  notificationRecipients: [NotificationRecipients]
   showSurvey: Boolean
   hasLoadedOnce: Boolean
   attachments: [FlowAttachmentsConfigInput]
@@ -519,6 +557,12 @@ input ExecuteStepInput {
 
 input DeleteFlowInput {
   id: String!
+}
+
+input DuplicateBranchInput {
+  flow: StepFlowInput
+  previousStep: PreviousStepInput
+  steps: [CreateStepInput]
 }
 
 input DuplicateFlowInput {
@@ -570,10 +614,12 @@ input StepPositionInput {
 
 input UpdateStepPositionsInput {
   stepPositions: [StepPositionInput!]!
+  flow: StepFlowInput!
 }
 
 input DeleteStepInput {
   ids: [String!]!
+  flow: StepFlowInput!
 }
 
 input RequestOtpInput {
@@ -679,6 +725,7 @@ enum StepEnumType {
 
 input StepFlowInput {
   id: String
+  updatedAt: String
 }
 
 input StepInput {
@@ -797,6 +844,11 @@ type PaginatedExecutions {
 type PaginatedExecutionSteps {
   edges: [ExecutionStepEdge]!
   pageInfo: PageInfo!
+}
+
+type DuplicateBranchResult {
+  flow: Flow
+  steps: [Step]
 }
 
 enum DatabaseType {

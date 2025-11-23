@@ -1,8 +1,9 @@
+import { Fragment } from 'react'
 import { Link, useMatch } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
 import { SidebarContainer, SidebarItem } from '@opengovsg/design-system-react'
 
-import { DrawerLink } from '.'
+import { DrawerLink, GroupedDrawerLinks } from '.'
 
 interface EditorSidebarItemProps {
   link: DrawerLink
@@ -10,7 +11,7 @@ interface EditorSidebarItemProps {
 }
 
 interface EditorSidebarProps {
-  links: DrawerLink[]
+  groupedLinks: GroupedDrawerLinks[]
   closeDrawer: () => void
 }
 
@@ -48,15 +49,23 @@ function EditorSidebarItem({
 }
 
 export default function EditorSidebar(props: EditorSidebarProps) {
-  const { links, closeDrawer } = props
+  const { groupedLinks, closeDrawer } = props
+
   return (
     <SidebarContainer>
-      {links.map((link, index) => (
-        <EditorSidebarItem
-          key={index}
-          link={link}
-          closeDrawer={closeDrawer}
-        ></EditorSidebarItem>
+      {groupedLinks.map(({ group, links }) => (
+        <Fragment key={group}>
+          <Text p={4} ml={2} textStyle="caption-3">
+            {group}
+          </Text>
+          {links.map((link, index) => (
+            <EditorSidebarItem
+              key={index}
+              link={link}
+              closeDrawer={closeDrawer}
+            />
+          ))}
+        </Fragment>
       ))}
     </SidebarContainer>
   )

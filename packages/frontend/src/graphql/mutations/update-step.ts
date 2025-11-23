@@ -20,6 +20,9 @@ export const UPDATE_STEP = graphql(`
           appEventKey
         }
       }
+      flow {
+        updatedAt
+      }
     }
   }
 `)

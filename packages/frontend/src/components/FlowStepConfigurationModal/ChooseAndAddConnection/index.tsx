@@ -57,6 +57,7 @@ export const optionGenerator = (
   return {
     label: screenName ?? 'Unnamed',
     value: connection?.id as string,
+    description: connection?.description ?? undefined,
   }
 }
 
@@ -65,6 +66,7 @@ export default function ChooseAndAddConnection(
 ) {
   const { onClose } = props
   const {
+    flow,
     flowId,
     onCreateStep,
     onDrawerOpen,
@@ -82,7 +84,10 @@ export default function ChooseAndAddConnection(
     loading: appConnectionsLoading,
     refetch,
   } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: selectedApp?.key },
+    variables: {
+      key: selectedApp?.key,
+      flowId: flow.id,
+    },
     skip: !selectedApp,
   })
 

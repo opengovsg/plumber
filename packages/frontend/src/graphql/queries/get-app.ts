@@ -56,27 +56,6 @@ export const GET_APP = gql`
           }
         }
       }
-      connections {
-        id
-      }
-      triggers {
-        name
-        key
-        type
-        pollInterval
-        description
-        substeps {
-          name
-        }
-      }
-      actions {
-        name
-        key
-        description
-        substeps {
-          name
-        }
-      }
     }
   }
 `

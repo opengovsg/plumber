@@ -1,9 +1,10 @@
 import { IStep } from '@plumber/types'
 
-import { MouseEventHandler, useCallback, useRef } from 'react'
+import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
 import { useMutation } from '@apollo/client'
 import { useDisclosure } from '@chakra-ui/react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
@@ -13,6 +14,7 @@ const useDeleteStepConfirmation = (
   groupedSteps: IStep[][],
   branchSteps?: IStep[],
 ) => {
+  const { flow } = useContext(EditorContext)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const cancelRef = useRef<HTMLButtonElement>(null)
 
@@ -29,6 +31,7 @@ const useDeleteStepConfirmation = (
   )
 
   const onDelete = useCallback(async () => {
+    const flowInput = { updatedAt: flow.updatedAt }
     if (type === TOOLBOX_ACTIONS.ForEach) {
       /**
        *  deleting the entire for-each deletes the entire for-each loop
@@ -37,16 +40,16 @@ const useDeleteStepConfirmation = (
       const flatSteps = groupedSteps.flat()
       const idsToDelete = flatSteps.map((step) => step.id)
       await deleteStep({
-        variables: { input: { ids: idsToDelete } },
+        variables: { input: { ids: idsToDelete, flow: flowInput } },
       })
     } else if (type === TOOLBOX_ACTIONS.IfThen && branchSteps) {
       const idsToDelete = branchSteps.map((step) => step.id)
       await deleteStep({
-        variables: { input: { ids: idsToDelete } },
+        variables: { input: { ids: idsToDelete, flow: flowInput } },
       })
     }
     onClose()
-  }, [branchSteps, deleteStep, groupedSteps, onClose, type])
+  }, [branchSteps, deleteStep, flow.updatedAt, groupedSteps, onClose, type])
 
   return {
     cancelRef,

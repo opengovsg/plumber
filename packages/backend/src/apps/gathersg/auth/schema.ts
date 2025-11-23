@@ -25,6 +25,7 @@ const schema = z
         submissionId: z.string().min(1),
       })
       .nullish(),
+    fields: z.record(z.string(), z.any()).nullish(),
   })
   .refine(
     (data) => {

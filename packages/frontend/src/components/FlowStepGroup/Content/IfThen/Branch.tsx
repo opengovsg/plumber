@@ -66,7 +66,9 @@ export default function Branch(props: BranchProps) {
   const deleteBranch = useCallback(async () => {
     const idsToDelete = branchSteps.map((step) => step.id)
     await deleteStep({
-      variables: { input: { ids: idsToDelete } },
+      variables: {
+        input: { ids: idsToDelete, flow: { updatedAt: flow.updatedAt } },
+      },
     })
 
     setCurrentStepId(null)
@@ -78,6 +80,7 @@ export default function Branch(props: BranchProps) {
     onDrawerClose,
     closeDeleteConfirmation,
     setCurrentStepId,
+    flow.updatedAt,
   ])
 
   const canAddStep = useMemo(() => allowAddStep(branchSteps), [branchSteps])
