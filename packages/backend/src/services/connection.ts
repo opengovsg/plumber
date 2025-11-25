@@ -26,11 +26,10 @@ export const getConnection = async (params: GetConnectionParams) => {
     //    it could be their own connection or a shared connection
     // 2. the user is the owner of a pipe that has been transferred to them
     //    it should include connections from the flow_connections table as well
-    //
     // TODO (kevinkim-ogp): phase 2 will allow editors to add their own connections, so owner's connections
     // will need to include connections from the flow_connections table
 
-    const connection = await Connection.query(trx)
+    return await Connection.query(trx)
       .findById(connectionId)
       .where(function () {
         // connection is either owned by the user
@@ -42,8 +41,6 @@ export const getConnection = async (params: GetConnectionParams) => {
         )
       })
       .throwIfNotFound({ message: 'Connection not found' })
-
-    return connection
   }
 
   // NOTE: editor and viewer can only access shared connections from the flow_connections table
