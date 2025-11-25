@@ -119,7 +119,7 @@ const AddNewCollaborator = ({
               type="submit"
               isLoading={isAdding}
               isDisabled={!isValid}
-              alignSelf="flex-end"
+              alignSelf="flex-start"
             >
               Add collaborator
             </Button>
