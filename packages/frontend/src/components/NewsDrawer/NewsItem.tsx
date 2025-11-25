@@ -22,12 +22,14 @@ export interface NewsItemProps {
   title: string
   details: string
   multimedia?: NewsItemMultimedia
+  ldFlagKey?: string
 }
 
 const DATE_FORMAT = 'dd MMM yyyy'
 
 export default function NewsItem(props: NewsItemProps) {
   const { date, tag, title, details, multimedia } = props
+
   const formattedDate = DateTime.fromISO(date).toFormat(DATE_FORMAT, {
     locale: 'en-US',
   })
