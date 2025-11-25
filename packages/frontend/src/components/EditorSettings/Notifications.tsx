@@ -100,7 +100,7 @@ function NotificationFormFields() {
         w="fit-content"
         type="submit"
         isDisabled={!isDirty || isReadOnly}
-        alignSelf="flex-end"
+        alignSelf="flex-start"
       >
         {isDirty ? 'Save' : 'Saved'}
       </Button>
