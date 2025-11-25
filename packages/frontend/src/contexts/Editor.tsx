@@ -115,59 +115,6 @@ type EditorProviderProps = {
   resetFormRef?: React.MutableRefObject<(() => void) | null>
 }
 
-/**
- * Helper function to update the flow in the cache
- */
-function updateHandlerFactory(
-  flowId: string,
-  previousStepId: string,
-  mutationType: 'createStep' | 'updateStep' = 'createStep',
-) {
-  return function stepUpdateHandler(cache: any, mutationResult: any) {
-    const { data } = mutationResult
-    const stepData = data[mutationType]
-
-    // read the flow from the cache to avoid stale data when creating or updating steps
-    // we read from the cache instead of firing a getFlow query on every update
-    // to reduce the UI flicker
-    // TODO (kevinkim-ogp): should just be able to use the flow from the context
-    const { getFlow: flow } = cache.readQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-    })
-
-    // getFlow requires certain attributes to be returned
-    const completeStep = {
-      ...stepData,
-      iconUrl: null,
-      webhookUrl: null,
-      config: {
-        stepName: null,
-        templateConfig: {
-          appEventKey: null,
-        },
-      },
-      createdAt: new Date().toISOString(),
-    }
-
-    const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
-      if (mutationType === 'createStep' && currentStep.id === previousStepId) {
-        return [...steps, currentStep, completeStep]
-      }
-
-      return [...steps, currentStep]
-    }, [])
-
-    cache.writeQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-      data: {
-        getFlow: { ...flow, updatedAt: stepData.flow.updatedAt, steps },
-      },
-    })
-  }
-}
-
 export const EditorProvider = ({
   flow,
   shouldWarnOnLeave,
@@ -269,39 +216,17 @@ export const EditorProvider = ({
 
       const createdStep = await createStep({
         variables: { input: mutationInput },
-        update: updateHandlerFactory(flowId, previousStepId, 'createStep'),
       })
 
-      const newStep = createdStep.data.createStep
+      let newStep = createdStep.data.createStep
       setCurrentStepId(newStep.id)
 
       // account for the for-each and if-then
-      if (appKey === TOOLBOX_APP_KEY) {
-        // Get the complete step data from the cache
-        const { getFlow: updatedFlow } = client.readQuery({
-          query: GET_FLOW,
-          variables: { id: flowId },
-        })
-
-        const completeStep = updatedFlow.steps.find(
-          (s: IStep) => s.id === newStep.id,
-        )
-
-        if (completeStep) {
-          const completeStepWithFlow = {
-            ...completeStep,
-            flowId: flowId,
-            flow: {
-              updatedAt: newStep.flow.updatedAt,
-            },
-          }
-          if (eventKey === TOOLBOX_ACTIONS.IfThen) {
-            return (await initializeIfThen(
-              completeStepWithFlow,
-            )) as unknown as IStep
-          }
-        }
+      if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
+        newStep = await initializeIfThen(newStep)
       }
+      // we refetch GET_FLOW after everything is completed
+      await client.refetchQueries({ include: [GET_FLOW] })
 
       return newStep as IStep
     },
@@ -340,7 +265,6 @@ export const EditorProvider = ({
 
       const updatedStep = await updateStep({
         variables: { input: mutationInput },
-        update: updateHandlerFactory(flowId, step.id, 'updateStep'),
         onCompleted: () => onCompleted?.(),
       })
 

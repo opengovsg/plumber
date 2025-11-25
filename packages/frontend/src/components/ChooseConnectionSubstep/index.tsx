@@ -71,6 +71,7 @@ function ChooseConnectionSubstep(
       flowId: step.flowId,
       supportsConnectionRegistration,
     },
+    fetchPolicy: 'cache-first',
     skip: !connection?.id,
   })
 
