@@ -588,12 +588,10 @@ describe('updateStep mutation', () => {
       // Mock FlowConnections query for getConnection validation
       // Since role is 'editor', getConnection will query FlowConnections table
       vi.spyOn(FlowConnections, 'query').mockReturnValue({
-        withSoftDeleted: vi.fn().mockReturnValue({
-          findOne: vi.fn().mockReturnValue({
-            withGraphFetched: vi.fn().mockReturnValue({
-              throwIfNotFound: vi.fn().mockResolvedValue({
-                connection: { id: mockConnectionId, key: 'slack' },
-              }),
+        findOne: vi.fn().mockReturnValue({
+          withGraphFetched: vi.fn().mockReturnValue({
+            throwIfNotFound: vi.fn().mockResolvedValue({
+              connection: { id: mockConnectionId, key: 'slack' },
             }),
           }),
         }),

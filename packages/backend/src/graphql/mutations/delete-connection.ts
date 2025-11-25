@@ -7,20 +7,22 @@ const deleteConnection: MutationResolvers['deleteConnection'] = async (
   params,
   context,
 ) => {
-  await context.currentUser
-    .$relatedQuery('connections')
-    .delete()
-    .findOne({
-      id: params.input.id,
-    })
-    .throwIfNotFound()
+  return await FlowConnections.transaction(async (trx) => {
+    await context.currentUser
+      .$relatedQuery('connections', trx)
+      .delete()
+      .findOne({
+        id: params.input.id,
+      })
+      .throwIfNotFound()
 
-  // also delete the connection from the flow_connections table for flows with collaborators
-  await FlowConnections.query()
-    .delete()
-    .where({ connection_id: params.input.id })
+    // also delete the connection from the flow_connections table for flows with collaborators
+    await FlowConnections.query(trx)
+      .delete()
+      .where({ connection_id: params.input.id })
 
-  return true
+    return true
+  })
 }
 
 export default deleteConnection
