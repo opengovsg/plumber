@@ -15,16 +15,23 @@ export async function throwSendMessageError(
   testRun: boolean,
 ): Promise<never> {
   const position = step.position
-  logger.error('Telegram bot error', {
-    error: err,
-  })
+
   // catch telegram errors with different error format for ETIMEDOUT and ECONNRESET: e.g. details: { error: 'connect ECONNREFUSED 127.0.0.1:3002' }
+  const errorDetails = JSON.stringify(get(err, 'details', {}))
   const errorString = JSON.stringify(get(err, 'details.error', ''))
+  logger.error({
+    event: 'telegram-bot-error',
+    error: errorDetails,
+    stepId: step.id,
+    testRun,
+  })
+
   if (
     errorString.includes('ECONNRESET') ||
     errorString.includes('ETIMEDOUT') ||
     err.message.includes('ETIMEDOUT') ||
-    err.code === 'ETIMEDOUT'
+    err.code === 'ETIMEDOUT' ||
+    errorString.includes('socket hang up')
   ) {
     logger.error(`Telegram ip error: ${err.resolvedIp}`)
     throw new RetriableError({
@@ -37,7 +44,6 @@ export async function throwSendMessageError(
   /**
    * TODO: Temporary error handling since I cant find a way to catch the ETIMEDOUT error
    */
-  const errorDetails = JSON.stringify(get(err, 'details', {}))
   if (errorDetails === '{"error": "Error"}') {
     throw new RetriableError({
       error: 'Timeout error. Telegram may be experiencing issues.',
@@ -132,6 +138,12 @@ export async function throwSendMessageError(
         appName,
         err,
       )
+    case 504:
+      throw new RetriableError({
+        error: 'Timeout error. Telegram may be experiencing issues.',
+        delayInMs: 'default',
+        delayType: 'step',
+      })
     default:
       // return original error since uncaught
       throw err

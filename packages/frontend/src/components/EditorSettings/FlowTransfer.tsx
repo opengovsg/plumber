@@ -105,7 +105,7 @@ export default function FlowTransfer() {
             <Button
               type="submit"
               isDisabled={shouldDisableInput || !isValid}
-              alignSelf="flex-end"
+              alignSelf="flex-start"
               mt={8}
             >
               Transfer Pipe

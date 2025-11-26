@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import {
   Box,
   Button,
@@ -14,16 +14,12 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+
 import NewsItem from './NewsItem'
 import { NEWS_ITEM_LIST } from './NewsItemList'
 
 const LOCAL_STORAGE_LAST_READ_KEY = 'news-drawer-last-read'
-
-// this fetches the latest time from the news
-const latestNewsTimestamp =
-  NEWS_ITEM_LIST.length > 0
-    ? new Date(NEWS_ITEM_LIST[0].date).getTime().toString()
-    : ''
 
 export default function NewsDrawer({
   children,
@@ -34,12 +30,29 @@ export default function NewsDrawer({
   const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
     localStorage.getItem(LOCAL_STORAGE_LAST_READ_KEY),
   )
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+
+  const FILTERED_NEWS_ITEM_LIST = useMemo(() => {
+    return NEWS_ITEM_LIST.filter((item) => {
+      if (!item.ldFlagKey) {
+        return true
+      }
+      // default to true since flag may get deleted in future
+      return getFlagValue(item.ldFlagKey, true)
+    })
+  }, [getFlagValue])
+
+  // this fetches the latest time from the news
+  const latestNewsTimestamp =
+    FILTERED_NEWS_ITEM_LIST.length > 0
+      ? new Date(FILTERED_NEWS_ITEM_LIST[0].date).getTime().toString()
+      : ''
 
   const handleOpen = useCallback(() => {
     // only way to update this is to change the news or clear the local storage
     localStorage.setItem(LOCAL_STORAGE_LAST_READ_KEY, latestNewsTimestamp)
     setLocalLatestTimestamp(latestNewsTimestamp)
-  }, [])
+  }, [latestNewsTimestamp])
 
   const { isOpen, onOpen, onClose } = useDisclosure({ onOpen: handleOpen })
 
@@ -78,7 +91,7 @@ export default function NewsDrawer({
               divider={<StackDivider borderColor="gray.300"></StackDivider>}
               spacing="1rem"
             >
-              {NEWS_ITEM_LIST.map((item, index) => (
+              {FILTERED_NEWS_ITEM_LIST.map((item, index) => (
                 <NewsItem key={index} {...item} />
               ))}
             </Stack>
