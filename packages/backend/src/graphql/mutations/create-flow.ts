@@ -14,14 +14,13 @@ const createFlow: MutationResolvers['createFlow'] = async (
     name: trimmedFlowName,
   })
 
+  /**
+   * We do not need to create an empty action since the AddStepButton already looks like an empty step
+   */
   await flow.$relatedQuery('steps').insert([
     {
       type: 'trigger',
       position: 1,
-    },
-    {
-      type: 'action',
-      position: 2,
     },
   ])
 

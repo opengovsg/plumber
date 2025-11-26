@@ -60,6 +60,7 @@ export type TDataOutMetadatumType =
   | 'array'
   | 'tile_row_id'
   | 'table'
+  | 'approval'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
