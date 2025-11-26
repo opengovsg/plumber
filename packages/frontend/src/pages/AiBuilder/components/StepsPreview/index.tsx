@@ -8,6 +8,7 @@ import {
   Center,
   Flex,
   HStack,
+  Image,
   Text,
   useDisclosure,
   VStack,
@@ -22,6 +23,7 @@ import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-ste
 import { GENERATE_AI_STEPS } from '@/graphql/mutations/generate-ai-steps'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
+import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
 import { getPromptFromFormInput } from '@/pages/AiBuilder/helpers'
 import { AiFormData } from '@/pages/AiBuilder/schema'
 
@@ -54,10 +56,11 @@ export default function StepsPreview() {
     ddSessionId,
   } = useAiBuilderContext()
 
-  const [error, setError] = useState<boolean>(false)
   const { isOpen, onClose, onOpen } = useDisclosure()
   const isMobile = useIsMobile()
   const navigate = useNavigate()
+  const [error, setError] = useState<boolean>(true)
+
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
   )
@@ -183,7 +186,7 @@ export default function StepsPreview() {
 
   if (error) {
     return (
-      <Center h="100%">
+      <Center h="80%">
         <Flex
           flexDir="column"
           alignItems="center"
@@ -192,8 +195,17 @@ export default function StepsPreview() {
           w="100%"
           maxW="400px"
         >
+          <Image src={aiBuilderErrorImg} alt="ai-bulilder-error" w="400px" />
           <Text textStyle="h4" fontWeight="normal">
-            Something went wrong
+            Something went wrong.
+          </Text>
+          <Text>Modify your prompt or try again.</Text>
+          <Text>
+            If this issue persists,{' '}
+            <a href={URLS.SUPPORT_FORM_LINK} target="_blank" rel="noreferrer">
+              contact us
+            </a>
+            .
           </Text>
           <Button onClick={retryGenerateAiSteps}>Try again</Button>
         </Flex>
