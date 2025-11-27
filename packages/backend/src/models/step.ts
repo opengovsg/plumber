@@ -193,6 +193,26 @@ class Step extends Base {
     return command
   }
 
+  // Reset step ordering in case of mass deletion or reordering
+  static async resetStepOrdering(flowId: string, trx?: Transaction) {
+    const allSteps = await Step.query(trx)
+      .where('flow_id', flowId)
+      .where('type', 'action')
+      .orderBy('position', 'asc')
+
+    for (let i = 0; i < allSteps.length; i++) {
+      const currStep = allSteps[i]
+      if (currStep.position !== i + 2) {
+        await Step.query(trx)
+          .findById(currStep.id)
+          .patch({
+            // actions start from 2 (after the trigger step)
+            position: i + 2,
+          })
+      }
+    }
+  }
+
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {
     await super.beforeUpdate(args)
 

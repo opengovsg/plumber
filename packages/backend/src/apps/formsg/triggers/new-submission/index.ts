@@ -117,7 +117,16 @@ const trigger: IRawTrigger = {
       await createMrfSteps($, mrfWorkflowData)
     } else {
       // remove mrf object from parameters and remove mrf steps (if any)
-      await removeMrfSteps($)
+      try {
+        await removeMrfSteps($.flow.id)
+      } catch (error) {
+        throw new StepError(
+          'Error removing MRF steps',
+          'This should not happen, please contact support.',
+          $.step.position,
+          $.app.name,
+        )
+      }
     }
 
     // if test with mock data is selected OR no past submission exists

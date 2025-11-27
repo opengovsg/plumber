@@ -1,5 +1,6 @@
 import { raw } from 'objection'
 
+import { removeMrfSteps } from '@/apps/formsg/triggers/new-submission/remove-mrf-steps'
 import { hasStepReference } from '@/helpers/check-step-parameters'
 import Step from '@/models/step'
 
@@ -50,6 +51,10 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     //
     if (steps.length === 1 && steps[0].type === 'trigger') {
       const deletedStepId = steps[0].id
+
+      if (steps[0].appKey === 'formsg' && steps[0].key === 'newSubmission') {
+        await removeMrfSteps(flow.id, trx)
+      }
 
       // check for steps whose parameters reference the deletedStepId
       const allSteps = await flow
