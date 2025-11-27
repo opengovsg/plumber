@@ -23,6 +23,7 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
   const { flow, isMobile, onDrawerOpen, setCurrentStepId } =
     useContext(EditorContext)
 
+  // TODO: use onCreateStep from EditorContext instead
   const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
   const onDuplicateStep = useCallback(async () => {
     const duplicateConfig = {

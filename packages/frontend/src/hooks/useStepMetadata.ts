@@ -119,11 +119,8 @@ export function useStepMetadata(
         break
       }
     }
-    // if is approval step, return whether
+    // this means that the step is after the trigger step
     if (!immediatePriorMrfStep) {
-      console.warn(
-        'No immediate prior mrf step found... this should not happen tho',
-      )
       return null
     }
     /**

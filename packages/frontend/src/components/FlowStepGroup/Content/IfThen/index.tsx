@@ -7,8 +7,10 @@ import { Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
+import { MrfContext } from '@/contexts/MrfContext'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { getMrfApprovalConfig } from '@/helpers/formsg'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
 import Branch from './Branch'
@@ -24,6 +26,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
   const { groupedSteps, stepsBeforeGroup } = props
 
   const { depth } = useContext(BranchContext)
+  const { approvalBranches } = useContext(MrfContext)
   const {
     flow,
     flowId,
@@ -51,6 +54,11 @@ export default function IfThen(props: IfThenProps): JSX.Element {
     const lastGroup = groupedSteps[groupedSteps.length - 1]
     const lastStep = lastGroup[lastGroup.length - 1]
 
+    const approvalConfig = getMrfApprovalConfig({
+      previousStep: lastStep,
+      approvalBranches,
+    })
+
     const branchStep = await createStep({
       variables: {
         input: {
@@ -66,6 +74,9 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           parameters: {
             depth,
             branchName: `Branch ${numBranches + 1}`,
+          },
+          config: {
+            approval: approvalConfig,
           },
         },
       },
@@ -83,6 +94,9 @@ export default function IfThen(props: IfThenProps): JSX.Element {
             id: flowId,
             updatedAt: branchStep.data.createStep.flow.updatedAt,
           },
+          config: {
+            approval: approvalConfig,
+          },
         },
       },
     })
@@ -95,6 +109,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
     createStep,
     flowId,
     depth,
+    approvalBranches,
     numBranches,
     onDrawerOpen,
     setCurrentStepId,
