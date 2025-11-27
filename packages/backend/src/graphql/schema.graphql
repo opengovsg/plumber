@@ -135,8 +135,7 @@ type Mutation {
 }
 
 input GenerateAiStepsInput {
-  trigger: String!
-  actions: String!
+  prompt: String!
 }
 
 type AdminMutation {

@@ -33,8 +33,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
 
   try {
     const validatedInput = INPUT_SCHEMA.parse(params.input)
-    const { trigger: triggerInput, actions: actionsInput } = validatedInput
-    const userPrompt = `**trigger**:\n${triggerInput}\n\n**actions**:\n${actionsInput}`
+    const { prompt: userPrompt } = validatedInput
 
     if (!context.currentUser) {
       throw new ForbiddenError('Not authorised!')

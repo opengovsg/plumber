@@ -72,9 +72,8 @@ const DEFAULT_MOCKED_OUTPUT = {
 }
 
 const DEFAULT_INPUT = {
-  trigger: 'New FormSG submission',
-  actions:
-    'Send a welcome email to the new user\nSend a welcome SMS to the new user',
+  prompt:
+    '#### Start the workflow\nNew FormSG submission\n\n#### Actions\nSend a welcome email to the new user\nSend a welcome SMS to the new user',
 }
 
 describe('generateAiSteps mutation', () => {
@@ -115,28 +114,12 @@ describe('generateAiSteps mutation', () => {
         null,
         {
           input: {
-            trigger: 'gibberish',
-            actions: 'gibberish',
+            prompt: 'gibberish',
           },
         },
         context,
       ),
-    ).rejects.toThrow('Description must be at least 15 characters')
-  })
-
-  it('should throw an error if the input is invalid', async () => {
-    await expect(
-      generateAiSteps(
-        null,
-        {
-          input: {
-            trigger: 'New user submit a new form response',
-            actions: 'gibberish',
-          },
-        },
-        context,
-      ),
-    ).rejects.toThrow('Description must be at least 30 characters')
+    ).rejects.toThrow('Prompt must be at least 15 characters')
   })
 
   it('should map step positions correctly', async () => {
