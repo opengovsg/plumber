@@ -5,11 +5,13 @@ import { Router } from 'express'
 
 import appConfig from '@/config/app'
 import { AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG } from '@/config/flags'
-import { langfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
+import { getPrompt } from '@/helpers/pair/get-prompt'
 import { AuthenticatedRequest } from '@/types/express/context'
+
+import chatReadinessRouter from './readiness'
 
 interface ChatRequest {
   messages: Array<{
@@ -57,9 +59,7 @@ async function handleChatStream(req: AuthenticatedRequest, res: Response) {
       .pop()
 
     // Get the prompt from Langfuse
-    const prompt = await langfuseClient.prompt.get(chatPrompt, {
-      label: version,
-    })
+    const prompt = await getPrompt(chatPrompt, version)
 
     let traceId = ''
 
@@ -109,7 +109,6 @@ async function handleChatStream(req: AuthenticatedRequest, res: Response) {
 
             trace.update({
               output: { result: event.text },
-              level: 'DEFAULT',
             })
 
             generation
@@ -176,5 +175,6 @@ async function handleChatStream(req: AuthenticatedRequest, res: Response) {
 const router = Router()
 
 router.post('/', handleChatStream)
+router.use('/readiness', chatReadinessRouter)
 
 export default router
