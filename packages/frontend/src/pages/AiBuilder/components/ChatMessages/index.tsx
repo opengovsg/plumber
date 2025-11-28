@@ -2,9 +2,8 @@ import { Box, Flex, VStack } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
 
-import AiMessage from './AiMessage'
+import ChatMessage from './ChatMessage'
 import StreamingMessage from './StreamingMessage'
-import UserMessage from './UserMessage'
 
 interface ChatMessagesProps {
   messages: Message[]
@@ -35,13 +34,7 @@ export default function ChatMessages({
       <Box w="full" maxW="4xl" mx="auto" px={4} py={6}>
         <VStack align="stretch" spacing={4}>
           {messages.map((message, index) => (
-            <Box key={index}>
-              {message.isUser ? (
-                <UserMessage message={message} />
-              ) : (
-                <AiMessage message={message} />
-              )}
-            </Box>
+            <ChatMessage key={index} message={message} />
           ))}
 
           {/* Streaming response */}
