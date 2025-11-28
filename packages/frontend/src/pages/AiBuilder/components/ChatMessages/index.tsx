@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Box, Flex, VStack } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
@@ -23,8 +24,38 @@ export default function ChatMessages({
   messagesEndRef,
   messagesContainerRef,
   hasMessages,
-  onOpenDrawer: onOpenDrawer,
+  onOpenDrawer,
 }: ChatMessagesProps) {
+  const [isReadyForPreview, setIsReadyForPreview] = useState(false)
+
+  useEffect(() => {
+    const checkReadiness = async () => {
+      if (isStreaming || messages.length === 0) {
+        setIsReadyForPreview(false)
+        return
+      }
+
+      const lastMessage = messages[messages.length - 1]
+
+      try {
+        const response = await fetch('/api/chat/readiness', {
+          method: 'POST',
+          body: JSON.stringify({ message: lastMessage.text }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        const result = await response.json()
+        setIsReadyForPreview(result.isReady)
+      } catch {
+        setIsReadyForPreview(false)
+      }
+    }
+
+    checkReadiness()
+  }, [isStreaming, messages])
+
   return (
     <Flex
       ref={messagesContainerRef}
@@ -39,7 +70,7 @@ export default function ChatMessages({
             <ChatMessage key={index} message={message} />
           ))}
 
-          {hasMessages && !isStreaming && (
+          {hasMessages && !isStreaming && isReadyForPreview && (
             <PreviewStepsButton
               messages={messages}
               onOpenDrawer={onOpenDrawer}
