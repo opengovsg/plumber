@@ -11,9 +11,8 @@ import { Box, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
 
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
+import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
-
-import IdeaButtons from '../IdeaButtons'
 
 interface PromptInputProps {
   isStreaming: boolean
