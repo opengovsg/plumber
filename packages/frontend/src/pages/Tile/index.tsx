@@ -99,6 +99,7 @@ export default function Tile(): JSX.Element | null {
       refetch={refetch}
     >
       <Helmet>
+        <meta name="robots" content="noindex,nofollow" />
         <title>{name} | Tile</title>
       </Helmet>
       <Flex

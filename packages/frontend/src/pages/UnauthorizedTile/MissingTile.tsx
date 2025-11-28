@@ -15,6 +15,7 @@ export function MissingTile({ title }: MissingTileProps): JSX.Element {
   return (
     <>
       <Helmet>
+        <meta name="robots" content="noindex,nofollow" />
         <title>you seem lost...</title>
       </Helmet>
       <Stack

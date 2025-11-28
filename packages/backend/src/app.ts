@@ -19,6 +19,7 @@ import csp from '@/helpers/csp'
 import errorHandler from '@/helpers/error-handler'
 import injectBullBoardHandler from '@/helpers/inject-bull-board-handler'
 import morgan from '@/helpers/morgan'
+import robotsHeaderMiddleware from '@/helpers/robots-header'
 import webUIHandler from '@/helpers/web-ui-handler'
 import router from '@/routes'
 
@@ -50,7 +51,7 @@ app.use(
   }),
 )
 app.use(cors(corsOptions))
-
+app.use(robotsHeaderMiddleware)
 injectBullBoardHandler(app, serverAdapter)
 
 appAssetsHandler(app)
