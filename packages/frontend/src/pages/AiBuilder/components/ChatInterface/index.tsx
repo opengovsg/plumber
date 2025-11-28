@@ -3,8 +3,8 @@ import { IoChevronDown } from 'react-icons/io5'
 import { Box, Flex, IconButton, Text } from '@chakra-ui/react'
 
 import { useChatStream } from '@/hooks/useChatStream'
+import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 
-import ChatMessages from './ChatMessages'
 import PromptInput from './PromptInput'
 
 export default function ChatInterface() {
