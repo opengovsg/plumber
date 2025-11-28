@@ -16,11 +16,16 @@ type CustomUIMessage = UIMessage<{
   traceId?: string
 }>
 
-interface UseChatStreamProps {
-  ddSessionId: string
+export interface UseChatStreamOptions {
+  initialMessages?: Message[]
 }
 
-export function useChatStream({ ddSessionId }: UseChatStreamProps) {
+interface UseChatStreamProps {
+  ddSessionId: string
+  options: UseChatStreamOptions
+}
+
+export function useChatStream({ ddSessionId, options }: UseChatStreamProps) {
   const toast = useToast()
 
   const {
@@ -65,7 +70,10 @@ export function useChatStream({ ddSessionId }: UseChatStreamProps) {
   const messages = useMemo<Message[]>(() => {
     const isActivelyStreaming = status === 'streaming' || status === 'submitted'
 
-    // Filter user and assistant messages
+    // Start with initial messages if provided
+    const initialMsgs = options?.initialMessages || []
+
+    // Filter user and assistant messages from AI SDK
     let messagesToTransform = aiMessages.filter(
       (msg) => msg.role === 'user' || msg.role === 'assistant',
     )
@@ -78,7 +86,7 @@ export function useChatStream({ ddSessionId }: UseChatStreamProps) {
       }
     }
 
-    return messagesToTransform.map((msg) => {
+    const transformedMessages = messagesToTransform.map((msg) => {
       // Extract traceId from message metadata
       const traceId = msg.metadata?.traceId
 
@@ -88,7 +96,10 @@ export function useChatStream({ ddSessionId }: UseChatStreamProps) {
         traceId: traceId,
       }
     })
-  }, [aiMessages, extractTextContent, status])
+
+    // Combine initial messages with new messages
+    return [...initialMsgs, ...transformedMessages]
+  }, [aiMessages, extractTextContent, status, options?.initialMessages])
 
   // Get the current streaming response (last assistant message that's still being streamed)
   const currentResponse = useMemo(() => {

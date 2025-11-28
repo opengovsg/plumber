@@ -76,27 +76,28 @@ function AiBuilderContent() {
 }
 
 export default function AiBuilder() {
-  const { flowName, formInput, isFormMode, output, chatInput } = useLocation()
-    ?.state || {
-    flowName: 'New flow',
-    isFormMode: false,
-    formInput: {
-      trigger: '',
-      actions: '',
-    },
-    chatInput: '',
-    output: {
-      trigger: '',
-      actions: '',
-    },
-  }
+  const { flowName, formInput, isFormMode, output, chatInput, chatMessages } =
+    useLocation()?.state || {
+      flowName: 'New flow',
+      isFormMode: false,
+      chatInput: '',
+      chatMessages: [],
+      formInput: {
+        trigger: '',
+        actions: '',
+      },
+      output: {
+        trigger: '',
+        actions: '',
+      },
+    }
 
   /**
    * NOTE: if isFormMode is true, we validate that the formInput exists.
    * if it does not exist, we don't bother showing the AiBuilder
    * since it will waste an API call to Pair
    */
-  if (isFormMode && (!formInput || !formInput.trigger || !formInput.actions)) {
+  if (isFormMode && (!formInput.trigger || !formInput.actions)) {
     return (
       <InvalidEditorPage message="Something went wrong. Please try again." />
     )
@@ -104,9 +105,10 @@ export default function AiBuilder() {
 
   return (
     <AiBuilderContextProvider
-      chatInput={chatInput}
       flowName={flowName}
       formInput={formInput}
+      chatInput={chatInput}
+      chatMessages={chatMessages}
       isFormMode={isFormMode}
       output={output}
     >

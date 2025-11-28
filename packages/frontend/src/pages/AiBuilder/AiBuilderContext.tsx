@@ -10,6 +10,7 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
+import { Message } from '@/hooks/useChatStream'
 
 interface AIBuilderSharedProps {
   flowName: string
@@ -18,6 +19,7 @@ interface AIBuilderSharedProps {
     actions: string
   }
   chatInput: string
+  chatMessages: Message[]
   isFormMode: boolean
   output: {
     trigger: IStep
@@ -62,12 +64,21 @@ export const useAiBuilderContext = () => {
 
 interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
   children: React.ReactNode
+  flowName: string
+  formInput: {
+    trigger: string
+    actions: string
+  }
+  chatInput: string
+  chatMessages: Message[]
+  isFormMode: boolean
 }
 
 export const AiBuilderContextProvider = ({
   children,
   flowName = 'Name your Pipe', // default to Name your Pipe if no flow name is provided
   chatInput,
+  chatMessages,
   formInput,
   isFormMode,
   output,
@@ -128,6 +139,7 @@ export const AiBuilderContextProvider = ({
         flowName,
         formInput,
         chatInput,
+        chatMessages,
         isFormMode,
         output,
         isMobile,
