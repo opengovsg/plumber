@@ -1,10 +1,16 @@
-import { IAction, IApp, IStep, ISubstep, ITrigger } from '@plumber/types'
+import {
+  IAction,
+  IApp,
+  IStep,
+  IStepApprovalBranch,
+  ISubstep,
+  ITrigger,
+} from '@plumber/types'
 
 import { useContext, useMemo } from 'react'
-import get from 'lodash/get'
 
 import { EditorContext } from '@/contexts/Editor'
-import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
+import { MrfContext } from '@/contexts/MrfContext'
 import getStepName from '@/helpers/getStepName'
 import {
   isIfThenStep as checkIfThenStep,
@@ -27,6 +33,7 @@ interface UseStepMetadataResult {
   isDeletable: boolean
   isMrfStep: boolean
   isApprovalStep: boolean
+  approvalBranch: IStepApprovalBranch | null
 }
 
 export function useStepMetadata(
@@ -35,6 +42,7 @@ export function useStepMetadata(
 ): UseStepMetadataResult {
   const { readOnly, isMobile, isDrawerOpen, allApps } =
     useContext(EditorContext)
+  const { mrfSteps, approvalBranches } = useContext(MrfContext)
 
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
@@ -75,11 +83,59 @@ export function useStepMetadata(
     [readOnly, selectedActionOrTrigger, step?.key],
   )
 
-  const isMrfStep =
-    step?.appKey === FORMSG_APP_KEY && step?.key === MRF_ACTION_KEY
+  const isMrfStep = useMemo(() => {
+    return mrfSteps.some((mrfStep) => mrfStep.id === step?.id)
+  }, [mrfSteps, step?.id])
 
-  const isApprovalStep =
-    isMrfStep && !!get(step?.parameters, 'mrf.approvalField', false)
+  const isApprovalStep = useMemo(() => {
+    if (!step?.id) {
+      return false
+    }
+    return approvalBranches[step.id] !== undefined
+  }, [approvalBranches, step?.id])
+
+  const approvalBranch = useMemo(() => {
+    // If step not instantiated, return null
+    if (!step) {
+      return null
+    }
+    // If not MRF workflow, return null
+    if (!mrfSteps.length || !step) {
+      return null
+    }
+    // If step is an MRF step, return null
+    if (isMrfStep) {
+      return null
+    }
+    if (step.config.approval?.branch === 'reject') {
+      return 'reject'
+    }
+    // Find the most immediate prior mrfStep by iterating from the last to the first.
+    let immediatePriorMrfStep = null
+    for (let i = mrfSteps.length - 1; i >= 0; i--) {
+      const mrfStep = mrfSteps[i]
+      if (mrfStep.position < step.position) {
+        immediatePriorMrfStep = mrfStep
+        break
+      }
+    }
+    // if is approval step, return whether
+    if (!immediatePriorMrfStep) {
+      console.warn(
+        'No immediate prior mrf step found... this should not happen tho',
+      )
+      return null
+    }
+    /**
+     * If no approval step config exists, but is part of an mrf branch,
+     * it's part of the approve branch by default
+     */
+    if (approvalBranches[immediatePriorMrfStep.id]) {
+      return 'approve'
+    }
+    // If follows a non-approval mrf step, return null
+    return null
+  }, [step, mrfSteps, isMrfStep, approvalBranches])
 
   /**
    * NOTE: there are various conditions that determine whether the drag handle
@@ -130,5 +186,6 @@ export function useStepMetadata(
     isDeletable,
     isMrfStep,
     isApprovalStep,
+    approvalBranch,
   }
 }

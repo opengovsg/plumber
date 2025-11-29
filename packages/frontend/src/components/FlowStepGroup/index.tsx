@@ -9,6 +9,7 @@ import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/S
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 
@@ -27,6 +28,7 @@ interface FlowStepGroupProps {
 export default function FlowStepGroup(props: FlowStepGroupProps) {
   const { groupedSteps, stepsBeforeGroup } = props
   const { isDrawerOpen, isMobile, onDrawerClose } = useContext(EditorContext)
+  const { approvalBranch } = useStepMetadata(groupedSteps[0]?.[0])
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
     let stepGroupType: string | null = null
@@ -70,8 +72,6 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     (step) => step.key === TOOLBOX_ACTIONS.ForEach,
   )
 
-  const approvalBranch = groupedSteps[0]?.[0]?.config?.approval?.branch
-
   return (
     <Flex
       w={
@@ -90,7 +90,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
         // approval branch can be approve, reject or undefined
         // boxShadow specified in theme/foundations/shadows.ts
         // we display for entire group instead of individual nested steps
-        boxShadow={approvalBranch}
+        boxShadow={approvalBranch ?? undefined}
       >
         <Box {...flowStepGroupStyles.header} w="100%">
           <Flex

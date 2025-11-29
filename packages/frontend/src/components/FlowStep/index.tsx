@@ -77,6 +77,7 @@ export default function FlowStep(
     substeps,
     shouldShowDragHandle,
     isDeletable,
+    approvalBranch,
   } = useStepMetadata(step, allowReorder)
 
   const {
@@ -161,8 +162,6 @@ export default function FlowStep(
   // are removed once user executes a successful test
   const hasInfoBox = shouldShowTemplateMsg || shouldTestStepAgain
 
-  const approvalBranch = step.config.approval?.branch
-
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
   }
@@ -236,7 +235,7 @@ export default function FlowStep(
               w={headerWidth}
               // approval branch can be approve, reject or undefined
               // boxShadow specified in theme/foundations/shadows.ts
-              boxShadow={isNested ? 'none' : approvalBranch}
+              boxShadow={isNested ? 'none' : approvalBranch ?? undefined}
             >
               <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
                 <StepAppIcon

@@ -36,11 +36,11 @@ export function getMrfApprovalConfig({
   }
 
   /**
-   * If previous step is an approval step, check which branch it's currently set to
+   * If previous step is an approval step and is set to reject, return the reject branch
    */
-  if (previousStep.id in approvalBranches) {
+  if (approvalBranches[previousStep.id] === 'reject') {
     return {
-      branch: approvalBranches[previousStep.id],
+      branch: 'reject',
       stepId: previousStep.id,
     }
   }
