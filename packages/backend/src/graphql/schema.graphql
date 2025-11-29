@@ -590,13 +590,10 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
-enum StepApprovalBranch {
-  approve
-  reject
-}
+
 
 input StepApprovalConfigInput {
-  branch: StepApprovalBranch!
+  branch: String!
   stepId: String!
 }
 

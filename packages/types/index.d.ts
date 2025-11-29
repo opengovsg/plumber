@@ -169,7 +169,7 @@ export interface IExecution {
 export type IStepApprovalBranch = 'approve' | 'reject'
 
 export interface IStepApprovalConfig {
-  branch: IStepApprovalBranch
+  branch: 'reject'
   stepId: string
 }
 

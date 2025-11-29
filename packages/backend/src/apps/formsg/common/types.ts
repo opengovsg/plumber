@@ -52,6 +52,6 @@ export interface ParsedMrfWorkflow {
 }
 
 export const stepApprovalConfigSchema = z.object({
-  branch: z.enum(['approve', 'reject']),
+  branch: z.literal('reject'),
   stepId: z.string().uuid(),
 })

@@ -50,7 +50,7 @@ export async function validateApprovalConfig(
       }
     }
     logger.error(
-      'Invalid approval config: previous step has no approval config and is not an mrf approval step',
+      'Invalid approval config: previous step has no approval config and is not an mrf approval step. This step should not have an approval config.',
     )
     return {
       isApprovalConfigValid: false,
@@ -83,12 +83,19 @@ export async function validateApprovalConfig(
    * Case 4: Previous step is an approval step
    */
   if (isPreviousStepMrfApprovalStep) {
+    // If previous step is an approval step, but this step has no approval config, it is part of the approve flow
+    if (!config?.approval) {
+      return {
+        isApprovalConfigValid: true,
+        newStepPosition: prevStep.position + 1,
+      }
+    }
     // validate approval config
     const { success } = stepApprovalConfigSchema.safeParse(config?.approval)
     // validate approval config step id is the same as prev step id
     if (!success || config.approval.stepId !== prevStep.id) {
       logger.error(
-        'Invalid approval config (after approval step): invalid approval config or new step id is not the same as approval step id',
+        'Invalid approval config: invalid approval config or new step id is not the same as approval step id',
         {
           approvalConfig: config?.approval,
         },
@@ -97,16 +104,7 @@ export async function validateApprovalConfig(
         isApprovalConfigValid: false,
       }
     }
-    /**
-     * If approval branch, simply add 1 to the prev step position
-     */
-    if (config.approval.branch === 'approve') {
-      return {
-        isApprovalConfigValid: true,
-        newStepPosition: prevStep.position + 1,
-      }
-    }
-    // If reject branch, find the end of the approval branch and add one to that step
+    // For reject branch, find the end of the approval branch and add one to that step
     // first find the next mrf step (if any)
     const nextMrfStep = await Step.query()
       .where('flow_id', prevStep.flowId)
@@ -115,23 +113,23 @@ export async function validateApprovalConfig(
       .andWhere('position', '>', prevStep.position)
       .orderBy('position', 'asc')
       .first()
-    // then find the last approval step in the curr branch (if any)
-    const lastApprovalStepQuery = Step.query()
+    // then find the step in the approve branch (if any)
+    const lastStepOfApproveFlowQuery = Step.query()
       .where('flow_id', prevStep.flowId)
       .andWhere('position', '>', prevStep.position)
-      .andWhereRaw(`config->'approval'->>'branch' = ?`, ['approve'])
+
       .orderBy('position', 'desc')
       .first()
 
     if (nextMrfStep) {
-      lastApprovalStepQuery.andWhere('position', '<', nextMrfStep.position)
+      lastStepOfApproveFlowQuery.andWhere('position', '<', nextMrfStep.position)
     }
-    const lastApprovalStep = await lastApprovalStepQuery.first()
+    const lastStepOfapproveFlow = await lastStepOfApproveFlowQuery.first()
     // If last approval step exists, return the position after that
-    if (lastApprovalStep) {
+    if (lastStepOfapproveFlow) {
       return {
         isApprovalConfigValid: true,
-        newStepPosition: lastApprovalStep.position + 1,
+        newStepPosition: lastStepOfapproveFlow.position + 1,
       }
     } else {
       // If no last approval step, return the position after the previous step

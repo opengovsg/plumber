@@ -1,3 +1,5 @@
+import { IStepConfig } from '@plumber/types'
+
 import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -37,15 +39,6 @@ const createStep: MutationResolvers['createStep'] = async (
 
     if (triggerOrAction?.hiddenFromUser) {
       throw new BadUserInputError('Action can only be created by system')
-    }
-  }
-  if (input.connection?.id) {
-    // if connectionId is specified, verify that the connection exists and belongs to the user
-    const connection = await context.currentUser
-      .$relatedQuery('connections')
-      .findOne({ id: input.connection.id })
-    if (!connection) {
-      throw new BadUserInputError('Connection not found')
     }
   }
 
@@ -89,7 +82,7 @@ const createStep: MutationResolvers['createStep'] = async (
       .throwIfNotFound()
 
     const validationResult = await validateApprovalConfig(
-      input.config,
+      input.config as IStepConfig,
       previousStep,
     )
     if (!validationResult.isApprovalConfigValid) {
@@ -110,7 +103,7 @@ const createStep: MutationResolvers['createStep'] = async (
       position: validationResult.newStepPosition,
       parameters: input.parameters,
       connectionId: input.connection?.id,
-      config: input.config,
+      config: input.config as IStepConfig,
     })
 
     // NOTE: add flow connection to the flow_connections table
