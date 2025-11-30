@@ -30,11 +30,11 @@ interface UseStepMetadataResult {
 }
 
 export function useStepMetadata(
-  allApps: IApp[],
   step: IStep | undefined,
   allowReorder?: boolean,
 ): UseStepMetadataResult {
-  const { readOnly, isMobile, isDrawerOpen } = useContext(EditorContext)
+  const { readOnly, isMobile, isDrawerOpen, allApps } =
+    useContext(EditorContext)
 
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'

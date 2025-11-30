@@ -1,8 +1,5 @@
 import { IStep } from '@plumber/types'
 
-import { useContext } from 'react'
-
-import { EditorContext } from '@/contexts/Editor'
 import { FlowStep } from '@/exports/components'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
@@ -31,9 +28,7 @@ export default function FlowStepWithAddButton({
     showEmptyAction: boolean
   }
 }) {
-  const { allApps } = useContext(EditorContext)
-
-  const { isApprovalStep } = useStepMetadata(allApps, step)
+  const { isApprovalStep } = useStepMetadata(step)
 
   return (
     <>

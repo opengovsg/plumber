@@ -26,7 +26,7 @@ type EditorProps = {
 export default function Editor(props: EditorProps): React.ReactElement {
   const { isNested } = props
 
-  const { allApps, isDrawerOpen, isMobile, flow, readOnly } =
+  const { allApps, isDrawerOpen, isMobile, flow, readOnly, currentStepId } =
     useContext(EditorContext)
 
   const { handleReorderUpdate } = useReorderSteps(flow.id)
@@ -43,6 +43,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
       })),
     [flow, rawSteps],
   )
+
+  const currentStep = useMemo(() => {
+    return steps.find((step) => step.id === currentStepId)
+  }, [currentStepId, steps])
 
   const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
@@ -92,14 +96,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
       ? [triggerStep, steps.slice(1), []]
       : [triggerStep, steps.slice(1, groupStepIdx), branchesWithSteps]
   }, [groupingActions, steps])
-
-  const flowStepGroupIconUrl = useMemo(() => {
-    if (groupedSteps.length === 0) {
-      return undefined
-    }
-    return appsWithActions.find((app) => app.key === groupedSteps[0][0].appKey)
-      ?.iconUrl
-  }, [appsWithActions, groupedSteps])
 
   const handleReorderSteps = async (reorderedSteps: IStep[]) => {
     const stepPositions = reorderedSteps.map((step, index) => ({
@@ -242,10 +238,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
             opacity={isDrawerOpen ? 1 : 0}
             transform={rightDrawerTransform}
           >
-            <EditorRightDrawer
-              flowStepGroupIconUrl={flowStepGroupIconUrl}
-              steps={steps}
-            />
+            <EditorRightDrawer step={currentStep} />
           </Flex>
         </StepExecutionsToIncludeProvider>
       </MrfContextProvider>
