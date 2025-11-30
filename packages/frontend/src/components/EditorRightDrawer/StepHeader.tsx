@@ -25,7 +25,6 @@ export default function StepHeader(props: StepHeaderProps) {
   } = useDisclosure()
 
   const {
-    allApps,
     readOnly: isReadOnlyEditor,
     shouldWarnOnLeave,
     onDrawerClose,
@@ -38,7 +37,7 @@ export default function StepHeader(props: StepHeaderProps) {
     defaultCaption,
     position,
     stepName: initialStepName,
-  } = useStepMetadata(allApps, step)
+  } = useStepMetadata(step)
 
   const handleClose = () => {
     if (shouldWarnOnLeave) {

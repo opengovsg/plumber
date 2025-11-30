@@ -1,7 +1,7 @@
 import type { IStep } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
-import { CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
+import { Flex, useDisclosure } from '@chakra-ui/react'
 
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
@@ -17,11 +17,10 @@ import LearnFromGuideInfobox from './LearnFromGuideInfobox'
 
 type StepProps = {
   step: IStep
-  isLastStep: boolean
 }
 
 export default function Step(props: StepProps): React.ReactElement | null {
-  const { step, isLastStep } = props
+  const { step } = props
 
   const {
     isOpen: isModalOpen,
@@ -29,10 +28,10 @@ export default function Step(props: StepProps): React.ReactElement | null {
     onClose: onModalClose,
   } = useDisclosure()
 
-  const { allApps, onUpdateStep, resetTimestamp } = useContext(EditorContext)
+  const { onUpdateStep, resetTimestamp } = useContext(EditorContext)
 
   const { app, hasConnection, isTrigger, selectedActionOrTrigger, substeps } =
-    useStepMetadata(allApps, step)
+    useStepMetadata(step)
 
   const handleSubmit = useCallback(
     (val: any) => {
@@ -45,10 +44,6 @@ export default function Step(props: StepProps): React.ReactElement | null {
     () => generateValidationSchema(substeps),
     [substeps],
   )
-
-  if (!allApps) {
-    return <CircularProgress isIndeterminate my={2} />
-  }
 
   return (
     <>
@@ -96,7 +91,8 @@ export default function Step(props: StepProps): React.ReactElement | null {
         <FlowStepConfigurationModal
           onClose={onModalClose}
           isTrigger={isTrigger}
-          isLastStep={isLastStep}
+          // this shouldnt matter here since it's just for reconnecting
+          isLastStep={false}
           step={step}
           app={app}
           event={selectedActionOrTrigger}
