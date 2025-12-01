@@ -16,6 +16,7 @@ export const FLOW_FIELDS = gql`
       status
       position
       createdAt
+      flowId
       connection {
         id
         verified
