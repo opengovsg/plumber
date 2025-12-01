@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { FaRegThumbsDown } from 'react-icons/fa'
+import React, { useRef, useState } from 'react'
+import { FaRegThumbsDown, FaRegThumbsUp } from 'react-icons/fa'
 import {
   Button,
   ButtonGroup,
@@ -24,13 +24,23 @@ interface ChatMessageToolbarProps {
   traceId: string
 }
 
-export default function ChatMessageToolbar({
-  traceId,
-}: ChatMessageToolbarProps) {
+interface FeedbackButtonProps {
+  feedbackType: 'positive' | 'negative'
+  traceId: string
+}
+
+const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
   const { onOpen, onClose, isOpen } = useDisclosure()
+  const firstFieldRef = useRef(null)
   const toast = useToast()
-  const firstFieldRef = React.useRef(null)
-  const [comment, setComment] = useState('')
+  const icon = feedbackType === 'positive' ? FaRegThumbsUp : FaRegThumbsDown
+  const formLabel =
+    feedbackType === 'positive'
+      ? 'What was helpful about this?'
+      : 'Why was this not helpful?'
+  const score = feedbackType === 'positive' ? 1 : 0
+
+  const [feedback, setFeedback] = useState('')
 
   const handleSubmitFeedback = async (comment: string) => {
     try {
@@ -44,7 +54,7 @@ export default function ChatMessageToolbar({
       await fetch('/api/chat/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ traceId, feedback: comment }),
+        body: JSON.stringify({ traceId, feedback, score }),
       })
     } catch {
       // don't throw error if feedback submission fails
@@ -55,7 +65,7 @@ export default function ChatMessageToolbar({
       // if they attempt to submit again
       onClose()
       toast({
-        title: "Thank you! We've sent your feeback to the Plumber team.",
+        title: "Thank you! We've sent your feedback to the Plumber team.",
         status: 'success',
         duration: 3000,
         isClosable: true,
@@ -65,58 +75,64 @@ export default function ChatMessageToolbar({
   }
 
   return (
-    <Flex gap={1} mt={2}>
-      <Popover
-        isOpen={isOpen}
-        initialFocusRef={firstFieldRef}
-        onOpen={onOpen}
-        onClose={onClose}
-      >
-        <PopoverTrigger>
-          <IconButton
-            variant="clear"
-            colorScheme="secondary"
-            aria-label="Thumbs down"
-            icon={<Icon as={FaRegThumbsDown} />}
-            onClick={onOpen}
-          />
-        </PopoverTrigger>
-        <PopoverContent>
-          <FocusLock persistentFocus={false}>
-            <PopoverArrow />
+    <Popover
+      isOpen={isOpen}
+      initialFocusRef={firstFieldRef}
+      onOpen={onOpen}
+      onClose={onClose}
+    >
+      <PopoverTrigger>
+        <IconButton
+          variant="clear"
+          colorScheme="secondary"
+          aria-label="Thumbs down"
+          icon={<Icon as={icon} />}
+          onClick={onOpen}
+        />
+      </PopoverTrigger>
+      <PopoverContent>
+        <FocusLock persistentFocus={false}>
+          <PopoverArrow />
 
-            <PopoverBody>
-              <Stack spacing={4}>
-                <FormControl>
-                  <FormLabel htmlFor="why-not-helpful">
-                    Why was this not helpful?
-                  </FormLabel>
-                  <Textarea
-                    ref={firstFieldRef}
-                    id="why-not-helpful"
-                    rows={3}
-                    resize="none"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                  />
-                </FormControl>
-                <ButtonGroup display="flex" justifyContent="flex-end">
-                  <Button variant="outline" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button
-                    isDisabled={!comment}
-                    colorScheme="teal"
-                    onClick={() => handleSubmitFeedback(comment)}
-                  >
-                    Submit feedback
-                  </Button>
-                </ButtonGroup>
-              </Stack>
-            </PopoverBody>
-          </FocusLock>
-        </PopoverContent>
-      </Popover>
+          <PopoverBody>
+            <Stack spacing={4}>
+              <FormControl>
+                <FormLabel htmlFor="feedback-details">{formLabel}</FormLabel>
+                <Textarea
+                  ref={firstFieldRef}
+                  id="feedback-details"
+                  rows={3}
+                  resize="none"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                />
+              </FormControl>
+              <ButtonGroup display="flex" justifyContent="flex-end">
+                <Button variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  isDisabled={!feedback}
+                  onClick={() => handleSubmitFeedback(feedback)}
+                >
+                  Submit
+                </Button>
+              </ButtonGroup>
+            </Stack>
+          </PopoverBody>
+        </FocusLock>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+export default function ChatMessageToolbar({
+  traceId,
+}: ChatMessageToolbarProps) {
+  return (
+    <Flex gap={1} mt={2}>
+      <FeedbackButton feedbackType="negative" traceId={traceId} />
+      <FeedbackButton feedbackType="positive" traceId={traceId} />
     </Flex>
   )
 }

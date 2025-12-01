@@ -10,6 +10,7 @@ import { getAuthenticatedContext } from '../middleware/authentication'
 interface ChatFeedbackRequest {
   traceId: string
   feedback: string
+  score: number
 }
 
 const handleChatFeedback = async (
@@ -19,7 +20,7 @@ const handleChatFeedback = async (
   const context = getAuthenticatedContext(req)
 
   try {
-    const { traceId, feedback } = req.body as ChatFeedbackRequest
+    const { traceId, feedback, score } = req.body as ChatFeedbackRequest
 
     if (!traceId || !feedback) {
       res.status(400).json({ error: 'Trace ID and feedback are required' })
@@ -30,7 +31,7 @@ const handleChatFeedback = async (
       id: `feedback-${traceId}-${context.currentUser.email}`,
       environment: appConfig.appEnv,
       name: 'user-feedback',
-      value: 0, // 1 for positive, 0 for negative
+      value: score, // 1 for positive, 0 for negative
       comment: feedback,
     })
     res.status(200).json({ success: true })
