@@ -10,6 +10,7 @@ export const CREATE_STEP = gql`
       parameters
       position
       status
+      flowId
       connection {
         id
       }

@@ -147,5 +147,7 @@ export const parameterSchema = z.object({
     })
     .refine((v) => VARIABLE_REGEX.test(v), {
       message: PARAMETER_ERROR_MESSAGE,
-    }),
+    })
+    // could be null when user is updating the step name before selecting a variable
+    .nullish(),
 })

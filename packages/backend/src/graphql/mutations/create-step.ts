@@ -92,6 +92,7 @@ const createStep: MutationResolvers['createStep'] = async (
 
     return {
       ...step,
+      flowId: flow.id,
       flow: {
         updatedAt: updatedFlow.updatedAt,
       },

@@ -703,6 +703,7 @@ type Step {
   executionSteps: [ExecutionStep]
   config: StepConfig
   createdAt: String
+  flowId: String
 }
 
 type StepConfig {
