@@ -5,7 +5,7 @@ import appConfig from '@/config/app'
 import { langfuseClient } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
 
-import { getAuthenticatedContext } from './middleware/authentication'
+import { getAuthenticatedContext } from '../middleware/authentication'
 
 interface ChatFeedbackRequest {
   traceId: string

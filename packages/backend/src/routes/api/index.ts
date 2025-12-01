@@ -6,7 +6,6 @@ import {
   setCurrentUserContext,
 } from './middleware/authentication'
 import chatRouter from './chat'
-import chatFeedbackRouter from './chat-feedback'
 
 const router = Router()
 
@@ -24,7 +23,6 @@ router.use(blockAdminOperations)
 
 // Mount individual API routes
 router.use('/chat', chatRouter)
-router.use('/chat-feedback', chatFeedbackRouter)
 
 // Future routes can be added here:
 // router.use('/users', usersRouter)

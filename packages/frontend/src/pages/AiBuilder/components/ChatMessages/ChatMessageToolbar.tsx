@@ -41,7 +41,7 @@ export default function ChatMessageToolbar({
       // NOTE: we send feedback to the backend instead of using Langfuse directly
       // as there are additional headers required to call Rome/Istanbul endpoints
       // that should not be exposed to the frontend
-      await fetch('/api/chat-feedback', {
+      await fetch('/api/chat/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ traceId, feedback: comment }),
