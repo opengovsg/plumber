@@ -4,6 +4,7 @@ import {
   raw,
   RelatedQueryBuilder,
   type StaticHookArguments,
+  Transaction,
   ValidationError,
 } from 'objection'
 import { URL } from 'url'
