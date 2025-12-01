@@ -53,6 +53,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -61,7 +62,10 @@ describe('createFlowWithSteps mutation integration tests', () => {
       // Verify flow was created
       expect(result).toBeDefined()
       expect(result.name).toBe('My Test Flow')
-      expect(result.config).toEqual({ aiBuilder: true })
+      expect(result.config).toEqual({
+        aiBuilder: true,
+        aiBuilderTraceId: '123',
+      })
       expect(result.userId).toBe(testUser.id)
 
       // Verify steps were created and inserted correctly
@@ -103,6 +107,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -129,6 +134,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               position: 2,
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -175,6 +181,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -205,6 +212,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -230,6 +238,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -264,6 +273,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -303,6 +313,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -335,6 +346,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -369,6 +381,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -401,6 +414,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -441,6 +455,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
             config: {},
           },
         ],
+        traceId: '123',
       },
     }
 
@@ -508,6 +523,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               },
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -551,6 +567,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               },
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -586,6 +603,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               },
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -618,6 +636,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               // missing parameters entirely
             },
           ],
+          traceId: '123',
         },
       }
 
@@ -650,6 +669,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
               parameters: {},
             },
           ],
+          traceId: '123',
         },
       }
 
