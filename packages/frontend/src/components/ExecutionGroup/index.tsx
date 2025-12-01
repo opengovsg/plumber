@@ -83,6 +83,19 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
     }
   }, [iterationMap, statusFilter])
 
+  // NOTE: filter the iteration map to only include iterations that match the status filter
+  const filteredIterationMap = useMemo(() => {
+    if (statusFilter === GroupStatusType.All) {
+      return iterationMap
+    }
+
+    return new Map(
+      [...iterationMap].filter(([_iteration, status]) => {
+        return status === statusFilter
+      }),
+    )
+  }, [iterationMap, statusFilter])
+
   const { app, appName } = useExecutionStepStatus({
     appKey: groupingStep?.appKey ?? '',
     status: !execution?.status
@@ -153,7 +166,7 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
           {iterationMap.size > 0 ? (
             <>
               <IterationSelector
-                iterationMap={iterationMap}
+                iterationMap={filteredIterationMap}
                 canRetryAll={groupStats.failure > 0}
                 execution={execution}
                 selectedIteration={selectedIteration}
