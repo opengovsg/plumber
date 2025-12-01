@@ -209,7 +209,9 @@ export interface IFlowConfig {
   templateConfig?: IFlowTemplateConfig
   showSurvey?: boolean
   attachments?: IFlowAttachmentsConfig[]
+  // AI Builder config
   aiBuilder?: boolean
+  aiBuilderTraceId?: string // trace id on Rome (Langfuse)
 }
 
 export type NotificationRecipients = 'editor' | 'viewer'

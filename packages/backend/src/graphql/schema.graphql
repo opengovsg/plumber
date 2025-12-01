@@ -152,6 +152,7 @@ type StepInput {
 input CreateFlowWithStepsInput {
   flowName: String!
   steps: [StepInput!]!
+  traceId: String!
 }
 
 type AdminMutation {

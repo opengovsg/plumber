@@ -8,7 +8,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   context,
 ) => {
   const {
-    input: { steps, flowName },
+    input: { steps, flowName, traceId },
   } = params
 
   const trimmedFlowName = flowName.trim()
@@ -44,6 +44,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
       name: trimmedFlowName,
       config: {
         aiBuilder: true,
+        aiBuilderTraceId: traceId,
       },
     })
 

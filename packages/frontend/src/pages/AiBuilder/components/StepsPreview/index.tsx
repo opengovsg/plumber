@@ -125,6 +125,7 @@ export default function StepsPreview() {
             parameters: step?.parameters || {},
             position: step.position,
           })),
+          traceId: output?.traceId,
         },
       },
     })
@@ -134,7 +135,7 @@ export default function StepsPreview() {
     navigate(URLS.FLOW_EDITOR(flowId), {
       replace: true,
     })
-  }, [steps, createFlowWithSteps, flowName, navigate])
+  }, [steps, createFlowWithSteps, flowName, navigate, output?.traceId])
 
   const onUpdatePrompt = async (formData: AiFormData) => {
     const aiSteps = await generateAiSteps(formData)
