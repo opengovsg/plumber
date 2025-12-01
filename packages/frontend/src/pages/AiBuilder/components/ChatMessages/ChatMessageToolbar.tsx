@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
 import { FaRegThumbsDown, FaRegThumbsUp } from 'react-icons/fa'
 import {
   Button,
@@ -20,6 +20,14 @@ import {
 } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
+import Form from '@/components/Form'
+import { SingleSelect } from '@/components/SingleSelect'
+
+interface FeedbackFormData {
+  'feedback-dropdown'?: string
+  'feedback-details': string
+}
+
 interface ChatMessageToolbarProps {
   traceId: string
 }
@@ -29,20 +37,97 @@ interface FeedbackButtonProps {
   traceId: string
 }
 
+const FEEDBACK_POPOVER_DETAILS = {
+  positive: {
+    dropdownLabel: null,
+    dropdownOptions: null,
+    textAreaLabel:
+      'Provide details on what was satisfying about this response:',
+    textAreaPlaceholder: 'What was satisfying about this response?',
+    score: 1,
+  },
+  negative: {
+    dropdownLabel: 'What type of issue do you wish to report?',
+    dropdownOptions: [
+      'Incorrect workflow generated',
+      'Incomplete response',
+      'UI bug',
+      "I don't understand the response",
+      'Other',
+    ],
+    textAreaLabel: 'Provide details on what was wrong with this response:',
+    textAreaPlaceholder: 'What was wrong with this response?',
+    score: 0,
+  },
+}
+
+const FeedbackFormContent = ({
+  dropdownLabel,
+  dropdownOptions,
+  textAreaLabel,
+  textAreaPlaceholder,
+  autoFocus,
+}: {
+  dropdownLabel: string | null
+  dropdownOptions: string[] | null
+  textAreaLabel: string
+  textAreaPlaceholder: string
+  autoFocus?: boolean
+}) => {
+  const { control, register } = useFormContext<FeedbackFormData>()
+
+  return (
+    <Flex direction="column">
+      {dropdownLabel != null && dropdownOptions != null && (
+        <>
+          <FormLabel htmlFor="feedback-dropdown" mt={2}>
+            {dropdownLabel}
+          </FormLabel>
+          <Controller
+            name="feedback-dropdown"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <SingleSelect
+                colorScheme="secondary"
+                name="feedback-dropdown"
+                items={dropdownOptions}
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                isClearable={false}
+              />
+            )}
+          />
+        </>
+      )}
+      <FormLabel htmlFor="feedback-details" mt={2}>
+        {textAreaLabel}
+      </FormLabel>
+      <Textarea
+        id="feedback-details"
+        rows={3}
+        resize="none"
+        autoFocus={autoFocus}
+        placeholder={textAreaPlaceholder}
+        {...register('feedback-details')}
+      />
+    </Flex>
+  )
+}
+
 const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
   const { onOpen, onClose, isOpen } = useDisclosure()
-  const firstFieldRef = useRef(null)
   const toast = useToast()
   const icon = feedbackType === 'positive' ? FaRegThumbsUp : FaRegThumbsDown
-  const formLabel =
-    feedbackType === 'positive'
-      ? 'What was helpful about this?'
-      : 'Why was this not helpful?'
-  const score = feedbackType === 'positive' ? 1 : 0
+  const {
+    dropdownLabel,
+    dropdownOptions,
+    textAreaLabel,
+    textAreaPlaceholder,
+    score,
+  } = FEEDBACK_POPOVER_DETAILS[feedbackType]
 
-  const [feedback, setFeedback] = useState('')
-
-  const handleSubmitFeedback = async (comment: string) => {
+  const handleSubmitFeedback = async (data: FeedbackFormData) => {
     try {
       if (!traceId) {
         return
@@ -54,13 +139,20 @@ const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
       await fetch('/api/chat/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ traceId, feedback, score }),
+        body: JSON.stringify({
+          traceId,
+          feedback: {
+            category: data['feedback-dropdown'],
+            comment: data['feedback-details'],
+          },
+          score,
+        }),
       })
     } catch {
       // don't throw error if feedback submission fails
       // as it is not critical to the user experience
     } finally {
-      // NOTE: do not reset comment here
+      // NOTE: do not reset form here
       // so that user will see what they previously typed or submitted
       // if they attempt to submit again
       onClose()
@@ -77,9 +169,9 @@ const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
   return (
     <Popover
       isOpen={isOpen}
-      initialFocusRef={firstFieldRef}
       onOpen={onOpen}
       onClose={onClose}
+      placement="top-start"
     >
       <PopoverTrigger>
         <IconButton
@@ -94,31 +186,32 @@ const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
         <FocusLock persistentFocus={false}>
           <PopoverArrow />
 
-          <PopoverBody>
-            <Stack spacing={4}>
-              <FormControl>
-                <FormLabel htmlFor="feedback-details">{formLabel}</FormLabel>
-                <Textarea
-                  ref={firstFieldRef}
-                  id="feedback-details"
-                  rows={3}
-                  resize="none"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                />
-              </FormControl>
-              <ButtonGroup display="flex" justifyContent="flex-end">
-                <Button variant="outline" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  isDisabled={!feedback}
-                  onClick={() => handleSubmitFeedback(feedback)}
-                >
-                  Submit
-                </Button>
-              </ButtonGroup>
-            </Stack>
+          <PopoverBody p={4}>
+            <Form
+              onSubmit={(data) =>
+                handleSubmitFeedback(data as FeedbackFormData)
+              }
+            >
+              <Stack spacing={4}>
+                <FormControl>
+                  <FeedbackFormContent
+                    dropdownLabel={dropdownLabel}
+                    dropdownOptions={dropdownOptions}
+                    textAreaLabel={textAreaLabel}
+                    textAreaPlaceholder={textAreaPlaceholder}
+                    autoFocus={feedbackType === 'positive'}
+                  />
+                </FormControl>
+                <ButtonGroup display="flex" justifyContent="flex-end">
+                  <Button variant="clear" onClick={onClose} size="sm">
+                    Cancel
+                  </Button>
+                  <Button type="submit" size="sm">
+                    Submit
+                  </Button>
+                </ButtonGroup>
+              </Stack>
+            </Form>
           </PopoverBody>
         </FocusLock>
       </PopoverContent>

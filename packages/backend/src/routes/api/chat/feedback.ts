@@ -9,7 +9,10 @@ import { getAuthenticatedContext } from '../middleware/authentication'
 
 interface ChatFeedbackRequest {
   traceId: string
-  feedback: string
+  feedback: {
+    category?: string
+    comment?: string
+  }
   score: number
 }
 
@@ -32,7 +35,10 @@ const handleChatFeedback = async (
       environment: appConfig.appEnv,
       name: 'user-feedback',
       value: score, // 1 for positive, 0 for negative
-      comment: feedback,
+      comment: feedback.comment,
+      ...(feedback?.category && {
+        metadata: { category: feedback.category },
+      }),
     })
     res.status(200).json({ success: true })
   } catch (error) {
