@@ -50,8 +50,10 @@ export default function ChatMessageToolbar({
       // don't throw error if feedback submission fails
       // as it is not critical to the user experience
     } finally {
+      // NOTE: do not reset comment here
+      // so that user will see what they previously typed or submitted
+      // if they attempt to submit again
       onClose()
-      setComment('')
       toast({
         title: "Thank you! We've sent your feeback to the Plumber team.",
         status: 'success',
