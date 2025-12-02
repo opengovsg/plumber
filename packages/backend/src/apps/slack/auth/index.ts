@@ -22,7 +22,7 @@ const auth: IUserAddedConnectionAuth = {
     },
     {
       key: 'consumerKey',
-      label: 'API Key',
+      label: 'Client ID',
       type: 'string' as const,
       required: true,
       readOnly: false,
@@ -33,7 +33,7 @@ const auth: IUserAddedConnectionAuth = {
     },
     {
       key: 'consumerSecret',
-      label: 'API Secret',
+      label: 'Client Secret',
       type: 'string' as const,
       required: true,
       readOnly: false,
