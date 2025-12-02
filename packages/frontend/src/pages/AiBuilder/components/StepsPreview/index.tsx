@@ -1,3 +1,5 @@
+import { IStepConfig } from '@plumber/types'
+
 import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
@@ -112,19 +114,28 @@ export default function StepsPreview() {
       variables: {
         input: {
           flowName: flowName || 'Name your Pipe',
-          steps: steps?.map((step) => ({
-            type: step.type,
-            appKey: step.appKey,
-            key: step.key,
-            config: step?.config?.stepName
-              ? {
-                  stepName: step?.config?.stepName || null,
-                }
-              : {},
-            // NOTE: we need to pass the parameters especially for if-then branches
-            parameters: step?.parameters || {},
-            position: step.position,
-          })),
+          steps: steps?.map((step) => {
+            const config: IStepConfig = {}
+            if (step?.config?.stepName) {
+              config['stepName'] = step.config.stepName
+            }
+
+            if (step?.description) {
+              config['templateConfig'] = {
+                customTemplate: step.description,
+              }
+            }
+
+            return {
+              type: step.type,
+              appKey: step.appKey,
+              key: step.key,
+              config,
+              // NOTE: we need to pass the parameters especially for if-then branches
+              parameters: step?.parameters || {},
+              position: step.position,
+            }
+          }),
           traceId: output?.traceId,
         },
       },

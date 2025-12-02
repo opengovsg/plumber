@@ -612,8 +612,13 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
+input StepTemplateConfigInput {
+  customTemplate: String
+}
+
 input StepConfigInput {
   stepName: String
+  templateConfig: StepTemplateConfigInput
 }
 
 input UpdateStepInput {
@@ -736,6 +741,7 @@ type StepConfig {
 
 type StepTemplateConfig {
   appEventKey: String
+  customTemplate: String
 }
 
 input StepConnectionInput {

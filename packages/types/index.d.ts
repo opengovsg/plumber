@@ -174,6 +174,7 @@ export interface IStepConfig {
 
 export interface IStepTemplateConfig {
   appEventKey?: string
+  customTemplate?: string
 }
 
 export interface IStep {

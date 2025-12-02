@@ -24,11 +24,15 @@ interface AIBuilderSharedProps {
   }
 }
 
+interface AiBuilderStep extends IStep {
+  description?: string
+}
+
 interface AIBuilderContextValue extends AIBuilderSharedProps {
   allApps: IApp[]
   isMobile: boolean
   triggerStep: IStep | null
-  steps: IStep[]
+  steps: AiBuilderStep[]
   actionSteps: IStep[]
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
