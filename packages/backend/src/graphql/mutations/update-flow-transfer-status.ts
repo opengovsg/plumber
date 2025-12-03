@@ -103,7 +103,9 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       // nullify connections for M365-excel
       // excel connections cannot be shared; the new owner should use their own connection
       const excelStepIds = flow.steps
-        .filter((step) => step.appKey === 'm365-excel')
+        .filter(
+          (step) => step.appKey === 'm365-excel' && step.connectionId != null,
+        )
         .map((step) => step.id)
       const numExcelNullified = await Step.query(trx)
         .patch({ connection: null, connectionId: null, status: 'incomplete' })
