@@ -131,8 +131,9 @@ async function getMockData($: IGlobalVariable) {
           data.responses[formFields[i]._id].answer = 'Signature captured' // mock this to always be present regardless of whether the user has signed or not
         }
 
-        // formsg payload doesnt contain this anyways, so we dont return in mock data
-        if (fieldType === 'statement') {
+        // formsg payload doesnt contain these fields anyways, so we dont return in mock data
+        // this ensures that the question numbering remains consistent with the actual submission
+        if (fieldType === 'statement' || fieldType === 'image') {
           delete data.responses[formFields[i]._id]
           continue
         }
