@@ -13,6 +13,7 @@ type FormField = {
   _id: string
   columns?: Array<{
     _id: string
+    title?: string
   }>
   fieldType: string
   fieldOptions?: string[]
@@ -160,9 +161,25 @@ async function getMockData($: IGlobalVariable) {
         if (fieldType === 'table') {
           const answerArray = data.responses[formFields[i]._id]
             .answerArray as string[][]
-          const question = data.responses[formFields[i]._id].question
+          const question = `${
+            data.responses[formFields[i]._id].question
+          } (${formFields[i].columns
+            ?.map((column, index) => column?.title ?? `Col ${index + 1}`)
+            .join(', ')})`
+
+          console.log('columns', formFields[i].columns)
+          data.responses[formFields[i]._id].question = question
           data.responses[formFields[i]._id].answer =
             convertTableAnswerArrayToTableObject(question, answerArray)
+
+          console.log(
+            'data.responses[formFields[i]._id].answer',
+            data.responses[formFields[i]._id].answer,
+          )
+        }
+
+        if (fieldType === 'section' || fieldType === 'image') {
+          data.responses[formFields[i]._id].answer = ''
         }
 
         data.responses[formFields[i]._id].order = i + 1

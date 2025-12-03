@@ -1,4 +1,5 @@
 import { IJSONObject } from '@plumber/types'
+import get from 'lodash.get'
 
 import { z } from 'zod'
 
@@ -35,23 +36,28 @@ const FormSgFieldSchema = z.object({
   answer: z.union([z.string(), z.record(z.any())]).nullish(),
 })
 
-const FormSgFieldsSchema = z.record(FormSgFieldSchema).transform((fields) => {
-  const tableField = Object.values(fields).find(
-    (field) => field?.fieldType === 'table',
-  ) as z.infer<typeof FormSgFieldSchema> | undefined
+const createFormSgFieldsSchema = (variableId: string) => {
+  const regex = new RegExp(
+    /step\.[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}\.fields\.([^.]+)\.answer/,
+  )
+  const match = variableId.match(regex)
+  const tableFieldId = match?.[1]
 
-  if (!tableField) {
-    return {
-      fieldType: 'table',
-      answer: {
-        rows: [],
-        columns: [],
-      },
+  return z.record(FormSgFieldSchema).transform((fields) => {
+    if (!tableFieldId) {
+      return {
+        fieldType: 'table',
+        answer: {
+          rows: [],
+          columns: [],
+        },
+      }
     }
-  }
 
-  return FormSgTableFieldSchema.parse(tableField)
-})
+    const tableField = get(fields, tableFieldId)
+    return FormSgTableFieldSchema.parse(tableField)
+  })
+}
 
 /**
  * FormSG has a different dataOut structure from our own apps.
@@ -60,18 +66,20 @@ const FormSgFieldsSchema = z.record(FormSgFieldSchema).transform((fields) => {
  * Note: FormSG implements check to have at least 1 row in the table field.
  * the cells may be empty, but there will always be at least 1 row.
  */
-export const FormSgTableDataOutSchema = z
-  .object({
-    fields: FormSgFieldsSchema,
-  })
-  .transform((dataOut) => {
-    const parsedData = dataOut.fields.answer as z.infer<typeof RowDataSchema>
-    return {
-      rowsFound:
-        (parsedData.rows as z.infer<typeof RowDataSchema>['rows'])?.length ?? 0,
-      data: parsedData,
-    }
-  })
+export const createFormSgTableDataOutSchema = (variableName: string) =>
+  z
+    .object({
+      fields: createFormSgFieldsSchema(variableName),
+    })
+    .transform((dataOut) => {
+      const parsedData = dataOut.fields.answer as z.infer<typeof RowDataSchema>
+      return {
+        rowsFound:
+          (parsedData.rows as z.infer<typeof RowDataSchema>['rows'])?.length ??
+          0,
+        data: parsedData,
+      }
+    })
 
 export const MultipleRowDataOutSchema = z.object({
   rowsFound: z.union([z.string(), z.number()]).default(0),
@@ -79,7 +87,8 @@ export const MultipleRowDataOutSchema = z.object({
 })
 
 // Enhanced schema that can handle both regular and FormSG data
-export const ExecutionStepDataOutSchema = z.union([
-  MultipleRowDataOutSchema,
-  FormSgTableDataOutSchema,
-])
+export const createExecutionStepDataOutSchema = (variableName: string) =>
+  z.union([
+    MultipleRowDataOutSchema,
+    createFormSgTableDataOutSchema(variableName),
+  ])

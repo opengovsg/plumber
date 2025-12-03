@@ -1,6 +1,6 @@
 import { IExecutionStep } from '@plumber/types'
 
-import { ExecutionStepDataOutSchema } from './schema'
+import { createExecutionStepDataOutSchema } from './schema'
 
 export interface RawColumn {
   id: string
@@ -42,9 +42,14 @@ const processColumns = (rawColumns: RawColumn[]): ProcessedColumn[] => {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 }
 
-export const processData = (executionStep: IExecutionStep): ProcessedData => {
+export const processData = (
+  executionStep: IExecutionStep,
+  variableId: string,
+): ProcessedData => {
   try {
-    const dataOut = ExecutionStepDataOutSchema.parse(executionStep.dataOut)
+    const dataOut = createExecutionStepDataOutSchema(variableId).parse(
+      executionStep.dataOut,
+    )
     const rowsFound = String(dataOut.rowsFound)
 
     return {
