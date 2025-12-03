@@ -167,15 +167,9 @@ async function getMockData($: IGlobalVariable) {
             ?.map((column, index) => column?.title ?? `Col ${index + 1}`)
             .join(', ')})`
 
-          console.log('columns', formFields[i].columns)
           data.responses[formFields[i]._id].question = question
           data.responses[formFields[i]._id].answer =
             convertTableAnswerArrayToTableObject(question, answerArray)
-
-          console.log(
-            'data.responses[formFields[i]._id].answer',
-            data.responses[formFields[i]._id].answer,
-          )
         }
 
         if (fieldType === 'section' || fieldType === 'image') {
