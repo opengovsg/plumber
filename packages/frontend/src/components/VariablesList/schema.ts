@@ -32,7 +32,7 @@ const FormSgTableFieldSchema = z.object({
 
 const FormSgFieldSchema = z.object({
   fieldType: z.string(),
-  answer: z.union([z.string(), z.record(z.any())]).optional(),
+  answer: z.union([z.string(), z.record(z.any())]).nullish(),
 })
 
 const FormSgFieldsSchema = z.record(FormSgFieldSchema).transform((fields) => {
