@@ -204,7 +204,9 @@ function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
 
   const tableObject = JSON.parse(fieldData.answer as string)
   return {
-    label: `Response ${fieldData.order}`,
+    label: fieldData.question
+      ? `${fieldData.order}. ${fieldData.question}`
+      : `Response ${fieldData.order}`,
     order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
     type: 'table',
     displayedValue: `Preview ${tableObject.rows.length} row(s)`,
