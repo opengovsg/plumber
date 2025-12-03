@@ -518,8 +518,8 @@ describe('updateStep mutation', () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: context.currentUser,
-        stepKey: 'sendTransactionalEmail',
-        stepAppKey: 'postman',
+        stepKey: 'createTableRow',
+        stepAppKey: 'm365-excel',
         flowId: mockFlowId,
         flowUpdatedAt: testFlowISODateString,
       })
@@ -532,6 +532,7 @@ describe('updateStep mutation', () => {
       const input = {
         ...genericInputParams,
         appKey: 'm365-excel',
+        key: 'createTableRow',
         parameters: { fileId: '1234567890' },
       }
 
@@ -552,7 +553,7 @@ describe('updateStep mutation', () => {
       const input = {
         id: mockStepId,
         flow: { id: mockFlowId, updatedAt: testFlowISODateString },
-        key: 'sendMessage',
+        key: 'sendMessageToChannel',
         appKey: 'slack',
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
@@ -574,6 +575,7 @@ describe('updateStep mutation', () => {
       const input = {
         ...genericInputParams,
         appKey: 'slack',
+        key: 'sendMessageToChannel',
         parameters: { message: 'Hello world' }, // No channel parameter
         connection: { id: mockConnectionId },
       }
@@ -601,7 +603,7 @@ describe('updateStep mutation', () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: owner,
-        stepKey: 'sendMessage',
+        stepKey: 'sendMessageToChannel',
         stepAppKey: 'slack',
         flowId: mockFlowId,
         stepRole: 'editor', // Not owner
@@ -623,6 +625,7 @@ describe('updateStep mutation', () => {
       const input = {
         ...genericInputParams,
         appKey: 'slack',
+        key: 'sendMessageToChannel',
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
       }
@@ -694,7 +697,7 @@ describe('updateStep mutation', () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: owner,
-        stepKey: 'readAction',
+        stepKey: 'createTileRow',
         stepAppKey: 'tiles',
         stepRole: 'owner',
         flowUpdatedAt: testFlowISODateString,
@@ -703,6 +706,7 @@ describe('updateStep mutation', () => {
       const input = {
         ...genericInputParams,
         appKey: 'tiles',
+        key: 'createTileRow',
         connection: {},
         parameters: { tableId: mockTableId },
       }

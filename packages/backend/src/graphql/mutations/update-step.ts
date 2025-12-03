@@ -4,6 +4,7 @@ import {
   addFlowConnection,
   addFlowTableConnection,
 } from '@/helpers/add-flow-connection'
+import logger from '@/helpers/logger'
 import App from '@/models/app'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -22,6 +23,11 @@ const updateStep: MutationResolvers['updateStep'] = async (
     input.key,
   )
   if (!triggerOrAction) {
+    logger.error({
+      event: 'updateStep: no such trigger or action',
+      appKey: input.appKey,
+      key: input.key,
+    })
     throw new BadUserInputError('No such trigger or action')
   }
 
