@@ -28,6 +28,8 @@ interface TableVariableModalProps {
   isOpen: boolean
   onClose: () => void
   currentExecutionStep?: IExecutionStep | null
+  // variableName is the step variable: `step.<uuid>.xxxxx`
+  variableId: string
 }
 
 const TableHeader = ({ columns }: { columns: ProcessedColumn[] }) => (
@@ -107,12 +109,15 @@ const TableRow = ({
 )
 
 export default function TableVariableModal(props: TableVariableModalProps) {
-  const { isOpen, onClose, currentExecutionStep } = props
+  const { isOpen, onClose, currentExecutionStep, variableId } = props
 
   if (!currentExecutionStep) {
     return null
   }
-  const { rowsFound, dataRows, columns } = processData(currentExecutionStep)
+  const { rowsFound, dataRows, columns } = processData(
+    currentExecutionStep,
+    variableId,
+  )
 
   return (
     <Modal

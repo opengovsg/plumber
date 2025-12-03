@@ -33,6 +33,7 @@ export default function TableVariableItem(props: TableVariableItemProps) {
       />
       {!onClick && (
         <TableVariableModal
+          variableId={variable.name}
           isOpen={isOpen}
           onClose={onClose}
           currentExecutionStep={currentTestExecutionStep}

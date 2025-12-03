@@ -13,6 +13,7 @@ type FormField = {
   _id: string
   columns?: Array<{
     _id: string
+    title?: string
   }>
   fieldType: string
   fieldOptions?: string[]
@@ -130,8 +131,9 @@ async function getMockData($: IGlobalVariable) {
           data.responses[formFields[i]._id].answer = 'Signature captured' // mock this to always be present regardless of whether the user has signed or not
         }
 
-        // formsg payload doesnt contain this anyways, so we dont return in mock data
-        if (fieldType === 'statement') {
+        // formsg payload doesnt contain these fields anyways, so we dont return in mock data
+        // this ensures that the question numbering remains consistent with the actual submission
+        if (fieldType === 'statement' || fieldType === 'image') {
           delete data.responses[formFields[i]._id]
           continue
         }
@@ -160,9 +162,19 @@ async function getMockData($: IGlobalVariable) {
         if (fieldType === 'table') {
           const answerArray = data.responses[formFields[i]._id]
             .answerArray as string[][]
-          const question = data.responses[formFields[i]._id].question
+          const question = `${
+            data.responses[formFields[i]._id].question
+          } (${formFields[i].columns
+            ?.map((column, index) => column?.title ?? `Col ${index + 1}`)
+            .join(', ')})`
+
+          data.responses[formFields[i]._id].question = question
           data.responses[formFields[i]._id].answer =
             convertTableAnswerArrayToTableObject(question, answerArray)
+        }
+
+        if (fieldType === 'section' || fieldType === 'image') {
+          data.responses[formFields[i]._id].answer = ''
         }
 
         data.responses[formFields[i]._id].order = i + 1
