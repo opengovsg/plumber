@@ -117,6 +117,8 @@ describe('generateAiSteps mutation', () => {
         {
           input: {
             prompt: 'gibberish',
+            isFormMode: true,
+            sessionId: '123',
           },
         },
         context,
