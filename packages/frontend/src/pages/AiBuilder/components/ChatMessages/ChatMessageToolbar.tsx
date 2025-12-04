@@ -180,6 +180,8 @@ const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
           aria-label="Thumbs down"
           icon={<Icon as={icon} />}
           onClick={onOpen}
+          // HACKFIX(kevinkim-ogp): prevent autofocus when new input is sent
+          tabIndex={-1}
         />
       </PopoverTrigger>
       <PopoverContent>
