@@ -5,6 +5,7 @@ import { Router } from 'express'
 import z from 'zod/v3'
 
 import appConfig from '@/config/app'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { getPrompt } from '@/helpers/pair/get-prompt'
@@ -25,8 +26,16 @@ const handleChatReadiness = async (
   try {
     const { message: rawMessage } = req.body as ChatReadinessRequest
 
-    // Get the prompt from Langfuse
-    const prompt = await getPrompt('ai-builder/chat-to-form-check')
+    const promptConfig = await getLdFlagValue(
+      'ai-builder-prompt-config',
+      context.currentUser.email,
+      {
+        chatReadinessPrompt: 'chat-readiness-check',
+        version: 'production',
+      },
+    )
+    const { chatReadinessPrompt, version } = promptConfig
+    const prompt = await getPrompt(chatReadinessPrompt, version)
     const { prompt: systemPrompt } = prompt
 
     const result = await startActiveObservation(
