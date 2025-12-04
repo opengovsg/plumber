@@ -56,6 +56,13 @@ export default function ChatMessages({
     checkReadiness()
   }, [isStreaming, messages])
 
+  // Scroll to bottom when PreviewStepsButton appears
+  useEffect(() => {
+    if (isReadyForPreview) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [isReadyForPreview, messagesEndRef])
+
   return (
     <Flex
       ref={messagesContainerRef}
