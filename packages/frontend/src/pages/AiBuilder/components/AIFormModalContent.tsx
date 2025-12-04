@@ -1,6 +1,9 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Form } from 'react-router-dom'
+import { useMutation } from '@apollo/client'
 import {
+  Box,
   Button,
   Flex,
   FormControl,
@@ -9,14 +12,17 @@ import {
   ModalCloseButton,
   ModalFooter,
   ModalHeader,
+  Spinner,
   Text,
   Textarea,
 } from '@chakra-ui/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
+import { debounce } from 'lodash'
 
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
+import { REFINE_FORM_INPUT } from '@/graphql/mutations/ai/refine-form-input'
 import { AI_FORM_SCHEMA, AiFormData } from '@/pages/AiBuilder/schema'
 import { AI_FORM_IDEAS, AiFormIdea } from '@/pages/Flows/constants'
 
@@ -59,12 +65,16 @@ export const AIFormModalContent = ({
   onBack: () => void
   onSubmit: (data: AiFormData) => void
 }) => {
+  const [refineFormInput, { loading: isRefiningFormInput }] =
+    useMutation(REFINE_FORM_INPUT)
+
   const isMobile = useIsMobile()
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
     setValue,
+    watch,
   } = useForm<AiFormData>({
     resolver: zodResolver(AI_FORM_SCHEMA),
     mode: 'onChange',
@@ -75,12 +85,81 @@ export const AIFormModalContent = ({
     },
   })
 
+  const actionsValue = watch('actions')
+  const isFromSuggestionRef = useRef(false)
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null)
+  const [showReadyMessage, setShowReadyMessage] = useState(false)
+
+  const callRefineFormInput = useCallback(
+    async (prompt: string) => {
+      // Skip if the value is from a suggestion
+      if (isFromSuggestionRef.current) {
+        isFromSuggestionRef.current = false
+        return
+      }
+
+      // Skip if trigger is empty or too short (minimum 15 characters required by API)
+      if (!prompt || prompt.trim().length < 15) {
+        setAiSuggestion(null)
+        setShowReadyMessage(false)
+        return
+      }
+
+      try {
+        const result = await refineFormInput({
+          variables: {
+            input: {
+              prompt,
+              sessionId: null,
+            },
+          },
+        })
+
+        if (result.data?.refineFormInput) {
+          const { status, suggestion } = result.data.refineFormInput
+          if (status) {
+            // Status is true - show ready message
+            setShowReadyMessage(true)
+            setAiSuggestion(null)
+          } else if (suggestion) {
+            // Status is false and we have a suggestion
+            setAiSuggestion(suggestion)
+            setShowReadyMessage(false)
+          } else {
+            setAiSuggestion(null)
+            setShowReadyMessage(false)
+          }
+        }
+      } catch (error) {
+        console.error('Error refining form input:', error)
+        setAiSuggestion(null)
+        setShowReadyMessage(false)
+      }
+    },
+    [refineFormInput],
+  )
+
+  const debouncedRefineFormInput = useMemo(
+    () => debounce(callRefineFormInput, 2000),
+    [callRefineFormInput],
+  )
+
   const handleIdeaClick = (idea: AiFormIdea) => {
+    isFromSuggestionRef.current = true
+    debouncedRefineFormInput.cancel()
+    setAiSuggestion(null)
+    setShowReadyMessage(false)
     setValue('trigger', idea.trigger, { shouldValidate: true })
     setValue('actions', idea.actions, { shouldValidate: true })
   }
 
+  useEffect(() => {
+    debouncedRefineFormInput(actionsValue)
+  }, [actionsValue, debouncedRefineFormInput])
+
   const isCreate = type === 'create'
+  const shouldShowIdeaButtons =
+    isCreate && !isRefiningFormInput && !aiSuggestion && !showReadyMessage
 
   return (
     <>
@@ -112,7 +191,34 @@ export const AIFormModalContent = ({
                       {errors[field.key]?.message}
                     </FormErrorMessage>
                   )}
-                  {isCreate && field.key === 'actions' && (
+                  {field.key === 'actions' &&
+                    (isRefiningFormInput ||
+                      aiSuggestion ||
+                      showReadyMessage) && (
+                      <Box mt={2} borderRadius="md">
+                        {isRefiningFormInput ? (
+                          <Flex align="center" gap={2}>
+                            <Spinner size="sm" />
+                            <Text fontSize="sm">Loading suggestion...</Text>
+                          </Flex>
+                        ) : showReadyMessage ? (
+                          <Text fontSize="sm" color="green.600">
+                            <Text as="span" fontWeight="semibold">
+                              All good!
+                            </Text>{' '}
+                            Let&apos;s give it a try.
+                          </Text>
+                        ) : (
+                          <Text fontSize="sm">
+                            <Text as="span" fontWeight="semibold">
+                              Suggestion:
+                            </Text>{' '}
+                            {aiSuggestion}
+                          </Text>
+                        )}
+                      </Box>
+                    )}
+                  {field.key === 'actions' && shouldShowIdeaButtons && (
                     <IdeaButtons
                       ideas={AI_FORM_IDEAS}
                       onClick={handleIdeaClick}
