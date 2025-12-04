@@ -15,7 +15,12 @@ import {
 } from './AiBuilderContext'
 
 function AiBuilderContent() {
-  const { flowName, isFormMode } = useAiBuilderContext()
+  const { aiBuilderType, flowName, isFormMode } = useAiBuilderContext()
+
+  // TODO(kevinkim-ogp): remove this once A/B test is complete
+  if (aiBuilderType === 'ai-form') {
+    return <InvalidEditorPage message="You do not have access to this." />
+  }
 
   return (
     <>

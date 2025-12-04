@@ -22,7 +22,7 @@ interface CreateFlowModalProps {
 
 export default function CreateFlowModal(props: CreateFlowModalProps) {
   const { onClose } = props
-  const { createMode } = useCreateFlowContext()
+  const { createMode, aiBuilderType } = useCreateFlowContext()
 
   const navigate = useNavigate()
   const [createFlow, { loading }] = useMutation(CREATE_FLOW)
@@ -69,14 +69,18 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       return
     }
 
-    if (createMode === 'ai-form') {
+    // TODO(kevinkim-ogp): remove aiBuilderType once A/B test is complete
+    if (
+      createMode === 'ai-form' &&
+      (aiBuilderType === 'ai-form' || aiBuilderType === 'all')
+    ) {
       // Store the flow name before switching to AI modal content
       setFlowName(trimmedFlowName)
       setShowAiModalContent(true)
       return
     }
 
-    if (createMode === 'ai-chat') {
+    if (createMode === 'ai-chat' && aiBuilderType === 'ai-chat') {
       event.preventDefault()
       onClose()
       navigate(`${URLS.EDITOR}/ai`, {
