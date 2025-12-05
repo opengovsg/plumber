@@ -178,56 +178,51 @@ export const AIFormModalContent = ({
                 isInvalid={!!errors[field.key]}
                 key={field.key}
               >
-                <Flex gap={2} flexDir="column">
-                  <FormLabel>{field.label}</FormLabel>
-                  <Textarea
-                    {...register(field.key)}
-                    placeholder={field.placeholder}
-                    resize={field.resize}
-                    minH={field.minH}
-                    maxH={field.maxH}
-                    required={field.required}
-                  />
-                  {errors[field.key] && (
-                    <FormErrorMessage>
-                      {errors[field.key]?.message}
-                    </FormErrorMessage>
-                  )}
-                  {field.key === 'actions' && shouldShowSuggestion && (
-                    <Box mt={2} borderRadius="md">
-                      {isRefiningFormInput ? (
-                        <Flex align="center" gap={2}>
-                          <Spinner size="sm" />
-                        </Flex>
-                      ) : showReadyMessage ? (
-                        <Text fontSize="sm" color="green.600">
-                          <Text as="span" fontWeight="semibold">
-                            All good!
-                          </Text>{' '}
-                          Let&apos;s give it a try.
-                        </Text>
-                      ) : (
-                        <Text>
-                          <Text as="span" fontWeight="medium">
-                            Consider addressing:{' '}
-                          </Text>
-                          <Text as="span" fontWeight="regular">
-                            {aiSuggestion}
-                          </Text>
-                        </Text>
-                      )}
-                    </Box>
-                  )}
-
-                  {field.key === 'actions' && shouldShowIdeaButtons && (
-                    <IdeaButtons
-                      ideas={AI_FORM_IDEAS}
-                      onClick={handleIdeaClick}
-                    />
-                  )}
-                </Flex>
+                <FormLabel>{field.label}</FormLabel>
+                <Textarea
+                  {...register(field.key)}
+                  placeholder={field.placeholder}
+                  resize={field.resize}
+                  minH={field.minH}
+                  maxH={field.maxH}
+                  required={field.required}
+                />
+                {errors[field.key] && (
+                  <FormErrorMessage>
+                    {errors[field.key]?.message}
+                  </FormErrorMessage>
+                )}
               </FormControl>
             ))}
+            {shouldShowSuggestion && (
+              <Box borderRadius="md">
+                {isRefiningFormInput ? (
+                  <Flex align="center" gap={2}>
+                    <Spinner size="sm" />
+                  </Flex>
+                ) : showReadyMessage ? (
+                  <Text fontSize="sm" color="green.600">
+                    <Text as="span" fontWeight="semibold">
+                      All good!
+                    </Text>{' '}
+                    Let&apos;s give it a try.
+                  </Text>
+                ) : (
+                  <Text>
+                    <Text as="span" fontWeight="medium">
+                      Consider addressing:{' '}
+                    </Text>
+                    <Text as="span" fontWeight="regular">
+                      {aiSuggestion}
+                    </Text>
+                  </Text>
+                )}
+              </Box>
+            )}
+
+            {shouldShowIdeaButtons && (
+              <IdeaButtons ideas={AI_FORM_IDEAS} onClick={handleIdeaClick} />
+            )}
           </Flex>
         </ModalBody>
         <ModalFooter>
