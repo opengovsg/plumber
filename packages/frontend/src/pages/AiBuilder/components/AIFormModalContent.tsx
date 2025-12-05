@@ -98,8 +98,8 @@ export const AIFormModalContent = ({
         return
       }
 
-      // Skip if trigger is empty or too short (minimum 15 characters required by API)
-      if (!prompt || prompt.trim().length < 15) {
+      // Skip if trigger is empty or too short (minimum 30 characters required by API)
+      if (!prompt || prompt.trim().length < 30) {
         setAiSuggestion(null)
         setShowReadyMessage(false)
         return
