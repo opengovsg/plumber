@@ -1,13 +1,12 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@apollo/client'
+import { datadogRum } from '@datadog/browser-rum'
 import { debounce } from 'lodash'
 
 import { REFINE_FORM_INPUT } from '@/graphql/mutations/ai/refine-form-input'
 
-import { useAiBuilderContext } from '../AiBuilderContext'
-
 export const useRefineFormInput = () => {
-  const { ddSessionId } = useAiBuilderContext()
+  const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
   const [refineFormInput, { loading: isRefiningFormInput }] =
     useMutation(REFINE_FORM_INPUT)
 
