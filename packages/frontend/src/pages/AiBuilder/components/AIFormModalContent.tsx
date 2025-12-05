@@ -97,31 +97,33 @@ export const AIFormModalContent = ({
                 isInvalid={!!errors[field.key]}
                 key={field.key}
               >
-                <FormLabel>{field.label}</FormLabel>
-                <Textarea
-                  {...register(field.key)}
-                  placeholder={field.placeholder}
-                  resize={field.resize}
-                  minH={field.minH}
-                  maxH={field.maxH}
-                  required={field.required}
-                />
-                {errors[field.key] && (
-                  <FormErrorMessage>
-                    {errors[field.key]?.message}
-                  </FormErrorMessage>
-                )}
+                <Flex gap={2} flexDir="column">
+                  <FormLabel>{field.label}</FormLabel>
+                  <Textarea
+                    {...register(field.key)}
+                    placeholder={field.placeholder}
+                    resize={field.resize}
+                    minH={field.minH}
+                    maxH={field.maxH}
+                    required={field.required}
+                  />
+                  {errors[field.key] && (
+                    <FormErrorMessage>
+                      {errors[field.key]?.message}
+                    </FormErrorMessage>
+                  )}
+                  {isCreate && field.key === 'actions' && (
+                    <IdeaButtons
+                      ideas={AI_FORM_IDEAS}
+                      onClick={(idea: AiChatIdea | AiFormIdea) =>
+                        handleIdeaClick(idea)
+                      }
+                      builderType="form"
+                    />
+                  )}
+                </Flex>
               </FormControl>
             ))}
-            {isCreate && (
-              <IdeaButtons
-                ideas={AI_FORM_IDEAS}
-                onClick={(idea: AiChatIdea | AiFormIdea) =>
-                  handleIdeaClick(idea)
-                }
-                builderType="form"
-              />
-            )}
           </Flex>
         </ModalBody>
         <ModalFooter>
