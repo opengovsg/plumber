@@ -160,6 +160,8 @@ export const AIFormModalContent = ({
   const isCreate = type === 'create'
   const shouldShowIdeaButtons =
     isCreate && !isRefiningFormInput && !aiSuggestion && !showReadyMessage
+  const shouldShowSuggestion =
+    isRefiningFormInput || aiSuggestion || showReadyMessage
 
   return (
     <>
@@ -191,33 +193,32 @@ export const AIFormModalContent = ({
                       {errors[field.key]?.message}
                     </FormErrorMessage>
                   )}
-                  {field.key === 'actions' &&
-                    (isRefiningFormInput ||
-                      aiSuggestion ||
-                      showReadyMessage) && (
-                      <Box mt={2} borderRadius="md">
-                        {isRefiningFormInput ? (
-                          <Flex align="center" gap={2}>
-                            <Spinner size="sm" />
-                            <Text fontSize="sm">Loading suggestion...</Text>
-                          </Flex>
-                        ) : showReadyMessage ? (
-                          <Text fontSize="sm" color="green.600">
-                            <Text as="span" fontWeight="semibold">
-                              All good!
-                            </Text>{' '}
-                            Let&apos;s give it a try.
+                  {field.key === 'actions' && shouldShowSuggestion && (
+                    <Box mt={2} borderRadius="md">
+                      {isRefiningFormInput ? (
+                        <Flex align="center" gap={2}>
+                          <Spinner size="sm" />
+                        </Flex>
+                      ) : showReadyMessage ? (
+                        <Text fontSize="sm" color="green.600">
+                          <Text as="span" fontWeight="semibold">
+                            All good!
+                          </Text>{' '}
+                          Let&apos;s give it a try.
+                        </Text>
+                      ) : (
+                        <Text>
+                          <Text as="span" fontWeight="medium">
+                            Consider addressing:{' '}
                           </Text>
-                        ) : (
-                          <Text fontSize="sm">
-                            <Text as="span" fontWeight="semibold">
-                              Suggestion:
-                            </Text>{' '}
+                          <Text as="span" fontWeight="regular">
                             {aiSuggestion}
                           </Text>
-                        )}
-                      </Box>
-                    )}
+                        </Text>
+                      )}
+                    </Box>
+                  )}
+
                   {field.key === 'actions' && shouldShowIdeaButtons && (
                     <IdeaButtons
                       ideas={AI_FORM_IDEAS}
