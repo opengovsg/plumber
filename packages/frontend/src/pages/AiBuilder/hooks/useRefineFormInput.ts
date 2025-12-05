@@ -23,7 +23,8 @@ export const useRefineFormInput = () => {
       }
 
       // Combine trigger and actions into a single prompt
-      const combinedPrompt = `${triggerPrompt}\n${actionsPrompt}`.trim()
+      const combinedPrompt =
+        `data source:${triggerPrompt}\n workflow description:${actionsPrompt}`.trim()
 
       // Skip if combined prompt is empty or too short (minimum 30 characters required by API)
       if (!combinedPrompt || combinedPrompt.length < 30) {
