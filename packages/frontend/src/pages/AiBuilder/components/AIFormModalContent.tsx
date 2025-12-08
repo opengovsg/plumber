@@ -118,7 +118,6 @@ export const AIFormModalContent = ({
                       onClick={(idea: AiChatIdea | AiFormIdea) =>
                         handleIdeaClick(idea)
                       }
-                      builderType="form"
                     />
                   )}
                 </Flex>

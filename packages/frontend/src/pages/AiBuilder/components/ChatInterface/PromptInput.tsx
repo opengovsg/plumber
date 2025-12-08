@@ -155,7 +155,6 @@ export default function PromptInput({
             // trigger resize after state update
             setTimeout(() => handleResize(), 0)
           }}
-          builderType="chat"
         />
       )}
 
