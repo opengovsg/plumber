@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useLazyQuery } from '@apollo/client'
 import { Box, Flex, VStack } from '@chakra-ui/react'
 
+import { GET_CHAT_READINESS } from '@/graphql/queries/get-chat-readiness'
 import { Message } from '@/hooks/useChatStream'
+
+import { useAiBuilderContext } from '../../AiBuilderContext'
 
 import ChatMessage from './ChatMessage'
 import PreviewStepsButton from './PreviewStepsButton'
@@ -26,7 +30,10 @@ export default function ChatMessages({
   hasMessages,
   onOpenDrawer,
 }: ChatMessagesProps) {
+  const { ddSessionId } = useAiBuilderContext()
   const [isReadyForPreview, setIsReadyForPreview] = useState(false)
+
+  const [getChatReadiness] = useLazyQuery(GET_CHAT_READINESS)
 
   useEffect(() => {
     const checkReadiness = async () => {
@@ -38,23 +45,17 @@ export default function ChatMessages({
       const lastMessage = messages[messages.length - 1]
 
       try {
-        const response = await fetch('/api/chat/readiness', {
-          method: 'POST',
-          body: JSON.stringify({ message: lastMessage.text }),
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const { data } = await getChatReadiness({
+          variables: { message: lastMessage.text, sessionId: ddSessionId },
         })
-
-        const result = await response.json()
-        setIsReadyForPreview(result.isReady)
+        setIsReadyForPreview(data?.getChatReadiness?.isReady)
       } catch {
         setIsReadyForPreview(false)
       }
     }
 
     checkReadiness()
-  }, [isStreaming, messages])
+  }, [ddSessionId, getChatReadiness, isStreaming, messages])
 
   // Scroll to bottom when PreviewStepsButton appears
   useEffect(() => {
