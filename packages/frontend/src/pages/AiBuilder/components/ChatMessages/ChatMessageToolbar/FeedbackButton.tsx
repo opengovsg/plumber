@@ -1,12 +1,10 @@
-import { Controller, useFormContext } from 'react-hook-form'
 import { FaRegThumbsDown, FaRegThumbsUp } from 'react-icons/fa'
+import { useMutation } from '@apollo/client'
 import {
   Button,
   ButtonGroup,
-  Flex,
   FocusLock,
   FormControl,
-  FormLabel,
   Icon,
   IconButton,
   Popover,
@@ -15,21 +13,19 @@ import {
   PopoverContent,
   PopoverTrigger,
   Stack,
-  Textarea,
   useDisclosure,
 } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
 import Form from '@/components/Form'
-import { SingleSelect } from '@/components/SingleSelect'
+import { UPDATE_CHAT_FEEDBACK } from '@/graphql/mutations/ai/update-chat-feedback'
+
+import { FEEDBACK_POPOVER_DETAILS } from './constants'
+import FeedbackFormContent from './FeedbackFormContent'
 
 interface FeedbackFormData {
   'feedback-dropdown'?: string
   'feedback-details': string
-}
-
-interface ChatMessageToolbarProps {
-  traceId: string
 }
 
 interface FeedbackButtonProps {
@@ -37,88 +33,14 @@ interface FeedbackButtonProps {
   traceId: string
 }
 
-const FEEDBACK_POPOVER_DETAILS = {
-  positive: {
-    dropdownLabel: null,
-    dropdownOptions: null,
-    textAreaLabel:
-      'Provide details on what was satisfying about this response:',
-    textAreaPlaceholder: 'What was satisfying about this response?',
-    score: 1,
-  },
-  negative: {
-    dropdownLabel: 'What type of issue do you wish to report?',
-    dropdownOptions: [
-      'Incorrect workflow generated',
-      'Incomplete response',
-      'UI bug',
-      "I don't understand the response",
-      'Other',
-    ],
-    textAreaLabel: 'Provide details on what was wrong with this response:',
-    textAreaPlaceholder: 'What was wrong with this response?',
-    score: 0,
-  },
-}
-
-const FeedbackFormContent = ({
-  dropdownLabel,
-  dropdownOptions,
-  textAreaLabel,
-  textAreaPlaceholder,
-  autoFocus,
-}: {
-  dropdownLabel: string | null
-  dropdownOptions: string[] | null
-  textAreaLabel: string
-  textAreaPlaceholder: string
-  autoFocus?: boolean
-}) => {
-  const { control, register } = useFormContext<FeedbackFormData>()
-
-  return (
-    <Flex direction="column">
-      {dropdownLabel != null && dropdownOptions != null && (
-        <>
-          <FormLabel htmlFor="feedback-dropdown" mt={2}>
-            {dropdownLabel}
-          </FormLabel>
-          <Controller
-            name="feedback-dropdown"
-            control={control}
-            defaultValue=""
-            render={({ field }) => (
-              <SingleSelect
-                colorScheme="secondary"
-                name="feedback-dropdown"
-                items={dropdownOptions}
-                value={field.value ?? ''}
-                onChange={field.onChange}
-                isClearable={false}
-              />
-            )}
-          />
-        </>
-      )}
-      <FormLabel htmlFor="feedback-details" mt={2}>
-        {textAreaLabel}
-      </FormLabel>
-      <Textarea
-        id="feedback-details"
-        rows={3}
-        resize="none"
-        autoFocus={autoFocus}
-        placeholder={textAreaPlaceholder}
-        {...register('feedback-details')}
-      />
-    </Flex>
-  )
-}
-
-const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
+export const FeedbackButton = ({
+  feedbackType,
+  traceId,
+}: FeedbackButtonProps) => {
   const { onOpen, onClose, isOpen } = useDisclosure()
   const toast = useToast()
   const icon = feedbackType === 'positive' ? FaRegThumbsUp : FaRegThumbsDown
+  const [updateChatFeedback] = useMutation(UPDATE_CHAT_FEEDBACK)
   const {
     dropdownLabel,
     dropdownOptions,
@@ -136,17 +58,17 @@ const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
       // NOTE: we send feedback to the backend instead of using Langfuse directly
       // as there are additional headers required to call Rome/Istanbul endpoints
       // that should not be exposed to the frontend
-      await fetch('/api/chat/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          traceId,
-          feedback: {
-            category: data['feedback-dropdown'],
-            comment: data['feedback-details'],
+      await updateChatFeedback({
+        variables: {
+          input: {
+            traceId,
+            feedback: {
+              category: data['feedback-dropdown'],
+              comment: data['feedback-details'],
+            },
+            score,
           },
-          score,
-        }),
+        },
       })
     } catch {
       // don't throw error if feedback submission fails
@@ -218,16 +140,5 @@ const FeedbackButton = ({ feedbackType, traceId }: FeedbackButtonProps) => {
         </FocusLock>
       </PopoverContent>
     </Popover>
-  )
-}
-
-export default function ChatMessageToolbar({
-  traceId,
-}: ChatMessageToolbarProps) {
-  return (
-    <Flex gap={1} mt={2}>
-      <FeedbackButton feedbackType="negative" traceId={traceId} />
-      <FeedbackButton feedbackType="positive" traceId={traceId} />
-    </Flex>
   )
 }
