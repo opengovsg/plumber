@@ -99,7 +99,9 @@ export const AIFormModalContent = ({
   }
 
   useEffect(() => {
-    refineFormInput(triggerValue, actionsValue)
+    if (triggerValue?.trim() && actionsValue?.trim()) {
+      refineFormInput(triggerValue, actionsValue)
+    }
   }, [triggerValue, actionsValue, refineFormInput])
 
   const isCreate = type === 'create'
