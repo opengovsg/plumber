@@ -1,7 +1,5 @@
 import { startActiveObservation } from '@langfuse/tracing'
 import { generateObject } from 'ai'
-import type { Request, Response } from 'express'
-import { Router } from 'express'
 import z from 'zod/v3'
 
 import appConfig from '@/config/app'
@@ -10,21 +8,15 @@ import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { getPrompt } from '@/helpers/pair/get-prompt'
 
-import { getAuthenticatedContext } from '../middleware/authentication'
+import type { QueryResolvers } from '../__generated__/types.generated'
 
-interface ChatReadinessRequest {
-  message: string
-  sessionId: string
-}
-
-const handleChatReadiness = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  const context = getAuthenticatedContext(req)
-
+const getChatReadiness: QueryResolvers['getChatReadiness'] = async (
+  _parent,
+  params,
+  context,
+) => {
   try {
-    const { message: rawMessage } = req.body as ChatReadinessRequest
+    const { message: rawMessage, sessionId } = params
 
     const promptConfig = await getLdFlagValue(
       'ai-builder-prompt-config',
@@ -45,6 +37,7 @@ const handleChatReadiness = async (
           userId: context.currentUser.email,
           environment: appConfig.appEnv,
           tags: ['ai-builder', 'is-chat-ready'],
+          sessionId,
         })
 
         trace.update({
@@ -88,15 +81,11 @@ const handleChatReadiness = async (
       },
     )
 
-    res.json({ isReady: result.isReady })
+    return { isReady: result.isReady }
   } catch (error) {
-    logger.error('Error in chat readiness', { error })
-    res.status(500).json({ error: 'Internal server error' })
+    logger.error('Error in getChatReadiness', { error })
+    throw new Error('Error encountered. Please try again.')
   }
 }
 
-const router = Router()
-
-router.post('/', handleChatReadiness)
-
-export default router
+export default getChatReadiness

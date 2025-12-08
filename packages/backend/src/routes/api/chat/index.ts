@@ -11,8 +11,6 @@ import { model, MODEL_TYPE } from '@/helpers/pair'
 import { getPrompt } from '@/helpers/pair/get-prompt'
 import { AuthenticatedRequest } from '@/types/express/context'
 
-import chatReadinessRouter from './readiness'
-
 interface ChatRequest {
   messages: Array<{
     role: 'user' | 'assistant' | 'system'
@@ -175,6 +173,5 @@ async function handleChatStream(req: AuthenticatedRequest, res: Response) {
 const router = Router()
 
 router.post('/', handleChatStream)
-router.use('/readiness', chatReadinessRouter)
 
 export default router
