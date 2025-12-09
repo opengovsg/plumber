@@ -149,10 +149,15 @@ type StepInput {
   position: Int
 }
 
+input FlowAiBuilderConfigInput {
+  type: String!
+  traceId: String!
+}
+
 input CreateFlowWithStepsInput {
   flowName: String!
   steps: [StepInput!]!
-  traceId: String!
+  aiBuilderConfig: FlowAiBuilderConfigInput!
 }
 
 type AdminMutation {

@@ -8,7 +8,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   context,
 ) => {
   const {
-    input: { steps, flowName, traceId },
+    input: { steps, flowName, aiBuilderConfig },
   } = params
 
   const trimmedFlowName = flowName.trim()
@@ -43,8 +43,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
     const flow = await context.currentUser.$relatedQuery('flows', trx).insert({
       name: trimmedFlowName,
       config: {
-        aiBuilder: true,
-        aiBuilderTraceId: traceId,
+        aiBuilderConfig,
       },
     })
 

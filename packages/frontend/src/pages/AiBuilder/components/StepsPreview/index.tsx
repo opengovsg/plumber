@@ -136,7 +136,10 @@ export default function StepsPreview() {
               position: step.position,
             }
           }),
-          traceId: output?.traceId,
+          aiBuilderConfig: {
+            type: isFormMode ? 'form' : 'chat',
+            traceId: output?.traceId,
+          },
         },
       },
     })
@@ -146,7 +149,14 @@ export default function StepsPreview() {
     navigate(URLS.FLOW_EDITOR(flowId), {
       replace: true,
     })
-  }, [steps, createFlowWithSteps, flowName, navigate, output?.traceId])
+  }, [
+    steps,
+    createFlowWithSteps,
+    flowName,
+    navigate,
+    output?.traceId,
+    isFormMode,
+  ])
 
   const onUpdatePrompt = async (formData: AiFormData) => {
     const aiSteps = await generateAiSteps(formData)
