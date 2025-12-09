@@ -59,7 +59,7 @@ export default function StepsPreview() {
   const { isOpen, onClose, onOpen } = useDisclosure()
   const isMobile = useIsMobile()
   const navigate = useNavigate()
-  const [error, setError] = useState<boolean>(true)
+  const [error, setError] = useState<boolean>(false)
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
