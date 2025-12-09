@@ -116,7 +116,7 @@ async function getDataOutMetadata(
           // not an array - treat as simple field
           fieldsMetadata[key] = { label: decodedLabel }
         }
-      } catch (error) {
+      } catch {
         // if decoding fails, use the hex key as-is
         fieldsMetadata[key] = { label: key }
       }
