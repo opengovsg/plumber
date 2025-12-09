@@ -22,6 +22,7 @@ export const dataOutSchema = z.object({
           name: z.string().min(1),
         })
         .nullish(),
+      tags: z.array(z.string()).nullish(),
     })
     .nullish(),
 })

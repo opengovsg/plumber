@@ -51,6 +51,16 @@ async function getDataOutMetadata(
     },
   }
 
+  // handle tags if any
+  // tags are an array of strings and exist at the top level alongside the
+  // uuid, caseRef, etc
+  const tagsMetadata = Object.create(null)
+  if (dataOut.tags && Array.isArray(dataOut.tags)) {
+    for (let i = 0; i < dataOut.tags.length; i++) {
+      tagsMetadata[i] = { label: `Tag` }
+    }
+  }
+
   // handle hex-encoded field names from dataOut
   const fieldsMetadata = Object.create(null)
 
@@ -108,6 +118,7 @@ async function getDataOutMetadata(
   return {
     data: {
       ...metadata.data,
+      tags: tagsMetadata,
       fields: fieldsMetadata,
     },
   }
