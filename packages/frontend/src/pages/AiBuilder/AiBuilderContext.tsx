@@ -87,7 +87,10 @@ export const AiBuilderContextProvider = ({
    * as if its in the Editor, but a lot simpler
    */
   const steps = useMemo(
-    () => [output?.trigger, ...(output?.actions || [])],
+    () => [
+      ...(output?.trigger ? [output.trigger] : []),
+      ...(output?.actions || []),
+    ],
     [output?.trigger, output?.actions],
   )
   const [triggerStep, stepsBeforeGroup, groupedSteps] = useMemo(
