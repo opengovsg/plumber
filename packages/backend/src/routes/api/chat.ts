@@ -71,7 +71,7 @@ async function handleChatStream(req: Request, res: Response) {
           sessionId: sessionId || 'unknown',
           userId: context.currentUser.email || 'anonymous',
           input: { messages, prompt: lastUserMessage },
-          tags: ['stream', 'rest-api'],
+          tags: ['ai-builder', 'chat', 'stream'],
           environment: appConfig.appEnv,
         })
 
