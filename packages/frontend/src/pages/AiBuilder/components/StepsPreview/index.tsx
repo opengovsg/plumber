@@ -210,7 +210,7 @@ export default function StepsPreview() {
     })
   }
 
-  if (error || !steps || steps.length === 0) {
+  if (error || !steps) {
     return (
       <Center h="80%">
         <Flex
