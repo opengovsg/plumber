@@ -34,6 +34,7 @@ const PreviewStepsButton = ({
                 ...location.state,
                 chatInput: messages[messages.length - 1].text,
                 chatMessages: messages,
+                isFormMode: false,
               },
               replace: true,
             })

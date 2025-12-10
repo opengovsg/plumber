@@ -76,13 +76,15 @@ function AiBuilderContent() {
 }
 
 export default function AiBuilder() {
-  const { flowName, formInput, isFormMode, output } = useLocation()?.state || {
+  const { flowName, formInput, isFormMode, output, chatInput } = useLocation()
+    ?.state || {
     flowName: 'New flow',
     isFormMode: false,
     formInput: {
       trigger: '',
       actions: '',
     },
+    chatInput: '',
     output: {
       trigger: '',
       actions: '',
@@ -102,6 +104,7 @@ export default function AiBuilder() {
 
   return (
     <AiBuilderContextProvider
+      chatInput={chatInput}
       flowName={flowName}
       formInput={formInput}
       isFormMode={isFormMode}

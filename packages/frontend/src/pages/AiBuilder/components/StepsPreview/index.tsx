@@ -44,6 +44,7 @@ export default function StepsPreview() {
   const {
     formInput,
     flowName,
+    chatInput,
     output,
     steps,
     triggerStep,
@@ -68,23 +69,35 @@ export default function StepsPreview() {
     useMutation(GENERATE_AI_STEPS)
 
   const generateAiSteps = useCallback(
-    async (input: { trigger: string; actions: string }) => {
-      const { data } = await generateAiStepsMutation({
-        variables: {
-          input: {
-            prompt: getPromptFromFormInput(input),
-            isFormMode,
-            sessionId: ddSessionId,
+    async (prompt: string) => {
+      // GUARD: skip the call altogether if the prompt is empty or the isFormMode is undefined
+      if (!prompt || isFormMode === undefined) {
+        setError(true)
+        return
+      }
+
+      try {
+        setError(false)
+        const { data } = await generateAiStepsMutation({
+          variables: {
+            input: {
+              prompt,
+              isFormMode,
+              sessionId: ddSessionId,
+            },
           },
-        },
-      })
-      return data?.generateAiSteps
+        })
+        return data?.generateAiSteps
+      } catch {
+        setError(true)
+      }
     },
     [generateAiStepsMutation, isFormMode, ddSessionId],
   )
 
   const onGenerateAiSteps = useCallback(async () => {
-    const aiSteps = await generateAiSteps(formInput)
+    const prompt = isFormMode ? getPromptFromFormInput(formInput) : chatInput
+    const aiSteps = await generateAiSteps(prompt)
 
     navigate(location.pathname, {
       state: {
@@ -93,7 +106,18 @@ export default function StepsPreview() {
       },
       replace: true, // Use replace to avoid adding to history
     })
-  }, [generateAiSteps, formInput, navigate, location.pathname, location.state])
+
+    // NOTE: we don't need to include the location.state in the dependencies
+    // as we don't want to re-run the function if the location state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isFormMode,
+    formInput,
+    chatInput,
+    generateAiSteps,
+    navigate,
+    location.pathname,
+  ])
 
   useEffect(() => {
     if (output) {
@@ -104,8 +128,9 @@ export default function StepsPreview() {
 
   const retryGenerateAiSteps = useCallback(async () => {
     setError(false)
-    await generateAiSteps(formInput)
-  }, [generateAiSteps, formInput])
+    const prompt = isFormMode ? getPromptFromFormInput(formInput) : chatInput
+    await generateAiSteps(prompt)
+  }, [generateAiSteps, formInput, chatInput, isFormMode])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
@@ -165,8 +190,9 @@ export default function StepsPreview() {
     isFormMode,
   ])
 
+  // NOTE: this is only for form-mode
   const onUpdatePrompt = async (formData: AiFormData) => {
-    const aiSteps = await generateAiSteps(formData)
+    const aiSteps = await generateAiSteps(getPromptFromFormInput(formData))
 
     // Close modal first, then navigate
     onClose()
@@ -184,7 +210,7 @@ export default function StepsPreview() {
     })
   }
 
-  if (error) {
+  if (error || !steps || steps.length === 0) {
     return (
       <Center h="80%">
         <Flex
