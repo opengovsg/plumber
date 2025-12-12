@@ -8,8 +8,8 @@ import {
   Box,
   FormControl,
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
   Portal,
   useDisclosure,
 } from '@chakra-ui/react'
@@ -264,28 +264,29 @@ const Editor = ({
       onClose={closeSuggestions}
       isOpen={isSuggestionsOpen && variablesEnabled}
       placement={getPopoverPlacement(editor)}
+      closeOnBlur={false}
     >
-      <div
-        className="editor"
-        onClick={(e) => {
-          e.stopPropagation()
-          openSuggestions()
-        }}
-        onBlur={(e) => {
-          // Focus might shift to menu bar or other children, where we do _not_
-          // want to close our popper.
-          const editorContainer =
-            e.currentTarget.closest('.single-line-editor') || e.currentTarget
-          if (
-            editorContainer.contains(e.relatedTarget) ||
-            e.relatedTarget?.closest('.chakra-popover__content')
-          ) {
-            return
-          }
-          closeSuggestions()
-        }}
-      >
-        <PopoverTrigger>
+      <PopoverAnchor>
+        <div
+          className="editor"
+          onClick={(e) => {
+            e.stopPropagation()
+            openSuggestions()
+          }}
+          onBlur={(e) => {
+            // Focus might shift to menu bar or other children, where we do _not_
+            // want to close our popper.
+            const editorContainer =
+              e.currentTarget.closest('.single-line-editor') || e.currentTarget
+            if (
+              editorContainer.contains(e.relatedTarget) ||
+              e.relatedTarget?.closest('.chakra-popover__content')
+            ) {
+              return
+            }
+            closeSuggestions()
+          }}
+        >
           <Box className={isMulticol ? 'single-line-editor' : undefined}>
             {isRich && (
               <MenuBar
@@ -303,31 +304,31 @@ const Editor = ({
                 }
               }}
             />
-            <Portal>
-              <PopoverContent
-                w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
-                motionProps={POPOVER_MOTION_PROPS}
-                onFocus={(e) => {
-                  // Go back to previous focus when clicking on suggestions to resume typing
-                  if (e.relatedTarget instanceof HTMLElement) {
-                    e.relatedTarget?.focus()
-                  }
-                }}
-                _focus={{
-                  boxShadow: 'none',
-                  borderColor: 'inherit',
-                }}
-              >
-                <Suggestions
-                  data={stepsWithVariables}
-                  onSuggestionClick={(v) => editable && handleVariableClick(v)}
-                  noVariablesMessage={noVariablesMessage}
-                />
-              </PopoverContent>
-            </Portal>
           </Box>
-        </PopoverTrigger>
-      </div>
+        </div>
+      </PopoverAnchor>
+      <Portal>
+        <PopoverContent
+          w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
+          motionProps={POPOVER_MOTION_PROPS}
+          onFocus={(e) => {
+            // Go back to previous focus when clicking on suggestions to resume typing
+            if (e.relatedTarget instanceof HTMLElement) {
+              e.relatedTarget?.focus()
+            }
+          }}
+          _focus={{
+            boxShadow: 'none',
+            borderColor: 'inherit',
+          }}
+        >
+          <Suggestions
+            data={stepsWithVariables}
+            onSuggestionClick={(v) => editable && handleVariableClick(v)}
+            noVariablesMessage={noVariablesMessage}
+          />
+        </PopoverContent>
+      </Portal>
     </Popover>
   )
 }
