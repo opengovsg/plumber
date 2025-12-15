@@ -77,7 +77,7 @@ export default function FlowStep(
     substeps,
     shouldShowDragHandle,
     isDeletable,
-  } = useStepMetadata(step, true)
+  } = useStepMetadata(step, allowReorder)
 
   const {
     cancelRef,

@@ -11,6 +11,7 @@ export default function FlowStepWithAddButton({
   step,
   isLastStep,
   isNested,
+  allowReorder,
   addButtonProps: {
     isHidden = false,
     isDisabled = false,
@@ -22,6 +23,7 @@ export default function FlowStepWithAddButton({
   isNested?: boolean
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
+  allowReorder: boolean
   addButtonProps: {
     isHidden: boolean
     isDisabled: boolean
@@ -37,7 +39,7 @@ export default function FlowStepWithAddButton({
         isLastStep={isLastStep}
         isNested={isNested}
         // only allow reordering if there are more than 1 action steps
-        allowReorder={true}
+        allowReorder={allowReorder}
       />
       {isApprovalStep && <ApproveReject />}
       <AddStepButton

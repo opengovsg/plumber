@@ -180,6 +180,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                 isNested={isNested}
                 stepsBeforeGroup={[]} // no reason to pass in for this
                 groupedSteps={groupedSteps}
+                allowReorder={false}
                 addButtonProps={{
                   isHidden: readOnly,
                   isDisabled: shouldDisableAddButton,
@@ -207,6 +208,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
                         isNested={isNested}
                         stepsBeforeGroup={actionStepsBeforeGroup}
                         groupedSteps={groupedSteps}
+                        allowReorder={nonIfThenActionSteps.length > 1}
                         addButtonProps={{
                           isHidden: readOnly || !!isOverlay,
                           isDisabled: shouldDisableAddButton,
