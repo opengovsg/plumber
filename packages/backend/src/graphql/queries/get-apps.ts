@@ -57,6 +57,7 @@ export const ACTION_APPS_RANKING = [
   customApiApp.key,
   vaultWorkspaceApp.key,
   twilioApp.key,
+  formsgApp.key,
 ]
 
 function sortApps(apps: IApp[]): IApp[] {
