@@ -624,8 +624,8 @@ describe('updateStep mutation', () => {
 
       const input = {
         ...genericInputParams,
-        appKey: 'slack',
         key: 'sendMessageToChannel',
+        appKey: 'slack',
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
       }

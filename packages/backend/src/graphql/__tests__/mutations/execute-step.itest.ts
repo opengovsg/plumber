@@ -20,6 +20,8 @@ const getMockResolvedValue = (userId: string) => {
     key: 'sendTransactionalEmail',
     appKey: 'postman',
     status: 'completed',
+    flowId: mockFlowId,
+    parameters: {},
     flow: {
       id: mockFlowId,
       userId,
@@ -30,6 +32,14 @@ const getMockResolvedValue = (userId: string) => {
     },
     $query: vi.fn().mockReturnValue({
       patch: vi.fn().mockResolvedValue({}),
+      patchAndFetch: vi.fn().mockResolvedValue({
+        id: mockStepId,
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
+        status: 'completed',
+        flowId: mockFlowId,
+        parameters: {},
+      }),
     }),
   }
 }
@@ -231,6 +241,7 @@ describe('executeStep mutation - access control', () => {
                 key: 'sendTransactionalEmail',
                 appKey: 'postman',
                 status: 'completed',
+                flowId: mockFlowId,
                 flow: {
                   id: mockFlowId,
                   userId: 'owner-user-id',
@@ -241,6 +252,14 @@ describe('executeStep mutation - access control', () => {
                 },
                 $query: vi.fn().mockReturnValue({
                   patch: vi.fn().mockResolvedValue({}),
+                  patchAndFetch: vi.fn().mockResolvedValue({
+                    id: mockStepId,
+                    key: 'sendTransactionalEmail',
+                    appKey: 'postman',
+                    status: 'completed',
+                    flowId: mockFlowId,
+                    parameters: {},
+                  }),
                 }),
               }),
             }),

@@ -25,22 +25,6 @@ function getNoOutputMessage(
   return selectedActionOrTrigger?.webhookTriggerInstructions?.errorMsg ?? null
 }
 
-function getMockDataMessage(
-  selectedActionOrTrigger: TestResultsProps['selectedActionOrTrigger'],
-): string | null {
-  // Type guard for ITrigger
-  if (
-    !selectedActionOrTrigger ||
-    !('webhookTriggerInstructions' in selectedActionOrTrigger)
-  ) {
-    return null
-  }
-
-  return (
-    selectedActionOrTrigger?.webhookTriggerInstructions?.mockDataMsg ?? null
-  )
-}
-
 interface TestResultsProps {
   step: IStep
   selectedActionOrTrigger: ITrigger | IAction | undefined
@@ -65,6 +49,12 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
   const { testExecutionSteps } = useContext(EditorContext)
   const isForEachStep = step.key === TOOLBOX_ACTIONS.ForEach
 
+  const testResultMessage = isForEachStep
+    ? getForEachDataMessage(testExecutionSteps, step)
+    : isMock
+    ? 'The mock responses below are based on your form fields.'
+    : null
+
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.
     if (!variables?.length) {
@@ -84,13 +74,9 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
 
     return (
       <Box w="100%">
-        {(isMock || isForEachStep) && (
+        {testResultMessage && (
           <Infobox variant="info">
-            <Text>
-              {isForEachStep
-                ? getForEachDataMessage(testExecutionSteps, step)
-                : getMockDataMessage(selectedActionOrTrigger)}
-            </Text>
+            <Text>{testResultMessage}</Text>
           </Infobox>
         )}
         <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />
