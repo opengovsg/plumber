@@ -114,7 +114,7 @@ export default function FlowStepTestController(
     isMrfStep,
     selectedActionOrTrigger,
     substeps,
-  } = useStepMetadata(allApps, step)
+  } = useStepMetadata(step)
 
   const {
     isTestSuccessful,

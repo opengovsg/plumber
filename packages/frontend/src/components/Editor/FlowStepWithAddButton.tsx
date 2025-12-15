@@ -1,10 +1,6 @@
 import { IStep } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
-
-import { EditorContext } from '@/contexts/Editor'
 import { FlowStep } from '@/exports/components'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import { ApproveReject } from '../FlowStep/components/ApproveReject'
@@ -15,50 +11,26 @@ export default function FlowStepWithAddButton({
   step,
   isLastStep,
   isNested,
-  stepsBeforeGroup,
-  groupedSteps,
-  showAddButton = true,
+  allowReorder,
+  addButtonProps: {
+    isHidden = false,
+    isDisabled = false,
+    showEmptyAction = false,
+  },
 }: {
   step: IStep
   isLastStep: boolean
   isNested?: boolean
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
-  showAddButton?: boolean
+  allowReorder: boolean
+  addButtonProps: {
+    isHidden: boolean
+    isDisabled: boolean
+    showEmptyAction: boolean
+  }
 }) {
-  const { readOnly, allApps } = useContext(EditorContext)
-
-  const { isApprovalStep } = useStepMetadata(allApps, step)
-
-  const nonIfThenActionSteps = stepsBeforeGroup.filter(
-    (step) => step.type === 'action' && step.key !== TOOLBOX_ACTIONS.IfThen,
-  )
-
-  // Disables last add step and hide in-between add step buttons
-  const hasExactlyOneEmptyActionStep =
-    nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
-
-  // Disables last add step button but show empty action instead
-  const hasNoActionSteps = nonIfThenActionSteps.length === 0
-
-  const getAddStepButtonProps = useMemo(() => {
-    const shouldShowEmptyAction = hasNoActionSteps && !groupedSteps.length
-    const shouldDisableButton =
-      (hasExactlyOneEmptyActionStep || hasNoActionSteps) && !groupedSteps.length
-
-    return (isLastStep: boolean, stepId: string) => ({
-      isHidden: readOnly,
-      showEmptyAction: shouldShowEmptyAction,
-      isDisabled: shouldDisableButton,
-      isLastStep,
-      stepId,
-    })
-  }, [
-    readOnly,
-    hasNoActionSteps,
-    groupedSteps.length,
-    hasExactlyOneEmptyActionStep,
-  ])
+  const { isApprovalStep } = useStepMetadata(step)
 
   return (
     <>
@@ -67,13 +39,16 @@ export default function FlowStepWithAddButton({
         isLastStep={isLastStep}
         isNested={isNested}
         // only allow reordering if there are more than 1 action steps
-        allowReorder={nonIfThenActionSteps.length > 1}
+        allowReorder={allowReorder}
       />
       {isApprovalStep && <ApproveReject />}
-
-      {showAddButton && (
-        <AddStepButton {...getAddStepButtonProps(isLastStep, step.id)} />
-      )}
+      <AddStepButton
+        isLastStep={isLastStep}
+        stepId={step.id}
+        isHidden={isHidden}
+        isDisabled={isDisabled}
+        showEmptyAction={showEmptyAction}
+      />
     </>
   )
 }
