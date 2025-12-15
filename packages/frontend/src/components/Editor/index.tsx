@@ -7,6 +7,7 @@ import EditorRightDrawer from '@/components/EditorRightDrawer'
 import FlowStepGroup from '@/components/FlowStepGroup'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
+import { MrfContextProvider } from '@/contexts/MrfContext'
 import { StepExecutionsToIncludeProvider } from '@/contexts/StepExecutionsToInclude'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { extractBranchesWithSteps, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
@@ -25,7 +26,7 @@ type EditorProps = {
 export default function Editor(props: EditorProps): React.ReactElement {
   const { isNested } = props
 
-  const { allApps, isDrawerOpen, isMobile, currentStepId, flow } =
+  const { allApps, isDrawerOpen, isMobile, flow, readOnly, currentStepId } =
     useContext(EditorContext)
 
   const { handleReorderUpdate } = useReorderSteps(flow.id)
@@ -42,6 +43,10 @@ export default function Editor(props: EditorProps): React.ReactElement {
       })),
     [flow, rawSteps],
   )
+
+  const currentStep = useMemo(() => {
+    return steps.find((step) => step.id === currentStepId)
+  }, [currentStepId, steps])
 
   const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
@@ -61,7 +66,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     )
   }, [appsWithActions])
 
-  const [triggerStep, stepsBeforeGroup, groupedSteps] = useMemo(() => {
+  const [triggerStep, actionStepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
       return [null, [], []]
     }
@@ -92,42 +97,6 @@ export default function Editor(props: EditorProps): React.ReactElement {
       : [triggerStep, steps.slice(1, groupStepIdx), branchesWithSteps]
   }, [groupingActions, steps])
 
-  const flowStepGroupIconUrl = useMemo(() => {
-    if (groupedSteps.length === 0) {
-      return undefined
-    }
-    return appsWithActions.find((app) => app.key === groupedSteps[0][0].appKey)
-      ?.iconUrl
-  }, [appsWithActions, groupedSteps])
-
-  //
-  // Compute which steps are eligible for variable extraction.
-  // Mainly for if-then branches where we do not want to include steps
-  // from other branches.
-  //
-  // Note:
-  // - we include some grouped steps as there is no longer a nested editor
-  // - we identify the group by checking if the current step id is in the group
-  // - for-each steps are always included
-  const groupStepsToInclude = useMemo(() => {
-    return groupedSteps.flatMap((group) =>
-      group.some((step) => step.id === currentStepId) ||
-      group.some((step) => step.key === TOOLBOX_ACTIONS.ForEach)
-        ? group
-        : [],
-    )
-  }, [currentStepId, groupedSteps])
-
-  const stepExecutionsToInclude = useMemo(
-    () =>
-      new Set([
-        ...(triggerStep?.id ? [triggerStep.id] : []),
-        ...stepsBeforeGroup.map((step) => step.id),
-        ...groupStepsToInclude.map((s) => s.id),
-      ]),
-    [triggerStep, stepsBeforeGroup, groupStepsToInclude],
-  )
-
   const handleReorderSteps = async (reorderedSteps: IStep[]) => {
     const stepPositions = reorderedSteps.map((step, index) => ({
       id: step.id,
@@ -145,6 +114,21 @@ export default function Editor(props: EditorProps): React.ReactElement {
       )
     }
   }
+
+  const nonIfThenActionSteps = actionStepsBeforeGroup.filter(
+    (step) => step.key !== TOOLBOX_ACTIONS.IfThen,
+  )
+
+  // Disables last add step and hide in-between add step buttons
+  const hasExactlyOneEmptyActionStep =
+    nonIfThenActionSteps.length === 1 && !nonIfThenActionSteps[0].appKey
+
+  // Disables last add step button but show empty action instead
+  const hasNoActionSteps = nonIfThenActionSteps.length === 0
+  const shouldShowEmptyAction = hasNoActionSteps && !groupedSteps.length
+  // for backwards compatibility where empty step is created
+  const shouldDisableAddButton =
+    (hasExactlyOneEmptyActionStep || hasNoActionSteps) && !groupedSteps.length
 
   if (!appsWithActions || !groupingActions) {
     return (
@@ -172,80 +156,94 @@ export default function Editor(props: EditorProps): React.ReactElement {
         backgroundSize: '30px 30px',
       }}
     >
-      <StepExecutionsToIncludeProvider value={stepExecutionsToInclude}>
-        <Flex
-          {...editorStyles.stepHeaderContainer}
-          flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
-          px={leftStepPadding}
-          maxWidth={`calc(100% - ${
-            isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
-          })`}
+      <MrfContextProvider steps={steps}>
+        <StepExecutionsToIncludeProvider
+          groupedSteps={groupedSteps}
+          triggerStep={triggerStep}
+          actionStepsBeforeGroup={actionStepsBeforeGroup}
         >
-          {triggerStep && (
-            <FlowStepWithAddButton
-              step={triggerStep}
-              isLastStep={
-                stepsBeforeGroup.length === 0 && groupedSteps.length === 0
-              }
-              isNested={isNested}
-              stepsBeforeGroup={stepsBeforeGroup}
-              groupedSteps={groupedSteps}
-              showAddButton={true}
-            />
-          )}
+          <Flex
+            {...editorStyles.stepHeaderContainer}
+            flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
+            px={leftStepPadding}
+            maxWidth={`calc(100% - ${
+              isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
+            })`}
+          >
+            {triggerStep && (
+              <FlowStepWithAddButton
+                step={triggerStep}
+                isLastStep={
+                  actionStepsBeforeGroup.length === 0 &&
+                  groupedSteps.length === 0
+                }
+                isNested={isNested}
+                stepsBeforeGroup={[]} // no reason to pass in for this
+                groupedSteps={groupedSteps}
+                allowReorder={false}
+                addButtonProps={{
+                  isHidden: readOnly,
+                  isDisabled: shouldDisableAddButton,
+                  showEmptyAction: shouldShowEmptyAction,
+                }}
+              />
+            )}
 
-          <SortableList
-            items={stepsBeforeGroup}
-            onChange={handleReorderSteps}
-            renderItem={(step, isOverlay) => {
-              const { id, position } = step
-              return (
-                <SortableList.Item id={id}>
-                  <Flex
-                    key={`${id}-${position}`}
-                    width={isDrawerOpen || isMobile ? '100%' : 'auto'}
-                    flexDir="column"
-                    position="relative"
-                  >
-                    <FlowStepWithAddButton
-                      step={step}
-                      isLastStep={position === steps.length}
-                      isNested={isNested}
-                      stepsBeforeGroup={stepsBeforeGroup}
-                      groupedSteps={groupedSteps}
-                      showAddButton={!isOverlay}
-                    />
-                  </Flex>
-                </SortableList.Item>
-              )
-            }}
-          />
-          {groupedSteps.length > 0 && (
-            <FlowStepGroup
-              stepsBeforeGroup={stepsBeforeGroup}
-              groupedSteps={groupedSteps}
+            <SortableList
+              items={actionStepsBeforeGroup}
+              onChange={handleReorderSteps}
+              renderItem={(step, isOverlay) => {
+                const { id, position } = step
+                return (
+                  <SortableList.Item id={id}>
+                    <Flex
+                      key={`${id}-${position}`}
+                      width={isDrawerOpen || isMobile ? '100%' : 'auto'}
+                      flexDir="column"
+                      position="relative"
+                    >
+                      <FlowStepWithAddButton
+                        step={step}
+                        isLastStep={position === steps.length}
+                        isNested={isNested}
+                        stepsBeforeGroup={actionStepsBeforeGroup}
+                        groupedSteps={groupedSteps}
+                        allowReorder={nonIfThenActionSteps.length > 1}
+                        addButtonProps={{
+                          isHidden: readOnly || !!isOverlay,
+                          isDisabled: shouldDisableAddButton,
+                          showEmptyAction: shouldShowEmptyAction,
+                        }}
+                      />
+                    </Flex>
+                  </SortableList.Item>
+                )
+              }}
             />
-          )}
-        </Flex>
-        {/** HACKFIX (kevinkim-ogp): to ensure that the transitions are smooth */}
-        <Flex
-          {...editorStyles.dummyRightContainer}
-          w={rightDrawerWidth}
-          transform={rightDrawerTransform}
-        />
-        <Flex
-          {...editorStyles.rightDrawerContainer}
-          w={rightDrawerWidth}
-          visibility={isDrawerOpen ? 'visible' : 'hidden'}
-          opacity={isDrawerOpen ? 1 : 0}
-          transform={rightDrawerTransform}
-        >
-          <EditorRightDrawer
-            flowStepGroupIconUrl={flowStepGroupIconUrl}
-            steps={steps}
+            {groupedSteps.length > 0 && (
+              <FlowStepGroup
+                stepsBeforeGroup={actionStepsBeforeGroup}
+                groupedSteps={groupedSteps}
+              />
+            )}
+          </Flex>
+          {/** HACKFIX (kevinkim-ogp): to ensure that the transitions are smooth */}
+          <Flex
+            {...editorStyles.dummyRightContainer}
+            w={rightDrawerWidth}
+            transform={rightDrawerTransform}
           />
-        </Flex>
-      </StepExecutionsToIncludeProvider>
+          <Flex
+            {...editorStyles.rightDrawerContainer}
+            w={rightDrawerWidth}
+            visibility={isDrawerOpen ? 'visible' : 'hidden'}
+            opacity={isDrawerOpen ? 1 : 0}
+            transform={rightDrawerTransform}
+          >
+            <EditorRightDrawer step={currentStep} />
+          </Flex>
+        </StepExecutionsToIncludeProvider>
+      </MrfContextProvider>
     </Flex>
   )
 }

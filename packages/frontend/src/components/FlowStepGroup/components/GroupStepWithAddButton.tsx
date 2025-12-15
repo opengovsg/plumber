@@ -26,7 +26,6 @@ export default function GroupStepWithAddButton(
     isLastStep,
     isOverlay,
     allowReorder,
-
     showEmptyAction,
     canChildStepsReorder,
   } = props
