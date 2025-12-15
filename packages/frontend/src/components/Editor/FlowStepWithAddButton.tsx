@@ -44,7 +44,7 @@ export default function FlowStepWithAddButton({
       {isApprovalStep && <ApproveReject />}
       <AddStepButton
         isLastStep={isLastStep}
-        stepId={step.id}
+        step={step}
         isHidden={isHidden}
         isDisabled={isDisabled}
         showEmptyAction={showEmptyAction}
