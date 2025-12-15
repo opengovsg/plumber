@@ -8,6 +8,7 @@ import { Button, Link } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
+import { FORMSG_APP_KEY } from '@/helpers/formsg'
 import useAuthentication from '@/hooks/useAuthentication'
 
 import { NON_EDITABLE_APP_CONNECTIONS } from '../Editor/constants'
@@ -118,7 +119,7 @@ function ChooseConnectionSubstep(
       const connectionOption = optionGenerator(connection, application.key)
 
       let connectionLink: ConnectionLink | undefined
-      if (application.key === 'formsg') {
+      if (application.key === FORMSG_APP_KEY) {
         connectionLink = {
           url: formLinkGenerator(connectionOption),
           text: '(View form)',
