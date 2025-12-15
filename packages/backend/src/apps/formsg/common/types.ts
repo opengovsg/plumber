@@ -36,13 +36,15 @@ export interface FormSchema {
  * This will be stored in the step's parameters and
  * not modifiable by the user
  */
-export interface ParsedMrfWorkflowStep {
-  defaultStepName: string
-  formWorkflowStepId: string
-  type: 'static' | 'dynamic' | 'conditional'
-  fields?: string[]
-  approvalField?: string
-}
+export const parsedMrfWorkflowStepSchema = z.object({
+  defaultStepName: z.string(),
+  formWorkflowStepId: z.string(),
+  type: z.enum(['static', 'dynamic', 'conditional']),
+  fields: z.array(z.string()),
+  approvalField: z.string().optional(),
+})
+
+export type ParsedMrfWorkflowStep = z.infer<typeof parsedMrfWorkflowStepSchema>
 
 export interface ParsedMrfWorkflow {
   trigger: Omit<ParsedMrfWorkflowStep, 'approvalField'>

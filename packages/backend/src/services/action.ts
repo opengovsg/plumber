@@ -152,6 +152,7 @@ export const processAction = async (options: ProcessActionOptions) => {
         : await actionCommand.run($, metadata)
     if (result) {
       runResult = result
+      metadata
     }
   } catch (error) {
     executionError = error
@@ -206,7 +207,7 @@ export const processAction = async (options: ProcessActionOptions) => {
       appKey: $.app.key,
       jobId,
       key: step.key,
-      metadata,
+      metadata: { ...metadata, ...$.actionOutput.data?.meta },
     })
 
   let nextStep = null
