@@ -73,7 +73,11 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
       {isHidden || (isDisabled && !isLastStep) ? (
         !isLastStep && (
           // If in between add button is disabled, we hide it
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
+          <Divider
+            h={12}
+            orientation="vertical"
+            borderColor="base.divider.strong"
+          />
         )
       ) : (
         <>
