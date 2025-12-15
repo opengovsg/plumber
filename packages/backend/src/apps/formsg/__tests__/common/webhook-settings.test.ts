@@ -3,9 +3,9 @@ import { IGlobalVariable, IHttpClient } from '@plumber/types'
 import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import HttpError from '@/errors/http'
 
-import app from '../..'
 import {
   FORMSG_WEBHOOK_REGISTRATION_MESSAGE,
   FORMSG_WEBHOOK_VERIFICATION_MESSAGE,
@@ -37,7 +37,7 @@ describe('formsg webhook registration', () => {
         createdAt: `${new Date().getTime()}`,
         updatedAt: `${new Date().getTime()}`,
       },
-      app,
+      app: apps.formsg,
     }
   })
 

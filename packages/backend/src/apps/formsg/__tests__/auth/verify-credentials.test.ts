@@ -2,7 +2,8 @@ import { IGlobalVariable, IHttpClient } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import app from '../..'
+import apps from '@/apps'
+
 import {
   parseFormIdFormat,
   parseSecretKeyFormat,
@@ -49,7 +50,7 @@ describe('verify credentials', () => {
           },
         }),
       } as unknown as IHttpClient, // deliberately cast
-      app,
+      app: apps.formsg,
     }
   })
 
