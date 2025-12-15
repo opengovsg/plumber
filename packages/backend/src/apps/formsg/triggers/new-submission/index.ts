@@ -6,11 +6,11 @@ import { z } from 'zod'
 import StepError from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
+import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
 import { createMrfSteps } from './create-mrf-steps'
 import { fetchFormSchema } from './fetch-form-schema'
-import getDataOutMetadata from './get-data-out-metadata'
 import getMockData from './get-mock-data'
 import { parseWorkflowData } from './get-workflow-data'
 
@@ -36,7 +36,6 @@ const trigger: IRawTrigger = {
     hideWebhookUrl: true,
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
-    mockDataMsg: 'The mock responses below are based on your form fields.',
   },
   arguments: [
     {
@@ -112,6 +111,7 @@ const trigger: IRawTrigger = {
     const formSchema = await fetchFormSchema($, formId)
 
     if (formSchema.form.responseMode === 'multirespondent') {
+      // Create MRF steps for multirespondent forms
       const mrfWorkflowData = await parseWorkflowData($, formSchema)
       await createMrfSteps($, mrfWorkflowData)
     }

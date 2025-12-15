@@ -1,6 +1,6 @@
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 
-import { extractLastTopLevelBracketContent } from '../triggers/new-submission/get-data-out-metadata'
+import { extractLastTopLevelBracketContent } from './get-data-out-metadata'
 
 type TableColumn = {
   id: string

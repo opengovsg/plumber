@@ -57,7 +57,7 @@ describe('createStep mutation integration tests', async () => {
     testConnection = await testUser
       .$relatedQuery('connections')
       .insertAndFetch({
-        key: 'test-connection',
+        key: 'postman',
         formattedData: { test: 'data' },
         verified: true,
         draft: false,
