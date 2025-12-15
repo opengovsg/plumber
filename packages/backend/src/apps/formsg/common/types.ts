@@ -1,37 +1,13 @@
 import { z } from 'zod'
 
-/**
- * This determines the kind of routing for this step
- * Static: routes to a fixed list of emails
- * Dynamic: routes based on a a specified email field
- * Conditional: routes based on a dropdown field which corresponds to a list of emails
- */
-const workflowTypeSpecificFields = z.discriminatedUnion('workflow_type', [
-  z.object({
-    workflow_type: z.literal('static'),
-    emails: z.array(z.string()),
-  }),
-  z.object({
-    workflow_type: z.literal('dynamic'),
-    // the email field to use for routing
-    field: z.string(),
-  }),
-  z.object({
-    workflow_type: z.literal('conditional'),
-    // the dropdown field to use for routing
-    conditional_field: z.string(),
-  }),
-])
-
 export const mrfWorkflowDataSchema = z.array(
-  z
-    .object({
-      _id: z.string(),
-      edit: z.array(z.string()),
-      step_name: z.string().optional(),
-      approval_field: z.string().optional(),
-    })
-    .and(workflowTypeSpecificFields),
+  z.object({
+    _id: z.string(),
+    edit: z.array(z.string()),
+    step_name: z.string().optional(),
+    approval_field: z.string().optional(),
+    workflow_type: z.enum(['static', 'dynamic', 'conditional']),
+  }),
 )
 
 export interface FormSchema {
@@ -54,4 +30,21 @@ export interface FormSchema {
       }>
     }
   }
+}
+
+/**
+ * This will be stored in the step's parameters and
+ * not modifiable by the user
+ */
+export interface ParsedMrfWorkflowStep {
+  defaultStepName: string
+  formWorkflowStepId: string
+  type: 'static' | 'dynamic' | 'conditional'
+  fields?: string[]
+  approvalField?: string
+}
+
+export interface ParsedMrfWorkflow {
+  trigger: Omit<ParsedMrfWorkflowStep, 'approvalField'>
+  actions: ParsedMrfWorkflowStep[]
 }
