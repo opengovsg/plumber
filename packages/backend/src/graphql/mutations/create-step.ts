@@ -1,5 +1,8 @@
 import { raw } from 'objection'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
+import logger from '@/helpers/logger'
+import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -13,6 +16,28 @@ const createStep: MutationResolvers['createStep'] = async (
 ) => {
   const { input } = params
 
+  /**
+   * appKey and key are optional, we allow creating of empty step for if-then branches
+   */
+  if (input.appKey && input.key) {
+    const triggerOrAction = await App.findTriggerOrActionByKey(
+      input.appKey,
+      input.key,
+    )
+
+    if (!triggerOrAction) {
+      logger.error({
+        event: 'createStep: no such trigger or action',
+        appKey: input.appKey,
+        key: input.key,
+      })
+      throw new BadUserInputError('No such trigger or action')
+    }
+
+    if ('hiddenFromUser' in triggerOrAction && triggerOrAction.hiddenFromUser) {
+      throw new BadUserInputError('Action can only be created by system')
+    }
+  }
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
