@@ -8,6 +8,7 @@ import ExecutionStep from '@/models/execution-step'
 
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
+import { fetchFormSchema } from './fetch-form-schema'
 import getDataOutMetadata from './get-data-out-metadata'
 import getMockData from './get-mock-data'
 
@@ -106,10 +107,12 @@ const trigger: IRawTrigger = {
     const shouldUseMockData =
       hasNoPastSubmission || testRunMetadataRes.data.preferMock
 
+    const formSchema = await fetchFormSchema($, formId)
+
     // if test with mock data is selected OR no past submission exists
     // we use mock data
     const testData = shouldUseMockData
-      ? await getMockData($)
+      ? await getMockData($, formSchema)
       : lastSubmittedTestExecutionStep?.dataOut
 
     // If for some reason the submission time is not available, use the createdAt time
