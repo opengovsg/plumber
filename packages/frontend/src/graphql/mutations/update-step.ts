@@ -20,6 +20,10 @@ export const UPDATE_STEP = graphql(`
         templateConfig {
           appEventKey
         }
+        approval {
+          branch
+          stepId
+        }
       }
       flow {
         updatedAt

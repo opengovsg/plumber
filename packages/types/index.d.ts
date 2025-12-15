@@ -168,8 +168,14 @@ export interface IExecution {
 
 export type IStepApprovalBranch = 'approve' | 'reject'
 
+export interface IStepApprovalConfig {
+  branch: 'reject'
+  stepId: string
+}
+
 export interface IStepConfig {
   stepName?: string
+  approval?: IStepApprovalConfig
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
 }
