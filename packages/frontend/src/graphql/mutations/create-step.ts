@@ -16,6 +16,13 @@ export const CREATE_STEP = gql`
       }
       config {
         stepName
+        templateConfig {
+          appEventKey
+        }
+        approval {
+          branch
+          stepId
+        }
       }
       flow {
         updatedAt
