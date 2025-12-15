@@ -125,11 +125,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const handleSaveAndTest = useCallback(
     async (testRunMetadata?: Record<string, unknown>) => {
       try {
-        if (
-          !selectedActionOrTrigger ||
-          !('hiddenFromUser' in selectedActionOrTrigger) ||
-          selectedActionOrTrigger.hiddenFromUser !== true
-        ) {
+        if (!selectedActionOrTrigger?.hiddenFromUser) {
           await saveStep()
         }
         await executeTestStep({ testRunMetadata })
