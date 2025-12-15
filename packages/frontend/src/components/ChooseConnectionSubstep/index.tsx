@@ -39,7 +39,9 @@ interface ConnectionStatus {
 }
 
 const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
-  const { description: formId, env } = connectionOption
+  const { description, env } = connectionOption
+  // get the last 24 characters of the description which is the form id
+  const formId = description?.slice(-24)
   return `https://${env === 'prod' ? '' : `${env}.`}form.gov.sg/${formId}`
 }
 
