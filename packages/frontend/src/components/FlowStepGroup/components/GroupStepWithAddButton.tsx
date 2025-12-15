@@ -46,7 +46,7 @@ export default function GroupStepWithAddButton(
           isDisabled={readOnly || !canAddStep}
           isDrawerOpen={isDrawerOpen}
           isLastStep={isLastStep}
-          prevStepId={step.id}
+          prevStep={step}
           showEmptyAction={showEmptyAction}
           step={step}
           allowReorder={allowReorder}
