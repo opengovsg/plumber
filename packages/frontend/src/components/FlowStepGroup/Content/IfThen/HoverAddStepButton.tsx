@@ -18,7 +18,7 @@ interface HoverAddStepButtonProps {
   isDisabled: boolean
   isDrawerOpen: boolean
   isLastStep: boolean
-  prevStepId: string
+  prevStep: IStep
   showEmptyAction?: boolean
   step: IStep
   allowReorder?: boolean
@@ -31,7 +31,7 @@ export function HoverAddStepButton(
   const {
     isDisabled,
     isLastStep,
-    prevStepId,
+    prevStep,
     showEmptyAction,
     step,
     allowReorder,
@@ -108,7 +108,7 @@ export function HoverAddStepButton(
           onClose={onClose}
           isTrigger={false} // Can only add an action all the time
           isLastStep={isLastStep}
-          prevStepId={prevStepId}
+          prevStep={prevStep}
         />
       )}
 

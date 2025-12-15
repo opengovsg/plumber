@@ -1,28 +1,25 @@
-import { IStep } from '@plumber/types'
+import { IStep, IStepApprovalBranch } from '@plumber/types'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useState } from 'react'
+import get from 'lodash/get'
 
 import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
 
-type ApprovalBranch = 'approve' | 'reject'
-
 interface MrfContextReturnValue {
   mrfSteps: IStep[]
+  mrfApprovalSteps: IStep[]
   approvalBranches: {
-    [stepId: string]: ApprovalBranch
+    [stepId: string]: IStepApprovalBranch
   }
-  setApprovalBranch: (stepId: string, branch: ApprovalBranch) => void
+  setApprovalBranch: (stepId: string, branch: IStepApprovalBranch) => void
 }
 
-const MrfContext = createContext<MrfContextReturnValue | undefined>(undefined)
-
-export const useMrfContext = () => {
-  const context = useContext(MrfContext)
-  if (!context) {
-    throw new Error('useMrfContext must be used within a MrfContextProvider')
-  }
-  return context
-}
+export const MrfContext = createContext<MrfContextReturnValue>({
+  mrfSteps: [],
+  mrfApprovalSteps: [],
+  approvalBranches: {},
+  setApprovalBranch: () => null,
+})
 
 interface MrfContextProviderProps {
   children: React.ReactNode
@@ -37,16 +34,20 @@ export const MrfContextProvider = ({
     (step) => step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY,
   )
 
+  const mrfApprovalSteps = mrfSteps.filter(
+    (step) => !!get(step.parameters, 'mrf.approvalField', false),
+  )
+
   const [approvalBranches, setApprovalBranches] = useState<
-    Record<string, ApprovalBranch>
+    Record<string, IStepApprovalBranch>
   >({
-    ...mrfSteps.reduce((acc, step) => {
+    ...mrfApprovalSteps.reduce((acc, step) => {
       acc[step.id] = 'approve'
       return acc
-    }, {} as Record<string, ApprovalBranch>),
+    }, {} as Record<string, IStepApprovalBranch>),
   })
 
-  const setApprovalBranch = (stepId: string, branch: ApprovalBranch) => {
+  const setApprovalBranch = (stepId: string, branch: IStepApprovalBranch) => {
     setApprovalBranches((prev) => ({
       ...prev,
       [stepId]: branch,
@@ -57,6 +58,7 @@ export const MrfContextProvider = ({
     <MrfContext.Provider
       value={{
         mrfSteps,
+        mrfApprovalSteps,
         approvalBranches,
         setApprovalBranch,
       }}

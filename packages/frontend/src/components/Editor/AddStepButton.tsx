@@ -1,3 +1,5 @@
+import { IStep } from '@plumber/types'
+
 import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
@@ -14,11 +16,11 @@ interface AddStepButtonProps {
   isDisabled: boolean
   isLastStep: boolean
   showEmptyAction: boolean
-  stepId: string
+  step: IStep
 }
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { isHidden, isLastStep, stepId, isDisabled, showEmptyAction } = props
+  const { isHidden, isLastStep, step, isDisabled, showEmptyAction } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const {
@@ -107,7 +109,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               onClose={onClose}
               isTrigger={false} // Can only add an action all the time
               isLastStep={isLastStep}
-              prevStepId={stepId}
+              prevStep={step}
             />
           )}
         </>
