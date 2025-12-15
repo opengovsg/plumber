@@ -8,9 +8,11 @@ import ExecutionStep from '@/models/execution-step'
 
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
+import { createMrfSteps } from './create-mrf-steps'
 import { fetchFormSchema } from './fetch-form-schema'
 import getDataOutMetadata from './get-data-out-metadata'
 import getMockData from './get-mock-data'
+import { parseWorkflowData } from './get-workflow-data'
 
 const formsgTestRunMetadataSchema = z
   .object({
@@ -108,6 +110,11 @@ const trigger: IRawTrigger = {
       hasNoPastSubmission || testRunMetadataRes.data.preferMock
 
     const formSchema = await fetchFormSchema($, formId)
+
+    if (formSchema.form.responseMode === 'multirespondent') {
+      const mrfWorkflowData = await parseWorkflowData($, formSchema)
+      await createMrfSteps($, mrfWorkflowData)
+    }
 
     // if test with mock data is selected OR no past submission exists
     // we use mock data
