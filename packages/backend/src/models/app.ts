@@ -41,7 +41,7 @@ class App {
   static async findTriggerOrActionByKey(
     appKey: string,
     key: string,
-  ): Promise<ITrigger | IAction> {
+  ): Promise<ITrigger | IAction | null> {
     try {
       const app = await this.findOneByKey(appKey)
       return (

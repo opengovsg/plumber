@@ -4,7 +4,6 @@ import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { FlowStep } from '@/exports/components'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { HoverAddStepButton } from '../Content/IfThen/HoverAddStepButton'
 
@@ -27,20 +26,16 @@ export default function GroupStepWithAddButton(
     isLastStep,
     isOverlay,
     allowReorder,
+
     showEmptyAction,
     canChildStepsReorder,
   } = props
   const { isDrawerOpen, readOnly } = useContext(EditorContext)
 
-  // cannot delete the condition step
-  const isDeletable =
-    step.key !== TOOLBOX_ACTIONS.IfThen && step.key !== TOOLBOX_ACTIONS.ForEach
-
   return (
     <>
       <FlowStep
         step={step}
-        isDeletable={isDeletable}
         // branch steps are always nested
         isNested={true}
         isLastStep={isLastStep}
