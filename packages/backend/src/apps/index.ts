@@ -9,6 +9,7 @@ import formsgApp from './formsg'
 import gathersgApp from './gathersg'
 import lettersgApp from './lettersg'
 import m365ExcelApp from './m365-excel'
+import pairApp from './pair'
 import paysgApp from './paysg'
 import postmanApp from './postman'
 import postmanSmsApp from './postman-sms'
@@ -29,6 +30,7 @@ const apps: Record<string, IApp> = {
   [formsgApp.key]: formsgApp,
   [lettersgApp.key]: lettersgApp,
   [m365ExcelApp.key]: m365ExcelApp,
+  [pairApp.key]: pairApp,
   [paysgApp.key]: paysgApp,
   [postmanApp.key]: postmanApp,
   [postmanSmsApp.key]: postmanSmsApp,
