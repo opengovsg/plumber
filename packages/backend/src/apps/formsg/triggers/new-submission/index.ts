@@ -4,6 +4,7 @@ import { RelatedQueryBuilder } from 'objection'
 import { z } from 'zod'
 
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
@@ -114,7 +115,17 @@ const trigger: IRawTrigger = {
     if (formSchema.form.responseMode === 'multirespondent') {
       // Create MRF steps for multirespondent forms
       const mrfWorkflowData = await parseWorkflowData($, formSchema)
-      await createMrfSteps($, mrfWorkflowData)
+      try {
+        await createMrfSteps($, mrfWorkflowData)
+      } catch (error) {
+        logger.error('Error syncing MRF steps', error)
+        throw new StepError(
+          'Error syncing MRF steps',
+          'This should not happen, please contact support.',
+          $.step.position,
+          $.app.name,
+        )
+      }
     } else {
       // remove mrf object from parameters and remove mrf steps (if any)
       try {

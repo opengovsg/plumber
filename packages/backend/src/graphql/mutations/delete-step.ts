@@ -65,14 +65,13 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
         allSteps,
         new Set([deletedStepId]),
       )
-
       // invalidate steps that reference the deleted steps
       await Step.query(trx).findByIds(stepsToInvalidate).patch({
         status: 'incomplete',
       })
 
       // we delete and add a new trigger upon deletion to preserve past execution steps' context
-      await steps[0].$query().delete()
+      await steps[0].$query(trx).delete()
       await flow.$relatedQuery('steps', trx).insert({
         key: null,
         appKey: null,
@@ -99,6 +98,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
         .$relatedQuery('steps', trx)
         .whereNotIn('id', stepIds)
         .orderBy('position', 'asc')
+
       const stepsToInvalidate = getStepsToInvalidate(allSteps, new Set(stepIds))
 
       // invalidate steps that reference the deleted steps

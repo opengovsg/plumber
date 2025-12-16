@@ -26,15 +26,6 @@ export async function removeMrfSteps(flowId: string, trx?: Transaction) {
       .where('type', 'action')
       .andWhereRaw(`steps.config->'approval'->>'branch' = ?`, ['reject'])
       .delete()
-      .debug()
-
-    await Step.query(trx)
-      .where('flow_id', flowId)
-      .where('type', 'action')
-      .patch({
-        // remove approval config from all action steps
-        config: Step.knex().raw(`(steps.config::jsonb - 'approval')::jsonb`),
-      })
 
     await Step.resetStepOrdering(flowId, trx)
   }
