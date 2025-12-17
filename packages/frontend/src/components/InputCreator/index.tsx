@@ -1,6 +1,7 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
 import { useContext } from 'react'
+import { useFormContext } from 'react-hook-form'
 
 import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
@@ -10,6 +11,7 @@ import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
 import TextField from '@/components/TextField'
 import { EditorContext } from '@/contexts/Editor'
+import { getDefaultValue } from '@/helpers/editor'
 import { useIsFieldHidden } from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
 
@@ -35,6 +37,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
 
 export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const { schema, namePrefix, stepId, parentType, autoFocus } = props
+  const formContext = useFormContext()
 
   const {
     key: name,
@@ -146,6 +149,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         isRich
         noVariablesMessage={noVariablesMessage}
         customRteMenuOptions={schema?.customRteMenuOptions}
+        defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
       />
     )
   }
@@ -222,6 +226,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         type={type}
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
+        defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
       />
     )
   }
