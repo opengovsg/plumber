@@ -1,3 +1,4 @@
+import processImage from './process-image'
 import sendPrompt from './send-prompt'
 
-export default [sendPrompt]
+export default [sendPrompt, processImage]
