@@ -16,12 +16,13 @@ import { StepWithVariables, Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { boxStyles, divWrapperStyles, noVariablesTextStyles } from '../style'
-import { ACCEPTED_FILE_TYPES, AttachmentConfigInput } from '../utils'
+import { AttachmentConfigInput, DEFAULT_FILE_TYPES } from '../utils'
 
 import Checkbox, { type CheckboxVariable } from './Checkbox'
 import TagList from './TagList'
 
 interface SuggestionsProps {
+  acceptedFileTypes: string[]
   allOptions: (CheckboxVariable | AttachmentConfigInput)[]
   currentTab: number
   isSuggestionsOpen: boolean
@@ -39,6 +40,7 @@ interface SuggestionsProps {
 
 export default function Suggestions(props: SuggestionsProps) {
   const {
+    acceptedFileTypes,
     allOptions,
     currentTab,
     isSuggestionsOpen,
@@ -55,6 +57,9 @@ export default function Suggestions(props: SuggestionsProps) {
   } = props
 
   const { readOnly } = useContext(EditorContext)
+  const fileTypes = useMemo(() => {
+    return acceptedFileTypes?.join(',') ?? DEFAULT_FILE_TYPES.join(',')
+  }, [acceptedFileTypes])
 
   const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
@@ -74,7 +79,7 @@ export default function Suggestions(props: SuggestionsProps) {
               >
                 {addNew && (
                   <FileUpload
-                    accept={ACCEPTED_FILE_TYPES.join(',')}
+                    accept={fileTypes}
                     buttonType="textButton"
                     disabled={isUploading || readOnly}
                     loading={isUploading}

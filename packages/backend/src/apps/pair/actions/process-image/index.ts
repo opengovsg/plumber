@@ -31,11 +31,18 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Image',
+      description: 'Supported file types: JPEG, JPG, PDF, PNG, WebP',
       key: 'image',
       type: 'attachment' as const,
       required: true,
       variableTypes: ['file'],
-      // TODO(kevinkim-ogp): restrict the supported file types
+      acceptedFileTypes: [
+        'application/pdf', // .pdf
+        'image/jpeg', // .jpg, .jpeg
+        'image/png', // .png
+        'image/webp', // .webp
+      ],
+      maxNumFiles: 1,
     },
     {
       label: 'Response field(s)',

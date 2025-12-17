@@ -440,6 +440,16 @@ export interface IFieldAttachment extends IBaseField {
   type: 'attachment'
   value?: string
   variableTypes?: TDataOutMetadatumType[]
+  /**
+   * acceptedFileTypes
+   * the allowed MIME type, e.g., application/pdf, image/jpeg, image/png, image/webp
+   */
+  acceptedFileTypes?: string[]
+  /**
+   * maxNumFiles
+   * the maximum number of files allowed
+   */
+  maxNumFiles?: number
 }
 
 export interface IFieldMultiline extends IBaseField {

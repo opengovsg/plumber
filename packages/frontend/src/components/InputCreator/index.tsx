@@ -197,6 +197,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         label={label}
         description={description}
         variableTypes={schema.variableTypes}
+        required={required}
+        acceptedFileTypes={schema.acceptedFileTypes}
+        maxNumFiles={schema.maxNumFiles}
       />
     )
   }

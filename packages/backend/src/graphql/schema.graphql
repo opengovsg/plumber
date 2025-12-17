@@ -257,6 +257,10 @@ type ActionSubstepArgument {
 
   # Only for rich text
   customRteMenuOptions: [String]
+
+  # Only for attachment
+  acceptedFileTypes: [String]
+  maxNumFiles: Int
 }
 
 type DropdownClickableLink {

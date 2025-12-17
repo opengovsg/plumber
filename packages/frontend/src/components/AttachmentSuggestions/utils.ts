@@ -6,11 +6,11 @@ import { type CheckboxVariable } from './components/Checkbox'
 
 const KB = 1024
 const MB = KB * KB
-export const MAX_NUM_FILES = 10
+export const DEFAULT_MAX_NUM_FILES = 10
 const MAX_FILE_SIZE = 10 * MB // 10MB
 const MAX_TOTAL_FILE_SIZE = 10 * MB // 10MB
 
-export const ACCEPTED_FILE_TYPES = [
+export const DEFAULT_FILE_TYPES = [
   'text/plain', // .txt, .asc
   'video/x-msvideo', // .avi
   'image/bmp', // .bmp
@@ -168,6 +168,7 @@ export function validateFiles(
   file: File | CheckboxVariable,
   options: CheckboxVariable[],
   currentSelection: string[],
+  maxNumFiles: number,
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
   const selectedOptions = options.filter((o) =>
@@ -180,10 +181,13 @@ export function validateFiles(
   const totalSize = currentTotalSize + fileSize
   const currentFileCount = selectedOptions.length + 1
 
-  if (currentFileCount > MAX_NUM_FILES) {
+  const maxAllowedFiles = maxNumFiles ?? DEFAULT_MAX_NUM_FILES
+  if (currentFileCount > maxAllowedFiles) {
     return {
       isValid: false,
-      error: 'Total number of files cannot exceed 10',
+      error: `Maximum of ${maxAllowedFiles} file${
+        maxAllowedFiles === 1 ? '' : 's'
+      } allowed`,
     }
   }
   if (fileSize > MAX_FILE_SIZE) {

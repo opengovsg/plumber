@@ -17,7 +17,7 @@ import MenuAlertDialog from '../MenuAlertDialog'
 import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'
-import { validateFiles } from './utils'
+import { DEFAULT_MAX_NUM_FILES, validateFiles } from './utils'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -26,6 +26,8 @@ interface AttachmentSuggestionsProps {
   description?: string
   required?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  acceptedFileTypes?: string[]
+  maxNumFiles?: number
 }
 
 function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
@@ -36,6 +38,8 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     label,
     variableTypes = null,
     defaultValue = [],
+    acceptedFileTypes = [],
+    maxNumFiles = DEFAULT_MAX_NUM_FILES,
   } = props
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -99,6 +103,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
           variable,
           options,
           getValues(name),
+          maxNumFiles,
         )
         if (!isValid) {
           setError(name, { type: 'invalidFile', message: error })
@@ -107,7 +112,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         }
       }
     },
-    [getValues, name, setError, options],
+    [getValues, name, setError, options, maxNumFiles],
   )
 
   useOutsideClick({
@@ -144,14 +149,19 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const processFile = useCallback(
     async (file: File) => {
-      const { isValid, error } = validateFiles(file, options, getValues(name))
+      const { isValid, error } = validateFiles(
+        file,
+        options,
+        getValues(name),
+        maxNumFiles,
+      )
       if (!isValid) {
         setError(name, { type: 'invalidFile', message: error })
       } else {
         await uploadToS3(file, flowId)
       }
     },
-    [flowId, getValues, name, options, setError, uploadToS3],
+    [flowId, getValues, name, options, setError, uploadToS3, maxNumFiles],
   )
 
   return (
@@ -195,6 +205,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
               openSuggestions={openSuggestions}
               processFile={processFile}
               setCurrentTab={setCurrentTab}
+              acceptedFileTypes={acceptedFileTypes}
             />
             <MenuAlertDialog
               cancelRef={cancelRef}

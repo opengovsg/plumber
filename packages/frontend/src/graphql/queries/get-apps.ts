@@ -198,6 +198,8 @@ export const GET_APPS = gql`
             tooltipText
             value
             noVariablesMessage
+            acceptedFileTypes
+            maxNumFiles
             options {
               label
               description
