@@ -27,7 +27,7 @@ async function generateObject(
     return object
   } catch (error) {
     logger.error('Failed to generate object', {
-      error: error,
+      error,
       ...metadata,
     })
     throw error

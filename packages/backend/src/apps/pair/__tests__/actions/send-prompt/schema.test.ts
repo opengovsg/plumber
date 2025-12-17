@@ -228,6 +228,23 @@ describe('call-pair schema', () => {
         })
         assert(result.success === false)
       })
+
+      it('should reject empty response fields', () => {
+        const result = schema.safeParse({
+          promptType: 'analyse',
+          prompt: 'test prompt',
+          responseFields: [],
+        })
+        assert(result.success === false)
+      })
+
+      it('should reject non-existent response fields', () => {
+        const result = schema.safeParse({
+          promptType: 'analyse',
+          prompt: 'test prompt',
+        })
+        assert(result.success === false)
+      })
     })
 
     describe('fieldCategories validation', () => {
