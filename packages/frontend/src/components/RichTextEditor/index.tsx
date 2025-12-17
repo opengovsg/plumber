@@ -229,7 +229,10 @@ const Editor = ({
     // this is to sync the content of the editor with the defaultValue
     // only do this if the defaultValue has actually changed
     // for simplicity, we don't check if the initialValue has changed
-    // and just override the content of the editor with the defaultValue
+    // and just overwrite the content of the editor with the defaultValue
+    // this is a trade-off that we make as defaultValues are updated at once
+    // in multiple fields, and a warning may be required to warn the user
+    // that changes have been made and will be overwritten.
     const hasDefaultValueChanged =
       defaultValue !== previousDefaultValueRef.current
 
@@ -243,7 +246,7 @@ const Editor = ({
 
       previousDefaultValueRef.current = defaultValue
     }
-  }, [defaultValue, editor, isRich, varInfo, onChange, initialValue])
+  }, [defaultValue, editor, isRich, onChange])
 
   const handleVariableClick = useCallback(
     (variable: Variable) => {
