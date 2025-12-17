@@ -126,7 +126,6 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                         isEditorReadOnly={isEditorReadOnly}
                         remove={() => remove(index)}
                         index={index}
-                        defaultValue={defaultValue}
                         {...forwardedInputCreatorProps}
                       />
                       {/*
