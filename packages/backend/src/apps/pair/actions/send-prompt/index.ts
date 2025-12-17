@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import TurndownService from 'turndown'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
@@ -9,6 +10,8 @@ import { generateSchemaFromFields } from '../../common/generate-schema'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { schema } from './schema'
+
+const turndownService = new TurndownService()
 
 const action: IRawAction = {
   name: 'Ask Pair',
@@ -123,9 +126,19 @@ const action: IRawAction = {
 
     const { prompt, responseFields } = validatedParameters.data
 
+    /**
+     * As the prompt is entered using the Tiptap editor, it is stored as HTML.
+     * We convert it to markdown as LLMs interpret markdown much better than HTML.
+     *
+     * NOTE: we also don't convert to markdown directly on the Tiptap editor as
+     * it involves more work to convert the markdown back to HTML for displaying
+     * in the editor.
+     */
+    const convertedPrompt = turndownService.turndown(prompt)
+
     const dynamicSchema = generateSchemaFromFields(responseFields)
 
-    const response = await generateObject(prompt, dynamicSchema, {
+    const response = await generateObject(convertedPrompt, dynamicSchema, {
       userId: $.user.email,
       flowId: $.flow.id,
       stepId: $.step.id,
