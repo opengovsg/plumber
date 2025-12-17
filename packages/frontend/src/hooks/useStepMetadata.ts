@@ -27,7 +27,7 @@ interface UseStepMetadataResult {
 }
 
 function isAiStep(step: IStep): boolean {
-  return Object.values(AI_ACTIONS).includes(step?.appKey as AI_ACTIONS) ?? false
+  return Object.values(AI_ACTIONS).includes(step?.appKey as AI_ACTIONS)
 }
 
 export function useStepMetadata(
