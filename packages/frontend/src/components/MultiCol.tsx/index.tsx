@@ -1,4 +1,4 @@
-import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
+import type { IFieldMultiRowMultiColSubField, IJSONValue } from '@plumber/types'
 
 import React, { useContext } from 'react'
 import { BiTrash } from 'react-icons/bi'
@@ -15,6 +15,7 @@ type MultiColProps = {
   isEditorReadOnly?: boolean
   remove?: (index?: number | number[]) => void
   index?: number
+  defaultValue?: string | IJSONValue
 }
 
 export default function MultiCol(props: MultiColProps) {

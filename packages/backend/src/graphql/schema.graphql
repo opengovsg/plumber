@@ -238,6 +238,12 @@ type ActionSubstepArgument {
   addRowButtonText: String
   tooltipText: String
   noVariablesMessage: String
+  """
+  Can be either:
+  - A static string value (e.g., "Default text")
+  - A dynamic object with fieldKey and options (e.g., { fieldKey: "promptType", options: { analyse: "Analyse this" } })
+  """
+  defaultValue: JSONObject
 
   # Only for string and multiline
   singleVariableSelection: Boolean

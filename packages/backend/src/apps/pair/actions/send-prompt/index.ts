@@ -5,6 +5,10 @@ import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 
+import {
+  DEFAULT_PROMPT_VALUES,
+  DEFAULT_RESPONSE_FIELDS_VALUES,
+} from '../../common/constants'
 import generateObject from '../../common/generate-object'
 import { generateSchemaFromFields } from '../../common/generate-schema'
 
@@ -19,8 +23,6 @@ const action: IRawAction = {
   description:
     'Enter a custom prompt to summarise, categorise or analyse data with Pair',
   arguments: [
-    // TODO (kevinkim-ogp): each option should link to a different
-    // default value for the prompt. update when the default value is provided
     {
       label: 'What would you like to do?',
       key: 'promptType',
@@ -60,11 +62,13 @@ const action: IRawAction = {
         'Undo',
         'Redo',
       ],
-      // TODO (kevinkim-ogp): add the default value for the prompt
+      defaultValue: {
+        fieldKey: 'promptType',
+        options: DEFAULT_PROMPT_VALUES,
+      },
     },
     {
       label: 'How do you want the response?',
-
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
@@ -105,7 +109,10 @@ const action: IRawAction = {
           customStyle: { flex: 3 },
         },
       ],
-      // TODO (kevinkim-ogp): add the default value for the response fields
+      defaultValue: {
+        fieldKey: 'promptType',
+        options: DEFAULT_RESPONSE_FIELDS_VALUES,
+      },
     },
   ],
 

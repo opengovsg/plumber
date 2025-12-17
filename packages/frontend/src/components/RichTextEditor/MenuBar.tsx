@@ -361,6 +361,7 @@ export const MenuBar = ({
           return (
             <button
               key={`${label}${index}`}
+              type="button"
               title={label}
               disabled={!editable}
               style={{
