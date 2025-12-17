@@ -68,6 +68,7 @@ type AppConfig = {
     foundry: {
       apiKey: string
       model: string
+      imageModel: string
     }
     rome: {
       publicKey: string
@@ -160,6 +161,7 @@ const appConfig: AppConfig = {
     foundry: {
       apiKey: process.env.PAIR_FOUNDRY_API_KEY,
       model: process.env.PAIR_FOUNDRY_MODEL,
+      imageModel: process.env.PAIR_FOUNDRY_IMAGE_MODEL,
     },
     rome: {
       publicKey: process.env.PAIR_ROME_PUBLIC_KEY,
@@ -229,7 +231,11 @@ if (!appConfig.gathersg.publicKey) {
   throw new Error('GATHERSG_PUBLIC_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.pair.foundry.apiKey || !appConfig.pair.foundry.model) {
+if (
+  !appConfig.pair.foundry.apiKey ||
+  !appConfig.pair.foundry.model ||
+  !appConfig.pair.foundry.imageModel
+) {
   throw new Error('Pair Foundry environment variables need to be set!')
 }
 
