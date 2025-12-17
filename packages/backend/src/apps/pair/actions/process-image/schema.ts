@@ -1,7 +1,9 @@
 import z from 'zod/v3'
 
 export const schema = z.object({
-  image: z.array(z.string()),
+  image: z.array(z.string()).refine((value) => value.length === 1, {
+    message: 'Only one image allowed',
+  }),
   responseFields: z
     .array(
       z.object({
