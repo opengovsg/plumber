@@ -14,7 +14,7 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
   params,
   context,
 ) => {
-  const { id } = params
+  const { id, flowUpdatedAt } = params
   if (!validateManualUploadId(id)) {
     throw new Error('Invalid id')
   }
@@ -32,6 +32,8 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
       'You do not have sufficient permissions for this pipe',
     )
   }
+
+  flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
   // only postman has attachments
   // Get all postman steps and update attachments in a single transaction

@@ -60,7 +60,8 @@ export const useS3Operations = (
   const deleteUploadedFile = async (file: any) => {
     try {
       const { name: filename, value, displayedValue } = file
-      const flowId = getValues('flowId')
+      const flow = getValues('flow')
+      const { id: flowId, updatedAt: flowUpdatedAt } = flow
       setIsDeleting(true)
 
       // NOTE: this is to ensure all changes are saved before deleting a file
@@ -71,7 +72,9 @@ export const useS3Operations = (
       const mutationInput = createUpdateStep(getValues(), currentAttachments)
       await updateStep({ variables: { input: mutationInput } })
 
-      await deleteFile({ variables: { id: value } })
+      await deleteFile({
+        variables: { id: value, flowUpdatedAt },
+      })
 
       await updateFlowConfig(
         getConfigInput(flowId, [
