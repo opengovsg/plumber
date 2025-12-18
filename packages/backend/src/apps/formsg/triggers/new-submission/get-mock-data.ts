@@ -177,6 +177,13 @@ async function getMockData($: IGlobalVariable) {
           data.responses[formFields[i]._id].answer = ''
         }
 
+        // mock date to be current date in dd MMM yyyy format + 1 day for delay until step
+        if (fieldType === 'date') {
+          data.responses[formFields[i]._id].answer = DateTime.now()
+            .plus({ days: 1 })
+            .toPlumberFormat('dd MMM yyyy')
+        }
+
         data.responses[formFields[i]._id].order = i + 1
         data.responses[formFields[i]._id].id = undefined
       }
