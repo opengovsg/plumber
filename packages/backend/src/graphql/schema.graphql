@@ -570,11 +570,11 @@ input DuplicateFlowInput {
 }
 
 input GeneratePresignedPostInput {
-  flowId: String!
   filename: String!
   fileType: String!
   size: Int!
   updatedAt: String!
+  flow: StepFlowInput!
 }
 
 input CreateStepInput {

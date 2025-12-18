@@ -8,7 +8,12 @@ import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 import { generateMockContext } from './tiles/table.mock'
-import { generateMockFlow, generateMockStep } from './flow.mock'
+import {
+  generateMockCollaborator,
+  generateMockFlow,
+  generateMockStep,
+  generateMockUser,
+} from './flow.mock'
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 const mockBucket = 'test-bucket'
@@ -79,6 +84,22 @@ describe('deleteFromS3', () => {
     ).resolves.toBe(true)
   })
 
+  it('should successfully delete an object when user is an editor of the flow', async () => {
+    const mockFlow = await generateMockFlow(context, mockFlowId)
+    const editor = await generateMockUser('editor')
+    await generateMockCollaborator(
+      mockFlow.id,
+      editor.id,
+      context.currentUser.id,
+      'editor',
+    )
+    context.currentUser = editor
+
+    await expect(
+      deleteUploadedFile(null, { id: mockS3Id }, context),
+    ).resolves.toBe(true)
+  })
+
   it('should delete object from all other steps within a flow', async () => {
     const fileToDelete = createMockS3Id('test_1')
     await generateMockFlow(context, mockFlowId)
@@ -105,6 +126,22 @@ describe('deleteFromS3', () => {
       .mockRejectedValue(
         new ForbiddenError('You do not have access to this flow'),
       )
+
+    await expect(
+      deleteUploadedFile(null, { id: mockS3Id }, context),
+    ).rejects.toThrow(ForbiddenError)
+  })
+
+  it('should throw an error if the user is not an editor or owner of the flow', async () => {
+    const mockFlow = await generateMockFlow(context, mockFlowId)
+    const viewer = await generateMockUser('viewer')
+    await generateMockCollaborator(
+      mockFlow.id,
+      viewer.id,
+      context.currentUser.id,
+      'viewer',
+    )
+    context.currentUser = viewer
 
     await expect(
       deleteUploadedFile(null, { id: mockS3Id }, context),
