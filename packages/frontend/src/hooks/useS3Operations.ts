@@ -30,6 +30,7 @@ export const useS3Operations = (
     variables?: Partial<OperationVariables> | undefined,
   ) => Promise<ApolloQueryResult<any>>,
   uploadedFiles: CheckboxVariable[],
+  maxNumFiles: number,
   options: UseS3UploadOptions = {},
 ) => {
   const toast = useToast()
@@ -153,10 +154,26 @@ export const useS3Operations = (
         )
 
         const currentAttachments = getValues(name) || []
-        const mutationInput = createUpdateStep(name, getValues(), [
-          ...currentAttachments,
-          s3Id,
-        ])
+        /**
+         * we update the attachments in the step parameters based on the maxNumFiles
+         * if maxNumFiles is 1, we replace the existing attachments with the new one
+         * if the number of attachments is equal to maxNumFiles, we keep the existing selection
+         * else, we add the new attachment to the existing attachments
+         */
+        const updatedAttachments = []
+        if (maxNumFiles === 1) {
+          updatedAttachments.push(s3Id)
+        } else if (currentAttachments.length >= maxNumFiles) {
+          updatedAttachments.push(...currentAttachments)
+        } else {
+          updatedAttachments.push(...currentAttachments, s3Id)
+        }
+
+        const mutationInput = createUpdateStep(
+          name,
+          getValues(),
+          updatedAttachments,
+        )
 
         await updateStep({
           variables: { input: mutationInput },

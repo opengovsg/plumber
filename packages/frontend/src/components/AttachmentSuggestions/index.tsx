@@ -17,7 +17,7 @@ import MenuAlertDialog from '../MenuAlertDialog'
 import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'
-import { DEFAULT_MAX_NUM_FILES, validateFiles } from './utils'
+import { DEFAULT_MAX_NUM_FILES, validateFiles, validateFileSize } from './utils'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -125,7 +125,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   })
 
   const { deleteUploadedFile, isDeleting, uploadToS3, isUploading } =
-    useS3Operations(name, getValues, refetchFlow, uploadedItems, {
+    useS3Operations(name, getValues, refetchFlow, uploadedItems, maxNumFiles, {
       onError: (filename: string, type: string, errorMessage: string) => {
         setError(name, {
           type: type,
@@ -149,19 +149,19 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const processFile = useCallback(
     async (file: File) => {
-      const { isValid, error } = validateFiles(
-        file,
-        options,
-        getValues(name),
-        maxNumFiles,
-      )
+      /**
+       * when uploading the file, we only need to validate the file size.
+       * the total number of files and total size of files are validated when users make
+       * their selection via the suggestions component.
+       */
+      const { isValid, error } = validateFileSize(file)
       if (!isValid) {
         setError(name, { type: 'invalidFile', message: error })
       } else {
         await uploadToS3(file, flowId)
       }
     },
-    [flowId, getValues, name, options, setError, uploadToS3, maxNumFiles],
+    [flowId, name, setError, uploadToS3],
   )
 
   return (

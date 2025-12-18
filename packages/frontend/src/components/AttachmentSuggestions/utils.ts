@@ -1,9 +1,9 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { FieldValues } from 'react-hook-form'
+import set from 'lodash/set'
 
 import { type CheckboxVariable } from './components/Checkbox'
-import set from 'lodash/set'
 
 const KB = 1024
 const MB = KB * KB
@@ -194,14 +194,27 @@ export function validateFiles(
       } allowed`,
     }
   }
-  if (fileSize > MAX_FILE_SIZE) {
-    return { isValid: false, error: 'Size of attachment exceeds 2MB' }
+
+  const { isValid: isValidFileSize, error: fileSizeError } =
+    validateFileSize(file)
+  if (!isValidFileSize) {
+    return { isValid: false, error: fileSizeError }
   }
   if (totalSize > MAX_TOTAL_FILE_SIZE) {
     return {
       isValid: false,
       error: 'Total size of attachments exceeds 10MB',
     }
+  }
+  return { isValid: true }
+}
+
+export function validateFileSize(
+  file: File | CheckboxVariable,
+): FileSizeValidationResult {
+  const fileSize = file.size ?? 0
+  if (fileSize > MAX_FILE_SIZE) {
+    return { isValid: false, error: 'Size of attachment exceeds 10MB' }
   }
   return { isValid: true }
 }
