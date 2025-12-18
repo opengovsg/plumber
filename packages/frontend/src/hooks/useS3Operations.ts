@@ -65,7 +65,11 @@ export const useS3Operations = (
       // before clicking "Continue," the file would be deleted, but other
       // inputs remain visible in the UI without being saved.
       const currentAttachments = getValues(name) || []
-      const mutationInput = createUpdateStep(getValues(), currentAttachments)
+      const mutationInput = createUpdateStep(
+        name,
+        getValues(),
+        currentAttachments,
+      )
       await updateStep({ variables: { input: mutationInput } })
 
       await deleteFile({ variables: { id: value } })
@@ -149,7 +153,7 @@ export const useS3Operations = (
         )
 
         const currentAttachments = getValues(name) || []
-        const mutationInput = createUpdateStep(getValues(), [
+        const mutationInput = createUpdateStep(name, getValues(), [
           ...currentAttachments,
           s3Id,
         ])

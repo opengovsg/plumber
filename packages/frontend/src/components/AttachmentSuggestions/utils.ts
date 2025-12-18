@@ -3,6 +3,7 @@ import { TDataOutMetadatumType } from '@plumber/types'
 import { FieldValues } from 'react-hook-form'
 
 import { type CheckboxVariable } from './components/Checkbox'
+import set from 'lodash/set'
 
 const KB = 1024
 const MB = KB * KB
@@ -91,6 +92,7 @@ export function createUpdateFlowConfigInput(
 }
 
 export function createUpdateStep(
+  parameterName: string,
   formValues: FieldValues,
   updatedAttachments: string[],
 ) {
@@ -100,7 +102,6 @@ export function createUpdateStep(
     key,
     parameters: {
       ...parameters,
-      attachments: updatedAttachments,
     },
     connection: {
       id: connection?.id,
@@ -109,6 +110,9 @@ export function createUpdateStep(
       id: flow.id,
     },
   }
+
+  // we use lodash.set as the parameterName is in this format: parameters.attachments / parameters.image
+  set(mutationInput, parameterName, updatedAttachments)
 
   if (appKey) {
     mutationInput.appKey = appKey
