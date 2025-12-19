@@ -1,6 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { createOpenAI } from '@ai-sdk/openai'
 import { generateObject } from 'ai'
 import z from 'zod/v3'
 import { fromZodError } from 'zod-validation-error'
@@ -14,13 +14,15 @@ import { getImageContent } from '../../common/get-image-content'
 import getDataOutMetadata from './get-data-out-metadata'
 import { schema } from './schema'
 
-const engineProvider = createOpenAICompatible({
+// create a separate engine provider for image processing
+// as it does not work well with createOpenAICompatible
+// when processing PDFs
+const engineProvider = createOpenAI({
   name: 'pair-engine',
   baseURL: 'https://engine.pair.gov.sg',
   apiKey: appConfig.pair.foundry.apiKey,
-  supportsStructuredOutputs: true,
 })
-const model = engineProvider.chatModel(appConfig.pair.foundry.imageModel)
+const model = engineProvider.languageModel(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
   name: 'Process image',
@@ -116,13 +118,7 @@ const action: IRawAction = {
         s3Id: image[0],
       })
 
-      throw new StepError(
-        'Failed to process image',
-        'Please try again.',
-        $.step.position,
-        $.app.name,
-        error,
-      )
+      throw new StepError('Failed to process image', 'Please try again.', error)
     }
   },
 }
