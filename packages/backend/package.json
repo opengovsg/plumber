@@ -28,6 +28,7 @@
     "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
   },
   "dependencies": {
+    "@ai-sdk/openai": "2.0.88",
     "@ai-sdk/openai-compatible": "1.0.23",
     "@apollo/server": "5.0.0",
     "@as-integrations/express4": "1.1.2",
