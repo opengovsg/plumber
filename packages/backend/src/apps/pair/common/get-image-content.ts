@@ -8,18 +8,13 @@ function getMimeType(extension: string): string {
     webp: 'image/webp',
     pdf: 'application/pdf',
   }
-  const normalizedExtension = extension.toLowerCase()
-  const mimeType = mimeTypes[normalizedExtension]
-  if (!mimeType) {
-    throw new Error(`${extension} files are not supported`)
-  }
-  return mimeType
+  return mimeTypes[extension.toLowerCase()] || 'application/octet-stream'
 }
 
 async function getImageContent(s3Id: string) {
-  const s3Object = await getObjectFromS3Id(s3Id)
-  const base64String = Buffer.from(s3Object.data).toString('base64')
-  const extension = s3Object.name.split('.').pop() || ''
+  const S3Object = await getObjectFromS3Id(s3Id)
+  const base64String = Buffer.from(S3Object.data).toString('base64')
+  const extension = S3Object.name.split('.').pop() || ''
   const mimeType = getMimeType(extension)
 
   if (mimeType === 'application/pdf') {

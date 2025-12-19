@@ -7,7 +7,9 @@ import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
-import { getObjectFromS3Id } from '@/helpers/s3'
+import logger from '@/helpers/logger'
+
+import { getImageContent } from '../../common/get-image-content'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { schema } from './schema'
@@ -69,49 +71,59 @@ const action: IRawAction = {
       )
     }
     const { image, responseFields } = validatedParameters.data
-    const schemaShape: Record<string, z.ZodTypeAny> = {}
-    for (const field of responseFields) {
-      schemaShape[field.fieldName] = z.string().describe(field.description)
+
+    try {
+      const schemaShape: Record<string, z.ZodTypeAny> = {}
+      for (const field of responseFields) {
+        schemaShape[field.fieldName] = z.string().describe(field.description)
+      }
+      const responseSchema = z.object(schemaShape).strict()
+
+      const content = await getImageContent(image[0])
+
+      const { object } = await generateObject({
+        model,
+        schema: responseSchema,
+        messages: [
+          {
+            role: 'user',
+            content,
+          },
+        ],
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: 'pair-action-process-image',
+          metadata: {
+            userId: $.user.email,
+            executionId: $.execution.id,
+            flowId: $.flow.id,
+            stepId: $.step.id,
+            tags: ['pair', 'action', 'process-image'],
+          },
+        },
+      })
+
+      $.setActionItem({
+        raw: { ...object },
+      })
+    } catch (error) {
+      logger.error('Failed to process image', {
+        error,
+        flowId: $.flow.id,
+        executionId: $.execution.id,
+        stepId: $.step.id,
+        userId: $.user.email,
+        s3Id: image[0],
+      })
+
+      throw new StepError(
+        'Failed to process image',
+        'Please try again.',
+        $.step.position,
+        $.app.name,
+        error,
+      )
     }
-    const responseSchema = z.object(schemaShape).strict()
-
-    const S3Object = await getObjectFromS3Id(image[0])
-    const base64Image = Buffer.from(S3Object.data).toString('base64')
-
-    const { object } = await generateObject({
-      model,
-      schema: responseSchema,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              image: `data:image/jpeg;base64,${base64Image}`,
-            },
-            {
-              type: 'text',
-              text: 'Extract all the information from this file.',
-            },
-          ],
-        },
-      ],
-      experimental_telemetry: {
-        isEnabled: true,
-        functionId: 'pair-action-process-image',
-        metadata: {
-          userId: $.user.email,
-          executionId: $.execution.id,
-          flowId: $.flow.id,
-          stepId: $.step.id,
-          tags: ['pair', 'action', 'process-image'],
-        },
-      },
-    })
-
-    $.setActionItem({
-      raw: { ...object },
-    })
   },
 }
 
