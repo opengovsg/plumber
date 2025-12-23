@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   Box,
   Collapse,
@@ -55,6 +55,20 @@ export default function Suggestions(props: SuggestionsProps) {
   } = props
 
   const { readOnly } = useContext(EditorContext)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const scrollPositionRef = useRef<number>(0)
+
+  // Preserve scroll position across re-renders
+  useLayoutEffect(() => {
+    const container = scrollContainerRef.current
+    if (container && scrollPositionRef.current > 0) {
+      container.scrollTop = scrollPositionRef.current
+    }
+  })
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    scrollPositionRef.current = e.currentTarget.scrollTop
+  }
 
   const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
@@ -62,7 +76,12 @@ export default function Suggestions(props: SuggestionsProps) {
     }
 
     return (
-      <>
+      <Box
+        ref={scrollContainerRef}
+        maxH={64}
+        overflowY="auto"
+        onScroll={handleScroll}
+      >
         {suggestions.map((option: StepWithVariables, index: number) => {
           const { addNew, output } = option
           return (
@@ -81,7 +100,7 @@ export default function Suggestions(props: SuggestionsProps) {
                     processFile={processFile}
                   />
                 )}
-                <Box data-test="attachment-group" maxH={64} overflowY="auto">
+                <Box data-test="attachment-group">
                   {output?.map((variable) => {
                     const { name } = variable
                     return (
@@ -108,7 +127,7 @@ export default function Suggestions(props: SuggestionsProps) {
             )
           )
         })}
-      </>
+      </Box>
     )
   }
 

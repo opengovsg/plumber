@@ -1,4 +1,4 @@
-import { ChangeEvent, memo } from 'react'
+import { memo } from 'react'
 import { BiTrash } from 'react-icons/bi'
 import { BsDot } from 'react-icons/bs'
 import {
@@ -54,16 +54,12 @@ function Checkbox(props: CheckboxProps) {
     )
   }
 
-  // Note: removes the outline around the checkbox that is last focused
-  const handleBlur = (e: ChangeEvent<HTMLInputElement>) => e.target.blur()
-
   return (
     <ChakraCheckbox
       key={value as string}
       isChecked={isChecked}
       onChange={(e) => {
         onClick?.(variable, e.target.checked)
-        handleBlur(e)
       }}
       _hover={{
         backgroundColor: 'primary.100',
