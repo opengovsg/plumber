@@ -47,12 +47,22 @@ const action: IRawAction = {
       description: 'Delay until the time (24h). E.g. 08:00, 23:00',
       variables: true,
     },
+    {
+      label: 'Always allow past timestamp?',
+      key: 'alwaysAllowPastTimestamp',
+      type: 'checkbox' as const,
+      required: false,
+      description:
+        'Always allow the pipe to continue running even if the delay until timestamp is in the past.',
+      value: false,
+    },
   ],
 
   async run($) {
     const defaultTime = '00:00'
     // trim the date and time for user
-    const { delayUntil, delayUntilTime } = $.step.parameters
+    const { delayUntil, delayUntilTime, alwaysAllowPastTimestamp } =
+      $.step.parameters
     const delayUntilString = new String(delayUntil).trim()
     // catch empty string (user input), null, undefined (backwards compat)
     const delayUntilTimeString = delayUntilTime
@@ -95,14 +105,15 @@ const action: IRawAction = {
 
     /**
      * RETRY: we check and only allow manual retries for failures due to:
-     * - delay until timestamp entered is in the past
+     * - delay until timestamp entered is in the past and allowPastTimestamp is false by default
      */
     const isRetry = await isValidRetry($)
     const isPastTimestamp = delayTimestamp < DateTime.now().toMillis()
 
     // Allow test step to always succeed but show warning in the frontend
+    // Note: Allow users to still retry for past timestamp live executions so we don't have to debug and fix the issue for them. They have the control over this.
     if (!$.execution.testRun && isPastTimestamp) {
-      if (isRetry) {
+      if (isRetry || alwaysAllowPastTimestamp) {
         const dateTimeNow = DateTime.now()
         dataItem = {
           delayUntil: dateTimeNow.toPlumberFormat('dd MMM yyyy'),
@@ -118,11 +129,12 @@ const action: IRawAction = {
       }
     }
 
-    // Only show warning message for test executions
+    // Only show warning message for test executions and if alwaysAllowPastTimestamp is false
     $.setActionItem({
       raw: dataItem,
       ...(isPastTimestamp &&
-        $.execution.testRun && {
+        $.execution.testRun &&
+        !alwaysAllowPastTimestamp && {
           meta: {
             warningMessage: PAST_TIMESTAMP_WARNING_MESSAGE,
           },

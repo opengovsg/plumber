@@ -475,6 +475,11 @@ export interface IFieldBooleanRadioOption {
   value: boolean
 }
 
+export interface IFieldCheckbox extends IBaseField {
+  type: 'checkbox'
+  value: boolean // have to default to the more preferred value
+}
+
 export type IField =
   | IFieldDropdown
   | IFieldText
@@ -485,6 +490,7 @@ export type IField =
   | IFieldMultiRow
   | IFieldRichText
   | IFieldBooleanRadio
+  | IFieldCheckbox
   | IFieldDragDrop
 
 export interface IAuthenticationStepField {

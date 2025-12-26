@@ -16,6 +16,7 @@ import useDynamicData from '@/hooks/useDynamicData'
 import { COLLABORATOR_RESTRICTED_FIELDS } from '../Editor/constants'
 
 import BooleanRadio from './BooleanRadio'
+import Checkbox from './Checkbox'
 
 export type InputCreatorProps = {
   schema: IField
@@ -88,6 +89,18 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         required={required}
         defaultValue={value as boolean}
         options={schema?.options}
+      />
+    )
+  }
+
+  if (type === 'checkbox') {
+    return (
+      <Checkbox
+        name={computedName}
+        label={label}
+        description={description}
+        required={required}
+        defaultValue={value as boolean}
       />
     )
   }
