@@ -7,7 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
 
-import delayUntilAction from '../actions/delay-until'
+import delayUntilAction, {
+  PAST_TIMESTAMP_WARNING_MESSAGE,
+} from '../actions/delay-until'
 import delayApp from '../index'
 
 const PAST_DATE = '2023-11-08'
@@ -44,6 +46,14 @@ describe('Delay until action', () => {
       },
       execution: {
         testRun: false,
+      },
+      actionOutput: {
+        data: {
+          raw: null,
+          meta: {
+            warningMessage: PAST_TIMESTAMP_WARNING_MESSAGE,
+          },
+        },
       },
       setActionItem: mocks.setActionItem,
       getLastExecutionStep: mocks.getLastExecutionStep,
@@ -144,7 +154,7 @@ describe('Delay until action', () => {
   })
 
   describe('retry logic', () => {
-    it('prevents retries during test runs', async () => {
+    it('no need for retries during test runs', async () => {
       $.step.parameters = {
         delayUntil: PAST_DATE,
         delayUntilTime: DEFAULT_TIME,
@@ -153,15 +163,19 @@ describe('Delay until action', () => {
       // Set testRun to true to simulate test environment
       $.execution.testRun = true
 
-      // Mock last execution step to indicate a retry for past timestamp
-      mocks.getLastExecutionStep.mockResolvedValue({
-        errorDetails: {
-          name: 'Delay until timestamp entered is in the past',
+      const result = await delayUntilAction.run($)
+      expect(result).toBeFalsy()
+
+      // shows warning message in metadata for test runs
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: {
+          delayUntil: PAST_DATE,
+          delayUntilTime: DEFAULT_TIME,
+        },
+        meta: {
+          warningMessage: PAST_TIMESTAMP_WARNING_MESSAGE,
         },
       })
-
-      // Should throw error even with valid retry conditions due to testRun
-      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
     })
 
     it('allows past timestamp when retrying after past timestamp error', async () => {

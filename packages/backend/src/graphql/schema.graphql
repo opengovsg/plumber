@@ -363,6 +363,7 @@ type ExecutionStepMetadata {
   iterationStatus: JSONObject
   isLastIteration: Boolean
   isLastStep: Boolean
+  warningMessage: String
 }
 
 type Field {

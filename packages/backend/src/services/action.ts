@@ -195,6 +195,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     })
   }
 
+  // update metadata with warning message
+  if ($.actionOutput.data?.meta?.warningMessage) {
+    metadata.warningMessage = $.actionOutput.data.meta.warningMessage
+  }
+
   const executionStep = await execution
     .$relatedQuery('executionSteps')
     .insertAndFetch({

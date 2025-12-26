@@ -350,6 +350,9 @@ export default function FlowStepTestController(
               isMock={currentTestExecutionStep?.metadata?.isMock}
               isOpen={isTestResultOpen}
               isIfThenStep={isIfThenStep}
+              warningMessage={
+                currentTestExecutionStep?.metadata?.warningMessage ?? ''
+              }
             />
           </VStack>
         ) : (

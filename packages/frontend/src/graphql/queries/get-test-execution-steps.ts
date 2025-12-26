@@ -36,6 +36,7 @@ export const GET_TEST_EXECUTION_STEPS = gql`
         isMock
         lastTestSubmissionDate
         iteration
+        warningMessage
       }
     }
   }

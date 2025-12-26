@@ -153,6 +153,7 @@ export interface IExecutionStepMetadata {
   >
   isLastIteration?: boolean
   isLastStep?: boolean
+  warningMessage?: string
 }
 
 export interface IExecution {
@@ -783,8 +784,13 @@ export interface IActionOutput {
   error?: IJSONObject
 }
 
+// This is useful for actions that need to display a warning message to the user
+// and still succeed e.g. delay until step
 export interface IActionItem {
   raw: IJSONObject
+  meta?: {
+    warningMessage?: string
+  }
 }
 
 export interface IBaseAction {

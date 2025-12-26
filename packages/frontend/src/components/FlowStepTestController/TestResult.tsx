@@ -50,6 +50,7 @@ interface TestResultsProps {
   isOpen: boolean
   isIfThenStep?: boolean
   onModalOpen?: () => void
+  warningMessage?: string
 }
 
 export default function TestResult(props: TestResultsProps): JSX.Element {
@@ -60,11 +61,11 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
     isOpen,
     isIfThenStep,
     step,
+    warningMessage,
   } = props
 
   const { testExecutionSteps } = useContext(EditorContext)
   const isForEachStep = step.key === TOOLBOX_ACTIONS.ForEach
-
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.
     if (!variables?.length) {
@@ -93,6 +94,15 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
             </Text>
           </Infobox>
         )}
+
+        {warningMessage && (
+          <Infobox variant="warning" width="full">
+            <Box>
+              <Text fontWeight="600">{warningMessage}</Text>
+            </Box>
+          </Infobox>
+        )}
+
         <VariablesList variables={variables} customStyles={{ py: 0, px: 2 }} />
       </Box>
     )

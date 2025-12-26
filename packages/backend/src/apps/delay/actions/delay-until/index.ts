@@ -6,6 +6,9 @@ import StepError from '@/errors/step'
 
 import generateTimestamp from '../../helpers/generate-timestamp'
 
+export const PAST_TIMESTAMP_WARNING_MESSAGE =
+  'The delay until timestamp entered is in the past. Do note that your pipe will fail to run if this was your actual live data.'
+
 async function isValidRetry($: IGlobalVariable): Promise<boolean> {
   // do not allow retries in test runs
   if ($.execution.testRun) {
@@ -95,8 +98,10 @@ const action: IRawAction = {
      * - delay until timestamp entered is in the past
      */
     const isRetry = await isValidRetry($)
+    const isPastTimestamp = delayTimestamp < DateTime.now().toMillis()
 
-    if (delayTimestamp < DateTime.now().toMillis()) {
+    // Allow test step to always succeed but show warning in the frontend
+    if (!$.execution.testRun && isPastTimestamp) {
       if (isRetry) {
         const dateTimeNow = DateTime.now()
         dataItem = {
@@ -113,7 +118,16 @@ const action: IRawAction = {
       }
     }
 
-    $.setActionItem({ raw: dataItem })
+    // Only show warning message for test executions
+    $.setActionItem({
+      raw: dataItem,
+      ...(isPastTimestamp &&
+        $.execution.testRun && {
+          meta: {
+            warningMessage: PAST_TIMESTAMP_WARNING_MESSAGE,
+          },
+        }),
+    })
   },
 }
 
