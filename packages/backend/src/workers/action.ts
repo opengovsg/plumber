@@ -20,6 +20,7 @@ export const mainActionWorker = makeActionWorker({
   redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
   queueConfig: {
     isQueueDelayable: false,
+    workerType: 'action',
   },
 })
 
