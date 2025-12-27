@@ -795,6 +795,10 @@ export interface IActionRunResult {
    */
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
+    // "stop-execution" works differently from "pause-execution"
+    // for "pause-execution", the execution is paused and the execution status is not patched
+    // for "stop-execution", the execution is ended and the execution status is patched
+    | { command: 'pause-execution' }
     | { command: 'stop-execution' }
     | { command: 'start-for-each'; stepId: IStep['id'] }
   nextStepMetadata?: NextStepMetadata
