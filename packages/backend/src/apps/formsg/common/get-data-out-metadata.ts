@@ -431,6 +431,9 @@ async function getDataOutMetadata(
       type: 'text',
       label: 'Submission Time',
     },
+    workflowContent: {
+      isHidden: true,
+    },
   }
   if (verifiedSubmitterInfo) {
     result.verifiedSubmitterInfo = verifiedSubmitterInfo
