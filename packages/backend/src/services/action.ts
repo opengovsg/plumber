@@ -1,8 +1,4 @@
-import type {
-  IActionRunResult,
-  IJSONValue,
-  TestRunStepMetadata,
-} from '@plumber/types'
+import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
 
 import {
   FOR_EACH_ITERATION_DELAY,
@@ -26,20 +22,6 @@ import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 
 import getForEachMetadata from './helpers/get-for-each-metadata'
-
-// TODO on Oct: remove this once the logging is not needed anymore
-const SEPT_KEYWORD_REGEX = /Sept /
-
-function containsSeptKeyword(obj: IJSONValue): boolean {
-  if (typeof obj === 'string') {
-    return SEPT_KEYWORD_REGEX.test(obj)
-  }
-  if (typeof obj === 'object' && obj !== null) {
-    return SEPT_KEYWORD_REGEX.test(JSON.stringify(obj))
-  }
-
-  return false
-}
 
 type ProcessActionOptions = {
   flowId: string
@@ -226,17 +208,6 @@ export const processAction = async (options: ProcessActionOptions) => {
       key: step.key,
       metadata,
     })
-
-  // TODO on Oct: remove this once the logging is not needed anymore
-  if (!testRun && containsSeptKeyword($.step.parameters ?? {})) {
-    logger.info('Execution contains Sept keyword', {
-      event: 'execution-contains-sept-keyword',
-      stepId,
-      flowId,
-      executionId,
-      executionStepId: executionStep.id,
-    })
-  }
 
   let nextStep = null
   switch (runResult.nextStep?.command) {
