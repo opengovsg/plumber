@@ -83,66 +83,40 @@ const dynamicData: IDynamicData = {
 
         return processCaseFields(filteredFields)
       } else if (caseUuid) {
+        // account that case uuid can be pasted in the frontend
+        // and may not always be a variable
+        let computedCaseUuid = caseUuid as string
+
         if (
           typeof caseUuid === 'string' &&
           caseUuid.match(`^${VARIABLE_REGEX.source}$`)
         ) {
           // if the case uuid is a variable, we need to compute the value
-          const computedCaseUuid = await getCaseUuidFromVariable($, caseUuid)
-
-          // use the case uuid to fetch the case data to derive the case type uuid
-          const { data: caseData } = await $.http.get<{ data: GatherSGCase }>(
-            `/cases/:caseUuid`,
-            {
-              urlPathParams: { caseUuid: computedCaseUuid as string },
-            },
-          )
-
-          const { filteredFields } = await fetchCaseFields({
+          computedCaseUuid = (await getCaseUuidFromVariable(
             $,
-            caseTypeUuid: caseData.data.type.uuid,
-          })
-          return processCaseFields(filteredFields)
+            caseUuid,
+          )) as string
         }
 
-        return {
-          data: [],
-        }
+        // use the case uuid to fetch the case data to derive the case type uuid
+        const { data: caseData } = await $.http.get<{ data: GatherSGCase }>(
+          `/cases/:caseUuid`,
+          {
+            urlPathParams: { caseUuid: computedCaseUuid },
+          },
+        )
+
+        const { filteredFields } = await fetchCaseFields({
+          $,
+          caseTypeUuid: caseData.data.type.uuid,
+        })
+        return processCaseFields(filteredFields)
       }
 
-      // BACKWARD COMPATIBILITY: this gets the case fields from the latest case in gathersg
-      const { data: searchResult } = await $.http.post<{
-        traceId: string
-        total: number
-        data: GatherSGCase[]
-      }>('/cases/search', {
-        page: 1,
-        size: 1,
-        sort: 'createdAt',
-        order: 'desc',
-      })
-
-      /**
-       * No cases found
-       */
-      if (searchResult.data.length === 0) {
-        return {
-          data: [],
-        }
-      }
-
-      const caseFields: object = searchResult.data[0].fields
-      const updatedCaseFields: { name: string; value: string }[] = []
-      for (const [field, value] of Object.entries(caseFields)) {
-        // Right now, we cannot support adding of array of objects as a value so just going to exclude to not cause errors unnecessarily
-        if (Array.isArray(value)) {
-          continue
-        }
-        updatedCaseFields.push({ name: field, value: field })
-      }
-
+      // fallback to return empty array
+      // user can still manually input the case field
       return {
-        data: updatedCaseFields,
+        data: [],
       }
     } catch (error) {
       if (error instanceof HttpError) {

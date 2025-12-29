@@ -42,7 +42,7 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
   minio:
-    image: 'bitnami/minio:2025.7.23'
+    image: 'minio/minio:RELEASE.2025-09-07T16-13-09Z'
     user: '0:0'
     ports:
       - '9000:9000'
@@ -59,7 +59,7 @@ services:
       interval: 1s
       retries: 5
   create-minio-buckets:
-    image: bitnami/minio-client:2025.7.21
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     volumes:
       - ../frontend/src/assets/plumber-logo.jpg:/assets/plumber-logo.jpg
     depends_on:

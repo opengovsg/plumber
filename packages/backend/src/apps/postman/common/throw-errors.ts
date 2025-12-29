@@ -4,6 +4,7 @@ import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 
 import { PostmanEmailSendStatus } from './data-out-validator'
 import { createRequestBlacklistFormLink } from './send-blacklist-email'
@@ -102,6 +103,17 @@ export function throwPostmanStepError({
         executionId: $.execution.id,
         blacklistedRecipients,
       })
+
+      // log individual blacklisted recipients
+      blacklistedRecipients.forEach((recipient) => {
+        logger.info('Blacklisted recipient for postman email step', {
+          event: 'postman-step-blacklisted-recipient',
+          blacklistedEmail: recipient,
+          stepId: $.step.id,
+          executionId: $.execution.id,
+        })
+      })
+
       let solution = `The following email addresses have been blacklisted by Postman:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
