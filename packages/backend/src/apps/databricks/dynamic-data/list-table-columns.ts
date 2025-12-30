@@ -4,9 +4,11 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
+import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
+import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickColumnRes } from '../common/types'
 
 const dynamicData: IDynamicData = {
@@ -27,6 +29,8 @@ const dynamicData: IDynamicData = {
       const { session, endSession } = await createSession($)
       const operation = await session.getColumns({
         tableName: $.step.parameters.tableName as string,
+        catalogName: databricksConfig.catalog,
+        schemaName: constructSchemaName($),
       })
       const columns = (await operation.fetchAll({
         maxRows: 1000,
