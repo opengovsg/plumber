@@ -13,7 +13,7 @@ const dynamicAction: MutationResolvers['dynamicAction'] = async (
   const { stepId, key: dynamicActionKey, parameters } = params.input
 
   const step = await context.currentUser
-    .$relatedQuery('steps')
+    .withAccessibleSteps({ requiredRole: 'editor' })
     .withGraphFetched({
       connection: true,
       flow: {

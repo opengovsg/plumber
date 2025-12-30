@@ -8,6 +8,7 @@ import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
+import { constructSchemaName } from '../common/construct-schema-name'
 import { DatabrickTableRes } from '../common/types'
 
 const dynamicData: IDynamicData = {
@@ -19,7 +20,7 @@ const dynamicData: IDynamicData = {
       const { session, endSession } = await createSession($)
       const operation = await session.getTables({
         catalogName: databricksConfig.catalog,
-        schemaName: $.auth.data.schema as string,
+        schemaName: constructSchemaName($),
         tableTypes: ['TABLE'],
       })
       const tables = (await operation.fetchAll({

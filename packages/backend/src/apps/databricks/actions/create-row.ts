@@ -11,7 +11,13 @@ const insertRowSchema = z.object({
   tableName: z.string().min(1),
   rowData: z.array(
     z.object({
-      columnName: z.string().min(1, { message: 'Column name is required' }),
+      columnName: z
+        .string()
+        .min(1, { message: 'Column name is required' })
+        .regex(/^[a-z0-9_]+$/, {
+          message:
+            'Column name can only contain lowercase letters, numbers and underscores',
+        }),
       columnValue: z.string(),
     }),
   ),
@@ -111,13 +117,18 @@ const createRowAction: IRawAction = {
       const columnNames = rowData.map((row) => row.columnName)
       const columnValues = rowData.map((row) => row.columnValue)
 
-      // TODO: properly prepare this statement
       const statement = `INSERT INTO ${tableName} (${columnNames
         .map((col) => `\`${col}\``)
         .join(',')}) VALUES (${columnValues
-        .map((val) => `'${val}'`)
+        .map((_val, index) => `:val${index}`)
         .join(',')})`
-      const operation = await session.executeStatement(statement)
+      const namedParameters = {} as Record<string, string>
+      for (let i = 0; i < columnValues.length; i++) {
+        namedParameters[`val${i}`] = columnValues[i]
+      }
+      const operation = await session.executeStatement(statement, {
+        namedParameters,
+      })
       await operation.fetchAll()
       await endSession()
       $.setActionItem({

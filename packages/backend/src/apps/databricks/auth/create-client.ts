@@ -1,16 +1,16 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import { DBSQLClient, LogLevel } from '@databricks/sql'
+import { ConnectionOptions } from '@databricks/sql/dist/contracts/IDBSQLClient'
 
 import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
-export const createSession = async ($: IGlobalVariable) => {
-  const token = $.auth.data.token
-  if (typeof token !== 'string') {
-    throw new Error('Databricks personal access token is required')
-  }
+import { constructSchemaName } from '../common/construct-schema-name'
 
+import { databricksOAuthPersistence } from './token-persistence'
+
+export const createSession = async ($: IGlobalVariable) => {
   const client: DBSQLClient = new DBSQLClient({
     logger: {
       log(level: LogLevel, message: string) {
@@ -27,16 +27,20 @@ export const createSession = async ($: IGlobalVariable) => {
   })
 
   const connectOptions = {
-    token,
+    authType: 'databricks-oauth',
+    oauthClientId: databricksConfig.clientId,
+    oauthClientSecret: databricksConfig.clientSecret,
     host: databricksConfig.serverHostname,
     path: databricksConfig.httpPath,
-    userAgent: 'plumber',
-  }
+    persistence: databricksOAuthPersistence,
+  } satisfies ConnectionOptions
+
+  const schemaName = constructSchemaName($)
 
   try {
     const connectedClient = await client.connect(connectOptions)
     const session = await connectedClient.openSession({
-      initialSchema: $.auth.data.schema as string,
+      initialSchema: schemaName,
       initialCatalog: databricksConfig.catalog,
     })
     const endSession = async () => {

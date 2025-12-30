@@ -1,7 +1,6 @@
 import { IApp } from '@plumber/types'
 
 import actions from './actions'
-import auth from './auth'
 import dynamicData from './dynamic-data'
 
 const app: IApp = {
@@ -11,7 +10,6 @@ const app: IApp = {
   iconUrl: '{BASE_URL}/apps/databricks/assets/favicon.svg',
   authDocUrl: '',
   beforeRequest: [],
-  auth,
   baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '0059F7',

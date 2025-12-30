@@ -43,7 +43,9 @@ const dynamicData: IDynamicAction = {
       const { tableName, columnName } = parametersParseResult.data
 
       const { session, endSession } = await createSession($)
-      // TODO: properly prepare this statement
+      // Note: DDL statements like ALTER TABLE don't support parameterization in Databricks.
+      // Input validation via regex (only alphanumeric + underscore) provides SQL injection protection.
+      // We default to STRING type for the new column. Support for other types will be added later.
       const statement = `ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` STRING;`
       const operation = await session.executeStatement(statement)
       await operation.fetchAll()

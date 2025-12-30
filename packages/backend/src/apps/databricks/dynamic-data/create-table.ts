@@ -31,7 +31,8 @@ const dynamicData: IDynamicAction = {
       const { tableName } = parametersParseResult.data
 
       const { session, endSession } = await createSession($)
-      // TODO: properly prepare this statement
+      // Note: DDL statements like CREATE TABLE don't support parameterization in Databricks.
+      // Input validation via regex (only alphanumeric + underscore) provides SQL injection protection.
       const statement = `CREATE TABLE \`${tableName}\`;`
       const operation = await session.executeStatement(statement)
       await operation.fetchAll()
