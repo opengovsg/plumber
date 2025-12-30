@@ -8,7 +8,7 @@ import logger from '@/helpers/logger'
 
 import { constructSchemaName } from '../common/construct-schema-name'
 
-import { databricksOAuthPersistence } from './token-persistence'
+import { getDatabricksToken } from './token-persistence'
 
 export const createSession = async ($: IGlobalVariable) => {
   const client: DBSQLClient = new DBSQLClient({
@@ -26,13 +26,21 @@ export const createSession = async ($: IGlobalVariable) => {
     },
   })
 
+  // const connectOptions = {
+  //   authType: 'databricks-oauth',
+  //   oauthClientId: databricksConfig.clientId,
+  //   oauthClientSecret: databricksConfig.clientSecret,
+  //   host: databricksConfig.serverHostname,
+  //   path: databricksConfig.httpPath,
+  //   persistence: databricksOAuthPersistence,
+  // } satisfies ConnectionOptions
+
+  const token = await getDatabricksToken()
   const connectOptions = {
-    authType: 'databricks-oauth',
-    oauthClientId: databricksConfig.clientId,
-    oauthClientSecret: databricksConfig.clientSecret,
+    authType: 'access-token',
     host: databricksConfig.serverHostname,
     path: databricksConfig.httpPath,
-    persistence: databricksOAuthPersistence,
+    token,
   } satisfies ConnectionOptions
 
   const schemaName = constructSchemaName($)
