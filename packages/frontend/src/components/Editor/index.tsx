@@ -30,19 +30,7 @@ export default function Editor(props: EditorProps): React.ReactElement {
     useContext(EditorContext)
 
   const { handleReorderUpdate } = useReorderSteps(flow.id)
-  const rawSteps = flow.steps
-  const steps = useMemo(
-    // Populate each step's flowId so that IStep isn't LYING about flowId being
-    // non-undefined. We do it here instead of fetching in GraphQL since all
-    // steps have same pipe, so a bit wasteful to repeat this data over the wire.
-    () =>
-      rawSteps.map((step) => ({
-        ...step,
-        flow,
-        flowId: flow.id,
-      })),
-    [flow, rawSteps],
-  )
+  const steps = flow.steps
 
   const currentStep = useMemo(() => {
     return steps.find((step) => step.id === currentStepId)
