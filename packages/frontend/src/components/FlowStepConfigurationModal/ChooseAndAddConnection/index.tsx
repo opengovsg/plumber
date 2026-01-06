@@ -4,7 +4,9 @@ import { useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 
 import { EditorContext } from '@/contexts/Editor'
+import { MrfContext } from '@/contexts/MrfContext'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import { getMrfApprovalConfig } from '@/helpers/formsg'
 
 import { EXCEL_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
@@ -74,9 +76,11 @@ export default function ChooseAndAddConnection(
     setCurrentStepId,
     executeTestStep,
   } = useContext(EditorContext)
-  const { modalState, patchModalState, step, prevStepId } = useContext(
+  const { modalState, patchModalState, step, prevStep } = useContext(
     FlowStepConfigurationContext,
   )
+
+  const { approvalBranches } = useContext(MrfContext)
   const { currentScreen, selectedApp, selectedEvent } = modalState
 
   const {
@@ -125,12 +129,17 @@ export default function ChooseAndAddConnection(
       patchModalState({ isLoading: true })
       let newStepId = null
       try {
-        if (prevStepId) {
+        if (prevStep) {
+          const approvalConfig = getMrfApprovalConfig({
+            previousStep: prevStep,
+            approvalBranches: approvalBranches,
+          })
           const createdStep = await onCreateStep(
-            prevStepId,
+            prevStep.id,
             selectedApp.key,
             selectedEvent.key,
             connectionId,
+            { approval: approvalConfig },
           )
           newStepId = createdStep.id
         } else if (step) {
@@ -162,11 +171,12 @@ export default function ChooseAndAddConnection(
       selectedApp,
       selectedEvent,
       patchModalState,
-      prevStepId,
+      prevStep,
       step,
       onClose,
       onDrawerOpen,
       setCurrentStepId,
+      approvalBranches,
       onCreateStep,
       onUpdateStep,
       executeTestStep,

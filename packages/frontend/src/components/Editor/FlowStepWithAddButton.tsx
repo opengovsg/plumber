@@ -41,7 +41,7 @@ export default function FlowStepWithAddButton({
         // only allow reordering if there are more than 1 action steps
         allowReorder={allowReorder}
       />
-      {isApprovalStep && <ApproveReject />}
+      {isApprovalStep && <ApproveReject stepId={step.id} />}
       <AddStepButton
         isLastStep={isLastStep}
         step={step}
