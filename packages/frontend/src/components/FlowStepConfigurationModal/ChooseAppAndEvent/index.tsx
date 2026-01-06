@@ -4,7 +4,9 @@ import { useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
 
 import { EditorContext } from '@/contexts/Editor'
+import { MrfContext } from '@/contexts/MrfContext'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
+import { getMrfApprovalConfig } from '@/helpers/formsg'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
@@ -34,8 +36,10 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     flowId,
   } = useContext(EditorContext)
 
-  const { modalState, patchModalState, prevStepId, isTrigger, step } =
-    useContext(FlowStepConfigurationContext)
+  const { modalState, patchModalState, prevStep, isTrigger, step } = useContext(
+    FlowStepConfigurationContext,
+  )
+  const { approvalBranches } = useContext(MrfContext)
 
   const { currentScreen, selectedApp } = modalState
 
@@ -106,12 +110,17 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       patchModalState({ isLoading: true })
       let newStepId = null
       try {
-        if (prevStepId) {
+        if (prevStep) {
+          const approvalConfig = getMrfApprovalConfig({
+            previousStep: prevStep,
+            approvalBranches: approvalBranches,
+          })
           const createdStep = await onCreateStep(
-            prevStepId,
+            prevStep.id,
             app.key,
             triggerOrAction.key,
             excelConnection?.id || undefined,
+            { approval: approvalConfig },
           )
           newStepId = createdStep.id
         } else if (step) {
@@ -147,11 +156,12 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       excelConnection?.verified,
       excelConnection?.id,
       patchModalState,
-      prevStepId,
+      prevStep,
       step,
       onClose,
       onDrawerOpen,
       setCurrentStepId,
+      approvalBranches,
       onCreateStep,
       initializeIfThen,
       onUpdateStep,

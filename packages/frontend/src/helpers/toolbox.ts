@@ -151,6 +151,12 @@ export function useIfThenInitializer(): [
     async (currStep: IStep) => {
       setIsInitializing(true)
 
+      const commonConfig = {
+        ...(currStep.config?.approval && {
+          approval: currStep.config?.approval,
+        }),
+      }
+
       const updateFirstBranch = await updateStep({
         variables: {
           input: {
@@ -168,6 +174,7 @@ export function useIfThenInitializer(): [
             connection: {
               id: null,
             },
+            // no need to set config here since it's already set
           },
         },
       })
@@ -188,6 +195,7 @@ export function useIfThenInitializer(): [
               depth,
               branchName: 'Branch 2',
             },
+            config: commonConfig,
           },
         },
       })
@@ -213,6 +221,7 @@ export function useIfThenInitializer(): [
               id: currStep.flowId,
               updatedAt: createdSecondBranch.flow.updatedAt,
             },
+            config: commonConfig,
           },
         },
       })
@@ -227,6 +236,7 @@ export function useIfThenInitializer(): [
               id: currStep.flowId,
               updatedAt: createdFirstStep?.flow?.updatedAt,
             },
+            config: commonConfig,
           },
         },
       })
