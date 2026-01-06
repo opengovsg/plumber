@@ -4,10 +4,8 @@ import { useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
-import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
-import { GET_FLOW } from '@/graphql/queries/get-flow'
 
 export const TOOLBOX_APP_KEY = 'toolbox'
 
@@ -241,10 +239,10 @@ export function useIfThenInitializer(): [
         },
       })
 
-      // Refetch only after completion of all initialization steps.
-      await client.refetchQueries({ include: [GET_FLOW] })
-
       setIsInitializing(false)
+
+      // we dont refetch GET_FLOW here but leave it to the caller to refetch
+
       return currStep
     },
     [createStep, depth, updateStep],

@@ -139,7 +139,7 @@ export default function ChooseAndAddConnection(
             selectedApp.key,
             selectedEvent.key,
             connectionId,
-            { approval: approvalConfig },
+            approvalConfig && { approval: approvalConfig },
           )
           newStepId = createdStep.id
         } else if (step) {

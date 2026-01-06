@@ -29,10 +29,7 @@ export function getMrfApprovalConfig({
     previousStep.config?.approval?.branch &&
     previousStep.config?.approval?.stepId
   ) {
-    return {
-      branch: previousStep.config?.approval?.branch,
-      stepId: previousStep.config?.approval?.stepId,
-    }
+    return previousStep.config?.approval
   }
 
   /**
