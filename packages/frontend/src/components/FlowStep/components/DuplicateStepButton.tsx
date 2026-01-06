@@ -17,59 +17,13 @@ interface DuplicateStepButtonProps {
   step: IStep
 }
 
-/**
- * Helper function to update the flow in the cache
- */
-function updateHandlerFactory(flowId: string, previousStepId: string) {
-  return function createStepUpdateHandler(cache: any, mutationResult: any) {
-    const { data } = mutationResult
-    const { createStep: createdStep } = data
-    const { getFlow: flow } = cache.readQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-    })
-
-    // getFlow requires certain attributes to be returned
-    const completeCreatedStep = {
-      ...createdStep,
-      iconUrl: null,
-      webhookUrl: null,
-      config: {
-        stepName: createdStep?.config?.stepName || null,
-        templateConfig: {
-          appEventKey: null,
-        },
-        approval: {
-          branch: createdStep?.config?.approval?.branch ?? null,
-          stepId: createdStep?.config?.approval?.stepId ?? null,
-        },
-      },
-      createdAt: new Date().toISOString(),
-    }
-
-    const steps = flow.steps.reduce((steps: any[], currentStep: any) => {
-      if (currentStep.id === previousStepId) {
-        return [...steps, currentStep, completeCreatedStep]
-      }
-
-      return [...steps, currentStep]
-    }, [])
-
-    cache.writeQuery({
-      query: GET_FLOW,
-      variables: { id: flowId },
-      data: { getFlow: { ...flow, steps } },
-    })
-  }
-}
-
 export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
   const { isNested, step } = props
 
   const { flow, isMobile, onDrawerOpen, setCurrentStepId } =
     useContext(EditorContext)
 
-  const [createStep] = useMutation(CREATE_STEP)
+  const [createStep] = useMutation(CREATE_STEP, { refetchQueries: [GET_FLOW] })
   const onDuplicateStep = useCallback(async () => {
     const duplicateConfig = {
       ...(step.config?.approval && {
@@ -97,7 +51,6 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
 
     const createdStep = await createStep({
       variables: { input: mutationInput },
-      update: updateHandlerFactory(flow.id, step.id),
     })
 
     const newStep = createdStep.data.createStep

@@ -12,6 +12,7 @@ export const UPDATE_STEP = graphql(`
       status
       position
       flowId
+      createdAt
       connection {
         id
       }
