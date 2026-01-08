@@ -7,6 +7,7 @@ import appConfig from '@/config/app'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { langfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
+import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import JSONObject from '@/types/interfaces/json-object'
 
@@ -113,11 +114,9 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
       },
     )
 
-    const { object } = { object: result }
-
     return {
-      ...object,
-      actions: (object.actions as Action[]).map((action: Action) => ({
+      ...result,
+      actions: (result.actions as Action[]).map((action: Action) => ({
         ...action,
         config: {
           ...action.config,
@@ -126,6 +125,8 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
       })),
     } as JSONObject
   } catch (error) {
+    logger.error('Error generating ai steps', { error })
+
     if (error instanceof z.ZodError) {
       throw new BadUserInputError(fromZodError(error).details[0].message)
     }
