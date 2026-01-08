@@ -18,7 +18,9 @@ const CreateFlowContext = createContext<CreateFlowContextProps | null>(null)
 export const useCreateFlowContext = () => {
   const context = useContext(CreateFlowContext)
   if (!context) {
-    return {} as CreateFlowContextProps
+    throw new Error(
+      'useCreateFlowContext must be used within a CreateFlowContextProvider',
+    )
   }
   return context
 }

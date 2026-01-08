@@ -17,7 +17,29 @@ import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import { AI_FORM_SCHEMA, AiFormData } from '@/pages/AiBuilder/schema'
-import { AI_FORM_FIELDS, AI_FORM_IDEAS } from '@/pages/Flows/constants'
+import { AI_FORM_IDEAS } from '@/pages/Flows/constants'
+
+const AI_FORM_FIELDS = [
+  {
+    key: 'actions' as const,
+    label: 'What should this workflow accomplish?',
+    placeholder:
+      'This workflow should help me to collect attendance for my event.',
+    required: true,
+    resize: 'vertical' as const,
+    minH: '100px',
+    maxH: '200px',
+  },
+  {
+    key: 'trigger' as const,
+    label: 'Where does your data come from?',
+    placeholder: 'FormSG',
+    required: true,
+    resize: 'vertical' as const,
+    minH: '42px',
+    maxH: '126px',
+  },
+]
 
 export const AIFormModalContent = ({
   flowName,
@@ -104,7 +126,7 @@ export const AIFormModalContent = ({
                     key={idea.label}
                     size="sm"
                     bgColor="interaction.sub-subtle.default"
-                    color="#5D6785"
+                    color="gray.600"
                     variant="clear"
                     _hover={{
                       bgColor: 'interaction.sub-subtle.hover',

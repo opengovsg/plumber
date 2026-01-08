@@ -99,7 +99,6 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
           actions: data.actions,
         },
       },
-      replace: true,
     })
   }
 

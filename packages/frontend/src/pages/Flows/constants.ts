@@ -1,25 +1,3 @@
-export const AI_FORM_FIELDS = [
-  {
-    key: 'actions' as const,
-    label: 'What should this workflow accomplish?',
-    placeholder:
-      'This workflow should help me to collect attendance for my event.',
-    required: true,
-    resize: 'vertical' as const,
-    minH: '100px',
-    maxH: '200px',
-  },
-  {
-    key: 'trigger' as const,
-    label: 'Where does your data come from?',
-    placeholder: 'FormSG',
-    required: true,
-    resize: 'vertical' as const,
-    minH: '42px',
-    maxH: '126px',
-  },
-]
-
 export const AI_FORM_IDEAS = [
   {
     label: 'Route support enquiries',
