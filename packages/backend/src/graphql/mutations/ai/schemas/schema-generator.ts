@@ -1,6 +1,10 @@
 import { z } from 'zod/v3'
 
 import apps from '@/apps'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/apps/toolbox/common/constants'
 
 /**
  * Generates valid appKey enum from registered apps
@@ -41,10 +45,24 @@ export function generateSchema(
         return null
       }
 
-      return baseSchema.extend({
+      // IF-THEN special case: add depth and branchName parameters
+      const isIfThenAction =
+        schemaType === 'action' &&
+        appKey === TOOLBOX_APP_KEY &&
+        keys.includes(TOOLBOX_ACTIONS.IF_THEN)
+
+      const extension = {
         appKey: z.literal(appKey),
         key: z.enum(keys as [string, ...string[]]),
-      })
+        ...(isIfThenAction && {
+          parameters: z.object({
+            depth: z.literal(0).optional(),
+            branchName: z.string().optional().default('Branch'),
+          }),
+        }),
+      }
+
+      return baseSchema.extend(extension)
     })
     .filter(Boolean)
 
