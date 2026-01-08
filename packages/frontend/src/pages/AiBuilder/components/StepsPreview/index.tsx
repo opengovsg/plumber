@@ -109,7 +109,7 @@ export default function StepsPreview() {
     return groupedSteps.slice(1)
   }, [groupedSteps])
 
-  const onCreateFlow = useCallback(async () => {
+  const onCreateFlowWithSteps = useCallback(async () => {
     const { data } = await createFlowWithSteps({
       variables: {
         input: {
@@ -267,7 +267,7 @@ export default function StepsPreview() {
             <Button variant="outline" onClick={onOpen}>
               Make changes
             </Button>
-            <Button variant="outline" onClick={onCreateFlow}>
+            <Button variant="outline" onClick={onCreateFlowWithSteps}>
               Create this workflow
             </Button>
           </HStack>

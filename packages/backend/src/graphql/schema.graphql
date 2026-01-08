@@ -141,14 +141,6 @@ input GenerateAiStepsInput {
   sessionId: String
 }
 
-type StepInput {
-  type: StepEnumType!
-  appKey: String!
-  key: String!
-  config: StepConfigInput
-  position: Int
-}
-
 input FlowAiBuilderConfigInput {
   type: String!
   traceId: String!
@@ -772,6 +764,9 @@ input StepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  type: StepEnumType
+  config: StepConfigInput
+  position: Int
 }
 
 type Trigger {
