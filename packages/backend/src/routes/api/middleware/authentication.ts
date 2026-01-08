@@ -16,7 +16,7 @@ export async function setCurrentUserContext(
   const context = await setGraphQLContext({ req, res })
 
   // Attach context to the request object
-  req.context = context as Context
+  req.context = context
 
   next()
 }
@@ -47,5 +47,5 @@ export function getAuthenticatedContext(req: Request): Context {
     throw new Error('User must be authenticated')
   }
 
-  return req.context as Context
+  return req.context
 }
