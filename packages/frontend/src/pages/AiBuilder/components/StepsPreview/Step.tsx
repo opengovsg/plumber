@@ -56,7 +56,7 @@ export default function Step(props: StepProps) {
           />
           <Box py={isNested ? 2 : 4}>
             <Text textStyle="subhead-2">
-              Something went wrong, delete this step and try again.
+              Something went wrong. Modify your prompt and try again.
             </Text>
             <Text textStyle="caption-1" mt={1}>
               If this issue persists, contact us at{' '}

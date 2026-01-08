@@ -88,14 +88,7 @@ export default function StepsPreview() {
       return
     }
     onGenerateAiSteps()
-  }, [
-    onGenerateAiSteps,
-    formInput,
-    location.pathname,
-    location.state,
-    output,
-    navigate,
-  ])
+  }, [onGenerateAiSteps, output])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
