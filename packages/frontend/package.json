@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.56.5",
+  "version": "1.56.6",
   "type": "module",
   "scripts": {
     "dev": "wait-on tcp:3000 && vite --host --force",
