@@ -155,6 +155,17 @@ if (!appConfig.adminJwtSecretKey) {
   throw new Error('ADMIN_JWT_SECRET_KEY environment variable needs to be set!')
 }
 
+// CVE-2025-68470: Prevent JWT Secret Key Confusion vulnerability
+// Ensure SESSION_SECRET_KEY and ADMIN_JWT_SECRET_KEY are different to prevent
+// privilege escalation where a user token could be used as an admin token.
+if (appConfig.sessionSecretKey === appConfig.adminJwtSecretKey) {
+  throw new Error(
+    'SECURITY ERROR: SESSION_SECRET_KEY and ADMIN_JWT_SECRET_KEY must be different values! ' +
+      'Using the same key creates a critical privilege escalation vulnerability (CVE-2025-68470). ' +
+      'See CVE-2025-68470-POC.md for details.',
+  )
+}
+
 if (!appConfig.postman.apiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
 }
