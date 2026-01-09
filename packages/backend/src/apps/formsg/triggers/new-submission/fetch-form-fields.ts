@@ -63,7 +63,7 @@ async function fetchFormFields($: IGlobalVariable) {
       addToSampleData(sampleData, field)
     }
     return sampleData
-  } catch (e) {
+  } catch {
     throw new Error(
       'Unable to fetch form fields. Form might be deleted or not public.',
     )

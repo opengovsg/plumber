@@ -50,7 +50,7 @@ export default async (request: IRequest, response: Response) => {
 
   try {
     z.string().uuid().parse(flowId)
-  } catch (err) {
+  } catch {
     logger.info(`Invalid webhook flow id ${flowId}, not uuid`)
     return response.sendStatus(404)
   }

@@ -20,7 +20,7 @@ const checkUrls: TBeforeRequest = async ($, requestConfig) => {
   let url
   try {
     url = new URL(requestConfig.baseURL)
-  } catch (e) {
+  } catch {
     throw new Error(INVALID_URL_ERROR)
   }
 
