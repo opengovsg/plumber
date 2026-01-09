@@ -1,68 +1,68 @@
 import { useNavigate } from 'react-router-dom'
-import { Box, Flex, Hide, Text } from '@chakra-ui/react'
-import { Tile } from '@opengovsg/design-system-react'
+import { Flex, Text } from '@chakra-ui/react'
 
-import NavigationDrawer from '@/components/Layout/NavigationDrawer'
 import * as URLS from '@/config/urls'
-import { TemplateIcon } from '@/helpers/flow-templates'
+
+import { useCreateFlowContext } from '../contexts/CreateFlowContext'
+
+import CreatePipeTile, { TileProps } from './CreatePipeTile'
 
 export default function EmptyFlows({ onCreate }: { onCreate: () => void }) {
   const navigate = useNavigate()
+  const { canUseAiBuilder, setCreateMode, setSkipModeSelection } =
+    useCreateFlowContext()
+
+  const TILES = [
+    canUseAiBuilder && {
+      header: 'Build with AI',
+      description:
+        'Describe your workflow and we&apos;ll create the steps for you',
+      iconName: 'BiSolidMagicWand',
+      onClick: () => {
+        setCreateMode('ai-form')
+        setSkipModeSelection(true)
+        onCreate()
+      },
+    },
+    {
+      header: 'Use a template',
+      description:
+        'Select from pre-built workflows that you can use as-is or customize further for your own use case',
+      iconName: 'BiBookOpen',
+      onClick: () => navigate(URLS.TEMPLATES),
+    },
+    {
+      header: 'Start from scratch',
+      description: 'Use our workflow builder to create your own workflow',
+      iconName: 'BiPlus',
+      onClick: () => {
+        // when creating a new flow from the empty flows page
+        // skip the mode selection in the modal
+        // and directly open the modal with flow name input
+        // and show the use case suggestions
+        setCreateMode('new')
+        setSkipModeSelection(true)
+        onCreate()
+      },
+    },
+  ].filter(Boolean) as TileProps[]
 
   return (
     <Flex
-      maxW="600px"
+      maxW="800px"
       margin="auto"
       rowGap={4}
       flexDir="column"
       pt={{ base: '0', md: '10vh' }}
     >
-      <Flex maxW="400px">
-        <Hide above="sm">
-          <Box mt={-1.5}>
-            <NavigationDrawer />
-          </Box>
-        </Hide>
+      <Flex maxW="800px">
         <Text textStyle="h3">How do you want to create your pipe?</Text>
       </Flex>
 
       <Flex gap={4} flexDir={{ base: 'column', md: 'row' }}>
-        <Tile
-          icon={() => (
-            <Box py={2}>
-              <TemplateIcon iconName="BiBookOpen" fontSize="2rem" />
-            </Box>
-          )}
-          display="flex"
-          flex="1"
-          onClick={() => navigate(URLS.TEMPLATES)}
-        >
-          <Flex flexDir="column" gap={2} mt={2}>
-            <Text textStyle="subhead-1">Use a template</Text>
-            <Text textStyle="body-2">
-              Select from pre-built workflows that you can use as-is or
-              customize further for your own use case
-            </Text>
-          </Flex>
-        </Tile>
-
-        <Tile
-          icon={() => (
-            <Box py={2}>
-              <TemplateIcon iconName="BiPlus" fontSize="2rem" />
-            </Box>
-          )}
-          display="flex"
-          flex="1"
-          onClick={onCreate}
-        >
-          <Flex flexDir="column" gap={2} mt={2}>
-            <Text textStyle="subhead-1">Start from scratch</Text>
-            <Text textStyle="body-2">
-              Use our workflow builder to create your own workflow
-            </Text>
-          </Flex>
-        </Tile>
+        {TILES.map((tile) => (
+          <CreatePipeTile key={tile.header} {...tile} />
+        ))}
       </Flex>
     </Flex>
   )
