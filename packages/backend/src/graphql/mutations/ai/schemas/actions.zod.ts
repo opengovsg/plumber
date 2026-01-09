@@ -16,6 +16,11 @@ const baseActionSchema = z.object({
   }),
 })
 
+export const ifThenParametersSchema = z.object({
+  depth: z.number(),
+  branchName: z.string(),
+})
+
 const generatedSchema = generateSchema(baseActionSchema, 'action')
 
 export const ACTION_SCHEMA = generatedSchema.refine(
@@ -25,7 +30,8 @@ export const ACTION_SCHEMA = generatedSchema.refine(
       data.appKey === TOOLBOX_APP_KEY &&
       data.key === TOOLBOX_ACTIONS.IF_THEN
     ) {
-      return data.parameters !== undefined
+      const result = ifThenParametersSchema.safeParse(data.parameters)
+      return result.success
     }
 
     // For other keys, remove parameters

@@ -10,21 +10,29 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 
-interface AIBuilderContextValue {
-  allApps: IApp[]
+interface AIBuilderSharedProps {
   flowName: string
   formInput: {
     trigger: string
     actions: string
   }
-  isMobile: boolean
   isFormMode: boolean
   output: {
     trigger: IStep
     actions: IStep[]
+    traceId: string
   }
+}
+
+interface AiBuilderStep extends IStep {
+  description?: string
+}
+
+interface AIBuilderContextValue extends AIBuilderSharedProps {
+  allApps: IApp[]
+  isMobile: boolean
   triggerStep: IStep | null
-  steps: IStep[]
+  steps: AiBuilderStep[]
   actionSteps: IStep[]
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
@@ -48,18 +56,8 @@ export const useAiBuilderContext = () => {
   return context
 }
 
-interface AiBuilderContextProviderProps {
+interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
   children: React.ReactNode
-  flowName: string
-  formInput: {
-    trigger: string
-    actions: string
-  }
-  isFormMode: boolean
-  output: {
-    trigger: IStep
-    actions: IStep[]
-  }
 }
 
 export const AiBuilderContextProvider = ({

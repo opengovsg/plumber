@@ -4,7 +4,7 @@ import { BiInfoCircle } from 'react-icons/bi'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
-import StepCaptionAndDemo from '@/components/FlowStep/components/StepCaptionAndDemo'
+import StepNameAndDemo from '@/components/FlowStep/components/StepNameAndDemo'
 import { flowStepStyles } from '@/components/FlowStep/styles'
 import { SUPPORT_FORM_LINK } from '@/config/urls'
 import getStepName from '@/helpers/getStepName'
@@ -27,7 +27,7 @@ export default function Step(props: StepProps) {
   const app = allApps?.find(
     (currentApp: IApp) => currentApp.key === step?.appKey,
   )
-  const { caption } = getStepName(allApps, step as IStep)
+  const { stepName } = getStepName(allApps, step as IStep)
 
   if (!step) {
     return (
@@ -91,7 +91,10 @@ export default function Step(props: StepProps) {
               step={step}
             />
             <Box w="100%">
-              <StepCaptionAndDemo app={app} caption={caption} />
+              <StepNameAndDemo
+                stepName={stepName}
+                displayPosition={step.position}
+              />
               <Text textStyle="body-2">{step.description}</Text>
             </Box>
           </Flex>
