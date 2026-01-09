@@ -34,7 +34,13 @@
     "qs": "6.15.0",
     "glob": "13.0.6",
     "minimatch": "10.2.3",
-    "rollup": "4.59.0"
+    "rollup": "4.59.0",
+    "dd-trace": {
+      "@opentelemetry/core": "2.2.0"
+    },
+    "@opentelemetry/core": {
+      "@opentelemetry/semantic-conventions": "1.37.0"
+    }
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
