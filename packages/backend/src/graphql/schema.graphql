@@ -77,6 +77,7 @@ type Mutation {
   registerConnection(input: RegisterConnectionInput): Boolean
   # Flows
   createFlow(input: CreateFlowInput): Flow
+  createFlowWithSteps(input: CreateFlowWithStepsInput): Flow
   createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
@@ -138,6 +139,17 @@ input GenerateAiStepsInput {
   prompt: String!
   isFormMode: Boolean!
   sessionId: String
+}
+
+input FlowAiBuilderConfigInput {
+  type: String!
+  traceId: String!
+}
+
+input CreateFlowWithStepsInput {
+  flowName: String!
+  steps: [StepInput!]!
+  aiBuilderConfig: FlowAiBuilderConfigInput!
 }
 
 type AdminMutation {
@@ -597,8 +609,13 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
+input StepTemplateConfigInput {
+  customTemplate: String
+}
+
 input StepConfigInput {
   stepName: String
+  templateConfig: StepTemplateConfigInput
 }
 
 input UpdateStepInput {
@@ -721,6 +738,7 @@ type StepConfig {
 
 type StepTemplateConfig {
   appEventKey: String
+  customTemplate: String
 }
 
 input StepConnectionInput {
@@ -746,6 +764,9 @@ input StepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  type: StepEnumType
+  config: StepConfigInput
+  position: Int
 }
 
 type Trigger {

@@ -174,6 +174,7 @@ export interface IStepConfig {
 
 export interface IStepTemplateConfig {
   appEventKey?: string
+  customTemplate?: string
 }
 
 export interface IStep {
@@ -209,6 +210,11 @@ export interface IFlowConfig {
   templateConfig?: IFlowTemplateConfig
   showSurvey?: boolean
   attachments?: IFlowAttachmentsConfig[]
+  // AI Builder config
+  aiBuilderConfig?: {
+    type: string
+    traceId: string // trace id on Rome (Langfuse)
+  }
 }
 
 export type NotificationRecipients = 'editor' | 'viewer'
