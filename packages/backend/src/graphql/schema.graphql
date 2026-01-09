@@ -131,8 +131,16 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  # Ai builder mutations
+  generateAiSteps(input: GenerateAiStepsInput!): JSONObject
   # Admin mutations
   admin: AdminMutation!
+}
+
+input GenerateAiStepsInput {
+  prompt: String!
+  isFormMode: Boolean!
+  sessionId: String
 }
 
 type AdminMutation {
