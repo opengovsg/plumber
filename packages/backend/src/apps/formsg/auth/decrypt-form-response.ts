@@ -226,7 +226,7 @@ export async function decryptFormResponse(
       headers['x-formsg-signature'] as string,
       $.webhookUrl,
     )
-  } catch (e) {
+  } catch {
     logger.error('Unable to verify formsg signature')
     return { verified: false, internalId: null }
   }

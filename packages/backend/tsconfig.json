@@ -15,9 +15,10 @@
     "sourceMap": true,
     "target": "es2021",
     "typeRoots": [
+      "../../node_modules/@types",
       "node_modules/@types",
       "node_modules/@plumber/types",
-      "./src/types",
+      "./src/types"
     ]
   },
   "include": ["src/**/*"],

@@ -19,7 +19,7 @@ const verifyCredentials = async ($: IGlobalVariable) => {
     } else {
       throw new Error('Invalid client ID or client secret')
     }
-  } catch (error) {
+  } catch {
     throw new Error('Invalid client ID or client secret')
   }
 }
