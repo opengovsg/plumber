@@ -92,7 +92,7 @@
     "launchdarkly-react-client-sdk": "3.0.8",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-router-dom": "6.11.2",
+    "react-router-dom": "6.30.3",
     "zod": "3.22.4"
   },
   "browserslist": {
