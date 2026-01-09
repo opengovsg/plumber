@@ -2,6 +2,7 @@ import type {
   AdminMutation,
   MutationResolvers,
 } from './__generated__/types.generated'
+import generateAiSteps from './mutations/ai/generate-ai-steps'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import bulkRetryIterations from './mutations/bulk-retry-iterations'
 import createConnection from './mutations/create-connection'
@@ -62,6 +63,7 @@ export default {
   bulkRetryIterations,
   createConnection,
   generateAuthUrl,
+  generateAiSteps,
   updateConnection,
   resetConnection,
   verifyConnection,
