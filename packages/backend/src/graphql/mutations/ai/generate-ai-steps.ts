@@ -31,6 +31,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
     },
   )
   const { objectPrompt: promptName, version } = promptConfig
+  let traceId
 
   try {
     const validatedInput = INPUT_SCHEMA.parse(params.input)
@@ -60,6 +61,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
           tags.push('chat')
         }
 
+        traceId = trace.traceId
         trace.updateTrace({
           userId: context.currentUser.email,
           environment: appConfig.appEnv,
@@ -123,6 +125,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
           templateConfig: {}, // add this by default so it does not complain
         },
       })),
+      traceId,
     } as JSONObject
   } catch (error) {
     logger.error('Error generating ai steps', { error })
