@@ -162,7 +162,7 @@ if (appConfig.sessionSecretKey === appConfig.adminJwtSecretKey) {
   throw new Error(
     'SECURITY ERROR: SESSION_SECRET_KEY and ADMIN_JWT_SECRET_KEY must be different values! ' +
       'Using the same key creates a critical privilege escalation vulnerability (CVE-2025-68470). ' +
-      'See CVE-2025-68470-POC.md for details.',
+      'Generate two different strong random keys using: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
   )
 }
 
