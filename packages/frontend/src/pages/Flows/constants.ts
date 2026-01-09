@@ -1,0 +1,23 @@
+export const AI_FORM_IDEAS = [
+  {
+    label: 'Route support enquiries',
+    icon: 'BiDirections',
+    trigger: 'FormSG',
+    actions:
+      'If the query is related to IT, route to the IT department.\nIf the query is related to HR, route to the HR department.\nIf the query is related to Finance, route to the Finance department.',
+  },
+  {
+    label: 'Schedule reminders',
+    icon: 'BiCalendar',
+    trigger: 'Tiles',
+    actions:
+      'Every day at 09:00 AM, find rows in Tiles where the RSVPed column is Yes and the Reminder sent column is empty.\nFor each row, send a reminder email to the attendee.\nMark the row as Reminder sent.',
+  },
+  {
+    label: 'Attendance taking',
+    icon: 'BiCheckDouble',
+    trigger: 'FormSG',
+    actions:
+      "When a new event attendance is received, find the attendee in Tiles.\nIf the attendee is found, update the Attended? column to Yes.\nIf the attendee is not found, create a new row in Tiles with the attendee's details.",
+  },
+]
