@@ -74,7 +74,7 @@ function TableCell({
         try {
           const newRowCell = row.getVisibleCells()[1] as CellType | null
           tableMeta?.setActiveCell(newRowCell)
-        } catch (_) {
+        } catch {
           // no newRow found, do nothing
         }
       }, DELAY.FOCUS_CELL)
