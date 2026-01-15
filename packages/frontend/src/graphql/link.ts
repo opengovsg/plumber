@@ -32,8 +32,6 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
       if (autoSnackbar) {
         callback?.(NOT_AUTHORISED)
       }
-      // this form of navigation will refetch current user as well
-      window.location.href = URLS.LOGIN
       return
     }
 
