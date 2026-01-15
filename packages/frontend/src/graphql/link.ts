@@ -26,6 +26,15 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
     const context = operation.getContext()
     const autoSnackbar = context.autoSnackbar ?? true
 
+    // this should catch when user's session has expired or the user is not authorised
+    // return early since the status code is enough to identify the error
+    if (context.response.status === 401) {
+      if (autoSnackbar) {
+        callback?.(NOT_AUTHORISED)
+      }
+      return
+    }
+
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path }) => {
         if (autoSnackbar) {
@@ -37,10 +46,6 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
           `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
         )
 
-        if (message === NOT_AUTHORISED) {
-          // this form of navigation will refetch current user as well
-          window.location.href = URLS.LOGIN
-        }
         if (message === INVALID_TILE_VIEW_KEY) {
           window.location.href = URLS.UNAUTHORIZED_TILE
         }

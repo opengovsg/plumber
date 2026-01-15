@@ -10,7 +10,8 @@ import { applyMiddleware } from 'graphql-middleware'
 import { DBError } from 'objection'
 
 import appConfig from '@/config/app'
-import { BadUserInputError } from '@/errors/graphql-errors'
+import { BadUserInputError, UnauthorisedError } from '@/errors/graphql-errors'
+import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
@@ -95,6 +96,17 @@ export const server = new ApolloServer<UnauthenticatedContext>({
     // so we handle them here
     if (unwrapResolverError(error) instanceof DBError) {
       return { message: 'Internal server error', code: 'INTERNAL_SERVER_ERROR' }
+    }
+
+    if (unwrapResolverError(error) instanceof UnauthorisedError) {
+      return { message: 'Not Authorised!', code: 'NOT_AUTHORISED' }
+    }
+
+    if (unwrapResolverError(error) instanceof InvalidTileViewKeyError) {
+      return {
+        message: 'Invalid tile view only key',
+        code: 'INVALID_TILE_VIEW_KEY',
+      }
     }
 
     // NOTE: handles INTERNAL_SERVER_ERROR
