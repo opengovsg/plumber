@@ -18,6 +18,7 @@ async function getDataOutMetadata(
       response: {
         content: {
           label: 'Response',
+          type: 'ai_response',
         },
       },
     },
