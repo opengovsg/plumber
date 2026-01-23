@@ -3,6 +3,7 @@ import { createRateLimitRule, RedisStore } from 'graphql-rate-limit'
 import { allow, and, not, or, rule, shield } from 'graphql-shield'
 
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
+import { UnauthorisedError } from '@/errors/graphql-errors'
 import {
   getAdminTokenUser,
   getLoggedInUser,
@@ -46,6 +47,9 @@ export const setCurrentUserContext = async ({
 
 const isAuthenticated = rule()(
   async (_parent, _args, ctx: UnauthenticatedContext) => {
+    if (ctx.currentUser == null) {
+      throw new UnauthorisedError()
+    }
     return ctx.currentUser != null
   },
 )
@@ -110,6 +114,8 @@ const authentication = shield(
   },
   {
     allowExternalErrors: true,
+    // only affects shield authorisation failures
+    fallbackError: new UnauthorisedError(),
   },
 )
 

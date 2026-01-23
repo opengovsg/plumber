@@ -138,7 +138,10 @@ describe('updateFlowTransferStatus', () => {
       await Connection.query().insert({
         id: connectionId,
         key: 'slack',
-        data: 'secret',
+        data: AES.encrypt(
+          JSON.stringify({ token: 'secret' }),
+          appConfig.encryptionKey,
+        ).toString(),
         userId: owner.id,
       })
 
