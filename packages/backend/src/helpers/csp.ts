@@ -23,6 +23,8 @@ const helmetOptions: HelmetOptions = {
         'https://plumber-uat-attachment-bucket-private-0d9400e.s3.ap-southeast-1.amazonaws.com',
         'https://plumber-staging-attachment-bucket-private-ab28487.s3.ap-southeast-1.amazonaws.com',
         'https://plumber-prod-attachment-bucket-private-beb3aa3.s3.ap-southeast-1.amazonaws.com',
+        // Ladybug
+        'https://ladybug.hack2026.gov.sg',
         appConfig.baseUrl,
       ],
       // for google fonts
@@ -31,6 +33,8 @@ const helmetOptions: HelmetOptions = {
       frameSrc: [
         "'self'",
         'https://demo.arcade.software',
+        // Ladybug
+        'https://ladybug.hack2026.gov.sg',
         appConfig.isDev && 'https://*.apollographql.com',
       ].filter(Boolean),
       imgSrc: [
@@ -39,6 +43,8 @@ const helmetOptions: HelmetOptions = {
         'https://file.go.gov.sg',
         'https://www.google-analytics.com',
         'https://www.googletagmanager.com',
+        // Ladybug
+        'https://ladybug.hack2026.gov.sg',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.baseUrl,
       ].filter(Boolean),
@@ -50,6 +56,8 @@ const helmetOptions: HelmetOptions = {
         "'self'",
         'https://www.google-analytics.com',
         'https://www.googletagmanager.com',
+        // Ladybug
+        'https://ladybug.hack2026.gov.sg',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.isDev && "'unsafe-inline'",
       ].filter(Boolean),

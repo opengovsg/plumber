@@ -1080,3 +1080,18 @@ export type DemoVideoDetails = {
   url: string
   title: string
 }
+
+// Ladybug types
+interface LadybugUserInfo {
+  email?: string
+  id?: string
+}
+
+declare global {
+  interface Window {
+    Ladybug?: {
+      setUser(userInfo: LadybugUserInfo): void
+      unsetUser(): void
+    }
+  }
+}

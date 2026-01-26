@@ -50,6 +50,9 @@ export const AuthenticationProvider = ({
       datadogRum.setUser(currentUser)
       // grant consent to start tracking once logged in
       datadogRum.setTrackingConsent('granted')
+      if (window.Ladybug) {
+        window.Ladybug.setUser({ email: currentUser.email })
+      }
     }
   }, [currentUser])
 
