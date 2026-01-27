@@ -43,8 +43,6 @@ const helmetOptions: HelmetOptions = {
         'https://file.go.gov.sg',
         'https://www.google-analytics.com',
         'https://www.googletagmanager.com',
-        // Ladybug
-        'https://ladybug.hack2026.gov.sg',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.baseUrl,
       ].filter(Boolean),
