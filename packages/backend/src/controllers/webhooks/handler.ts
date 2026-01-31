@@ -1,4 +1,4 @@
-import { IRequest, ITriggerItem } from '@plumber/types'
+import { IRequest, ITriggerItem, SubtriggerData } from '@plumber/types'
 
 import { randomUUID } from 'crypto'
 import { Response } from 'express'
@@ -13,6 +13,7 @@ import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import { enqueueActionJob } from '@/queues/action'
+import { processSubTrigger } from '@/services/sub-trigger'
 import { type CustomWebhookResponse, processTrigger } from '@/services/trigger'
 
 const DEFAULT_MAX_QPS = 10
@@ -110,6 +111,12 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
+  let isSubtrigger = false
+  /**
+   * This is the workflow data which is currently mrf workflow content only
+   */
+  let subtriggerData: SubtriggerData | undefined
+
   if (triggerApp.auth?.verifyWebhook) {
     const $ = await globalVariable({
       flow,
@@ -119,13 +126,14 @@ export default async (request: IRequest, response: Response) => {
       request,
     })
 
-    const { verified, internalId: newInternalId } =
-      await triggerApp.auth.verifyWebhook($)
+    const verifyResult = await triggerApp.auth.verifyWebhook($)
 
-    if (!verified) {
+    if (!verifyResult.verified) {
       return response.sendStatus(401)
     }
-    internalId = newInternalId
+    internalId = verifyResult.internalId
+    isSubtrigger = verifyResult.isSubtrigger ?? false
+    subtriggerData = verifyResult.subtriggerData
   }
 
   // in case trigger type is 'webhook'
@@ -144,6 +152,54 @@ export default async (request: IRequest, response: Response) => {
     meta: {
       internalId,
     },
+  }
+
+  // Handle MRF sub-trigger (subsequent workflow step submissions)
+  if (!testRun && isSubtrigger && subtriggerData !== undefined) {
+    const subTriggerResult = await processSubTrigger({
+      flowId,
+      triggerItem,
+      subtriggerData,
+    })
+
+    span?.addTags({
+      flowId,
+      executionId: subTriggerResult?.executionId,
+      appKey: triggerApp.key,
+      testRun,
+      isSubTrigger: true,
+    })
+
+    // No existing execution found or MRF step not found - return 200 but skip processing
+    if (!subTriggerResult) {
+      return response.sendStatus(200)
+    }
+
+    const { executionId, nextStep } = subTriggerResult
+
+    // For test runs, don't enqueue the next step
+    if (testRun) {
+      return response.sendStatus(200)
+    }
+
+    // Enqueue the next step after the MRF action step
+    if (nextStep) {
+      const jobName = `${executionId}-${nextStep.id}`
+      const jobData = {
+        flowId,
+        executionId,
+        stepId: nextStep.id,
+      }
+
+      await enqueueActionJob({
+        appKey: nextStep.appKey,
+        jobName,
+        jobData,
+        jobOptions: DEFAULT_JOB_OPTIONS,
+      })
+    }
+
+    return response.sendStatus(200)
   }
 
   /**
