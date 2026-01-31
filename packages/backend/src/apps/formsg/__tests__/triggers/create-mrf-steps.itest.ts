@@ -639,4 +639,430 @@ describe('createMrfSteps', () => {
     expect(allSteps[3].position).toBeGreaterThan(3)
     expect(allSteps[4].position).toBeGreaterThan(allSteps[3].position)
   })
+
+  describe('MRF branch deletion', () => {
+    it('should delete all steps within an MRF branch when the MRF action is deleted', async () => {
+      // Create initial workflow with 1 MRF action
+      const initialWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval1',
+          },
+        ],
+      }
+
+      await createMrfSteps($, initialWorkflow)
+
+      // Add non-MRF steps after the MRF action (simulating steps in the MRF branch)
+      await generateMockStep(
+        context,
+        'delayFor',
+        'delay',
+        'action',
+        mockFlowId,
+        3,
+        {},
+      )
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        4,
+        {},
+      )
+
+      // Verify we have 4 steps: trigger + MRF action + 2 branch steps
+      let allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+      expect(allSteps).toHaveLength(4)
+
+      // Now delete the MRF action by updating with empty actions
+      const updatedWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [],
+      }
+
+      await createMrfSteps($, updatedWorkflow)
+
+      // All steps in the MRF branch should be deleted, only trigger remains
+      allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+
+      expect(allSteps).toHaveLength(1)
+      expect(allSteps[0].type).toBe('trigger')
+    })
+
+    it('should delete only the steps within the deleted MRF branch when there are multiple MRF actions', async () => {
+      // Create initial workflow with 2 MRF actions
+      const initialWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval1',
+          },
+          {
+            defaultStepName: 'Action 2',
+            formWorkflowStepId: 'action-002',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval2',
+          },
+        ],
+      }
+
+      await createMrfSteps($, initialWorkflow)
+
+      // Get the MRF step IDs
+      const mrfSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .where('key', 'mrfSubmission')
+        .orderBy('position', 'asc')
+
+      expect(mrfSteps).toHaveLength(2)
+
+      // Add steps after first MRF action (in first branch) - position 3
+      await generateMockStep(
+        context,
+        'delayFor',
+        'delay',
+        'action',
+        mockFlowId,
+        3,
+        {},
+      )
+
+      // Update second MRF step position to 4
+      await Step.query().patchAndFetchById(mrfSteps[1].id, { position: 4 })
+
+      // Add steps after second MRF action (in second branch) - position 5 and 6
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        5,
+        {},
+      )
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        6,
+        {},
+      )
+
+      // Verify we have 6 steps: trigger + 2 MRF actions + 1 step in branch 1 + 2 steps in branch 2
+      let allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+      expect(allSteps).toHaveLength(6)
+
+      // Delete the first MRF action, keeping the second
+      const updatedWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 2',
+            formWorkflowStepId: 'action-002',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval2',
+          },
+        ],
+      }
+
+      await createMrfSteps($, updatedWorkflow)
+
+      // Should have: trigger + 1 MRF action + 2 steps from second branch
+      // First branch (MRF action 1 + delay step) should be deleted
+      allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+
+      expect(allSteps).toHaveLength(4)
+      expect(allSteps[0].type).toBe('trigger')
+      expect(allSteps[1].key).toBe('mrfSubmission')
+      expect(get(allSteps[1].parameters, 'mrf.formWorkflowStepId')).toBe(
+        'action-002',
+      )
+      // The 2 postman steps from the second branch should remain
+      expect(allSteps[2].key).toBe('sendTransactionalEmail')
+      expect(allSteps[3].key).toBe('sendTransactionalEmail')
+    })
+
+    it('should delete all steps after the last MRF action when it is deleted', async () => {
+      // Create initial workflow with 2 MRF actions
+      const initialWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval1',
+          },
+          {
+            defaultStepName: 'Action 2',
+            formWorkflowStepId: 'action-002',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval2',
+          },
+        ],
+      }
+
+      await createMrfSteps($, initialWorkflow)
+
+      // Get the MRF step IDs
+      const mrfSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .where('key', 'mrfSubmission')
+        .orderBy('position', 'asc')
+
+      // Add steps after first MRF action (in first branch) - position 3
+      await generateMockStep(
+        context,
+        'delayFor',
+        'delay',
+        'action',
+        mockFlowId,
+        3,
+        {},
+      )
+
+      // Update second MRF step position to 4
+      await Step.query().patchAndFetchById(mrfSteps[1].id, { position: 4 })
+
+      // Add steps after second MRF action (in second branch) - position 5 and 6
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        5,
+        {},
+      )
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        6,
+        {},
+      )
+
+      // Verify we have 6 steps
+      let allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+      expect(allSteps).toHaveLength(6)
+
+      // Delete the second MRF action, keeping the first
+      const updatedWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval1',
+          },
+        ],
+      }
+
+      await createMrfSteps($, updatedWorkflow)
+
+      // Should have: trigger + 1 MRF action + 1 delay step from first branch
+      // Second branch (MRF action 2 + 2 postman steps) should be deleted
+      allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+
+      expect(allSteps).toHaveLength(3)
+      expect(allSteps[0].type).toBe('trigger')
+      expect(allSteps[1].key).toBe('mrfSubmission')
+      expect(get(allSteps[1].parameters, 'mrf.formWorkflowStepId')).toBe(
+        'action-001',
+      )
+      // The delay step from the first branch should remain
+      expect(allSteps[2].key).toBe('delayFor')
+    })
+
+    it('should delete middle MRF branch while preserving other branches', async () => {
+      // Create initial workflow with 3 MRF actions
+      const initialWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval1',
+          },
+          {
+            defaultStepName: 'Action 2',
+            formWorkflowStepId: 'action-002',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval2',
+          },
+          {
+            defaultStepName: 'Action 3',
+            formWorkflowStepId: 'action-003',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval3',
+          },
+        ],
+      }
+
+      await createMrfSteps($, initialWorkflow)
+
+      // Get the MRF step IDs
+      const mrfSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .where('key', 'mrfSubmission')
+        .orderBy('position', 'asc')
+
+      // Add step after first MRF action (branch 1) - position 3
+      await generateMockStep(
+        context,
+        'delayFor',
+        'delay',
+        'action',
+        mockFlowId,
+        3,
+        {},
+      )
+
+      // Update second MRF step position to 4
+      await Step.query().patchAndFetchById(mrfSteps[1].id, { position: 4 })
+
+      // Add steps after second MRF action (branch 2) - position 5
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        5,
+        {},
+      )
+
+      // Update third MRF step position to 6
+      await Step.query().patchAndFetchById(mrfSteps[2].id, { position: 6 })
+
+      // Add step after third MRF action (branch 3) - position 7
+      await generateMockStep(
+        context,
+        'delayFor',
+        'delay',
+        'action',
+        mockFlowId,
+        7,
+        {},
+      )
+
+      // Verify we have 7 steps
+      let allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+      expect(allSteps).toHaveLength(7)
+
+      // Delete the middle MRF action (action-002), keeping first and third
+      const updatedWorkflow: ParsedMrfWorkflow = {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval1',
+          },
+          {
+            defaultStepName: 'Action 3',
+            formWorkflowStepId: 'action-003',
+            type: 'static',
+            fields: [],
+            approvalField: 'approval3',
+          },
+        ],
+      }
+
+      await createMrfSteps($, updatedWorkflow)
+
+      // Should have: trigger + 2 MRF actions + 1 delay (branch 1) + 1 twilio (branch 3)
+      // Middle branch (MRF action 2 + postman step) should be deleted
+      allSteps = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+
+      expect(allSteps).toHaveLength(5)
+      expect(allSteps[0].type).toBe('trigger')
+      expect(allSteps[1].key).toBe('mrfSubmission')
+      expect(get(allSteps[1].parameters, 'mrf.formWorkflowStepId')).toBe(
+        'action-001',
+      )
+      expect(allSteps[2].key).toBe('delayFor') // First branch step preserved
+      expect(allSteps[3].key).toBe('mrfSubmission')
+      expect(get(allSteps[3].parameters, 'mrf.formWorkflowStepId')).toBe(
+        'action-003',
+      )
+      expect(allSteps[4].key).toBe('delayFor') // Third branch step preserved
+    })
+  })
 })
