@@ -1,14 +1,14 @@
 import { IStep } from '@plumber/types'
 
-import { useContext } from 'react'
+import { useCallback, useContext } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
+import { MrfContext } from '@/contexts/MrfContext'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
-import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
@@ -30,26 +30,43 @@ export function StepsList({ isNested }: StepsListProps) {
     groupingActions,
   } = useContext(StepsToDisplayContext)
   const { flow, isDrawerOpen, isMobile, readOnly } = useContext(EditorContext)
+  const { mrfSteps, mrfApprovalSteps, approvalBranches } =
+    useContext(MrfContext)
 
-  const { handleReorderUpdate } = useReorderSteps(flow.id)
+  const { calculateReorderedSteps, handleReorderUpdate } = useReorderSteps(
+    flow.id,
+  )
 
-  const handleReorderSteps = async (reorderedSteps: IStep[]) => {
-    const stepPositions = reorderedSteps.map((step, index) => ({
-      id: step.id,
-      position: index + 2, // trigger position is 1
-      type: step.type as StepEnumType,
-    }))
+  const handleReorderSteps = useCallback(
+    async (reorderedSteps: IStep[]) => {
+      const allSteps = flow.steps
+      const allReorderedSteps = calculateReorderedSteps({
+        reorderedSteps,
+        allSteps,
+        mrfSteps,
+        mrfApprovalSteps,
+        approvalBranches,
+      })
 
-    try {
-      await handleReorderUpdate(stepPositions)
-    } catch (error) {
-      console.error(
-        'Error updating step positions: ',
-        error,
-        JSON.stringify(stepPositions),
-      )
-    }
-  }
+      try {
+        await handleReorderUpdate(allReorderedSteps)
+      } catch (error) {
+        console.error(
+          'Error updating step positions: ',
+          error,
+          JSON.stringify(allReorderedSteps),
+        )
+      }
+    },
+    [
+      flow.steps,
+      calculateReorderedSteps,
+      mrfSteps,
+      mrfApprovalSteps,
+      approvalBranches,
+      handleReorderUpdate,
+    ],
+  )
 
   const nonIfThenActionSteps = actionStepsBeforeGroup.filter(
     (step) => step.key !== TOOLBOX_ACTIONS.IfThen,
