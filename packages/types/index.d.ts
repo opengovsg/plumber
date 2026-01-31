@@ -564,6 +564,11 @@ export interface IAppQueue {
    * the queueRateLimit.
    */
   isQueueDelayable: boolean
+
+  /**
+   * The type of worker to use for this queue.
+   */
+  workerType: 'action' | 'sub-trigger'
 }
 
 export interface IApp {

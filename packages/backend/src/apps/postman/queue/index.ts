@@ -8,6 +8,7 @@ const queueSettings = {
     max: appConfig.postman.rateLimit,
   },
   isQueueDelayable: true,
+  workerType: 'action',
 } satisfies IAppQueue
 
 export default queueSettings
