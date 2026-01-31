@@ -1,5 +1,6 @@
 import { raw } from 'objection'
 
+import { removeMrfSteps } from '@/apps/formsg/triggers/new-submission/remove-mrf-steps'
 import { hasStepReference } from '@/helpers/check-step-parameters'
 import Step from '@/models/step'
 
@@ -51,6 +52,10 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     if (steps.length === 1 && steps[0].type === 'trigger') {
       const deletedStepId = steps[0].id
 
+      if (steps[0].appKey === 'formsg' && steps[0].key === 'newSubmission') {
+        await removeMrfSteps(flow.id, trx)
+      }
+
       // check for steps whose parameters reference the deletedStepId
       const allSteps = await flow
         .$relatedQuery('steps', trx)
@@ -60,14 +65,13 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
         allSteps,
         new Set([deletedStepId]),
       )
-
       // invalidate steps that reference the deleted steps
       await Step.query(trx).findByIds(stepsToInvalidate).patch({
         status: 'incomplete',
       })
 
       // we delete and add a new trigger upon deletion to preserve past execution steps' context
-      await steps[0].$query().delete()
+      await steps[0].$query(trx).delete()
       await flow.$relatedQuery('steps', trx).insert({
         key: null,
         appKey: null,
@@ -94,6 +98,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
         .$relatedQuery('steps', trx)
         .whereNotIn('id', stepIds)
         .orderBy('position', 'asc')
+
       const stepsToInvalidate = getStepsToInvalidate(allSteps, new Set(stepIds))
 
       // invalidate steps that reference the deleted steps
