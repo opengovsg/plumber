@@ -49,6 +49,7 @@ const queueSettings = {
     max: 1,
     duration: M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS,
   },
+  workerType: 'action',
 } satisfies IAppQueue
 
 export default queueSettings

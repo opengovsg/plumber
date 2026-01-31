@@ -38,6 +38,7 @@ const queueSettings = {
     concurrency: 1,
   },
   isQueueDelayable: false,
+  workerType: 'action',
 } satisfies IAppQueue
 
 export default queueSettings

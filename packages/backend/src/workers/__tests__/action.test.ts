@@ -27,11 +27,13 @@ vi.mock('@/apps', () => ({
     'app-with-queue-1': {
       queue: {
         stubQueueConfig: 1,
+        workerType: 'action',
       },
     },
     'app-with-queue-2': {
       queue: {
         stubQueueConfig: 2,
+        workerType: 'action',
       },
     },
   },
@@ -49,6 +51,7 @@ describe('action workers', () => {
       redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
       queueConfig: {
         isQueueDelayable: false,
+        workerType: 'action',
       },
     })
   })
@@ -57,12 +60,12 @@ describe('action workers', () => {
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
       appKey: 'app-with-queue-1',
       queueName: '{app-actions-app-with-queue-1}',
-      queueConfig: { stubQueueConfig: 1 },
+      queueConfig: { stubQueueConfig: 1, workerType: 'action' },
     })
     expect(mocks.makeActionWorker).toHaveBeenCalledWith({
       appKey: 'app-with-queue-2',
       queueName: '{app-actions-app-with-queue-2}',
-      queueConfig: { stubQueueConfig: 2 },
+      queueConfig: { stubQueueConfig: 2, workerType: 'action' },
     })
   })
 
