@@ -3,7 +3,7 @@ import { IStep } from '@plumber/types'
 import { FlowStep } from '@/exports/components'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
-import { ApproveReject } from '../FlowStep/components/ApproveReject'
+import { ApproveReject } from '../../FlowStep/components/ApproveReject'
 
 import { AddStepButton } from './AddStepButton'
 
