@@ -50,6 +50,11 @@ function VariableTag({
           label: 'Tile Row ID',
           tooltip: `This variable can be used in Tile's Update Single Row action`,
         }
+      case 'approval':
+        return {
+          label: 'Approval',
+          tooltip: 'This variable determines the approval status of this step',
+        }
       default:
         return {
           label: null,
