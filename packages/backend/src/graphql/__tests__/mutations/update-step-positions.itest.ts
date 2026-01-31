@@ -69,7 +69,9 @@ describe('updateStepPositions mutation', () => {
     // Set up flow patch and fetch spy first
     flowPatchAndFetchSpy = vi.fn().mockReturnValue({
       withGraphFetched: vi.fn().mockReturnValue({
-        orderBy: vi.fn().mockResolvedValue([]),
+        orderBy: vi.fn().mockResolvedValue({
+          steps: MOCK_STEPS,
+        }),
       }),
     })
     stepPatchSpy = vi.fn().mockResolvedValue({})

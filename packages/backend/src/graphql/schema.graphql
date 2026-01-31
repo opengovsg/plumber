@@ -619,6 +619,7 @@ input StepPositionInput {
   id: String!
   position: Int!
   type: StepEnumType!
+  config: StepConfigInput
 }
 
 input UpdateStepPositionsInput {
@@ -726,8 +727,8 @@ type StepTemplateConfig {
 }
 
 type StepApprovalConfig {
-  branch: String
-  stepId: String
+  branch: String!
+  stepId: String!
 }
 
 input StepConnectionInput {
