@@ -1,8 +1,9 @@
-import { IGlobalVariable } from '@plumber/types'
+import type { IAuth, IGlobalVariable } from '@plumber/types'
 
 import {
   DecryptedAttachments,
   DecryptedContent,
+  FormField,
 } from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
@@ -11,6 +12,7 @@ import logger from '@/helpers/logger'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
 import convertTableAnswerArrayToTableObject from '../common/process-table-field'
+import type { FormsgPayloadWorkflowContent } from '../common/types'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
@@ -58,7 +60,7 @@ export function filterNric($: IGlobalVariable, value: string): string | null {
 
 export async function decryptFormResponse(
   $: IGlobalVariable,
-): Promise<{ verified: boolean; internalId: string | null }> {
+): ReturnType<IAuth['verifyWebhook']> {
   if (!$.request) {
     logger.error('No trigger item provided')
     return { verified: false, internalId: null }
@@ -93,12 +95,42 @@ export async function decryptFormResponse(
   }
 
   const formSecretKey = $.auth.data.privateKey as string
+  const version = data.version
 
   const shouldStoreAttachments = $.flow.hasFileProcessingActions
   let submission: DecryptedContent | null = null
   let attachments: DecryptedAttachments | null = null
 
-  if (shouldStoreAttachments) {
+  if (version >= 3) {
+    const decryptedSubmission = formSgSdk.cryptoV3.decrypt(formSecretKey, data)
+    const responsesV3 = decryptedSubmission?.responses
+    const mappedResponses: FormField[] = []
+    let questionNumber = 1
+    for (const [key, value] of Object.entries(responsesV3)) {
+      if (typeof value.answer === 'string') {
+        mappedResponses.push({
+          _id: key,
+          fieldType: value.fieldType,
+          // this is temporary since formsg isnt returning us the question yet
+          question: `Question ${questionNumber}`,
+          answer: value.answer,
+        })
+      } else if (Array.isArray(value.answer)) {
+        mappedResponses.push({
+          _id: key,
+          fieldType: value.fieldType,
+          // this is temporary since formsg isnt returning us the question yet
+          question: `Question ${questionNumber}`,
+          answerArray: value.answer,
+        })
+      }
+      questionNumber++
+    }
+    submission = {
+      responses: mappedResponses,
+      verified: decryptedSubmission?.verified,
+    }
+  } else if (shouldStoreAttachments) {
     const decryptedResponse = await formSgSdk.crypto.decryptWithAttachments(
       formSecretKey,
       data,
@@ -231,7 +263,32 @@ export async function decryptFormResponse(
     delete $.request.headers
     delete $.request.query
 
-    return { verified: true, internalId: data.submissionId }
+    const internalId = data.submissionId
+
+    if (!data.workflowContent) {
+      return { verified: true, internalId }
+    }
+
+    $.request.body.workflowContent = data.workflowContent
+
+    const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
+
+    /**
+     * This means it's the first mrf step and is a new submission
+     */
+    if (!workflowContent) {
+      return { verified: true, internalId }
+    }
+
+    return {
+      verified: true,
+      internalId,
+      isSubtrigger: workflowContent.workflowStep > 0 ? true : false,
+      subtriggerData: {
+        type: 'mrf',
+        mrfStepId: workflowContent.workflow[workflowContent.workflowStep]?._id,
+      },
+    }
   } else {
     // Could not decrypt the submission
     logger.error('Unable to decrypt formsg response')
