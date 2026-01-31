@@ -1,5 +1,7 @@
 import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
 
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
+
 import {
   FOR_EACH_ITERATION_DELAY,
   FOR_EACH_MAX_ITERATIONS,
@@ -152,7 +154,6 @@ export const processAction = async (options: ProcessActionOptions) => {
         : await actionCommand.run($, metadata)
     if (result) {
       runResult = result
-      metadata
     }
   } catch (error) {
     executionError = error
@@ -257,6 +258,17 @@ export const processAction = async (options: ProcessActionOptions) => {
     case 'stop-execution':
       // Nothing to do, nextStep is already null.
       break
+    case 'pause-execution':
+      logger.error({
+        event: 'invalid-action-command',
+        command: 'pause-execution',
+        stepId,
+        flowId,
+        executionId,
+      })
+      throw new UnrecoverableError(
+        'pause-execution command not allowed for actions',
+      )
     default:
       nextStep = await step.getNextStep()
   }
