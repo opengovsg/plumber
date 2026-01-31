@@ -335,10 +335,13 @@ async function getDataOutMetadata(
 
   let questionIdsToShowForMrf: Set<string> | undefined
 
+  let approvalField: string | null = null
   if (parameters.mrf) {
     questionIdsToShowForMrf = new Set(
       (parameters.mrf as ParsedMrfWorkflowStep).fields,
     )
+    approvalField =
+      (parameters.mrf as ParsedMrfWorkflowStep).approvalField ?? null
   }
 
   const fieldMetadata: IDataOutMetadata = Object.create(null)
@@ -391,6 +394,11 @@ async function getDataOutMetadata(
       isVisible: { isHidden: true },
       isHeader: { isHidden: true },
     }
+
+    if (approvalField && fieldId === approvalField) {
+      fieldMetadata[fieldId].answer.type = 'approval'
+    }
+
     if (isAnswerArrayValid(fieldData)) {
       // table field will have a stringified table object in the answer field
       // so that it can be used in for-each

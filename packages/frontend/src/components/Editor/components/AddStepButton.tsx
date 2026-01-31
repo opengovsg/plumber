@@ -32,21 +32,21 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const { dividerColor, iconBgColor } = useMemo(() => {
-    if (approvalBranch === undefined) {
-      return {
-        dividerColor: 'base.divider.strong',
-        iconBgColor: undefined,
-      }
-    }
     if (approvalBranch === 'approve') {
       return {
         dividerColor: 'green.500',
         iconBgColor: 'green.50',
       }
     }
+    if (approvalBranch === 'reject') {
+      return {
+        dividerColor: 'red.500',
+        iconBgColor: 'red.50',
+      }
+    }
     return {
-      dividerColor: 'red.500',
-      iconBgColor: 'red.50',
+      dividerColor: 'base.divider.strong',
+      iconBgColor: undefined,
     }
   }, [approvalBranch])
 
@@ -97,7 +97,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             </>
           )}
           {/* Top vertical line */}
-          <Box h={6}>
+          <Box h={4}>
             <Divider orientation="vertical" borderColor={dividerColor} />
           </Box>
           <TouchableTooltip
@@ -129,7 +129,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
           </TouchableTooltip>
           {/* Bottom vertical line */}
           {!isLastStep && (
-            <Box h={6}>
+            <Box h={4}>
               <Divider orientation="vertical" borderColor={dividerColor} />
             </Box>
           )}
