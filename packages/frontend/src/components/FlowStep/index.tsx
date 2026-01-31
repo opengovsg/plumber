@@ -13,7 +13,7 @@ import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
-import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
+import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'

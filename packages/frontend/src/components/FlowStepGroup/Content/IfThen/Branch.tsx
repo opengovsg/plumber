@@ -12,7 +12,7 @@ import { useMutation } from '@apollo/client'
 import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
-import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
+import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'

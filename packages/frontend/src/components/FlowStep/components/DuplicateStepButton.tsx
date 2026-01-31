@@ -6,7 +6,7 @@ import { useMutation } from '@apollo/client'
 import { Tooltip } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
-import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
+import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
