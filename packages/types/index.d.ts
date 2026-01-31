@@ -654,6 +654,11 @@ type IConnectionModalLabel = {
   addConnectionLabel?: string
 }
 
+export interface SubtriggerData {
+  type: 'mrf'
+  mrfStepId: string
+}
+
 interface IBaseAuth {
   connectionType: AuthConnectionType
 
@@ -661,9 +666,12 @@ interface IBaseAuth {
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
-  verifyWebhook?(
-    $: IGlobalVariable,
-  ): Promise<{ verified: boolean; internalId: string | null }>
+  verifyWebhook?($: IGlobalVariable): Promise<{
+    verified: boolean
+    internalId: string | null
+    isSubtrigger?: boolean
+    subtriggerData?: SubtriggerData
+  }>
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
