@@ -10,9 +10,11 @@ export const mrfWorkflowDataSchema = z.array(
   }),
 )
 
+type IMrfWorkflow = z.infer<typeof mrfWorkflowDataSchema>
+
 export interface FormSchema {
   form: {
-    workflow?: z.infer<typeof mrfWorkflowDataSchema>
+    workflow?: IMrfWorkflow
     publicKey: string
     responseMode: string
     _id: string
@@ -55,3 +57,22 @@ export const stepApprovalConfigSchema = z.object({
   branch: z.literal('reject'),
   stepId: z.string().uuid(),
 })
+
+export const submittedStepsSchema = z.array(
+  z.object({
+    isApproval: z.boolean(),
+    submittedAt: z.string(),
+    nextStepRecipientEmails: z.array(z.string()).optional(),
+    status: z.enum(['APPROVED', 'REJECTED']).optional(),
+    stepNumber: z.number().optional(),
+  }),
+)
+
+/*
+ * type for workflowContent in formsg mrf payload
+ */
+export interface FormsgPayloadWorkflowContent {
+  workflow: IMrfWorkflow
+  workflowStep: number
+  submittedSteps: z.infer<typeof submittedStepsSchema>
+}
