@@ -167,9 +167,53 @@ class Step extends Base {
   async getNextStep() {
     const flow = await this.$relatedQuery('flow')
 
-    return await flow
+    const nextImmediateStep = await flow
       .$relatedQuery('steps')
       .findOne({ position: this.position + 1 })
+
+    if (!nextImmediateStep) {
+      return undefined
+    }
+
+    const isCurrentStepInMrfRejectionBranch =
+      this.config.approval?.branch === 'reject'
+    const isNextStepInMrfRejectionBranch =
+      nextImmediateStep.config.approval?.branch === 'reject'
+    if (isCurrentStepInMrfRejectionBranch) {
+      /**
+       * If the current step is in the rejection branch, return the next step in the rejection branch
+       */
+      if (
+        isNextStepInMrfRejectionBranch &&
+        this.config.approval?.stepId ===
+          nextImmediateStep.config.approval?.stepId
+      ) {
+        return nextImmediateStep
+      }
+      /**
+       * If the next step is not in the rejection branch, return undefined
+       */
+      return undefined
+    } else {
+      /**
+       * If the current step and next step are not in the rejection branch, return the next step
+       */
+      if (!isNextStepInMrfRejectionBranch) {
+        return nextImmediateStep
+      }
+
+      /**
+       * If the next step is in a rejection branch, skip to the next mrf action step
+       */
+      const nextMrfStep = await Step.query()
+        .where('flow_id', flow.id)
+        .andWhere('type', 'action')
+        .andWhere('key', 'mrfSubmission')
+        .andWhere('position', '>', nextImmediateStep.position)
+        .orderBy('position', 'asc')
+        .first()
+      return nextMrfStep
+    }
   }
 
   async getTriggerCommand() {
