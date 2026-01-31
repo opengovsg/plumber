@@ -58,8 +58,8 @@ describe('deleteStep mutation', () => {
     testSteps = await Promise.all([
       generateMockStep(
         context,
-        'newSubmission',
-        'formsg',
+        'catchRawWebhook',
+        'custom-api',
         'trigger',
         testFlow.id,
         1,
