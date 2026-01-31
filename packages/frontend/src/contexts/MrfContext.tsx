@@ -1,6 +1,7 @@
 import { IStep, IStepApprovalBranch } from '@plumber/types'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { isEqual } from 'lodash'
 import get from 'lodash/get'
 
 import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
@@ -29,28 +30,55 @@ interface MrfContextProviderProps {
   children: React.ReactNode
 }
 
+function generateDefaultApprovalBranches(
+  mrfApprovalSteps: IStep[],
+): Record<string, IStepApprovalBranch> {
+  return mrfApprovalSteps.reduce((acc, step) => {
+    acc[step.id] = 'approve'
+    return acc
+  }, {} as Record<string, IStepApprovalBranch>)
+}
+
 export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
   const { flow } = useContext(EditorContext)
 
   const [disabledMrfStepToDisplay, setDisabledMrfStepToDisplay] =
     useState<IStep | null>(null)
 
-  const mrfSteps = flow.steps.filter(
-    (step) => step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY,
+  const mrfSteps = useMemo(
+    () =>
+      flow.steps.filter(
+        (step) => step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY,
+      ),
+    [flow.steps],
   )
 
-  const mrfApprovalSteps = mrfSteps.filter(
-    (step) => !!get(step.parameters, 'mrf.approvalField', false),
+  const mrfApprovalSteps = useMemo(
+    () =>
+      mrfSteps.filter(
+        (step) => !!get(step.parameters, 'mrf.approvalField', false),
+      ),
+    [mrfSteps],
   )
 
   const [approvalBranches, setApprovalBranches] = useState<
     Record<string, IStepApprovalBranch>
-  >({
-    ...mrfApprovalSteps.reduce((acc, step) => {
-      acc[step.id] = 'approve'
-      return acc
-    }, {} as Record<string, IStepApprovalBranch>),
-  })
+  >(generateDefaultApprovalBranches(mrfApprovalSteps))
+
+  /**
+   * We need to reset the state when the mrf approval steps change
+   */
+  useEffect(() => {
+    if (
+      isEqual(
+        mrfApprovalSteps.map((step) => step.id),
+        Object.keys(approvalBranches),
+      )
+    ) {
+      return
+    }
+    setApprovalBranches(generateDefaultApprovalBranches(mrfApprovalSteps))
+  }, [approvalBranches, mrfApprovalSteps])
 
   const setApprovalBranch = (stepId: string, branch: IStepApprovalBranch) => {
     setApprovalBranches((prev) => ({
