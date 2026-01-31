@@ -14,6 +14,7 @@ interface MrfContextReturnValue {
     [stepId: string]: IStepApprovalBranch
   }
   setApprovalBranch: (stepId: string, branch: IStepApprovalBranch) => void
+  disabledMrfStepToDisplay: IStep | null
 }
 
 export const MrfContext = createContext<MrfContextReturnValue>({
@@ -21,6 +22,7 @@ export const MrfContext = createContext<MrfContextReturnValue>({
   mrfApprovalSteps: [],
   approvalBranches: {},
   setApprovalBranch: () => null,
+  disabledMrfStepToDisplay: null,
 })
 
 interface MrfContextProviderProps {
@@ -29,6 +31,9 @@ interface MrfContextProviderProps {
 
 export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
   const { flow } = useContext(EditorContext)
+
+  const [disabledMrfStepToDisplay, setDisabledMrfStepToDisplay] =
+    useState<IStep | null>(null)
 
   const mrfSteps = flow.steps.filter(
     (step) => step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY,
@@ -52,6 +57,13 @@ export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
       ...prev,
       [stepId]: branch,
     }))
+    if (branch === 'reject') {
+      const nextMrfStepId =
+        mrfSteps[mrfSteps.findIndex((mrfStep) => mrfStep.id === stepId) + 1]
+      setDisabledMrfStepToDisplay(nextMrfStepId ?? null)
+    } else {
+      setDisabledMrfStepToDisplay(null)
+    }
   }
 
   return (
@@ -61,6 +73,7 @@ export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
         mrfApprovalSteps,
         approvalBranches,
         setApprovalBranch,
+        disabledMrfStepToDisplay,
       }}
     >
       {children}

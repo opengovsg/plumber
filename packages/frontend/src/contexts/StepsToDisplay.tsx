@@ -6,6 +6,7 @@ import { createContext, useContext, useMemo } from 'react'
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import { EditorContext } from './Editor'
+import { MrfContext } from './MrfContext'
 
 export type StepToDisplayContextValue = {
   triggerStep: IStep | null
@@ -31,8 +32,38 @@ export function StepsToDisplayProvider({
   children,
 }: StepExecutionsProviderProps): JSX.Element {
   const { allApps, flow } = useContext(EditorContext)
+  const { approvalBranches } = useContext(MrfContext)
 
-  const steps = flow.steps
+  const allSteps = flow.steps
+
+  const stepsToDisplay = useMemo(() => {
+    let firstRejectBranchStepId: string | null = null
+    return allSteps.filter((step) => {
+      if (
+        firstRejectBranchStepId != null &&
+        step.config?.approval?.stepId !== firstRejectBranchStepId
+      ) {
+        return false
+      }
+
+      if (!firstRejectBranchStepId && approvalBranches[step.id] === 'reject') {
+        firstRejectBranchStepId = step.id
+        return true
+      }
+
+      if (!step.config?.approval) {
+        return true
+      }
+
+      const approvalConfigStepId = step.config?.approval?.stepId
+      const approvalConfigBranch = step.config?.approval?.branch
+
+      if (approvalBranches[approvalConfigStepId] === approvalConfigBranch) {
+        return true
+      }
+      return false
+    })
+  }, [allSteps, approvalBranches])
 
   const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
@@ -57,7 +88,7 @@ export function StepsToDisplayProvider({
       return [null, [], []]
     }
 
-    const groupStepIdx = steps.findIndex((step, index) => {
+    const groupStepIdx = stepsToDisplay.findIndex((step, index) => {
       if (
         // We ignore the 1st step because it's either a trigger, or a
         // step-grouping action that is using a nested Editor to edit steps in
@@ -73,15 +104,18 @@ export function StepsToDisplayProvider({
 
     let branchesWithSteps: IStep[][] = []
     if (groupStepIdx !== -1) {
-      branchesWithSteps = extractBranchesWithSteps(steps.slice(groupStepIdx), 0)
+      branchesWithSteps = extractBranchesWithSteps(
+        stepsToDisplay.slice(groupStepIdx),
+        0,
+      )
     }
 
-    const triggerStep = steps[0]
+    const triggerStep = stepsToDisplay[0]
 
     return groupStepIdx === -1
-      ? [triggerStep, steps.slice(1), []]
-      : [triggerStep, steps.slice(1, groupStepIdx), branchesWithSteps]
-  }, [groupingActions, steps])
+      ? [triggerStep, stepsToDisplay.slice(1), []]
+      : [triggerStep, stepsToDisplay.slice(1, groupStepIdx), branchesWithSteps]
+  }, [groupingActions, stepsToDisplay])
 
   return (
     <StepsToDisplayContext.Provider

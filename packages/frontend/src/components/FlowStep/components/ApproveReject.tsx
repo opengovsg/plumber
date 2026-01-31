@@ -1,6 +1,7 @@
 import { useCallback, useContext } from 'react'
 import { Flex, Tab, TabList, TabProps, Tabs } from '@chakra-ui/react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 
 const tabStyle = (primaryColor: string): TabProps => {
@@ -24,6 +25,7 @@ const tabStyle = (primaryColor: string): TabProps => {
 }
 
 export function ApproveReject({ stepId }: { stepId: string }) {
+  const { setCurrentStepId, onDrawerClose } = useContext(EditorContext)
   const { approvalBranches, setApprovalBranch } = useContext(MrfContext)
 
   const isApproveBranch = approvalBranches[stepId] === 'approve'
@@ -31,8 +33,10 @@ export function ApproveReject({ stepId }: { stepId: string }) {
   const onChange = useCallback(
     (index: number) => {
       setApprovalBranch(stepId, index === 0 ? 'approve' : 'reject')
+      setCurrentStepId(null)
+      onDrawerClose()
     },
-    [stepId, setApprovalBranch],
+    [stepId, setApprovalBranch, setCurrentStepId, onDrawerClose],
   )
 
   return (
