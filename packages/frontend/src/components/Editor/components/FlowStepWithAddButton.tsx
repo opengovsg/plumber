@@ -1,11 +1,15 @@
 import { IStep } from '@plumber/types'
 
+import { useContext } from 'react'
+
+import { MrfContext } from '@/contexts/MrfContext'
 import { FlowStep } from '@/exports/components'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import { ApproveReject } from '../../FlowStep/components/ApproveReject'
 
 import { AddStepButton } from './AddStepButton'
+import { DisabledFlowStep } from './DisabledFlowStep'
 
 export default function FlowStepWithAddButton({
   step,
@@ -30,7 +34,11 @@ export default function FlowStepWithAddButton({
     showEmptyAction: boolean
   }
 }) {
-  const { isApprovalStep } = useStepMetadata(step)
+  const { approvalBranches, disabledMrfStepToDisplay } = useContext(MrfContext)
+  const { isApprovalStep, approvalBranch } = useStepMetadata(step)
+  const approvalBranchForAddStep = approvalBranch ?? approvalBranches[step.id]
+
+  const shouldShowDisabledMrfStep = isLastStep && disabledMrfStepToDisplay
 
   return (
     <>
@@ -48,7 +56,16 @@ export default function FlowStepWithAddButton({
         isHidden={isHidden}
         isDisabled={isDisabled}
         showEmptyAction={showEmptyAction}
+        approvalBranch={approvalBranchForAddStep}
       />
+      {shouldShowDisabledMrfStep && (
+        <DisabledFlowStep
+          step={disabledMrfStepToDisplay}
+          tooltipText={
+            'This step will only happen if the previous MRF step is approved'
+          }
+        />
+      )}
     </>
   )
 }
