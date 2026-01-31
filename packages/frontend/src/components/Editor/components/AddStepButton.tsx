@@ -4,10 +4,9 @@ import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 
+import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
+import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
-
-import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
-import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 import UnsavedChangesAlert from './UnsavedChangesAlert'
 

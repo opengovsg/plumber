@@ -4,7 +4,7 @@ import { useContext, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 
-import UnsavedChangesAlert from '@/components/Editor/UnsavedChangesAlert'
+import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'

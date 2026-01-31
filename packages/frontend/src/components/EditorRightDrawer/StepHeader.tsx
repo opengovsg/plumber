@@ -7,7 +7,7 @@ import EditableInput from '@/components/EditableInput'
 import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
-import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
+import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 
 import { editorRightDrawerStyles as styles } from './styles'
 

@@ -5,7 +5,7 @@ import { createContext, useContext, useMemo } from 'react'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { EditorContext } from './Editor'
-import { StepExecutionsToIncludeContext } from './StepExecutionsToInclude'
+import { StepsToDisplayContext } from './StepsToDisplay'
 
 export const StepExecutionsContext = createContext<{
   priorExecutionSteps: IExecutionStep[]
@@ -26,7 +26,7 @@ export const StepExecutionsProvider = ({
     triggerStep,
     actionStepsBeforeGroup: stepsBeforeGroup,
     groupedSteps,
-  } = useContext(StepExecutionsToIncludeContext)
+  } = useContext(StepsToDisplayContext)
 
   //
   // Compute which steps are eligible for variable extraction.
