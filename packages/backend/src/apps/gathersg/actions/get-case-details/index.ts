@@ -28,11 +28,33 @@ const action: IRawAction = {
   async run($) {
     try {
       const { caseUuid } = $.step.parameters
-      const { data: rawData } = await $.http.get(`/cases/:caseUuid`, {
-        urlPathParams: { caseUuid },
-      })
 
-      const { fields } = rawData.data
+      let rawData
+      try {
+        const { data } = await $.http.get(`/cases/:caseUuid`, {
+          urlPathParams: { caseUuid },
+        })
+        rawData = data
+      } catch (error) {
+        logger.error(`Failed to get case details for case ${caseUuid}:`, error)
+        throw new StepError(
+          `Invalid case uuid: ${caseUuid}`,
+          'Please check that you have configured your step correctly',
+          $.step.position,
+          $.app.name,
+          error,
+        )
+      }
+
+      const fields = rawData.data?.fields
+      if (!fields) {
+        throw new StepError(
+          `No data found for case ${caseUuid}`,
+          'Please check that you have configured your step correctly',
+          $.step.position,
+          $.app.name,
+        )
+      }
 
       // hex encode the field names
       const hexEncodedFields: Record<string, any> = {}
