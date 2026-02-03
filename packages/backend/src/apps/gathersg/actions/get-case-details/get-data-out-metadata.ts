@@ -22,6 +22,10 @@ async function getDataOutMetadata(
       type: {
         name: { label: 'Case type' },
         uuid: { isHidden: true },
+        slaDay: {
+          label: 'Case duration threshold (in days)',
+          isHidden: !dataOut.type.slaDay,
+        },
       },
       uuid: { label: 'Case UUID' },
       caseRef: { label: 'Case ref' },
@@ -47,7 +51,14 @@ async function getDataOutMetadata(
         uuid: { isHidden: true },
       },
       durationSec: { isHidden: true },
-      traceId: { label: 'Trace ID' },
+      durationPaused: { isHidden: true },
+      email: {
+        subject: { label: 'Email subject' },
+        sender: {
+          name: { label: 'Email sender (name)' },
+          address: { label: 'Email sender (email)' },
+        },
+      },
     },
   }
 
@@ -101,8 +112,13 @@ async function getDataOutMetadata(
 
             fieldsMetadata[hexKey] = rowsMetadata
           } else {
-            // array of primitives (strings, numbers, etc.) - treat as simple field
-            fieldsMetadata[hexKey] = { label: decodedLabel }
+            // array of primitives (strings, numbers, etc.) - display as comma-separated values
+            // allow to use as array
+            fieldsMetadata[hexKey] = {
+              label: decodedLabel,
+              type: 'array',
+              displayedValue: fieldValue.join(', '),
+            }
           }
         } else {
           // not an array - treat as simple field
@@ -115,11 +131,23 @@ async function getDataOutMetadata(
     }
   }
 
+  const attachmentsMetadata = Object.create(null)
+  if (dataOut.attachments) {
+    for (const key of Object.keys(dataOut.attachments)) {
+      attachmentsMetadata[key] = {
+        name: { isHidden: true },
+        mimeType: { isHidden: true },
+        size: { isHidden: true },
+      }
+    }
+  }
+
   return {
     data: {
       ...metadata.data,
       tags: tagsMetadata,
       fields: fieldsMetadata,
+      attachments: attachmentsMetadata,
     },
   }
 }
