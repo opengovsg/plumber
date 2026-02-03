@@ -8,7 +8,7 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Get case details',
   key: 'getCaseDetails',
-  description: 'Get details of a case based on the case uuid',
+  description: 'Select the case uuid you want to get case details for.',
   arguments: [
     {
       label: 'Case UUID',
@@ -16,6 +16,10 @@ const action: IRawAction = {
       type: 'string' as const,
       required: true,
       variables: true,
+      // we intentionally disable typing for case uuid as it is used in
+      // to get dynamic data for case fields
+      // it can still be pasted via mouse click
+      singleVariableSelection: true,
     },
   ],
 
@@ -47,7 +51,10 @@ const action: IRawAction = {
         },
       })
     } catch (error) {
-      logger.error('Failed to get case details:', error)
+      logger.error(
+        `Failed to get case details for case ${$.step.parameters.caseUuid}:`,
+        error,
+      )
       throw new StepError(
         `An error occurred: '${error.message}'`,
         'Please check that you have configured your step correctly',
