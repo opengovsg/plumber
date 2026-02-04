@@ -72,6 +72,20 @@ async function getDataOutMetadata(
     }
   }
 
+  const attachmentsMetadata = Object.create(null)
+  const attachmentKeys: string[] = []
+  if (dataOut.attachments) {
+    for (const key of Object.keys(dataOut.attachments)) {
+      attachmentsMetadata[key] = {
+        name: { isHidden: true },
+        mimeType: { isHidden: true },
+        size: { isHidden: true },
+      }
+
+      attachmentKeys.push(key)
+    }
+  }
+
   // handle hex-encoded field names from dataOut
   const fieldsMetadata = Object.create(null)
 
@@ -114,10 +128,26 @@ async function getDataOutMetadata(
           } else {
             // array of primitives (strings, numbers, etc.) - display as comma-separated values
             // allow to use as array
-            fieldsMetadata[hexKey] = {
-              label: decodedLabel,
-              type: 'array',
-              displayedValue: fieldValue.join(', '),
+
+            // HACK: GatherSg returns the attachment field with an array of attachment ids
+            // and a separate attachment object. we hide the array of attachment ids as it is
+            // not useful to the user
+            if (
+              fieldValue.every(
+                (item) =>
+                  typeof item === 'string' && attachmentKeys.includes(item),
+              )
+            ) {
+              fieldsMetadata[hexKey] = {
+                label: decodedLabel,
+                isHidden: true,
+              }
+            } else {
+              fieldsMetadata[hexKey] = {
+                label: decodedLabel,
+                type: 'array',
+                displayedValue: fieldValue.join(', '),
+              }
             }
           }
         } else {
@@ -127,17 +157,6 @@ async function getDataOutMetadata(
       } catch (error) {
         // if decoding fails, use the hex key as-is
         fieldsMetadata[hexKey] = { label: hexKey }
-      }
-    }
-  }
-
-  const attachmentsMetadata = Object.create(null)
-  if (dataOut.attachments) {
-    for (const key of Object.keys(dataOut.attachments)) {
-      attachmentsMetadata[key] = {
-        name: { isHidden: true },
-        mimeType: { isHidden: true },
-        size: { isHidden: true },
       }
     }
   }
