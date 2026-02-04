@@ -22,10 +22,7 @@ async function getDataOutMetadata(
       type: {
         name: { label: 'Case type' },
         uuid: { isHidden: true },
-        slaDay: {
-          label: 'Case duration threshold (in days)',
-          isHidden: !dataOut.type.slaDay,
-        },
+        slaDay: { isHidden: true },
       },
       uuid: { label: 'Case UUID' },
       caseRef: { label: 'Case ref' },
