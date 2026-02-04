@@ -88,7 +88,7 @@ export function makeSubTriggerWorker(
         app: await step.getApp(),
         step,
         connection: await step.$relatedQuery('connection'),
-        execution: execution,
+        execution,
         testRun: false,
         metadata: jobData.metadata ?? {},
       })
