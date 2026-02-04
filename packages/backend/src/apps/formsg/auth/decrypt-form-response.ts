@@ -265,6 +265,9 @@ export async function decryptFormResponse(
 
     const internalId = data.submissionId
 
+    /**
+     * This means it's the first mrf step and is a new submission
+     */
     if (!data.workflowContent) {
       return { verified: true, internalId }
     }
@@ -273,17 +276,10 @@ export async function decryptFormResponse(
 
     const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
 
-    /**
-     * This means it's the first mrf step and is a new submission
-     */
-    if (!workflowContent) {
-      return { verified: true, internalId }
-    }
-
     return {
       verified: true,
       internalId,
-      isSubtrigger: workflowContent.workflowStep > 0 ? true : false,
+      isSubtrigger: workflowContent.workflowStep > 0,
       subtriggerData: {
         type: 'mrf',
         mrfStepId: workflowContent.workflow[workflowContent.workflowStep]?._id,
