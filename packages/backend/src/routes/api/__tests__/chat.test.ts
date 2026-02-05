@@ -251,7 +251,9 @@ describe('Chat Route Authentication', () => {
   })
 
   describe('Admin User Access', () => {
-    it('should allow admin users to access the endpoint', async () => {
+    it('handler can process admin requests (blocking handled by middleware)', async () => {
+      // Note: admin users are blocked by middleware before reaching this handler.
+      // This test verifies the handler itself can process admin contexts if they reach it.
       const mockContext: Context = {
         req: mockReq as Request,
         res: mockRes as Response,
