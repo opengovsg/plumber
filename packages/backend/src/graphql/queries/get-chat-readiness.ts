@@ -3,6 +3,10 @@ import { generateObject } from 'ai'
 import z from 'zod/v3'
 
 import appConfig from '@/config/app'
+import {
+  AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG,
+  AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG_FALLBACK,
+} from '@/config/flags'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
@@ -19,12 +23,9 @@ const getChatReadiness: QueryResolvers['getChatReadiness'] = async (
     const { message: rawMessage, sessionId } = params
 
     const promptConfig = await getLdFlagValue(
-      'ai-builder-prompt-config',
+      AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG,
       context.currentUser.email,
-      {
-        chatReadinessPrompt: 'chat-readiness-check',
-        version: 'production',
-      },
+      AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG_FALLBACK,
     )
     const { chatReadinessPrompt, version } = promptConfig
     const prompt = await getPrompt(chatReadinessPrompt, version)
