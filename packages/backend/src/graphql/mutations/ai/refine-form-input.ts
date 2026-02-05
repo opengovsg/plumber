@@ -4,6 +4,10 @@ import z from 'zod/v3'
 import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
+import {
+  AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG,
+  AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG_FALLBACK,
+} from '@/config/flags'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import { model, MODEL_TYPE } from '@/helpers/pair'
@@ -27,12 +31,9 @@ const refineFormInput: MutationResolvers['refineFormInput'] = async (
     const { prompt: userPrompt, sessionId } = validatedInput
 
     const promptConfig = await getLdFlagValue(
-      'ai-builder-prompt-config',
+      AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG,
       context.currentUser.email,
-      {
-        refineFormInputPrompt: 'form-input-suggestion',
-        version: 'production',
-      },
+      AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG_FALLBACK,
     )
     const { refineFormInputPrompt, version } = promptConfig
     const prompt = await getPrompt(refineFormInputPrompt, version)
