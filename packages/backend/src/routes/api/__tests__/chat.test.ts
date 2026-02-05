@@ -1,10 +1,7 @@
 import type { Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type Context from '@/types/express/context'
-
 const mocks = vi.hoisted(() => ({
-  getAuthenticatedContext: vi.fn(),
   getLdFlagValue: vi.fn(),
   langfuseClient: {
     prompt: {
@@ -13,10 +10,6 @@ const mocks = vi.hoisted(() => ({
   },
   startActiveObservation: vi.fn(),
   streamText: vi.fn(),
-}))
-
-vi.mock('../middleware/authentication', () => ({
-  getAuthenticatedContext: mocks.getAuthenticatedContext,
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -75,7 +68,7 @@ async function executeChatPostHandler(
   return postHandler(req, res)
 }
 
-describe('Chat Route Authentication', () => {
+describe('Chat Route Handler', () => {
   let mockReq: Partial<Request>
   let mockRes: Partial<Response>
 
@@ -113,19 +106,9 @@ describe('Chat Route Authentication', () => {
     vi.restoreAllMocks()
   })
 
-  describe('Authentication Requirements', () => {
-    it('should call getAuthenticatedContext on every request', async () => {
-      const mockContext: Context = {
-        req: mockReq as Request,
-        res: mockRes as Response,
-        currentUser: {
-          id: 'test-user-id',
-          email: 'test@plumber.gov.sg',
-        } as any,
-        isAdminOperation: false,
-      }
-
-      mocks.getAuthenticatedContext.mockReturnValueOnce(mockContext)
+  describe('Handler Behavior', () => {
+    it('should process authenticated requests', async () => {
+      // Context is set by middleware before reaching handler
       mocks.getLdFlagValue.mockResolvedValueOnce({
         chatPrompt: 'aids-chat-v0',
         version: 'production',
@@ -155,25 +138,26 @@ describe('Chat Route Authentication', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      expect(mocks.getAuthenticatedContext).toHaveBeenCalledWith(mockReq)
+      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+        'ai-builder-prompt-config',
+        'test@plumber.gov.sg',
+        expect.any(Object),
+      )
     })
 
-    it('should throw error when user is not authenticated', async () => {
-      mocks.getAuthenticatedContext.mockImplementationOnce(() => {
-        throw new Error('User must be authenticated')
-      })
+    it('should throw error when context is missing user', async () => {
+      // Simulate missing context (should be caught by middleware in production)
+      mockReq.context = undefined
 
-      await expect(executeChatPostHandler(mockReq, mockRes)).rejects.toThrow(
-        'User must be authenticated',
-      )
+      await expect(executeChatPostHandler(mockReq, mockRes)).rejects.toThrow()
 
-      expect(mocks.getAuthenticatedContext).toHaveBeenCalledWith(mockReq)
-      // Should not reach getLdFlagValue since authentication failed
+      // Should not reach getLdFlagValue since context is missing
       expect(mocks.getLdFlagValue).not.toHaveBeenCalled()
     })
 
     it('should use authenticated user email for feature flag lookup', async () => {
-      const mockContext: Context = {
+      // Set context with different user email
+      mockReq.context = {
         req: mockReq as Request,
         res: mockRes as Response,
         currentUser: {
@@ -183,7 +167,6 @@ describe('Chat Route Authentication', () => {
         isAdminOperation: false,
       }
 
-      mocks.getAuthenticatedContext.mockReturnValueOnce(mockContext)
       mocks.getLdFlagValue.mockResolvedValueOnce({
         chatPrompt: 'aids-chat-v0',
         version: 'production',
@@ -220,22 +203,11 @@ describe('Chat Route Authentication', () => {
     })
 
     it('should validate request body before processing', async () => {
-      const mockContext: Context = {
-        req: mockReq as Request,
-        res: mockRes as Response,
-        currentUser: {
-          id: 'test-user-id',
-          email: 'test@plumber.gov.sg',
-        } as any,
-        isAdminOperation: false,
-      }
-
       // Invalid request body (empty messages)
       mockReq.body = {
         messages: [],
       }
 
-      mocks.getAuthenticatedContext.mockReturnValueOnce(mockContext)
       mocks.getLdFlagValue.mockResolvedValueOnce({
         chatPrompt: 'aids-chat-v0',
         version: 'production',
@@ -252,9 +224,10 @@ describe('Chat Route Authentication', () => {
 
   describe('Admin User Access', () => {
     it('handler can process admin requests (blocking handled by middleware)', async () => {
-      // Note: admin users are blocked by middleware before reaching this handler.
-      // This test verifies the handler itself can process admin contexts if they reach it.
-      const mockContext: Context = {
+      // Note: blockAdminOperations middleware blocks admin users
+      // before they reach this handler. This test verifies the handler itself
+      // has no admin-specific logic and would work if an admin context reached it.
+      mockReq.context = {
         req: mockReq as Request,
         res: mockRes as Response,
         currentUser: {
@@ -264,7 +237,6 @@ describe('Chat Route Authentication', () => {
         isAdminOperation: true,
       }
 
-      mocks.getAuthenticatedContext.mockReturnValueOnce(mockContext)
       mocks.getLdFlagValue.mockResolvedValueOnce({
         chatPrompt: 'aids-chat-v0',
         version: 'production',
@@ -293,7 +265,6 @@ describe('Chat Route Authentication', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      expect(mocks.getAuthenticatedContext).toHaveBeenCalledWith(mockReq)
       expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
         'ai-builder-prompt-config',
         'admin@plumber.gov.sg',

@@ -242,7 +242,7 @@ describe('API Authentication Middleware', () => {
     })
   })
 
-  describe('blockAdminMutations', () => {
+  describe('blockAdminOperations', () => {
     it('should block admin operations with 403', () => {
       mockReq.context = {
         req: mockReq as Request,
