@@ -4,6 +4,7 @@ import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
+import { AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG } from '@/config/flags'
 import { langfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -15,14 +16,16 @@ interface ChatRequest {
     role: 'user' | 'assistant' | 'system'
     parts: Array<{ type: 'text'; text: string }>
   }>
-  userId?: string
+  /**
+   * sessionId: Datadog RUM session ID
+   */
   sessionId?: string
 }
 
 async function handleChatStream(req: AuthenticatedRequest, res: Response) {
   const context = req.context
   const promptConfig = await getLdFlagValue(
-    'ai-builder-prompt-config',
+    AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG,
     context.currentUser.email,
     {
       chatPrompt: 'ai-builder/chat',
@@ -45,7 +48,7 @@ async function handleChatStream(req: AuthenticatedRequest, res: Response) {
     }
 
     // Convert UIMessages to ModelMessages
-    const messages = convertToModelMessages(rawMessages as any)
+    const messages = convertToModelMessages(rawMessages)
 
     // Extract last user message text for tracking (simple text-only format)
     const lastUserMessage = rawMessages
