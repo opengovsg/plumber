@@ -57,6 +57,8 @@ const updateFlowConfig = async (
 
   return await flow.$query().patchAndFetch({
     config: newConfig,
+    updatedAt: new Date().toISOString(),
+    updatedBy: context.currentUser.id,
   })
 }
 

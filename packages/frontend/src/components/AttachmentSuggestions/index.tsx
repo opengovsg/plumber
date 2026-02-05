@@ -44,7 +44,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const [currentTab, setCurrentTab] = useState<number>(0)
   const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
 
-  const flowId = getValues('flowId')
+  const flow = getValues('flow')
 
   const {
     isOpen: isDialogOpen,
@@ -63,7 +63,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     loading,
     refetch: refetchFlow,
   } = useQuery(GET_FLOW, {
-    variables: { id: flowId },
+    variables: { id: flow.id },
   })
 
   const { options, suggestions, uploadedItems } = useAttachmentOptions(
@@ -148,10 +148,10 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
       if (!isValid) {
         setError(name, { type: 'invalidFile', message: error })
       } else {
-        await uploadToS3(file, flowId)
+        await uploadToS3(file, flow.id, flow.updatedAt)
       }
     },
-    [flowId, getValues, name, options, setError, uploadToS3],
+    [flow.id, flow.updatedAt, getValues, name, options, setError, uploadToS3],
   )
 
   return (

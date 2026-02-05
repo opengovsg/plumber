@@ -110,7 +110,7 @@ type Mutation {
   deleteFlowCollaborator(input: DeleteFlowCollaboratorInput!): Boolean!
   # S3 operations
   generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
-  deleteUploadedFile(id: String!): Boolean
+  deleteUploadedFile(id: String!, flowUpdatedAt: String!): Boolean
   # Tiles
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
@@ -570,11 +570,11 @@ input DuplicateFlowInput {
 }
 
 input GeneratePresignedPostInput {
-  flowId: String!
   filename: String!
   fileType: String!
   size: Int!
   updatedAt: String!
+  flow: StepFlowInput!
 }
 
 input CreateStepInput {

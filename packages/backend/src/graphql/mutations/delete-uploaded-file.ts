@@ -1,10 +1,10 @@
+import { ForbiddenError } from '@/errors/graphql-errors'
 import {
   COMMON_S3_BUCKET,
   deleteObjects,
   parseS3Id,
   validateManualUploadId,
 } from '@/helpers/s3'
-import Flow from '@/models/flow'
 import Step from '@/models/step'
 
 import { MutationResolvers } from '../__generated__/types.generated'
@@ -14,16 +14,26 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
   params,
   context,
 ) => {
-  const { id } = params
+  const { id, flowUpdatedAt } = params
   if (!validateManualUploadId(id)) {
     throw new Error('Invalid id')
   }
 
   const { objectKey } = parseS3Id(id)
 
-  // check if flow belongs to user
+  // check if user is an editor of the flow
   const flowId = objectKey.split('/')[0]
-  await Flow.hasAccess(context.currentUser.id, flowId)
+  const flow = await context.currentUser
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findOne({ id: flowId })
+
+  if (!flow) {
+    throw new ForbiddenError(
+      'You do not have sufficient permissions for this pipe',
+    )
+  }
+
+  flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
   // only postman has attachments
   // Get all postman steps and update attachments in a single transaction
