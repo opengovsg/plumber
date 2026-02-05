@@ -92,10 +92,10 @@ export const useS3Operations = (
       return true
     } catch (error) {
       console.error('Error deleting file:', error)
-      triggerToast(`Failed to delete ${file.name}`, 'error')
+      triggerToast(`Failed to delete file`, 'error')
       setIsDeleting(false)
       const errorMessage = error instanceof Error ? error.message : ''
-      options.onError?.(file.name, 'deleteError', errorMessage)
+      options.onError?.('file', 'deleteError', errorMessage)
       return false
     }
   }
