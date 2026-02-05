@@ -3,6 +3,10 @@ import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 import { HEX_ENCODED_FIELD_PREFIX } from '../../common/constants'
 
 import { dataOutSchema } from './schema'
+import {
+  createFieldMetadata,
+  createOptionalNestedMetadata,
+} from '../../common/data-out-metadata-helpers'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
@@ -26,96 +30,55 @@ async function getDataOutMetadata(
     timestamp: { label: 'Timestamp' },
   }
 
-  // handle formsg field
-  let formSgMetadata = Object.create(null)
-  if (dataOut.formsg) {
-    formSgMetadata.formId = { label: 'FormSG (form ID)' }
-    formSgMetadata.submissionId = { label: 'FormSG (submission ID)' }
-  } else {
-    formSgMetadata = { isHidden: true }
-  }
+  // handle optional nested objects
+  const formSgMetadata = createOptionalNestedMetadata(dataOut.formsg, {
+    formId: 'FormSG (form ID)',
+    submissionId: 'FormSG (submission ID)',
+  })
 
-  // handle createdBy field
-  let createdByMetadata = Object.create(null)
-  if (dataOut.createdBy) {
-    createdByMetadata.email = { label: 'Created by (email)' }
-    createdByMetadata.name = { label: 'Created by (name)' }
-  } else {
-    createdByMetadata = { isHidden: true }
-  }
+  const createdByMetadata = createOptionalNestedMetadata(dataOut.createdBy, {
+    email: 'Created by (email)',
+    name: 'Created by (name)',
+  })
 
-  // handle updatedBy field
-  let updatedByMetadata = Object.create(null)
-  if (dataOut.updatedBy) {
-    updatedByMetadata.email = { label: 'Updated by (email)' }
-    updatedByMetadata.name = { label: 'Updated by (name)' }
-  } else {
-    updatedByMetadata = { isHidden: true }
-  }
+  const updatedByMetadata = createOptionalNestedMetadata(dataOut.updatedBy, {
+    email: 'Updated by (email)',
+    name: 'Updated by (name)',
+  })
 
-  // handle finalisedBy field
-  let finalisedByMetadata = Object.create(null)
-  if (dataOut.finalisedBy) {
-    finalisedByMetadata.email = { label: 'Finalised by (email)' }
-    finalisedByMetadata.name = { label: 'Finalised by (name)' }
-  } else {
-    finalisedByMetadata = { isHidden: true }
+  const finalisedByMetadata = createOptionalNestedMetadata(
+    dataOut.finalisedBy,
+    {
+      email: 'Finalised by (email)',
+      name: 'Finalised by (name)',
+    },
+  )
+
+  const attachmentsMetadata: Record<string, any> = {}
+  const attachmentKeys: string[] = []
+  if (dataOut.attachments) {
+    for (const key of Object.keys(dataOut.attachments)) {
+      attachmentsMetadata[key] = {
+        name: { isHidden: true },
+        mimeType: { isHidden: true },
+        size: { isHidden: true },
+      }
+
+      attachmentKeys.push(key)
+    }
   }
 
   // handle hex-encoded field names from dataOut
-  const fieldsMetadata = Object.create(null)
+  const fieldsMetadata: Record<string, any> = {}
   if (dataOut.fields) {
     for (const key of Object.keys(dataOut.fields)) {
       try {
-        // decode hex encoded field name to get the original field name
-        let decodedLabel: string
-        if (key.startsWith(HEX_ENCODED_FIELD_PREFIX)) {
-          decodedLabel = Buffer.from(
-            key.replace(HEX_ENCODED_FIELD_PREFIX, ''),
-            'hex',
-          ).toString('utf-8')
-        } else {
-          decodedLabel = key
-        }
-        const fieldValue = dataOut.fields[decodedLabel]
-
-        // check if the value is an array
-        if (Array.isArray(fieldValue)) {
-          // check if it's an array of objects or an array of primitives
-          if (
-            fieldValue.length > 0 &&
-            typeof fieldValue[0] === 'object' &&
-            fieldValue[0] !== null
-          ) {
-            // array of objects - create nested object structure for each row
-            const array = fieldValue as IJSONArray
-            const rowsMetadata = Object.create(null)
-
-            for (let i = 0; i < array.length; i++) {
-              const rowObject = array[i]
-              const rowMetadata = Object.create(null)
-
-              if (typeof rowObject === 'object' && rowObject !== null) {
-                for (const nestedKey of Object.keys(rowObject)) {
-                  rowMetadata[nestedKey] = {
-                    type: 'text',
-                    label: `${decodedLabel} Row ${i + 1} ${nestedKey}`,
-                  }
-                }
-              }
-
-              rowsMetadata[i] = rowMetadata
-            }
-
-            fieldsMetadata[key] = rowsMetadata
-          } else {
-            // array of primitives (strings, numbers, etc.) - treat as simple field
-            fieldsMetadata[key] = { label: decodedLabel }
-          }
-        } else {
-          // not an array - treat as simple field
-          fieldsMetadata[key] = { label: decodedLabel }
-        }
+        const fieldValue = dataOut.fields[key]
+        fieldsMetadata[key] = createFieldMetadata(
+          key,
+          fieldValue,
+          attachmentKeys,
+        )
       } catch (error) {
         // if decoding fails, use the hex key as-is
         fieldsMetadata[key] = { label: key }
@@ -131,6 +94,7 @@ async function getDataOutMetadata(
       createdBy: createdByMetadata,
       finalisedBy: finalisedByMetadata,
       updatedBy: updatedByMetadata,
+      attachments: attachmentsMetadata,
 
       caseRef: { label: 'Case ref' },
       createdAt: { label: 'Created at' },

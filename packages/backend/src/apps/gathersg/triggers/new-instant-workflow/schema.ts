@@ -51,6 +51,16 @@ export const dataOutSchema = z.object({
           name: z.string().min(1),
         })
         .nullish(),
+      attachments: z
+        .record(
+          z.string(),
+          z.object({
+            name: z.string().min(1),
+            mimeType: z.string().min(1),
+            size: z.number(),
+          }),
+        )
+        .nullish(),
     })
     .nullish(),
 })
