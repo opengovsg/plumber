@@ -1,6 +1,6 @@
 import { startActiveObservation } from '@langfuse/tracing'
 import { convertToModelMessages, smoothStream, streamText } from 'ai'
-import type { Request, Response } from 'express'
+import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
@@ -8,8 +8,7 @@ import { langfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
-
-import { getAuthenticatedContext } from './middleware/authentication'
+import { AuthenticatedRequest } from '@/types/express/context'
 
 interface ChatRequest {
   messages: Array<{
@@ -20,9 +19,8 @@ interface ChatRequest {
   sessionId?: string
 }
 
-async function handleChatStream(req: Request, res: Response) {
-  const context = getAuthenticatedContext(req)
-
+async function handleChatStream(req: AuthenticatedRequest, res: Response) {
+  const context = req.context
   const promptConfig = await getLdFlagValue(
     'ai-builder-prompt-config',
     context.currentUser.email,
