@@ -12,6 +12,19 @@ export const mrfWorkflowDataSchema = z.array(
 
 type IMrfWorkflow = z.infer<typeof mrfWorkflowDataSchema>
 
+export interface FormSchemaField {
+  _id: string
+  fieldType: string
+  title: string
+  // for table fields
+  columns?: Array<{
+    title: string
+    _id: string
+  }>
+  minimumRows?: number
+  maximumRows?: number
+}
+
 export interface FormSchema {
   form: {
     workflow?: IMrfWorkflow
@@ -20,7 +33,7 @@ export interface FormSchema {
     _id: string
     title: string
     status: string
-    form_fields: Array<Record<string, any>>
+    form_fields: Array<FormSchemaField>
     authType: string
     isSubmitterIdCollectionEnabled: boolean
     payments_field?: {
