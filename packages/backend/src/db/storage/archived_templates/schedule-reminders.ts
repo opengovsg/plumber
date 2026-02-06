@@ -1,6 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
-import { USER_EMAIL_PLACEHOLDER } from './constants'
+import { USER_EMAIL_PLACEHOLDER } from '../constants'
 
 const SCHEDULE_REMINDERS_ID = '65e90f41-b605-4e83-bcd7-e4d2e349299d'
 
