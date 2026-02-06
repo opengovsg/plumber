@@ -9,41 +9,49 @@ const DEFAULT_CASE_DATA = {
   timestamp: new Date().getTime(),
 }
 
+const createMockExecutionStep = (dataOut: any) => ({
+  id: 'execution-step-id',
+  executionId: 'execution-id',
+  stepId: 'step-id',
+  step: {} as any,
+  dataIn: {},
+  dataOut: {
+    ...DEFAULT_CASE_DATA,
+    ...(dataOut ? dataOut : {}),
+  },
+  errorDetails: {},
+  status: 'success' as const,
+  appKey: 'gathersg',
+  key: 'new-instant-workflow',
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+  metadata: {},
+})
+
 describe('getDataOutMetadata', () => {
   it('should return null if dataOut is missing', async () => {
-    const executionStep = {
-      dataOut: null,
-    }
-
-    const result = await getDataOutMetadata(executionStep)
+    const result = await getDataOutMetadata({} as any)
     expect(result).toBeNull()
   })
 
   it('should return null if dataOut schema validation fails', async () => {
-    const executionStep = {
-      dataOut: {
-        invalid: 'data',
-      },
-    }
+    const executionStep = { dataOut: { invalid: 'data' } } as any
 
     const result = await getDataOutMetadata(executionStep)
     expect(result).toBeNull()
   })
 
   it('should create basic case metadata', async () => {
-    const executionStep = {
-      dataOut: {
-        ...DEFAULT_CASE_DATA,
-        data: {
-          caseRef: 'CASE-001',
-          createdAt: '2024-01-01',
-          status: 'open',
-          type: 'inquiry',
-          updatedAt: '2024-01-02',
-          uuid: 'abc123',
-        },
+    const executionStep = createMockExecutionStep({
+      data: {
+        caseRef: 'CASE-001',
+        createdAt: '2024-01-01',
+        status: 'open',
+        type: 'inquiry',
+        updatedAt: '2024-01-02',
+        uuid: 'abc123',
       },
-    }
+    })
 
     const result = await getDataOutMetadata(executionStep)
 
@@ -57,32 +65,23 @@ describe('getDataOutMetadata', () => {
 
   describe('Optional nested objects', () => {
     it('should hide formsg metadata when formsg is absent', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-          },
-        },
-      }
-
+      const executionStep = createMockExecutionStep({
+        data: { caseRef: 'CASE-001' },
+      })
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.formsg).toEqual({ isHidden: true })
     })
 
     it('should show formsg metadata when formsg is present', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            formsg: {
-              formId: 'form123',
-              submissionId: 'sub456',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          formsg: {
+            formId: 'form123',
+            submissionId: 'sub456',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.formsg).toEqual({
@@ -92,32 +91,24 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should hide createdBy metadata when createdBy is absent', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-          },
-        },
-      }
+      const executionStep = createMockExecutionStep({
+        data: { caseRef: 'CASE-001' },
+      })
 
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.createdBy).toEqual({ isHidden: true })
     })
 
     it('should show createdBy metadata when createdBy is present', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            createdBy: {
-              email: 'creator@example.com',
-              name: 'Creator',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          createdBy: {
+            email: 'creator@example.com',
+            name: 'Creator',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.createdBy).toEqual({
@@ -127,33 +118,23 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should hide updatedBy metadata when updatedBy is absent', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-          },
-        },
-      } as any
-
+      const executionStep = createMockExecutionStep({
+        data: { caseRef: 'CASE-001' },
+      })
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.updatedBy).toEqual({ isHidden: true })
     })
 
     it('should show updatedBy metadata when updatedBy is present', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            updatedBy: {
-              email: 'updater@example.com',
-              name: 'Updater',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          updatedBy: {
+            email: 'updater@example.com',
+            name: 'Updater',
           },
         },
-      }
-
+      })
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.updatedBy).toEqual({
         email: { label: 'Updated by (email)' },
@@ -162,32 +143,23 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should hide finalisedBy metadata when finalisedBy is absent', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-          },
-        },
-      }
-
+      const executionStep = createMockExecutionStep({
+        data: { caseRef: 'CASE-001' },
+      })
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.finalisedBy).toEqual({ isHidden: true })
     })
 
     it('should show finalisedBy metadata when finalisedBy is present', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            finalisedBy: {
-              email: 'finaliser@example.com',
-              name: 'Finaliser',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          finalisedBy: {
+            email: 'finaliser@example.com',
+            name: 'Finaliser',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
       expect(result?.data.finalisedBy).toEqual({
@@ -199,26 +171,23 @@ describe('getDataOutMetadata', () => {
 
   describe('Attachments', () => {
     it('should create hidden metadata for attachments', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            attachments: {
-              attach1: {
-                name: 'file1.pdf',
-                mimeType: 'application/pdf',
-                size: 1024,
-              },
-              attach2: {
-                name: 'file2.jpg',
-                mimeType: 'image/jpeg',
-                size: 2048,
-              },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          attachments: {
+            attach1: {
+              name: 'file1.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
+            },
+            attach2: {
+              name: 'file2.jpg',
+              mimeType: 'image/jpeg',
+              size: 2048,
             },
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -244,17 +213,14 @@ describe('getDataOutMetadata', () => {
         fieldName,
       ).toString('hex')}`
 
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              [hexEncodedKey]: 'some value',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            [hexEncodedKey]: 'some value',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -264,17 +230,14 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should use key as-is for non-hex-encoded fields', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              normalField: 'some value',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            normalField: 'some value',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -286,17 +249,14 @@ describe('getDataOutMetadata', () => {
     it('should handle invalid hex encoding gracefully', async () => {
       const invalidHexKey = `${HEX_ENCODED_FIELD_PREFIX}zzz`
 
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              [invalidHexKey]: 'some value',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            [invalidHexKey]: 'some value',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -309,18 +269,15 @@ describe('getDataOutMetadata', () => {
 
   describe('Fields - Simple fields', () => {
     it('should create metadata for simple text field', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              name: 'John Doe',
-              email: 'john@example.com',
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            name: 'John Doe',
+            email: 'john@example.com',
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -331,22 +288,19 @@ describe('getDataOutMetadata', () => {
 
   describe('Fields - Primitive arrays with _array property', () => {
     it('should create metadata for primitive array with _array property', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              colors: {
-                0: 'red',
-                1: 'blue',
-                2: 'green',
-                _array: ['red', 'blue', 'green'],
-              },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            colors: {
+              0: 'red',
+              1: 'blue',
+              2: 'green',
+              _array: ['red', 'blue', 'green'],
             },
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -363,33 +317,30 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should hide primitive array when it contains only attachment keys', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            attachments: {
-              attach1: {
-                name: 'file1.pdf',
-                mimeType: 'application/pdf',
-                size: 1024,
-              },
-              attach2: {
-                name: 'file2.pdf',
-                mimeType: 'application/pdf',
-                size: 1024,
-              },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          attachments: {
+            attach1: {
+              name: 'file1.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
             },
-            fields: {
-              documents: {
-                0: 'attach1',
-                1: 'attach2',
-                _array: ['attach1', 'attach2'],
-              },
+            attach2: {
+              name: 'file2.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
+            },
+          },
+          fields: {
+            documents: {
+              0: 'attach1',
+              1: 'attach2',
+              _array: ['attach1', 'attach2'],
             },
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -402,17 +353,14 @@ describe('getDataOutMetadata', () => {
 
   describe('Fields - Direct arrays', () => {
     it('should create metadata for primitive array (non-_array format)', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              tags: ['urgent', 'follow-up', 'resolved'],
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            tags: ['urgent', 'follow-up', 'resolved'],
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -424,29 +372,26 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should hide direct array when it contains only attachment keys', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            attachments: {
-              attach1: {
-                name: 'file1.pdf',
-                mimeType: 'application/pdf',
-                size: 1024,
-              },
-              attach2: {
-                name: 'file2.pdf',
-                mimeType: 'application/pdf',
-                size: 1024,
-              },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          attachments: {
+            attach1: {
+              name: 'file1.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
             },
-            fields: {
-              files: ['attach1', 'attach2'],
+            attach2: {
+              name: 'file2.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
             },
           },
+          fields: {
+            files: ['attach1', 'attach2'],
+          },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -457,20 +402,17 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should create metadata for array of objects', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              items: [
-                { name: 'Item 1', quantity: 5 },
-                { name: 'Item 2', quantity: 10 },
-              ],
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            items: [
+              { name: 'Item 1', quantity: 5 },
+              { name: 'Item 2', quantity: 10 },
+            ],
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -487,17 +429,14 @@ describe('getDataOutMetadata', () => {
     })
 
     it('should handle empty array of objects', async () => {
-      const executionStep = {
-        dataOut: {
-          ...DEFAULT_CASE_DATA,
-          data: {
-            caseRef: 'CASE-001',
-            fields: {
-              items: [],
-            },
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          fields: {
+            items: [],
           },
         },
-      }
+      })
 
       const result = await getDataOutMetadata(executionStep)
 
@@ -505,75 +444,70 @@ describe('getDataOutMetadata', () => {
     })
   })
 
-  // describe('Integration - Complex case', () => {
-  //   it('should handle complex dataOut with all field types', async () => {
-  //     const hexEncodedField = `${HEX_ENCODED_FIELD_PREFIX}${Buffer.from(
-  //       'field.special',
-  //     ).toString('hex')}`
+  describe('Integration - Complex case', () => {
+    it('should handle complex dataOut with all field types', async () => {
+      const hexEncodedField = `${HEX_ENCODED_FIELD_PREFIX}${Buffer.from(
+        'field.special',
+      ).toString('hex')}`
 
-  //     const executionStep = {
-  //       dataOut: {
-  //         data: {
-  //           caseRef: 'CASE-001',
-  //           createdAt: '2024-01-01',
-  //           status: 'open',
-  //           type: 'inquiry',
-  //           formsg: {
-  //             formId: 'form123',
-  //             submissionId: 'sub456',
-  //           },
-  //           createdBy: {
-  //             email: 'creator@example.com',
-  //             name: 'Creator',
-  //           },
-  //           attachments: {
-  //             attach1: {
-  //               name: 'file1.pdf',
-  //               mimeType: 'application/pdf',
-  //               size: 1024,
-  //             },
-  //           },
-  //           fields: {
-  //             name: 'John Doe',
-  //             [hexEncodedField]: 'special value',
-  //             colors: {
-  //               0: 'red',
-  //               1: 'blue',
-  //               _array: ['red', 'blue'],
-  //             },
-  //             tags: ['urgent', 'follow-up'],
-  //             items: [
-  //               { name: 'Item 1', qty: 5 },
-  //               { name: 'Item 2', qty: 10 },
-  //             ],
-  //             attachmentRefs: ['attach1'],
-  //           },
-  //         },
-  //         app: 'gathersg',
-  //         signature: 'sig123',
-  //         timestamp: '2024-01-01T00:00:00Z',
-  //       },
-  //     } as any
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          createdAt: '2024-01-01',
+          status: 'open',
+          type: 'inquiry',
+          formsg: {
+            formId: 'form123',
+            submissionId: 'sub456',
+          },
+          createdBy: {
+            email: 'creator@example.com',
+            name: 'Creator',
+          },
+          attachments: {
+            attach1: {
+              name: 'file1.pdf',
+              mimeType: 'application/pdf',
+              size: 1024,
+            },
+          },
+          fields: {
+            name: 'John Doe',
+            [hexEncodedField]: 'special value',
+            colors: {
+              0: 'red',
+              1: 'blue',
+              _array: ['red', 'blue'],
+            },
+            tags: ['urgent', 'follow-up'],
+            items: [
+              { name: 'Item 1', qty: 5 },
+              { name: 'Item 2', qty: 10 },
+            ],
+            attachmentRefs: ['attach1'],
+          },
+        },
+      })
 
-  //     const result = await getDataOutMetadata(executionStep)
+      const result = await getDataOutMetadata(executionStep)
 
-  //     expect(result).toBeDefined()
-  //     expect(result?.data.formsg).toEqual({
-  //       formId: { label: 'FormSG (form ID)' },
-  //       submissionId: { label: 'FormSG (submission ID)' },
-  //     })
-  //     expect(result?.data.createdBy).toEqual({
-  //       email: { label: 'Created by (email)' },
-  //       name: { label: 'Created by (name)' },
-  //     })
-  //     expect(result?.data.fields.name).toEqual({ label: 'name' })
-  //     expect(result?.data.fields[hexEncodedField]).toEqual({
-  //       label: 'field.special',
-  //     })
-  //     expect(result?.data.fields.attachmentRefs).toEqual({
-  //       label: 'attachmentRefs',
-  //       isHidden: true,
-  //     })
-  //   })
-  // })
+      expect(result).toBeDefined()
+      expect(result?.data.formsg).toEqual({
+        formId: { label: 'FormSG (form ID)' },
+        submissionId: { label: 'FormSG (submission ID)' },
+      })
+      expect(result?.data.createdBy).toEqual({
+        email: { label: 'Created by (email)' },
+        name: { label: 'Created by (name)' },
+      })
+      expect(result?.data.fields.name).toEqual({ label: 'name' })
+      expect(result?.data.fields[hexEncodedField]).toEqual({
+        label: 'field.special',
+      })
+      expect(result?.data.fields.attachmentRefs).toEqual({
+        label: 'attachmentRefs',
+        isHidden: true,
+      })
+    })
+  })
 })

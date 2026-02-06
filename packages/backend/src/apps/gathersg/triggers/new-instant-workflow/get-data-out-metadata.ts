@@ -1,12 +1,11 @@
-import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
+import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
-import { HEX_ENCODED_FIELD_PREFIX } from '../../common/constants'
-
-import { dataOutSchema } from './schema'
 import {
   createFieldMetadata,
   createOptionalNestedMetadata,
 } from '../../common/data-out-metadata-helpers'
+
+import { dataOutSchema } from './schema'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
@@ -31,23 +30,23 @@ async function getDataOutMetadata(
   }
 
   // handle optional nested objects
-  const formSgMetadata = createOptionalNestedMetadata(dataOut.formsg, {
+  const formSgMetadata = createOptionalNestedMetadata(dataOut?.formsg, {
     formId: 'FormSG (form ID)',
     submissionId: 'FormSG (submission ID)',
   })
 
-  const createdByMetadata = createOptionalNestedMetadata(dataOut.createdBy, {
+  const createdByMetadata = createOptionalNestedMetadata(dataOut?.createdBy, {
     email: 'Created by (email)',
     name: 'Created by (name)',
   })
 
-  const updatedByMetadata = createOptionalNestedMetadata(dataOut.updatedBy, {
+  const updatedByMetadata = createOptionalNestedMetadata(dataOut?.updatedBy, {
     email: 'Updated by (email)',
     name: 'Updated by (name)',
   })
 
   const finalisedByMetadata = createOptionalNestedMetadata(
-    dataOut.finalisedBy,
+    dataOut?.finalisedBy,
     {
       email: 'Finalised by (email)',
       name: 'Finalised by (name)',
@@ -56,7 +55,7 @@ async function getDataOutMetadata(
 
   const attachmentsMetadata: Record<string, any> = {}
   const attachmentKeys: string[] = []
-  if (dataOut.attachments) {
+  if (dataOut?.attachments) {
     for (const key of Object.keys(dataOut.attachments)) {
       attachmentsMetadata[key] = {
         name: { isHidden: true },
@@ -70,7 +69,7 @@ async function getDataOutMetadata(
 
   // handle hex-encoded field names from dataOut
   const fieldsMetadata: Record<string, any> = {}
-  if (dataOut.fields) {
+  if (dataOut?.fields) {
     for (const key of Object.keys(dataOut.fields)) {
       try {
         const fieldValue = dataOut.fields[key]
