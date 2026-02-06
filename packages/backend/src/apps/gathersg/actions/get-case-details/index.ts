@@ -3,6 +3,8 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
+import { processFields } from '../../common/utils'
+
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {
@@ -57,18 +59,14 @@ const action: IRawAction = {
       }
 
       // hex encode the field names
-      const hexEncodedFields: Record<string, any> = {}
-      for (const [key, value] of Object.entries(fields)) {
-        const hexKey = Buffer.from(key).toString('hex')
-        hexEncodedFields[hexKey] = value
-      }
+      const processedFields = processFields(fields)
 
       $.setActionItem({
         raw: {
           ...rawData,
           data: {
             ...rawData.data,
-            fields: hexEncodedFields,
+            fields: processedFields,
           },
         },
       })

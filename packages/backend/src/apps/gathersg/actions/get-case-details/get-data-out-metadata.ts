@@ -1,5 +1,7 @@
 import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 
+import { decodeFieldName } from '../../common/utils'
+
 import { dataOutSchema } from './schema'
 
 async function getDataOutMetadata(
@@ -90,7 +92,7 @@ async function getDataOutMetadata(
     for (const hexKey of Object.keys(dataOut.fields)) {
       try {
         // decode hex key to get the original column name
-        const decodedLabel = Buffer.from(hexKey, 'hex').toString('utf-8')
+        const decodedLabel = decodeFieldName(hexKey)
         const fieldValue = dataOut.fields[hexKey]
 
         // check if the value is an array
