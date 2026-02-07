@@ -8,16 +8,15 @@ import {
 export default function getStepName(allApps: IApp[], step: IStep | undefined) {
   if (!step) {
     return {
-      caption: '',
-      defaultCaption: '',
+      stepName: '',
+      defaultStepName: '',
     }
   }
 
   const {
     appKey,
     key,
-    config: { stepName = undefined } = {},
-    position,
+    config: { stepName: customStepName = undefined } = {},
     type,
   } = step
 
@@ -37,44 +36,40 @@ export default function getStepName(allApps: IApp[], step: IStep | undefined) {
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === key,
   )
 
-  let caption = ''
-  let defaultCaption = selectedActionOrTrigger?.name
+  let stepName = ''
+  let defaultStepName = selectedActionOrTrigger?.name
 
   if (isIfThen) {
-    defaultCaption = 'Condition'
-    caption = stepName ? `${position}. ${stepName}` : `${position}. Condition`
+    defaultStepName = 'Condition'
+    stepName = customStepName ?? 'Condition'
     return {
-      caption,
-      defaultCaption,
+      stepName,
+      defaultStepName,
     }
   }
 
   if (isForEach) {
-    caption = stepName
-      ? `${position}. ${stepName}`
-      : `${position}. For each item`
+    stepName = customStepName ?? 'For each item'
     return {
-      caption,
-      defaultCaption,
+      stepName,
+      defaultStepName,
     }
   }
 
-  if (stepName) {
-    caption = `${position}. ${stepName}`
-  } else if (defaultCaption) {
-    caption = `${position ? `${position}. ` : ''}${defaultCaption}`
+  if (customStepName) {
+    stepName = customStepName
+  } else if (defaultStepName) {
+    stepName = defaultStepName
   } else if (app?.name) {
-    caption = `${position ? `${position}. ` : ''}${app.name}`
+    stepName = app.name
   } else if (isTrigger) {
-    caption = 'This step starts your pipe'
+    stepName = 'This step starts your pipe'
   }
 
   return {
-    caption:
-      caption ||
-      (appKey
-        ? `${position}. ${appKey.charAt(0).toUpperCase() + appKey.slice(1)}`
-        : ''),
-    defaultCaption,
+    stepName:
+      stepName ||
+      (appKey ? appKey.charAt(0).toUpperCase() + appKey.slice(1) : ''),
+    defaultStepName,
   }
 }

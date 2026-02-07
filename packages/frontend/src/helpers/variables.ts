@@ -217,15 +217,13 @@ export function extractVariables(
           '',
         )
 
-        const { caption: name } = getStepName(
-          allApps || [],
-          executionStep?.step,
-        )
+        const { stepName } = getStepName(allApps || [], executionStep?.step)
         // sort variable by order key in-place
         sortVariables(variables)
         return {
           id: executionStep.stepId,
-          name,
+          // Need to add position here
+          name: stepName,
           output: variables,
         }
       })
