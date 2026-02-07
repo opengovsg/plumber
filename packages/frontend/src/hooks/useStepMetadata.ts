@@ -11,6 +11,7 @@ import { useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
+import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import getStepName from '@/helpers/getStepName'
 import {
   isIfThenStep as checkIfThenStep,
@@ -20,14 +21,14 @@ import {
 interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
-  caption: string
-  defaultCaption?: string
+  stepName: string
+  defaultStepName?: string
   hasConnection: boolean
   isCompleted: boolean
   isIfThenStep: boolean
   isTrigger: boolean
   position: number
-  stepName: string
+  displayPosition: number
   substeps: ISubstep[]
   shouldShowDragHandle?: boolean
   isDeletable: boolean
@@ -43,6 +44,7 @@ export function useStepMetadata(
   const { readOnly, isMobile, isDrawerOpen, allApps } =
     useContext(EditorContext)
   const { mrfSteps, approvalBranches } = useContext(MrfContext)
+  const { stepIdToOrder } = useContext(StepsToDisplayContext)
 
   const isCompleted = step?.status === 'completed'
   const isTrigger = step?.type === 'trigger'
@@ -67,7 +69,7 @@ export function useStepMetadata(
     [actionsOrTriggers, step?.key],
   )
 
-  const { caption, defaultCaption } = getStepName(allApps, step)
+  const { stepName, defaultStepName } = getStepName(allApps, step)
 
   const substeps = selectedActionOrTrigger?.substeps || []
   const hasConnection = substeps?.some(
@@ -165,19 +167,19 @@ export function useStepMetadata(
     isMrfStep,
   ])
 
+  const displayPosition = stepIdToOrder[step?.id ?? ''] ?? step?.position ?? 0
+
   return {
     app,
     selectedActionOrTrigger,
-    caption,
-    defaultCaption,
+    stepName,
+    defaultStepName,
     hasConnection,
     isCompleted,
     isIfThenStep,
     isTrigger,
     position: step?.position ?? 0,
-    stepName: step?.config?.stepName
-      ? step.config.stepName
-      : defaultCaption ?? '',
+    displayPosition,
     substeps,
     shouldShowDragHandle,
     isDeletable,

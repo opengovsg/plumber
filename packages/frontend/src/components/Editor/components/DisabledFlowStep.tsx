@@ -5,7 +5,7 @@ import { Flex } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
-import StepCaptionAndDemo from '@/components/FlowStep/components/StepCaptionAndDemo'
+import StepNameAndDemo from '@/components/FlowStep/components/StepNameAndDemo'
 import { flowStepStyles } from '@/components/FlowStep/styles'
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
@@ -21,7 +21,7 @@ export function DisabledFlowStep(props: DisabledFlowStepProps) {
 
   const { isMobile, isDrawerOpen } = useContext(EditorContext)
 
-  const { app, caption } = useStepMetadata(step)
+  const { app, stepName } = useStepMetadata(step)
   const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, false)
 
   return (
@@ -45,7 +45,7 @@ export function DisabledFlowStep(props: DisabledFlowStepProps) {
             pointerEvents="none"
           >
             <StepAppIcon app={app} step={step} />
-            <StepCaptionAndDemo app={app} caption={caption} />
+            <StepNameAndDemo stepName={stepName} />
           </Flex>
         </Flex>
       </TouchableTooltip>

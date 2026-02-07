@@ -1,14 +1,12 @@
-import { IApp } from '@plumber/types'
-
 import { Flex, Text } from '@chakra-ui/react'
 
-interface StepCaptionProps {
-  app?: IApp
-  caption: string
+interface StepNameAndDemoProps {
+  displayPosition?: number
+  stepName: string
 }
 
-export default function StepCaptionAndDemo(props: StepCaptionProps) {
-  const { caption } = props
+export default function StepNameAndDemo(props: StepNameAndDemoProps) {
+  const { stepName, displayPosition } = props
   return (
     <>
       <Flex direction="column" align="start" flex={1} flexShrink={1} minW={0}>
@@ -21,7 +19,8 @@ export default function StepCaptionAndDemo(props: StepCaptionProps) {
             textOverflow="ellipsis"
             maxW="100%"
           >
-            {caption}
+            {displayPosition ? `${displayPosition}. ` : ''}
+            {stepName}
           </Text>
         </Flex>
       </Flex>

@@ -33,11 +33,7 @@ export default function StepHeader(props: StepHeaderProps) {
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
 
-  const {
-    defaultCaption,
-    position,
-    stepName: initialStepName,
-  } = useStepMetadata(step)
+  const { defaultStepName, displayPosition, stepName } = useStepMetadata(step)
 
   const handleClose = () => {
     if (shouldWarnOnLeave) {
@@ -70,13 +66,15 @@ export default function StepHeader(props: StepHeaderProps) {
   return (
     <Flex {...styles.stepHeader}>
       <Flex alignItems="center" maxW="100%">
-        {position && <Text whiteSpace="pre-wrap">{position}.&nbsp;</Text>}
+        {displayPosition && (
+          <Text whiteSpace="pre-wrap">{displayPosition}.&nbsp;</Text>
+        )}
         <EditableInput
           key={step.id}
-          value={initialStepName}
+          value={stepName}
           onSave={onSave}
           readOnly={isReadOnlyEditor}
-          placeholder={defaultCaption}
+          placeholder={defaultStepName}
           allowEmpty={true}
         />
       </Flex>

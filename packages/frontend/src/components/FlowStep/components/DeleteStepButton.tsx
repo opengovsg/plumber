@@ -22,14 +22,15 @@ interface DeleteStepButtonProps {
   isNested?: boolean
   isDeletingStep?: boolean
   step: IStep
-  caption?: string
+  stepName: string
+  displayPosition: number
 }
 
 export default function DeleteStepButton(props: DeleteStepButtonProps) {
-  const { isNested, step, caption } = props
+  const { isNested, step, stepName, displayPosition } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
-  const customBody = caption
-    ? `Are you sure you want to delete step **${caption}**? You can't undo this action afterwards.`
+  const customBody = stepName
+    ? `Are you sure you want to delete step **${displayPosition}. ${stepName}**? You can't undo this action afterwards.`
     : undefined
   const {
     isOpen: isDialogOpen,

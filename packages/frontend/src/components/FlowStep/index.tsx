@@ -23,7 +23,7 @@ import { DragHandle } from '../SortableList/components'
 import DeleteStepButton from './components/DeleteStepButton'
 import DuplicateStepButton from './components/DuplicateStepButton'
 import StepAppIcon from './components/StepAppIcon'
-import StepCaptionAndDemo from './components/StepCaptionAndDemo'
+import StepNameAndDemo from './components/StepNameAndDemo'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
@@ -70,7 +70,8 @@ export default function FlowStep(
   } = useContext(EditorContext)
   const {
     app,
-    caption,
+    stepName,
+    displayPosition,
     isCompleted,
     isTrigger,
     selectedActionOrTrigger,
@@ -242,7 +243,10 @@ export default function FlowStep(
                   app={app}
                   step={step}
                 />
-                <StepCaptionAndDemo app={app} caption={caption} />
+                <StepNameAndDemo
+                  displayPosition={displayPosition}
+                  stepName={stepName}
+                />
                 {isDeletable && (
                   <Flex gap={1} ml="auto">
                     {!isTrigger && (
@@ -251,7 +255,8 @@ export default function FlowStep(
                     <DeleteStepButton
                       isNested={isNested}
                       step={step}
-                      caption={caption}
+                      displayPosition={displayPosition}
+                      stepName={stepName}
                     />
                   </Flex>
                 )}
