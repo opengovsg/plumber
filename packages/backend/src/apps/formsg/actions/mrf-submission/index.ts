@@ -220,35 +220,34 @@ const action: IRawAction = {
         executionId: $.execution.id,
       })
       return
-    } else {
-      // If rejected ("No"), skip to the rejection branch. (Logic to skip is elsewhere.)
-      // Find the next step in the rejection branch based on current step id
-      const nextStep = await Step.query()
-        .where('flow_id', $.flow.id)
-        .andWhere('position', '>', $.step.position)
-        .orderBy('position', 'asc')
-        .andWhereRaw(`steps.config->'approval'->>'branch' = ?`, ['reject'])
-        .andWhereRaw(`steps.config->'approval'->>'stepId' = ?`, [$.step.id])
-        .first()
+    }
+    // If rejected ("No"), skip to the rejection branch. (Logic to skip is elsewhere.)
+    // Find the next step in the rejection branch based on current step id
+    const nextStep = await Step.query()
+      .where('flow_id', $.flow.id)
+      .andWhere('position', '>', $.step.position)
+      .orderBy('position', 'asc')
+      .andWhereRaw(`steps.config->'approval'->>'branch' = ?`, ['reject'])
+      .andWhereRaw(`steps.config->'approval'->>'stepId' = ?`, [$.step.id])
+      .first()
 
-      logger.info({
-        event: 'mrf-submission - rejection branch',
-        executionId: $.execution.id,
-        nextStepId: nextStep?.id,
-      })
-      if (!nextStep) {
-        return {
-          nextStep: {
-            command: 'stop-execution',
-          },
-        }
-      }
+    logger.info({
+      event: 'mrf-submission - rejection branch',
+      executionId: $.execution.id,
+      nextStepId: nextStep?.id,
+    })
+    if (!nextStep) {
       return {
         nextStep: {
-          command: 'jump-to-step',
-          stepId: nextStep.id,
+          command: 'stop-execution',
         },
       }
+    }
+    return {
+      nextStep: {
+        command: 'jump-to-step',
+        stepId: nextStep.id,
+      },
     }
   },
 }

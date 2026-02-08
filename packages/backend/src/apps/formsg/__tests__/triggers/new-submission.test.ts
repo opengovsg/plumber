@@ -11,22 +11,35 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import apps from '@/apps'
 
 import { ADDRESS_LABELS } from '../../common/constants'
+import { FormSchema, ParsedMrfWorkflowStep } from '../../common/types'
 import trigger from '../../triggers/new-submission'
 
 const pushTriggerItemMock = vi.fn()
 const getLastExecutionStepMock = vi.fn()
 
+const mockFormSchema: FormSchema = {
+  form: {
+    responseMode: 'storage',
+    publicKey: 'public_key',
+    _id: 'form-id',
+    title: 'form-title',
+    status: 'form-status',
+    form_fields: [],
+    authType: 'none',
+    isSubmitterIdCollectionEnabled: true,
+    payments_field: undefined,
+  },
+}
+
 const mocks = vi.hoisted(() => ({
   getMockData: vi.fn(),
   getFormDetailsFromGlobalVariable: vi.fn(),
-  fetchFormSchema: vi.fn(() => {
-    return {
-      form: {
-        responseMode: 'storage',
-      },
-    }
+  fetchFormSchema: vi.fn((): FormSchema => {
+    return mockFormSchema
   }),
   removeMrfSteps: vi.fn(),
+  createMrfSteps: vi.fn(),
+  parseWorkflowData: vi.fn(),
 }))
 
 vi.mock('../../triggers/new-submission/get-mock-data', () => ({
@@ -39,6 +52,14 @@ vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
 
 vi.mock('../../triggers/new-submission/remove-mrf-steps', () => ({
   removeMrfSteps: mocks.removeMrfSteps,
+}))
+
+vi.mock('../../triggers/new-submission/create-mrf-steps', () => ({
+  createMrfSteps: mocks.createMrfSteps,
+}))
+
+vi.mock('../../triggers/new-submission/get-workflow-data', () => ({
+  parseWorkflowData: mocks.parseWorkflowData,
 }))
 
 vi.mock('../../common/webhook-settings', () => ({
@@ -253,6 +274,113 @@ describe('new submission trigger', () => {
       getLastExecutionStepMock.mockResolvedValue(null)
       await trigger.testRun($, { preferMock: false })
       expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+    })
+
+    describe('MRF multirespondent flow', () => {
+      const mrfWorkflowData = {
+        trigger: {
+          defaultStepName: 'Step 1',
+          type: 'static',
+          fields: ['field-a'],
+          formWorkflowStepId: 'step-001',
+        },
+        actions: [] as ParsedMrfWorkflowStep[],
+      }
+
+      it('should call createMrfSteps for multirespondent forms with workflow', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            ...mockFormSchema.form,
+            workflow: [
+              {
+                _id: 'step-001',
+                edit: ['field-a'],
+                workflow_type: 'static',
+              },
+            ],
+            responseMode: 'multirespondent',
+          },
+        })
+        mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
+
+        await trigger.testRun($, { preferMock: true })
+
+        expect(mocks.parseWorkflowData).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.removeMrfSteps).not.toHaveBeenCalled()
+      })
+
+      it('should throw StepError when createMrfSteps fails', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            responseMode: 'multirespondent',
+            publicKey: 'public_key',
+            _id: 'form-id',
+            title: 'form-title',
+            status: 'form-status',
+            form_fields: [],
+            authType: 'none',
+            isSubmitterIdCollectionEnabled: true,
+            payments_field: undefined,
+            workflow: [
+              {
+                _id: 'step-001',
+                edit: ['field-a'],
+                workflow_type: 'static',
+              },
+            ],
+          },
+        })
+        mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
+        mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
+
+        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
+          'Error syncing MRF steps',
+        )
+      })
+
+      it('should throw StepError when removeMrfSteps fails', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
+
+        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
+          'Error removing MRF steps',
+        )
+      })
+
+      it('should call removeMrfSteps for multirespondent forms with empty workflow', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            ...mockFormSchema.form,
+            workflow: [],
+            responseMode: 'multirespondent',
+          },
+        })
+
+        await trigger.testRun($, { preferMock: true })
+
+        expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).not.toHaveBeenCalled()
+      })
+
+      it('should call removeMrfSteps for multirespondent forms with undefined workflow', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            ...mockFormSchema.form,
+            responseMode: 'multirespondent',
+            workflow: undefined,
+          },
+        })
+
+        await trigger.testRun($, { preferMock: true })
+
+        expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).not.toHaveBeenCalled()
+      })
     })
   })
   describe('dataOut metadata', () => {
