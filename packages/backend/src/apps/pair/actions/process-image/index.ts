@@ -1,6 +1,5 @@
 import { IRawAction } from '@plumber/types'
 
-import { createOpenAI } from '@ai-sdk/openai'
 import { generateObject } from 'ai'
 import z from 'zod/v3'
 import { fromZodError } from 'zod-validation-error'
@@ -8,21 +7,14 @@ import { fromZodError } from 'zod-validation-error'
 import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
+import { engineProvider } from '@/helpers/pair'
 
 import { getImageContent } from '../../common/get-image-content'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { schema } from './schema'
 
-// create a separate engine provider for image processing
-// as it does not work well with createOpenAICompatible
-// when processing PDFs
-const engineProvider = createOpenAI({
-  name: 'pair-engine',
-  baseURL: 'https://engine.pair.gov.sg',
-  apiKey: appConfig.pair.foundry.apiKey,
-})
-const model = engineProvider.languageModel(appConfig.pair.foundry.imageModel)
+const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
   name: 'Process image',
