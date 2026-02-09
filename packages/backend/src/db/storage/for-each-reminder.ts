@@ -4,7 +4,6 @@ import {
   CREATE_TEMPLATE_STEP_VARIABLE,
   TILE_COL_DATA_PLACEHOLDER,
   TILE_ID_PLACEHOLDER,
-  USER_EMAIL_PLACEHOLDER,
 } from './constants'
 
 const FOR_EACH_REMINDER_ID = 'b8dd6c22-3578-460d-89e2-e2062b3601f2'
@@ -58,10 +57,14 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
       appKey: 'postman',
       eventKey: 'sendTransactionalEmail',
       parameters: {
-        body: '<p style="margin: 0">This is a gentle reminder for the upcoming event! </p>',
+        body: `<p style="margin: 0">Hi ${CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace with name from step 3',
+        )},\n This is a gentle reminder for the upcoming event! </p>`,
         subject: 'Event reminder',
         senderName: 'Event reminder',
-        destinationEmail: USER_EMAIL_PLACEHOLDER,
+        destinationEmail: CREATE_TEMPLATE_STEP_VARIABLE(
+          'Replace with email from step 3',
+        ),
       },
     },
     {
@@ -70,7 +73,7 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
       eventKey: 'updateSingleRow',
       parameters: {
         tableId: TILE_ID_PLACEHOLDER,
-        rowId: CREATE_TEMPLATE_STEP_VARIABLE('Replace with Row ID from Step 3'),
+        rowId: CREATE_TEMPLATE_STEP_VARIABLE('Replace with Row ID from step 3'),
         rowData: [
           {
             columnId: TILE_COL_DATA_PLACEHOLDER('Reminder sent'),
