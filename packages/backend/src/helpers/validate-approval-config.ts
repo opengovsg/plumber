@@ -112,23 +112,23 @@ export async function validateApprovalConfig(
       .andWhere('position', '>', prevStep.position)
       .orderBy('position', 'asc')
       .first()
-    // then find the step in the approve branch (if any)
+    // then find the last step in the approve branch (if any)
     const lastStepOfApproveFlowQuery = Step.query()
       .where('flow_id', prevStep.flowId)
       .andWhere('position', '>', prevStep.position)
-
+      .andWhereRaw("config -> 'approval' IS NULL")
       .orderBy('position', 'desc')
       .first()
 
     if (nextMrfStep) {
       lastStepOfApproveFlowQuery.andWhere('position', '<', nextMrfStep.position)
     }
-    const lastStepOfapproveFlow = await lastStepOfApproveFlowQuery.first()
+    const lastStepOfApproveFlow = await lastStepOfApproveFlowQuery.first()
     // If last approval step exists, return the position after that
-    if (lastStepOfapproveFlow) {
+    if (lastStepOfApproveFlow) {
       return {
         isApprovalConfigValid: true,
-        newStepPosition: lastStepOfapproveFlow.position + 1,
+        newStepPosition: lastStepOfApproveFlow.position + 1,
       }
     } else {
       // If no last approval step, return the position after the previous step
