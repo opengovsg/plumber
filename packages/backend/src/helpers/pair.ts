@@ -1,14 +1,13 @@
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { createOpenAI } from '@ai-sdk/openai'
 
 import appConfig from '@/config/app'
 
-export const MODEL_TYPE = appConfig.pair.foundry.model
-const engineProvider = createOpenAICompatible({
+const MODEL_TYPE = appConfig.pair.foundry.model
+const engineProvider = createOpenAI({
   name: 'pair-engine',
   baseURL: 'https://engine.pair.gov.sg',
   apiKey: appConfig.pair.foundry.apiKey,
-  supportsStructuredOutputs: true,
 })
-const model = engineProvider.chatModel(MODEL_TYPE)
+const model = engineProvider.chat(MODEL_TYPE)
 
-export { engineProvider, model }
+export { engineProvider, model, MODEL_TYPE }
