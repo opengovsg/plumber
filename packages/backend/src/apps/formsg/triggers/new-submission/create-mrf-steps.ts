@@ -65,7 +65,7 @@ export async function createMrfSteps(
   const { trigger, actions } = mrfWorkflow
 
   await Step.transaction(async (trx) => {
-    const triggerStepName = `MRF: ${trigger.defaultStepName}`
+    const triggerStepName = trigger.defaultStepName
     // Update the trigger step parameters
     const updatedTriggerStep = await Step.query(trx).patchAndFetchById(
       $.step.id,
@@ -131,7 +131,7 @@ export async function createMrfSteps(
         mrf: action,
       } as unknown as IStep['parameters']
 
-      const stepName = `MRF: ${action.defaultStepName}`
+      const stepName = action.defaultStepName
 
       if (stepToUpdate) {
         // Update existing step
