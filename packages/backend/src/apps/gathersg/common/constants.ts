@@ -14,3 +14,5 @@ export const UNSUPPORTED_FIELDS = [
 
 // Prefix for hex encoding field names that contain special characters
 export const HEX_ENCODED_FIELD_PREFIX = '__HEX_ENCODED__'
+// Regex to match invalid characters in field names that need to be hex encoded
+export const INVALID_CHAR_REGEX = /[^a-zA-Z0-9-_ ]/
