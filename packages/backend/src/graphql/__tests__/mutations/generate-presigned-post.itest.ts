@@ -6,12 +6,21 @@ import generatePresignedPost from '@/graphql/mutations/generate-presigned-post'
 import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
+import {
+  generateMockCollaborator,
+  generateMockFlow,
+  generateMockUser,
+} from './flow.mock'
+
 const VALID_PARAMS = {
-  flowId: '193040de-c818-4a0c-90f9-1dcfb1963f53',
   filename: 'test.txt',
   fileType: 'text/plain',
   size: 100,
   updatedAt: new Date().toISOString(),
+  flow: {
+    id: '193040de-c818-4a0c-90f9-1dcfb1963f53',
+    updatedAt: new Date().toISOString(),
+  },
 }
 
 // Mock the s3 helpers module
@@ -44,27 +53,61 @@ describe('generatePresignedPost', () => {
   })
 
   it('should generate a presigned url', async () => {
-    await Flow.query().insert({
-      id: VALID_PARAMS.flowId,
-      name: 'Test Flow',
-      userId: context.currentUser.id,
-    })
+    const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
 
-    await generatePresignedPost(null, { input: VALID_PARAMS }, context)
+    await generatePresignedPost(
+      null,
+      {
+        input: {
+          ...VALID_PARAMS,
+          flow: {
+            id: mockFlow.id,
+            updatedAt: mockFlow.updatedAt,
+          },
+        },
+      },
+      context,
+    )
     expect(getPresignedPost).toHaveBeenCalledWith(
       COMMON_S3_BUCKET,
       expect.stringMatching(
         new RegExp(
-          `^${VALID_PARAMS.flowId}/[a-f0-9-]+/${VALID_PARAMS.filename}$`,
+          `^${VALID_PARAMS.flow.id}/[a-f0-9-]+/${VALID_PARAMS.filename}$`,
         ),
       ),
       VALID_PARAMS.fileType,
       {
-        flowId: VALID_PARAMS.flowId,
+        flowId: VALID_PARAMS.flow.id,
         filename: VALID_PARAMS.filename,
         size: VALID_PARAMS.size.toString(),
         updatedAt: VALID_PARAMS.updatedAt,
       },
+    )
+  })
+
+  it('should generate a presigned url when user is an editor of the flow', async () => {
+    const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
+    const editor = await generateMockUser('editor')
+    await generateMockCollaborator(
+      mockFlow.id,
+      editor.id,
+      context.currentUser.id,
+      'editor',
+    )
+    context.currentUser = editor
+
+    await generatePresignedPost(
+      null,
+      {
+        input: {
+          ...VALID_PARAMS,
+          flow: {
+            id: VALID_PARAMS.flow.id,
+            updatedAt: mockFlow.updatedAt,
+          },
+        },
+      },
+      context,
     )
   })
 
@@ -74,7 +117,23 @@ describe('generatePresignedPost', () => {
       .patch({
         userId: otherUserContext.currentUser.id,
       })
-      .where('id', VALID_PARAMS.flowId)
+      .where('id', VALID_PARAMS.flow.id)
+
+    await expect(
+      generatePresignedPost(null, { input: VALID_PARAMS }, context),
+    ).rejects.toThrow(ForbiddenError)
+  })
+
+  it('should throw an error if the user is a viewer of the flow', async () => {
+    const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
+    const viewer = await generateMockUser('viewer')
+    await generateMockCollaborator(
+      mockFlow.id,
+      viewer.id,
+      context.currentUser.id,
+      'viewer',
+    )
+    context.currentUser = viewer
 
     await expect(
       generatePresignedPost(null, { input: VALID_PARAMS }, context),
@@ -83,7 +142,7 @@ describe('generatePresignedPost', () => {
 
   it('should throw an error if the file size is too large', async () => {
     await Flow.query().insert({
-      id: VALID_PARAMS.flowId,
+      id: VALID_PARAMS.flow.id,
       name: 'Test Flow',
       userId: context.currentUser.id,
     })
@@ -103,7 +162,7 @@ describe('generatePresignedPost', () => {
     'should throw an error if the file type is not supported: %s',
     async (fileType) => {
       await Flow.query().insert({
-        id: VALID_PARAMS.flowId,
+        id: VALID_PARAMS.flow.id,
         name: 'Test Flow',
         userId: context.currentUser.id,
       })

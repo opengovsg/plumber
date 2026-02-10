@@ -17,6 +17,7 @@ import { DELETE_UPLOADED_FILE } from '@/graphql/mutations/delete-uploaded-file'
 import { GENERATE_PRESIGNED_POST } from '@/graphql/mutations/generate-presigned-post'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
 
 interface UseS3UploadOptions {
   onError?: (filename: string, type: string, errorMessage: string) => void
@@ -36,7 +37,9 @@ export const useS3Operations = (
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [deleteFile] = useMutation(DELETE_UPLOADED_FILE)
-  const [generatePresignedPost] = useMutation(GENERATE_PRESIGNED_POST)
+  const [generatePresignedPost] = useMutation(GENERATE_PRESIGNED_POST, {
+    refetchQueries: [GET_FLOW],
+  })
   const [updateFlowConfig] = useMutation(UPDATE_FLOW_CONFIG)
   const [updateStep] = useMutation(UPDATE_STEP)
 
@@ -57,7 +60,8 @@ export const useS3Operations = (
   const deleteUploadedFile = async (file: any) => {
     try {
       const { name: filename, value, displayedValue } = file
-      const flowId = getValues('flowId')
+      const flow = getValues('flow')
+      const { id: flowId, updatedAt: flowUpdatedAt } = flow
       setIsDeleting(true)
 
       // NOTE: this is to ensure all changes are saved before deleting a file
@@ -68,7 +72,9 @@ export const useS3Operations = (
       const mutationInput = createUpdateStep(getValues(), currentAttachments)
       await updateStep({ variables: { input: mutationInput } })
 
-      await deleteFile({ variables: { id: value } })
+      await deleteFile({
+        variables: { id: value, flowUpdatedAt },
+      })
 
       await updateFlowConfig(
         getConfigInput(flowId, [
@@ -86,15 +92,19 @@ export const useS3Operations = (
       return true
     } catch (error) {
       console.error('Error deleting file:', error)
-      triggerToast(`Failed to delete ${file.name}`, 'error')
+      triggerToast(`Failed to delete file`, 'error')
       setIsDeleting(false)
       const errorMessage = error instanceof Error ? error.message : ''
-      options.onError?.(file.name, 'deleteError', errorMessage)
+      options.onError?.('file', 'deleteError', errorMessage)
       return false
     }
   }
 
-  const uploadToS3 = async (file: File, flowId: string) => {
+  const uploadToS3 = async (
+    file: File,
+    flowId: string,
+    flowUpdatedAt: string,
+  ) => {
     try {
       setIsUploading(true)
       const { name: filename, size, type } = file
@@ -103,11 +113,14 @@ export const useS3Operations = (
       const res = await generatePresignedPost({
         variables: {
           input: {
-            flowId,
             filename,
             fileType: type,
             size,
             updatedAt,
+            flow: {
+              id: flowId,
+              updatedAt: flowUpdatedAt,
+            },
           },
         },
       })

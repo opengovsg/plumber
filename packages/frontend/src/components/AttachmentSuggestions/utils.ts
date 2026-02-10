@@ -107,6 +107,7 @@ export function createUpdateStep(
     },
     flow: {
       id: flow.id,
+      updatedAt: flow.updatedAt,
     },
   }
 
