@@ -110,7 +110,13 @@ const action: IRawAction = {
         s3Id: image[0],
       })
 
-      throw new StepError('Failed to process image', 'Please try again.', error)
+      throw new StepError(
+        error?.message
+          ? `Failed to process image: ${error.message}`
+          : 'Failed to process image',
+        'Please try again.',
+        error,
+      )
     }
   },
 }
