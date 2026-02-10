@@ -3,6 +3,7 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
+import knex from 'knex'
 
 let postgresContainer: StartedPostgreSqlContainer
 
@@ -21,6 +22,29 @@ export async function setup() {
   console.info(
     `Tiles PostgreSQL container started at port ${process.env.TILES_POSTGRES_PORT}`,
   )
+
+  // Create per-worker databases for parallel test execution.
+  // Tiles tables are created dynamically (no migrations needed).
+  const maxForks = parseInt(process.env.VITEST_MAX_FORKS || '4')
+  const adminClient = knex({
+    client: 'pg',
+    connection: {
+      host: 'localhost',
+      port: postgresContainer.getPort(),
+      user: TILES_POSTGRES_USERNAME,
+      password: TILES_POSTGRES_PASSWORD,
+      database: TILES_POSTGRES_DATABASE,
+    },
+  })
+
+  for (let i = 1; i <= maxForks; i++) {
+    const workerDb = `plumber_tiles_test_${i}`
+    await adminClient.raw(`CREATE DATABASE "${workerDb}"`)
+    console.info(`Tiles worker DB ${workerDb} created`)
+  }
+
+  await adminClient.destroy()
+  console.info(`${maxForks} tiles worker databases created`)
 }
 
 export async function teardown() {

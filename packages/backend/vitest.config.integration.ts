@@ -19,9 +19,10 @@ config({
 export default defineConfig({
   test: {
     name: 'backend-integration',
-    // load env variables
+    // load env variables, then override POSTGRES_DATABASE per fork worker
     setupFiles: [
       'dotenv/config',
+      getPath('./test/worker-db-setup.ts'),
       getPath('./test/pg-reset-db-setup.ts'),
       getPath('./test/ddb-reset-db-setup.ts'),
     ],
@@ -31,10 +32,11 @@ export default defineConfig({
       getPath('./test/ddb-global-setup.ts'),
       getPath('./test/redis-global-setup.ts'),
     ],
-    pool: 'threads',
+    pool: 'forks',
     poolOptions: {
-      threads: {
-        singleThread: true,
+      forks: {
+        maxForks: parseInt(process.env.VITEST_MAX_FORKS || '4'),
+        minForks: 1,
       },
     },
     include: ['src/**/*.itest.{js,ts}'],
