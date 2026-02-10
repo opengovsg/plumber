@@ -33,12 +33,6 @@ export default defineConfig({
       getPath('./test/redis-global-setup.ts'),
     ],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: parseInt(process.env.VITEST_MAX_FORKS || '4'),
-        minForks: 1,
-      },
-    },
     include: ['src/**/*.itest.{js,ts}'],
     onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
       if (log.startsWith('vite:')) {

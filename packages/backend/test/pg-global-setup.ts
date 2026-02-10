@@ -6,6 +6,8 @@ import {
 import knex, { Knex } from 'knex'
 import { join } from 'path'
 
+import { getMaxForks } from './get-max-forks'
+
 let postgresContainer: StartedPostgreSqlContainer
 
 const POSTGRES_DATABASE = process.env.POSTGRES_DATABASE as string
@@ -51,7 +53,7 @@ export async function setup() {
 
   // Create per-worker databases for parallel test execution.
   // Each vitest fork worker connects to its own isolated database.
-  const maxForks = parseInt(process.env.VITEST_MAX_FORKS || '4')
+  const maxForks = getMaxForks()
   const adminClient = createClient(POSTGRES_DATABASE)
 
   for (let i = 1; i <= maxForks; i++) {

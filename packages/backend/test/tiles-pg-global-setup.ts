@@ -5,6 +5,8 @@ import {
 } from '@testcontainers/postgresql'
 import knex from 'knex'
 
+import { getMaxForks } from './get-max-forks'
+
 let postgresContainer: StartedPostgreSqlContainer
 
 const TILES_POSTGRES_DATABASE = process.env.TILES_POSTGRES_DATABASE as string
@@ -25,7 +27,7 @@ export async function setup() {
 
   // Create per-worker databases for parallel test execution.
   // Tiles tables are created dynamically (no migrations needed).
-  const maxForks = parseInt(process.env.VITEST_MAX_FORKS || '4')
+  const maxForks = getMaxForks()
   const adminClient = knex({
     client: 'pg',
     connection: {
