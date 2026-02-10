@@ -17,7 +17,10 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
     .findById(flowId)
     .throwIfNotFound()
 
-  const testExecutionSteps = await getTestExecutionStepsHelper(flow.id)
+  const testExecutionSteps = await getTestExecutionStepsHelper(flow.id, {
+    stepIds: flow.steps.map((s) => s.id),
+    testExecutionId: flow.testExecutionId ?? null,
+  })
 
   // We do not return test execution steps if the step is not complete
   // to ensure we dont show variables from other step/events.

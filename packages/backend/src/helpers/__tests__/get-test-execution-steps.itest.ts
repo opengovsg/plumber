@@ -233,5 +233,24 @@ describe('get test execution steps', () => {
         testExecution2.executionSteps[1].id,
       ])
     })
+
+    it('returns same result when called with options (no second flow fetch)', async () => {
+      await flow.$query().patch({ testExecutionId: testExecution1.id })
+      const refreshedFlow = await Flow.query()
+        .findById(flow.id)
+        .withGraphFetched('steps')
+        .throwIfNotFound()
+
+      const withOptions = await getTestExecutionSteps(flow.id, {
+        stepIds: refreshedFlow.steps.map((s) => s.id),
+        testExecutionId: refreshedFlow.testExecutionId ?? null,
+      })
+      const withoutOptions = await getTestExecutionSteps(flow.id)
+
+      expect(withOptions).toHaveLength(withoutOptions.length)
+      expect(withOptions.map((s) => s.id)).toEqual(
+        withoutOptions.map((s) => s.id),
+      )
+    })
   })
 })
