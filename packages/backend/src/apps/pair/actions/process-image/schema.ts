@@ -10,16 +10,25 @@ export const schema = z.object({
       z.object({
         fieldName: z
           .string()
-          .min(1)
-          .max(64)
-          .regex(
-            /^[a-zA-Z0-9_-]+$/,
-            'Field name cannot contain spaces. Use only letters, numbers, underscores (_), and hyphens (-)',
-          ),
+          .min(1, { message: 'Field name is required' })
+          .max(64, { message: 'Field name cannot be more than 64 characters' })
+          .regex(/^[a-zA-Z0-9_-]+$/, {
+            message:
+              'Field name cannot contain spaces. Use only letters, numbers, underscores (_), and hyphens (-)',
+          }),
 
-        description: z.string().min(1).max(128),
+        description: z
+          .string()
+          .min(1, { message: 'Description is required' })
+          .max(128, {
+            message: 'Description cannot be more than 128 characters',
+          }),
       }),
     )
-    .optional()
-    .default([]),
+    .min(1, { message: 'At least one response field is required' })
+    .refine(
+      (fields) =>
+        new Set(fields.map((field) => field.fieldName)).size === fields.length,
+      { message: 'Field names must be unique' },
+    ),
 })

@@ -113,7 +113,9 @@ const action: IRawAction = {
       })
 
       throw new StepError(
-        'Failed to process image',
+        error?.message
+          ? `Failed to process image: ${error.message}`
+          : 'Failed to process image',
         'Please try again.',
         $.step.position,
         $.app.name,
