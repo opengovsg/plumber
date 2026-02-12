@@ -2,6 +2,7 @@
   "name": "plumber",
   "license": "AGPL-3.0",
   "scripts": {
+    "generate:apps": "ts-node -r tsconfig-paths/register --project packages/backend/tsconfig.json packages/scripts/generate-apps.ts",
     "postinstall": "npm run gqlc",
     "all": "concurrently -c auto",
     "setup": "npm run -w backend setup",

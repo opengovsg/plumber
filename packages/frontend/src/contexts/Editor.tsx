@@ -33,6 +33,7 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
+import apps from '@/assets/apps.json'
 
 interface IEditorContextValue {
   flow: IFlow
@@ -160,9 +161,8 @@ export const EditorProvider = ({
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
-  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS, {
-    fetchPolicy: 'cache-first',
-  })
+  // const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
+  // const apps =
 
   const steps = flow?.steps ?? []
   const isEmptyPipe =
@@ -171,10 +171,7 @@ export const EditorProvider = ({
   const hasForEach = flow?.steps.some((step) => isForEachStep(step))
   const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
 
-  const allApps = useMemo(
-    () => getAppsData?.getApps ?? [],
-    [getAppsData?.getApps],
-  )
+  const allApps = useMemo(() => apps ?? [], [apps])
 
   const { data } = useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
     GET_TEST_EXECUTION_STEPS,
@@ -375,13 +372,13 @@ export const EditorProvider = ({
     }
   }, [resetForm, resetFormRef])
 
-  if (isLoadingAllApps) {
-    return (
-      <Center height="100vh" position="fixed" width="full" top={0} left={0}>
-        <PrimarySpinner fontSize="4xl" />
-      </Center>
-    )
-  }
+  // if (isLoadingAllApps) {
+  //   return (
+  //     <Center height="100vh" position="fixed" width="full" top={0} left={0}>
+  //       <PrimarySpinner fontSize="4xl" />
+  //     </Center>
+  //   )
+  // }
 
   return (
     <EditorContext.Provider

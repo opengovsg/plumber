@@ -32,6 +32,7 @@ export const GET_APPS = gql`
       auth {
         connectionType
         connectionRegistrationType
+        autoCheckStep
         fields {
           key
           label
@@ -55,7 +56,7 @@ export const GET_APPS = gql`
           arguments {
             name
             value
-            # type
+            type
             properties {
               name
               value
@@ -68,7 +69,7 @@ export const GET_APPS = gql`
           arguments {
             name
             value
-            # type
+            type
             properties {
               name
               value
@@ -87,6 +88,7 @@ export const GET_APPS = gql`
         pollInterval
         description
         isNew
+        noAuthRequired
         setupMessage {
           variant
           messageBody
