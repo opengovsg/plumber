@@ -44,16 +44,15 @@ const action: IRawAction = {
       key: 'delayUntilTime',
       type: 'string' as const,
       required: false,
+      placeholder: '00:00',
       description: 'Delay until the time (24h). E.g. 08:00, 23:00',
       variables: true,
     },
     {
-      label: 'Always allow past timestamp?',
-      key: 'alwaysAllowPastTimestamp',
+      label: 'Stop if the scheduled time has already passed',
+      key: 'stopIfPastTimestamp',
       type: 'checkbox' as const,
       required: false,
-      description:
-        'Always allow the pipe to continue running even if the delay until timestamp is in the past.',
       value: false,
     },
   ],
@@ -61,7 +60,7 @@ const action: IRawAction = {
   async run($) {
     const defaultTime = '00:00'
     // trim the date and time for user
-    const { delayUntil, delayUntilTime, alwaysAllowPastTimestamp } =
+    const { delayUntil, delayUntilTime, stopIfPastTimestamp } =
       $.step.parameters
     const delayUntilString = new String(delayUntil).trim()
     // catch empty string (user input), null, undefined (backwards compat)
@@ -113,7 +112,7 @@ const action: IRawAction = {
     // Allow test step to always succeed but show warning in the frontend
     // Note: Allow users to still retry for past timestamp live executions so we don't have to debug and fix the issue for them. They have the control over this.
     if (!$.execution.testRun && isPastTimestamp) {
-      if (isRetry || alwaysAllowPastTimestamp) {
+      if (isRetry || !stopIfPastTimestamp) {
         const dateTimeNow = DateTime.now()
         dataItem = {
           delayUntil: dateTimeNow.toPlumberFormat('dd MMM yyyy'),
@@ -134,7 +133,7 @@ const action: IRawAction = {
       raw: dataItem,
       ...(isPastTimestamp &&
         $.execution.testRun &&
-        !alwaysAllowPastTimestamp && {
+        stopIfPastTimestamp && {
           meta: {
             warningMessage: PAST_TIMESTAMP_WARNING_MESSAGE,
           },

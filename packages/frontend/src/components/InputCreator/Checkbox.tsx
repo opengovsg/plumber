@@ -1,11 +1,9 @@
 import { useContext } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
-import Markdown from 'react-markdown'
-import { FormControl } from '@chakra-ui/react'
+import { FormControl, Text } from '@chakra-ui/react'
 import {
   Checkbox as ChakraCheckbox,
   FormErrorMessage,
-  FormLabel,
 } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -44,8 +42,6 @@ export default function Checkbox(props: CheckboxProps) {
 
         return (
           <FormControl isInvalid={isError}>
-            {label && <FormLabel isRequired={required}>{label}</FormLabel>}
-
             <ChakraCheckbox
               isChecked={isChecked}
               onChange={(e) => {
@@ -55,9 +51,16 @@ export default function Checkbox(props: CheckboxProps) {
               }}
               isDisabled={readOnly}
               colorScheme="secondary"
+              pl={2.5}
+              _hover={{ bg: 'interaction.muted.neutral.hover' }}
+              _focusWithin={{ outline: 'none', boxShadow: 'none' }}
             >
+              {label && <Text textStyle="subhead-1">{label}</Text>}
+
               {description && (
-                <Markdown linkTarget="_blank">{description}</Markdown>
+                <Text textStyle="body-2" color="base.content.medium">
+                  {description}
+                </Text>
               )}
             </ChakraCheckbox>
 
