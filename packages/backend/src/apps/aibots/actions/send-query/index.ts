@@ -15,14 +15,6 @@ const action: IRawAction = {
   description: 'Sends a query to your customised AI Bot',
   arguments: [
     {
-      label: 'Bot API key',
-      key: 'apiKey',
-      description: 'Enter the API key for your bot',
-      type: 'string' as const,
-      required: true,
-      variables: false,
-    },
-    {
       label: 'Query',
       key: 'query',
       type: 'string' as const,
@@ -37,16 +29,21 @@ const action: IRawAction = {
     try {
       const parameters = parametersSchema.parse($.step.parameters)
 
-      const { query, apiKey } = parameters
+      const { query } = parameters
 
-      const headers = { 'X-ATLAS-Key': apiKey }
+      if (!$.auth.data?.apiKey) {
+        throw new StepError(
+          'API key is required',
+          'Please check that you have entered a valid API key',
+          $.step.position,
+          $.app.name,
+        )
+      }
 
       // create a new chat
-      const response = await $.http.post(
-        `/chats`,
-        { name: 'Chat from Plumber' },
-        { headers },
-      )
+      const response = await $.http.post(`/chats`, {
+        name: 'Chat from Plumber',
+      })
 
       // /chats/:chatId/messages requires FormData
       const chatId = response.data.id
@@ -58,7 +55,6 @@ const action: IRawAction = {
         `/chats/:chatId/messages`,
         formData,
         {
-          headers,
           urlPathParams: { chatId },
         },
       )

@@ -1,6 +1,8 @@
 import { IApp } from '@plumber/types'
 
+import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
+import auth from './auth'
 
 const app: IApp = {
   name: 'AIBots',
@@ -13,12 +15,9 @@ const app: IApp = {
   apiBaseUrl: 'https://api.aibots.gov.sg/v1.0/api',
   primaryColor: '',
   category: 'ai',
-  // TODO: add the actual auth here
-  // there is currently no verification available for aibots
-  // its done directly in the action itself
-  // (as requested by AiBots team)
-  // auth,
+  auth,
   actions,
+  beforeRequest: [addAuthHeader],
 }
 
 export default app

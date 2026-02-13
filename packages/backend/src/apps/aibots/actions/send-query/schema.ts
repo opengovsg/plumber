@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 export const parametersSchema = z.object({
-  apiKey: z.string().min(1),
   query: z.string().min(1),
 })
 
