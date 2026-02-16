@@ -181,5 +181,13 @@ describe('chatRequestSchema', () => {
       })
       expect(result.success).toBe(true)
     })
+
+    it('should accept empty sessionId', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+        sessionId: '',
+      })
+      expect(result.success).toBe(true)
+    })
   })
 })

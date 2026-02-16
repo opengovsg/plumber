@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 // Limits to protect API and LLM costs
 const MAX_MESSAGES = 50
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
@@ -44,9 +47,15 @@ export const chatRequestSchema = z.object({
     .min(1, 'Messages array must contain at least one message')
     .max(MAX_MESSAGES, `Cannot send more than ${MAX_MESSAGES} messages`),
   /**
-   * Datadog RUM session IDs are always UUIDs
+   * Datadog RUM session UUID for debugging. Optional and allows empty string
+   * (e.g., in dev) to avoid failing the API since we already have the user's email.
    */
-  sessionId: z.string().uuid('Session ID must be a valid UUID').optional(),
+  sessionId: z
+    .string()
+    .refine((val) => val === '' || UUID_REGEX.test(val), {
+      message: 'Session ID must be a valid UUID',
+    })
+    .optional(),
 })
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>
