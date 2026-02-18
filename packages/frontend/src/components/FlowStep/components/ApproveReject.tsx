@@ -16,10 +16,14 @@ const tabStyle = (primaryColor: string): TabProps => {
     _hover: {
       color: primaryColor,
     },
+    bg: 'transparent',
     letterSpacing: '0',
     fontWeight: 'medium',
     textTransform: 'none',
+    borderRadius: 'md',
+    w: '50%',
     px: 4,
+    py: 1.5,
     fontSize: 'medium',
   }
 }
@@ -40,15 +44,16 @@ export function ApproveReject({ stepId }: { stepId: string }) {
   )
 
   return (
-    <Flex mt={4} mx="auto">
+    <Flex onClick={(e) => e.stopPropagation()} w="100%" maxW="600px" px={4}>
       <Tabs
-        variant="soft-rounded"
+        variant="enclosed-colored"
         index={isApproveBranch ? 0 : 1}
         backgroundColor="base.divider.medium"
-        borderRadius="full"
         py={1}
         px={0.5}
+        borderRadius="md"
         onChange={onChange}
+        flex={1}
       >
         <TabList gap={2}>
           <Tab {...tabStyle('green.500')}>If approved</Tab>
