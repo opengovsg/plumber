@@ -14,6 +14,7 @@ export const flowStepStyles = {
       '& .hover-remove-button': {
         visibility: 'visible',
       },
+      cursor: 'pointer',
     },
   },
   incompleteContainer: {
@@ -33,15 +34,6 @@ export const flowStepStyles = {
     px: 4,
     py: 4,
     w: 'full',
-    _hover: {
-      bg: 'interaction.muted.neutral.hover',
-      cursor: 'pointer',
-      borderBottomRadius: 'inherit',
-    },
-    _active: {
-      bg: 'interaction.muted.neutral.active',
-      borderBottomRadius: 'inherit',
-    },
   },
   appIconWrapper: {
     alignItems: 'center',
