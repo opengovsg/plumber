@@ -159,6 +159,17 @@ function patchMockData(
           convertTableAnswerArrayToTableObject(question, answerArray)
       }
 
+      // These are not returned by the API, so we need to add them manually
+      if (
+        mockData.responses[formFields[i]._id].fieldType === 'country_region'
+      ) {
+        mockData.responses[formFields[i]._id].answer = 'SINGAPORE'
+      }
+
+      if (mockData.responses[formFields[i]._id].fieldType === 'signature') {
+        mockData.responses[formFields[i]._id].answer = 'Signature captured'
+      }
+
       mockData.responses[formFields[i]._id].order = i + 1
       mockData.responses[formFields[i]._id].id = undefined
     }
