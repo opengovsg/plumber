@@ -229,7 +229,7 @@ export default function FlowStep(
               flexDir="column"
               data-test="flow-step"
               {...flowStepStyles.container}
-              alignItems="center"
+              justifyContent="flex-start"
               borderTopWidth={hasInfoBox ? 0 : '1px'}
               borderColor={
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
