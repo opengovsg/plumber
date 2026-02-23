@@ -5,7 +5,7 @@
     "teardown": "docker-compose -f docker-compose.dev.yml down",
     "dev": "npm run build:watch -- --exec \"ts-node --swc src/server.ts\"",
     "worker": "npm run build:watch -- --exec \"ts-node --swc src/worker.ts\"",
-    "prebuild": "rm -rf ./dist",
+    "prebuild": "rimraf ./dist",
     "build": "tsc && npm run copy-statics && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "start": "node dist/server.js",
@@ -25,7 +25,7 @@
     "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
     "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
     "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
-    "copy-statics": "copyfiles -u 1 src/**/*.{graphql,json,svg} dist"
+    "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
     "@apollo/server": "5.4.0",
@@ -46,7 +46,6 @@
     "axios": "1.13.5",
     "big.js": "6.2.1",
     "cookie-parser": "1.4.7",
-    "copyfiles": "^2.4.1",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "csv-parse": "5.4.0",
@@ -105,6 +104,7 @@
     "@types/morgan": "^1.9.3",
     "@types/multer": "1.4.12",
     "@types/pg": "^8.6.1",
+    "cpy-cli": "^7.0.0",
     "nodemon": "^3.1.10",
     "testcontainers": "^11.10.0",
     "ts-node": "^10.9.1",
