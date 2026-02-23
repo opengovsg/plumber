@@ -1,6 +1,4 @@
 import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
-import Execution from '@/models/execution'
-import ExecutionStep from '@/models/execution-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -16,11 +14,15 @@ const deleteFlow: MutationResolvers['deleteFlow'] = async (
     })
     .throwIfNotFound()
 
-  const executionIds = (
-    await flow.$relatedQuery('executions').select('executions.id')
-  ).map((execution: Execution) => execution.id)
+  /**
+   * NOTE: do not delete execution steps similar to delete-step.ts
+   * because this operation is expensive for high volume pipes.
+   */
+  // const executionIds = (
+  //  await flow.$relatedQuery('executions').select('executions.id')
+  //).map((execution: Execution) => execution.id)
 
-  await ExecutionStep.query().delete().whereIn('execution_id', executionIds)
+  // await ExecutionStep.query().delete().whereIn('execution_id', executionIds)
 
   await flow.$relatedQuery('executions').delete()
   await flow.$relatedQuery('steps').delete()
