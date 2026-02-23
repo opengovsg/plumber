@@ -24,6 +24,7 @@ const deleteFlow: MutationResolvers['deleteFlow'] = async (
 
   await flow.$relatedQuery('executions').delete()
   await flow.$relatedQuery('steps').delete()
+  await flow.$relatedQuery('pendingTransfer').delete()
 
   // delete attachments from s3
   // Note: specify object keys individually, cannot delete entire folder
