@@ -31,10 +31,9 @@
         "graphql": "16.11.0"
       }
     },
-    "electrodb": {
-      "@aws-sdk/lib-dynamodb": "3.980.0"
-    },
-    "glob": "10.5.0"
+    "qs": "6.15.0",
+    "glob": "13.0.6",
+    "minimatch": "10.2.2"
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
