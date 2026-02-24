@@ -90,13 +90,14 @@ const generateProjectionExpressions = ({
   ExpressionAttributeNames: Record<string, string>
 } => {
   const ProjectionExpression = [
-    'rowId',
+    '#rowId',
     ...columnIds.map((_id, i) => `#data.#col${i}`),
   ].join(',')
   // #pk has to be mapped since it's used by electrodb
   // #data has to be mapped since it's a reserved word
   const ExpressionAttributeNames: Record<string, string> = {
     '#pk': 'tableId',
+    '#rowId': 'rowId',
     // we only need to map #data if we're projecting nested attributes or filters
     ...(columnIds.length || filters?.length ? { '#data': 'data' } : {}),
   }
@@ -367,7 +368,9 @@ export const getTableRows = async ({
         params: {
           ProjectionExpression,
           ExpressionAttributeNames,
-          Limit: remainingScanLimit,
+          ...(isFinite(remainingScanLimit)
+            ? { Limit: remainingScanLimit }
+            : {}),
         },
         // use data:'raw' to bypass electrodb formatting, since we're using ProjectionExpression to select nested attributes
         // ref: https://electrodb.dev/en/queries/get/#execution-options

@@ -30,6 +30,9 @@
       "@graphql-tools/utils": {
         "graphql": "16.11.0"
       }
+    },
+    "electrodb": {
+      "@aws-sdk/lib-dynamodb": "3.980.0"
     }
   },
   "devDependencies": {
