@@ -11,6 +11,19 @@ type ThrowingHandler = (
   ...args: Parameters<IApp['requestErrorHandler']>
 ) => never
 
+type MaybeThrowingHandler = (
+  ...args: Parameters<IApp['requestErrorHandler']>
+) => never | void
+
+const handleIntermittentError: MaybeThrowingHandler = ($, error) => {
+  if (error.code === 'ETIMEDOUT') {
+    throw new RetriableError({
+      error: `Retrying ETIMEDOUT ${error.message} from M365 Excel`,
+      delayType: 'step',
+      delayInMs: 'default',
+    })
+  }
+}
 //
 // Handle MS rate limiting us
 //
@@ -120,6 +133,9 @@ const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
       return handle500and502and503($, error)
     case 509: // Bandwidth limit reached
       return handle509($, error)
+    default:
+      handleIntermittentError($, error)
+      throw error
   }
 }
 

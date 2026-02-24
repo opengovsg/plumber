@@ -36,6 +36,12 @@ function mockAxiosAdapterToThrowOnce(
   })
 }
 
+function mockAxiosAdapterToThrowNetworkErrorOnce(code: string): void {
+  mocks.axiosAdapter.mockImplementationOnce((config) => {
+    throw new AxiosError('Network error', code, config, null, undefined)
+  })
+}
+
 const mocks = vi.hoisted(() => ({
   axiosAdapter: vi.fn(
     async (config: InternalAxiosRequestConfig): AxiosPromise => ({
@@ -203,6 +209,11 @@ describe('M365 request error handlers', () => {
       expect.stringContaining('HTTP 509'),
       expect.objectContaining({ event: 'm365-http-509' }),
     )
+  })
+
+  it('throws a RetriableError with default step delay on ETIMEDOUT', async () => {
+    mockAxiosAdapterToThrowNetworkErrorOnce('ETIMEDOUT')
+    await expect(http.get('/test-url')).rejects.toThrow(RetriableError)
   })
 
   it('throws HTTP error on other non-successful codes', async () => {
