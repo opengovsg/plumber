@@ -104,6 +104,7 @@
     "@types/morgan": "^1.9.3",
     "@types/multer": "1.4.12",
     "@types/pg": "^8.6.1",
+    "axios-mock-adapter": "^2.1.0",
     "cpy-cli": "^7.0.0",
     "nodemon": "^3.1.10",
     "testcontainers": "^11.10.0",

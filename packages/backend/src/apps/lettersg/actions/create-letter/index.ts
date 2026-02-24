@@ -3,21 +3,26 @@ import type { IRawAction } from '@plumber/types'
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
 import { getTemplateData } from '../../common/get-template-data'
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
-import { processMissingFields } from '../../helpers/process-missing-fields'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
 
-// TODO (mal): update when letters provide a standard error format for all errors
-type LettersApiFieldErrorData = {
-  message: string
-  success?: boolean
-  errors?: Record<string, string>[]
+function handleZodError(
+  error: ZodError,
+  position: number,
+  appName: string,
+): never {
+  const firstError = fromZodError(error).details[0]
+  throw new StepError(
+    `${firstError.message}`,
+    GenericSolution.ReconfigureInvalidField,
+    position,
+    appName,
+  )
 }
 
 const action: IRawAction = {
@@ -111,25 +116,35 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const payloadResult = requestSchema.safeParse($.step.parameters)
+
+    if (payloadResult.success === false) {
+      handleZodError(payloadResult.error, $.step.position, $.app.name)
+    }
+
+    // post response, TODO (mal): double try catch
+    const rawResponse = await $.http.post('/v1/letters', payloadResult.data)
+    const responseResult = responseSchema.safeParse(rawResponse.data)
+
+    if (responseResult.success === false) {
+      handleZodError(responseResult.error, $.step.position, $.app.name)
+    }
+
+    const response = responseResult.data
+
+    if (
+      !$.step.parameters.shouldGeneratePdf ||
+      !$.flow.hasFileProcessingActions
+    ) {
+      $.setActionItem({
+        raw: response,
+      })
+      return
+    }
+
+    const { data: templateData } = await getTemplateData($)
+
     try {
-      const payload = requestSchema.parse($.step.parameters)
-
-      // post response, TODO (mal): double try catch
-      const rawResponse = await $.http.post('/v1/letters', payload)
-      const response = responseSchema.parse(rawResponse.data)
-
-      if (
-        !$.step.parameters.shouldGeneratePdf ||
-        !$.flow.hasFileProcessingActions
-      ) {
-        $.setActionItem({
-          raw: response,
-        })
-        return
-      }
-
-      const { data: templateData } = await getTemplateData($)
-
       // Note: s3 won't allow for template names with .., we only need to replace / with _ because of how we denote a S3 ID
       const templateName = templateData.name.replaceAll('/', '_')
       const attachmentS3Key = await downloadAndStoreAttachmentInS3(
@@ -144,30 +159,6 @@ const action: IRawAction = {
         },
       })
     } catch (error) {
-      if (error instanceof ZodError) {
-        const firstError = fromZodError(error).details[0]
-        throw new StepError(
-          `${firstError.message}`,
-          GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
-        )
-      }
-      if (error instanceof HttpError && error.response.status === 400) {
-        const missingFields = await processMissingFields($)
-        const lettersErrorData: LettersApiFieldErrorData = error.response.data
-        if (lettersErrorData?.message === 'Invalid letter params.') {
-          throw new StepError(
-            `Personalised field(s) not specified${
-              missingFields.length === 0 ? '' : `: ${missingFields.join(', ')}`
-            }`,
-            'Check that you have entered all the fields and values in the letter parameters.',
-            $.step.position,
-            $.app.name,
-          )
-        }
-      }
-
       throw new StepError(
         `An error occurred: '${error.message}'`,
         'Please check that you have configured your step correctly',
