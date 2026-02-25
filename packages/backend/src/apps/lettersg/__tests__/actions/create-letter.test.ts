@@ -1,12 +1,13 @@
 import type { IGlobalVariable } from '@plumber/types'
 
-import { AxiosError } from 'axios'
+import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
+import createHttpClient from '@/helpers/http-client'
 
 import app from '../..'
 import createLetterAction from '../../actions/create-letter'
+import requestErrorHandler from '../../common/request-error-handler'
 
 const MOCK_RESPONSE = {
   publicId: '123',
@@ -24,12 +25,6 @@ const MOCK_TEMPLATE_DATA = {
 const MOCK_S3_ATTACHMENT_KEY = `s3:plumber-development-common-bucket:123/${MOCK_TEMPLATE_NAME}.pdf`
 
 const mocks = vi.hoisted(() => ({
-  httpGet: vi.fn(() => ({
-    data: MOCK_TEMPLATE_DATA,
-  })),
-  httpPost: vi.fn(() => ({
-    data: MOCK_RESPONSE,
-  })),
   downloadAndStoreAttachmentInS3: vi.fn(() => MOCK_S3_ATTACHMENT_KEY),
 }))
 
@@ -39,6 +34,7 @@ vi.mock('../../helpers/attachment', () => ({
 
 describe('create letter from template', () => {
   let $: IGlobalVariable
+  let mockAdapter: MockAdapter
 
   beforeEach(() => {
     $ = {
@@ -61,16 +57,24 @@ describe('create letter from template', () => {
         id: 'flow-id-123',
         hasFileProcessingActions: true,
       },
-      http: {
-        get: mocks.httpGet,
-        post: mocks.httpPost,
-      } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
     } as unknown as IGlobalVariable
+
+    $.http = createHttpClient({
+      $,
+      baseURL: 'http://localhost/mock-lettersg-api',
+      beforeRequest: [],
+      requestErrorHandler,
+    })
+
+    mockAdapter = new MockAdapter($.http)
+    mockAdapter.onGet('/v1/templates/123').reply(200, MOCK_TEMPLATE_DATA)
+    mockAdapter.onPost('/v1/letters').reply(200, MOCK_RESPONSE)
   })
 
   afterEach(() => {
+    mockAdapter.restore()
     vi.restoreAllMocks()
   })
 
@@ -78,10 +82,9 @@ describe('create letter from template', () => {
     $.auth.data.apiKey = 'test_v1_123456'
     await createLetterAction.run($)
 
-    expect(mocks.httpPost).toHaveBeenCalledWith('/v1/letters', {
-      templateId: 123,
-      letterParams: {},
-    })
+    expect(mockAdapter.history.post[0].data).toEqual(
+      JSON.stringify({ templateId: 123, letterParams: {} }),
+    )
   })
 
   it('builds the payload correctly with letter params', async () => {
@@ -93,13 +96,12 @@ describe('create letter from template', () => {
     $.auth.data.apiKey = 'test_v1_123456'
     await createLetterAction.run($)
 
-    expect(mocks.httpPost).toHaveBeenCalledWith('/v1/letters', {
-      templateId: 123,
-      letterParams: {
-        name: 'curry',
-        message: 'what is life?',
-      },
-    })
+    expect(mockAdapter.history.post[0].data).toEqual(
+      JSON.stringify({
+        templateId: 123,
+        letterParams: { name: 'curry', message: 'what is life?' },
+      }),
+    )
   })
 
   it('parses the raw response correctly without attachment', async () => {
@@ -140,40 +142,18 @@ describe('create letter from template', () => {
 
   it('should throw step error for insufficient fields used', async () => {
     $.step.parameters.letterParams = [{ field: 'field 1', value: 'test' }]
-    // simulate letters error
-    const error = {
-      response: {
-        data: {
-          message: 'Invalid letter params.',
-        },
-        status: 400,
-        statusText: 'Bad Request',
-      },
-    } as AxiosError
-    const httpError = new HttpError(error)
-    mocks.httpPost.mockRejectedValueOnce(httpError)
-    // throw partial step error
+    mockAdapter.onPost('/v1/letters').reply(400, {
+      message: 'Invalid letter params.',
+    })
     await expect(createLetterAction.run($)).rejects.toThrowError(
       'Personalised field(s) not specified',
     )
   })
 
   it('should throw generic step error for unknown error', async () => {
-    // simulate unknown error
-    const error = {
-      response: {
-        data: {
-          message: 'Unknown error',
-        },
-        status: 400,
-        statusText: 'Bad Request',
-      },
-    } as AxiosError
-    const httpError = new HttpError(error)
-    mocks.httpPost.mockRejectedValueOnce(httpError)
-    // throw partial step error
+    mockAdapter.onPost('/v1/letters').reply(400, { message: 'Unknown error' })
     await expect(createLetterAction.run($)).rejects.toThrowError(
-      'Please check that you have configured your step correctly',
+      'Error creating letter',
     )
   })
 })
