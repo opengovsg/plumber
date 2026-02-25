@@ -7,9 +7,6 @@ import Step from '@/models/step'
 
 import logger from './logger'
 
-/**
- * TODO: write unit test for this function
- */
 export async function validateApprovalConfig(
   config: IStepConfig,
   prevStep: IStep,
@@ -40,7 +37,8 @@ export async function validateApprovalConfig(
 
   /**
    * Case 2: Prev step has no approval config and is not an mrf approval step,
-   * current step should have no approval config either
+   * current step should have no approval config either.
+   * This could be either a normal step or a step in an mrf approval branch
    */
   if (!prevStep.config.approval && !isPreviousStepMrfApprovalStep) {
     if (!config?.approval) {
@@ -58,11 +56,12 @@ export async function validateApprovalConfig(
   }
 
   /**
-   * Case 3: Prev step is part of an approval branch, check that
-   * the new step has the same approval config
+   * Case 3: Prev step is part of a rejection branch, check that
+   * the new step has the same config
    */
   if (prevStep.config.approval) {
     const isSameApprovalConfig =
+      config?.approval?.branch === 'reject' &&
       prevStep.config.approval?.branch === config?.approval?.branch &&
       prevStep.config.approval?.stepId === config?.approval?.stepId
     if (isSameApprovalConfig) {
@@ -80,7 +79,7 @@ export async function validateApprovalConfig(
   }
 
   /**
-   * Case 4: Previous step is an approval step
+   * Case 4: Previous step is an mrf approval step
    */
   if (isPreviousStepMrfApprovalStep) {
     // If previous step is an approval step, but this step has no approval config, it is part of the approve flow
