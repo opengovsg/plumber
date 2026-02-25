@@ -52,7 +52,7 @@ export default function ErrorFlowStepHeader(props: ErrorFlowStepHeaderProps) {
       <DeleteStepButton
         isNested={isNested}
         step={step}
-        caption="this error step"
+        stepName="this error step"
       />
     </Flex>
   )

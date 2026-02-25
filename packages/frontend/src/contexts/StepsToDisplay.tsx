@@ -14,6 +14,7 @@ export type StepToDisplayContextValue = {
   groupedSteps: IStep[][]
   appsWithActions: IApp[]
   groupingActions: Set<string> | null
+  stepIdToOrder: Record<string, number>
 }
 
 export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
@@ -22,6 +23,7 @@ export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
   groupedSteps: [],
   appsWithActions: [],
   groupingActions: null,
+  stepIdToOrder: {},
 })
 
 interface StepExecutionsProviderProps {
@@ -83,6 +85,14 @@ export function StepsToDisplayProvider({
     ) as Set<string>
   }, [appsWithActions])
 
+  const stepIdToOrder = useMemo(() => {
+    const map: Record<string, number> = {}
+    stepsToDisplay.forEach((step, index) => {
+      map[step.id] = index + 1
+    })
+    return map
+  }, [stepsToDisplay])
+
   const [triggerStep, actionStepsBeforeGroup, groupedSteps] = useMemo(() => {
     if (!groupingActions) {
       return [null, [], []]
@@ -125,6 +135,7 @@ export function StepsToDisplayProvider({
         groupedSteps,
         appsWithActions,
         groupingActions,
+        stepIdToOrder,
       }}
     >
       {children}

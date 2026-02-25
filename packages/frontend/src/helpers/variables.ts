@@ -208,7 +208,7 @@ export function extractVariables(
       })
       // sort by step position since the order of steps by createdAt is no longer preserved in single-step testing
       .sort((a, b) => a.step.position - b.step.position)
-      .map((executionStep: IExecutionStep) => {
+      .map((executionStep: IExecutionStep, index: number) => {
         const metadata = executionStep.dataOutMetadata ?? {}
         const variables = process(
           executionStep.stepId,
@@ -217,15 +217,13 @@ export function extractVariables(
           '',
         )
 
-        const { caption: name } = getStepName(
-          allApps || [],
-          executionStep?.step,
-        )
+        const { stepName } = getStepName(allApps || [], executionStep?.step)
         // sort variable by order key in-place
         sortVariables(variables)
         return {
           id: executionStep.stepId,
-          name,
+
+          name: `${index + 1}. ${stepName}`,
           output: variables,
         }
       })
