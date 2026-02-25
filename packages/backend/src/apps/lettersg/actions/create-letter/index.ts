@@ -122,7 +122,6 @@ const action: IRawAction = {
       handleZodError(payloadResult.error, $.step.position, $.app.name)
     }
 
-    // post response, TODO (mal): double try catch
     const rawResponse = await $.http.post('/v1/letters', payloadResult.data)
     const responseResult = responseSchema.safeParse(rawResponse.data)
 
