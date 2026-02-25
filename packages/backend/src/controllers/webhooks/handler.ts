@@ -177,11 +177,6 @@ export default async (request: IRequest, response: Response) => {
 
     const { executionId, nextStep } = subTriggerResult
 
-    // For test runs, don't enqueue the next step
-    if (testRun) {
-      return response.sendStatus(200)
-    }
-
     // Enqueue the next step after the MRF action step
     if (nextStep) {
       const jobName = `${executionId}-${nextStep.id}`

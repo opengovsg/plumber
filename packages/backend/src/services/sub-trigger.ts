@@ -51,6 +51,7 @@ export const processSubTrigger = async (
       event: 'sub-trigger-no-internal-id',
       flowId,
     })
+    return null
   }
   // Find the execution to attach to
   const execution = await Execution.query()
@@ -106,20 +107,41 @@ export const processSubTrigger = async (
     return null
   }
 
-  // Create the execution step for the MRF action step
-  const executionStep = await execution
-    .$relatedQuery('executionSteps')
-    .insertAndFetch({
+  const executionStep = await ExecutionStep.transaction(async (trx) => {
+    // Check if the execution step already exists
+    const existing = await ExecutionStep.query(trx)
+      .findOne({
+        execution_id: execution.id,
+        step_id: mrfStep.id,
+      })
+      .forUpdate() // Prevents race conditions
+
+    // if the execution step already exists, do not process again
+    if (existing) {
+      logger.warn({
+        event: 'sub-trigger-execution-step-already-exists',
+        executionId: execution.id,
+        stepId: mrfStep.id,
+      })
+      // we don't throw an error so formsg does not retry the webhook
+      return null
+    }
+    // Create the execution step for the MRF action step
+    return await ExecutionStep.query(trx).insertAndFetch({
       stepId: mrfStep.id,
+      executionId: execution.id,
       dataIn: mrfStep.parameters,
       dataOut: triggerItem.raw,
       appKey: mrfStep.appKey,
       key: mrfStep.key,
     })
+  })
 
   return {
     executionId: execution.id,
     executionStep,
+    // we enqueue the mrfStep itself, since the above logic does not actually process the mrfStep
+    // we need the mrf action to run to determine which is the actual next step to enqueue
     nextStep: mrfStep ?? null,
     shouldExecute: true,
   }
