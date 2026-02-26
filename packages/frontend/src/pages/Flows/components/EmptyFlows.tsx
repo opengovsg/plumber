@@ -9,8 +9,12 @@ import CreatePipeTile, { TileProps } from './CreatePipeTile'
 
 export default function EmptyFlows({ onCreate }: { onCreate: () => void }) {
   const navigate = useNavigate()
-  const { canUseAiBuilder, setCreateMode, setSkipModeSelection } =
-    useCreateFlowContext()
+  const {
+    aiBuilderType,
+    canUseAiBuilder,
+    setCreateMode,
+    setSkipModeSelection,
+  } = useCreateFlowContext()
 
   const TILES = [
     canUseAiBuilder && {
@@ -19,9 +23,13 @@ export default function EmptyFlows({ onCreate }: { onCreate: () => void }) {
         'Describe your workflow and we&apos;ll create the steps for you',
       iconName: 'BiSolidMagicWand',
       onClick: () => {
-        setCreateMode('ai-form')
-        setSkipModeSelection(true)
-        onCreate()
+        if (aiBuilderType === 'ai-form' || aiBuilderType === 'all') {
+          setCreateMode('ai-form')
+          setSkipModeSelection(true)
+          onCreate()
+        } else {
+          navigate(`${URLS.EDITOR}/ai`)
+        }
       },
     },
     {

@@ -7,6 +7,7 @@ import { datadogRum } from '@datadog/browser-rum'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_APPS } from '@/graphql/queries/get-apps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 
@@ -30,9 +31,9 @@ interface AiBuilderStep extends IStep {
 
 interface AIBuilderContextValue extends AIBuilderSharedProps {
   allApps: IApp[]
-  isMobile: boolean
   triggerStep: IStep | null
   steps: AiBuilderStep[]
+  isMobile: boolean
   actionSteps: IStep[]
   stepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
@@ -40,6 +41,8 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   stepGroupCaption: string | null
   // DataDog RUM Session ID so we can associate the trace with the RUM
   ddSessionId: string
+  // TODO(kevinkim-ogp): remove this once A/B test is complete
+  aiBuilderType: string
 }
 
 const AiBuilderContext = createContext<AIBuilderContextValue | undefined>(
@@ -69,6 +72,9 @@ export const AiBuilderContextProvider = ({
 }: AiBuilderContextProviderProps) => {
   const isMobile = useIsMobile()
   const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
+  // TODO(kevinkim-ogp): remove this once A/B test is complete
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const aiBuilderType = getFlagValue('ai-builder-type', 'none')
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
 
@@ -130,6 +136,8 @@ export const AiBuilderContextProvider = ({
         stepGroupType,
         stepGroupCaption,
         ddSessionId,
+        // TODO(kevinkim-ogp): remove this once A/B test is complete
+        aiBuilderType,
       }}
     >
       {children}
