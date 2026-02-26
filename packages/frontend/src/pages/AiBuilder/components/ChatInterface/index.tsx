@@ -5,11 +5,14 @@ import { Box, Flex, IconButton, Text } from '@chakra-ui/react'
 import { useChatStream } from '@/hooks/useChatStream'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 
+import { useAiBuilderContext } from '../../AiBuilderContext'
+
 import PromptInput from './PromptInput'
 
 export default function ChatInterface() {
+  const { ddSessionId } = useAiBuilderContext()
   const { messages, currentResponse, isStreaming, sendMessage, cancelStream } =
-    useChatStream()
+    useChatStream({ ddSessionId })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
-import { DefaultChatTransport } from 'ai'
+import { DefaultChatTransport, TextPart } from 'ai'
 
 export interface Message {
   text: string
@@ -16,7 +16,11 @@ type CustomUIMessage = UIMessage<{
   traceId?: string
 }>
 
-export function useChatStream() {
+interface UseChatStreamProps {
+  ddSessionId: string
+}
+
+export function useChatStream({ ddSessionId }: UseChatStreamProps) {
   const toast = useToast()
 
   const {
@@ -33,7 +37,7 @@ export function useChatStream() {
         // Send all messages to maintain conversation context
         const body = {
           messages: messages,
-          sessionId: '',
+          sessionId: ddSessionId,
         }
         return { body }
       },
@@ -53,7 +57,7 @@ export function useChatStream() {
   const extractTextContent = useCallback((msg: CustomUIMessage): string => {
     return msg.parts
       .filter((part) => part.type === 'text')
-      .map((part) => (part as any).text)
+      .map((part: TextPart) => part.text)
       .join('')
   }, [])
 
@@ -112,16 +116,12 @@ export function useChatStream() {
     [sendMessage],
   )
 
-  const cancelStream = useCallback(() => {
-    stop()
-  }, [stop])
-
   return {
     messages,
     currentResponse,
     isStreaming: status === 'submitted' || status === 'streaming',
     error: aiError?.message || null,
     sendMessage: sendMessageWrapper,
-    cancelStream,
+    cancelStream: stop,
   }
 }
