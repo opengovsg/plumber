@@ -2,12 +2,12 @@ import { Helmet } from 'react-helmet'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useLocation } from 'react-router-dom'
 import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
-import { Tag } from '@opengovsg/design-system-react'
 
 import { EDITOR_MARGIN_TOP } from '@/components/Editor/constants'
 import * as URLS from '@/config/urls'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
+import ChatInterface from './components/ChatInterface'
 import StepsPreview from './components/StepsPreview'
 import {
   AiBuilderContextProvider,
@@ -15,7 +15,12 @@ import {
 } from './AiBuilderContext'
 
 function AiBuilderContent() {
-  const { flowName, isFormMode } = useAiBuilderContext()
+  const { aiBuilderType, flowName, isFormMode } = useAiBuilderContext()
+
+  // TODO(kevinkim-ogp): remove this once A/B test is complete
+  if (aiBuilderType === 'ai-form') {
+    return <InvalidEditorPage message="You do not have access to this." />
+  }
 
   return (
     <>
@@ -55,7 +60,7 @@ function AiBuilderContent() {
         <Container
           maxW="full"
           px={0}
-          py={10}
+          py={isFormMode ? 10 : 0}
           mt={EDITOR_MARGIN_TOP}
           flex={1}
           overflowY="auto"
@@ -64,27 +69,7 @@ function AiBuilderContent() {
             backgroundSize: '30px 30px',
           }}
         >
-          {isFormMode ? (
-            <StepsPreview />
-          ) : (
-            <Flex
-              sx={{
-                backgroundImage:
-                  'radial-gradient(#f5f5f5 2px, transparent 2px)',
-                backgroundSize: '30px 30px',
-              }}
-              h="100%"
-              w="full"
-              flexDir="column"
-              alignItems="center"
-              justifyContent="center"
-              gap={4}
-            >
-              <Tag colorScheme="secondary">Build with AI</Tag>
-              <Text textStyle="h3">What happens in your workflow?</Text>
-              {/* TODO: Add chat interface */}
-            </Flex>
-          )}
+          {isFormMode ? <StepsPreview /> : <ChatInterface />}
         </Container>
       </Flex>
     </>
