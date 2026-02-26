@@ -19,6 +19,7 @@ async function getDataOutMetadata(
     const fieldName = prompts[index]
     fieldsMetadata[key] = {
       label: fieldName,
+      type: 'ai_response',
     }
   })
 

@@ -55,6 +55,11 @@ function VariableTag({
           label: 'Approval',
           tooltip: 'This variable determines the approval status of this step',
         }
+      case 'ai_response':
+        return {
+          label: 'AI response',
+          tooltip: 'This is AI-generated. Check for errors before using it.',
+        }
       default:
         return {
           label: null,
