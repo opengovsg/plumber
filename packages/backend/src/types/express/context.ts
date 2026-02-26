@@ -14,4 +14,8 @@ interface Context extends UnauthenticatedContext {
   currentUser: User
 }
 
+export interface AuthenticatedRequest extends Request {
+  context: Context
+}
+
 export default Context
