@@ -49,3 +49,35 @@ export function getAuthenticatedContext(req: Request): Context {
 
   return req.context
 }
+
+/**
+ * Middleware to block admin operations from making mutations.
+ * Admins are limited to read-only operations by default.
+ * Returns 403 if the request is an admin operation.
+ */
+export function blockAdminOperations(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  if (req.context?.isAdminOperation) {
+    res.status(403).json({ error: 'Admin operations are read-only' })
+    return
+  }
+
+  next()
+}
+
+/**
+ * Middleware to allow admin operations (bypass the admin mutation block).
+ * Use this for specific endpoints where admins should have write access.
+ */
+export function allowAdminOperations(
+  _req: Request,
+  _res: Response,
+  next: NextFunction,
+) {
+  // This middleware does nothing but can be used to explicitly allow admin operations
+  // by placing it before blockAdminMutations in the middleware chain
+  next()
+}

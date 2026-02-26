@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UnauthenticatedContext } from '@/types/express/context'
 
 import {
+  blockAdminOperations,
   getAuthenticatedContext,
   requireAuthentication,
   setCurrentUserContext,
@@ -238,6 +239,74 @@ describe('API Authentication Middleware', () => {
 
       expect(result).toEqual(mockContext)
       expect(result.isAdminOperation).toBe(true)
+    })
+  })
+
+  describe('blockAdminOperations', () => {
+    it('should block admin operations with 403', () => {
+      mockReq.context = {
+        req: mockReq as Request,
+        res: mockRes as Response,
+        currentUser: {
+          id: 'admin-user-id',
+          email: 'admin@plumber.gov.sg',
+        } as any,
+        isAdminOperation: true,
+      }
+
+      blockAdminOperations(mockReq as Request, mockRes as Response, mockNext)
+
+      expect(mockRes.status).toHaveBeenCalledWith(403)
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'Admin operations are read-only',
+      })
+      expect(mockNext).not.toHaveBeenCalled()
+    })
+
+    it('should allow non-admin operations', () => {
+      mockReq.context = {
+        req: mockReq as Request,
+        res: mockRes as Response,
+        currentUser: {
+          id: 'user-id',
+          email: 'user@example.com',
+        } as any,
+        isAdminOperation: false,
+      }
+
+      blockAdminOperations(mockReq as Request, mockRes as Response, mockNext)
+
+      expect(mockRes.status).not.toHaveBeenCalled()
+      expect(mockRes.json).not.toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalledOnce()
+    })
+
+    it('should allow requests without context', () => {
+      mockReq.context = undefined
+
+      blockAdminOperations(mockReq as Request, mockRes as Response, mockNext)
+
+      expect(mockRes.status).not.toHaveBeenCalled()
+      expect(mockRes.json).not.toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalledOnce()
+    })
+
+    it('should allow requests with isAdminOperation set to false', () => {
+      mockReq.context = {
+        req: mockReq as Request,
+        res: mockRes as Response,
+        currentUser: {
+          id: 'user-id',
+          email: 'user@example.com',
+        } as any,
+        isAdminOperation: false,
+      }
+
+      blockAdminOperations(mockReq as Request, mockRes as Response, mockNext)
+
+      expect(mockRes.status).not.toHaveBeenCalled()
+      expect(mockRes.json).not.toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalledOnce()
     })
   })
 })
