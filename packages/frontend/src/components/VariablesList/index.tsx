@@ -118,7 +118,9 @@ export function VariableItem({
     }
   }, [variable.type, isExpanded])
 
-  const shouldShowToggle = variable.type === 'ai_response' && isOverflowing
+  // NOTE: we intentionally not show the toggle for suggestion variables
+  const shouldShowToggle =
+    variable.type === 'ai_response' && isOverflowing && !isSuggestionVariable
 
   return (
     <Box
