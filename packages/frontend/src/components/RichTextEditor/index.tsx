@@ -1,5 +1,6 @@
 import './RichTextEditor.scss'
 
+import type { TRteMenuOption } from '@plumber/types'
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useCallback, useContext, useEffect, useMemo } from 'react'
@@ -101,6 +102,7 @@ interface EditorProps {
   autoFocus?: boolean
   singleVariableSelection?: boolean
   noVariablesMessage?: string
+  customRteMenuOptions?: TRteMenuOption[]
 }
 const Editor = ({
   onChange,
@@ -115,6 +117,7 @@ const Editor = ({
   singleVariableSelection,
   autoFocus = false,
   noVariablesMessage,
+  customRteMenuOptions,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -294,6 +297,7 @@ const Editor = ({
                 editor={editor}
                 variableMap={varInfo}
                 editable={editable ?? false}
+                customMenuOptions={customRteMenuOptions}
               />
             )}
             <EditorContent
@@ -350,6 +354,7 @@ interface RichTextEditorProps {
   autoFocus?: boolean
   singleVariableSelection?: boolean
   noVariablesMessage?: string
+  customRteMenuOptions?: TRteMenuOption[]
 }
 const RichTextEditor = ({
   required,
@@ -367,6 +372,7 @@ const RichTextEditor = ({
   autoFocus,
   singleVariableSelection,
   noVariablesMessage,
+  customRteMenuOptions,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -415,6 +421,7 @@ const RichTextEditor = ({
             autoFocus={shouldAutoFocus}
             singleVariableSelection={singleVariableSelection}
             noVariablesMessage={noVariablesMessage}
+            customRteMenuOptions={customRteMenuOptions}
           />
         )}
       />
