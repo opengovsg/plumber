@@ -1,5 +1,6 @@
 import './RichTextEditor.scss'
 
+import type { TRteMenuOption } from '@plumber/types'
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useCallback, useContext, useEffect, useMemo } from 'react'
@@ -100,7 +101,7 @@ interface EditorProps {
   autoFocus?: boolean
   singleVariableSelection?: boolean
   noVariablesMessage?: string
-  customRteMenuOptions?: string[]
+  customRteMenuOptions?: TRteMenuOption[]
 }
 const Editor = ({
   onChange,
@@ -351,7 +352,7 @@ interface RichTextEditorProps {
   autoFocus?: boolean
   singleVariableSelection?: boolean
   noVariablesMessage?: string
-  customRteMenuOptions?: string[]
+  customRteMenuOptions?: TRteMenuOption[]
 }
 const RichTextEditor = ({
   required,

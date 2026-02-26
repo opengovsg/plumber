@@ -451,13 +451,36 @@ export interface IFieldMultiRow extends IBaseField {
   subFields: IField[]
 }
 
+export type TRteMenuOption =
+  | 'Bold'
+  | 'Italic'
+  | 'Underline'
+  | 'LinkSet'
+  | 'LinkRemove'
+  | 'Heading1'
+  | 'Heading2'
+  | 'Heading3'
+  | 'Heading4'
+  | 'ListBullet'
+  | 'ListOrdered'
+  | 'ImageAdd'
+  | 'TableAdd'
+  | 'ColumnAdd'
+  | 'ColumnRemove'
+  | 'RowAdd'
+  | 'RowRemove'
+  | 'FormatClear'
+  | 'Undo'
+  | 'Redo'
+  | 'Divider'
+
 export interface IFieldRichText extends IBaseField {
   type: 'rich-text'
   value?: string
 
   // Specifies the order and what menu options to show in the RTE
-  // 'divider' is specified manually to determine when a divider should be shown
-  customRteMenuOptions?: string[]
+  // 'Divider' is specified manually to determine when a divider should be shown
+  customRteMenuOptions?: TRteMenuOption[]
 }
 
 export interface IFieldDragDrop extends IBaseField {
