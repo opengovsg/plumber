@@ -1,5 +1,7 @@
 import './MenuBar.scss'
 
+import type { TRteMenuOption } from '@plumber/types'
+
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { LuHeading1, LuHeading2, LuHeading3, LuHeading4 } from 'react-icons/lu'
 import {
@@ -36,57 +38,36 @@ import { Editor } from '@tiptap/react'
 import { parse } from 'node-html-parser'
 
 import Form from '@/components/Form'
+import { RteMenuOption } from '@/graphql/__generated__/graphql'
 import { makeExternalLink } from '@/helpers/urls'
 
 import { simpleSubstitute, type VariableInfoMap } from './utils'
 import { BareEditor } from '.'
 
-enum MenuLabels {
-  Bold = 'Bold',
-  Italic = 'Italic',
-  Underline = 'Underline',
-  LinkSet = 'Set Link',
-  LinkRemove = 'Remove Link',
-  Heading1 = 'Heading 1',
-  Heading2 = 'Heading 2',
-  Heading3 = 'Heading 3',
-  Heading4 = 'Heading 4',
-  ListBullet = 'Bullet List',
-  ListOrdered = 'Ordered List',
-  ImageAdd = 'Add Image',
-  TableAdd = 'Add Table',
-  ColumnAdd = 'Add Column',
-  ColumnRemove = 'Remove Column',
-  RowAdd = 'Add Row',
-  RowRemove = 'Remove Row',
-  FormatClear = 'Clear Format',
-  Undo = 'Undo',
-  Redo = 'Redo',
-}
-const menuButtons = [
+const DEFAULT_MENU_BUTTONS = [
   {
-    label: MenuLabels.Bold,
+    label: RteMenuOption.Bold,
     onClick: (editor: Editor) => editor.chain().focus().toggleBold().run(),
     icon: <RiBold />,
     isActive: (editor: Editor) => editor.isActive('bold'),
   },
   {
-    label: MenuLabels.Italic,
+    label: RteMenuOption.Italic,
     onClick: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
     icon: <RiItalic />,
     isActive: (editor: Editor) => editor.isActive('italic'),
   },
   {
-    label: MenuLabels.Underline,
+    label: RteMenuOption.Underline,
     icon: <RiUnderline />,
     onClick: (editor: Editor) => editor.chain().focus().toggleUnderline().run(),
     isActive: (editor: Editor) => editor.isActive('underline'),
   },
   {
-    label: 'divider',
+    label: RteMenuOption.Divider,
   },
   {
-    label: MenuLabels.LinkSet,
+    label: RteMenuOption.LinkSet,
     icon: <RiLink />,
     onClick: (editor: Editor) => {
       const previousUrl = editor.getAttributes('link').href
@@ -114,57 +95,57 @@ const menuButtons = [
     },
   },
   {
-    label: MenuLabels.LinkRemove,
+    label: RteMenuOption.LinkRemove,
     icon: <RiLinkUnlink />,
     onClick: (editor: Editor) => editor.chain().focus().unsetLink().run(),
   },
   {
-    label: 'divider',
+    label: RteMenuOption.Divider,
   },
   {
-    label: MenuLabels.Heading1,
+    label: RteMenuOption.Heading1,
     icon: <LuHeading1 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 1 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 1 }),
   },
   {
-    label: MenuLabels.Heading2,
+    label: RteMenuOption.Heading2,
     icon: <LuHeading2 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 2 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 2 }),
   },
   {
-    label: MenuLabels.Heading3,
+    label: RteMenuOption.Heading3,
     icon: <LuHeading3 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 3 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 3 }),
   },
   {
-    label: MenuLabels.Heading4,
+    label: RteMenuOption.Heading4,
     icon: <LuHeading4 />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleHeading({ level: 4 }).run(),
     isActive: (editor: Editor) => editor.isActive('heading', { level: 4 }),
   },
   {
-    label: MenuLabels.ListBullet,
+    label: RteMenuOption.ListBullet,
     icon: <RiListUnordered />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleBulletList().run(),
     isActive: (editor: Editor) => editor.isActive('bulletList'),
   },
   {
-    label: MenuLabels.ListOrdered,
+    label: RteMenuOption.ListOrdered,
     icon: <RiListOrdered />,
     onClick: (editor: Editor) =>
       editor.chain().focus().toggleOrderedList().run(),
     isActive: (editor: Editor) => editor.isActive('orderedList'),
   },
   {
-    label: MenuLabels.ImageAdd,
+    label: RteMenuOption.ImageAdd,
     icon: <RiImageFill />,
     onClick: (editor: Editor) => {
       const url = window.prompt('URL')
@@ -175,10 +156,10 @@ const menuButtons = [
     },
   },
   {
-    label: 'divider',
+    label: RteMenuOption.Divider,
   },
   {
-    label: MenuLabels.TableAdd,
+    label: RteMenuOption.TableAdd,
     icon: <RiTableLine />,
     onClick: (editor: Editor) =>
       editor
@@ -188,49 +169,49 @@ const menuButtons = [
         .run(),
   },
   {
-    label: MenuLabels.ColumnAdd,
+    label: RteMenuOption.ColumnAdd,
     icon: <RiInsertColumnRight />,
     onClick: (editor: Editor) => editor.chain().focus().addColumnAfter().run(),
   },
   {
-    label: MenuLabels.ColumnRemove,
+    label: RteMenuOption.ColumnRemove,
     icon: <RiDeleteColumn />,
     onClick: (editor: Editor) => editor.chain().focus().deleteColumn().run(),
   },
   {
-    label: MenuLabels.RowAdd,
+    label: RteMenuOption.RowAdd,
     icon: <RiInsertRowBottom />,
     onClick: (editor: Editor) => editor.chain().focus().addRowAfter().run(),
   },
   {
-    label: MenuLabels.RowRemove,
+    label: RteMenuOption.RowRemove,
     icon: <RiDeleteRow />,
     onClick: (editor: Editor) => editor.chain().focus().deleteRow().run(),
   },
   {
-    label: 'divider',
+    label: RteMenuOption.Divider,
   },
   {
-    label: MenuLabels.FormatClear,
+    label: RteMenuOption.FormatClear,
     icon: <RiFormatClear />,
     onClick: (editor: Editor) =>
       editor.chain().focus().clearNodes().unsetAllMarks().run(),
   },
   {
-    label: MenuLabels.Undo,
+    label: RteMenuOption.Undo,
     icon: <RiArrowGoBackLine />,
     onClick: (editor: Editor) => editor.chain().focus().undo().run(),
   },
   {
-    label: MenuLabels.Redo,
+    label: RteMenuOption.Redo,
     icon: <RiArrowGoForwardLine />,
     onClick: (editor: Editor) => editor.chain().focus().redo().run(),
   },
 ]
 
-const dialogPlaceholders: Partial<Record<MenuLabels, string>> = {
-  [MenuLabels.LinkSet]: 'Enter a full URL with http prefix',
-  [MenuLabels.ImageAdd]:
+const dialogPlaceholders: Partial<Record<RteMenuOption, string>> = {
+  [RteMenuOption.LinkSet]: 'Enter a full URL with http prefix',
+  [RteMenuOption.ImageAdd]:
     'Enter direct image link (e.g. https://file.go.gov.sg/clipplumber.png)',
 }
 
@@ -238,9 +219,15 @@ interface MenuBarProps {
   editor: Editor | null
   variableMap: VariableInfoMap
   editable: boolean
+  customMenuOptions?: TRteMenuOption[]
 }
 
-export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
+export const MenuBar = ({
+  editor,
+  variableMap,
+  editable,
+  customMenuOptions,
+}: MenuBarProps) => {
   const {
     isOpen: isDialogOpen,
     onClose,
@@ -248,7 +235,7 @@ export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
   } = useDisclosure()
   const cancelRef = useRef(null)
   const [dialogValue, setDialogValue] = useState('')
-  const [dialogLabel, setDialogLabel] = useState<MenuLabels | null>(null)
+  const [dialogLabel, setDialogLabel] = useState<RteMenuOption | null>(null)
 
   const onDialogClose = useCallback(() => {
     setDialogLabel(null)
@@ -256,22 +243,22 @@ export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
     onClose()
   }, [onClose])
 
-  const onClickOverrides: Partial<Record<MenuLabels, () => void>> = useMemo(
+  const onClickOverrides: Partial<Record<RteMenuOption, () => void>> = useMemo(
     () => ({
-      [MenuLabels.LinkSet]: () => {
+      [RteMenuOption.LinkSet]: () => {
         if (!editor) {
           return
         }
         const previousUrl = editor.getAttributes('link').href
-        setDialogLabel(MenuLabels.LinkSet)
+        setDialogLabel(RteMenuOption.LinkSet)
         setDialogValue(previousUrl)
         onDialogOpen()
       },
-      [MenuLabels.ImageAdd]: () => {
+      [RteMenuOption.ImageAdd]: () => {
         if (!editor) {
           return
         }
-        setDialogLabel(MenuLabels.ImageAdd)
+        setDialogLabel(RteMenuOption.ImageAdd)
         setDialogValue('')
         onDialogOpen()
       },
@@ -279,9 +266,9 @@ export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
     [editor, onDialogOpen],
   )
 
-  const dialogOnSubmits: Partial<Record<MenuLabels, () => void>> = useMemo(
+  const dialogOnSubmits: Partial<Record<RteMenuOption, () => void>> = useMemo(
     () => ({
-      [MenuLabels.LinkSet]: () => {
+      [RteMenuOption.LinkSet]: () => {
         if (!editor) {
           return
         }
@@ -306,7 +293,7 @@ export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
           .run()
         onDialogClose()
       },
-      [MenuLabels.ImageAdd]: () => {
+      [RteMenuOption.ImageAdd]: () => {
         if (!editor) {
           return
         }
@@ -320,6 +307,18 @@ export const MenuBar = ({ editor, variableMap, editable }: MenuBarProps) => {
     }),
     [editor, dialogValue, onDialogClose],
   )
+
+  const menuButtons = useMemo(() => {
+    if (customMenuOptions) {
+      return customMenuOptions
+        .map((option) =>
+          DEFAULT_MENU_BUTTONS.find(({ label }) => label === option),
+        )
+        .filter((button): button is NonNullable<typeof button> => !!button)
+    }
+
+    return DEFAULT_MENU_BUTTONS
+  }, [customMenuOptions])
 
   if (!editor) {
     return null
