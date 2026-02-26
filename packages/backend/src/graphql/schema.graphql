@@ -218,6 +218,30 @@ type DropdownAddNewOption {
   label: String!
 }
 
+enum RteMenuOption {
+  Bold
+  Italic
+  Underline
+  LinkSet
+  LinkRemove
+  Heading1
+  Heading2
+  Heading3
+  Heading4
+  ListBullet
+  ListOrdered
+  ImageAdd
+  TableAdd
+  ColumnAdd
+  ColumnRemove
+  RowAdd
+  RowRemove
+  FormatClear
+  Undo
+  Redo
+  Divider
+}
+
 type ActionSubstepArgument {
   label: String
   key: String
@@ -248,6 +272,9 @@ type ActionSubstepArgument {
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
+
+  # Only for rich text
+  customRteMenuOptions: [RteMenuOption]
 }
 
 type DropdownClickableLink {
@@ -290,6 +317,7 @@ enum AppCategory {
   data
   communication
   logic
+  ai
   others
 }
 
