@@ -6,6 +6,7 @@ import { useToast } from '@opengovsg/design-system-react'
 import { DefaultChatTransport } from 'ai'
 
 import * as URLS from '@/config/urls'
+import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import {
   deduplicateMessages,
   extractTextContent,
@@ -28,15 +29,11 @@ export interface UseChatStreamOptions {
   initialMessages?: Message[]
 }
 
-interface UseChatStreamProps {
-  ddSessionId: string
-  options: UseChatStreamOptions
-}
-
-export function useChatStream({ ddSessionId, options }: UseChatStreamProps) {
+export function useChatStream(options: UseChatStreamOptions) {
   const toast = useToast()
   const navigate = useNavigate()
   const location = useLocation()
+  const { ddSessionId } = useAiBuilderContext()
 
   const {
     messages: aiMessages,

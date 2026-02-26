@@ -16,11 +16,10 @@ export default function ChatInterface() {
   const navigate = useNavigate()
   const location = useLocation()
   const isMobile = useIsMobile()
-  const { ddSessionId, flowName, chatInput, chatMessages } =
-    useAiBuilderContext()
+  const { flowName, chatInput, chatMessages } = useAiBuilderContext()
 
   const { messages, currentResponse, isStreaming, sendMessage, cancelStream } =
-    useChatStream({ ddSessionId, options: { initialMessages: chatMessages } })
+    useChatStream({ initialMessages: chatMessages })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
