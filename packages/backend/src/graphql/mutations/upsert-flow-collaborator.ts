@@ -85,15 +85,16 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
           const connectionInserts = Object.entries(
             connectionDetails.connection,
           ).map(([connectionId, metadata]) => ({
-            flowId,
-            connectionId,
-            addedBy: flow.userId,
-            connectionType: 'connection' as const,
+            flow_id: flowId,
+            connection_id: connectionId,
+            added_by: flow.userId,
+            connection_type: 'connection' as const,
             metadata,
           }))
 
           if (connectionInserts.length > 0) {
-            await FlowConnections.query(trx)
+            await trx
+              .table('flow_connections')
               .insert(connectionInserts)
               .onConflict(['flow_id', 'connection_id'])
               .ignore()
