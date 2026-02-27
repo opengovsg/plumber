@@ -368,6 +368,81 @@ describe('upsert flow collaborator', () => {
 
       expect(flowConnections).toHaveLength(0)
     })
+
+    it('should ignore duplicate flow_connections when re-sharing after collaborator deletion', async () => {
+      // Step 1: Create step with connection
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'sendMessage',
+        appKey: 'slack',
+        type: 'action',
+        connectionId: connectionId,
+        parameters: { channel: 'general' },
+        position: 1,
+      })
+
+      // Step 2: Add first collaborator
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Step 3: Verify flow_connections exist
+      const flowConnectionsAfterFirstShare = await FlowConnections.query().where({
+        flow_id: dummyFlow.id,
+      })
+      expect(flowConnectionsAfterFirstShare).toHaveLength(1)
+      expect(flowConnectionsAfterFirstShare[0].connectionId).toBe(connectionId)
+
+      // Step 4: Delete the collaborator
+      await FlowCollaborator.query()
+        .delete()
+        .where({ flow_id: dummyFlow.id, user_id: editor.id })
+
+      // Step 5: Add a new step with a new connection
+      const connectionId2 = randomUUID()
+      await Connection.query().insert({
+        id: connectionId2,
+        key: 'telegram-bot',
+        data: '5678',
+      })
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'sendMessage',
+        appKey: 'telegram-bot',
+        type: 'action',
+        connectionId: connectionId2,
+        parameters: {},
+        position: 2,
+      })
+
+      // Step 6: Add a new collaborator - should not fail on duplicate connection
+      await expect(
+        upsertFlowCollaborator(
+          null,
+          {
+            input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' },
+          },
+          context,
+        ),
+      ).resolves.toBe(true)
+
+      // Verify: both connections exist, no duplicates, no errors
+      const flowConnectionsAfterSecondShare =
+        await FlowConnections.query().where({
+          flow_id: dummyFlow.id,
+        })
+
+      expect(flowConnectionsAfterSecondShare).toHaveLength(2)
+      expect(
+        flowConnectionsAfterSecondShare.map((fc) => fc.connectionId).sort(),
+      ).toEqual([connectionId, connectionId2].sort())
+    })
   })
 
   describe('automatic table collaborator sharing', () => {
