@@ -64,14 +64,6 @@ export const useAiBuilderContext = () => {
 
 interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
   children: React.ReactNode
-  flowName: string
-  formInput: {
-    trigger: string
-    actions: string
-  }
-  chatInput: string
-  chatMessages: Message[]
-  isFormMode: boolean
 }
 
 export const AiBuilderContextProvider = ({

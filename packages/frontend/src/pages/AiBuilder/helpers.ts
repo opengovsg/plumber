@@ -1,3 +1,5 @@
+import { TextPart } from 'ai'
+
 import { CustomUIMessage, Message } from '@/hooks/useChatStream'
 
 export const getPromptFromFormInput = (formInput: {
@@ -12,12 +14,11 @@ export const getPromptFromFormInput = (formInput: {
 export const deduplicateMessages = (messages: Message[]) => {
   const seen = new Set()
   return messages.filter((msg) => {
-    if (!msg.id || !seen.has(msg.id)) {
-      if (msg.id) {
-        seen.add(msg.id)
-        return true
-      }
+    if (!msg.id || seen.has(msg.id)) {
+      return false
     }
+    seen.add(msg.id)
+    return true
   })
 }
 
@@ -25,7 +26,7 @@ export const deduplicateMessages = (messages: Message[]) => {
 export const extractTextContent = (msg: CustomUIMessage): string => {
   return msg.parts
     .filter((part) => part.type === 'text')
-    .map((part) => (part as any).text)
+    .map((part: TextPart) => part.text)
     .join('')
 }
 
