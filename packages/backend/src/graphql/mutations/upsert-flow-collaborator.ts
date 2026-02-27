@@ -9,7 +9,6 @@ import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
-import FlowConnections from '@/models/flow-connections'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
