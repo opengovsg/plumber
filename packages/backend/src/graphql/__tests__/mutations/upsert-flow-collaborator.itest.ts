@@ -392,9 +392,10 @@ describe('upsert flow collaborator', () => {
       )
 
       // Step 3: Verify flow_connections exist
-      const flowConnectionsAfterFirstShare = await FlowConnections.query().where({
-        flow_id: dummyFlow.id,
-      })
+      const flowConnectionsAfterFirstShare =
+        await FlowConnections.query().where({
+          flow_id: dummyFlow.id,
+        })
       expect(flowConnectionsAfterFirstShare).toHaveLength(1)
       expect(flowConnectionsAfterFirstShare[0].connectionId).toBe(connectionId)
 
@@ -426,7 +427,11 @@ describe('upsert flow collaborator', () => {
         upsertFlowCollaborator(
           null,
           {
-            input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' },
+            input: {
+              flowId: dummyFlow.id,
+              email: viewer.email,
+              role: 'viewer',
+            },
           },
           context,
         ),
