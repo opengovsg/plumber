@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { datadogRum } from '@datadog/browser-rum'
 import { debounce } from 'lodash'
@@ -77,6 +77,13 @@ export const useRefineFormInput = () => {
     debouncedRefineFormInput.cancel()
     setAiSuggestion(null)
     setShowReadyMessage(false)
+  }, [debouncedRefineFormInput])
+
+  // Cancel pending debounced calls on unmount to prevent unnecessary API requests
+  useEffect(() => {
+    return () => {
+      debouncedRefineFormInput.cancel()
+    }
   }, [debouncedRefineFormInput])
 
   return {

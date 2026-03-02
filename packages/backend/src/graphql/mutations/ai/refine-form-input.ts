@@ -22,11 +22,11 @@ const refineFormInput: MutationResolvers['refineFormInput'] = async (
   params,
   context,
 ) => {
-  try {
-    if (!context.currentUser) {
-      throw new ForbiddenError('Not authorised!')
-    }
+  if (!context.currentUser) {
+    throw new ForbiddenError('Not authorised!')
+  }
 
+  try {
     const validatedInput = REFINE_FORM_INPUT_SCHEMA.parse(params.input)
     const { prompt: userPrompt, sessionId } = validatedInput
 
@@ -79,7 +79,7 @@ const refineFormInput: MutationResolvers['refineFormInput'] = async (
           prompt: userPrompt,
           experimental_telemetry: {
             isEnabled: true,
-            functionId: 'is-chat-ready',
+            functionId: 'refine-form-input',
           },
         })
 
