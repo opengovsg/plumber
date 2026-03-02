@@ -872,6 +872,158 @@ describe('upsert flow collaborator', () => {
         newTableCollaborator.find((tc) => tc.userId === newCollaborator.id),
       ).toBeDefined()
     })
+
+    /**
+     * This tests the fix for the issue where:
+     * 1. A Pipe with a Tiles connection was transferred before Collaborators was released
+     * 2. The new owner is only an editor of the Tile
+     * 3. The old owner remains the owner of the Tile
+     * 4. The new owner attempts to add the old owner as a Pipe collaborator
+     *
+     * Previously this would throw 'Cannot change owner role' error because
+     * the code tried to add the Tile owner as a table collaborator.
+     */
+    it('should succeed when adding Tile owner as Pipe collaborator (transferred pipe scenario)', async () => {
+      // Simulate: "old owner" owns the tile
+      const oldOwner = await User.query().insert({
+        id: randomUUID(),
+        email: 'old-owner@plumber.gov.sg',
+      })
+
+      // Create a new tile where oldOwner is the owner
+      const transferredTileId = randomUUID()
+      await TableMetadata.query().insert({
+        id: transferredTileId,
+        name: 'transferred tile',
+        db: 'pg',
+      })
+
+      await TableCollaborator.query().insert({
+        tableId: transferredTileId,
+        userId: oldOwner.id,
+        role: 'owner',
+      })
+
+      // context.currentUser (new owner of Pipe) is only an editor of the Tile
+      await TableCollaborator.query().insert({
+        tableId: transferredTileId,
+        userId: context.currentUser.id,
+        role: 'editor',
+      })
+
+      // Add a Tile step using the transferred tile
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: transferredTileId },
+        position: 1,
+      })
+
+      // New owner tries to add old owner as a Pipe collaborator
+      // This should succeed - the old owner is already the Tile owner,
+      // so the error should be silently ignored
+      await expect(
+        upsertFlowCollaborator(
+          null,
+          {
+            input: {
+              flowId: dummyFlow.id,
+              email: oldOwner.email,
+              role: 'editor',
+            },
+          },
+          context,
+        ),
+      ).resolves.toBe(true)
+
+      // Verify the flow collaborator was added
+      const flowCollaborators = await FlowCollaborator.query().where({
+        flow_id: dummyFlow.id,
+        user_id: oldOwner.id,
+      })
+      expect(flowCollaborators).toHaveLength(1)
+      expect(flowCollaborators[0].role).toBe('editor')
+
+      // Verify the old owner's Tile ownership was NOT changed
+      const tileCollaborator = await TableCollaborator.query().findOne({
+        table_id: transferredTileId,
+        user_id: oldOwner.id,
+      })
+      expect(tileCollaborator).toBeDefined()
+      expect(tileCollaborator.role).toBe('owner')
+    })
+
+    it('should succeed when adding Tile owner as viewer (flow was transferred, owner became viewer)', async () => {
+      // Scenario: Pipe was transferred, old owner (Tile owner) is being added back as viewer
+      const oldOwner = await User.query().insert({
+        id: randomUUID(),
+        email: 'old-pipe-owner@plumber.gov.sg',
+      })
+
+      const sharedTileId = randomUUID()
+      await TableMetadata.query().insert({
+        id: sharedTileId,
+        name: 'transferred tile 2',
+        db: 'pg',
+      })
+
+      // Old owner is the Tile owner
+      await TableCollaborator.query().insert({
+        tableId: sharedTileId,
+        userId: oldOwner.id,
+        role: 'owner',
+      })
+
+      // Current user (new pipe owner) is editor of the Tile
+      await TableCollaborator.query().insert({
+        tableId: sharedTileId,
+        userId: context.currentUser.id,
+        role: 'editor',
+      })
+
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: sharedTileId },
+        position: 1,
+      })
+
+      // Add old owner as viewer (even though they're Tile owner)
+      await expect(
+        upsertFlowCollaborator(
+          null,
+          {
+            input: {
+              flowId: dummyFlow.id,
+              email: oldOwner.email,
+              role: 'viewer',
+            },
+          },
+          context,
+        ),
+      ).resolves.toBe(true)
+
+      // Verify flow collaborator was added as viewer
+      const flowCollab = await FlowCollaborator.query().findOne({
+        flow_id: dummyFlow.id,
+        user_id: oldOwner.id,
+      })
+      expect(flowCollab).toBeDefined()
+      expect(flowCollab.role).toBe('viewer')
+
+      // Verify Tile ownership was NOT changed
+      const tileCollab = await TableCollaborator.query().findOne({
+        table_id: sharedTileId,
+        user_id: oldOwner.id,
+      })
+      expect(tileCollab.role).toBe('owner')
+    })
   })
 
   it('should not allow adding collaborators if collaborators flag is false', async () => {
