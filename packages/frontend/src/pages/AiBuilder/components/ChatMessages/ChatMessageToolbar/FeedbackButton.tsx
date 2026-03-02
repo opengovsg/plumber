@@ -99,7 +99,7 @@ export const FeedbackButton = ({
         <IconButton
           variant="clear"
           colorScheme="secondary"
-          aria-label="Thumbs down"
+          aria-label={feedbackType === 'positive' ? 'Thumbs up' : 'Thumbs down'}
           icon={<Icon as={icon} />}
           onClick={onOpen}
           // HACKFIX(kevinkim-ogp): prevent autofocus when new input is sent
@@ -127,10 +127,10 @@ export const FeedbackButton = ({
                   />
                 </FormControl>
                 <ButtonGroup display="flex" justifyContent="flex-end">
-                  <Button variant="clear" onClick={onClose} size="sm">
+                  <Button variant="clear" onClick={onClose} size="xs">
                     Cancel
                   </Button>
-                  <Button type="submit" size="sm">
+                  <Button type="submit" size="xs">
                     Submit
                   </Button>
                 </ButtonGroup>

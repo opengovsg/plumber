@@ -150,9 +150,14 @@ input RefineFormInputInput {
   sessionId: String
 }
 
+input FeedbackInput {
+  category: String
+  comment: String
+}
+
 input UpdateChatFeedbackInput {
   traceId: String!
-  feedback: JSONObject
+  feedback: FeedbackInput
   score: Int!
 }
 

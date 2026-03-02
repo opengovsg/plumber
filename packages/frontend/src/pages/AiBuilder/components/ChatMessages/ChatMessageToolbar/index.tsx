@@ -11,8 +11,8 @@ export default function ChatMessageToolbar({
 }: ChatMessageToolbarProps) {
   return (
     <Flex gap={1} mt={2}>
-      <FeedbackButton feedbackType="negative" traceId={traceId} />
       <FeedbackButton feedbackType="positive" traceId={traceId} />
+      <FeedbackButton feedbackType="negative" traceId={traceId} />
     </Flex>
   )
 }

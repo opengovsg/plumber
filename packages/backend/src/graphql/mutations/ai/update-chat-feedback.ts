@@ -19,9 +19,9 @@ const updateChatFeedback: MutationResolvers['updateChatFeedback'] = async (
       name: 'user-feedback',
       value: score, // 1 for positive, 0 for negative
       comment: feedback.comment as string,
-      ...(feedback?.category && {
-        metadata: { category: feedback.category },
-      }),
+      metadata: feedback?.category
+        ? { category: feedback.category }
+        : { category: null }, // NOTE: we need to set to null as Langfuse will merge instead of overwriting metadata
     })
 
     return true
