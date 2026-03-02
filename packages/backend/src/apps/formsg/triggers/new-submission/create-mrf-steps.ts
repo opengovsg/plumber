@@ -185,8 +185,12 @@ export async function createMrfSteps(
       await Step.query(trx)
         .where('flow_id', $.flow.id)
         .where('position', '>=', newMrfSteps[0].position)
-        .andWhereNot('key', MRF_KEY)
-        .andWhereNot('app_key', MRF_APP_KEY)
+        .where((builder) => {
+          builder.whereNot('key', MRF_KEY).orWhereNull('key')
+        })
+        .where((builder) => {
+          builder.whereNot('app_key', MRF_APP_KEY).orWhereNull('app_key')
+        })
         .increment('position', newMrfSteps.length)
 
       // Get all the step ids in the reject branch
