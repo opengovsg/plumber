@@ -18,6 +18,7 @@ import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'
 import { validateFiles } from './utils'
+import { EditorContext } from '@/contexts/Editor'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -40,11 +41,12 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const wrapperRef = useRef(null)
+  const { flow } = useContext(EditorContext)
   const { control, setError, getValues } = useFormContext()
   const [currentTab, setCurrentTab] = useState<number>(0)
   const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
 
-  const flow = getValues('flow')
+
 
   const {
     isOpen: isDialogOpen,

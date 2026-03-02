@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { FieldValues, UseFormGetValues } from 'react-hook-form'
 import {
   ApolloQueryResult,
@@ -18,6 +18,7 @@ import { GENERATE_PRESIGNED_POST } from '@/graphql/mutations/generate-presigned-
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { EditorContext } from '@/contexts/Editor'
 
 interface UseS3UploadOptions {
   onError?: (filename: string, type: string, errorMessage: string) => void
@@ -34,6 +35,7 @@ export const useS3Operations = (
   options: UseS3UploadOptions = {},
 ) => {
   const toast = useToast()
+  const { flow } = useContext(EditorContext)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [deleteFile] = useMutation(DELETE_UPLOADED_FILE)
@@ -60,7 +62,6 @@ export const useS3Operations = (
   const deleteUploadedFile = async (file: any) => {
     try {
       const { name: filename, value, displayedValue } = file
-      const flow = getValues('flow')
       const { id: flowId, updatedAt: flowUpdatedAt } = flow
       setIsDeleting(true)
 
@@ -69,7 +70,7 @@ export const useS3Operations = (
       // before clicking "Continue," the file would be deleted, but other
       // inputs remain visible in the UI without being saved.
       const currentAttachments = getValues(name) || []
-      const mutationInput = createUpdateStep(getValues(), currentAttachments)
+      const mutationInput = createUpdateStep(flow, getValues(), currentAttachments)
       await updateStep({ variables: { input: mutationInput } })
 
       await deleteFile({
@@ -162,7 +163,7 @@ export const useS3Operations = (
         )
 
         const currentAttachments = getValues(name) || []
-        const mutationInput = createUpdateStep(getValues(), [
+        const mutationInput = createUpdateStep(flow, getValues(), [
           ...currentAttachments,
           s3Id,
         ])
