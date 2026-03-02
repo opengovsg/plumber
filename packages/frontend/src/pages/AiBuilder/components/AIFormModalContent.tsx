@@ -18,7 +18,7 @@ import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import { AI_FORM_SCHEMA, AiFormData } from '@/pages/AiBuilder/schema'
-import { AI_FORM_IDEAS, AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
+import { AI_FORM_IDEAS, AiFormIdea } from '@/pages/Flows/constants'
 
 import IdeaButtons from './IdeaButtons'
 
@@ -75,9 +75,9 @@ export const AIFormModalContent = ({
     },
   })
 
-  const handleIdeaClick = (idea: AiChatIdea | AiFormIdea) => {
-    setValue('trigger', (idea as AiFormIdea).trigger, { shouldValidate: true })
-    setValue('actions', (idea as AiFormIdea).actions, { shouldValidate: true })
+  const handleIdeaClick = (idea: AiFormIdea) => {
+    setValue('trigger', idea.trigger, { shouldValidate: true })
+    setValue('actions', idea.actions, { shouldValidate: true })
   }
 
   const isCreate = type === 'create'
@@ -115,9 +115,7 @@ export const AIFormModalContent = ({
                   {isCreate && field.key === 'actions' && (
                     <IdeaButtons
                       ideas={AI_FORM_IDEAS}
-                      onClick={(idea: AiChatIdea | AiFormIdea) =>
-                        handleIdeaClick(idea)
-                      }
+                      onClick={handleIdeaClick}
                     />
                   )}
                 </Flex>

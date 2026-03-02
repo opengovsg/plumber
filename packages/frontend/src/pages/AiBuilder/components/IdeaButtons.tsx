@@ -4,12 +4,15 @@ import { Button, FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import { TemplateIcon } from '@/helpers/flow-templates'
 import { AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
 
-interface IdeaButtonsProps {
-  ideas: AiChatIdea[] | AiFormIdea[]
-  onClick: (idea: AiChatIdea | AiFormIdea) => void
+interface IdeaButtonsProps<T extends AiChatIdea | AiFormIdea> {
+  ideas: T[]
+  onClick: (idea: T) => void
 }
 
-export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
+export default function IdeaButtons<T extends AiChatIdea | AiFormIdea>({
+  ideas,
+  onClick,
+}: IdeaButtonsProps<T>) {
   const isMobile = useIsMobile()
 
   return (
