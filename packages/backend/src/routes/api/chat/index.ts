@@ -121,6 +121,12 @@ const handleChatStream = observe(
             traceId,
             error: errorMessage,
           })
+
+          updateActiveObservation({ output: errorMessage })
+          updateActiveTrace({ output: errorMessage })
+
+          // Manually end the span since we're streaming
+          trace.getActiveSpan()?.end()
         },
       })
 
