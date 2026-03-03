@@ -20,12 +20,16 @@ const validateFlowSteps = (steps: Step[]) => {
     )
   }
 
+  const forEachSteps = steps.filter(
+    (step) =>
+      step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH,
+  )
+
   if (
-    steps.filter(
-      (step) =>
-        step.appKey === TOOLBOX_APP_KEY &&
-        step.key === TOOLBOX_ACTIONS.FOR_EACH,
-    ).length > 1
+    forEachSteps.length > 2 ||
+    (forEachSteps.length === 2 &&
+      forEachSteps[0].config.approval?.branch ===
+        forEachSteps[1].config.approval?.branch)
   ) {
     throw new Error(
       'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
