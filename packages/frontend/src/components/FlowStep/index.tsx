@@ -235,7 +235,7 @@ export default function FlowStep(
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={isNested ? '48px' : isApprovalStep ? '124px' : '64px'}
+              h={isNested ? '56px' : isApprovalStep ? '124px' : '64px'}
               w={headerWidth}
               onClick={handleClick}
             >
