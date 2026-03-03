@@ -55,7 +55,7 @@ export function ApproveReject({ stepId }: { stepId: string }) {
         onChange={onChange}
         flex={1}
       >
-        <TabList gap={2}>
+        <TabList gap={2} overflow="hidden">
           <Tab {...tabStyle('green.500')}>If approved</Tab>
           <Tab {...tabStyle('red.500')}>If rejected</Tab>
         </TabList>
