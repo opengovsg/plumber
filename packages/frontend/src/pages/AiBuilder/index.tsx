@@ -14,13 +14,7 @@ import {
 } from './AiBuilderContext'
 
 function AiBuilderContent() {
-  const { aiBuilderType, flowName, isFormMode, chatInput, chatMessages } =
-    useAiBuilderContext()
-
-  // TODO(kevinkim-ogp): remove this once A/B test is complete
-  if (aiBuilderType === 'ai-form' && !chatInput && chatMessages?.length === 0) {
-    return <InvalidEditorPage message="You do not have access to this." />
-  }
+  const { flowName, isFormMode } = useAiBuilderContext()
 
   return (
     <>
