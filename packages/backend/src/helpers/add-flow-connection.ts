@@ -71,7 +71,7 @@ async function addFlowTableConnection({
   await TableCollaborator.hasAccess(addedBy, tableId, 'editor')
 
   // first try to add the connection to the flow_connections table
-  const addedConnection = await FlowConnections.addFlowConnection({
+  await FlowConnections.addFlowConnection({
     flowId,
     connectionId: tableId,
     addedBy,
@@ -79,27 +79,24 @@ async function addFlowTableConnection({
     trx,
   })
 
-  // only need to proceed if the tile was added to flow_connections
-  if (addedConnection) {
-    // then add the collaborators to the flow_collaborators table
-    const collaborators = await FlowCollaborator.getCollaborators({
-      flowId,
-      trx,
-    })
+  // then add the collaborators to the flow_collaborators table
+  const collaborators = await FlowCollaborator.getCollaborators({
+    flowId,
+    trx,
+  })
 
-    // use Promise.all so that we use the addCollaborator function, which checks
-    // if the collaborator already exists to avoid duplicates
-    await Promise.all(
-      collaborators.map(async ({ userId, role }) => {
-        await TableCollaborator.addCollaborator({
-          userId,
-          tableId,
-          role,
-          trx,
-        })
-      }),
-    )
-  }
+  // use Promise.all so that we use the addCollaborator function, which checks
+  // if the collaborator already exists to avoid duplicates
+  await Promise.all(
+    collaborators.map(async ({ userId, role }) => {
+      await TableCollaborator.addCollaborator({
+        userId,
+        tableId,
+        role,
+        trx,
+      })
+    }),
+  )
 }
 
 export { addFlowConnection, addFlowTableConnection }

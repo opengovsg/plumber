@@ -817,6 +817,61 @@ describe('upsert flow collaborator', () => {
       expect(tableCollaborators2[0].tableId).toBe(tilesTableId1)
       expect(tableCollaborators2[0].role).toBe('editor')
     })
+
+    it('should add subsequent Pipe collaborator as Tile collaborator', async () => {
+      await Step.query().insert({
+        id: randomUUID(),
+        flowId: dummyFlow.id,
+        key: 'createTileRow',
+        appKey: 'tiles',
+        type: 'action',
+        parameters: { tableId: tilesTableId1 },
+        position: 1,
+      })
+
+      // add the editor as a collaborator of the Pipe first
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
+        },
+        context,
+      )
+
+      // Check that only one table collaborator was added (duplicates should be handled)
+      const tableCollaborators = await TableCollaborator.query().where({
+        user_id: editor.id,
+      })
+      expect(tableCollaborators).toHaveLength(1)
+      expect(tableCollaborators[0].tableId).toBe(tilesTableId1)
+      expect(tableCollaborators[0].role).toBe('editor')
+
+      // add another collaborator to the Pipe
+      const newCollaborator = await User.query().insert({
+        id: randomUUID(),
+        email: 'new-collaborator@plumber.gov.sg',
+      })
+      await upsertFlowCollaborator(
+        null,
+        {
+          input: {
+            flowId: dummyFlow.id,
+            email: newCollaborator.email,
+            role: 'editor',
+          },
+        },
+        context,
+      )
+
+      // check that the new collaborator was added as a table collaborator
+      const newTableCollaborator = await TableCollaborator.query().where({
+        table_id: tilesTableId1,
+      })
+      expect(newTableCollaborator).toHaveLength(3)
+      expect(
+        newTableCollaborator.find((tc) => tc.userId === newCollaborator.id),
+      ).toBeDefined()
+    })
   })
 
   it('should not allow adding collaborators if collaborators flag is false', async () => {
