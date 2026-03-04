@@ -18,8 +18,14 @@ export default function ChatInterface() {
   const isMobile = useIsMobile()
   const { flowName, chatInput, chatMessages } = useAiBuilderContext()
 
-  const { messages, currentResponse, isStreaming, sendMessage, cancelStream } =
-    useChatStream({ initialMessages: chatMessages })
+  const {
+    messages,
+    currentResponse,
+    isStreaming,
+    isReady: isReadyForPreview,
+    sendMessage,
+    cancelStream,
+  } = useChatStream({ initialMessages: chatMessages })
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -134,6 +140,7 @@ export default function ChatInterface() {
           messagesContainerRef={messagesContainerRef}
           hasMessages={hasMessages}
           onOpenDrawer={handleOpenPreview}
+          isReady={isReadyForPreview}
         />
 
         {/* Input Area - Fixed at bottom */}
