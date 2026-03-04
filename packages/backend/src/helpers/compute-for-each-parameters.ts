@@ -75,6 +75,7 @@ export function getStepContext(
       // to account for MRF flows: only track the last step within the same branch
       if (
         currStep.config.approval?.branch === stepApprovalConfig?.branch &&
+        currStep.config.approval?.stepId === stepApprovalConfig?.stepId &&
         currStep.position > acc.maxPosition
       ) {
         acc.maxPosition = currStep.position
@@ -136,8 +137,6 @@ export function computeForEachParameters({
 
   // SPECIAL CASE: this returns the iteration number of the specific iteration.
   // metadata.iteration is not available for test runs
-  console.log('forEachKeyPath', forEachKeyPath)
-  console.log('metadata', metadata)
   if (forEachKeyPath === FOR_EACH_ITERATION_KEY) {
     return metadata?.iteration ? metadata.iteration : 1
   }
