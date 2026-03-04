@@ -32,7 +32,6 @@ export default function StepHeader(props: StepHeaderProps) {
     setCurrentStepId,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
-
   const { defaultStepName, displayPosition, stepName } = useStepMetadata(step)
 
   const handleClose = () => {

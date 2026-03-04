@@ -136,7 +136,7 @@ export function StepsToDisplayProvider({
       setCurrentStepId(null)
       onDrawerClose()
     }
-  }, [stepsToDisplay, currentStepId, onDrawerClose])
+  }, [stepsToDisplay, currentStepId, onDrawerClose, setCurrentStepId])
 
   return (
     <StepsToDisplayContext.Provider

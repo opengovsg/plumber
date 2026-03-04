@@ -2,12 +2,12 @@ import { IStep } from '@plumber/types'
 
 import { useContext } from 'react'
 
+import { SortableItemContext } from '@/components/SortableList/components/SortableItem'
 import { MrfContext } from '@/contexts/MrfContext'
 import { FlowStep } from '@/exports/components'
 
 import { AddStepButton } from './AddStepButton'
 import { DisabledFlowStep } from './DisabledFlowStep'
-import { SortableItemContext } from '@/components/SortableList/components/SortableItem'
 
 export default function FlowStepWithAddButton({
   step,
