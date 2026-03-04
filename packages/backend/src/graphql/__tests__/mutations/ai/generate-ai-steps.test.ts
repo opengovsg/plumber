@@ -74,7 +74,6 @@ const DEFAULT_MOCKED_OUTPUT = {
 const DEFAULT_INPUT = {
   prompt:
     '#### Start the workflow\nNew FormSG submission\n\n#### Actions\nSend a welcome email to the new user\nSend a welcome SMS to the new user',
-  isFormMode: true,
   sessionId: '123',
 }
 
@@ -86,7 +85,7 @@ describe('generateAiSteps mutation', () => {
 
     mocks.langfusePromptGet.mockResolvedValue({ prompt: 'system prompt' })
     mocks.getLdFlagValue.mockResolvedValue({
-      objectPrompt: 'ai-builder/form',
+      objectPrompt: 'ai-builder/chat',
       version: 'production',
     })
 
@@ -117,7 +116,6 @@ describe('generateAiSteps mutation', () => {
         {
           input: {
             prompt: 'gibberish',
-            isFormMode: true,
             sessionId: '123',
           },
         },

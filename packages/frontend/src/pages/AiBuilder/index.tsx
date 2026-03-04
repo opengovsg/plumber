@@ -4,17 +4,15 @@ import { Link, useLocation } from 'react-router-dom'
 import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
 
 import * as URLS from '@/config/urls'
-import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import ChatInterface from './components/ChatInterface'
-import StepsPreview from './components/StepsPreview'
 import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
 
 function AiBuilderContent() {
-  const { flowName, isFormMode } = useAiBuilderContext()
+  const { flowName } = useAiBuilderContext()
 
   return (
     <>
@@ -54,7 +52,7 @@ function AiBuilderContent() {
         <Container
           maxW="full"
           px={0}
-          py={isFormMode ? 10 : 0}
+          py={0}
           mt="51.5px"
           flex={1}
           overflowY="auto"
@@ -63,7 +61,7 @@ function AiBuilderContent() {
             backgroundSize: '30px 30px',
           }}
         >
-          {isFormMode ? <StepsPreview /> : <ChatInterface />}
+          <ChatInterface />
         </Container>
       </Flex>
     </>
@@ -71,40 +69,22 @@ function AiBuilderContent() {
 }
 
 export default function AiBuilder() {
-  const { flowName, formInput, isFormMode, output, chatInput, chatMessages } =
-    useLocation()?.state || {
-      flowName: 'New flow',
-      isFormMode: false,
-      chatInput: '',
-      chatMessages: [],
-      formInput: {
-        trigger: '',
-        actions: '',
-      },
-      output: {
-        trigger: '',
-        actions: '',
-      },
-    }
-
-  /**
-   * NOTE: if isFormMode is true, we validate that the formInput exists.
-   * if it does not exist, we don't bother showing the AiBuilder
-   * since it will waste an API call to Pair
-   */
-  if (isFormMode && (!formInput.trigger || !formInput.actions)) {
-    return (
-      <InvalidEditorPage message="Something went wrong. Please try again." />
-    )
+  const { flowName, output, chatInput, chatMessages } = useLocation()
+    ?.state || {
+    flowName: 'New flow',
+    chatInput: '',
+    chatMessages: [],
+    output: {
+      trigger: '',
+      actions: '',
+    },
   }
 
   return (
     <AiBuilderContextProvider
       flowName={flowName}
-      formInput={formInput}
       chatInput={chatInput}
       chatMessages={chatMessages}
-      isFormMode={isFormMode}
       output={output}
     >
       <AiBuilderContent />

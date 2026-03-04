@@ -87,7 +87,6 @@ export function useChatStream(options: UseChatStreamOptions) {
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
           ...location.state,
-          isFormMode: false,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
         },
