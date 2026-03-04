@@ -13,12 +13,12 @@ import {
   createUpdateStep,
   reformatToAttachmentConfig,
 } from '@/components/AttachmentSuggestions/utils'
+import { EditorContext } from '@/contexts/Editor'
 import { DELETE_UPLOADED_FILE } from '@/graphql/mutations/delete-uploaded-file'
 import { GENERATE_PRESIGNED_POST } from '@/graphql/mutations/generate-presigned-post'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
-import { EditorContext } from '@/contexts/Editor'
 
 interface UseS3UploadOptions {
   onError?: (filename: string, type: string, errorMessage: string) => void
@@ -70,7 +70,11 @@ export const useS3Operations = (
       // before clicking "Continue," the file would be deleted, but other
       // inputs remain visible in the UI without being saved.
       const currentAttachments = getValues(name) || []
-      const mutationInput = createUpdateStep(flow, getValues(), currentAttachments)
+      const mutationInput = createUpdateStep(
+        flow,
+        getValues(),
+        currentAttachments,
+      )
       await updateStep({ variables: { input: mutationInput } })
 
       await deleteFile({

@@ -7,6 +7,7 @@ import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { type Variable } from '@/helpers/variables'
@@ -18,7 +19,6 @@ import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'
 import { validateFiles } from './utils'
-import { EditorContext } from '@/contexts/Editor'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -45,8 +45,6 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const { control, setError, getValues } = useFormContext()
   const [currentTab, setCurrentTab] = useState<number>(0)
   const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
-
-
 
   const {
     isOpen: isDialogOpen,
