@@ -1,7 +1,7 @@
 import './SortableItem.css'
 
 import type { CSSProperties, PropsWithChildren } from 'react'
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext } from 'react'
 import type {
   DraggableSyntheticListeners,
   UniqueIdentifier,
@@ -52,17 +52,7 @@ export function SortableItem({
     transition,
     isSorting,
   } = useSortable({ id })
-  const context = useMemo(
-    () => ({
-      attributes,
-      listeners,
-      ref: setActivatorNodeRef,
-      isDragging,
-      isOverlay,
-      isSorting,
-    }),
-    [attributes, listeners, setActivatorNodeRef, isDragging, isOverlay],
-  )
+
   const style: CSSProperties = {
     opacity: isDragging ? 0.4 : undefined,
     transform: CSS.Translate.toString(transform),
@@ -70,7 +60,17 @@ export function SortableItem({
   }
 
   return (
-    <SortableItemContext.Provider value={context}>
+    <SortableItemContext.Provider
+      value={{
+        attributes,
+        listeners,
+        ref: setActivatorNodeRef,
+        isDragging,
+        isOverlay,
+
+        isSorting,
+      }}
+    >
       <li className="SortableItem" ref={setNodeRef} style={style}>
         {children}
       </li>
