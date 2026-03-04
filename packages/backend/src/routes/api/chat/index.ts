@@ -38,7 +38,7 @@ const handleChatStream = observe(
       return
     }
 
-    const { chatPrompt, version } = aiBuilderFlag.config
+    const { chatPromptName, version } = aiBuilderFlag.config
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -59,7 +59,7 @@ const handleChatStream = observe(
       )
 
       // Get the prompt from Langfuse
-      const prompt = await getPrompt(chatPrompt, version)
+      const prompt = await getPrompt(chatPromptName, version)
 
       // Manually capture serializable input for Langfuse
       // joining with new line for readability on Langfuse
@@ -102,7 +102,7 @@ const handleChatStream = observe(
             sessionId: sessionId || 'unknown',
             userId: context.currentUser.email,
             environment: appConfig.appEnv,
-            promptName: chatPrompt,
+            promptName: chatPromptName,
             promptVersion: version,
             langfusePrompt: prompt.toJSON(),
             tags: ['ai-builder', 'chat', 'stream'],

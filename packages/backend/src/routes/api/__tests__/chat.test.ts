@@ -112,7 +112,7 @@ describe('Chat Route Handler', () => {
     it('should process authenticated requests', async () => {
       // Context is set by middleware before reaching handler
       mocks.getLdFlagValue.mockResolvedValueOnce({
-        chatPrompt: 'aids-chat-v0',
+        chatPromptName: 'aids-chat-v0',
         version: 'production',
       })
       mocks.getPrompt.mockResolvedValueOnce({
@@ -161,7 +161,7 @@ describe('Chat Route Handler', () => {
       mocks.getLdFlagValue.mockResolvedValueOnce({
         enabled: true,
         config: {
-          chatPrompt: 'chat-v0',
+          chatPromptName: 'chat-v0',
           version: 'production',
         },
       })
@@ -194,7 +194,7 @@ describe('Chat Route Handler', () => {
       mocks.getLdFlagValue.mockResolvedValueOnce({
         enabled: true,
         config: {
-          chatPrompt: 'chat-v0',
+          chatPromptName: 'chat-v0',
           version: 'production',
         },
       })
@@ -243,7 +243,7 @@ describe('Chat Route Handler', () => {
       mocks.getLdFlagValue.mockResolvedValueOnce({
         enabled: true,
         config: {
-          chatPrompt: 'chat-v0',
+          chatPromptName: 'chat-v0',
           version: 'production',
         },
       })

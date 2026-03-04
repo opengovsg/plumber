@@ -9,9 +9,9 @@ export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
   enabled: false,
   config: {
-    chatPrompt: 'chat',
-    chatReadinessPrompt: 'chat-readiness-check',
-    generateStepsPrompt: 'generate-steps',
+    chatPromptName: 'chat',
+    chatReadinessPromptName: 'chat-readiness-check',
+    generateStepsPromptName: 'generate-steps',
     version: 'production',
   },
 }

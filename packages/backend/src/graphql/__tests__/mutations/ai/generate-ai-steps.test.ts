@@ -87,7 +87,7 @@ describe('generateAiSteps mutation', () => {
     mocks.getLdFlagValue.mockResolvedValue({
       enabled: true,
       config: {
-        generateStepsPrompt: 'generate-steps',
+        generateStepsPromptName: 'generate-steps',
         version: 'production',
       },
     })

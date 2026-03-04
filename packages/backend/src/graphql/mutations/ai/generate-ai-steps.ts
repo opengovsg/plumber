@@ -36,7 +36,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
     throw new ForbiddenError('You do not have permissions to use AI Builder!')
   }
 
-  const { generateStepsPrompt: promptName, version } = aiBuilderFlag.config
+  const { generateStepsPromptName: promptName, version } = aiBuilderFlag.config
   let traceId
 
   try {

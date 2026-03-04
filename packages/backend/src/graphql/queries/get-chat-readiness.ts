@@ -27,8 +27,8 @@ const getChatReadiness: QueryResolvers['getChatReadiness'] = async (
       context.currentUser.email,
       AI_BUILDER_FEATURE_FLAG_FALLBACK,
     )
-    const { chatReadinessPrompt, version } = aiBuilderFlag.config
-    const prompt = await getPrompt(chatReadinessPrompt, version)
+    const { chatReadinessPromptName, version } = aiBuilderFlag.config
+    const prompt = await getPrompt(chatReadinessPromptName, version)
     const { prompt: systemPrompt } = prompt
 
     const result = await startActiveObservation(
