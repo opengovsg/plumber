@@ -4,6 +4,10 @@ import z from 'zod/v3'
 import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
+import {
+  AI_BUILDER_FEATURE_FLAG,
+  AI_BUILDER_FEATURE_FLAG_FALLBACK,
+} from '@/config/flags'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { langfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
@@ -22,15 +26,17 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
   params,
   context,
 ) => {
-  const promptConfig = await getLdFlagValue(
-    'ai-builder-prompt-config',
+  const aiBuilderFlag = await getLdFlagValue(
+    AI_BUILDER_FEATURE_FLAG,
     context.currentUser.email,
-    {
-      objectPrompt: 'ai-builder/form',
-      version: 'production',
-    },
+    AI_BUILDER_FEATURE_FLAG_FALLBACK,
   )
-  const { objectPrompt: promptName, version } = promptConfig
+
+  if (!aiBuilderFlag.enabled) {
+    throw new ForbiddenError('You do not have permissions to use AI Builder!')
+  }
+
+  const { generateStepsPrompt: promptName, version } = aiBuilderFlag.config
   let traceId
 
   try {

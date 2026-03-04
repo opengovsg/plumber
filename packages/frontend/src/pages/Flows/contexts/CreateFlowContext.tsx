@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useState } from 'react'
 
+import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
 interface CreateFlowContextProps {
@@ -35,8 +36,10 @@ export const CreateFlowContextProvider = ({
 }) => {
   // TODO (kevinkim-ogp): remove the flag value once GA
   const { getFlagValue } = useContext(LaunchDarklyContext)
-  const aiBuilderType = getFlagValue('ai-builder-type', 'none')
-  const canUseAiBuilder = aiBuilderType !== 'none'
+  const aiBuilderFlag = getFlagValue(AI_BUILDER_FEATURE_FLAG, {
+    enabled: false,
+  })
+  const canUseAiBuilder = aiBuilderFlag.enabled
 
   const [skipModeSelection, setSkipModeSelection] = useState<boolean>(false)
 
