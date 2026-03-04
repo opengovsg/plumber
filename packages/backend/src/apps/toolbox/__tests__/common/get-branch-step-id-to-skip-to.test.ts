@@ -79,7 +79,7 @@ describe('getBranchStepIdToSkipTo', () => {
     }
 
     const result = await getBranchStepIdToSkipTo($ as any)
-    expect(result).toBeUndefined()
+    expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
@@ -289,7 +289,7 @@ describe('getBranchStepIdToSkipTo', () => {
     }
 
     const result = await getBranchStepIdToSkipTo($ as any)
-    expect(result).toBeUndefined()
+    expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 

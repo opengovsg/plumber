@@ -74,8 +74,8 @@ export async function getBranchStepIdToSkipTo(
 
   // To account for MRF flows: don't skip across approval/rejection branch boundaries,
   // or into a rejection branch belonging to a different MRF approval step.
-  const currApproval = currBranchStep.config.approval
-  const nextApproval = nextBranchStep.config.approval
+  const currApproval = currBranchStep.config?.approval
+  const nextApproval = nextBranchStep.config?.approval
   const isSameBranch =
     currApproval?.branch === 'reject' && nextApproval?.branch === 'reject'
       ? currApproval.stepId === nextApproval.stepId
