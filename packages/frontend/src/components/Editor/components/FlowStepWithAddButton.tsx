@@ -7,6 +7,7 @@ import { FlowStep } from '@/exports/components'
 
 import { AddStepButton } from './AddStepButton'
 import { DisabledFlowStep } from './DisabledFlowStep'
+import { SortableItemContext } from '@/components/SortableList/components/SortableItem'
 
 export default function FlowStepWithAddButton({
   step,
@@ -32,6 +33,7 @@ export default function FlowStepWithAddButton({
   }
 }) {
   const { disabledMrfStepToDisplay } = useContext(MrfContext)
+  const { isOverlay, isSorting } = useContext(SortableItemContext)
 
   const shouldShowDisabledMrfStep = isLastStep && disabledMrfStepToDisplay
 
@@ -44,14 +46,18 @@ export default function FlowStepWithAddButton({
         // only allow reordering if there are more than 1 action steps
         allowReorder={allowReorder}
       />
-      <AddStepButton
-        isLastStep={isLastStep}
-        step={step}
-        isHidden={isHidden}
-        isDisabled={isDisabled}
-        showEmptyAction={showEmptyAction}
-      />
-      {shouldShowDisabledMrfStep && (
+      {/* Hide the add step button and dividers for the drag overlay */}
+      {!isOverlay && (
+        <AddStepButton
+          isLastStep={isLastStep}
+          step={step}
+          isHidden={isHidden}
+          isDisabled={isDisabled}
+          showEmptyAction={showEmptyAction}
+        />
+      )}
+      {/* Hide the disabled mrf step for the drag overlay and when sorting is taking place */}
+      {shouldShowDisabledMrfStep && !isOverlay && !isSorting && (
         <DisabledFlowStep
           step={disabledMrfStepToDisplay}
           tooltipText={

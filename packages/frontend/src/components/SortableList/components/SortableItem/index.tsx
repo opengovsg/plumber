@@ -20,20 +20,28 @@ interface Context {
   listeners: DraggableSyntheticListeners
   ref(node: HTMLElement | null): void
   isDragging: boolean
+  isOverlay: boolean
+  isSorting: boolean
 }
 
 export const NESTED_DRAG_HANDLE_WIDTH = 16
 
-const SortableItemContext = createContext<Context>({
+export const SortableItemContext = createContext<Context>({
   attributes: {},
   listeners: undefined,
   ref() {
     // Empty implementation for default context
   },
   isDragging: false,
+  isOverlay: false,
+  isSorting: false,
 })
 
-export function SortableItem({ children, id }: PropsWithChildren<Props>) {
+export function SortableItem({
+  children,
+  id,
+  isOverlay = false,
+}: PropsWithChildren<Props & { isOverlay?: boolean }>) {
   const {
     attributes,
     isDragging,
@@ -42,6 +50,7 @@ export function SortableItem({ children, id }: PropsWithChildren<Props>) {
     setActivatorNodeRef,
     transform,
     transition,
+    isSorting,
   } = useSortable({ id })
   const context = useMemo(
     () => ({
@@ -49,8 +58,10 @@ export function SortableItem({ children, id }: PropsWithChildren<Props>) {
       listeners,
       ref: setActivatorNodeRef,
       isDragging,
+      isOverlay,
+      isSorting,
     }),
-    [attributes, listeners, setActivatorNodeRef, isDragging],
+    [attributes, listeners, setActivatorNodeRef, isDragging, isOverlay],
   )
   const style: CSSProperties = {
     opacity: isDragging ? 0.4 : undefined,
