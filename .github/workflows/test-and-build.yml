@@ -53,6 +53,8 @@ jobs:
           key: ${{ runner.os }}-node_modules-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node_modules-
+      - name: Generate graphql artifacts
+        run: npm run postinstall
       - run: npm run lint
       - run: echo "✅ Lint check passed."
       - run: VITE_MODE=test npm run build
@@ -74,6 +76,8 @@ jobs:
           key: ${{ runner.os }}-node_modules-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node_modules-
+      - name: Generate graphql artifacts
+        run: npm run postinstall
       - name: Configure Datadog Test Visibility
         env:
           DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
