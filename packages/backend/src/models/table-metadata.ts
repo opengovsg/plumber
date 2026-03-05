@@ -108,6 +108,10 @@ class TableMetadata extends Base {
     }
     return mappedData
   }
+
+  get isPasswordProtected() {
+    return this.viewOnlyKey && this.viewOnlyPassword
+  }
 }
 
 export default TableMetadata
