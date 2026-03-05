@@ -7,12 +7,15 @@ import {
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
+import InvalidTileViewTokenError from '@/errors/invalid-tile-view-password'
 import logger from '@/helpers/logger'
 import TableMetadata from '@/models/table-metadata'
 import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/tiles/dynamodb/helpers'
 import { getTableOperations } from '@/models/tiles/factory'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
+
+import { fetchTableWithViewOnlyCheck } from './view-only.helper'
 
 const getAllRows: QueryResolvers['getAllRows'] = async (
   _parent,
@@ -22,19 +25,22 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   const { tableId, stringifiedCursor } = params
 
   try {
-    const table = context.tilesViewKey
-      ? await TableMetadata.query()
-          .withGraphFetched('columns')
-          .findOne({
-            id: tableId,
-            view_only_key: context.tilesViewKey,
-          })
-          .throwIfNotFound()
-      : await context.currentUser
-          .$relatedQuery('tables')
-          .withGraphFetched('columns')
-          .findById(tableId)
-          .throwIfNotFound()
+    let table: TableMetadata | undefined
+    if (context.tilesViewKey) {
+      const { table: fetchedTable } = await fetchTableWithViewOnlyCheck({
+        tableId,
+        context,
+        withColumns: true,
+      })
+
+      table = fetchedTable
+    } else {
+      table = await context.currentUser
+        .$relatedQuery('tables')
+        .withGraphFetched('columns')
+        .findById(tableId)
+        .throwIfNotFound()
+    }
 
     // update last accessed at for collaborator/table
     if (!context.tilesViewKey && !context.isAdminOperation) {
@@ -76,15 +82,18 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
   } catch (e) {
     logger.error(e)
     if (e instanceof ObjectionNotFoundError) {
-      if (context.tilesViewKey) {
-        throw new InvalidTileViewKeyError(tableId, context.tilesViewKey)
-      }
       throw new NotFoundError('Table does not exist or you do not have access.')
     }
     if (e.message.includes(DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE)) {
       throw new RateLimitedError(
         'Unable to fetch rows at the moment. Please retry in a bit.',
       )
+    }
+    if (
+      e instanceof InvalidTileViewKeyError ||
+      e instanceof InvalidTileViewTokenError
+    ) {
+      throw e
     }
     throw new Error('Error fetching rows')
   }
