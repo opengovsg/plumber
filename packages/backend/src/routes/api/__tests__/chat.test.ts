@@ -387,8 +387,8 @@ describe('Chat Route Handler', () => {
       mocks.getLdFlagValue.mockResolvedValueOnce({
         enabled: true,
         config: {
-          chatPrompt: 'chat-v0',
-          chatReadinessPrompt: 'chat-readiness-v0',
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
           chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
           version: 'production',
         },
