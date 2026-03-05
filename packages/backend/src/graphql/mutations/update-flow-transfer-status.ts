@@ -212,7 +212,7 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
 
               // there may be instances where the new pipe owner is already the owner of the table
               // we catch the error but do nothing`
-              await TableCollaborator.addCollaborator({
+              await TableCollaborator.upgradeOrInsertCollaborator({
                 userId: context.currentUser.id, // the new owner
                 tableId,
                 role: 'editor',

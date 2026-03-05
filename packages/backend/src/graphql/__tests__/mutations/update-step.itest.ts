@@ -648,7 +648,7 @@ describe('updateStep mutation', () => {
       // mock the check that the user has access to the tile
       vi.spyOn(TableCollaborator, 'hasAccess').mockResolvedValue(undefined)
       const addCollaboratorSpy = vi
-        .spyOn(TableCollaborator, 'addCollaborator')
+        .spyOn(TableCollaborator, 'upgradeOrInsertCollaborator')
         .mockResolvedValue(undefined)
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi

@@ -2,7 +2,6 @@ import { IStep } from '@plumber/types'
 
 import { Transaction } from 'objection'
 
-import { BadUserInputError } from '@/errors/graphql-errors'
 import FlowCollaborator from '@/models/flow-collaborators'
 import FlowConnections from '@/models/flow-connections'
 import TableCollaborator from '@/models/table-collaborators'
@@ -90,22 +89,12 @@ async function addFlowTableConnection({
   // if the collaborator already exists to avoid duplicates
   await Promise.all(
     collaborators.map(async ({ userId, role }) => {
-      try {
-        await TableCollaborator.addCollaborator({
-          userId,
-          tableId,
-          role,
-          trx,
-        })
-      } catch (e) {
-        // do nothing if the new collaborator is already the owner of the tile
-        const isOwnerRoleError =
-          e instanceof BadUserInputError &&
-          e.message === 'Cannot change owner role'
-        if (!isOwnerRoleError) {
-          throw e
-        }
-      }
+      await TableCollaborator.upgradeOrInsertCollaborator({
+        userId,
+        tableId,
+        role,
+        trx,
+      })
     }),
   )
 }

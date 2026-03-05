@@ -2,12 +2,14 @@ import { IGlobalVariable, ITableCollabRole } from '@plumber/types'
 
 import { Transaction } from 'objection'
 
-import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
+import { ForbiddenError } from '@/errors/graphql-errors'
 import StepError from '@/errors/step'
 
 import Base from './base'
 import TableMetadata from './table-metadata'
 import User from './user'
+
+const TILE_COLLAB_ROLES = ['owner', 'editor', 'viewer']
 
 class TableCollaborator extends Base {
   userId!: string
@@ -25,7 +27,7 @@ class TableCollaborator extends Base {
       userId: { type: 'string', format: 'uuid' },
       tableId: { type: 'string', format: 'uuid' },
       name: { type: 'string', format: 'uuid' },
-      role: { type: 'string', enum: ['owner', 'editor', 'viewer'] },
+      role: { type: 'string', enum: TILE_COLLAB_ROLES },
       lastAccessedAt: { type: 'string', format: 'date-time' },
     },
   }
@@ -61,15 +63,14 @@ class TableCollaborator extends Base {
     role: ITableCollabRole,
     $?: IGlobalVariable,
   ): Promise<void | never> => {
-    const permissionLevels = ['viewer', 'editor', 'owner']
     const collaborator = await this.query().findOne({
       user_id: userId,
       table_id: tableId,
     })
     if (
       !collaborator ||
-      permissionLevels.indexOf(collaborator.role) <
-        permissionLevels.indexOf(role)
+      TILE_COLLAB_ROLES.indexOf(collaborator.role) >
+        TILE_COLLAB_ROLES.indexOf(role)
     ) {
       if ($) {
         throw new StepError(
@@ -87,7 +88,7 @@ class TableCollaborator extends Base {
     }
   }
 
-  static addCollaborator = async ({
+  static upgradeOrInsertCollaborator = async ({
     userId,
     tableId,
     role,
@@ -106,20 +107,21 @@ class TableCollaborator extends Base {
       .withSoftDeleted()
 
     /**
-     * Upsert collaborator here
+     * Upgrade or insert collaborator here
      */
     if (existingCollaborator) {
-      if (existingCollaborator.role === 'owner') {
-        throw new BadUserInputError('Cannot change owner role')
-      }
+      const currentRoleIndex = TILE_COLLAB_ROLES.indexOf(
+        existingCollaborator.role,
+      )
+      const newRoleIndex = TILE_COLLAB_ROLES.indexOf(role)
 
       /**
-       * COLLABORATORS:
-       * should not downgrade the role on Tiles when the Pipe collaborator is being
-       * downgraded from an Editor to a Viewer.
-       * Tile Owner / Editor should do that manually.
+       * No-op if new role is less or equally permissive to current role.
+       * - Owner role cannot be changed
+       * - Tile collaborators should not be downgraded when Pipe collaborator is downgraded
+       * Only applies to active collaborators; soft-deleted ones should be restored with the new role.
        */
-      if (role === 'viewer' && existingCollaborator.role === 'editor') {
+      if (!existingCollaborator.deletedAt && newRoleIndex >= currentRoleIndex) {
         return
       }
 
