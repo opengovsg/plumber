@@ -151,7 +151,7 @@ const handleChatStream = observe(
                 // Write fallback isReady: false to ensure client receives a response
                 writer.write({
                   type: 'data-isChatReady',
-                  data: { isReady: false },
+                  data: { isChatReady: false },
                 })
               } finally {
                 // Manually end the span since we're streaming
