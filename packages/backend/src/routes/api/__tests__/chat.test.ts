@@ -419,7 +419,7 @@ describe('Chat Route Handler', () => {
       // Verify fallback isReady: false was written
       expect(capturedWriter!.write).toHaveBeenCalledWith({
         type: 'data-isChatReady',
-        data: { isReady: false },
+        data: { isChatReady: false },
       })
     })
   })
