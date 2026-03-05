@@ -70,7 +70,7 @@
     "lottie-web": "5.12.2",
     "luxon": "2.5.2",
     "morgan": "^1.10.0",
-    "multer": "2.0.2",
+    "multer": "2.1.1",
     "nanoid": "3.3.8",
     "objection": "^3.0.0",
     "openid-client": "5.4.0",
@@ -106,11 +106,11 @@
     "@types/pg": "^8.6.1",
     "axios-mock-adapter": "^2.1.0",
     "cpy-cli": "^7.0.0",
-    "nodemon": "^3.1.10",
+    "nodemon": "^3.1.14",
     "testcontainers": "^11.10.0",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.58.0"
+  "version": "1.58.1"
 }
