@@ -19,6 +19,15 @@ jobs:
       - run: npm ci
         env:
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - name: Check packages are hoisted to root
+        run: |
+          for dir in packages/backend packages/frontend; do
+            if [ -d "$dir/node_modules" ]; then
+              echo "❌ Found node_modules in $dir — packages are not hoisted to root"
+              exit 1
+            fi
+          done
+          echo "✅ All packages are hoisted to root"
       - name: Configure Datadog Test Visibility
         env:
           DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
