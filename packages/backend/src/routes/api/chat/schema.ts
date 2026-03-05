@@ -23,7 +23,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('data-isChatReady'),
     data: z.object({
-      isReady: z.boolean(),
+      isChatReady: z.boolean(),
     }),
   }),
 ])
