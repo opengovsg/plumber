@@ -89,7 +89,7 @@ async function addFlowTableConnection({
   // if the collaborator already exists to avoid duplicates
   await Promise.all(
     collaborators.map(async ({ userId, role }) => {
-      await TableCollaborator.addCollaborator({
+      await TableCollaborator.upgradeOrInsertCollaborator({
         userId,
         tableId,
         role,

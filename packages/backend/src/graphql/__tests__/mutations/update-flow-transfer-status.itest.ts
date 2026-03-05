@@ -316,7 +316,7 @@ describe('updateFlowTransferStatus', () => {
         .mockResolvedValue(undefined)
 
       const addCollaboratorSpy = vi
-        .spyOn(TableCollaborator, 'addCollaborator')
+        .spyOn(TableCollaborator, 'upgradeOrInsertCollaborator')
         .mockResolvedValue(undefined)
 
       // Approve the transfer as new owner
