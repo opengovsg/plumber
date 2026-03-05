@@ -3,10 +3,11 @@ import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const deleteShareableTableLink: MutationResolvers['deleteShareableTableLink'] =
+const deleteTableViewPassword: MutationResolvers['deleteTableViewPassword'] =
   async (_parent, params, context) => {
-    const tableId = params.tableId
+    const { tableId } = params
 
+    // Must be at least editor
     await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
     const table = await TableMetadata.query()
@@ -14,12 +15,10 @@ const deleteShareableTableLink: MutationResolvers['deleteShareableTableLink'] =
       .throwIfNotFound()
 
     await table.$query().patch({
-      viewOnlyKey: null,
-      // we also remove passwords when shareable link is disabled
       viewOnlyPassword: null,
     })
 
     return true
   }
 
-export default deleteShareableTableLink
+export default deleteTableViewPassword
