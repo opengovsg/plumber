@@ -102,6 +102,8 @@ export function useChatStream(options: UseChatStreamOptions) {
           ...location.state,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
+          // Clear old output to trigger step regeneration in StepsPreview
+          output: undefined,
         },
         replace: true,
       })
