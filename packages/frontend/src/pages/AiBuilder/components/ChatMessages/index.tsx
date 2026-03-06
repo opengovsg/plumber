@@ -27,8 +27,8 @@ export default function ChatMessages({
     >
       <Box w="full" maxW="4xl" mx="auto" px={4} py={6}>
         <VStack align="stretch" spacing={4}>
-          {messages.map((message, index) => (
-            <ChatMessage key={index} message={message} />
+          {messages.map((message) => (
+            <ChatMessage key={message.id} message={message} />
           ))}
 
           {/* Streaming response */}

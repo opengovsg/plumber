@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
@@ -10,7 +11,7 @@ interface ChatMessageProps {
   message: Message
 }
 
-const AiMessage = ({ message }: ChatMessageProps) => {
+const AiMessage = memo(({ message }: ChatMessageProps) => {
   return (
     <Flex gap={3} w="full" align="start">
       <PlumberAvatar mt={3} />
@@ -22,9 +23,11 @@ const AiMessage = ({ message }: ChatMessageProps) => {
       </Box>
     </Flex>
   )
-}
+})
 
-const UserMessage = ({ message }: ChatMessageProps) => {
+AiMessage.displayName = 'AiMessage'
+
+const UserMessage = memo(({ message }: ChatMessageProps) => {
   return (
     <Flex justify="flex-end">
       <Box
@@ -41,13 +44,17 @@ const UserMessage = ({ message }: ChatMessageProps) => {
       </Box>
     </Flex>
   )
-}
+})
 
-const ChatMessage = ({ message }: { message: Message }) => {
+UserMessage.displayName = 'UserMessage'
+
+const ChatMessage = memo(({ message }: { message: Message }) => {
   if (message.isUser) {
     return <UserMessage message={message} />
   }
   return <AiMessage message={message} />
-}
+})
+
+ChatMessage.displayName = 'ChatMessage'
 
 export default ChatMessage
