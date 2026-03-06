@@ -20,6 +20,10 @@ import { fetchFormSchema } from '../triggers/new-submission/fetch-form-schema'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
+import {
+  decryptFormAttachmentsV3,
+  decryptSubmissionSecretKey,
+} from './decrypt-form-attachments-v3'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -140,7 +144,16 @@ async function processResponsesV3(
       continue
     }
     if (value.fieldType === 'attachment') {
-      // we dont extract attachment fields
+      // the answer has the shape { hasBeenScanned: boolean, answer: string, md5Hash: string }
+      // the answer is the filename
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        // we temporarily store the filename in answer, it will subsequently be replaced with the S3 ID from storeAttachmentInS3
+        answer: value.answer.answer,
+      })
       continue
     }
     // catch-all
@@ -233,23 +246,43 @@ export async function decryptFormResponse(
       data.formId,
       responsesV3,
     )
+
     submission = {
       responses: mappedResponses,
       verified: decryptedSubmission?.verified,
     }
-  } else if (shouldStoreAttachments) {
-    const decryptedResponse = await formSgSdk.crypto.decryptWithAttachments(
-      formSecretKey,
-      data,
-    )
-    submission = decryptedResponse?.content
-    attachments = decryptedResponse?.attachments
+
+    // shouldStoreAttachments should only consider steps after the mrf step instead of the whole pipe
+    // but leaving it as such for now to avoid complexity
+    if (shouldStoreAttachments && data.attachmentDownloadUrls) {
+      const submissionSecretKey = decryptSubmissionSecretKey(
+        formSecretKey,
+        data.encryptedSubmissionSecretKey,
+      )
+      attachments = await decryptFormAttachmentsV3(
+        formSgSdk,
+        submissionSecretKey,
+        data.attachmentDownloadUrls,
+        mappedResponses,
+      )
+    }
   } else {
-    submission = formSgSdk.crypto.decrypt(formSecretKey, data)
+    if (shouldStoreAttachments) {
+      const decryptedResponse = await formSgSdk.crypto.decryptWithAttachments(
+        formSecretKey,
+        data,
+      )
+      submission = decryptedResponse?.content
+      attachments = decryptedResponse?.attachments
+    } else {
+      submission = formSgSdk.crypto.decrypt(formSecretKey, data)
+    }
   }
 
   // If the decryption failed, submission will be `null`.
   if (submission) {
+    const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
+
     const parsedData: Record<string, any> = {}
 
     for (const [index, formField] of submission.responses.entries()) {
@@ -294,9 +327,15 @@ export async function decryptFormResponse(
       }
 
       if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
+        let s3FolderId = data.submissionId
+        if (data.workflowContent) {
+          // we add a suffix if it's an mrf step to prevent
+          // overwriting attachments from previous steps
+          s3FolderId += `-${workflowContent.workflowStep}`
+        }
         rest.answer = await storeAttachmentInS3(
           $,
-          data.submissionId,
+          s3FolderId,
           formField,
           attachments,
         )
@@ -375,13 +414,11 @@ export async function decryptFormResponse(
     /**
      * This means it's the first mrf step and is a new submission
      */
-    if (!data.workflowContent) {
+    if (!workflowContent) {
       return { verified: true, internalId }
     }
 
-    $.request.body.workflowContent = data.workflowContent
-
-    const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
+    $.request.body.workflowContent = workflowContent
 
     return {
       verified: true,
