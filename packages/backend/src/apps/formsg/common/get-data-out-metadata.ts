@@ -373,15 +373,7 @@ async function getDataOutMetadata(
 
     // if this is an MRF step, we only show the fields that are editable
     if (questionIdsToShowForMrf && !questionIdsToShowForMrf.has(fieldId)) {
-      fieldMetadata[fieldId] = {
-        question: { isHidden: true },
-        answer: { isHidden: true },
-        fieldType: { isHidden: true },
-        order: { isHidden: true },
-        myInfo: { attr: { isHidden: true } },
-        isVisible: { isHidden: true },
-        isHeader: { isHidden: true },
-      }
+      fieldMetadata[fieldId] = { isHidden: true }
       continue
     }
 

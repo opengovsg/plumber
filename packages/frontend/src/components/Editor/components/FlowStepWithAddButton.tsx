@@ -4,9 +4,6 @@ import { useContext } from 'react'
 
 import { MrfContext } from '@/contexts/MrfContext'
 import { FlowStep } from '@/exports/components'
-import { useStepMetadata } from '@/hooks/useStepMetadata'
-
-import { ApproveReject } from '../../FlowStep/components/ApproveReject'
 
 import { AddStepButton } from './AddStepButton'
 import { DisabledFlowStep } from './DisabledFlowStep'
@@ -34,9 +31,7 @@ export default function FlowStepWithAddButton({
     showEmptyAction: boolean
   }
 }) {
-  const { approvalBranches, disabledMrfStepToDisplay } = useContext(MrfContext)
-  const { isApprovalStep, approvalBranch } = useStepMetadata(step)
-  const approvalBranchForAddStep = approvalBranch ?? approvalBranches[step.id]
+  const { disabledMrfStepToDisplay } = useContext(MrfContext)
 
   const shouldShowDisabledMrfStep = isLastStep && disabledMrfStepToDisplay
 
@@ -49,14 +44,12 @@ export default function FlowStepWithAddButton({
         // only allow reordering if there are more than 1 action steps
         allowReorder={allowReorder}
       />
-      {isApprovalStep && <ApproveReject stepId={step.id} />}
       <AddStepButton
         isLastStep={isLastStep}
         step={step}
         isHidden={isHidden}
         isDisabled={isDisabled}
         showEmptyAction={showEmptyAction}
-        approvalBranch={approvalBranchForAddStep}
       />
       {shouldShowDisabledMrfStep && (
         <DisabledFlowStep

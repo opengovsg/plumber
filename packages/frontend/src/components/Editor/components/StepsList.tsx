@@ -90,7 +90,14 @@ export function StepsList({ isNested }: StepsListProps) {
       </Center>
     )
   }
-  const leftStepPadding = isDrawerOpen ? (isMobile ? 0 : '5rem') : 0
+  const leftStepPadding = isDrawerOpen
+    ? isMobile
+      ? 0
+      : {
+          base: '1rem',
+          lg: '5rem',
+        }
+    : 0
 
   return (
     <Flex
@@ -100,6 +107,9 @@ export function StepsList({ isNested }: StepsListProps) {
       maxWidth={`calc(100% - ${
         isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
       })`}
+      sx={{
+        scrollbarGutter: 'stable',
+      }}
     >
       {triggerStep && (
         <FlowStepWithAddButton

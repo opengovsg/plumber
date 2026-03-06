@@ -20,6 +20,7 @@ import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 import { DragHandle } from '../SortableList/components'
 
+import { ApproveReject } from './components/ApproveReject'
 import DeleteStepButton from './components/DeleteStepButton'
 import DuplicateStepButton from './components/DuplicateStepButton'
 import StepAppIcon from './components/StepAppIcon'
@@ -78,6 +79,7 @@ export default function FlowStep(
     substeps,
     shouldShowDragHandle,
     isDeletable,
+    isApprovalStep,
   } = useStepMetadata(step, allowReorder)
 
   const {
@@ -224,17 +226,20 @@ export default function FlowStep(
               </Box>
             )}
             <Flex
+              flexDir="column"
               data-test="flow-step"
               {...flowStepStyles.container}
+              justifyContent="flex-start"
               borderTopWidth={hasInfoBox ? 0 : '1px'}
               borderColor={
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={isNested ? '48px' : '64px'}
+              h={isNested ? '48px' : isApprovalStep ? '124px' : '64px'}
               w={headerWidth}
+              onClick={handleClick}
             >
-              <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
+              <Flex {...flowStepStyles.topHeader}>
                 <StepAppIcon
                   isCompleted={isCompleted}
                   isNested={isNested}
@@ -261,6 +266,7 @@ export default function FlowStep(
                   </Flex>
                 )}
               </Flex>
+              {isApprovalStep && <ApproveReject stepId={step.id} />}
             </Flex>
           </Flex>
           {shouldShowDragHandle &&

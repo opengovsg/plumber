@@ -1,6 +1,5 @@
-import { IStep, IStepApprovalBranch } from '@plumber/types'
+import { IStep } from '@plumber/types'
 
-import { useMemo } from 'react'
 import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
@@ -17,38 +16,11 @@ interface AddStepButtonProps {
   isLastStep: boolean
   showEmptyAction: boolean
   step: IStep
-  approvalBranch: IStepApprovalBranch
 }
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const {
-    isHidden,
-    isLastStep,
-    step,
-    isDisabled,
-    showEmptyAction,
-    approvalBranch,
-  } = props
+  const { isHidden, isLastStep, step, isDisabled, showEmptyAction } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
-
-  const { dividerColor, iconBgColor } = useMemo(() => {
-    if (approvalBranch === 'approve') {
-      return {
-        dividerColor: 'green.500',
-        iconBgColor: 'green.50',
-      }
-    }
-    if (approvalBranch === 'reject') {
-      return {
-        dividerColor: 'red.500',
-        iconBgColor: 'red.50',
-      }
-    }
-    return {
-      dividerColor: 'base.divider.strong',
-      iconBgColor: undefined,
-    }
-  }, [approvalBranch])
 
   const {
     cancelRef,
@@ -98,7 +70,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
           )}
           {/* Top vertical line */}
           <Box h={4}>
-            <Divider orientation="vertical" borderColor={dividerColor} />
+            <Divider orientation="vertical" />
           </Box>
           <TouchableTooltip
             label={isDisabled ? '' : 'Add step'}
@@ -114,7 +86,6 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               variant={isLastStep ? 'outline' : 'clear'}
               size="xs"
               color="interaction.sub.default"
-              bg={iconBgColor}
               borderRadius="full"
               pointerEvents={isDisabled ? 'none' : 'auto'}
               _hover={{
@@ -123,14 +94,14 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               _active={{
                 bg: 'interaction.muted.neutral.active',
               }}
-              borderColor={isLastStep ? dividerColor : undefined}
+              borderColor={isLastStep ? 'base.divider.strong' : undefined}
               h={8}
             />
           </TouchableTooltip>
           {/* Bottom vertical line */}
           {!isLastStep && (
             <Box h={4}>
-              <Divider orientation="vertical" borderColor={dividerColor} />
+              <Divider orientation="vertical" />
             </Box>
           )}
 

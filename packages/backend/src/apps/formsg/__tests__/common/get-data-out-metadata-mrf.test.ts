@@ -100,13 +100,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
 
       // field2 is not in mrf.fields, so all its properties should be hidden
       expect(result.fields.field2).toEqual({
-        question: { isHidden: true },
-        answer: { isHidden: true },
-        fieldType: { isHidden: true },
-        order: { isHidden: true },
-        myInfo: { attr: { isHidden: true } },
-        isVisible: { isHidden: true },
-        isHeader: { isHidden: true },
+        isHidden: true,
       })
     })
 
@@ -290,22 +284,10 @@ describe('getDataOutMetadata - MRF field filtering', () => {
 
       // All fields should have the hidden structure
       expect(result.fields.field1).toEqual({
-        question: { isHidden: true },
-        answer: { isHidden: true },
-        fieldType: { isHidden: true },
-        order: { isHidden: true },
-        myInfo: { attr: { isHidden: true } },
-        isVisible: { isHidden: true },
-        isHeader: { isHidden: true },
+        isHidden: true,
       })
       expect(result.fields.field2).toEqual({
-        question: { isHidden: true },
-        answer: { isHidden: true },
-        fieldType: { isHidden: true },
-        order: { isHidden: true },
-        myInfo: { attr: { isHidden: true } },
-        isVisible: { isHidden: true },
-        isHeader: { isHidden: true },
+        isHidden: true,
       })
     })
   })
