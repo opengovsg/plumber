@@ -2,6 +2,8 @@ import { IGlobalVariable } from '@plumber/types'
 
 import get from 'lodash.get'
 
+import { getLdFlagValue } from '@/helpers/launch-darkly'
+
 import { FORM_ID_LENGTH } from '../common/constants'
 import {
   FormEnv,
@@ -32,6 +34,17 @@ export const verifyFormCreds = async (
 
   if (!publicKey) {
     throw new Error('Form is not a storage mode form')
+  }
+
+  if (isMrf) {
+    const canConnectMrf = await getLdFlagValue(
+      'allow-mrf-form',
+      $.user?.email ?? null,
+      false,
+    )
+    if (!canConnectMrf) {
+      throw new Error('MRF forms are not supported yet. Check back soon!')
+    }
   }
 
   const formsgSdk = getSdk(env)
