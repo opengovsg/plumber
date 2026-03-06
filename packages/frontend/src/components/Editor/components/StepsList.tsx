@@ -135,7 +135,7 @@ export function StepsList({ isNested }: StepsListProps) {
         renderItem={(step, isOverlay) => {
           const { id, position } = step
           return (
-            <SortableList.Item id={id}>
+            <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
               <Flex
                 key={`${id}-${position}`}
                 width={isDrawerOpen || isMobile ? '100%' : 'auto'}

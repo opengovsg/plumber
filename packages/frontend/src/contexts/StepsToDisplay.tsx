@@ -1,7 +1,7 @@
 import type { IApp, IStep } from '@plumber/types'
 
 import type { ReactNode } from 'react'
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext, useEffect, useMemo } from 'react'
 
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
@@ -33,7 +33,8 @@ interface StepExecutionsProviderProps {
 export function StepsToDisplayProvider({
   children,
 }: StepExecutionsProviderProps): JSX.Element {
-  const { allApps, flow } = useContext(EditorContext)
+  const { allApps, flow, currentStepId, setCurrentStepId, onDrawerClose } =
+    useContext(EditorContext)
   const { approvalBranches } = useContext(MrfContext)
 
   const allSteps = flow.steps
@@ -126,6 +127,16 @@ export function StepsToDisplayProvider({
       ? [triggerStep, stepsToDisplay.slice(1), []]
       : [triggerStep, stepsToDisplay.slice(1, groupStepIdx), branchesWithSteps]
   }, [groupingActions, stepsToDisplay])
+
+  useEffect(() => {
+    if (
+      currentStepId &&
+      !stepsToDisplay.map((step) => step.id).includes(currentStepId)
+    ) {
+      setCurrentStepId(null)
+      onDrawerClose()
+    }
+  }, [stepsToDisplay, currentStepId, onDrawerClose, setCurrentStepId])
 
   return (
     <StepsToDisplayContext.Provider

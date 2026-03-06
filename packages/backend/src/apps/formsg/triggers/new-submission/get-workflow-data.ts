@@ -28,7 +28,9 @@ export function parseWorkflowData(
   for (const step of result.data) {
     populatedFields.push(...step.edit)
     parsedSteps.push({
-      defaultStepName: step.step_name ?? `MRF Step ${parsedSteps.length + 1}`,
+      defaultStepName: step.step_name
+        ? step.step_name.trim()
+        : `MRF Step ${parsedSteps.length + 1}`,
       type: step.workflow_type,
       fields: [...populatedFields],
       formWorkflowStepId: step._id,
