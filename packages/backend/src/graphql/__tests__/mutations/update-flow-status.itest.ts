@@ -127,12 +127,22 @@ describe('updateFlowStatus', () => {
     )
   })
 
-  it('throws an error when activating a flow with more than one for-each step', async () => {
+  it('throws an error when publishing a flow with more than one for-each step', async () => {
     fakeFlow.active = false
     fakeFlow.steps = [
       { position: 1 },
-      { position: 2, appKey: TOOLBOX_APP_KEY, key: TOOLBOX_ACTIONS.FOR_EACH },
-      { position: 3, appKey: TOOLBOX_APP_KEY, key: TOOLBOX_ACTIONS.FOR_EACH },
+      {
+        position: 2,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.FOR_EACH,
+        config: {},
+      },
+      {
+        position: 3,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.FOR_EACH,
+        config: {},
+      },
     ]
 
     await expect(
@@ -140,6 +150,54 @@ describe('updateFlowStatus', () => {
     ).rejects.toThrow(
       'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
     )
+  })
+
+  it('throws an error when publishing a flow with 2 for-each step in the same branch', async () => {
+    fakeFlow.active = false
+    fakeFlow.steps = [
+      { position: 1 },
+      {
+        position: 2,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.FOR_EACH,
+        config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+      },
+      {
+        position: 3,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.FOR_EACH,
+        config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+      },
+    ]
+
+    await expect(
+      updateFlowStatus({}, { input: defaultInput }, context),
+    ).rejects.toThrow(
+      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
+    )
+  })
+
+  it('should not throw an error when publishing a flow with 2 for-each step in different branches', async () => {
+    fakeFlow.active = false
+    fakeFlow.steps = [
+      { position: 1 },
+      {
+        position: 2,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.FOR_EACH,
+        config: {},
+      },
+      {
+        position: 3,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.FOR_EACH,
+        config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+      },
+    ]
+
+    await expect(
+      updateFlowStatus({}, { input: defaultInput }, context),
+    ).resolves.not.toThrow()
   })
 
   it('activates the flow and enqueues a job for non-webhook triggers', async () => {
