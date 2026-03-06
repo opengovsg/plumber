@@ -155,7 +155,6 @@ input UpdateChatFeedbackInput {
 }
 
 input FlowAiBuilderConfigInput {
-  type: String!
   traceId: String!
 }
 
