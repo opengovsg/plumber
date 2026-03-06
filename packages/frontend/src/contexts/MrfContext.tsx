@@ -78,7 +78,18 @@ export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
       return
     }
     setApprovalBranches(generateDefaultApprovalBranches(mrfApprovalSteps))
+    setDisabledMrfStepToDisplay(null)
   }, [approvalBranches, mrfApprovalSteps])
+
+  // Dont show disabled mrf step if it's deleted.
+  useEffect(() => {
+    if (
+      disabledMrfStepToDisplay &&
+      !mrfSteps.map((step) => step.id).includes(disabledMrfStepToDisplay.id)
+    ) {
+      setDisabledMrfStepToDisplay(null)
+    }
+  }, [mrfSteps, disabledMrfStepToDisplay])
 
   const setApprovalBranch = (stepId: string, branch: IStepApprovalBranch) => {
     setApprovalBranches((prev) => ({

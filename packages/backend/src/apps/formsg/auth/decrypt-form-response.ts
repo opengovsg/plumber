@@ -101,7 +101,7 @@ async function processResponsesV3(
     /**
      * Similary, formv3 responses put these fields in value.answer.value
      */
-    if (['radio', 'email', 'mobile'].includes(value.fieldType)) {
+    if (['radiobutton', 'email', 'mobile'].includes(value.fieldType)) {
       mappedResponses.push({
         _id: key,
         fieldType: value.fieldType,
