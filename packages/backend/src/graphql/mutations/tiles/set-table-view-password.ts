@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import { z } from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { hashTilePassword } from '@/helpers/auth-tiles'
@@ -7,13 +8,21 @@ import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
+const setTableViewPasswordSchema = z.object({
+  tableId: z.string(),
+  password: z.string().min(8).max(100),
+})
+
 const setTableViewPassword: MutationResolvers['setTableViewPassword'] = async (
   _parent,
   params,
   context,
 ) => {
-  const { tableId, password } = params.input
-
+  const result = setTableViewPasswordSchema.safeParse(params.input)
+  if (!result.success) {
+    throw new BadUserInputError('Ensure password is 8-64 characters long')
+  }
+  const { tableId, password } = result.data
   // Must be at least editor
   await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
