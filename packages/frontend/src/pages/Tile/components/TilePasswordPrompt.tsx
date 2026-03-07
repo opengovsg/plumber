@@ -1,7 +1,15 @@
 import { type FormEvent, useState } from 'react'
+import { BiHide, BiShow } from 'react-icons/bi'
 import { ApolloError, useMutation } from '@apollo/client'
-import { Center, FormControl, Text, VStack } from '@chakra-ui/react'
-import { Button, Input } from '@opengovsg/design-system-react'
+import {
+  Center,
+  FormControl,
+  InputGroup,
+  InputRightElement,
+  Text,
+  VStack,
+} from '@chakra-ui/react'
+import { Button, IconButton, Input } from '@opengovsg/design-system-react'
 
 import { FORBIDDEN, RATE_LIMITED } from '@/config/errors'
 import { VERIFY_TABLE_VIEW_PASSWORD } from '@/graphql/mutations/tiles/verify-table-view-password'
@@ -21,6 +29,7 @@ export default function TilePasswordPrompt({
   onSuccess,
 }: TilePasswordPromptProps): JSX.Element {
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const [verifyPassword, { loading }] = useMutation(
@@ -83,13 +92,27 @@ export default function TilePasswordPrompt({
         <form onSubmit={handleSubmit} style={{ width: '100%' }}>
           <VStack spacing={4} w="full">
             <FormControl isInvalid={!!errorMessage}>
-              <Input
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoFocus
-              />
+              <InputGroup>
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                  pr="10"
+                />
+                <InputRightElement>
+                  <IconButton
+                    icon={showPassword ? <BiHide /> : <BiShow />}
+                    variant="clear"
+                    size="sm"
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
+                    onClick={() => setShowPassword((p) => !p)}
+                  />
+                </InputRightElement>
+              </InputGroup>
               {errorMessage && (
                 <Text color="red.500" textStyle="body-2" mt={2}>
                   {errorMessage}
