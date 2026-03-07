@@ -169,9 +169,7 @@ const ShareLinkPasswordSection = () => {
               <InputGroup flex={1}>
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder={
-                    isPasswordProtected ? 'New password' : 'Set a password'
-                  }
+                  placeholder={'Enter a new password (min 8 characters)'}
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -200,7 +198,7 @@ const ShareLinkPasswordSection = () => {
                 aria-label="Save"
                 size="md"
                 isLoading={isSettingPassword}
-                isDisabled={!passwordInput}
+                isDisabled={!passwordInput || passwordInput.length < 8}
                 onClick={onSetPassword}
               />
               <IconButton
