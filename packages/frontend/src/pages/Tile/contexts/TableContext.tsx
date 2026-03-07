@@ -29,6 +29,7 @@ interface TableContextProps {
   mode: EditMode
   setMode: (mode: EditMode) => void
   hasEditPermission: boolean
+  isPasswordProtected?: boolean
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
   role?: string
@@ -56,6 +57,7 @@ interface TableContextProviderProps {
   tableColumns: ITableColumnMetadata[]
   tableRows: ITableRow[]
   children: React.ReactNode
+  isPasswordProtected?: boolean
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
   // If null, the tile is accessed by a shareable link
@@ -72,6 +74,7 @@ export const TableContextProvider = ({
   tableColumns,
   tableRows,
   children,
+  isPasswordProtected,
   viewOnlyKey,
   collaborators,
   role,
@@ -99,6 +102,7 @@ export const TableContextProvider = ({
         mode,
         setMode,
         hasEditPermission,
+        isPasswordProtected,
         viewOnlyKey,
         collaborators,
         role,
