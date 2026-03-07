@@ -1025,6 +1025,7 @@ export interface ITableMetadata {
   lastAccessedAt: string
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
+  isPasswordProtected: boolean
   role?: ITableCollabRole
 }
 
