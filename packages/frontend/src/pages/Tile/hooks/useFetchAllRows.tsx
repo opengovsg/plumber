@@ -57,9 +57,11 @@ const processRow = (
 export function useFetchAllRows({
   tableId,
   urlViewOnlyKey,
+  viewToken,
 }: {
   tableId: string
   urlViewOnlyKey?: string
+  viewToken?: string | null
 }) {
   const [rows, setRows] = useState<ITableRow[]>([])
   const [isThroughputError, setIsThroughputError] = useState(false)
@@ -69,11 +71,6 @@ export function useFetchAllRows({
   const startTime = useRef<number>()
 
   const [fetchAllRowsQuery] = useLazyQuery(GET_ALL_ROWS, {
-    context: urlViewOnlyKey
-      ? {
-          headers: { 'x-tiles-view-key': urlViewOnlyKey },
-        }
-      : undefined,
     fetchPolicy: 'cache-and-network',
   })
 
@@ -83,6 +80,12 @@ export function useFetchAllRows({
       setIsFetching(true)
       let rowCount = 0
       let currentCursor = cursor
+      const viewOnlyHeaders = urlViewOnlyKey
+        ? {
+            'x-tiles-view-key': urlViewOnlyKey,
+            ...(viewToken && { 'x-tiles-view-token': viewToken }),
+          }
+        : undefined
       try {
         do {
           const { data, error } = await fetchAllRowsQuery({
@@ -90,6 +93,7 @@ export function useFetchAllRows({
               stringifiedCursor: currentCursor,
               tableId: tableId,
             },
+            context: viewOnlyHeaders ? { headers: viewOnlyHeaders } : undefined,
           })
           if (error) {
             throw error
@@ -126,7 +130,7 @@ export function useFetchAllRows({
         setIsFetching(false)
       }
     },
-    [fetchAllRowsQuery, tableId],
+    [fetchAllRowsQuery, tableId, urlViewOnlyKey, viewToken],
   )
 
   const refetch = useCallback(async () => {
