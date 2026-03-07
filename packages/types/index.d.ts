@@ -1098,3 +1098,9 @@ export type DemoVideoDetails = {
   url: string
   title: string
 }
+
+export interface CustomGraphQLFormattedError {
+  message: string
+  code: string
+  data?: IJSONObject
+}
