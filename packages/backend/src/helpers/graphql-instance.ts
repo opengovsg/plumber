@@ -1,3 +1,5 @@
+import { CustomGraphQLFormattedError } from '@plumber/types'
+
 import { ApolloServer, type ApolloServerPlugin } from '@apollo/server'
 import { unwrapResolverError } from '@apollo/server/errors'
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
@@ -90,7 +92,7 @@ export const server = new ApolloServer<UnauthenticatedContext>({
   ],
   // We don't want to allow batching within a single HTTP request, this defaults to false
   allowBatchedHttpRequests: false,
-  formatError: (formattedError, error) => {
+  formatError: (formattedError, error): CustomGraphQLFormattedError => {
     logger.error(formattedError)
 
     const unwrappedError = unwrapResolverError(error)
@@ -146,7 +148,7 @@ export const server = new ApolloServer<UnauthenticatedContext>({
     }
     const newError = {
       message: errorMessage,
-      code: formattedError.extensions?.code,
+      code: formattedError.extensions?.code as string,
     }
     return newError
   },

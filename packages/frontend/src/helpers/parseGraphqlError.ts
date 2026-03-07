@@ -1,35 +1,31 @@
+import { CustomGraphQLFormattedError } from '@plumber/types'
+
 import { ApolloError, ServerError } from '@apollo/client'
 
-export function parseGraphqlError(error: ApolloError): {
-  statusCode: number | null
-  message: string | null
-  code: string | null
-} {
+export function parseGraphqlError(
+  error: ApolloError,
+): CustomGraphQLFormattedError {
+  // Handle GraphQL errors (HTTP 200 responses with errors in the body)
+  if (error.graphQLErrors?.length) {
+    const graphqlError = error.graphQLErrors[0] as CustomGraphQLFormattedError
+    return graphqlError
+  }
+
+  // Handle network errors (non-200 HTTP responses, e.g. 403 from ForbiddenError)
   if (error.networkError) {
     const serverError = error.networkError as ServerError
-    const statusCode = serverError.statusCode
     if (serverError.result) {
       const result = serverError.result as {
-        errors: { message: string; code: string }[]
+        errors: CustomGraphQLFormattedError[]
       }
       if (result.errors?.length) {
-        const error = result.errors[0]
-        return {
-          statusCode,
-          message: error?.message,
-          code: error?.code,
-        }
-      }
-      return {
-        statusCode,
-        message: serverError.message,
-        code: null,
+        return result.errors[0]
       }
     }
   }
+
   return {
-    statusCode: null,
     message: error.message,
-    code: null,
+    code: '',
   }
 }
