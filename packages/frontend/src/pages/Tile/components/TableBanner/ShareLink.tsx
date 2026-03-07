@@ -25,6 +25,8 @@ import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
 
+import ShareLinkPasswordSection from './ShareLinkPasswordSection'
+
 const ShareLink = () => {
   const { tableId, viewOnlyKey, hasEditPermission } = useTableContext()
   const [isNewLink, setIsNewLink] = useState(false)
@@ -85,6 +87,7 @@ const ShareLink = () => {
       </Button>
     )
   }
+
   return (
     <FormControl>
       <VStack spacing={2} alignItems="flex-start">
@@ -128,6 +131,7 @@ const ShareLink = () => {
             New link generated!
           </FormHelperText>
         )}
+        <ShareLinkPasswordSection />
       </VStack>
       <Divider my={6} />
     </FormControl>
