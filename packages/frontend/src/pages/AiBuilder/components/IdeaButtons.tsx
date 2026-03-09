@@ -1,51 +1,48 @@
 import { Flex, Text } from '@chakra-ui/react'
-import { Button, FormLabel, useIsMobile } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
 
-import { TemplateIcon } from '@/helpers/flow-templates'
-import { AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
+import { type AiChatIdea } from '@/pages/AiBuilder/constants'
 
-interface IdeaButtonsProps<T extends AiChatIdea | AiFormIdea> {
-  ideas: T[]
-  onClick: (idea: T) => void
+interface IdeaButtonsProps {
+  ideas: AiChatIdea[]
+  onClick: (idea: AiChatIdea) => void
 }
 
-export default function IdeaButtons<T extends AiChatIdea | AiFormIdea>({
-  ideas,
-  onClick,
-}: IdeaButtonsProps<T>) {
-  const isMobile = useIsMobile()
-
+export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
   return (
-    <Flex flexDir="row" alignItems="center">
-      <FormLabel isRequired style={{ margin: 0, marginRight: '0.5rem' }}>
-        {/* arbitrary isRequired to hide optional text */}
-        Try:
-      </FormLabel>
+    <Flex flexDir="row" alignItems="center" w="full">
       <Flex
-        flexDir={isMobile ? 'column' : 'row'}
-        gap={2}
-        justifyContent="space-between"
+        flexDir="row"
+        gap={3}
+        justifyContent="space-evenly"
         flexWrap="wrap"
-        w={isMobile ? 'full' : 'auto'}
+        w="full"
       >
         {ideas.map((idea) => (
           <Button
             key={idea.label}
             size="sm"
-            bgColor="interaction.sub-subtle.default"
-            color="gray.600"
+            bgColor="primary.50"
+            color="secondary.700"
             variant="clear"
             _hover={{
-              bgColor: 'interaction.sub-subtle.hover',
+              bgColor: 'interaction.main-subtle.default',
             }}
             onClick={() => onClick(idea)}
             px={3}
             minH={4}
-            w={isMobile ? 'full' : 'auto'}
-            flexShrink={0}
+            flex="1"
+            minW="150px"
+            maxW="250px"
+            whiteSpace="normal"
+            height="auto"
           >
-            <TemplateIcon iconName={idea.icon} fontSize="1rem" />
-            <Text textStyle="caption-1" ml="0.25rem">
+            <Text
+              textStyle="caption-1"
+              ml="0.25rem"
+              whiteSpace="normal"
+              textAlign="left"
+            >
               {idea.label}
             </Text>
           </Button>

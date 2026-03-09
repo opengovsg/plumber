@@ -7,13 +7,13 @@ import {
 } from 'react'
 import { FaArrowCircleRight } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
+import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
-import { AI_CHAT_IDEAS, AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
+import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -61,6 +61,9 @@ export default function PromptInput({
     target.style.height = 'auto'
     target.style.height = Math.min(target.scrollHeight, maxHeight) + 'px'
   }
+
+  // only show idea buttons if showIdeas is true and the user has not entered any text
+  const shouldShowIdeas = showIdeas && !input?.trim()
 
   return (
     <Box w="full" maxW="4xl">
@@ -147,11 +150,11 @@ export default function PromptInput({
         </Flex>
       </Flex>
 
-      {showIdeas && (
+      {shouldShowIdeas && (
         <IdeaButtons
           ideas={AI_CHAT_IDEAS}
-          onClick={(idea: AiChatIdea | AiFormIdea) => {
-            setInput((idea as AiChatIdea).input)
+          onClick={(idea: AiChatIdea) => {
+            setInput(idea.input)
             // trigger resize after state update
             setTimeout(() => handleResize(), 0)
           }}
