@@ -93,13 +93,8 @@ const ShareLinkPasswordSection = () => {
     setPasswordInput('')
     setShowPassword(false)
     setIsEditing(false)
-    showSuccess(isPasswordProtected ? 'Password updated!' : 'Password set!')
+    showSuccess(isPasswordProtected ? 'Password changed!' : 'Password set!')
   }, [passwordInput, setPassword, tableId, isPasswordProtected, showSuccess])
-
-  const onRemovePassword = useCallback(async () => {
-    await deletePassword()
-    showSuccess('Password removed')
-  }, [deletePassword, showSuccess])
 
   const onCancelEdit = useCallback(() => {
     setIsEditing(false)
@@ -114,13 +109,14 @@ const ShareLinkPasswordSection = () => {
         setIsEditing(true)
       } else {
         if (isPasswordProtected) {
-          onRemovePassword()
+          deletePassword()
+          setSuccessMessage(null)
         }
         setIsEditing(false)
         setPasswordInput('')
       }
     },
-    [isPasswordProtected, onRemovePassword],
+    [isPasswordProtected, deletePassword, setSuccessMessage],
   )
 
   if (!viewOnlyKey || !hasEditPermission) {
@@ -143,6 +139,9 @@ const ShareLinkPasswordSection = () => {
           isChecked={isCheckboxChecked}
           onChange={onCheckboxChange}
           isDisabled={isDeletingPassword}
+          _hover={{
+            backgroundColor: 'transparent',
+          }}
         >
           <Text textStyle="body-1">Password required</Text>
         </Checkbox>
@@ -155,7 +154,8 @@ const ShareLinkPasswordSection = () => {
               <Input
                 type="password"
                 value="••••••••••••••••••••"
-                isReadOnly
+                isDisabled
+                pointerEvents="none"
                 placeholder="Password set"
               />
 
