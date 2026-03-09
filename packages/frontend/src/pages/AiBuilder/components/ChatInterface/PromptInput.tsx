@@ -5,13 +5,11 @@ import {
   useRef,
   useState,
 } from 'react'
-import { FaArrowCircleRight } from 'react-icons/fa'
+import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
-import pairLogo from '@/assets/pair-logo.svg'
-import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
@@ -136,7 +134,7 @@ export default function PromptInput({
             />
           ) : (
             <Icon
-              as={FaArrowCircleRight}
+              as={FaArrowCircleUp}
               fontSize="24px"
               color={
                 input?.trim()
@@ -159,15 +157,6 @@ export default function PromptInput({
             setTimeout(() => handleResize(), 0)
           }}
         />
-      )}
-
-      {!isMobile && (
-        <Flex gap={1} alignItems="center" justify="center" mt={3}>
-          <Text fontSize="xs" color="gray.500">
-            Powered by{' '}
-          </Text>
-          <ImageBox imageUrl={pairLogo} boxSize={6} />
-        </Flex>
       )}
     </Box>
   )

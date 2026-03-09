@@ -4,10 +4,13 @@ import { Box, Flex, Text } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
+import pairLogo from '@/assets/pair-logo.svg'
+import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
+import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
 
 import PromptInput from './PromptInput'
 import ScrollButton from './ScrollButton'
@@ -64,21 +67,22 @@ export default function ChatInterface() {
         flexDir="column"
         alignItems="center"
         justifyContent="center"
-        gap="1.5rem"
         px={4}
       >
-        {messages.length === 0 && (
-          <Text textStyle="h3">What happens in your workflow?</Text>
-        )}
-        <Box w="full" maxW="2xl" overflowY="auto" maxH="100vh">
+        <Flex flexDir="column" gap="1.5rem" w="full" maxW="2xl">
+          <Text textStyle="h3" textAlign="left">
+            What do you want to automate?
+          </Text>
           <PromptInput
             sendMessage={sendMessage}
             isStreaming={isStreaming}
             cancelStream={cancelStream}
-            showIdeas={true}
-            placeholder="Tell us step-by-step what happens in your workflow"
+            showIdeas
+            placeholder={
+              PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
+            }
           />
-        </Box>
+        </Flex>
       </Flex>
     )
   }
@@ -118,7 +122,7 @@ export default function ChatInterface() {
             flexShrink={0}
             position="relative"
           >
-            <Box maxW="4xl" mx="auto" p={4}>
+            <Box maxW="4xl" mx="auto" px={4} py={4} pb={8}>
               <ScrollButton />
               <PromptInput
                 sendMessage={sendMessage}
@@ -129,6 +133,21 @@ export default function ChatInterface() {
           </Box>
         </StickToBottom>
       </Flex>
+      {!isMobile && (
+        <Flex
+          gap={1}
+          alignItems="center"
+          position="absolute"
+          bottom={4}
+          left={4}
+          zIndex={5}
+        >
+          <Text fontSize="xs" color="gray.500">
+            Powered by{' '}
+          </Text>
+          <ImageBox imageUrl={pairLogo} boxSize={6} />
+        </Flex>
+      )}
       <SideDrawer isOpen={isDrawerOpen} isReadyForPreview={isReadyForPreview} />
     </Flex>
   )
