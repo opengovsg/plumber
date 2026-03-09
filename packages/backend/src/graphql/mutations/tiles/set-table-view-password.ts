@@ -20,7 +20,7 @@ const setTableViewPassword: MutationResolvers['setTableViewPassword'] = async (
 ) => {
   const result = setTableViewPasswordSchema.safeParse(params.input)
   if (!result.success) {
-    throw new BadUserInputError('Ensure password is 8-64 characters long')
+    throw new BadUserInputError('Ensure password is 8-100 characters long')
   }
   const { tableId, password } = result.data
   // Must be at least editor

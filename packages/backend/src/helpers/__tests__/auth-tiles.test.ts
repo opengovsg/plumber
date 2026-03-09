@@ -25,9 +25,13 @@ describe('auth-tiles', () => {
     it('returns false for an incorrect password', () => {
       const viewOnlyKey = 'view-only-key'
       const hash = hashTilePassword('password123', viewOnlyKey)
-      expect(verifyTilePassword('wrong-password', hash, viewOnlyKey)).toBe(
-        false,
-      )
+      expect(
+        verifyTilePassword(
+          'wrong-password912783901823129837',
+          hash,
+          viewOnlyKey,
+        ),
+      ).toBe(false)
     })
 
     it('returns false when viewOnlyKey does not match', () => {

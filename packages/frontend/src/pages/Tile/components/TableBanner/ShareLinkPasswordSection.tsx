@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { BiCheck, BiHide, BiPencil, BiShow, BiX } from 'react-icons/bi'
+import { BiCheck, BiHide, BiShow, BiX } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   Flex,
@@ -9,6 +9,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import {
+  Button,
   Checkbox,
   FormHelperText,
   IconButton,
@@ -97,7 +98,7 @@ const ShareLinkPasswordSection = () => {
 
   const onRemovePassword = useCallback(async () => {
     await deletePassword()
-    showSuccess('Password removed!')
+    showSuccess('Password removed')
   }, [deletePassword, showSuccess])
 
   const onCancelEdit = useCallback(() => {
@@ -133,6 +134,8 @@ const ShareLinkPasswordSection = () => {
       spacing={2}
       alignItems="flex-start"
       w="full"
+      // using padding since margin is overwritten by another css rule
+      pt={4}
       justifyContent="stretch"
     >
       <Flex gap={2} alignItems="center">
@@ -141,12 +144,12 @@ const ShareLinkPasswordSection = () => {
           onChange={onCheckboxChange}
           isDisabled={isDeletingPassword}
         >
-          <Text textStyle="subhead-3">Password protection</Text>
+          <Text textStyle="body-1">Password required</Text>
         </Checkbox>
       </Flex>
 
       {isCheckboxChecked && (
-        <Flex alignSelf="stretch" gap={2} alignItems="center" pl={10} w="full">
+        <Flex alignSelf="stretch" gap={2} alignItems="center" w="full">
           {isPasswordProtected && !isEditing ? (
             <>
               <Input
@@ -156,20 +159,20 @@ const ShareLinkPasswordSection = () => {
                 placeholder="Password set"
               />
 
-              <IconButton
-                icon={<BiPencil />}
+              <Button
                 variant="outline"
                 size="md"
-                aria-label="Change password"
                 onClick={() => setIsEditing(true)}
-              />
+              >
+                Change
+              </Button>
             </>
           ) : (
             <>
               <InputGroup flex={1}>
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder={'Enter a new password (min 8 characters)'}
+                  placeholder={'At least 8 characters required'}
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -212,9 +215,7 @@ const ShareLinkPasswordSection = () => {
         </Flex>
       )}
       {successMessage && (
-        <FormHelperText pl={10} variant="success">
-          {successMessage}
-        </FormHelperText>
+        <FormHelperText variant="success">{successMessage}</FormHelperText>
       )}
     </VStack>
   )
