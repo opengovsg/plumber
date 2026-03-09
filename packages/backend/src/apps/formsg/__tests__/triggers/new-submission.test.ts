@@ -8,23 +8,74 @@ import {
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
+
 import { ADDRESS_LABELS } from '../../common/constants'
+import { FormSchema, ParsedMrfWorkflowStep } from '../../common/types'
 import trigger from '../../triggers/new-submission'
 
 const pushTriggerItemMock = vi.fn()
 const getLastExecutionStepMock = vi.fn()
 
+const mockFormSchema: FormSchema = {
+  form: {
+    responseMode: 'storage',
+    publicKey: 'public_key',
+    _id: 'form-id',
+    title: 'form-title',
+    status: 'form-status',
+    form_fields: [],
+    authType: 'none',
+    isSubmitterIdCollectionEnabled: true,
+    payments_field: undefined,
+  },
+}
+
 const mocks = vi.hoisted(() => ({
   getMockData: vi.fn(),
   getFormDetailsFromGlobalVariable: vi.fn(),
+  fetchFormSchema: vi.fn((): FormSchema => {
+    return mockFormSchema
+  }),
+  removeMrfSteps: vi.fn(),
+  createMrfSteps: vi.fn(),
+  parseWorkflowData: vi.fn(),
 }))
 
 vi.mock('../../triggers/new-submission/get-mock-data', () => ({
   default: mocks.getMockData,
 }))
 
+vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
+  fetchFormSchema: mocks.fetchFormSchema,
+}))
+
+vi.mock('../../triggers/new-submission/remove-mrf-steps', () => ({
+  removeMrfSteps: mocks.removeMrfSteps,
+}))
+
+vi.mock('../../triggers/new-submission/create-mrf-steps', () => ({
+  createMrfSteps: mocks.createMrfSteps,
+}))
+
+vi.mock('../../triggers/new-submission/get-workflow-data', () => ({
+  parseWorkflowData: mocks.parseWorkflowData,
+}))
+
 vi.mock('../../common/webhook-settings', () => ({
+  registerWebhookUrl: vi.fn(),
+  verifyWebhookUrl: vi.fn(),
   getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
+}))
+
+vi.mock('../../../../models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: vi.fn(() => ({ parameters: {} })),
+      })),
+    })),
+  },
 }))
 
 describe('new submission trigger', () => {
@@ -59,12 +110,24 @@ describe('new submission trigger', () => {
     } as unknown as IExecutionStep
   })
 
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   describe('testRun', () => {
     const $ = {
       auth: { data: { formId: '123' } },
       user: { email: 'test@test.com' },
+      step: {
+        id: '123',
+        position: 1,
+      },
+      flow: {
+        id: 'flow-id',
+      },
       pushTriggerItem: pushTriggerItemMock,
       getLastExecutionStep: getLastExecutionStepMock,
+      app: apps.formsg,
     } as unknown as IGlobalVariable
 
     const mockData = {
@@ -93,10 +156,6 @@ describe('new submission trigger', () => {
       mocks.getFormDetailsFromGlobalVariable.mockReturnValue({
         formId: '123',
       })
-    })
-
-    afterEach(() => {
-      vi.clearAllMocks()
     })
 
     it('should use mock data if preferMock is true and there is no past submission', async () => {
@@ -208,6 +267,119 @@ describe('new submission trigger', () => {
             '2025-06-16 07:06:30.155+00',
           ).toISOString(),
         },
+      })
+    })
+
+    it('should call remove MRF steps function if the form is storage mode', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      await trigger.testRun($, { preferMock: false })
+      expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+    })
+
+    describe('MRF multirespondent flow', () => {
+      const mrfWorkflowData = {
+        trigger: {
+          defaultStepName: 'Step 1',
+          type: 'static',
+          fields: ['field-a'],
+          formWorkflowStepId: 'step-001',
+        },
+        actions: [] as ParsedMrfWorkflowStep[],
+      }
+
+      it('should call createMrfSteps for multirespondent forms with workflow', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            ...mockFormSchema.form,
+            workflow: [
+              {
+                _id: 'step-001',
+                edit: ['field-a'],
+                workflow_type: 'static',
+              },
+            ],
+            responseMode: 'multirespondent',
+          },
+        })
+        mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
+
+        await trigger.testRun($, { preferMock: true })
+
+        expect(mocks.parseWorkflowData).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.removeMrfSteps).not.toHaveBeenCalled()
+      })
+
+      it('should throw StepError when createMrfSteps fails', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            responseMode: 'multirespondent',
+            publicKey: 'public_key',
+            _id: 'form-id',
+            title: 'form-title',
+            status: 'form-status',
+            form_fields: [],
+            authType: 'none',
+            isSubmitterIdCollectionEnabled: true,
+            payments_field: undefined,
+            workflow: [
+              {
+                _id: 'step-001',
+                edit: ['field-a'],
+                workflow_type: 'static',
+              },
+            ],
+          },
+        })
+        mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
+        mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
+
+        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
+          'Error syncing MRF steps',
+        )
+      })
+
+      it('should throw StepError when removeMrfSteps fails', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
+
+        await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
+          'Error removing MRF steps',
+        )
+      })
+
+      it('should call removeMrfSteps for multirespondent forms with empty workflow', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            ...mockFormSchema.form,
+            workflow: [],
+            responseMode: 'multirespondent',
+          },
+        })
+
+        await trigger.testRun($, { preferMock: true })
+
+        expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).not.toHaveBeenCalled()
+      })
+
+      it('should call removeMrfSteps for multirespondent forms with undefined workflow', async () => {
+        getLastExecutionStepMock.mockResolvedValue(null)
+        mocks.fetchFormSchema.mockResolvedValueOnce({
+          form: {
+            ...mockFormSchema.form,
+            responseMode: 'multirespondent',
+            workflow: undefined,
+          },
+        })
+
+        await trigger.testRun($, { preferMock: true })
+
+        expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).not.toHaveBeenCalled()
       })
     })
   })
@@ -342,7 +514,7 @@ describe('new submission trigger', () => {
       )
     })
 
-    it('sets label to the associated question for attachment answers', async () => {
+    it('sets label to the associated question for attachment answers with question number', async () => {
       executionStep.dataOut.fields = {
         fileFieldId: {
           question: 'Attach a file.',
@@ -352,14 +524,14 @@ describe('new submission trigger', () => {
       }
 
       const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(metadata.fields.fileFieldId.answer.label).toEqual('Attach a file.')
+      expect(metadata.fields.fileFieldId.answer.label).toEqual(
+        '1. Attach a file.',
+      )
     })
 
-    it('collapses header fields', async () => {
+    it('hides header fields', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(
-        metadata.fields.headerFieldId.question.isCollapsedByDefault,
-      ).toEqual(true)
+      expect(metadata.fields.headerFieldId.isHidden).toEqual(true)
     })
 
     it('collapses question variables', async () => {

@@ -1,10 +1,11 @@
-import { IApp } from '@plumber/types'
+import { IAction, IApp, ITrigger } from '@plumber/types'
 
 import { memoize } from 'lodash'
 
 import apps from '@/apps'
 import appInfoConverter from '@/helpers/app-info-converter'
 import getApp from '@/helpers/get-app'
+import logger from '@/helpers/logger'
 
 class App {
   static list = Object.keys(apps)
@@ -35,6 +36,27 @@ class App {
     const rawAppData = await getApp(key, stripFuncs)
 
     return appInfoConverter(rawAppData)
+  }
+
+  static async findTriggerOrActionByKey(
+    appKey: string,
+    key: string,
+  ): Promise<ITrigger | IAction | null> {
+    try {
+      const app = await this.findOneByKey(appKey)
+      return (
+        app.triggers?.find((trigger) => trigger.key === key) ||
+        app.actions?.find((action) => action.key === key)
+      )
+    } catch {
+      logger.error({
+        event: 'findTriggerOrActionByKey',
+        message: 'No such trigger or action',
+        appKey,
+        key,
+      })
+      return null
+    }
   }
 
   static getAllAppsWithFunctions = memoize(async () => {

@@ -1,0 +1,121 @@
+import { IStep, IStepApprovalBranch } from '@plumber/types'
+
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { isEqual } from 'lodash'
+import get from 'lodash/get'
+
+import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
+
+import { EditorContext } from './Editor'
+
+interface MrfContextReturnValue {
+  mrfSteps: IStep[]
+  mrfApprovalSteps: IStep[]
+  approvalBranches: {
+    [stepId: string]: IStepApprovalBranch
+  }
+  setApprovalBranch: (stepId: string, branch: IStepApprovalBranch) => void
+  disabledMrfStepToDisplay: IStep | null
+}
+
+export const MrfContext = createContext<MrfContextReturnValue>({
+  mrfSteps: [],
+  mrfApprovalSteps: [],
+  approvalBranches: {},
+  setApprovalBranch: () => null,
+  disabledMrfStepToDisplay: null,
+})
+
+interface MrfContextProviderProps {
+  children: React.ReactNode
+}
+
+function generateDefaultApprovalBranches(
+  mrfApprovalSteps: IStep[],
+): Record<string, IStepApprovalBranch> {
+  return mrfApprovalSteps.reduce((acc, step) => {
+    acc[step.id] = 'approve'
+    return acc
+  }, {} as Record<string, IStepApprovalBranch>)
+}
+
+export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {
+  const { flow } = useContext(EditorContext)
+
+  const [disabledMrfStepToDisplay, setDisabledMrfStepToDisplay] =
+    useState<IStep | null>(null)
+
+  const mrfSteps = useMemo(
+    () =>
+      flow.steps.filter(
+        (step) => step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY,
+      ),
+    [flow.steps],
+  )
+
+  const mrfApprovalSteps = useMemo(
+    () =>
+      mrfSteps.filter(
+        (step) => !!get(step.parameters, 'mrf.approvalField', false),
+      ),
+    [mrfSteps],
+  )
+
+  const [approvalBranches, setApprovalBranches] = useState<
+    Record<string, IStepApprovalBranch>
+  >(generateDefaultApprovalBranches(mrfApprovalSteps))
+
+  /**
+   * We need to reset the state when the mrf approval steps change
+   */
+  useEffect(() => {
+    if (
+      isEqual(
+        mrfApprovalSteps.map((step) => step.id),
+        Object.keys(approvalBranches),
+      )
+    ) {
+      return
+    }
+    setApprovalBranches(generateDefaultApprovalBranches(mrfApprovalSteps))
+    setDisabledMrfStepToDisplay(null)
+  }, [approvalBranches, mrfApprovalSteps])
+
+  // Dont show disabled mrf step if it's deleted.
+  useEffect(() => {
+    if (
+      disabledMrfStepToDisplay &&
+      !mrfSteps.map((step) => step.id).includes(disabledMrfStepToDisplay.id)
+    ) {
+      setDisabledMrfStepToDisplay(null)
+    }
+  }, [mrfSteps, disabledMrfStepToDisplay])
+
+  const setApprovalBranch = (stepId: string, branch: IStepApprovalBranch) => {
+    setApprovalBranches((prev) => ({
+      ...prev,
+      [stepId]: branch,
+    }))
+    if (branch === 'reject') {
+      const nextMrfStepId =
+        mrfSteps[mrfSteps.findIndex((mrfStep) => mrfStep.id === stepId) + 1]
+      setDisabledMrfStepToDisplay(nextMrfStepId ?? null)
+    } else {
+      setDisabledMrfStepToDisplay(null)
+    }
+  }
+
+  return (
+    <MrfContext.Provider
+      value={{
+        mrfSteps,
+        mrfApprovalSteps,
+        approvalBranches,
+        setApprovalBranch,
+        disabledMrfStepToDisplay,
+      }}
+    >
+      {children}
+    </MrfContext.Provider>
+  )
+}

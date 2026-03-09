@@ -3,9 +3,9 @@ import { IGlobalVariable, IHttpClient } from '@plumber/types'
 import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import HttpError from '@/errors/http'
 
-import app from '../..'
 import {
   FORMSG_WEBHOOK_REGISTRATION_MESSAGE,
   FORMSG_WEBHOOK_VERIFICATION_MESSAGE,
@@ -37,7 +37,7 @@ describe('formsg webhook registration', () => {
         createdAt: `${new Date().getTime()}`,
         updatedAt: `${new Date().getTime()}`,
       },
-      app,
+      app: apps.formsg,
     }
   })
 
@@ -185,17 +185,6 @@ describe('formsg webhook registration', () => {
       $.http.patch = vi.fn().mockRejectedValueOnce(new HttpError(error422))
       await expect(registerWebhookUrl($)).rejects.toThrowError(
         FORMSG_WEBHOOK_REGISTRATION_MESSAGE.USER_NOT_FOUND,
-      )
-    })
-
-    it('should error if trying to connect to a multirespondent form', async () => {
-      $.http.post = vi.fn().mockResolvedValueOnce({
-        data: {
-          responseMode: 'multirespondent',
-        },
-      })
-      await expect(registerWebhookUrl($)).rejects.toThrowError(
-        'Multi-Respondent Forms cannot be connected to Plumber yet.',
       )
     })
   })

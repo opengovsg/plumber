@@ -1,8 +1,10 @@
+import { IAction } from '@/../../types'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   addFlowConnection,
   addFlowTableConnection,
 } from '@/helpers/add-flow-connection'
+import logger from '@/helpers/logger'
 import App from '@/models/app'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -15,6 +17,19 @@ const updateStep: MutationResolvers['updateStep'] = async (
   context,
 ) => {
   const { input } = params
+
+  const triggerOrAction = await App.findTriggerOrActionByKey(
+    input.appKey,
+    input.key,
+  )
+  if (!triggerOrAction) {
+    logger.error({
+      event: 'updateStep: no such trigger or action',
+      appKey: input.appKey,
+      key: input.key,
+    })
+    throw new BadUserInputError('No such trigger or action')
+  }
 
   const step = await Step.transaction(async (trx) => {
     const step = await context.currentUser
@@ -52,8 +67,10 @@ const updateStep: MutationResolvers['updateStep'] = async (
     // NOTE: we use this function to first validate the step parameters
     // to avoid misuse and saving invalid step parameters
     if (step.type === 'action') {
-      const app = await App.findOneByKey(input.appKey)
-      const action = app?.actions?.find((action) => action.key === step.key)
+      const action = triggerOrAction as IAction
+      if (action?.hiddenFromUser) {
+        throw new BadUserInputError('Action can only be updated by system')
+      }
       action?.validateStepParameters?.(input.parameters)
     }
 

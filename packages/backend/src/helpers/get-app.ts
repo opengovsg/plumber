@@ -82,7 +82,6 @@ function addStaticSubsteps(
   } else {
     computedStep.substeps.push(testStep)
   }
-
   return computedStep
 }
 

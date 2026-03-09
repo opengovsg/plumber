@@ -2,7 +2,8 @@ import { IGlobalVariable, IHttpClient } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import app from '../..'
+import apps from '@/apps'
+
 import {
   parseFormIdFormat,
   parseSecretKeyFormat,
@@ -49,7 +50,7 @@ describe('verify credentials', () => {
           },
         }),
       } as unknown as IHttpClient, // deliberately cast
-      app,
+      app: apps.formsg,
     }
   })
 
@@ -151,7 +152,7 @@ describe('verify credentials', () => {
           $.auth.data.privateKey as string,
           'prod',
         ),
-      ).rejects.toThrowError('Form not found')
+      ).rejects.toThrowError('Unable to fetch form. Form might not exist.')
     })
 
     it('should throw an error if form is not storage mode', async () => {
@@ -182,26 +183,6 @@ describe('verify credentials', () => {
           'prod',
         ),
       ).rejects.toThrowError('Invalid secret key')
-    })
-
-    it('should throw an error if form is multirespondent', async () => {
-      $.http.get = vi.fn().mockResolvedValueOnce({
-        data: {
-          form: {
-            responseMode: 'multirespondent',
-          },
-        },
-      })
-      await expect(
-        verifyFormCreds(
-          $,
-          $.auth.data.formId as string,
-          $.auth.data.privateKey as string,
-          'prod',
-        ),
-      ).rejects.toThrowError(
-        'Multi-Respondent Forms cannot be connected to Plumber yet.',
-      )
     })
   })
 })

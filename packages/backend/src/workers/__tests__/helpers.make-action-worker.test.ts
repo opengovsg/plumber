@@ -65,7 +65,7 @@ describe('makeActionWorker', () => {
     makeActionWorker({
       appKey: 'test-app',
       queueName: '{test-app-queue}',
-      queueConfig: { isQueueDelayable: false },
+      queueConfig: { isQueueDelayable: false, workerType: 'action' },
     })
     expect(mocks.workerConstructor).toHaveBeenCalledWith(
       '{test-app-queue}',
@@ -82,7 +82,7 @@ describe('makeActionWorker', () => {
       appKey: 'test-app',
       queueName: 'some-queue',
       redisConnectionPrefix: '{test}',
-      queueConfig: { isQueueDelayable: false },
+      queueConfig: { isQueueDelayable: false, workerType: 'action' },
     })
     expect(mocks.workerConstructor).toHaveBeenCalledWith(
       'some-queue',
@@ -102,6 +102,7 @@ describe('makeActionWorker', () => {
           type: 'concurrency' as const,
           concurrency: 2,
         },
+        workerType: 'action' as const,
       },
       expectedWorkerOptions: expect.objectContaining({
         group: {
@@ -120,6 +121,7 @@ describe('makeActionWorker', () => {
             duration: 100,
           },
         },
+        workerType: 'action' as const,
       },
       expectedWorkerOptions: expect.objectContaining({
         group: {
@@ -142,6 +144,7 @@ describe('makeActionWorker', () => {
           max: 1,
           duration: 5000,
         },
+        workerType: 'action' as const,
       },
       expectedWorkerOptions: expect.objectContaining({
         group: {
@@ -160,6 +163,7 @@ describe('makeActionWorker', () => {
           max: 1,
           duration: 5000,
         },
+        workerType: 'action' as const,
       },
       expectedWorkerOptions: expect.objectContaining({
         limiter: {

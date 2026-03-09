@@ -6,7 +6,6 @@ import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
-import { StepDisplayOverridesContext } from '@/contexts/StepDisplayOverrides'
 import { MarkdownRenderer } from '@/exports/components'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { replacePlaceholdersForHelpMessage } from '@/helpers/flow-templates'
@@ -14,24 +13,24 @@ import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
-import UnsavedChangesAlert from '../Editor/UnsavedChangesAlert'
+import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
 import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 import { DragHandle } from '../SortableList/components'
 
+import { ApproveReject } from './components/ApproveReject'
 import DeleteStepButton from './components/DeleteStepButton'
 import DuplicateStepButton from './components/DuplicateStepButton'
 import StepAppIcon from './components/StepAppIcon'
-import StepCaptionAndDemo from './components/StepCaptionAndDemo'
+import StepNameAndDemo from './components/StepNameAndDemo'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
 import { flowStepStyles } from './styles'
 
 type FlowStepProps = {
   step: IStep
-  isDeletable?: boolean
   isLastStep: boolean
   isNested?: boolean
   allowReorder?: boolean
@@ -70,23 +69,18 @@ export default function FlowStep(
     setCurrentStepId,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
-  const displayOverrides = useContext(StepDisplayOverridesContext)?.[step.id]
   const {
     app,
-    caption,
+    stepName,
+    displayPosition,
     isCompleted,
     isTrigger,
     selectedActionOrTrigger,
     substeps,
     shouldShowDragHandle,
-  } = useStepMetadata(
-    allApps,
-    step,
-    readOnly,
-    allowReorder,
-    isMobile,
-    isDrawerOpen,
-  )
+    isDeletable,
+    isApprovalStep,
+  } = useStepMetadata(step, allowReorder)
 
   const {
     cancelRef,
@@ -98,11 +92,6 @@ export default function FlowStep(
   } = useUnsavedChanges({
     onProceed: onModalOpen,
   })
-
-  const isDeletable =
-    displayOverrides?.disableDelete === true
-      ? false
-      : !readOnly && props.isDeletable
 
   const { shouldTestStepAgain, isTestSuccessful } = useMemo(
     () => validateStepParams(step, testExecutionSteps, substeps),
@@ -237,17 +226,20 @@ export default function FlowStep(
               </Box>
             )}
             <Flex
+              flexDir="column"
               data-test="flow-step"
               {...flowStepStyles.container}
+              justifyContent="flex-start"
               borderTopWidth={hasInfoBox ? 0 : '1px'}
               borderColor={
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={isNested ? '48px' : '64px'}
+              h={isNested ? '56px' : isApprovalStep ? '124px' : '64px'}
               w={headerWidth}
+              onClick={handleClick}
             >
-              <Flex {...flowStepStyles.topHeader} onClick={handleClick}>
+              <Flex {...flowStepStyles.topHeader}>
                 <StepAppIcon
                   isCompleted={isCompleted}
                   isNested={isNested}
@@ -256,7 +248,10 @@ export default function FlowStep(
                   app={app}
                   step={step}
                 />
-                <StepCaptionAndDemo app={app} caption={caption} />
+                <StepNameAndDemo
+                  displayPosition={displayPosition}
+                  stepName={stepName}
+                />
                 {isDeletable && (
                   <Flex gap={1} ml="auto">
                     {!isTrigger && (
@@ -265,11 +260,13 @@ export default function FlowStep(
                     <DeleteStepButton
                       isNested={isNested}
                       step={step}
-                      caption={caption}
+                      displayPosition={displayPosition}
+                      stepName={stepName}
                     />
                   </Flex>
                 )}
               </Flex>
+              {isApprovalStep && <ApproveReject stepId={step.id} />}
             </Flex>
           </Flex>
           {shouldShowDragHandle &&

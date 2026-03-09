@@ -3,10 +3,9 @@ import type { IGlobalVariable } from '@plumber/types'
 import type { AxiosPromise } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import type Connection from '@/models/connection'
-
-import formSgApp from '../'
 
 const mocks = vi.hoisted(() => ({
   axiosRequestAdapter: vi.fn(
@@ -53,7 +52,7 @@ describe('FormSG app', () => {
       connection: {
         formattedData: {},
       } as unknown as Connection,
-      app: formSgApp,
+      app: apps.formsg,
     })
   })
 

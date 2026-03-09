@@ -4,6 +4,7 @@ import {
   raw,
   RelatedQueryBuilder,
   type StaticHookArguments,
+  Transaction,
   ValidationError,
 } from 'objection'
 import { URL } from 'url'
@@ -166,9 +167,53 @@ class Step extends Base {
   async getNextStep() {
     const flow = await this.$relatedQuery('flow')
 
-    return await flow
+    const nextImmediateStep = await flow
       .$relatedQuery('steps')
       .findOne({ position: this.position + 1 })
+
+    if (!nextImmediateStep) {
+      return undefined
+    }
+
+    const isCurrentStepInMrfRejectionBranch =
+      this.config.approval?.branch === 'reject'
+    const isNextStepInMrfRejectionBranch =
+      nextImmediateStep.config.approval?.branch === 'reject'
+    if (isCurrentStepInMrfRejectionBranch) {
+      /**
+       * If the current step is in the rejection branch, return the next step in the rejection branch
+       */
+      if (
+        isNextStepInMrfRejectionBranch &&
+        this.config.approval?.stepId ===
+          nextImmediateStep.config.approval?.stepId
+      ) {
+        return nextImmediateStep
+      }
+      /**
+       * If the next step is not in the rejection branch, return undefined
+       */
+      return undefined
+    } else {
+      /**
+       * If the current step and next step are not in the rejection branch, return the next step
+       */
+      if (!isNextStepInMrfRejectionBranch) {
+        return nextImmediateStep
+      }
+
+      /**
+       * If the next step is in a rejection branch, skip to the next mrf action step
+       */
+      const nextMrfStep = await Step.query()
+        .where('flow_id', flow.id)
+        .andWhere('type', 'action')
+        .andWhere('key', 'mrfSubmission')
+        .andWhere('position', '>', nextImmediateStep.position)
+        .orderBy('position', 'asc')
+        .first()
+      return nextMrfStep
+    }
   }
 
   async getTriggerCommand() {
@@ -191,6 +236,26 @@ class Step extends Base {
     const command = apps[appKey].actions.find((action) => action.key === key)
 
     return command
+  }
+
+  // Reset step ordering in case of mass deletion or reordering
+  static async resetStepOrdering(flowId: string, trx?: Transaction) {
+    const allSteps = await Step.query(trx)
+      .where('flow_id', flowId)
+      .where('type', 'action')
+      .orderBy('position', 'asc')
+
+    for (let i = 0; i < allSteps.length; i++) {
+      const currStep = allSteps[i]
+      if (currStep.position !== i + 2) {
+        await Step.query(trx)
+          .findById(currStep.id)
+          .patch({
+            // actions start from 2 (after the trigger step)
+            position: i + 2,
+          })
+      }
+    }
   }
 
   static async beforeUpdate(args: StaticHookArguments<Step>): Promise<void> {

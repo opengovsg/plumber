@@ -4,12 +4,17 @@ import { RelatedQueryBuilder } from 'objection'
 import { z } from 'zod'
 
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
 
+import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
-import getDataOutMetadata from './get-data-out-metadata'
+import { createMrfSteps } from './create-mrf-steps'
+import { fetchFormSchema } from './fetch-form-schema'
 import getMockData from './get-mock-data'
+import { parseWorkflowData } from './get-workflow-data'
+import { removeMrfSteps } from './remove-mrf-steps'
 
 const formsgTestRunMetadataSchema = z
   .object({
@@ -33,7 +38,6 @@ const trigger: IRawTrigger = {
     hideWebhookUrl: true,
     errorMsg:
       'Make a new submission to the form you connected and test the step again.',
-    mockDataMsg: 'The mock responses below are based on your form fields.',
   },
   arguments: [
     {
@@ -106,10 +110,44 @@ const trigger: IRawTrigger = {
     const shouldUseMockData =
       hasNoPastSubmission || testRunMetadataRes.data.preferMock
 
+    const formSchema = await fetchFormSchema($, formId)
+
+    if (
+      formSchema.form.responseMode === 'multirespondent' &&
+      // if the workflow is not set up, we treat it as a single respondent form
+      formSchema.form.workflow?.length > 0
+    ) {
+      // Create MRF steps for multirespondent forms
+      const mrfWorkflowData = await parseWorkflowData($, formSchema)
+      try {
+        await createMrfSteps($, mrfWorkflowData)
+      } catch (error) {
+        logger.error('Error syncing MRF steps', error)
+        throw new StepError(
+          'Error syncing MRF steps',
+          'This should not happen, please contact support.',
+          $.step.position,
+          $.app.name,
+        )
+      }
+    } else {
+      // remove mrf object from parameters and remove mrf steps (if any)
+      try {
+        await removeMrfSteps($.flow.id)
+      } catch (error) {
+        throw new StepError(
+          'Error removing MRF steps',
+          'This should not happen, please contact support.',
+          $.step.position,
+          $.app.name,
+        )
+      }
+    }
+
     // if test with mock data is selected OR no past submission exists
     // we use mock data
     const testData = shouldUseMockData
-      ? await getMockData($)
+      ? await getMockData($, formSchema)
       : lastSubmittedTestExecutionStep?.dataOut
 
     // If for some reason the submission time is not available, use the createdAt time

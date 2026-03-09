@@ -8,6 +8,7 @@ import { Button, Link } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
+import { FORMSG_APP_KEY } from '@/helpers/formsg'
 import useAuthentication from '@/hooks/useAuthentication'
 
 import { NON_EDITABLE_APP_CONNECTIONS } from '../Editor/constants'
@@ -39,7 +40,9 @@ interface ConnectionStatus {
 }
 
 const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
-  const { description: formId, env } = connectionOption
+  const { description, env } = connectionOption
+  // get the last 24 characters of the description which is the form id
+  const formId = description?.slice(-24)
   return `https://${env === 'prod' ? '' : `${env}.`}form.gov.sg/${formId}`
 }
 
@@ -116,7 +119,7 @@ function ChooseConnectionSubstep(
       const connectionOption = optionGenerator(connection, application.key)
 
       let connectionLink: ConnectionLink | undefined
-      if (application.key === 'formsg') {
+      if (application.key === FORMSG_APP_KEY) {
         connectionLink = {
           url: formLinkGenerator(connectionOption),
           text: '(View form)',
