@@ -1,6 +1,9 @@
 import { IStep } from '@plumber/types'
 
+import { PartialModelObject, raw } from 'objection'
+
 import { BadUserInputError } from '@/errors/graphql-errors'
+import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -77,9 +80,17 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
 
     // Patch each step individually with its new position
     for (const stepPosition of stepPositions) {
-      await Step.query(trx).findById(stepPosition.id).patch({
+      const patchData: PartialModelObject<Step> = {
         position: stepPosition.position,
-      })
+      }
+      if (stepPosition.config) {
+        patchData.config = stepPosition.config.approval
+          ? raw(`jsonb_set(config, '{approval}', ?::jsonb, true)`, [
+              JSON.stringify(stepPosition.config?.approval),
+            ])
+          : raw(`config - 'approval'`)
+      }
+      await Step.query(trx).findById(stepPosition.id).patch(patchData)
     }
 
     // Update the flow's lastUpdatedAt timestamp
@@ -90,6 +101,21 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
       })
       .withGraphFetched('steps')
       .orderBy('steps.position', 'asc')
+
+    // sanity check that all step positions are contiguous
+    const contiguousPositions = updatedFlow.steps.map((step) => step.position)
+    if (
+      !contiguousPositions.every((position, index) => position === index + 1)
+    ) {
+      logger.error({
+        message: 'Updated positions are no longer contiguous',
+        stepPositions,
+        flowId: flow.id,
+      })
+      throw new BadUserInputError(
+        'Failed to update: updated positions are no longer contiguous',
+      )
+    }
 
     return updatedFlow
   })

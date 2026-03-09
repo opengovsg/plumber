@@ -1,4 +1,10 @@
-import type { IApp, IExecutionStep, IFlow, IStep } from '@plumber/types'
+import type {
+  IApp,
+  IExecutionStep,
+  IFlow,
+  IStep,
+  IStepConfig,
+} from '@plumber/types'
 
 import {
   createContext,
@@ -67,6 +73,7 @@ interface IEditorContextValue {
     appKey: string,
     eventKey: string,
     connectionId?: string,
+    config?: IStepConfig,
   ) => Promise<IStep>
   onUpdateStep: (step: IStep, onCompleted?: () => void) => Promise<IStep>
   allApps: IApp[]
@@ -200,6 +207,7 @@ export const EditorProvider = ({
       appKey: string,
       eventKey: string,
       connectionId?: string,
+      config?: IStepConfig,
     ) => {
       const mutationInput = {
         previousStep: {
@@ -212,6 +220,7 @@ export const EditorProvider = ({
         appKey,
         key: eventKey,
         connection: { id: connectionId },
+        config,
       }
 
       const createdStep = await createStep({

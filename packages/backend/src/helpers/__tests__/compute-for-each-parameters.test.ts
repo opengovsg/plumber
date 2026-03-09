@@ -264,24 +264,28 @@ const mockFlow = {
       position: 1,
       appKey: 'test-app',
       key: 'test-action',
+      config: {},
     },
     {
       id: randomForEachStepId,
       position: 2,
       appKey: TOOLBOX_APP_KEY,
       key: TOOLBOX_ACTIONS.FOR_EACH,
+      config: {},
     },
     {
       id: randomAction1StepId,
       position: 3,
       appKey: 'test-app',
       key: 'test-action-after-foreach',
+      config: {},
     },
     {
       id: randomAction2StepId,
       position: 4,
       appKey: 'test-app',
       key: 'test-action-after-foreach',
+      config: {},
     },
   ],
 } as unknown as Flow
@@ -295,6 +299,7 @@ describe('getStepContext', () => {
           position: 1,
           appKey: 'test-app',
           key: 'test-action',
+          config: {},
         },
       ],
     } as unknown as Flow
@@ -361,6 +366,103 @@ describe('getStepContext', () => {
       [mockFlow.steps[1].id]: 2,
       [mockFlow.steps[2].id]: 3,
       [mockFlow.steps[3].id]: 4,
+    })
+  })
+
+  describe('MRF approval flows', () => {
+    const mrfStepId = randomUUID()
+    const approveStep1Id = randomUUID()
+    const approveStep2Id = randomUUID()
+    const rejectForEachStepId = randomUUID()
+    const rejectStep1Id = randomUUID()
+    const rejectStep2Id = randomUUID()
+
+    // Flow: approve for-each(1) → approve(2) → approve(3) → reject for-each(4) → reject(5) → reject(6)
+    const mockMrfFlow = {
+      steps: [
+        {
+          id: mrfStepId,
+          position: 1,
+          appKey: TOOLBOX_APP_KEY,
+          key: TOOLBOX_ACTIONS.FOR_EACH,
+          config: {},
+        },
+        {
+          id: approveStep1Id,
+          position: 2,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          config: {},
+        },
+        {
+          id: approveStep2Id,
+          position: 3,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          config: {},
+        },
+        {
+          id: rejectForEachStepId,
+          position: 4,
+          appKey: TOOLBOX_APP_KEY,
+          key: TOOLBOX_ACTIONS.FOR_EACH,
+          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+        },
+        {
+          id: rejectStep1Id,
+          position: 5,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+        },
+        {
+          id: rejectStep2Id,
+          position: 6,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+        },
+      ],
+    } as unknown as Flow
+
+    it('last approval-branch step is isLastStep, not the rejection-branch steps that follow', () => {
+      const approveStep2 = mockMrfFlow.steps[2]
+      const context = getStepContext(mockMrfFlow, approveStep2)
+      expect(context.isLastStep).toBe(true)
+    })
+
+    it('last rejection-branch step is isLastStep, not the approval-branch steps', () => {
+      const rejectStep2 = mockMrfFlow.steps[5]
+      const context = getStepContext(mockMrfFlow, rejectStep2)
+      expect(context.isLastStep).toBe(true)
+    })
+
+    it('non-last approval-branch step is not isLastStep', () => {
+      const approveStep1 = mockMrfFlow.steps[1]
+      const context = getStepContext(mockMrfFlow, approveStep1)
+      expect(context.isLastStep).toBe(false)
+    })
+
+    it('approval-branch step finds approval-branch for-each', () => {
+      const approveStep1 = mockMrfFlow.steps[1]
+      const context = getStepContext(mockMrfFlow, approveStep1)
+      expect(context.forEachStepPosition).toBe(1)
+    })
+
+    it('rejection-branch step finds rejection-branch for-each', () => {
+      const rejectStep1 = mockMrfFlow.steps[4]
+      const context = getStepContext(mockMrfFlow, rejectStep1)
+      expect(context.forEachStepPosition).toBe(4)
+    })
+
+    it('rejection-branch step returns forEachStepPosition -1 when no rejection for-each exists', () => {
+      const flowWithOnlyApproveForEach = {
+        steps: mockMrfFlow.steps.filter((s) => s.id !== rejectForEachStepId),
+      } as unknown as Flow
+      const rejectStep1 = mockMrfFlow.steps[4]
+      const context = getStepContext(flowWithOnlyApproveForEach, rejectStep1)
+      expect(context.forEachStepPosition).toBe(-1)
+      expect(context.isLastStep).toBe(false)
     })
   })
 

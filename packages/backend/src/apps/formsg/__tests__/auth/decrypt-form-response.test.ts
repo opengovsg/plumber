@@ -3,9 +3,9 @@ import { IGlobalVariable, IRequest } from '@plumber/types'
 import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 
-import app from '../..'
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import { NricFilter } from '../../triggers/new-submission'
 
@@ -92,7 +92,7 @@ describe('decrypt form response', () => {
       },
       step: {
         id: '123',
-        appKey: app.key,
+        appKey: apps.formsg.key,
         position: 0,
         parameters: {
           nricFilter: undefined,
@@ -110,7 +110,7 @@ describe('decrypt form response', () => {
         createdAt: `${new Date().getTime()}`,
         updatedAt: `${new Date().getTime()}`,
       },
-      app,
+      app: apps.formsg,
     }
   })
 

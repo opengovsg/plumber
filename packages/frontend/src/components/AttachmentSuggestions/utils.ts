@@ -1,4 +1,4 @@
-import { TDataOutMetadatumType } from '@plumber/types'
+import { IFlow, TDataOutMetadatumType } from '@plumber/types'
 
 import { FieldValues } from 'react-hook-form'
 
@@ -91,10 +91,11 @@ export function createUpdateFlowConfigInput(
 }
 
 export function createUpdateStep(
+  flow: IFlow,
   formValues: FieldValues,
   updatedAttachments: string[],
 ) {
-  const { appKey, id, key, parameters, connection, flow } = formValues
+  const { appKey, id, key, parameters, connection } = formValues
   const mutationInput: Record<string, unknown> = {
     id,
     key,

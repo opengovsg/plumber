@@ -108,8 +108,13 @@ export default function FlowStepTestController(
   } = useContext(EditorContext)
   const formContext = useFormContext()
 
-  const { isIfThenStep, isTrigger, selectedActionOrTrigger, substeps } =
-    useStepMetadata(allApps, step)
+  const {
+    isIfThenStep,
+    isTrigger,
+    isMrfStep,
+    selectedActionOrTrigger,
+    substeps,
+  } = useStepMetadata(step)
 
   const {
     isTestSuccessful,
@@ -305,8 +310,8 @@ export default function FlowStepTestController(
                     </Button>
                   )}
                 </Flex>
-                {shouldShowSaveButton ? (
-                  <Flex>
+                <Flex>
+                  {shouldShowSaveButton && (
                     <Button
                       variant="outline"
                       // cant use responsive value for variant for some reason
@@ -322,16 +327,7 @@ export default function FlowStepTestController(
                     >
                       {!isDirty ? 'Saved' : 'Save without checking'}
                     </Button>
-                    <CheckAgainButton
-                      isUnstyledInfobox={isStepUnchecked}
-                      onClick={handleSaveAndTest}
-                      isLoading={isTestExecuting}
-                      isDisabled={!isValid || readOnly}
-                      step={step}
-                      executionStepMetadata={currentTestExecutionStep?.metadata}
-                    />
-                  </Flex>
-                ) : (
+                  )}
                   <CheckAgainButton
                     isUnstyledInfobox={isStepUnchecked}
                     onClick={handleSaveAndTest}
@@ -340,7 +336,7 @@ export default function FlowStepTestController(
                     step={step}
                     executionStepMetadata={currentTestExecutionStep?.metadata}
                   />
-                )}
+                </Flex>
               </Flex>
             </Infobox>
             <TestResult
@@ -362,7 +358,8 @@ export default function FlowStepTestController(
             <HStack w="100%" justifyContent="flex-end">
               {/* gathersg is a special case where there is a webhook url and the save step button
               needs to be shown to save the encryption key */}
-              {(!step.webhookUrl || step.appKey === 'gathersg') && (
+              {((!step.webhookUrl && !isMrfStep) ||
+                step.appKey === 'gathersg') && (
                 <Button
                   isDisabled={readOnly || isSaving || !isDirty}
                   isLoading={isSaving}

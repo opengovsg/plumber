@@ -43,8 +43,11 @@ const requestOtp: MutationResolvers['requestOtp'] = async (_parent, params) => {
   })
 
   if (appConfig.isDev) {
-    // eslint-disable-next-line no-console
-    console.log(`OTP for ${email}: \x1b[45m${otp}\x1b[0m`)
+    // adding a delay so that the otp is printed after the dd trace log
+    setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.log(`OTP for ${email}: \x1b[45m${otp}\x1b[0m`)
+    }, 100)
   } else {
     // Send otp
     await sendEmail({

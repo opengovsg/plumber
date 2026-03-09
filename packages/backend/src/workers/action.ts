@@ -7,6 +7,8 @@ import {
 } from '@/queues/action'
 import { makeActionWorker } from '@/workers/helpers/make-action-worker'
 
+import { makeSubTriggerWorker } from './helpers/make-sub-trigger-worker'
+
 //
 // Worker Storage
 // ---
@@ -20,6 +22,7 @@ export const mainActionWorker = makeActionWorker({
   redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
   queueConfig: {
     isQueueDelayable: false,
+    workerType: 'action',
   },
 })
 
@@ -33,11 +36,18 @@ for (const [appKey, app] of Object.entries(apps)) {
     continue
   }
 
-  appActionWorkers[appKey] = makeActionWorker({
-    appKey,
-    queueName: appActionQueues[appKey].name,
-    queueConfig: app.queue,
-  })
+  if (app.queue.workerType === 'sub-trigger') {
+    appActionWorkers[appKey] = makeSubTriggerWorker({
+      appKey,
+      queueName: appActionQueues[appKey].name,
+    })
+  } else {
+    appActionWorkers[appKey] = makeActionWorker({
+      appKey,
+      queueName: appActionQueues[appKey].name,
+      queueConfig: app.queue,
+    })
+  }
 }
 
 process.on('SIGTERM', async () => {

@@ -57,7 +57,7 @@ describe('createStep mutation integration tests', async () => {
     testConnection = await testUser
       .$relatedQuery('connections')
       .insertAndFetch({
-        key: 'test-connection',
+        key: 'postman',
         formattedData: { test: 'data' },
         verified: true,
         draft: false,
@@ -123,8 +123,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
       },
     }
@@ -138,8 +138,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendMessage',
+        appKey: 'telegram-bot',
         parameters: { newParam: 'value' },
       },
     }
@@ -149,8 +149,8 @@ describe('createStep mutation integration tests', async () => {
     // Ensure the new step is returned as expected.
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('newStep')
-    expect(newStep.appKey).toBe('test-app')
+    expect(newStep.key).toBe('sendMessage')
+    expect(newStep.appKey).toBe('telegram-bot')
     // New step's position should be previousStep.position + 1.
     expect(newStep.position).toBe(existingSteps[0].position + 1)
 
@@ -246,8 +246,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: 'invalid-id' }, // Non-existent step id
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
       },
     }
@@ -260,8 +260,8 @@ describe('createStep mutation integration tests', async () => {
 
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('newStep')
-    expect(newStep.appKey).toBe('test-app')
+    expect(newStep.key).toBe('sendTransactionalEmail')
+    expect(newStep.appKey).toBe('postman')
     // New step's position should be previousStep.position + 1.
     expect(newStep.position).toBe(existingSteps[0].position + 1)
   })
@@ -272,8 +272,8 @@ describe('createStep mutation integration tests', async () => {
 
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('newStep')
-    expect(newStep.appKey).toBe('test-app')
+    expect(newStep.key).toBe('sendTransactionalEmail')
+    expect(newStep.appKey).toBe('postman')
     // New step's position should be previousStep.position + 1.
     expect(newStep.position).toBe(existingSteps[0].position + 1)
   })
@@ -285,8 +285,8 @@ describe('createStep mutation integration tests', async () => {
       input: {
         flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
         connection: { id: testConnection.id },
         connectionRole: 'owner',
@@ -296,8 +296,8 @@ describe('createStep mutation integration tests', async () => {
     const newStep = await createStep(null, params, context)
     expect(newStep).toBeDefined()
     expect(newStep.type).toBe('action')
-    expect(newStep.key).toBe('newStep')
-    expect(newStep.appKey).toBe('test-app')
+    expect(newStep.key).toBe('sendTransactionalEmail')
+    expect(newStep.appKey).toBe('postman')
     expect(newStep.position).toBe(existingSteps[0].position + 1)
   })
 
@@ -324,8 +324,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
         connection: { id: testConnection.id },
       },
@@ -353,8 +353,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
         connection: { id: randomUUID() },
       },
@@ -385,8 +385,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
         connection: { id: editorConnection.id },
       },
@@ -417,8 +417,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
         connection: { id: otherUserConnection.id },
       },
@@ -437,8 +437,8 @@ describe('createStep mutation integration tests', async () => {
           updatedAt: testFlowTimestampString,
         },
         previousStep: { id: existingSteps[0].id },
-        key: 'newStep',
-        appKey: 'test-app',
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
         parameters: { newParam: 'value' },
       },
     }
@@ -458,8 +458,8 @@ describe('createStep mutation integration tests', async () => {
             updatedAt: testFlowTimestampString,
           },
           previousStep: { id: existingSteps[0].id },
-          key: 'newStep',
-          appKey: 'test-app',
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
           parameters: { newParam: 'value' },
         },
       }
@@ -467,7 +467,7 @@ describe('createStep mutation integration tests', async () => {
       const newStep = await createStep(null, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('newStep')
+      expect(newStep.key).toBe('sendTransactionalEmail')
     })
 
     it('should succeed when input.flow.updatedAt is different from flow.updatedAt for same user', async () => {
@@ -481,8 +481,8 @@ describe('createStep mutation integration tests', async () => {
             updatedAt: futureTimestamp,
           },
           previousStep: { id: existingSteps[0].id },
-          key: 'newStep',
-          appKey: 'test-app',
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
           parameters: { newParam: 'value' },
         },
       }
@@ -490,7 +490,7 @@ describe('createStep mutation integration tests', async () => {
       const newStep = await createStep(null, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('newStep')
+      expect(newStep.key).toBe('sendTransactionalEmail')
     })
 
     it('should throw when input.flow.updatedAt is different from flow.updatedAt for different user', async () => {
@@ -505,8 +505,8 @@ describe('createStep mutation integration tests', async () => {
             updatedAt: futureTimestamp,
           },
           previousStep: { id: existingSteps[0].id },
-          key: 'newStep',
-          appKey: 'test-app',
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
           parameters: { newParam: 'value' },
         },
       }
@@ -531,8 +531,8 @@ describe('createStep mutation integration tests', async () => {
             updatedAt: oldTimestamp,
           },
           previousStep: { id: existingSteps[0].id },
-          key: 'newStep',
-          appKey: 'test-app',
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
           parameters: { newParam: 'value' },
         },
       }
@@ -553,8 +553,8 @@ describe('createStep mutation integration tests', async () => {
             updatedAt: 'invalid-timestamp',
           },
           previousStep: { id: existingSteps[0].id },
-          key: 'newStep',
-          appKey: 'test-app',
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
           parameters: { newParam: 'value' },
         },
       }
@@ -562,7 +562,7 @@ describe('createStep mutation integration tests', async () => {
       const newStep = await createStep(null, params, context)
 
       expect(newStep).toBeDefined()
-      expect(newStep.key).toBe('newStep')
+      expect(newStep.key).toBe('sendTransactionalEmail')
     })
   })
 })

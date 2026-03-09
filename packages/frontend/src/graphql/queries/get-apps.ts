@@ -98,7 +98,6 @@ export const GET_APPS = gql`
           afterUrlMsg
           errorMsg
           hideWebhookUrl
-          mockDataMsg
         }
         substeps {
           key
@@ -178,6 +177,7 @@ export const GET_APPS = gql`
         groupsLaterSteps
         isNew
         linkToGuide
+        hiddenFromUser
         substeps {
           key
           name

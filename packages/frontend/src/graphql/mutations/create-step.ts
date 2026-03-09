@@ -11,11 +11,19 @@ export const CREATE_STEP = gql`
       position
       status
       flowId
+      createdAt
       connection {
         id
       }
       config {
         stepName
+        templateConfig {
+          appEventKey
+        }
+        approval {
+          branch
+          stepId
+        }
       }
       flow {
         updatedAt

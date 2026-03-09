@@ -2,6 +2,8 @@ import { IGlobalVariable } from '@plumber/types'
 
 import get from 'lodash.get'
 
+import { getLdFlagValue } from '@/helpers/launch-darkly'
+
 import { FORM_ID_LENGTH } from '../common/constants'
 import {
   FormEnv,
@@ -9,6 +11,7 @@ import {
   parseFormEnv,
   parseFormIdAsUrl,
 } from '../common/form-env'
+import { fetchFormSchema } from '../triggers/new-submission/fetch-form-schema'
 
 // ref: https://stackoverflow.com/questions/475074/regex-to-parse-or-validate-base64-data/475217#475217
 const BASE64_REGEX =
@@ -20,33 +23,10 @@ export const verifyFormCreds = async (
   secretKey: string,
   env: FormEnv,
 ) => {
-  let formTitle = ''
-  let publicKey = ''
-  let responseMode = ''
-  try {
-    const { data } = await $.http.get('/v3/forms/:formId', {
-      urlPathParams: {
-        formId,
-      },
-    })
-    formTitle = get(data, 'form.title')
-    publicKey = get(data, 'form.publicKey')
-    responseMode = get(data, 'form.responseMode')
-  } catch (error) {
-    if (error.response?.status === 404) {
-      if (error.response.data?.isPageFound) {
-        // form is valid but not public
-        throw new Error('Ensure form is public')
-      }
-    }
-    throw new Error('Form not found')
-  }
-
-  if (responseMode === 'multirespondent') {
-    throw new Error(
-      'Multi-Respondent Forms cannot be connected to Plumber yet.',
-    )
-  }
+  const formSchema = await fetchFormSchema($, formId)
+  const formTitle = get(formSchema, 'form.title')
+  const publicKey = get(formSchema, 'form.publicKey')
+  const isMrf = get(formSchema, 'form.responseMode') === 'multirespondent'
 
   if (!formTitle) {
     throw new Error('Form does not exist')
@@ -56,13 +36,27 @@ export const verifyFormCreds = async (
     throw new Error('Form is not a storage mode form')
   }
 
+  if (isMrf) {
+    const canConnectMrf = await getLdFlagValue(
+      'allow-mrf-form',
+      $.user?.email ?? null,
+      false,
+    )
+    if (!canConnectMrf) {
+      throw new Error('MRF forms are not supported yet. Check back soon!')
+    }
+  }
+
   const formsgSdk = getSdk(env)
   if (!formsgSdk.crypto.valid(publicKey, secretKey)) {
     throw new Error('Invalid secret key')
   }
 
   // Prefix label with "[$env]" for non-prod environments
-  const prefix = env !== 'prod' ? `[${env.toUpperCase()}] ` : ''
+  let prefix = env !== 'prod' ? `[${env.toUpperCase()}] ` : ''
+  if (isMrf) {
+    prefix += '[MRF] '
+  }
   await $.auth.set({
     screenName: `${prefix}${formId} - ${formTitle}`,
     env,

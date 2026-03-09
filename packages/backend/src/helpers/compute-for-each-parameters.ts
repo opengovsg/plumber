@@ -41,9 +41,14 @@ export function getStepContext(
 } {
   const isForEachStep =
     step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH
+
+  const stepApprovalConfig = step.config.approval
   const forEachSteps = flow.steps.filter(
-    (step) =>
-      step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH,
+    (currStep) =>
+      currStep.appKey === TOOLBOX_APP_KEY &&
+      currStep.key === TOOLBOX_ACTIONS.FOR_EACH &&
+      currStep.config.approval?.branch === stepApprovalConfig?.branch &&
+      currStep.config.approval?.stepId === stepApprovalConfig?.stepId,
   )
   // NOTE: do not allow multiple for-each steps in a flow
   if (forEachSteps.length !== 1) {
@@ -65,11 +70,16 @@ export function getStepContext(
    *   used in for each to terminate an iteration within the loop
    */
   const { stepPositions, lastStepId } = flow.steps.reduce(
-    (acc, step) => {
-      acc.stepPositions[step.id] = step.position
-      if (step.position > acc.maxPosition) {
-        acc.maxPosition = step.position
-        acc.lastStepId = step.id
+    (acc, currStep) => {
+      acc.stepPositions[currStep.id] = currStep.position
+      // to account for MRF flows: only track the last step within the same branch
+      if (
+        currStep.config.approval?.branch === stepApprovalConfig?.branch &&
+        currStep.config.approval?.stepId === stepApprovalConfig?.stepId &&
+        currStep.position > acc.maxPosition
+      ) {
+        acc.maxPosition = currStep.position
+        acc.lastStepId = currStep.id
       }
       return acc
     },

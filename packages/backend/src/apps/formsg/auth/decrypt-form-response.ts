@@ -1,8 +1,9 @@
-import { IGlobalVariable } from '@plumber/types'
+import type { IAuth, IGlobalVariable } from '@plumber/types'
 
 import {
   DecryptedAttachments,
   DecryptedContent,
+  FormField,
 } from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
@@ -11,9 +12,18 @@ import logger from '@/helpers/logger'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
 import convertTableAnswerArrayToTableObject from '../common/process-table-field'
+import type {
+  FormSchemaField,
+  FormsgPayloadWorkflowContent,
+} from '../common/types'
+import { fetchFormSchema } from '../triggers/new-submission/fetch-form-schema'
 import { NricFilter } from '../triggers/new-submission/index'
 
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
+import {
+  decryptFormAttachmentsV3,
+  decryptSubmissionSecretKey,
+} from './decrypt-form-attachments-v3'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -28,6 +38,135 @@ function processLocalAddress(answerArray: string[]): string[] {
   answer.splice(4, 1)
 
   return answer
+}
+
+async function processResponsesV3(
+  $: IGlobalVariable,
+  formId: string,
+  responsesV3: Record<string, any>,
+): Promise<FormField[]> {
+  const formSchemaFields: Record<string, FormSchemaField> = {}
+  try {
+    const formSchema = await fetchFormSchema($, formId)
+    if (formSchema?.form?.form_fields) {
+      for (const field of formSchema.form.form_fields) {
+        formSchemaFields[field._id] = field
+      }
+    }
+  } catch (e) {
+    logger.error('Unable to fetch form schema', {
+      event: 'formsg-unable-to-fetch-form-schema',
+      formId,
+      error: e,
+    })
+  }
+  const mappedResponses: FormField[] = []
+  let questionNumber = 0
+  for (const [key, value] of Object.entries(responsesV3)) {
+    questionNumber++
+    if (value.fieldType === 'table') {
+      let question =
+        formSchemaFields[key]?.title ?? `Question ${questionNumber}`
+      const answerArray = value.answer.map((row: Record<string, string>) => {
+        return Object.values(row)
+      })
+      // we follow the same format as the old table field title schema
+      if (formSchemaFields[key]?.columns) {
+        question += ` (${formSchemaFields[key]?.columns
+          ?.map((column) => column.title.replaceAll(',', ' '))
+          .join(', ')})`
+      }
+      // v3 return table answers in an array of objects (with key as column id )
+      // we need to map it back to a matrix
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question,
+        answerArray,
+      })
+      continue
+    }
+    if (value.fieldType === 'checkbox') {
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        // this is kinda weird, but it's the way formsg returns the answer for checkbox fields
+        answerArray: value.answer.value,
+      })
+      continue
+    }
+    /**
+     * Similary, formv3 responses put these fields in value.answer.value
+     */
+    if (['radiobutton', 'email', 'mobile'].includes(value.fieldType)) {
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        answer: value.answer.value,
+      })
+      continue
+    }
+    if (value.fieldType === 'signature') {
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        // it comes in this form: { type: 'draw', value: [Array] } },
+        answerArray: value.answer.value,
+      })
+      continue
+    }
+    if (value.fieldType === 'address') {
+      //  answer: { addressSubFields: [Object] } },
+      const addressSubFields = value.answer.addressSubFields ?? {}
+      // we need to map to [block number, street name, building name, level number, unit number, postal code]
+      const answerArray = [
+        addressSubFields.blockNumber,
+        addressSubFields.streetName,
+        addressSubFields.buildingName,
+        addressSubFields.levelNumber,
+        addressSubFields.unitNumber,
+        addressSubFields.postalCode,
+      ]
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        answerArray,
+      })
+      continue
+    }
+    if (value.fieldType === 'attachment') {
+      // the answer has the shape { hasBeenScanned: boolean, answer: string, md5Hash: string }
+      // the answer is the filename
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        // we temporarily store the filename in answer, it will subsequently be replaced with the S3 ID from storeAttachmentInS3
+        answer: value.answer.answer,
+      })
+      continue
+    }
+    // catch-all
+    mappedResponses.push({
+      _id: key,
+      fieldType: value.fieldType,
+      // we fallback to Question # if the question is not found in the form schema
+      question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+      answer: value.answer,
+    })
+    continue
+  }
+  return mappedResponses
 }
 
 /**
@@ -58,7 +197,7 @@ export function filterNric($: IGlobalVariable, value: string): string | null {
 
 export async function decryptFormResponse(
   $: IGlobalVariable,
-): Promise<{ verified: boolean; internalId: string | null }> {
+): ReturnType<IAuth['verifyWebhook']> {
   if (!$.request) {
     logger.error('No trigger item provided')
     return { verified: false, internalId: null }
@@ -93,30 +232,63 @@ export async function decryptFormResponse(
   }
 
   const formSecretKey = $.auth.data.privateKey as string
+  const version = data.version
 
   const shouldStoreAttachments = $.flow.hasFileProcessingActions
   let submission: DecryptedContent | null = null
   let attachments: DecryptedAttachments | null = null
 
-  if (shouldStoreAttachments) {
-    const decryptedResponse = await formSgSdk.crypto.decryptWithAttachments(
-      formSecretKey,
-      data,
+  if (version >= 3) {
+    const decryptedSubmission = formSgSdk.cryptoV3.decrypt(formSecretKey, data)
+    const responsesV3 = decryptedSubmission?.responses
+    const mappedResponses = await processResponsesV3(
+      $,
+      data.formId,
+      responsesV3,
     )
-    submission = decryptedResponse?.content
-    attachments = decryptedResponse?.attachments
+
+    submission = {
+      responses: mappedResponses,
+      verified: decryptedSubmission?.verified,
+    }
+
+    // shouldStoreAttachments should only consider steps after the mrf step instead of the whole pipe
+    // but leaving it as such for now to avoid complexity
+    if (shouldStoreAttachments && data.attachmentDownloadUrls) {
+      const submissionSecretKey = decryptSubmissionSecretKey(
+        formSecretKey,
+        data.encryptedSubmissionSecretKey,
+      )
+      attachments = await decryptFormAttachmentsV3(
+        formSgSdk,
+        submissionSecretKey,
+        data.attachmentDownloadUrls,
+        mappedResponses,
+      )
+    }
   } else {
-    submission = formSgSdk.crypto.decrypt(formSecretKey, data)
+    if (shouldStoreAttachments) {
+      const decryptedResponse = await formSgSdk.crypto.decryptWithAttachments(
+        formSecretKey,
+        data,
+      )
+      submission = decryptedResponse?.content
+      attachments = decryptedResponse?.attachments
+    } else {
+      submission = formSgSdk.crypto.decrypt(formSecretKey, data)
+    }
   }
 
   // If the decryption failed, submission will be `null`.
   if (submission) {
+    const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
+
     const parsedData: Record<string, any> = {}
 
     for (const [index, formField] of submission.responses.entries()) {
       const { _id, ...rest } = formField
       // perform null character sanitisation for all answer fields so that it can be inserted into the DB
-      if (rest.answer) {
+      if (rest.answer && typeof rest.answer === 'string') {
         rest.answer = rest.answer.replaceAll('\u0000', '')
       }
 
@@ -155,9 +327,15 @@ export async function decryptFormResponse(
       }
 
       if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
+        let s3FolderId = data.submissionId
+        if (data.workflowContent) {
+          // we add a suffix if it's an mrf step to prevent
+          // overwriting attachments from previous steps
+          s3FolderId += `-${workflowContent.workflowStep}`
+        }
         rest.answer = await storeAttachmentInS3(
           $,
-          data.submissionId,
+          s3FolderId,
           formField,
           attachments,
         )
@@ -231,7 +409,26 @@ export async function decryptFormResponse(
     delete $.request.headers
     delete $.request.query
 
-    return { verified: true, internalId: data.submissionId }
+    const internalId = data.submissionId
+
+    /**
+     * This means it's the first mrf step and is a new submission
+     */
+    if (!workflowContent) {
+      return { verified: true, internalId }
+    }
+
+    $.request.body.workflowContent = workflowContent
+
+    return {
+      verified: true,
+      internalId,
+      isSubtrigger: workflowContent.workflowStep > 0,
+      subtriggerData: {
+        type: 'mrf',
+        mrfStepId: workflowContent.workflow[workflowContent.workflowStep]?._id,
+      },
+    }
   } else {
     // Could not decrypt the submission
     logger.error('Unable to decrypt formsg response')

@@ -8,22 +8,29 @@ import {
 export default function getStepName(allApps: IApp[], step: IStep | undefined) {
   if (!step) {
     return {
-      caption: '',
-      defaultCaption: '',
+      stepName: '',
+      defaultStepName: '',
     }
   }
 
-  const {
-    appKey,
-    key,
-    config: { stepName = undefined } = {},
-    position,
-    type,
-  } = step
+  const { appKey, key, config: { stepName: customStepName } = {}, type } = step
+
+  // IfThen and ForEach are toolbox steps that don't need app lookup
+  if (checkIfThenStep(step)) {
+    return {
+      stepName: customStepName ?? 'Condition',
+      defaultStepName: 'Condition',
+    }
+  }
+
+  if (checkForEachStep(step)) {
+    return {
+      stepName: customStepName ?? 'For each item',
+      defaultStepName: 'For each item',
+    }
+  }
 
   const isTrigger = type === 'trigger'
-  const isIfThen = checkIfThenStep(step)
-  const isForEach = checkForEachStep(step)
 
   const apps: IApp[] = allApps?.filter((app: IApp) =>
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
@@ -37,44 +44,17 @@ export default function getStepName(allApps: IApp[], step: IStep | undefined) {
     (actionOrTrigger: IAction | ITrigger) => actionOrTrigger.key === key,
   )
 
-  let caption = ''
-  let defaultCaption = selectedActionOrTrigger?.name
+  const defaultStepName = selectedActionOrTrigger?.name
 
-  if (isIfThen) {
-    defaultCaption = 'Condition'
-    caption = stepName ? `${position}. ${stepName}` : `${position}. Condition`
-    return {
-      caption,
-      defaultCaption,
-    }
-  }
-
-  if (isForEach) {
-    caption = stepName
-      ? `${position}. ${stepName}`
-      : `${position}. For each item`
-    return {
-      caption,
-      defaultCaption,
-    }
-  }
-
-  if (stepName) {
-    caption = `${position}. ${stepName}`
-  } else if (defaultCaption) {
-    caption = `${position ? `${position}. ` : ''}${defaultCaption}`
-  } else if (app?.name) {
-    caption = `${position ? `${position}. ` : ''}${app.name}`
-  } else if (isTrigger) {
-    caption = 'This step starts your pipe'
-  }
+  const stepName =
+    customStepName ||
+    defaultStepName ||
+    app?.name ||
+    (isTrigger ? 'This step starts your pipe' : undefined) ||
+    (appKey ? appKey.charAt(0).toUpperCase() + appKey.slice(1) : '')
 
   return {
-    caption:
-      caption ||
-      (appKey
-        ? `${position}. ${appKey.charAt(0).toUpperCase() + appKey.slice(1)}`
-        : ''),
-    defaultCaption,
+    stepName,
+    defaultStepName,
   }
 }

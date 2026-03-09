@@ -174,6 +174,7 @@ type Action {
   name: String
   key: String
   description: String
+  hiddenFromUser: Boolean
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   isNew: Boolean
@@ -589,8 +590,16 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
+
+
+input StepApprovalConfigInput {
+  branch: String!
+  stepId: String!
+}
+
 input StepConfigInput {
   stepName: String
+  approval: StepApprovalConfigInput
 }
 
 input UpdateStepInput {
@@ -610,6 +619,7 @@ input StepPositionInput {
   id: String!
   position: Int!
   type: StepEnumType!
+  config: StepConfigInput
 }
 
 input UpdateStepPositionsInput {
@@ -709,10 +719,16 @@ type Step {
 type StepConfig {
   templateConfig: StepTemplateConfig
   stepName: String
+  approval: StepApprovalConfig
 }
 
 type StepTemplateConfig {
   appEventKey: String
+}
+
+type StepApprovalConfig {
+  branch: String!
+  stepId: String!
 }
 
 input StepConnectionInput {
@@ -758,7 +774,6 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
-  mockDataMsg: String
 }
 
 type StepTransferDetails {

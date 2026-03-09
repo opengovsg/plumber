@@ -7,6 +7,7 @@ import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { type Variable } from '@/helpers/variables'
@@ -40,11 +41,10 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const wrapperRef = useRef(null)
+  const { flow } = useContext(EditorContext)
   const { control, setError, getValues } = useFormContext()
   const [currentTab, setCurrentTab] = useState<number>(0)
   const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
-
-  const flow = getValues('flow')
 
   const {
     isOpen: isDialogOpen,
