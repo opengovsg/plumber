@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import StepsPreview from '../StepsPreview'
@@ -30,16 +30,9 @@ export default function SideDrawer({
       pointerEvents={isOpen ? 'auto' : 'none'}
       visibility={isOpen ? 'visible' : 'hidden'}
     >
-      <Flex h="100%" flexDir="column" px={6} w="full">
-        {/* Header */}
-        <Flex justify="space-between" align="center" py={4}>
-          <Text fontSize="xl" fontWeight="bold">
-            Workflow preview
-          </Text>
-        </Flex>
-
+      <Flex h="100%" flexDir="column" w="full">
         {/* Content */}
-        <Box flex={1} overflowY="auto" pb={4}>
+        <Box flex={1} overflowY="auto" py={6}>
           {isOpen && <StepsPreview isReadyForPreview={isReadyForPreview} />}
         </Box>
       </Flex>
