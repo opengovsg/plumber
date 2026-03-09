@@ -74,6 +74,7 @@ export function createFieldMetadata(
   const decodedLabel = decodeFieldKey(key)
 
   // Handle converted primitive array (has _array property)
+  // - checkbox
   if (
     typeof fieldValue === 'object' &&
     fieldValue !== null &&
@@ -88,6 +89,8 @@ export function createFieldMetadata(
   }
 
   // Handle array
+  // - table field
+  // - array of arrays
   if (Array.isArray(fieldValue)) {
     return createArrayMetadata(decodedLabel, fieldValue, attachmentKeys)
   }
@@ -150,11 +153,15 @@ export function createPrimitiveArrayMetadata(
   }
 
   // Create individual elements + _array field
+  // - Hide the array elements from the variable list, this does not break
+  //   existing Pipes (although the variable will appear as missing in subsequent steps)
+  // - Show the array elements in the variable list, this is the intended behaviour
   const arrayElements: Record<string, any> = {}
   for (let i = 0; i < array.length; i++) {
     arrayElements[i] = {
       type: 'text',
       label: decodedLabel,
+      isHidden: true,
     }
   }
 

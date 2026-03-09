@@ -305,9 +305,9 @@ describe('getDataOutMetadata', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(result?.data.fields.colors).toEqual({
-        0: { type: 'text', label: 'colors' },
-        1: { type: 'text', label: 'colors' },
-        2: { type: 'text', label: 'colors' },
+        0: { type: 'text', label: 'colors', isHidden: true },
+        1: { type: 'text', label: 'colors', isHidden: true },
+        2: { type: 'text', label: 'colors', isHidden: true },
         _array: {
           label: 'colors',
           type: 'array',
