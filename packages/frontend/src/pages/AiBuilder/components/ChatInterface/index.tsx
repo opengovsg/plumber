@@ -129,7 +129,7 @@ export default function ChatInterface() {
           </Box>
         </StickToBottom>
       </Flex>
-      <SideDrawer isOpen={isDrawerOpen} />
+      <SideDrawer isOpen={isDrawerOpen} isReadyForPreview={isReadyForPreview} />
     </Flex>
   )
 }
