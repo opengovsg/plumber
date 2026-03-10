@@ -137,6 +137,7 @@ type Mutation {
   # Ai builder mutations
   generateAiSteps(input: GenerateAiStepsInput!): JSONObject
   refineFormInput(input: RefineFormInputInput!): JSONObject
+  updateChatFeedback(input: UpdateChatFeedbackInput!): Boolean!
   # Admin mutations
   admin: AdminMutation!
 }
@@ -150,6 +151,17 @@ input GenerateAiStepsInput {
 input RefineFormInputInput {
   prompt: String!
   sessionId: String
+}
+
+input FeedbackInput {
+  category: String
+  comment: String
+}
+
+input UpdateChatFeedbackInput {
+  traceId: String!
+  feedback: FeedbackInput
+  score: Int!
 }
 
 input FlowAiBuilderConfigInput {
