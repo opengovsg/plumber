@@ -64,12 +64,15 @@ export default function TilePasswordPrompt({
       const { code } = parseGraphqlError(error)
       if (code === FORBIDDEN) {
         setErrorMessage('Incorrect password. Please try again.')
+        return
       }
       if (code === RATE_LIMITED) {
         setErrorMessage(
           'Too many attempts. Please wait a while before trying again.',
         )
+        return
       }
+      setErrorMessage('Something went wrong. Please try again.')
     }
   }
 

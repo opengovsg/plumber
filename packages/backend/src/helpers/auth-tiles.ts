@@ -29,9 +29,12 @@ export function verifyTilePassword(
   storedHash: string,
   viewOnlyKey: string,
 ): boolean {
-  const inputHash = scryptSync(password, viewOnlyKey, SCRYPT_KEY_LENGTH)
+  const inputHashBuffer = scryptSync(password, viewOnlyKey, SCRYPT_KEY_LENGTH)
   const storedHashBuffer = Buffer.from(storedHash, 'base64')
-  return timingSafeEqual(inputHash, storedHashBuffer)
+  if (inputHashBuffer.length !== storedHashBuffer.length) {
+    return false
+  }
+  return timingSafeEqual(inputHashBuffer, storedHashBuffer)
 }
 
 export function generateTokenNonce(): string {
