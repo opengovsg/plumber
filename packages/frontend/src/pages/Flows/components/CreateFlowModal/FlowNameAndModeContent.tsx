@@ -103,10 +103,10 @@ export default function FlowNameAndModeContent({
           </FormControl>
 
           {/* Specific form items */}
-          {(createMode === 'ai' || createMode === 'new') && (
+          {createMode === 'new' && (
             <Flex flexDir="column">
               <FormControl isRequired>
-                <FormLabel textStyle="subhead-1">Name your pipe</FormLabel>
+                <FormLabel textStyle="subhead-1">Name your workflow</FormLabel>
                 <Input
                   ref={inputRef}
                   placeholder="For e.g. track event feedback, send customised replies"

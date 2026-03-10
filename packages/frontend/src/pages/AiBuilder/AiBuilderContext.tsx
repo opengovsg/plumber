@@ -60,7 +60,7 @@ interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
 
 export const AiBuilderContextProvider = ({
   children,
-  flowName = 'Name your Pipe', // default to Name your Pipe if no flow name is provided
+  flowName = 'Build with AI', // default to Build with AI if no flow name is provided
   chatInput,
   chatMessages,
   output,

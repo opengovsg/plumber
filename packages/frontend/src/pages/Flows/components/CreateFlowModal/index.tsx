@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useRef, useState } from 'react'
+import { FormEvent, useCallback, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -24,24 +24,20 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
 
   const navigate = useNavigate()
   const [createFlow, { loading }] = useMutation(CREATE_FLOW)
-  const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(true)
   const inputRef = useRef<HTMLInputElement>(null)
   const [flowName, setFlowName] = useState<string>('')
 
-  // to minimise the re-renders to the max, didn't use react hook form cus overkill
-  const handleInputChange = () => {
-    const inputValue = inputRef.current?.value || ''
-    const trimmedInputValue = inputValue.trim()
-    setFlowName(inputValue)
-    if (trimmedInputValue !== '') {
-      if (isButtonDisabled) {
-        setIsButtonDisabled(false)
-      }
-    } else {
-      if (!isButtonDisabled) {
-        setIsButtonDisabled(true)
-      }
+  // derive button state from current values
+  const isButtonDisabled = useMemo(() => {
+    // ai builder auto-suggests a name for the pipe
+    if (createMode === 'ai') {
+      return false
     }
+    return flowName.trim() === ''
+  }, [createMode, flowName])
+
+  const handleInputChange = () => {
+    setFlowName(inputRef.current?.value || '')
   }
 
   const onCreateFlow = useCallback(
@@ -61,18 +57,16 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
   )
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    const trimmedFlowName = inputRef.current?.value.trim()
-    if (!trimmedFlowName) {
-      return
-    }
-
+    // ai builder auto-suggests a name for the pipe, user does not need to specify a name
     if (createMode === 'ai') {
       event.preventDefault()
       onClose()
-      navigate(`${URLS.EDITOR}/ai`, {
-        state: { flowName: trimmedFlowName },
-        replace: true,
-      })
+      navigate(`${URLS.EDITOR}/ai`, { replace: true })
+      return
+    }
+
+    const trimmedFlowName = inputRef.current?.value.trim()
+    if (!trimmedFlowName) {
       return
     }
 
