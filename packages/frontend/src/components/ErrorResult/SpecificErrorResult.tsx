@@ -16,6 +16,8 @@ import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
+import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
+
 interface SpecificErrorResultProps {
   errorDetails: IStepError
   isTestRun: boolean
@@ -70,7 +72,9 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          <Markdown linkTarget="_blank">{solution}</Markdown>
+          <Markdown linkTarget="_blank" components={infoboxMdComponents}>
+            {solution}
+          </Markdown>
           <Box
             marginTop={4}
             borderTop="1px solid #E0E0E0"

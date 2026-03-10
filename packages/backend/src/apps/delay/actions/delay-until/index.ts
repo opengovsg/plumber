@@ -44,12 +44,32 @@ const action: IRawAction = {
       description: 'Delay until the time (24h). E.g. 08:00, 23:00',
       variables: true,
     },
+    {
+      label: 'How should we handle dates in the past?',
+      key: 'allowPastDate',
+      type: 'boolean-radio' as const,
+      required: false,
+      value: true,
+      options: [
+        {
+          label: 'Continue the workflow',
+          description: `If the scheduled date has passed when the workflow runs, the next action will execute immediately and the delay won't apply.`,
+          value: true,
+        },
+        {
+          label: 'Pause the workflow',
+          description:
+            'You can resume it on the Executions page. You will receive an email notification if any executions were paused based on your pipe settings.',
+          value: false,
+        },
+      ],
+    },
   ],
 
   async run($) {
     const defaultTime = '00:00'
     // trim the date and time for user
-    const { delayUntil, delayUntilTime } = $.step.parameters
+    const { delayUntil, delayUntilTime, allowPastDate } = $.step.parameters
     const delayUntilString = new String(delayUntil).trim()
     // catch empty string (user input), null, undefined (backwards compat)
     const delayUntilTimeString = delayUntilTime
@@ -83,8 +103,9 @@ const action: IRawAction = {
 
     if (isNaN(delayTimestamp)) {
       throw new StepError(
-        'Invalid timestamp entered',
-        'Check that the date or time entered is of a valid format.',
+        'Incorrect date or time format',
+        `* Date must be in DD MMM YYYY and time in HH:MM format. 
+         \n* If you're using a variable, make sure it returns values in these formats.`,
         $.step.position,
         $.app.name,
       )
@@ -92,12 +113,13 @@ const action: IRawAction = {
 
     /**
      * RETRY: we check and only allow manual retries for failures due to:
-     * - delay until timestamp entered is in the past
+     * - delay until timestamp entered is in the past and allowPastDate is false
      */
     const isRetry = await isValidRetry($)
+    const isPastTimestamp = delayTimestamp < DateTime.now().toMillis()
 
-    if (delayTimestamp < DateTime.now().toMillis()) {
-      if (isRetry) {
+    if (!$.execution.testRun && isPastTimestamp) {
+      if (isRetry || allowPastDate) {
         const dateTimeNow = DateTime.now()
         dataItem = {
           delayUntil: dateTimeNow.toPlumberFormat('dd MMM yyyy'),
