@@ -68,8 +68,8 @@ export default function FlowNameAndModeContent({
                 <Tile
                   icon={BiSolidMagicWand}
                   flex={1}
-                  onClick={() => setCreateMode('ai-form')}
-                  isSelected={createMode === 'ai-form'}
+                  onClick={() => setCreateMode('ai')}
+                  isSelected={createMode === 'ai'}
                 >
                   <Text textStyle="h5">Build with AI</Text>
                   <Text textStyle="body-2">
@@ -102,7 +102,7 @@ export default function FlowNameAndModeContent({
       </ModalBody>
       <ModalFooter>
         <Button type="submit" isDisabled={isButtonDisabled} isLoading={loading}>
-          {createMode === 'ai-form' ? 'Next' : 'Create'}
+          {createMode === 'ai' ? 'Next' : 'Create'}
         </Button>
       </ModalFooter>
     </Form>
