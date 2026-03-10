@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { IoChevronDown } from 'react-icons/io5'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Flex, IconButton, Text } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
-import { parseWorkflow } from '@/components/AiBuilder/helpers/parseMarkdown'
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
@@ -15,11 +14,13 @@ import SideDrawer from './SideDrawer'
 
 export default function ChatInterface() {
   const navigate = useNavigate()
+  const location = useLocation()
   const isMobile = useIsMobile()
-  const { ddSessionId, flowName, formInput } = useAiBuilderContext()
+  const { flowName, chatInput, chatMessages } = useAiBuilderContext()
 
   const { messages, currentResponse, isStreaming, sendMessage, cancelStream } =
-    useChatStream({ ddSessionId })
+    useChatStream({ initialMessages: chatMessages })
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -67,22 +68,17 @@ export default function ChatInterface() {
   const hasMessages = messages.length > 0 || isStreaming
 
   const handleOpenPreview = () => {
-    const { trigger, actions } = parseWorkflow(
-      messages[messages.length - 1].text,
-    )
-
     // NOTE: only need to update the location state if there has been changes
     // if the user just closed and open the side drawer, we don't need to update
     // as we don't want to generate the ai steps again
-    if (formInput?.trigger !== trigger || formInput?.actions !== actions) {
+    if (chatInput !== messages[messages.length - 1].text) {
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
+          ...location.state,
           flowName,
           isFormMode: false,
-          formInput: {
-            trigger,
-            actions,
-          },
+          chatInput: messages[messages.length - 1].text,
+          chatMessages: messages,
         },
         replace: true,
       })

@@ -1,6 +1,7 @@
 import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 
-import { AiFormData } from '../../schema'
+import { AiFormData } from '@/pages/AiBuilder/schema'
+
 import { AIFormModalContent } from '../AIFormModalContent'
 
 const ModifyPromptModal = ({
