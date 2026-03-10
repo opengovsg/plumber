@@ -10,8 +10,6 @@ import {
 
 import * as URLS from '@/config/urls'
 import { CREATE_FLOW } from '@/graphql/mutations/create-flow'
-import { AIFormModalContent } from '@/pages/AiBuilder/components/AIFormModalContent'
-import { AiFormData } from '@/pages/AiBuilder/schema'
 import { useCreateFlowContext } from '@/pages/Flows/contexts/CreateFlowContext'
 
 import FlowNameAndModeContent from './FlowNameAndModeContent'
@@ -28,7 +26,6 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
   const [createFlow, { loading }] = useMutation(CREATE_FLOW)
   const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(true)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [showAiModalContent, setShowAiModalContent] = useState<boolean>(false)
   const [flowName, setFlowName] = useState<string>('')
 
   // to minimise the re-renders to the max, didn't use react hook form cus overkill
@@ -73,7 +70,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       event.preventDefault()
       onClose()
       navigate(`${URLS.EDITOR}/ai`, {
-        state: { flowName: trimmedFlowName, isFormMode: false },
+        state: { flowName: trimmedFlowName },
         replace: true,
       })
       return
@@ -81,20 +78,6 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
 
     // default to new flow
     onCreateFlow(trimmedFlowName)
-  }
-
-  const handleAiFormSubmit = (data: AiFormData) => {
-    onClose()
-    navigate(`${URLS.EDITOR}/ai`, {
-      state: {
-        flowName,
-        isFormMode: true,
-        formInput: {
-          trigger: data.trigger,
-          actions: data.actions,
-        },
-      },
-    })
   }
 
   return (
@@ -107,22 +90,14 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
     >
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent>
-        {showAiModalContent ? (
-          <AIFormModalContent
-            type="create"
-            onBack={() => setShowAiModalContent(false)}
-            onSubmit={handleAiFormSubmit}
-          />
-        ) : (
-          <FlowNameAndModeContent
-            isButtonDisabled={isButtonDisabled}
-            loading={loading}
-            inputRef={inputRef}
-            flowName={flowName}
-            handleInputChange={handleInputChange}
-            handleSubmit={handleSubmit}
-          />
-        )}
+        <FlowNameAndModeContent
+          isButtonDisabled={isButtonDisabled}
+          loading={loading}
+          inputRef={inputRef}
+          flowName={flowName}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+        />
         <ModalCloseButton mt={3} />
       </ModalContent>
     </Modal>

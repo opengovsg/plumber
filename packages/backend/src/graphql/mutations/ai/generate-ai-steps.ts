@@ -35,7 +35,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
 
   try {
     const validatedInput = INPUT_SCHEMA.parse(params.input)
-    const { prompt: userPrompt, isFormMode, sessionId } = validatedInput
+    const { prompt: userPrompt, sessionId } = validatedInput
 
     if (!context.currentUser) {
       throw new ForbiddenError('Not authorised!')
@@ -52,14 +52,6 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
       'generate-steps',
       async (trace) => {
         const tags = ['ai-builder', 'generate-steps']
-        // TODO(kevinkim-ogp): we add the tags based on the input mode on the frontend
-        // whether it was from form or chat
-        // to be removed once A/B test is complete
-        if (isFormMode) {
-          tags.push('form')
-        } else {
-          tags.push('chat')
-        }
 
         traceId = trace.traceId
         trace.updateTrace({

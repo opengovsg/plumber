@@ -13,13 +13,8 @@ import { Message } from '@/hooks/useChatStream'
 
 interface AIBuilderSharedProps {
   flowName: string
-  formInput: {
-    trigger: string
-    actions: string
-  }
   chatInput: string
   chatMessages: Message[]
-  isFormMode: boolean
   output: {
     trigger: IStep
     actions: IStep[]
@@ -68,8 +63,6 @@ export const AiBuilderContextProvider = ({
   flowName = 'Name your Pipe', // default to Name your Pipe if no flow name is provided
   chatInput,
   chatMessages,
-  formInput,
-  isFormMode,
   output,
 }: AiBuilderContextProviderProps) => {
   const isMobile = useIsMobile()
@@ -123,10 +116,8 @@ export const AiBuilderContextProvider = ({
       value={{
         allApps,
         flowName,
-        formInput,
         chatInput,
         chatMessages,
-        isFormMode,
         output,
         isMobile,
         steps,

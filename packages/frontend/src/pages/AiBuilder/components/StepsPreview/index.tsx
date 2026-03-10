@@ -10,7 +10,6 @@ import {
   HStack,
   Image,
   Text,
-  useDisclosure,
   VStack,
 } from '@chakra-ui/react'
 import { Button, useIsMobile } from '@opengovsg/design-system-react'
@@ -24,12 +23,9 @@ import { GENERATE_AI_STEPS } from '@/graphql/mutations/generate-ai-steps'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
-import { getPromptFromFormInput } from '@/pages/AiBuilder/helpers'
-import { AiFormData } from '@/pages/AiBuilder/schema'
 
 import BranchStep from './BranchStep'
 import GroupedStepContainer from './GroupedStepContainer'
-import ModifyPromptModal from './ModifyPromptModal'
 import Step from './Step'
 
 const LOADING_STATES = [
@@ -42,7 +38,6 @@ const LOADING_STATES = [
 export default function StepsPreview() {
   const location = useLocation()
   const {
-    formInput,
     flowName,
     chatInput,
     output,
@@ -53,11 +48,9 @@ export default function StepsPreview() {
     groupedSteps,
     stepGroupType,
     stepGroupCaption,
-    isFormMode,
     ddSessionId,
   } = useAiBuilderContext()
 
-  const { isOpen, onClose, onOpen } = useDisclosure()
   const isMobile = useIsMobile()
   const navigate = useNavigate()
   const [error, setError] = useState<boolean>(false)
@@ -70,8 +63,8 @@ export default function StepsPreview() {
 
   const generateAiSteps = useCallback(
     async (prompt: string) => {
-      // GUARD: skip the call altogether if the prompt is empty or the isFormMode is undefined
-      if (!prompt || isFormMode === undefined) {
+      // GUARD: skip the call altogether if the prompt is empty
+      if (!prompt) {
         setError(true)
         return
       }
@@ -82,7 +75,6 @@ export default function StepsPreview() {
           variables: {
             input: {
               prompt,
-              isFormMode,
               sessionId: ddSessionId,
             },
           },
@@ -92,11 +84,11 @@ export default function StepsPreview() {
         setError(true)
       }
     },
-    [generateAiStepsMutation, isFormMode, ddSessionId],
+    [generateAiStepsMutation, ddSessionId],
   )
 
   const onGenerateAiSteps = useCallback(async () => {
-    const prompt = isFormMode ? getPromptFromFormInput(formInput) : chatInput
+    const prompt = chatInput
     const aiSteps = await generateAiSteps(prompt)
 
     navigate(location.pathname, {
@@ -110,14 +102,7 @@ export default function StepsPreview() {
     // NOTE: we don't need to include the location.state in the dependencies
     // as we don't want to re-run the function if the location state changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isFormMode,
-    formInput,
-    chatInput,
-    generateAiSteps,
-    navigate,
-    location.pathname,
-  ])
+  }, [chatInput, generateAiSteps, navigate, location.pathname])
 
   useEffect(() => {
     if (output) {
@@ -128,9 +113,8 @@ export default function StepsPreview() {
 
   const retryGenerateAiSteps = useCallback(async () => {
     setError(false)
-    const prompt = isFormMode ? getPromptFromFormInput(formInput) : chatInput
-    await generateAiSteps(prompt)
-  }, [generateAiSteps, formInput, chatInput, isFormMode])
+    await generateAiSteps(chatInput)
+  }, [generateAiSteps, chatInput])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
@@ -169,7 +153,6 @@ export default function StepsPreview() {
             }
           }),
           aiBuilderConfig: {
-            type: isFormMode ? 'form' : 'chat',
             traceId: output?.traceId,
           },
         },
@@ -181,34 +164,7 @@ export default function StepsPreview() {
     navigate(URLS.FLOW_EDITOR(flowId), {
       replace: true,
     })
-  }, [
-    steps,
-    createFlowWithSteps,
-    flowName,
-    navigate,
-    output?.traceId,
-    isFormMode,
-  ])
-
-  // NOTE: this is only for form-mode
-  const onUpdatePrompt = async (formData: AiFormData) => {
-    const aiSteps = await generateAiSteps(getPromptFromFormInput(formData))
-
-    // Close modal first, then navigate
-    onClose()
-    navigate(location.pathname, {
-      state: {
-        ...location.state,
-        isFormMode: true,
-        formInput: {
-          trigger: formData.trigger,
-          actions: formData.actions,
-        },
-        output: aiSteps,
-      },
-      replace: true,
-    })
-  }
+  }, [steps, createFlowWithSteps, flowName, navigate, output?.traceId])
 
   if (error || !steps) {
     return (
@@ -320,21 +276,9 @@ export default function StepsPreview() {
           </GroupedStepContainer>
         )}
         <VStack mt={10} gap={2}>
-          {isFormMode ? (
-            <Text textStyle="subhead-2">How does this workflow look?</Text>
-          ) : (
-            <Text textStyle="body-1">Looks good?</Text>
-          )}
+          <Text textStyle="body-1">Looks good?</Text>
           <HStack alignItems="center" justifyContent="center" gap={2}>
-            {isFormMode && (
-              <Button variant="outline" onClick={onOpen}>
-                Make changes
-              </Button>
-            )}
-            <Button
-              variant={isFormMode ? 'outline' : 'solid'}
-              onClick={onCreateFlowWithSteps}
-            >
+            <Button variant="solid" onClick={onCreateFlowWithSteps}>
               Create this workflow
             </Button>
           </HStack>
@@ -356,13 +300,6 @@ export default function StepsPreview() {
           <Text textStyle="h6">Creating workflow...</Text>
         </Flex>
       )}
-
-      <ModifyPromptModal
-        isOpen={isOpen}
-        onClose={onClose}
-        formInput={formInput}
-        onUpdatePrompt={onUpdatePrompt}
-      />
     </>
   )
 }
