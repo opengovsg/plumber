@@ -4,14 +4,13 @@ import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
 interface CreateFlowContextProps {
   canUseAiBuilder: boolean
-  aiBuilderType: string
   createMode: FLOW_CREATE_MODE | null
   setCreateMode: (mode: FLOW_CREATE_MODE) => void
   skipModeSelection: boolean
   setSkipModeSelection: (skip: boolean) => void
 }
 
-export type FLOW_CREATE_MODE = 'ai-chat' | 'ai-form' | 'new' | 'template'
+export type FLOW_CREATE_MODE = 'ai' | 'new' | 'template'
 
 const CreateFlowContext = createContext<CreateFlowContextProps | null>(null)
 
@@ -44,7 +43,6 @@ export const CreateFlowContextProvider = ({
   return (
     <CreateFlowContext.Provider
       value={{
-        aiBuilderType,
         canUseAiBuilder,
         createMode,
         setCreateMode,
