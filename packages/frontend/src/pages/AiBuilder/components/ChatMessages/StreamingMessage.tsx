@@ -1,8 +1,8 @@
 import { Box, Flex } from '@chakra-ui/react'
 
-import Loader from '@/pages/AiBuilder/components/ChatMessages/Loader'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
 
+import Loader from './Loader'
 import PlumberAvatar from './PlumberAvatar'
 
 interface StreamingMessageProps {
