@@ -4,6 +4,7 @@ import { allow, and, not, or, rule, shield } from 'graphql-shield'
 
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { UnauthorisedError } from '@/errors/graphql-errors'
+import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import {
   getAdminTokenUser,
   getLoggedInUser,
@@ -80,6 +81,9 @@ const rateLimitRule = createRateLimitRule({
   // recommended flag: https://github.com/teamplanes/graphql-rate-limit#enablebatchrequestcache
   enableBatchRequestCache: true,
   store: new RedisStore(createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)),
+  createError: (message) => {
+    return new RateLimitedError(message)
+  },
 })
 
 const authentication = shield(

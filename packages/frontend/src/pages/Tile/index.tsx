@@ -7,7 +7,8 @@ import { ApolloError, useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
-import { NOT_FOUND } from '@/config/errors'
+import { INVALID_TILE_VIEW_KEY, NOT_FOUND } from '@/config/errors'
+import * as URLS from '@/config/urls'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 
@@ -70,6 +71,10 @@ export default function Tile(): JSX.Element | null {
         return (
           <MissingTile title="You do not have access to this Tile, or it does not exist." />
         )
+      }
+      if (code === INVALID_TILE_VIEW_KEY) {
+        window.location.href = URLS.UNAUTHORIZED_TILE
+        return null
       }
     }
     return (
