@@ -1,5 +1,6 @@
 import type { MutationResolvers } from './__generated__/types.generated'
 import generateAiSteps from './mutations/ai/generate-ai-steps'
+import refineFormInput from './mutations/ai/refine-form-input'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import bulkRetryIterations from './mutations/bulk-retry-iterations'
 import createConnection from './mutations/create-connection'
@@ -38,7 +39,6 @@ import updateStepPositions from './mutations/update-step-positions'
 import upsertFlowCollaborator from './mutations/upsert-flow-collaborator'
 import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
-
 /**
  * Want to create a new mutation or modify an existing mutation?
  * 1. Add/Change your mutation in graphql.schema.
@@ -62,6 +62,7 @@ export default {
   createConnection,
   generateAuthUrl,
   generateAiSteps,
+  refineFormInput,
   updateConnection,
   resetConnection,
   verifyConnection,
