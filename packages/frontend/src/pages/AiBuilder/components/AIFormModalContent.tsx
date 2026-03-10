@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Form } from 'react-router-dom'
 import {
+  Box,
   Button,
   Flex,
   FormControl,
@@ -9,6 +11,7 @@ import {
   ModalCloseButton,
   ModalFooter,
   ModalHeader,
+  Spinner,
   Text,
   Textarea,
 } from '@chakra-ui/react'
@@ -19,6 +22,8 @@ import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import { AI_FORM_SCHEMA, AiFormData } from '@/pages/AiBuilder/schema'
 import { AI_FORM_IDEAS, AiFormIdea } from '@/pages/Flows/constants'
+
+import { useRefineFormInput } from '../hooks/useRefineFormInput'
 
 import IdeaButtons from './IdeaButtons'
 
@@ -65,6 +70,7 @@ export const AIFormModalContent = ({
     handleSubmit,
     formState: { errors, isValid },
     setValue,
+    watch,
   } = useForm<AiFormData>({
     resolver: zodResolver(AI_FORM_SCHEMA),
     mode: 'onChange',
@@ -75,12 +81,34 @@ export const AIFormModalContent = ({
     },
   })
 
+  const triggerValue = watch('trigger')
+  const actionsValue = watch('actions')
+
+  const {
+    refineFormInput,
+    isRefiningFormInput,
+    aiSuggestion,
+    showReadyMessage,
+    resetSuggestion,
+  } = useRefineFormInput()
+
   const handleIdeaClick = (idea: AiFormIdea) => {
+    resetSuggestion()
     setValue('trigger', idea.trigger, { shouldValidate: true })
     setValue('actions', idea.actions, { shouldValidate: true })
   }
 
+  useEffect(() => {
+    if (triggerValue?.trim() && actionsValue?.trim()) {
+      refineFormInput(triggerValue, actionsValue)
+    }
+  }, [triggerValue, actionsValue, refineFormInput])
+
   const isCreate = type === 'create'
+  const shouldShowIdeaButtons =
+    isCreate && !isRefiningFormInput && !aiSuggestion && !showReadyMessage
+  const shouldShowSuggestion =
+    isRefiningFormInput || aiSuggestion || showReadyMessage
 
   return (
     <>
@@ -97,30 +125,51 @@ export const AIFormModalContent = ({
                 isInvalid={!!errors[field.key]}
                 key={field.key}
               >
-                <Flex gap={2} flexDir="column">
-                  <FormLabel>{field.label}</FormLabel>
-                  <Textarea
-                    {...register(field.key)}
-                    placeholder={field.placeholder}
-                    resize={field.resize}
-                    minH={field.minH}
-                    maxH={field.maxH}
-                    required={field.required}
-                  />
-                  {errors[field.key] && (
-                    <FormErrorMessage>
-                      {errors[field.key]?.message}
-                    </FormErrorMessage>
-                  )}
-                  {isCreate && field.key === 'actions' && (
-                    <IdeaButtons
-                      ideas={AI_FORM_IDEAS}
-                      onClick={handleIdeaClick}
-                    />
-                  )}
-                </Flex>
+                <FormLabel>{field.label}</FormLabel>
+                <Textarea
+                  {...register(field.key)}
+                  placeholder={field.placeholder}
+                  resize={field.resize}
+                  minH={field.minH}
+                  maxH={field.maxH}
+                  required={field.required}
+                />
+                {errors[field.key] && (
+                  <FormErrorMessage>
+                    {errors[field.key]?.message}
+                  </FormErrorMessage>
+                )}
               </FormControl>
             ))}
+            {shouldShowSuggestion && (
+              <Box borderRadius="md">
+                {isRefiningFormInput ? (
+                  <Flex align="center" gap={2}>
+                    <Spinner size="sm" />
+                  </Flex>
+                ) : showReadyMessage ? (
+                  <Text fontSize="sm" color="green.600">
+                    <Text as="span" fontWeight="semibold">
+                      All good!
+                    </Text>{' '}
+                    Let&apos;s give it a try.
+                  </Text>
+                ) : (
+                  <Text>
+                    <Text as="span" fontWeight="medium">
+                      Consider addressing:{' '}
+                    </Text>
+                    <Text as="span" fontWeight="regular">
+                      {aiSuggestion}
+                    </Text>
+                  </Text>
+                )}
+              </Box>
+            )}
+
+            {shouldShowIdeaButtons && (
+              <IdeaButtons ideas={AI_FORM_IDEAS} onClick={handleIdeaClick} />
+            )}
           </Flex>
         </ModalBody>
         <ModalFooter>
