@@ -1,18 +1,38 @@
+import { useRef } from 'react'
 import { Helmet } from 'react-helmet'
-import { BiChevronLeft } from 'react-icons/bi'
-import { Link, useLocation } from 'react-router-dom'
-import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import {
+  CloseButton,
+  Container,
+  Flex,
+  HStack,
+  Text,
+  useDisclosure,
+} from '@chakra-ui/react'
 
 import * as URLS from '@/config/urls'
 
 import ChatInterface from './components/ChatInterface'
+import ExitAlert from './components/ExitAlert'
 import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
 
 function AiBuilderContent() {
+  const navigate = useNavigate()
   const { flowName } = useAiBuilderContext()
+
+  const cancelRef = useRef(null)
+  const {
+    isOpen: isWarningOpen,
+    onOpen: onWarningOpen,
+    onClose: onWarningClose,
+  } = useDisclosure()
+
+  const handleExit = () => {
+    navigate(URLS.FLOWS)
+  }
 
   return (
     <>
@@ -34,18 +54,10 @@ function AiBuilderContent() {
           borderBottom="1px solid"
           borderColor="base.divider.medium"
         >
-          <Flex flex={1} alignItems="center" minWidth={0}>
-            <Box as={Link} to={URLS.FLOWS} mt={1} mr={3} flexShrink={0}>
-              <Icon
-                boxSize={6}
-                color="interaction.support.disabled-content"
-                as={BiChevronLeft}
-              ></Icon>
-            </Box>
+          <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
+            <CloseButton size="sm" onClick={onWarningOpen} />
 
-            <Flex flex={1} minWidth={0}>
-              <Text>{flowName}</Text>
-            </Flex>
+            <Text>{flowName}</Text>
           </Flex>
           {/* TODO: Add <AiBuilderToolbar /> */}
         </HStack>
@@ -64,6 +76,12 @@ function AiBuilderContent() {
           <ChatInterface />
         </Container>
       </Flex>
+      <ExitAlert
+        cancelRef={cancelRef}
+        isOpen={isWarningOpen}
+        onClose={onWarningClose}
+        onExit={handleExit}
+      />
     </>
   )
 }
