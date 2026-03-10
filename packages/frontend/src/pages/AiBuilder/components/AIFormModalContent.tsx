@@ -6,6 +6,7 @@ import {
   FormControl,
   FormErrorMessage,
   ModalBody,
+  ModalCloseButton,
   ModalFooter,
   ModalHeader,
   Text,
@@ -17,7 +18,9 @@ import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import { AI_FORM_SCHEMA, AiFormData } from '@/pages/AiBuilder/schema'
-import { AI_FORM_IDEAS } from '@/pages/Flows/constants'
+import { AI_FORM_IDEAS, AiFormIdea } from '@/pages/Flows/constants'
+
+import IdeaButtons from './IdeaButtons'
 
 const AI_FORM_FIELDS = [
   {
@@ -72,10 +75,12 @@ export const AIFormModalContent = ({
     },
   })
 
-  const handleIdeaClick = (idea: (typeof AI_FORM_IDEAS)[number]) => {
+  const handleIdeaClick = (idea: AiFormIdea) => {
     setValue('trigger', idea.trigger, { shouldValidate: true })
     setValue('actions', idea.actions, { shouldValidate: true })
   }
+
+  const isCreate = type === 'create'
 
   return (
     <>
@@ -83,6 +88,7 @@ export const AIFormModalContent = ({
         <ModalHeader p="2.5rem 2rem 1.5rem">
           <Text textStyle="h4">Build with AI</Text>
         </ModalHeader>
+        {!isCreate && <ModalCloseButton onClick={onBack} />}
         <ModalBody>
           <Flex gap={4} flexDir="column">
             {AI_FORM_FIELDS.map((field) => (
@@ -91,73 +97,58 @@ export const AIFormModalContent = ({
                 isInvalid={!!errors[field.key]}
                 key={field.key}
               >
-                <FormLabel>{field.label}</FormLabel>
-                <Textarea
-                  {...register(field.key)}
-                  placeholder={field.placeholder}
-                  resize={field.resize}
-                  minH={field.minH}
-                  maxH={field.maxH}
-                  required={field.required}
-                />
-                {errors[field.key] && (
-                  <FormErrorMessage>
-                    {errors[field.key]?.message}
-                  </FormErrorMessage>
-                )}
+                <Flex gap={2} flexDir="column">
+                  <FormLabel>{field.label}</FormLabel>
+                  <Textarea
+                    {...register(field.key)}
+                    placeholder={field.placeholder}
+                    resize={field.resize}
+                    minH={field.minH}
+                    maxH={field.maxH}
+                    required={field.required}
+                  />
+                  {errors[field.key] && (
+                    <FormErrorMessage>
+                      {errors[field.key]?.message}
+                    </FormErrorMessage>
+                  )}
+                  {isCreate && field.key === 'actions' && (
+                    <IdeaButtons
+                      ideas={AI_FORM_IDEAS}
+                      onClick={handleIdeaClick}
+                    />
+                  )}
+                </Flex>
               </FormControl>
             ))}
-            <Flex flexDir="row" alignItems="center">
-              <FormLabel
-                isRequired
-                style={{ margin: 0, marginRight: '0.5rem' }}
-              >
-                {/* arbitrary isRequired to hide optional text */}
-                Try:
-              </FormLabel>
-              <Flex
-                flexDir="row"
-                gap={2}
-                justifyContent="space-between"
-                flexWrap="wrap"
-              >
-                {AI_FORM_IDEAS.map((idea) => (
-                  <Button
-                    key={idea.label}
-                    size="sm"
-                    bgColor="interaction.sub-subtle.default"
-                    color="gray.600"
-                    variant="clear"
-                    _hover={{
-                      bgColor: 'interaction.sub-subtle.hover',
-                    }}
-                    onClick={() => handleIdeaClick(idea)}
-                    px={3}
-                    minH={4}
-                    w={isMobile ? 'calc(50% - 4px)' : 'auto'}
-                    flexShrink={0}
-                  >
-                    <Text textStyle="caption-1">{idea.label}</Text>
-                  </Button>
-                ))}
-              </Flex>
-            </Flex>
           </Flex>
         </ModalBody>
         <ModalFooter>
-          <Flex justifyContent="space-between" alignItems="center" w="100%">
-            <Flex gap={1} alignItems="center">
-              <Text fontSize="xs" color="gray.500">
-                Powered by{' '}
-              </Text>
-              <ImageBox imageUrl={pairLogo} boxSize={6} />
-            </Flex>
+          <Flex
+            justifyContent={isMobile ? 'flex-end' : 'space-between'}
+            alignItems="center"
+            w="100%"
+          >
+            {!isMobile && (
+              <Flex gap={1} alignItems="center" justifyContent="center">
+                <Text fontSize="xs" color="gray.500">
+                  Powered by{' '}
+                </Text>
+                <ImageBox imageUrl={pairLogo} boxSize={6} />
+              </Flex>
+            )}
             <Flex gap={4}>
-              <Button variant="clear" colorScheme="secondary" onClick={onBack}>
-                Back
-              </Button>
+              {isCreate && (
+                <Button
+                  variant="clear"
+                  colorScheme="secondary"
+                  onClick={onBack}
+                >
+                  Back
+                </Button>
+              )}
               <Button type="submit" isDisabled={!isValid}>
-                {type === 'update' ? 'Update workflow' : 'Create'}
+                {isCreate ? 'Create' : 'Update'}
               </Button>
             </Flex>
           </Flex>
