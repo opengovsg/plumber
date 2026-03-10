@@ -85,8 +85,11 @@ describe('generateAiSteps mutation', () => {
 
     mocks.langfusePromptGet.mockResolvedValue({ prompt: 'system prompt' })
     mocks.getLdFlagValue.mockResolvedValue({
-      objectPrompt: 'ai-builder/chat',
-      version: 'production',
+      enabled: true,
+      config: {
+        generateStepsPromptName: 'generate-steps',
+        version: 'production',
+      },
     })
 
     context = {

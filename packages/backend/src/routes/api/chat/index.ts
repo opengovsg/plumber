@@ -10,7 +10,10 @@ import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
-import { AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG } from '@/config/flags'
+import {
+  AI_BUILDER_FEATURE_FLAG,
+  AI_BUILDER_FEATURE_FLAG_FALLBACK,
+} from '@/config/flags'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
@@ -22,16 +25,20 @@ import { chatRequestSchema } from './schema'
 const handleChatStream = observe(
   async (req: AuthenticatedRequest, res: Response) => {
     const context = req.context
-    const promptConfig = await getLdFlagValue(
-      AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG,
+    const aiBuilderFlag = await getLdFlagValue(
+      AI_BUILDER_FEATURE_FLAG,
       context.currentUser.email,
-      {
-        chatPrompt: 'ai-builder/chat',
-        version: 'production',
-      },
+      AI_BUILDER_FEATURE_FLAG_FALLBACK,
     )
 
-    const { chatPrompt, version } = promptConfig
+    if (!aiBuilderFlag.enabled) {
+      res
+        .status(403)
+        .json({ error: 'You do not have permissions to use AI Builder!' })
+      return
+    }
+
+    const { chatPromptName, version } = aiBuilderFlag.config
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -52,7 +59,7 @@ const handleChatStream = observe(
       )
 
       // Get the prompt from Langfuse
-      const prompt = await getPrompt(chatPrompt, version)
+      const prompt = await getPrompt(chatPromptName, version)
 
       // Manually capture serializable input for Langfuse
       // joining with new line for readability on Langfuse
@@ -95,7 +102,7 @@ const handleChatStream = observe(
             sessionId: sessionId || 'unknown',
             userId: context.currentUser.email,
             environment: appConfig.appEnv,
-            promptName: chatPrompt,
+            promptName: chatPromptName,
             promptVersion: version,
             langfusePrompt: prompt.toJSON(),
             tags: ['ai-builder', 'chat', 'stream'],
