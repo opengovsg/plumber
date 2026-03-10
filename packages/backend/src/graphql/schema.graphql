@@ -117,7 +117,7 @@ type Mutation {
   deleteShareableTableLink(tableId: ID!): Boolean!
   setTableViewPassword(input: SetTableViewPasswordInput!): Boolean!
   deleteTableViewPassword(tableId: ID!): Boolean!
-  verifyTableViewPassword(input: VerifyTableViewPasswordInput!): Boolean!
+  verifyTableViewPassword(input: VerifyTableViewPasswordInput!): String!
   updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
   # Tiles rows

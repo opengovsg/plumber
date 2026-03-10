@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'crypto'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
-import { verifyTilePassword } from '@/helpers/auth-tiles'
+import { generateViewToken, verifyTilePassword } from '@/helpers/auth-tiles'
 import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
@@ -38,8 +38,12 @@ const verifyTableViewPassword: MutationResolvers['verifyTableViewPassword'] =
     ) {
       throw new ForbiddenError('Invalid password')
     }
-
-    return true
+    const token = generateViewToken(
+      table.id,
+      table.viewOnlyKey,
+      table.viewOnlyPassword.tokenNonce,
+    )
+    return token
   }
 
 export default verifyTableViewPassword
