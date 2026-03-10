@@ -127,8 +127,15 @@ export default function Tile(): JSX.Element | null {
     return null
   }
 
-  const { id, name, columns, viewOnlyKey, collaborators, databaseType } =
-    getTableData.getTable
+  const {
+    id,
+    name,
+    columns,
+    viewOnlyKey,
+    isPasswordProtected,
+    collaborators,
+    databaseType,
+  } = getTableData.getTable
 
   return (
     <TableContextProvider
@@ -138,6 +145,7 @@ export default function Tile(): JSX.Element | null {
       tableColumns={columns}
       tableRows={rows}
       viewOnlyKey={viewOnlyKey}
+      isPasswordProtected={isPasswordProtected}
       collaborators={collaborators}
       role={ownRole}
       isFetching={isFetching}

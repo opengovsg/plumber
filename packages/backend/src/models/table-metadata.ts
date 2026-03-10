@@ -44,6 +44,11 @@ class TableMetadata extends Base {
     },
   }
 
+  // This ensures that the attributes are available in JSON serialization
+  static get virtualAttributes() {
+    return ['isPasswordProtected']
+  }
+
   static relationMappings = () => ({
     collaborators: {
       relation: Base.ManyToManyRelation,
@@ -110,7 +115,7 @@ class TableMetadata extends Base {
   }
 
   get isPasswordProtected() {
-    return this.viewOnlyKey && this.viewOnlyPassword
+    return !!this.viewOnlyKey && !!this.viewOnlyPassword
   }
 }
 
