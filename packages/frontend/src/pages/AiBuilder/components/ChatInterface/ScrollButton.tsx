@@ -1,18 +1,20 @@
 import { IoChevronDown } from 'react-icons/io5'
 import { IconButton } from '@chakra-ui/react'
+import { useStickToBottomContext } from 'use-stick-to-bottom'
 
-interface ScrollButtonProps {
-  onClick: () => void
-}
+export default function ScrollButton() {
+  const { isAtBottom, scrollToBottom } = useStickToBottomContext()
 
-export default function ScrollButton(props: ScrollButtonProps) {
-  const { onClick } = props
+  if (isAtBottom) {
+    return null
+  }
+
   return (
     <IconButton
       aria-label="Scroll to bottom"
       variant="clear"
       icon={<IoChevronDown />}
-      onClick={onClick}
+      onClick={() => scrollToBottom()}
       size="xs"
       borderRadius="full"
       border="1px"

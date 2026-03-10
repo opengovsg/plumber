@@ -1,13 +1,8 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
+import { StickToBottom } from 'use-stick-to-bottom'
 
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
@@ -33,106 +28,9 @@ export default function ChatInterface() {
     cancelStream,
   } = useChatStream({ initialMessages: chatMessages })
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(
     Boolean(output?.trigger || output?.actions?.length),
   )
-  const [showScrollButton, setShowScrollButton] = useState(false)
-  const [hasMounted, setHasMounted] = useState(false)
-  const prevMessagesLengthRef = useRef(messages.length)
-  const wasStreamingRef = useRef(isStreaming)
-  const scrollTickRef = useRef(false)
-
-  // Unified scroll function
-  const scrollToBottom = useCallback(
-    (behavior: 'smooth' | 'instant' | 'instant-native' = 'smooth') => {
-      if (behavior === 'instant-native') {
-        const container = messagesContainerRef.current
-        if (container) {
-          container.scrollTop = container.scrollHeight
-        }
-      } else {
-        messagesEndRef.current?.scrollIntoView({ behavior })
-      }
-    },
-    [],
-  )
-
-  // Scroll to bottom on initial mount using MutationObserver
-  useLayoutEffect(() => {
-    if (!chatMessages?.length) {
-      setHasMounted(true)
-      return
-    }
-
-    // First rAF: React commit is done, browser is about to paint
-    // Second rAF: all child components (toolbar, etc.) have rendered
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        scrollToBottom('instant-native')
-        setHasMounted(true)
-      })
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Scroll button visibility + auto-scroll on message/stream changes
-  useEffect(() => {
-    const container = messagesContainerRef.current
-    if (!container) {
-      return
-    }
-
-    const getIsNearBottom = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container
-      return scrollHeight - scrollTop - clientHeight < 100
-    }
-
-    // Throttled scroll handler for button visibility
-    const handleScroll = () => {
-      if (scrollTickRef.current) {
-        return
-      }
-      scrollTickRef.current = true
-      requestAnimationFrame(() => {
-        const { scrollHeight, clientHeight } = container
-        setShowScrollButton(!getIsNearBottom() && scrollHeight > clientHeight)
-        scrollTickRef.current = false
-      })
-    }
-
-    container.addEventListener('scroll', handleScroll)
-    handleScroll()
-
-    // Auto-scroll logic
-    const isNearBottom = getIsNearBottom()
-    const prevLength = prevMessagesLengthRef.current
-    const newUserMessage =
-      messages.length > prevLength &&
-      messages[messages.length - 1]?.isUser === true
-    const streamingJustEnded = wasStreamingRef.current && !isStreaming
-
-    prevMessagesLengthRef.current = messages.length
-    wasStreamingRef.current = isStreaming
-
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
-
-    if (newUserMessage) {
-      scrollToBottom('smooth')
-    } else if (isStreaming && isNearBottom) {
-      scrollToBottom('instant')
-    } else if (streamingJustEnded && isNearBottom) {
-      timeoutId = setTimeout(() => scrollToBottom('smooth'), 100)
-    }
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [messages, currentResponse, isStreaming, scrollToBottom])
 
   const hasMessages = messages.length > 0 || isStreaming
 
@@ -193,36 +91,44 @@ export default function ChatInterface() {
         flexDir="column"
         position="relative"
         pr={isDrawerOpen && !isMobile ? '50%' : '0'}
-        transition={hasMounted ? 'padding-right 0.3s ease-in-out' : 'none'}
+        transition="padding-right 0.3s ease-in-out"
       >
-        <ChatMessages
-          messages={messages}
-          currentResponse={currentResponse}
-          isStreaming={isStreaming}
-          messagesEndRef={messagesEndRef}
-          messagesContainerRef={messagesContainerRef}
-        />
-
-        <Box
-          borderTop="1px"
-          borderColor="gray.200"
-          bg="white"
-          w="full"
-          position="relative"
+        <StickToBottom
+          resize="smooth"
+          initial="smooth"
+          style={{
+            display: 'flex',
+            height: '100%',
+            width: '100%',
+            flexDirection: 'column',
+            position: 'relative',
+          }}
         >
-          {showScrollButton && (
-            <ScrollButton onClick={() => scrollToBottom('smooth')} />
-          )}
-          <Box maxW="4xl" mx="auto" p={4}>
-            <PromptInput
-              sendMessage={sendMessage}
-              isStreaming={isStreaming}
-              cancelStream={cancelStream}
-            />
-          </Box>
-        </Box>
-      </Flex>
+          <ChatMessages
+            messages={messages}
+            currentResponse={currentResponse}
+            isStreaming={isStreaming}
+          />
 
+          <Box
+            borderTop="1px"
+            borderColor="gray.200"
+            bg="white"
+            w="full"
+            flexShrink={0}
+            position="relative"
+          >
+            <Box maxW="4xl" mx="auto" p={4}>
+              <ScrollButton />
+              <PromptInput
+                sendMessage={sendMessage}
+                isStreaming={isStreaming}
+                cancelStream={cancelStream}
+              />
+            </Box>
+          </Box>
+        </StickToBottom>
+      </Flex>
       <SideDrawer isOpen={isDrawerOpen} />
     </Flex>
   )

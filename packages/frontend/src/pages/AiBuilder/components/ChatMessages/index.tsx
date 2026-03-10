@@ -1,4 +1,5 @@
-import { Box, Flex, VStack } from '@chakra-ui/react'
+import { Box, VStack } from '@chakra-ui/react'
+import { StickToBottom } from 'use-stick-to-bottom'
 
 import { Message } from '@/hooks/useChatStream'
 
@@ -9,24 +10,20 @@ interface ChatMessagesProps {
   messages: Message[]
   currentResponse: string
   isStreaming: boolean
-  messagesEndRef: React.RefObject<HTMLDivElement>
-  messagesContainerRef: React.RefObject<HTMLDivElement>
 }
 
 export default function ChatMessages({
   messages,
   currentResponse,
   isStreaming,
-  messagesEndRef,
-  messagesContainerRef,
 }: ChatMessagesProps) {
   return (
-    <Flex
-      ref={messagesContainerRef}
-      flex={1}
-      flexDir="column"
-      overflowY="auto"
-      w="full"
+    <StickToBottom.Content
+      style={{
+        flex: 1,
+        overflowY: 'auto',
+        minHeight: 0,
+      }}
     >
       <Box w="full" maxW="4xl" mx="auto" px={4} py={6}>
         <VStack align="stretch" spacing={4}>
@@ -40,7 +37,6 @@ export default function ChatMessages({
           )}
         </VStack>
       </Box>
-      <div ref={messagesEndRef} />
-    </Flex>
+    </StickToBottom.Content>
   )
 }
