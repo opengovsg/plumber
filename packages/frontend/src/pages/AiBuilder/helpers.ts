@@ -2,13 +2,6 @@ import { TextPart } from 'ai'
 
 import { CustomUIMessage, Message } from '@/hooks/useChatStream'
 
-export const getPromptFromFormInput = (formInput: {
-  trigger: string
-  actions: string
-}) => {
-  return `#### Start the workflow\n${formInput.trigger}\n\n#### Actions\n${formInput.actions}`
-}
-
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
 export const deduplicateMessages = (messages: Message[]) => {

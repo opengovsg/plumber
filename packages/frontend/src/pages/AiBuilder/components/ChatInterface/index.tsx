@@ -76,7 +76,6 @@ export default function ChatInterface() {
         state: {
           ...location.state,
           flowName,
-          isFormMode: false,
           chatInput: messages[messages.length - 1].text,
           chatMessages: messages,
         },
