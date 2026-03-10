@@ -18,7 +18,7 @@ const AiMessage = ({ message }: ChatMessageProps) => {
         <ChakraStreamdown isAnimating={false}>
           {message.text || ''}
         </ChakraStreamdown>
-        <ChatMessageToolbar />
+        <ChatMessageToolbar traceId={message.traceId || ''} />
       </Box>
     </Flex>
   )

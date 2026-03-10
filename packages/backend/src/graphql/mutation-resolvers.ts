@@ -2,8 +2,7 @@ import type {
   AdminMutation,
   MutationResolvers,
 } from './__generated__/types.generated'
-import generateAiSteps from './mutations/ai/generate-ai-steps'
-import refineFormInput from './mutations/ai/refine-form-input'
+import aiMutationResolvers from './mutations/ai'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import bulkRetryIterations from './mutations/bulk-retry-iterations'
 import createConnection from './mutations/create-connection'
@@ -64,8 +63,6 @@ export default {
   bulkRetryIterations,
   createConnection,
   generateAuthUrl,
-  generateAiSteps,
-  refineFormInput,
   updateConnection,
   resetConnection,
   verifyConnection,
@@ -100,6 +97,7 @@ export default {
   deleteUploadedFile,
   generatePresignedPost,
   ...tilesMutationResolvers,
+  ...aiMutationResolvers,
 
   // This is a special stub that enables us to group all our admin-related
   // mutations into a special AdminMutation object; each "mutation" is handled by field
