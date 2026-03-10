@@ -1,6 +1,6 @@
 import { IStepConfig } from '@plumber/types'
 
-import { Fragment, useCallback, useEffect, useMemo } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -8,6 +8,7 @@ import {
   Center,
   Flex,
   HStack,
+  Image,
   Text,
   useDisclosure,
   VStack,
@@ -22,6 +23,7 @@ import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-ste
 import { GENERATE_AI_STEPS } from '@/graphql/mutations/generate-ai-steps'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
+import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
 import { getPromptFromFormInput } from '@/pages/AiBuilder/helpers'
 import { AiFormData } from '@/pages/AiBuilder/schema'
 
@@ -42,6 +44,7 @@ export default function StepsPreview() {
   const {
     formInput,
     flowName,
+    chatInput,
     output,
     steps,
     triggerStep,
@@ -57,28 +60,44 @@ export default function StepsPreview() {
   const { isOpen, onClose, onOpen } = useDisclosure()
   const isMobile = useIsMobile()
   const navigate = useNavigate()
+  const [error, setError] = useState<boolean>(false)
 
+  const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
+    CREATE_FLOW_WITH_STEPS,
+  )
   const [generateAiStepsMutation, { loading: isGeneratingSteps }] =
     useMutation(GENERATE_AI_STEPS)
 
   const generateAiSteps = useCallback(
-    async (input: { trigger: string; actions: string }) => {
-      const { data } = await generateAiStepsMutation({
-        variables: {
-          input: {
-            prompt: getPromptFromFormInput(input),
-            isFormMode,
-            sessionId: ddSessionId,
+    async (prompt: string) => {
+      // GUARD: skip the call altogether if the prompt is empty or the isFormMode is undefined
+      if (!prompt || isFormMode === undefined) {
+        setError(true)
+        return
+      }
+
+      try {
+        setError(false)
+        const { data } = await generateAiStepsMutation({
+          variables: {
+            input: {
+              prompt,
+              isFormMode,
+              sessionId: ddSessionId,
+            },
           },
-        },
-      })
-      return data?.generateAiSteps
+        })
+        return data?.generateAiSteps
+      } catch {
+        setError(true)
+      }
     },
     [generateAiStepsMutation, isFormMode, ddSessionId],
   )
 
   const onGenerateAiSteps = useCallback(async () => {
-    const aiSteps = await generateAiSteps(formInput)
+    const prompt = isFormMode ? getPromptFromFormInput(formInput) : chatInput
+    const aiSteps = await generateAiSteps(prompt)
 
     navigate(location.pathname, {
       state: {
@@ -87,7 +106,18 @@ export default function StepsPreview() {
       },
       replace: true, // Use replace to avoid adding to history
     })
-  }, [generateAiSteps, formInput, navigate, location.pathname, location.state])
+
+    // NOTE: we don't need to include the location.state in the dependencies
+    // as we don't want to re-run the function if the location state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isFormMode,
+    formInput,
+    chatInput,
+    generateAiSteps,
+    navigate,
+    location.pathname,
+  ])
 
   useEffect(() => {
     if (output) {
@@ -96,9 +126,11 @@ export default function StepsPreview() {
     onGenerateAiSteps()
   }, [onGenerateAiSteps, output])
 
-  const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
-    CREATE_FLOW_WITH_STEPS,
-  )
+  const retryGenerateAiSteps = useCallback(async () => {
+    setError(false)
+    const prompt = isFormMode ? getPromptFromFormInput(formInput) : chatInput
+    await generateAiSteps(prompt)
+  }, [generateAiSteps, formInput, chatInput, isFormMode])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
@@ -158,8 +190,9 @@ export default function StepsPreview() {
     isFormMode,
   ])
 
+  // NOTE: this is only for form-mode
   const onUpdatePrompt = async (formData: AiFormData) => {
-    const aiSteps = await generateAiSteps(formData)
+    const aiSteps = await generateAiSteps(getPromptFromFormInput(formData))
 
     // Close modal first, then navigate
     onClose()
@@ -177,19 +210,44 @@ export default function StepsPreview() {
     })
   }
 
-  if (isGeneratingSteps || !output) {
+  if (error || !steps) {
+    return (
+      <Center h="80%">
+        <Flex
+          flexDir="column"
+          alignItems="center"
+          justifyContent="center"
+          gap={4}
+          w="100%"
+          maxW="400px"
+        >
+          <Image src={aiBuilderErrorImg} alt="ai-bulilder-error" w="400px" />
+          <Text textStyle="h4" fontWeight="normal">
+            Something went wrong.
+          </Text>
+          <Text>Modify your prompt or try again.</Text>
+          <Text>
+            If this issue persists,{' '}
+            <a href={URLS.SUPPORT_FORM_LINK} target="_blank" rel="noreferrer">
+              contact us
+            </a>
+            .
+          </Text>
+          <Button onClick={retryGenerateAiSteps}>Try again</Button>
+        </Flex>
+      </Center>
+    )
+  }
+
+  if (isGeneratingSteps) {
     return (
       <Center h="100%">
-        {output && !isGeneratingSteps ? (
-          <PrimarySpinner fontSize="4xl" />
-        ) : (
-          <MultiStepLoader
-            loadingStates={LOADING_STATES}
-            loading={isGeneratingSteps}
-            duration={1500}
-            loop={false}
-          />
-        )}
+        <MultiStepLoader
+          loadingStates={LOADING_STATES}
+          loading={isGeneratingSteps}
+          duration={1500}
+          loop={false}
+        />
       </Center>
     )
   }
@@ -262,12 +320,21 @@ export default function StepsPreview() {
           </GroupedStepContainer>
         )}
         <VStack mt={10} gap={2}>
-          <Text textStyle="subhead-2">How does this workflow look?</Text>
+          {isFormMode ? (
+            <Text textStyle="subhead-2">How does this workflow look?</Text>
+          ) : (
+            <Text textStyle="body-1">Looks good?</Text>
+          )}
           <HStack alignItems="center" justifyContent="center" gap={2}>
-            <Button variant="outline" onClick={onOpen}>
-              Make changes
-            </Button>
-            <Button variant="outline" onClick={onCreateFlowWithSteps}>
+            {isFormMode && (
+              <Button variant="outline" onClick={onOpen}>
+                Make changes
+              </Button>
+            )}
+            <Button
+              variant={isFormMode ? 'outline' : 'solid'}
+              onClick={onCreateFlowWithSteps}
+            >
               Create this workflow
             </Button>
           </HStack>

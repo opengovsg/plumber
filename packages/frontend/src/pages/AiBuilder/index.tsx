@@ -3,7 +3,6 @@ import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useLocation } from 'react-router-dom'
 import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
 
-import { EDITOR_MARGIN_TOP } from '@/components/Editor/constants'
 import * as URLS from '@/config/urls'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
@@ -61,7 +60,7 @@ function AiBuilderContent() {
           maxW="full"
           px={0}
           py={isFormMode ? 10 : 0}
-          mt={EDITOR_MARGIN_TOP}
+          mt="51.5px"
           flex={1}
           overflowY="auto"
           sx={{
@@ -77,13 +76,15 @@ function AiBuilderContent() {
 }
 
 export default function AiBuilder() {
-  const { flowName, formInput, isFormMode, output } = useLocation()?.state || {
+  const { flowName, formInput, isFormMode, output, chatInput } = useLocation()
+    ?.state || {
     flowName: 'New flow',
     isFormMode: false,
     formInput: {
       trigger: '',
       actions: '',
     },
+    chatInput: '',
     output: {
       trigger: '',
       actions: '',
@@ -103,6 +104,7 @@ export default function AiBuilder() {
 
   return (
     <AiBuilderContextProvider
+      chatInput={chatInput}
       flowName={flowName}
       formInput={formInput}
       isFormMode={isFormMode}
