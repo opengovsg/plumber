@@ -144,7 +144,6 @@ type Mutation {
 
 input GenerateAiStepsInput {
   prompt: String!
-  isFormMode: Boolean!
   sessionId: String
 }
 
