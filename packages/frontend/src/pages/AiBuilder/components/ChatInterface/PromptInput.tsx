@@ -8,6 +8,7 @@ import {
 import { FaArrowCircleRight } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
@@ -29,6 +30,7 @@ export default function PromptInput({
   sendMessage,
   cancelStream,
 }: PromptInputProps) {
+  const isMobile = useIsMobile()
   const [input, setInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -74,7 +76,7 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        mb={6}
+        mb={isMobile ? 0 : 6}
       >
         <Textarea
           ref={textareaRef}
@@ -156,12 +158,14 @@ export default function PromptInput({
         />
       )}
 
-      <Flex gap={1} alignItems="center" justify="center" mt={3}>
-        <Text fontSize="xs" color="gray.500">
-          Powered by{' '}
-        </Text>
-        <ImageBox imageUrl={pairLogo} boxSize={6} />
-      </Flex>
+      {!isMobile && (
+        <Flex gap={1} alignItems="center" justify="center" mt={3}>
+          <Text fontSize="xs" color="gray.500">
+            Powered by{' '}
+          </Text>
+          <ImageBox imageUrl={pairLogo} boxSize={6} />
+        </Flex>
+      )}
     </Box>
   )
 }

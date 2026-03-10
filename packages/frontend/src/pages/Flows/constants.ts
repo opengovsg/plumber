@@ -46,14 +46,8 @@ export const AI_CHAT_IDEAS = [
     label: 'Attendance taking',
     icon: 'BiCheckDouble',
     input:
-      'I have a FormSG that I am using to track attendance. I need this workflow to track who has signed up and is present. It should also note down if this person is a new registrant.',
+      "When a new event attendance is received, find the attendee in Tiles. If the attendee is found, update the Attended? column to Yes. If the attendee is not found, create a new row in Tiles with the attendee's details.",
   },
-  // {
-  //   label: 'Send follow ups',
-  //   icon: 'BiEnvelope',
-  //   input:
-  //     'When a new form submission is received, send a follow up email to the customer.',
-  // },
 ]
 
 export type AiChatIdea = {

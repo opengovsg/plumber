@@ -4,12 +4,15 @@ import { Button, FormLabel, useIsMobile } from '@opengovsg/design-system-react'
 import { TemplateIcon } from '@/helpers/flow-templates'
 import { AiChatIdea, AiFormIdea } from '@/pages/Flows/constants'
 
-interface IdeaButtonsProps {
-  ideas: AiChatIdea[] | AiFormIdea[]
-  onClick: (idea: AiChatIdea | AiFormIdea) => void
+interface IdeaButtonsProps<T extends AiChatIdea | AiFormIdea> {
+  ideas: T[]
+  onClick: (idea: T) => void
 }
 
-export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
+export default function IdeaButtons<T extends AiChatIdea | AiFormIdea>({
+  ideas,
+  onClick,
+}: IdeaButtonsProps<T>) {
   const isMobile = useIsMobile()
 
   return (
@@ -19,17 +22,18 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
         Try:
       </FormLabel>
       <Flex
-        flexDir="row"
+        flexDir={isMobile ? 'column' : 'row'}
         gap={2}
         justifyContent="space-between"
         flexWrap="wrap"
+        w={isMobile ? 'full' : 'auto'}
       >
         {ideas.map((idea) => (
           <Button
             key={idea.label}
             size="sm"
             bgColor="interaction.sub-subtle.default"
-            color="#5D6785"
+            color="gray.600"
             variant="clear"
             _hover={{
               bgColor: 'interaction.sub-subtle.hover',
@@ -37,7 +41,7 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
             onClick={() => onClick(idea)}
             px={3}
             minH={4}
-            w={isMobile ? 'calc(50% - 4px)' : 'auto'}
+            w={isMobile ? 'full' : 'auto'}
             flexShrink={0}
           >
             <TemplateIcon iconName={idea.icon} fontSize="1rem" />
