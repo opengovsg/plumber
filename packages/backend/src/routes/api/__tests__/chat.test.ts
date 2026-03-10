@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   updateActiveTrace: vi.fn(),
   observe: vi.fn((fn) => fn),
   streamText: vi.fn(),
+  createUIMessageStream: vi.fn(),
+  createUIMessageStreamResponse: vi.fn(),
+  getChatReadiness: vi.fn(),
+  pipeWebResponseToExpress: vi.fn(),
+  loggerError: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -30,18 +35,31 @@ vi.mock('ai', () => ({
   convertToModelMessages: vi.fn((msgs) => msgs),
   smoothStream: vi.fn(() => ({})),
   streamText: mocks.streamText,
+  createUIMessageStream: mocks.createUIMessageStream,
+  createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
+}))
+
+vi.mock('../chat/get-chat-readiness', () => ({
+  getChatReadiness: mocks.getChatReadiness,
+}))
+
+vi.mock('@/helpers/stream', () => ({
+  pipeWebResponseToExpress: mocks.pipeWebResponseToExpress,
 }))
 
 vi.mock('@/helpers/logger', () => ({
   default: {
     info: vi.fn(),
-    error: vi.fn(),
+    error: mocks.loggerError,
   },
 }))
 
 vi.mock('@/helpers/pair', () => ({
   model: {},
   MODEL_TYPE: 'test-model',
+  engineProvider: {
+    chatModel: vi.fn().mockReturnValue({}),
+  },
 }))
 
 vi.mock('@/config/app', () => ({
@@ -98,11 +116,59 @@ describe('Chat Route Handler', () => {
       json: vi.fn(),
       headersSent: false,
       end: vi.fn(),
+      setHeader: vi.fn(),
+      write: vi.fn(),
     } as Partial<Response>
 
     // Reset mocks
     vi.clearAllMocks()
+
+    // Set up default streaming mocks
+    setupStreamingMocks()
   })
+
+  // Helper to set up the streaming-related mocks
+  function setupStreamingMocks() {
+    // Mock streamText to return a result with toUIMessageStream
+    const mockStreamResult = {
+      toUIMessageStream: vi.fn().mockReturnValue({
+        getReader: vi.fn().mockReturnValue({
+          read: vi.fn().mockResolvedValue({ done: true }),
+        }),
+      }),
+    }
+    mocks.streamText.mockReturnValue(mockStreamResult)
+
+    // Mock createUIMessageStream to execute the callback and return a stream
+    mocks.createUIMessageStream.mockImplementation(({ execute }) => {
+      // Create a mock writer
+      const mockWriter = {
+        write: vi.fn(),
+        merge: vi.fn(),
+      }
+      // Execute the callback (fire and forget for test purposes)
+      execute({ writer: mockWriter })
+      // Return a mock stream
+      return {
+        getReader: vi.fn().mockReturnValue({
+          read: vi.fn().mockResolvedValue({ done: true }),
+        }),
+      }
+    })
+
+    // Mock createUIMessageStreamResponse to return a Response-like object
+    mocks.createUIMessageStreamResponse.mockReturnValue({
+      headers: new Map([['Content-Type', 'text/plain; charset=utf-8']]),
+      body: {
+        getReader: vi.fn().mockReturnValue({
+          read: vi.fn().mockResolvedValue({ done: true }),
+        }),
+      },
+    })
+
+    // Mock getChatReadiness
+    mocks.getChatReadiness.mockResolvedValue(false)
+  }
 
   afterEach(() => {
     vi.restoreAllMocks()
@@ -112,20 +178,22 @@ describe('Chat Route Handler', () => {
     it('should process authenticated requests', async () => {
       // Context is set by middleware before reaching handler
       mocks.getLdFlagValue.mockResolvedValueOnce({
-        chatPromptName: 'aids-chat-v0',
-        version: 'production',
+        enabled: true,
+        config: {
+          chatPromptName: 'aids-chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
       })
-      mocks.getPrompt.mockResolvedValueOnce({
-        prompt: 'test prompt',
-        toJSON: vi.fn(),
-      })
+      mocks.getPrompt
+        .mockResolvedValueOnce({
+          prompt: 'test prompt',
+          toJSON: vi.fn(),
+        })
+        .mockResolvedValueOnce({
+          prompt: 'readiness prompt',
+        })
       mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
-
-      // Mock streamText to return a mock result
-      const mockResult = {
-        pipeUIMessageStreamToResponse: vi.fn(),
-      }
-      mocks.streamText.mockReturnValueOnce(mockResult)
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -162,19 +230,19 @@ describe('Chat Route Handler', () => {
         enabled: true,
         config: {
           chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
           version: 'production',
         },
       })
-      mocks.getPrompt.mockResolvedValueOnce({
-        prompt: 'test prompt',
-        toJSON: vi.fn(),
-      })
+      mocks.getPrompt
+        .mockResolvedValueOnce({
+          prompt: 'test prompt',
+          toJSON: vi.fn(),
+        })
+        .mockResolvedValueOnce({
+          prompt: 'readiness prompt',
+        })
       mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
-
-      const mockResult = {
-        pipeUIMessageStreamToResponse: vi.fn(),
-      }
-      mocks.streamText.mockReturnValueOnce(mockResult)
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -195,6 +263,7 @@ describe('Chat Route Handler', () => {
         enabled: true,
         config: {
           chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
           version: 'production',
         },
       })
@@ -244,6 +313,83 @@ describe('Chat Route Handler', () => {
         enabled: true,
         config: {
           chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getPrompt
+        .mockResolvedValueOnce({
+          prompt: 'test prompt',
+          toJSON: vi.fn(),
+        })
+        .mockResolvedValueOnce({
+          prompt: 'readiness prompt',
+        })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+        'ai-builder',
+        'admin@plumber.gov.sg',
+        expect.any(Object),
+      )
+    })
+  })
+
+  describe('getChatReadiness Error Handling', () => {
+    it('should gracefully handle getChatReadiness failure and write isReady: false', async () => {
+      // Track the onFinish callback and writer
+      let capturedOnFinish:
+        | ((event: { text: string }) => Promise<void>)
+        | null = null
+      let capturedWriter: { write: ReturnType<typeof vi.fn> } | null = null
+
+      // Mock streamText to capture the onFinish callback
+      mocks.streamText.mockImplementation((options) => {
+        capturedOnFinish = options.onFinish
+        return {
+          toUIMessageStream: vi.fn().mockReturnValue({
+            getReader: vi.fn().mockReturnValue({
+              read: vi.fn().mockResolvedValue({ done: true }),
+            }),
+          }),
+        }
+      })
+
+      // Mock createUIMessageStream to capture the writer
+      mocks.createUIMessageStream.mockImplementation(({ execute }) => {
+        capturedWriter = {
+          write: vi.fn(),
+        }
+        execute({ writer: { ...capturedWriter, merge: vi.fn() } })
+        return {
+          getReader: vi.fn().mockReturnValue({
+            read: vi.fn().mockResolvedValue({ done: true }),
+          }),
+        }
+      })
+
+      mocks.createUIMessageStreamResponse.mockReturnValue({
+        headers: new Map([['Content-Type', 'text/plain; charset=utf-8']]),
+        body: {
+          getReader: vi.fn().mockReturnValue({
+            read: vi.fn().mockResolvedValue({ done: true }),
+          }),
+        },
+      })
+
+      // Mock getChatReadiness to throw an error
+      mocks.getChatReadiness.mockRejectedValue(
+        new Error('LLM service unavailable'),
+      )
+
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
           version: 'production',
         },
       })
@@ -253,18 +399,28 @@ describe('Chat Route Handler', () => {
       })
       mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
 
-      const mockResult = {
-        pipeUIMessageStreamToResponse: vi.fn(),
-      }
-      mocks.streamText.mockReturnValueOnce(mockResult)
-
       await executeChatPostHandler(mockReq, mockRes)
 
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder',
-        'admin@plumber.gov.sg',
-        expect.any(Object),
+      // Verify onFinish was captured and execute it
+      expect(capturedOnFinish).not.toBeNull()
+      expect(capturedWriter).not.toBeNull()
+
+      // Execute onFinish to trigger the error handling
+      await capturedOnFinish!({ text: 'Test response' })
+
+      // Verify error was logged
+      expect(mocks.loggerError).toHaveBeenCalledWith(
+        'Error checking chat readiness',
+        expect.objectContaining({
+          error: 'LLM service unavailable',
+        }),
       )
+
+      // Verify fallback isReady: false was written
+      expect(capturedWriter!.write).toHaveBeenCalledWith({
+        type: 'data-isChatReady',
+        data: { isChatReady: false },
+      })
     })
   })
 })

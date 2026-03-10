@@ -1,7 +1,6 @@
 import type { QueryResolvers } from './__generated__/types.generated'
 import getApp from './queries/get-app'
 import getApps from './queries/get-apps'
-import getChatReadiness from './queries/get-chat-readiness'
 import getConnectedApps from './queries/get-connected-apps'
 import getCurrentUser from './queries/get-current-user'
 import getDynamicData from './queries/get-dynamic-data'
@@ -46,7 +45,6 @@ export default {
   getPendingFlowTransfers,
   getFlowTransferDetails,
   getTemplates,
-  getChatReadiness,
   ...tilesQueryResolvers,
 
   // This is a special stub that enables us to group all our admin-related

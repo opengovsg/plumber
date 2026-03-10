@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -19,6 +19,12 @@ const messagePartSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('step-start'),
+  }),
+  z.object({
+    type: z.literal('data-isChatReady'),
+    data: z.object({
+      isChatReady: z.boolean(),
+    }),
   }),
 ])
 
@@ -56,6 +62,10 @@ export const chatRequestSchema = z.object({
       message: 'Session ID must be a valid UUID',
     })
     .optional(),
+})
+
+export const isChatReadySchema = z.object({
+  isReady: z.boolean(),
 })
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>
