@@ -6,12 +6,18 @@ import TableCollaborator from './table-collaborators'
 import TableColumnMetadata from './table-column-metadata'
 import User from './user'
 
+interface ViewOnlyPassword {
+  hash: string
+  tokenNonce: string
+}
+
 class TableMetadata extends Base {
   id!: string
   name: string
   collaborators!: User[]
   columns: TableColumnMetadata[]
   viewOnlyKey?: string | null
+  viewOnlyPassword?: ViewOnlyPassword | null
 
   /**
    * for typescript support when creating TableCollaborator row in insertGraph
@@ -28,6 +34,13 @@ class TableMetadata extends Base {
       id: { type: 'string', format: 'uuid' },
       name: { type: 'string' },
       viewOnlyKey: { type: ['string', 'null'] },
+      viewOnlyPassword: {
+        type: ['object', 'null'],
+        properties: {
+          hash: { type: 'string' },
+          tokenNonce: { type: 'string' },
+        },
+      },
     },
   }
 
@@ -94,6 +107,10 @@ class TableMetadata extends Base {
       }
     }
     return mappedData
+  }
+
+  get isPasswordProtected() {
+    return this.viewOnlyKey && this.viewOnlyPassword
   }
 }
 
