@@ -222,7 +222,6 @@ export interface IFlowConfig {
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
   aiBuilderConfig?: {
-    type: string
     traceId: string // trace id on Rome (Langfuse)
   }
 }
