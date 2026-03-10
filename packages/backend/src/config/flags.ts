@@ -8,6 +8,5 @@ export const AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG = 'ai-builder-prompt-config'
  */
 export const AI_BUILDER_PROMPT_CONFIG_FEATURE_FLAG_FALLBACK = {
   chatReadinessPrompt: 'chat-readiness-check',
-  refineFormInputPrompt: 'form-input-suggestion',
   version: 'production',
 }
