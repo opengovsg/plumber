@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
@@ -25,6 +25,14 @@ export type CustomUIMessage = UIMessage<{
   traceId?: string
 }>
 
+// Type for the step status data annotation
+export type IsChatReadyPart = {
+  type: 'data-isChatReady'
+  data: {
+    isChatReady: boolean
+  }
+}
+
 export interface UseChatStreamOptions {
   initialMessages?: Message[]
 }
@@ -34,6 +42,11 @@ export function useChatStream(options: UseChatStreamOptions) {
   const navigate = useNavigate()
   const location = useLocation()
   const { ddSessionId } = useAiBuilderContext()
+
+  // Track step readiness from data-isChatReady annotation
+  // Defaults to false, becomes true when API returns isReady: true
+  // Resets to false when a new message is sent
+  const [isReady, setIsReady] = useState(false)
 
   const {
     messages: aiMessages,
@@ -138,9 +151,27 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
+  // Extract step status from the last assistant message when streaming ends
+  useEffect(() => {
+    // Only check when not streaming (i.e., when streaming just finished)
+    if (status !== 'streaming' && status !== 'submitted') {
+      const lastMessage = aiMessages[aiMessages.length - 1]
+      if (lastMessage && lastMessage.role === 'assistant') {
+        const isChatReadyPart = lastMessage.parts.find(
+          (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
+        )
+        if (isChatReadyPart) {
+          setIsReady(isChatReadyPart.data.isChatReady)
+        }
+      }
+    }
+  }, [aiMessages, status])
+
   // Wrapper for sendMessage that matches the expected signature
   const sendMessageWrapper = useCallback(
     (userPrompt: string) => {
+      // Reset isReady when sending a new message
+      setIsReady(false)
       sendMessage({
         role: 'user',
         parts: [{ type: 'text', text: userPrompt }],
@@ -153,6 +184,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     messages,
     currentResponse,
     isStreaming: status === 'submitted' || status === 'streaming',
+    isReady,
     error: aiError?.message || null,
     sendMessage: sendMessageWrapper,
     cancelStream: stop,

@@ -11,4 +11,4 @@ const engineProvider = createOpenAICompatible({
 })
 const model = engineProvider.chatModel(MODEL_TYPE)
 
-export { model }
+export { engineProvider, model }

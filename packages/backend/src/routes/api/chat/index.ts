@@ -5,7 +5,13 @@ import {
   updateActiveTrace,
 } from '@langfuse/tracing'
 import { trace } from '@opentelemetry/api'
-import { convertToModelMessages, smoothStream, streamText } from 'ai'
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  smoothStream,
+  streamText,
+} from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
 
@@ -18,8 +24,11 @@ import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { getPrompt } from '@/helpers/pair/get-prompt'
+import { pipeWebResponseToExpress } from '@/helpers/stream'
 import { AuthenticatedRequest } from '@/types/express/context'
 
+import { getChatReadiness } from './get-chat-readiness'
+import { serializeMessagesForLangfuse } from './helpers'
 import { chatRequestSchema } from './schema'
 
 const handleChatStream = observe(
@@ -38,7 +47,12 @@ const handleChatStream = observe(
       return
     }
 
-    const { chatPromptName, version } = aiBuilderFlag.config
+    const {
+      chatPromptName,
+      chatReadinessPromptName,
+      chatReadinessModel,
+      version,
+    } = aiBuilderFlag.config
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -62,20 +76,9 @@ const handleChatStream = observe(
       const prompt = await getPrompt(chatPromptName, version)
 
       // Manually capture serializable input for Langfuse
-      // joining with new line for readability on Langfuse
       updateActiveObservation({
         input: {
-          messages: rawMessages.map((m) => ({
-            role: m.role,
-            content: m.parts
-              .map((p) => {
-                if (p.type === 'text') {
-                  return p.text
-                }
-                return ''
-              })
-              .join('\n'),
-          })),
+          messages: serializeMessagesForLangfuse(rawMessages),
         },
       })
 
@@ -89,64 +92,106 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
-      const result = streamText({
-        model,
-        messages: [{ role: 'system', content: prompt.prompt }, ...messages],
-        experimental_transform: smoothStream({
-          chunking: 'word', // Stream word-by-word for typing effect
-        }),
-        experimental_telemetry: {
-          isEnabled: true,
-          metadata: {
-            name: 'ai-chat-stream',
-            sessionId: sessionId || 'unknown',
-            userId: context.currentUser.email,
-            environment: appConfig.appEnv,
-            promptName: chatPromptName,
-            promptVersion: version,
-            langfusePrompt: prompt.toJSON(),
-            tags: ['ai-builder', 'chat', 'stream'],
-          },
-        },
-        onFinish: (event) => {
-          logger.info('Stream finished', {
-            traceId,
-            textLength: event.text.length,
+      const systemMessage = { role: 'system' as const, content: prompt.prompt }
+      const allMessages = [systemMessage, ...messages]
+
+      const stream = createUIMessageStream({
+        execute: async ({ writer }) => {
+          const result = streamText({
+            model,
+            messages: allMessages,
+            experimental_transform: smoothStream({
+              chunking: 'word', // Stream word-by-word for typing effect
+            }),
+            experimental_telemetry: {
+              isEnabled: true,
+              metadata: {
+                name: 'ai-chat-stream',
+                sessionId: sessionId || 'unknown',
+                userId: context.currentUser.email,
+                environment: appConfig.appEnv,
+                promptName: chatPromptName,
+                promptVersion: version,
+                langfusePrompt: prompt.toJSON(),
+                tags: ['ai-builder', 'chat', 'stream'],
+              },
+            },
+            onFinish: async (event) => {
+              try {
+                logger.info('Stream finished', {
+                  traceId,
+                  textLength: event.text.length,
+                })
+
+                updateActiveObservation({ output: event })
+                updateActiveTrace({ output: event })
+
+                // Check if chat is ready for step generation using a fast structured call
+                const isChatReady = await getChatReadiness({
+                  context,
+                  promptName: chatReadinessPromptName,
+                  promptVersion: version,
+                  llmResponse: event.text,
+                  sessionId: sessionId || '',
+                  modelId: chatReadinessModel,
+                })
+
+                // Write chat readiness status as a data annotation
+                // NOTE: type MUST start with "data-" - SDK enforces this
+                writer.write({
+                  type: 'data-isChatReady',
+                  data: { isChatReady },
+                })
+              } catch (error) {
+                logger.error('Error checking chat readiness', {
+                  traceId,
+                  error: error instanceof Error ? error.message : String(error),
+                })
+
+                // Write fallback isReady: false to ensure client receives a response
+                writer.write({
+                  type: 'data-isChatReady',
+                  data: { isChatReady: false },
+                })
+              } finally {
+                // Manually end the span since we're streaming
+                trace.getActiveSpan()?.end()
+              }
+            },
+            onError: (error) => {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error)
+
+              logger.error('Error generating chat response', {
+                traceId,
+                error: errorMessage,
+              })
+
+              updateActiveObservation({ output: errorMessage })
+              updateActiveTrace({ output: errorMessage })
+
+              // Manually end the span since we're streaming
+              trace.getActiveSpan()?.end()
+            },
           })
 
-          updateActiveObservation({ output: event })
-          updateActiveTrace({ output: event })
-
-          // Manually end the span since we're streaming
-          trace.getActiveSpan()?.end()
-        },
-        onError: (error) => {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error)
-
-          logger.error('Error generating chat response', {
-            traceId,
-            error: errorMessage,
-          })
-
-          updateActiveObservation({ output: errorMessage })
-          updateActiveTrace({ output: errorMessage })
-
-          // Manually end the span since we're streaming
-          trace.getActiveSpan()?.end()
+          // Merge text stream into the response with metadata
+          writer.merge(
+            result.toUIMessageStream({
+              messageMetadata: () => ({
+                traceId,
+                model: MODEL_TYPE,
+              }),
+            }),
+          )
         },
       })
 
-      // Pipe the UI message stream to Express response
-      // This uses the data stream protocol that DefaultChatTransport expects
-      result.pipeUIMessageStreamToResponse(res, {
-        messageMetadata: () => {
-          return {
-            traceId,
-            model: MODEL_TYPE,
-          }
-        },
-      })
+      // Create a proper HTTP Response from the stream
+      const webResponse = createUIMessageStreamResponse({ stream })
+
+      // Pipe the web response to Express
+      await pipeWebResponseToExpress(webResponse, res)
     } catch (error) {
       logger.error('Error in chat stream', { error })
 

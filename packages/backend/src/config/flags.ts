@@ -11,6 +11,7 @@ export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
   config: {
     chatPromptName: 'chat',
     chatReadinessPromptName: 'chat-readiness-check',
+    chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
     generateStepsPromptName: 'generate-steps',
     version: 'production',
   },

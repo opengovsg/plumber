@@ -57,8 +57,6 @@ type Query {
   admin: AdminQuery!
   # Templates (including demo templates)
   getTemplates(tag: TemplateTagType): [Template!]!
-  # AI
-  getChatReadiness(message: String!, sessionId: String!): ChatReadinessResult!
 }
 
 type AdminQuery {
@@ -165,10 +163,6 @@ input CreateFlowWithStepsInput {
   flowName: String!
   steps: [StepInput!]!
   aiBuilderConfig: FlowAiBuilderConfigInput!
-}
-
-type ChatReadinessResult {
-  isReady: Boolean!
 }
 
 type AdminMutation {
