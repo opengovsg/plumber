@@ -3,6 +3,7 @@ import { Box, Flex, VStack } from '@chakra-ui/react'
 import { Message } from '@/hooks/useChatStream'
 
 import ChatMessage from './ChatMessage'
+import PreviewStepsButton from './PreviewStepsButton'
 import StreamingMessage from './StreamingMessage'
 
 interface ChatMessagesProps {
@@ -21,7 +22,8 @@ export default function ChatMessages({
   isStreaming,
   messagesEndRef,
   messagesContainerRef,
-  onOpenDrawer: _onOpenDrawer, // TODO: Implement preview drawer
+  hasMessages,
+  onOpenDrawer: onOpenDrawer,
 }: ChatMessagesProps) {
   return (
     <Flex
@@ -36,6 +38,13 @@ export default function ChatMessages({
           {messages.map((message, index) => (
             <ChatMessage key={index} message={message} />
           ))}
+
+          {hasMessages && !isStreaming && (
+            <PreviewStepsButton
+              messages={messages}
+              onOpenDrawer={onOpenDrawer}
+            />
+          )}
 
           {/* Streaming response */}
           {isStreaming && (

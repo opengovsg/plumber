@@ -17,6 +17,7 @@ interface AIBuilderSharedProps {
     trigger: string
     actions: string
   }
+  chatInput: string
   isFormMode: boolean
   output: {
     trigger: IStep
@@ -66,6 +67,7 @@ interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
 export const AiBuilderContextProvider = ({
   children,
   flowName = 'Name your Pipe', // default to Name your Pipe if no flow name is provided
+  chatInput,
   formInput,
   isFormMode,
   output,
@@ -125,6 +127,7 @@ export const AiBuilderContextProvider = ({
         allApps,
         flowName,
         formInput,
+        chatInput,
         isFormMode,
         output,
         isMobile,
