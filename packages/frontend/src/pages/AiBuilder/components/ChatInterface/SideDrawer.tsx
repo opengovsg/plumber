@@ -45,7 +45,7 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
 
         {/* Content */}
         <Box flex={1} overflowY="auto" pb={4}>
-          <StepsPreview />
+          {isOpen && <StepsPreview />}
         </Box>
       </Flex>
     </Box>
