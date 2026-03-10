@@ -3,12 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getLdFlagValue: vi.fn(),
-  langfuseClient: {
-    prompt: {
-      get: vi.fn(),
-    },
-  },
-  startActiveObservation: vi.fn(),
+  getPrompt: vi.fn(),
+  getActiveTraceId: vi.fn(),
+  updateActiveObservation: vi.fn(),
+  updateActiveTrace: vi.fn(),
+  observe: vi.fn((fn) => fn),
   streamText: vi.fn(),
 }))
 
@@ -16,12 +15,15 @@ vi.mock('@/helpers/launch-darkly', () => ({
   getLdFlagValue: mocks.getLdFlagValue,
 }))
 
-vi.mock('@/helpers/langfuse', () => ({
-  langfuseClient: mocks.langfuseClient,
+vi.mock('@/helpers/pair/get-prompt', () => ({
+  getPrompt: mocks.getPrompt,
 }))
 
 vi.mock('@langfuse/tracing', () => ({
-  startActiveObservation: mocks.startActiveObservation,
+  observe: mocks.observe,
+  getActiveTraceId: mocks.getActiveTraceId,
+  updateActiveObservation: mocks.updateActiveObservation,
+  updateActiveTrace: mocks.updateActiveTrace,
 }))
 
 vi.mock('ai', () => ({
@@ -113,28 +115,17 @@ describe('Chat Route Handler', () => {
         chatPrompt: 'aids-chat-v0',
         version: 'production',
       })
-      mocks.langfuseClient.prompt.get.mockResolvedValueOnce({
+      mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
+        toJSON: vi.fn(),
       })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
 
       // Mock streamText to return a mock result
       const mockResult = {
         pipeUIMessageStreamToResponse: vi.fn(),
       }
-      mocks.startActiveObservation.mockImplementationOnce(
-        async (name, callback) => {
-          const mockTrace = {
-            updateTrace: vi.fn(),
-            startObservation: vi.fn(() => ({
-              update: vi.fn(),
-            })),
-            update: vi.fn(),
-            traceId: 'test-trace-id',
-          }
-          return await callback(mockTrace)
-        },
-      )
-      mocks.streamText.mockResolvedValueOnce(mockResult)
+      mocks.streamText.mockReturnValueOnce(mockResult)
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -171,27 +162,16 @@ describe('Chat Route Handler', () => {
         chatPrompt: 'aids-chat-v0',
         version: 'production',
       })
-      mocks.langfuseClient.prompt.get.mockResolvedValueOnce({
+      mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
+        toJSON: vi.fn(),
       })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
 
       const mockResult = {
         pipeUIMessageStreamToResponse: vi.fn(),
       }
-      mocks.startActiveObservation.mockImplementationOnce(
-        async (name, callback) => {
-          const mockTrace = {
-            updateTrace: vi.fn(),
-            startObservation: vi.fn(() => ({
-              update: vi.fn(),
-            })),
-            update: vi.fn(),
-            traceId: 'test-trace-id',
-          }
-          return await callback(mockTrace)
-        },
-      )
-      mocks.streamText.mockResolvedValueOnce(mockResult)
+      mocks.streamText.mockReturnValueOnce(mockResult)
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -217,7 +197,12 @@ describe('Chat Route Handler', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(400)
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Messages array is required',
+        error: 'Invalid request body',
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            message: 'Messages array must contain at least one message',
+          }),
+        ]),
       })
     })
   })
@@ -241,27 +226,16 @@ describe('Chat Route Handler', () => {
         chatPrompt: 'aids-chat-v0',
         version: 'production',
       })
-      mocks.langfuseClient.prompt.get.mockResolvedValueOnce({
+      mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
+        toJSON: vi.fn(),
       })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
 
       const mockResult = {
         pipeUIMessageStreamToResponse: vi.fn(),
       }
-      mocks.startActiveObservation.mockImplementationOnce(
-        async (name, callback) => {
-          const mockTrace = {
-            updateTrace: vi.fn(),
-            startObservation: vi.fn(() => ({
-              update: vi.fn(),
-            })),
-            update: vi.fn(),
-            traceId: 'test-trace-id',
-          }
-          return await callback(mockTrace)
-        },
-      )
-      mocks.streamText.mockResolvedValueOnce(mockResult)
+      mocks.streamText.mockReturnValueOnce(mockResult)
 
       await executeChatPostHandler(mockReq, mockRes)
 
