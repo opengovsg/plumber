@@ -112,7 +112,7 @@ describe('Chat Route Handler', () => {
     it('should process authenticated requests', async () => {
       // Context is set by middleware before reaching handler
       mocks.getLdFlagValue.mockResolvedValueOnce({
-        chatPrompt: 'aids-chat-v0',
+        chatPromptName: 'aids-chat-v0',
         version: 'production',
       })
       mocks.getPrompt.mockResolvedValueOnce({
@@ -130,7 +130,7 @@ describe('Chat Route Handler', () => {
       await executeChatPostHandler(mockReq, mockRes)
 
       expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder-prompt-config',
+        'ai-builder',
         'test@plumber.gov.sg',
         expect.any(Object),
       )
@@ -159,8 +159,11 @@ describe('Chat Route Handler', () => {
       }
 
       mocks.getLdFlagValue.mockResolvedValueOnce({
-        chatPrompt: 'aids-chat-v0',
-        version: 'production',
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          version: 'production',
+        },
       })
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
@@ -176,7 +179,7 @@ describe('Chat Route Handler', () => {
       await executeChatPostHandler(mockReq, mockRes)
 
       expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder-prompt-config',
+        'ai-builder',
         'feature-test@plumber.gov.sg',
         expect.any(Object),
       )
@@ -189,8 +192,11 @@ describe('Chat Route Handler', () => {
       }
 
       mocks.getLdFlagValue.mockResolvedValueOnce({
-        chatPrompt: 'aids-chat-v0',
-        version: 'production',
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          version: 'production',
+        },
       })
 
       await executeChatPostHandler(mockReq, mockRes)
@@ -203,6 +209,18 @@ describe('Chat Route Handler', () => {
             message: 'Messages array must contain at least one message',
           }),
         ]),
+      })
+    })
+
+    it('should throw error when AI Builder is not enabled', async () => {
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: false,
+      })
+
+      await executeChatPostHandler(mockReq, mockRes)
+      expect(mockRes.status).toHaveBeenCalledWith(403)
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'You do not have permissions to use AI Builder!',
       })
     })
   })
@@ -223,8 +241,11 @@ describe('Chat Route Handler', () => {
       }
 
       mocks.getLdFlagValue.mockResolvedValueOnce({
-        chatPrompt: 'aids-chat-v0',
-        version: 'production',
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          version: 'production',
+        },
       })
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
@@ -240,7 +261,7 @@ describe('Chat Route Handler', () => {
       await executeChatPostHandler(mockReq, mockRes)
 
       expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder-prompt-config',
+        'ai-builder',
         'admin@plumber.gov.sg',
         expect.any(Object),
       )
