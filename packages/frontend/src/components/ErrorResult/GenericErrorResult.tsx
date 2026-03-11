@@ -39,9 +39,9 @@ export default function GenericErrorResult(props: GenericErrorResultProps) {
             opacity={0.8}
             w="full"
           >
-            If this error still persists, contact us at{' '}
+            If this error still persists, contact{' '}
             <a href={SUPPORT_FORM_LINK} target="_blank" rel="noreferrer">
-              {SUPPORT_FORM_LINK}
+              Plumber support
             </a>
             .
           </Box>

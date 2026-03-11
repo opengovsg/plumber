@@ -28,4 +28,8 @@ const partialIcon = (
 
 const waitingIcon = <Image src={executionWaitingIcon} h={6} />
 
-export { failureIcon, partialIcon, successIcon, waitingIcon }
+const delayPausedIcon = (
+  <Icon boxSize={6} as={BiSolidErrorCircle} color="blue.500" />
+)
+
+export { delayPausedIcon, failureIcon, partialIcon, successIcon, waitingIcon }
