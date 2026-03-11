@@ -1,4 +1,3 @@
-import { memo } from 'react'
 import { Box, Flex } from '@chakra-ui/react'
 
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
@@ -10,7 +9,7 @@ interface StreamingMessageProps {
   currentResponse: string
 }
 
-const StreamingMessage = memo(({ currentResponse }: StreamingMessageProps) => {
+const StreamingMessage = ({ currentResponse }: StreamingMessageProps) => {
   if (currentResponse) {
     return (
       <Flex gap={3} w="full" align="start">
@@ -30,8 +29,6 @@ const StreamingMessage = memo(({ currentResponse }: StreamingMessageProps) => {
       <Loader />
     </Flex>
   )
-})
-
-StreamingMessage.displayName = 'StreamingMessage'
+}
 
 export default StreamingMessage

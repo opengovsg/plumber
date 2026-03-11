@@ -133,12 +133,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     },
   })
 
-  // Cache the last stable messages to avoid recalculating during streaming
-  const cachedMessagesRef = useRef<Message[]>([])
-  const lastMessageCountRef = useRef(0)
-
   // Transform AI SDK messages to our Message format
-  // Optimized to avoid recalculating historical messages during streaming
   const messages = useMemo<Message[]>(() => {
     const isActivelyStreaming = status === 'streaming' || status === 'submitted'
     const initialMsgs = options?.initialMessages || []
@@ -156,22 +151,11 @@ export function useChatStream(options: UseChatStreamOptions) {
       }
     }
 
-    // During streaming, if the message count hasn't changed, return cached messages
-    // This prevents expensive recalculation when only the streaming content changes
-    const messageCount = initialMsgs.length + messagesToTransform.length
-    if (isActivelyStreaming && messageCount === lastMessageCountRef.current) {
-      return cachedMessagesRef.current
-    }
-
     const transformedMessages = transformMessages(messagesToTransform)
     const allMessages = deduplicateMessages([
       ...initialMsgs,
       ...transformedMessages,
     ])
-
-    // Update cache
-    cachedMessagesRef.current = allMessages
-    lastMessageCountRef.current = messageCount
 
     return allMessages
   }, [aiMessages, options?.initialMessages, status])
