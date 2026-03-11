@@ -216,7 +216,20 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     clearPersistedState,
   ])
 
-  if (error || !steps) {
+  if (isGeneratingSteps) {
+    return (
+      <Center h="100%">
+        <MultiStepLoader
+          loadingStates={LOADING_STATES}
+          loading={isGeneratingSteps}
+          duration={1500}
+          loop={false}
+        />
+      </Center>
+    )
+  }
+
+  if (error || !(output?.trigger && output?.actions?.length) || !steps) {
     return (
       <Center h="80%">
         <Flex
@@ -241,19 +254,6 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
           </Text>
           <Button onClick={retryGenerateAiSteps}>Try again</Button>
         </Flex>
-      </Center>
-    )
-  }
-
-  if (isGeneratingSteps) {
-    return (
-      <Center h="100%">
-        <MultiStepLoader
-          loadingStates={LOADING_STATES}
-          loading={isGeneratingSteps}
-          duration={1500}
-          loop={false}
-        />
       </Center>
     )
   }
