@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Helmet } from 'react-helmet'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -44,6 +44,24 @@ function AiBuilderContent() {
     cancelStream()
     navigate(URLS.FLOWS)
   }
+
+  // Handle browser back button
+  useEffect(() => {
+    // Push a history entry to create a "barrier"
+    window.history.pushState(null, '', window.location.href)
+
+    const handlePopState = () => {
+      // User clicked back, push forward to stay here and show warning
+      window.history.pushState(null, '', window.location.href)
+      onWarningOpen()
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [onWarningOpen])
 
   return (
     <>
