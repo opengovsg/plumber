@@ -1,6 +1,6 @@
 import { IApp, IStep } from '@plumber/types'
 
-import { createContext, useContext, useMemo } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
@@ -39,6 +39,8 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   stepGroupCaption: string | null
   // DataDog RUM Session ID so we can associate the trace with the RUM
   ddSessionId: string
+  isDrawerOpen: boolean
+  setIsDrawerOpen: (open: boolean) => void
 }
 
 const AiBuilderContext = createContext<AIBuilderContextValue | undefined>(
@@ -70,6 +72,21 @@ export const AiBuilderContextProvider = ({
 }: AiBuilderContextProviderProps) => {
   const isMobile = useIsMobile()
   const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+  // Update drawer state when isMobile or output changes (handles async isMobile hook)
+  useEffect(() => {
+    const shouldOpen =
+      !isMobile && Boolean(output?.trigger || output?.actions?.length)
+
+    if (shouldOpen !== isDrawerOpen) {
+      setIsDrawerOpen(shouldOpen)
+    }
+
+    // NOTE: re-trigger based on changes to isMobile
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile])
 
   const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
 
@@ -132,6 +149,8 @@ export const AiBuilderContextProvider = ({
         stepGroupCaption,
         ddSessionId,
         clearPersistedState,
+        isDrawerOpen,
+        setIsDrawerOpen,
       }}
     >
       {children}

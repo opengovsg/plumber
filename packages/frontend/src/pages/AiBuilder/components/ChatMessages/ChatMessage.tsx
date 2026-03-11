@@ -8,16 +8,20 @@ import ChatMessageToolbar from './ChatMessageToolbar'
 
 interface ChatMessageProps {
   message: Message
+  shouldShowPreview?: boolean
 }
 
-const AiMessage = memo(({ message }: ChatMessageProps) => {
+const AiMessage = memo(({ message, shouldShowPreview }: ChatMessageProps) => {
   return (
     <Flex gap={3} w="full" align="start">
       <Box flex={1} px={2} color="gray.900">
         <ChakraStreamdown isAnimating={false}>
           {message.text || ''}
         </ChakraStreamdown>
-        <ChatMessageToolbar traceId={message.traceId || ''} />
+        <ChatMessageToolbar
+          traceId={message.traceId || ''}
+          shouldShowPreviewButton={shouldShowPreview}
+        />
       </Box>
     </Flex>
   )
@@ -46,12 +50,20 @@ const UserMessage = memo(({ message }: ChatMessageProps) => {
 
 UserMessage.displayName = 'UserMessage'
 
-const ChatMessage = memo(({ message }: { message: Message }) => {
-  if (message.isUser) {
-    return <UserMessage message={message} />
-  }
-  return <AiMessage message={message} />
-})
+const ChatMessage = memo(
+  ({
+    message,
+    shouldShowPreview,
+  }: {
+    message: Message
+    shouldShowPreview: boolean
+  }) => {
+    if (message.isUser) {
+      return <UserMessage message={message} />
+    }
+    return <AiMessage message={message} shouldShowPreview={shouldShowPreview} />
+  },
+)
 
 ChatMessage.displayName = 'ChatMessage'
 

@@ -77,7 +77,7 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        mb={isMobile ? 0 : 6}
+        mb={isMobile ? (shouldShowIdeas ? 6 : 0) : 6}
       >
         <Textarea
           ref={textareaRef}

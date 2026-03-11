@@ -12,7 +12,7 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
   return (
     <Flex flexDir="row" alignItems="center" w="full">
       <Flex
-        flexDir="row"
+        flexDir={{ base: 'column', md: 'row' }}
         gap={3}
         justifyContent="space-evenly"
         flexWrap="wrap"
@@ -31,9 +31,10 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
             onClick={() => onClick(idea)}
             px={3}
             minH={4}
-            flex="1"
-            minW="150px"
-            maxW="250px"
+            flex={{ base: 'none', md: '1' }}
+            w={{ base: 'full', md: 'auto' }}
+            minW={{ base: 'auto', md: '150px' }}
+            maxW={{ base: 'none', md: '250px' }}
             whiteSpace="normal"
             height="auto"
           >
