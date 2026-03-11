@@ -91,7 +91,12 @@ export function useChatStream(options: UseChatStreamOptions) {
         position: 'top',
       })
     },
-    onFinish: ({ messages }) => {
+    onFinish: ({ messages, isAbort }) => {
+      // if the chat stream is cancelled, isAbort will be true
+      if (isAbort) {
+        return
+      }
+
       // transform the messages and save to location state
       // so that user can still access it if they refresh the page
       const transformedMessages = transformMessages(messages)

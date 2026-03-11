@@ -11,6 +11,7 @@ import {
 } from '@chakra-ui/react'
 
 import * as URLS from '@/config/urls'
+import { useChatStream } from '@/hooks/useChatStream'
 
 import ChatInterface from './components/ChatInterface'
 import ExitAlert from './components/ExitAlert'
@@ -21,7 +22,16 @@ import {
 
 function AiBuilderContent() {
   const navigate = useNavigate()
-  const { flowName } = useAiBuilderContext()
+  const { flowName, chatMessages } = useAiBuilderContext()
+
+  const {
+    messages,
+    currentResponse,
+    isStreaming,
+    isReady: isReadyForPreview,
+    sendMessage,
+    cancelStream,
+  } = useChatStream({ initialMessages: chatMessages })
 
   const cancelRef = useRef(null)
   const {
@@ -31,6 +41,7 @@ function AiBuilderContent() {
   } = useDisclosure()
 
   const handleExit = () => {
+    cancelStream()
     navigate(URLS.FLOWS)
   }
 
@@ -59,7 +70,6 @@ function AiBuilderContent() {
 
             <Text>{flowName}</Text>
           </Flex>
-          {/* TODO: Add <AiBuilderToolbar /> */}
         </HStack>
         <Container
           maxW="full"
@@ -73,7 +83,14 @@ function AiBuilderContent() {
             backgroundSize: '30px 30px',
           }}
         >
-          <ChatInterface />
+          <ChatInterface
+            messages={messages}
+            currentResponse={currentResponse}
+            isStreaming={isStreaming}
+            isReadyForPreview={isReadyForPreview}
+            sendMessage={sendMessage}
+            cancelStream={cancelStream}
+          />
         </Container>
       </Flex>
       <ExitAlert
