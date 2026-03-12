@@ -12,6 +12,17 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-03-12',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Tiles - Password protection 🔒',
+    details: dedent`
+      We've added password protection for shareable table links. You can now set a password when sharing a table link, adding an extra layer of security.
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-tiles-pw-whats-new.png',
+    },
+  },
+  {
     date: '2025-11-26',
     tag: NEW_FEATURE_TAG,
     title: 'Collaborators — add editors and viewers to your pipes',
