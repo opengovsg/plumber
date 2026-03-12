@@ -46,7 +46,7 @@ export const useFlowCreation = () => {
     (options?: { onClose?: () => void }) => {
       if (createMode === 'ai') {
         options?.onClose?.()
-        navigate(`${URLS.EDITOR}/ai`)
+        navigate(`${URLS.EDITOR}/ai`, { replace: true })
         return
       }
 
