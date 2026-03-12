@@ -37,12 +37,7 @@ const getLimitAndOffset = (page: number) => ({
   offset: (page - 1) * FLOWS_PER_PAGE,
 })
 
-function FlowsList({
-  isLoading,
-  isSearching,
-  flows,
-  onCreateModalOpen,
-}: FlowsInternalProps) {
+function FlowsList({ isLoading, isSearching, flows }: FlowsInternalProps) {
   const hasFlows = flows.length > 0
   const hasNoUserFlows = !hasFlows && !isSearching
   const isEmptySearchResults = !hasFlows && isSearching
@@ -56,7 +51,7 @@ function FlowsList({
   }
 
   if (hasNoUserFlows) {
-    return <EmptyFlows onCreate={onCreateModalOpen} />
+    return <EmptyFlows />
   }
 
   if (isEmptySearchResults) {
