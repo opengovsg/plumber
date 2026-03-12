@@ -7,7 +7,12 @@ import { ApolloError, useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
-import { NOT_FOUND } from '@/config/errors'
+import {
+  INVALID_TILE_VIEW_KEY,
+  INVALID_TILE_VIEW_TOKEN,
+  NOT_FOUND,
+} from '@/config/errors'
+import * as URLS from '@/config/urls'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 
@@ -15,8 +20,10 @@ import { MissingTile } from '../UnauthorizedTile'
 
 import Table from './components/Table'
 import TableBanner from './components/TableBanner'
+import TilePasswordPrompt from './components/TilePasswordPrompt'
 import { TableContextProvider } from './contexts/TableContext'
 import { useFetchAllRows } from './hooks/useFetchAllRows'
+import { useViewToken } from './hooks/useViewToken'
 
 export default function Tile(): JSX.Element | null {
   const { tileId: tableId, viewOnlyKey: urlViewOnlyKey } = useParams<{
@@ -24,9 +31,19 @@ export default function Tile(): JSX.Element | null {
     viewOnlyKey?: string
   }>()
 
+  const { viewToken, storeViewToken } = useViewToken(tableId as string)
+
+  const viewOnlyHeaders = urlViewOnlyKey
+    ? {
+        'x-tiles-view-key': urlViewOnlyKey,
+        ...(viewToken && { 'x-tiles-view-token': viewToken }),
+      }
+    : undefined
+
   const { rows, isFetching, isThroughputError, refetch } = useFetchAllRows({
     tableId: tableId as string,
     urlViewOnlyKey,
+    viewToken,
   })
 
   const {
@@ -34,25 +51,34 @@ export default function Tile(): JSX.Element | null {
     loading: isTableLoading,
     error: getTableError,
     called: isGetTableCalled,
+    refetch: refetchTable,
   } = useQuery<{
     getTable: ITableMetadata
   }>(GET_TABLE, {
     variables: {
       tableId,
     },
-    context: urlViewOnlyKey
+    context: viewOnlyHeaders
       ? {
-          headers: { 'x-tiles-view-key': urlViewOnlyKey },
+          headers: viewOnlyHeaders,
         }
       : undefined,
   })
   const ownRole = getTableData?.getTable?.role
 
   useEffect(() => {
-    if (isGetTableCalled) {
+    if (isGetTableCalled && getTableData?.getTable) {
+      // load rows after fetching table metadata
       refetch()
     }
-  }, [isGetTableCalled, refetch])
+  }, [isGetTableCalled, getTableError, getTableData, refetch])
+
+  // Refetch table data when view token changes (e.g. after password verification)
+  useEffect(() => {
+    if (viewToken && getTableError) {
+      refetchTable()
+    }
+  }, [viewToken, getTableError, refetchTable])
 
   // On first load, show loading spinner
   if (isTableLoading && !isGetTableCalled) {
@@ -65,11 +91,31 @@ export default function Tile(): JSX.Element | null {
 
   if (getTableError) {
     if (getTableError instanceof ApolloError) {
-      const { code } = parseGraphqlError(getTableError)
+      // Check for password-protected tile error<
+      const { code, data } = parseGraphqlError(getTableError)
+      if (
+        code === INVALID_TILE_VIEW_TOKEN &&
+        urlViewOnlyKey &&
+        data?.tableName
+      ) {
+        return (
+          <TilePasswordPrompt
+            tableId={tableId as string}
+            tableName={data?.tableName as string}
+            viewOnlyKey={urlViewOnlyKey}
+            onSuccess={storeViewToken}
+          />
+        )
+      }
+
       if (code === NOT_FOUND) {
         return (
           <MissingTile title="You do not have access to this Tile, or it does not exist." />
         )
+      }
+      if (code === INVALID_TILE_VIEW_KEY) {
+        window.location.href = URLS.UNAUTHORIZED_TILE
+        return null
       }
     }
     return (
@@ -81,8 +127,15 @@ export default function Tile(): JSX.Element | null {
     return null
   }
 
-  const { id, name, columns, viewOnlyKey, collaborators, databaseType } =
-    getTableData.getTable
+  const {
+    id,
+    name,
+    columns,
+    viewOnlyKey,
+    isPasswordProtected,
+    collaborators,
+    databaseType,
+  } = getTableData.getTable
 
   return (
     <TableContextProvider
@@ -92,6 +145,7 @@ export default function Tile(): JSX.Element | null {
       tableColumns={columns}
       tableRows={rows}
       viewOnlyKey={viewOnlyKey}
+      isPasswordProtected={isPasswordProtected}
       collaborators={collaborators}
       role={ownRole}
       isFetching={isFetching}

@@ -1025,6 +1025,7 @@ export interface ITableMetadata {
   lastAccessedAt: string
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
+  isPasswordProtected: boolean
   role?: ITableCollabRole
 }
 
@@ -1097,4 +1098,10 @@ export type TileTemplateData = {
 export type DemoVideoDetails = {
   url: string
   title: string
+}
+
+export interface CustomGraphQLFormattedError {
+  message: string
+  code: string
+  data?: IJSONObject
 }

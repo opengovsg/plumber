@@ -26,7 +26,8 @@ interface FlowStepGroupProps {
 
 export default function FlowStepGroup(props: FlowStepGroupProps) {
   const { groupedSteps, stepsBeforeGroup } = props
-  const { isDrawerOpen, isMobile, onDrawerClose } = useContext(EditorContext)
+  const { isDrawerOpen, isMobile, onDrawerClose, readOnly } =
+    useContext(EditorContext)
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
     let stepGroupType: string | null = null
@@ -112,7 +113,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
                 </Text>
               </Flex>
             </Flex>
-            {stepGroupType === TOOLBOX_ACTIONS.ForEach && (
+            {stepGroupType === TOOLBOX_ACTIONS.ForEach && !readOnly && (
               <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
                 <IconButton
                   boxSize={8}

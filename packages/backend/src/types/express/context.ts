@@ -8,6 +8,7 @@ export interface UnauthenticatedContext {
   currentUser: User | null
   isAdminOperation: boolean
   tilesViewKey?: string
+  tilesViewToken?: string
 }
 
 interface Context extends UnauthenticatedContext {

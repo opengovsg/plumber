@@ -1,3 +1,5 @@
+import { CustomGraphQLFormattedError } from '@plumber/types'
+
 import { ApolloServer, type ApolloServerPlugin } from '@apollo/server'
 import { unwrapResolverError } from '@apollo/server/errors'
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled'
@@ -12,6 +14,7 @@ import { DBError } from 'objection'
 import appConfig from '@/config/app'
 import { BadUserInputError, UnauthorisedError } from '@/errors/graphql-errors'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
+import InvalidTileViewTokenError from '@/errors/invalid-tile-view-password'
 import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
@@ -89,23 +92,33 @@ export const server = new ApolloServer<UnauthenticatedContext>({
   ],
   // We don't want to allow batching within a single HTTP request, this defaults to false
   allowBatchedHttpRequests: false,
-  formatError: (formattedError, error) => {
+  formatError: (formattedError, error): CustomGraphQLFormattedError => {
     logger.error(formattedError)
 
+    const unwrappedError = unwrapResolverError(error)
     // NOTE: objection throws all error with DBError class
     // so we handle them here
-    if (unwrapResolverError(error) instanceof DBError) {
+    if (unwrappedError instanceof DBError) {
       return { message: 'Internal server error', code: 'INTERNAL_SERVER_ERROR' }
     }
 
-    if (unwrapResolverError(error) instanceof UnauthorisedError) {
+    if (unwrappedError instanceof UnauthorisedError) {
       return { message: 'Not Authorised!', code: 'NOT_AUTHORISED' }
     }
 
-    if (unwrapResolverError(error) instanceof InvalidTileViewKeyError) {
+    if (unwrappedError instanceof InvalidTileViewKeyError) {
       return {
-        message: 'Invalid tile view only key',
-        code: 'INVALID_TILE_VIEW_KEY',
+        message: unwrappedError.message,
+        code: unwrappedError.code,
+      }
+    }
+    if (unwrappedError instanceof InvalidTileViewTokenError) {
+      return {
+        message: unwrappedError.message,
+        code: unwrappedError.code,
+        data: {
+          tableName: unwrappedError.tableName,
+        },
       }
     }
 
@@ -135,7 +148,7 @@ export const server = new ApolloServer<UnauthenticatedContext>({
     }
     const newError = {
       message: errorMessage,
-      code: formattedError.extensions?.code,
+      code: formattedError.extensions?.code as string,
     }
     return newError
   },

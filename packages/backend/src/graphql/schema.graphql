@@ -115,6 +115,9 @@ type Mutation {
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
   deleteShareableTableLink(tableId: ID!): Boolean!
+  setTableViewPassword(input: SetTableViewPasswordInput!): Boolean!
+  deleteTableViewPassword(tableId: ID!): Boolean!
+  verifyTableViewPassword(input: VerifyTableViewPasswordInput!): String!
   updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
   # Tiles rows
@@ -936,6 +939,7 @@ type TableMetadata {
   lastAccessedAt: String!
   viewOnlyKey: String
   collaborators: [TableCollaborator!]
+  isPasswordProtected: Boolean!
   role: String
 }
 
@@ -952,6 +956,16 @@ type GetTableRowsResult {
   rows: Any!
   columnIds: [String!]!
   stringifiedCursor: String
+}
+
+input SetTableViewPasswordInput {
+  tableId: ID!
+  password: String!
+}
+
+input VerifyTableViewPasswordInput {
+  tableId: ID!
+  password: String!
 }
 
 # End Tiles types
