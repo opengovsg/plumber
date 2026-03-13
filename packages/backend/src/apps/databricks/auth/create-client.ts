@@ -26,15 +26,6 @@ export const createSession = async ($: IGlobalVariable) => {
     },
   })
 
-  // const connectOptions = {
-  //   authType: 'databricks-oauth',
-  //   oauthClientId: databricksConfig.clientId,
-  //   oauthClientSecret: databricksConfig.clientSecret,
-  //   host: databricksConfig.serverHostname,
-  //   path: databricksConfig.httpPath,
-  //   persistence: databricksOAuthPersistence,
-  // } satisfies ConnectionOptions
-
   const token = await getDatabricksToken()
   const connectOptions = {
     authType: 'access-token',
