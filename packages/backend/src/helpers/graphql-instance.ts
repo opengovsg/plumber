@@ -19,7 +19,11 @@ import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
-import { createRequestContext, requestContext } from '@/helpers/request-context'
+import {
+  createRequestContext,
+  getRequestStats,
+  requestContext,
+} from '@/helpers/request-context'
 import tracer from '@/helpers/tracer'
 import type { UnauthenticatedContext } from '@/types/express/context'
 import type AuthenticatedContext from '@/types/express/context'
@@ -166,7 +170,16 @@ const graphqlRouteHandler: RequestHandler = async (req, res, next) => {
   }
 
   const operationName = req.body?.operationName || 'unknown'
+  const startTime = Date.now()
+
   requestContext.run(createRequestContext(operationName), () => {
+    res.on('finish', () => {
+      const stats = getRequestStats()
+      const totalMs = Date.now() - startTime
+      logger.info(
+        `[GraphQLaaa][${operationName}] ${totalMs}ms | ${stats.queryCount} queries (${stats.totalQueryMs}ms)`,
+      )
+    })
     graphqlInstance(req, res, next)
   })
 }

@@ -53,7 +53,7 @@ export function trackQuery(queryId: string, sql: string): void {
 
     store.queries.push({ sql: sql.substring(0, 200), durationMs: duration })
 
-    logger.info(
+    logger.debug(
       `[SQL][${store.operationName}][#${
         store.queryCount
       }][${duration}ms] ${sql.substring(0, 100)}`,
