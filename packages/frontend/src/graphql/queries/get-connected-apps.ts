@@ -10,9 +10,7 @@ export const GET_CONNECTED_APPS = gql`
       primaryColor
       connectionCount
       flowCount
-      auth {
-        connectionType
-      }
+      auth
     }
   }
 `

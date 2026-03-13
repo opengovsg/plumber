@@ -1,4 +1,5 @@
 interface AppConfig {
+  baseUrl: string
   launchDarklyClientId: string
   sgidClientId: string
   isDev: boolean
@@ -22,6 +23,7 @@ function getAppConfig(): AppConfig {
   switch (env) {
     case 'prod':
       return {
+        baseUrl: 'https://plumber.gov.sg',
         launchDarklyClientId: '64bf4b539077f112ef24e4ae',
         sgidClientId: 'PLUMBER-c24255a5',
         isDev: false,
@@ -33,6 +35,7 @@ function getAppConfig(): AppConfig {
     // UAT and staging differ for the lens survey client key only
     case 'uat':
       return {
+        baseUrl: 'https://uat.plumber.gov.sg',
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
@@ -43,6 +46,7 @@ function getAppConfig(): AppConfig {
       }
     case 'staging':
       return {
+        baseUrl: 'https://staging.plumber.gov.sg',
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
@@ -53,6 +57,7 @@ function getAppConfig(): AppConfig {
       }
     default:
       return {
+        baseUrl: 'http://localhost:3001',
         launchDarklyClientId: '64bf4b539077f112ef24e4ad',
         sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         isDev: true,

@@ -15,20 +15,20 @@ import {
   useState,
 } from 'react'
 import { useMutation, useQuery } from '@apollo/client'
-import { Center, useDisclosure } from '@chakra-ui/react'
+import { useDisclosure } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
-import PrimarySpinner from '@/components/PrimarySpinner'
+import appsData from '@/assets/apps.json'
 import {
   genVariableInfoMap,
   VariableInfoMap,
 } from '@/components/RichTextEditor/utils'
+import appConfig from '@/config/app'
 import { ExecutionStep } from '@/graphql/__generated__/graphql'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
@@ -39,6 +39,12 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
+
+// Process apps data once at module load
+const allApps: IApp[] = (appsData as IApp[]).map((app) => ({
+  ...app,
+  iconUrl: app.iconUrl?.replace('{BASE_URL}', appConfig.baseUrl),
+}))
 
 interface IEditorContextValue {
   flow: IFlow
@@ -140,19 +146,12 @@ export const EditorProvider = ({
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
-  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
-
   const steps = flow?.steps ?? []
   const isEmptyPipe =
     steps.length <= 2 && steps.every((s) => s.key === null && s.appKey === null)
 
   const hasForEach = flow?.steps.some((step) => isForEachStep(step))
   const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
-
-  const allApps = useMemo(
-    () => getAppsData?.getApps ?? [],
-    [getAppsData?.getApps],
-  )
 
   const { data, loading: isLoadingTestExecutionSteps } = useQuery<{
     getTestExecutionSteps: IExecutionStep[]
@@ -171,7 +170,7 @@ export const EditorProvider = ({
     const stepsWithVars = extractVariables(testExecutionSteps, allApps)
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [testExecutionSteps, allApps])
+  }, [testExecutionSteps])
 
   const currentTestExecutionStep = useMemo(
     () =>
@@ -349,14 +348,6 @@ export const EditorProvider = ({
     }
   }, [resetForm, resetFormRef])
 
-  if (isLoadingAllApps) {
-    return (
-      <Center height="100vh" position="fixed" width="full" top={0} left={0}>
-        <PrimarySpinner fontSize="4xl" />
-      </Center>
-    )
-  }
-
   return (
     <EditorContext.Provider
       value={{
@@ -387,7 +378,6 @@ export const EditorProvider = ({
         resetForm,
         resetTimestamp,
         isLoading:
-          isLoadingAllApps ||
           isLoadingTestExecutionSteps ||
           isCreatingStep ||
           isUpdatingStep ||
