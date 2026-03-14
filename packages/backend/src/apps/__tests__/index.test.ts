@@ -6,7 +6,7 @@ import exportedApps from '@/apps'
 import {
   ACTION_APPS_RANKING,
   TRIGGER_APPS_RANKING,
-} from '@/graphql/queries/get-apps'
+} from '@/apps/priority-rankings'
 
 describe('index.ts', () => {
   it('should export all apps keys that also match their folder names', () => {

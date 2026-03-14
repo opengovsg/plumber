@@ -5,10 +5,11 @@ import { useQuery } from '@apollo/client'
 import { Flex, Grid, Text } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
 
+import appsData from '@/assets/apps.json'
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
+import appConfig from '@/config/app'
 import * as URLS from '@/config/urls'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 
 import TemplateModal from '../Template'
@@ -19,15 +20,18 @@ import TemplateTileSkeleton from './components/TemplateTileSkeleton'
 const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
 
+// Process apps data once at module load
+const apps: IApp[] = (appsData as IApp[]).map((app) => ({
+  ...app,
+  iconUrl: app.iconUrl?.replace('{BASE_URL}', appConfig.baseUrl),
+}))
+
 export default function Templates(): JSX.Element {
   const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
 
   const templates: ITemplate[] = data?.getTemplates
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
-
-  const { data: appsData, loading: appsLoading } = useQuery(GET_APPS)
-  const apps: IApp[] = appsData?.getApps ?? []
 
   return (
     <>
@@ -56,7 +60,7 @@ export default function Templates(): JSX.Element {
           rowGap={6}
           mb={8}
         >
-          {templatesLoading || appsLoading
+          {templatesLoading
             ? Array.from({ length: TEMPLATES_COUNT }).map((_, index) => (
                 <TemplateTileSkeleton key={index} />
               ))
@@ -71,7 +75,7 @@ export default function Templates(): JSX.Element {
           alignItems="center"
           textStyle="body-2"
         >
-          <Text whiteSpace="pre-wrap">{`Can’t find what you’re looking for? `}</Text>
+          <Text whiteSpace="pre-wrap">{`Can't find what you're looking for? `}</Text>
           <Link
             href={URLS.TEMPLATES_FORM_LINK}
             isExternal

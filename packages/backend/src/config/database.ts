@@ -8,7 +8,6 @@ import type { Knex } from 'knex'
 import knex from 'knex'
 
 import logger from '../helpers/logger'
-import { markQueryStart, trackQuery } from '../helpers/request-context'
 
 import appConfig from './app'
 
@@ -30,14 +29,6 @@ export const config = {
 } satisfies Knex.Config
 
 export const client: Knex = knex(config)
-
-client.on('query', (query) => {
-  markQueryStart(query.__knexQueryUid)
-})
-
-client.on('query-response', (_response, query) => {
-  trackQuery(query.__knexQueryUid, query.sql)
-})
 
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 

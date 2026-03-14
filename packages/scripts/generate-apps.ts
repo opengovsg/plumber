@@ -21,7 +21,7 @@ import apps from '../backend/src/apps'
 import {
   ACTION_APPS_RANKING,
   TRIGGER_APPS_RANKING,
-} from '../backend/src/graphql/queries/get-apps'
+} from '../backend/src/apps/priority-rankings'
 import getApp from '../backend/src/helpers/get-app'
 
 const OUTPUT_PATH = 'packages/frontend/src/assets/apps.json'
