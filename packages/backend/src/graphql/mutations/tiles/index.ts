@@ -8,9 +8,12 @@ import deleteRows from './delete-rows'
 import deleteTable from './delete-table'
 import deleteTableCollaborator from './delete-table-collaborator'
 import deleteShareableTableLink from './delete-table-shareable-link'
+import deleteTableViewPassword from './delete-table-view-password'
+import setTableViewPassword from './set-table-view-password'
 import updateRow from './update-row'
 import updateTable from './update-table'
 import upsertTableCollaborator from './upsert-table-collaborator'
+import verifyTableViewPassword from './verify-table-view-password'
 
 export default {
   createTable,
@@ -24,4 +27,7 @@ export default {
   deleteShareableTableLink,
   deleteTableCollaborator,
   upsertTableCollaborator,
+  setTableViewPassword,
+  deleteTableViewPassword,
+  verifyTableViewPassword,
 } satisfies MutationResolvers

@@ -15,6 +15,8 @@ const deleteShareableTableLink: MutationResolvers['deleteShareableTableLink'] =
 
     await table.$query().patch({
       viewOnlyKey: null,
+      // we also remove passwords when shareable link is disabled
+      viewOnlyPassword: null,
     })
 
     return true

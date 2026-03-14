@@ -1,11 +1,11 @@
-import { IFlow, IStep } from '@plumber/types'
+import { IStep } from '@plumber/types'
 
 import { useContext } from 'react'
 
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
 import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
-import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 /**
@@ -16,68 +16,26 @@ import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
  *
  */
 function isDelaySelectable({
-  flow,
+  hasForEach,
+  groupedSteps,
   step,
   prevStepId,
 }: {
-  flow: IFlow
+  hasForEach: boolean
+  groupedSteps: IStep[][]
   step?: IStep
   prevStepId?: string
 }) {
-  const forEachStepPosition = flow?.steps.find(
-    (s) => s.key === TOOLBOX_ACTIONS.ForEach,
-  )?.position
-
-  let prevStepPosition = null
-  if (step) {
-    prevStepPosition = step.position
-  } else if (prevStepId) {
-    prevStepPosition = flow?.steps?.find((s) => s.id === prevStepId)?.position
+  if (!hasForEach) {
+    return true
   }
-
-  let isDelaySelectable: boolean
-  if (!forEachStepPosition) {
-    isDelaySelectable = true
-  } else if (forEachStepPosition && prevStepPosition) {
-    isDelaySelectable = prevStepPosition < forEachStepPosition
-  } else {
-    isDelaySelectable = false
-  }
-
-  return isDelaySelectable
-}
-
-/**
- * Helper function to check if For-each action should be selectable; supports edge
- * case in ChooseEvent component.
- *
- * For-each should only be selectable if:
- * - We're the last step.
- * - We are not inside a for-each action.
- * - We are not inside an if-then action.
- * - There is no if-then action in the flow,
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- */
-function isForEachSelectable({
-  flow,
-  hasIfThen,
-  isLastStep,
-}: {
-  flow: IFlow
-  hasIfThen: boolean
-  isLastStep: boolean
-}) {
-  const hasForEach = flow?.steps?.some(
-    (step: IStep) => step.key === TOOLBOX_ACTIONS.ForEach,
-  )
-
-  if (hasForEach || hasIfThen || !isLastStep) {
+  const isStepWithinForEach = groupedSteps.flat().some((groupedStep) => {
+    if (step?.id === groupedStep.id || prevStepId === groupedStep.id) {
+      return true
+    }
     return false
-  }
-
-  return true
+  })
+  return !isStepWithinForEach
 }
 
 /**
@@ -116,6 +74,7 @@ function isIfThenSelectable({
   }
 
   const isNestedBranch = depth > 0
+
   return !isNestedBranch
 }
 
@@ -129,8 +88,16 @@ export const useIsAppSelectable = ({
   prevStepId?: string
 }): Record<string, boolean> => {
   const { depth } = useContext(BranchContext)
-  const { flow, hasIfThen } = useContext(EditorContext)
+  const { groupedSteps } = useContext(StepsToDisplayContext)
   const { getFlagValue } = useContext(LaunchDarklyContext)
+
+  const hasIfThen = groupedSteps.some((group) =>
+    group.some((step) => step.key === TOOLBOX_ACTIONS.IfThen),
+  )
+
+  const hasForEach = groupedSteps.some((group) =>
+    group.some((step) => step.key === TOOLBOX_ACTIONS.ForEach),
+  )
 
   return {
     [TOOLBOX_ACTIONS.IfThen]: isIfThenSelectable({
@@ -139,11 +106,13 @@ export const useIsAppSelectable = ({
       isLastStep,
       getFlagValue,
     }),
-    [TOOLBOX_ACTIONS.ForEach]: isForEachSelectable({
-      flow,
-      hasIfThen,
-      isLastStep,
-    }),
-    delay: isDelaySelectable({ flow, step, prevStepId }),
+    /**
+     * For-each should only be selectable if:
+     * - We're the last step.
+     * - There's no other for-each action
+     * - There's no other if-then action
+     */
+    [TOOLBOX_ACTIONS.ForEach]: isLastStep && !hasIfThen && !hasForEach,
+    delay: isDelaySelectable({ hasForEach, groupedSteps, step, prevStepId }),
   }
 }

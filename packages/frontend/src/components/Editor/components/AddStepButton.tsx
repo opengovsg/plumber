@@ -1,11 +1,12 @@
+import { IStep } from '@plumber/types'
+
 import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 
+import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
+import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
-
-import EmptyFlowStepHeader from '../EmptyFlowStepHeader'
-import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 
 import UnsavedChangesAlert from './UnsavedChangesAlert'
 
@@ -14,11 +15,11 @@ interface AddStepButtonProps {
   isDisabled: boolean
   isLastStep: boolean
   showEmptyAction: boolean
-  stepId: string
+  step: IStep
 }
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { isHidden, isLastStep, stepId, isDisabled, showEmptyAction } = props
+  const { isHidden, isLastStep, step, isDisabled, showEmptyAction } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const {
@@ -38,12 +39,17 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
       flexDir="column"
       alignItems="center"
       alignSelf="stretch"
-      h={showEmptyAction ? undefined : isHidden ? 12 : 16}
+      h="auto"
+      w="100%"
     >
       {isHidden || (isDisabled && !isLastStep) ? (
         !isLastStep && (
           // If in between add button is disabled, we hide it
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
+          <Divider
+            h={12}
+            orientation="vertical"
+            borderColor="base.divider.strong"
+          />
         )
       ) : (
         <>
@@ -63,8 +69,8 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             </>
           )}
           {/* Top vertical line */}
-          <Box h={6}>
-            <Divider orientation="vertical" borderColor="base.divider.strong" />
+          <Box h={4}>
+            <Divider orientation="vertical" />
           </Box>
           <TouchableTooltip
             label={isDisabled ? '' : 'Add step'}
@@ -88,17 +94,14 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               _active={{
                 bg: 'interaction.muted.neutral.active',
               }}
-              borderColor={isLastStep ? 'interaction.sub.default' : undefined}
+              borderColor={isLastStep ? 'base.divider.strong' : undefined}
               h={8}
             />
           </TouchableTooltip>
           {/* Bottom vertical line */}
           {!isLastStep && (
-            <Box h={6}>
-              <Divider
-                orientation="vertical"
-                borderColor="base.divider.strong"
-              />
+            <Box h={4}>
+              <Divider orientation="vertical" />
             </Box>
           )}
 
@@ -107,7 +110,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               onClose={onClose}
               isTrigger={false} // Can only add an action all the time
               isLastStep={isLastStep}
-              prevStepId={stepId}
+              prevStep={step}
             />
           )}
         </>

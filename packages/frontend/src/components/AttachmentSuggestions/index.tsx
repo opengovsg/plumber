@@ -7,6 +7,7 @@ import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
+import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { type Variable } from '@/helpers/variables'
@@ -17,7 +18,7 @@ import MenuAlertDialog from '../MenuAlertDialog'
 import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'
-import { validateFiles } from './utils'
+import { validateFiles, validateFileSize } from './utils'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -40,11 +41,10 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const cancelRef = useRef<HTMLButtonElement>(null)
   const wrapperRef = useRef(null)
+  const { flow } = useContext(EditorContext)
   const { control, setError, getValues } = useFormContext()
   const [currentTab, setCurrentTab] = useState<number>(0)
   const [selectedFile, setSelectedFile] = useState<Variable | null>(null)
-
-  const flow = getValues('flow')
 
   const {
     isOpen: isDialogOpen,
@@ -144,14 +144,19 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
 
   const processFile = useCallback(
     async (file: File) => {
-      const { isValid, error } = validateFiles(file, options, getValues(name))
+      /**
+       * when uploading the file, we only need to validate the file size.
+       * the total number of files and total size of files are validated when users make
+       * their selection via the suggestions component.
+       */
+      const { isValid, error } = validateFileSize(file)
       if (!isValid) {
         setError(name, { type: 'invalidFile', message: error })
       } else {
         await uploadToS3(file, flow.id, flow.updatedAt)
       }
     },
-    [flow.id, flow.updatedAt, getValues, name, options, setError, uploadToS3],
+    [flow.id, flow.updatedAt, name, setError, uploadToS3],
   )
 
   return (

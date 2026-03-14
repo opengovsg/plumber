@@ -60,6 +60,7 @@ export type TDataOutMetadatumType =
   | 'array'
   | 'tile_row_id'
   | 'table'
+  | 'approval'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -166,8 +167,16 @@ export interface IExecution {
   createdAt: string
 }
 
+export type IStepApprovalBranch = 'approve' | 'reject'
+
+export interface IStepApprovalConfig {
+  branch: 'reject'
+  stepId: string
+}
+
 export interface IStepConfig {
   stepName?: string
+  approval?: IStepApprovalConfig
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
 }
@@ -555,6 +564,11 @@ export interface IAppQueue {
    * the queueRateLimit.
    */
   isQueueDelayable: boolean
+
+  /**
+   * The type of worker to use for this queue.
+   */
+  workerType: 'action' | 'sub-trigger'
 }
 
 export interface IApp {
@@ -640,6 +654,11 @@ type IConnectionModalLabel = {
   addConnectionLabel?: string
 }
 
+export interface SubtriggerData {
+  type: 'mrf'
+  mrfStepId: string
+}
+
 interface IBaseAuth {
   connectionType: AuthConnectionType
 
@@ -647,9 +666,12 @@ interface IBaseAuth {
   verifyCredentials?($: IGlobalVariable): Promise<void>
   isStillVerified?($: IGlobalVariable): Promise<boolean>
   refreshToken?($: IGlobalVariable): Promise<void>
-  verifyWebhook?(
-    $: IGlobalVariable,
-  ): Promise<{ verified: boolean; internalId: string | null }>
+  verifyWebhook?($: IGlobalVariable): Promise<{
+    verified: boolean
+    internalId: string | null
+    isSubtrigger?: boolean
+    subtriggerData?: SubtriggerData
+  }>
   isRefreshTokenRequested?: boolean
   authenticationSteps?: IAuthenticationStep[]
   reconnectionSteps?: IAuthenticationStep[]
@@ -694,7 +716,6 @@ export type ITriggerInstructions = Partial<{
   afterUrlMsg: string
   hideWebhookUrl: boolean
   errorMsg: string
-  mockDataMsg: string
 }>
 
 // TODO (mal): instructions is temporarily used to display no connection but to modify for phase 2
@@ -713,6 +734,7 @@ export interface IBaseTrigger {
   description: string
   isNew?: boolean
   webhookTriggerInstructions?: ITriggerInstructions
+  hiddenFromUser?: boolean
   getInterval?(parameters: IStep['parameters']): string
   run?($: IGlobalVariable): Promise<void>
   testRun?(
@@ -773,6 +795,10 @@ export interface IActionRunResult {
    */
   nextStep?:
     | { command: 'jump-to-step'; stepId: IStep['id'] }
+    // "stop-execution" works differently from "pause-execution"
+    // for "pause-execution", the execution is paused and the execution status is not patched
+    // for "stop-execution", the execution is ended and the execution status is patched
+    | { command: 'pause-execution' }
     | { command: 'stop-execution' }
     | { command: 'start-for-each'; stepId: IStep['id'] }
   nextStepMetadata?: NextStepMetadata
@@ -785,11 +811,14 @@ export interface IActionOutput {
 
 export interface IActionItem {
   raw: IJSONObject
+  meta?: IExecutionStepMetadata
 }
 
 export interface IBaseAction {
   name: string
   key: string
+  // can only be created by backend, not by user
+  hiddenFromUser?: boolean
   description: string
   isNew?: boolean
   run?(
@@ -996,6 +1025,7 @@ export interface ITableMetadata {
   lastAccessedAt: string
   viewOnlyKey?: string
   collaborators?: ITableCollaborator[]
+  isPasswordProtected: boolean
   role?: ITableCollabRole
 }
 
@@ -1068,4 +1098,10 @@ export type TileTemplateData = {
 export type DemoVideoDetails = {
   url: string
   title: string
+}
+
+export interface CustomGraphQLFormattedError {
+  message: string
+  code: string
+  data?: IJSONObject
 }

@@ -12,6 +12,7 @@ export const UPDATE_STEP = graphql(`
       status
       position
       flowId
+      createdAt
       connection {
         id
       }
@@ -19,6 +20,10 @@ export const UPDATE_STEP = graphql(`
         stepName
         templateConfig {
           appEventKey
+        }
+        approval {
+          branch
+          stepId
         }
       }
       flow {

@@ -79,7 +79,7 @@ describe('getBranchStepIdToSkipTo', () => {
     }
 
     const result = await getBranchStepIdToSkipTo($ as any)
-    expect(result).toBeUndefined()
+    expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
@@ -289,7 +289,7 @@ describe('getBranchStepIdToSkipTo', () => {
     }
 
     const result = await getBranchStepIdToSkipTo($ as any)
-    expect(result).toBeUndefined()
+    expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
@@ -405,6 +405,95 @@ describe('getBranchStepIdToSkipTo', () => {
 
       const result = await getBranchStepIdToSkipTo($ as any)
       expect(result).toBe('step5')
+    })
+  })
+
+  describe('MRF approval flows', () => {
+    const makeSteps = (step2Config: object, step4Config: object) => [
+      {
+        id: 'step1',
+        appKey: 'formsg',
+        key: 'newSubmission',
+        parameters: {},
+        config: {},
+        position: 1,
+      },
+      {
+        id: 'step2',
+        appKey: 'toolbox',
+        key: 'ifThen',
+        parameters: { depth: '1' },
+        config: step2Config,
+        position: 2,
+      },
+      {
+        id: 'step3',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        config: {},
+        position: 3,
+      },
+      {
+        id: 'step4',
+        appKey: 'toolbox',
+        key: 'ifThen',
+        parameters: { depth: '1' },
+        config: step4Config,
+        position: 4,
+      },
+      {
+        id: 'step5',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        config: {},
+        position: 5,
+      },
+    ]
+
+    const $ = { flow: { id: 'flow-mrf' }, step: { id: 'step2', position: 2 } }
+
+    it('approval-branch if-then skips to next approval-branch if-then', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce(makeSteps({}, {}))
+      const result = await getBranchStepIdToSkipTo($ as any)
+      expect(result).toBe('step4')
+    })
+
+    it('approval-branch if-then does not skip to rejection-branch if-then', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce(
+        makeSteps({}, { approval: { branch: 'reject', stepId: 'mrf1' } }),
+      )
+      const result = await getBranchStepIdToSkipTo($ as any)
+      expect(result).toBeNull()
+    })
+
+    it('rejection-branch if-then skips to next rejection-branch if-then with same stepId', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce(
+        makeSteps(
+          { approval: { branch: 'reject', stepId: 'mrf1' } },
+          { approval: { branch: 'reject', stepId: 'mrf1' } },
+        ),
+      )
+      const result = await getBranchStepIdToSkipTo($ as any)
+      expect(result).toBe('step4')
+    })
+
+    it('rejection-branch if-then does not skip to rejection-branch if-then with different stepId', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce(
+        makeSteps(
+          { approval: { branch: 'reject', stepId: 'mrf1' } },
+          { approval: { branch: 'reject', stepId: 'mrf2' } },
+        ),
+      )
+      const result = await getBranchStepIdToSkipTo($ as any)
+      expect(result).toBeNull()
+    })
+
+    it('rejection-branch if-then does not skip to approval-branch if-then', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce(
+        makeSteps({ approval: { branch: 'reject', stepId: 'mrf1' } }, {}),
+      )
+      const result = await getBranchStepIdToSkipTo($ as any)
+      expect(result).toBeNull()
     })
   })
 })

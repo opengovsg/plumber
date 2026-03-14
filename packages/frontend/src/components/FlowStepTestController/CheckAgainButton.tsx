@@ -15,6 +15,12 @@ import {
 } from '@chakra-ui/react'
 import { Button, IconButton, Menu } from '@opengovsg/design-system-react'
 
+import {
+  FORMSG_APP_KEY,
+  FORMSG_TRIGGER_KEY,
+  MRF_ACTION_KEY,
+} from '@/helpers/formsg'
+
 interface CheckAgainButtonProps {
   isUnstyledInfobox: boolean
   onClick: (testRunMetadata?: Record<string, unknown>) => void
@@ -27,8 +33,14 @@ interface CheckAgainButtonProps {
 export function CheckAgainButton(props: CheckAgainButtonProps) {
   const { isUnstyledInfobox, onClick, isLoading, isDisabled, step } = props
   const isFormSgTrigger =
-    step.appKey === 'formsg' && step.key === 'newSubmission'
+    step.appKey === FORMSG_APP_KEY && step.key === FORMSG_TRIGGER_KEY
+  const isFormSgAction =
+    step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
+
   if (isFormSgTrigger) {
+    return <FormSGCheckAgainButton {...props} />
+  }
+  if (isFormSgAction) {
     return <FormSGCheckAgainButton {...props} />
   }
   return (

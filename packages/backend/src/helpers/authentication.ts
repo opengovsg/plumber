@@ -4,6 +4,7 @@ import { allow, and, not, or, rule, shield } from 'graphql-shield'
 
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { UnauthorisedError } from '@/errors/graphql-errors'
+import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
 import {
   getAdminTokenUser,
   getLoggedInUser,
@@ -25,8 +26,11 @@ export const setCurrentUserContext = async ({
     isAdminOperation: false,
   }
 
-  // Get tiles view key from headers
+  // Get tiles view key and token from headers
   context.tilesViewKey = req.headers['x-tiles-view-key'] as string | undefined
+  context.tilesViewToken = req.headers['x-tiles-view-token'] as
+    | string
+    | undefined
 
   if (typeof req.headers['x-plumber-admin-token'] === 'string') {
     const adminToken = parseAdminToken(req.headers['x-plumber-admin-token'])
@@ -77,6 +81,9 @@ const rateLimitRule = createRateLimitRule({
   // recommended flag: https://github.com/teamplanes/graphql-rate-limit#enablebatchrequestcache
   enableBatchRequestCache: true,
   store: new RedisStore(createRedisClient(REDIS_DB_INDEX.RATE_LIMIT)),
+  createError: (message) => {
+    return new RateLimitedError(message)
+  },
 })
 
 const authentication = shield(
@@ -108,6 +115,10 @@ const authentication = shield(
       loginWithSgid: rateLimitRule({ window: '1s', max: 5 }),
       loginWithSelectedSgid: rateLimitRule({ window: '1s', max: 5 }),
       loginWithSso: rateLimitRule({ window: '1s', max: 5 }),
+      verifyTableViewPassword: and(
+        isViewKey,
+        rateLimitRule({ window: '1s', max: 5 }),
+      ),
       admin: isAdminOperation,
     },
     AdminMutation: isAdminOperation,

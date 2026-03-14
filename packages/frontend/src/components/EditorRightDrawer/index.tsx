@@ -1,9 +1,7 @@
 import { IStep } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
-import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import Step from './Step'
@@ -11,21 +9,15 @@ import StepHeader from './StepHeader'
 import { editorRightDrawerStyles as styles } from './styles'
 
 interface EditorRightDrawerProps {
-  flowStepGroupIconUrl?: string
-  steps: IStep[]
+  step?: IStep
 }
 
 export default function EditorRightDrawer(props: EditorRightDrawerProps) {
-  const { steps } = props
+  const { step } = props
 
-  const { allApps, currentStepId } = useContext(EditorContext)
+  const { hasConnection } = useStepMetadata(step)
 
-  const step = useMemo(() => {
-    return steps.find((step) => step.id === currentStepId)
-  }, [currentStepId, steps])
-  const { hasConnection } = useStepMetadata(allApps, step)
-
-  if (!currentStepId || !step) {
+  if (!step) {
     return null
   }
 
@@ -40,7 +32,7 @@ export default function EditorRightDrawer(props: EditorRightDrawerProps) {
     >
       <StepHeader step={step} />
       <Flex {...styles.stepContentsWrapper} pt={hasConnection ? 0 : 4}>
-        <Step step={step} isLastStep={step.position === steps.length} />
+        <Step step={step} />
       </Flex>
     </Flex>
   )

@@ -20,7 +20,7 @@ interface FlowStepConfigurationModalProps {
   step?: IStep
   app?: IApp
   event?: ITrigger | IAction
-  prevStepId?: string
+  prevStep?: IStep
 }
 
 function FlowStepConfigurationModalContent({
@@ -52,7 +52,7 @@ function FlowStepConfigurationModalContent({
 export default function FlowStepConfigurationModal(
   props: FlowStepConfigurationModalProps,
 ): JSX.Element {
-  const { onClose, isTrigger, isLastStep, step, app, event, prevStepId } = props
+  const { onClose, isTrigger, isLastStep, step, app, event, prevStep } = props
 
   return (
     <FlowStepConfigurationContextProvider
@@ -60,7 +60,7 @@ export default function FlowStepConfigurationModal(
       isLastStep={isLastStep}
       app={app}
       event={event}
-      prevStepId={prevStepId}
+      prevStep={prevStep}
       step={step}
     >
       <Modal

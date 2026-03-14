@@ -24,5 +24,6 @@ export function getGenericAppQueue(
       concurrency: concurrency,
     },
     isQueueDelayable: false,
+    workerType: 'action',
   } satisfies IAppQueue
 }

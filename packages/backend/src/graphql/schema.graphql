@@ -115,6 +115,9 @@ type Mutation {
   createTable(input: CreateTableInput!): TableMetadata!
   createShareableTableLink(tableId: ID!): String!
   deleteShareableTableLink(tableId: ID!): Boolean!
+  setTableViewPassword(input: SetTableViewPasswordInput!): Boolean!
+  deleteTableViewPassword(tableId: ID!): Boolean!
+  verifyTableViewPassword(input: VerifyTableViewPasswordInput!): String!
   updateTable(input: UpdateTableInput!): TableMetadata!
   deleteTable(input: DeleteTableInput!): Boolean!
   # Tiles rows
@@ -174,6 +177,7 @@ type Action {
   name: String
   key: String
   description: String
+  hiddenFromUser: Boolean
   groupsLaterSteps: Boolean
   setupMessage: SetupMessage
   isNew: Boolean
@@ -589,8 +593,16 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
+
+
+input StepApprovalConfigInput {
+  branch: String!
+  stepId: String!
+}
+
 input StepConfigInput {
   stepName: String
+  approval: StepApprovalConfigInput
 }
 
 input UpdateStepInput {
@@ -610,6 +622,7 @@ input StepPositionInput {
   id: String!
   position: Int!
   type: StepEnumType!
+  config: StepConfigInput
 }
 
 input UpdateStepPositionsInput {
@@ -709,10 +722,16 @@ type Step {
 type StepConfig {
   templateConfig: StepTemplateConfig
   stepName: String
+  approval: StepApprovalConfig
 }
 
 type StepTemplateConfig {
   appEventKey: String
+}
+
+type StepApprovalConfig {
+  branch: String!
+  stepId: String!
 }
 
 input StepConnectionInput {
@@ -758,7 +777,6 @@ type TriggerInstructions {
   afterUrlMsg: String
   hideWebhookUrl: Boolean
   errorMsg: String
-  mockDataMsg: String
 }
 
 type StepTransferDetails {
@@ -921,6 +939,7 @@ type TableMetadata {
   lastAccessedAt: String!
   viewOnlyKey: String
   collaborators: [TableCollaborator!]
+  isPasswordProtected: Boolean!
   role: String
 }
 
@@ -937,6 +956,16 @@ type GetTableRowsResult {
   rows: Any!
   columnIds: [String!]!
   stringifiedCursor: String
+}
+
+input SetTableViewPasswordInput {
+  tableId: ID!
+  password: String!
+}
+
+input VerifyTableViewPasswordInput {
+  tableId: ID!
+  password: String!
 }
 
 # End Tiles types

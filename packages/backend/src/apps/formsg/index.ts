@@ -1,7 +1,9 @@
 import type { IApp } from '@plumber/types'
 
 import beforeRequest from './common/before-request'
+import actions from './actions'
 import auth from './auth'
+import queue from './queue'
 import triggers from './triggers'
 
 const app: IApp = {
@@ -16,11 +18,12 @@ const app: IApp = {
   beforeRequest,
   auth,
   triggers,
-  actions: [],
+  actions,
   demoVideoDetails: {
     url: 'https://demo.arcade.software/6cWULLTHkTH4XsSB1rs1?embed&show_copy_link=true',
     title: 'Setting up FormSG',
   },
+  queue,
 }
 
 export default app

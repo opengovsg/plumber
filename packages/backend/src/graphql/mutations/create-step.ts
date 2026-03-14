@@ -1,5 +1,11 @@
+import { IStepConfig } from '@plumber/types'
+
 import { raw } from 'objection'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
+import logger from '@/helpers/logger'
+import { validateApprovalConfig } from '@/helpers/validate-approval-config'
+import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -12,6 +18,29 @@ const createStep: MutationResolvers['createStep'] = async (
   context,
 ) => {
   const { input } = params
+
+  /**
+   * appKey and key are optional, we allow creating of empty step for if-then branches
+   */
+  if (input.appKey && input.key) {
+    const triggerOrAction = await App.findTriggerOrActionByKey(
+      input.appKey,
+      input.key,
+    )
+
+    if (!triggerOrAction) {
+      logger.error({
+        event: 'createStep: no such trigger or action',
+        appKey: input.appKey,
+        key: input.key,
+      })
+      throw new BadUserInputError('No such trigger or action')
+    }
+
+    if (triggerOrAction?.hiddenFromUser) {
+      throw new BadUserInputError('Action can only be created by system')
+    }
+  }
 
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
@@ -52,21 +81,29 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
+    const validationResult = await validateApprovalConfig(
+      input.config as IStepConfig,
+      previousStep,
+    )
+    if (!validationResult.isApprovalConfigValid) {
+      throw new BadUserInputError('Invalid approval config')
+    }
+
     await flow
       .$relatedQuery('steps', trx)
       .patch({
         position: raw(`position + 1`),
       })
-      .where('position', '>=', previousStep.position + 1)
+      .where('position', '>=', validationResult.newStepPosition)
 
     const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
       key: input.key,
       appKey: input.appKey,
       type: 'action',
-      position: previousStep.position + 1,
+      position: validationResult.newStepPosition,
       parameters: input.parameters,
       connectionId: input.connection?.id,
-      config: input.config,
+      config: input.config as IStepConfig,
     })
 
     // NOTE: add flow connection to the flow_connections table

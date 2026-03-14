@@ -1,9 +1,15 @@
+import { CustomGraphQLFormattedError } from '@plumber/types'
+
 import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
+import { removeTypenameFromVariables } from '@apollo/client/link/remove-typename'
 
-import { INVALID_TILE_VIEW_KEY, NOT_AUTHORISED } from '@/config/errors'
-import * as URLS from '@/config/urls'
+import {
+  INVALID_TILE_VIEW_KEY,
+  INVALID_TILE_VIEW_TOKEN,
+  NOT_AUTHORISED,
+} from '@/config/errors'
 
 type CreateLinkOptions = {
   uri: string
@@ -36,19 +42,20 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
     }
 
     if (graphQLErrors) {
-      graphQLErrors.forEach(({ message, locations, path }) => {
-        if (autoSnackbar) {
+      graphQLErrors.forEach((error: unknown) => {
+        const { message, code } = error as CustomGraphQLFormattedError
+        // Password-protected tile errors are handled locally by the Tile page
+        const noSnackbarErrors = [
+          INVALID_TILE_VIEW_KEY,
+          INVALID_TILE_VIEW_TOKEN,
+        ]
+
+        if (autoSnackbar && !noSnackbarErrors.includes(code)) {
           callback?.(message)
         }
 
         // eslint-disable-next-line no-console
-        console.log(
-          `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
-        )
-
-        if (message === INVALID_TILE_VIEW_KEY) {
-          window.location.href = URLS.UNAUTHORIZED_TILE
-        }
+        console.log(`[GraphQL error]: Message: ${message}, Code: ${code}`)
       })
     } else if (networkError) {
       if (autoSnackbar) {
@@ -67,7 +74,13 @@ const createLink = (options: CreateLinkOptions): ApolloLink => {
 
   const httpOptions = { uri, token }
 
-  return from([createErrorLink(onError), createHttpLink(httpOptions)])
+  return from([
+    // this removes the __typename from variables before sending to the server,
+    // which prevents validation errors especially when duplicating steps
+    removeTypenameFromVariables(),
+    createErrorLink(onError),
+    createHttpLink(httpOptions),
+  ])
 }
 
 export default createLink

@@ -9,6 +9,7 @@ interface FlowStepConfigurationContextValue {
   patchModalState: (modalState: Partial<ModalState>) => void
   isTrigger: boolean
   isLastStep: boolean
+  prevStep?: IStep
   prevStepId?: string
   step?: IStep
 }
@@ -49,7 +50,7 @@ interface FlowStepConfigurationContextProps {
   event?: ITrigger | IAction
   isTrigger: boolean
   isLastStep: boolean
-  prevStepId?: string
+  prevStep?: IStep
   children: React.ReactNode
 }
 
@@ -59,7 +60,7 @@ export const FlowStepConfigurationContextProvider = ({
   event,
   isTrigger,
   isLastStep,
-  prevStepId,
+  prevStep,
   children,
 }: FlowStepConfigurationContextProps) => {
   const [modalState, setModalState] = useState<ModalState>({
@@ -81,7 +82,8 @@ export const FlowStepConfigurationContextProvider = ({
         patchModalState,
         isTrigger,
         isLastStep,
-        prevStepId,
+        prevStep,
+        prevStepId: prevStep?.id,
         step,
       }}
     >
