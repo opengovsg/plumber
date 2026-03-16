@@ -53,6 +53,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     stepGroupType,
     stepGroupCaption,
     ddSessionId,
+    clearPersistedState,
   } = useAiBuilderContext()
 
   const isMobile = useIsMobile()
@@ -166,10 +167,20 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
 
     const flowId = data?.createFlowWithSteps?.id
 
+    // Clear persisted draft state since we successfully created the flow
+    clearPersistedState()
+
     navigate(URLS.FLOW_EDITOR(flowId), {
       replace: true,
     })
-  }, [steps, createFlowWithSteps, flowName, navigate, output?.traceId])
+  }, [
+    steps,
+    createFlowWithSteps,
+    flowName,
+    navigate,
+    output?.traceId,
+    clearPersistedState,
+  ])
 
   if (error || !steps) {
     return (
