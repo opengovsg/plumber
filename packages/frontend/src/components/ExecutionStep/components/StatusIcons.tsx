@@ -28,6 +28,7 @@ const partialIcon = (
 
 const waitingIcon = <Image src={executionWaitingIcon} h={6} />
 
+// Only used for delay until past timestamp paused errors
 const delayPausedIcon = (
   <Icon boxSize={6} as={BiSolidErrorCircle} color="blue.500" />
 )

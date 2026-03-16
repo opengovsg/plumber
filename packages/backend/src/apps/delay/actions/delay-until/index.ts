@@ -125,6 +125,7 @@ const action: IRawAction = {
           delayUntilTime: dateTimeNow.toPlumberFormat('HH:mm'),
         }
       } else {
+        // Update in `useExecutionStepStatus.ts` if the error name changes
         throw new StepError(
           'Delay until timestamp entered is in the past',
           'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
