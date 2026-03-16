@@ -7,7 +7,6 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
   params,
   context,
 ) => {
-  console.time('handler')
   const { flowId } = params
   // For checking if user is a collaborator
   const flow = await context.currentUser
@@ -34,7 +33,6 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
       return completedStepIdsSet.has(executionStep.stepId)
     },
   )
-  console.timeEnd('handler')
   return filteredTestExecutionSteps
 }
 

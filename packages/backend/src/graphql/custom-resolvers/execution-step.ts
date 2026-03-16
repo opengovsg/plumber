@@ -7,9 +7,12 @@ type ExecutionStepResolver = Resolvers['ExecutionStep']
 const dataOutMetadata: ExecutionStepResolver['dataOutMetadata'] = async (
   parent,
 ) => {
-  // Use already-loaded relation to avoid N+1 queries
-  const step = parent.step ?? (await parent.$relatedQuery('step'))
-  const { appKey, key: stepKey, isAction, isTrigger } = step
+  const {
+    appKey,
+    key: stepKey,
+    isAction,
+    isTrigger,
+  } = await parent.$relatedQuery('step')
 
   if (!appKey || !stepKey) {
     return null
@@ -21,7 +24,6 @@ const dataOutMetadata: ExecutionStepResolver['dataOutMetadata'] = async (
   if (appKey !== parent.appKey) {
     return null
   }
-
   const app = await App.findOneByKey(appKey)
 
   if (isAction) {
