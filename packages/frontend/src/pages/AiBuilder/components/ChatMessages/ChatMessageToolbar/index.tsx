@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button, Flex } from '@chakra-ui/react'
 
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
@@ -14,6 +15,17 @@ export default function ChatMessageToolbar({
   shouldShowPreviewButton,
 }: ChatMessageToolbarProps) {
   const { setIsDrawerOpen } = useAiBuilderContext()
+  const [submittedFeedback, setSubmittedFeedback] = useState<
+    'positive' | 'negative' | null
+  >(null)
+
+  const handleFeedbackSubmit = (type: 'positive' | 'negative') => {
+    setSubmittedFeedback(type)
+  }
+
+  const handleFeedbackReset = () => {
+    setSubmittedFeedback(null)
+  }
 
   return (
     <>
@@ -25,8 +37,24 @@ export default function ChatMessageToolbar({
         </Flex>
       )}
       <Flex gap={1} mt={2}>
-        <FeedbackButton feedbackType="positive" traceId={traceId} />
-        <FeedbackButton feedbackType="negative" traceId={traceId} />
+        {submittedFeedback !== 'negative' && (
+          <FeedbackButton
+            feedbackType="positive"
+            traceId={traceId}
+            onFeedbackSubmit={handleFeedbackSubmit}
+            onFeedbackReset={handleFeedbackReset}
+            isSubmitted={submittedFeedback === 'positive'}
+          />
+        )}
+        {submittedFeedback !== 'positive' && (
+          <FeedbackButton
+            feedbackType="negative"
+            traceId={traceId}
+            onFeedbackSubmit={handleFeedbackSubmit}
+            onFeedbackReset={handleFeedbackReset}
+            isSubmitted={submittedFeedback === 'negative'}
+          />
+        )}
       </Flex>
     </>
   )
