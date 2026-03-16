@@ -93,7 +93,7 @@ function AiBuilderContent() {
           maxW="full"
           px={0}
           py={0}
-          mt={isMobile && isDrawerOpen ? 0 : '51.5px'}
+          mt={isMobile && isDrawerOpen ? 0 : '57px'}
           flex={1}
           overflowY="auto"
           bg="white"

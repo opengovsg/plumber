@@ -35,7 +35,7 @@ export default function SideDrawer({
         backgroundSize: '30px 30px',
       }}
     >
-      <Flex h="100%" flexDir="column" w="full" py={isMobile ? 0 : 4}>
+      <Flex h="100%" flexDir="column" w="full" py={0}>
         {isMobile && (
           <Flex
             px={4}
@@ -49,7 +49,12 @@ export default function SideDrawer({
         )}
 
         {/* Content */}
-        <Box flex={1} overflowY="auto" py={2} px={isMobile ? 4 : 0}>
+        <Box
+          flex={1}
+          overflowY="auto"
+          py={isMobile ? 4 : 6}
+          px={isMobile ? 4 : 0}
+        >
           {isOpen && <StepsPreview isReadyForPreview={isReadyForPreview} />}
         </Box>
       </Flex>
