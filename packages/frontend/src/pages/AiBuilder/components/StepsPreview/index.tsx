@@ -1,6 +1,13 @@
 import { IStepConfig } from '@plumber/types'
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -59,6 +66,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
   const isMobile = useIsMobile()
   const navigate = useNavigate()
   const [error, setError] = useState<boolean>(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
@@ -74,6 +82,15 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
         return
       }
 
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+
+      // Create new AbortController for this request
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
       try {
         setError(false)
         const { data } = await generateAiStepsMutation({
@@ -83,9 +100,17 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
               sessionId: ddSessionId,
             },
           },
+          context: {
+            fetchOptions: {
+              signal: abortController.signal,
+            },
+          },
         })
         return data?.generateAiSteps
       } catch {
+        if (abortController.signal.aborted) {
+          return
+        }
         setError(true)
       }
     },
@@ -116,6 +141,15 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     }
     onGenerateAiSteps()
   }, [onGenerateAiSteps, output, isReadyForPreview])
+
+  // Cleanup: abort mutation on unmount or navigation
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
 
   const retryGenerateAiSteps = useCallback(async () => {
     setError(false)
