@@ -76,6 +76,7 @@ export default function PromptInput({
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
         mb={shouldShowIdeas ? 6 : 0}
+        cursor={isStreaming ? 'not-allowed' : 'default'}
       >
         <Textarea
           ref={textareaRef}
@@ -92,7 +93,12 @@ export default function PromptInput({
           color="gray.900"
           _placeholder={{ color: 'gray.500' }}
           _focus={{ outline: 'none', boxShadow: 'none' }}
-          _disabled={{ opacity: 1, bg: 'transparent', color: 'gray.900' }}
+          _disabled={{
+            opacity: 1,
+            bg: 'transparent',
+            color: 'gray.900',
+            cursor: 'not-allowed',
+          }}
           fontSize="base"
           lineHeight="6"
           maxH="calc(40vh - 100px)"
