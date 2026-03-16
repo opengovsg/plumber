@@ -8,7 +8,6 @@ import {
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
-import { useIsMobile } from '@opengovsg/design-system-react'
 
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
@@ -28,7 +27,6 @@ export default function PromptInput({
   sendMessage,
   cancelStream,
 }: PromptInputProps) {
-  const isMobile = useIsMobile()
   const [input, setInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -77,7 +75,7 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        mb={isMobile ? (shouldShowIdeas ? 6 : 0) : 6}
+        mb={shouldShowIdeas ? 6 : 0}
       >
         <Textarea
           ref={textareaRef}
