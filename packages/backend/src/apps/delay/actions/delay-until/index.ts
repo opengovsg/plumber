@@ -48,7 +48,7 @@ const action: IRawAction = {
       label: 'How should we handle dates in the past?',
       key: 'allowPastDate',
       type: 'boolean-radio' as const,
-      required: false,
+      required: true,
       value: true,
       options: [
         {
@@ -104,8 +104,7 @@ const action: IRawAction = {
     if (isNaN(delayTimestamp)) {
       throw new StepError(
         'Incorrect date or time format',
-        `* Date must be in DD MMM YYYY and time in HH:MM format. 
-         \n* If you're using a variable, make sure it returns values in these formats.`,
+        `* Date must be in DD MMM YYYY and time in HH:MM format.\n* If you're using a variable, make sure it returns values in these formats.`,
         $.step.position,
         $.app.name,
       )
