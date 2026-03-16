@@ -7,11 +7,15 @@ import { GroupStatusType } from '@/components/ExecutionGroup/GroupStatusFilter'
 import { GET_APP } from '@/graphql/queries/get-app'
 
 import {
+  delayPausedIcon,
   failureIcon,
   partialIcon,
   successIcon,
   waitingIcon,
 } from '../components/StatusIcons'
+
+// This is frontend hardcoded, remember to change if error name changes
+const ERROR_NAME_DELAY_PAUSED = 'Delay until timestamp entered is in the past'
 
 export interface UseExecutionStepStatusProps {
   appKey: string
@@ -28,6 +32,7 @@ export interface UseExecutionStepStatusReturn {
   isStepSuccessful: boolean
   hasError: boolean
   isPartialSuccess: boolean
+  isDelayPaused: boolean
   canRetry: boolean
   loading: boolean
   customRetryButtonText?: string
@@ -49,6 +54,7 @@ export function useExecutionStepStatus({
   const isStepSuccessful = status === 'success'
   const hasExecutionFailed = execution?.status === 'failure'
   const isPartialSuccess = status === 'success' && hasError
+  const isDelayPaused = errorDetails?.name === ERROR_NAME_DELAY_PAUSED
   const canRetry =
     !isStepSuccessful &&
     !!jobId &&
@@ -56,6 +62,9 @@ export function useExecutionStepStatus({
     execution?.flow?.role !== 'viewer'
 
   const statusIcon = useMemo(() => {
+    if (isDelayPaused) {
+      return delayPausedIcon
+    }
     if (isPartialSuccess) {
       return partialIcon
     }
@@ -66,7 +75,7 @@ export function useExecutionStepStatus({
       return waitingIcon
     }
     return failureIcon
-  }, [isPartialSuccess, isStepSuccessful, status])
+  }, [isPartialSuccess, isStepSuccessful, status, isDelayPaused])
 
   const customRetryButtonText = useMemo(() => {
     // specific to email by postman where we want to allow users to retry without attachments
@@ -89,6 +98,7 @@ export function useExecutionStepStatus({
     isStepSuccessful,
     hasError,
     isPartialSuccess,
+    isDelayPaused,
     canRetry,
     loading,
     customRetryButtonText,
