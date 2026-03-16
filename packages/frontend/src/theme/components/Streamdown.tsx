@@ -36,10 +36,10 @@ export function ChakraStreamdown({
         <Text textStyle="h3" mt={2} mb={2} {...props} />
       ),
       h4: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h4" mt={2} mb={2} {...props} />
+        <Text textStyle="h4" mt={2} mb={4} {...props} />
       ),
       h5: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h5" mt={2} mb={2} {...props} />
+        <Text textStyle="h5" mt={2} mb={4} {...props} />
       ),
       h6: (props: React.ComponentProps<typeof Text>) => (
         <Text textStyle="h6" mt={2} mb={2} {...props} />
@@ -55,7 +55,7 @@ export function ChakraStreamdown({
         <List styleType="disc" spacing={2} pl={4} {...props} />
       ),
       ol: (props: React.ComponentProps<typeof List>) => (
-        <List as="ol" styleType="decimal" spacing={2} pl={4} {...props} />
+        <List as="ol" styleType="decimal" spacing={6} pl={4} {...props} />
       ),
       li: (props: React.ComponentProps<typeof ListItem>) => (
         <ListItem {...props} />
