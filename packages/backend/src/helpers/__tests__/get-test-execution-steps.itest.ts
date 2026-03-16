@@ -194,6 +194,20 @@ describe('get test execution steps', () => {
         testExecution1.executionSteps[2].id,
       ])
     })
+
+    it('should not return execution steps for incomplete steps', async () => {
+      // Set one step to incomplete
+      await flow.steps[1].$query().patch({ status: 'incomplete' })
+
+      const testExecutionSteps = await getTestExecutionSteps(flow.id)
+
+      // Should only return 2 execution steps (for the 2 completed steps)
+      expect(testExecutionSteps).toHaveLength(2)
+      expect(testExecutionSteps.map((step) => step.id)).toEqual([
+        testExecution1.executionSteps[0].id,
+        testExecution1.executionSteps[2].id,
+      ])
+    })
   })
 
   describe('when test execution id is set', () => {
@@ -238,11 +252,9 @@ describe('get test execution steps', () => {
       await flow.$query().patch({ testExecutionId: testExecution1.id })
       const refreshedFlow = await Flow.query()
         .findById(flow.id)
-        .withGraphFetched('steps')
         .throwIfNotFound()
 
       const withOptions = await getTestExecutionSteps(flow.id, {
-        stepIds: refreshedFlow.steps.map((s) => s.id),
         testExecutionId: refreshedFlow.testExecutionId ?? null,
       })
       const withoutOptions = await getTestExecutionSteps(flow.id)
@@ -251,6 +263,21 @@ describe('get test execution steps', () => {
       expect(withOptions.map((s) => s.id)).toEqual(
         withoutOptions.map((s) => s.id),
       )
+    })
+
+    it('should not return execution steps for incomplete steps', async () => {
+      // Set one step to incomplete
+      await flow.steps[1].$query().patch({ status: 'incomplete' })
+
+      await flow.$query().patch({ testExecutionId: testExecution1.id })
+      const testExecutionSteps = await getTestExecutionSteps(flow.id)
+
+      // Should only return 2 execution steps (for the 2 completed steps)
+      expect(testExecutionSteps).toHaveLength(2)
+      expect(testExecutionSteps.map((step) => step.id)).toEqual([
+        testExecution1.executionSteps[0].id,
+        testExecution1.executionSteps[2].id,
+      ])
     })
   })
 })

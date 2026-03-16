@@ -4,7 +4,7 @@ import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 
 export interface GetTestExecutionStepsOptions {
-  stepIds: string[]
+  stepIds?: string[]
   testExecutionId: string | null
 }
 
@@ -18,9 +18,10 @@ async function fetchTestExecutionStepsByExecutionId(
     })
   /**
    * NOTE: filters out test execution steps for steps that have been deleted
+   * or are not yet completed
    */
   const filteredTestExecutionSteps = testExecutionSteps
-    .filter((e) => e.step)
+    .filter((e) => e.step?.status === 'completed')
     .sort((a, b) => a.step.position - b.step.position)
 
   /**
@@ -86,44 +87,46 @@ async function fetchLatestExecutionStepsByStepIds(
     .where('rn', '=', 1)
     .withSoftDeleted() // because this adds a 'execution_steps.deleted_at' column to the query instead of latest_execution_steps
 
-  // sort by step position
-  latestExecutionSteps.sort((a, b) => a.step.position - b.step.position)
-  return latestExecutionSteps
+  // filter by completed status and sort by step position
+  const filteredSteps = latestExecutionSteps.filter(
+    (e) => e.step?.status === 'completed',
+  )
+  filteredSteps.sort((a, b) => a.step.position - b.step.position)
+  return filteredSteps
 }
 
 export async function getTestExecutionSteps(
   flowId: string,
   options?: GetTestExecutionStepsOptions,
 ): Promise<ExecutionStep[]> {
-  let stepIds: string[]
-  let testExecutionId: string | null
-
-  // The reason why we may need to fetch the flow step IDs again is because this function is being used in other parts of the codebase e.g. test-step.ts and get-case-fields.ts where it does not have access to the entire flow object
-  if (options) {
-    stepIds = options.stepIds
-    testExecutionId = options.testExecutionId
-  } else {
-    const flow = await Flow.query()
-      .findById(flowId)
-      .withGraphFetched('steps')
-      .throwIfNotFound()
-
-    stepIds = flow.steps.map((step) => step.id)
-    testExecutionId = flow.testExecutionId ?? null
+  // If testExecutionId is provided via options, use it directly
+  if (options?.testExecutionId) {
+    return fetchTestExecutionStepsByExecutionId(options.testExecutionId)
   }
 
-  // Sanity check to ensure step ids are provided
-  if (!stepIds.length) {
-    console.warn(
-      'No step ids obtained, returning empty array of execution steps',
-    )
-    return []
+  // If options provided with stepIds but no testExecutionId (backwards compat)
+  if (options?.stepIds?.length) {
+    return fetchLatestExecutionStepsByStepIds(options.stepIds)
   }
+
+  // No options or incomplete options - fetch flow to determine path
+  const flow = await Flow.query().findById(flowId).throwIfNotFound()
+  const testExecutionId = flow.testExecutionId ?? null
 
   if (testExecutionId) {
     return fetchTestExecutionStepsByExecutionId(testExecutionId)
   }
 
-  // This is for backwards compatibility for flows without test execution id
+  // Backwards compatibility: fetch steps for flows without testExecutionId
+  const flowWithSteps = await flow
+    .$query()
+    .withGraphFetched('steps')
+    .throwIfNotFound()
+
+  const stepIds = flowWithSteps.steps.map((step) => step.id)
+  if (!stepIds.length) {
+    return []
+  }
+
   return fetchLatestExecutionStepsByStepIds(stepIds)
 }
