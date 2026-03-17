@@ -25,11 +25,9 @@ import ConnectionHeader from './ConnectionHeader'
 export function ImageBox({
   imageUrl,
   boxSize,
-  opacity,
 }: {
   imageUrl: string
   boxSize: number
-  opacity?: number
 }) {
   return (
     <Image
@@ -37,7 +35,6 @@ export function ImageBox({
       boxSize={boxSize}
       borderStyle="solid"
       fit="contain"
-      opacity={opacity}
       fallback={
         <Icon
           boxSize={boxSize}
