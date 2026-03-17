@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 
 import { redisClient as pipeErrorRedisClient } from '@/helpers/generate-error-email'
+import { getNotificationCcRecipients } from '@/helpers/get-notification-cc-recipients'
 import { escapeHtml, safeHtml, trustedHtml } from '@/helpers/html-utils'
 import { sendEmail } from '@/helpers/send-email'
 
@@ -134,6 +135,9 @@ export async function sendBlacklistEmail({
     return
   }
 
+  // COLLABORATORS: retrieve list of collaborators to CC if any
+  const ccList = await getNotificationCcRecipients(flowId)
+
   await sendEmail({
     subject: `Plumber: Blacklisted email detected on ${truncatedFlowName}`,
     body: createBodyErrorMessage({
@@ -143,6 +147,7 @@ export async function sendBlacklistEmail({
       blacklistedRecipients: filteredBlacklist,
     }),
     recipient: userEmail,
+    cc: ccList,
     replyTo: 'support@plumber.gov.sg',
   })
 
