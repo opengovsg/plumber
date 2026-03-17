@@ -9,7 +9,6 @@ import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
 
-import ChatFooter from './ChatFooter'
 import PromptInput from './PromptInput'
 import ScrollButton from './ScrollButton'
 import SideDrawer from './SideDrawer'
@@ -150,7 +149,15 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                 isStreaming={isStreaming}
                 cancelStream={cancelStream}
               />
-              {!isMobile && <ChatFooter />}
+              {!isMobile && (
+                <Text
+                  textStyle="caption-1"
+                  color="interaction.support.placeholder"
+                  textAlign="center"
+                >
+                  This feature is new and still improving. It can make mistakes.
+                </Text>
+              )}
             </Box>
           </Box>
         </StickToBottom>
