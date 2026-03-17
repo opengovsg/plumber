@@ -75,7 +75,6 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        mb={shouldShowIdeas ? 6 : 0}
         cursor={isStreaming ? 'not-allowed' : 'default'}
       >
         <Textarea
@@ -152,15 +151,19 @@ export default function PromptInput({
         </Flex>
       </Flex>
 
-      {shouldShowIdeas && (
-        <IdeaButtons
-          ideas={AI_CHAT_IDEAS}
-          onClick={(idea: AiChatIdea) => {
-            setInput(idea.input)
-            // trigger resize after state update
-            setTimeout(() => handleResize(), 0)
-          }}
-        />
+      {showIdeas && (
+        <Box minH={{ base: '200px', md: '60px' }} mt={6}>
+          {shouldShowIdeas && (
+            <IdeaButtons
+              ideas={AI_CHAT_IDEAS}
+              onClick={(idea: AiChatIdea) => {
+                setInput(idea.input)
+                // trigger resize after state update
+                setTimeout(() => handleResize(), 0)
+              }}
+            />
+          )}
+        </Box>
       )}
     </Box>
   )
