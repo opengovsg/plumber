@@ -38,6 +38,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['showSurvey']
     delete prevConfig['attachments']
     delete prevConfig['errorConfig']
+    delete prevConfig['maxQps']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
@@ -68,6 +69,9 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
             oldStep.parameters,
             oldToNewStepIdsMap,
           ),
+          config: oldStep.config?.stepName
+            ? { stepName: oldStep.config.stepName }
+            : undefined,
         })
       oldToNewStepIdsMap[oldStep.id] = duplicatedStep.id // update map after duplicating step
     }
