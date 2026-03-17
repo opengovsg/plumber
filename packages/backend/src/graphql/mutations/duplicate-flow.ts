@@ -76,7 +76,11 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
                     stepName: oldStep.config.stepName,
                   }),
                   ...(oldStep.config?.approval && {
-                    approval: oldStep.config.approval,
+                    approval: {
+                      ...oldStep.config.approval,
+                      stepId:
+                        oldToNewStepIdsMap[oldStep.config.approval.stepId],
+                    },
                   }),
                 }
               : undefined,
