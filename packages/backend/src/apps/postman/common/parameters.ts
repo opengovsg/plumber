@@ -116,12 +116,20 @@ export const transactionalEmailSchema = z.object({
       message: 'The total number of CC recipient emails must not exceed 49',
     })
     .optional(),
-  replyTo: z.preprocess((value) => {
-    if (typeof value !== 'string') {
-      return value
-    }
-    return value.trim() === '' ? undefined : value.trim()
-  }, z.string().email({ message: 'Invalid reply to email' }).optional()),
+  replyTo: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') {
+        return value
+      }
+      return value.trim() === '' ? undefined : value.trim()
+    },
+    z
+      .string()
+      .refine((value) => validator.validate(value), {
+        message: 'Invalid reply to email',
+      })
+      .optional(),
+  ),
   senderName: z
     .string()
     .min(1, { message: 'Empty sender name' })
