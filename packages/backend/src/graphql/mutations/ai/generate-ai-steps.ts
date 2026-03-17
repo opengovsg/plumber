@@ -17,7 +17,8 @@ import JSONObject from '@/types/interfaces/json-object'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
 
-import { Action, ACTION_SCHEMA } from './schemas/actions.zod'
+import { actionStepsSchema } from './schemas/action-steps-schema'
+import { Action } from './schemas/actions.zod'
 import { INPUT_SCHEMA } from './schemas/input.zod'
 import { TRIGGER_SCHEMA } from './schemas/triggers.zod'
 
@@ -91,7 +92,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
           model,
           schema: z.object({
             trigger: TRIGGER_SCHEMA,
-            actions: z.array(ACTION_SCHEMA),
+            actions: actionStepsSchema,
             name: z.string().max(64).default('Build with AI'),
           }),
           system: systemPrompt,
