@@ -32,7 +32,6 @@ interface FeedbackButtonProps {
   feedbackType: 'positive' | 'negative'
   traceId: string
   onFeedbackSubmit?: (type: 'positive' | 'negative') => void
-  onFeedbackReset?: () => void
   isSubmitted?: boolean
 }
 
@@ -40,7 +39,6 @@ export const FeedbackButton = ({
   feedbackType,
   traceId,
   onFeedbackSubmit,
-  onFeedbackReset,
   isSubmitted = false,
 }: FeedbackButtonProps) => {
   const { onOpen, onClose, isOpen } = useDisclosure()
@@ -54,17 +52,6 @@ export const FeedbackButton = ({
     textAreaPlaceholder,
     score,
   } = FEEDBACK_POPOVER_DETAILS[feedbackType]
-
-  const handleButtonClick = (
-    e: React.MouseEvent<HTMLButtonElement> | undefined,
-  ) => {
-    e?.preventDefault()
-    if (isSubmitted) {
-      onFeedbackReset?.()
-    } else {
-      onOpen()
-    }
-  }
 
   const handleSubmitFeedback = async (data: FeedbackFormData) => {
     try {
@@ -121,7 +108,7 @@ export const FeedbackButton = ({
           icon={
             <Icon as={icon} color={isSubmitted ? 'primary.500' : undefined} />
           }
-          onClick={handleButtonClick}
+          onClick={() => onOpen()}
           // HACKFIX(kevinkim-ogp): prevent autofocus when new input is sent
           tabIndex={-1}
         />

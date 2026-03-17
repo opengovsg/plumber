@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Box, VStack } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 import { StickToBottom } from 'use-stick-to-bottom'
@@ -35,7 +36,7 @@ export default function ChatMessages({
             const isLast = index === messages.length - 1
             const isFirst = index === 0
             return (
-              <>
+              <Fragment key={message.id}>
                 <ChatMessage
                   key={message.id}
                   message={message}
@@ -43,7 +44,7 @@ export default function ChatMessages({
                   shouldShowToolbar={isLast}
                 />
                 {isFirst && <WarningMessage />}
-              </>
+              </Fragment>
             )
           })}
 

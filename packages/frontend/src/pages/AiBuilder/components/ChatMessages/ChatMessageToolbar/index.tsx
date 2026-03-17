@@ -23,10 +23,6 @@ export default function ChatMessageToolbar({
     setSubmittedFeedback(type)
   }
 
-  const handleFeedbackReset = () => {
-    setSubmittedFeedback(null)
-  }
-
   return (
     <>
       {shouldShowPreviewButton && (
@@ -37,24 +33,19 @@ export default function ChatMessageToolbar({
         </Flex>
       )}
       <Flex gap={1} mt={2}>
-        {submittedFeedback !== 'negative' && (
-          <FeedbackButton
-            feedbackType="positive"
-            traceId={traceId}
-            onFeedbackSubmit={handleFeedbackSubmit}
-            onFeedbackReset={handleFeedbackReset}
-            isSubmitted={submittedFeedback === 'positive'}
-          />
-        )}
-        {submittedFeedback !== 'positive' && (
-          <FeedbackButton
-            feedbackType="negative"
-            traceId={traceId}
-            onFeedbackSubmit={handleFeedbackSubmit}
-            onFeedbackReset={handleFeedbackReset}
-            isSubmitted={submittedFeedback === 'negative'}
-          />
-        )}
+        <FeedbackButton
+          feedbackType="positive"
+          traceId={traceId}
+          onFeedbackSubmit={handleFeedbackSubmit}
+          isSubmitted={submittedFeedback === 'positive'}
+        />
+
+        <FeedbackButton
+          feedbackType="negative"
+          traceId={traceId}
+          onFeedbackSubmit={handleFeedbackSubmit}
+          isSubmitted={submittedFeedback === 'negative'}
+        />
       </Flex>
     </>
   )
