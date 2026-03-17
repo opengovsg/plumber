@@ -40,7 +40,7 @@
     "@opengovsg/formsg-sdk": "0.16.1",
     "@opengovsg/sgid-client": "2.3.0",
     "@plumber/types": "file:../types",
-    "@taskforcesh/bullmq-pro": "7.7.1",
+    "@taskforcesh/bullmq-pro": "7.8.1",
     "ajv-formats": "2.1.1",
     "async-mutex": "0.4.0",
     "axios": "1.13.5",
@@ -112,5 +112,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.60.0"
+  "version": "1.60.1"
 }

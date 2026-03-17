@@ -137,6 +137,7 @@ export default function EditorLayout() {
   ])
 
   // warn user of unsaved changes when they try to close or reload the browser
+  // amd when they try to use the browser back
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!shouldWarnOnLeave) {
@@ -146,9 +147,27 @@ export default function EditorLayout() {
       e.returnValue = '' // legacy but still required by some browsers
     }
 
+    // Push a barrier entry for back button interception
+    if (shouldWarnOnLeave) {
+      window.history.pushState(null, '', window.location.href)
+    }
+
+    const handlePopState = () => {
+      if (!shouldWarnOnLeave) {
+        return
+      }
+      window.history.pushState(null, '', window.location.href)
+      onWarningOpen()
+    }
+
     window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [shouldWarnOnLeave])
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [shouldWarnOnLeave, onWarningOpen])
 
   // navigate user to not found page if flow does not belong to the user
   if (

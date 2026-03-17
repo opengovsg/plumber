@@ -138,6 +138,7 @@ type Mutation {
 type AdminMutation {
   pauseGroup(input: PauseGroupInput!): Boolean
   resumeGroup(input: ResumeGroupInput!): Boolean
+  setGroupConcurrency(input: SetGroupConcurrencyInput!): Int!
 }
 
 """
@@ -1107,6 +1108,12 @@ input PauseGroupInput {
 input ResumeGroupInput {
   groupId: String!
   appKey: String!
+}
+
+input SetGroupConcurrencyInput {
+  groupId: String!
+  appKey: String!
+  concurrency: Int
 }
 
 # End of admin types
