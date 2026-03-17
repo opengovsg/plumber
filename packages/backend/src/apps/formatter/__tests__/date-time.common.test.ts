@@ -52,6 +52,11 @@ describe('common date-time formatter functions', () => {
       expect(dateTime.toUnixInteger()).toEqual(1711555200)
     })
 
+    it('supports parsing single-padded day input', () => {
+      const dateTime = parseDateTime('formsgDateField', '5 Apr 2024')
+      expect(dateTime.toUnixInteger()).toEqual(1712246400)
+    })
+
     it('supports converting to FormSG date field, with time omitted', () => {
       const dateTime = DateTime.fromSeconds(1711986308)
       expect(dateTimeToString('formsgDateField', dateTime)).toEqual(

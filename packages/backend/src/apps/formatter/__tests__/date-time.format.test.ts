@@ -141,6 +141,86 @@ describe('convert date time', () => {
     })
   })
 
+  // Test that formats accept both single-padded and double-padded input
+  it.each([
+    // dd/LL/yy accepts both padded and non-padded
+    {
+      inputFormat: 'dd/LL/yy',
+      inputValue: '01/04/24',
+      toFormat: 'dd/LL/yyyy',
+      expectedResult: '01/04/2024',
+    },
+    {
+      inputFormat: 'dd/LL/yy',
+      inputValue: '1/4/24',
+      toFormat: 'dd/LL/yyyy',
+      expectedResult: '01/04/2024',
+    },
+    // dd/LL/yyyy accepts both padded and non-padded
+    {
+      inputFormat: 'dd/LL/yyyy',
+      inputValue: '05/12/2025',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '05 Dec 2025',
+    },
+    {
+      inputFormat: 'dd/LL/yyyy',
+      inputValue: '5/12/2025',
+      toFormat: 'dd LLL yyyy',
+      expectedResult: '05 Dec 2025',
+    },
+    // yyyy/LL/dd accepts both padded and non-padded
+    {
+      inputFormat: 'yyyy/LL/dd',
+      inputValue: '2024/04/01',
+      toFormat: 'dd/LL/yy',
+      expectedResult: '01/04/24',
+    },
+    {
+      inputFormat: 'yyyy/LL/dd',
+      inputValue: '2024/4/1',
+      toFormat: 'dd/LL/yy',
+      expectedResult: '01/04/24',
+    },
+    // hh:mm a accepts both padded and non-padded hour
+    {
+      inputFormat: 'hh:mm a',
+      inputValue: '09:30 am',
+      toFormat: 'hh:mm:ss a',
+      expectedResult: '09:30:00 am',
+    },
+    {
+      inputFormat: 'hh:mm a',
+      inputValue: '9:30 am',
+      toFormat: 'hh:mm:ss a',
+      expectedResult: '09:30:00 am',
+    },
+    // dd LLL yyyy hh:mm a accepts both padded and non-padded
+    {
+      inputFormat: 'dd LLL yyyy hh:mm a',
+      inputValue: '05 Apr 2024 09:30 am',
+      toFormat: 'dd/LL/yyyy',
+      expectedResult: '05/04/2024',
+    },
+    {
+      inputFormat: 'dd LLL yyyy hh:mm a',
+      inputValue: '5 Apr 2024 9:30 am',
+      toFormat: 'dd/LL/yyyy',
+      expectedResult: '05/04/2024',
+    },
+  ])('accepts both single-padded and double-padded input', (testParams) => {
+    const { inputFormat, inputValue, toFormat, expectedResult } = testParams
+    $.step.parameters = {
+      dateTimeFormat: inputFormat,
+      formatDateTimeToFormat: toFormat,
+    }
+    spec.transformData($, inputValue)
+
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: expectedResult },
+    })
+  })
+
   it.each([
     {
       inputFormat: 'formsgDateField',
