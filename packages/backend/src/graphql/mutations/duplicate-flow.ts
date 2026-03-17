@@ -69,9 +69,17 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
             oldStep.parameters,
             oldToNewStepIdsMap,
           ),
-          config: oldStep.config?.stepName
-            ? { stepName: oldStep.config.stepName }
-            : undefined,
+          config:
+            oldStep.config?.stepName || oldStep.config?.approval
+              ? {
+                  ...(oldStep.config?.stepName && {
+                    stepName: oldStep.config.stepName,
+                  }),
+                  ...(oldStep.config?.approval && {
+                    approval: oldStep.config.approval,
+                  }),
+                }
+              : undefined,
         })
       oldToNewStepIdsMap[oldStep.id] = duplicatedStep.id // update map after duplicating step
     }
