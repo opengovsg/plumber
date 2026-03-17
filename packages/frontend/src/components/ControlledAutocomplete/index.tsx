@@ -185,6 +185,7 @@ function ControlledAutocomplete(
               )}
               target="_blank"
               ml={1}
+              isExternal
             >
               ({clickableLink.label})
             </Link>

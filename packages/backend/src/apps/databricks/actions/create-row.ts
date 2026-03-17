@@ -2,10 +2,13 @@ import { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import { z } from 'zod'
 
+import { databricksConfig } from '@/config/app-env-vars/databricks'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
 import { createSession } from '../auth/create-client'
+
+const databricksTableUrl = `https://${databricksConfig.serverHostname}/explore/tables/${databricksConfig.catalog}`
 
 const insertRowSchema = z.object({
   tableName: z.string().min(1),
@@ -49,6 +52,10 @@ const createRowAction: IRawAction = {
         id: 'databricks-createTable',
         type: 'modal',
         label: 'Create a new table',
+      },
+      clickableLink: {
+        label: 'View databricks dashboard',
+        url: databricksTableUrl,
       },
     },
     {
