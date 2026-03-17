@@ -135,7 +135,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             position="relative"
           >
             <Box
-              maxW="4xl"
+              maxW="3xl"
               mx="auto"
               px={4}
               py={4}

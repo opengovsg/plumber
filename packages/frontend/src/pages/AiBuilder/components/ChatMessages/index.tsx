@@ -28,7 +28,7 @@ export default function ChatMessages({
         minHeight: 0,
       }}
     >
-      <Box w="full" maxW="4xl" mx="auto" px={4} py={6}>
+      <Box w="full" maxW="3xl" mx="auto" px={4} py={6}>
         <VStack align="stretch" spacing={4}>
           {messages.map((message, index) => {
             const shouldShowPreview = isMobile && message.isChatReady
