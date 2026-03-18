@@ -3,7 +3,7 @@ import type { IFieldBooleanRadioOptions } from '@plumber/types'
 import { useContext } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
-import { FormControl, RadioGroup, Stack, Text } from '@chakra-ui/react'
+import { Box, FormControl, RadioGroup, Stack, Text } from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
@@ -100,24 +100,30 @@ export default function BooleanRadio(props: BooleanRadioProps) {
                 <Radio
                   allowDeselect={!required}
                   value={convertBooleanToString(firstOption.value)}
+                  pl={3}
                 >
-                  {firstOption.label}
-                  {firstOption.description && (
-                    <Text textStyle="body-2" textColor="base.content.default">
-                      {firstOption.description}
-                    </Text>
-                  )}
+                  <Box maxW="600px">
+                    {firstOption.label}
+                    {firstOption.description && (
+                      <Text textStyle="body-2" textColor="base.content.default">
+                        {firstOption.description}
+                      </Text>
+                    )}
+                  </Box>
                 </Radio>
                 <Radio
                   allowDeselect={!required}
                   value={convertBooleanToString(secondOption.value)}
+                  pl={3}
                 >
-                  {secondOption.label}
-                  {secondOption.description && (
-                    <Text textStyle="body-2" textColor="base.content.default">
-                      {secondOption.description}
-                    </Text>
-                  )}
+                  <Box maxW="600px">
+                    {secondOption.label}
+                    {secondOption.description && (
+                      <Text textStyle="body-2" textColor="base.content.default">
+                        {secondOption.description}
+                      </Text>
+                    )}
+                  </Box>
                 </Radio>
               </Stack>
             </RadioGroup>
