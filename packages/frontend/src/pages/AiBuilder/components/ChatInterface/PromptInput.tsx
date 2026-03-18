@@ -32,7 +32,7 @@ export default function PromptInput({
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault()
-    if (input?.trim()) {
+    if (input?.trim() && !isStreaming) {
       sendMessage(input)
       setInput('')
       if (textareaRef.current) {
@@ -75,11 +75,9 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        cursor={isStreaming ? 'not-allowed' : 'default'}
       >
         <Textarea
           ref={textareaRef}
-          disabled={isStreaming}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyPress}
@@ -92,12 +90,6 @@ export default function PromptInput({
           color="gray.900"
           _placeholder={{ color: 'gray.500' }}
           _focus={{ outline: 'none', boxShadow: 'none' }}
-          _disabled={{
-            opacity: 1,
-            bg: 'transparent',
-            color: 'gray.900',
-            cursor: 'not-allowed',
-          }}
           fontSize="base"
           lineHeight="6"
           maxH="calc(40vh - 100px)"
