@@ -1,9 +1,8 @@
 import { IStepError } from '@plumber/types'
 
-import { useCallback, useState } from 'react'
 import Markdown from 'react-markdown'
 import { useMutation } from '@apollo/client'
-import { Box, Collapse, Text } from '@chakra-ui/react'
+import { Box, Text } from '@chakra-ui/react'
 import {
   Badge,
   Button,
@@ -11,10 +10,13 @@ import {
   useToast,
 } from '@opengovsg/design-system-react'
 
-import JSONViewer from '@/components/JSONViewer'
-import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
+
+import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
+
+import ErrorDetailsCollapse from './ErrorDetailsCollapse'
+import SupportContactMessage from './SupportContactMessage'
 
 interface SpecificErrorResultProps {
   errorDetails: IStepError
@@ -26,10 +28,6 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   const { errorDetails, isTestRun, executionStepId } = props
   const { name, solution, position, appName, details, partialRetry } =
     errorDetails
-  const [isOpen, setIsOpen] = useState(false)
-  const toggleDropdown = useCallback(() => {
-    setIsOpen((value) => !value)
-  }, [])
 
   const toast = useToast()
 
@@ -70,38 +68,17 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
         </Text>
 
         <Text textStyle="body-1">
-          <Markdown linkTarget="_blank">{solution}</Markdown>
-          <Box
-            marginTop={4}
-            borderTop="1px solid #E0E0E0"
-            fontSize="0.8rem"
-            opacity={0.8}
-            w="full"
-          >
-            If this error still persists, contact us at{' '}
-            <a href={SUPPORT_FORM_LINK} target="_blank" rel="noreferrer">
-              {SUPPORT_FORM_LINK}
-            </a>
-            .
-          </Box>
-          {details && (
-            <>
-              <Button
-                onClick={toggleDropdown}
-                variant="link"
-                size="sm"
-                sx={{ textDecoration: 'underline' }}
-                mt={2}
-              >
-                View http error details below.
-              </Button>
+          <Markdown linkTarget="_blank" components={infoboxMdComponents}>
+            {solution}
+          </Markdown>
 
-              <Box>
-                <Collapse in={isOpen}>
-                  <JSONViewer data={details}></JSONViewer>
-                </Collapse>
-              </Box>
-            </>
+          <SupportContactMessage />
+
+          {details && (
+            <ErrorDetailsCollapse
+              details={details}
+              buttonText="View http error details below."
+            />
           )}
 
           {!isTestRun && partialRetry && executionStepId && (

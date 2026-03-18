@@ -480,6 +480,7 @@ export type IFieldBooleanRadioOptions = [
 
 export interface IFieldBooleanRadioOption {
   label: string
+  description?: string
   value: boolean
 }
 

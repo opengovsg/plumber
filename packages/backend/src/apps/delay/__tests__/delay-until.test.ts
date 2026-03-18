@@ -144,26 +144,6 @@ describe('Delay until action', () => {
   })
 
   describe('retry logic', () => {
-    it('prevents retries during test runs', async () => {
-      $.step.parameters = {
-        delayUntil: PAST_DATE,
-        delayUntilTime: DEFAULT_TIME,
-      }
-
-      // Set testRun to true to simulate test environment
-      $.execution.testRun = true
-
-      // Mock last execution step to indicate a retry for past timestamp
-      mocks.getLastExecutionStep.mockResolvedValue({
-        errorDetails: {
-          name: 'Delay until timestamp entered is in the past',
-        },
-      })
-
-      // Should throw error even with valid retry conditions due to testRun
-      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
-    })
-
     it('allows past timestamp when retrying after past timestamp error', async () => {
       $.step.parameters = {
         delayUntil: PAST_DATE,

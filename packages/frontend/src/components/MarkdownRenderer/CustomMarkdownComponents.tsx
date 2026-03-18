@@ -15,4 +15,7 @@ export const infoboxMdComponents: Components = {
   // react-markdown wraps everything in a <Text> by default,
   // which mucks up styling for infoboxes with variants.
   p: ({ ...props }) => <chakra.p {...props} />,
+  li: ({ ...props }) => (
+    <chakra.li {...props} sx={{ marginInlineStart: '1.25em' }} />
+  ),
 }

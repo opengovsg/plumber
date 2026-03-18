@@ -17,6 +17,7 @@ import JSONViewer from '@/components/JSONViewer'
 import { EXECUTION_STEP_PER_PAGE } from '@/pages/Execution'
 
 import AppIconWithStatus from './components/AppIconWithStatus'
+import DelayPausedAlert from './components/DelayPausedAlert'
 import { RetryAllButton } from './components/RetryAllButton'
 import RetryButton from './components/RetryButton'
 import { useExecutionStepStatus } from './hooks/useExecutionStepStatus'
@@ -48,6 +49,7 @@ export default function ExecutionStep({
     statusIcon,
     hasError,
     isPartialSuccess,
+    isDelayPaused,
     canRetry,
     customRetryButtonText,
   } = useExecutionStepStatus({
@@ -57,6 +59,9 @@ export default function ExecutionStep({
     execution,
     jobId,
   })
+
+  const showAlertTab = isDelayPaused
+  const showErrorTab = hasError && !isDelayPaused
 
   if (!app) {
     return null
@@ -83,10 +88,14 @@ export default function ExecutionStep({
           <HStack>
             {!isInForEach && canRetry && (
               <>
-                <RetryAllButton execution={execution} />
+                <RetryAllButton
+                  execution={execution}
+                  variant={isDelayPaused ? 'resume' : 'retry'}
+                />
                 <RetryButton
                   executionStepId={executionStep.id}
                   customButtonText={customRetryButtonText}
+                  variant={isDelayPaused ? 'resume' : undefined}
                 />
               </>
             )}
@@ -95,7 +104,7 @@ export default function ExecutionStep({
 
         {/* bottom half: data in, data out and error */}
         <Box borderTop="1px solid" borderTopColor="base.divider.strong" p={4}>
-          <Tabs defaultIndex={hasError ? 2 : 0}>
+          <Tabs defaultIndex={showAlertTab || hasError ? 2 : 0}>
             <TabList
               borderBottom="1px solid"
               borderBottomColor="base.divider.medium"
@@ -103,7 +112,9 @@ export default function ExecutionStep({
             >
               <Tab>Data In</Tab>
               <Tab>Data Out</Tab>
-              {hasError && (
+              {/* Only for paused delay until pipes for now */}
+              {showAlertTab && <Tab>Alert</Tab>}
+              {showErrorTab && (
                 <Tab position="relative">
                   Error
                   {isPartialSuccess && (
@@ -126,7 +137,12 @@ export default function ExecutionStep({
               <TabPanel>
                 <JSONViewer data={executionStep.dataOut} />
               </TabPanel>
-              {hasError && (
+              {showAlertTab && (
+                <TabPanel>
+                  <DelayPausedAlert execution={execution} />
+                </TabPanel>
+              )}
+              {showErrorTab && (
                 <TabPanel>
                   <ErrorResult
                     executionStepId={executionStep.id}

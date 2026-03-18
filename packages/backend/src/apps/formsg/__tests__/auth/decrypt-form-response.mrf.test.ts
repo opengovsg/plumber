@@ -212,6 +212,15 @@ describe('decrypt form response - MRF specific', () => {
       )
     })
 
+    it('should return verified: false when decryption fails', async () => {
+      mocks.cryptoV3Decrypt.mockReturnValueOnce(null)
+
+      const result = await decryptFormResponse($)
+
+      expect(result).toEqual({ verified: false, internalId: null })
+      expect(mocks.consoleWarn).toHaveBeenCalled()
+    })
+
     it('should not call v3 attachment decryption when no attachmentDownloadUrls', async () => {
       $.flow.hasFileProcessingActions = true
 
