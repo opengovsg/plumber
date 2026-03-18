@@ -19,6 +19,7 @@ import appConfig from '@/config/app'
 import {
   AI_BUILDER_FEATURE_FLAG,
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
+  EXCEL_FEATURE_FLAG,
 } from '@/config/flags'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -39,6 +40,14 @@ const handleChatStream = observe(
       AI_BUILDER_FEATURE_FLAG,
       context.currentUser.email,
       AI_BUILDER_FEATURE_FLAG_FALLBACK,
+    )
+
+    // NOTE: we check the excel feature flag to tell the assistant whether the user has access to the M365-Excel app
+    // TODO(kevinkim-ogp): should send in all the allowed apps and actions to the assistant
+    const excelFeatureFlag = await getLdFlagValue(
+      EXCEL_FEATURE_FLAG,
+      context.currentUser.email,
+      false,
     )
 
     if (!aiBuilderFlag.enabled) {
@@ -93,7 +102,12 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
-      const systemMessage = { role: 'system' as const, content: prompt.prompt }
+      const systemMessage = {
+        role: 'system' as const,
+        content: `${prompt.prompt}\n\nNote: this user ${
+          excelFeatureFlag ? 'has' : 'does not have'
+        } access to the M365-Excel app.`,
+      }
       const allMessages = [systemMessage, ...messages]
 
       const stream = createUIMessageStream({

@@ -177,14 +177,16 @@ describe('Chat Route Handler', () => {
   describe('Handler Behavior', () => {
     it('should process authenticated requests', async () => {
       // Context is set by middleware before reaching handler
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'aids-chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'aids-chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(false) // Excel feature flag
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -201,6 +203,11 @@ describe('Chat Route Handler', () => {
         'ai-builder',
         'test@plumber.gov.sg',
         expect.any(Object),
+      )
+      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+        'app_m365-excel',
+        'test@plumber.gov.sg',
+        false,
       )
     })
 
@@ -226,14 +233,16 @@ describe('Chat Route Handler', () => {
         isAdminOperation: false,
       }
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(false) // Excel feature flag
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -251,6 +260,11 @@ describe('Chat Route Handler', () => {
         'feature-test@plumber.gov.sg',
         expect.any(Object),
       )
+      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+        'app_m365-excel',
+        'feature-test@plumber.gov.sg',
+        false,
+      )
     })
 
     it('should validate request body before processing', async () => {
@@ -259,14 +273,16 @@ describe('Chat Route Handler', () => {
         messages: [],
       }
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(false) // Excel feature flag
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -292,6 +308,88 @@ describe('Chat Route Handler', () => {
         error: 'You do not have permissions to use AI Builder!',
       })
     })
+
+    it('should include Excel access in system message when user has Excel enabled', async () => {
+      let capturedMessages: any[] = []
+
+      // Capture the messages passed to streamText
+      mocks.streamText.mockImplementation((options) => {
+        capturedMessages = options.messages
+        return {
+          toUIMessageStream: vi.fn().mockReturnValue({
+            getReader: vi.fn().mockReturnValue({
+              read: vi.fn().mockResolvedValue({ done: true }),
+            }),
+          }),
+        }
+      })
+
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(true) // Excel feature flag enabled
+      mocks.getPrompt.mockResolvedValueOnce({
+        prompt: 'test prompt',
+        toJSON: vi.fn(),
+      })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      // Verify system message includes Excel access
+      expect(capturedMessages[0]).toMatchObject({
+        role: 'system',
+        content: expect.stringContaining('has access to the M365-Excel app'),
+      })
+    })
+
+    it('should indicate no Excel access in system message when user does not have Excel enabled', async () => {
+      let capturedMessages: any[] = []
+
+      // Capture the messages passed to streamText
+      mocks.streamText.mockImplementation((options) => {
+        capturedMessages = options.messages
+        return {
+          toUIMessageStream: vi.fn().mockReturnValue({
+            getReader: vi.fn().mockReturnValue({
+              read: vi.fn().mockResolvedValue({ done: true }),
+            }),
+          }),
+        }
+      })
+
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(false) // Excel feature flag disabled
+      mocks.getPrompt.mockResolvedValueOnce({
+        prompt: 'test prompt',
+        toJSON: vi.fn(),
+      })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      // Verify system message indicates no Excel access
+      expect(capturedMessages[0]).toMatchObject({
+        role: 'system',
+        content: expect.stringContaining(
+          'does not have access to the M365-Excel app',
+        ),
+      })
+    })
   })
 
   describe('Admin User Access', () => {
@@ -309,14 +407,16 @@ describe('Chat Route Handler', () => {
         isAdminOperation: true,
       }
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(false) // Excel feature flag
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -333,6 +433,11 @@ describe('Chat Route Handler', () => {
         'ai-builder',
         'admin@plumber.gov.sg',
         expect.any(Object),
+      )
+      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+        'app_m365-excel',
+        'admin@plumber.gov.sg',
+        false,
       )
     })
   })
@@ -384,15 +489,17 @@ describe('Chat Route Handler', () => {
         new Error('LLM service unavailable'),
       )
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
-          version: 'production',
-        },
-      })
+      mocks.getLdFlagValue
+        .mockResolvedValueOnce({
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
+            version: 'production',
+          },
+        })
+        .mockResolvedValueOnce(false) // Excel feature flag
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
