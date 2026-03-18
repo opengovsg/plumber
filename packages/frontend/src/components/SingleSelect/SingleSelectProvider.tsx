@@ -193,14 +193,14 @@ export const SingleSelectProvider = ({
         filteredItems.push({
           value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
           label: inputValue,
-          description: validationError ?? (addNew?.label ?? 'Create new'),
+          description: validationError ?? addNew?.label ?? 'Create new',
           isAddNew: true,
           icon: BxPlus,
           disabled: !!validationError,
         })
       }
     },
-    [addNew?.label, addNew?.validate, getItemByValue],
+    [addNew, getItemByValue],
   )
 
   const handleInputChange = useCallback(
