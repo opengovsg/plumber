@@ -4,7 +4,9 @@ import { useMutation } from '@apollo/client'
 import { HStack, Icon, Text } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
 
+import client from '@/graphql/client'
 import { RETRY_EXECUTION_STEP } from '@/graphql/mutations/retry-execution-step'
+import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
 interface RetryButtonProps {
   executionStepId: string
@@ -39,6 +41,13 @@ const RetryButton = ({
         position: 'bottom-right',
       })
       setIsRetrySuccessful(true)
+
+      // reload page after short delay because the job is retrying
+      setTimeout(() => {
+        client.refetchQueries({
+          include: [GET_EXECUTION_STEPS],
+        })
+      }, 3000)
     },
     onError: () => {
       setIsRetrySuccessful(false)

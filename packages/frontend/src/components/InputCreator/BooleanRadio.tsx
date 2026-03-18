@@ -3,7 +3,7 @@ import type { IFieldBooleanRadioOptions } from '@plumber/types'
 import { useContext } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
-import { FormControl, RadioGroup, Stack } from '@chakra-ui/react'
+import { FormControl, RadioGroup, Stack, Text } from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
@@ -102,12 +102,22 @@ export default function BooleanRadio(props: BooleanRadioProps) {
                   value={convertBooleanToString(firstOption.value)}
                 >
                   {firstOption.label}
+                  {firstOption.description && (
+                    <Text textStyle="body-2" textColor="base.content.default">
+                      {firstOption.description}
+                    </Text>
+                  )}
                 </Radio>
                 <Radio
                   allowDeselect={!required}
                   value={convertBooleanToString(secondOption.value)}
                 >
                   {secondOption.label}
+                  {secondOption.description && (
+                    <Text textStyle="body-2" textColor="base.content.default">
+                      {secondOption.description}
+                    </Text>
+                  )}
                 </Radio>
               </Stack>
             </RadioGroup>
