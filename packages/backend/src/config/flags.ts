@@ -2,6 +2,7 @@
  * Feature flags
  */
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
+export const EXCEL_FEATURE_FLAG = 'app_m365-excel'
 
 /**
  * Feature flag fallbacks
