@@ -56,6 +56,19 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       // and the pipe was subsequently transferred to another user
       const shouldDuplicateConnection = oldStep.connection?.userId != null
 
+      const prevStepConfig = {
+        ...oldStep.config,
+        ...(oldStep.config?.approval && {
+          approval: {
+            ...oldStep.config.approval,
+            stepId: oldToNewStepIdsMap[oldStep.config.approval.stepId],
+          },
+        }),
+      }
+
+      delete prevStepConfig['templateConfig']
+      delete prevStepConfig['adminOverride']
+
       const duplicatedStep = await duplicatedFlow
         .$relatedQuery('steps', trx)
         .insert({
@@ -69,21 +82,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
             oldStep.parameters,
             oldToNewStepIdsMap,
           ),
-          config:
-            oldStep.config?.stepName || oldStep.config?.approval
-              ? {
-                  ...(oldStep.config?.stepName && {
-                    stepName: oldStep.config.stepName,
-                  }),
-                  ...(oldStep.config?.approval && {
-                    approval: {
-                      ...oldStep.config.approval,
-                      stepId:
-                        oldToNewStepIdsMap[oldStep.config.approval.stepId],
-                    },
-                  }),
-                }
-              : undefined,
+          config: !isEmpty(prevStepConfig) ? prevStepConfig : undefined,
         })
       oldToNewStepIdsMap[oldStep.id] = duplicatedStep.id // update map after duplicating step
     }
