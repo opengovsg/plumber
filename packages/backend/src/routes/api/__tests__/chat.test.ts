@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getLdFlagValue: vi.fn(),
+  getAllLdFlags: vi.fn(),
   getPrompt: vi.fn(),
   getActiveTraceId: vi.fn(),
   updateActiveObservation: vi.fn(),
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/helpers/launch-darkly', () => ({
   getLdFlagValue: mocks.getLdFlagValue,
+  getAllLdFlags: mocks.getAllLdFlags,
 }))
 
 vi.mock('@/helpers/pair/get-prompt', () => ({
@@ -177,16 +179,15 @@ describe('Chat Route Handler', () => {
   describe('Handler Behavior', () => {
     it('should process authenticated requests', async () => {
       // Context is set by middleware before reaching handler
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'aids-chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(false) // Excel feature flag
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'aids-chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -204,11 +205,7 @@ describe('Chat Route Handler', () => {
         'test@plumber.gov.sg',
         expect.any(Object),
       )
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'app_m365-excel',
-        'test@plumber.gov.sg',
-        false,
-      )
+      expect(mocks.getAllLdFlags).toHaveBeenCalledWith('test@plumber.gov.sg')
     })
 
     it('should throw error when context is missing user', async () => {
@@ -233,16 +230,15 @@ describe('Chat Route Handler', () => {
         isAdminOperation: false,
       }
 
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(false) // Excel feature flag
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -260,10 +256,8 @@ describe('Chat Route Handler', () => {
         'feature-test@plumber.gov.sg',
         expect.any(Object),
       )
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'app_m365-excel',
+      expect(mocks.getAllLdFlags).toHaveBeenCalledWith(
         'feature-test@plumber.gov.sg',
-        false,
       )
     })
 
@@ -273,16 +267,15 @@ describe('Chat Route Handler', () => {
         messages: [],
       }
 
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(false) // Excel feature flag
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({})
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -309,7 +302,7 @@ describe('Chat Route Handler', () => {
       })
     })
 
-    it('should include Excel access in system message when user has Excel enabled', async () => {
+    it('should exclude Excel from restricted apps when user has Excel enabled', async () => {
       let capturedMessages: any[] = []
 
       // Capture the messages passed to streamText
@@ -324,16 +317,18 @@ describe('Chat Route Handler', () => {
         }
       })
 
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(true) // Excel feature flag enabled
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'app_m365-excel': true, // Excel enabled
+        'app_other-app': false, // Other app disabled
+      })
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
@@ -342,51 +337,99 @@ describe('Chat Route Handler', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      // Verify system message includes Excel access
-      expect(capturedMessages[0]).toMatchObject({
-        role: 'system',
-        content: expect.stringContaining('has access to the M365-Excel app'),
-      })
-    })
-
-    it('should indicate no Excel access in system message when user does not have Excel enabled', async () => {
-      let capturedMessages: any[] = []
-
-      // Capture the messages passed to streamText
-      mocks.streamText.mockImplementation((options) => {
-        capturedMessages = options.messages
-        return {
-          toUIMessageStream: vi.fn().mockReturnValue({
-            getReader: vi.fn().mockReturnValue({
-              read: vi.fn().mockResolvedValue({ done: true }),
-            }),
-          }),
-        }
-      })
-
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(false) // Excel feature flag disabled
-      mocks.getPrompt.mockResolvedValueOnce({
-        prompt: 'test prompt',
-        toJSON: vi.fn(),
-      })
-      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
-
-      await executeChatPostHandler(mockReq, mockRes)
-
-      // Verify system message indicates no Excel access
+      // Verify system message does not include Excel in restricted apps
       expect(capturedMessages[0]).toMatchObject({
         role: 'system',
         content: expect.stringContaining(
-          'does not have access to the M365-Excel app',
+          'this user does not have access to the following apps: other-app',
+        ),
+      })
+      expect(capturedMessages[0].content).not.toContain('m365-excel')
+    })
+
+    it('should include Excel in restricted apps when user does not have Excel enabled', async () => {
+      let capturedMessages: any[] = []
+
+      // Capture the messages passed to streamText
+      mocks.streamText.mockImplementation((options) => {
+        capturedMessages = options.messages
+        return {
+          toUIMessageStream: vi.fn().mockReturnValue({
+            getReader: vi.fn().mockReturnValue({
+              read: vi.fn().mockResolvedValue({ done: true }),
+            }),
+          }),
+        }
+      })
+
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'app_m365-excel': false, // Excel disabled
+      })
+      mocks.getPrompt.mockResolvedValueOnce({
+        prompt: 'test prompt',
+        toJSON: vi.fn(),
+      })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      // Verify system message includes Excel in restricted apps
+      expect(capturedMessages[0]).toMatchObject({
+        role: 'system',
+        content: expect.stringContaining(
+          'this user does not have access to the following apps: m365-excel',
+        ),
+      })
+    })
+
+    it('should show empty restricted apps list when user has access to all apps', async () => {
+      let capturedMessages: any[] = []
+
+      // Capture the messages passed to streamText
+      mocks.streamText.mockImplementation((options) => {
+        capturedMessages = options.messages
+        return {
+          toUIMessageStream: vi.fn().mockReturnValue({
+            getReader: vi.fn().mockReturnValue({
+              read: vi.fn().mockResolvedValue({ done: true }),
+            }),
+          }),
+        }
+      })
+
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'app_m365-excel': true,
+        'some-other-flag': false, // Non-app flag
+      })
+      mocks.getPrompt.mockResolvedValueOnce({
+        prompt: 'test prompt',
+        toJSON: vi.fn(),
+      })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      // Verify system message shows empty restricted apps (empty string after "apps: ")
+      expect(capturedMessages[0]).toMatchObject({
+        role: 'system',
+        content: expect.stringContaining(
+          'this user does not have access to the following apps: .',
         ),
       })
     })
@@ -407,16 +450,15 @@ describe('Chat Route Handler', () => {
         isAdminOperation: true,
       }
 
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(false) // Excel feature flag
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -434,11 +476,7 @@ describe('Chat Route Handler', () => {
         'admin@plumber.gov.sg',
         expect.any(Object),
       )
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'app_m365-excel',
-        'admin@plumber.gov.sg',
-        false,
-      )
+      expect(mocks.getAllLdFlags).toHaveBeenCalledWith('admin@plumber.gov.sg')
     })
   })
 
@@ -489,17 +527,16 @@ describe('Chat Route Handler', () => {
         new Error('LLM service unavailable'),
       )
 
-      mocks.getLdFlagValue
-        .mockResolvedValueOnce({
-          enabled: true,
-          config: {
-            chatPromptName: 'chat-v0',
-            chatReadinessPromptName: 'chat-readiness-v0',
-            chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
-            version: 'production',
-          },
-        })
-        .mockResolvedValueOnce(false) // Excel feature flag
+      mocks.getLdFlagValue.mockResolvedValueOnce({
+        enabled: true,
+        config: {
+          chatPromptName: 'chat-v0',
+          chatReadinessPromptName: 'chat-readiness-v0',
+          chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
+          version: 'production',
+        },
+      })
+      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
