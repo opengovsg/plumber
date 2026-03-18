@@ -11,7 +11,13 @@ import { createSession } from '../auth/create-client'
 const databricksTableUrl = `https://${databricksConfig.serverHostname}/explore/tables/${databricksConfig.catalog}`
 
 const insertRowSchema = z.object({
-  tableName: z.string().min(1),
+  tableName: z
+    .string()
+    .min(1, { message: 'Table name is required' })
+    .regex(/^[a-z0-9_]+$/, {
+      message:
+        'Table name can only contain lowercase letters, numbers and underscores',
+    }),
   rowData: z.array(
     z.object({
       columnName: z

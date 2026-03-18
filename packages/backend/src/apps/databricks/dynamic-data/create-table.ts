@@ -1,5 +1,6 @@
 import { IDynamicAction, IGlobalVariable, IJSONObject } from '@plumber/types'
 
+import validator from 'email-validator'
 import { z } from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -12,10 +13,14 @@ const createTableSchema = z.object({
   tableName: z
     .string()
     .min(1, { message: 'Table name is required' })
+    .max(255, { message: 'Table name must be less than 255 characters' })
     .regex(/^[a-z0-9_]+$/, {
       message:
         'Table name can only contain lowercase letters, numbers and underscores',
     }),
+  userEmail: z.string().refine((val) => validator.validate(val), {
+    message: 'Invalid email address',
+  }),
 })
 
 const dynamicData: IDynamicAction = {
@@ -23,7 +28,10 @@ const dynamicData: IDynamicAction = {
   key: 'databricks-createTable',
   type: 'action',
   async run($: IGlobalVariable): Promise<IJSONObject> {
-    const parametersParseResult = createTableSchema.safeParse($.step.parameters)
+    const parametersParseResult = createTableSchema.safeParse({
+      ...$.step.parameters,
+      userEmail: $.user.email,
+    })
     if (parametersParseResult.success === false) {
       throw new BadUserInputError(parametersParseResult.error.issues[0].message)
     }
@@ -33,9 +41,17 @@ const dynamicData: IDynamicAction = {
       const { session, endSession } = await createSession($)
       // Note: DDL statements like CREATE TABLE don't support parameterization in Databricks.
       // Input validation via regex (only alphanumeric + underscore) provides SQL injection protection.
-      const statement = `CREATE TABLE \`${tableName}\`;`
-      const operation = await session.executeStatement(statement)
-      await operation.fetchAll()
+
+      const createTableOperation = await session.executeStatement(
+        `CREATE TABLE \`${tableName}\`;`,
+      )
+      await createTableOperation.fetchAll()
+      // We grant ALL PRIVILEGES to the current user to the table,
+      // which includes reading, writing, altering table, and managing permis.
+      const grantPermissionsOperation = await session.executeStatement(
+        `GRANT ALL PRIVILEGES ON \`${tableName}\` TO \`${$.user.email}\`;`,
+      )
+      await grantPermissionsOperation.fetchAll()
       await endSession()
       return {
         newValue: tableName,
