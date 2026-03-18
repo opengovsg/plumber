@@ -183,7 +183,7 @@ describe('decrypt form response', () => {
         FAILED_DECRYPT_RESPONSE,
       )
       expect(decryptMock).toHaveBeenCalledTimes(1)
-      expect(mocks.consoleError).toHaveBeenCalledWith(
+      expect(mocks.consoleWarn).toHaveBeenCalledWith(
         'Unable to decrypt formsg response',
       )
     })

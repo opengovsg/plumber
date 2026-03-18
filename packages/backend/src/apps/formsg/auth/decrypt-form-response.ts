@@ -107,6 +107,13 @@ export async function decryptFormResponse(
 
   if (version >= 3) {
     const decryptedSubmission = formSgSdk.cryptoV3.decrypt(formSecretKey, data)
+
+    // If decryption fails (aka invalid form secret key), return false
+    if (decryptedSubmission == null) {
+      logger.warn('Unable to decrypt MRF formsg response')
+      return { verified: false, internalId: null }
+    }
+
     const responsesV3 = decryptedSubmission?.responses
     const mappedResponses = await processResponsesV3(
       $,
@@ -295,7 +302,7 @@ export async function decryptFormResponse(
     }
   } else {
     // Could not decrypt the submission
-    logger.error('Unable to decrypt formsg response')
+    logger.warn('Unable to decrypt formsg response')
     return { verified: false, internalId: null }
   }
 }
