@@ -7,8 +7,13 @@ import {
 import { generateSchema } from './schema-generator'
 
 // Generate schema to validate action steps against the available actions in apps
+// This schema is used by createFlowWithSteps where description/config are optional
 const actionStepSchema = generateSchema(
-  z.object({ type: z.literal('action') }),
+  z.object({
+    type: z.literal('action'),
+    description: z.string().optional(),
+    config: z.record(z.any()).optional(),
+  }),
   'action',
 ).refine(validateActionParameters, {
   message:
