@@ -88,12 +88,14 @@ export default function ExecutionStep({
           <HStack>
             {!isInForEach && canRetry && (
               <>
-                <RetryAllButton execution={execution} />
+                <RetryAllButton
+                  execution={execution}
+                  variant={isDelayPaused ? 'resume' : 'retry'}
+                />
                 <RetryButton
                   executionStepId={executionStep.id}
-                  customButtonText={
-                    isDelayPaused ? 'Resume' : customRetryButtonText
-                  }
+                  customButtonText={customRetryButtonText}
+                  variant={isDelayPaused ? 'resume' : undefined}
                 />
               </>
             )}
