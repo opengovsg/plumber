@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
@@ -47,6 +47,11 @@ export function useChatStream(options: UseChatStreamOptions) {
   // Defaults to false, becomes true when API returns isReady: true
   // Resets to false when a new message is sent
   const [isReady, setIsReady] = useState(false)
+
+  // Use ref to always access the latest location state in callbacks
+  // This ensures onFinish sees updates made by other components (e.g., StepsPreview)
+  const locationRef = useRef(location)
+  locationRef.current = location
 
   const {
     messages: aiMessages,
@@ -97,11 +102,31 @@ export function useChatStream(options: UseChatStreamOptions) {
         ...transformedMessages,
       ])
 
+      let isChatReady = false
+      const lastMessage = messages[messages.length - 1]
+      const isChatReadyPart = lastMessage.parts.find(
+        (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
+      )
+      if (isChatReadyPart) {
+        isChatReady = isChatReadyPart.data.isChatReady
+        setIsReady(isChatReady)
+      }
+
+      // Get current output from the ref (ensures we see latest state from other navigates)
+      const currentOutput = locationRef.current.state?.output
+
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
           ...location.state,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
+          // When isChatReady is true: clear output to trigger step generation
+          ...(isChatReady
+            ? { output: undefined }
+            : // When isChatReady is false: preserve current output from ref
+            currentOutput
+            ? { output: currentOutput }
+            : {}),
         },
         replace: true,
       })
@@ -149,22 +174,6 @@ export function useChatStream(options: UseChatStreamOptions) {
       return extractTextContent(lastMessage)
     }
     return ''
-  }, [aiMessages, status])
-
-  // Extract step status from the last assistant message when streaming ends
-  useEffect(() => {
-    // Only check when not streaming (i.e., when streaming just finished)
-    if (status !== 'streaming' && status !== 'submitted') {
-      const lastMessage = aiMessages[aiMessages.length - 1]
-      if (lastMessage && lastMessage.role === 'assistant') {
-        const isChatReadyPart = lastMessage.parts.find(
-          (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
-        )
-        if (isChatReadyPart) {
-          setIsReady(isChatReadyPart.data.isChatReady)
-        }
-      }
-    }
   }, [aiMessages, status])
 
   // Wrapper for sendMessage that matches the expected signature

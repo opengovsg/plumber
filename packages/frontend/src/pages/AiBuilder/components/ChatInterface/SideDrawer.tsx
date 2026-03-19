@@ -1,15 +1,17 @@
-import { FaTimes } from 'react-icons/fa'
-import { Box, Flex, Icon, IconButton, Text } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import StepsPreview from '../StepsPreview'
 
 interface SideDrawerProps {
   isOpen: boolean
-  onClose: () => void
+  isReadyForPreview: boolean
 }
 
-export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
+export default function SideDrawer({
+  isOpen,
+  isReadyForPreview,
+}: SideDrawerProps) {
   const isMobile = useIsMobile()
 
   return (
@@ -34,18 +36,11 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
           <Text fontSize="xl" fontWeight="bold">
             Workflow preview
           </Text>
-          <IconButton
-            aria-label="Close drawer"
-            icon={<Icon as={FaTimes} />}
-            onClick={onClose}
-            variant="clear"
-            size="sm"
-          />
         </Flex>
 
         {/* Content */}
         <Box flex={1} overflowY="auto" pb={4}>
-          {isOpen && <StepsPreview />}
+          {isOpen && <StepsPreview isReadyForPreview={isReadyForPreview} />}
         </Box>
       </Flex>
     </Box>

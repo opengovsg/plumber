@@ -1,3 +1,5 @@
+import type { IStep } from '@plumber/types'
+
 import z from 'zod/v3'
 
 import {
@@ -7,7 +9,7 @@ import {
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 
-import { MutationResolvers, StepInput } from '../__generated__/types.generated'
+import { MutationResolvers } from '../__generated__/types.generated'
 
 import { ifThenParametersSchema } from './ai/schemas/actions.zod'
 import { generateSchema } from './ai/schemas/schema-generator'
@@ -100,7 +102,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
       },
     })
 
-    const stepsToInsert = steps.map((step: StepInput) => {
+    const stepsToInsert = steps.map((step: IStep) => {
       return {
         type: step.type,
         appKey: step.appKey,
