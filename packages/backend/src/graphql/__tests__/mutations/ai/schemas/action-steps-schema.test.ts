@@ -52,6 +52,41 @@ describe('actionStepsSchema validation', () => {
     })
   })
 
+  describe('array length validation', () => {
+    it('should accept maximum allowed length (29 steps)', () => {
+      // Generate 29 valid action steps (max allowed, since there's also a trigger making 30 total)
+      const steps = Array.from({ length: 29 }, (_, index) => ({
+        type: 'action' as StepEnumType,
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: index + 2, // Starting from position 2 (position 1 is the trigger)
+        config: {},
+      }))
+
+      const result = actionStepsSchema.safeParse(steps)
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject exceeding maximum length (30 steps)', () => {
+      // Generate 30 action steps (one over the limit)
+      const steps = Array.from({ length: 30 }, (_, index) => ({
+        type: 'action' as StepEnumType,
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: index + 2,
+        config: {},
+      }))
+
+      const result = actionStepsSchema.safeParse(steps)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.errors[0].message).toContain(
+          'Array must contain at most 29 element(s)',
+        )
+      }
+    })
+  })
+
   describe('if-then validation', () => {
     it('should accept valid if-then step with depth: 0 and branchName', () => {
       const steps = [

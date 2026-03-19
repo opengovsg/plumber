@@ -31,6 +31,7 @@ export const ACTION_SCHEMA = generatedSchema.refine(validateActionParameters, {
 export const ACTIONS_SCHEMA = z
   .array(ACTION_SCHEMA)
   .min(1)
+  .max(29) // max of 30 steps including trigger
   .superRefine(validateActionStepsRules)
 
 // Type inference for TypeScript

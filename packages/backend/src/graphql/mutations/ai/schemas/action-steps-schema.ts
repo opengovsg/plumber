@@ -23,4 +23,5 @@ const actionStepSchema = generateSchema(
 export const actionStepsSchema = z
   .array(actionStepSchema)
   .min(1)
+  .max(29) // max of 30 steps including trigger
   .superRefine(validateActionStepsRules)
