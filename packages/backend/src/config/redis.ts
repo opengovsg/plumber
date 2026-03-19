@@ -25,6 +25,12 @@ function reconnectOnError(err: Error) {
   return false
 }
 
+/**
+ * TODO:
+ * database index is actually not supported in cluster mode
+ * it automatically uses the database index 0.
+ * We should be using prefixes instead.
+ */
 export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
   appConfig.redisClusterMode
     ? new ioRedis.Cluster(
