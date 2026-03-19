@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
+import { MdCheck, MdContentCopy } from 'react-icons/md'
 import {
+  Box,
   Code,
+  IconButton,
   Link,
   List,
   ListItem,
@@ -11,8 +14,57 @@ import {
   Th,
   Thead,
   Tr,
+  useClipboard,
 } from '@chakra-ui/react'
 import { Streamdown } from 'streamdown'
+
+function extractText(node: React.ReactNode): string {
+  if (typeof node === 'string') {
+    return node
+  }
+  if (typeof node === 'number') {
+    return String(node)
+  }
+  if (Array.isArray(node)) {
+    return node.map(extractText).join('')
+  }
+  if (node !== null && typeof node === 'object' && 'props' in node) {
+    return extractText((node as React.ReactElement).props.children)
+  }
+  return ''
+}
+
+function CodeBlock(props: React.ComponentProps<'pre'>) {
+  const { onCopy, hasCopied } = useClipboard(extractText(props.children))
+
+  return (
+    <Box position="relative" my={4} width="100%">
+      <IconButton
+        aria-label="Copy code"
+        icon={hasCopied ? <MdCheck /> : <MdContentCopy />}
+        size="xs"
+        variant="clear"
+        colorScheme="gray"
+        position="absolute"
+        top={2}
+        right={2}
+        onClick={onCopy}
+        zIndex={1}
+      />
+      <Box
+        as="pre"
+        p={4}
+        pr={10}
+        bg="gray.100"
+        borderRadius="md"
+        overflowX="auto"
+        fontSize="sm"
+        whiteSpace="pre-wrap"
+        {...props}
+      />
+    </Box>
+  )
+}
 
 interface ChakraStreamdownProps {
   children: string
@@ -72,6 +124,7 @@ export function ChakraStreamdown({
       tr: (props: React.ComponentProps<typeof Tr>) => <Tr {...props} />,
       th: (props: React.ComponentProps<typeof Th>) => <Th {...props} />,
       td: (props: React.ComponentProps<typeof Td>) => <Td {...props} />,
+      pre: (props: React.ComponentProps<'pre'>) => <CodeBlock {...props} />,
     }),
     [],
   )

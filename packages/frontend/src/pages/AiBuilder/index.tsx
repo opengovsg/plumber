@@ -32,6 +32,8 @@ function AiBuilderContent() {
     isReady: isReadyForPreview,
     sendMessage,
     cancelStream,
+    resetChat,
+    hasReachedLimit,
   } = useChatStream({ initialMessages: chatMessages })
 
   const cancelRef = useRef(null)
@@ -105,6 +107,9 @@ function AiBuilderContent() {
             isReadyForPreview={isReadyForPreview}
             sendMessage={sendMessage}
             cancelStream={cancelStream}
+            resetChat={resetChat}
+            hasReachedLimit={hasReachedLimit}
+            clearPersistedState={clearPersistedState}
           />
         </Container>
       </Flex>
