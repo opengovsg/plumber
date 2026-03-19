@@ -282,7 +282,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
         <VStack mt={10} gap={2}>
           <Text textStyle="body-1">Looks good?</Text>
           <HStack alignItems="center" justifyContent="center" gap={2}>
-            <Button variant="solid" onClick={onCreateFlowWithSteps}>
+            <Button variant="solid" onClick={onCreateFlowWithSteps} size="sm">
               Create this workflow
             </Button>
           </HStack>

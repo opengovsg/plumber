@@ -1,5 +1,17 @@
 import { useMemo } from 'react'
-import { Code, Link, List, ListItem, Text } from '@chakra-ui/react'
+import {
+  Code,
+  Link,
+  List,
+  ListItem,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+} from '@chakra-ui/react'
 import { Streamdown } from 'streamdown'
 
 interface ChakraStreamdownProps {
@@ -48,6 +60,18 @@ export function ChakraStreamdown({
       li: (props: React.ComponentProps<typeof ListItem>) => (
         <ListItem {...props} />
       ),
+      table: (props: React.ComponentProps<typeof Table>) => (
+        <Table variant="simple" size="sm" mb={4} {...props} />
+      ),
+      thead: (props: React.ComponentProps<typeof Thead>) => (
+        <Thead {...props} />
+      ),
+      tbody: (props: React.ComponentProps<typeof Tbody>) => (
+        <Tbody {...props} />
+      ),
+      tr: (props: React.ComponentProps<typeof Tr>) => <Tr {...props} />,
+      th: (props: React.ComponentProps<typeof Th>) => <Th {...props} />,
+      td: (props: React.ComponentProps<typeof Td>) => <Td {...props} />,
     }),
     [],
   )
