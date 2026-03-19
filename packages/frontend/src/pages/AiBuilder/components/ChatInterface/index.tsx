@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
-import { IoChevronDown } from 'react-icons/io5'
+import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Box, Flex, IconButton, Text } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
+import { StickToBottom } from 'use-stick-to-bottom'
 
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
@@ -10,13 +10,14 @@ import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 
 import PromptInput from './PromptInput'
+import ScrollButton from './ScrollButton'
 import SideDrawer from './SideDrawer'
 
 export default function ChatInterface() {
   const navigate = useNavigate()
   const location = useLocation()
   const isMobile = useIsMobile()
-  const { flowName, chatInput, chatMessages } = useAiBuilderContext()
+  const { flowName, chatInput, chatMessages, output } = useAiBuilderContext()
 
   const {
     messages,
@@ -27,56 +28,13 @@ export default function ChatInterface() {
     cancelStream,
   } = useChatStream({ initialMessages: chatMessages })
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [showScrollButton, setShowScrollButton] = useState(false)
-
-  // Check if user is near bottom of scroll
-  useEffect(() => {
-    const container = messagesContainerRef.current
-    if (!container) {
-      return
-    }
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
-      setShowScrollButton(!isNearBottom && scrollHeight > clientHeight)
-    }
-
-    container.addEventListener('scroll', handleScroll)
-    // Check initially and on content changes
-    handleScroll()
-
-    return () => container.removeEventListener('scroll', handleScroll)
-  }, [messages, currentResponse])
-
-  // Auto-scroll to bottom when new messages arrive (only if already at bottom)
-  useEffect(() => {
-    const container = messagesContainerRef.current
-    if (!container) {
-      return
-    }
-
-    const { scrollTop, scrollHeight, clientHeight } = container
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
-
-    if (isNearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages, currentResponse])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  const [isDrawerOpen, setIsDrawerOpen] = useState(
+    Boolean(output?.trigger || output?.actions?.length),
+  )
 
   const hasMessages = messages.length > 0 || isStreaming
 
-  const handleOpenPreview = () => {
-    // NOTE: only need to update the location state if there has been changes
-    // if the user just closed and open the side drawer, we don't need to update
-    // as we don't want to generate the ai steps again
+  const handleOpenPreview = useCallback(() => {
     if (chatInput !== messages[messages.length - 1].text) {
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
@@ -89,9 +47,15 @@ export default function ChatInterface() {
       })
     }
     setIsDrawerOpen(true)
-  }
+  }, [chatInput, messages, location.state, flowName, navigate])
 
-  // Initial empty state - centered layout
+  // Auto-open preview when streaming completes and result is ready
+  useEffect(() => {
+    if (hasMessages && !isStreaming && isReadyForPreview) {
+      handleOpenPreview()
+    }
+  }, [isStreaming, hasMessages, isReadyForPreview, handleOpenPreview])
+
   if (!hasMessages) {
     return (
       <Flex
@@ -119,10 +83,8 @@ export default function ChatInterface() {
     )
   }
 
-  // Chat layout - messages with input at bottom
   return (
     <Flex h="100%" w="full" position="relative" overflow="hidden">
-      {/* Main Chat Area */}
       <Flex
         h="100%"
         w="full"
@@ -131,62 +93,43 @@ export default function ChatInterface() {
         pr={isDrawerOpen && !isMobile ? '50%' : '0'}
         transition="padding-right 0.3s ease-in-out"
       >
-        {/* Messages Area */}
-        <ChatMessages
-          messages={messages}
-          currentResponse={currentResponse}
-          isStreaming={isStreaming}
-          messagesEndRef={messagesEndRef}
-          messagesContainerRef={messagesContainerRef}
-          hasMessages={hasMessages}
-          onOpenDrawer={handleOpenPreview}
-          isReady={isReadyForPreview}
-        />
-
-        {/* Input Area - Fixed at bottom */}
-        <Box
-          borderTop="1px"
-          borderColor="gray.200"
-          bg="white"
-          w="full"
-          position="relative"
+        <StickToBottom
+          resize="smooth"
+          initial="smooth"
+          style={{
+            display: 'flex',
+            height: '100%',
+            width: '100%',
+            flexDirection: 'column',
+            position: 'relative',
+          }}
         >
-          {/* Scroll to Bottom Button */}
-          {showScrollButton && (
-            <IconButton
-              aria-label="Scroll to bottom"
-              variant="clear"
-              icon={<IoChevronDown />}
-              onClick={scrollToBottom}
-              size="xs"
-              borderRadius="full"
-              border="1px"
-              bg="white"
-              _hover={{
-                bg: 'interaction.muted.neutral.hover',
-              }}
-              position="absolute"
-              top="-56px"
-              left="50%"
-              transform="translateX(-50%)"
-              zIndex={10}
-              boxShadow="md"
-            />
-          )}
-          <Box maxW="4xl" mx="auto" p={4}>
-            <PromptInput
-              sendMessage={sendMessage}
-              isStreaming={isStreaming}
-              cancelStream={cancelStream}
-            />
-          </Box>
-        </Box>
-      </Flex>
+          <ChatMessages
+            messages={messages}
+            currentResponse={currentResponse}
+            isStreaming={isStreaming}
+          />
 
-      <SideDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-      />
+          <Box
+            borderTop="1px"
+            borderColor="gray.200"
+            bg="white"
+            w="full"
+            flexShrink={0}
+            position="relative"
+          >
+            <Box maxW="4xl" mx="auto" p={4}>
+              <ScrollButton />
+              <PromptInput
+                sendMessage={sendMessage}
+                isStreaming={isStreaming}
+                cancelStream={cancelStream}
+              />
+            </Box>
+          </Box>
+        </StickToBottom>
+      </Flex>
+      <SideDrawer isOpen={isDrawerOpen} isReadyForPreview={isReadyForPreview} />
     </Flex>
   )
 }

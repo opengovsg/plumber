@@ -35,7 +35,11 @@ const LOADING_STATES = [
   { text: 'Putting it all together...' },
 ]
 
-export default function StepsPreview() {
+interface StepsPreviewProps {
+  isReadyForPreview: boolean
+}
+
+export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
   const location = useLocation()
   const {
     flowName,
@@ -105,11 +109,11 @@ export default function StepsPreview() {
   }, [chatInput, generateAiSteps, navigate, location.pathname])
 
   useEffect(() => {
-    if (output) {
+    if (output || !isReadyForPreview) {
       return
     }
     onGenerateAiSteps()
-  }, [onGenerateAiSteps, output])
+  }, [onGenerateAiSteps, output, isReadyForPreview])
 
   const retryGenerateAiSteps = useCallback(async () => {
     setError(false)
