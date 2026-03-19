@@ -1,47 +1,24 @@
-import { useNavigate } from 'react-router-dom'
-import { Flex, Text } from '@chakra-ui/react'
-
-import * as URLS from '@/config/urls'
+import { BiRightArrowAlt } from 'react-icons/bi'
+import { Flex, Icon, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 
 import { useCreateFlowContext } from '../contexts/CreateFlowContext'
+import { useFlowCreation } from '../hooks/useFlowCreation'
 
-import CreatePipeTile, { TileProps } from './CreatePipeTile'
+import FlowNameInput from './FlowNameInput'
+import ModeSelector from './ModeSelector'
 
-export default function EmptyFlows({ onCreate }: { onCreate: () => void }) {
-  const navigate = useNavigate()
-  const { canUseAiBuilder, setCreateMode, setSkipModeSelection } =
-    useCreateFlowContext()
+export default function EmptyFlows() {
+  const { createMode } = useCreateFlowContext()
 
-  const TILES = [
-    canUseAiBuilder && {
-      header: 'Build with AI',
-      description:
-        'Describe your workflow and we&apos;ll create the steps for you',
-      iconName: 'BiSolidMagicWand',
-      onClick: () => navigate(`${URLS.EDITOR}/ai`),
-    },
-    {
-      header: 'Use a template',
-      description:
-        'Select from pre-built workflows that you can use as-is or customize further for your own use case',
-      iconName: 'BiBookOpen',
-      onClick: () => navigate(URLS.TEMPLATES),
-    },
-    {
-      header: 'Start from scratch',
-      description: 'Use our workflow builder to create your own workflow',
-      iconName: 'BiPlus',
-      onClick: () => {
-        // when creating a new flow from the empty flows page
-        // skip the mode selection in the modal
-        // and directly open the modal with flow name input
-        // and show the use case suggestions
-        setCreateMode('new')
-        setSkipModeSelection(true)
-        onCreate()
-      },
-    },
-  ].filter(Boolean) as TileProps[]
+  const {
+    flowName,
+    inputRef,
+    handleInputChange,
+    isButtonDisabled,
+    handleModeSubmit,
+    loading,
+  } = useFlowCreation()
 
   return (
     <Flex
@@ -52,14 +29,28 @@ export default function EmptyFlows({ onCreate }: { onCreate: () => void }) {
       pt={{ base: '0', md: '10vh' }}
     >
       <Flex maxW="800px">
-        <Text textStyle="h3">How do you want to create your pipe?</Text>
+        <Text textStyle="h3">How do you want to create your workflow?</Text>
       </Flex>
 
-      <Flex gap={4} flexDir={{ base: 'column', md: 'row' }}>
-        {TILES.map((tile) => (
-          <CreatePipeTile key={tile.header} {...tile} />
-        ))}
-      </Flex>
+      <ModeSelector />
+
+      {createMode === 'new' && (
+        <FlowNameInput
+          inputRef={inputRef}
+          flowName={flowName}
+          handleInputChange={handleInputChange}
+        />
+      )}
+
+      {createMode && (
+        <Button
+          onClick={() => handleModeSubmit()}
+          isDisabled={isButtonDisabled}
+          isLoading={loading}
+        >
+          Next <Icon boxSize={6} as={BiRightArrowAlt} />
+        </Button>
+      )}
     </Flex>
   )
 }

@@ -92,6 +92,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
           schema: z.object({
             trigger: TRIGGER_SCHEMA,
             actions: z.array(ACTION_SCHEMA),
+            name: z.string().max(64).default('Build with AI'),
           }),
           system: systemPrompt,
           prompt: userPrompt,
