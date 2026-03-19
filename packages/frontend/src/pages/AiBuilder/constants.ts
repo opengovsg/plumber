@@ -37,3 +37,6 @@ export const PLACEHOLDER_MESSAGES = [
   "Describe what you have in mind and we'll show you what's possible",
   "Share what you're trying to do and we'll help you figure out the best way to automate it",
 ]
+
+// Maximum number of messages allowed in a conversation (hard limit)
+export const MAX_MESSAGES = 50

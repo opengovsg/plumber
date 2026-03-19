@@ -7,6 +7,7 @@ import { DefaultChatTransport } from 'ai'
 
 import * as URLS from '@/config/urls'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
+import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
   deduplicateMessages,
   extractTextContent,
@@ -65,6 +66,7 @@ export function useChatStream(options: UseChatStreamOptions) {
   const {
     messages: aiMessages,
     sendMessage,
+    setMessages,
     status,
     error: aiError,
     stop,
@@ -202,6 +204,11 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
+  const resetChat = useCallback(() => {
+    setMessages([])
+    setIsReady(false)
+  }, [setMessages])
+
   // Wrapper for sendMessage that matches the expected signature
   const sendMessageWrapper = useCallback(
     (userPrompt: string) => {
@@ -223,5 +230,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     error: aiError?.message || null,
     sendMessage: sendMessageWrapper,
     cancelStream: stop,
+    resetChat,
+    hasReachedLimit: messages.length >= MAX_MESSAGES,
   }
 }
