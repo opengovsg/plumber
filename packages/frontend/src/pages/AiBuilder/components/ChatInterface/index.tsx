@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
-import { useIsMobile } from '@opengovsg/design-system-react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import pairLogo from '@/assets/pair-logo.svg'
@@ -36,12 +35,8 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   } = props
   const navigate = useNavigate()
   const location = useLocation()
-  const isMobile = useIsMobile()
-  const { flowName, chatInput, output } = useAiBuilderContext()
-
-  const [isDrawerOpen, setIsDrawerOpen] = useState(
-    Boolean(output?.trigger || output?.actions?.length),
-  )
+  const { flowName, chatInput, isMobile, isDrawerOpen, setIsDrawerOpen } =
+    useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
 
@@ -57,8 +52,19 @@ export default function ChatInterface(props: ChatInterfaceProps) {
         replace: true,
       })
     }
-    setIsDrawerOpen(true)
-  }, [chatInput, messages, location.state, flowName, navigate])
+
+    if (!isMobile) {
+      setIsDrawerOpen(true)
+    }
+  }, [
+    chatInput,
+    messages,
+    setIsDrawerOpen,
+    navigate,
+    location.state,
+    flowName,
+    isMobile,
+  ])
 
   // Auto-open preview when streaming completes and result is ready
   useEffect(() => {
@@ -130,7 +136,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             flexShrink={0}
             position="relative"
           >
-            <Box maxW="4xl" mx="auto" px={4} py={4} pb={8}>
+            <Box maxW="4xl" mx="auto" px={4} py={4} pb={isMobile ? 4 : 8}>
               <ScrollButton />
               <PromptInput
                 sendMessage={sendMessage}
@@ -156,7 +162,12 @@ export default function ChatInterface(props: ChatInterfaceProps) {
           <ImageBox imageUrl={pairLogo} boxSize={6} />
         </Flex>
       )}
-      <SideDrawer isOpen={isDrawerOpen} isReadyForPreview={isReadyForPreview} />
+
+      <SideDrawer
+        isOpen={isDrawerOpen}
+        isReadyForPreview={isReadyForPreview}
+        onClose={() => setIsDrawerOpen(false)}
+      />
     </Flex>
   )
 }

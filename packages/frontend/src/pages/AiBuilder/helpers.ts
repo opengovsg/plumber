@@ -1,6 +1,10 @@
 import { TextPart } from 'ai'
 
-import { CustomUIMessage, Message } from '@/hooks/useChatStream'
+import {
+  CustomUIMessage,
+  IsChatReadyPart,
+  Message,
+} from '@/hooks/useChatStream'
 
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
@@ -24,10 +28,30 @@ export const extractTextContent = (msg: CustomUIMessage): string => {
 }
 
 export const transformMessages = (messages: CustomUIMessage[]) => {
-  return messages.map((msg) => ({
-    id: msg.id,
-    text: extractTextContent(msg),
-    isUser: msg.role === 'user',
-    traceId: msg.metadata?.traceId,
-  }))
+  let lastReadyIndex = -1
+
+  const transformed = messages.map((msg, index) => {
+    const isChatReady = msg.parts.find(
+      (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
+    )?.data.isChatReady
+
+    if (isChatReady) {
+      lastReadyIndex = index
+    }
+
+    return {
+      id: msg.id,
+      text: extractTextContent(msg),
+      isUser: msg.role === 'user',
+      traceId: msg.metadata?.traceId,
+      isChatReady: false, // default to false
+    }
+  })
+
+  // Only set the last ready message to true
+  if (lastReadyIndex !== -1) {
+    transformed[lastReadyIndex].isChatReady = true
+  }
+
+  return transformed
 }
