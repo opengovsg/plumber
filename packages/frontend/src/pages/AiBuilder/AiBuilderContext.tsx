@@ -20,6 +20,7 @@ interface AIBuilderSharedProps {
     actions: IStep[]
     traceId: string
   }
+  clearPersistedState: () => void
 }
 
 interface AiBuilderStep extends IStep {
@@ -56,6 +57,7 @@ export const useAiBuilderContext = () => {
 
 interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
   children: React.ReactNode
+  clearPersistedState: () => void
 }
 
 export const AiBuilderContextProvider = ({
@@ -64,6 +66,7 @@ export const AiBuilderContextProvider = ({
   chatInput,
   chatMessages,
   output,
+  clearPersistedState,
 }: AiBuilderContextProviderProps) => {
   const isMobile = useIsMobile()
   const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
@@ -128,6 +131,7 @@ export const AiBuilderContextProvider = ({
         stepGroupType,
         stepGroupCaption,
         ddSessionId,
+        clearPersistedState,
       }}
     >
       {children}

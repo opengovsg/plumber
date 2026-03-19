@@ -33,6 +33,7 @@ import { chatRequestSchema } from './schema'
 
 const handleChatStream = observe(
   async (req: AuthenticatedRequest, res: Response) => {
+    const abortController = new AbortController()
     const context = req.context
     const aiBuilderFlag = await getLdFlagValue(
       AI_BUILDER_FEATURE_FLAG,
@@ -116,6 +117,7 @@ const handleChatStream = observe(
                 tags: ['ai-builder', 'chat', 'stream'],
               },
             },
+            abortSignal: abortController.signal,
             onFinish: async (event) => {
               try {
                 logger.info('Stream finished', {

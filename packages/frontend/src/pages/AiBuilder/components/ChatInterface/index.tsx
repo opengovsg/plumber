@@ -7,7 +7,7 @@ import { StickToBottom } from 'use-stick-to-bottom'
 import pairLogo from '@/assets/pair-logo.svg'
 import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import * as URLS from '@/config/urls'
-import { useChatStream } from '@/hooks/useChatStream'
+import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
@@ -16,20 +16,28 @@ import PromptInput from './PromptInput'
 import ScrollButton from './ScrollButton'
 import SideDrawer from './SideDrawer'
 
-export default function ChatInterface() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const isMobile = useIsMobile()
-  const { flowName, chatInput, chatMessages, output } = useAiBuilderContext()
+interface ChatInterfaceProps {
+  messages: Message[]
+  currentResponse: string
+  isStreaming: boolean
+  isReadyForPreview: boolean
+  sendMessage: (message: string) => void
+  cancelStream: () => void
+}
 
+export default function ChatInterface(props: ChatInterfaceProps) {
   const {
     messages,
     currentResponse,
     isStreaming,
-    isReady: isReadyForPreview,
+    isReadyForPreview,
     sendMessage,
     cancelStream,
-  } = useChatStream({ initialMessages: chatMessages })
+  } = props
+  const navigate = useNavigate()
+  const location = useLocation()
+  const isMobile = useIsMobile()
+  const { flowName, chatInput, output } = useAiBuilderContext()
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(
     Boolean(output?.trigger || output?.actions?.length),

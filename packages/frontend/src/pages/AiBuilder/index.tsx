@@ -1,18 +1,59 @@
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet'
-import { BiChevronLeft } from 'react-icons/bi'
-import { Link, useLocation } from 'react-router-dom'
-import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 
 import * as URLS from '@/config/urls'
+import { useChatStream } from '@/hooks/useChatStream'
+import { useNavigationGuard } from '@/hooks/useNavigationGuard'
+import { usePersistedState } from '@/hooks/usePersistedState'
 
 import ChatInterface from './components/ChatInterface'
+import ExitAlert from './components/ExitAlert'
 import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
 
 function AiBuilderContent() {
-  const { flowName } = useAiBuilderContext()
+  const navigate = useNavigate()
+  const { flowName, chatMessages, clearPersistedState } = useAiBuilderContext()
+
+  const {
+    messages,
+    currentResponse,
+    isStreaming,
+    isReady: isReadyForPreview,
+    sendMessage,
+    cancelStream,
+  } = useChatStream({ initialMessages: chatMessages })
+
+  const cancelRef = useRef(null)
+
+  // Determine if we have unsaved work
+  // Show warning if there's ANY state worth protecting:
+  // - Existing persisted chat messages
+  // - New messages beyond persisted state
+  // - Currently streaming a response
+  const hasUnsavedWork = useMemo(
+    () => chatMessages.length > 0 || messages.length > 0 || isStreaming,
+    [chatMessages.length, messages.length, isStreaming],
+  )
+
+  // Guard navigation - clear persisted state when user confirms exit
+  const { showWarning, guardedNavigate, confirm, cancel } = useNavigationGuard({
+    when: hasUnsavedWork,
+    onLeave: () => {
+      cancelStream()
+      clearPersistedState()
+    },
+    navigateBack: () => navigate(URLS.FLOWS, { replace: true }),
+  })
+
+  // Close button handler - uses guarded navigation
+  const handleClose = useCallback(() => {
+    guardedNavigate(() => navigate(URLS.FLOWS, { replace: true }))
+  }, [guardedNavigate, navigate])
 
   return (
     <>
@@ -34,20 +75,11 @@ function AiBuilderContent() {
           borderBottom="1px solid"
           borderColor="base.divider.medium"
         >
-          <Flex flex={1} alignItems="center" minWidth={0}>
-            <Box as={Link} to={URLS.FLOWS} mt={1} mr={3} flexShrink={0}>
-              <Icon
-                boxSize={6}
-                color="interaction.support.disabled-content"
-                as={BiChevronLeft}
-              ></Icon>
-            </Box>
+          <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
+            <CloseButton size="sm" onClick={handleClose} />
 
-            <Flex flex={1} minWidth={0}>
-              <Text>{flowName}</Text>
-            </Flex>
+            <Text>{flowName}</Text>
           </Flex>
-          {/* TODO: Add <AiBuilderToolbar /> */}
         </HStack>
         <Container
           maxW="full"
@@ -61,25 +93,53 @@ function AiBuilderContent() {
             backgroundSize: '30px 30px',
           }}
         >
-          <ChatInterface />
+          <ChatInterface
+            messages={messages}
+            currentResponse={currentResponse}
+            isStreaming={isStreaming}
+            isReadyForPreview={isReadyForPreview}
+            sendMessage={sendMessage}
+            cancelStream={cancelStream}
+          />
         </Container>
       </Flex>
+      <ExitAlert
+        cancelRef={cancelRef}
+        isOpen={showWarning}
+        onClose={cancel}
+        onExit={confirm}
+      />
     </>
   )
 }
 
 export default function AiBuilder() {
-  const { flowName, output, chatInput, chatMessages } = useLocation()
-    ?.state || {
-    flowName: 'Build with AI',
-    chatInput: '',
-    chatMessages: [],
-    output: {
-      trigger: '',
-      actions: '',
-      name: 'Build with AI',
-    },
-  }
+  const locationState = useLocation()?.state
+
+  // Persist state to sessionStorage so it survives refresh
+  const [persistedState, setPersistedState, clearPersistedState] =
+    usePersistedState(
+      'ai-builder-draft',
+      locationState || {
+        flowName: 'Build with AI',
+        chatInput: '',
+        chatMessages: [],
+        output: {
+          trigger: '',
+          actions: '',
+          name: 'Build with AI',
+        },
+      },
+    )
+
+  // Sync location state updates (from useChatStream navigate calls) to persisted state
+  useEffect(() => {
+    if (locationState) {
+      setPersistedState(locationState)
+    }
+  }, [locationState, setPersistedState])
+
+  const { flowName, output, chatInput, chatMessages } = persistedState
 
   return (
     <AiBuilderContextProvider
@@ -87,6 +147,7 @@ export default function AiBuilder() {
       chatInput={chatInput}
       chatMessages={chatMessages}
       output={output}
+      clearPersistedState={clearPersistedState}
     >
       <AiBuilderContent />
     </AiBuilderContextProvider>
