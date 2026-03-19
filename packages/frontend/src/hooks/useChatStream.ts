@@ -136,8 +136,6 @@ export function useChatStream(options: UseChatStreamOptions) {
   // Transform AI SDK messages to our Message format
   const messages = useMemo<Message[]>(() => {
     const isActivelyStreaming = status === 'streaming' || status === 'submitted'
-
-    // Start with initial messages if provided
     const initialMsgs = options?.initialMessages || []
 
     // Filter user and assistant messages from AI SDK
@@ -158,6 +156,7 @@ export function useChatStream(options: UseChatStreamOptions) {
       ...initialMsgs,
       ...transformedMessages,
     ])
+
     return allMessages
   }, [aiMessages, options?.initialMessages, status])
 
