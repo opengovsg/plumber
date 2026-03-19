@@ -50,7 +50,9 @@ export default function ModeTile(props: ModeTileProps) {
     <Tile
       icon={() => icon}
       flex={1}
-      {...(isNew && { badge: <NewBadge /> })}
+      {...(isNew && {
+        badge: <NewBadge variant="secondary" />,
+      })}
       {...rest}
     >
       <Text textStyle="subhead-1">{title}</Text>
