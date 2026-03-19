@@ -9,6 +9,7 @@ import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
 
+import MessageLimitBanner from './MessageLimitBanner'
 import PromptInput from './PromptInput'
 import ScrollButton from './ScrollButton'
 import SideDrawer from './SideDrawer'
@@ -20,6 +21,9 @@ interface ChatInterfaceProps {
   isReadyForPreview: boolean
   sendMessage: (message: string) => void
   cancelStream: () => void
+  resetChat: () => void
+  hasReachedLimit: boolean
+  clearPersistedState: () => void
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -30,6 +34,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     isReadyForPreview,
     sendMessage,
     cancelStream,
+    resetChat,
+    hasReachedLimit,
+    clearPersistedState,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -37,6 +44,21 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
+
+  const handleNewChat = useCallback(() => {
+    cancelStream()
+    resetChat()
+    clearPersistedState()
+    navigate(`${URLS.EDITOR}/ai`, {
+      state: {
+        flowName: 'Build with AI',
+        chatInput: '',
+        chatMessages: [],
+        output: { trigger: '', actions: '', name: 'Build with AI' },
+      },
+      replace: true,
+    })
+  }, [cancelStream, resetChat, clearPersistedState, navigate])
 
   const handleOpenPreview = useCallback(() => {
     if (chatInput !== messages[messages.length - 1].text) {
@@ -144,11 +166,15 @@ export default function ChatInterface(props: ChatInterfaceProps) {
               flexDirection="column"
             >
               <ScrollButton />
-              <PromptInput
-                sendMessage={sendMessage}
-                isStreaming={isStreaming}
-                cancelStream={cancelStream}
-              />
+              {hasReachedLimit ? (
+                <MessageLimitBanner onNewChat={handleNewChat} />
+              ) : (
+                <PromptInput
+                  sendMessage={sendMessage}
+                  isStreaming={isStreaming}
+                  cancelStream={cancelStream}
+                />
+              )}
               {!isMobile && (
                 <Text
                   textStyle="caption-1"
