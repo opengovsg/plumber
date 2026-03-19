@@ -99,6 +99,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
       state: {
         ...location.state,
         output: aiSteps,
+        flowName: aiSteps?.name || 'Build with AI',
       },
       replace: true, // Use replace to avoid adding to history
     })

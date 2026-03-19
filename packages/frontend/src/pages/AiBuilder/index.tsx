@@ -71,12 +71,13 @@ function AiBuilderContent() {
 export default function AiBuilder() {
   const { flowName, output, chatInput, chatMessages } = useLocation()
     ?.state || {
-    flowName: 'New flow',
+    flowName: 'Build with AI',
     chatInput: '',
     chatMessages: [],
     output: {
       trigger: '',
       actions: '',
+      name: 'Build with AI',
     },
   }
 

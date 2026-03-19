@@ -1,6 +1,4 @@
-import { FormEvent, useCallback, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@apollo/client'
+import { FormEvent } from 'react'
 import {
   Modal,
   ModalCloseButton,
@@ -8,9 +6,7 @@ import {
   ModalOverlay,
 } from '@chakra-ui/react'
 
-import * as URLS from '@/config/urls'
-import { CREATE_FLOW } from '@/graphql/mutations/create-flow'
-import { useCreateFlowContext } from '@/pages/Flows/contexts/CreateFlowContext'
+import { useFlowCreation } from '@/pages/Flows/hooks/useFlowCreation'
 
 import FlowNameAndModeContent from './FlowNameAndModeContent'
 
@@ -20,64 +16,19 @@ interface CreateFlowModalProps {
 
 export default function CreateFlowModal(props: CreateFlowModalProps) {
   const { onClose } = props
-  const { createMode } = useCreateFlowContext()
 
-  const navigate = useNavigate()
-  const [createFlow, { loading }] = useMutation(CREATE_FLOW)
-  const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(true)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [flowName, setFlowName] = useState<string>('')
-
-  // to minimise the re-renders to the max, didn't use react hook form cus overkill
-  const handleInputChange = () => {
-    const inputValue = inputRef.current?.value || ''
-    const trimmedInputValue = inputValue.trim()
-    setFlowName(inputValue)
-    if (trimmedInputValue !== '') {
-      if (isButtonDisabled) {
-        setIsButtonDisabled(false)
-      }
-    } else {
-      if (!isButtonDisabled) {
-        setIsButtonDisabled(true)
-      }
-    }
-  }
-
-  const onCreateFlow = useCallback(
-    async (flowName: string) => {
-      const response = await createFlow({
-        variables: {
-          input: {
-            flowName,
-          },
-        },
-      })
-      navigate(URLS.FLOW_EDITOR(response.data?.createFlow?.id), {
-        replace: true,
-      })
-    },
-    [createFlow, navigate],
-  )
+  const {
+    flowName,
+    inputRef,
+    handleInputChange,
+    isButtonDisabled,
+    handleModeSubmit,
+    loading,
+  } = useFlowCreation()
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    const trimmedFlowName = inputRef.current?.value.trim()
-    if (!trimmedFlowName) {
-      return
-    }
-
-    if (createMode === 'ai') {
-      event.preventDefault()
-      onClose()
-      navigate(`${URLS.EDITOR}/ai`, {
-        state: { flowName: trimmedFlowName },
-        replace: true,
-      })
-      return
-    }
-
-    // default to new flow
-    onCreateFlow(trimmedFlowName)
+    event.preventDefault()
+    handleModeSubmit({ onClose })
   }
 
   return (
