@@ -17,7 +17,13 @@ import {
 
 function AiBuilderContent() {
   const navigate = useNavigate()
-  const { flowName, chatMessages, clearPersistedState } = useAiBuilderContext()
+  const {
+    flowName,
+    chatMessages,
+    clearPersistedState,
+    isMobile,
+    isDrawerOpen,
+  } = useAiBuilderContext()
 
   const {
     messages,
@@ -61,31 +67,33 @@ function AiBuilderContent() {
         <title>{flowName} | WIP</title>
       </Helmet>
       <Flex h="100vh" flexDirection="column">
-        <HStack
-          position="fixed"
-          top={0}
-          left={0}
-          right={0}
-          zIndex={10}
-          bg="white"
-          justifyContent="space-between"
-          alignItems="center"
-          py={2}
-          px={{ base: 4, md: 8 }}
-          borderBottom="1px solid"
-          borderColor="base.divider.medium"
-        >
-          <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
-            <CloseButton size="sm" onClick={handleClose} />
+        {!(isMobile && isDrawerOpen) && (
+          <HStack
+            position="fixed"
+            top={0}
+            left={0}
+            right={0}
+            zIndex={10}
+            bg="white"
+            justifyContent="space-between"
+            alignItems="center"
+            py={2}
+            px={{ base: 4, md: 8 }}
+            borderBottom="1px solid"
+            borderColor="base.divider.medium"
+          >
+            <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
+              <CloseButton size="sm" onClick={handleClose} />
 
-            <Text>{flowName}</Text>
-          </Flex>
-        </HStack>
+              <Text>{flowName}</Text>
+            </Flex>
+          </HStack>
+        )}
         <Container
           maxW="full"
           px={0}
           py={0}
-          mt="51.5px"
+          mt={isMobile && isDrawerOpen ? 0 : '51.5px'}
           flex={1}
           overflowY="auto"
           sx={{

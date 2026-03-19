@@ -18,6 +18,13 @@ export interface Message {
   text: string
   traceId?: string // only assistant messages have this
   isUser: boolean
+  /**
+   * used to track the latest message with isChatReady: true.
+   * this is used to determine where we should show the preview button
+   * on mobile mode.
+   * only assistant messages should have this.
+   */
+  isChatReady: boolean
 }
 
 // Custom message type with metadata
@@ -44,9 +51,11 @@ export function useChatStream(options: UseChatStreamOptions) {
   const { ddSessionId } = useAiBuilderContext()
 
   // Track step readiness from data-isChatReady annotation
-  // Defaults to false, becomes true when API returns isReady: true
-  // Resets to false when a new message is sent
-  const [isReady, setIsReady] = useState(false)
+  // Initialize based on whether initialMessages contains a ready message
+  const initialIsReady = !!options?.initialMessages?.findLast(
+    (msg) => msg.isChatReady,
+  )
+  const [isReady, setIsReady] = useState(initialIsReady)
 
   // Use ref to always access the latest location state in callbacks
   // This ensures onFinish sees updates made by other components (e.g., StepsPreview)
@@ -157,10 +166,23 @@ export function useChatStream(options: UseChatStreamOptions) {
     }
 
     const transformedMessages = transformMessages(messagesToTransform)
-    const allMessages = deduplicateMessages([
+    const combined = deduplicateMessages([
       ...initialMsgs,
       ...transformedMessages,
     ])
+
+    // Ensure only the last message with isChatReady: true keeps the flag
+    let lastReadyIndex = -1
+    const allMessages = combined.map((msg, index) => {
+      if (msg.isChatReady) {
+        lastReadyIndex = index
+      }
+      return { ...msg, isChatReady: false }
+    })
+
+    if (lastReadyIndex !== -1) {
+      allMessages[lastReadyIndex].isChatReady = true
+    }
 
     return allMessages
   }, [aiMessages, options?.initialMessages, status])

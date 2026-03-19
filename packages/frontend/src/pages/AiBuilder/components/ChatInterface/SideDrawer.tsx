@@ -1,4 +1,4 @@
-import { Box, Flex } from '@chakra-ui/react'
+import { Box, CloseButton, Flex } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import StepsPreview from '../StepsPreview'
@@ -6,11 +6,13 @@ import StepsPreview from '../StepsPreview'
 interface SideDrawerProps {
   isOpen: boolean
   isReadyForPreview: boolean
+  onClose: () => void
 }
 
 export default function SideDrawer({
   isOpen,
   isReadyForPreview,
+  onClose,
 }: SideDrawerProps) {
   const isMobile = useIsMobile()
 
@@ -30,9 +32,20 @@ export default function SideDrawer({
       pointerEvents={isOpen ? 'auto' : 'none'}
       visibility={isOpen ? 'visible' : 'hidden'}
     >
-      <Flex h="100%" flexDir="column" w="full">
+      <Flex h="100%" flexDir="column" w="full" py={isMobile ? 0 : 4}>
+        {isMobile && (
+          <Flex
+            px={4}
+            borderBottom="1px solid"
+            borderColor="base.divider.medium"
+            py={2}
+          >
+            <CloseButton size="sm" onClick={onClose} />
+          </Flex>
+        )}
+
         {/* Content */}
-        <Box flex={1} overflowY="auto" py={6}>
+        <Box flex={1} overflowY="auto" py={2} px={isMobile ? 4 : 0}>
           {isOpen && <StepsPreview isReadyForPreview={isReadyForPreview} />}
         </Box>
       </Flex>

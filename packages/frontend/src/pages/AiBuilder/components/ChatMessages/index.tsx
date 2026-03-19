@@ -1,4 +1,5 @@
 import { Box, VStack } from '@chakra-ui/react'
+import { useIsMobile } from '@opengovsg/design-system-react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import { Message } from '@/hooks/useChatStream'
@@ -17,6 +18,8 @@ export default function ChatMessages({
   currentResponse,
   isStreaming,
 }: ChatMessagesProps) {
+  const isMobile = useIsMobile()
+
   return (
     <StickToBottom.Content
       style={{
@@ -27,9 +30,16 @@ export default function ChatMessages({
     >
       <Box w="full" maxW="4xl" mx="auto" px={4} py={6}>
         <VStack align="stretch" spacing={4}>
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))}
+          {messages.map((message) => {
+            const shouldShowPreview = isMobile && message.isChatReady
+            return (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                shouldShowPreview={shouldShowPreview}
+              />
+            )
+          })}
 
           {/* Streaming response */}
           {isStreaming && (
