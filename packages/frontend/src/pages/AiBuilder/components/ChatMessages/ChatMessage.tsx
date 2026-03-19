@@ -5,7 +5,6 @@ import { Message } from '@/hooks/useChatStream'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
 
 import ChatMessageToolbar from './ChatMessageToolbar'
-import PlumberAvatar from './PlumberAvatar'
 
 interface ChatMessageProps {
   message: Message
@@ -14,8 +13,7 @@ interface ChatMessageProps {
 const AiMessage = memo(({ message }: ChatMessageProps) => {
   return (
     <Flex gap={3} w="full" align="start">
-      <PlumberAvatar mt={3} />
-      <Box flex={1} color="gray.900">
+      <Box flex={1} px={2} color="gray.900">
         <ChakraStreamdown isAnimating={false}>
           {message.text || ''}
         </ChakraStreamdown>
