@@ -8,6 +8,7 @@
 import aisayApp from './aisay'
 import calculatorApp from './calculator'
 import customApiApp from './custom-api'
+import databricksApp from './databricks'
 import delayApp from './delay'
 import formatterApp from './formatter'
 import formsgApp from './formsg'
@@ -37,6 +38,7 @@ export const ACTION_APPS_RANKING = [
   postmanApp.key,
   tilesApp.key,
   m365ExcelApp.key,
+  databricksApp.key,
   toolboxApp.key,
   formatterApp.key,
   calculatorApp.key,
