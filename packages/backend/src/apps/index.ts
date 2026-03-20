@@ -3,6 +3,7 @@ import type { IApp } from '@plumber/types'
 import aisayApp from './aisay'
 import calculatorApp from './calculator'
 import customApiApp from './custom-api'
+import databricksApp from './databricks'
 import delayApp from './delay'
 import formatterApp from './formatter'
 import formsgApp from './formsg'
@@ -42,6 +43,7 @@ const apps: Record<string, IApp> = {
   [webhookApp.key]: webhookApp,
   [aisayApp.key]: aisayApp,
   [gathersgApp.key]: gathersgApp,
+  [databricksApp.key]: databricksApp,
 }
 
 export default apps
