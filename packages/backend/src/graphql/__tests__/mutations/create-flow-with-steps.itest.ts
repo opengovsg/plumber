@@ -683,7 +683,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(flows).toHaveLength(0)
     })
 
-    it('should throw error when if-then step is missing branchName parameter', async () => {
+    it('should not throw error when if-then step is missing branchName parameter', async () => {
       const params = {
         input: {
           flowName: 'Test Flow',
@@ -704,6 +704,48 @@ describe('createFlowWithSteps mutation integration tests', () => {
               parameters: {
                 depth: 0,
                 // missing branchName
+              },
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'postman',
+              key: 'sendTransactionalEmail',
+              position: 3,
+              config: {},
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
+
+      const result = await createFlowWithSteps(null, params, context)
+      expect(result).toBeDefined()
+    })
+
+    it('should throw error when if-then is the last step', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                depth: 0,
+                branchName: 'If',
               },
             },
           ],
