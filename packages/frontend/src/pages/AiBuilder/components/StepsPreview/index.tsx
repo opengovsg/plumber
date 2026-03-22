@@ -121,6 +121,12 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     const prompt = chatInput
     const aiSteps = await generateAiSteps(prompt)
 
+    // Avoid navigating with undefined output on error, which would reset
+    // location state and re-trigger the useEffect that watches `output`
+    if (!aiSteps) {
+      return
+    }
+
     navigate(location.pathname, {
       state: {
         ...location.state,
@@ -150,11 +156,6 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
       }
     }
   }, [])
-
-  const retryGenerateAiSteps = useCallback(async () => {
-    setError(false)
-    await generateAiSteps(chatInput)
-  }, [generateAiSteps, chatInput])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
@@ -252,7 +253,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
             </a>
             .
           </Text>
-          <Button onClick={retryGenerateAiSteps}>Try again</Button>
+          <Button onClick={onGenerateAiSteps}>Try again</Button>
         </Flex>
       </Center>
     )
