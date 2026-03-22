@@ -95,8 +95,20 @@ export function useChatStream(options: UseChatStreamOptions) {
             ...(msg.traceId && { metadata: { traceId: msg.traceId } }),
           }))
 
-        // Prepend initial messages to maintain full conversation context
-        const allMessages = [...initialMsgs, ...messages]
+        // Prepend initial messages to maintain full conversation context.
+        // Filter out assistant messages with no text content — these can be left
+        // behind when the user stops the stream before any output is produced,
+        // and would fail backend schema validation.
+        const allMessages = [...initialMsgs, ...messages].filter((msg) => {
+          if (msg.role !== 'assistant') {
+            return true
+          }
+          return (msg.parts ?? []).some(
+            (part) =>
+              part.type === 'text' &&
+              !!(part as { type: string; text?: string }).text?.trim(),
+          )
+        })
 
         const body = {
           messages: allMessages,
@@ -180,6 +192,13 @@ export function useChatStream(options: UseChatStreamOptions) {
         messagesToTransform = messagesToTransform.slice(0, -1)
       }
     }
+
+    // Filter out assistant messages with no text content — these are left behind
+    // when the user stops the stream before any output is produced
+    messagesToTransform = messagesToTransform.filter(
+      (msg) =>
+        msg.role !== 'assistant' || extractTextContent(msg).trim().length > 0,
+    )
 
     const transformedMessages = transformMessages(messagesToTransform)
     const combined = deduplicateMessages([
