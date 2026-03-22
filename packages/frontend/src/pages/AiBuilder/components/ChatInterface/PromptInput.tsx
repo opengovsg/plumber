@@ -2,6 +2,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
   type SyntheticEvent,
+  useEffect,
   useRef,
   useState,
 } from 'react'
@@ -16,6 +17,7 @@ interface PromptInputProps {
   isStreaming: boolean
   showIdeas?: boolean
   placeholder?: string
+  initialValue?: string
   sendMessage: (message: string) => void
   cancelStream: () => void
 }
@@ -24,10 +26,11 @@ export default function PromptInput({
   isStreaming,
   showIdeas = false,
   placeholder = 'Send a message',
+  initialValue = '',
   sendMessage,
   cancelStream,
 }: PromptInputProps) {
-  const [input, setInput] = useState<string>('')
+  const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleSubmit = async (e: SyntheticEvent) => {
@@ -57,6 +60,14 @@ export default function PromptInput({
     target.style.height = 'auto'
     target.style.height = Math.min(target.scrollHeight, maxHeight) + 'px'
   }
+
+  // Trigger resize on mount if initialValue is pre-filled
+  useEffect(() => {
+    if (initialValue) {
+      handleResize()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()

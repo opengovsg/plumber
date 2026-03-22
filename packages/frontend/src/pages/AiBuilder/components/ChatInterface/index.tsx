@@ -23,7 +23,6 @@ interface ChatInterfaceProps {
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
-  clearPersistedState: () => void
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -36,29 +35,50 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     cancelStream,
     resetChat,
     hasReachedLimit,
-    clearPersistedState,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
-  const { flowName, chatInput, isMobile, isDrawerOpen, setIsDrawerOpen } =
-    useAiBuilderContext()
+  const {
+    flowName,
+    chatInput,
+    isMobile,
+    isDrawerOpen,
+    setIsDrawerOpen,
+    setChatState,
+  } = useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
 
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
-    clearPersistedState()
-    navigate(`${URLS.EDITOR}/ai`, {
-      state: {
-        flowName: 'Build with AI',
-        chatInput: '',
-        chatMessages: [],
-        output: { trigger: '', actions: '', name: 'Build with AI' },
-      },
-      replace: true,
-    })
-  }, [cancelStream, resetChat, clearPersistedState, navigate])
+    setIsDrawerOpen(false)
+
+    // Extract continuation prompt from the last assistant message (between first pair of triple backticks)
+    const lastMessage = messages[messages.length - 1]
+    const match = lastMessage?.text?.match(/```\n([\s\S]*?)\n```/)
+    const continuationPrompt = match ? match[1].trim() : ''
+
+    const newState = {
+      flowName: 'Build with AI',
+      chatInput: continuationPrompt,
+      chatMessages: [],
+      output: { trigger: '', actions: '', name: 'Build with AI', traceId: '' },
+    }
+
+    // Synchronously update persisted state so the next render sees empty messages
+    // immediately (avoids a stale intermediate render with old messages)
+    setChatState(newState)
+
+    navigate(`${URLS.EDITOR}/ai`, { state: newState, replace: true })
+  }, [
+    cancelStream,
+    resetChat,
+    setIsDrawerOpen,
+    setChatState,
+    navigate,
+    messages,
+  ])
 
   const handleOpenPreview = useCallback(() => {
     if (chatInput !== messages[messages.length - 1].text) {
@@ -112,6 +132,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             isStreaming={isStreaming}
             cancelStream={cancelStream}
             showIdeas
+            initialValue={chatInput}
             placeholder={
               PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
             }
