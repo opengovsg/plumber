@@ -38,7 +38,6 @@ export default function ChatMessages({
             return (
               <Fragment key={message.id}>
                 <ChatMessage
-                  key={message.id}
                   message={message}
                   shouldShowPreview={shouldShowPreview}
                   shouldShowToolbar={isLast}
