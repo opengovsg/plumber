@@ -52,16 +52,24 @@ export function useChatStream(options: UseChatStreamOptions) {
   const { ddSessionId } = useAiBuilderContext()
 
   // Track step readiness from data-isChatReady annotation
-  // Initialize based on whether initialMessages contains a ready message
-  const initialIsReady = !!options?.initialMessages?.findLast(
-    (msg) => msg.isChatReady,
+  // Initialize based on whether initialMessages contains a ready message.
+  // Lazy initializer avoids re-running findLast on every render (useState only
+  // uses the initial value on mount).
+  const [isReady, setIsReady] = useState(
+    () => !!options?.initialMessages?.findLast((msg) => msg.isChatReady),
   )
-  const [isReady, setIsReady] = useState(initialIsReady)
 
   // Use ref to always access the latest location state in callbacks
   // This ensures onFinish sees updates made by other components (e.g., StepsPreview)
   const locationRef = useRef(location)
   locationRef.current = location
+
+  // Use ref to always access the latest initialMessages in callbacks.
+  // useChat captures its transport/onFinish on mount, so without a ref,
+  // prepareSendMessagesRequest and onFinish would use stale initialMessages
+  // (e.g. the old 50 messages after clicking "New Chat").
+  const initialMessagesRef = useRef(options?.initialMessages)
+  initialMessagesRef.current = options?.initialMessages
 
   const {
     messages: aiMessages,
@@ -75,13 +83,17 @@ export function useChatStream(options: UseChatStreamOptions) {
       api: '/api/chat',
       credentials: 'include',
       prepareSendMessagesRequest: ({ messages }) => {
-        // Convert initialMessages to the format expected by the API
-        const initialMsgs = (options?.initialMessages || []).map((msg) => ({
-          id: msg.id,
-          role: msg.isUser ? 'user' : 'assistant',
-          parts: [{ type: 'text', text: msg.text }],
-          ...(msg.traceId && { metadata: { traceId: msg.traceId } }),
-        }))
+        // Filter out any initialMessages already tracked by the AI SDK to avoid
+        // duplicates (the SDK accumulates messages across exchanges in its own state)
+        const aiMessageIds = new Set(messages.map((m) => m.id))
+        const initialMsgs = (initialMessagesRef.current || [])
+          .filter((msg) => !aiMessageIds.has(msg.id))
+          .map((msg) => ({
+            id: msg.id,
+            role: msg.isUser ? 'user' : 'assistant',
+            parts: [{ type: 'text', text: msg.text }],
+            ...(msg.traceId && { metadata: { traceId: msg.traceId } }),
+          }))
 
         // Prepend initial messages to maintain full conversation context
         const allMessages = [...initialMsgs, ...messages]
@@ -114,7 +126,7 @@ export function useChatStream(options: UseChatStreamOptions) {
 
       // Combine initial messages with new messages to preserve full history
       const allMessages = deduplicateMessages([
-        ...(options?.initialMessages || []),
+        ...(initialMessagesRef.current || []),
         ...transformedMessages,
       ])
 
@@ -149,7 +161,9 @@ export function useChatStream(options: UseChatStreamOptions) {
     },
   })
 
-  // Transform AI SDK messages to our Message format
+  // Transform AI SDK messages to our Message format.
+  // Uses options?.initialMessages directly (not the ref) so the memo re-runs
+  // reactively when initialMessages changes (e.g., after "New Chat").
   const messages = useMemo<Message[]>(() => {
     const isActivelyStreaming = status === 'streaming' || status === 'submitted'
     const initialMsgs = options?.initialMessages || []

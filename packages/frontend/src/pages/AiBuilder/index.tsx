@@ -109,7 +109,6 @@ function AiBuilderContent() {
             cancelStream={cancelStream}
             resetChat={resetChat}
             hasReachedLimit={hasReachedLimit}
-            clearPersistedState={clearPersistedState}
           />
         </Container>
       </Flex>
@@ -158,6 +157,7 @@ export default function AiBuilder() {
       chatMessages={chatMessages}
       output={output}
       clearPersistedState={clearPersistedState}
+      setChatState={setPersistedState}
     >
       <AiBuilderContent />
     </AiBuilderContextProvider>
