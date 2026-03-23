@@ -2,9 +2,12 @@ import z from 'zod/v3'
 
 export const schema = z.object({
   // NOTE: this is an array because the attachment field returns an array
-  image: z.array(z.string()).refine((value) => value.length === 1, {
-    message: 'Only one image allowed',
-  }),
+  image: z
+    .array(z.string())
+    .min(1, { message: 'An image must be selected' })
+    .refine((value) => value.length === 1, {
+      message: 'Only one image allowed',
+    }),
   responseFields: z
     .array(
       z.object({
