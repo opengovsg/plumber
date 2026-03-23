@@ -1,5 +1,5 @@
 import appConfig from '@/config/app'
-import { langfuseClient } from '@/helpers/langfuse'
+import { getLangfuseClient } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
@@ -12,6 +12,7 @@ const updateChatFeedback: MutationResolvers['updateChatFeedback'] = async (
   const { traceId, feedback, score } = params.input
 
   try {
+    const langfuseClient = getLangfuseClient('aiBuilder')
     langfuseClient.score.create({
       traceId,
       id: `feedback-${traceId}-${context.currentUser.email}`,
