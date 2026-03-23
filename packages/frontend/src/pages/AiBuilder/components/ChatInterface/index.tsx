@@ -54,9 +54,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     resetChat()
     setIsDrawerOpen(false)
 
-    // Extract continuation prompt from the last assistant message (between first pair of triple backticks)
+    // Extract continuation prompt from the last assistant message (between <code> tags)
     const lastMessage = messages[messages.length - 1]
-    const match = lastMessage?.text?.match(/```\n([\s\S]*?)\n```/)
+    const match = lastMessage?.text?.match(/<code[^>]*>([\s\S]*?)<\/code>/)
     const continuationPrompt = match ? match[1].trim() : ''
 
     const newState = {

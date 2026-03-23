@@ -18,16 +18,16 @@ export default function MessageLimitBanner({
     >
       <Flex alignItems="center" justifyContent="space-between" gap={4}>
         <Text textStyle="body-1">
-          You&apos;ve reached the message limit. Copy the summary above and
-          start a new chat.
+          Message limit reached. Your progress will carry over when you continue
+          in a new chat.
         </Text>
         <Button
           onClick={onNewChat}
           colorScheme="primary"
-          size="sm"
+          size="xs"
           flexShrink={0}
         >
-          New Chat
+          Continue in new chat
         </Button>
       </Flex>
     </Box>
