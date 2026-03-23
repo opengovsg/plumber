@@ -2,46 +2,19 @@ import type { IStep } from '@plumber/types'
 
 import z from 'zod/v3'
 
-import {
-  TOOLBOX_ACTIONS,
-  TOOLBOX_APP_KEY,
-} from '@/apps/toolbox/common/constants'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 
-import { MutationResolvers } from '../__generated__/types.generated'
+import { MutationResolvers } from '../../__generated__/types.generated'
 
-import { ifThenParametersSchema } from './ai/schemas/actions.zod'
-import { generateSchema } from './ai/schemas/schema-generator'
+import { actionStepsSchema } from './schemas/action-steps-schema'
+import { generateSchema } from './schemas/schema-generator'
 
 // Generate schema to validate trigger step against the available triggers in apps
 const triggerSchema = generateSchema(
   z.object({ type: z.literal('trigger') }),
   'trigger',
 )
-
-// Generate schema to validate action steps against the available actions in apps
-const actionStepSchema = generateSchema(
-  z.object({ type: z.literal('action') }),
-  'action',
-).refine(
-  (data) => {
-    // IF-THEN special case: parameters are required with depth and branchName
-    if (
-      data.appKey === TOOLBOX_APP_KEY &&
-      data.key === TOOLBOX_ACTIONS.IF_THEN
-    ) {
-      const result = ifThenParametersSchema.safeParse(data.parameters)
-      return result.success
-    }
-    return true
-  },
-  {
-    message:
-      'If-then steps must have parameters with depth (number) and branchName (string)',
-  },
-)
-const actionStepsSchema = z.array(actionStepSchema).min(1)
 
 const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   _parent,
