@@ -37,34 +37,36 @@ export function generateSchema(
   schemaType: 'action' | 'trigger',
 ) {
   const schemas = getAppKeys()
-    .map((appKey) => {
+    .flatMap((appKey) => {
       const keys =
         schemaType === 'action' ? getActionKeys(appKey) : getTriggerKeys(appKey)
 
       if (keys.length === 0) {
-        return null
+        return []
       }
 
-      // IF-THEN special case: add depth and branchName parameters
-      const isIfThenAction =
-        schemaType === 'action' &&
-        appKey === TOOLBOX_APP_KEY &&
-        keys.includes(TOOLBOX_ACTIONS.IF_THEN)
+      // Create a separate schema for each appKey/key combination
+      return keys.map((key) => {
+        // Only add parameters for specific appKey/key combinations
+        const isIfThenAction =
+          appKey === TOOLBOX_APP_KEY && key === TOOLBOX_ACTIONS.IF_THEN
 
-      const extension = {
-        appKey: z.literal(appKey),
-        key: z.enum(keys as [string, ...string[]]),
-        ...(isIfThenAction && {
-          parameters: z.object({
-            depth: z.literal(0).optional(),
-            branchName: z.string().optional().default('Branch'),
-          }),
-        }),
-      }
+        const extendedFields: any = {
+          appKey: z.literal(appKey),
+          key: z.literal(key),
+        }
 
-      return baseSchema.extend(extension)
+        if (isIfThenAction) {
+          extendedFields.parameters = z.object({
+            depth: z.literal(0),
+            branchName: z.string().default('Branch'),
+          })
+        }
+
+        return baseSchema.extend(extendedFields)
+      })
     })
     .filter(Boolean)
 
-  return z.discriminatedUnion('appKey', schemas as any)
+  return z.union(schemas as any)
 }

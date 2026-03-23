@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { StepEnumType } from '@/graphql/__generated__/types.generated'
-import createFlowWithSteps from '@/graphql/mutations/create-flow-with-steps'
+import createFlowWithSteps from '@/graphql/mutations/ai/create-flow-with-steps'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -601,7 +601,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
               key: 'sendTransactionalEmail',
               position: 3,
               config: {},
-              parameters: {},
             },
             {
               type: 'action' as StepEnumType,
@@ -645,154 +644,196 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(steps[3].parameters).toEqual({ depth: 0, branchName: 'Else' })
     })
 
-    // it('should throw error when if-then step is missing depth parameter', async () => {
-    //   const params = {
-    //     input: {
-    //       flowName: 'Test Flow',
-    //       steps: [
-    //         {
-    //           type: 'trigger' as StepEnumType,
-    //           appKey: 'scheduler',
-    //           key: 'everyHour',
-    //           position: 1,
-    //           config: {},
-    //         },
-    //         {
-    //           type: 'action' as StepEnumType,
-    //           appKey: 'toolbox',
-    //           key: 'ifThen',
-    //           position: 2,
-    //           config: {},
-    //           parameters: {
-    //             branchName: 'If',
-    //             // missing depth
-    //           },
-    //         },
-    //       ],
-    //       aiBuilderConfig: {
-    //         type: 'form',
-    //         traceId: '123',
-    //       },
-    //     },
-    //   }
+    it('should throw error when if-then step is missing depth parameter', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                branchName: 'If',
+                // missing depth
+              },
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
 
-    //   await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
-    //     'Pipe contains invalid action steps',
-    //   )
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'Pipe contains invalid action steps',
+      )
 
-    //   const flows = await Flow.query()
-    //   expect(flows).toHaveLength(0)
-    // })
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
 
-    // it('should throw error when if-then step is missing branchName parameter', async () => {
-    //   const params = {
-    //     input: {
-    //       flowName: 'Test Flow',
-    //       steps: [
-    //         {
-    //           type: 'trigger' as StepEnumType,
-    //           appKey: 'scheduler',
-    //           key: 'everyHour',
-    //           position: 1,
-    //           config: {},
-    //         },
-    //         {
-    //           type: 'action' as StepEnumType,
-    //           appKey: 'toolbox',
-    //           key: 'ifThen',
-    //           position: 2,
-    //           config: {},
-    //           parameters: {
-    //             depth: 0,
-    //             // missing branchName
-    //           },
-    //         },
-    //       ],
-    //       aiBuilderConfig: {
-    //         type: 'form',
-    //         traceId: '123',
-    //       },
-    //     },
-    //   }
+    it('should not throw error when if-then step is missing branchName parameter', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                depth: 0,
+                // missing branchName
+              },
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'postman',
+              key: 'sendTransactionalEmail',
+              position: 3,
+              config: {},
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
 
-    //   await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
-    //     'Pipe contains invalid action steps',
-    //   )
+      const result = await createFlowWithSteps(null, params, context)
+      expect(result).toBeDefined()
+    })
 
-    //   const flows = await Flow.query()
-    //   expect(flows).toHaveLength(0)
-    // })
+    it('should throw error when if-then is the last step', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {
+                depth: 0,
+                branchName: 'If',
+              },
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
 
-    // it('should throw error when if-then step has no parameters', async () => {
-    //   const params = {
-    //     input: {
-    //       flowName: 'Test Flow',
-    //       steps: [
-    //         {
-    //           type: 'trigger' as StepEnumType,
-    //           appKey: 'scheduler',
-    //           key: 'everyHour',
-    //           position: 1,
-    //           config: {},
-    //         },
-    //         {
-    //           type: 'action' as StepEnumType,
-    //           appKey: 'toolbox',
-    //           key: 'ifThen',
-    //           position: 2,
-    //           config: {},
-    //           // missing parameters entirely
-    //         },
-    //       ],
-    //       aiBuilderConfig: {
-    //         type: 'form',
-    //         traceId: '123',
-    //       },
-    //     },
-    //   }
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'Pipe contains invalid action steps',
+      )
 
-    //   await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
-    //     'Pipe contains invalid action steps',
-    //   )
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
 
-    //   const flows = await Flow.query()
-    //   expect(flows).toHaveLength(0)
-    // })
+    it('should throw error when if-then step has no parameters', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              // missing parameters entirely
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
 
-    // it('should throw error when if-then step has empty parameters object', async () => {
-    //   const params = {
-    //     input: {
-    //       flowName: 'Test Flow',
-    //       steps: [
-    //         {
-    //           type: 'trigger' as StepEnumType,
-    //           appKey: 'scheduler',
-    //           key: 'everyHour',
-    //           position: 1,
-    //           config: {},
-    //         },
-    //         {
-    //           type: 'action' as StepEnumType,
-    //           appKey: 'toolbox',
-    //           key: 'ifThen',
-    //           position: 2,
-    //           config: {},
-    //           parameters: {},
-    //         },
-    //       ],
-    //       aiBuilderConfig: {
-    //         type: 'form',
-    //         traceId: '123',
-    //       },
-    //     },
-    //   }
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'Pipe contains invalid action steps',
+      )
 
-    //   await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
-    //     'Pipe contains invalid action steps',
-    //   )
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
 
-    //   const flows = await Flow.query()
-    //   expect(flows).toHaveLength(0)
-    // })
+    it('should throw error when if-then step has empty parameters object', async () => {
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'toolbox',
+              key: 'ifThen',
+              position: 2,
+              config: {},
+              parameters: {},
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
+
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'Pipe contains invalid action steps',
+      )
+
+      const flows = await Flow.query()
+      expect(flows).toHaveLength(0)
+    })
   })
 })
