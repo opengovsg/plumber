@@ -166,6 +166,33 @@ describe('call-pair schema', () => {
         })
         assert(result.success === true)
       })
+
+      it('should not accept duplicate field names (case-insensitive)', () => {
+        const result = schema.safeParse({
+          promptType: 'analyse',
+          prompt: 'test prompt',
+          responseFields: [
+            {
+              fieldName: 'Field1',
+              fieldType: 'text',
+            },
+            {
+              fieldName: 'field1',
+              fieldType: 'text',
+            },
+            {
+              fieldName: 'field2',
+              fieldType: 'number',
+            },
+            {
+              fieldName: 'field3',
+              fieldType: 'category',
+              fieldCategories: 'A, B, C',
+            },
+          ],
+        })
+        assert(result.success === false)
+      })
     })
 
     describe('fieldType validation', () => {
@@ -262,7 +289,7 @@ describe('call-pair schema', () => {
         assert(result.success === false)
         if (!result.success) {
           expect(result.error.issues[0].message).toBe(
-            'Categories are required when field type is category. Enter comma-separated values',
+            'Enter categories as comma-separated values with no empty or duplicate entries.',
           )
         }
       })
@@ -334,6 +361,36 @@ describe('call-pair schema', () => {
             ],
           })
           assert(result.success === false)
+        },
+      )
+
+      it.each([
+        'red,blue,red',
+        'red, blue, red',
+        'red,blue,Red',
+        'Red, Blue, red',
+        'apple, banana, APPLE',
+        'A,B,C,a',
+      ])(
+        'should reject categories with duplicates (case-insensitive): %s',
+        (fieldCategories) => {
+          const result = schema.safeParse({
+            promptType: 'analyse',
+            prompt: 'test prompt',
+            responseFields: [
+              {
+                fieldName: 'field1',
+                fieldType: 'category',
+                fieldCategories,
+              },
+            ],
+          })
+          assert(result.success === false)
+          if (!result.success) {
+            expect(result.error.issues[0].message).toBe(
+              'Enter categories as comma-separated values with no empty or duplicate entries.',
+            )
+          }
         },
       )
 
