@@ -26,7 +26,7 @@ const getChatReadiness = async (input: isChatReadyInput): Promise<boolean> => {
     modelId,
   } = input
 
-  const chatReadinessModel = engineProvider.chatModel(modelId)
+  const chatReadinessModel = engineProvider.chat(modelId)
 
   const chatReadinessPrompt = await getPrompt(promptName, promptVersion)
 
