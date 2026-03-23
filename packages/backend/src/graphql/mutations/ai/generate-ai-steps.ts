@@ -6,8 +6,8 @@ import { fromZodError } from 'zod-validation-error'
 import appConfig from '@/config/app'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
-import { langfuseClient } from '@/helpers/langfuse'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
+import { getLangfuseClient } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import JSONObject from '@/types/interfaces/json-object'
@@ -48,6 +48,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
 
     // NOTE: we get the entire prompt object so that we can pass it to generation.update
     // to link the generation to the prompt in Rome (Langfuse)
+    const langfuseClient = getLangfuseClient('aiBuilder')
     const prompt = await langfuseClient.prompt.get(promptName, {
       label: version,
     })
