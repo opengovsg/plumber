@@ -21,6 +21,7 @@ import {
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
   APP_FLAG_REGEX,
 } from '@/config/flags'
+import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
@@ -103,11 +104,7 @@ const handleChatStream = observe(
 
       const systemMessage = {
         role: 'system' as const,
-        content: `${
-          prompt.prompt
-        }\n\nNote: this user does not have access to the following apps: ${restrictedApps.join(
-          ', ',
-        )}.`,
+        content: buildSystemPrompt(prompt.prompt, restrictedApps),
       }
       const allMessages = [systemMessage, ...messages]
 

@@ -390,7 +390,7 @@ describe('Chat Route Handler', () => {
       })
     })
 
-    it('should show empty restricted apps list when user has access to all apps', async () => {
+    it('should not append restricted apps note when user has access to all apps', async () => {
       let capturedMessages: any[] = []
 
       // Capture the messages passed to streamText
@@ -425,13 +425,15 @@ describe('Chat Route Handler', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      // Verify system message shows empty restricted apps (empty string after "apps: ")
+      // Verify system message does NOT include the restricted apps note
+      // (no need to say "this user does not have access to: ." when list is empty)
       expect(capturedMessages[0]).toMatchObject({
         role: 'system',
-        content: expect.stringContaining(
-          'this user does not have access to the following apps: .',
-        ),
+        content: 'test prompt', // Just the base prompt, no note appended
       })
+      expect(capturedMessages[0].content).not.toContain(
+        'this user does not have access to the following apps',
+      )
     })
   })
 
