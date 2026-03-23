@@ -164,6 +164,9 @@ describe('Condition is true', () => {
     // yyyy/L/d accepts both padded and non-padded
     { field: '2024/11/04', text: '2024/11/05', expectedResult: true },
     { field: '2024/11/4', text: '2024/11/5', expectedResult: true },
+    // yyyy-L-d accepts both padded and non-padded
+    { field: '2024-11-04', text: '2024-11-05', expectedResult: true },
+    { field: '2024-11-4', text: '2024-11-5', expectedResult: true },
     // d LLL yyyy h:mm a accepts both padded and non-padded
     {
       field: '04 Nov 2024 09:30 AM',

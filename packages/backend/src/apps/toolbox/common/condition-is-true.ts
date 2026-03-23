@@ -35,6 +35,7 @@ const VALID_DATETIME_FORMATS = [
   'd LLL yyyy',
   'd LLLL yyyy',
   'yyyy/L/d',
+  'yyyy-L-d',
   'd LLL yyyy h:mm a',
   'd LLL yyyy h:mm:ss a',
 ]
