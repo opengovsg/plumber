@@ -31,11 +31,15 @@ interface FeedbackFormData {
 interface FeedbackButtonProps {
   feedbackType: 'positive' | 'negative'
   traceId: string
+  onFeedbackSubmit?: (type: 'positive' | 'negative') => void
+  isSubmitted?: boolean
 }
 
 export const FeedbackButton = ({
   feedbackType,
   traceId,
+  onFeedbackSubmit,
+  isSubmitted = false,
 }: FeedbackButtonProps) => {
   const { onOpen, onClose, isOpen } = useDisclosure()
   const toast = useToast()
@@ -78,6 +82,7 @@ export const FeedbackButton = ({
       // so that user will see what they previously typed or submitted
       // if they attempt to submit again
       onClose()
+      onFeedbackSubmit?.(feedbackType)
       toast({
         title: "Thank you! We've sent your feedback to the Plumber team.",
         status: 'success',
@@ -100,8 +105,10 @@ export const FeedbackButton = ({
           variant="clear"
           colorScheme="secondary"
           aria-label={feedbackType === 'positive' ? 'Thumbs up' : 'Thumbs down'}
-          icon={<Icon as={icon} />}
-          onClick={onOpen}
+          icon={
+            <Icon as={icon} color={isSubmitted ? 'primary.500' : undefined} />
+          }
+          onClick={() => onOpen()}
           // HACKFIX(kevinkim-ogp): prevent autofocus when new input is sent
           tabIndex={-1}
         />

@@ -23,7 +23,6 @@ export default function SideDrawer({
       top={0}
       w={isMobile ? '100%' : '50%'}
       h="100%"
-      bg="white"
       borderLeft={isMobile ? 'none' : '1px'}
       borderColor="gray.200"
       transform={isOpen ? 'translateX(0)' : 'translateX(100%)'}
@@ -31,21 +30,31 @@ export default function SideDrawer({
       zIndex={10}
       pointerEvents={isOpen ? 'auto' : 'none'}
       visibility={isOpen ? 'visible' : 'hidden'}
+      sx={{
+        backgroundImage: 'radial-gradient(#f5f5f5 2px, white 2px)',
+        backgroundSize: '30px 30px',
+      }}
     >
-      <Flex h="100%" flexDir="column" w="full" py={isMobile ? 0 : 4}>
+      <Flex h="100%" flexDir="column" w="full" py={0}>
         {isMobile && (
           <Flex
             px={4}
             borderBottom="1px solid"
             borderColor="base.divider.medium"
             py={2}
+            bg="white"
           >
             <CloseButton size="sm" onClick={onClose} />
           </Flex>
         )}
 
         {/* Content */}
-        <Box flex={1} overflowY="auto" py={2} px={isMobile ? 4 : 0}>
+        <Box
+          flex={1}
+          overflowY="auto"
+          py={isMobile ? 4 : 6}
+          px={isMobile ? 4 : 0}
+        >
           {isOpen && <StepsPreview isReadyForPreview={isReadyForPreview} />}
         </Box>
       </Flex>

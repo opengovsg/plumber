@@ -93,13 +93,10 @@ function AiBuilderContent() {
           maxW="full"
           px={0}
           py={0}
-          mt={isMobile && isDrawerOpen ? 0 : '51.5px'}
+          mt={isMobile && isDrawerOpen ? 0 : '57px'}
           flex={1}
           overflowY="auto"
-          sx={{
-            backgroundImage: 'radial-gradient(#f5f5f5 2px, transparent 2px)',
-            backgroundSize: '30px 30px',
-          }}
+          bg="white"
         >
           <ChatInterface
             messages={messages}
