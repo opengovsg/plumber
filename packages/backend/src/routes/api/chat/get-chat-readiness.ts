@@ -28,7 +28,11 @@ const getChatReadiness = async (input: isChatReadyInput): Promise<boolean> => {
 
   const chatReadinessModel = engineProvider.chat(modelId)
 
-  const chatReadinessPrompt = await getPrompt(promptName, promptVersion)
+  const chatReadinessPrompt = await getPrompt(
+    promptName,
+    'aiBuilder',
+    promptVersion,
+  )
 
   // Generate step status using a fast structured call
   const { object } = await generateObject({

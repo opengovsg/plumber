@@ -9,7 +9,7 @@ import {
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
 } from '@/config/flags'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
-import { langfuseClient } from '@/helpers/langfuse'
+import { getLangfuseClient } from '@/helpers/langfuse'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
@@ -49,6 +49,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
 
     // NOTE: we get the entire prompt object so that we can pass it to generation.update
     // to link the generation to the prompt in Rome (Langfuse)
+    const langfuseClient = getLangfuseClient('aiBuilder')
     const prompt = await langfuseClient.prompt.get(promptName, {
       label: version,
     })

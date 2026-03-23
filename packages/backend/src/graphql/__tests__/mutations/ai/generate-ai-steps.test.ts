@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   generateObject: vi.fn(),
   langfusePromptGet: vi.fn(),
   getLdFlagValue: vi.fn(),
+  getLangfuseClient: vi.fn(),
 }))
 
 vi.mock('ai', () => ({
@@ -15,11 +16,7 @@ vi.mock('ai', () => ({
 }))
 
 vi.mock('@/helpers/langfuse', () => ({
-  langfuseClient: {
-    prompt: {
-      get: mocks.langfusePromptGet,
-    },
-  },
+  getLangfuseClient: mocks.getLangfuseClient,
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -83,7 +80,11 @@ describe('generateAiSteps mutation', () => {
   beforeEach(async () => {
     vi.resetAllMocks()
 
-    mocks.langfusePromptGet.mockResolvedValue({ prompt: 'system prompt' })
+    mocks.getLangfuseClient.mockReturnValue({
+      prompt: {
+        get: vi.fn().mockResolvedValue({ prompt: 'system prompt' }),
+      },
+    })
     mocks.getLdFlagValue.mockResolvedValue({
       enabled: true,
       config: {
