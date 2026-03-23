@@ -8,7 +8,6 @@ import {
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
-import { useIsMobile } from '@opengovsg/design-system-react'
 
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
@@ -28,7 +27,6 @@ export default function PromptInput({
   sendMessage,
   cancelStream,
 }: PromptInputProps) {
-  const isMobile = useIsMobile()
   const [input, setInput] = useState<string>('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -77,7 +75,7 @@ export default function PromptInput({
         w="full"
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
-        mb={isMobile ? (shouldShowIdeas ? 6 : 0) : 6}
+        cursor={isStreaming ? 'not-allowed' : 'default'}
       >
         <Textarea
           ref={textareaRef}
@@ -94,7 +92,12 @@ export default function PromptInput({
           color="gray.900"
           _placeholder={{ color: 'gray.500' }}
           _focus={{ outline: 'none', boxShadow: 'none' }}
-          _disabled={{ opacity: 1, bg: 'transparent', color: 'gray.900' }}
+          _disabled={{
+            opacity: 1,
+            bg: 'transparent',
+            color: 'gray.900',
+            cursor: 'not-allowed',
+          }}
           fontSize="base"
           lineHeight="6"
           maxH="calc(40vh - 100px)"
@@ -148,15 +151,19 @@ export default function PromptInput({
         </Flex>
       </Flex>
 
-      {shouldShowIdeas && (
-        <IdeaButtons
-          ideas={AI_CHAT_IDEAS}
-          onClick={(idea: AiChatIdea) => {
-            setInput(idea.input)
-            // trigger resize after state update
-            setTimeout(() => handleResize(), 0)
-          }}
-        />
+      {showIdeas && (
+        <Box minH={{ base: '200px', md: '60px' }} mt={6}>
+          {shouldShowIdeas && (
+            <IdeaButtons
+              ideas={AI_CHAT_IDEAS}
+              onClick={(idea: AiChatIdea) => {
+                setInput(idea.input)
+                // trigger resize after state update
+                setTimeout(() => handleResize(), 0)
+              }}
+            />
+          )}
+        </Box>
       )}
     </Box>
   )

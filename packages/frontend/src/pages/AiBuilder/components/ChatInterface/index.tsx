@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
-import pairLogo from '@/assets/pair-logo.svg'
-import { ImageBox } from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConfigureExcelConnection'
 import * as URLS from '@/config/urls'
 import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
@@ -136,32 +134,34 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             flexShrink={0}
             position="relative"
           >
-            <Box maxW="4xl" mx="auto" px={4} py={4} pb={isMobile ? 4 : 8}>
+            <Box
+              maxW="3xl"
+              mx="auto"
+              px={4}
+              py={4}
+              gap={4}
+              display="flex"
+              flexDirection="column"
+            >
               <ScrollButton />
               <PromptInput
                 sendMessage={sendMessage}
                 isStreaming={isStreaming}
                 cancelStream={cancelStream}
               />
+              {!isMobile && (
+                <Text
+                  textStyle="caption-1"
+                  color="interaction.support.placeholder"
+                  textAlign="center"
+                >
+                  This feature is new and still improving. It can make mistakes.
+                </Text>
+              )}
             </Box>
           </Box>
         </StickToBottom>
       </Flex>
-      {!isMobile && (
-        <Flex
-          gap={1}
-          alignItems="center"
-          position="absolute"
-          bottom={4}
-          left={4}
-          zIndex={5}
-        >
-          <Text fontSize="xs" color="gray.500">
-            Powered by{' '}
-          </Text>
-          <ImageBox imageUrl={pairLogo} boxSize={6} />
-        </Flex>
-      )}
 
       <SideDrawer
         isOpen={isDrawerOpen}
