@@ -1,10 +1,6 @@
 import { TextPart } from 'ai'
 
-import {
-  CustomUIMessage,
-  IsChatReadyPart,
-  Message,
-} from '@/hooks/useChatStream'
+import { CustomUIMessage, Message } from '@/hooks/useChatStream'
 
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
@@ -24,19 +20,35 @@ export const extractTextContent = (msg: CustomUIMessage): string => {
   return msg.parts
     .filter((part) => part.type === 'text')
     .map((part: TextPart) => part.text)
-    .join('')
+    .join('\n\n')
+}
+
+// Extract the generateWorkflow tool result from a UIMessage, if present
+export const extractWorkflowToolResult = (msg: CustomUIMessage) => {
+  for (const part of msg.parts) {
+    if (
+      part.type === 'tool-generateWorkflow' &&
+      'state' in part &&
+      part.state === 'output-available' &&
+      'output' in part
+    ) {
+      return {
+        ...(part.output as Record<string, unknown>),
+        traceId: msg.metadata?.traceId || 'unknown_trace_id',
+      }
+    }
+  }
+  return null
 }
 
 export const transformMessages = (messages: CustomUIMessage[]) => {
-  let lastReadyIndex = -1
+  let lastWorkflowIndex = -1
 
   const transformed = messages.map((msg, index) => {
-    const isChatReady = msg.parts.find(
-      (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
-    )?.data.isChatReady
+    const hasWorkflow = !!extractWorkflowToolResult(msg)
 
-    if (isChatReady) {
-      lastReadyIndex = index
+    if (hasWorkflow) {
+      lastWorkflowIndex = index
     }
 
     return {
@@ -44,13 +56,13 @@ export const transformMessages = (messages: CustomUIMessage[]) => {
       text: extractTextContent(msg),
       isUser: msg.role === 'user',
       traceId: msg.metadata?.traceId,
-      isChatReady: false, // default to false
+      hasWorkflow: false, // default to false
     }
   })
 
-  // Only set the last ready message to true
-  if (lastReadyIndex !== -1) {
-    transformed[lastReadyIndex].isChatReady = true
+  // Only set the last workflow message to true
+  if (lastWorkflowIndex !== -1) {
+    transformed[lastWorkflowIndex].hasWorkflow = true
   }
 
   return transformed

@@ -8,7 +8,7 @@ const MAX_MESSAGES = 50
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
 const MAX_PARTS_PER_MESSAGE = 10
 
-const messagePartSchema = z.discriminatedUnion('type', [
+const messagePartSchema = z.union([
   z.object({
     type: z.literal('text'),
     text: z
@@ -20,12 +20,12 @@ const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('step-start'),
   }),
-  z.object({
-    type: z.literal('data-isChatReady'),
-    data: z.object({
-      isChatReady: z.boolean(),
-    }),
-  }),
+  // The AI SDK includes tool-* parts (e.g. tool-invocation, tool-result) in conversation history
+  z
+    .object({
+      type: z.string().startsWith('tool-'),
+    })
+    .passthrough(),
 ])
 
 const messageSchema = z.object({
@@ -62,10 +62,6 @@ export const chatRequestSchema = z.object({
       message: 'Session ID must be a valid UUID',
     })
     .optional(),
-})
-
-export const isChatReadySchema = z.object({
-  isReady: z.boolean(),
 })
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>

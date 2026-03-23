@@ -1,9 +1,7 @@
 import { useCallback, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
-import * as URLS from '@/config/urls'
 import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
@@ -18,7 +16,6 @@ interface ChatInterfaceProps {
   messages: Message[]
   currentResponse: string
   isStreaming: boolean
-  isReadyForPreview: boolean
   sendMessage: (message: string) => void
   cancelStream: () => void
   resetChat: () => void
@@ -30,21 +27,21 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     messages,
     currentResponse,
     isStreaming,
-    isReadyForPreview,
     sendMessage,
     cancelStream,
     resetChat,
     hasReachedLimit,
   } = props
-  const navigate = useNavigate()
-  const location = useLocation()
   const {
-    flowName,
     chatInput,
+    output,
     isMobile,
     isDrawerOpen,
     setIsDrawerOpen,
-    setChatState,
+    setChatInput,
+    setChatMessages,
+    setFlowName,
+    setOutput,
   } = useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
@@ -59,38 +56,25 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     const match = lastMessage?.text?.match(/```\n([\s\S]*?)\n```/)
     const continuationPrompt = match ? match[1].trim() : ''
 
-    const newState = {
-      flowName: 'Build with AI',
-      chatInput: continuationPrompt,
-      chatMessages: [],
-      output: { trigger: '', actions: '', name: 'Build with AI', traceId: '' },
-    }
-
-    // Synchronously update persisted state so the next render sees empty messages
-    // immediately (avoids a stale intermediate render with old messages)
-    setChatState(newState)
-
-    navigate(`${URLS.EDITOR}/ai`, { state: newState, replace: true })
+    setChatInput(continuationPrompt)
+    setChatMessages([])
+    setFlowName('Build with AI')
+    setOutput(null)
   }, [
     cancelStream,
     resetChat,
     setIsDrawerOpen,
-    setChatState,
-    navigate,
+    setChatInput,
+    setChatMessages,
+    setFlowName,
+    setOutput,
     messages,
   ])
 
   const handleOpenPreview = useCallback(() => {
-    if (chatInput !== messages[messages.length - 1].text) {
-      navigate(`${URLS.EDITOR}/ai`, {
-        state: {
-          ...location.state,
-          flowName,
-          chatInput: messages[messages.length - 1].text,
-          chatMessages: messages,
-        },
-        replace: true,
-      })
+    if (chatInput !== messages[messages.length - 1]?.text) {
+      setChatInput(messages[messages.length - 1].text)
+      setChatMessages(messages)
     }
 
     if (!isMobile) {
@@ -99,19 +83,18 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   }, [
     chatInput,
     messages,
+    setChatInput,
+    setChatMessages,
     setIsDrawerOpen,
-    navigate,
-    location.state,
-    flowName,
     isMobile,
   ])
 
-  // Auto-open preview when streaming completes and result is ready
+  // Auto-open preview when streaming completes and output is available
   useEffect(() => {
-    if (hasMessages && !isStreaming && isReadyForPreview) {
+    if (hasMessages && !isStreaming && !!output) {
       handleOpenPreview()
     }
-  }, [isStreaming, hasMessages, isReadyForPreview, handleOpenPreview])
+  }, [isStreaming, hasMessages, output, handleOpenPreview])
 
   if (!hasMessages) {
     return (
@@ -212,7 +195,6 @@ export default function ChatInterface(props: ChatInterfaceProps) {
 
       <SideDrawer
         isOpen={isDrawerOpen}
-        isReadyForPreview={isReadyForPreview}
         onClose={() => setIsDrawerOpen(false)}
       />
     </Flex>

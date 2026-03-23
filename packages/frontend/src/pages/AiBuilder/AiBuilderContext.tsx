@@ -1,6 +1,13 @@
 import { IApp, IStep } from '@plumber/types'
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
@@ -11,25 +18,60 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 import { Message } from '@/hooks/useChatStream'
 
-export interface AIBuilderDraftState {
+const STORAGE_KEY = 'ai-builder-draft'
+const STALENESS_THRESHOLD_MS = 30 * 60 * 1000 // 30 minutes
+
+export interface AiBuilderOutput {
+  trigger: IStep
+  actions: IStep[]
+  traceId: string
+}
+
+interface PersistedAiBuilderState {
   flowName: string
   chatInput: string
   chatMessages: Message[]
-  // output can be populated (IStep values) or the initial empty state (empty strings)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  output: Record<string, any>
+  output: AiBuilderOutput | null
 }
 
-interface AIBuilderSharedProps extends AIBuilderDraftState {
-  clearPersistedState: () => void
-  setChatState: (state: AIBuilderDraftState) => void
+const DEFAULT_STATE: PersistedAiBuilderState = {
+  flowName: 'Build with AI',
+  chatInput: '',
+  chatMessages: [],
+  output: null,
+}
+
+function readPersistedState(): PersistedAiBuilderState {
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (stored !== null) {
+      const parsed = JSON.parse(stored) as {
+        value: PersistedAiBuilderState
+        timestamp: number
+      }
+      if (
+        parsed.timestamp &&
+        Date.now() - parsed.timestamp < STALENESS_THRESHOLD_MS
+      ) {
+        return parsed.value
+      }
+      sessionStorage.removeItem(STORAGE_KEY)
+    }
+  } catch {
+    // Corrupted data or storage unavailable
+  }
+  return DEFAULT_STATE
 }
 
 interface AiBuilderStep extends IStep {
   description?: string
 }
 
-interface AIBuilderContextValue extends AIBuilderSharedProps {
+interface AIBuilderContextValue {
+  flowName: string
+  chatInput: string
+  chatMessages: Message[]
+  output: AiBuilderOutput | null
   allApps: IApp[]
   triggerStep: IStep | null
   steps: AiBuilderStep[]
@@ -39,10 +81,16 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   groupedSteps: IStep[][]
   stepGroupType: string | null
   stepGroupCaption: string | null
-  // DataDog RUM Session ID so we can associate the trace with the RUM
   ddSessionId: string
   isDrawerOpen: boolean
+  isToolCalling: boolean
+  setIsToolCalling: (isToolCalling: boolean) => void
   setIsDrawerOpen: (open: boolean) => void
+  setFlowName: (name: string) => void
+  setChatInput: (input: string) => void
+  setChatMessages: (msgs: Message[] | ((prev: Message[]) => Message[])) => void
+  setOutput: (output: AiBuilderOutput | null) => void
+  clearPersistedState: () => void
 }
 
 const AiBuilderContext = createContext<AIBuilderContextValue | undefined>(
@@ -59,25 +107,56 @@ export const useAiBuilderContext = () => {
   return context
 }
 
-interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
+interface AiBuilderContextProviderProps {
   children: React.ReactNode
 }
 
 export const AiBuilderContextProvider = ({
   children,
-  flowName = 'Build with AI', // default to Build with AI if no flow name is provided
-  chatInput,
-  chatMessages,
-  output,
-  clearPersistedState,
-  setChatState,
 }: AiBuilderContextProviderProps) => {
   const isMobile = useIsMobile()
   const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
 
+  // Owned state — hydrated from sessionStorage on mount (read once)
+  const [initialState] = useState(readPersistedState)
+  const [isToolCalling, setIsToolCalling] = useState(false)
+  const [flowName, setFlowName] = useState<string>(initialState.flowName)
+  const [chatInput, setChatInput] = useState<string>(initialState.chatInput)
+  const [chatMessages, setChatMessages] = useState<Message[]>(
+    initialState.chatMessages,
+  )
+  const [output, setOutput] = useState<AiBuilderOutput | null>(
+    initialState.output,
+  )
+
+  // Persist state to sessionStorage whenever it changes
+  useEffect(() => {
+    try {
+      const data = {
+        value: { flowName, chatInput, chatMessages, output },
+        timestamp: Date.now(),
+      }
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    } catch {
+      // Storage full or unavailable
+    }
+  }, [flowName, chatInput, chatMessages, output])
+
+  const clearPersistedState = useCallback(() => {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // ignore
+    }
+    setFlowName(DEFAULT_STATE.flowName)
+    setChatInput(DEFAULT_STATE.chatInput)
+    setChatMessages(DEFAULT_STATE.chatMessages)
+    setOutput(DEFAULT_STATE.output)
+  }, [])
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-  // Update drawer state when isMobile or output changes (handles async isMobile hook)
+  // Update drawer state when isMobile changes (handles async isMobile hook)
   useEffect(() => {
     const shouldOpen =
       !isMobile && Boolean(output?.trigger || output?.actions?.length)
@@ -151,9 +230,14 @@ export const AiBuilderContextProvider = ({
         stepGroupCaption,
         ddSessionId,
         clearPersistedState,
-        setChatState,
         isDrawerOpen,
         setIsDrawerOpen,
+        setFlowName,
+        setChatInput,
+        setChatMessages,
+        setOutput,
+        setIsToolCalling,
+        isToolCalling,
       }}
     >
       {children}

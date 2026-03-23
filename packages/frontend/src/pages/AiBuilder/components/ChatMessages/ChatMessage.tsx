@@ -17,7 +17,7 @@ const AiMessage = memo(
     return (
       <Flex gap={3} w="full" align="start">
         <Box flex={1} px={2} color="gray.900">
-          <ChakraStreamdown isAnimating={false}>
+          <ChakraStreamdown isAnimating={true}>
             {message.text || ''}
           </ChakraStreamdown>
           {shouldShowToolbar && (

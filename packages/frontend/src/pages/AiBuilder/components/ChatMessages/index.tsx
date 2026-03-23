@@ -32,7 +32,7 @@ export default function ChatMessages({
       <Box w="full" maxW="3xl" mx="auto" px={4} py={6}>
         <VStack align="stretch" spacing={4}>
           {messages.map((message, index) => {
-            const shouldShowPreview = isMobile && message.isChatReady
+            const shouldShowPreview = isMobile && message.hasWorkflow
             const isLast = index === messages.length - 1
             const isFirst = index === 0
             return (

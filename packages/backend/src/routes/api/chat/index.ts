@@ -10,10 +10,13 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   smoothStream,
+  stepCountIs,
   streamText,
+  tool,
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
+import { z } from 'zod/v3'
 
 import appConfig from '@/config/app'
 import {
@@ -21,6 +24,8 @@ import {
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
   APP_FLAG_REGEX,
 } from '@/config/flags'
+import { ACTIONS_SCHEMA } from '@/graphql/mutations/ai/schemas/actions.zod'
+import { TRIGGER_SCHEMA } from '@/graphql/mutations/ai/schemas/triggers.zod'
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -29,7 +34,6 @@ import { getPrompt } from '@/helpers/pair/get-prompt'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import { AuthenticatedRequest } from '@/types/express/context'
 
-import { getChatReadiness } from './get-chat-readiness'
 import { serializeMessagesForLangfuse } from './helpers'
 import { chatRequestSchema } from './schema'
 
@@ -59,13 +63,8 @@ const handleChatStream = observe(
       .filter((flag) => APP_FLAG_REGEX.test(flag) && allLdFlags[flag] === false)
       .map((flag) => flag.replace('app_', ''))
 
-    const {
-      chatPromptName,
-      chatReadinessPromptName,
-      chatReadinessModel,
-      chatSummaryPromptName,
-      version,
-    } = aiBuilderFlag.config
+    const { chatPromptName, chatSummaryPromptName, version } =
+      aiBuilderFlag.config
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -122,8 +121,26 @@ const handleChatStream = observe(
           const result = streamText({
             model,
             messages: allMessages,
+            tools: {
+              generateWorkflow: tool({
+                name: 'generateWorkflow',
+                description:
+                  'Generate a structured workflow with a trigger and actions. ALWAYS call this tool whenever the workflows steps are generated (basically whenever the HTML table exists).',
+                inputSchema: z.object({
+                  name: z.string().max(64).default('Build with AI'),
+                  trigger: TRIGGER_SCHEMA,
+                  actions: ACTIONS_SCHEMA,
+                }),
+                execute: async ({ name, trigger, actions }) => {
+                  console.log('TOOL CALLED')
+                  console.log('output', name, trigger, actions)
+                  return { name, trigger, actions }
+                },
+              }),
+            },
+            stopWhen: stepCountIs(3),
             experimental_transform: smoothStream({
-              chunking: 'word', // Stream word-by-word for typing effect
+              chunking: 'word',
             }),
             experimental_telemetry: {
               isEnabled: true,
@@ -152,40 +169,12 @@ const handleChatStream = observe(
 
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
-
-                let isChatReady = false
-                if (!isAtLimit) {
-                  // Check if chat is ready for step generation using a fast structured call
-                  // only do this if the chat is not at the limit yet
-                  isChatReady = await getChatReadiness({
-                    context,
-                    promptName: chatReadinessPromptName,
-                    promptVersion: version,
-                    llmResponse: event.text,
-                    sessionId: sessionId || '',
-                    modelId: chatReadinessModel,
-                  })
-                }
-
-                // Write chat readiness status as a data annotation
-                // NOTE: type MUST start with "data-" - SDK enforces this
-                writer.write({
-                  type: 'data-isChatReady',
-                  data: { isChatReady },
-                })
               } catch (error) {
-                logger.error('Error checking chat readiness', {
+                logger.error('Error in stream onFinish', {
                   traceId,
                   error: error instanceof Error ? error.message : String(error),
                 })
-
-                // Write fallback isReady: false to ensure client receives a response
-                writer.write({
-                  type: 'data-isChatReady',
-                  data: { isChatReady: false },
-                })
               } finally {
-                // Manually end the span since we're streaming
                 trace.getActiveSpan()?.end()
               }
             },
@@ -201,7 +190,6 @@ const handleChatStream = observe(
               updateActiveObservation({ output: errorMessage })
               updateActiveTrace({ output: errorMessage })
 
-              // Manually end the span since we're streaming
               trace.getActiveSpan()?.end()
             },
           })

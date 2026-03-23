@@ -1,16 +1,18 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useCallback, useMemo, useRef } from 'react'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
 import { DefaultChatTransport } from 'ai'
 
-import * as URLS from '@/config/urls'
-import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
+import {
+  AiBuilderOutput,
+  useAiBuilderContext,
+} from '@/pages/AiBuilder/AiBuilderContext'
 import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
   deduplicateMessages,
   extractTextContent,
+  extractWorkflowToolResult,
   transformMessages,
 } from '@/pages/AiBuilder/helpers'
 
@@ -20,12 +22,10 @@ export interface Message {
   traceId?: string // only assistant messages have this
   isUser: boolean
   /**
-   * used to track the latest message with isChatReady: true.
-   * this is used to determine where we should show the preview button
-   * on mobile mode.
-   * only assistant messages should have this.
+   * Whether this message contains a workflow tool call result.
+   * Used to determine where to show the preview button on mobile.
    */
-  isChatReady: boolean
+  hasWorkflow: boolean
 }
 
 // Custom message type with metadata
@@ -33,36 +33,25 @@ export type CustomUIMessage = UIMessage<{
   traceId?: string
 }>
 
-// Type for the step status data annotation
-export type IsChatReadyPart = {
-  type: 'data-isChatReady'
-  data: {
-    isChatReady: boolean
-  }
-}
-
 export interface UseChatStreamOptions {
   initialMessages?: Message[]
 }
 
 export function useChatStream(options: UseChatStreamOptions) {
   const toast = useToast()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { ddSessionId } = useAiBuilderContext()
+  const {
+    ddSessionId,
+    output: currentOutput,
+    setChatInput,
+    setChatMessages,
+    setOutput,
+    setFlowName,
+    setIsToolCalling,
+  } = useAiBuilderContext()
 
-  // Track step readiness from data-isChatReady annotation
-  // Initialize based on whether initialMessages contains a ready message.
-  // Lazy initializer avoids re-running findLast on every render (useState only
-  // uses the initial value on mount).
-  const [isReady, setIsReady] = useState(
-    () => !!options?.initialMessages?.findLast((msg) => msg.isChatReady),
-  )
-
-  // Use ref to always access the latest location state in callbacks
-  // This ensures onFinish sees updates made by other components (e.g., StepsPreview)
-  const locationRef = useRef(location)
-  locationRef.current = location
+  // Use ref for currentOutput to avoid stale closure in onFinish
+  const outputRef = useRef(currentOutput)
+  outputRef.current = currentOutput
 
   // Use ref to always access the latest initialMessages in callbacks.
   // useChat captures its transport/onFinish on mount, so without a ref,
@@ -117,6 +106,13 @@ export function useChatStream(options: UseChatStreamOptions) {
         return { body }
       },
     }),
+    onData: (dataPart) => {
+      console.log(`dataPart: ${Date.now()}`, dataPart)
+    },
+    onToolCall: () => {
+      console.log(`onToolCall: ${Date.now()}`)
+      setIsToolCalling(true)
+    },
     onError: (error: Error) => {
       toast({
         title: 'Error: ' + error.message,
@@ -125,15 +121,14 @@ export function useChatStream(options: UseChatStreamOptions) {
         isClosable: true,
         position: 'top',
       })
+      setIsToolCalling(false)
     },
     onFinish: ({ messages, isAbort }) => {
-      // if the chat stream is cancelled, isAbort will be true
+      setIsToolCalling(false)
       if (isAbort) {
         return
       }
 
-      // transform the messages and save to location state
-      // so that user can still access it if they refresh the page
       const transformedMessages = transformMessages(messages)
 
       // Combine initial messages with new messages to preserve full history
@@ -142,34 +137,23 @@ export function useChatStream(options: UseChatStreamOptions) {
         ...transformedMessages,
       ])
 
-      let isChatReady = false
+      // Check if the last message contains a workflow tool result
       const lastMessage = messages[messages.length - 1]
-      const isChatReadyPart = lastMessage.parts.find(
-        (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
-      )
-      if (isChatReadyPart) {
-        isChatReady = isChatReadyPart.data.isChatReady
-        setIsReady(isChatReady)
+      const workflowResult = extractWorkflowToolResult(lastMessage) as
+        | (AiBuilderOutput & { name?: string })
+        | null
+
+      const outputToUse = workflowResult || outputRef.current
+
+      setChatInput(allMessages[allMessages.length - 1].text)
+      setChatMessages(allMessages)
+
+      if (outputToUse) {
+        setOutput(outputToUse)
       }
-
-      // Get current output from the ref (ensures we see latest state from other navigates)
-      const currentOutput = locationRef.current.state?.output
-
-      navigate(`${URLS.EDITOR}/ai`, {
-        state: {
-          ...locationRef.current.state,
-          chatInput: allMessages[allMessages.length - 1].text,
-          chatMessages: allMessages,
-          // When isChatReady is true: clear output to trigger step generation
-          ...(isChatReady
-            ? { output: undefined }
-            : // When isChatReady is false: preserve current output from ref
-            currentOutput
-            ? { output: currentOutput }
-            : {}),
-        },
-        replace: true,
-      })
+      if (workflowResult?.name) {
+        setFlowName(workflowResult.name || 'Build with AI')
+      }
     },
   })
 
@@ -206,17 +190,17 @@ export function useChatStream(options: UseChatStreamOptions) {
       ...transformedMessages,
     ])
 
-    // Ensure only the last message with isChatReady: true keeps the flag
+    // Ensure only the last message with hasWorkflow: true keeps the flag
     let lastReadyIndex = -1
     const allMessages = combined.map((msg, index) => {
-      if (msg.isChatReady) {
+      if (msg.hasWorkflow) {
         lastReadyIndex = index
       }
-      return { ...msg, isChatReady: false }
+      return { ...msg, hasWorkflow: false }
     })
 
     if (lastReadyIndex !== -1) {
-      allMessages[lastReadyIndex].isChatReady = true
+      allMessages[lastReadyIndex].hasWorkflow = true
     }
 
     return allMessages
@@ -239,14 +223,11 @@ export function useChatStream(options: UseChatStreamOptions) {
 
   const resetChat = useCallback(() => {
     setMessages([])
-    setIsReady(false)
   }, [setMessages])
 
   // Wrapper for sendMessage that matches the expected signature
   const sendMessageWrapper = useCallback(
     (userPrompt: string) => {
-      // Reset isReady when sending a new message
-      setIsReady(false)
       sendMessage({
         role: 'user',
         parts: [{ type: 'text', text: userPrompt }],
@@ -259,7 +240,6 @@ export function useChatStream(options: UseChatStreamOptions) {
     messages,
     currentResponse,
     isStreaming: status === 'submitted' || status === 'streaming',
-    isReady,
     error: aiError?.message || null,
     sendMessage: sendMessageWrapper,
     cancelStream: stop,

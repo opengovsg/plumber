@@ -27,7 +27,7 @@ export function usePersistedState<T>(
       const stored = sessionStorage.getItem(key)
       if (stored !== null) {
         const parsed = JSON.parse(stored) as PersistedData<T>
-
+        console.log('parsed', parsed)
         // Check if data has a timestamp and is still fresh
         if (
           parsed.timestamp &&
@@ -56,6 +56,7 @@ export function usePersistedState<T>(
           value: next,
           timestamp: Date.now(),
         }
+        console.log('dataToStore', dataToStore)
         sessionStorage.setItem(keyRef.current, JSON.stringify(dataToStore))
       } catch {
         // Storage full or unavailable — state still updates in memory

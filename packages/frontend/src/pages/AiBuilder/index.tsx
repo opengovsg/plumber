@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
-import { usePersistedState } from '@/hooks/usePersistedState'
 
 import ChatInterface from './components/ChatInterface'
 import ExitAlert from './components/ExitAlert'
@@ -29,7 +28,6 @@ function AiBuilderContent() {
     messages,
     currentResponse,
     isStreaming,
-    isReady: isReadyForPreview,
     sendMessage,
     cancelStream,
     resetChat,
@@ -104,7 +102,6 @@ function AiBuilderContent() {
             messages={messages}
             currentResponse={currentResponse}
             isStreaming={isStreaming}
-            isReadyForPreview={isReadyForPreview}
             sendMessage={sendMessage}
             cancelStream={cancelStream}
             resetChat={resetChat}
@@ -123,42 +120,8 @@ function AiBuilderContent() {
 }
 
 export default function AiBuilder() {
-  const locationState = useLocation()?.state
-
-  // Persist state to sessionStorage so it survives refresh
-  const [persistedState, setPersistedState, clearPersistedState] =
-    usePersistedState(
-      'ai-builder-draft',
-      locationState || {
-        flowName: 'Build with AI',
-        chatInput: '',
-        chatMessages: [],
-        output: {
-          trigger: '',
-          actions: '',
-          name: 'Build with AI',
-        },
-      },
-    )
-
-  // Sync location state updates (from useChatStream navigate calls) to persisted state
-  useEffect(() => {
-    if (locationState) {
-      setPersistedState(locationState)
-    }
-  }, [locationState, setPersistedState])
-
-  const { flowName, output, chatInput, chatMessages } = persistedState
-
   return (
-    <AiBuilderContextProvider
-      flowName={flowName}
-      chatInput={chatInput}
-      chatMessages={chatMessages}
-      output={output}
-      clearPersistedState={clearPersistedState}
-      setChatState={setPersistedState}
-    >
+    <AiBuilderContextProvider>
       <AiBuilderContent />
     </AiBuilderContextProvider>
   )
