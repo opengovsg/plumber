@@ -31,6 +31,7 @@ import escapeHtml from 'escape-html'
 
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
+import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import {
   extractVariables,
   filterVariables,
@@ -116,13 +117,14 @@ const Editor = ({
   noVariablesMessage,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
+  const { stepIdToOrder } = useContext(StepsToDisplayContext)
   const { allApps } = useContext(EditorContext)
   const isMobile = useIsMobile()
   const isMulticol = parentType === 'multicol'
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
-      extractVariables(priorExecutionSteps, allApps),
+      extractVariables(priorExecutionSteps, stepIdToOrder, allApps),
       (variable) => {
         const variableType = variable.type ?? 'text'
         if (variableTypes) {
@@ -134,7 +136,7 @@ const Editor = ({
     )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
-  }, [allApps, priorExecutionSteps, variableTypes])
+  }, [allApps, priorExecutionSteps, stepIdToOrder, variableTypes])
 
   const extensions: Array<any> = [
     Placeholder.configure({

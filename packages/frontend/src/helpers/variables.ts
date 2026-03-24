@@ -195,6 +195,8 @@ const process = (
 
 export function extractVariables(
   executionSteps: IExecutionStep[],
+  // this only needs to be passed in if you need the step order to be displayed (e.g. in the suggestions popper)
+  stepIdToOrder: Record<string, number> = {},
   allApps?: IApp[],
 ): StepWithVariables[] {
   if (!executionSteps) {
@@ -220,10 +222,12 @@ export function extractVariables(
         const { stepName } = getStepName(allApps || [], executionStep?.step)
         // sort variable by order key in-place
         sortVariables(variables)
+        const stepOrder = stepIdToOrder[executionStep.stepId] ?? index + 1
+
         return {
           id: executionStep.stepId,
 
-          name: `${index + 1}. ${stepName}`,
+          name: `${stepOrder}. ${stepName}`,
           output: variables,
         }
       })

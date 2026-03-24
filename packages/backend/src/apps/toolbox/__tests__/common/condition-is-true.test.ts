@@ -94,6 +94,23 @@ describe('Condition is true', () => {
     expect(result).toEqual(expectedResult)
   })
 
+  it.each([
+    { field: 'hello', text: 'hello', expectedResult: true },
+    { field: 'hello', text: 'he', expectedResult: true },
+    { field: 'hello', text: 'llo', expectedResult: false },
+    { field: '9.9', text: 9, expectedResult: true },
+    { field: '9.9', text: 1, expectedResult: false },
+  ])('supports begins', ({ field, text, expectedResult }) => {
+    const result = conditionIsTrue({
+      field,
+      is: 'is',
+      condition: 'begins',
+      text,
+    })
+
+    expect(result).toEqual(expectedResult)
+  })
+
   // check all date formats
   it.each([
     { text: '05/11/24', expectedResult: true }, // 'dd/LL/yy'
@@ -125,6 +142,66 @@ describe('Condition is true', () => {
 
     expect(result).toEqual(expectedResult)
   })
+
+  // Test that date formats accept both single-padded and double-padded input
+  it.each([
+    // d/L/yy accepts both padded and non-padded
+    { field: '04/11/24', text: '05/11/24', expectedResult: true },
+    { field: '4/11/24', text: '5/11/24', expectedResult: true },
+    // d/L/yyyy accepts both padded and non-padded
+    { field: '04/11/2024', text: '05/11/2024', expectedResult: true },
+    { field: '4/11/2024', text: '5/11/2024', expectedResult: true },
+    // d LLL yyyy accepts both padded and non-padded
+    { field: '04 Nov 2024', text: '05 Nov 2024', expectedResult: true },
+    { field: '4 Nov 2024', text: '5 Nov 2024', expectedResult: true },
+    // d LLLL yyyy accepts both padded and non-padded
+    {
+      field: '04 November 2024',
+      text: '05 November 2024',
+      expectedResult: true,
+    },
+    { field: '4 November 2024', text: '5 November 2024', expectedResult: true },
+    // yyyy/L/d accepts both padded and non-padded
+    { field: '2024/11/04', text: '2024/11/05', expectedResult: true },
+    { field: '2024/11/4', text: '2024/11/5', expectedResult: true },
+    // yyyy-L-d accepts both padded and non-padded
+    { field: '2024-11-04', text: '2024-11-05', expectedResult: true },
+    { field: '2024-11-4', text: '2024-11-5', expectedResult: true },
+    // d LLL yyyy h:mm a accepts both padded and non-padded
+    {
+      field: '04 Nov 2024 09:30 AM',
+      text: '04 Nov 2024 10:30 AM',
+      expectedResult: true,
+    },
+    {
+      field: '4 Nov 2024 9:30 AM',
+      text: '4 Nov 2024 10:30 AM',
+      expectedResult: true,
+    },
+    // d LLL yyyy h:mm:ss a accepts both padded and non-padded
+    {
+      field: '04 Nov 2024 09:30:00 AM',
+      text: '04 Nov 2024 10:30:00 AM',
+      expectedResult: true,
+    },
+    {
+      field: '4 Nov 2024 9:30:00 AM',
+      text: '4 Nov 2024 10:30:00 AM',
+      expectedResult: true,
+    },
+  ])(
+    'accepts both single-padded and double-padded date input',
+    ({ field, text, expectedResult }) => {
+      const result = conditionIsTrue({
+        field,
+        is: 'is',
+        condition: 'before',
+        text,
+      })
+
+      expect(result).toEqual(expectedResult)
+    },
+  )
 
   it.each([
     { field: 'hello', text: 9.9, condition: 'equals', expectedResult: true },

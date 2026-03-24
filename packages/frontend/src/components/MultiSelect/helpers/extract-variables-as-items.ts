@@ -8,12 +8,19 @@ import { ComboboxItem } from '@opengovsg/design-system-react'
 
 import { extractVariables } from '@/helpers/variables'
 
+/**
+ * @deprecated this function is unused, current resides in MultiSelect component
+ */
 function extractVariablesAsItems(
   executionSteps: IExecutionStep[],
   allowedTypes: TDataOutMetadatumType[] | null,
   allApps: IApp[],
 ): ComboboxItem[] {
-  const stepsWithVariables = extractVariables(executionSteps, allApps)
+  const stepsWithVariables = extractVariables(
+    executionSteps,
+    undefined,
+    allApps,
+  )
 
   const result: ComboboxItem[] = []
   for (const step of stepsWithVariables) {
