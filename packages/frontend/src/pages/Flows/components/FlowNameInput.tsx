@@ -23,6 +23,7 @@ export default function FlowNameInput({
           onChange={handleInputChange}
           value={flowName}
           required
+          autoFocus
         />
       </FormControl>
     </Flex>
