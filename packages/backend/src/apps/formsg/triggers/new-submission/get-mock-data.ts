@@ -42,17 +42,17 @@ type FormField = {
 const myInfoChildSubfieldMap: Record<ChildSubfield, ChildSubfieldDetails> = {
   childname: {
     displayLabel: 'Name',
-    mockData: 'Jackson',
+    mockData: 'Jackson Kim',
     isMyInfoFieldLabel: true,
   },
   childbirthcertno: {
     displayLabel: 'Birth certificate number',
-    mockData: 'T2207101C',
+    mockData: 'T0700001J',
     isMyInfoFieldLabel: true,
   },
   childdateofbirth: {
     displayLabel: 'Date of birth',
-    mockData: '23/01/2022', // MyInfo provides child DOB as DD/MM/YYYY...
+    mockData: '23/01/2007', // MyInfo provides child DOB as DD/MM/YYYY...
     isMyInfoFieldLabel: true,
   },
   childgender: {
