@@ -155,6 +155,10 @@ export default function Tile(): JSX.Element | null {
       <Helmet>
         <meta name="robots" content="noindex,nofollow" />
         <title>{name} | Tile</title>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
       </Helmet>
       <Flex
         flexDir={{ base: 'column' }}
