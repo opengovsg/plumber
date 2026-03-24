@@ -25,6 +25,8 @@ interface MultiSelectProps {
 }
 
 /**
+ * @deprecated this component is unused
+ * -------------------------------------
  * Currently only supports multiple select from variables.
  * FUTURE: single select, hard coded options, freeSolo
  */
@@ -40,7 +42,6 @@ function MultiSelect(props: MultiSelectProps): React.ReactElement {
   const { control } = useFormContext()
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { allApps, readOnly } = useContext(EditorContext)
-
   const items = useMemo(
     () => extractVariablesAsItems(priorExecutionSteps, variableTypes, allApps),
     [priorExecutionSteps, variableTypes, allApps],
