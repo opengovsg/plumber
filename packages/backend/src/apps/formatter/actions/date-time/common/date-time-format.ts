@@ -28,6 +28,21 @@ const supportedFormats = z.enum([
   ...commonDateFormats,
 ])
 
+// Map strict formats to lenient equivalents for parsing
+// Single-letter tokens (d, L, h) accept both padded and non-padded input
+const toLenientFormatMap: Record<string, string> = {
+  'dd/LL/yy': 'd/L/yy',
+  'dd/LL/yyyy': 'd/L/yyyy',
+  'dd LLL yyyy': 'd LLL yyyy',
+  'dd LLLL yyyy': 'd LLLL yyyy',
+  'yyyy/LL/dd': 'yyyy/L/d',
+  'yyyy-LL-dd': 'yyyy-L-d',
+  'hh:mm a': 'h:mm a',
+  'hh:mm:ss a': 'h:mm:ss a',
+  'dd LLL yyyy hh:mm a': 'd LLL yyyy h:mm a',
+  'dd LLL yyyy hh:mm:ss a': 'd LLL yyyy h:mm:ss a',
+}
+
 const formatConverters = Object.assign({
   formsgSubmissionTime: {
     description: 'FormSG submission time',
@@ -46,8 +61,11 @@ const formatConverters = Object.assign({
       // At time of this comment, the only effective difference between en-US
       // and en-SG is September - the former only accepts "Sep", and the latter
       // only accepts "Sept"
+      //
+      // We use 'd MMM yyyy' (single-letter d) for lenient parsing to accept
+      // both single and double-padded day input (e.g., '5 Apr 2024' or '05 Apr 2024')
 
-      const dateTime = DateTime.fromFormat(input, 'dd MMM yyyy', {
+      const dateTime = DateTime.fromFormat(input, 'd MMM yyyy', {
         locale: 'en-US',
       })
 
@@ -56,7 +74,7 @@ const formatConverters = Object.assign({
       }
 
       // en-US parsing failed, fall back to en-SG.
-      return DateTime.fromFormat(input, 'dd MMM yyyy')
+      return DateTime.fromFormat(input, 'd MMM yyyy')
     },
     stringify: (dateTime: DateTime): string =>
       dateTime.toPlumberFormat('dd MMM yyyy'),
@@ -64,25 +82,29 @@ const formatConverters = Object.assign({
   ...Object.fromEntries(
     commonDateFormats
       .filter((format) => format !== 'dd LLL yyyy') // Exclude repeated option due to formsgDateField
-      .map((format) => [
-        format,
-        {
-          description: format,
-          parse: (input: string): DateTime => {
-            const result = DateTime.fromFormat(input, format, {
-              locale: 'en-US',
-            })
-            if (result.isValid) {
-              return result
-            }
-            return DateTime.fromFormat(input, format, {
-              locale: 'en-SG',
-            })
+      .map((format) => {
+        // Use lenient format for parsing (accepts both padded and non-padded)
+        const parseFormat = toLenientFormatMap[format] ?? format
+        return [
+          format,
+          {
+            description: format,
+            parse: (input: string): DateTime => {
+              const result = DateTime.fromFormat(input, parseFormat, {
+                locale: 'en-US',
+              })
+              if (result.isValid) {
+                return result
+              }
+              return DateTime.fromFormat(input, parseFormat, {
+                locale: 'en-SG',
+              })
+            },
+            stringify: (dateTime: DateTime): string =>
+              dateTime.toPlumberFormat(format),
           },
-          stringify: (dateTime: DateTime): string =>
-            dateTime.toPlumberFormat(format),
-        },
-      ]),
+        ]
+      }),
   ),
 }) satisfies Record<z.infer<typeof supportedFormats>, DateFormatConverter>
 

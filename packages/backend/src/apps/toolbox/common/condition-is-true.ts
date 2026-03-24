@@ -28,15 +28,16 @@ function compareNumbers(
   }
 }
 
-// support only formatter date formats
+// support only formatter date formats (single-letter tokens are more lenient)
 const VALID_DATETIME_FORMATS = [
-  'dd/LL/yy',
-  'dd/LL/yyyy',
-  'dd LLL yyyy',
-  'dd LLLL yyyy',
-  'yyyy/LL/dd',
-  'dd LLL yyyy hh:mm a',
-  'dd LLL yyyy hh:mm:ss a',
+  'd/L/yy',
+  'd/L/yyyy',
+  'd LLL yyyy',
+  'd LLLL yyyy',
+  'yyyy/L/d',
+  'yyyy-L-d',
+  'd LLL yyyy h:mm a',
+  'd LLL yyyy h:mm:ss a',
 ]
 
 function compareDates(

@@ -27,6 +27,12 @@ describe('delay until date and time handler', () => {
       expect(generateTimestamp(date, time)).toBeTruthy()
     })
 
+    it('[Valid] ISO Complete Date format (single-padded)', () => {
+      const date = '2023-9-5'
+      const time = DEFAULT_TIME
+      expect(generateTimestamp(date, time)).toBeTruthy()
+    })
+
     it('[Invalid] ISO DateTime format', () => {
       const date = '2023-09-05T12:00:00.000Z'
       const time = DEFAULT_TIME
@@ -68,6 +74,12 @@ describe('delay until date and time handler', () => {
     it('[Valid]: Short date format (with time)', () => {
       const date = '05/09/2023'
       const time = VALID_TIME
+      expect(generateTimestamp(date, time)).toBeTruthy()
+    })
+
+    it('[Valid]: Single-padded day and month', () => {
+      const date = '5/9/2023'
+      const time = DEFAULT_TIME
       expect(generateTimestamp(date, time)).toBeTruthy()
     })
 
@@ -115,10 +127,10 @@ describe('delay until date and time handler', () => {
       expect(generateTimestamp(date, time)).toBeFalsy()
     })
 
-    it('[Invalid]: Wrong day padding', () => {
+    it('[Valid]: Single-padded day format', () => {
       const date = '5 Oct 2023'
       const time = DEFAULT_TIME
-      expect(generateTimestamp(date, time)).toBeFalsy()
+      expect(generateTimestamp(date, time)).toBeTruthy()
     })
 
     it('[Invalid]: Wrong time format', () => {
