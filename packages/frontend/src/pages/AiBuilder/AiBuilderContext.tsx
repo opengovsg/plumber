@@ -11,16 +11,18 @@ import { GET_APPS } from '@/graphql/queries/get-apps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 import { Message } from '@/hooks/useChatStream'
 
-interface AIBuilderSharedProps {
+export interface AIBuilderDraftState {
   flowName: string
   chatInput: string
   chatMessages: Message[]
-  output: {
-    trigger: IStep
-    actions: IStep[]
-    traceId: string
-  }
+  // output can be populated (IStep values) or the initial empty state (empty strings)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  output: Record<string, any>
+}
+
+interface AIBuilderSharedProps extends AIBuilderDraftState {
   clearPersistedState: () => void
+  setChatState: (state: AIBuilderDraftState) => void
 }
 
 interface AiBuilderStep extends IStep {
@@ -59,7 +61,6 @@ export const useAiBuilderContext = () => {
 
 interface AiBuilderContextProviderProps extends AIBuilderSharedProps {
   children: React.ReactNode
-  clearPersistedState: () => void
 }
 
 export const AiBuilderContextProvider = ({
@@ -69,6 +70,7 @@ export const AiBuilderContextProvider = ({
   chatMessages,
   output,
   clearPersistedState,
+  setChatState,
 }: AiBuilderContextProviderProps) => {
   const isMobile = useIsMobile()
   const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
@@ -149,6 +151,7 @@ export const AiBuilderContextProvider = ({
         stepGroupCaption,
         ddSessionId,
         clearPersistedState,
+        setChatState,
         isDrawerOpen,
         setIsDrawerOpen,
       }}

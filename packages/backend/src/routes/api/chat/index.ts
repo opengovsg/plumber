@@ -33,6 +33,8 @@ import { getChatReadiness } from './get-chat-readiness'
 import { serializeMessagesForLangfuse } from './helpers'
 import { chatRequestSchema } from './schema'
 
+const MAX_MESSAGES = 50
+
 const handleChatStream = observe(
   async (req: AuthenticatedRequest, res: Response) => {
     const abortController = new AbortController()
@@ -61,6 +63,7 @@ const handleChatStream = observe(
       chatPromptName,
       chatReadinessPromptName,
       chatReadinessModel,
+      chatSummaryPromptName,
       version,
     } = aiBuilderFlag.config
 
@@ -82,9 +85,6 @@ const handleChatStream = observe(
         rawMessages as Parameters<typeof convertToModelMessages>[0],
       )
 
-      // Get the prompt from Langfuse
-      const prompt = await getPrompt(chatPromptName, version)
-
       // Manually capture serializable input for Langfuse
       updateActiveObservation({
         input: {
@@ -94,6 +94,15 @@ const handleChatStream = observe(
 
       // Get the active trace ID from Langfuse context
       const traceId = getActiveTraceId() || ''
+
+      // +1 for the system message
+      const isAtLimit = messages.length + 1 >= MAX_MESSAGES
+
+      // Get the prompt from Langfuse
+      const prompt = await getPrompt(
+        isAtLimit ? chatSummaryPromptName : chatPromptName,
+        version,
+      )
 
       logger.info('Starting AI chat stream', {
         traceId,
@@ -126,7 +135,11 @@ const handleChatStream = observe(
                 promptName: chatPromptName,
                 promptVersion: version,
                 langfusePrompt: prompt.toJSON(),
-                tags: ['ai-builder', 'chat', 'stream'],
+                tags: [
+                  'ai-builder',
+                  'stream',
+                  isAtLimit ? 'chat-summary' : 'chat',
+                ],
               },
             },
             abortSignal: abortController.signal,
@@ -140,15 +153,19 @@ const handleChatStream = observe(
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
 
-                // Check if chat is ready for step generation using a fast structured call
-                const isChatReady = await getChatReadiness({
-                  context,
-                  promptName: chatReadinessPromptName,
-                  promptVersion: version,
-                  llmResponse: event.text,
-                  sessionId: sessionId || '',
-                  modelId: chatReadinessModel,
-                })
+                let isChatReady = false
+                if (!isAtLimit) {
+                  // Check if chat is ready for step generation using a fast structured call
+                  // only do this if the chat is not at the limit yet
+                  isChatReady = await getChatReadiness({
+                    context,
+                    promptName: chatReadinessPromptName,
+                    promptVersion: version,
+                    llmResponse: event.text,
+                    sessionId: sessionId || '',
+                    modelId: chatReadinessModel,
+                  })
+                }
 
                 // Write chat readiness status as a data annotation
                 // NOTE: type MUST start with "data-" - SDK enforces this
