@@ -195,6 +195,8 @@ function patchMockData(
 ) {
   const formFields = formDetails.form.form_fields as Array<FormField>
 
+  const isMrf = formDetails.form.responseMode === 'multirespondent'
+
   // for myinfo children fields
   const newChildrenSubfieldResponses = Object.create(null)
   let childrenObjectIndex = 0 // to support the rare case of multiple child records form fields similar to how FormSG does it
@@ -214,9 +216,11 @@ function patchMockData(
       }
 
       // formsg payload doesnt contain this anyways, so we dont return in mock data
+      // in mrf forms only, sections are also not returned in the payload
       if (
         mockData.responses[formFields[i]._id].fieldType === 'statement' ||
-        mockData.responses[formFields[i]._id].fieldType === 'image'
+        mockData.responses[formFields[i]._id].fieldType === 'image' ||
+        (isMrf && mockData.responses[formFields[i]._id].fieldType === 'section')
       ) {
         delete mockData.responses[formFields[i]._id]
         continue
