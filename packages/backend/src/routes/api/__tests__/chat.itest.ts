@@ -64,12 +64,6 @@ vi.mock('@/helpers/pair', () => ({
   },
 }))
 
-vi.mock('@/config/app', () => ({
-  default: {
-    appEnv: 'test',
-  },
-}))
-
 // Helper function to get and execute the POST handler from the chat router
 async function executeChatPostHandler(
   req: Partial<Request>,

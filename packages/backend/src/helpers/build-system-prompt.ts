@@ -14,25 +14,11 @@
  * Also appends a safety net note listing the restricted apps.
  */
 
-const APP_DISPLAY_NAMES: Record<string, string> = {
-  formsg: 'FormSG',
-  webhook: 'Webhook',
-  scheduler: 'Scheduler',
-  gathersg: 'GatherSG',
-  calculator: 'Calculator',
-  'custom-api': 'Custom API',
-  delay: 'Delay',
-  formatter: 'Formatter',
-  lettersg: 'LetterSG',
-  'm365-excel': 'M365 Excel',
-  paysg: 'PaySG',
-  postman: 'Email by Postman',
-  'postman-sms': 'SMS by Postman',
-  slack: 'Slack',
-  'telegram-bot': 'Telegram',
-  tiles: 'Tiles',
-  toolbox: 'Toolbox',
-}
+import apps from '@/apps'
+
+const APP_DISPLAY_NAMES: Record<string, string> = Object.fromEntries(
+  Object.values(apps).map((app) => [app.key, app.name]),
+)
 
 /**
  * Escapes special regex characters in a string
