@@ -60,6 +60,8 @@ const executeStep: MutationResolvers['executeStep'] = async (
     // we check if the step is an MRF step again after testing
     shouldContinueTestingMrfSteps = !!updatedStep.parameters.mrf
   } else {
+    // if the step failed, we should set back to 'incomplete' to force the user to fix the error
+    await stepToTest.$query().patch({ status: 'incomplete' })
     return executionStep
   }
 
