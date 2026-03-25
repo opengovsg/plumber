@@ -26,10 +26,7 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
     question.label = 'Header'
   }
 
-  if (
-    fieldData.fieldType === 'attachment' ||
-    fieldData.fieldType === 'signature'
-  ) {
+  if (fieldData.fieldType === 'signature') {
     question['isHidden'] = true
   }
 
@@ -356,25 +353,49 @@ async function getDataOutMetadata(
   })
 
   /**
-   * We ignore all 'image' and 'section' (aka headers) field types
+   * This is a hack to match the question number to the form as closely as possible.
+   * In formsg, the headers are not numbered, so we need to exclude them from the question number.
+   * But we also need to keep track of the headers between questions, so we can order them correctly.
+   * The regenerated order will be like so:
+   * Example given form:
+   * Header 0.0001
+   * Header 0.0002
+   * Question 1
+   * Question 2
+   * Sub Heading 2.0001
+   * Question 3
+   * Header 3.0001
+   * Sub Heading 3.0002
+   * Question 4
+   * Sub Heading 4.0001
+   * Question 4
+   * We ignore all 'image' field types
    * Paragraphs are not returned in encryptedContent
    */
   let questionOrder = 0
+  let headerOrderBetweenQuestions = 0
   for (const [fieldId, fieldData] of fields) {
     // ignore image fields, dont even increment question order
-    if (fieldData.fieldType === 'image' || fieldData.fieldType === 'section') {
+    if (fieldData.fieldType === 'image') {
       fieldMetadata[fieldId] = { isHidden: true }
       continue
     }
 
-    // increment question order for each field
-    questionOrder++
-    fieldData.order = questionOrder
+    if (fieldData.fieldType === 'section') {
+      headerOrderBetweenQuestions++
+      fieldData.order = questionOrder + headerOrderBetweenQuestions / 1000
+    } else {
+      // reset header order between questions
+      headerOrderBetweenQuestions = 0
+      // increment question order for each field
+      questionOrder++
+      fieldData.order = questionOrder
 
-    // if this is an MRF step, we only show the fields that are editable
-    if (questionIdsToShowForMrf && !questionIdsToShowForMrf.has(fieldId)) {
-      fieldMetadata[fieldId] = { isHidden: true }
-      continue
+      // if this is an MRF step, we only show the fields that are editable
+      if (questionIdsToShowForMrf && !questionIdsToShowForMrf.has(fieldId)) {
+        fieldMetadata[fieldId] = { isHidden: true }
+        continue
+      }
     }
 
     fieldMetadata[fieldId] = {
