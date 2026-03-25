@@ -4,6 +4,11 @@
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 
 /**
+ * App flags regex
+ */
+export const APP_FLAG_REGEX = /^app_.*$/
+
+/**
  * Feature flag fallbacks
  */
 export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {

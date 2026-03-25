@@ -131,7 +131,7 @@ export function useChatStream(options: UseChatStreamOptions) {
 
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
-          ...location.state,
+          ...locationRef.current.state,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
           // When isChatReady is true: clear output to trigger step generation

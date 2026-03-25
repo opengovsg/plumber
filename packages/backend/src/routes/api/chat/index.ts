@@ -19,8 +19,10 @@ import appConfig from '@/config/app'
 import {
   AI_BUILDER_FEATURE_FLAG,
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
+  APP_FLAG_REGEX,
 } from '@/config/flags'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
+import { buildSystemPrompt } from '@/helpers/build-system-prompt'
+import { getAllLdFlags, getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { getPrompt } from '@/helpers/pair/get-prompt'
@@ -47,6 +49,13 @@ const handleChatStream = observe(
         .json({ error: 'You do not have permissions to use AI Builder!' })
       return
     }
+
+    // NOTE: we check LD for this user's access to apps
+    // we then pass it into the system prompt to tell the assistant which apps the user does not have access to
+    const allLdFlags = await getAllLdFlags(context.currentUser.email)
+    const restrictedApps = Object.keys(allLdFlags)
+      .filter((flag) => APP_FLAG_REGEX.test(flag) && allLdFlags[flag] === false)
+      .map((flag) => flag.replace('app_', ''))
 
     const {
       chatPromptName,
@@ -93,7 +102,10 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
-      const systemMessage = { role: 'system' as const, content: prompt.prompt }
+      const systemMessage = {
+        role: 'system' as const,
+        content: buildSystemPrompt(prompt.prompt, restrictedApps),
+      }
       const allMessages = [systemMessage, ...messages]
 
       const stream = createUIMessageStream({
