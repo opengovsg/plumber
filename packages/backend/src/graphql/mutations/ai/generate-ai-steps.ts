@@ -127,7 +127,10 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
       traceId,
     } as JSONObject
   } catch (error) {
-    logger.error('Error generating ai steps', { error })
+    logger.error('Error generating ai steps', {
+      error,
+      user: context.currentUser.email,
+    })
 
     if (error instanceof z.ZodError) {
       throw new BadUserInputError(fromZodError(error).details[0].message)
