@@ -60,7 +60,7 @@ vi.mock('@/helpers/pair', () => ({
   model: {},
   MODEL_TYPE: 'test-model',
   engineProvider: {
-    chatModel: vi.fn().mockReturnValue({}),
+    chat: vi.fn().mockReturnValue({}),
   },
 }))
 
