@@ -61,6 +61,7 @@ export const dataOutSchema = z.object({
           }),
         )
         .nullish(),
+      tags: z.array(z.string()).nullish(),
     })
     .nullish(),
 })

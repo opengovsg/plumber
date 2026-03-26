@@ -1,8 +1,10 @@
 import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 import {
+  createAttachmentsMetadata,
   createFieldMetadata,
   createOptionalNestedMetadata,
+  createTagMetadata,
 } from '../../common/data-out-metadata-helpers'
 
 import { dataOutSchema } from './schema'
@@ -53,19 +55,8 @@ async function getDataOutMetadata(
     },
   )
 
-  const attachmentsMetadata: Record<string, any> = {}
-  const attachmentKeys: string[] = []
-  if (dataOut?.attachments) {
-    for (const key of Object.keys(dataOut.attachments)) {
-      attachmentsMetadata[key] = {
-        name: { isHidden: true },
-        mimeType: { isHidden: true },
-        size: { isHidden: true },
-      }
-
-      attachmentKeys.push(key)
-    }
-  }
+  const { attachmentsMetadata, attachmentKeys } =
+    createAttachmentsMetadata(dataOut)
 
   // handle hex-encoded field names from dataOut
   const fieldsMetadata: Record<string, any> = {}
@@ -85,6 +76,8 @@ async function getDataOutMetadata(
     }
   }
 
+  const tagsMetadata = createTagMetadata(dataOut)
+
   return {
     ...caseMetadata,
     data: {
@@ -94,6 +87,7 @@ async function getDataOutMetadata(
       finalisedBy: finalisedByMetadata,
       updatedBy: updatedByMetadata,
       attachments: attachmentsMetadata,
+      tags: tagsMetadata,
 
       caseRef: { label: 'Case ref' },
       createdAt: { label: 'Created at' },

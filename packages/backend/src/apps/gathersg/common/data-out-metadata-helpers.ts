@@ -1,4 +1,4 @@
-import { IJSONArray } from '@plumber/types'
+import { IDataOutMetadata, IJSONArray } from '@plumber/types'
 
 import { HEX_ENCODED_FIELD_PREFIX } from './constants'
 
@@ -173,4 +173,38 @@ export function createPrimitiveArrayMetadata(
       displayedValue: array.join(', '),
     },
   }
+}
+
+// Helper function to create metadata for tags
+// tags are an array of strings and exist at the top level alongside the
+// uuid, caseRef, etc
+export const createTagMetadata = (dataOut: IDataOutMetadata) => {
+  const tagsMetadata = Object.create(null)
+  if (dataOut.tags && Array.isArray(dataOut.tags)) {
+    for (let i = 0; i < dataOut.tags.length; i++) {
+      tagsMetadata[i] = { label: `Tag` }
+    }
+  }
+
+  return tagsMetadata
+}
+
+// Helper function to create metadata for attachments
+// attachments are hidden as they are not useful to the user
+export const createAttachmentsMetadata = (dataOut: IDataOutMetadata) => {
+  const attachmentsMetadata = Object.create(null)
+  const attachmentKeys: string[] = []
+  if (dataOut.attachments) {
+    for (const key of Object.keys(dataOut.attachments)) {
+      attachmentsMetadata[key] = {
+        name: { isHidden: true },
+        mimeType: { isHidden: true },
+        size: { isHidden: true },
+      }
+
+      attachmentKeys.push(key)
+    }
+  }
+
+  return { attachmentsMetadata, attachmentKeys }
 }
