@@ -33,3 +33,16 @@ export async function getLdFlagValue<T extends IJSONValue>(
     fallbackValue,
   )) as T
 }
+
+export async function getAllLdFlags(
+  userEmail: string | null,
+): Promise<Record<string, any>> {
+  const client = await getClient()
+
+  const allFlags = await client.allFlagsState({
+    kind: 'user',
+    key: userEmail ?? 'anonymous',
+  })
+
+  return allFlags.allValues()
+}

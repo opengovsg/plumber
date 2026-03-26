@@ -271,6 +271,7 @@ export function getInfoBoxDetails({
   isTestExecuting,
   stepId,
   testVariables,
+  isAiStep,
 }: {
   isDirty: boolean
   isIfThenStep: boolean
@@ -279,9 +280,20 @@ export function getInfoBoxDetails({
   isTestExecuting: boolean
   stepId: string
   testVariables: Variable[] | null
+  isAiStep: boolean
 }): [InfoboxProps['variant'], React.ReactNode] {
   if (isTestExecuting) {
     return ['unstyled', 'Checking step...']
+  }
+
+  if (isAiStep) {
+    return [
+      'warning',
+      <Text key={`${stepId}-ai-warning-text`}>
+        AI can make mistakes. Check the response{' '}
+        {!isDirty && 'across multiple test cases'}
+      </Text>,
+    ]
   }
 
   if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {

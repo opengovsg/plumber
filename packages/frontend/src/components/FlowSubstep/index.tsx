@@ -129,7 +129,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
           await saveStep()
         }
         await executeTestStep({ testRunMetadata })
-      } catch (error) {
+      } catch {
         console.error('Error saving and test step')
       }
     },

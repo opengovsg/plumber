@@ -149,15 +149,28 @@ export default function FlowStep(
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`
   const templateStepAppEventKey = step.config.templateConfig?.appEventKey
-  const templateStepHelpMessage = replacePlaceholdersForHelpMessage(
+
+  const templateStepHelpMessage = useMemo(() => {
+    if (step.config.templateConfig?.customTemplate) {
+      return step.config.templateConfig.customTemplate
+    }
+
+    return replacePlaceholdersForHelpMessage(
+      templateStepAppEventKey,
+      flow?.config?.templateConfig,
+    )
+  }, [
+    step.config.templateConfig?.customTemplate,
     templateStepAppEventKey,
     flow?.config?.templateConfig,
-  )
+  ])
 
   // Only show if the template step app key matches the current step app key
   // and has a help message (once tested successfully, the template step app key is removed)
   const shouldShowTemplateMsg: boolean =
-    stepAppEventKey === templateStepAppEventKey && !!templateStepHelpMessage
+    (stepAppEventKey === templateStepAppEventKey &&
+      !!templateStepHelpMessage) ||
+    !!step.config.templateConfig?.customTemplate
 
   // NOTE: there will only be 1 infobox shown at a time
   // there will not be a situation where both are shown as template messages

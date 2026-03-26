@@ -20,7 +20,7 @@ const addInterceptors = (httpClient: AxiosInstance): void => {
       ) {
         try {
           await streamResponse(error.response)
-        } catch (streamError) {
+        } catch {
           logger.warn('Error processing error response stream:')
         }
       }

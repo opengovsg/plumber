@@ -6,7 +6,7 @@ import { PipeIcon } from '@/components/Icons/PipeIcon'
 import * as URLS from '@/config/urls'
 import styles from '@/pages/UnauthorizedTile/UnauthorizedTile.module.css'
 
-export default function InvalidEditorPage() {
+export default function InvalidEditorPage({ message }: { message?: string }) {
   return (
     <>
       <Helmet>
@@ -35,10 +35,14 @@ export default function InvalidEditorPage() {
             textAlign={{ base: 'center', md: 'left' }}
             fontWeight="normal"
           >
-            Pipe not found.
-            <br />
-            It might have been transferred to someone else, or you may no longer
-            have access. 🤔
+            {message || (
+              <>
+                Pipe not found.
+                <br />
+                It might have been transferred to someone else, or you may no
+                longer have access. 🤔
+              </>
+            )}
           </Text>
           <Link
             textStyle="h6"
