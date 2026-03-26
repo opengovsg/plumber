@@ -30,8 +30,12 @@ export const schema = z.object({
     )
     .min(1, { message: 'At least one response field is required' })
     .refine(
-      (fields) =>
-        new Set(fields.map((field) => field.fieldName)).size === fields.length,
-      { message: 'Field names must be unique' },
+      (fields) => {
+        const names = fields.map((f) => f.fieldName.toLowerCase())
+        return new Set(names).size === names.length
+      },
+      {
+        message: 'Field names must be unique (case-insensitive)',
+      },
     ),
 })
