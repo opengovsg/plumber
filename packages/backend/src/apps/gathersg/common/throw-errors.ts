@@ -1,9 +1,12 @@
+import { ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
+
 import HttpError from '@/errors/http'
-import StepError from '@/errors/step'
+import StepError, { GenericSolution } from '@/errors/step'
 
 import { GatherSGError } from './types'
 
-export default function throwGatherSGStepError(error: HttpError) {
+function throwGatherSGStepError(error: HttpError) {
   const { code, message, details } =
     (error.response?.data?.error as GatherSGError) || {}
   const errorStatus = error.response?.status
@@ -51,3 +54,13 @@ export default function throwGatherSGStepError(error: HttpError) {
     error,
   )
 }
+
+function handleZodError(error: ZodError) {
+  const firstError = fromZodError(error).details[0]
+  throw new StepError(
+    `${firstError.message}`,
+    GenericSolution.ReconfigureInvalidField,
+  )
+}
+
+export { handleZodError, throwGatherSGStepError }

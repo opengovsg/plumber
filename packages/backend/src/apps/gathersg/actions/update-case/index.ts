@@ -1,15 +1,18 @@
 import type { IRawAction } from '@plumber/types'
 
 import { ZodError } from 'zod'
-import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
-import StepError, { GenericSolution } from '@/errors/step'
+import StepError from '@/errors/step'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
-import throwGatherSGStepError from '../../common/throw-errors'
+import { fieldTypeEnum } from '../../common/schema'
+import {
+  handleZodError,
+  throwGatherSGStepError,
+} from '../../common/throw-errors'
 
-import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
+import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Update case',
@@ -133,11 +136,7 @@ const action: IRawAction = {
       })
     } catch (error) {
       if (error instanceof ZodError) {
-        const firstError = fromZodError(error).details[0]
-        throw new StepError(
-          `${firstError.message}`,
-          GenericSolution.ReconfigureInvalidField,
-        )
+        handleZodError(error)
       }
 
       if (error instanceof HttpError) {
