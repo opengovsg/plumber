@@ -1,10 +1,12 @@
-import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
+import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 import {
   createAttachmentsMetadata,
+  createFieldMetadata,
+  createFormSgMetadata,
   createTagMetadata,
+  createUserMetadata,
 } from '../../common/data-out-metadata-helpers'
-import { decodeFieldName } from '../../common/utils'
 
 import { dataOutSchema } from './schema'
 
@@ -40,19 +42,10 @@ async function getDataOutMetadata(
         isFinal: { isHidden: true },
       },
       createdAt: { label: 'Created at' },
-      createdBy: {
-        name: { label: 'Created by (name)' },
-        email: { label: 'Created by (email)' },
-        role: { isHidden: true },
-        uuid: { isHidden: true },
-      },
       updatedAt: { label: 'Updated at' },
-      updatedBy: {
-        name: { label: 'Updated by (name)' },
-        email: { label: 'Updated by (email)' },
-        role: { isHidden: true },
-        uuid: { isHidden: true },
-      },
+      createdBy: createUserMetadata(dataOut?.createdBy, 'Created by'),
+      updatedBy: createUserMetadata(dataOut?.updatedBy, 'Updated by'),
+      finalisedBy: createUserMetadata(dataOut?.finalisedBy, 'Finalised by'),
       durationSec: { isHidden: true },
       durationPaused: { isHidden: true },
       email: {
@@ -62,6 +55,7 @@ async function getDataOutMetadata(
           address: { label: 'Email sender (email)' },
         },
       },
+      formsg: createFormSgMetadata(dataOut?.formsg),
     },
   }
 
@@ -70,76 +64,19 @@ async function getDataOutMetadata(
     createAttachmentsMetadata(dataOut)
 
   // handle hex-encoded field names from dataOut
-  const fieldsMetadata = Object.create(null)
-
-  if (dataOut.fields) {
-    for (const hexKey of Object.keys(dataOut.fields)) {
+  const fieldsMetadata: Record<string, any> = {}
+  if (dataOut?.fields) {
+    for (const key of Object.keys(dataOut.fields)) {
       try {
-        // decode hex key to get the original column name
-        const decodedLabel = decodeFieldName(hexKey)
-        const fieldValue = dataOut.fields[hexKey]
-
-        // check if the value is an array
-        if (Array.isArray(fieldValue)) {
-          // check if it's an array of objects or an array of primitives
-          if (
-            fieldValue.length > 0 &&
-            typeof fieldValue[0] === 'object' &&
-            fieldValue[0] !== null
-          ) {
-            // array of objects - create nested object structure for each row
-            const array = fieldValue as IJSONArray
-            const rowsMetadata = Object.create(null)
-
-            for (let i = 0; i < array.length; i++) {
-              const rowObject = array[i]
-              const rowMetadata = Object.create(null)
-
-              if (typeof rowObject === 'object' && rowObject !== null) {
-                for (const nestedKey of Object.keys(rowObject)) {
-                  rowMetadata[nestedKey] = {
-                    type: 'text',
-                    label: `${decodedLabel} Row ${i + 1} ${nestedKey}`,
-                  }
-                }
-              }
-
-              rowsMetadata[i] = rowMetadata
-            }
-
-            fieldsMetadata[hexKey] = rowsMetadata
-          } else {
-            // array of primitives (strings, numbers, etc.) - display as comma-separated values
-            // allow to use as array
-
-            // HACK: GatherSg returns the attachment field with an array of attachment ids
-            // and a separate attachment object. we hide the array of attachment ids as it is
-            // not useful to the user
-            if (
-              fieldValue.every(
-                (item) =>
-                  typeof item === 'string' && attachmentKeys.includes(item),
-              )
-            ) {
-              fieldsMetadata[hexKey] = {
-                label: decodedLabel,
-                isHidden: true,
-              }
-            } else {
-              fieldsMetadata[hexKey] = {
-                label: decodedLabel,
-                type: 'array',
-                displayedValue: fieldValue.join(', '),
-              }
-            }
-          }
-        } else {
-          // not an array - treat as simple field
-          fieldsMetadata[hexKey] = { label: decodedLabel }
-        }
+        const fieldValue = dataOut.fields[key]
+        fieldsMetadata[key] = createFieldMetadata(
+          key,
+          fieldValue,
+          attachmentKeys,
+        )
       } catch {
         // if decoding fails, use the hex key as-is
-        fieldsMetadata[hexKey] = { label: hexKey }
+        fieldsMetadata[key] = { label: key }
       }
     }
   }

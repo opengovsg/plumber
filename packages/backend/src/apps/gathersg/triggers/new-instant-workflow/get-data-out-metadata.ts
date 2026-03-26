@@ -3,8 +3,9 @@ import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 import {
   createAttachmentsMetadata,
   createFieldMetadata,
-  createOptionalNestedMetadata,
+  createFormSgMetadata,
   createTagMetadata,
+  createUserMetadata,
 } from '../../common/data-out-metadata-helpers'
 
 import { dataOutSchema } from './schema'
@@ -32,27 +33,12 @@ async function getDataOutMetadata(
   }
 
   // handle optional nested objects
-  const formSgMetadata = createOptionalNestedMetadata(dataOut?.formsg, {
-    formId: 'FormSG (form ID)',
-    submissionId: 'FormSG (submission ID)',
-  })
-
-  const createdByMetadata = createOptionalNestedMetadata(dataOut?.createdBy, {
-    email: 'Created by (email)',
-    name: 'Created by (name)',
-  })
-
-  const updatedByMetadata = createOptionalNestedMetadata(dataOut?.updatedBy, {
-    email: 'Updated by (email)',
-    name: 'Updated by (name)',
-  })
-
-  const finalisedByMetadata = createOptionalNestedMetadata(
+  const formSgMetadata = createFormSgMetadata(dataOut?.formsg)
+  const createdByMetadata = createUserMetadata(dataOut?.createdBy, 'Created by')
+  const updatedByMetadata = createUserMetadata(dataOut?.updatedBy, 'Updated by')
+  const finalisedByMetadata = createUserMetadata(
     dataOut?.finalisedBy,
-    {
-      email: 'Finalised by (email)',
-      name: 'Finalised by (name)',
-    },
+    'Finalised by',
   )
 
   const { attachmentsMetadata, attachmentKeys } =

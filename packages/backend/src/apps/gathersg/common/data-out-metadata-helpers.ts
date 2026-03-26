@@ -1,4 +1,4 @@
-import { IDataOutMetadata, IJSONArray } from '@plumber/types'
+import { IDataOutMetadata, IDataOutMetadatum, IJSONArray } from '@plumber/types'
 
 import { HEX_ENCODED_FIELD_PREFIX } from './constants'
 
@@ -125,20 +125,31 @@ export function createObjectArrayMetadata(
   return rowsMetadata
 }
 
-// Helper function to create metadata for optional nested objects
-export function createOptionalNestedMetadata<T extends Record<string, any>>(
-  data: T | null | undefined,
-  fieldLabels: Record<keyof T, string>,
-): Record<string, { label: string }> | { isHidden: true } {
-  if (!data) {
-    return { isHidden: true }
-  }
+// Helper function to create FormSG metadata
+export function createFormSgMetadata(
+  data: Record<string, any> | null | undefined,
+): Record<string, IDataOutMetadatum> | { isHidden: true } {
+  return data
+    ? {
+        formId: { label: 'FormSG (form ID)' },
+        submissionId: { label: 'FormSG (submission ID)' },
+      }
+    : { isHidden: true }
+}
 
-  const metadata: Record<string, { label: string }> = {}
-  for (const [key, label] of Object.entries(fieldLabels)) {
-    metadata[key] = { label }
-  }
-  return metadata
+// Helper function to create user related metadata
+export function createUserMetadata(
+  data: Record<string, any> | null | undefined,
+  prefix: string,
+): Record<string, IDataOutMetadatum> | { isHidden: true } {
+  return data
+    ? {
+        email: { label: `${prefix} (email)` },
+        name: { label: `${prefix} (name)` },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
+      }
+    : { isHidden: true }
 }
 
 // Helper function to create metadata for primitive arrays (with _array property)
