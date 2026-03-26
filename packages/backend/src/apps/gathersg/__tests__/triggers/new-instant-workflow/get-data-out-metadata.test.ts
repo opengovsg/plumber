@@ -114,6 +114,8 @@ describe('getDataOutMetadata', () => {
       expect(result?.data.createdBy).toEqual({
         email: { label: 'Created by (email)' },
         name: { label: 'Created by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
       })
     })
 
@@ -139,6 +141,8 @@ describe('getDataOutMetadata', () => {
       expect(result?.data.updatedBy).toEqual({
         email: { label: 'Updated by (email)' },
         name: { label: 'Updated by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
       })
     })
 
@@ -165,6 +169,8 @@ describe('getDataOutMetadata', () => {
       expect(result?.data.finalisedBy).toEqual({
         email: { label: 'Finalised by (email)' },
         name: { label: 'Finalised by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
       })
     })
   })
@@ -499,6 +505,8 @@ describe('getDataOutMetadata', () => {
       expect(result?.data.createdBy).toEqual({
         email: { label: 'Created by (email)' },
         name: { label: 'Created by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
       })
       expect(result?.data.fields.name).toEqual({ label: 'name' })
       expect(result?.data.fields[hexEncodedField]).toEqual({
