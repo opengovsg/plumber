@@ -18,6 +18,11 @@ import {
   TOOLBOX_ACTIONS,
 } from '@/helpers/toolbox'
 
+enum AI_ACTIONS {
+  Pair = 'pair',
+  Aisay = 'aisay',
+}
+
 interface UseStepMetadataResult {
   app: IApp | undefined
   selectedActionOrTrigger: IAction | ITrigger | undefined
@@ -35,6 +40,11 @@ interface UseStepMetadataResult {
   isMrfStep: boolean
   isApprovalStep: boolean
   approvalBranch: IStepApprovalBranch | null
+  isAiStep: boolean
+}
+
+function isAiStep(step: IStep): boolean {
+  return Object.values(AI_ACTIONS).includes(step?.appKey as AI_ACTIONS)
 }
 
 export function useStepMetadata(
@@ -186,5 +196,6 @@ export function useStepMetadata(
     isMrfStep,
     isApprovalStep,
     approvalBranch,
+    isAiStep: step ? isAiStep(step) : false,
   }
 }

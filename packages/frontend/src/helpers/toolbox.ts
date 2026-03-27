@@ -1,4 +1,4 @@
-import { type IStep } from '@plumber/types'
+import { IApp, type IStep } from '@plumber/types'
 
 import { useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
@@ -256,4 +256,82 @@ export function useIfThenInitializer(): [
 //
 export function isForEachStep(step: IStep): boolean {
   return step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.ForEach
+}
+
+//
+// General toolbox helpers
+//
+export function getGroupingActions(appsWithActions: IApp[]) {
+  if (!appsWithActions) {
+    return null
+  }
+
+  return new Set(
+    appsWithActions?.flatMap((app) =>
+      app.actions
+        ?.filter((action) => action.groupsLaterSteps)
+        ?.map((action) => `${app.key}-${action.key}`),
+    ) ?? [],
+  )
+}
+
+export function getStepStructure(
+  appsWithActions: IApp[],
+  steps: IStep[],
+): [IStep | null, IStep[], IStep[][]] {
+  const groupingActions = getGroupingActions(appsWithActions)
+
+  if (!groupingActions) {
+    return [null, [], []]
+  }
+
+  const groupStepIdx = steps.findIndex((step, index) => {
+    if (
+      // We ignore the 1st step because it's either a trigger, or a
+      // step-grouping action that is using a nested Editor to edit steps in
+      // its group.
+      index === 0 ||
+      !step.appKey ||
+      !step.key
+    ) {
+      return false
+    }
+    return groupingActions.has(`${step.appKey}-${step.key}`)
+  })
+
+  let branchesWithSteps: IStep[][] = []
+  if (groupStepIdx !== -1) {
+    branchesWithSteps = extractBranchesWithSteps(steps.slice(groupStepIdx), 0)
+  }
+
+  const triggerStep = steps[0]
+
+  return groupStepIdx === -1
+    ? [triggerStep, steps.slice(1), []]
+    : [triggerStep, steps.slice(1, groupStepIdx), branchesWithSteps]
+}
+
+export function getStepGroupTypeAndCaption(groupedSteps: IStep[][]): {
+  stepGroupType: string | null
+  stepGroupCaption: string | null
+} {
+  let stepGroupType: string | null = null
+  let stepGroupCaption: string | null = null
+
+  const groupKey = groupedSteps[0]?.[0]?.key
+  if (!groupKey) {
+    return { stepGroupType: null, stepGroupCaption: null }
+  }
+
+  if (groupKey === TOOLBOX_ACTIONS.IfThen) {
+    stepGroupType = TOOLBOX_ACTIONS.IfThen
+    stepGroupCaption = 'If-then'
+  }
+
+  if (groupKey === TOOLBOX_ACTIONS.ForEach) {
+    stepGroupType = TOOLBOX_ACTIONS.ForEach
+    stepGroupCaption = 'For each'
+  }
+
+  return { stepGroupType, stepGroupCaption }
 }

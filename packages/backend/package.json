@@ -28,6 +28,7 @@
     "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "1.0.23",
     "@apollo/server": "5.4.0",
     "@as-integrations/express4": "1.1.2",
     "@aws-sdk/client-dynamodb": "3.995.0",
@@ -36,11 +37,16 @@
     "@bull-board/express": "5.17.0",
     "@graphql-tools/schema": "10.0.25",
     "@graphql-tools/utils": "10.9.1",
+    "@langfuse/client": "4.2.0",
+    "@langfuse/otel": "4.2.0",
+    "@langfuse/tracing": "4.2.0",
     "@launchdarkly/node-server-sdk": "9.0.4",
     "@opengovsg/formsg-sdk": "0.16.1",
     "@opengovsg/sgid-client": "2.3.0",
+    "@opentelemetry/sdk-node": "0.207.0",
     "@plumber/types": "file:../types",
     "@taskforcesh/bullmq-pro": "7.8.1",
+    "ai": "5.0.81",
     "ajv-formats": "2.1.1",
     "async-mutex": "0.4.0",
     "axios": "1.13.5",
@@ -80,11 +86,11 @@
     "rate-limiter-flexible": "2.4.1",
     "remark-breaks": "3.0.3",
     "remark-gfm": "3.0.1",
-    "typescript": "^4.6.3",
+    "typescript": "^5.5.4",
     "ulid": "3.0.0",
     "urlcat": "3.1.0",
     "winston": "^3.7.1",
-    "zod": "3.22.4",
+    "zod": "3.25.76",
     "zod-validation-error": "1.5.0"
   },
   "devDependencies": {
@@ -93,16 +99,16 @@
     "@types/bcrypt": "^5.0.0",
     "@types/big.js": "6.2.2",
     "@types/bull": "^3.15.8",
-    "@types/cookie-parser": "^1.4.9",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.12",
     "@types/crypto-js": "^4.0.2",
-    "@types/express": "^4.17.15",
+    "@types/express": "^5.0.5",
     "@types/http-errors": "^1.8.1",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/lodash.get": "4.4.9",
     "@types/luxon": "^2.4.0",
     "@types/morgan": "^1.9.3",
-    "@types/multer": "1.4.12",
+    "@types/multer": "2.0.0",
     "@types/pg": "^8.6.1",
     "axios-mock-adapter": "^2.1.0",
     "cpy-cli": "^7.0.0",
@@ -112,5 +118,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.60.4"
+  "version": "1.61.0"
 }

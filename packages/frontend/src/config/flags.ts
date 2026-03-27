@@ -13,6 +13,7 @@ export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
 export const SGID_FEATURE_FLAG = 'sgid-login'
 export const SSO_FEATURE_FLAG = 'ogp-sso-enabled'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
+export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 
 /**
  * App/events flags

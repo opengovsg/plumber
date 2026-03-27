@@ -134,7 +134,7 @@ const trigger: IRawTrigger = {
       // remove mrf object from parameters and remove mrf steps (if any)
       try {
         await removeMrfSteps($.flow.id)
-      } catch (error) {
+      } catch {
         throw new StepError(
           'Error removing MRF steps',
           'This should not happen, please contact support.',

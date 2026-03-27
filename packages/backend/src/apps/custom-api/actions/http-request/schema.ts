@@ -58,7 +58,7 @@ export const requestSchema = z.object({
           JSON.parse(str) // to test for valid JSON
         }
         return str
-      } catch (e) {
+      } catch {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Invalid JSON data',

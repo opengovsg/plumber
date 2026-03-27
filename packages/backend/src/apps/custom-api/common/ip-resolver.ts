@@ -7,7 +7,7 @@ export async function getIpFromHostname(hostname: string) {
   try {
     const { address } = await dns.promises.lookup(hostname)
     return address
-  } catch (e) {
+  } catch {
     throw new Error(`Unable to resolve IP address for ${hostname}`)
   }
 }

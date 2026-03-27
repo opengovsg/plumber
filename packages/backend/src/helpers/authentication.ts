@@ -10,6 +10,7 @@ import {
   getLoggedInUser,
   parseAdminToken,
 } from '@/helpers/auth'
+import { getClientIp } from '@/helpers/get-client-ip'
 import { UnauthenticatedContext } from '@/types/express/context'
 
 export const setCurrentUserContext = async ({
@@ -72,11 +73,7 @@ const isAdminOperation = rule()(
 
 const rateLimitRule = createRateLimitRule({
   identifyContext: (ctx: UnauthenticatedContext) => {
-    // get ip address of request in this order: cf-connecting-ip -> remoteAddress
-    const userIp =
-      (ctx.req.headers['cf-connecting-ip'] as string) ||
-      ctx.req.socket.remoteAddress.split(',')[0].trim()
-    return userIp
+    return getClientIp(ctx.req)
   },
   // recommended flag: https://github.com/teamplanes/graphql-rate-limit#enablebatchrequestcache
   enableBatchRequestCache: true,
