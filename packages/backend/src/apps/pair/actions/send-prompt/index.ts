@@ -1,28 +1,13 @@
 import { IRawAction } from '@plumber/types'
 
-import TurndownService from 'turndown'
-import { fromZodError } from 'zod-validation-error'
-
-import StepError, { GenericSolution } from '@/errors/step'
-
-import {
-  DEFAULT_PROMPT_VALUES,
-  DEFAULT_RESPONSE_FIELDS_VALUES,
-} from '../../common/constants'
-import generateObject from '../../common/generate-object'
-import { generateSchemaFromFields } from '../../common/generate-schema'
-
-import getDataOutMetadata from './get-data-out-metadata'
-import { schema } from './schema'
-
-const turndownService = new TurndownService()
-
 const action: IRawAction = {
   name: 'Ask Pair',
   key: 'sendPrompt',
   description:
     'Enter a custom prompt to summarise, categorise or analyse data with Pair',
   arguments: [
+    // TODO (kevinkim-ogp): each option should link to a different
+    // default value for the prompt. update when the default value is provided
     {
       label: 'What would you like to do?',
       key: 'promptType',
@@ -62,13 +47,11 @@ const action: IRawAction = {
         'Undo',
         'Redo',
       ],
-      defaultValue: {
-        fieldKey: 'promptType',
-        options: DEFAULT_PROMPT_VALUES,
-      },
+      // TODO (kevinkim-ogp): add the default value for the prompt
     },
     {
       label: 'How do you want the response?',
+
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
@@ -109,50 +92,21 @@ const action: IRawAction = {
           customStyle: { flex: 3 },
         },
       ],
-      defaultValue: {
-        fieldKey: 'promptType',
-        options: DEFAULT_RESPONSE_FIELDS_VALUES,
-      },
+      // TODO (kevinkim-ogp): add the default value for the response fields
     },
   ],
 
-  getDataOutMetadata,
+  // TODO (kevinkim-ogp): add the data out metadata
 
   async run($) {
-    const validatedParameters = schema.safeParse($.step.parameters)
+    // TODO (kevinkim-ogp): add the validation for the parameters
 
-    if (!validatedParameters.success) {
-      const firstError = fromZodError(validatedParameters.error).details[0]
-      throw new StepError(
-        firstError.message,
-        GenericSolution.ReconfigureInvalidField,
-      )
-    }
+    // TODO (kevinkim-ogp): add the dynamic schema for the response fields
 
-    const { prompt, responseFields } = validatedParameters.data
-
-    /**
-     * As the prompt is entered using the Tiptap editor, it is stored as HTML.
-     * We convert it to markdown as LLMs interpret markdown much better than HTML.
-     *
-     * NOTE: we also don't convert to markdown directly on the Tiptap editor as
-     * it involves more work to convert the markdown back to HTML for displaying
-     * in the editor.
-     */
-    const convertedPrompt = turndownService.turndown(prompt)
-
-    const dynamicSchema = generateSchemaFromFields(responseFields)
-
-    const response = await generateObject(convertedPrompt, dynamicSchema, {
-      userId: $.user.email,
-      flowId: $.flow.id,
-      stepId: $.step.id,
-      executionId: $.execution.id,
-      tags: ['pair', 'action', 'generate-text'],
-    })
+    // TODO (kevinkim-ogp): add the generate object
 
     $.setActionItem({
-      raw: { ...response },
+      raw: { data: $.step.parameters },
     })
   },
 }
