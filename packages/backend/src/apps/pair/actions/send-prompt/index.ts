@@ -1,5 +1,15 @@
 import { IRawAction } from '@plumber/types'
 
+import { fromZodError } from 'zod-validation-error'
+
+import StepError, { GenericSolution } from '@/errors/step'
+
+import generateObject from '../../common/generate-object'
+import { generateSchemaFromFields } from '../../common/generate-schema'
+
+import getDataOutMetadata from './get-data-out-metadata'
+import { schema } from './schema'
+
 const action: IRawAction = {
   name: 'Ask Pair',
   key: 'sendPrompt',
@@ -96,17 +106,35 @@ const action: IRawAction = {
     },
   ],
 
-  // TODO (kevinkim-ogp): add the data out metadata
+  getDataOutMetadata,
 
   async run($) {
-    // TODO (kevinkim-ogp): add the validation for the parameters
+    const validatedParameters = schema.safeParse($.step.parameters)
 
-    // TODO (kevinkim-ogp): add the dynamic schema for the response fields
+    if (!validatedParameters.success) {
+      const firstError = fromZodError(validatedParameters.error).details[0]
+      throw new StepError(
+        firstError.message,
+        GenericSolution.ReconfigureInvalidField,
+        $.step.position,
+        $.app.name,
+      )
+    }
 
-    // TODO (kevinkim-ogp): add the generate object
+    const { prompt, responseFields } = validatedParameters.data
+
+    const dynamicSchema = generateSchemaFromFields(responseFields)
+
+    const response = await generateObject(prompt, dynamicSchema, {
+      userId: $.user.email,
+      flowId: $.flow.id,
+      stepId: $.step.id,
+      executionId: $.execution.id,
+      tags: ['pair', 'action', 'generate-text'],
+    })
 
     $.setActionItem({
-      raw: { data: $.step.parameters },
+      raw: { ...response },
     })
   },
 }
