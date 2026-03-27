@@ -9,6 +9,7 @@ import formsgApp from '@/apps/formsg/'
 import gathersgApp from '@/apps/gathersg'
 import lettersgApp from '@/apps/lettersg'
 import m365ExcelApp from '@/apps/m365-excel'
+import pairApp from '@/apps/pair'
 import paysgApp from '@/apps/paysg'
 import postmanApp from '@/apps/postman'
 import postmanSmsApp from '@/apps/postman-sms'
@@ -52,6 +53,7 @@ export const ACTION_APPS_RANKING = [
   postmanSmsApp.key,
   telegramBotApp.key,
   slackApp.key,
+  pairApp.key,
   aisayApp.key,
   gathersgApp.key,
   customApiApp.key,
