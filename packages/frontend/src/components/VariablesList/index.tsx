@@ -1,6 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -102,12 +102,31 @@ export function VariableItem({
   onViewButtonPreload?: () => void
   isViewButtonLoading?: boolean
 }): JSX.Element {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
   const shouldShowBottomBorder = !withViewButton && (onClick || isLast)
 
   const displayValue =
     variable.displayedValue ?? variable.value?.toString() ?? ''
 
   const isSuggestionVariable = onClick && !withViewButton
+
+  // Check if text is overflowing after render
+  useEffect(() => {
+    if (variable.type === 'ai_response' && textRef.current && !isExpanded) {
+      const element = textRef.current
+      const isTextOverflowing =
+        element.scrollHeight > element.clientHeight ||
+        element.scrollWidth > element.clientWidth
+      setIsOverflowing(isTextOverflowing)
+    }
+  }, [variable.type, isExpanded])
+
+  // NOTE: we intentionally not show the toggle for suggestion variables
+  const shouldShowToggle =
+    variable.type === 'ai_response' && isOverflowing && !isSuggestionVariable
+
   return (
     <Box
       key={`suggestion-${variable.name}`}
@@ -115,14 +134,18 @@ export function VariableItem({
       h={
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          : shouldShowToggle
+          ? 'auto'
           : VARIABLE_ITEM_HEIGHT
       }
       maxH={
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
+          : shouldShowToggle
+          ? undefined
           : VARIABLE_ITEM_HEIGHT
       }
-      overflowY="hidden"
+      overflowY={shouldShowToggle && isExpanded ? 'visible' : 'hidden'}
       padding={isSuggestionVariable ? '0.5rem 1rem' : '1rem'}
       borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
@@ -158,23 +181,42 @@ export function VariableItem({
             </Text>
             <VariableTag type={variable.type} />
           </Flex>
-
-          <Text
-            textStyle="body-2"
-            color="base.content.medium"
-            whiteSpace="nowrap"
-            overflow="hidden"
-            textOverflow="ellipsis"
-          >
-            {displayValue.length ? (
-              displayValue
-            ) : (
-              // padding right to ensure the 'y' is not cut off
-              <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
+          <Flex flexDirection="column" gap={1}>
+            <Flex alignItems="center" gap={2}>
+              <Text
+                ref={textRef}
+                textStyle="body-2"
+                color="base.content.medium"
+                whiteSpace={isExpanded ? 'pre-wrap' : 'nowrap'}
+                overflow={isExpanded ? 'visible' : 'hidden'}
+                textOverflow={isExpanded ? 'clip' : 'ellipsis'}
+              >
+                {displayValue.length ? (
+                  displayValue
+                ) : (
+                  <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
+                )}
+              </Text>
+            </Flex>
+            {shouldShowToggle && (
+              <Text
+                textStyle="body-2"
+                color="primary.500"
+                cursor="pointer"
+                _hover={{ textDecoration: 'underline' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsExpanded(!isExpanded)
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation()
+                }}
+              >
+                {isExpanded ? 'Show less' : 'Show more'}
+              </Text>
             )}
-          </Text>
+          </Flex>
         </Flex>
-
         {onClick && withViewButton && (
           <Button
             variant="clear"
@@ -231,6 +273,7 @@ export default function VariablesList(props: VariablesListProps) {
     getScrollElement: () => parentRef.current,
     estimateSize: () =>
       onClick ? SUGGESTION_VARIABLE_ITEM_HEIGHT : VARIABLE_ITEM_HEIGHT,
+    measureElement: (element) => element.getBoundingClientRect().height,
     overscan: 50,
   })
 
@@ -259,6 +302,7 @@ export default function VariablesList(props: VariablesListProps) {
             <Box
               key={virtualItem.key}
               data-index={virtualItem.index}
+              ref={virtualizer.measureElement}
               position="absolute"
               top={0}
               left={0}
