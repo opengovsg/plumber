@@ -1,0 +1,73 @@
+import z from 'zod/v3'
+
+export const schema = z.object({
+  promptType: z.enum(['analyse', 'categorise', 'summarise', 'write', 'custom']),
+  prompt: z.string().min(1),
+  responseFields: z
+    .array(
+      z
+        .object({
+          fieldName: z
+            .string()
+            .min(1)
+            .max(64)
+            .regex(
+              /^[a-zA-Z0-9_-]+$/,
+              'Field name cannot contain spaces. Use only letters, numbers, underscores (_), and hyphens (-)',
+            ),
+          fieldType: z.enum(['text', 'number', 'category']),
+          fieldCategories: z.string().optional(),
+        })
+        .refine(
+          (data: {
+            fieldName?: string
+            fieldType?: string
+            fieldCategories?: string
+          }) => {
+            if (data.fieldType === 'category') {
+              if (!data.fieldCategories) {
+                return false
+              }
+              // Validate comma-separated values in a single pass
+              const items = data.fieldCategories.split(',')
+              const seen = new Set<string>()
+
+              for (const item of items) {
+                const trimmed = item.trim()
+
+                // Check if empty
+                if (trimmed.length === 0) {
+                  return false
+                }
+
+                // Check for duplicate (case-insensitive)
+                const lower = trimmed.toLowerCase()
+                if (seen.has(lower)) {
+                  return false
+                }
+                seen.add(lower)
+              }
+
+              return true
+            }
+            return true
+          },
+          {
+            message:
+              'Enter categories as comma-separated values with no empty or duplicate entries.',
+          },
+        ),
+    )
+    .min(1, {
+      message: 'Enter at least one response field',
+    })
+    .refine(
+      (fields) => {
+        const names = fields.map((f) => f.fieldName.toLowerCase())
+        return new Set(names).size === names.length
+      },
+      {
+        message: 'Field names must be unique (case-insensitive)',
+      },
+    ),
+})
