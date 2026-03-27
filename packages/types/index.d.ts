@@ -349,6 +349,34 @@ export interface IBaseField {
 
   // message to show when no variables are available
   noVariablesMessage?: string
+
+  /**
+   * Allows setting a default value for the field.
+   * ---
+   * Can be either:
+   * - A static string value that is always used
+   * - A dynamic object that determines the default based on another field's value
+   * ---
+   * Static example:
+   * defaultValue: 'Default text here'
+   *
+   * Dynamic example:
+   * {
+   *   fieldKey: 'promptType',
+   *   options: {
+   *     analyse: 'Analyse this document',
+   *     categorise: 'Categorise this document',
+   *     summarise: 'Summarise this document',
+   *     write: 'Write this document',
+   *   },
+   * }
+   */
+  defaultValue?:
+    | string
+    | {
+        fieldKey: string
+        options: Record<string, string | IJSONValue>
+      }
 }
 
 export type DropdownAddNewType = 'modal' | 'inline'
