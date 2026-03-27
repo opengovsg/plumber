@@ -1,14 +1,13 @@
 import { IApp, IStep } from '@plumber/types'
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
+import { useApps } from '@/hooks/useApps'
 import { Message } from '@/hooks/useChatStream'
 
 export interface AIBuilderDraftState {
@@ -90,12 +89,7 @@ export const AiBuilderContextProvider = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile])
 
-  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
-
-  const allApps = useMemo(
-    () => getAppsData?.getApps ?? [],
-    [getAppsData?.getApps],
-  )
+  const { data: allApps, loading: isLoadingAllApps } = useApps()
   const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
   )

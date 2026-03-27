@@ -5,6 +5,7 @@ import {
   requireAuthentication,
   setCurrentUserContext,
 } from './middleware/authentication'
+import appsRouter from './apps'
 import chatRouter from './chat'
 
 const router = Router()
@@ -22,6 +23,7 @@ router.use(requireAuthentication)
 router.use(blockAdminOperations)
 
 // Mount individual API routes
+router.use('/apps', appsRouter)
 router.use('/chat', chatRouter)
 
 // Future routes can be added here:

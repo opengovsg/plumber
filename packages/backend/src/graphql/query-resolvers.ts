@@ -1,6 +1,5 @@
 import type { QueryResolvers } from './__generated__/types.generated'
 import getApp from './queries/get-app'
-import getApps from './queries/get-apps'
 import getConnectedApps from './queries/get-connected-apps'
 import getCurrentUser from './queries/get-current-user'
 import getDynamicData from './queries/get-dynamic-data'
@@ -29,7 +28,6 @@ import tilesQueryResolvers from './queries/tiles'
  */
 
 export default {
-  getApps,
   getApp,
   getConnectedApps,
   testConnection,
