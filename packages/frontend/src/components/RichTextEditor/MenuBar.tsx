@@ -376,6 +376,7 @@ export const MenuBar = ({
           return (
             <button
               key={`${label}${index}`}
+              type="button"
               title={label}
               disabled={isDisabled}
               style={{
