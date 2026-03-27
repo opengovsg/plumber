@@ -6,6 +6,7 @@ import {
   ISubstep,
 } from '@plumber/types'
 
+import { FieldValues, UseFormReturn } from 'react-hook-form'
 import { BiQuestionMark } from 'react-icons/bi'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { BaseSchema } from 'yup'
@@ -162,4 +163,24 @@ export const hasDirtyFields = (fields: Record<string, any>): boolean => {
     }
     return false
   })
+}
+
+export function getDefaultValue(
+  formContext: UseFormReturn<FieldValues, any, FieldValues>,
+  defaultValue?:
+    | string
+    | { fieldKey: string; options: Record<string, string | IJSONValue> }
+    | undefined,
+): string | IJSONValue | undefined {
+  if (!defaultValue) {
+    return undefined
+  }
+
+  if (typeof defaultValue === 'string') {
+    return defaultValue
+  }
+
+  const formValues = formContext.getValues()
+  const fieldValue = formValues.parameters[defaultValue.fieldKey]
+  return defaultValue.options[fieldValue] ?? undefined
 }
