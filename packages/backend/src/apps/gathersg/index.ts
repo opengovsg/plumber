@@ -7,7 +7,7 @@ import dynamicData from './dynamic-data'
 import triggers from './triggers'
 
 const app: IApp = {
-  name: 'GatherSG',
+  name: 'Ownself Gather',
   key: 'gathersg',
   description: 'Case management system',
   iconUrl: '{BASE_URL}/apps/gathersg/assets/favicon.svg',
