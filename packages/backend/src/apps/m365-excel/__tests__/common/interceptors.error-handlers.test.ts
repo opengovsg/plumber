@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
 
 import m365ExcelApp from '../..'
@@ -89,6 +90,12 @@ describe('M365 request error handlers', () => {
         data: {
           tenantKey: 'test-tenant',
         },
+      },
+      step: {
+        position: 1,
+      },
+      app: {
+        name: 'M365 Excel',
       },
     } as unknown as IGlobalVariable
     http = createHttpClient({
@@ -209,6 +216,22 @@ describe('M365 request error handlers', () => {
       expect.stringContaining('HTTP 509'),
       expect.objectContaining({ event: 'm365-http-509' }),
     )
+  })
+
+  it('throws a StepError with formula guidance on 504 (no auto-retry)', async () => {
+    mockAxiosAdapterToThrowOnce(504)
+    await http
+      .get('/test-url')
+      .then(() => {
+        expect.unreachable()
+      })
+      .catch((error): void => {
+        expect(error).toBeInstanceOf(StepError)
+        expect(error.message).toContain('Excel request timed out')
+        expect(error.message).toContain('long-running formulas')
+        // We intentionally don't set a cause to prevent auto-retry
+        expect(error.cause).toBeUndefined()
+      })
   })
 
   it('throws a RetriableError with default step delay on ETIMEDOUT', async () => {
