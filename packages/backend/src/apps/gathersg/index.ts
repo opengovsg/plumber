@@ -21,6 +21,7 @@ const app: IApp = {
   triggers,
   dynamicData,
   category: 'data',
+  isNewApp: true,
 }
 
 export default app
