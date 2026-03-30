@@ -85,8 +85,6 @@ export default async function getTableRowImpl(
     throw new StepError(
       `Column "${lookupColumn}" does not exist in your table.`,
       `Check that your Excel table contains the "${lookupColumn}" column.`,
-      $.step.position,
-      $.app.name,
     )
   }
 

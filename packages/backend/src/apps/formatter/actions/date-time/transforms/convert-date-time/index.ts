@@ -29,8 +29,6 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
     throw new StepError(
       `Configuration problem: '${firstZodParseError(error)}'`,
       GenericSolution.ReconfigureInvalidField,
-      $.step.position,
-      $.app.name,
     )
   }
 }
@@ -63,8 +61,6 @@ export const spec = {
       throw new StepError(
         `Error with the original value: '${error.message}'`,
         'Ensure that you have selected the correct date format for your original value.',
-        $.step.position,
-        $.app.name,
       )
     }
   },

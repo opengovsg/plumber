@@ -107,8 +107,6 @@ class FlowCollaborator extends Base {
           `Please ensure that you are ${
             requiredRole === 'viewer' ? 'a' : 'an'
           } ${requiredRole} of this pipe.`,
-          $.step.position,
-          $.app.name,
         )
       }
       throw new ForbiddenError(

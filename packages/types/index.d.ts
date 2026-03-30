@@ -1031,8 +1031,6 @@ export interface ITestConnectionOutput
 export interface IStepError {
   name: string
   solution: string
-  position: number
-  appName: string
   details?: IJSONObject
   partialRetry?: {
     buttonMessage: string

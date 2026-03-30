@@ -78,8 +78,6 @@ class TableCollaborator extends Base {
           `Please ensure that you are ${
             role === 'viewer' ? 'a' : 'an'
           } ${role} of this tile.`,
-          $.step.position,
-          $.app.name,
         )
       }
       throw new ForbiddenError(

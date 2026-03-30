@@ -94,8 +94,6 @@ const action: IRawAction = {
       throw new StepError(
         'Action is set up incorrectly.',
         parametersParseResult.error.issues[0].message,
-        $.step?.position,
-        $.app.name,
       )
     }
 

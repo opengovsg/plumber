@@ -25,8 +25,6 @@ const dynamicData: IDynamicData = {
       throw new StepError(
         'There was a problem with the input.',
         parametersParseResult.error.issues[0].message,
-        $.step.position,
-        $.app.name,
       )
     }
 

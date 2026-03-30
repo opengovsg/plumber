@@ -47,8 +47,6 @@ const action: IRawAction = {
         throw new StepError(
           `${firstError.message} at "${firstError.path}"`,
           GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
         )
       }
 

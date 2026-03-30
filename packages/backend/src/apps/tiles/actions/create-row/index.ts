@@ -104,8 +104,6 @@ const action: IRawAction = {
       throw new StepError(
         'Tile not found',
         'Tile may have been deleted. Please check your tile.',
-        $.step.position,
-        'tiles',
       )
     }
 
@@ -124,8 +122,6 @@ const action: IRawAction = {
       throw new StepError(
         'Invalid column ID(s)',
         'Column(s) may have been deleted or modified. Please check your tile and pipe setup.',
-        $.step.position,
-        $.app.name,
       )
     }
 

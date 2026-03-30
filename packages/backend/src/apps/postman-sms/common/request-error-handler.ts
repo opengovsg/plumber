@@ -58,17 +58,10 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
         throw new StepError(
           'Campaign template was not set up correctly',
           'Ensure that you have followed the instructions in our guide to set up your campaign template.',
-          $.step.position,
-          $.app.name,
         )
       }
 
-      throw new StepError(
-        'Error sending SMS',
-        error.message,
-        $.step.position,
-        $.app.name,
-      )
+      throw new StepError('Error sending SMS', error.message)
   }
 }
 

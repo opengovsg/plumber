@@ -42,8 +42,6 @@ const action: IRawAction = {
         throw new StepError(
           `Invalid case uuid: ${caseUuid}`,
           'Please check that you have configured your step correctly',
-          $.step.position,
-          $.app.name,
           error,
         )
       }
@@ -53,8 +51,6 @@ const action: IRawAction = {
         throw new StepError(
           `No data found for case ${caseUuid}`,
           'Please check that you have configured your step correctly',
-          $.step.position,
-          $.app.name,
         )
       }
 
@@ -78,8 +74,6 @@ const action: IRawAction = {
       throw new StepError(
         `An error occurred: '${error.message}'`,
         'Please check that you have configured your step correctly',
-        $.step.position,
-        $.app.name,
       )
     }
   },

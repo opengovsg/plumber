@@ -87,8 +87,6 @@ const action: IRawAction = {
       throw new StepError(
         'There was a problem with the input.',
         parametersParseResult.error.issues[0].message,
-        $.step?.position,
-        $.app.name,
       )
     }
 
@@ -96,12 +94,7 @@ const action: IRawAction = {
 
     // Basic sanity checks
     if (cells.length > 3) {
-      throw new StepError(
-        'Too many cells',
-        'Please only input up to 3 cells',
-        $.step.position,
-        $.app.key,
-      )
+      throw new StepError('Too many cells', 'Please only input up to 3 cells')
     }
 
     for (const cell of cells) {
@@ -109,8 +102,6 @@ const action: IRawAction = {
         throw new StepError(
           `Invalid cell address ${cell.address}`,
           'Please specify cell addresses in A1 notation.',
-          $.step.position,
-          $.app.key,
         )
       }
     }

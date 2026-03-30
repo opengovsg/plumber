@@ -59,8 +59,6 @@ function getParams($: IGlobalVariable) /* inferred return type */ {
     throw new StepError(
       `Configuration problem: '${firstZodParseError(error)}'`,
       GenericSolution.ReconfigureInvalidField,
-      $.step.position,
-      $.app.name,
     )
   }
 }
@@ -87,8 +85,6 @@ export const transformData: TransformSpec['transformData'] = async (
     throw new StepError(
       `Error processing dates: '${error.message}'`,
       'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
-      $.step.position,
-      $.app.name,
     )
   }
 }

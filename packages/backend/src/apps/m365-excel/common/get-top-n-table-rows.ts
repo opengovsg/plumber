@@ -85,8 +85,6 @@ export async function getTopNTableRows(
       throw new StepError(
         'Invalid table range',
         'Check your Excel file and try again',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -98,8 +96,6 @@ export async function getTopNTableRows(
       throw new StepError(
         `Your Excel table has more than ${n.toLocaleString()} rows.`,
         `Reduce the number of rows and try again.`,
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -117,8 +113,6 @@ export async function getTopNTableRows(
         throw new StepError(
           'Your Excel table is too large',
           'Reduce the number of rows or columns and try again.',
-          $.step.position,
-          $.app.name,
           error,
         )
       }
@@ -167,8 +161,6 @@ export async function getTopNTableRowsOld(
     throw new StepError(
       'Received invalid table data',
       'Double check your Excel file and retry the step if needed',
-      $.step.position,
-      $.app.name,
     )
   }
 
@@ -178,8 +170,6 @@ export async function getTopNTableRowsOld(
     throw new StepError(
       'Excel table is missing the header row',
       'Ensure that your Excel table has a header row',
-      $.step.position,
-      $.app.name,
     )
   }
 
@@ -188,8 +178,6 @@ export async function getTopNTableRowsOld(
     throw new StepError(
       `Your Excel table has more than ${n.toLocaleString()} rows.`,
       `Reduce the number of rows and try again.`,
-      $.step.position,
-      $.app.name,
     )
   }
 

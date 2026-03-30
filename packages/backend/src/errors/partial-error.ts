@@ -4,8 +4,6 @@ import StepError from './step'
 interface PartialStepErrorArgs {
   name: string
   solution: string
-  position: number
-  appName: string
   partialRetry: {
     buttonMessage: string
   }
@@ -18,7 +16,7 @@ interface PartialStepErrorArgs {
  */
 export default class PartialStepError extends StepError {
   constructor(props: PartialStepErrorArgs) {
-    const { name, solution, position, appName, error, partialRetry } = props
-    super(name, solution, position, appName, error, { partialRetry })
+    const { name, solution, error, partialRetry } = props
+    super(name, solution, error, { partialRetry })
   }
 }

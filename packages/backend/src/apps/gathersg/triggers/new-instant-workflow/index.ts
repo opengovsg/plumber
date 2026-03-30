@@ -48,8 +48,6 @@ const trigger: IRawTrigger = {
         throw new StepError(
           'Encryption key is not valid',
           `Encryption key must ${error}`,
-          $.step.position,
-          $.app.name,
         )
       }
     }
