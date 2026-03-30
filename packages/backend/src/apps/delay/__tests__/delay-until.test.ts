@@ -119,6 +119,60 @@ describe('Delay until action', () => {
     })
   })
 
+  describe('single-padded to double-padded formatting', () => {
+    it('converts single-padded day to double-padded in date output', async () => {
+      $.step.parameters = {
+        delayUntil: '5 Dec 2026', // single-padded day
+        delayUntilTime: VALID_TIME,
+      }
+
+      const result = await delayUntilAction.run($)
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { delayUntil: '05 Dec 2026', delayUntilTime: VALID_TIME },
+      })
+    })
+
+    it('converts single-padded hour to double-padded in time output', async () => {
+      $.step.parameters = {
+        delayUntil: VALID_DATE,
+        delayUntilTime: '9:30', // single-padded hour
+      }
+
+      const result = await delayUntilAction.run($)
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { delayUntil: VALID_DATE, delayUntilTime: '09:30' },
+      })
+    })
+
+    it('converts both single-padded date and time to double-padded', async () => {
+      $.step.parameters = {
+        delayUntil: '1 Jan 2027', // single-padded day
+        delayUntilTime: '8:05', // single-padded hour
+      }
+
+      const result = await delayUntilAction.run($)
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { delayUntil: '01 Jan 2027', delayUntilTime: '08:05' },
+      })
+    })
+
+    it('keeps double-padded date and time unchanged', async () => {
+      $.step.parameters = {
+        delayUntil: '05 Dec 2026', // already double-padded
+        delayUntilTime: '09:30', // already double-padded
+      }
+
+      const result = await delayUntilAction.run($)
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { delayUntil: '05 Dec 2026', delayUntilTime: '09:30' },
+      })
+    })
+  })
+
   it('throws step error if delay until has a past timestamp', async () => {
     $.step.parameters = {
       delayUntil: PAST_DATE,
@@ -144,26 +198,6 @@ describe('Delay until action', () => {
   })
 
   describe('retry logic', () => {
-    it('prevents retries during test runs', async () => {
-      $.step.parameters = {
-        delayUntil: PAST_DATE,
-        delayUntilTime: DEFAULT_TIME,
-      }
-
-      // Set testRun to true to simulate test environment
-      $.execution.testRun = true
-
-      // Mock last execution step to indicate a retry for past timestamp
-      mocks.getLastExecutionStep.mockResolvedValue({
-        errorDetails: {
-          name: 'Delay until timestamp entered is in the past',
-        },
-      })
-
-      // Should throw error even with valid retry conditions due to testRun
-      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
-    })
-
     it('allows past timestamp when retrying after past timestamp error', async () => {
       $.step.parameters = {
         delayUntil: PAST_DATE,

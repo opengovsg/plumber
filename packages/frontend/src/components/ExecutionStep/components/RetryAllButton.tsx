@@ -1,6 +1,7 @@
 import { IExecution } from '@plumber/types'
 
 import { useCallback, useContext, useState } from 'react'
+import { BiFastForward } from 'react-icons/bi'
 import { TbArrowForwardUpDouble } from 'react-icons/tb'
 import { useMutation } from '@apollo/client'
 import { Icon } from '@chakra-ui/react'
@@ -10,12 +11,33 @@ import { BULK_RETRY_EXECUTIONS_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { BULK_RETRY_EXECUTIONS } from '@/graphql/mutations/bulk-retry-executions'
 
-interface RetryAllButtonProps {
-  execution: IExecution
+import { RetryVariant } from './RetryButton'
+
+const variantConfigs: Record<
+  RetryVariant,
+  { text: string; icon: React.ReactElement }
+> = {
+  retry: {
+    text: 'Retry all failures for this pipe',
+    icon: <Icon boxSize={6} as={TbArrowForwardUpDouble} />,
+  },
+  resume: {
+    text: 'Resume all paused executions for this workflow',
+    icon: <Icon boxSize={6} as={BiFastForward} />,
+  },
 }
 
-export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
+interface RetryAllButtonProps {
+  execution: IExecution
+  variant?: RetryVariant
+}
+
+export const RetryAllButton = ({
+  execution,
+  variant = 'retry',
+}: RetryAllButtonProps) => {
   const flowId = execution.flow?.id
+  const config = variantConfigs[variant]
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const toast = useToast()
   const [isBulkRetrying, setIsBulkRetrying] = useState(false)
@@ -60,14 +82,14 @@ export const RetryAllButton = ({ execution }: RetryAllButtonProps) => {
   return (
     <Button
       variant="clear"
-      leftIcon={<Icon boxSize={6} as={TbArrowForwardUpDouble} />}
+      leftIcon={config.icon}
       isLoading={isBulkRetrying}
       isDisabled={hasBulkRetried}
       spinner={<Spinner fontSize={24} />}
       size="md"
       onClick={onBulkRetryExecutions}
     >
-      Retry all failures for this pipe
+      {config.text}
     </Button>
   )
 }

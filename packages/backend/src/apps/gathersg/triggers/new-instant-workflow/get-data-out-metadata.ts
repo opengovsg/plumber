@@ -78,7 +78,7 @@ async function getDataOutMetadata(
           fieldValue,
           attachmentKeys,
         )
-      } catch (error) {
+      } catch {
         // if decoding fails, use the hex key as-is
         fieldsMetadata[key] = { label: key }
       }

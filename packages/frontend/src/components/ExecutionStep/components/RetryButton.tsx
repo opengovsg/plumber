@@ -1,28 +1,58 @@
 import { useState } from 'react'
-import { BiErrorCircle, BiRedo } from 'react-icons/bi'
+import { BiErrorCircle, BiPlay, BiRedo } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { HStack, Icon, Text } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
 
+import client from '@/graphql/client'
 import { RETRY_EXECUTION_STEP } from '@/graphql/mutations/retry-execution-step'
+import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
+
+export type RetryVariant = 'retry' | 'resume'
+
+interface VariantConfig {
+  defaultText: string
+  successMessage: string
+  icon: JSX.Element
+  successText: string
+  failureText: string
+}
+
+const variantConfigs: Record<RetryVariant, VariantConfig> = {
+  retry: {
+    defaultText: 'Retry',
+    successMessage:
+      'Retry has been enqueued. Your page should reload after a few seconds with the updated status.',
+    icon: <Icon boxSize={6} as={BiRedo} />,
+    successText: 'Retry started',
+    failureText: 'Retry failed',
+  },
+  resume: {
+    defaultText: 'Resume',
+    successMessage:
+      'Resume has been enqueued. Your page should reload after a few seconds with the updated status.',
+    icon: <Icon boxSize={6} as={BiPlay} />,
+    successText: 'Resume started',
+    failureText: 'Resume failed',
+  },
+}
 
 interface RetryButtonProps {
   executionStepId: string
   customButtonText?: string
+  variant?: RetryVariant
 }
-
-const retryIcon = <Icon boxSize={6} as={BiRedo} />
 
 const RetryButton = ({
   executionStepId,
   customButtonText,
+  variant = 'retry',
 }: RetryButtonProps) => {
   const [isRetrySuccessful, setIsRetrySuccessful] = useState<boolean | null>(
     null,
   )
   const toast = useToast()
-  const retrySuccessMessage =
-    'Retry has been enqueued. Please reload your page after a few seconds to see updated status.'
+  const config = variantConfigs[variant]
 
   const [retryExecutionStep] = useMutation(RETRY_EXECUTION_STEP, {
     variables: {
@@ -32,13 +62,20 @@ const RetryButton = ({
     },
     onCompleted: () => {
       toast({
-        title: retrySuccessMessage,
+        title: config.successMessage,
         status: 'success',
         duration: 3000,
         isClosable: true,
         position: 'bottom-right',
       })
       setIsRetrySuccessful(true)
+
+      // reload page after short delay because the job is retrying
+      setTimeout(() => {
+        client.refetchQueries({
+          include: [GET_EXECUTION_STEPS],
+        })
+      }, 3000)
     },
     onError: () => {
       setIsRetrySuccessful(false)
@@ -49,10 +86,10 @@ const RetryButton = ({
     return (
       <Button
         variant="clear"
-        leftIcon={retryIcon}
+        leftIcon={config.icon}
         onClick={() => retryExecutionStep()}
       >
-        {customButtonText ?? 'Retry'}
+        {customButtonText ?? config.defaultText}
       </Button>
     )
   } else {
@@ -67,7 +104,7 @@ const RetryButton = ({
       >
         <Icon as={BiErrorCircle} boxSize={6} />
         <Text textStyle="subhead-1">
-          {isRetrySuccessful ? 'Retry started' : 'Retry failed'}
+          {isRetrySuccessful ? config.successText : config.failureText}
         </Text>
       </HStack>
     )

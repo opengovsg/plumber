@@ -1,4 +1,8 @@
-import { BiSolidCheckCircle, BiSolidErrorCircle } from 'react-icons/bi'
+import {
+  BiSolidCheckCircle,
+  BiSolidErrorCircle,
+  BiSolidInfoCircle,
+} from 'react-icons/bi'
 import { Icon, Image } from '@chakra-ui/react'
 
 import executionWaitingIcon from '@/assets/execution-waiting.svg'
@@ -28,4 +32,9 @@ const partialIcon = (
 
 const waitingIcon = <Image src={executionWaitingIcon} h={6} />
 
-export { failureIcon, partialIcon, successIcon, waitingIcon }
+// Only used for delay until past timestamp paused errors
+const delayPausedIcon = (
+  <Icon boxSize={6} as={BiSolidInfoCircle} color="blue.500" />
+)
+
+export { delayPausedIcon, failureIcon, partialIcon, successIcon, waitingIcon }

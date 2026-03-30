@@ -1,69 +1,56 @@
-import { useNavigate } from 'react-router-dom'
-import { Box, Flex, Hide, Text } from '@chakra-ui/react'
-import { Tile } from '@opengovsg/design-system-react'
+import { BiRightArrowAlt } from 'react-icons/bi'
+import { Flex, Icon, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 
-import NavigationDrawer from '@/components/Layout/NavigationDrawer'
-import * as URLS from '@/config/urls'
-import { TemplateIcon } from '@/helpers/flow-templates'
+import { useCreateFlowContext } from '../contexts/CreateFlowContext'
+import { useFlowCreation } from '../hooks/useFlowCreation'
 
-export default function EmptyFlows({ onCreate }: { onCreate: () => void }) {
-  const navigate = useNavigate()
+import FlowNameInput from './FlowNameInput'
+import ModeSelector from './ModeSelector'
+
+export default function EmptyFlows() {
+  const { createMode } = useCreateFlowContext()
+
+  const {
+    flowName,
+    inputRef,
+    handleInputChange,
+    isButtonDisabled,
+    handleModeSubmit,
+    loading,
+  } = useFlowCreation()
 
   return (
     <Flex
-      maxW="600px"
+      maxW="800px"
       margin="auto"
       rowGap={4}
       flexDir="column"
       pt={{ base: '0', md: '10vh' }}
     >
-      <Flex maxW="400px">
-        <Hide above="sm">
-          <Box mt={-1.5}>
-            <NavigationDrawer />
-          </Box>
-        </Hide>
-        <Text textStyle="h3">How do you want to create your pipe?</Text>
+      <Flex maxW="800px">
+        <Text textStyle="h3">How do you want to create your workflow?</Text>
       </Flex>
 
-      <Flex gap={4} flexDir={{ base: 'column', md: 'row' }}>
-        <Tile
-          icon={() => (
-            <Box py={2}>
-              <TemplateIcon iconName="BiBookOpen" fontSize="2rem" />
-            </Box>
-          )}
-          display="flex"
-          flex="1"
-          onClick={() => navigate(URLS.TEMPLATES)}
-        >
-          <Flex flexDir="column" gap={2} mt={2}>
-            <Text textStyle="subhead-1">Use a template</Text>
-            <Text textStyle="body-2">
-              Select from pre-built workflows that you can use as-is or
-              customize further for your own use case
-            </Text>
-          </Flex>
-        </Tile>
+      <ModeSelector />
 
-        <Tile
-          icon={() => (
-            <Box py={2}>
-              <TemplateIcon iconName="BiPlus" fontSize="2rem" />
-            </Box>
-          )}
-          display="flex"
-          flex="1"
-          onClick={onCreate}
+      {createMode === 'new' && (
+        <FlowNameInput
+          inputRef={inputRef}
+          flowName={flowName}
+          handleInputChange={handleInputChange}
+        />
+      )}
+
+      {createMode && (
+        <Button
+          onClick={() => handleModeSubmit()}
+          isDisabled={isButtonDisabled}
+          isLoading={loading}
         >
-          <Flex flexDir="column" gap={2} mt={2}>
-            <Text textStyle="subhead-1">Start from scratch</Text>
-            <Text textStyle="body-2">
-              Use our workflow builder to create your own workflow
-            </Text>
-          </Flex>
-        </Tile>
-      </Flex>
+          Next <Icon boxSize={6} as={BiRightArrowAlt} />
+        </Button>
+      )}
     </Flex>
   )
 }

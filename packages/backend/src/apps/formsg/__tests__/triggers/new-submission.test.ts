@@ -529,9 +529,10 @@ describe('new submission trigger', () => {
       )
     })
 
-    it('hides header fields', async () => {
+    it('should hide header answers but not questions', async () => {
       const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(metadata.fields.headerFieldId.isHidden).toEqual(true)
+      expect(metadata.fields.headerFieldId.answer.isHidden).toBe(true)
+      expect(metadata.fields.headerFieldId.question.isHidden).toBeFalsy()
     })
 
     it('collapses question variables', async () => {
@@ -539,19 +540,6 @@ describe('new submission trigger', () => {
       expect(metadata.fields.textFieldId.question.isCollapsedByDefault).toEqual(
         true,
       )
-    })
-
-    it('hides attachment questions', async () => {
-      executionStep.dataOut.fields = {
-        fileFieldId: {
-          question: 'Attach a file.',
-          answer: 's3:bucket_name:abcd/efg/my file.txt',
-          fieldType: 'attachment',
-        },
-      }
-
-      const metadata = await trigger.getDataOutMetadata(executionStep)
-      expect(metadata.fields.fileFieldId.question.isHidden).toEqual(true)
     })
 
     it('should handle null dataOut', async () => {

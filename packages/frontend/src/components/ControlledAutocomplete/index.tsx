@@ -83,7 +83,6 @@ function ControlledAutocomplete(
   } = props
   const { allApps, readOnly } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
-
   /**
    * allow extraction of specific variables to a dropdown, e.g., files from FormSG
    */

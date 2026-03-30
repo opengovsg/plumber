@@ -23,7 +23,7 @@ export function hasMissingStepReference(
           if (!stepIdSet.has(stepId)) {
             missing.add(stepId)
           }
-        } catch (error) {
+        } catch {
           continue
         }
       }

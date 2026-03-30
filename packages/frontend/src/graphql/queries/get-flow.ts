@@ -31,6 +31,7 @@ export const FLOW_FIELDS = gql`
         stepName
         templateConfig {
           appEventKey
+          customTemplate
         }
         approval {
           branch

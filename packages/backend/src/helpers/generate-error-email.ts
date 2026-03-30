@@ -1,5 +1,3 @@
-import { NotificationRecipients } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 
 import appConfig from '@/config/app'
@@ -7,6 +5,7 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { sendEmail } from '@/helpers/send-email'
 import Flow from '@/models/flow'
 
+import { getNotificationCcRecipients } from './get-notification-cc-recipients'
 import { safeHtml } from './html-utils'
 
 const MAX_LENGTH = 80
@@ -72,25 +71,9 @@ export async function sendErrorEmail(flow: Flow) {
   const userEmail = flow.user.email
   const errorKey = `error-alert:${flowId}`
   const currDatetime = DateTime.now()
-  const ccList: string[] = []
 
-  // default to notify owner only if no collaborators are specified
-  const notificationRecipients =
-    flow.config?.errorConfig?.notificationRecipients ?? []
-  if (
-    notificationRecipients.length > 0 &&
-    flow.collaborators &&
-    flow.collaborators.length > 0
-  ) {
-    const collaboratorsToCC = flow.collaborators
-      .filter((collaborator) =>
-        notificationRecipients.includes(
-          collaborator.role as NotificationRecipients,
-        ),
-      )
-      .map((collaborator) => collaborator.user.email)
-    ccList.push(...collaboratorsToCC)
-  }
+  // COLLABORATORS: retrieve list of collaborators to CC if any
+  const ccList = await getNotificationCcRecipients(flowId, flow)
 
   const errorDetails = {
     flowId,

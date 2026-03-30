@@ -10,6 +10,21 @@ import { filterNric } from '../../auth/decrypt-form-response'
 import convertTableAnswerArrayToTableObject from '../../common/process-table-field'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
 
+type ChildSubfield =
+  | 'childname'
+  | 'childbirthcertno'
+  | 'childdateofbirth'
+  | 'childgender'
+  | 'childvaxxstatus'
+  | 'childrace'
+  | 'childsecondaryrace'
+
+type ChildSubfieldDetails = {
+  displayLabel: string
+  mockData: string
+  isMyInfoFieldLabel: boolean
+}
+
 type FormField = {
   _id: string
   columns?: Array<{
@@ -19,6 +34,48 @@ type FormField = {
   fieldType: string
   fieldOptions?: string[]
   othersRadioButton?: boolean
+  childrenSubFields?: ChildSubfield[]
+  myInfo?: { attr: string }
+}
+
+// Naming of MyInfo child subfields from https://github.com/opengovsg/FormSG/blob/develop/packages/shared/constants/field/myinfo/index.ts
+const myInfoChildSubfieldMap: Record<ChildSubfield, ChildSubfieldDetails> = {
+  childname: {
+    displayLabel: 'Name',
+    mockData: 'Jackson Kim',
+    isMyInfoFieldLabel: true,
+  },
+  childbirthcertno: {
+    displayLabel: 'Birth certificate number',
+    mockData: 'T0700001J',
+    isMyInfoFieldLabel: true,
+  },
+  childdateofbirth: {
+    displayLabel: 'Date of birth',
+    mockData: '23/01/2007', // MyInfo provides child DOB as DD/MM/YYYY...
+    isMyInfoFieldLabel: true,
+  },
+  childgender: {
+    displayLabel: 'Sex',
+    mockData: 'MALE',
+    isMyInfoFieldLabel: true,
+  },
+  childvaxxstatus: {
+    displayLabel: 'Vaccination status',
+    mockData:
+      'MINIMUM VACCINATION REQUIREMENT FOR PRESCHOOL ADMISSION FULFILLED',
+    isMyInfoFieldLabel: true,
+  },
+  childrace: {
+    displayLabel: 'Race',
+    mockData: 'CHINESE',
+    isMyInfoFieldLabel: true,
+  },
+  childsecondaryrace: {
+    displayLabel: 'Secondary race',
+    mockData: 'OTHERS',
+    isMyInfoFieldLabel: false,
+  },
 }
 
 // Adapted from https://github.com/opengovsg/FormSG/blob/82c5ba6fff7e9628b6c32449148e89c0224e9ff5/shared/types/form/form.ts#L96
@@ -69,6 +126,42 @@ function generateMockAddressData(): string[] {
   return ['51', 'BRAS BASAH ROAD', 'Lazada One', '#08-888', '189554']
 }
 
+/**
+ * Example of how a children subfield response would look in prod
+ * childrenbirthrecords_<childrecordFieldID>_childname_0: {
+ *  question: 'Child 1 Name',
+ *  answer: 'Jackson',
+ *  fieldType: 'children',
+ *  order: '6.1'
+ * }
+ */
+
+function generateMockChildrenSubfieldResponses(
+  formField: FormField,
+  order: number,
+  childrenObjectIndex: number,
+): Record<string, Record<string, string | number>> {
+  const responses: Record<string, Record<string, string | number>> = {}
+  const childrenSubFields = formField.childrenSubFields ?? []
+
+  for (let j = 0; j < childrenSubFields.length; j++) {
+    const subfieldName = childrenSubFields[j]
+    const subfieldId = `${formField.myInfo?.attr}_${formField._id}_${subfieldName}_0`
+    const subfieldDetails = myInfoChildSubfieldMap[subfieldName]
+
+    responses[subfieldId] = {
+      question: `${
+        subfieldDetails.isMyInfoFieldLabel ? '[MyInfo]' : ''
+      } Child ${childrenObjectIndex + 1} ${subfieldDetails.displayLabel}`,
+      answer: subfieldDetails.mockData,
+      fieldType: 'children',
+      order: `${order}.${j + 1}`,
+    }
+  }
+
+  return responses
+}
+
 function generateMockPaymentData(products: Partial<PaymentProduct>[]) {
   // if there are no payment products, default to a mocked one
   const firstProduct: Partial<PaymentProduct> =
@@ -101,6 +194,13 @@ function patchMockData(
   $: IGlobalVariable,
 ) {
   const formFields = formDetails.form.form_fields as Array<FormField>
+
+  const isMrf = formDetails.form.responseMode === 'multirespondent'
+
+  // for myinfo children fields
+  const newChildrenSubfieldResponses = Object.create(null)
+  let childrenObjectIndex = 0 // to support the rare case of multiple child records form fields similar to how FormSG does it
+
   for (let i = 0; i < formFields.length; i++) {
     if (mockData.responses[formFields[i]._id]) {
       // forcefully include all checkbox options in the correct order
@@ -116,9 +216,11 @@ function patchMockData(
       }
 
       // formsg payload doesnt contain this anyways, so we dont return in mock data
+      // in mrf forms only, sections are also not returned in the payload
       if (
         mockData.responses[formFields[i]._id].fieldType === 'statement' ||
-        mockData.responses[formFields[i]._id].fieldType === 'image'
+        mockData.responses[formFields[i]._id].fieldType === 'image' ||
+        (isMrf && mockData.responses[formFields[i]._id].fieldType === 'section')
       ) {
         delete mockData.responses[formFields[i]._id]
         continue
@@ -127,6 +229,21 @@ function patchMockData(
       if (mockData.responses[formFields[i]._id].fieldType === 'address') {
         mockData.responses[formFields[i]._id].answerArray =
           generateMockAddressData()
+      }
+
+      if (mockData.responses[formFields[i]._id].fieldType === 'children') {
+        const childrenField = formFields[i]
+
+        // Generate new subfield responses with proper IDs for mapping
+        const childrenResponses = generateMockChildrenSubfieldResponses(
+          childrenField,
+          i + 1,
+          childrenObjectIndex,
+        )
+        Object.assign(newChildrenSubfieldResponses, childrenResponses)
+        childrenObjectIndex += 1
+        delete mockData.responses[formFields[i]._id] // remove the child records object after since it is giving a null from FormSG mock data
+        continue
       }
 
       if (mockData.responses[formFields[i]._id].fieldType === 'attachment') {
@@ -174,6 +291,10 @@ function patchMockData(
       mockData.responses[formFields[i]._id].id = undefined
     }
   }
+
+  // Add children subfield responses with proper IDs for mapping
+  Object.assign(mockData.responses, newChildrenSubfieldResponses)
+
   // There's actually no need to return since it's modifying in place
   return mockData
 }

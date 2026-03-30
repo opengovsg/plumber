@@ -168,7 +168,11 @@ export const EditorProvider = ({
   )
 
   const [stepsWithVars, varInfoMap] = useMemo(() => {
-    const stepsWithVars = extractVariables(testExecutionSteps, allApps)
+    const stepsWithVars = extractVariables(
+      testExecutionSteps,
+      undefined,
+      allApps,
+    )
     const info = genVariableInfoMap(stepsWithVars)
     return [stepsWithVars, info]
   }, [testExecutionSteps, allApps])

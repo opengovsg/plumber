@@ -3,22 +3,18 @@ import type { IAuth, IGlobalVariable } from '@plumber/types'
 import {
   DecryptedAttachments,
   DecryptedContent,
-  FormField,
 } from '@opengovsg/formsg-sdk/dist/types'
-import { DateTime } from 'luxon'
 
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
 import convertTableAnswerArrayToTableObject from '../common/process-table-field'
-import type {
-  FormSchemaField,
-  FormsgPayloadWorkflowContent,
-} from '../common/types'
-import { fetchFormSchema } from '../triggers/new-submission/fetch-form-schema'
+import type { FormsgPayloadWorkflowContent } from '../common/types'
 import { NricFilter } from '../triggers/new-submission/index'
 
+import { computeSubmissionTime } from './helpers/compute-submission-time'
+import { processResponsesV3 } from './helpers/process-v3-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import {
   decryptFormAttachmentsV3,
@@ -38,135 +34,6 @@ function processLocalAddress(answerArray: string[]): string[] {
   answer.splice(4, 1)
 
   return answer
-}
-
-async function processResponsesV3(
-  $: IGlobalVariable,
-  formId: string,
-  responsesV3: Record<string, any>,
-): Promise<FormField[]> {
-  const formSchemaFields: Record<string, FormSchemaField> = {}
-  try {
-    const formSchema = await fetchFormSchema($, formId)
-    if (formSchema?.form?.form_fields) {
-      for (const field of formSchema.form.form_fields) {
-        formSchemaFields[field._id] = field
-      }
-    }
-  } catch (e) {
-    logger.error('Unable to fetch form schema', {
-      event: 'formsg-unable-to-fetch-form-schema',
-      formId,
-      error: e,
-    })
-  }
-  const mappedResponses: FormField[] = []
-  let questionNumber = 0
-  for (const [key, value] of Object.entries(responsesV3)) {
-    questionNumber++
-    if (value.fieldType === 'table') {
-      let question =
-        formSchemaFields[key]?.title ?? `Question ${questionNumber}`
-      const answerArray = value.answer.map((row: Record<string, string>) => {
-        return Object.values(row)
-      })
-      // we follow the same format as the old table field title schema
-      if (formSchemaFields[key]?.columns) {
-        question += ` (${formSchemaFields[key]?.columns
-          ?.map((column) => column.title.replaceAll(',', ' '))
-          .join(', ')})`
-      }
-      // v3 return table answers in an array of objects (with key as column id )
-      // we need to map it back to a matrix
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        // we fallback to Question # if the question is not found in the form schema
-        question,
-        answerArray,
-      })
-      continue
-    }
-    if (value.fieldType === 'checkbox') {
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        // we fallback to Question # if the question is not found in the form schema
-        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-        // this is kinda weird, but it's the way formsg returns the answer for checkbox fields
-        answerArray: value.answer.value,
-      })
-      continue
-    }
-    /**
-     * Similary, formv3 responses put these fields in value.answer.value
-     */
-    if (['radiobutton', 'email', 'mobile'].includes(value.fieldType)) {
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        // we fallback to Question # if the question is not found in the form schema
-        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-        answer: value.answer.value,
-      })
-      continue
-    }
-    if (value.fieldType === 'signature') {
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        // we fallback to Question # if the question is not found in the form schema
-        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-        // it comes in this form: { type: 'draw', value: [Array] } },
-        answerArray: value.answer.value,
-      })
-      continue
-    }
-    if (value.fieldType === 'address') {
-      //  answer: { addressSubFields: [Object] } },
-      const addressSubFields = value.answer.addressSubFields ?? {}
-      // we need to map to [block number, street name, building name, level number, unit number, postal code]
-      const answerArray = [
-        addressSubFields.blockNumber,
-        addressSubFields.streetName,
-        addressSubFields.buildingName,
-        addressSubFields.levelNumber,
-        addressSubFields.unitNumber,
-        addressSubFields.postalCode,
-      ]
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        // we fallback to Question # if the question is not found in the form schema
-        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-        answerArray,
-      })
-      continue
-    }
-    if (value.fieldType === 'attachment') {
-      // the answer has the shape { hasBeenScanned: boolean, answer: string, md5Hash: string }
-      // the answer is the filename
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        // we fallback to Question # if the question is not found in the form schema
-        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-        // we temporarily store the filename in answer, it will subsequently be replaced with the S3 ID from storeAttachmentInS3
-        answer: value.answer.answer,
-      })
-      continue
-    }
-    // catch-all
-    mappedResponses.push({
-      _id: key,
-      fieldType: value.fieldType,
-      // we fallback to Question # if the question is not found in the form schema
-      question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-      answer: value.answer,
-    })
-    continue
-  }
-  return mappedResponses
 }
 
 /**
@@ -226,7 +93,7 @@ export async function decryptFormResponse(
       headers['x-formsg-signature'] as string,
       $.webhookUrl,
     )
-  } catch (e) {
+  } catch {
     logger.error('Unable to verify formsg signature')
     return { verified: false, internalId: null }
   }
@@ -240,6 +107,13 @@ export async function decryptFormResponse(
 
   if (version >= 3) {
     const decryptedSubmission = formSgSdk.cryptoV3.decrypt(formSecretKey, data)
+
+    // If decryption fails (aka invalid form secret key), return false
+    if (decryptedSubmission == null) {
+      logger.warn('Unable to decrypt MRF formsg response')
+      return { verified: false, internalId: null }
+    }
+
     const responsesV3 = decryptedSubmission?.responses
     const mappedResponses = await processResponsesV3(
       $,
@@ -388,11 +262,8 @@ export async function decryptFormResponse(
     $.request.body = {
       fields: parsedData,
       submissionId: data.submissionId,
-      // Forms gives us submission time as ISO 8601 UTC TZ, but our users
-      // expect SGT time, so convert it to ISO 8601 SGT TZ (our Luxon is
-      // configured for SGT - so although fromISO -> toISO looks like a no-op,
-      // it internally does a TZ conversion).
-      submissionTime: DateTime.fromISO(data.created).toISO(),
+      // submission time is computed based on whether it's an MRF or SRF form
+      submissionTime: computeSubmissionTime(data),
       formId: data.formId, // this is used to check if a new form is connected to the formsg step
     }
 
@@ -431,7 +302,7 @@ export async function decryptFormResponse(
     }
   } else {
     // Could not decrypt the submission
-    logger.error('Unable to decrypt formsg response')
+    logger.warn('Unable to decrypt formsg response')
     return { verified: false, internalId: null }
   }
 }

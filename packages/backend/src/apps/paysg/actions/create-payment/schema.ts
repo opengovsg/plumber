@@ -142,7 +142,7 @@ export const requestSchema = z
         z
           .string()
           .length(0)
-          .transform((_val) => undefined),
+          .transform((_val): undefined => undefined),
       ])
       .nullish(),
     returnUrl: z
@@ -158,7 +158,7 @@ export const requestSchema = z
         z
           .string()
           .length(0)
-          .transform((_val) => undefined),
+          .transform((_val): undefined => undefined),
       ])
       .nullish(),
   })

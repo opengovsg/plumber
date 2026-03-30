@@ -3,6 +3,7 @@ import { Box } from '@chakra-ui/react'
 import { ThemeProvider as ChakraThemeProvider } from '@opengovsg/design-system-react'
 
 import { useDefaultZoom } from '@/hooks/useGovtBrowser'
+import { useHandleDynamicLoadError } from '@/hooks/useHandleDynamicLoadError'
 
 import { theme as chakraTheme } from '../../theme'
 
@@ -16,6 +17,7 @@ const ThemeProvider = ({
   // This is a workaround to fix the issue of toasts appearing behind modal overlays
   const ref = useRef<HTMLDivElement>(null)
   useDefaultZoom()
+  useHandleDynamicLoadError()
   return (
     <ChakraThemeProvider
       theme={chakraTheme}

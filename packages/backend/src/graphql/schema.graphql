@@ -77,6 +77,7 @@ type Mutation {
   registerConnection(input: RegisterConnectionInput): Boolean
   # Flows
   createFlow(input: CreateFlowInput): Flow
+  createFlowWithSteps(input: CreateFlowWithStepsInput): Flow
   createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
@@ -131,13 +132,43 @@ type Mutation {
   # Flow transfers
   createFlowTransfer(input: CreateFlowTransferInput!): FlowTransfer!
   updateFlowTransferStatus(input: UpdateFlowTransferStatusInput): FlowTransfer!
+  # Ai builder mutations
+  generateAiSteps(input: GenerateAiStepsInput!): JSONObject
+  updateChatFeedback(input: UpdateChatFeedbackInput!): Boolean!
   # Admin mutations
   admin: AdminMutation!
+}
+
+input GenerateAiStepsInput {
+  prompt: String!
+  sessionId: String
+}
+
+input FeedbackInput {
+  category: String
+  comment: String
+}
+
+input UpdateChatFeedbackInput {
+  traceId: String!
+  feedback: FeedbackInput
+  score: Int!
+}
+
+input FlowAiBuilderConfigInput {
+  traceId: String!
+}
+
+input CreateFlowWithStepsInput {
+  flowName: String!
+  steps: [StepInput!]!
+  aiBuilderConfig: FlowAiBuilderConfigInput!
 }
 
 type AdminMutation {
   pauseGroup(input: PauseGroupInput!): Boolean
   resumeGroup(input: ResumeGroupInput!): Boolean
+  setGroupConcurrency(input: SetGroupConcurrencyInput!): Int!
 }
 
 """
@@ -202,6 +233,30 @@ type DropdownAddNewOption {
   label: String!
 }
 
+enum RteMenuOption {
+  Bold
+  Italic
+  Underline
+  LinkSet
+  LinkRemove
+  Heading1
+  Heading2
+  Heading3
+  Heading4
+  ListBullet
+  ListOrdered
+  ImageAdd
+  TableAdd
+  ColumnAdd
+  ColumnRemove
+  RowAdd
+  RowRemove
+  FormatClear
+  Undo
+  Redo
+  Divider
+}
+
 type ActionSubstepArgument {
   label: String
   key: String
@@ -232,6 +287,9 @@ type ActionSubstepArgument {
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
+
+  # Only for rich text
+  customRteMenuOptions: [RteMenuOption]
 }
 
 type DropdownClickableLink {
@@ -274,6 +332,7 @@ enum AppCategory {
   data
   communication
   logic
+  ai
   others
 }
 
@@ -593,16 +652,19 @@ input CreateStepInput {
   config: StepConfigInput
 }
 
-
-
 input StepApprovalConfigInput {
   branch: String!
   stepId: String!
 }
 
+input StepTemplateConfigInput {
+  customTemplate: String
+}
+
 input StepConfigInput {
   stepName: String
   approval: StepApprovalConfigInput
+  templateConfig: StepTemplateConfigInput
 }
 
 input UpdateStepInput {
@@ -727,6 +789,7 @@ type StepConfig {
 
 type StepTemplateConfig {
   appEventKey: String
+  customTemplate: String
 }
 
 type StepApprovalConfig {
@@ -757,6 +820,9 @@ input StepInput {
   flow: StepFlowInput
   parameters: JSONObject
   previousStep: PreviousStepInput
+  type: StepEnumType
+  config: StepConfigInput
+  position: Int
 }
 
 type Trigger {
@@ -1107,6 +1173,12 @@ input PauseGroupInput {
 input ResumeGroupInput {
   groupId: String!
   appKey: String!
+}
+
+input SetGroupConcurrencyInput {
+  groupId: String!
+  appKey: String!
+  concurrency: Int
 }
 
 # End of admin types

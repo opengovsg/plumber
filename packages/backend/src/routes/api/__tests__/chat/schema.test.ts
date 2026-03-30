@@ -1,0 +1,193 @@
+import { describe, expect, it } from 'vitest'
+
+import { chatRequestSchema } from '../../chat/schema'
+
+describe('chatRequestSchema', () => {
+  const validMessage = {
+    role: 'user' as const,
+    parts: [{ type: 'text' as const, text: 'Hello' }],
+  }
+
+  describe('valid requests', () => {
+    it('should accept a valid request with one message', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept a valid request with sessionId', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+        sessionId: '550e8400-e29b-41d4-a716-446655440000',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept assistant role', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          { role: 'assistant', parts: [{ type: 'text', text: 'Hi' }] },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept step-start part type', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              { type: 'step-start' },
+              { type: 'text', text: 'Working...' },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe('messages validation', () => {
+    it('should reject empty messages array', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [],
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe(
+        'Messages array must contain at least one message',
+      )
+    })
+
+    it('should reject more than 50 messages', () => {
+      const messages = Array(51).fill(validMessage)
+      const result = chatRequestSchema.safeParse({ messages })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe(
+        'Cannot send more than 50 messages',
+      )
+    })
+  })
+
+  describe('role validation', () => {
+    it('should reject system role', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          { role: 'system', parts: [{ type: 'text', text: 'You are...' }] },
+        ],
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject invalid role', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'admin', parts: [{ type: 'text', text: 'Hello' }] }],
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('parts validation', () => {
+    it('should reject empty parts array', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts: [] }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe(
+        'Message must have at least one part',
+      )
+    })
+
+    it('should reject more than 10 parts', () => {
+      const parts = Array(11).fill({ type: 'text', text: 'part' })
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe(
+        'Message cannot have more than 10 parts',
+      )
+    })
+  })
+
+  describe('text validation', () => {
+    it('should reject empty text', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts: [{ type: 'text', text: '' }] }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe('Text cannot be empty')
+    })
+
+    it('should reject whitespace-only text', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts: [{ type: 'text', text: '   ' }] }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe('Text cannot be empty')
+    })
+
+    it('should reject text exceeding 10000 characters', () => {
+      const longText = 'a'.repeat(10001)
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts: [{ type: 'text', text: longText }] }],
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe(
+        'Text cannot exceed 10000 characters',
+      )
+    })
+
+    it('should accept text at exactly 10000 characters', () => {
+      const maxText = 'a'.repeat(10000)
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts: [{ type: 'text', text: maxText }] }],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should trim text before validation', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          { role: 'user', parts: [{ type: 'text', text: '  hello  ' }] },
+        ],
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.messages[0].parts[0]).toEqual({
+          type: 'text',
+          text: 'hello',
+        })
+      }
+    })
+  })
+
+  describe('sessionId validation', () => {
+    it('should reject invalid UUID format', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+        sessionId: 'not-a-uuid',
+      })
+      expect(result.success).toBe(false)
+      expect(result.error?.issues[0].message).toBe(
+        'Session ID must be a valid UUID',
+      )
+    })
+
+    it('should accept missing sessionId', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept empty sessionId', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+        sessionId: '',
+      })
+      expect(result.success).toBe(true)
+    })
+  })
+})

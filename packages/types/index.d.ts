@@ -61,6 +61,7 @@ export type TDataOutMetadatumType =
   | 'tile_row_id'
   | 'table'
   | 'approval'
+  | 'ai_response'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -183,6 +184,7 @@ export interface IStepConfig {
 
 export interface IStepTemplateConfig {
   appEventKey?: string
+  customTemplate?: string
 }
 
 export interface IStep {
@@ -218,6 +220,10 @@ export interface IFlowConfig {
   templateConfig?: IFlowTemplateConfig
   showSurvey?: boolean
   attachments?: IFlowAttachmentsConfig[]
+  // AI Builder config
+  aiBuilderConfig?: {
+    traceId: string // trace id on Rome (Langfuse)
+  }
 }
 
 export type NotificationRecipients = 'editor' | 'viewer'
@@ -454,9 +460,36 @@ export interface IFieldMultiRow extends IBaseField {
   subFields: IField[]
 }
 
+export type TRteMenuOption =
+  | 'Bold'
+  | 'Italic'
+  | 'Underline'
+  | 'LinkSet'
+  | 'LinkRemove'
+  | 'Heading1'
+  | 'Heading2'
+  | 'Heading3'
+  | 'Heading4'
+  | 'ListBullet'
+  | 'ListOrdered'
+  | 'ImageAdd'
+  | 'TableAdd'
+  | 'ColumnAdd'
+  | 'ColumnRemove'
+  | 'RowAdd'
+  | 'RowRemove'
+  | 'FormatClear'
+  | 'Undo'
+  | 'Redo'
+  | 'Divider'
+
 export interface IFieldRichText extends IBaseField {
   type: 'rich-text'
   value?: string
+
+  // Specifies the order and what menu options to show in the RTE
+  // 'Divider' is specified manually to determine when a divider should be shown
+  customRteMenuOptions?: TRteMenuOption[]
 }
 
 export interface IFieldDragDrop extends IBaseField {
@@ -480,6 +513,7 @@ export type IFieldBooleanRadioOptions = [
 
 export interface IFieldBooleanRadioOption {
   label: string
+  description?: string
   value: boolean
 }
 
@@ -626,7 +660,7 @@ export interface IApp {
   setupMessage?: SetupMessage
 }
 
-export type AppCategory = 'data' | 'communication' | 'logic' | 'others'
+export type AppCategory = 'data' | 'communication' | 'logic' | 'others' | 'ai'
 
 export type TBeforeRequest = (
   $: IGlobalVariable,

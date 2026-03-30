@@ -61,7 +61,7 @@ const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
         )
       }
     }
-  } catch (e) {
+  } catch {
     throw new Error('Failed to retry partial step')
   }
 

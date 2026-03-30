@@ -54,8 +54,11 @@ const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
   // COLLABORATORS:
   // check that the current owner has the rights to make the new owner
   // an editor of the Tile (if any)
+  // Filter out steps that do not have a tile selected as this will break
   const tilesSteps =
-    flow?.[0].steps?.filter((step) => step.appKey === 'tiles') ?? []
+    flow?.[0].steps?.filter(
+      (step) => step.appKey === 'tiles' && step.parameters?.tableId,
+    ) ?? []
 
   // check that the current owner has the rights to make the new owner
   // an editor of all the Tiles in the Pipe

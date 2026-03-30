@@ -1,6 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import { ReactElement, useEffect } from 'react'
+import { ReactElement, useEffect, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { Button, Pagination } from '@opengovsg/design-system-react'
@@ -17,6 +17,10 @@ import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 import CreateFlowModal from './components/CreateFlowModal'
 import EmptyFlows from './components/EmptyFlows'
+import {
+  CreateFlowContextProvider,
+  FLOW_CREATE_MODE,
+} from './contexts/CreateFlowContext'
 
 const FLOWS_PER_PAGE = 10
 const FLOWS_TITLE = 'Pipes'
@@ -33,12 +37,7 @@ const getLimitAndOffset = (page: number) => ({
   offset: (page - 1) * FLOWS_PER_PAGE,
 })
 
-function FlowsList({
-  isLoading,
-  isSearching,
-  flows,
-  onCreateModalOpen,
-}: FlowsInternalProps) {
+function FlowsList({ isLoading, isSearching, flows }: FlowsInternalProps) {
   const hasFlows = flows.length > 0
   const hasNoUserFlows = !hasFlows && !isSearching
   const isEmptySearchResults = !hasFlows && isSearching
@@ -52,7 +51,7 @@ function FlowsList({
   }
 
   if (hasNoUserFlows) {
-    return <EmptyFlows onCreate={onCreateModalOpen} />
+    return <EmptyFlows />
   }
 
   if (isEmptySearchResults) {
@@ -75,6 +74,7 @@ function FlowsList({
 export default function Flows(): ReactElement {
   const { input, page, setSearchParams, isSearching } = usePaginationAndFilter()
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const [createMode, setCreateMode] = useState<FLOW_CREATE_MODE | null>(null)
 
   const { data, loading } = useQuery(GET_FLOWS, {
     variables: {
@@ -99,44 +99,56 @@ export default function Flows(): ReactElement {
   }, [lastPage, page, setSearchParams])
 
   return (
-    <Container py={9}>
-      {!hasNoUserFlows && (
-        <PageTitle
-          title={FLOWS_TITLE}
-          searchComponent={
-            <DebouncedSearchInput
-              searchValue={input}
-              onChange={(input) => setSearchParams({ input })}
-            />
-          }
-          createComponent={
-            <Button data-test="create-flow-button" onClick={onOpen}>
-              Create Pipe
-            </Button>
-          }
-        />
-      )}
-
-      <ApproveTransfersInfobox />
-
-      <FlowsList
-        flows={flows}
-        isLoading={loading}
-        isSearching={isSearching}
-        onCreateModalOpen={onOpen}
-      />
-
-      {hasPagination && (
-        <Flex justifyContent="center" mt={6}>
-          <Pagination
-            currentPage={pageInfo?.currentPage}
-            onPageChange={(page) => setSearchParams({ page })}
-            pageSize={FLOWS_PER_PAGE}
-            totalCount={totalCount}
+    <CreateFlowContextProvider
+      createMode={createMode}
+      setCreateMode={setCreateMode}
+    >
+      <Container py={9}>
+        {!hasNoUserFlows && (
+          <PageTitle
+            title={FLOWS_TITLE}
+            searchComponent={
+              <DebouncedSearchInput
+                searchValue={input}
+                onChange={(input) => setSearchParams({ input })}
+              />
+            }
+            createComponent={
+              <Button data-test="create-flow-button" onClick={onOpen}>
+                Create Pipe
+              </Button>
+            }
           />
-        </Flex>
-      )}
-      {isOpen && <CreateFlowModal onClose={onClose} />}
-    </Container>
+        )}
+
+        <ApproveTransfersInfobox />
+
+        <FlowsList
+          flows={flows}
+          isLoading={loading}
+          isSearching={isSearching}
+          onCreateModalOpen={onOpen}
+        />
+
+        {hasPagination && (
+          <Flex justifyContent="center" mt={6}>
+            <Pagination
+              currentPage={pageInfo?.currentPage}
+              onPageChange={(page) => setSearchParams({ page })}
+              pageSize={FLOWS_PER_PAGE}
+              totalCount={totalCount}
+            />
+          </Flex>
+        )}
+        {isOpen && (
+          <CreateFlowModal
+            onClose={() => {
+              onClose()
+              setCreateMode(null)
+            }}
+          />
+        )}
+      </Container>
+    </CreateFlowContextProvider>
   )
 }

@@ -22,7 +22,7 @@ import { useConnectionVerification } from '../hooks/useConnectionRegistration'
 
 import ConnectionHeader from './ConnectionHeader'
 
-function ImageBox({
+export function ImageBox({
   imageUrl,
   boxSize,
 }: {

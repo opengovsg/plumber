@@ -1,4 +1,9 @@
-import type { MutationResolvers } from './__generated__/types.generated'
+import type {
+  AdminMutation,
+  MutationResolvers,
+} from './__generated__/types.generated'
+import aiMutationResolvers from './mutations/ai'
+import createFlowWithSteps from './mutations/ai/create-flow-with-steps'
 import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import bulkRetryIterations from './mutations/bulk-retry-iterations'
 import createConnection from './mutations/create-connection'
@@ -36,7 +41,6 @@ import updateStepPositions from './mutations/update-step-positions'
 import upsertFlowCollaborator from './mutations/upsert-flow-collaborator'
 import verifyConnection from './mutations/verify-connection'
 import verifyOtp from './mutations/verify-otp'
-
 /**
  * Want to create a new mutation or modify an existing mutation?
  * 1. Add/Change your mutation in graphql.schema.
@@ -67,6 +71,7 @@ export default {
   createFlow,
   createTemplatedFlow,
   updateFlow,
+  createFlowWithSteps,
   updateFlowStatus,
   updateFlowConfig,
   upsertFlowCollaborator,
@@ -92,9 +97,10 @@ export default {
   deleteUploadedFile,
   generatePresignedPost,
   ...tilesMutationResolvers,
+  ...aiMutationResolvers,
 
   // This is a special stub that enables us to group all our admin-related
   // mutations into a special AdminMutation object; each "mutation" is handled by field
   // resolvers defined in @/graphql/admin/mutations.
-  admin: () => ({}),
+  admin: () => ({} as AdminMutation),
 } satisfies MutationResolvers

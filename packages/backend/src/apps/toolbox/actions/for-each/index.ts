@@ -25,7 +25,6 @@ const action: IRawAction = {
   key: 'forEach',
   description: 'Repeat actions for each item',
   groupsLaterSteps: true,
-  isNew: true,
   linkToGuide:
     'https://guide.plumber.gov.sg/user-guides/actions/for-each-item-coming-soon',
   arguments: [

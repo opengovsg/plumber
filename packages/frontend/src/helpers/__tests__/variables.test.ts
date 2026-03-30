@@ -306,6 +306,77 @@ describe('variables', () => {
       })
     })
 
+    describe('stepIdToOrder', () => {
+      it('uses stepIdToOrder for step name when provided', () => {
+        executionSteps.push({
+          dataOut: {
+            numberProp: 456,
+          },
+          id: 'execution-step-id-2',
+          stepId: 'step2-id',
+          step: {
+            position: 2,
+            appKey: 'App2',
+            key: 'Action2',
+          },
+          appKey: 'App2',
+        } as unknown as IExecutionStep)
+
+        const stepIdToOrder = {
+          'step1-id': 3,
+          'step2-id': 5,
+        }
+        const result = extractVariables(executionSteps, stepIdToOrder)
+        expect(result[0].name).toBe('3. App1')
+        expect(result[1].name).toBe('5. App2')
+      })
+
+      it('falls back to index + 1 when stepIdToOrder is empty', () => {
+        executionSteps.push({
+          dataOut: {
+            numberProp: 456,
+          },
+          id: 'execution-step-id-2',
+          stepId: 'step2-id',
+          step: {
+            position: 2,
+            appKey: 'App2',
+            key: 'Action2',
+          },
+          appKey: 'App2',
+        } as unknown as IExecutionStep)
+
+        const result = extractVariables(executionSteps)
+        expect(result[0].name).toBe('1. App1')
+        expect(result[1].name).toBe('2. App2')
+      })
+
+      it('falls back to index + 1 for steps not in stepIdToOrder', () => {
+        executionSteps.push({
+          dataOut: {
+            numberProp: 456,
+          },
+          id: 'execution-step-id-2',
+          stepId: 'step2-id',
+          step: {
+            position: 2,
+            appKey: 'App2',
+            key: 'Action2',
+          },
+          appKey: 'App2',
+        } as unknown as IExecutionStep)
+
+        const stepIdToOrder = {
+          'step1-id': 7,
+          // step2-id not provided
+        }
+        const result = extractVariables(executionSteps, stepIdToOrder)
+        expect(result[0].name).toBe('7. App1')
+        // falls back to index + 1 (step2 is at index 1, so 2)
+        expect(result[1].name).toBe('2. App2')
+      })
+    })
+
     describe('process arrays in dataout', () => {
       it('data without formsg checkbox field will have the array flat-mapped', () => {
         executionSteps[0].dataOut = {
