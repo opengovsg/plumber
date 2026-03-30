@@ -10,10 +10,10 @@ const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
   if (typeof apiKey !== 'string') {
     logger.error({
       event: 'auth-header-apikey-error',
-      error: `[GatherSG] Unexpected API key type: ${typeof apiKey}`,
+      error: `[Ownself Gather] Unexpected API key type: ${typeof apiKey}`,
       flowId: $.flow.id,
     })
-    throw new Error('[GatherSG] Missing API key')
+    throw new Error('[Ownself Gather] Missing API key')
   }
 
   // request config has headers by default already

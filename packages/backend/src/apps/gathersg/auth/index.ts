@@ -30,7 +30,7 @@ const auth: IUserAddedConnectionAuth = {
   verifyWebhook: decryptResponse,
   isStillVerified,
   connectionModalLabel: {
-    chooseConnectionLabel: 'Connect to GatherSG',
+    chooseConnectionLabel: 'Connect to Ownself Gather',
   },
 }
 
