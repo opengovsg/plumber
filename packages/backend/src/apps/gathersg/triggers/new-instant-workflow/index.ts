@@ -13,7 +13,7 @@ const trigger: IRawTrigger = {
   type: 'webhook',
   noAuthRequired: true,
   description:
-    'Executes this Pipe when an instant workflow is triggered from GatherSG',
+    'Executes this Pipe when an instant workflow is triggered from Ownself Gather',
   webhookTriggerInstructions: {
     beforeUrlMsg: `# 1. Configure your instant workflow using this webhook URL.`,
     afterUrlMsg: `# 2. Trigger the instant workflow. Then, click check step.`,

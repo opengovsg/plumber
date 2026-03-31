@@ -13,7 +13,7 @@ export async function verifyApiKey($: IGlobalVariable): Promise<void> {
       )
     } else if (err.response?.status === 403) {
       throw new Error(
-        'Please check that you have the correct permissions to access the GatherSG API e.g. view, update or tag cases',
+        'Please check that you have the correct permissions to access the Ownself Gather API e.g. view, update or tag cases',
       )
     }
 
