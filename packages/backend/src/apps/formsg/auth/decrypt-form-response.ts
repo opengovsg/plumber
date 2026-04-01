@@ -242,6 +242,7 @@ export async function decryptFormResponse(
       for (const key of Object.keys(submission.verified)) {
         let value = submission.verified[key]
 
+        // @deprecated: filterNrics not supported new pipes
         if (NRIC_VERIFIED_FIELDS.has(key)) {
           value = filterNric($, value)
           if (!value) {
@@ -250,7 +251,14 @@ export async function decryptFormResponse(
         }
 
         // for backwards compatibility with old forms that were created with sgID authType
-        if (key === 'uinFin' || key === 'sgidUinFin') {
+        if (
+          key === 'uinFin' ||
+          key === 'sgidUinFin' ||
+          // v3 mrf forms send nric as "uinFin (Step 1)"
+          // brackets break the variable regex and is not the same as mock data
+          // we need to map it back to uinFin
+          key.startsWith('uinFin')
+        ) {
           verifiedSubmitterInfo['uinFin'] = value
           verifiedSubmitterInfo['sgidUinFin'] = value
         } else {
