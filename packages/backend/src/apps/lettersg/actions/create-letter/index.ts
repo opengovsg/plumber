@@ -143,28 +143,19 @@ const action: IRawAction = {
 
     const { data: templateData } = await getTemplateData($)
 
-    try {
-      // Note: s3 won't allow for template names with .., we only need to replace / with _ because of how we denote a S3 ID
-      const templateName = templateData.name.replaceAll('/', '_')
-      const attachmentS3Key = await downloadAndStoreAttachmentInS3(
-        $,
-        response.publicId,
-        templateName,
-      )
-      $.setActionItem({
-        raw: {
-          ...response,
-          attachment: attachmentS3Key,
-        },
-      })
-    } catch (error) {
-      throw new StepError(
-        `An error occurred: '${error.message}'`,
-        'Please check that you have configured your step correctly',
-        $.step.position,
-        $.app.name,
-      )
-    }
+    // Note: s3 won't allow for template names with .., we only need to replace / with _ because of how we denote a S3 ID
+    const templateName = templateData.name.replaceAll('/', '_')
+    const attachmentS3Key = await downloadAndStoreAttachmentInS3(
+      $,
+      response.publicId,
+      templateName,
+    )
+    $.setActionItem({
+      raw: {
+        ...response,
+        attachment: attachmentS3Key,
+      },
+    })
   },
 }
 
