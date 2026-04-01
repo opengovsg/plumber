@@ -95,9 +95,13 @@ export function useStepMetadata(
     [readOnly, selectedActionOrTrigger, step?.key],
   )
 
+  // isMrfStep = includes both trigger and mrf action steps
   const isMrfStep = useMemo(() => {
+    if (isTrigger && !!step?.parameters?.mrf) {
+      return true
+    }
     return mrfSteps.some((mrfStep) => mrfStep.id === step?.id)
-  }, [mrfSteps, step?.id])
+  }, [isTrigger, mrfSteps, step?.id, step?.parameters?.mrf])
 
   const isApprovalStep = useMemo(() => {
     if (!step?.id) {
