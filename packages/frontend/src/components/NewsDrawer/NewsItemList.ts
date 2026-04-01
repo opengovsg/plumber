@@ -12,6 +12,41 @@ const IF_THEN_EXTERNAL_LINK =
 
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-04-02',
+    tag: NEW_FEATURE_TAG,
+    title: '🤖 Introducing AI Builder: Go from Idea to Pipe, instantly',
+    details: dedent`
+      Not sure where to start? Describe your workflow in plain English and AI Builder generates a pipe structure for you, a ready-to-configure starting point so you're never staring at a blank slate.
+
+      Try it out and [share your feedback](https://go.gov.sg/plumber-ai-builder-feedback)! Your input will directly shape how we improve it.
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-new-build-with-ai.png',
+    },
+  },
+  {
+    date: '2026-04-02',
+    tag: NEW_FEATURE_TAG,
+    title: 'Automate your approval workflows with MRF!',
+    details: dedent`
+      You can now connect a FormSG Multi-Respondent Form (MRF) to your pipe and automate what happens next - the moment a response is approved, rejected, or submitted. Read how to set it up here [here](https://guide.plumber.gov.sg/user-guides/start-the-workflow/formsg-multi-respondent-form-integration).
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-new-mrf.png',
+    },
+  },
+  {
+    date: '2026-04-02',
+    tag: NEW_FEATURE_TAG,
+    title: 'Introducing the Ownself Gather integration',
+    details: dedent`
+      Plumber now connects with Ownself Gather. Trigger a pipe when a case is created or updated, retrieve case details, create new cases and more!
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-new-ownself-gather.png',
+    },
+  },
+  {
     date: '2026-03-12',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'Tiles - Password protection 🔒',
