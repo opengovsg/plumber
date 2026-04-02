@@ -9,7 +9,6 @@ import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
 
 const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
-
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
     date: '2026-04-02',
@@ -23,28 +22,31 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     multimedia: {
       url: 'https://file.go.gov.sg/plumber-new-build-with-ai.png',
     },
+    ldFlagKey: 'ai-builder-whats-new-flag',
   },
   {
     date: '2026-04-02',
     tag: NEW_FEATURE_TAG,
     title: 'Automate your approval workflows with MRF!',
     details: dedent`
-      You can now connect a FormSG Multi-Respondent Form (MRF) to your pipe and automate what happens next - the moment a response is approved, rejected, or submitted. Read how to set it up here [here](https://guide.plumber.gov.sg/user-guides/start-the-workflow/formsg-multi-respondent-form-integration).
+      You can now connect a FormSG Multi-Respondent Form (MRF) to your pipe and automate what happens next. Set up different actions for when a response is approved, rejected, or submitted. Read how to set it up [here](https://guide.plumber.gov.sg/user-guides/start-the-workflow/formsg-multi-respondent-form-integration).
     `,
     multimedia: {
       url: 'https://file.go.gov.sg/plumber-new-mrf.png',
     },
+    ldFlagKey: 'allow-mrf-form',
   },
   {
     date: '2026-04-02',
     tag: NEW_FEATURE_TAG,
     title: 'Introducing the Ownself Gather integration',
     details: dedent`
-      Plumber now connects with Ownself Gather. Trigger a pipe when a case is created or updated, retrieve case details, create new cases and more!
+      Plumber now connects with Ownself Gather. Retrieve case details, create new cases, trigger a pipe when a case is created or updated and more!
     `,
     multimedia: {
       url: 'https://file.go.gov.sg/plumber-new-ownself-gather.png',
     },
+    ldFlagKey: 'app_gathersg',
   },
   {
     date: '2026-03-12',
