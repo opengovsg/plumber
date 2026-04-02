@@ -3,6 +3,8 @@ import type { IGlobalVariable } from '@plumber/types'
 import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 import createHttpClient from '@/helpers/http-client'
 
 import app from '../..'
@@ -152,8 +154,22 @@ describe('create letter from template', () => {
 
   it('should throw generic step error for unknown error', async () => {
     mockAdapter.onPost('/v1/letters').reply(400, { message: 'Unknown error' })
-    await expect(createLetterAction.run($)).rejects.toThrowError(
-      'Error creating letter',
+    await expect(createLetterAction.run($)).rejects.toBeInstanceOf(StepError)
+  })
+
+  it('should propagate RetriableError from downloadAndStoreAttachmentInS3', async () => {
+    const retriableError = new RetriableError({
+      error: 'Retrying ETIMEDOUT from LettersSG',
+      delayType: 'step',
+      delayInMs: 'default',
+    })
+    mocks.downloadAndStoreAttachmentInS3.mockRejectedValueOnce(retriableError)
+
+    $.auth.data.apiKey = 'test_v1_123456'
+    $.step.parameters.shouldGeneratePdf = true
+
+    await expect(createLetterAction.run($)).rejects.toBeInstanceOf(
+      RetriableError,
     )
   })
 })
