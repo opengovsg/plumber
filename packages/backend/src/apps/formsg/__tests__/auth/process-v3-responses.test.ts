@@ -1,3 +1,6 @@
+// you need to import this to make the toPlumberFormat method available
+import '@/types/luxon-extensions'
+
 import type { IGlobalVariable } from '@plumber/types'
 
 import { describe, expect, it, vi } from 'vitest'
@@ -346,6 +349,76 @@ describe('processResponsesV3', () => {
           answer: 'test',
         },
       ])
+    })
+  })
+
+  describe('date fields', () => {
+    it('converts DD/MM/YYYY to DD MMM YYYY format', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        dt1: { fieldType: 'date', answer: '29/03/2026' },
+      })
+
+      expect(result[0]).toMatchObject({
+        _id: 'dt1',
+        fieldType: 'date',
+        question: 'Date of birth',
+        answer: '29 Mar 2026',
+      })
+    })
+
+    it('should pad single digit dates with 0 in front', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        dt1: { fieldType: 'date', answer: '01/03/2026' },
+      })
+
+      expect(result[0]).toMatchObject({
+        _id: 'dt1',
+        fieldType: 'date',
+        question: 'Date of birth',
+        answer: '01 Mar 2026',
+      })
+    })
+
+    it('should use Sep not Sept for September', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        dt1: { fieldType: 'date', answer: '01/09/2026' },
+      })
+
+      expect(result[0]).toMatchObject({
+        _id: 'dt1',
+        fieldType: 'date',
+        question: 'Date of birth',
+        answer: '01 Sep 2026',
+      })
+    })
+
+    it('uses Question N fallback when field not in schema', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(makeFormSchema([]))
+
+      const result = await processResponsesV3($, 'formId', {
+        dt1: { fieldType: 'date', answer: '01/01/2025' },
+      })
+
+      expect(result[0].question).toBe('Question 1')
+      expect(result[0].answer).toBe('01 Jan 2025')
     })
   })
 

@@ -42,11 +42,10 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
 
   // catch-all
   throw new StepError(
-    'Error creating letter',
-    error.message,
+    `An error occurred: '${error.message}'`,
+    'Please check that you have configured your step correctly',
     $.step.position,
     $.app.name,
-    error,
   )
 }
 

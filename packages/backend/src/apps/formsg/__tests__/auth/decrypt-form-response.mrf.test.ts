@@ -324,73 +324,104 @@ describe('decrypt form response - MRF specific', () => {
     })
   })
 
-  describe('attachment storage ID suffix for MRF', () => {
-    it('should suffix storageId with workflowStep for MRF attachments', async () => {
-      $.flow.hasFileProcessingActions = true
-      const workflowContent = makeWorkflowContent(2)
-      $.request.body.data.workflowContent = workflowContent
-      $.request.body.data.attachmentDownloadUrls = {
-        attachmentField1: 'https://example.com/download/1',
-      }
-      $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
-
+  describe('verifiedSubmitterInfo for MRF submissions', () => {
+    it('should map "uinFin (Step 1)" to uinFin and sgidUinFin', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(1)
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
-        responses: {
-          attachmentField1: {
-            fieldType: 'attachment',
-            answer: { answer: 'myfile.pdf' },
-          },
-        },
-        verified: undefined,
-      })
-      mocks.decryptFormAttachmentsV3.mockResolvedValueOnce({
-        attachmentField1: {
-          filename: 'myfile.pdf',
-          content: Buffer.from('file content'),
-        },
+        responses: {},
+        verified: { 'uinFin (Step 1)': 'S1234567A' },
       })
 
       await decryptFormResponse($)
 
-      expect(mocks.storeAttachmentInS3).toHaveBeenCalledWith(
-        $,
-        'submissionId-2',
-        expect.anything(),
-        expect.anything(),
-      )
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        uinFin: 'S1234567A',
+        sgidUinFin: 'S1234567A',
+      })
     })
 
-    it('should not suffix storageId for non-MRF attachments', async () => {
-      $.flow.hasFileProcessingActions = true
-      $.request.body.data.attachmentDownloadUrls = {
-        attachmentField1: 'https://example.com/download/1',
-      }
-      $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
-
+    it('should still map plain uinFin key correctly', async () => {
+      $.request.body.data.workflowContent = makeWorkflowContent(0)
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
-        responses: {
-          attachmentField1: {
-            fieldType: 'attachment',
-            answer: { answer: 'myfile.pdf' },
-          },
-        },
-        verified: undefined,
-      })
-      mocks.decryptFormAttachmentsV3.mockResolvedValueOnce({
-        attachmentField1: {
-          filename: 'myfile.pdf',
-          content: Buffer.from('file content'),
-        },
+        responses: {},
+        verified: { uinFin: 'S1234567A' },
       })
 
       await decryptFormResponse($)
 
-      expect(mocks.storeAttachmentInS3).toHaveBeenCalledWith(
-        $,
-        'submissionId',
-        expect.anything(),
-        expect.anything(),
-      )
+      expect($.request.body.verifiedSubmitterInfo).toEqual({
+        uinFin: 'S1234567A',
+        sgidUinFin: 'S1234567A',
+      })
+    })
+    describe('attachment storage ID suffix for MRF', () => {
+      it('should suffix storageId with workflowStep for MRF attachments', async () => {
+        $.flow.hasFileProcessingActions = true
+        const workflowContent = makeWorkflowContent(2)
+        $.request.body.data.workflowContent = workflowContent
+        $.request.body.data.attachmentDownloadUrls = {
+          attachmentField1: 'https://example.com/download/1',
+        }
+        $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
+
+        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+          responses: {
+            attachmentField1: {
+              fieldType: 'attachment',
+              answer: { answer: 'myfile.pdf' },
+            },
+          },
+          verified: undefined,
+        })
+        mocks.decryptFormAttachmentsV3.mockResolvedValueOnce({
+          attachmentField1: {
+            filename: 'myfile.pdf',
+            content: Buffer.from('file content'),
+          },
+        })
+
+        await decryptFormResponse($)
+
+        expect(mocks.storeAttachmentInS3).toHaveBeenCalledWith(
+          $,
+          'submissionId-2',
+          expect.anything(),
+          expect.anything(),
+        )
+      })
+
+      it('should not suffix storageId for non-MRF attachments', async () => {
+        $.flow.hasFileProcessingActions = true
+        $.request.body.data.attachmentDownloadUrls = {
+          attachmentField1: 'https://example.com/download/1',
+        }
+        $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
+
+        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+          responses: {
+            attachmentField1: {
+              fieldType: 'attachment',
+              answer: { answer: 'myfile.pdf' },
+            },
+          },
+          verified: undefined,
+        })
+        mocks.decryptFormAttachmentsV3.mockResolvedValueOnce({
+          attachmentField1: {
+            filename: 'myfile.pdf',
+            content: Buffer.from('file content'),
+          },
+        })
+
+        await decryptFormResponse($)
+
+        expect(mocks.storeAttachmentInS3).toHaveBeenCalledWith(
+          $,
+          'submissionId',
+          expect.anything(),
+          expect.anything(),
+        )
+      })
     })
   })
 })

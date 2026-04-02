@@ -3,7 +3,7 @@ import type { IFlow } from '@plumber/types'
 import { ReactElement, useEffect, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
-import { Button, Pagination } from '@opengovsg/design-system-react'
+import { Pagination } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
@@ -16,6 +16,7 @@ import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
 import CreateFlowModal from './components/CreateFlowModal'
+import CreatePipeButton from './components/CreatePipeButton'
 import EmptyFlows from './components/EmptyFlows'
 import {
   CreateFlowContextProvider,
@@ -113,11 +114,7 @@ export default function Flows(): ReactElement {
                 onChange={(input) => setSearchParams({ input })}
               />
             }
-            createComponent={
-              <Button data-test="create-flow-button" onClick={onOpen}>
-                Create Pipe
-              </Button>
-            }
+            createComponent={<CreatePipeButton onOpen={onOpen} />}
           />
         )}
 

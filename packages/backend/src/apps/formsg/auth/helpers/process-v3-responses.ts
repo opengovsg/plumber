@@ -1,6 +1,7 @@
 import type { IGlobalVariable } from '@plumber/types'
 
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
+import { DateTime } from 'luxon'
 
 import logger from '@/helpers/logger'
 
@@ -120,6 +121,21 @@ export async function processResponsesV3(
         question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
         // we temporarily store the filename in answer, it will subsequently be replaced with the S3 ID from storeAttachmentInS3
         answer: value.answer.answer,
+      })
+      continue
+    }
+    if (value.fieldType === 'date') {
+      // Currently, v3 responses return the date as DD/MM/YYYY (e.g. 29/03/2026)
+      // We need to convert it to the standard FormSG date format (e.g. 29 Mar 2026)
+      const originalDateString = value.answer
+      const originalDate = DateTime.fromFormat(originalDateString, 'dd/MM/yyyy')
+      const convertedDateString = originalDate.toPlumberFormat('dd MMM yyyy')
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        answer: convertedDateString,
       })
       continue
     }

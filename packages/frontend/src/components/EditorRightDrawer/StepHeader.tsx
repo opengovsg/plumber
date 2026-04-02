@@ -32,7 +32,8 @@ export default function StepHeader(props: StepHeaderProps) {
     setCurrentStepId,
     setShouldWarnOnLeave,
   } = useContext(EditorContext)
-  const { defaultStepName, displayPosition, stepName } = useStepMetadata(step)
+  const { defaultStepName, displayPosition, stepName, isMrfStep } =
+    useStepMetadata(step)
 
   const handleClose = () => {
     if (shouldWarnOnLeave) {
@@ -72,7 +73,8 @@ export default function StepHeader(props: StepHeaderProps) {
           key={step.id}
           value={stepName}
           onSave={onSave}
-          readOnly={isReadOnlyEditor}
+          // We don't allow editing the step name for MRF steps
+          readOnly={isReadOnlyEditor || isMrfStep}
           placeholder={defaultStepName}
           allowEmpty={true}
         />
