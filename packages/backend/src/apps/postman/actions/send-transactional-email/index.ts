@@ -21,6 +21,8 @@ import { sendBlacklistEmail } from '../../common/send-blacklist-email'
 import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachments-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
 
+import getDataOutMetadata from './get-data-out-metadata'
+
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
@@ -32,6 +34,8 @@ const action: IRawAction = {
       (step.parameters.attachments as IJSONArray).length > 0
     )
   },
+
+  getDataOutMetadata,
 
   async run($) {
     const {
