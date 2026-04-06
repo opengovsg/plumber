@@ -62,13 +62,15 @@ export async function getBranchStepIdToSkipTo(
         return false
       }
 
-      const nextBranchDepth = parseInt(step.parameters?.depth as string)
+      let nextBranchDepth = parseInt(step.parameters?.depth as string)
       if (isNaN(nextBranchDepth)) {
-        throw new Error(
+        logger.warn(
           `Branch depth for future branch step ${$.step.id} is not defined.`,
         )
+        // This an unreproducible bug where the depth is not defined for the step. since it's not possible to nest if-then at
+        // this point of time, we default the depth to 0.
+        nextBranchDepth = 0
       }
-
       return nextBranchDepth <= currDepth
     })
 
