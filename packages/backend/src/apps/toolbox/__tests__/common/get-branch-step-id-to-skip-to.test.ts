@@ -83,7 +83,7 @@ describe('getBranchStepIdToSkipTo', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
-  it('throws an error if the current branch step has an invalid depth', async () => {
+  it('defaults currDepth to 0 and returns null if the current branch step has an invalid depth', async () => {
     mocks.stepQueryResult.mockResolvedValue([
       {
         id: 'step1',
@@ -128,11 +128,13 @@ describe('getBranchStepIdToSkipTo', () => {
       },
     }
 
-    await expect(getBranchStepIdToSkipTo($ as any)).rejects.toThrowError()
+    // currDepth defaults to 0; step4 has depth 2 which is > 0, so no next branch matches
+    const result = await getBranchStepIdToSkipTo($ as any)
+    expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
-  it('throws an error if the next branch step has an invalid depth', async () => {
+  it('defaults to 0 if the next branch step has an invalid depth', async () => {
     mocks.stepQueryResult.mockResolvedValueOnce([
       {
         id: 'step1',
@@ -176,7 +178,8 @@ describe('getBranchStepIdToSkipTo', () => {
         position: 2,
       },
     }
-    await expect(getBranchStepIdToSkipTo($ as any)).rejects.toThrowError()
+    const result = await getBranchStepIdToSkipTo($ as any)
+    expect(result).toBe('step4')
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
