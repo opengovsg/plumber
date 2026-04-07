@@ -24,6 +24,7 @@ export type MultiRowProps = {
   showDivider?: boolean
   addRowButtonText?: string
   type?: string
+  maxRows?: number
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -36,6 +37,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     addRowButtonText,
     showDivider,
     type,
+    maxRows,
     ...forwardedInputCreatorProps
   } = props
 
@@ -61,6 +63,9 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     name,
     rules: { required },
   })
+
+  // Show add button if maxRows is not set, or if current row count is below the limit
+  const canAddRow = maxRows == null || rows.length < Number(maxRows)
 
   const handleAddRow = useCallback(() => {
     // NOTE: only need to use this flag to focus on the rte
@@ -171,15 +176,17 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               )
             })}
 
-            <Button
-              variant="outline"
-              leftIcon={<BiPlus />}
-              onClick={handleAddRow}
-              isDisabled={isEditorReadOnly}
-              maxW="fit-content"
-            >
-              {addRowButtonText ?? 'And'}
-            </Button>
+            {canAddRow && (
+              <Button
+                variant="outline"
+                leftIcon={<BiPlus />}
+                onClick={handleAddRow}
+                isDisabled={isEditorReadOnly}
+                maxW="fit-content"
+              >
+                {addRowButtonText ?? 'And'}
+              </Button>
+            )}
           </Flex>
         )
       }}
