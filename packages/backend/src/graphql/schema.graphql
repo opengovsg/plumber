@@ -282,6 +282,7 @@ type ActionSubstepArgument {
 
   # Only for multirow
   subFields: [ActionSubstepArgument]
+  maxRows: String
 
   # Only for rich text
   customRteMenuOptions: [RteMenuOption]
