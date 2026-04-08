@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import patchParameters from '../../common/patch-parameters-temp'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
@@ -120,6 +121,9 @@ const action: IRawAction = {
     // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
     if ($.execution.testRun) {
       await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
+
+      // TODO (kevinkim-ogp): remove this once we have moved to the
+      await patchParameters($)
     }
 
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)

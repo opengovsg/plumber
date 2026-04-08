@@ -7,6 +7,7 @@ import StepError from '@/errors/step'
 
 import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
+import patchParameters from '../../common/patch-parameters-temp'
 import { convertRowToHexKeyedObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
 import WorkbookSession from '../../common/workbook-session'
 import { MAX_ROWS } from '../get-table-row/implementation'
@@ -112,6 +113,11 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if ($.execution.testRun) {
+      // TODO (kevinkim-ogp): remove this once we have moved to the new multi lookup
+      await patchParameters($)
+    }
+
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
     if (parametersParseResult.success === false) {
       throw new StepError(
