@@ -64,9 +64,6 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     rules: { required },
   })
 
-  // Show add button if maxRows is not set, or if current row count is below the limit
-  const canAddRow = maxRows == null || rows.length < Number(maxRows)
-
   const handleAddRow = useCallback(() => {
     // NOTE: only need to use this flag to focus on the rte
     // if the first column is a variable-enabled string field
@@ -91,6 +88,8 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         const rowsToRender =
           !rows.length && required ? [{ ...newRowDefaultValue }] : rows
         const canRemoveRow = !required || rowsToRender.length > 1
+        const canAddRow =
+          maxRows == null || rowsToRender.length < Number(maxRows)
 
         return (
           <Flex flexDir="column">
