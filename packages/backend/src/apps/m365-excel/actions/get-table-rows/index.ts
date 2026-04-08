@@ -5,7 +5,10 @@ import z from 'zod'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 
-import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
+import {
+  GET_TABLE_ROWS_LIMIT,
+  LOOKUP_CONDITIONS_SUBFIELDS,
+} from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 import patchParameters from '../../common/patch-parameters-temp'
 import { convertRowToHexKeyedObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
@@ -107,6 +110,19 @@ const action: IRawAction = {
       type: 'string' as const,
       required: false,
       variables: true,
+    },
+    {
+      key: 'filters',
+      label: 'Lookup conditions',
+      description:
+        'Lookup values are case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
+      type: 'multirow-multicol' as const,
+      required: true,
+      subFields: LOOKUP_CONDITIONS_SUBFIELDS,
+      maxRows: 1, // Phase 1: Restrict to single filter
+      hiddenIf: {
+        op: 'always_true',
+      },
     },
   ],
 

@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
 import patchParameters from '../../common/patch-parameters-temp'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -111,6 +112,19 @@ const action: IRawAction = {
       hiddenIf: {
         fieldKey: 'tableId',
         op: 'is_empty',
+      },
+    },
+    {
+      label: 'Lookup conditions',
+      description:
+        'If multiple rows meet the conditions, the topmost entry will be returned. Lookup values are case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
+      key: 'filters',
+      type: 'multirow-multicol' as const,
+      required: true,
+      subFields: LOOKUP_CONDITIONS_SUBFIELDS,
+      maxRows: 1,
+      hiddenIf: {
+        op: 'always_true',
       },
     },
   ],
