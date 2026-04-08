@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'
+import Flow from '@/models/flow'
+import Step from '@/models/step'
 import Context from '@/types/express/context'
 
 import m365Excel from '../..'
@@ -68,6 +70,9 @@ describe('getTableRowsAction', () => {
       setActionItem: vi.fn(),
       http: {
         request: vi.fn(),
+      },
+      execution: {
+        testRun: false,
       },
     } as unknown as IGlobalVariable
 
@@ -396,5 +401,63 @@ describe('getTableRowsAction', () => {
     expect(rowData[499].data[getHexEncodedColumnName('Column2')]).toBe(
       'data500',
     )
+  })
+
+  /**
+   * TODO (kevinkim-ogp): remove this entire describe block when
+   * patchParameters is removed from get-table-rows.
+   * These tests only guard the temporary DB patch during test runs.
+   */
+  describe('patchParameters (temporary patch-parameters-temp)', () => {
+    it('does not call Step.query when execution.testRun is false', async () => {
+      const stepQuerySpy = vi.spyOn(Step, 'query')
+      await getTableRowsAction.run($)
+      expect(stepQuerySpy).not.toHaveBeenCalled()
+    })
+
+    it('when execution.testRun is true, patches the step row with filters from lookup fields', async () => {
+      const context = await generateMockContext()
+      const flow = await Flow.query().insert({
+        userId: context.currentUser.id,
+        name: 'get-table-rows patchParameters test flow',
+      })
+
+      const parameters = {
+        fileId: 'test-file-id',
+        tableId: '{test-table-id}',
+        lookupColumn: 'Column1',
+        lookupValue: 'patch-test-lookup',
+      }
+
+      const dbStep = await Step.query().insert({
+        flowId: flow.id,
+        key: getTableRowsAction.key,
+        appKey: 'm365-excel',
+        type: 'action',
+        position: 2,
+        status: 'completed',
+        parameters: { ...parameters },
+      })
+
+      $.flow.id = flow.id
+      $.flow.userId = context.currentUser.id
+      $.step.id = dbStep.id
+      $.step.parameters = { ...parameters }
+      $.execution.testRun = true
+
+      await getTableRowsAction.run($)
+
+      const updated = await Step.query().findById(dbStep.id).throwIfNotFound()
+
+      expect(updated.parameters).toMatchObject({
+        ...parameters,
+        filters: [
+          {
+            lookupColumn: parameters.lookupColumn,
+            lookupValue: parameters.lookupValue,
+          },
+        ],
+      })
+    })
   })
 })
