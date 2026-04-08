@@ -1,4 +1,9 @@
-import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
+import {
+  IBaseTrigger,
+  IJSONObject,
+  IStep,
+  ITriggerInstructions,
+} from '@plumber/types'
 
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -21,6 +26,7 @@ import {
 } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
+import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
@@ -36,6 +42,7 @@ import {
   getInfoBoxDetails,
   isSameAppAndAppKey,
   matchParamsToDataIn,
+  omitHiddenParameterKeys,
 } from './utils'
 
 const defaultTriggerInstructions: ITriggerInstructions = {
@@ -134,12 +141,29 @@ export default function FlowStepTestController(
   // isLastTestExecutionCurrent is false if the form values are saved but not tested
   const isLastTestExecutionCurrent = useMemo(() => {
     const formValues = formContext.getValues()
+
+    /**
+     * TODO (kevinkim-ogp): remove this once the Excel multi lookup is done
+     * as we should not have fields that are always hidden.
+     *
+     * NOTE: we filter out hidden parameters from the form values
+     * so that the 'dataIn' comparison is not affected by hidden parameters
+     */
+    const setupActionSubstep = substeps.find((s) => s.key === 'setUpAction')
+    const hiddenParameters = setupActionSubstep?.arguments?.filter((a) =>
+      isFieldHidden(a.hiddenIf, formValues.parameters),
+    )
+    const hiddenParametersKeys = hiddenParameters?.map((h) => h.key)
+
     return matchParamsToDataIn(
       currentTestExecutionStep?.dataIn,
-      formValues.parameters,
+      omitHiddenParameterKeys(
+        formValues.parameters as IJSONObject,
+        hiddenParametersKeys,
+      ),
       varInfoMap,
     )
-  }, [currentTestExecutionStep, formContext, varInfoMap])
+  }, [currentTestExecutionStep?.dataIn, formContext, substeps, varInfoMap])
 
   const [infoBoxVariant, infoBoxText] = getInfoBoxDetails({
     isDirty,

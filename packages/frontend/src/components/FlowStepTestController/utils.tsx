@@ -351,3 +351,26 @@ export function getForEachDataMessage(
   const numberOfItems = getForEachIterationCount(testExecutionSteps, step.id)
   return `This for-each action will run on ${numberOfItems} items. The first item is shown below.`
 }
+
+/**
+ * * TODO (kevinkim-ogp): remove this once the Excel multi lookup is done
+ * as we should not have fields that are always hidden.
+ *
+ * Drops keys (e.g. hidden setUpAction fields) while keeping IJSONObject typing.
+ */
+export function omitHiddenParameterKeys(
+  parameters: IJSONObject,
+  hiddenKeys: string[] | undefined,
+): IJSONObject {
+  if (!hiddenKeys?.length) {
+    return { ...parameters }
+  }
+  const visible: IJSONObject = {}
+  for (const key of Object.keys(parameters)) {
+    if (hiddenKeys.includes(key)) {
+      continue
+    }
+    visible[key] = parameters[key]
+  }
+  return visible
+}
