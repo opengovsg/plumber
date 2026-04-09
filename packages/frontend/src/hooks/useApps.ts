@@ -1,12 +1,6 @@
 import type { IApp } from '@plumber/types'
 
-import { useEffect, useMemo, useState } from 'react'
-
-interface UseAppsOptions {
-  name?: string
-  onlyWithTriggers?: boolean
-  onlyWithActions?: boolean
-}
+import { useEffect, useState } from 'react'
 
 interface UseAppsResult {
   data: IApp[]
@@ -18,35 +12,14 @@ interface UseAppsResult {
 // This persists across component mounts and is shared across all hook instances
 const appsCache: {
   all: IApp[] | null
-  withTriggers: IApp[] | null
-  withActions: IApp[] | null
   fetchPromise: Promise<IApp[]> | null
 } = {
   all: null,
-  withTriggers: null,
-  withActions: null,
   fetchPromise: null,
 }
 
-async function fetchApps(options: UseAppsOptions = {}): Promise<IApp[]> {
-  const params = new URLSearchParams()
-
-  if (options.name) {
-    params.set('name', options.name)
-  }
-  if (options.onlyWithTriggers) {
-    params.set('onlyWithTriggers', 'true')
-  }
-  if (options.onlyWithActions) {
-    params.set('onlyWithActions', 'true')
-  }
-
-  const queryString = params.toString()
-  const url = `/api/apps${queryString ? `?${queryString}` : ''}`
-
-  const startTime = performance.now()
-
-  const response = await fetch(url, {
+async function fetchApps(): Promise<IApp[]> {
+  const response = await fetch('/api/apps', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -59,63 +32,21 @@ async function fetchApps(options: UseAppsOptions = {}): Promise<IApp[]> {
   }
 
   const result = await response.json()
-
-  const endTime = performance.now()
-  // TODO: Remove this log for performance monitoring before merging
-  // eslint-disable-next-line no-console
-  console.log(
-    `[useApps] Fetched ${result.data.length} apps in ${(
-      endTime - startTime
-    ).toFixed(0)}ms`,
-  )
-
   return result.data as IApp[]
 }
 
-/**
- * Hook to fetch apps data from the REST API with caching.
- *
- * This is a replacement for the GraphQL GET_APPS query that provides:
- * - In-memory caching (shared across all component instances)
- * - Deduplication of concurrent requests
- * - Similar API to Apollo's useQuery for easy migration
- *
- * @example
- * // Get all apps
- * const { data: apps, loading } = useApps()
- *
- * // Get only apps with triggers
- * const { data: triggerApps } = useApps({ onlyWithTriggers: true })
- *
- * // Get only apps with actions
- * const { data: actionApps } = useApps({ onlyWithActions: true })
- */
-export function useApps(options: UseAppsOptions = {}): UseAppsResult {
-  const { name, onlyWithTriggers, onlyWithActions } = options
-
-  const [allApps, setAllApps] = useState<IApp[] | null>(appsCache.all)
+export function useApps(): UseAppsResult {
+  const [data, setData] = useState<IApp[]>(appsCache.all ?? [])
   const [loading, setLoading] = useState(!appsCache.all)
   const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
-    // If we have cached data and no name filter, use cache
-    if (appsCache.all && !name) {
-      setAllApps(appsCache.all)
+    if (appsCache.all) {
+      setData(appsCache.all)
       setLoading(false)
       return
     }
 
-    // If we have a name filter, filter from cache if available
-    if (name && appsCache.all) {
-      const filtered = appsCache.all.filter((app) =>
-        app.key.toLowerCase().includes(name.toLowerCase()),
-      )
-      setAllApps(filtered)
-      setLoading(false)
-      return
-    }
-
-    // Fetch from API
     const doFetch = async () => {
       try {
         setLoading(true)
@@ -127,22 +58,10 @@ export function useApps(options: UseAppsOptions = {}): UseAppsResult {
 
         const apps = await appsCache.fetchPromise
 
-        // Cache the result
         appsCache.all = apps
-        appsCache.withTriggers = apps.filter((app) => app.triggers?.length)
-        appsCache.withActions = apps.filter((app) => app.actions?.length)
         appsCache.fetchPromise = null
 
-        // Apply name filter if needed
-        if (name) {
-          const filtered = apps.filter((app) =>
-            app.key.toLowerCase().includes(name.toLowerCase()),
-          )
-          setAllApps(filtered)
-        } else {
-          setAllApps(apps)
-        }
-
+        setData(apps)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)))
@@ -153,24 +72,7 @@ export function useApps(options: UseAppsOptions = {}): UseAppsResult {
     }
 
     doFetch()
-  }, [name])
-
-  // Apply filters from cached data
-  const data = useMemo(() => {
-    if (!allApps) {
-      return []
-    }
-
-    if (onlyWithTriggers) {
-      return allApps.filter((app) => app.triggers?.length)
-    }
-
-    if (onlyWithActions) {
-      return allApps.filter((app) => app.actions?.length)
-    }
-
-    return allApps
-  }, [allApps, onlyWithTriggers, onlyWithActions])
+  }, [])
 
   return { data, loading, error }
 }
