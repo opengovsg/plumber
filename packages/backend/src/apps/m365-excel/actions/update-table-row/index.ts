@@ -96,8 +96,6 @@ const action: IRawAction = {
       throw new StepError(
         'There was a problem with the input.',
         parametersParseResult.error.issues[0].message,
-        $.step?.position,
-        $.app.name,
       )
     }
 
@@ -170,8 +168,6 @@ const action: IRawAction = {
       throw new StepError(
         `Received invalid row data after update: '${updateRowValuesParseResult.error.issues[0].message}'`,
         'Double check your Excel file and retry the step if needed',
-        $.step.position,
-        $.app.name,
       )
     }
     const updatedRow = updateRowValuesParseResult.data

@@ -53,8 +53,6 @@ const action: IRawAction = {
       throw new StepError(
         'Invalid delay for value entered',
         'Check that the value is a valid number.',
-        $.step.position,
-        $.app.name,
       )
     }
 

@@ -59,12 +59,7 @@ const action: IRawAction = {
     const parsedResult = inputSchema.safeParse({ data: rawItems, testRun })
 
     if (parsedResult.success === false) {
-      throw new StepError(
-        'Invalid input list',
-        'Select a valid input list',
-        $.step.position,
-        $.app.name,
-      )
+      throw new StepError('Invalid input list', 'Select a valid input list')
     }
 
     try {
@@ -119,12 +114,7 @@ const action: IRawAction = {
       }
     } catch (err) {
       console.error(err)
-      throw new StepError(
-        'Invalid input list',
-        'Select a valid input list',
-        $.step.position,
-        $.app.name,
-      )
+      throw new StepError('Invalid input list', 'Select a valid input list')
     }
   },
 }

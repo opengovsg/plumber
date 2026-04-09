@@ -1,5 +1,3 @@
-import { IGlobalVariable } from '@plumber/types'
-
 import type {
   GetObjectCommandInput,
   GetObjectCommandOutput,
@@ -77,7 +75,6 @@ export const MAX_FILE_SIZE = 1024 * 1024 * 10 // 10MB
 function throwAttachmentError(
   errorType: string,
   metadata: Record<string, string>,
-  $: IGlobalVariable,
 ) {
   let name
   let solution
@@ -100,7 +97,7 @@ function throwAttachmentError(
       break
   }
 
-  throw new StepError(name, solution, $.step.position, $.app.name)
+  throw new StepError(name, solution)
 }
 
 const s3Client = new S3Client({
@@ -286,7 +283,6 @@ export interface S3Object {
 export async function getObjectFromS3Id(
   id: string,
   metadataToCheck?: Record<string, string>,
-  $?: IGlobalVariable,
 ): Promise<S3Object> {
   const idData = parseS3Id(id)
   if (!idData) {
@@ -321,7 +317,7 @@ export async function getObjectFromS3Id(
           idData.objectKey,
         )
         if (!isValid) {
-          throwAttachmentError(scanStatus, metadata, $)
+          throwAttachmentError(scanStatus, metadata)
         }
       }
     }

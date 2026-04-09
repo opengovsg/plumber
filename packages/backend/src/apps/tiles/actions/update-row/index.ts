@@ -133,8 +133,6 @@ const action: IRawAction = {
       throw new StepError(
         'Tile is required',
         'Please select a tile to update a row in.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -149,8 +147,6 @@ const action: IRawAction = {
       throw new StepError(
         'Tile not found',
         'Tile may have been deleted. Please check your tile.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -176,8 +172,6 @@ const action: IRawAction = {
         throw new StepError(
           'Unable to update row',
           'The value to add or subtract by must be a number.',
-          $.step.position,
-          $.app.name,
         )
       }
     }
@@ -252,12 +246,7 @@ const action: IRawAction = {
           })
           return
         }
-        throw new StepError(
-          'Failed to update row',
-          e.message,
-          $.step.position,
-          $.app.name,
-        )
+        throw new StepError('Failed to update row', e.message)
       }
       throw e
     }

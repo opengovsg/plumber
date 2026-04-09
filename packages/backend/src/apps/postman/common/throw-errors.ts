@@ -85,9 +85,6 @@ export function throwPostmanStepError({
   invalidAttachments: string[]
   isRetryWithoutAttachments: boolean
 }) {
-  const position = $.step.position
-  const appName = $.app.name
-
   const hasInvalidAttachments = invalidAttachments.length > 0
   const invalidAttachmentsSolution = getInvalidAttachmentSolution({
     invalidAttachments,
@@ -135,14 +132,12 @@ export function throwPostmanStepError({
         throw new PartialStepError({
           name,
           solution,
-          position,
-          appName,
           partialRetry: {
             buttonMessage,
           },
         })
       }
-      throw new StepError(name, solution, position, appName, error)
+      throw new StepError(name, solution, error)
     }
     case 'RATE-LIMITED':
       // this will be auto-retried later on
@@ -155,16 +150,12 @@ export function throwPostmanStepError({
       throw new StepError(
         'Password-protected attachment(s)',
         `Check that the attachment(s) are not password-protected.`,
-        position,
-        appName,
         error,
       )
     case 'ATTACHMENT-SIZE-EXCEEDED':
       throw new StepError(
         'Total attachment size exceeded',
         'Check that the attachments do not exceed 10MB in total.',
-        position,
-        appName,
         error,
       )
     case 'INTERMITTENT-ERROR':
@@ -195,22 +186,18 @@ export function throwPostmanStepError({
         // throw StepError for test runs so that user cannot publish the pipe
         // until the error is fixed
         if ($.execution.testRun) {
-          throw new StepError(name, solution, position, appName, error)
+          throw new StepError(name, solution, error)
         }
 
         throw new PartialStepError({
           name,
           solution: invalidAttachmentsSolution,
-          position,
-          appName,
           partialRetry: { buttonMessage: '' }, // nothing to retry
         })
       }
       throw new StepError(
         'Something went wrong',
         'Please contact plumber@open.gov.sg for assistance.',
-        position,
-        appName,
         error,
       )
   }

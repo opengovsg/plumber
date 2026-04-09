@@ -61,8 +61,6 @@ const action: IRawAction = {
       throw new StepError(
         err.message,
         'Check that the condition has been configured properly.',
-        $.step.position,
-        $.app.name,
       )
     }
     $.setActionItem({

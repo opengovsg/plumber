@@ -3,12 +3,7 @@ import { IStepError } from '@plumber/types'
 import Markdown from 'react-markdown'
 import { useMutation } from '@apollo/client'
 import { Box, Text } from '@chakra-ui/react'
-import {
-  Badge,
-  Button,
-  Infobox,
-  useToast,
-} from '@opengovsg/design-system-react'
+import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
 
 import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
@@ -26,8 +21,7 @@ interface SpecificErrorResultProps {
 
 export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   const { errorDetails, isTestRun, executionStepId } = props
-  const { name, solution, position, appName, details, partialRetry } =
-    errorDetails
+  const { name, solution, details, partialRetry } = errorDetails
 
   const toast = useToast()
 
@@ -52,17 +46,6 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   return (
     <Infobox variant="error" borderRadius="lg">
       <Box minW="0" w="full">
-        {/* Actual executions will not need to show step position and app name */}
-        {isTestRun && (
-          <Badge
-            mb={2}
-            bg="interaction.critical-subtle.default"
-            color="interaction.critical.default"
-          >
-            <Text>{`Step ${position}: ${appName} error`}</Text>
-          </Badge>
-        )}
-
         <Text mb={0.5} textStyle="subhead-1">
           {name}
         </Text>

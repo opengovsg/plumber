@@ -72,8 +72,6 @@ const action: IRawAction = {
       throw new StepError(
         'Empty message text',
         'Check that the message text is not empty, especially if variables are used.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -97,7 +95,7 @@ const action: IRawAction = {
         raw: response.data,
       })
     } catch (err) {
-      await throwSendMessageError(err, $.step, $.app.name, $.execution.testRun)
+      await throwSendMessageError(err, $.step, $.execution.testRun)
     }
   },
 }

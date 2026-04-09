@@ -5,14 +5,7 @@ import SpecificErrorResult from './SpecificErrorResult'
 
 const isStepError = (value: IStepError | IJSONObject): value is IStepError => {
   // Narrowing type for IStepError using type predicate
-  return (
-    value &&
-    typeof value === 'object' &&
-    !!value.name &&
-    !!value.solution &&
-    !!value.position &&
-    !!value.appName
-  )
+  return value && typeof value === 'object' && !!value.name && !!value.solution
 }
 
 interface ErrorResultProps {

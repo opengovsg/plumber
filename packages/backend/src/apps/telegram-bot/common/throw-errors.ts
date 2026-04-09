@@ -11,11 +11,8 @@ import Step, { StepContext } from '@/models/step'
 export async function throwSendMessageError(
   err: HttpError,
   step: IGlobalVariable['step'],
-  appName: string,
   testRun: boolean,
 ): Promise<never> {
-  const position = step.position
-
   // catch telegram errors with different error format for ETIMEDOUT and ECONNRESET: e.g. details: { error: 'connect ECONNREFUSED 127.0.0.1:3002' }
   const errorDetails = JSON.stringify(get(err, 'details', {}))
   const errorString = JSON.stringify(get(err, 'details.error', ''))
@@ -62,8 +59,6 @@ export async function throwSendMessageError(
         throw new StepError(
           'No permission for bot',
           'Please give permission for your bot in telegram to send messages in the group chat used in your action.',
-          position,
-          appName,
           err,
         )
       } else if (errorString.includes('supergroup')) {
@@ -98,24 +93,18 @@ export async function throwSendMessageError(
         throw new StepError(
           'Supergroup chat upgrade',
           'Please re-connect the chat ID because chat ID changes when your group gets upgraded to a supergroup chat.',
-          position,
-          appName,
           err,
         )
       } else if (errorString.includes('chat not found')) {
         throw new StepError(
           'Incorrect bot configuration',
           'Check that a valid chat ID is used. Otherwise, remove and re-add the bot into the group. Make sure that you send a message to the bot before the bot can send messages to you.',
-          position,
-          appName,
           err,
         )
       } else if (errorString.includes('message thread not found')) {
         throw new StepError(
           'Incorrect topic configuration',
           'Check that a valid topic ID is used.',
-          position,
-          appName,
           err,
         )
       } else {
@@ -126,16 +115,12 @@ export async function throwSendMessageError(
       throw new StepError(
         'Forbidden',
         'Check that the bot is added in the group chat used in your action.',
-        position,
-        appName,
         err,
       )
     case 429:
       throw new StepError(
         'Rate limit exceeded',
         'Too many messages are being sent. Please wait for a minute before retrying and avoid sending more than 20 messages per minute to the same group.',
-        position,
-        appName,
         err,
       )
     case 504:

@@ -117,8 +117,6 @@ const action: IRawAction = {
       throw new StepError(
         'There was a problem with the input.',
         parametersParseResult.error.issues[0].message,
-        $.step?.position,
-        $.app.name,
       )
     }
 
@@ -138,8 +136,6 @@ const action: IRawAction = {
       throw new StepError(
         `Column "${lookupColumn}" does not exist in your table.`,
         `Check that your Excel table contains the "${lookupColumn}" column.`,
-        $.step.position,
-        $.app.name,
       )
     }
 

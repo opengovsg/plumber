@@ -353,8 +353,6 @@ describe('action helper functions', () => {
           stepError: new StepError(
             'http-step-error',
             'test solution',
-            1,
-            'test-app',
             new HttpError({
               response: {
                 headers: {
@@ -366,12 +364,7 @@ describe('action helper functions', () => {
           isRetried: true,
         },
         {
-          stepError: new StepError(
-            'non-http-step-error',
-            'test solution',
-            1,
-            'test-app',
-          ),
+          stepError: new StepError('non-http-step-error', 'test solution'),
           isRetried: false,
         },
       ])(

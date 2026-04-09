@@ -136,8 +136,6 @@ const action: IRawAction = {
         throw new StepError(
           `${firstError.message} under set up step`,
           GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
         )
       }
 

@@ -17,8 +17,6 @@ export function parseWorkflowData(
     throw new StepError(
       'Invalid MRF data',
       'Reconnect your MRF form and try again.',
-      $.step.position,
-      $.app.name,
     )
   }
 
