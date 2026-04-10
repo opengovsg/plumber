@@ -24,13 +24,14 @@ export async function setCurrentUserContext(
 /**
  * Middleware to ensure the user is authenticated before allowing the request to proceed.
  * Returns 401 if the user is not authenticated.
+ * Caveat: Allow rest API calls where user is not authenticated.
  */
 export function requireAuthentication(
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
-  if (!req.context?.currentUser) {
+  if (!req.context?.currentUser && !req.context?.isAdminOperation) {
     res.status(401).json({ error: 'Not Authorised!' })
     return
   }
