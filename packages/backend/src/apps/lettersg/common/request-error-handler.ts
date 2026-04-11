@@ -25,8 +25,6 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
           missingFields.length === 0 ? '' : `: ${missingFields.join(', ')}`
         }`,
         'Check that you have entered all the fields and values in the letter parameters.',
-        $.step.position,
-        $.app.name,
       )
     }
   }
@@ -44,8 +42,6 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
   throw new StepError(
     `An error occurred: '${error.message}'`,
     'Please check that you have configured your step correctly',
-    $.step.position,
-    $.app.name,
   )
 }
 

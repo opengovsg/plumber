@@ -204,8 +204,6 @@ const action: IRawAction = {
         throw new StepError(
           `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
         )
       }
 
@@ -213,8 +211,6 @@ const action: IRawAction = {
         throw new StepError(
           RECURSIVE_WEBHOOK_ERROR,
           'Ensure that you are not redirecting back to a plumber URL.',
-          $.step.position,
-          $.app.name,
         )
       }
 
@@ -228,8 +224,6 @@ const action: IRawAction = {
         throw new StepError(
           err.message,
           'If you think this is a mistake, please contact us.',
-          $.step.position,
-          $.app.name,
         )
       }
 
@@ -237,8 +231,6 @@ const action: IRawAction = {
         throw new StepError(
           `HTTP request exceeded timeout of ${timeout / 1000}s`,
           'The request took too long to respond.',
-          $.step.position,
-          $.app.name,
           err,
         )
       }
@@ -251,8 +243,6 @@ const action: IRawAction = {
             : err.message
         } `,
         'Check your custom app based on the status code and retry again.',
-        $.step.position,
-        $.app.name,
         err,
       )
     }

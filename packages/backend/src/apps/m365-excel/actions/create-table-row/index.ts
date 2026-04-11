@@ -26,8 +26,6 @@ function buildRowUpdateArgs(
     throw new StepError(
       `Error creating table row: ${err.message}`,
       'Double check that your step is configured correctly',
-      $.step.position,
-      $.app.name,
     )
   }
 }
@@ -146,8 +144,6 @@ const action: IRawAction = {
       throw new StepError(
         'There was a problem with the input.',
         parametersParseResult.error.issues[0].message,
-        $.step?.position,
-        $.app.name,
       )
     }
 

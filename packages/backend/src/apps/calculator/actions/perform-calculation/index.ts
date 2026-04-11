@@ -49,22 +49,16 @@ const action = {
         throw new StepError(
           `Configuration problem: '${firstZodParseError(error)}'`,
           GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
         )
       } else if (error instanceof Error) {
         throw new StepError(
           `Error performing calculation: '${formatBigJsErrorMessage(error)}'`,
           'Ensure that you have entered valid numbers.',
-          $.step.position,
-          $.app.name,
         )
       } else {
         throw new StepError(
           'Error performing calculation',
           'Ensure that you have entered valid numbers.',
-          $.step.position,
-          $.app.name,
         )
       }
     }

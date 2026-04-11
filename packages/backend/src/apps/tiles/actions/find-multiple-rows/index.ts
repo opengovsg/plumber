@@ -102,8 +102,6 @@ const action: IRawAction = {
       throw new StepError(
         'Tile not found',
         'Tile may have been deleted. Please check your tile.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -124,8 +122,6 @@ const action: IRawAction = {
       throw new StepError(
         'Invalid filters',
         'One or more filters are invalid. Please check that the columns in your filters still exist',
-        $.step.position,
-        $.app.name,
       )
     }
     // Retrieve the manual scan limit override, converting it to a number.

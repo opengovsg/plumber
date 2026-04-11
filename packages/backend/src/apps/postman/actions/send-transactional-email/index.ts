@@ -66,12 +66,7 @@ const action: IRawAction = {
         ? 'This attachment was not stored in the last submission. Please make a new submission with attachments to successfully configure this pipe.'
         : 'Reconfigure the invalid field and try again.'
 
-      throw new StepError(
-        stepErrorName,
-        stepErrorSolution,
-        $.step.position,
-        $.app.name,
-      )
+      throw new StepError(stepErrorName, stepErrorSolution)
     }
 
     let recipientsToSend = result.data.destinationEmail

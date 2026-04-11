@@ -59,8 +59,6 @@ const action = {
       throw new StepError(
         `Configuration problem: ${firstZodParseError(parsedParams.error)}`,
         GenericSolution.ReconfigureInvalidField,
-        $.step.position,
-        $.app.name,
       )
     }
     const authData = authDataSchema.safeParse($.auth.data)
@@ -68,8 +66,6 @@ const action = {
       throw new StepError(
         `Invalid connection data: ${firstZodParseError(authData.error)}`,
         GenericSolution.MalformedConnectionData,
-        $.step.position,
-        $.app.name,
       )
     }
 

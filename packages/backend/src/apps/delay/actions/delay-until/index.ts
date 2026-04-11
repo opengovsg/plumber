@@ -114,8 +114,6 @@ const action: IRawAction = {
       throw new StepError(
         'Incorrect date or time format',
         `* Date must be in DD MMM YYYY and time in HH:MM format.\n* If you're using a variable, make sure it returns values in these formats.`,
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -138,8 +136,6 @@ const action: IRawAction = {
         throw new StepError(
           'Delay until timestamp entered is in the past',
           'This action was scheduled to run at a time that has already passed. Click "Retry" to skip the delay and continue the Pipe now.',
-          $.step.position,
-          $.app.name,
         )
       }
     }

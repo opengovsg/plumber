@@ -21,8 +21,6 @@ function validateMrfStep($: IGlobalVariable): ParsedMrfWorkflowStep {
     throw new StepError(
       'Misconfigured MRF step',
       'Reconnect your MRF form and try again.',
-      $.step.position,
-      $.app.name,
     )
   }
   return mrf
@@ -128,8 +126,6 @@ const action: IRawAction = {
       throw new StepError(
         'Previous executable step not found',
         'The previous executable step was not found. This should not happen.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -186,8 +182,6 @@ const action: IRawAction = {
       throw new StepError(
         'Invalid MRF data: submitted steps are not valid',
         'Click check step to sync your MRF form and try again.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -199,8 +193,6 @@ const action: IRawAction = {
       throw new StepError(
         'Invalid MRF data: unable to find submitted step',
         'Click check step to sync your MRF form and try again.',
-        $.step.position,
-        $.app.name,
       )
     }
 

@@ -38,8 +38,6 @@ function throwError($?: IGlobalVariable): never {
     throw new StepError(
       'Excel has reached its limit',
       'There are too many users testing Excel at this moment. Try testing your step again later.',
-      $.step.position,
-      $.app.name,
     )
   } else {
     throw new Error(

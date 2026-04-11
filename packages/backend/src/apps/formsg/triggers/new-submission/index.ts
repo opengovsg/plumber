@@ -78,8 +78,6 @@ const trigger: IRawTrigger = {
       throw new StepError(
         'Missing FormSG connection',
         'Click on choose connection and set up your form credentials.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -89,8 +87,6 @@ const trigger: IRawTrigger = {
       throw new StepError(
         'Something went wrong',
         'Invalid test run metadata. Please refresh and try again.',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -126,8 +122,6 @@ const trigger: IRawTrigger = {
         throw new StepError(
           'Error syncing MRF steps',
           'This should not happen, please contact support.',
-          $.step.position,
-          $.app.name,
         )
       }
     } else {
@@ -138,8 +132,6 @@ const trigger: IRawTrigger = {
         throw new StepError(
           'Error removing MRF steps',
           'This should not happen, please contact support.',
-          $.step.position,
-          $.app.name,
         )
       }
     }

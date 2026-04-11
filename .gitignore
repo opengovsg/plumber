@@ -138,3 +138,6 @@ tmp/
 
 # Generated GraphQL
 /**/graphql/__generated__
+
+# claude stuff
+.claude/settings.local.json

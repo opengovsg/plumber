@@ -164,18 +164,14 @@ const action: IRawAction = {
         throw new StepError(
           `${firstError.path[0]}: ${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
         )
       }
       if (error instanceof HttpError) {
-        throwGatherSGStepError({ $, error })
+        throwGatherSGStepError(error)
       }
       throw new StepError(
         `An error occurred: '${error.message}'`,
         'Please check that you have configured your step correctly',
-        $.step.position,
-        $.app.name,
       )
     }
   },

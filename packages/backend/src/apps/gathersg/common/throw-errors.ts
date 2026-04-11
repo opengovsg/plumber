@@ -1,20 +1,9 @@
-import { IGlobalVariable } from '@plumber/types'
-
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 
 import { GatherSGError } from './types'
 
-export default function throwGatherSGStepError({
-  $,
-  error,
-}: {
-  $: IGlobalVariable
-  error: HttpError
-}) {
-  const position = $.step.position
-  const appName = $.app.name
-
+export default function throwGatherSGStepError(error: HttpError) {
   const { code, message, details } =
     (error.response?.data?.error as GatherSGError) || {}
   const errorStatus = error.response?.status
@@ -23,8 +12,6 @@ export default function throwGatherSGStepError({
     throw new StepError(
       message,
       'Check that you have entered a valid case status.',
-      position,
-      appName,
       error,
     )
   }
@@ -36,8 +23,6 @@ export default function throwGatherSGStepError({
       `Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: ${invalidFields.join(
         ', ',
       )}`,
-      position,
-      appName,
       error,
     )
   }
@@ -46,8 +31,6 @@ export default function throwGatherSGStepError({
     throw new StepError(
       'Insufficient permissions to perform this action',
       'Please check that you have been granted sufficient permissions for your API key.',
-      position,
-      appName,
       error,
     )
   }
@@ -57,8 +40,6 @@ export default function throwGatherSGStepError({
     throw new StepError(
       message,
       'Check that you have entered an existing case uuid.',
-      position,
-      appName,
       error,
     )
   }
@@ -67,8 +48,6 @@ export default function throwGatherSGStepError({
   throw new StepError(
     `An error occurred: ${message}`,
     'Please check that you have configured your step correctly',
-    position,
-    appName,
     error,
   )
 }

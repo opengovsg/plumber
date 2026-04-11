@@ -1,5 +1,6 @@
 import type { IGlobalVariable, IStep } from '@plumber/types'
 
+import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 export async function getBranchStepIdToSkipTo(
@@ -42,12 +43,15 @@ export async function getBranchStepIdToSkipTo(
     return null
   }
 
-  const currDepth = parseInt(currBranchStep.parameters?.depth as string)
+  let currDepth = parseInt(currBranchStep.parameters?.depth as string)
 
   if (isNaN(currDepth)) {
-    throw new Error(
+    logger.warn(
       `Branch depth for current branch step ${currBranchStep.id} is not defined for ${$.step.id}.`,
     )
+    //  This an unreproducible bug where the depth is not defined for the step. since it's not possible to nest if-then at
+    // this point of time, we default the depth to 0.
+    currDepth = 0
   }
 
   // search for next branch after current step
@@ -58,13 +62,15 @@ export async function getBranchStepIdToSkipTo(
         return false
       }
 
-      const nextBranchDepth = parseInt(step.parameters?.depth as string)
+      let nextBranchDepth = parseInt(step.parameters?.depth as string)
       if (isNaN(nextBranchDepth)) {
-        throw new Error(
+        logger.warn(
           `Branch depth for future branch step ${$.step.id} is not defined.`,
         )
+        // This an unreproducible bug where the depth is not defined for the step. since it's not possible to nest if-then at
+        // this point of time, we default the depth to 0.
+        nextBranchDepth = 0
       }
-
       return nextBranchDepth <= currDepth
     })
 

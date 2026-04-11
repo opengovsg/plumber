@@ -42,8 +42,8 @@ const action: IRawAction = {
     },
   ],
 
-  async run($) {
-    throwVaultDeprecationError($)
+  async run(_) {
+    throwVaultDeprecationError()
   },
 }
 

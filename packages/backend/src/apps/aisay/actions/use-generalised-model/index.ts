@@ -68,20 +68,13 @@ const action: IRawAction = {
     if (!result.success) {
       const { stepErrorName, stepErrorSolution } = getValidationError(result)
 
-      throw new StepError(
-        stepErrorName,
-        stepErrorSolution,
-        $.step.position,
-        $.app.name,
-      )
+      throw new StepError(stepErrorName, stepErrorSolution)
     }
 
     if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
       throw new StepError(
         'Missing client ID or client secret',
         'Please check the client ID and client secret',
-        $.step.position,
-        $.app.name,
       )
     }
 
@@ -114,13 +107,7 @@ const action: IRawAction = {
     } catch (err) {
       logger.error(err)
       const { stepErrorName, stepErrorSolution } = parseError(err)
-      throw new StepError(
-        stepErrorName,
-        stepErrorSolution,
-        $.step.position,
-        $.app.name,
-        err,
-      )
+      throw new StepError(stepErrorName, stepErrorSolution, err)
     }
   },
 } satisfies IRawAction
