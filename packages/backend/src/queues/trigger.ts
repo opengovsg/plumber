@@ -1,8 +1,8 @@
-import { QueuePro } from '@taskforcesh/bullmq-pro'
 import process from 'process'
 
 import { createRedisClient } from '@/config/redis'
 import logger from '@/helpers/logger'
+import { QueuePro } from '@/lib/bullmq-pro-compat'
 
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 

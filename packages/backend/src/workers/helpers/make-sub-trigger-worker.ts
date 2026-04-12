@@ -1,11 +1,5 @@
 import type { IActionJobData, IActionRunResult } from '@plumber/types'
 
-import {
-  UnrecoverableError,
-  WorkerPro,
-  WorkerProOptions,
-} from '@taskforcesh/bullmq-pro'
-
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import HttpError from '@/errors/http'
@@ -15,6 +9,11 @@ import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
+import {
+  UnrecoverableError,
+  WorkerPro,
+  WorkerProOptions,
+} from '@/lib/bullmq-pro-compat'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'

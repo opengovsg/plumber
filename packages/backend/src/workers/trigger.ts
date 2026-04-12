@@ -1,10 +1,9 @@
 import { IJSONObject, ITriggerItem } from '@plumber/types'
 
-import { UnrecoverableError, WorkerPro } from '@taskforcesh/bullmq-pro'
-
 import { createRedisClient } from '@/config/redis'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import { UnrecoverableError, WorkerPro } from '@/lib/bullmq-pro-compat'
 import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 import { processTrigger } from '@/services/trigger'

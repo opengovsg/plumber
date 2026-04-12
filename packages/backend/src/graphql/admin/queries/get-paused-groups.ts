@@ -1,5 +1,4 @@
-import { GroupStatus } from '@taskforcesh/bullmq-pro'
-
+import { GroupStatus } from '@/lib/bullmq-pro-compat'
 import { actionQueuesByName } from '@/queues/action'
 
 import type { AdminQueryResolvers } from '../../__generated__/types.generated'

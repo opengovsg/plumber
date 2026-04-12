@@ -1,6 +1,6 @@
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { UnrecoverableError } from '@/lib/bullmq-pro-compat'
 import triggerQueue from '@/queues/trigger'
 import { worker as triggerWorker } from '@/workers/trigger'
 

@@ -1,6 +1,5 @@
-import { type WorkerProOptions } from '@taskforcesh/bullmq-pro'
-
 import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
+import { type WorkerProOptions } from '@/lib/bullmq-pro-compat'
 
 import logger from './logger'
 

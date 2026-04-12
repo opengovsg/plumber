@@ -1,11 +1,10 @@
-import { WorkerPro } from '@taskforcesh/bullmq-pro'
-
 import { createRedisClient } from '@/config/redis'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import { WorkerPro } from '@/lib/bullmq-pro-compat'
 import Flow from '@/models/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'

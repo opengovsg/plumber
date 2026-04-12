@@ -1,7 +1,5 @@
 import type { IActionJobData } from '@plumber/types'
 
-import { UnrecoverableError, type WorkerPro } from '@taskforcesh/bullmq-pro'
-
 import appConfig from '@/config/app'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import {
@@ -9,6 +7,7 @@ import {
   sendErrorEmail,
 } from '@/helpers/generate-error-email'
 import logger from '@/helpers/logger'
+import { UnrecoverableError, type WorkerPro } from '@/lib/bullmq-pro-compat'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 

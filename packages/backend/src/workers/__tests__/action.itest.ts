@@ -1,4 +1,3 @@
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import {
   afterEach,
   beforeAll,
@@ -11,6 +10,7 @@ import {
 
 import RetriableError from '@/errors/retriable-error'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import { UnrecoverableError } from '@/lib/bullmq-pro-compat'
 import { enqueueActionJob, mainActionQueue } from '@/queues/action'
 import { mainActionWorker } from '@/workers/action'
 

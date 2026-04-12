@@ -1,13 +1,16 @@
 import type { IActionJobData } from '@plumber/types'
 
-import { type JobPro, WorkerPro } from '@taskforcesh/bullmq-pro'
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { type Span } from 'dd-trace'
 import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import {
+  type JobPro,
+  UnrecoverableError,
+  WorkerPro,
+} from '@/lib/bullmq-pro-compat'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'

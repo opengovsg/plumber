@@ -1,6 +1,5 @@
-import { type JobsProOptions } from '@taskforcesh/bullmq-pro'
-
 import appConfig from '@/config/app'
+import { type JobsProOptions } from '@/lib/bullmq-pro-compat'
 
 export const REMOVE_AFTER_30_DAYS = {
   age: 30 * 24 * 3600,

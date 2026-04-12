@@ -1,11 +1,5 @@
 import type { IActionJobData, IAppQueue } from '@plumber/types'
 
-import {
-  UnrecoverableError,
-  WorkerPro,
-  type WorkerProOptions,
-} from '@taskforcesh/bullmq-pro'
-
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
@@ -14,6 +8,11 @@ import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import tracer from '@/helpers/tracer'
+import {
+  UnrecoverableError,
+  WorkerPro,
+  type WorkerProOptions,
+} from '@/lib/bullmq-pro-compat'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'

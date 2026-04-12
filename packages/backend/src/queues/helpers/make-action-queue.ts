@@ -1,10 +1,10 @@
 import { IActionJobData } from '@plumber/types'
 
-import { QueuePro, type QueueProOptions } from '@taskforcesh/bullmq-pro'
 import process from 'process'
 
 import { createRedisClient } from '@/config/redis'
 import logger from '@/helpers/logger'
+import { QueuePro, type QueueProOptions } from '@/lib/bullmq-pro-compat'
 
 const CONNECTION_REFUSED = 'ECONNREFUSED'
 

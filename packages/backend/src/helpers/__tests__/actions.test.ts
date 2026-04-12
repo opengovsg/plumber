@@ -1,10 +1,5 @@
 import type { IActionJobData, IApp, IJSONObject } from '@plumber/types'
 
-import {
-  type JobPro,
-  UnrecoverableError,
-  WorkerPro,
-} from '@taskforcesh/bullmq-pro'
 import type { AxiosError } from 'axios'
 import { type Span } from 'dd-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -12,6 +7,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
+import {
+  type JobPro,
+  UnrecoverableError,
+  WorkerPro,
+} from '@/lib/bullmq-pro-compat'
 import Step from '@/models/step'
 
 import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
