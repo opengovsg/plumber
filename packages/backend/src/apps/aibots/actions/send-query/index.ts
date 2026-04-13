@@ -35,8 +35,6 @@ const action: IRawAction = {
         throw new StepError(
           'API key is required',
           'Please check that you have entered a valid API key',
-          $.step.position,
-          $.app.name,
         )
       }
 
