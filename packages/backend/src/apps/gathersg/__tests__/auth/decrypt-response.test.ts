@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { processFields } from '../../auth/decrypt-response'
 import { HEX_ENCODED_FIELD_PREFIX } from '../../common/constants'
+import { processFields } from '../../common/utils'
 
 describe('processFields', () => {
   it('should process fields with whitespace, -, _', () => {
