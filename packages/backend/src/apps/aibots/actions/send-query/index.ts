@@ -74,8 +74,6 @@ const action: IRawAction = {
         throw new StepError(
           'Invalid API key',
           'Please check that you have entered a valid API key',
-          $.step.position,
-          $.app.name,
         )
       }
 
@@ -85,8 +83,6 @@ const action: IRawAction = {
         throw new StepError(
           `${firstError.message} under set up step`,
           GenericSolution.ReconfigureInvalidField,
-          $.step.position,
-          $.app.name,
         )
       }
 
