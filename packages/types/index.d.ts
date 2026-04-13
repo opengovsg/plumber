@@ -801,6 +801,14 @@ export interface IBaseTrigger {
 
   // if true, the trigger does not require authentication
   noAuthRequired?: boolean
+
+  /**
+   * Allows specifying argument keys to ignore when processing the step parameters.
+   * ---
+   * This will be used when there is patching or migration of step parameters,
+   * without modifying the dataOut
+   */
+  ignoredArgs?: string[]
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -916,6 +924,14 @@ export interface IBaseAction {
 
   // if true, the action does not require authentication
   noAuthRequired?: boolean
+
+  /**
+   * Allows specifying argument keys to ignore when processing the step parameters.
+   * ---
+   * This will be used when there is patching or migration of step parameters,
+   * without modifying the dataOut
+   */
+  ignoredArgs?: string[]
 }
 
 export interface IRawAction extends IBaseAction {

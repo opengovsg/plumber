@@ -209,6 +209,8 @@ type Action {
   isNew: Boolean
   linkToGuide: String
   substeps: [ActionSubstep]
+
+  ignoredArgs: [String]
 }
 
 type ActionSubstep {
@@ -832,6 +834,8 @@ type Trigger {
   substeps: [TriggerSubstep]
   isNew: Boolean
   noAuthRequired: Boolean
+
+  ignoredArgs: [String]
 }
 
 type TriggerInstructions {

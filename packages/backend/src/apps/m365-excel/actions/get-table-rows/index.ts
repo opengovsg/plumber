@@ -125,6 +125,8 @@ const action: IRawAction = {
       },
     },
   ],
+  // TODO (kevinkim-ogp): update this to ['lookupColumn', 'lookupValue'] once we have moved to the new multi lookup
+  ignoredArgs: ['filters'],
 
   getDataOutMetadata,
 

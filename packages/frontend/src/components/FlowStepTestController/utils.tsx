@@ -125,13 +125,17 @@ const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
  * NOTE: it also validates the variable value as dataIn is based on the extracted value
  */
 export const matchParamsToDataIn = (
-  dataIn?: IJSONObject,
-  params?: IJSONObject,
+  rawDataIn?: IJSONObject,
+  rawParams?: IJSONObject,
   varInfoMap?: VariableInfoMap,
+  hiddenKeys?: string[],
 ) => {
-  if (!dataIn || !params || !varInfoMap) {
+  if (!rawDataIn || !rawParams || !varInfoMap) {
     return false
   }
+
+  const dataIn = omitHiddenParameterKeys(rawDataIn, hiddenKeys)
+  const params = omitHiddenParameterKeys(rawParams, hiddenKeys)
 
   // If both are empty objects, return true
   if (Object.keys(dataIn).length === 0 && Object.keys(params).length === 0) {
