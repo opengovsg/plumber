@@ -10,7 +10,7 @@ const app: IApp = {
   authDocUrl: '',
   // TODO: update this to PROD once aibots releases the PROD API
   baseUrl: 'https://aibots.gov.sg',
-  apiBaseUrl: 'https://api.uat.aibots.gov.sg/v1.0/api',
+  apiBaseUrl: 'https://api.aibots.gov.sg/v1.0/api',
   primaryColor: '',
   category: 'ai',
   // TODO: add the actual auth here
