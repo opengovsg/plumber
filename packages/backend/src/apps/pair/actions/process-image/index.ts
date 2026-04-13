@@ -62,8 +62,6 @@ const action: IRawAction = {
       throw new StepError(
         firstError.message,
         GenericSolution.ReconfigureInvalidField,
-        $.step.position,
-        $.app.name,
       )
     }
     const { image, responseFields } = validatedParameters.data
@@ -117,8 +115,6 @@ const action: IRawAction = {
           ? `Failed to process image: ${error.message}`
           : 'Failed to process image',
         'Please try again.',
-        $.step.position,
-        $.app.name,
         error,
       )
     }
