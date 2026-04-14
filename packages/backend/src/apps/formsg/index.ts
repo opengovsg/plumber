@@ -11,7 +11,8 @@ const app: IApp = {
   key: 'formsg',
   description: 'Workflow starts when a new form response is received',
   iconUrl: '{BASE_URL}/apps/formsg/assets/favicon.svg',
-  authDocUrl: 'https://guide.plumber.gov.sg/user-guides/triggers/formsg',
+  authDocUrl:
+    'https://guide.plumber.gov.sg/user-guides/start-the-workflow/formsg',
   baseUrl: 'https://form.gov.sg',
   apiBaseUrl: '',
   primaryColor: '635bff',
