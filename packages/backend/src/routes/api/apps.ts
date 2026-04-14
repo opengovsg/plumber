@@ -1,7 +1,7 @@
 import type { IApp } from '@plumber/types'
 
 import { Router } from 'express'
-import { memoize, pick } from 'lodash'
+import { pick } from 'lodash'
 
 import { ACTION_APPS_RANKING, TRIGGER_APPS_RANKING } from '@/apps/app-rankings'
 import App from '@/models/app'
@@ -24,6 +24,7 @@ const APP_RESPONSE_FIELDS = [
   'triggers',
   'actions',
 ] as const satisfies ReadonlyArray<keyof IApp>
+type AppResponse = Pick<IApp, (typeof APP_RESPONSE_FIELDS)[number]>
 
 const router = Router()
 
@@ -49,12 +50,18 @@ function sortApps(apps: IApp[]): IApp[] {
   })
 }
 
-// Memoize the sorted apps data since it's static at runtime.
-// This avoids repeated deep cloning and transformation on each request.
-const getSortedApps = memoize(async (): Promise<IApp[]> => {
+let cachedAppsResponse: AppResponse[] | null = null
+
+async function getAppsResponse(): Promise<AppResponse[]> {
+  if (cachedAppsResponse) {
+    return cachedAppsResponse
+  }
   const apps = await App.findAll()
-  return sortApps(apps)
-})
+  cachedAppsResponse = sortApps(apps).map((app) =>
+    pick(app, APP_RESPONSE_FIELDS),
+  )
+  return cachedAppsResponse
+}
 
 /**
  * GET /api/apps
@@ -63,8 +70,8 @@ const getSortedApps = memoize(async (): Promise<IApp[]> => {
  * This endpoint is cached in-memory since apps data is static at runtime.
  */
 router.get('/', async (_req, res) => {
-  const apps = await getSortedApps()
-  res.json({ data: apps.map((app) => pick(app, APP_RESPONSE_FIELDS)) })
+  const data = await getAppsResponse()
+  res.json({ data })
 })
 
 export default router

@@ -31,7 +31,7 @@ export function requireAuthentication(
   res: Response,
   next: NextFunction,
 ) {
-  if (!req.context?.currentUser && !req.context?.isAdminOperation) {
+  if (!req.context?.currentUser) {
     res.status(401).json({ error: 'Not Authorised!' })
     return
   }
