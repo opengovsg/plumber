@@ -1,4 +1,4 @@
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 import { MdOpenInNew } from 'react-icons/md'
 import { useDisclosure } from '@chakra-ui/react'
 
@@ -27,7 +27,7 @@ export default function VariableItemWithModal(
       variable.displayedValue !== 'Preview 0 row(s)') ||
     variable.type === 'html'
 
-  const ModalComponent = useMemo(() => {
+  const renderModal = () => {
     switch (variable.type) {
       case 'table':
         return (
@@ -47,7 +47,7 @@ export default function VariableItemWithModal(
           />
         )
     }
-  }, [currentTestExecutionStep, isOpen, onClose, variable])
+  }
 
   return (
     <>
@@ -59,7 +59,7 @@ export default function VariableItemWithModal(
         onClick={onClick ? onClick : canOpenModal ? onOpen : undefined}
         withIcon={onClick ? undefined : canOpenModal ? MdOpenInNew : undefined}
       />
-      {!onClick && ModalComponent}
+      {!onClick && renderModal()}
     </>
   )
 }

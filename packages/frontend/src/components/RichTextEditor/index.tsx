@@ -145,7 +145,7 @@ const Editor = ({
     Placeholder.configure({
       placeholder,
     }),
-    !isDisplayOnly && StepVariable,
+    ...(isDisplayOnly ? [] : [StepVariable]),
     ImageResize.configure({
       inline: true,
       resizable: !isDisplayOnly,
