@@ -101,16 +101,44 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
 
 //
 // Handle 504 Gateway Timeout - typically caused by long-running formulas.
-// We intentionally don't pass the HttpError as cause to prevent auto-retry,
-// since retrying won't help if the file has long-running formulas.
+// Test runs: fail immediately with helpful message.
+// Live runs: retry up to 3 times, then fail with helpful message.
 //
-const handle504: ThrowingHandler = function ($) {
-  throw new StepError(
-    'Excel request timed out',
+export const EXCEL_504_ERROR_CODE = 'EXCEL_504'
+export const EXCEL_504_MAX_ATTEMPTS = 3
+const EXCEL_504_ERROR_MESSAGE = {
+  name: 'Excel request timed out',
+  solution:
     'Your Excel file most likely has long-running formulas. Please either simplify the formulas or set the calculation options (under the Formulas tab) to manual instead of automatic.',
-    $.step.position,
-    $.app.name,
-  )
+}
+
+const handle504: ThrowingHandler = function ($, error) {
+  logger.warn('Received HTTP 504 from MS Graph', {
+    event: 'm365-http-504',
+    tenant: $.auth?.data?.tenantKey as string,
+    baseUrl: error.response.config.baseURL,
+    url: error.response.config.url,
+    flowId: $.flow?.id,
+    stepId: $.step?.id,
+    executionId: $.execution?.id,
+  })
+
+  // For test runs, fail immediately with user-friendly message
+  if ($.execution?.testRun) {
+    throw new StepError(
+      EXCEL_504_ERROR_MESSAGE.name,
+      EXCEL_504_ERROR_MESSAGE.solution,
+    )
+  }
+
+  // For live runs, throw RetriableError with user-friendly message
+  // The message will be saved as errorDetails, so it's correct from the start
+  throw new RetriableError({
+    error: EXCEL_504_ERROR_MESSAGE,
+    delayType: 'step',
+    delayInMs: 'default',
+    errorCode: EXCEL_504_ERROR_CODE,
+  })
 }
 
 //

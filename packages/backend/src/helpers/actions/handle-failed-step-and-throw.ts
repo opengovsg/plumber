@@ -5,12 +5,25 @@ import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { type Span } from 'dd-trace'
 import get from 'lodash.get'
 
+import {
+  EXCEL_504_ERROR_CODE,
+  EXCEL_504_MAX_ATTEMPTS,
+} from '@/apps/m365-excel/common/interceptors/request-error-handler'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
+
+/**
+ * Map of error codes to their custom max attempts.
+ * When max attempts is reached, the job fails with the error message
+ * that was already set in errorDetails (from RetriableError).
+ */
+const ERROR_CODE_MAX_ATTEMPTS: Record<string, number> = {
+  [EXCEL_504_ERROR_CODE]: EXCEL_504_MAX_ATTEMPTS,
+}
 import { parseRetryAfterToMs } from '../parse-retry-after-to-ms'
 
 /**
@@ -33,16 +46,17 @@ function handleRetriableError(
   executionError: RetriableError,
   context: HandleFailedStepAndThrowParams['context'],
 ): never {
-  const { delayType, delayInMs } = executionError
+  const { delayType, delayInMs, errorCode } = executionError
   const { worker, job, isQueueDelayable } = context
+
+  // Use custom max attempts if errorCode has one configured
+  const maxAttempts = errorCode
+    ? ERROR_CODE_MAX_ATTEMPTS[errorCode] ?? MAXIMUM_JOB_ATTEMPTS
+    : MAXIMUM_JOB_ATTEMPTS
 
   switch (delayType) {
     case 'queue':
-      checkIfAttemptsExhausted(
-        job.attemptsStarted,
-        MAXIMUM_JOB_ATTEMPTS,
-        executionError,
-      )
+      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
       if (isQueueDelayable) {
         worker.rateLimit(delayInMs)
         throw WorkerPro.RateLimitError()
@@ -56,11 +70,7 @@ function handleRetriableError(
       // off a small alert.
       throw executionError
     case 'group': {
-      checkIfAttemptsExhausted(
-        job.attemptsStarted,
-        MAXIMUM_JOB_ATTEMPTS,
-        executionError,
-      )
+      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
       const groupId = job.opts?.group?.id
       if (groupId) {
         worker.rateLimitGroup(job, delayInMs)
@@ -72,7 +82,9 @@ function handleRetriableError(
       throw executionError
     }
     case 'step':
-      // Finally, OK to pass this through to our worker's retry handler
+      // Check if max attempts reached for custom error codes
+      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
+      // OK to pass this through to our worker's retry handler
       throw executionError
   }
 }
@@ -168,12 +180,21 @@ export function handleFailedStepAndThrow(
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   } catch (finalError) {
     // Update span and execution status as necessary.
+    // Use custom max attempts if the error has an errorCode configured
+    const errorCode =
+      executionError instanceof RetriableError
+        ? executionError.errorCode
+        : undefined
+    const effectiveMaxAttempts = errorCode
+      ? ERROR_CODE_MAX_ATTEMPTS[errorCode] ?? MAXIMUM_JOB_ATTEMPTS
+      : MAXIMUM_JOB_ATTEMPTS
+
     const isRetriable =
       !(finalError instanceof UnrecoverableError) &&
       // -1 is needed because BullMQ only increments attemptsMade _after_ the
       // job processor finishes, but we're currently still inside the job
       // processor.
-      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
+      job.attemptsMade < effectiveMaxAttempts - 1
 
     span?.addTags({
       willRetry: isRetriable ? 'true' : 'false',
