@@ -1,6 +1,6 @@
 import { type CSSProperties, useCallback, useRef, useState } from 'react'
 import { RiSendToBack } from 'react-icons/ri'
-import TipTapImage from '@tiptap/extension-image'
+import TipTapImage, { type ImageOptions } from '@tiptap/extension-image'
 import {
   type NodeViewProps,
   NodeViewWrapper,
@@ -10,7 +10,19 @@ import {
 const MIN_WIDTH = 60
 const MAX_WIDTH = 750
 
-const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps) => {
+export interface ResizableImageOptions extends ImageOptions {
+  /**
+   * Controls whether to show the resize handle. Defaults to true.
+   */
+  resizable?: boolean
+}
+
+const ResizableImageTemplate = ({
+  node,
+  updateAttributes,
+  extension,
+}: NodeViewProps) => {
+  const resizable = extension.options.resizable ?? true // default true
   const imgRef = useRef<HTMLImageElement>(null)
   const [resizingStyle, setResizingStyle] = useState<
     Pick<CSSProperties, 'width'> | undefined
@@ -68,29 +80,37 @@ const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps) => {
           style={Object.assign(
             {},
             {
-              marginBottom: '-16px',
+              marginBottom: resizable ? '-16px' : undefined,
             },
             resizingStyle,
           )}
         />
 
-        <div
-          role="button"
-          tabIndex={0}
-          onMouseDown={handleMouseDown}
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <RiSendToBack />
-        </div>
+        {resizable && (
+          <div
+            role="button"
+            tabIndex={0}
+            onMouseDown={handleMouseDown}
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}
+          >
+            <RiSendToBack />
+          </div>
+        )}
       </div>
     </NodeViewWrapper>
   )
 }
 
-const ResizableImageExtension = TipTapImage.extend({
+const ResizableImageExtension = TipTapImage.extend<ResizableImageOptions>({
+  addOptions() {
+    return {
+      ...this.parent?.(),
+      resizable: true,
+    }
+  },
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -101,6 +121,6 @@ const ResizableImageExtension = TipTapImage.extend({
   addNodeView() {
     return ReactNodeViewRenderer(ResizableImageTemplate)
   },
-}).configure({ inline: true })
+}).configure({ inline: true, resizable: true })
 
 export default ResizableImageExtension

@@ -18,6 +18,7 @@ export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'tile_row_id',
   'approval',
   'ai_response',
+  'html',
 ]
 
 export interface StepWithVariables {
