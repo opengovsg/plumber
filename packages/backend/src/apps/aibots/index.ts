@@ -8,7 +8,7 @@ import queue from './queue'
 const app: IApp = {
   name: 'AIBots',
   key: 'aibots',
-  description: 'Integrate with your customised AI Bot',
+  description: 'Send a query to one of your bots on AIBots',
   iconUrl: '{BASE_URL}/apps/aibots/assets/favicon.svg',
   authDocUrl: '',
   baseUrl: 'https://aibots.gov.sg',

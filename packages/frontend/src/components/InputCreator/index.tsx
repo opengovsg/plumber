@@ -171,6 +171,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
           autoFocus={autoFocus}
           singleVariableSelection={schema.singleVariableSelection}
           noVariablesMessage={noVariablesMessage}
+          isMultiline={type === 'multiline'}
         />
       )
     }

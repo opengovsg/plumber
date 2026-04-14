@@ -9,7 +9,8 @@ const auth: IUserAddedConnectionAuth = {
   fields: [
     {
       key: 'screenName',
-      label: 'Label',
+      label: 'Nickname',
+      description: "It does not need to match your bot's name on AIBots.",
       type: 'string' as const,
       required: true,
       readOnly: false,

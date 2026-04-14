@@ -12,12 +12,13 @@ import { parametersSchema } from './schema'
 const action: IRawAction = {
   name: 'Send Query',
   key: 'sendQuery',
-  description: 'Sends a query to your customised AI Bot',
+  description: 'Sends a query to one of your bots on AIBots',
   arguments: [
     {
-      label: 'Query',
+      label: 'What do you want to ask your bot?',
+      placeholder: 'Summarise this form response and flag anything urgent',
       key: 'query',
-      type: 'string' as const,
+      type: 'multiline' as const,
       required: true,
       variables: true,
     },

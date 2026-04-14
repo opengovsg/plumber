@@ -104,6 +104,7 @@ interface EditorProps {
   singleVariableSelection?: boolean
   noVariablesMessage?: string
   customRteMenuOptions?: TRteMenuOption[]
+  isMultiline?: boolean
 }
 const Editor = ({
   onChange,
@@ -120,6 +121,7 @@ const Editor = ({
   autoFocus = false,
   noVariablesMessage,
   customRteMenuOptions,
+  isMultiline,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -213,7 +215,8 @@ const Editor = ({
     // To simulate textarea and coordinate with dropdown input size
     onCreate: ({ editor }) => {
       const editorElement = editor.view.dom as HTMLElement
-      editorElement.style.minHeight = isRich ? '9rem' : '2.625rem' // Set initial minHeight directly
+      editorElement.style.minHeight =
+        isRich || isMultiline ? '9rem' : '2.625rem' // Set initial minHeight directly
       editorElement.style.maxHeight = isSingleLine ? '2.625rem' : ''
     },
     editorProps: {
@@ -384,6 +387,7 @@ interface RichTextEditorProps {
   singleVariableSelection?: boolean
   noVariablesMessage?: string
   customRteMenuOptions?: TRteMenuOption[]
+  isMultiline?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -402,6 +406,7 @@ const RichTextEditor = ({
   singleVariableSelection,
   noVariablesMessage,
   customRteMenuOptions,
+  isMultiline,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -452,6 +457,7 @@ const RichTextEditor = ({
             singleVariableSelection={singleVariableSelection}
             noVariablesMessage={noVariablesMessage}
             customRteMenuOptions={customRteMenuOptions}
+            isMultiline={isMultiline}
           />
         )}
       />
