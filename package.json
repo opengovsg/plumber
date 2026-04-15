@@ -36,11 +36,17 @@
     "minimatch": "10.2.3",
     "rollup": "4.59.0",
     "dd-trace": {
-      "@opentelemetry/core": "2.2.0"
+      "@opentelemetry/core": "2.2.0",
+      "path-to-regexp": "0.1.13"
     },
     "@opentelemetry/core": {
       "@opentelemetry/semantic-conventions": "1.37.0"
-    }
+    },
+    "lodash": "4.18.1",
+    "lodash-es": "4.18.1",
+    "vite": "6.4.2",
+    "immutable": "4.3.8",
+    "picomatch": "4.0.4"
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
@@ -48,8 +54,8 @@
     "@types/node": "^22.18.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
-    "@vitest/coverage-v8": "^3.2.1",
-    "@vitest/ui": "^3.2.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "concurrently": "^9.2.1",
     "eslint": "^8.13.0",
     "eslint-config-prettier": "^8.3.0",
@@ -60,7 +66,7 @@
     "rimraf": "^4.4.1",
     "tsc-alias": "^1.8.16",
     "typescript": "^5.5.4",
-    "vitest": "^3.2.1",
+    "vitest": "^3.2.4",
     "wait-on": "^7.2.0"
   },
   "version": "1.61.3"
