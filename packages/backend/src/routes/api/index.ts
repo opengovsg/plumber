@@ -5,6 +5,7 @@ import {
   requireAuthentication,
   setCurrentUserContext,
 } from './middleware/authentication'
+import appsRouter from './apps'
 import chatRouter from './chat'
 
 const router = Router()
@@ -14,14 +15,12 @@ const router = Router()
 router.use(setCurrentUserContext)
 router.use(requireAuthentication)
 
-// Routes that allow admin operations must be mounted BEFORE this middleware
-// (none currently - all routes block admins by default)
+// Mount routes that admins can access before blockAdminOperations
+router.use('/apps', appsRouter)
 
-// Block ALL admin mutations by default (admins are read-only)
-// Individual routes that need admin write access should be mounted above
+// Block admin mutations for all subsequent routes
 router.use(blockAdminOperations)
 
-// Mount individual API routes
 router.use('/chat', chatRouter)
 
 // Future routes can be added here:

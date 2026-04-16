@@ -28,7 +28,6 @@ import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { EXECUTE_STEP } from '@/graphql/mutations/execute-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import {
@@ -39,6 +38,7 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
+import { useApps } from '@/hooks/useApps'
 
 interface IEditorContextValue {
   flow: IFlow
@@ -140,7 +140,8 @@ export const EditorProvider = ({
   const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
-  const { data: getAppsData, loading: isLoadingAllApps } = useQuery(GET_APPS)
+  // Use REST API for apps data (faster than GraphQL due to caching)
+  const { data: allApps, loading: isLoadingAllApps } = useApps()
 
   const steps = flow?.steps ?? []
   const isEmptyPipe =
@@ -148,11 +149,6 @@ export const EditorProvider = ({
 
   const hasForEach = flow?.steps.some((step) => isForEachStep(step))
   const hasIfThen = flow?.steps.some((step: IStep) => isIfThenStep(step))
-
-  const allApps = useMemo(
-    () => getAppsData?.getApps ?? [],
-    [getAppsData?.getApps],
-  )
 
   const { data, loading: isLoadingTestExecutionSteps } = useQuery<{
     getTestExecutionSteps: IExecutionStep[]
