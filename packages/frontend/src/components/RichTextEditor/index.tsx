@@ -84,9 +84,6 @@ const RICH_TEXT_EXTENSIONS = [
         'border:1px solid black;padding: 5px 10px;min-width: 100px;height: 15px;',
     },
   }),
-  ImageResize.configure({
-    inline: true,
-  }),
 ]
 
 interface EditorProps {
@@ -103,6 +100,7 @@ interface EditorProps {
   singleVariableSelection?: boolean
   noVariablesMessage?: string
   customRteMenuOptions?: TRteMenuOption[]
+  isDisplayOnly?: boolean
 }
 const Editor = ({
   onChange,
@@ -118,12 +116,14 @@ const Editor = ({
   autoFocus = false,
   noVariablesMessage,
   customRteMenuOptions,
+  isDisplayOnly = false,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
   const { allApps } = useContext(EditorContext)
   const isMobile = useIsMobile()
   const isMulticol = parentType === 'multicol'
+  const showMenuBar = isRich && !isDisplayOnly
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
@@ -145,7 +145,11 @@ const Editor = ({
     Placeholder.configure({
       placeholder,
     }),
-    StepVariable,
+    ...(isDisplayOnly ? [] : [StepVariable]),
+    ImageResize.configure({
+      inline: true,
+      resizable: !isDisplayOnly,
+    }),
   ]
 
   /**
@@ -160,7 +164,9 @@ const Editor = ({
     return escapeHtml(initialValue)
   }, [initialValue, isRich])
 
-  let content = substituteOldTemplates(unsubstituedValue, varInfo) // backward compatibility with old values from PowerInput
+  let content = isDisplayOnly
+    ? unsubstituedValue
+    : substituteOldTemplates(unsubstituedValue, varInfo) // backward compatibility with old values from PowerInput
   // convert new line character into br elem so tiptap can load the content correctly
   content = content.replaceAll('\n', '<br>')
 
@@ -289,10 +295,11 @@ const Editor = ({
           }
           closeSuggestions()
         }}
+        {...(isDisplayOnly && { style: { border: 'none' } })}
       >
         <PopoverTrigger>
           <Box className={isMulticol ? 'single-line-editor' : undefined}>
-            {isRich && (
+            {showMenuBar && (
               <MenuBar
                 editor={editor}
                 variableMap={varInfo}
@@ -308,6 +315,7 @@ const Editor = ({
                   e.preventDefault()
                 }
               }}
+              {...(isDisplayOnly && { style: { height: '60vh' } })}
             />
             <Portal>
               <PopoverContent
@@ -355,6 +363,7 @@ interface RichTextEditorProps {
   singleVariableSelection?: boolean
   noVariablesMessage?: string
   customRteMenuOptions?: TRteMenuOption[]
+  isDisplayOnly?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -373,6 +382,7 @@ const RichTextEditor = ({
   singleVariableSelection,
   noVariablesMessage,
   customRteMenuOptions,
+  isDisplayOnly = false,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -411,7 +421,7 @@ const RichTextEditor = ({
           <Editor
             onChange={onChange}
             initialValue={value}
-            editable={!readOnly}
+            editable={!readOnly && !isDisplayOnly}
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
             isRich={isRich}
@@ -422,6 +432,7 @@ const RichTextEditor = ({
             singleVariableSelection={singleVariableSelection}
             noVariablesMessage={noVariablesMessage}
             customRteMenuOptions={customRteMenuOptions}
+            isDisplayOnly={isDisplayOnly}
           />
         )}
       />

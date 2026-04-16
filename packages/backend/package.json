@@ -29,11 +29,11 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "1.0.23",
-    "@apollo/server": "5.4.0",
+    "@apollo/server": "5.5.0",
     "@as-integrations/express4": "1.1.2",
-    "@aws-sdk/client-dynamodb": "3.995.0",
-    "@aws-sdk/client-s3": "3.995.0",
-    "@aws-sdk/s3-presigned-post": "3.995.0",
+    "@aws-sdk/client-dynamodb": "3.1027.0",
+    "@aws-sdk/client-s3": "3.1027.0",
+    "@aws-sdk/s3-presigned-post": "3.1027.0",
     "@bull-board/express": "5.17.0",
     "@graphql-tools/schema": "10.0.25",
     "@graphql-tools/utils": "10.9.1",
@@ -72,6 +72,7 @@
     "ipaddr.js": "2.1.0",
     "jsonwebtoken": "^9.0.3",
     "knex": "2.4.2",
+    "lodash": "4.18.1",
     "lodash.get": "4.4.2",
     "lottie-web": "5.12.2",
     "luxon": "2.5.2",
@@ -95,7 +96,7 @@
   },
   "devDependencies": {
     "@swc/core": "^1.13.5",
-    "@testcontainers/postgresql": "^11.10.0",
+    "@testcontainers/postgresql": "^11.14.0",
     "@types/bcrypt": "^5.0.0",
     "@types/big.js": "6.2.2",
     "@types/bull": "^3.15.8",
@@ -113,10 +114,10 @@
     "axios-mock-adapter": "^2.1.0",
     "cpy-cli": "^7.0.0",
     "nodemon": "^3.1.14",
-    "testcontainers": "^11.10.0",
+    "testcontainers": "^11.14.0",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.61.3"
+  "version": "1.61.4"
 }

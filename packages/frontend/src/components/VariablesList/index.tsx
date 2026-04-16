@@ -21,8 +21,9 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
-import TableVariableItem from './TableVariableItem'
+import VariableItemWithModal from './VariableItemWithModal'
 
+const VARIABLES_WITH_MODALS = ['table', 'html']
 const VARIABLE_ITEM_HEIGHT = 77
 const SUGGESTION_VARIABLE_ITEM_HEIGHT = 61
 
@@ -233,6 +234,9 @@ export default function VariablesList(props: VariablesListProps) {
         {virtualizer.getVirtualItems().map((virtualItem) => {
           const variable = defaultVariables[virtualItem.index]
           const isLast = virtualItem.index === defaultVariables.length - 1
+          const isVariableWithModal = VARIABLES_WITH_MODALS.includes(
+            variable.type ?? 'text',
+          )
 
           return (
             <Box
@@ -244,8 +248,8 @@ export default function VariablesList(props: VariablesListProps) {
               width="100%"
               transform={`translateY(${virtualItem.start}px)`}
             >
-              {variable.type === 'table' ? (
-                <TableVariableItem variable={variable} onClick={onClick} />
+              {isVariableWithModal ? (
+                <VariableItemWithModal variable={variable} onClick={onClick} />
               ) : variable.isHidden ? null : (
                 <VariableItem
                   variable={variable}

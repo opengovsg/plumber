@@ -1,4 +1,4 @@
-import type { IApp, ITemplate } from '@plumber/types'
+import type { ITemplate } from '@plumber/types'
 
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
@@ -8,8 +8,8 @@ import { Link } from '@opengovsg/design-system-react'
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
-import { GET_APPS } from '@/graphql/queries/get-apps'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
+import { useApps } from '@/hooks/useApps'
 
 import TemplateModal from '../Template'
 
@@ -26,8 +26,7 @@ export default function Templates(): JSX.Element {
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
 
-  const { data: appsData, loading: appsLoading } = useQuery(GET_APPS)
-  const apps: IApp[] = appsData?.getApps ?? []
+  const { data: apps, loading: appsLoading } = useApps()
 
   return (
     <>

@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.61.3",
+  "version": "1.61.4",
   "type": "module",
   "scripts": {
     "dev": "wait-on tcp:3000 && vite --host --force",
@@ -42,7 +42,7 @@
     "escape-html": "1.0.3",
     "file-saver": "2.0.5",
     "lens-widget": "^1.37.0",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "lottie-web": "5.12.2",
     "luxon": "^2.3.1",
     "node-html-parser": "6.1.13",
@@ -82,7 +82,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^2.5.1",
     "type-fest": "4.10.3",
-    "vite": "^6.3.6",
+    "vite": "^6.4.2",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-package-version": "1.1.0",
     "vite-tsconfig-paths": "^5.1.4"

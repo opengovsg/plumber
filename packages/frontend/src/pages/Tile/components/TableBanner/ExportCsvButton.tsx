@@ -3,11 +3,11 @@ import { BiChevronDown, BiExport } from 'react-icons/bi'
 import { ButtonProps, MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
 import { Button, Menu } from '@opengovsg/design-system-react'
 import { saveAs } from 'file-saver'
-import { unparse } from 'papaparse'
 
 import { dateString } from '@/helpers/dateTime'
 
 import { useTableContext } from '../../contexts/TableContext'
+import { buildCsv } from '../../helpers/build-csv'
 
 const ExportCsvButton = (props: ButtonProps) => {
   const { allDataRef, filteredDataRef, tableColumns, tableName } =
@@ -19,22 +19,11 @@ const ExportCsvButton = (props: ButtonProps) => {
         filtered && filteredDataRef.current.length
           ? filteredDataRef.current
           : allDataRef.current
-      const columnIdToNameMap: Record<string, string> = {}
-      tableColumns.forEach((column) => {
-        columnIdToNameMap[column.id] = column.name
-      })
 
-      const mappedData = dataToSave.map((dataRow) => {
-        const row: Record<string, string> = {}
-        Object.entries(dataRow).forEach(([key, value]) => {
-          row[columnIdToNameMap[key]] = value
-        })
-        return row
-      })
-
-      const csvString = unparse(mappedData, {
-        columns: tableColumns.map((column) => column.name),
-      })
+      const csvString = buildCsv(dataToSave, tableColumns)
+      if (csvString === null) {
+        return
+      }
 
       const filename = `${tableName
         .trim()
