@@ -10,32 +10,41 @@ export const schema = z.object({
     }),
   responseFields: z
     .array(
-      z.object({
-        fieldName: z
-          .string()
-          .min(1, { message: 'Field name is required' })
-          .max(64, { message: 'Field name cannot be more than 64 characters' })
-          .regex(/^[a-zA-Z0-9_-]+$/, {
-            message:
-              'Field name cannot contain spaces. Use only letters, numbers, underscores (_), and hyphens (-)',
-          }),
+      z
+        .object({
+          fieldName: z
+            .string()
+            .min(1, { message: 'Output name is required' })
+            .max(64, {
+              message: 'Output name cannot be more than 64 characters',
+            })
+            .regex(/^[a-zA-Z0-9\s]+$/, {
+              message:
+                'Output name can only contain letters, numbers, and spaces',
+            }),
 
-        description: z
-          .string()
-          .min(1, { message: 'Description is required' })
-          .max(128, {
-            message: 'Description cannot be more than 128 characters',
-          }),
-      }),
+          description: z
+            .string()
+            .min(1, { message: 'Description is required' })
+            .max(128, {
+              message: 'Description cannot be more than 128 characters',
+            }),
+        })
+        .transform((field) => ({
+          fieldName: field.fieldName.replace(/\s/g, '_'),
+          originalFieldName: field.fieldName,
+          description: field.description,
+        })),
     )
     .min(1, { message: 'At least one response field is required' })
     .refine(
       (fields) => {
+        // After transformation, check uniqueness of sanitized field names
         const names = fields.map((f) => f.fieldName.toLowerCase())
         return new Set(names).size === names.length
       },
       {
-        message: 'Field names must be unique (case-insensitive)',
+        message: 'Output names must be unique (case-insensitive)',
       },
     ),
 })

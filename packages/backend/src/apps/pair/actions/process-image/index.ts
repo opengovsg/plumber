@@ -17,37 +17,43 @@ import { schema } from './schema'
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
-  name: 'Process image',
+  name: 'Process an image',
   key: 'processImage',
-  description: 'Process an image',
+  description: 'Extract information from an image or PDF',
   arguments: [
     {
       label: 'Image',
+      description: 'Select an image from a previous step or upload one',
       key: 'image',
       type: 'attachment' as const,
       required: true,
       variableTypes: ['file'],
       // TODO(kevinkim-ogp): restrict the supported file types
+      maxFiles: 1,
     },
     {
-      label: 'Response field(s)',
+      label: 'What do you want to extract?',
+      description: 'Use these as variables in later steps',
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
+      addRowButtonText: 'Add another',
       subFields: [
         {
-          key: 'fieldName',
-          placeholder: 'Field name',
-          type: 'string',
-          required: true,
-          customStyle: { flex: 1 },
-        },
-        {
           key: 'description',
-          placeholder: 'Description',
+          label: 'What to look for',
+          placeholder: 'Whether the image contains a handwritten signature',
           type: 'string',
           required: true,
           customStyle: { flex: 3 },
+        },
+        {
+          key: 'fieldName',
+          label: 'Output name',
+          placeholder: 'Signature present',
+          type: 'string',
+          required: true,
+          customStyle: { flex: 1 },
         },
       ],
     },
