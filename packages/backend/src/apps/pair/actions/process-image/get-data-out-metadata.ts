@@ -14,7 +14,7 @@ async function getDataOutMetadata(
 
   const metadata = Object.keys(dataOut).reduce((acc, key) => {
     acc[key] = {
-      label: key,
+      label: key.replace(/_/g, ' '),
       type: 'ai_response',
     }
     return acc
