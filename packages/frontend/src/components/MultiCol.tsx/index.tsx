@@ -48,9 +48,21 @@ export default function MultiCol(props: MultiColProps) {
     subFIndex: number,
   ) => {
     const { type, variables } = subF
+
+    // Only show labels, descriptions, and tooltips on the first row
+    const schemaWithConditionalLabel =
+      index === 0
+        ? subF
+        : {
+            ...subF,
+            label: undefined,
+            description: undefined,
+            tooltipText: undefined,
+          }
+
     return (
       <InputCreator
-        schema={subF}
+        schema={schemaWithConditionalLabel}
         namePrefix={name}
         parentType="multicol"
         autoFocus={subFIndex === 0 && type === 'string' && variables}
@@ -60,7 +72,7 @@ export default function MultiCol(props: MultiColProps) {
   }
 
   return (
-    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="center">
+    <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="flex-end">
       {subFields.map((subF, subFIndex) => {
         const showDeleteButton = subFIndex === 0 && canRemoveRow
         return isMobile ? (

@@ -290,6 +290,9 @@ type ActionSubstepArgument {
   # Only for rich text
   customRteMenuOptions: [RteMenuOption]
   supportTableDisplay: Boolean
+
+  # Only for attachments
+  maxFiles: Int
 }
 
 type DropdownClickableLink {
