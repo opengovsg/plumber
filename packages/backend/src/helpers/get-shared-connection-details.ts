@@ -1,5 +1,7 @@
 import { IStep } from '@plumber/types'
 
+import App from '@/models/app'
+
 /**
  * THIS MUST BE UPDATED WHEN A NEW APP OR NEW DYNAMIC FIELD IS ADDED
  * we only need to app apps that have fields that behave like connections.
@@ -34,14 +36,26 @@ export const APP_CONNECTION_FIELDS: Record<
   },
 }
 
-export function getConnectionDetails(steps: IStep[]): {
+export async function getConnectionDetails(steps: IStep[]): Promise<{
   connection: {
     [connectionId: string]: {
       [appKey: string]: string[]
     }
   }
   table: string[]
-} {
+}> {
+  /**
+   * NOTE: we fetch apps here to identify apps that should have connections
+   * Prior to the UI revamp, users could change the app/action without
+   * having to delete the step.
+   * There is a possibility where an app that should not have a `connection_id`
+   * like Tiles, could inherit a `connection_id` from a previous step.
+   */
+  const appsWithConnections = await App.getAllAppsWithConnections()
+  const appKeysWithConnections: string[] = appsWithConnections.map(
+    (app) => app.key,
+  )
+
   const connections: {
     connection: {
       [connectionId: string]: {
@@ -55,7 +69,7 @@ export function getConnectionDetails(steps: IStep[]): {
   }
 
   steps.map((step) => {
-    if (step.connectionId) {
+    if (step.connectionId && appKeysWithConnections.includes(step.appKey)) {
       connections.connection[step.connectionId] ??= {}
 
       const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey

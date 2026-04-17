@@ -75,7 +75,7 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
         const flow = await Flow.query(trx)
           .withGraphFetched('steps')
           .findById(flowId)
-        const connectionDetails = getConnectionDetails(flow?.steps)
+        const connectionDetails = await getConnectionDetails(flow?.steps)
 
         if (!hasCollaborators) {
           // add all connections to the flow_connections table

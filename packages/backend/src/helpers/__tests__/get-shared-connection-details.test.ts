@@ -24,7 +24,7 @@ describe('getConnectionDetails', () => {
     ...overrides,
   })
 
-  it('should not include any metadata for apps without connection fields', () => {
+  it('should not include any metadata for apps without connection fields', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'aisay',
@@ -43,7 +43,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     // Should return empty object since none of these apps have parameterKey defined
     expect(result).toEqual({
@@ -56,7 +56,7 @@ describe('getConnectionDetails', () => {
     })
   })
 
-  it('should not include metadata for apps without connection fields', () => {
+  it('should not include metadata for apps without connection fields', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'paysg',
@@ -69,7 +69,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     // Should return empty object since paysg has empty APP_CONNECTION_FIELDS
     expect(result).toEqual({
@@ -80,7 +80,7 @@ describe('getConnectionDetails', () => {
     })
   })
 
-  it('should include metadata for apps with parameterKey defined', () => {
+  it('should include metadata for apps with parameterKey defined', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'slack',
@@ -94,7 +94,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     expect(result).toEqual({
       connection: {
@@ -105,7 +105,7 @@ describe('getConnectionDetails', () => {
     })
   })
 
-  it('should handle multiple connections with different parameter keys', () => {
+  it('should handle multiple connections with different parameter keys', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'slack',
@@ -124,7 +124,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     expect(result).toEqual({
       connection: {
@@ -138,7 +138,7 @@ describe('getConnectionDetails', () => {
     })
   })
 
-  it('should not include duplicate parameter values for the same connection', () => {
+  it('should not include duplicate parameter values for the same connection', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'slack',
@@ -157,7 +157,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     expect(result).toEqual({
       connection: {
@@ -167,7 +167,7 @@ describe('getConnectionDetails', () => {
     })
   })
 
-  it('should handle steps without connectionId', () => {
+  it('should handle steps without connectionId', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'formatter',
@@ -181,7 +181,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     expect(result).toEqual({
       connection: {},
@@ -189,7 +189,7 @@ describe('getConnectionDetails', () => {
     })
   })
 
-  it('should handle steps with missing parameter values', () => {
+  it('should handle steps with missing parameter values', async () => {
     const steps: IStep[] = [
       createMockStep({
         appKey: 'slack',
@@ -203,7 +203,7 @@ describe('getConnectionDetails', () => {
       }),
     ]
 
-    const result = getConnectionDetails(steps)
+    const result = await getConnectionDetails(steps)
 
     expect(result).toEqual({
       connection: {
@@ -214,7 +214,7 @@ describe('getConnectionDetails', () => {
   })
 
   describe('special case: Tiles', () => {
-    it('should use tableId for tiles app regardless of connectionId', () => {
+    it('should use tableId for tiles app regardless of connectionId', async () => {
       const steps: IStep[] = [
         createMockStep({
           appKey: 'tiles',
@@ -226,7 +226,7 @@ describe('getConnectionDetails', () => {
         }),
       ]
 
-      const result = getConnectionDetails(steps)
+      const result = await getConnectionDetails(steps)
 
       expect(result).toEqual({
         connection: {},
@@ -234,7 +234,7 @@ describe('getConnectionDetails', () => {
       })
     })
 
-    it('should handle tiles step with empty parameters', () => {
+    it('should handle tiles step with empty parameters', async () => {
       const steps: IStep[] = [
         createMockStep({
           appKey: 'tiles',
@@ -242,7 +242,7 @@ describe('getConnectionDetails', () => {
         }),
       ]
 
-      const result = getConnectionDetails(steps)
+      const result = await getConnectionDetails(steps)
 
       expect(result).toEqual({
         connection: {},
@@ -250,7 +250,7 @@ describe('getConnectionDetails', () => {
       })
     })
 
-    it('should not include duplicate tableIds for tiles', () => {
+    it('should not include duplicate tableIds for tiles', async () => {
       const steps: IStep[] = [
         createMockStep({
           appKey: 'tiles',
@@ -269,7 +269,28 @@ describe('getConnectionDetails', () => {
         }),
       ]
 
-      const result = getConnectionDetails(steps)
+      const result = await getConnectionDetails(steps)
+
+      expect(result).toEqual({
+        connection: {},
+        table: ['table-123', 'table-456'],
+      })
+    })
+
+    it('should not include connection ids for Tiles steps', async () => {
+      const steps: IStep[] = [
+        createMockStep({
+          appKey: 'tiles',
+          connectionId: 'tiles-connection-id',
+          parameters: { tableId: 'table-123' },
+        }),
+        createMockStep({
+          appKey: 'tiles',
+          parameters: { tableId: 'table-456' },
+        }),
+      ]
+
+      const result = await getConnectionDetails(steps)
 
       expect(result).toEqual({
         connection: {},
@@ -279,7 +300,7 @@ describe('getConnectionDetails', () => {
   })
 
   describe('mixed scenarios', () => {
-    it('should handle mix of apps with and without parameterKey defined', () => {
+    it('should handle mix of apps with and without parameterKey defined', async () => {
       const steps: IStep[] = [
         // Apps with empty APP_CONNECTION_FIELDS
         createMockStep({
@@ -310,7 +331,7 @@ describe('getConnectionDetails', () => {
         }),
       ]
 
-      const result = getConnectionDetails(steps)
+      const result = await getConnectionDetails(steps)
 
       expect(result).toEqual({
         connection: {
@@ -325,15 +346,15 @@ describe('getConnectionDetails', () => {
       })
     })
 
-    it('should handle empty steps array', () => {
-      const result = getConnectionDetails([])
+    it('should handle empty steps array', async () => {
+      const result = await getConnectionDetails([])
       expect(result).toEqual({
         connection: {},
         table: [],
       })
     })
 
-    it('should handle steps with unknown appKey', () => {
+    it('should handle steps with unknown appKey', async () => {
       const steps: IStep[] = [
         createMockStep({
           appKey: 'unknown-app' as any,
@@ -342,13 +363,11 @@ describe('getConnectionDetails', () => {
         }),
       ]
 
-      const result = getConnectionDetails(steps)
+      const result = await getConnectionDetails(steps)
 
-      // Should return empty object since unknown app is not in APP_CONNECTION_FIELDS
+      // Should return empty object since unknown app is not a valid app
       expect(result).toEqual({
-        connection: {
-          'unknown-app-connection-id': {},
-        },
+        connection: {},
         table: [],
       })
     })

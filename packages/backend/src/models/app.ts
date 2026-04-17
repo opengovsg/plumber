@@ -62,6 +62,11 @@ class App {
   static getAllAppsWithFunctions = memoize(async () => {
     return await this.findAll(null, false)
   })
+
+  static getAllAppsWithConnections = memoize(async () => {
+    const allApps = await this.findAll(null, false)
+    return allApps.filter((app) => app.auth)
+  })
 }
 
 export default App
