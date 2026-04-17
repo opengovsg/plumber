@@ -14,11 +14,14 @@ async function getTransferDetails(
     }
   }
 
-  const table = await TableMetadata.query()
-    .findById(tableId)
-    .throwIfNotFound({
-      message: `Table connection cannot be found for table id: ${tableId}`,
-    })
+  const table = await TableMetadata.query().findById(tableId)
+  if (!table) {
+    return {
+      position: $.step.position,
+      appName: $.app.name,
+      instructions: `Tile has been deleted`,
+    }
+  }
 
   return {
     position: $.step.position,

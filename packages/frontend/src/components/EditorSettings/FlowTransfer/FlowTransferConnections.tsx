@@ -17,12 +17,16 @@ function StepConnectionDisplay(props: ITransferDetails) {
       <Badge colorScheme="warning">
         Step {position}: {appName}
       </Badge>
-      <Text textStyle="body-1" color="base.content.default">
-        {connectionName}
-      </Text>
-      <Text textStyle="body-1" color="base.content.medium">
-        {instructions}
-      </Text>
+      {connectionName && (
+        <Text textStyle="body-1" color="base.content.default">
+          {connectionName}
+        </Text>
+      )}
+      {instructions && (
+        <Text textStyle="body-1" color="base.content.medium">
+          {instructions}
+        </Text>
+      )}
     </Flex>
   )
 }
@@ -67,7 +71,7 @@ export default function FlowTransferConnections() {
           {showConnections ? 'Hide connections' : 'Show connections'}
         </Text>
         {showConnections && (
-          <Box>
+          <Box display="flex" flexDir="column" gap={2}>
             {flowTransferDetails.map(
               ({ appName, position, connectionName, instructions }, index) => (
                 <StepConnectionDisplay
