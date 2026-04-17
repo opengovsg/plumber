@@ -448,6 +448,9 @@ export interface IFieldAttachment extends IBaseField {
   type: 'attachment'
   value?: string
   variableTypes?: TDataOutMetadatumType[]
+
+  // Only for attachments
+  maxFiles?: number
 }
 
 export interface IFieldMultiline extends IBaseField {
