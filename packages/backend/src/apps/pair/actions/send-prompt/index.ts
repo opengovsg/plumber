@@ -18,7 +18,7 @@ import { schema } from './schema'
 const turndownService = new TurndownService()
 
 const action: IRawAction = {
-  name: 'Ask Pair',
+  name: 'Use Pair',
   key: 'sendPrompt',
   description:
     'Enter a custom prompt to summarise, categorise or analyse data with Pair',
@@ -42,33 +42,28 @@ const action: IRawAction = {
       showOptionValue: false,
     },
     {
-      label: 'Prompt',
+      label: 'Describe what you want Pair to do',
       key: 'prompt',
       type: 'rich-text' as const,
       required: true,
       variables: true,
-      customRteMenuOptions: [
-        'Bold',
-        'Italic',
-        'Underline',
-        'Divider', // specify when to show a divider
-        'Heading1',
-        'Heading2',
-        'Heading3',
-        'Heading4',
-        'ListBullet',
-        'ListOrdered',
-        'Divider',
-        'Undo',
-        'Redo',
-      ],
+      /**
+       * TODO (kevinkim-ogp): monitor this feature to see if we
+       * need to add the custom RTE menu options back.
+       *
+       * The initial release uses the RTE so users can still format
+       * using keyboard shortcuts, but hides the menu bar to keep
+       * this feature simple.
+       */
+      customRteMenuOptions: [],
       defaultValue: {
         fieldKey: 'promptType',
         options: DEFAULT_PROMPT_VALUES,
       },
     },
     {
-      label: 'How do you want the response?',
+      label: 'Define how you want Pair to structure what it extracts',
+      description: 'Use these as variables in later steps',
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
@@ -78,14 +73,7 @@ const action: IRawAction = {
       },
       subFields: [
         {
-          placeholder: 'Field name',
-          key: 'fieldName',
-          type: 'string' as const,
-          required: true,
-          variables: false,
-        },
-        {
-          placeholder: 'Field type',
+          label: 'Type',
           key: 'fieldType',
           type: 'dropdown' as const,
           required: true,
@@ -97,7 +85,16 @@ const action: IRawAction = {
           ],
         },
         {
-          placeholder: 'Categories (comma-separated)',
+          label: 'Output name',
+          placeholder: 'E.g., Priority level',
+          key: 'fieldName',
+          type: 'string' as const,
+          required: true,
+          variables: false,
+        },
+        {
+          label: 'Categories',
+          placeholder: 'Separated by commas',
           key: 'fieldCategories',
           type: 'string' as const,
           variables: true,

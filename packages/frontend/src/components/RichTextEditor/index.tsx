@@ -129,7 +129,9 @@ const Editor = ({
   const { allApps } = useContext(EditorContext)
   const isMobile = useIsMobile()
   const isMulticol = parentType === 'multicol'
-  const showMenuBar = isRich && !isDisplayOnly
+  const hasCustomMenuOptions =
+    !customRteMenuOptions || customRteMenuOptions.length > 0
+  const shouldShowMenuBar = isRich && hasCustomMenuOptions
 
   // ref to track the defaultValue
   // this is to sync the content of the editor with the defaultValue
@@ -343,7 +345,7 @@ const Editor = ({
         >
           <PopoverTrigger>
             <Box className={isMulticol ? 'single-line-editor' : undefined}>
-              {showMenuBar && (
+              {shouldShowMenuBar && (
                 <MenuBar
                   editor={editor}
                   variableMap={varInfo}
