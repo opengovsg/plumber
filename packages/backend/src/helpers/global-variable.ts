@@ -64,6 +64,7 @@ const globalVariable = async (
         return null
       },
       data: connection?.formattedData,
+      connectionId: connection?.id,
     },
     app: app,
     flow: {
