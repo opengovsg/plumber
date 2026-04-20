@@ -105,6 +105,7 @@ interface EditorProps {
   customRteMenuOptions?: TRteMenuOption[]
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
+  containerClassName?: string
 }
 const Editor = ({
   onChange,
@@ -123,6 +124,7 @@ const Editor = ({
   customRteMenuOptions,
   isDisplayOnly = false,
   supportTableDisplay,
+  containerClassName,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -323,7 +325,7 @@ const Editor = ({
         placement={getPopoverPlacement(editor)}
       >
         <div
-          className="editor"
+          className={`editor ${containerClassName ?? ''}`.trim()}
           onClick={(e) => {
             e.stopPropagation()
             openSuggestions()
@@ -415,6 +417,7 @@ interface RichTextEditorProps {
   customRteMenuOptions?: TRteMenuOption[]
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
+  containerClassName?: string
 }
 const RichTextEditor = ({
   required,
@@ -435,6 +438,7 @@ const RichTextEditor = ({
   customRteMenuOptions,
   isDisplayOnly = false,
   supportTableDisplay,
+  containerClassName,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -487,6 +491,7 @@ const RichTextEditor = ({
             customRteMenuOptions={customRteMenuOptions}
             isDisplayOnly={isDisplayOnly}
             supportTableDisplay={supportTableDisplay}
+            containerClassName={containerClassName}
           />
         )}
       />

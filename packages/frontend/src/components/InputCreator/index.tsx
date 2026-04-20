@@ -9,6 +9,7 @@ import DragDropInput from '@/components/DragDropInput'
 import MultiRow from '@/components/MultiRow'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
+import RichTextEditorWithPresets from '@/components/RichTextEditorWithPresets'
 import TextField from '@/components/TextField'
 import { EditorContext } from '@/contexts/Editor'
 import { getDefaultValue } from '@/helpers/editor'
@@ -140,6 +141,24 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   }
 
   if (type === 'rich-text') {
+    if (schema?.presets?.length) {
+      return (
+        <RichTextEditorWithPresets
+          name={computedName}
+          basePath={namePrefix}
+          presets={schema?.presets}
+          required={required}
+          label={label}
+          description={description}
+          placeholder={placeholder}
+          variablesEnabled={variables}
+          noVariablesMessage={noVariablesMessage}
+          customRteMenuOptions={schema?.customRteMenuOptions}
+          defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
+        />
+      )
+    }
+
     return (
       <RichTextEditor
         name={computedName}

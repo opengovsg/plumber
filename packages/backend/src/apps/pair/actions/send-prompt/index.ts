@@ -8,6 +8,7 @@ import StepError, { GenericSolution } from '@/errors/step'
 import {
   DEFAULT_PROMPT_VALUES,
   DEFAULT_RESPONSE_FIELDS_VALUES,
+  PROMPT_PRESETS,
 } from '../../common/constants'
 import generateObject from '../../common/generate-object'
 import { generateSchemaFromFields } from '../../common/generate-schema'
@@ -24,24 +25,6 @@ const action: IRawAction = {
     'Enter a custom prompt to summarise, categorise or analyse data with Pair',
   arguments: [
     {
-      label: 'What would you like to do?',
-      key: 'promptType',
-      type: 'dropdown' as const,
-      required: true,
-      options: [
-        { label: 'Analyse', value: 'analyse' },
-        { label: 'Categorise', value: 'categorise' },
-        { label: 'Summarise', value: 'summarise' },
-        { label: 'Write', value: 'write' },
-        {
-          label: 'Custom prompt',
-          value: 'custom',
-          description: 'Do it yourself',
-        },
-      ],
-      showOptionValue: false,
-    },
-    {
       label: 'Describe what you want Pair to do',
       key: 'prompt',
       type: 'rich-text' as const,
@@ -56,10 +39,21 @@ const action: IRawAction = {
        * this feature simple.
        */
       customRteMenuOptions: [],
-      defaultValue: {
-        fieldKey: 'promptType',
-        options: DEFAULT_PROMPT_VALUES,
-      },
+      presets: PROMPT_PRESETS.map((preset) => ({
+        key: preset.key,
+        label: preset.label,
+        description: preset.description,
+        assignments: [
+          {
+            fieldKey: 'prompt',
+            value: DEFAULT_PROMPT_VALUES[preset.key],
+          },
+          {
+            fieldKey: 'responseFields',
+            value: DEFAULT_RESPONSE_FIELDS_VALUES[preset.key],
+          },
+        ],
+      })),
     },
     {
       label: 'Define how you want Pair to structure what it extracts',
@@ -68,7 +62,7 @@ const action: IRawAction = {
       type: 'multirow-multicol' as const,
       required: true,
       hiddenIf: {
-        fieldKey: 'promptType',
+        fieldKey: 'prompt',
         op: 'is_empty',
       },
       addRowButtonText: 'Add output',
@@ -107,10 +101,6 @@ const action: IRawAction = {
           customStyle: { flex: 3 },
         },
       ],
-      defaultValue: {
-        fieldKey: 'promptType',
-        options: DEFAULT_RESPONSE_FIELDS_VALUES,
-      },
     },
   ],
 

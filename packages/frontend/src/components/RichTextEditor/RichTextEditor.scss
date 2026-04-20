@@ -322,6 +322,38 @@
   }
 }
 
+.editor--borderless {
+  border: none;
+  border-radius: 0;
+  height: 100%;
+  justify-content: flex-start;
+
+  &:focus-within {
+    border: none;
+    box-shadow: none;
+  }
+
+  .editor__content {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .editor__content > .tiptap {
+    flex: 1 1 auto;
+    min-height: 9rem;
+  }
+
+  .editor__content > .tiptap.ProseMirror {
+    height: 100%;
+    max-height: none;
+  }
+
+  .editor__content .ProseMirror {
+    min-height: 9rem !important;
+  }
+}
+
 .single-line-editor {
   white-space: nowrap;
   overflow-x: auto;

@@ -295,6 +295,7 @@ type ActionSubstepArgument {
   # Only for rich text
   customRteMenuOptions: [RteMenuOption]
   supportTableDisplay: Boolean
+  presets: JSONObject
 
   # Only for attachments
   maxFiles: Int
