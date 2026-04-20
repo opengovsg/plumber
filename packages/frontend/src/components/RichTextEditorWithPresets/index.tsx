@@ -22,7 +22,7 @@ interface RichTextEditorWithPresetsProps {
   defaultValue?: string | IJSONValue
 }
 
-const isEmptyEditorValue = (value?: string) => {
+const isEditorValueEmpty = (value?: string) => {
   if (!value) {
     return true
   }
@@ -53,7 +53,7 @@ export default function RichTextEditorWithPresets({
 
   const editorValue = watch(name) as string | undefined
   const showPresets = useMemo(
-    () => isEmptyEditorValue(editorValue),
+    () => isEditorValueEmpty(editorValue),
     [editorValue],
   )
 
@@ -97,24 +97,7 @@ export default function RichTextEditorWithPresets({
         }}
       >
         <Flex align="stretch" direction={{ base: 'column', lg: 'row' }}>
-          <Box
-            flex={1}
-            display="flex"
-            sx={{
-              '& > [data-test="text-input-group"]': {
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-              },
-              '& > [data-test="text-input-group"] > .editor': {
-                flex: 1,
-              },
-              '& > [data-test="text-input-group"] > .editor > [id^="popover-trigger-"]':
-                {
-                  height: '100%',
-                },
-            }}
-          >
+          <Box flex={1} display="flex">
             <RichTextEditor
               key={`${name}-${editorVersion}`}
               required={required}
@@ -126,6 +109,7 @@ export default function RichTextEditorWithPresets({
               customRteMenuOptions={customRteMenuOptions}
               defaultValue={defaultValue}
               containerClassName="editor--borderless"
+              triggerContainerClassName="editor-with-presets__trigger"
             />
           </Box>
 
