@@ -71,6 +71,7 @@ const action: IRawAction = {
         fieldKey: 'promptType',
         op: 'is_empty',
       },
+      addRowButtonText: 'Add output',
       subFields: [
         {
           label: 'Type',
