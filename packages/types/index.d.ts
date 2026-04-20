@@ -956,6 +956,7 @@ export type IGlobalVariable = {
   auth: {
     set: (args: IJSONObject) => Promise<null>
     data: IJSONObject
+    connectionId?: string
   }
   app: IApp
   http?: IHttpClient
