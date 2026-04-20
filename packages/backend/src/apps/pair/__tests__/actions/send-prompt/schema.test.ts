@@ -3,52 +3,9 @@ import { assert, describe, expect, it } from 'vitest'
 import { schema } from '@/apps/pair/actions/send-prompt/schema'
 
 describe('call-pair schema', () => {
-  describe('promptType validation', () => {
-    it('should accept valid prompt types', () => {
-      const validTypes = [
-        'analyse',
-        'categorise',
-        'summarise',
-        'write',
-        'custom',
-      ]
-
-      validTypes.forEach((promptType) => {
-        const result = schema.safeParse({
-          promptType,
-          prompt: 'test prompt',
-          responseFields: [
-            {
-              fieldName: 'summary',
-              fieldType: 'text',
-            },
-          ],
-        })
-        assert(result.success === true)
-        assert(result.data.promptType === promptType)
-      })
-    })
-
-    it('should reject invalid prompt types', () => {
-      const result = schema.safeParse({
-        promptType: 'invalid',
-        prompt: 'test prompt',
-      })
-      assert(result.success === false)
-    })
-
-    it('should require promptType', () => {
-      const result = schema.safeParse({
-        prompt: 'test prompt',
-      })
-      assert(result.success === false)
-    })
-  })
-
   describe('prompt validation', () => {
     it('should accept valid non-empty prompts', () => {
       const result = schema.safeParse({
-        promptType: 'analyse',
         prompt: 'Analyze this document',
         responseFields: [
           {
@@ -63,16 +20,13 @@ describe('call-pair schema', () => {
 
     it('should reject empty prompts', () => {
       const result = schema.safeParse({
-        promptType: 'analyse',
         prompt: '',
       })
       assert(result.success === false)
     })
 
     it('should require prompt field', () => {
-      const result = schema.safeParse({
-        promptType: 'analyse',
-      })
+      const result = schema.safeParse({})
       assert(result.success === false)
     })
   })
@@ -90,7 +44,6 @@ describe('call-pair schema', () => {
         'should accept valid field names with letters, numbers, and spaces: %s',
         (fieldName) => {
           const result = schema.safeParse({
-            promptType: 'analyse',
             prompt: 'test prompt',
             responseFields: [
               {
@@ -118,7 +71,6 @@ describe('call-pair schema', () => {
         'should reject field names with invalid characters: %s',
         (fieldName) => {
           const result = schema.safeParse({
-            promptType: 'analyse',
             prompt: 'test prompt',
             responseFields: [{ fieldName, fieldType: 'text' }],
           })
@@ -128,7 +80,6 @@ describe('call-pair schema', () => {
 
       it('should reject empty field names', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -143,7 +94,6 @@ describe('call-pair schema', () => {
       it('should reject field names longer than 64 characters', () => {
         const longName = 'a'.repeat(65)
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -158,7 +108,6 @@ describe('call-pair schema', () => {
       it('should accept field names exactly 64 characters long', () => {
         const maxName = 'a'.repeat(64)
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -172,7 +121,6 @@ describe('call-pair schema', () => {
 
       it('should not accept duplicate field names (case-insensitive)', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -201,7 +149,6 @@ describe('call-pair schema', () => {
     describe('fieldType validation', () => {
       it('should accept text field type', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -216,7 +163,6 @@ describe('call-pair schema', () => {
 
       it('should accept number field type', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -231,7 +177,6 @@ describe('call-pair schema', () => {
 
       it('should accept category field type with valid categories', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -247,7 +192,6 @@ describe('call-pair schema', () => {
 
       it('should reject invalid field types', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -261,7 +205,6 @@ describe('call-pair schema', () => {
 
       it('should reject empty response fields', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [],
         })
@@ -280,7 +223,6 @@ describe('call-pair schema', () => {
     describe('fieldCategories validation', () => {
       it('should require fieldCategories when fieldType is category', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -299,7 +241,6 @@ describe('call-pair schema', () => {
 
       it('should accept valid comma-separated categories', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -314,7 +255,6 @@ describe('call-pair schema', () => {
 
       it('should accept categories without spaces', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -329,7 +269,6 @@ describe('call-pair schema', () => {
 
       it('should reject empty categories when fieldType is category', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -353,7 +292,6 @@ describe('call-pair schema', () => {
         'should reject categories with empty items after trimming: %s',
         (fieldCategories) => {
           const result = schema.safeParse({
-            promptType: 'analyse',
             prompt: 'test prompt',
             responseFields: [
               {
@@ -378,7 +316,6 @@ describe('call-pair schema', () => {
         'should reject categories with duplicates (case-insensitive): %s',
         (fieldCategories) => {
           const result = schema.safeParse({
-            promptType: 'analyse',
             prompt: 'test prompt',
             responseFields: [
               {
@@ -399,7 +336,6 @@ describe('call-pair schema', () => {
 
       it('should allow fieldCategories to be optional when fieldType is not category', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -416,7 +352,6 @@ describe('call-pair schema', () => {
     describe('multiple fields validation', () => {
       it('should accept multiple valid response fields', () => {
         const result = schema.safeParse({
-          promptType: 'analyse',
           prompt: 'test prompt',
           responseFields: [
             {
@@ -462,7 +397,6 @@ describe('call-pair schema', () => {
         ],
       })
       assert(result.success === true)
-      assert(result.data.promptType === 'analyse')
       assert(result.data.responseFields.length === 3)
     })
   })
