@@ -159,6 +159,16 @@ const action: IRawAction = {
         tableId,
       },
     })
+
+    // This occurs when a user selected all the columns and created a table by accident...
+    // Reference: https://learn.microsoft.com/en-us/answers/questions/1837007/excel-api-cant-reach-data-on-the-last-column-xfd
+    if (!tableHeaderInfoResponse.data.values?.[0]?.length) {
+      throw new StepError(
+        'Could not read table headers.',
+        'Your Excel table may span the maximum number of columns (XFD). Try deleting any unused columns at the end of the table.',
+      )
+    }
+
     const tableHeaderInfo: TableHeaderInfo = {
       rowIndex: tableHeaderInfoResponse.data.rowIndex,
       columnNames: tableHeaderInfoResponse.data.values[0],
