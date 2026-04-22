@@ -18,6 +18,7 @@ import {
 } from '../FlowStepConfigurationModal/ChooseAndAddConnection'
 import {
   APP_ALLOWING_EMPTY_CONNECTION,
+  DATABRICKS_APP_KEY,
   EXCEL_APP_KEY,
 } from '../FlowStepConfigurationModal/constants'
 
@@ -48,6 +49,17 @@ const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
 
 const excelFolderLinkGenerator = (userEmail: string) => {
   return `https://gccprod-my.sharepoint.com/shared?id=%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents%2F${userEmail}&listurl=https%3A%2F%2Fgccprod%2Esharepoint%2Ecom%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents`
+}
+
+const databricksWorkspaceLinkGenerator = (
+  connectionOption: ConnectionDropdownOption,
+) => {
+  const { env, label } = connectionOption
+  if (!env) {
+    return null
+  }
+  // `env` is the workspace hostname (Databricks has multiple workspaces per environment)
+  return `https://${env}/explore/data/workspace/${label}`
 }
 
 function ChooseConnectionSubstep(
@@ -128,6 +140,11 @@ function ChooseConnectionSubstep(
         connectionLink = {
           url: excelFolderLinkGenerator(currentUser?.email ?? ''),
           text: '(View folder)',
+        }
+      } else if (application.key === DATABRICKS_APP_KEY) {
+        connectionLink = {
+          url: databricksWorkspaceLinkGenerator(connectionOption) ?? '',
+          text: '(View workspace)',
         }
       }
 
