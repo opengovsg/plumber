@@ -16,16 +16,12 @@ import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
-import {
-  AI_BUILDER_FEATURE_FLAG,
-  AI_BUILDER_FEATURE_FLAG_FALLBACK,
-  APP_FLAG_REGEX,
-} from '@/config/flags'
+import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import { getPrompt } from '@/helpers/ai/get-prompt'
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
-import { getAllLdFlags, getLdFlagValue } from '@/helpers/launch-darkly'
+import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
-import { getPrompt } from '@/helpers/pair/get-prompt'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import { AuthenticatedRequest } from '@/types/express/context'
 
@@ -39,11 +35,8 @@ const handleChatStream = observe(
   async (req: AuthenticatedRequest, res: Response) => {
     const abortController = new AbortController()
     const context = req.context
-    const aiBuilderFlag = await getLdFlagValue(
-      AI_BUILDER_FEATURE_FLAG,
-      context.currentUser.email,
-      AI_BUILDER_FEATURE_FLAG_FALLBACK,
-    )
+    const allLdFlags = await getAllLdFlags(context.currentUser.email)
+    const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
 
     if (!aiBuilderFlag.enabled) {
       res
@@ -52,12 +45,8 @@ const handleChatStream = observe(
       return
     }
 
-    // NOTE: we check LD for this user's access to apps
-    // we then pass it into the system prompt to tell the assistant which apps the user does not have access to
-    const allLdFlags = await getAllLdFlags(context.currentUser.email)
-    const restrictedApps = Object.keys(allLdFlags)
-      .filter((flag) => APP_FLAG_REGEX.test(flag) && allLdFlags[flag] === false)
-      .map((flag) => flag.replace('app_', ''))
+    // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
+    const restrictedApps = getRestrictedAppKeys(allLdFlags)
 
     const {
       chatPromptName,
