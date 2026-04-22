@@ -83,7 +83,10 @@ describe('generateAiSteps mutation', () => {
   beforeEach(async () => {
     vi.resetAllMocks()
 
-    mocks.langfusePromptGet.mockResolvedValue({ prompt: 'system prompt' })
+    mocks.langfusePromptGet.mockResolvedValue({
+      prompt: 'system prompt',
+      toJSON: vi.fn(),
+    })
     mocks.getLdFlagValue.mockResolvedValue({
       enabled: true,
       config: {

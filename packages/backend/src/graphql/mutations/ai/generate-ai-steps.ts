@@ -99,6 +99,16 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
           experimental_telemetry: {
             isEnabled: true,
             functionId: 'generate-steps',
+            metadata: {
+              name: 'generate-steps',
+              sessionId: sessionId || 'unknown',
+              userId: context.currentUser.email,
+              environment: appConfig.appEnv,
+              promptName,
+              promptVersion: version,
+              langfusePrompt: prompt.toJSON(),
+              tags: ['ai-builder', 'generate-steps'],
+            },
           },
         })
 

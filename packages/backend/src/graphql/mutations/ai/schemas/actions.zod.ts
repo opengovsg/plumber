@@ -17,7 +17,7 @@ const baseActionSchema = z.object({
 })
 
 export const ifThenParametersSchema = z.object({
-  depth: z.literal(0),
+  depth: z.literal(0).default(0),
   branchName: z.string().default('Branch'),
 })
 

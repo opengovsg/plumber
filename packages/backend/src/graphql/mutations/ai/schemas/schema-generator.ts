@@ -6,6 +6,8 @@ import {
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 
+import { ifThenParametersSchema } from './actions.zod'
+
 /**
  * Generates valid appKey enum from registered apps
  */
@@ -57,10 +59,7 @@ export function generateSchema(
         }
 
         if (isIfThenAction) {
-          extendedFields.parameters = z.object({
-            depth: z.literal(0),
-            branchName: z.string().default('Branch'),
-          })
+          extendedFields.parameters = ifThenParametersSchema.default({})
         }
 
         return baseSchema.extend(extendedFields)
