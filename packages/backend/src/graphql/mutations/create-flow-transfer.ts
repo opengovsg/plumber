@@ -1,5 +1,6 @@
 import FlowTransfer from '@/models/flow-transfers'
 import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -60,16 +61,32 @@ const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
       (step) => step.appKey === 'tiles' && step.parameters?.tableId,
     ) ?? []
 
+  // Filter out deleted tables before checking permissions
+  const tableIds = tilesSteps.map((step) => step.parameters.tableId as string)
+  const existingTableIds = new Set<string>()
+
+  if (tableIds.length > 0) {
+    const existingTables = await TableMetadata.query()
+      .select('id')
+      .whereIn('id', tableIds)
+
+    existingTables.forEach((table) => {
+      existingTableIds.add(table.id)
+    })
+  }
+
   // check that the current owner has the rights to make the new owner
-  // an editor of all the Tiles in the Pipe
+  // an editor of all the Tiles in the Pipe (only for existing tables)
   await Promise.all(
-    tilesSteps.map(async (step) => {
-      await TableCollaborator.hasAccess(
-        context.currentUser.id,
-        step.parameters.tableId as string,
-        'editor',
-      )
-    }),
+    tilesSteps
+      .filter((step) => existingTableIds.has(step.parameters.tableId as string))
+      .map(async (step) => {
+        await TableCollaborator.hasAccess(
+          context.currentUser.id,
+          step.parameters.tableId as string,
+          'editor',
+        )
+      }),
   )
 
   const newTransfer: FlowTransfer = await context.currentUser

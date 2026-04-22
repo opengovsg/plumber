@@ -1,5 +1,9 @@
 import { IStep } from '@plumber/types'
 
+import App from '@/models/app'
+import Connection from '@/models/connection'
+import TableMetadata from '@/models/table-metadata'
+
 /**
  * THIS MUST BE UPDATED WHEN A NEW APP OR NEW DYNAMIC FIELD IS ADDED
  * we only need to app apps that have fields that behave like connections.
@@ -34,14 +38,26 @@ export const APP_CONNECTION_FIELDS: Record<
   },
 }
 
-export function getConnectionDetails(steps: IStep[]): {
+export async function getConnectionDetails(steps: IStep[]): Promise<{
   connection: {
     [connectionId: string]: {
       [appKey: string]: string[]
     }
   }
   table: string[]
-} {
+}> {
+  /**
+   * NOTE: we fetch apps here to identify apps that should have connections
+   * Prior to the UI revamp, users could change the app/action without
+   * having to delete the step.
+   * There is a possibility where an app that should not have a `connection_id`
+   * like Tiles, could inherit a `connection_id` from a previous step.
+   */
+  const appsWithConnections = await App.getAllAppsWithConnections()
+  const appKeysWithConnections: string[] = appsWithConnections.map(
+    (app) => app.key,
+  )
+
   const connections: {
     connection: {
       [connectionId: string]: {
@@ -54,8 +70,13 @@ export function getConnectionDetails(steps: IStep[]): {
     table: [],
   }
 
-  steps.map((step) => {
-    if (step.connectionId) {
+  const connectionIdsFromSteps = new Set<string>()
+  const tableIdsFromSteps = new Set<string>()
+
+  // Single pass: build connections object and collect connection/table IDs
+  steps.forEach((step) => {
+    if (step.connectionId && appKeysWithConnections.includes(step.appKey)) {
+      connectionIdsFromSteps.add(step.connectionId)
       connections.connection[step.connectionId] ??= {}
 
       const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey
@@ -85,11 +106,50 @@ export function getConnectionDetails(steps: IStep[]): {
       const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey
       const paramValue = step.parameters[paramKey] as string
 
-      if (paramValue && !connections.table.includes(paramValue)) {
-        connections.table.push(paramValue)
+      if (paramValue) {
+        tableIdsFromSteps.add(paramValue)
+        if (!connections.table.includes(paramValue)) {
+          connections.table.push(paramValue)
+        }
       }
     }
   })
+
+  // Query database in parallel to check which connections and tables actually exist
+  const [existingConnections, existingTables] = await Promise.all([
+    connectionIdsFromSteps.size > 0
+      ? Connection.query()
+          .select('id')
+          .whereIn('id', Array.from(connectionIdsFromSteps))
+      : Promise.resolve([]),
+    tableIdsFromSteps.size > 0
+      ? TableMetadata.query()
+          .select('id')
+          .whereIn('id', Array.from(tableIdsFromSteps))
+      : Promise.resolve([]),
+  ])
+
+  // Remove connections that don't exist in the database
+  if (connectionIdsFromSteps.size > 0) {
+    const existingConnectionIds = new Set(
+      existingConnections.map((conn) => conn.id),
+    )
+
+    Object.keys(connections.connection).forEach((connectionId) => {
+      if (!existingConnectionIds.has(connectionId)) {
+        delete connections.connection[connectionId]
+      }
+    })
+  }
+
+  // Remove tables that don't exist in the database
+  if (tableIdsFromSteps.size > 0) {
+    const existingTableIds = new Set(existingTables.map((table) => table.id))
+
+    connections.table = connections.table.filter((tableId) =>
+      existingTableIds.has(tableId),
+    )
+  }
 
   return connections
 }

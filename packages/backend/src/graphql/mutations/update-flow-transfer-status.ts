@@ -129,7 +129,7 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       // get the connections and tables to be shared
       // intentionally exclude m365-excel as the connection has been nullified
       // and it should retain the user_id in the connections table
-      const connectionDetails = getConnectionDetails(
+      const connectionDetails = await getConnectionDetails(
         flow?.steps.filter((step) => step.appKey !== 'm365-excel'),
       )
       const sharedConnections = connectionDetails.connection
