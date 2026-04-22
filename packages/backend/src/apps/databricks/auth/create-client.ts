@@ -12,7 +12,14 @@ import { constructSchemaName } from '../common/construct-schema-name'
 
 import { getDatabricksToken } from './token-persistence'
 
-export const createSession = async ($: IGlobalVariable) => {
+interface CreateSessionOptions {
+  skipSchema?: boolean
+}
+
+export const createSession = async (
+  $: IGlobalVariable,
+  options?: CreateSessionOptions,
+) => {
   const client: DBSQLClient = new DBSQLClient({
     logger: {
       log(level: LogLevel, message: string) {
@@ -36,13 +43,11 @@ export const createSession = async ($: IGlobalVariable) => {
     token,
   } satisfies ConnectionOptions
 
-  const schemaName = constructSchemaName($)
-
   let connectedClient: IDBSQLClient
   try {
     connectedClient = await client.connect(connectOptions)
     const session = await connectedClient.openSession({
-      initialSchema: schemaName,
+      initialSchema: options?.skipSchema ? undefined : constructSchemaName($),
       initialCatalog: databricksConfig.catalog,
     })
     const endSession = async () => {
