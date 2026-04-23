@@ -4,37 +4,36 @@ import z from 'zod/v3'
 import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
-import {
-  AI_BUILDER_FEATURE_FLAG,
-  AI_BUILDER_FEATURE_FLAG_FALLBACK,
-} from '@/config/flags'
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
+import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import { langfuseClient } from '@/helpers/langfuse'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
+import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import JSONObject from '@/types/interfaces/json-object'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
 
-import { Action, ACTIONS_SCHEMA } from './schemas/actions.zod'
+import { getActionsSchema } from './schemas/actions.zod'
 import { INPUT_SCHEMA } from './schemas/input.zod'
-import { TRIGGER_SCHEMA } from './schemas/triggers.zod'
+import { getTriggerSchema } from './schemas/triggers.zod'
 
 const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
   _parent,
   params,
   context,
 ) => {
-  const aiBuilderFlag = await getLdFlagValue(
-    AI_BUILDER_FEATURE_FLAG,
-    context.currentUser.email,
-    AI_BUILDER_FEATURE_FLAG_FALLBACK,
-  )
+  const allLdFlags = await getAllLdFlags(context.currentUser.email)
+  const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
 
   if (!aiBuilderFlag.enabled) {
     throw new ForbiddenError('You do not have permissions to use AI Builder!')
   }
+
+  // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
+  const restrictedApps = getRestrictedAppKeys(allLdFlags)
+  const triggerSchema = getTriggerSchema(restrictedApps)
+  const actionsSchema = getActionsSchema(restrictedApps)
 
   const { generateStepsPromptName: promptName, version } = aiBuilderFlag.config
   let traceId
@@ -90,8 +89,8 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
         const { object } = await generateObject({
           model,
           schema: z.object({
-            trigger: TRIGGER_SCHEMA,
-            actions: ACTIONS_SCHEMA,
+            trigger: triggerSchema,
+            actions: actionsSchema,
             name: z.string().max(64).default('Build with AI'),
           }),
           system: systemPrompt,
@@ -127,7 +126,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
 
     return {
       ...result,
-      actions: (result.actions as Action[]).map((action: Action) => ({
+      actions: result.actions.map((action) => ({
         ...action,
         config: {
           ...action.config,

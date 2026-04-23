@@ -2,19 +2,14 @@ import type { IStep } from '@plumber/types'
 
 import z from 'zod/v3'
 
+import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
 
-import { actionStepsSchema } from './schemas/action-steps-schema'
+import { getActionStepsSchema } from './schemas/action-steps-schema'
 import { generateSchema } from './schemas/schema-generator'
-
-// Generate schema to validate trigger step against the available triggers in apps
-const triggerSchema = generateSchema(
-  z.object({ type: z.literal('trigger') }),
-  'trigger',
-)
 
 const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   _parent,
@@ -24,6 +19,19 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   const {
     input: { steps, flowName, aiBuilderConfig },
   } = params
+
+  const restrictedApps = getRestrictedAppKeys(
+    await getAllLdFlags(context.currentUser.email),
+  )
+
+  // Generate schema to validate trigger step against the available triggers in apps
+  // we also pass restricted apps into the schema so the assistant knows which apps the user cannot use
+  const triggerSchema = generateSchema(
+    z.object({ type: z.literal('trigger') }),
+    'trigger',
+    restrictedApps,
+  )
+  const actionStepsSchema = getActionStepsSchema(restrictedApps)
 
   const trimmedFlowName = flowName.trim()
   if (trimmedFlowName === '') {
@@ -75,7 +83,15 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
       },
     })
 
-    const stepsToInsert = steps.map((step: IStep) => {
+    const normalizedActionSteps = validatedActions.data.map(
+      (actionStep, index) => ({
+        ...steps[index + 1],
+        ...actionStep,
+      }),
+    )
+    // Keep the first step as the trigger; only action steps are rehydrated from validatedActions.
+    const normalizedSteps = [steps[0], ...normalizedActionSteps]
+    const stepsToInsert = normalizedSteps.map((step: IStep) => {
       return {
         type: step.type,
         appKey: step.appKey,

@@ -8,27 +8,12 @@ import {
 
 import { ifThenParametersSchema } from './actions.zod'
 
-/**
- * Generates valid appKey enum from registered apps
- */
-export function getAppKeys() {
-  return Object.keys(apps) as [string, ...string[]]
-}
-
-/**
- * Gets all action keys for a specific app
- */
-export function getActionKeys(appKey: string): string[] {
-  const app = apps[appKey]
-  return app?.actions?.map((action) => action.key) || []
-}
-
-/**
- * Gets all trigger keys for a specific app
- */
-export function getTriggerKeys(appKey: string): string[] {
-  const app = apps[appKey]
-  return app?.triggers?.map((trigger) => trigger.key) || []
+function getActiveApps(restrictedAppKeys: string[] = []) {
+  return Object.fromEntries(
+    Object.entries(apps).filter(
+      ([appKey]) => !restrictedAppKeys.includes(appKey),
+    ),
+  ) as typeof apps
 }
 
 /**
@@ -37,11 +22,16 @@ export function getTriggerKeys(appKey: string): string[] {
 export function generateSchema(
   baseSchema: z.ZodObject<any>,
   schemaType: 'action' | 'trigger',
+  restrictedAppKeys: string[] = [],
 ) {
-  const schemas = getAppKeys()
-    .flatMap((appKey) => {
+  const activeApps = getActiveApps(restrictedAppKeys)
+
+  const schemas = Object.entries(activeApps)
+    .flatMap(([appKey, app]) => {
       const keys =
-        schemaType === 'action' ? getActionKeys(appKey) : getTriggerKeys(appKey)
+        schemaType === 'action'
+          ? app?.actions?.map((action) => action.key) || []
+          : app?.triggers?.map((trigger) => trigger.key) || []
 
       if (keys.length === 0) {
         return []

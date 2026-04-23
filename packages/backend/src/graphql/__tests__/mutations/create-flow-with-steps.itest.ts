@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { StepEnumType } from '@/graphql/__generated__/types.generated'
 import createFlowWithSteps from '@/graphql/mutations/ai/create-flow-with-steps'
@@ -6,6 +6,16 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
+
+const mocks = vi.hoisted(() => ({
+  getAllLdFlags: vi.fn(),
+  getRestrictedAppKeys: vi.fn(),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getAllLdFlags: mocks.getAllLdFlags,
+  getRestrictedAppKeys: mocks.getRestrictedAppKeys,
+}))
 
 describe('createFlowWithSteps mutation integration tests', () => {
   let testUser: User
@@ -15,6 +25,16 @@ describe('createFlowWithSteps mutation integration tests', () => {
     // Clean up database before each test
     await Step.query().delete()
     await Flow.query().delete()
+
+    mocks.getAllLdFlags.mockResolvedValue({
+      'ai-builder': {
+        enabled: true,
+        config: {
+          generateStepsPromptName: 'generate-steps',
+          version: 'production',
+        },
+      },
+    })
 
     testUser = await User.query().findOne({ email: 'tester@open.gov.sg' })
     context = {
@@ -644,7 +664,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(steps[3].parameters).toEqual({ depth: 0, branchName: 'Else' })
     })
 
-    it('should throw error when if-then step is missing depth parameter', async () => {
+    it('should not throw error when if-then step is missing depth parameter', async () => {
       const params = {
         input: {
           flowName: 'Test Flow',
@@ -667,6 +687,13 @@ describe('createFlowWithSteps mutation integration tests', () => {
                 // missing depth
               },
             },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'postman',
+              key: 'sendTransactionalEmail',
+              position: 3,
+              config: {},
+            },
           ],
           aiBuilderConfig: {
             type: 'form',
@@ -675,12 +702,13 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
-        'Pipe contains invalid action steps',
-      )
+      const result = await createFlowWithSteps(null, params, context)
+      expect(result).toBeDefined()
 
-      const flows = await Flow.query()
-      expect(flows).toHaveLength(0)
+      const steps = await Step.query()
+        .where('flow_id', result.id)
+        .orderBy('position', 'asc')
+      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'If' })
     })
 
     it('should not throw error when if-then step is missing branchName parameter', async () => {
@@ -723,6 +751,11 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
       const result = await createFlowWithSteps(null, params, context)
       expect(result).toBeDefined()
+
+      const steps = await Step.query()
+        .where('flow_id', result.id)
+        .orderBy('position', 'asc')
+      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'Branch' })
     })
 
     it('should throw error when if-then is the last step', async () => {
@@ -800,7 +833,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(flows).toHaveLength(0)
     })
 
-    it('should throw error when if-then step has empty parameters object', async () => {
+    it('should not throw error when if-then step has empty parameters object', async () => {
       const params = {
         input: {
           flowName: 'Test Flow',
@@ -820,6 +853,53 @@ describe('createFlowWithSteps mutation integration tests', () => {
               config: {},
               parameters: {},
             },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'slack',
+              key: 'sendMessageToChannel',
+              position: 3,
+              config: {},
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
+
+      const result = await createFlowWithSteps(null, params, context)
+      expect(result).toBeDefined()
+
+      const steps = await Step.query()
+        .where('flow_id', result.id)
+        .orderBy('position', 'asc')
+      expect(steps[1].parameters).toEqual({ depth: 0, branchName: 'Branch' })
+    })
+  })
+
+  describe('restricted app keys validation', () => {
+    it('should throw error when using a restricted action app key', async () => {
+      mocks.getRestrictedAppKeys.mockReturnValueOnce(['aisay'])
+
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'scheduler',
+              key: 'everyHour',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'aisay',
+              key: 'useGeneralisedModel',
+              position: 2,
+              config: {},
+            },
           ],
           aiBuilderConfig: {
             type: 'form',
@@ -831,9 +911,40 @@ describe('createFlowWithSteps mutation integration tests', () => {
       await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
         'Pipe contains invalid action steps',
       )
+    })
 
-      const flows = await Flow.query()
-      expect(flows).toHaveLength(0)
+    it('should throw error when using a restricted trigger app key', async () => {
+      mocks.getRestrictedAppKeys.mockReturnValueOnce(['gathersg'])
+
+      const params = {
+        input: {
+          flowName: 'Test Flow',
+          steps: [
+            {
+              type: 'trigger' as StepEnumType,
+              appKey: 'gathersg',
+              key: 'newInstantWorkflow',
+              position: 1,
+              config: {},
+            },
+            {
+              type: 'action' as StepEnumType,
+              appKey: 'postman',
+              key: 'sendTransactionalEmail',
+              position: 2,
+              config: {},
+            },
+          ],
+          aiBuilderConfig: {
+            type: 'form',
+            traceId: '123',
+          },
+        },
+      }
+
+      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+        'Pipe must always start with a trigger',
+      )
     })
   })
 })

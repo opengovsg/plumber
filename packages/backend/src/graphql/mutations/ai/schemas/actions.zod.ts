@@ -21,21 +21,26 @@ export const ifThenParametersSchema = z.object({
   branchName: z.string().default('Branch'),
 })
 
-const generatedSchema = generateSchema(baseActionSchema, 'action')
+function getActionSchema(restrictedAppKeys: string[] = []) {
+  const generatedSchema = generateSchema(
+    baseActionSchema,
+    'action',
+    restrictedAppKeys,
+  )
 
-export const ACTION_SCHEMA = generatedSchema.refine(validateActionParameters, {
-  message:
-    'Parameters are only allowed when key is ifThen (with depth: 0 and branchName)',
-})
+  return generatedSchema.refine(validateActionParameters, {
+    message:
+      'Parameters are only allowed when key is ifThen (with depth: 0 and branchName)',
+  })
+}
 
-export const ACTIONS_SCHEMA = z
-  .array(ACTION_SCHEMA)
-  .min(1)
-  .max(29) // max of 30 steps including trigger
-  .superRefine(validateActionStepsRules)
-
-// Type inference for TypeScript
-export type Action = z.infer<typeof ACTION_SCHEMA>
+export function getActionsSchema(restrictedAppKeys: string[] = []) {
+  return z
+    .array(getActionSchema(restrictedAppKeys))
+    .min(1)
+    .max(29) // max of 30 steps including trigger
+    .superRefine(validateActionStepsRules)
+}
 
 /**
  * Reusable validation function for individual action steps that enforces:
