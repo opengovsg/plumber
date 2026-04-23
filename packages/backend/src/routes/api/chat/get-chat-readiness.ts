@@ -1,8 +1,8 @@
 import { generateObject } from 'ai'
 
 import appConfig from '@/config/app'
+import { getPrompt } from '@/helpers/ai/get-prompt'
 import { engineProvider } from '@/helpers/pair'
-import { getPrompt } from '@/helpers/pair/get-prompt'
 import Context from '@/types/express/context'
 
 import { isChatReadySchema } from './schema'

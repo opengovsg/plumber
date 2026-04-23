@@ -8,19 +8,6 @@ const baseTriggerSchema = z.object({
   type: z.literal('trigger'),
 })
 
-export const TRIGGER_SCHEMA = generateSchema(baseTriggerSchema, 'trigger')
-
-// Type inference for TypeScript
-export type Trigger = z.infer<typeof TRIGGER_SCHEMA>
-
-// Example usage with generateObject from the ai package:
-/*
-import { generateObject } from 'ai'
-import { TRIGGER_SCHEMA } from './triggers.zod'
-
-const result = await generateObject({
-  model: yourModel,
-  schema: TRIGGER_SCHEMA,
-  prompt: "Generate a trigger for...",
-})
-*/
+export function getTriggerSchema(restrictedAppKeys: string[] = []) {
+  return generateSchema(baseTriggerSchema, 'trigger', restrictedAppKeys)
+}

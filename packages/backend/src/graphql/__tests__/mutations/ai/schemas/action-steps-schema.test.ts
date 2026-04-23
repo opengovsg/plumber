@@ -166,7 +166,7 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(true)
     })
 
-    it('should reject if-then step missing depth parameter', () => {
+    it('should default depth to 0 if-then step missing depth parameter', () => {
       const steps = [
         {
           type: 'action' as StepEnumType,
@@ -189,7 +189,8 @@ describe('actionStepsSchema validation', () => {
       ]
 
       const result = actionStepsSchema.safeParse(steps)
-      expect(result.success).toBe(false)
+      expect(result.success).toBe(true)
+      expect(result.data[0].parameters?.depth).toBe(0)
     })
 
     it('should reject if-then step as last action', () => {

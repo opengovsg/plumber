@@ -2,7 +2,6 @@ import type { Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn(),
   getAllLdFlags: vi.fn(),
   getPrompt: vi.fn(),
   getActiveTraceId: vi.fn(),
@@ -15,14 +14,15 @@ const mocks = vi.hoisted(() => ({
   getChatReadiness: vi.fn(),
   pipeWebResponseToExpress: vi.fn(),
   loggerError: vi.fn(),
+  getRestrictedAppKeys: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
   getAllLdFlags: mocks.getAllLdFlags,
+  getRestrictedAppKeys: mocks.getRestrictedAppKeys,
 }))
 
-vi.mock('@/helpers/pair/get-prompt', () => ({
+vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: mocks.getPrompt,
 }))
 
@@ -173,15 +173,16 @@ describe('Chat Route Handler', () => {
   describe('Handler Behavior', () => {
     it('should process authenticated requests', async () => {
       // Context is set by middleware before reaching handler
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'aids-chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'aids-chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
         },
       })
-      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -194,11 +195,6 @@ describe('Chat Route Handler', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder',
-        'test@plumber.gov.sg',
-        expect.any(Object),
-      )
       expect(mocks.getAllLdFlags).toHaveBeenCalledWith('test@plumber.gov.sg')
     })
 
@@ -208,8 +204,8 @@ describe('Chat Route Handler', () => {
 
       await expect(executeChatPostHandler(mockReq, mockRes)).rejects.toThrow()
 
-      // Should not reach getLdFlagValue since context is missing
-      expect(mocks.getLdFlagValue).not.toHaveBeenCalled()
+      // Should not reach LaunchDarkly since context is missing
+      expect(mocks.getAllLdFlags).not.toHaveBeenCalled()
     })
 
     it('should use authenticated user email for feature flag lookup', async () => {
@@ -224,15 +220,16 @@ describe('Chat Route Handler', () => {
         isAdminOperation: false,
       }
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
         },
       })
-      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -245,11 +242,6 @@ describe('Chat Route Handler', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder',
-        'feature-test@plumber.gov.sg',
-        expect.any(Object),
-      )
       expect(mocks.getAllLdFlags).toHaveBeenCalledWith(
         'feature-test@plumber.gov.sg',
       )
@@ -261,15 +253,16 @@ describe('Chat Route Handler', () => {
         messages: [],
       }
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
         },
       })
-      mocks.getAllLdFlags.mockResolvedValueOnce({})
 
       await executeChatPostHandler(mockReq, mockRes)
 
@@ -285,8 +278,8 @@ describe('Chat Route Handler', () => {
     })
 
     it('should throw error when AI Builder is not enabled', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: false,
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': { enabled: false },
       })
 
       await executeChatPostHandler(mockReq, mockRes)
@@ -311,18 +304,19 @@ describe('Chat Route Handler', () => {
         }
       })
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
       mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        },
         'app_m365-excel': true, // Excel enabled
         'app_other-app': false, // Other app disabled
       })
+      mocks.getRestrictedAppKeys.mockReturnValueOnce(['other-app'])
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
@@ -356,17 +350,18 @@ describe('Chat Route Handler', () => {
         }
       })
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
       mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        },
         'app_m365-excel': false, // Excel disabled
       })
+      mocks.getRestrictedAppKeys.mockReturnValueOnce(['m365-excel'])
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
@@ -399,18 +394,19 @@ describe('Chat Route Handler', () => {
         }
       })
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
-        },
-      })
       mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
+        },
         'app_m365-excel': true,
         'some-other-flag': false, // Non-app flag
       })
+      mocks.getRestrictedAppKeys.mockReturnValueOnce([])
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
@@ -446,15 +442,16 @@ describe('Chat Route Handler', () => {
         isAdminOperation: true,
       }
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          version: 'production',
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            version: 'production',
+          },
         },
       })
-      mocks.getAllLdFlags.mockResolvedValueOnce({})
       mocks.getPrompt
         .mockResolvedValueOnce({
           prompt: 'test prompt',
@@ -467,11 +464,6 @@ describe('Chat Route Handler', () => {
 
       await executeChatPostHandler(mockReq, mockRes)
 
-      expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-        'ai-builder',
-        'admin@plumber.gov.sg',
-        expect.any(Object),
-      )
       expect(mocks.getAllLdFlags).toHaveBeenCalledWith('admin@plumber.gov.sg')
     })
   })
@@ -523,16 +515,18 @@ describe('Chat Route Handler', () => {
         new Error('LLM service unavailable'),
       )
 
-      mocks.getLdFlagValue.mockResolvedValueOnce({
-        enabled: true,
-        config: {
-          chatPromptName: 'chat-v0',
-          chatReadinessPromptName: 'chat-readiness-v0',
-          chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
-          version: 'production',
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: {
+            chatPromptName: 'chat-v0',
+            chatReadinessPromptName: 'chat-readiness-v0',
+            chatReadinessModel: 'claude-haiku-4-5-20251001-v1:rsn',
+            version: 'production',
+          },
         },
       })
-      mocks.getAllLdFlags.mockResolvedValueOnce({})
+      mocks.getRestrictedAppKeys.mockReturnValueOnce([])
       mocks.getPrompt.mockResolvedValueOnce({
         prompt: 'test prompt',
         toJSON: vi.fn(),
