@@ -83,8 +83,8 @@ export async function getTopNTableRows(
 
     if (rangeParseResult.success === false) {
       throw new StepError(
-        'Invalid table range',
-        'Check your Excel file and try again',
+        'Could not read table headers.',
+        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
       )
     }
 
