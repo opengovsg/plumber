@@ -165,7 +165,7 @@ const action: IRawAction = {
     if (!tableHeaderInfoResponse.data.values?.[0]?.length) {
       throw new StepError(
         'Could not read table headers.',
-        'Your Excel table may span the maximum number of columns (XFD). Try deleting any unused columns at the end of the table.',
+        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
       )
     }
 
