@@ -35,6 +35,7 @@ export type ModalScreen =
   | 'choose-connection'
   | 'add-connection'
   | 'configure-excel-connection'
+  | 'configure-databricks-connection'
 
 export type ModalState = {
   currentScreen: ModalScreen
