@@ -78,7 +78,7 @@ const ADD_NEW_OPTION_CONFIGS: Partial<
   'databricks-createTable': {
     modalHeader: 'Create a new table',
     inputLabel: 'Table name',
-    description: 'Only lowercase letters, numbers and underscores allowed.',
+    description: 'Only letters, numbers and underscores allowed.',
     buttonLabel: 'Create',
     validate: validateDatabricksTableName,
   },
