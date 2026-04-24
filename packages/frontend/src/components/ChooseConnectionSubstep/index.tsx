@@ -181,6 +181,7 @@ function ChooseConnectionSubstep(
                 href={connectionStatus.connectionLink.url}
                 target="_blank"
                 ml={2}
+                isExternal
               >
                 {connectionStatus.connectionLink.text}
               </Link>
