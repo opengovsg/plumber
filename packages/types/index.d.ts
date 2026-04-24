@@ -377,6 +377,8 @@ export interface IFieldDropdown extends IBaseField {
 export type DropdownAddNewId =
   | 'tiles-createTileRow-tableId'
   | 'tiles-createTileRow-columnId'
+  | 'databricks-createTable'
+  | 'databricks-createTableColumn'
 
 export interface IFieldDropdownSource {
   type: string
@@ -551,6 +553,13 @@ export interface IDynamicData {
   run($: IGlobalVariable): Promise<DynamicDataOutput>
 }
 
+export interface IDynamicAction {
+  name: string
+  key: string
+  type: 'action'
+  run($: IGlobalVariable): Promise<IJSONObject>
+}
+
 export interface IAppQueue {
   /**
    * Obtains the group config for a job that is about to be enqueued to this
@@ -619,7 +628,7 @@ export interface IApp {
   connectionCount?: number
   flowCount?: number
   beforeRequest?: TBeforeRequest[]
-  dynamicData?: IDynamicData[]
+  dynamicData?: (IDynamicData | IDynamicAction)[]
   triggers?: ITrigger[]
   actions?: IAction[]
   connections?: IConnection[]
