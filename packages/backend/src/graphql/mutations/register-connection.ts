@@ -79,7 +79,7 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
     throw new Error('Connection is not verified')
   }
 
-  await app.auth.registerConnection($)
+  await app.auth.registerConnection?.($)
   return true
 }
 
