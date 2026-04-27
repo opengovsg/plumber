@@ -1,10 +1,6 @@
 import { IApp } from '@plumber/types'
 
-import requestErrorHandler from './common/interceptors/request-error-handler'
-import { aisayUrlConfig } from './common/url-config'
 import actions from './actions'
-import auth from './auth'
-import queue from './queue'
 
 const app: IApp = {
   name: 'AISAY',
@@ -14,13 +10,10 @@ const app: IApp = {
     'Extract data from documents such as invoices, bank statements, cheques, and more',
   iconUrl: '{BASE_URL}/apps/aisay/assets/favicon.svg',
   authDocUrl: '',
-  auth,
-  baseUrl: aisayUrlConfig.baseUrl,
+  baseUrl: '',
   apiBaseUrl: '',
   primaryColor: '0059F7',
   actions,
-  requestErrorHandler,
-  queue,
 }
 
 export default app
