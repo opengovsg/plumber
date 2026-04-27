@@ -3,7 +3,12 @@ import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { fileIdSchema, filtersSchema, tableIdSchema } from '../../common/schema'
+import {
+  fileIdSchema,
+  filtersSchema,
+  lookupParametersSchema,
+  tableIdSchema,
+} from '../../common/schema'
 
 const VALID_FILE_ID = '1234ABCD1234ABCD1234ABCD1234ABCD'
 const VALID_TABLE_ID = `{${VALID_FILE_ID}}`
@@ -131,6 +136,77 @@ describe('filtersSchema', () => {
       if (result.success) {
         expect(result.data[0].lookupValue).toBe('')
       }
+    })
+  })
+})
+
+describe('lookupParametersSchema', () => {
+  describe('accepts new format', () => {
+    it('with filters array', () => {
+      expect(
+        lookupParametersSchema.safeParse({
+          fileId: VALID_FILE_ID,
+          tableId: VALID_TABLE_ID,
+          filters: [
+            {
+              lookupColumn: 'Email',
+              lookupValue: 'test@example.com',
+            },
+          ],
+        }),
+      ).toHaveProperty('success', true)
+    })
+
+    it('with multiple filters', () => {
+      expect(
+        lookupParametersSchema.safeParse({
+          fileId: VALID_FILE_ID,
+          tableId: VALID_TABLE_ID,
+          filters: [
+            {
+              lookupColumn: 'Status',
+              lookupValue: 'Active',
+            },
+            {
+              lookupColumn: 'Department',
+              lookupValue: 'Engineering',
+            },
+          ],
+        }),
+      ).toHaveProperty('success', true)
+    })
+
+    it('with exactly 3 filters (max allowed)', () => {
+      expect(
+        lookupParametersSchema.safeParse({
+          fileId: VALID_FILE_ID,
+          tableId: VALID_TABLE_ID,
+          filters: [
+            {
+              lookupColumn: 'Status',
+              lookupValue: 'Active',
+            },
+            {
+              lookupColumn: 'Department',
+              lookupValue: 'Engineering',
+            },
+            {
+              lookupColumn: 'Level',
+              lookupValue: 'Senior',
+            },
+          ],
+        }),
+      ).toHaveProperty('success', true)
+    })
+
+    it('with empty filters array', () => {
+      expect(
+        lookupParametersSchema.safeParse({
+          fileId: VALID_FILE_ID,
+          tableId: VALID_TABLE_ID,
+          filters: [],
+        }),
+      ).toHaveProperty('success', false)
     })
   })
 })

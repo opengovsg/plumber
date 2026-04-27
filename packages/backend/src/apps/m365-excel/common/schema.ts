@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { MAX_LOOKUP_CONDITIONS } from './constants'
+
 /**
  * Very loose regex to just accept only alphanumeric characters and dashes
  * since there is no proper public documentation with M365
@@ -38,6 +40,9 @@ export const filtersSchema = z
     }),
   )
   .min(1, { message: 'Please add at least one lookup condition.' })
+  .max(MAX_LOOKUP_CONDITIONS, {
+    message: `You can only add up to ${MAX_LOOKUP_CONDITIONS} lookup conditions.`,
+  })
   .refine(
     (filters) => {
       const columns = filters.map((f) => f.lookupColumn)

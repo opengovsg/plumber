@@ -8,6 +8,7 @@ import StepError from '@/errors/step'
 import {
   GET_TABLE_ROWS_LIMIT,
   LOOKUP_CONDITIONS_SUBFIELDS,
+  MAX_LOOKUP_CONDITIONS,
 } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 import { lookupParametersSchema } from '../../common/schema'
@@ -79,7 +80,7 @@ const action: IRawAction = {
       type: 'multirow-multicol' as const,
       required: true,
       subFields: LOOKUP_CONDITIONS_SUBFIELDS,
-      maxRows: 3,
+      maxRows: MAX_LOOKUP_CONDITIONS,
       hiddenIf: {
         fieldKey: 'tableId',
         op: 'is_empty',
