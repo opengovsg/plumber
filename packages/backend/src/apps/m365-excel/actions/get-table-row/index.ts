@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
@@ -65,48 +66,14 @@ const action: IRawAction = {
       },
     },
     {
-      key: 'lookupColumn' as const,
-      type: 'dropdown' as const,
-      showOptionValue: false,
+      key: 'filters',
+      label: 'Lookup conditions',
+      description:
+        'Lookup values are case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
+      type: 'multirow-multicol' as const,
       required: true,
-      variables: false,
-      label: 'Lookup column',
-      description:
-        'If multiple rows meet your condition, the topmost entry will be returned',
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [
-          {
-            name: 'key',
-            value: 'listTableColumns',
-          },
-          {
-            name: 'parameters.fileId',
-            value: '{parameters.fileId}',
-          },
-          {
-            name: 'parameters.tableId',
-            value: '{parameters.tableId}',
-          },
-        ],
-      },
-      hiddenIf: {
-        fieldKey: 'tableId',
-        op: 'is_empty',
-      },
-    },
-    {
-      key: 'lookupValue' as const,
-      label: 'Lookup Value',
-      // We don't support matching on Excel-formatted text because it's very
-      // weird (e.g. currency cells have a trailing space), and will lead to too
-      // much user confusion.
-      description:
-        'Case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
-      type: 'string' as const,
-      required: false,
-      variables: true,
+      subFields: LOOKUP_CONDITIONS_SUBFIELDS,
+      maxRows: 1, // Phase 1: Restrict to single filter
       hiddenIf: {
         fieldKey: 'tableId',
         op: 'is_empty',
@@ -131,8 +98,8 @@ const action: IRawAction = {
       )
     }
 
-    const { fileId, tableId, lookupColumn, lookupValue } =
-      parametersParseResult.data
+    const { fileId, tableId, filters } = parametersParseResult.data
+    const { lookupColumn, lookupValue } = filters![0]
 
     const session = await WorkbookSession.acquire($, fileId)
     const results = await getTableRowImpl({

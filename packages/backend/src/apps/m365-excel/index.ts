@@ -3,6 +3,7 @@ import type { IApp } from '@plumber/types'
 import getTransferDetails from './common/get-transfer-details'
 import beforeRequest from './common/interceptors/before-request'
 import requestErrorHandler from './common/interceptors/request-error-handler'
+import { transformStepParameters } from './common/transform-step-parameters'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
@@ -30,6 +31,7 @@ const app: IApp = {
       'There is a cap on total disk space and Excel actions across all Plumber users. To prevent disruption to your workflow, contact us if you have large files or need more than 100 Excel actions per hour.\n\nRead [our guide](https://guide.plumber.gov.sg/user-guides/actions/m365-excel) for more information.',
   },
   category: 'data',
+  transformStepParameters,
 }
 
 export default app

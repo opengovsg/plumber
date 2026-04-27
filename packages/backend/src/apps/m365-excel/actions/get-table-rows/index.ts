@@ -5,7 +5,10 @@ import z from 'zod'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 
-import { GET_TABLE_ROWS_LIMIT } from '../../common/constants'
+import {
+  GET_TABLE_ROWS_LIMIT,
+  LOOKUP_CONDITIONS_SUBFIELDS,
+} from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 import { convertRowToHexKeyedObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
 import WorkbookSession from '../../common/workbook-session'
@@ -68,44 +71,18 @@ const action: IRawAction = {
       },
     },
     {
-      key: 'lookupColumn' as const,
-      type: 'dropdown' as const,
-      showOptionValue: false,
+      key: 'filters',
+      label: 'Lookup conditions',
+      description:
+        'Lookup values are case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
+      type: 'multirow-multicol' as const,
       required: true,
-      variables: false,
-      label: 'Lookup column',
-      description:
-        'Only the first 500 rows that meet the condition will be returned',
-      source: {
-        type: 'query' as const,
-        name: 'getDynamicData' as const,
-        arguments: [
-          {
-            name: 'key',
-            value: 'listTableColumns',
-          },
-          {
-            name: 'parameters.fileId',
-            value: '{parameters.fileId}',
-          },
-          {
-            name: 'parameters.tableId',
-            value: '{parameters.tableId}',
-          },
-        ],
+      subFields: LOOKUP_CONDITIONS_SUBFIELDS,
+      maxRows: 1, // Phase 1: Restrict to single filter
+      hiddenIf: {
+        fieldKey: 'tableId',
+        op: 'is_empty',
       },
-    },
-    {
-      key: 'lookupValue' as const,
-      label: 'Lookup Value',
-      // We don't support matching on Excel-formatted text because it's very
-      // weird (e.g. currency cells have a trailing space), and will lead to too
-      // much user confusion.
-      description:
-        'Case sensitive and should not include units (e.g., $5.20 → 5.2). Leave blank to search for empty cells.',
-      type: 'string' as const,
-      required: false,
-      variables: true,
     },
   ],
 
@@ -113,6 +90,7 @@ const action: IRawAction = {
 
   async run($) {
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+
     if (parametersParseResult.success === false) {
       throw new StepError(
         'There was a problem with the input.',
@@ -120,8 +98,8 @@ const action: IRawAction = {
       )
     }
 
-    const { fileId, tableId, lookupColumn, lookupValue } =
-      parametersParseResult.data
+    const { fileId, tableId, filters } = parametersParseResult.data
+    const { lookupColumn, lookupValue } = filters![0]
 
     const session = await WorkbookSession.acquire($, fileId)
     const { columns: rawColumns, rows } = await getTopNTableRows(
