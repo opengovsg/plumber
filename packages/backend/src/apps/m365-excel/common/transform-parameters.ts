@@ -47,19 +47,19 @@ function transformLookupParameters(parameters: IJSONObject): IJSONObject {
  * App-level step parameter transformer for m365-excel.
  * Routes actions to the appropriate transformation function.
  *
- * @param actionKey - The action identifier (e.g., 'getTableRow')
- * @param parameters - The step parameters from database
+ * @param stepKey - The step key (e.g., 'getTableRow')
+ * @param stepParameters - The step parameters from database
  * @returns Transformed parameters in current format
  */
 function transformStepParameters(
-  actionKey: string,
-  parameters: IJSONObject,
+  stepKey: string,
+  stepParameters: IJSONObject,
 ): IJSONObject {
-  if (TRANSFORMABLE_ACTIONS.includes(actionKey)) {
-    return transformLookupParameters(parameters)
+  if (TRANSFORMABLE_ACTIONS.includes(stepKey)) {
+    return transformLookupParameters(stepParameters)
   }
 
-  return parameters
+  return stepParameters
 }
 
 export { transformStepParameters }
