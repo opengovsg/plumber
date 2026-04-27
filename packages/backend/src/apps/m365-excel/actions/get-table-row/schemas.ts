@@ -1,19 +1,10 @@
 import z from 'zod'
 
-import { fileIdSchema, tableIdSchema } from '../../common/schema'
+import { lookupParametersSchema } from '../../common/schema'
 import { hexEncodedRowRecordSchema } from '../../common/workbook-helpers/tables'
 
-export const parametersSchema = z.object({
-  fileId: fileIdSchema,
-  tableId: tableIdSchema,
-  // Populated by dynamic data, so no need to trim.
-  lookupColumn: z.string().min(1, {
-    message: 'Please select a column to lookup from.',
-  }),
-  // * We don't trim as we want to match _exactly_ on the user's input.
-  // * We allow empty strings to support optional form fields.
-  lookupValue: z.string().default(''),
-})
+// Use the validated lookup parameters schema from common
+export const parametersSchema = lookupParametersSchema
 
 export const dataOutSchema = z.discriminatedUnion('foundRow', [
   z.object({ foundRow: z.literal(false) }),
