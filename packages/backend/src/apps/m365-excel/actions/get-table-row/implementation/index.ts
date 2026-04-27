@@ -1,5 +1,8 @@
 import type { IGlobalVariable } from '@plumber/types'
 
+import type { z } from 'zod'
+
+import { lookupParametersSchema } from '@/apps/m365-excel/common/schema'
 import StepError from '@/errors/step'
 
 import getTopNTableRows from '../../../common/get-top-n-table-rows'
@@ -16,8 +19,7 @@ interface GetTableRowImplParams {
   $: IGlobalVariable
   session: WorkbookSession
   tableId: string
-  lookupValue: string
-  lookupColumn: string
+  filters: z.infer<typeof lookupParametersSchema>['filters']
 }
 
 interface GetTableRowImplResults {
@@ -71,7 +73,7 @@ interface GetTableRowImplResults {
 export default async function getTableRowImpl(
   args: GetTableRowImplParams,
 ): Promise<GetTableRowImplResults | null> {
-  const { $, session, tableId, lookupValue, lookupColumn } = args
+  const { $, session, tableId, filters } = args
 
   const { columns, rows, headerSheetRowIndex } = await getTopNTableRows(
     $,
@@ -80,16 +82,23 @@ export default async function getTableRowImpl(
     MAX_ROWS,
   )
 
-  const columnIndex = columns.indexOf(lookupColumn)
-  if (columnIndex === -1) {
-    throw new StepError(
-      `Column "${lookupColumn}" does not exist in your table.`,
-      `Check that your Excel table contains the "${lookupColumn}" column.`,
-    )
-  }
+  const columnIndices = filters.map(({ lookupColumn }) => {
+    const idx = columns.indexOf(lookupColumn)
+    if (idx === -1) {
+      throw new StepError(
+        `Column "${lookupColumn}" does not exist in your table.`,
+        `Check that your Excel table contains the "${lookupColumn}" column.`,
+      )
+    }
+    return idx
+  })
 
   for (const [rowIndex, row] of rows.entries()) {
-    if (row[columnIndex] === lookupValue) {
+    if (
+      filters.every(
+        ({ lookupValue }, i) => row[columnIndices[i]] === lookupValue,
+      )
+    ) {
       return {
         tableRowIndex: rowIndex,
         sheetRowNumber: rowIndex + headerSheetRowIndex + 2,
