@@ -51,8 +51,12 @@ export const createSession = async (
       initialCatalog: databricksConfig.catalog,
     })
     const endSession = async () => {
-      await session.close()
-      await connectedClient.close()
+      try {
+        await session.close()
+        await connectedClient.close()
+      } catch (e) {
+        logger.warn('Unable to close session', e)
+      }
     }
 
     return { session, endSession }

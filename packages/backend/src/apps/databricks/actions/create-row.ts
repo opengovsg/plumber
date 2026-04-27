@@ -127,7 +127,6 @@ const createRowAction: IRawAction = {
         namedParameters,
       })
       await operation.fetchAll()
-      await endSession()
       $.setActionItem({
         raw: {
           success: true,

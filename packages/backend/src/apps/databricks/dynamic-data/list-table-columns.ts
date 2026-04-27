@@ -16,17 +16,17 @@ const dynamicData: IDynamicData = {
   key: 'databricks-list-table-columns',
 
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
-    try {
-      const tableName = $.step.parameters.tableName as string
-      if (!tableName) {
-        return {
-          data: [],
-          error: {
-            message: 'Table name is required',
-          },
-        }
+    const tableName = $.step.parameters.tableName as string
+    if (!tableName) {
+      return {
+        data: [],
+        error: {
+          message: 'Table name is required',
+        },
       }
-      const { session, endSession } = await createSession($)
+    }
+    const { session, endSession } = await createSession($)
+    try {
       const operation = await session.getColumns({
         tableName: $.step.parameters.tableName as string,
         catalogName: databricksConfig.catalog,
@@ -35,7 +35,6 @@ const dynamicData: IDynamicData = {
       const columns = (await operation.fetchAll({
         maxRows: 1000,
       })) as DatabrickColumnRes[]
-      await endSession()
       return {
         data: columns.map((column) => ({
           name: column.COLUMN_NAME,
@@ -53,6 +52,8 @@ const dynamicData: IDynamicData = {
           message: 'Failed to list table columns',
         },
       }
+    } finally {
+      await endSession()
     }
   },
 }

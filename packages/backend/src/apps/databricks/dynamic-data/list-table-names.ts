@@ -16,8 +16,8 @@ const dynamicData: IDynamicData = {
   key: 'databricks-list-table-names',
 
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
+    const { session, endSession } = await createSession($)
     try {
-      const { session, endSession } = await createSession($)
       const operation = await session.getTables({
         catalogName: databricksConfig.catalog,
         schemaName: constructSchemaName($),
@@ -26,7 +26,6 @@ const dynamicData: IDynamicData = {
       const tables = (await operation.fetchAll({
         maxRows: 1000,
       })) as DatabrickTableRes[]
-      await endSession()
       return {
         data: tables.map((row) => ({
           name: row.TABLE_NAME,
@@ -44,6 +43,8 @@ const dynamicData: IDynamicData = {
           message: 'Failed to list table names',
         },
       }
+    } finally {
+      await endSession()
     }
   },
 }
