@@ -105,6 +105,7 @@ type Mutation {
   # Flow collaborators
   upsertFlowCollaborator(input: FlowCollaboratorInput!): Boolean!
   deleteFlowCollaborator(input: DeleteFlowCollaboratorInput!): Boolean!
+  deleteFlowConnection(input: DeleteFlowConnectionInput!): Boolean!
   # S3 operations
   generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!, flowUpdatedAt: String!): Boolean
@@ -479,6 +480,12 @@ input FlowCollaboratorInput {
 input DeleteFlowCollaboratorInput {
   flowId: String!
   email: String!
+}
+
+input DeleteFlowConnectionInput {
+  flowId: String!
+  connectionId: String!
+  connectionType: String!
 }
 
 # Rate limiting config is omitted here e.g. maxQps

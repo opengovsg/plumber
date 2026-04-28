@@ -14,6 +14,7 @@ import createTemplatedFlow from './mutations/create-templated-flow'
 import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
 import deleteFlowCollaborator from './mutations/delete-flow-collaborator'
+import deleteFlowConnection from './mutations/delete-flow-connection'
 import deleteStep from './mutations/delete-step'
 import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateBranch from './mutations/duplicate-branch'
@@ -76,6 +77,7 @@ export default {
   updateFlowConfig,
   upsertFlowCollaborator,
   deleteFlowCollaborator,
+  deleteFlowConnection,
   executeStep,
   deleteFlow,
   createStep,
