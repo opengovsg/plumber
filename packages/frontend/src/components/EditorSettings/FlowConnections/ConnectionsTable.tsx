@@ -1,13 +1,11 @@
 import { IFlow } from '@plumber/types'
 
 import { useContext } from 'react'
-import { BiTrash } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
 import {
   Box,
   Center,
   Flex,
-  IconButton,
   Table,
   TableContainer,
   Tbody,
@@ -23,7 +21,9 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { GET_FLOW_CONNECTIONS } from '@/graphql/queries/get-flow-connections'
 
-interface SharedConnection {
+import DeleteFlowConnectionButton from './DeleteFlowConnectionButton'
+
+export interface SharedConnection {
   addedBy: string
   appName: string
   appIconUrl: string
@@ -43,10 +43,19 @@ const COLUMNS = ['App', 'Connection name', 'Created by', 'Status', '']
 
 const StatusTag = ({ inUse }: { inUse: boolean }) => {
   if (inUse) {
-    return <Tag colorScheme="success">In use</Tag>
+    return (
+      <Tag colorScheme="success" _active={{}} _hover={{}}>
+        In use
+      </Tag>
+    )
   }
   return (
-    <Tag bg="interaction.sub-subtle.default" color="base.divider.strong">
+    <Tag
+      bg="interaction.sub-subtle.default"
+      color="base.divider.strong"
+      _active={{}}
+      _hover={{}}
+    >
       Not in use
     </Tag>
   )
@@ -65,7 +74,7 @@ const TableHeader = () => {
 }
 
 const TableRow = (props: TableRowProps) => {
-  const { connection, hasEditPermission } = props
+  const { connection, flow, hasEditPermission } = props
   const {
     connectionId,
     connectionName,
@@ -108,16 +117,11 @@ const TableRow = (props: TableRowProps) => {
         <StatusTag inUse={isInUse} />
       </Td>
       <Td>
-        {/* TODO: Add the delete functionality */}
         {hasEditPermission && (
-          <IconButton
-            onClick={(event) => {
-              event.stopPropagation()
-            }}
-            colorScheme="critical"
-            variant="clear"
-            aria-label="Delete flow connection"
-            icon={<BiTrash />}
+          <DeleteFlowConnectionButton
+            flow={flow}
+            connection={connection}
+            isInUse={isInUse}
           />
         )}
       </Td>

@@ -109,15 +109,29 @@ class FlowConnections extends Base {
     if (hasCollaborators) {
       // NOTE: somehow .onConflict().ignore() does not return an empty array
       // on conflict, but actually returns the row its trying to insert
-      const existing = await this.query(trx).findOne({
-        flow_id: flowId,
-        connection_id: connectionId,
-      })
+
+      // check if the connection existed before and was deleted
+      const existing = await this.query(trx)
+        .findOne({
+          flow_id: flowId,
+          connection_id: connectionId,
+        })
+        .withSoftDeleted()
 
       if (existing) {
-        return null
+        // if it existed before and was deleted, restore it
+        return await this.query(trx)
+          .where({
+            flow_id: flowId,
+            connection_id: connectionId,
+          })
+          .patch({
+            deletedAt: null,
+          })
+          .withSoftDeleted()
       }
 
+      // if it did not exist before, add it
       return await this.query(trx)
         .insert({
           flowId,

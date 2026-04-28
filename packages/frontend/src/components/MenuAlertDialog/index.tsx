@@ -30,7 +30,7 @@ interface MenuAlertDialogProps {
   cancelRef: React.RefObject<HTMLButtonElement>
   onDialogClose: () => void
   dialogType: AlertDialogType
-  dialogHeader: AlertHeaderType
+  dialogHeader: AlertHeaderType | string
   onClick: (() => void) | MouseEventHandler
   isLoading: boolean
   customBody?: string
@@ -44,7 +44,7 @@ interface AlertDialogContent {
 }
 
 function getAlertDialogContent(
-  dialogHeader: AlertHeaderType,
+  dialogHeader: AlertHeaderType | string,
   dialogType: AlertDialogType,
   customBody?: string,
 ): AlertDialogContent {
