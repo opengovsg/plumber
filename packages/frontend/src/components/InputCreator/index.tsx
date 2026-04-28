@@ -63,7 +63,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     ) && flow?.role === 'editor'
   const isReadOnly =
     // flow is an empty object if it is not in the editor
-    (Object.keys(flow).length > 0 && flow?.role !== 'owner') || readOnly
+    (Object.keys(flow).length > 0 && flow?.role === 'viewer') || readOnly
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
   const { data, loading, refetch } = useDynamicData(

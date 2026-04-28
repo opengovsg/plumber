@@ -37,6 +37,10 @@ const authenticationStepsWithoutAuthUrl = [
         name: 'id',
         value: '{createConnection.id}',
       },
+      {
+        name: 'flowId',
+        value: '{flowId}',
+      },
     ],
   },
 ]
@@ -68,6 +72,10 @@ const authenticationStepsWithAuthUrl = [
         name: 'id',
         value: '{createConnection.id}',
       },
+      {
+        name: 'flowId',
+        value: '{flowId}',
+      },
     ],
   },
   {
@@ -92,6 +100,10 @@ const authenticationStepsWithAuthUrl = [
         name: 'formattedData',
         value: '{openAuthPopup.all}',
       },
+      {
+        name: 'flowId',
+        value: '{flowId}',
+      },
     ],
   },
   {
@@ -101,6 +113,10 @@ const authenticationStepsWithAuthUrl = [
       {
         name: 'id',
         value: '{createConnection.id}',
+      },
+      {
+        name: 'flowId',
+        value: '{flowId}',
       },
     ],
   },

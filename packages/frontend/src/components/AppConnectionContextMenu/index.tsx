@@ -7,7 +7,7 @@ import { IconButton } from '@opengovsg/design-system-react'
 import * as URLS from '@/config/urls'
 
 type Action = {
-  type: 'test' | 'reconnect' | 'delete' | 'viewFlows'
+  type: 'test' | 'delete' | 'viewFlows'
 }
 
 type ContextMenuProps = {
@@ -55,15 +55,6 @@ export default function ContextMenu(
 
           <MenuItem onClick={createActionHandler({ type: 'test' })}>
             Test connection
-          </MenuItem>
-
-          {/* TODO: deprecate this action */}
-          <MenuItem
-            as={Link}
-            to={URLS.APP_RECONNECT_CONNECTION(appKey, connectionId)}
-            onClick={createActionHandler({ type: 'reconnect' })}
-          >
-            Edit connection
           </MenuItem>
 
           <MenuItem

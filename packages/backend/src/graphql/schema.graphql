@@ -36,6 +36,7 @@ type Query {
     key: String!
     parameters: JSONObject
   ): [JSONObject]
+  getFlowConnections(flowId: String!): [SharedFlowConnection!]!
   # Tiles
   getTable(tableId: String!): TableMetadata!
   getTableConnections(tableIds: [String!]!): JSONObject
@@ -104,6 +105,7 @@ type Mutation {
   # Flow collaborators
   upsertFlowCollaborator(input: FlowCollaboratorInput!): Boolean!
   deleteFlowCollaborator(input: DeleteFlowCollaboratorInput!): Boolean!
+  deleteFlowConnection(input: DeleteFlowConnectionInput!): Boolean!
   # S3 operations
   generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!, flowUpdatedAt: String!): Boolean
@@ -480,6 +482,12 @@ input DeleteFlowCollaboratorInput {
   email: String!
 }
 
+input DeleteFlowConnectionInput {
+  flowId: String!
+  connectionId: String!
+  connectionType: String!
+}
+
 # Rate limiting config is omitted here e.g. maxQps
 type FlowConfig {
   errorConfig: FlowErrorConfig
@@ -508,6 +516,17 @@ type FlowAttachmentConfig {
   updatedAt: String!
 }
 
+type SharedFlowConnection {
+  flowId: String!
+  connectionId: String!
+  connectionType: String!
+  appName: String!
+  appIconUrl: String!
+  addedBy: String!
+  connectionName: String!
+  isDeletable: Boolean!
+}
+
 type Execution {
   id: String
   testRun: Boolean
@@ -532,16 +551,18 @@ type BulkRetryIterationsResult {
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
-  flowId: String
+  flowId: String!
 }
 
 input GenerateAuthUrlInput {
   id: String!
+  flowId: String!
 }
 
 input UpdateConnectionInput {
   id: String!
   formattedData: JSONObject!
+  flowId: String!
 }
 
 input ResetConnectionInput {
@@ -550,6 +571,7 @@ input ResetConnectionInput {
 
 input VerifyConnectionInput {
   id: String!
+  flowId: String!
 }
 
 input DeleteConnectionInput {

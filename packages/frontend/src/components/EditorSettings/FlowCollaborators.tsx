@@ -1,14 +1,16 @@
 import { useCallback, useContext } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Divider, Flex, Text, VStack } from '@chakra-ui/react'
-import { useToast } from '@opengovsg/design-system-react'
+import { Flex, Text } from '@chakra-ui/react'
+import { Infobox, useToast } from '@opengovsg/design-system-react'
 
+import * as URLS from '@/config/urls'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { UPSERT_FLOW_COLLABORATOR } from '@/graphql/mutations/upsert-flow-collaborator'
 import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 
+import CollaboratorsTable from './FlowCollaborators/CollaboratorsTable'
 import AddNewCollaborator from './FlowShare/AddNewCollaborator'
-import CollaboratorListRow from './FlowShare/CollaboratorListRow'
 import { editorSettingsStyles as styles } from './styles'
 
 export default function FlowCollaborators() {
@@ -40,23 +42,34 @@ export default function FlowCollaborators() {
 
   return (
     <Flex {...styles.editorSettingsWrapper}>
-      <Text textStyle="h3-semibold">Share Pipe</Text>
-      <VStack gap={2} alignItems="flex-start">
+      <Flex flexDir="column" gap={2}>
+        <Text textStyle="h5">Collaborators</Text>
+        {/* Connections appear if pipe is unpublished */}
+        {flow.role !== 'viewer' && (
+          <Infobox variant="info" borderRadius="md" w="100%">
+            <Flex flexDir="column" gap={2}>
+              <Text textStyle="body-1">
+                Editors can use the{' '}
+                <Link to={URLS.FLOW_EDITOR_CONNECTIONS(flow.id)}>
+                  connections linked to this Pipe
+                </Link>
+                .
+              </Text>
+            </Flex>
+          </Infobox>
+        )}
+      </Flex>
+      <Flex flexDir="column" gap={4} w="100%">
         {hasEditPermission && (
           <AddNewCollaborator flow={flow} onAdd={upsertCollaboratorHandler} />
         )}
-        <VStack w="100%" divider={<Divider />}>
-          {collaborators.map((collab) => (
-            <CollaboratorListRow
-              key={collab.email}
-              collaborator={collab}
-              onRoleChange={(newRole) =>
-                upsertCollaboratorHandler(collab.email ?? '', newRole, true)
-              }
-            />
-          ))}
-        </VStack>
-      </VStack>
+        <CollaboratorsTable
+          collaborators={collaborators}
+          onRoleChange={(email, role) =>
+            upsertCollaboratorHandler(email, role, true)
+          }
+        />
+      </Flex>
     </Flex>
   )
 }

@@ -1,19 +1,8 @@
 import { IRawAction } from '@plumber/types'
 
-import StepError from '@/errors/step'
-import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
-import { getToken } from '../../auth/get-token'
-import {
-  DEFAULT_GENERALISED_MODEL_TYPE,
-  GENERALISED_MODEL_OPTIONS,
-} from '../../common/constants'
-import { parseError } from '../../common/error-parser'
-import { generalisedModelSchema } from '../../common/schema'
-import { getAttachmentFromS3, getValidationError } from '../../common/utils'
-
-import getDataOutMetadata from './get-data-out-metadata'
+import { throwAisayDeprecationError } from '../../common/throw-aisay-deprecation-error'
 
 const action: IRawAction = {
   name: 'Extract data from all document types',
@@ -27,8 +16,11 @@ const action: IRawAction = {
       required: true,
       variables: false,
       showOptionValue: false,
-      options: GENERALISED_MODEL_OPTIONS,
-      value: DEFAULT_GENERALISED_MODEL_TYPE,
+      options: [
+        { label: 'Standard', value: 'standard' }, // LLM
+        { label: 'Vision', value: 'DOC_EXTRACTION_V2' }, // VLM
+      ],
+      value: 'standard',
     },
     {
       label: 'File',
@@ -61,54 +53,9 @@ const action: IRawAction = {
   doesFileProcessing: (step: Step) => {
     return step.parameters.file && step.parameters.file !== ''
   },
-  getDataOutMetadata,
 
-  async run($) {
-    const result = generalisedModelSchema.safeParse($.step.parameters)
-    if (!result.success) {
-      const { stepErrorName, stepErrorSolution } = getValidationError(result)
-
-      throw new StepError(stepErrorName, stepErrorSolution)
-    }
-
-    if (!$.auth.data?.clientId || !$.auth.data?.clientSecret) {
-      throw new StepError(
-        'Missing client ID or client secret',
-        'Please check the client ID and client secret',
-      )
-    }
-
-    try {
-      const { file, prompts, modelType } = result.data
-
-      // get attachment from S3 first
-      const attachment = await getAttachmentFromS3(file, $.flow.id)
-
-      // Step 1: get AWS Cognito access token
-      const token = await getToken($)
-
-      // Step 2: Call the model to get the output
-      const res = await $.http.request({
-        url: `${$.app.baseUrl}/query`,
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        data: {
-          ...(modelType && { additional_features: modelType }),
-          gpt_query: prompts,
-          image: attachment.data,
-        },
-      })
-
-      $.setActionItem({ raw: { ...res.data } })
-    } catch (err) {
-      logger.error(err)
-      const { stepErrorName, stepErrorSolution } = parseError(err)
-      throw new StepError(stepErrorName, stepErrorSolution, err)
-    }
+  async run(_) {
+    throwAisayDeprecationError()
   },
 } satisfies IRawAction
 

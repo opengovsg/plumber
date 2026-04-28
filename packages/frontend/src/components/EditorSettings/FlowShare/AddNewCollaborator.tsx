@@ -17,8 +17,6 @@ import * as yup from 'yup'
 import CollaboratorRoleSelect from '@/components/CollaboratorRoleSelect'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 
-import SharedConnections from './SharedConnections'
-
 const inputSchema = yup
   .object({
     email: yup
@@ -95,7 +93,7 @@ const AddNewCollaborator = ({
       >
         <FormControl isInvalid={isSubmitted && !isValid}>
           <FormLabel>Add collaborator</FormLabel>
-          <VStack spacing={2} alignItems="flex-start">
+          <VStack spacing={4} alignItems="flex-start">
             <Flex alignSelf="stretch" gap={2}>
               <Input type="email" isRequired {...register('email')} />
               <CollaboratorRoleSelect
@@ -111,9 +109,6 @@ const AddNewCollaborator = ({
                 Please enter a valid email address.
               </FormErrorMessage>
             )}
-
-            {/* Connections appear if pipe is unpublished */}
-            {role === 'editor' && <SharedConnections />}
 
             <Button
               type="submit"

@@ -104,38 +104,29 @@ const updateStep: MutationResolvers['updateStep'] = async (
     /**
      * NOTE: we need to update flow connections for apps with connections:
      * Tiles:
-     * 1. add the collaborator to the flow connections table
+     * 1. add the tile to the flow connections table
      * 2. add the collaborator to the table collaborators table
      *
-     * TODO (kevinkim-ogp): phase 2
-     * collaborator should be able to add their own tiles,
-     * and the owner will be added as an editor to the Tile
-     *
      * Other connections:
-     * 1. add the collaborator to the flow connections table
-     *
-     * TODO (kevinkim-ogp): phase 2
-     * collaborator should be able to add their own connections,
-     * it will be tied to this specific flow only
+     * 1. add the connection to the flow connections table
      */
-    if (step.flow.role === 'owner') {
-      const appKey = updatedStep?.appKey
+    const appKey = updatedStep?.appKey
 
-      // tiles special handling
-      if (appKey === 'tiles' && updatedStep?.parameters?.tableId) {
-        await addFlowTableConnection({
-          flowId: updatedStep.flowId,
-          tableId: updatedStep.parameters.tableId as string,
-          addedBy: context.currentUser.id,
-          trx,
-        })
-      } else if (updatedStep?.connectionId) {
-        await addFlowConnection({
-          step: updatedStep,
-          addedBy: context.currentUser.id,
-          trx,
-        })
-      }
+    // tiles special handling
+    if (appKey === 'tiles' && updatedStep?.parameters?.tableId) {
+      await addFlowTableConnection({
+        flowId: updatedStep.flowId,
+        tableId: updatedStep.parameters.tableId as string,
+        addedBy: context.currentUser.id,
+        flowOwnerId: step.flow.userId,
+        trx,
+      })
+    } else if (step.flow.role === 'owner' && updatedStep?.connectionId) {
+      await addFlowConnection({
+        step: updatedStep,
+        addedBy: context.currentUser.id,
+        trx,
+      })
     }
 
     // update the flow's last updated

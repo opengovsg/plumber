@@ -142,6 +142,7 @@ const upsertFlowCollaborator: MutationResolvers['upsertFlowCollaborator'] =
                 flowId,
                 tableId,
                 addedBy: context.currentUser.id,
+                flowOwnerId: flow.userId,
                 trx,
               })
             }),

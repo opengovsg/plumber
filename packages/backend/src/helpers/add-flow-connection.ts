@@ -18,6 +18,7 @@ interface AddTableFlowConnectionParams {
   flowId: string
   tableId: string
   addedBy: string
+  flowOwnerId: string
   trx?: Transaction
 }
 
@@ -63,6 +64,7 @@ async function addFlowTableConnection({
   flowId,
   tableId,
   addedBy,
+  flowOwnerId,
   trx,
 }: AddTableFlowConnectionParams): Promise<void> {
   // COLLABORATORS:
@@ -84,6 +86,18 @@ async function addFlowTableConnection({
     flowId,
     trx,
   })
+
+  // now that editors can also add their own tiles, we also need to add the flow owner
+  // as an editor to the tile
+  // if the addedBy === flowOwnerId, the owner is adding their own Tile so we can skip this
+  if (addedBy !== flowOwnerId) {
+    await TableCollaborator.upgradeOrInsertCollaborator({
+      userId: flowOwnerId,
+      tableId,
+      role: 'editor',
+      trx,
+    })
+  }
 
   // use Promise.all so that we use the addCollaborator function, which checks
   // if the collaborator already exists to avoid duplicates

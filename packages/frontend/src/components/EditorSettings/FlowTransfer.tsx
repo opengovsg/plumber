@@ -14,9 +14,9 @@ import * as yup from 'yup'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 
 import DisallowRequestInfobox from './FlowTransfer/DisallowRequestInfobox'
-import FlowTransferConnections from './FlowTransfer/FlowTransferConnections'
 import PublishedFlowInfobox from './FlowTransfer/PublishedFlowInfobox'
 import TransferFlowModal from './FlowTransfer/TransferFlowModal'
+import WarningInfobox from './FlowTransfer/WarningInfobox'
 import { editorSettingsStyles as styles } from './styles'
 
 const inputSchema = yup
@@ -29,8 +29,7 @@ const inputSchema = yup
   .required()
 
 export default function FlowTransfer() {
-  const inputDescriptionText =
-    'Please enter the email account you wish to transfer'
+  const inputDescriptionText = "New owner's email address"
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const [newOwnerEmail, setNewOwnerEmail] = useState<string>('')
@@ -63,19 +62,24 @@ export default function FlowTransfer() {
 
   return (
     <Flex {...styles.editorSettingsWrapper}>
-      <Text textStyle="h3-semibold">Transfer Pipe</Text>
+      <Flex flexDir="column" gap={2}>
+        <Text textStyle="h5">Transfer Pipe</Text>
+
+        {/* Warning infobox only appears when the Pipe is unpublished and the user is the owner*/}
+        {!flow.active && flow.role === 'owner' && <WarningInfobox />}
+      </Flex>
 
       {flow.active && <PublishedFlowInfobox />}
 
       {hasRequestedEmail && <DisallowRequestInfobox />}
 
-      {/* Connections appear if pipe is unpublished */}
-      {!flow.active && <FlowTransferConnections />}
-
       <form onSubmit={handleSubmit(onSubmit)}>
         <FormControl isInvalid={!shouldDisableInput && !isValid}>
-          <Flex flexDir="column">
-            <FormLabel isRequired={true}>Transfer Pipe Ownership</FormLabel>
+          <Flex flexDir="column" gap={4}>
+            <FormLabel isRequired={true} mb={0}>
+              Transfer to
+            </FormLabel>
+
             <TouchableTooltip
               label={
                 flow.role !== 'owner'
@@ -106,7 +110,6 @@ export default function FlowTransfer() {
               type="submit"
               isDisabled={shouldDisableInput || !isValid}
               alignSelf="flex-start"
-              mt={8}
             >
               Transfer Pipe
             </Button>

@@ -1,3 +1,4 @@
+import FlowConnections from '@/models/flow-connections'
 import TableCollaborator from '@/models/table-collaborators'
 import TableMetadata from '@/models/table-metadata'
 
@@ -23,6 +24,12 @@ const deleteTable: MutationResolvers['deleteTable'] = async (
     await TableCollaborator.query().where({ table_id: params.input.id }).patch({
       deletedAt: new Date().toISOString(),
     })
+
+    // remove the table from the flow connections table
+    await FlowConnections.query(trx)
+      .where({ connection_id: params.input.id, connection_type: 'table' })
+      .delete()
+
     await table.$query(trx).delete()
   })
 

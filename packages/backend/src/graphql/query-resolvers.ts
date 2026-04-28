@@ -7,6 +7,7 @@ import getExecution from './queries/get-execution'
 import getExecutionSteps from './queries/get-execution-steps'
 import getExecutions from './queries/get-executions'
 import getFlow from './queries/get-flow'
+import getFlowConnections from './queries/get-flow-connections'
 import getFlowTransferDetails from './queries/get-flow-transfer-details'
 import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
@@ -41,6 +42,7 @@ export default {
   getCurrentUser,
   healthcheck,
   getPendingFlowTransfers,
+  getFlowConnections,
   getFlowTransferDetails,
   getTemplates,
   ...tilesQueryResolvers,

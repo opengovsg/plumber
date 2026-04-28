@@ -2,7 +2,7 @@ import { FlexProps } from '@chakra-ui/react'
 
 export const editorSettingsStyles = {
   editorSettingsWrapper: {
-    py: { base: '2rem', md: '3rem' },
+    py: { base: '2rem', md: '2rem' },
     px: { base: '1.5rem', md: '5rem' },
     flexDir: 'column' as FlexProps['flexDir'],
     gap: 10,
