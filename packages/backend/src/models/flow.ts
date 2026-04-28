@@ -9,6 +9,7 @@ import { doesActionProcessFiles } from '@/helpers/actions'
 import Base from './base'
 import Execution from './execution'
 import FlowCollaborator from './flow-collaborators'
+import FlowConnections from './flow-connections'
 import FlowTransfer from './flow-transfers'
 import ExtendedQueryBuilder from './query-builder'
 import Step from './step'
@@ -137,6 +138,14 @@ class Flow extends Base {
       },
       filter(builder: ExtendedQueryBuilder<FlowCollaborator>) {
         builder.whereNull('deleted_at')
+      },
+    },
+    flowConnections: {
+      relation: Base.HasManyRelation,
+      modelClass: FlowConnections,
+      join: {
+        from: `${this.tableName}.id`,
+        to: `${FlowConnections.tableName}.flow_id`,
       },
     },
   })

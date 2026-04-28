@@ -19,11 +19,17 @@ export const APP_CONNECTION_FIELDS: Record<
   {
     parameterKey?: string
     dynamicDataKey?: string
+    /**
+     * if true, collaborator will not able to modify the connection for the app,
+     * but they can still use the owner's connection
+     */
+    editorReadOnly?: boolean
   }
 > = {
   'm365-excel': {
     parameterKey: 'fileId',
     dynamicDataKey: 'listFiles',
+    editorReadOnly: true,
   },
   lettersg: {},
   slack: {},
