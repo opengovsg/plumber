@@ -18,7 +18,7 @@ export const schema = z.object({
             .max(64, {
               message: 'Output name cannot be more than 64 characters',
             })
-            .regex(/^[a-zA-Z0-9\s]+$/, {
+            .regex(/^[a-zA-Z0-9 ]+$/, {
               message:
                 'Output name can only contain letters, numbers, and spaces',
             }),
@@ -31,8 +31,7 @@ export const schema = z.object({
             }),
         })
         .transform((field) => ({
-          fieldName: field.fieldName.replace(/\s/g, '_'),
-          originalFieldName: field.fieldName,
+          fieldName: field.fieldName.replace(/ /g, '_'),
           description: field.description,
         })),
     )
