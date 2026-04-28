@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom'
 
 import EditorSettingsLayout from '@/components/EditorSettings'
 import FlowCollaborators from '@/components/EditorSettings/FlowCollaborators'
+import FlowConnections from '@/components/EditorSettings/FlowConnections'
 import FlowTransfer from '@/components/EditorSettings/FlowTransfer'
 import Notifications from '@/components/EditorSettings/Notifications'
 
@@ -29,6 +30,14 @@ export default function EditorRoutes(): React.ReactElement {
         element={
           <EditorSettingsLayout>
             <FlowCollaborators />
+          </EditorSettingsLayout>
+        }
+      />
+      <Route
+        path="/:flowId/connections"
+        element={
+          <EditorSettingsLayout>
+            <FlowConnections />
           </EditorSettingsLayout>
         }
       />

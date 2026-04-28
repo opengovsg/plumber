@@ -1,7 +1,7 @@
 import { IFlow } from '@plumber/types'
 
 import { ElementType, ReactNode, useContext, useMemo, useState } from 'react'
-import { BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
+import { BiLink, BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
 import {
@@ -56,6 +56,8 @@ export default function EditorSettingsLayout(
     variables: { id: flowId },
   })
   const flow: IFlow = data?.getFlow
+  const hasCollaborators =
+    flow?.collaborators?.length && flow.collaborators.length > 1 // includes owner
 
   const [isDrawerOpen, setDrawerOpen] = useState(false)
 
@@ -79,6 +81,18 @@ export default function EditorSettingsLayout(
             },
           ].filter(Boolean),
         },
+        showCollaborators &&
+          hasCollaborators && {
+            group: 'Manage Pipe',
+            links: [
+              {
+                Icon: BiLink,
+                text: 'Connections',
+                to: URLS.FLOW_EDITOR_CONNECTIONS(flowId),
+                group: 'Manage Pipe' as const,
+              },
+            ],
+          },
         {
           group: 'Notifications',
           links: [
@@ -90,11 +104,11 @@ export default function EditorSettingsLayout(
             },
           ],
         },
-      ],
+      ].filter(Boolean),
       () => setDrawerOpen(true),
       () => setDrawerOpen(false),
     ],
-    [flowId, setDrawerOpen, showCollaborators],
+    [flowId, setDrawerOpen, showCollaborators, hasCollaborators],
   )
 
   const drawerComponent = useBreakpointValue({

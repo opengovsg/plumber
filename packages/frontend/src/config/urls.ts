@@ -62,7 +62,8 @@ export const FLOW_EDITOR_SHARE = (flowId?: string): string =>
   flowId ? `/editor/${flowId}/share` : FLOWS
 export const FLOW_EDITOR_TRANSFERS = (flowId?: string): string =>
   flowId ? `/editor/${flowId}/transfer` : FLOWS
-
+export const FLOW_EDITOR_CONNECTIONS = (flowId?: string): string =>
+  flowId ? `/editor/${flowId}/connections` : FLOWS
 export const TRANSFERS = '/transfers'
 
 // Templates routes
