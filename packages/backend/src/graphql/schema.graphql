@@ -36,6 +36,7 @@ type Query {
     key: String!
     parameters: JSONObject
   ): [JSONObject]
+  getFlowConnections(flowId: String!): [SharedFlowConnection!]!
   # Tiles
   getTable(tableId: String!): TableMetadata!
   getTableConnections(tableIds: [String!]!): JSONObject
@@ -506,6 +507,16 @@ type FlowAttachmentConfig {
   value: String!
   size: Int!
   updatedAt: String!
+}
+
+type SharedFlowConnection {
+  flowId: String!
+  connectionId: String!
+  connectionType: String!
+  appName: String!
+  appIconUrl: String!
+  addedBy: String!
+  connectionName: String!
 }
 
 type Execution {

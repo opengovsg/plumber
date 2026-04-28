@@ -18,6 +18,7 @@ class FlowConnections extends Base {
   connectionType!: 'connection' | 'table'
   connection?: Connection
   table?: TableMetadata
+  user?: User
   metadata: Record<string, any>
   flow?: Flow
 
