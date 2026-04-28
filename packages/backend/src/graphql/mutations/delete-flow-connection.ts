@@ -1,4 +1,4 @@
-import { GraphQLError } from 'graphql'
+import { GraphQLError } from 'graphql/error'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { BadUserInputError } from '@/errors/graphql-errors/bad-user-input'
@@ -21,10 +21,10 @@ const deleteFlowConnection: MutationResolvers['deleteFlowConnection'] = async (
 
   try {
     return await FlowConnections.transaction(async (trx) => {
-      // this user needs to first be a flow owner to delete the flow connection
+      // this user needs to first be a flow owner or editor to delete the flow connection
       const flow = await context.currentUser
-        .$relatedQuery('flows', trx)
-        .findOne({ id: flowId })
+        .withAccessibleFlows({ requiredRole: 'editor' })
+        .findById(flowId)
 
       if (!flow) {
         throw new ForbiddenError('You do not have access to this flow')

@@ -550,16 +550,18 @@ type BulkRetryIterationsResult {
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
-  flowId: String
+  flowId: String!
 }
 
 input GenerateAuthUrlInput {
   id: String!
+  flowId: String!
 }
 
 input UpdateConnectionInput {
   id: String!
   formattedData: JSONObject!
+  flowId: String!
 }
 
 input ResetConnectionInput {
@@ -568,6 +570,7 @@ input ResetConnectionInput {
 
 input VerifyConnectionInput {
   id: String!
+  flowId: String!
 }
 
 input DeleteConnectionInput {

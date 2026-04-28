@@ -24,12 +24,6 @@ export const APP_PATTERN = '/app/:appKey'
 export const APP_CONNECTIONS = (appKey: string): string =>
   `/app/${appKey}/connections`
 export const APP_CONNECTIONS_PATTERN = '/app/:appKey/connections'
-export const APP_RECONNECT_CONNECTION = (
-  appKey: string,
-  connectionId: string,
-): string => `/app/${appKey}/connections/${connectionId}/reconnect`
-export const APP_RECONNECT_CONNECTION_PATTERN =
-  '/app/:appKey/connections/:connectionId/reconnect'
 export const APP_FLOWS = (appKey: string): string => `/app/${appKey}/flows`
 export const APP_FLOWS_FOR_CONNECTION = (
   appKey: string,

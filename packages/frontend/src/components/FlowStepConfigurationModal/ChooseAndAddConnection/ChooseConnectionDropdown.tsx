@@ -1,11 +1,10 @@
 import { type IApp } from '@plumber/types'
 
-import { useCallback, useContext } from 'react'
+import { useCallback } from 'react'
 import { FormControl } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
 
 import { SingleSelect } from '@/components/SingleSelect'
-import { EditorContext } from '@/contexts/Editor'
 
 import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
 
@@ -28,7 +27,6 @@ function ChooseConnectionDropdown({
   application,
   onAddNewConnection,
 }: ChooseConnectionDropdownProps) {
-  const { flow } = useContext(EditorContext)
   const onSelectionChange = useCallback(
     (value: string) => {
       onChange(value, false)
@@ -36,8 +34,7 @@ function ChooseConnectionDropdown({
     [onChange],
   )
 
-  const canAddNew =
-    application?.auth?.connectionType === 'user-added' && flow.role === 'owner'
+  const canAddNew = application?.auth?.connectionType === 'user-added'
   const items = [...connectionOptions]
 
   return (

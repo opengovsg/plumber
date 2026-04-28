@@ -24,19 +24,6 @@ type ApplicationParams = {
   connectionId?: string
 }
 
-const ReconnectConnection = (props: any): React.ReactElement => {
-  const { application, onClose } = props
-  const { connectionId } = useParams() as ApplicationParams
-
-  return (
-    <AddAppConnection
-      onClose={onClose}
-      application={application}
-      connectionId={connectionId}
-    />
-  )
-}
-
 export default function Application(): React.ReactElement | null {
   const connectionsPathMatch = useMatch({
     path: URLS.APP_CONNECTIONS_PATTERN,
@@ -137,17 +124,6 @@ export default function Application(): React.ReactElement | null {
           path="/connections/add"
           element={
             <AddAppConnection onClose={goToApplicationPage} application={app} />
-          }
-        />
-
-        {/* TODO: deprecate this route */}
-        <Route
-          path="/connections/:connectionId/reconnect"
-          element={
-            <ReconnectConnection
-              application={app}
-              onClose={goToApplicationPage}
-            />
           }
         />
       </Routes>

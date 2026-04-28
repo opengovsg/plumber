@@ -109,12 +109,22 @@ describe('deleteFlowConnection', () => {
       expect(result).toBe(true)
     })
 
-    it('should not allow editor to delete flow connection', async () => {
+    it('should allow editor to delete flow connection', async () => {
       context.currentUser = editor
+      await FlowConnections.query().insert({
+        flowId: testFlow.id,
+        connectionId: testConnection.id,
+        connectionType: 'connection',
+        addedBy: editor.id,
+      })
 
-      await expect(
-        deleteFlowConnection(null, { input: defaultInput }, context),
-      ).rejects.toThrow('You do not have access to this flow')
+      const result = await deleteFlowConnection(
+        null,
+        { input: defaultInput },
+        context,
+      )
+
+      expect(result).toBe(true)
     })
 
     it('should not allow viewer to delete flow connection', async () => {
