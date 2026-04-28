@@ -29,6 +29,7 @@ interface CreateNewOptionProps {
   inputValue: string
   parameters: Record<string, unknown>
   addNewId?: DropdownAddNewId
+  flowId?: string
 }
 
 export function useCreateNewOption(setValue: (newValue: string) => void) {
@@ -36,7 +37,12 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
   const [updateTable] = useMutation(UPDATE_TABLE)
   const [isCreatingNewOption, setIsCreatingNewOption] = useState(false)
   const createNewOption = useCallback(
-    async ({ inputValue, addNewId, parameters }: CreateNewOptionProps) => {
+    async ({
+      inputValue,
+      addNewId,
+      parameters,
+      flowId,
+    }: CreateNewOptionProps) => {
       if (!inputValue.trim() || !addNewId) {
         return
       }
@@ -50,6 +56,7 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
                 input: {
                   name: inputValue.trim(),
                   isBlank: true,
+                  flowId,
                 },
               },
             })

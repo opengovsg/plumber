@@ -81,7 +81,7 @@ function ControlledAutocomplete(
     isSearchable,
     variableTypes = null,
   } = props
-  const { allApps, readOnly } = useContext(EditorContext)
+  const { allApps, readOnly, flowId } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   /**
    * allow extraction of specific variables to a dropdown, e.g., files from FormSG
@@ -144,9 +144,16 @@ function ControlledAutocomplete(
         inputValue,
         addNewId: addNewOption?.id,
         parameters: getValues('parameters'),
+        flowId,
       })
     },
-    [addNewOption?.id, createNewOption, getValues, onNewOptionModalClose],
+    [
+      addNewOption?.id,
+      createNewOption,
+      getValues,
+      onNewOptionModalClose,
+      flowId,
+    ],
   )
 
   const onNewOptionInlineSelected = useCallback(

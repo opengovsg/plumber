@@ -1,4 +1,5 @@
 import { MutationResolvers } from '@/graphql/__generated__/types.generated'
+import { addFlowTableConnection } from '@/helpers/add-flow-connection'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
@@ -28,7 +29,7 @@ const createTable: MutationResolvers['createTable'] = async (
   params,
   context,
 ) => {
-  const { name: tableName, isBlank: isBlankTable } = params.input
+  const { name: tableName, isBlank: isBlankTable, flowId } = params.input
 
   if (!tableName) {
     throw new Error('Table name is required')
@@ -67,6 +68,28 @@ const createTable: MutationResolvers['createTable'] = async (
     await tableOperations.createTableRows({
       tableId: table.id,
       dataArray: PLACEHOLDER_ROWS,
+    })
+  }
+
+  /**
+   * COLLABORATORS
+   * Owners have the ability to create tables from within the Pipe Editor.
+   *
+   * If the Pipe has collaborators, we need to:
+   *   1. Add the Pipe collaborators as Tile collaborators
+   *   2. Add the Tile to the `flow_connections` table
+   */
+  if (flowId) {
+    const flow = await context.currentUser
+      .$relatedQuery('flows')
+      .findById(flowId)
+      .throwIfNotFound()
+
+    await addFlowTableConnection({
+      flowId,
+      tableId: table.id,
+      addedBy: context.currentUser.id,
+      flowOwnerId: flow.userId,
     })
   }
 

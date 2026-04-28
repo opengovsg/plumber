@@ -962,6 +962,7 @@ enum DatabaseType {
 input CreateTableInput {
   name: String!
   isBlank: Boolean!
+  flowId: String
 }
 
 input TableColumnConfigInput {
