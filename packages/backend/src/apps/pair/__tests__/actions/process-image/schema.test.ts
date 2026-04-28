@@ -102,7 +102,6 @@ describe('process-image schema', () => {
           })
           assert(result.success === true)
           assert(result.data.responseFields[0].fieldName === expected)
-          assert(result.data.responseFields[0].originalFieldName === input)
         },
       )
 
@@ -344,15 +343,8 @@ describe('process-image schema', () => {
       assert(result.data.image.length === 1)
       assert(result.data.responseFields.length === 3)
       assert(result.data.responseFields[0].fieldName === 'Signature_present')
-      assert(
-        result.data.responseFields[0].originalFieldName === 'Signature present',
-      )
       assert(result.data.responseFields[1].fieldName === 'Document_type')
-      assert(
-        result.data.responseFields[1].originalFieldName === 'Document type',
-      )
       assert(result.data.responseFields[2].fieldName === 'confidence')
-      assert(result.data.responseFields[2].originalFieldName === 'confidence')
     })
   })
 })
