@@ -4,13 +4,7 @@ import { ElementType, ReactNode, useContext, useMemo, useState } from 'react'
 import { BiLink, BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
-import {
-  Center,
-  Divider,
-  Flex,
-  useBreakpointValue,
-  VStack,
-} from '@chakra-ui/react'
+import { Box, Center, Divider, Flex, Show } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
@@ -24,6 +18,9 @@ import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 import EditorDrawer from './EditorDrawer'
 import EditorSidebar from './EditorSidebar'
 import Navbar from './Navbar'
+
+const NAVBAR_HEIGHT = '65px'
+const CONTENT_MAX_HEIGHT = `calc(100vh - ${NAVBAR_HEIGHT})`
 
 export type DrawerLink = {
   Icon: ElementType
@@ -56,8 +53,6 @@ export default function EditorSettingsLayout(
     variables: { id: flowId },
   })
   const flow: IFlow = data?.getFlow
-  const hasCollaborators =
-    flow?.collaborators?.length && flow.collaborators.length > 1 // includes owner
 
   const [isDrawerOpen, setDrawerOpen] = useState(false)
 
@@ -65,75 +60,56 @@ export default function EditorSettingsLayout(
     () => [
       [
         {
-          group: 'Manage Access',
+          group: 'Manage',
           links: [
             showCollaborators && {
               Icon: BiUserPlus,
               text: 'Collaborators',
               to: URLS.FLOW_EDITOR_SHARE(flowId),
-              group: 'Manage Access' as const,
+              group: 'Manage' as const,
             },
             {
               Icon: BiTransfer,
               text: 'Transfer Pipe',
               to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
-              group: 'Manage Access' as const,
+              group: 'Manage' as const,
             },
-          ].filter(Boolean),
-        },
-        showCollaborators &&
-          hasCollaborators && {
-            group: 'Manage Pipe',
-            links: [
-              {
-                Icon: BiLink,
-                text: 'Connections',
-                to: URLS.FLOW_EDITOR_CONNECTIONS(flowId),
-                group: 'Manage Pipe' as const,
-              },
-            ],
-          },
-        {
-          group: 'Notifications',
-          links: [
+            flow?.role !== 'viewer' && {
+              Icon: BiLink,
+              text: 'Connections',
+              to: URLS.FLOW_EDITOR_CONNECTIONS(flowId),
+              group: 'Manage' as const,
+            },
             {
               Icon: BiMailSend,
-              text: 'Email notifications',
+              text: 'Notifications',
               to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
-              group: 'Notifications' as const,
+              group: 'Manage' as const,
             },
-          ],
+          ].filter(Boolean),
         },
       ].filter(Boolean),
       () => setDrawerOpen(true),
       () => setDrawerOpen(false),
     ],
-    [flowId, setDrawerOpen, showCollaborators, hasCollaborators],
+    [flowId, setDrawerOpen, showCollaborators, flow?.role],
   )
 
-  const drawerComponent = useBreakpointValue({
-    base: (
-      <>
-        <EditorDrawer
-          groupedLinks={drawerLinks}
-          isDrawerOpen={isDrawerOpen}
-          openDrawer={openDrawer}
-          closeDrawer={closeDrawer}
-        />
-        <Divider borderColor="base.divider.medium" />
-      </>
-    ),
-    md: (
-      <>
-        <EditorSidebar groupedLinks={drawerLinks} closeDrawer={closeDrawer} />
-        <Divider
-          orientation="vertical"
-          borderColor="base.divider.medium"
-          height="auto"
-        />
-      </>
-    ),
-  })
+  const mobileDrawerComponent = (
+    <>
+      <EditorDrawer
+        groupedLinks={drawerLinks}
+        isDrawerOpen={isDrawerOpen}
+        openDrawer={openDrawer}
+        closeDrawer={closeDrawer}
+      />
+      <Divider borderColor="base.divider.medium" />
+    </>
+  )
+
+  const desktopSidebarComponent = (
+    <EditorSidebar groupedLinks={drawerLinks} closeDrawer={closeDrawer} />
+  )
 
   if (!currentUser) {
     return <RedirectToLogin />
@@ -159,13 +135,41 @@ export default function EditorSettingsLayout(
 
   return (
     <EditorSettingsProvider flow={flow}>
-      <VStack spacing={0} minH="100vh">
+      <Flex flexDir="column" h="100vh">
         <Navbar />
-        <Flex w="full" flex={1} flexDir={{ base: 'column', md: 'row' }}>
-          {drawerComponent}
-          {children}
+        <Flex
+          w="full"
+          flex={1}
+          flexDir={{ base: 'column', md: 'row' }}
+          mt={NAVBAR_HEIGHT}
+          minH="0"
+        >
+          {/* Mobile: drawer (no sticky) */}
+          <Show below="md">{mobileDrawerComponent}</Show>
+
+          {/* Desktop: sticky sidebar */}
+          <Show above="md">
+            <Box
+              position="sticky"
+              top={NAVBAR_HEIGHT}
+              height={CONTENT_MAX_HEIGHT}
+              overflowY="auto"
+            >
+              {desktopSidebarComponent}
+            </Box>
+            <Divider
+              orientation="vertical"
+              borderColor="base.divider.medium"
+              height="auto"
+            />
+          </Show>
+
+          {/* Content area with independent scroll */}
+          <Box flex={1} overflowY="auto" minH="0">
+            {children}
+          </Box>
         </Flex>
-      </VStack>
+      </Flex>
     </EditorSettingsProvider>
   )
 }

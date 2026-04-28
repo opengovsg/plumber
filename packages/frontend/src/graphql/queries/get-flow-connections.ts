@@ -10,6 +10,7 @@ export const GET_FLOW_CONNECTIONS = gql`
       appIconUrl
       addedBy
       connectionName
+      isDeletable
     }
   }
 `

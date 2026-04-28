@@ -15,16 +15,15 @@ import { SharedConnection } from './ConnectionsTable'
 interface DeleteFlowConnectionButtonProps {
   flow: IFlow
   connection: SharedConnection
-  isInUse?: boolean
 }
 
 export default function DeleteFlowConnectionButton(
   props: DeleteFlowConnectionButtonProps,
 ) {
-  const { flow, connection, isInUse } = props
+  const { flow, connection } = props
   const { connectionId, connectionName, connectionType } = connection
   const isActive = flow.active
-  const isDisabled = isActive || isInUse
+  const isDisabled = isActive
 
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
@@ -51,8 +50,6 @@ export default function DeleteFlowConnectionButton(
       label={
         isActive
           ? 'You cannot delete a connection when the Pipe is published'
-          : isInUse
-          ? 'This connection is in use and cannot be deleted.'
           : ''
       }
     >

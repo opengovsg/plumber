@@ -1,6 +1,6 @@
 import { IFlow } from '@plumber/types'
 
-import { useContext } from 'react'
+import { useContext, useRef, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Td,
   Th,
   Thead,
+  Tooltip,
   Tr,
 } from '@chakra-ui/react'
 import { Tag } from '@opengovsg/design-system-react'
@@ -31,6 +32,7 @@ export interface SharedConnection {
   connectionId: string
   connectionType: 'connection' | 'table'
   positions: number[]
+  isDeletable: boolean
 }
 
 interface TableRowProps {
@@ -61,6 +63,30 @@ const StatusTag = ({ inUse }: { inUse: boolean }) => {
   )
 }
 
+const OverflowTooltip = ({ label }: { label: string }) => {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+
+  return (
+    <Tooltip label={label} isDisabled={!isOverflowing}>
+      <Box
+        ref={ref}
+        overflow="hidden"
+        textOverflow="ellipsis"
+        whiteSpace="nowrap"
+        maxW={{ base: '100px', md: '300px' }}
+        onMouseEnter={() => {
+          if (ref.current) {
+            setIsOverflowing(ref.current.scrollWidth > ref.current.clientWidth)
+          }
+        }}
+      >
+        {label}
+      </Box>
+    </Tooltip>
+  )
+}
+
 const TableHeader = () => {
   return (
     <Thead>
@@ -82,6 +108,7 @@ const TableRow = (props: TableRowProps) => {
     positions,
     appName,
     appIconUrl,
+    isDeletable,
   } = connection
 
   const isInUse = positions.length > 0
@@ -103,26 +130,15 @@ const TableRow = (props: TableRowProps) => {
       </Td>
 
       <Td>
-        <Box
-          overflow="hidden"
-          textOverflow="ellipsis"
-          whiteSpace="nowrap"
-          maxW={{ base: '100px', md: '300px' }}
-        >
-          {connectionName}
-        </Box>
+        <OverflowTooltip label={connectionName} />
       </Td>
       <Td>{addedBy}</Td>
       <Td>
         <StatusTag inUse={isInUse} />
       </Td>
       <Td>
-        {hasEditPermission && (
-          <DeleteFlowConnectionButton
-            flow={flow}
-            connection={connection}
-            isInUse={isInUse}
-          />
+        {hasEditPermission && isDeletable && !isInUse && (
+          <DeleteFlowConnectionButton flow={flow} connection={connection} />
         )}
       </Td>
     </Tr>

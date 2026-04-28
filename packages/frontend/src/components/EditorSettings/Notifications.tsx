@@ -11,6 +11,8 @@ import { SingleSelect } from '@/components/SingleSelect'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { UPDATE_FLOW_CONFIG } from '@/graphql/mutations/update-flow-config'
 
+import { editorSettingsStyles as styles } from './styles'
+
 enum Frequency {
   Once = 'once_per_day',
   Always = 'always',
@@ -48,10 +50,7 @@ const DEFAULT_RECIPIENTS: NotificationRecipients[] = []
 const DEFAULT_FREQUENCY = Frequency.Once
 
 function NotificationFormFields() {
-  const { flow } = useContext(EditorSettingsContext)
-  // NOTE: check is for greater than 1 because collaborators includes the owner
-  const hasCollaborators =
-    flow?.collaborators?.length && flow?.collaborators?.length > 1
+  const { flow, hasCollaborators } = useContext(EditorSettingsContext)
   const isReadOnly = flow?.role === 'viewer'
 
   const {
@@ -167,15 +166,8 @@ export default function Notifications() {
   )
 
   return (
-    <Flex
-      py={{ base: '2rem', md: '3rem' }}
-      px={{ base: '1.5rem', md: '5rem' }}
-      flexDir="column"
-      gap={4}
-    >
-      <Text textStyle="h3-semibold" mb={6}>
-        Email notification settings
-      </Text>
+    <Flex {...styles.editorSettingsWrapper}>
+      <Text textStyle="h5">Email notification settings</Text>
       <Stack>
         <Text textStyle="h6">Error notification</Text>
         <Text textStyle="body-1">

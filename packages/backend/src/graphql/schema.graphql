@@ -524,6 +524,7 @@ type SharedFlowConnection {
   appIconUrl: String!
   addedBy: String!
   connectionName: String!
+  isDeletable: Boolean!
 }
 
 type Execution {

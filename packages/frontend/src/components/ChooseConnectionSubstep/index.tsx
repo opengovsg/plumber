@@ -3,7 +3,7 @@ import type { IApp, IStep, ITestConnectionOutput } from '@plumber/types'
 import { useContext, useMemo } from 'react'
 import { BiLink, BiRefresh, BiSolidCircle } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
-import { Flex, Icon, Text } from '@chakra-ui/react'
+import { Flex, Icon, Text, Tooltip } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -65,6 +65,9 @@ function ChooseConnectionSubstep(
     readOnly ||
     (flow.role !== 'owner' &&
       NON_EDITABLE_APP_CONNECTIONS.includes(application.key))
+  const shouldShowReconnectTooltip =
+    flow.role === 'editor' &&
+    NON_EDITABLE_APP_CONNECTIONS.includes(application.key)
 
   const { loading: testResultLoading, data: testConnectionData } = useQuery<{
     testConnection: ITestConnectionOutput
@@ -176,16 +179,24 @@ function ChooseConnectionSubstep(
           </Text>
         </Flex>
 
-        <Button
-          variant="clear"
-          colorScheme="secondary"
-          size="xs"
-          leftIcon={connection ? <BiRefresh /> : <BiLink />}
-          onClick={onReconnect}
-          isDisabled={isEditConnectionDisabled}
+        <Tooltip
+          label="Only the Pipe owner can reconnect this app"
+          hasArrow
+          isDisabled={!shouldShowReconnectTooltip}
         >
-          {connection ? 'Reconnect' : 'Connect'}
-        </Button>
+          <span>
+            <Button
+              variant="clear"
+              colorScheme="secondary"
+              size="xs"
+              leftIcon={connection ? <BiRefresh /> : <BiLink />}
+              onClick={onReconnect}
+              isDisabled={isEditConnectionDisabled}
+            >
+              {connection ? 'Reconnect' : 'Connect'}
+            </Button>
+          </span>
+        </Tooltip>
       </Flex>
     </Flex>
   )
