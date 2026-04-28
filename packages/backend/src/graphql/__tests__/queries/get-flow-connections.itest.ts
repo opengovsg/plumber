@@ -218,6 +218,7 @@ describe('getFlowConnections', () => {
         key: 'slack',
         formattedData: { screenName: 'My Slack Workspace' },
         userId: owner.id,
+        draft: false,
       })
 
       await FlowConnections.query().insert({
@@ -274,6 +275,7 @@ describe('getFlowConnections', () => {
         key: 'slack',
         formattedData: { screenName: 'My Slack Workspace' },
         userId: owner.id,
+        draft: false,
       })
 
       await FlowConnections.query().insert({
@@ -321,6 +323,26 @@ describe('getFlowConnections', () => {
           }),
         ]),
       )
+    })
+
+    it('should ignore draft connections', async () => {
+      const connection = await Connection.query().insert({
+        key: 'slack',
+        formattedData: { screenName: 'My Slack Workspace' },
+        userId: owner.id,
+        draft: true,
+      })
+
+      await FlowConnections.query().insert({
+        flowId: flow.id,
+        connectionId: connection.id,
+        addedBy: owner.id,
+        connectionType: 'connection',
+      })
+
+      const result = await getFlowConnections({}, { flowId: flow.id }, context)
+
+      expect(result).toHaveLength(0)
     })
   })
 })

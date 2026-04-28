@@ -41,6 +41,9 @@ const getFlowConnections: QueryResolvers['getFlowConnections'] = async (
       user: true,
       table: true,
     })
+    .modifyGraph('connection', (builder) => {
+      builder.where('draft', false)
+    })
 
   /**
    * we check if there are any flow connections for the flow first
