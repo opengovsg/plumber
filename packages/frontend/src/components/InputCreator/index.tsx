@@ -13,7 +13,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { useIsFieldHidden } from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
 
-import { COLLABORATOR_RESTRICTED_FIELDS } from '../Editor/constants'
+import { COLLABORATOR_RESTRICTED_ADDNEW_IDS } from '../Editor/constants'
 
 import BooleanRadio from './BooleanRadio'
 
@@ -58,9 +58,11 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const { flow } = useContext(EditorContext)
 
   const canCollaboratorAddNew =
-    !COLLABORATOR_RESTRICTED_FIELDS.find(
-      (item) => item.label === label && item.key === name,
-    ) && flow?.role === 'editor'
+    schema.type === 'dropdown' &&
+    !COLLABORATOR_RESTRICTED_ADDNEW_IDS.find(
+      (addNewId) => addNewId === schema.addNewOption?.id,
+    ) &&
+    flow?.role !== 'owner'
   const isReadOnly =
     // flow is an empty object if it is not in the editor
     (Object.keys(flow).length > 0 && flow?.role === 'viewer') || readOnly

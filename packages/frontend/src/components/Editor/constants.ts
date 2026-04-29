@@ -59,6 +59,10 @@ const NON_EDITABLE_APPS_FIELDS: Record<string, RestrictedField[]> = {
    * they can only select from Tiles that the Owner has used in the Pipe.
    */
   tiles: [{ label: 'Select Tile', key: 'tableId' }],
+
+  // DATABRICKS
+  // collaborators cannot modify this connection
+  databricks: [],
 }
 
 export const NON_EDITABLE_APP_CONNECTIONS = Object.keys(
@@ -66,9 +70,13 @@ export const NON_EDITABLE_APP_CONNECTIONS = Object.keys(
 )
 
 /**
- * Flattened array of all fields where collaborators cannot add new options.
- * This is derived from NON_EDITABLE_APPS_FIELDS and used for quick field-level checks.
+ * Collaborators cannot add new options for the following addNewIds.
  */
-export const COLLABORATOR_RESTRICTED_FIELDS = Object.values(
-  NON_EDITABLE_APPS_FIELDS,
-).flat()
+export const COLLABORATOR_RESTRICTED_ADDNEW_IDS = [
+  // Collaborators cannot create new tables in Databricks.
+  'databricks-createTable',
+  // Collaborators cannot create new columns in Databricks.
+  'databricks-createTableColumn',
+  // Collaborators cannot add new tiles via the dropdown.
+  'tiles-createTileRow-tableId',
+]

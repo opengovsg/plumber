@@ -8,12 +8,13 @@ import { MrfContext } from '@/contexts/MrfContext'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
 
-import { EXCEL_APP_KEY } from '../constants'
+import { DATABRICKS_APP_KEY, EXCEL_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
+import ConfigureDatabricksConnection from './ConfigureDatabricksConnection'
 import ConfigureExcelConnection from './ConfigureExcelConnection'
 
 interface ChooseAndAddConnectionProps {
@@ -24,7 +25,7 @@ export type ConnectionDropdownOption = {
   label: string
   value: string
   description?: string
-  env?: string // only used for FormSG now
+  env?: string // only used for FormSG / Databricks for now
 }
 
 // For FormSG, it will generate a label with the form title and the description with the form id
@@ -60,6 +61,7 @@ export const optionGenerator = (
     label: screenName ?? 'Unnamed',
     value: connection?.id as string,
     description: connection?.description ?? undefined,
+    env: connection?.formattedData?.env as string | undefined,
   }
 }
 
@@ -213,6 +215,19 @@ export default function ChooseAndAddConnection(
   ) {
     return (
       <ConfigureExcelConnection
+        onBack={() => patchModalState({ currentScreen: 'choose-event' })}
+        onCreateOrUpdateStep={onCreateOrUpdateStep}
+      />
+    )
+  }
+
+  if (
+    selectedApp?.key === DATABRICKS_APP_KEY &&
+    selectedEvent &&
+    currentScreen === 'configure-databricks-connection'
+  ) {
+    return (
+      <ConfigureDatabricksConnection
         onBack={() => patchModalState({ currentScreen: 'choose-event' })}
         onCreateOrUpdateStep={onCreateOrUpdateStep}
       />

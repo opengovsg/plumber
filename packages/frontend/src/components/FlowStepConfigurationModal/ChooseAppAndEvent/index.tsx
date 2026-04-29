@@ -1,7 +1,7 @@
 import { type IAction, IApp, ITrigger } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
-import { useQuery } from '@apollo/client'
+import { useCallback, useContext } from 'react'
+import { useLazyQuery } from '@apollo/client'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
@@ -15,12 +15,24 @@ import {
   useIfThenInitializer,
 } from '@/helpers/toolbox'
 
-import { APP_ALLOWING_EMPTY_CONNECTION, EXCEL_APP_KEY } from '../constants'
-import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
+import {
+  APP_ALLOWING_EMPTY_CONNECTION,
+  DATABRICKS_APP_KEY,
+  EXCEL_APP_KEY,
+} from '../constants'
+import {
+  FlowStepConfigurationContext,
+  ModalScreen,
+} from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 
 import ChooseApp from './ChooseApp'
 import ChooseEvent from './ChooseEvent'
+
+const SYSTEM_ADDED_CONFIGURE_SCREEN: Record<string, ModalScreen> = {
+  [EXCEL_APP_KEY]: 'configure-excel-connection',
+  [DATABRICKS_APP_KEY]: 'configure-databricks-connection',
+}
 
 type ChooseAppAndEventProps = {
   onClose: () => void
@@ -49,30 +61,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     isTrigger ? !!app.triggers?.length : !!app.actions?.length,
   )
 
-  // This is used for specifically Excel connections (to skip the connection configuration modal)
-  const { data: appConnectionsData } = useQuery(GET_APP_CONNECTIONS, {
-    variables: { key: selectedApp?.key, flowId },
-    skip: selectedApp?.key !== EXCEL_APP_KEY,
-  })
-  // Check and return the one and only Excel connection
-  const excelConnection = useMemo(() => {
-    if (selectedApp?.key !== EXCEL_APP_KEY) {
-      return null
-    }
-
-    const excelConnections = appConnectionsData?.getApp?.connections ?? []
-    if (excelConnections.length === 0) {
-      return null
-    }
-
-    // TODO: Remove this once we have a better way to handle multiple connections
-    if (excelConnections.length > 1) {
-      console.error(
-        'Multiple connections found for Excel. Please contact support@plumber.gov.sg for assistance.',
-      )
-    }
-    return excelConnections[0]
-  }, [selectedApp, appConnectionsData])
+  const [fetchAppConnections] = useLazyQuery(GET_APP_CONNECTIONS)
 
   const [initializeIfThen] = useIfThenInitializer()
 
@@ -84,26 +73,44 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
    */
   const onSelectAppEvent = useCallback(
     async (app: IApp, triggerOrAction: ITrigger | IAction) => {
-      if (
+      const configureScreen = SYSTEM_ADDED_CONFIGURE_SCREEN[app.key]
+      let systemConnection: { id?: string; verified?: boolean } | null = null
+      if (configureScreen) {
+        const { data: appConnectionsData } = await fetchAppConnections({
+          variables: { key: app.key, flowId },
+        })
+        const connections = appConnectionsData?.getApp?.connections ?? []
+        systemConnection = connections[0] ?? null
+
+        if (connections.length > 1 && app.key === EXCEL_APP_KEY) {
+          console.error(
+            'Multiple connections found for Excel. Please contact support@plumber.gov.sg for assistance.',
+          )
+        }
+
+        if (
+          app.auth &&
+          !triggerOrAction.noAuthRequired &&
+          !systemConnection?.verified
+        ) {
+          patchModalState({
+            selectedApp: app,
+            selectedEvent: triggerOrAction,
+            selectedConnectionId: systemConnection?.id,
+            currentScreen: configureScreen,
+          })
+          return
+        }
+      } else if (
         app.auth &&
         !triggerOrAction.noAuthRequired &&
-        app.key !== APP_ALLOWING_EMPTY_CONNECTION &&
-        !excelConnection?.verified
+        app.key !== APP_ALLOWING_EMPTY_CONNECTION
       ) {
-        if (app.key === EXCEL_APP_KEY) {
-          patchModalState({
-            selectedApp: app,
-            selectedEvent: triggerOrAction,
-            selectedConnectionId: excelConnection?.id,
-            currentScreen: 'configure-excel-connection',
-          })
-        } else {
-          patchModalState({
-            selectedApp: app,
-            selectedEvent: triggerOrAction,
-            currentScreen: 'choose-connection',
-          })
-        }
+        patchModalState({
+          selectedApp: app,
+          selectedEvent: triggerOrAction,
+          currentScreen: 'choose-connection',
+        })
         return
       }
 
@@ -121,7 +128,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             prevStep.id,
             app.key,
             triggerOrAction.key,
-            excelConnection?.id || undefined,
+            systemConnection?.id || undefined,
             approvalConfig && { approval: approvalConfig },
           )
           newStepId = createdStep.id
@@ -140,7 +147,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
               appKey: app.key,
               key: triggerOrAction.key,
               connection: {
-                id: excelConnection?.id || undefined,
+                id: systemConnection?.id || undefined,
               },
             })
             newStepId = updatedStep.id
@@ -158,8 +165,8 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       }
     },
     [
-      excelConnection?.verified,
-      excelConnection?.id,
+      fetchAppConnections,
+      flowId,
       patchModalState,
       prevStep,
       step,

@@ -20,7 +20,10 @@ import { StepExecutionsContext } from '@/contexts/StepExecutions'
 
 import extractVariablesAsItems from '../MultiSelect/helpers/extract-variables-as-items'
 
-import AddNewOptionModal, { useCreateNewOption } from './AddNewOptionModal'
+import AddNewOptionModal, {
+  INLINE_ADD_NEW_VALIDATE,
+  useCreateNewOption,
+} from './AddNewOptionModal'
 
 export interface ControlledAutocompleteProps {
   options: IFieldDropdownOption[]
@@ -188,6 +191,7 @@ function ControlledAutocomplete(
               )}
               target="_blank"
               ml={1}
+              isExternal
             >
               ({clickableLink.label})
             </Link>
@@ -221,6 +225,7 @@ function ControlledAutocomplete(
                         ? onNewOptionModalOpen
                         : onNewOptionInlineSelected,
                     isCreating: isCreatingNewOption,
+                    validate: INLINE_ADD_NEW_VALIDATE[addNewOption.id],
                   }
                 : undefined
             }
@@ -231,7 +236,7 @@ function ControlledAutocomplete(
       {/* the input state in the modal is reset on unmount */}
       {addNewOption?.type === 'modal' && isNewOptionModalOpen && (
         <AddNewOptionModal
-          modalHeader={addNewOption.label}
+          addNewId={addNewOption.id}
           onClose={onNewOptionModalClose}
           onSubmit={onNewOptionModalSubmit}
         />

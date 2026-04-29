@@ -62,6 +62,7 @@ export interface SingleSelectProviderProps<
     type: DropdownAddNewType
     onSelected: (value: string) => void
     isCreating: boolean
+    validate?: (value: string) => string | null
   }
   isSearchable?: boolean
   isBorderless?: boolean
@@ -188,16 +189,18 @@ export const SingleSelectProvider = ({
   const addInlineNewOption = useCallback(
     (filteredItems: ComboboxItem<string>[], inputValue?: string) => {
       if (inputValue?.trim() && !getItemByValue(inputValue)) {
+        const validationError = addNew?.validate?.(inputValue.trim())
         filteredItems.push({
           value: ADD_NEW_PLACEHOLDER_VALUE, // this is not referenced anywhere else
           label: inputValue,
-          description: addNew?.label ?? 'Create new',
+          description: validationError ?? addNew?.label ?? 'Create new',
           isAddNew: true,
           icon: BxPlus,
+          disabled: !!validationError,
         })
       }
     },
-    [addNew?.label, getItemByValue],
+    [addNew, getItemByValue],
   )
 
   const handleInputChange = useCallback(
