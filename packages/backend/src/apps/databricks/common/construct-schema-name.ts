@@ -5,9 +5,11 @@ export const constructSchemaNameFromEmail = (email: string): string => {
 }
 
 export const constructSchemaName = ($: IGlobalVariable): string => {
-  const userEmail = $.user?.email
-  if (!userEmail) {
-    throw new Error('User email is required')
+  // We shouldnt use $.user.email or else collaborators will end up using their own email
+  // instead, we should use the connection that has been set
+  const userEmail = $.auth?.data?.screenName
+  if (!userEmail || typeof userEmail !== 'string') {
+    throw new Error('Not connected to databricks: missing user email')
   }
-  return constructSchemaNameFromEmail(userEmail)
+  return userEmail
 }

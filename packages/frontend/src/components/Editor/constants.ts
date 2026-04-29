@@ -59,6 +59,10 @@ const NON_EDITABLE_APPS_FIELDS: Record<string, RestrictedField[]> = {
    * they can only select from Tiles that the Owner has used in the Pipe.
    */
   tiles: [{ label: 'Select Tile', key: 'tableId' }],
+
+  // DATABRICKS
+  // collaborators cannot modify this connection
+  databricks: [],
 }
 
 export const NON_EDITABLE_APP_CONNECTIONS = Object.keys(

@@ -37,15 +37,6 @@ function sortApps(apps: IApp[]): IApp[] {
       ? TRIGGER_APPS_RANKING.findIndex((app) => app === b.key)
       : ACTION_APPS_RANKING.findIndex((app) => app === b.key)
 
-    if (a.isNewApp && b.isNewApp) {
-      return firstPriority - secondPriority
-    }
-    if (a.isNewApp) {
-      return -1
-    }
-    if (b.isNewApp) {
-      return 1
-    }
     return firstPriority - secondPriority
   })
 }

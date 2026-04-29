@@ -50,6 +50,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
 
     if (input.connection.id) {
       // if connectionId is specified, verify that the connection exists
+      // this prevents editors from adding their own connections, only flow connections can be added
       const connection = await getConnection({
         context,
         connectionId: input.connection.id,

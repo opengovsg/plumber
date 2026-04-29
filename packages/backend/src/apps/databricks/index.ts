@@ -11,6 +11,7 @@ const app: IApp = {
   iconUrl: '{BASE_URL}/apps/databricks/assets/favicon.svg',
   authDocUrl: '',
   auth,
+  isNewApp: true,
   beforeRequest: [],
   baseUrl: '',
   apiBaseUrl: '',
