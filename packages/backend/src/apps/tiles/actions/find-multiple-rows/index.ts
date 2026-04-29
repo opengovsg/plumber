@@ -22,7 +22,6 @@ const action: IRawAction = {
   name: 'Find multiple rows',
   key: 'findMultipleRows',
   description: 'Gets data of multiple rows from your tile',
-  isNew: true,
   arguments: [
     {
       label: 'Select Tile',
