@@ -25,7 +25,7 @@ export type ConnectionDropdownOption = {
   label: string
   value: string
   description?: string
-  env?: string // only used for FormSG now
+  env?: string // only used for FormSG / Databricks for now
 }
 
 // For FormSG, it will generate a label with the form title and the description with the form id

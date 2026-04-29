@@ -33,7 +33,10 @@ const getSystemAddedConnections: NonNullable<
         key: APP_KEY,
         formattedData: {
           // Workspace hostname drives the "View workspace" link in the UI.
-          env: databricksConfig.serverHostname,
+          env: JSON.stringify({
+            hostname: databricksConfig.serverHostname,
+            catalog: databricksConfig.catalog,
+          }),
           screenName: constructSchemaNameFromEmail(user.email),
         },
         verified: false,

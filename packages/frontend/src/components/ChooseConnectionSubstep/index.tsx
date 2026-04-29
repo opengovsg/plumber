@@ -55,11 +55,19 @@ const databricksWorkspaceLinkGenerator = (
   connectionOption: ConnectionDropdownOption,
 ) => {
   const { env, label } = connectionOption
-  if (!env) {
+
+  try {
+    const { hostname, catalog } = JSON.parse(env ?? '{}') as {
+      hostname: string
+      catalog: string
+    }
+    if (!hostname || !catalog) {
+      return null
+    }
+    return `https://${hostname}/explore/data/${catalog}/${label}`
+  } catch {
     return null
   }
-  // `env` is the workspace hostname (Databricks has multiple workspaces per environment)
-  return `https://${env}/explore/data/workspace/${label}`
 }
 
 function ChooseConnectionSubstep(
@@ -179,7 +187,7 @@ function ChooseConnectionSubstep(
           />
           <Text>
             {connectionStatus.text}
-            {connectionStatus.connectionLink && (
+            {connectionStatus.connectionLink?.url && (
               <Link
                 href={connectionStatus.connectionLink.url}
                 target="_blank"
