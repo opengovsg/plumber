@@ -13,6 +13,7 @@ import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -511,7 +512,7 @@ describe('updateFlowStatus', () => {
       expect(refetched.publishedAt).not.toBeNull()
     })
 
-    it('throws and does not call removeRepeatableByKey when no repeatable job is found on unpublish', async () => {
+    it('logs a warning and does not call removeRepeatableByKey when no repeatable job is found on unpublish', async () => {
       fakeFlow.active = true
       // No repeatable job whose key starts with `flow-<id>`
       flowQueue.getRepeatableJobs = vi
@@ -519,17 +520,25 @@ describe('updateFlowStatus', () => {
         .mockResolvedValue([{ id: 'someone-else', key: 'flow-someone-else' }])
       flowQueue.removeRepeatableByKey = vi.fn().mockResolvedValue(undefined)
 
-      await expect(
-        updateFlowStatus(
-          {},
-          { input: { ...defaultInput, active: false } },
-          context,
-        ),
-      ).rejects.toThrow(
-        `No repeatable job found for flow ${fakeFlow.id} when trying to remove repeatable job upon unpublishing.`,
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+      const result = await updateFlowStatus(
+        {},
+        { input: { ...defaultInput, active: false } },
+        context,
       )
 
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: `Bug: No repeatable job found for flow ${fakeFlow.id} when trying to remove repeatable job upon unpublishing.`,
+          flowId: fakeFlow.id,
+          jobName: `flow-${fakeFlow.id}`,
+        }),
+      )
       expect(flowQueue.removeRepeatableByKey).not.toHaveBeenCalled()
+      expect(result).toEqual(fakeFlow)
+
+      warnSpy.mockRestore()
     })
   })
 
