@@ -42,6 +42,7 @@ describe('http request interceptors', () => {
         parameters: {
           url: CF_REDIRECTION_WORKER_FOR_UNIT_TESTS,
         },
+        version: 1,
       },
       setActionItem: vi.fn(),
       app,
