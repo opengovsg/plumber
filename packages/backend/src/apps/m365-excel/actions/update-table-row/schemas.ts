@@ -1,9 +1,9 @@
 import z from 'zod'
 
+import { lookupParametersSchema } from '../../common/schema'
 import { hexEncodedRowRecordSchema } from '../../common/workbook-helpers/tables'
-import { parametersSchema as getTableRowParametersSchema } from '../get-table-row/schemas'
 
-export const parametersSchema = getTableRowParametersSchema.extend({
+export const parametersSchema = lookupParametersSchema.extend({
   columnsToUpdate: z
     .array(
       z.object({

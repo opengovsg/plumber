@@ -5,13 +5,14 @@ import z from 'zod'
 import StepError from '@/errors/step'
 
 import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
+import { lookupParametersSchema } from '../../common/schema'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import getTableRowImpl, { MAX_ROWS } from './implementation'
-import { dataOutSchema, parametersSchema } from './schemas'
+import { dataOutSchema } from './schemas'
 
 type DataOut = Required<z.infer<typeof dataOutSchema>>
 
@@ -89,7 +90,9 @@ const action: IRawAction = {
       await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
     }
 
-    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+    const parametersParseResult = lookupParametersSchema.safeParse(
+      $.step.parameters,
+    )
 
     if (parametersParseResult.success === false) {
       throw new StepError(

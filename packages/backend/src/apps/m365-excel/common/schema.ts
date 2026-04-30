@@ -26,3 +26,21 @@ export const worksheetIdSchema = z
   .trim()
   .regex(WORKSHEET_ID_REGEX, { message: 'Invalid worksheet ID format.' })
   .min(1, { message: 'Please select a worksheet to lookup from.' })
+
+export const filtersSchema = z
+  .array(
+    z.object({
+      // Populated by dynamic data, so no need to trim.
+      lookupColumn: z.string().min(1),
+      // * We don't trim as we want to match _exactly_ on the user's input.
+      // * We allow empty strings to support optional form fields.
+      lookupValue: z.string().default(''),
+    }),
+  )
+  .min(1, { message: 'Please add at least one lookup condition.' })
+
+export const lookupParametersSchema = z.object({
+  fileId: fileIdSchema,
+  tableId: tableIdSchema,
+  filters: filtersSchema,
+})

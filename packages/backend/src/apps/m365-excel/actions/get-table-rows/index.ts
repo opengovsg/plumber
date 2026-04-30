@@ -10,12 +10,13 @@ import {
   LOOKUP_CONDITIONS_SUBFIELDS,
 } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
+import { lookupParametersSchema } from '../../common/schema'
 import { convertRowToHexKeyedObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
 import WorkbookSession from '../../common/workbook-session'
 import { MAX_ROWS } from '../get-table-row/implementation'
 
 import getDataOutMetadata from './get-data-out-metadata'
-import { dataOutSchema, parametersSchema } from './schemas'
+import { dataOutSchema } from './schemas'
 
 type DataOut = z.infer<typeof dataOutSchema>
 
@@ -89,7 +90,9 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
-    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+    const parametersParseResult = lookupParametersSchema.safeParse(
+      $.step.parameters,
+    )
 
     if (parametersParseResult.success === false) {
       throw new StepError(
