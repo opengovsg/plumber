@@ -37,7 +37,8 @@ function FlowStepConfigurationModalContent({
   if (
     currentScreen === 'choose-connection' ||
     currentScreen === 'add-connection' ||
-    currentScreen === 'configure-excel-connection'
+    currentScreen === 'configure-excel-connection' ||
+    currentScreen === 'configure-databricks-connection'
   ) {
     return <ChooseAndAddConnection onClose={onClose} />
   }

@@ -106,6 +106,7 @@ const authentication = shield(
       retryExecutionStep: or(isAuthenticated, isAdminOperation),
       bulkRetryExecutions: or(isAuthenticated, isAdminOperation),
       updateFlowStatus: or(isAuthenticated, isAdminOperation),
+      createFlowTransfer: or(isAuthenticated, isAdminOperation),
       requestOtp: rateLimitRule({ window: '1s', max: 5 }),
       verifyOtp: rateLimitRule({ window: '1s', max: 5 }),
       // Not OTP, but no real reason to be looser than OTP.

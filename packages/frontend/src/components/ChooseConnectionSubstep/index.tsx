@@ -18,6 +18,7 @@ import {
 } from '../FlowStepConfigurationModal/ChooseAndAddConnection'
 import {
   APP_ALLOWING_EMPTY_CONNECTION,
+  DATABRICKS_APP_KEY,
   EXCEL_APP_KEY,
 } from '../FlowStepConfigurationModal/constants'
 
@@ -48,6 +49,25 @@ const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
 
 const excelFolderLinkGenerator = (userEmail: string) => {
   return `https://gccprod-my.sharepoint.com/shared?id=%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents%2F${userEmail}&listurl=https%3A%2F%2Fgccprod%2Esharepoint%2Ecom%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents`
+}
+
+const databricksWorkspaceLinkGenerator = (
+  connectionOption: ConnectionDropdownOption,
+) => {
+  const { env, label } = connectionOption
+
+  try {
+    const { hostname, catalog } = JSON.parse(env ?? '{}') as {
+      hostname: string
+      catalog: string
+    }
+    if (!hostname || !catalog) {
+      return null
+    }
+    return `https://${hostname}/explore/data/${catalog}/${label}`
+  } catch {
+    return null
+  }
 }
 
 function ChooseConnectionSubstep(
@@ -132,6 +152,11 @@ function ChooseConnectionSubstep(
           url: excelFolderLinkGenerator(currentUser?.email ?? ''),
           text: '(View folder)',
         }
+      } else if (application.key === DATABRICKS_APP_KEY) {
+        connectionLink = {
+          url: databricksWorkspaceLinkGenerator(connectionOption) ?? '',
+          text: '(View workspace)',
+        }
       }
 
       // For FormSG, we provide a link to the form for easier reference
@@ -162,11 +187,12 @@ function ChooseConnectionSubstep(
           />
           <Text>
             {connectionStatus.text}
-            {connectionStatus.connectionLink && (
+            {connectionStatus.connectionLink?.url && (
               <Link
                 href={connectionStatus.connectionLink.url}
                 target="_blank"
                 ml={2}
+                isExternal
               >
                 {connectionStatus.connectionLink.text}
               </Link>

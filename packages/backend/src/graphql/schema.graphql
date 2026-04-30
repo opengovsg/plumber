@@ -94,6 +94,7 @@ type Mutation {
   bulkRetryIterations(
     input: BulkRetryIterationsInput
   ): BulkRetryIterationsResult!
+  dynamicAction(input: DynamicActionInput!): JSONObject!
   logout: LogoutResult
   loginWithSgid(input: OidcLoginInput!): LoginWithSgidResult!
   loginWithSso(input: OidcLoginInput!): Boolean!
@@ -548,6 +549,12 @@ type BulkRetryIterationsResult {
   allSuccessfullyRetried: Boolean!
 }
 
+input DynamicActionInput {
+  stepId: String!
+  key: String!
+  parameters: JSONObject!
+}
+
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
@@ -962,6 +969,7 @@ enum DatabaseType {
 input CreateTableInput {
   name: String!
   isBlank: Boolean!
+  flowId: String
 }
 
 input TableColumnConfigInput {

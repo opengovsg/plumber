@@ -20,7 +20,6 @@ const action: IRawAction = {
   name: 'Find multiple table rows',
   key: 'getTableRows',
   description: 'Gets multiple rows of data from your Excel table',
-  isNew: true,
   arguments: [
     {
       key: 'fileId',
