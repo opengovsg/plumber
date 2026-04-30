@@ -6,6 +6,8 @@ import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
+import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
 import flowQueue from '@/queues/flow'
 
 import type { MutationResolvers, Step } from '../__generated__/types.generated'
@@ -61,51 +63,78 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
   if (params.input.active) {
     validateFlowSteps(flow.steps)
   }
-
-  await flow.$query().patch({
-    active: params.input.active,
-    publishedAt: params.input.active ? new Date().toISOString() : null,
-    updatedBy: context.currentUser.id,
-    config: {
-      ...flow.config,
-      // When publishing: set to true if undefined else false
-      // When unpublishing: keep existing value
-      showSurvey: params.input.active
-        ? flow.config?.showSurvey === undefined
-          ? true
-          : false
-        : flow.config?.showSurvey,
-    },
-  })
+  const jobName = `${JOB_NAME}-${flow.id}`
 
   const triggerStep = await flow.getTriggerStep()
   const trigger = await triggerStep.getTriggerCommand()
   const interval = trigger.getInterval?.(triggerStep.parameters)
   const repeatOptions = {
     pattern: interval || EVERY_15_MINUTES_CRON,
+    /**
+     * Why use a custom repeatable key instead of the default one that bullmq generates?
+     * The old key was a concatenation of job name, job  id, tz(empty), and cron pattern. (i.e. flow-${flow.id}:${flow.id}:::0 * * * *)
+     * However, the new version of bullmq (latest v5) hashes the concatenated string, making it hard to derive or compare (i.e. abcdef123123123)
+     * Therefore, we are supplying our own repeatable key so we can identify both new and old repeatable jobs by their prefix (i.e. flow-${flow.id})
+     */
+    key: jobName,
   }
 
-  if (trigger.type !== 'webhook') {
-    if (params.input.active) {
-      const jobName = `${JOB_NAME}-${flow.id}`
+  /**
+   * Patch first inside the transaction, then perform the queue op.
+   * If the queue add/remove fails, the patch is rolled back so the flow's
+   * active state stays consistent (best-effort) with whether
+   * the repeatable job exists.
+   */
+  await Flow.transaction(async (trx) => {
+    await flow.$query(trx).patch({
+      active: params.input.active,
+      publishedAt: params.input.active ? new Date().toISOString() : null,
+      updatedBy: context.currentUser.id,
+      config: {
+        ...flow.config,
+        // When publishing: set to true if undefined else false
+        // When unpublishing: keep existing value
+        showSurvey: params.input.active
+          ? flow.config?.showSurvey === undefined
+            ? true
+            : false
+          : flow.config?.showSurvey,
+      },
+    })
 
-      await flowQueue.add(
-        jobName,
-        { flowId: flow.id },
-        {
-          repeat: repeatOptions,
-          jobId: flow.id,
-          removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-          removeOnFail: REMOVE_AFTER_30_DAYS,
-        },
-      )
-    } else {
-      const repeatableJobs = await flowQueue.getRepeatableJobs()
-      const job = repeatableJobs.find((job) => job.id === flow.id)
-
-      await flowQueue.removeRepeatableByKey(job.key)
+    if (trigger.type !== 'webhook') {
+      if (params.input.active) {
+        await flowQueue.add(
+          jobName,
+          { flowId: flow.id },
+          {
+            repeat: repeatOptions,
+            jobId: flow.id,
+            removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
+            removeOnFail: REMOVE_AFTER_30_DAYS,
+          },
+        )
+      } else {
+        /**
+         * @deprecated
+         * Repeatable jobs and its helper functions are now deprecated in favour of job schedulers.
+         * But deferring this change since this requires a migration of existing repeatable jobs
+         */
+        const repeatableJobs = await flowQueue.getRepeatableJobs()
+        const job = repeatableJobs.find((job) => job.key.startsWith(jobName))
+        // If no job found, we log a warning, but allow the flow to be unpublished.
+        if (!job) {
+          logger.warn({
+            message: `Bug: No repeatable job found for flow ${flow.id} when trying to remove repeatable job upon unpublishing.`,
+            flowId: flow.id,
+            jobName,
+          })
+        } else {
+          await flowQueue.removeRepeatableByKey(job.key)
+        }
+      }
     }
-  }
+  })
 
   return flow
 }
