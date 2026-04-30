@@ -1,6 +1,15 @@
 import type { IJSONObject } from '@plumber/types'
 
-import { TRANSFORMABLE_ACTIONS } from './constants'
+import { createStepParameterTransformer } from '@/helpers/transform-step-parameters'
+
+const ACTION_TRANSFORMERS: Record<
+  string,
+  ((parameters: IJSONObject) => IJSONObject)[]
+> = {
+  getTableRow: [transformLookupConditionsToFilters],
+  getTableRows: [transformLookupConditionsToFilters],
+  updateTableRow: [transformLookupConditionsToFilters],
+}
 
 /**
  * Transforms old lookup parameters to new filters array format.
@@ -15,7 +24,9 @@ import { TRANSFORMABLE_ACTIONS } from './constants'
  * Input:  { lookupColumn: 'Email', lookupValue: 'test@example.com' }
  * Output: { filters: [{ lookupColumn: 'Email', lookupValue: 'test@example.com' }] }
  */
-function transformLookupParameters(parameters: IJSONObject): IJSONObject {
+export function transformLookupConditionsToFilters(
+  parameters: IJSONObject,
+): IJSONObject {
   const { lookupColumn, lookupValue, filters, ...rest } = parameters
 
   // If filters already populated, use them (remove old params)
@@ -43,23 +54,5 @@ function transformLookupParameters(parameters: IJSONObject): IJSONObject {
   return parameters
 }
 
-/**
- * App-level step parameter transformer for m365-excel.
- * Routes actions to the appropriate transformation function.
- *
- * @param stepKey - The step key (e.g., 'getTableRow')
- * @param stepParameters - The step parameters from database
- * @returns Transformed parameters in current format
- */
-function transformStepParameters(
-  stepKey: string,
-  stepParameters: IJSONObject,
-): IJSONObject {
-  if (TRANSFORMABLE_ACTIONS.includes(stepKey)) {
-    return transformLookupParameters(stepParameters)
-  }
-
-  return stepParameters
-}
-
-export { transformStepParameters }
+export const transformStepParameters =
+  createStepParameterTransformer(ACTION_TRANSFORMERS)
