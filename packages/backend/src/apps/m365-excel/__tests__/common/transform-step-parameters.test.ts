@@ -4,22 +4,10 @@ import { describe, expect, it } from 'vitest'
 
 import { transformStepParameters } from '../../common/transform-step-parameters'
 
+// There is 1 transformer (v1→v2), so latest version is 2.
 describe('transformStepParameters', () => {
   describe('version routing', () => {
-    it('returns parameters unchanged for version 1 (current format)', () => {
-      const input = {
-        fileId: 'file123',
-        tableId: 'table456',
-        lookupColumn: 'Email',
-        lookupValue: 'test@example.com',
-      }
-
-      const result = transformStepParameters('getTableRow', input, 1)
-
-      expect(result).toEqual(input)
-    })
-
-    it('applies all transformers for version 2', () => {
+    it('version 1: applies the transformer (old format)', () => {
       const result = transformStepParameters(
         'getTableRow',
         {
@@ -28,12 +16,22 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Email',
           lookupValue: 'test@example.com',
         },
-        2,
+        1,
       )
 
       expect(result).toHaveProperty('filters')
       expect(result).not.toHaveProperty('lookupColumn')
       expect(result).not.toHaveProperty('lookupValue')
+    })
+
+    it('version 2: already latest, returns parameters unchanged', () => {
+      const input = {
+        fileId: 'file123',
+        tableId: 'table456',
+        filters: [{ lookupColumn: 'Email', lookupValue: 'test@example.com' }],
+      }
+
+      expect(transformStepParameters('getTableRow', input, 2)).toEqual(input)
     })
   })
 
@@ -47,7 +45,7 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Email',
           lookupValue: 'test@example.com',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -71,7 +69,7 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Status',
           lookupValue: '',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -94,7 +92,7 @@ describe('transformStepParameters', () => {
           tableId: 'table456',
           lookupColumn: 'Name',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -120,7 +118,7 @@ describe('transformStepParameters', () => {
           columnsToUpdate: [{ columnName: 'Status', value: 'Complete' }],
           someOtherField: 'preserved',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -151,7 +149,7 @@ describe('transformStepParameters', () => {
         ],
       }
 
-      const result = transformStepParameters('getTableRow', input, 2)
+      const result = transformStepParameters('getTableRow', input, 1)
 
       expect(result).toEqual(input)
     })
@@ -164,16 +162,16 @@ describe('transformStepParameters', () => {
         lookupValue: 'test@example.com',
       }
 
-      const firstTransform = transformStepParameters('getTableRow', input, 2)
+      const firstTransform = transformStepParameters('getTableRow', input, 1)
       const secondTransform = transformStepParameters(
         'getTableRow',
         firstTransform,
-        2,
+        1,
       )
       const thirdTransform = transformStepParameters(
         'getTableRow',
         secondTransform,
-        2,
+        1,
       )
 
       expect(firstTransform).toEqual(secondTransform)
@@ -195,7 +193,7 @@ describe('transformStepParameters', () => {
             },
           ],
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -225,7 +223,7 @@ describe('transformStepParameters', () => {
             },
           ],
         },
-        2,
+        1,
       )
 
       expect(result).not.toHaveProperty('lookupColumn')
@@ -245,7 +243,7 @@ describe('transformStepParameters', () => {
           lookupValue: 'test@example.com',
           filters: [],
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -270,7 +268,7 @@ describe('transformStepParameters', () => {
           lookupValue: 'test@example.com',
           filters: null,
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -295,7 +293,7 @@ describe('transformStepParameters', () => {
           lookupValue: 'test@example.com',
           filters: undefined,
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -317,7 +315,7 @@ describe('transformStepParameters', () => {
         someOtherField: 'value',
       }
 
-      const result = transformStepParameters('getTableRow', input, 2)
+      const result = transformStepParameters('getTableRow', input, 1)
 
       expect(result).toEqual(input)
     })
@@ -330,7 +328,7 @@ describe('transformStepParameters', () => {
           tableId: 'table456',
           lookupColumn: 'Status',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -353,7 +351,7 @@ describe('transformStepParameters', () => {
           tableId: 'table456',
           lookupValue: 'some value',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -374,7 +372,7 @@ describe('transformStepParameters', () => {
       const result = transformStepParameters(
         'getTableRow',
         { lookupColumn: 'Email', lookupValue: 'test@example.com' },
-        2,
+        1,
       )
 
       expect(result).toHaveProperty('filters')
@@ -384,7 +382,7 @@ describe('transformStepParameters', () => {
       const result = transformStepParameters(
         'getTableRows',
         { lookupColumn: 'Status', lookupValue: 'Active' },
-        2,
+        1,
       )
 
       expect(result).toHaveProperty('filters')
@@ -394,7 +392,7 @@ describe('transformStepParameters', () => {
       const result = transformStepParameters(
         'updateTableRow',
         { lookupColumn: 'ID', lookupValue: '123' },
-        2,
+        1,
       )
 
       expect(result).toHaveProperty('filters')
@@ -408,7 +406,7 @@ describe('transformStepParameters', () => {
         lookupValue: 'test@example.com',
       }
 
-      const result = transformStepParameters('someOtherAction', input, 2)
+      const result = transformStepParameters('someOtherAction', input, 1)
 
       expect(result).toEqual(input)
       expect(result).not.toHaveProperty('filters')
@@ -425,7 +423,7 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Email Address',
           lookupValue: '{{1.email}}',
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -440,7 +438,7 @@ describe('transformStepParameters', () => {
       })
     })
 
-    it('handles new Pipe with filters (version 1, no transformation)', () => {
+    it('handles new Pipe with filters (version 2, no transformation)', () => {
       const input = {
         fileId: '01ABCDEFGHIJKLMNOPQRSTUVWXYZ',
         tableId: '{01ABCDEFGHIJKLMNOPQRSTUVWXYZ}',
@@ -452,7 +450,7 @@ describe('transformStepParameters', () => {
         ],
       }
 
-      const result = transformStepParameters('getTableRow', input, 1)
+      const result = transformStepParameters('getTableRow', input, 2)
 
       expect(result).toEqual(input)
     })
@@ -476,7 +474,7 @@ describe('transformStepParameters', () => {
             },
           ],
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({
@@ -510,7 +508,7 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Name',
           lookupValue: "O'Brien, Inc. & Co. <test@example.com>",
         },
-        2,
+        1,
       )
 
       expect((result.filters as IJSONObject[])?.[0]?.lookupValue).toBe(
@@ -518,7 +516,7 @@ describe('transformStepParameters', () => {
       )
     })
 
-    it('handles numeric lookupValue (coerced to string)', () => {
+    it('handles numeric lookupValue', () => {
       const result = transformStepParameters(
         'getTableRow',
         {
@@ -527,7 +525,7 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Age',
           lookupValue: 42,
         },
-        2,
+        1,
       )
 
       expect(result).toEqual({

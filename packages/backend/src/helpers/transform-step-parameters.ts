@@ -3,13 +3,13 @@ import type { IJSONObject } from '@plumber/types'
 /**
  * Creates a versioned step parameter transformer for an app.
  *
- * Each transformer in the array migrates parameters from one version to the
- * next. The version stored on the step tells us which transformers to skip:
+ * Each transformer[i] migrates parameters from version i+1 to i+2.
+ * The version stored on the step determines where to start:
  *
- *   version 1 → no transformers run (parameters are already current)
- *   version 2 → transformers[0] onwards
- *   version 3 → transformers[1] onwards
- *   version N → transformers[N-2] onwards
+ *   version 1 → transformers[0] onwards  (oldest, needs all migrations)
+ *   version 2 → transformers[1] onwards  (skips first migration)
+ *   version N → transformers[N-1] onwards
+ *   version = transformers.length + 1 → nothing to run (already latest)
  *
  * ## How to add a new migration
  *
@@ -50,8 +50,8 @@ function createStepParameterTransformer(
       return stepParameters
     }
 
-    // version 1 = current format, startIndex would be -1 → skip all
-    const startIndex = stepVersion - 2
+    // startIndex < 0 guards against invalid version values (e.g. 0)
+    const startIndex = stepVersion - 1
     if (startIndex < 0) {
       return stepParameters
     }
