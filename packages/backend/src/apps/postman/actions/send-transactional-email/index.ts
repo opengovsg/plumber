@@ -4,6 +4,8 @@ import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
+import { TableVariableMarker } from '@/helpers/compute-parameters'
+import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
@@ -22,12 +24,49 @@ import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachmen
 import { throwPostmanStepError } from '../../common/throw-errors'
 
 import getDataOutMetadata from './get-data-out-metadata'
+/**
+ * Type guard to check if a value is a TableVariableMarker
+ */
+function isTableMarker(value: unknown): value is TableVariableMarker {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '__type' in value &&
+    (value as TableVariableMarker).__type === 'table'
+  )
+}
 
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
   description: 'Sends an email using Postman',
   arguments: transactionalEmailFields,
+
+  preprocessVariable(key: string, value: unknown) {
+    // Handle table variable markers - convert to HTML table
+    if (isTableMarker(value)) {
+      // Only allow table rendering in the body field
+      if (key !== 'body') {
+        // Return placeholder for unsupported fields
+        return '[Table variables are only supported in the email body]'
+      }
+
+      const result = formatTable(value.data, {
+        selectedColumnIds: value.selectedColumnIds,
+      })
+
+      if (result.success === false) {
+        // Return error message as placeholder instead of failing the step
+        return `[Table Error: ${result.message}]`
+      }
+
+      return result.output
+    }
+
+    // Return unchanged for non-table values
+    return value
+  },
+
   doesFileProcessing: (step: Step) => {
     return (
       step.parameters.attachments &&

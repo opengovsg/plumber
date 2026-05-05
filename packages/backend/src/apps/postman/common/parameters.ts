@@ -43,6 +43,14 @@ export const transactionalEmailFields: IField[] = [
     type: 'rich-text' as const,
     required: true,
     variables: true,
+    variableTypes: [
+      'text',
+      'array',
+      'tile_row_id',
+      'approval',
+      'ai_response',
+      'table',
+    ],
   },
   {
     label: 'Recipient email(s)',

@@ -489,6 +489,7 @@ export type TRteMenuOption =
 export interface IFieldRichText extends IBaseField {
   type: 'rich-text'
   value?: string
+  variableTypes?: TDataOutMetadatumType[]
 
   // Specifies the order and what menu options to show in the RTE
   // 'Divider' is specified manually to determine when a divider should be shown

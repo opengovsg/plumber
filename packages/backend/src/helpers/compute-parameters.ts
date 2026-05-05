@@ -172,21 +172,20 @@ function findAndSubstituteVariables(
 
       // NOTE: dataValue could be an array if it is not processed on variables.ts
       // which is the case for formSG checkbox only, this is to deal with forEach next time
-      if (preprocessVariable) {
-        return preprocessVariable(parameterKey, dataValue)
-      }
-
+      let resolvedValue = dataValue
       if (Array.isArray(dataValue)) {
         // NOTE: we do not stringify the array if its a for each step
         // to avoid having to parse it back into an array again
-        if (isForEachStep) {
-          return dataValue
+        if (!isForEachStep) {
+          resolvedValue = dataValue.join(', ')
         }
-
-        return dataValue.join(', ')
       }
 
-      return dataValue
+      if (preprocessVariable) {
+        return preprocessVariable(parameterKey, resolvedValue)
+      }
+
+      return resolvedValue
     }
 
     return part
