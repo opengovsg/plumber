@@ -11,6 +11,17 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-05-05',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: '📊 Display table data in your Postman emails',
+    details: dedent`
+      You can now insert table variable data from FormSG, Tiles, or M365 Excel directly into your Postman email body as a formatted HTML table. Select which columns to include and preview the table before sending.
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-show-multiple-rows.png',
+    },
+  },
+  {
     date: '2026-04-02',
     tag: NEW_FEATURE_TAG,
     title: '🤖 Introducing AI Builder: Go from Idea to Pipe, instantly',

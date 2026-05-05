@@ -26,8 +26,8 @@ export const TableVariable = Node.create<TableVariableOptions>({
       HTMLAttributes: {},
     }
   },
-  group: 'inline',
-  inline: true,
+  group: 'block',
+  inline: false,
   selectable: true,
   atom: true,
   addAttributes() {
@@ -51,13 +51,13 @@ export const TableVariable = Node.create<TableVariableOptions>({
   parseHTML() {
     return [
       {
-        tag: `span[data-type="${this.name}"]`,
+        tag: `div[data-type="${this.name}"]`,
       },
     ]
   },
   renderHTML({ node, HTMLAttributes }) {
     return [
-      'span',
+      'div',
       mergeAttributes({ 'data-type': this.name }, this.options.HTMLAttributes, {
         'data-id': HTMLAttributes['data-id'],
       }),
