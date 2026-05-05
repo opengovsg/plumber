@@ -66,10 +66,10 @@ export function genVariableInfoMap(
  * Template variable should take the same format as a step variable
  * but using a fake step id defined in VariableBadge.tsx file
  *
- * DO NOT TRY to construct TableVariable span differently because the TableVariable id always changes when different columns are selected.
+ * DO NOT TRY to construct TableVariable div differently because the TableVariable id always changes when different columns are selected.
  * Instead, derive the values from the actual TableVariable in the TableVariablePill.tsx
  */
-function constructVariableSpanElement(
+function constructVariableElement(
   varInfo: VariableInfoMap,
   id: string,
 ): NodeHTMLElement {
@@ -77,16 +77,16 @@ function constructVariableSpanElement(
   const varInfoForNode = varInfo.get(`{{${id}}}`)
   const value = varInfoForNode?.testRunValue || ''
   const label = varInfoForNode?.label || idComponents[idComponents.length - 1]
-  const span = new NodeHTMLElement('span', {})
-
   // Check if this is a table variable (has hex modifier)
   const isTableVariable = new RegExp(`\\|${HEX_MODIFIER_PATTERN}$`).test(id)
-  span.setAttribute('data-type', isTableVariable ? 'tableVariable' : 'variable')
-  span.setAttribute('data-id', id)
-  span.setAttribute('data-label', label)
-  span.setAttribute('data-value', value)
-  span.set_content(`{{${id}}}`)
-  return span
+
+  const el = new NodeHTMLElement(isTableVariable ? 'div' : 'span', {})
+  el.setAttribute('data-type', isTableVariable ? 'tableVariable' : 'variable')
+  el.setAttribute('data-id', id)
+  el.setAttribute('data-label', label)
+  el.setAttribute('data-value', value)
+  el.set_content(`{{${id}}}`)
+  return el
 }
 
 function substituteTemplateStringWithSpan(
@@ -101,8 +101,8 @@ function substituteTemplateStringWithSpan(
       continue
     }
     const id = substring.replace('{{', '').replace('}}', '')
-    const spanElement = constructVariableSpanElement(varInfo, id)
-    nodes.push(spanElement)
+    const variableElement = constructVariableElement(varInfo, id)
+    nodes.push(variableElement)
   }
 
   return nodes
@@ -118,9 +118,9 @@ function recursiveSubstitute(
     (dataTypeAttr === 'variable' || dataTypeAttr === 'tableVariable') &&
     dataIdAttr != null
   ) {
-    // if node is already a variable span,
-    // we should reconstruct a new span element with the latest data
-    return constructVariableSpanElement(varInfo, dataIdAttr)
+    // if node is already a variable element,
+    // we should reconstruct a new element with the latest data
+    return constructVariableElement(varInfo, dataIdAttr)
   }
   const newChildNodes: Node[] = []
   el.childNodes.forEach((n) => {

@@ -85,7 +85,7 @@ function parseTableModifier(id: string): ParsedModifier {
 
 function ErrorBadge({ message }: { message: string }) {
   return (
-    <NodeViewWrapper as="span">
+    <NodeViewWrapper as="div">
       <TouchableTooltip
         motionProps={POPOVER_OPACITY_MOTION_PROPS}
         label={message}
@@ -209,9 +209,7 @@ export function TableVariablePill({
   return (
     <NodeViewWrapper as="span">
       <Box
-        display="inline-block"
         verticalAlign="top"
-        maxW="100%"
         onClick={(e) => {
           e.stopPropagation()
           openSuggestions()
@@ -228,9 +226,9 @@ export function TableVariablePill({
             borderRadius="full"
             px={3}
             py={1}
-            maxW="50%"
+            maxW="100%"
             bg="primary.100"
-            borderWidth={selected ? '2px' : '0'}
+            borderWidth="1px"
             borderStyle="solid"
             borderColor={selected ? 'primary.500' : 'transparent'}
             cursor="default"
@@ -239,9 +237,7 @@ export function TableVariablePill({
             <Text color="base.content.strong" isTruncated>
               {label}
             </Text>
-            <Text color="base.content.medium" isTruncated>
-              {displayValue}
-            </Text>
+            <Text color="base.content.medium">{displayValue}</Text>
           </Badge>
         </TouchableTooltip>
 
@@ -252,7 +248,7 @@ export function TableVariablePill({
           w="fit-content"
           maxW="100%"
           borderRadius="md"
-          outline={selected ? '2px solid' : undefined}
+          outline={selected ? '1px solid' : undefined}
           outlineColor={selected ? 'primary.500' : undefined}
         >
           {/* Table content — clicks bubble up to outer Box to open suggestions */}
