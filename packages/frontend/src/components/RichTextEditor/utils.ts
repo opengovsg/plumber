@@ -18,8 +18,13 @@ export type VariableInfoMap = Map<
   }
 >
 
-const VARIABLE_REGEX =
-  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/
+const HEX_MODIFIER_PATTERN = '[a-fA-F0-9]+'
+
+// Matches step variables with optional hex-encoded modifier
+// Format: {{step.uuid.path}} or {{step.uuid.path|hexModifier}}
+const VARIABLE_REGEX = new RegExp(
+  `({{step\\.[\\da-f]{8}-(?:[\\da-f]{4}-){3}[\\da-f]{12}(?:\\.[\\da-zA-Z-_ ]+)+(?:\\|${HEX_MODIFIER_PATTERN})?}})`,
+)
 export const GLOBAL_VARIABLE_REGEX = new RegExp(VARIABLE_REGEX, 'g')
 /**
  * Used to generate substituted string for hyperlink checking
@@ -60,6 +65,9 @@ export function genVariableInfoMap(
  * Note: template variable will not require varInfo since value should be empty.
  * Template variable should take the same format as a step variable
  * but using a fake step id defined in VariableBadge.tsx file
+ *
+ * DO NOT TRY to construct TableVariable span differently because the TableVariable id always changes when different columns are selected.
+ * Instead, derive the values from the actual TableVariable in the TableVariablePill.tsx
  */
 function constructVariableSpanElement(
   varInfo: VariableInfoMap,
@@ -70,7 +78,10 @@ function constructVariableSpanElement(
   const value = varInfoForNode?.testRunValue || ''
   const label = varInfoForNode?.label || idComponents[idComponents.length - 1]
   const span = new NodeHTMLElement('span', {})
-  span.setAttribute('data-type', 'variable')
+
+  // Check if this is a table variable (has hex modifier)
+  const isTableVariable = new RegExp(`\\|${HEX_MODIFIER_PATTERN}$`).test(id)
+  span.setAttribute('data-type', isTableVariable ? 'tableVariable' : 'variable')
   span.setAttribute('data-id', id)
   span.setAttribute('data-label', label)
   span.setAttribute('data-value', value)
@@ -103,7 +114,10 @@ function recursiveSubstitute(
 ): NodeHTMLElement {
   const dataIdAttr = el.getAttribute('data-id')
   const dataTypeAttr = el.getAttribute('data-type')
-  if (dataTypeAttr === 'variable' && dataIdAttr != null) {
+  if (
+    (dataTypeAttr === 'variable' || dataTypeAttr === 'tableVariable') &&
+    dataIdAttr != null
+  ) {
     // if node is already a variable span,
     // we should reconstruct a new span element with the latest data
     return constructVariableSpanElement(varInfo, dataIdAttr)

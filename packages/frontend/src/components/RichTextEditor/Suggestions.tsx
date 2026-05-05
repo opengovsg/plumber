@@ -10,10 +10,16 @@ interface SuggestionsProps {
   data: StepWithVariables[]
   onSuggestionClick: (variable: Variable) => void
   noVariablesMessage?: string
+  supportTableDisplay?: boolean
 }
 
 function Suggestions(props: SuggestionsProps) {
-  const { data, onSuggestionClick = () => null, noVariablesMessage } = props
+  const {
+    data,
+    onSuggestionClick = () => null,
+    noVariablesMessage,
+    supportTableDisplay,
+  } = props
   const [current, setCurrent] = useState<number>(0)
 
   const isEmpty = data.reduce(
@@ -45,6 +51,7 @@ function Suggestions(props: SuggestionsProps) {
           <VariablesList
             variables={option.output ?? []}
             onClick={onSuggestionClick}
+            supportTableDisplay={supportTableDisplay}
           />
         </Collapse>
       ))}

@@ -1,7 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useMemo, useRef } from 'react'
-import { IconType } from 'react-icons/lib'
 import {
   Accordion,
   AccordionButton,
@@ -10,12 +9,12 @@ import {
   AccordionPanel,
   Box,
   Flex,
-  Icon,
   type SystemStyleObject,
   Tag,
   Text,
   Tooltip,
 } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { type Variable } from '@/helpers/variables'
@@ -38,7 +37,8 @@ function VariableTag({
       case 'table':
         return {
           label: 'List',
-          tooltip: 'This variable can be used in the For-each action',
+          tooltip:
+            'This variable can be used in the For-each action or the body field in Email by Postman action.',
         }
       case 'file':
         return {
@@ -91,19 +91,19 @@ export function VariableItem({
   variable,
   onClick,
   isLast,
-  withIcon,
+  withViewButton,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
   isLast?: boolean
-  withIcon?: IconType
+  withViewButton?: boolean
 }): JSX.Element {
-  const shouldShowBottomBorder = !withIcon && (onClick || isLast)
+  const shouldShowBottomBorder = !withViewButton && (onClick || isLast)
 
   const displayValue =
     variable.displayedValue ?? variable.value?.toString() ?? ''
 
-  const isSuggestionVariable = onClick && !withIcon
+  const isSuggestionVariable = onClick && !withViewButton
   return (
     <Box
       key={`suggestion-${variable.name}`}
@@ -122,7 +122,7 @@ export function VariableItem({
       padding={isSuggestionVariable ? '0.5rem 1rem' : '1rem'}
       borderBottom={shouldShowBottomBorder ? undefined : '1px solid #EDEDED'}
       _hover={
-        onClick
+        isSuggestionVariable
           ? {
               backgroundColor: 'secondary.50',
               cursor: 'pointer',
@@ -130,7 +130,7 @@ export function VariableItem({
           : undefined
       }
       _active={
-        onClick
+        isSuggestionVariable
           ? {
               backgroundColor: 'secondary.100',
               cursor: 'pointer',
@@ -139,39 +139,43 @@ export function VariableItem({
       }
       // onClick doesn't work sometimes due to latency between mousedown and immediate mouseup event after
       onMouseDown={
-        onClick
+        isSuggestionVariable
           ? () => {
               onClick(variable)
             }
           : undefined
       }
     >
-      <Text
-        textStyle="body-1"
-        color="base.content.strong"
-        display="flex"
-        alignItems="center"
-        gap={2}
-      >
-        {variable.label ?? variable.name} <VariableTag type={variable.type} />
-      </Text>
-      <Flex alignItems="center" gap={2}>
-        <Text
-          textStyle="body-2"
-          color="base.content.medium"
-          whiteSpace="nowrap"
-          overflow="hidden"
-          textOverflow="ellipsis"
-          textDecoration={withIcon ? 'underline' : undefined}
-        >
-          {displayValue.length ? (
-            displayValue
-          ) : (
-            // padding right to ensure the 'y' is not cut off
-            <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
-          )}
-        </Text>
-        {withIcon && <Icon as={withIcon} />}
+      <Flex justifyContent="space-between" gap={4}>
+        <Flex flexDir="column" minW={0}>
+          <Flex alignItems="center" gap={2}>
+            <Text textStyle="body-1" color="base.content.strong" isTruncated>
+              {variable.label ?? variable.name}
+            </Text>
+            <VariableTag type={variable.type} />
+          </Flex>
+
+          <Text
+            textStyle="body-2"
+            color="base.content.medium"
+            whiteSpace="nowrap"
+            overflow="hidden"
+            textOverflow="ellipsis"
+          >
+            {displayValue.length ? (
+              displayValue
+            ) : (
+              // padding right to ensure the 'y' is not cut off
+              <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
+            )}
+          </Text>
+        </Flex>
+
+        {onClick && withViewButton && (
+          <Button variant="clear" onClick={() => onClick(variable)}>
+            View
+          </Button>
+        )}
       </Flex>
     </Box>
   )
@@ -181,10 +185,11 @@ interface VariablesListProps {
   variables: Variable[]
   onClick?: (variable: Variable) => void
   customStyles?: SystemStyleObject
+  supportTableDisplay?: boolean
 }
 
 export default function VariablesList(props: VariablesListProps) {
-  const { variables, onClick } = props
+  const { variables, onClick, supportTableDisplay } = props
 
   // Separate variables into default and collapsed categories
   const { defaultVariables, collapsedVariables } = useMemo(() => {
@@ -195,7 +200,8 @@ export default function VariablesList(props: VariablesListProps) {
     const defaultVariables: Variable[] = []
     const collapsedVariables: Variable[] = []
     for (const variable of variables) {
-      if (variable.isHiddenFromList) {
+      // virtualized list reserving height for items that render null --> add isHidden check also
+      if (variable.isHiddenFromList || variable.isHidden) {
         continue
       }
       if (variable.isCollapsedByDefault) {
@@ -249,7 +255,11 @@ export default function VariablesList(props: VariablesListProps) {
               transform={`translateY(${virtualItem.start}px)`}
             >
               {isVariableWithModal ? (
-                <VariableItemWithModal variable={variable} onClick={onClick} />
+                <VariableItemWithModal
+                  variable={variable}
+                  onClick={onClick}
+                  supportTableDisplay={supportTableDisplay}
+                />
               ) : variable.isHidden ? null : (
                 <VariableItem
                   variable={variable}

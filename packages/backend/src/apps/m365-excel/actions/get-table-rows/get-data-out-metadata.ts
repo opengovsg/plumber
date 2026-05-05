@@ -11,6 +11,7 @@ async function getDataOutMetadata(
   }
 
   const dataOut = dataOutSchema.parse(rawDataOut)
+  const rowsFound = dataOut.rowsFound
 
   const metadata: IDataOutMetadata = {
     rowsFound: {
@@ -19,7 +20,7 @@ async function getDataOutMetadata(
     },
     data: {
       label: 'Row(s) found',
-      displayedValue: `Preview ${dataOut.rowsFound} row(s)`,
+      displayedValue: `${rowsFound} row${rowsFound != 1 ? 's' : ''}`,
       type: 'table',
       order: 1,
     },

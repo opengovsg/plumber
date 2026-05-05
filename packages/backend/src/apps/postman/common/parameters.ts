@@ -51,6 +51,7 @@ export const transactionalEmailFields: IField[] = [
       'ai_response',
       'table',
     ],
+    supportTableDisplay: true,
   },
   {
     label: 'Recipient email(s)',

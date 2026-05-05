@@ -47,8 +47,11 @@ const action: IRawAction = {
     if (isTableMarker(value)) {
       // Only allow table rendering in the body field
       if (key !== 'body') {
-        // Return placeholder for unsupported fields
-        return '[Table variables are only supported in the email body]'
+        logger.warn('Table variable used in unsupported field', {
+          event: 'table-variable-unsupported-field',
+          field: key,
+        })
+        return ''
       }
 
       const result = formatTable(value.data, {
@@ -56,8 +59,12 @@ const action: IRawAction = {
       })
 
       if (result.success === false) {
-        // Return error message as placeholder instead of failing the step
-        return `[Table Error: ${result.message}]`
+        logger.warn('Table variable failed to render', {
+          event: 'table-variable-render-failed',
+          error: result.error,
+          message: result.message,
+        })
+        return ''
       }
 
       return result.output

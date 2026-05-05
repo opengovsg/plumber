@@ -491,6 +491,10 @@ export interface IFieldRichText extends IBaseField {
   value?: string
   variableTypes?: TDataOutMetadatumType[]
 
+  // Enables table variable insertion with preview and column selection
+  // When true, table variables will be rendered as TableVariablePill in the editor
+  supportTableDisplay?: boolean
+
   // Specifies the order and what menu options to show in the RTE
   // 'Divider' is specified manually to determine when a divider should be shown
   customRteMenuOptions?: TRteMenuOption[]
