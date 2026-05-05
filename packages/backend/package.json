@@ -50,7 +50,7 @@
     "ai": "5.0.81",
     "ajv-formats": "2.1.1",
     "async-mutex": "0.4.0",
-    "axios": "1.15.0",
+    "axios": "1.15.2",
     "big.js": "6.2.1",
     "cookie-parser": "1.4.7",
     "cors": "^2.8.5",
