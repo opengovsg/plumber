@@ -40,12 +40,15 @@ export const VariableBadge = ({ node }: { node: Node }) => {
           variant="solid"
           borderRadius="50px"
           mx={0.5}
+          px={3}
+          py={1}
           cursor="default"
           bg={isEmpty ? 'transparent' : 'primary.100'}
           borderStyle={isEmpty ? 'dashed' : 'solid'}
           borderWidth={isEmpty ? '2px' : '0px'}
           borderColor={isEmpty ? 'primary.600' : 'transparent'}
           data-content={isEmpty ? 'empty' : 'filled'}
+          fontSize="sm"
         >
           <Text
             isTruncated

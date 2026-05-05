@@ -21,11 +21,12 @@ async function getDataOutMetadata(
     })
     return null
   }
+  const rowsFound = dataOut.data.rowsFound
 
   const metadata: IDataOutMetadata = {
     data: {
       label: 'Row(s) found',
-      displayedValue: `Preview ${dataOut.data.rowsFound} row(s)`,
+      displayedValue: `${rowsFound} row${rowsFound != 1 ? 's' : ''}`,
       type: 'table',
       order: 1,
     },

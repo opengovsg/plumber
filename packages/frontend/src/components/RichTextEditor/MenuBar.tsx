@@ -209,6 +209,20 @@ const DEFAULT_MENU_BUTTONS = [
   },
 ]
 
+const FORMATTING_BUTTONS_DISABLED_FOR_TABLE_VARIABLE = new Set([
+  RteMenuOption.Bold,
+  RteMenuOption.Italic,
+  RteMenuOption.Underline,
+  RteMenuOption.LinkSet,
+  RteMenuOption.LinkRemove,
+  RteMenuOption.Heading1,
+  RteMenuOption.Heading2,
+  RteMenuOption.Heading3,
+  RteMenuOption.Heading4,
+  RteMenuOption.ListBullet,
+  RteMenuOption.ListOrdered,
+])
+
 const dialogPlaceholders: Partial<Record<RteMenuOption, string>> = {
   [RteMenuOption.LinkSet]: 'Enter a full URL with http prefix',
   [RteMenuOption.ImageAdd]:
@@ -242,6 +256,21 @@ export const MenuBar = ({
     setDialogValue('')
     onClose()
   }, [onClose])
+
+  const selectionContainsTableVariable = useMemo(() => {
+    if (!editor) {
+      return false
+    }
+    const { from, to } = editor.state.selection
+    let found = false
+    editor.state.doc.nodesBetween(from, to, (node) => {
+      if (node.type.name === 'tableVariable') {
+        found = true
+      }
+    })
+    return found
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, editor?.state.selection])
 
   const onClickOverrides: Partial<Record<RteMenuOption, () => void>> = useMemo(
     () => ({
@@ -339,11 +368,16 @@ export const MenuBar = ({
               />
             )
           }
+          const isDisabled =
+            !editable ||
+            (selectionContainsTableVariable &&
+              FORMATTING_BUTTONS_DISABLED_FOR_TABLE_VARIABLE.has(label))
+
           return (
             <button
               key={`${label}${index}`}
               title={label}
-              disabled={!editable}
+              disabled={isDisabled}
               style={{
                 borderRadius: '0.25rem',
                 width: 'auto',
@@ -351,8 +385,8 @@ export const MenuBar = ({
                 backgroundColor: isActive?.(editor)
                   ? 'rgba(0,0,0,0.1)'
                   : 'transparent',
-                opacity: editable ? 1 : 0.5,
-                cursor: editable ? 'pointer' : 'default',
+                opacity: isDisabled ? 0.5 : 1,
+                cursor: isDisabled ? 'default' : 'pointer',
               }}
               className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
               onClick={() => {

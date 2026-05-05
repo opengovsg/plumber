@@ -38,6 +38,19 @@ export interface Variable extends IDataOutMetadatum {
   id?: string
 }
 
+/**
+ * Extended variable interface for table type with additional metadata
+ * Used for context-aware insertion (for-each vs email body)
+ *
+ * Note: stepId and path can be derived from variable.name (format: step.{stepId}.{path})
+ */
+export interface TableVariable extends Variable {
+  type: 'table'
+  columns: Array<{ id: string; name: string }>
+  sampleRows: Array<Record<string, unknown>>
+  totalRowCount: number
+}
+
 function sortVariables(variables: Variable[]): void {
   variables.sort((a, b) => {
     // Put vars with null order last, but preserve ordering (via `sort`'s
@@ -76,10 +89,17 @@ const process = (
     displayedValue = null,
     isCollapsedByDefault = false,
     isHiddenFromList = false,
+    value: metadataValue = null,
   } = metadata
 
   if (isHidden) {
     return []
+  }
+
+  // Special handling for FormSG tables: data is a string but metadata.value has the parsed object
+  // We need to use the table object for generating table_display variables
+  if (type === 'table' && typeof data === 'string' && metadataValue) {
+    data = metadataValue
   }
 
   if (typeof data !== 'object' || data == null) {
@@ -136,16 +156,27 @@ const process = (
   // special handling for multiple row objects from Tiles and M365 Excel
   // we do not do not join like strings as it contains objects and do not flatmap the data as we want to use it as a whole
   if (type === 'table') {
-    const outputVars = [
-      {
-        name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
-        value: JSON.stringify(data),
-        label: label ?? parentKey,
-        displayedValue,
-        type,
-        order,
-      },
-    ]
+    const { columns, rows } = data
+
+    // Extract sample rows for preview in TableVariablePill (3 rows to allow 2.5 visible)
+    const sampleRows = (rows || []).slice(0, 3).map((row: RawRow) => row.data)
+
+    // Single table variable with all metadata needed for context-aware insertion
+    // - In for-each fields: inserts as raw variable {{step.uuid.data}}
+    // - In email body fields (supportTableDisplay): inserts with hex modifier and renders as TableVariablePill
+    const tableVar: TableVariable = {
+      name: `step.${stepId}.${parentKey}`, // Don't mess with this because of lodash get!!!
+      value: JSON.stringify(data),
+      label: label ?? parentKey,
+      displayedValue,
+      type: 'table',
+      order,
+      columns: columns.map((c: RawColumn) => ({ id: c.id, name: c.name })),
+      sampleRows,
+      totalRowCount: rows?.length || 0,
+    }
+
+    const outputVars: Variable[] = [tableVar]
 
     /**
      * CAVEAT: we intentionally set the columns to be hidden in the variables list
@@ -155,7 +186,6 @@ const process = (
      * NOTE: we dynamically obtain the values for each column since we are not
      * storing the values in the dataOut.
      */
-    const { columns, rows } = data
     const columnVariables = columns.map((column: RawColumn) => {
       const rowValues: (string | number | null)[] = []
       rows.forEach((row: RawRow) => {

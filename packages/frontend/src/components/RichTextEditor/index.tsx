@@ -43,8 +43,10 @@ import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { MenuBar } from './MenuBar'
 import ImageResize from './ResizableImageExtension'
+import { RichTextEditorContext } from './RichTextEditorContext'
 import { StepVariable } from './StepVariablePlugin'
 import Suggestions from './Suggestions'
+import { TableVariable } from './TableVariablePlugin'
 import {
   checkAutoFocus,
   genVariableInfoMap,
@@ -101,6 +103,7 @@ interface EditorProps {
   noVariablesMessage?: string
   customRteMenuOptions?: TRteMenuOption[]
   isDisplayOnly?: boolean
+  supportTableDisplay?: boolean
 }
 const Editor = ({
   onChange,
@@ -117,6 +120,7 @@ const Editor = ({
   noVariablesMessage,
   customRteMenuOptions,
   isDisplayOnly = false,
+  supportTableDisplay,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -145,7 +149,7 @@ const Editor = ({
     Placeholder.configure({
       placeholder,
     }),
-    ...(isDisplayOnly ? [] : [StepVariable]),
+    ...(isDisplayOnly ? [] : [StepVariable, TableVariable]),
     ImageResize.configure({
       inline: true,
       resizable: !isDisplayOnly,
@@ -157,7 +161,7 @@ const Editor = ({
    * This means that angle brackets are not escaped when saved and will be rendered as html elements.
    * Therefore, we need to escape any html characters in the initial value to prevent them from being rendered as html.
    */
-  const unsubstituedValue = useMemo(() => {
+  const unsubstitutedValue = useMemo(() => {
     if (isRich || initialValue == null) {
       return initialValue
     }
@@ -165,8 +169,8 @@ const Editor = ({
   }, [initialValue, isRich])
 
   let content = isDisplayOnly
-    ? unsubstituedValue
-    : substituteOldTemplates(unsubstituedValue, varInfo) // backward compatibility with old values from PowerInput
+    ? unsubstitutedValue
+    : substituteOldTemplates(unsubstitutedValue, varInfo) // backward compatibility with old values from PowerInput
   // convert new line character into br elem so tiptap can load the content correctly
   content = content.replaceAll('\n', '<br>')
 
@@ -240,8 +244,13 @@ const Editor = ({
         return
       }
 
+      // Check if this is a table variable (has hex modifier that decodes to table:...)
+      // The hex modifier pattern is: |<hex characters> at the end of the variable name
+      const isTableVariable = /\|[a-fA-F0-9]+$/.test(variable.name)
+
       editor?.commands.insertContent({
-        type: StepVariable.name,
+        // Use string literal to ensure correct node type matching
+        type: isTableVariable ? 'tableVariable' : 'variable',
         attrs: {
           id: variable.name,
           label: variable.label,
@@ -265,84 +274,94 @@ const Editor = ({
     onClose: closeSuggestions,
   } = useDisclosure()
 
+  const suggestionsContextValue = useMemo(
+    () => ({ closeSuggestions, openSuggestions, supportTableDisplay }),
+    [closeSuggestions, openSuggestions, supportTableDisplay],
+  )
+
   return (
-    <Popover
-      autoFocus={editable ? false : true}
-      gutter={2}
-      matchWidth={isMulticol ? false : true}
-      isLazy
-      lazyBehavior="unmount"
-      onClose={closeSuggestions}
-      isOpen={isSuggestionsOpen && variablesEnabled}
-      placement={getPopoverPlacement(editor)}
-    >
-      <div
-        className="editor"
-        onClick={(e) => {
-          e.stopPropagation()
-          openSuggestions()
-        }}
-        onBlur={(e) => {
-          // Focus might shift to menu bar or other children, where we do _not_
-          // want to close our popper.
-          const editorContainer =
-            e.currentTarget.closest('.single-line-editor') || e.currentTarget
-          if (
-            editorContainer.contains(e.relatedTarget) ||
-            e.relatedTarget?.closest('.chakra-popover__content')
-          ) {
-            return
-          }
-          closeSuggestions()
-        }}
-        {...(isDisplayOnly && { style: { border: 'none' } })}
+    <RichTextEditorContext.Provider value={suggestionsContextValue}>
+      <Popover
+        autoFocus={editable ? false : true}
+        gutter={2}
+        matchWidth={isMulticol ? false : true}
+        isLazy
+        lazyBehavior="unmount"
+        onClose={closeSuggestions}
+        isOpen={isSuggestionsOpen && variablesEnabled}
+        placement={getPopoverPlacement(editor)}
       >
-        <PopoverTrigger>
-          <Box className={isMulticol ? 'single-line-editor' : undefined}>
-            {showMenuBar && (
-              <MenuBar
+        <div
+          className="editor"
+          onClick={(e) => {
+            e.stopPropagation()
+            openSuggestions()
+          }}
+          onBlur={(e) => {
+            // Focus might shift to menu bar or other children, where we do _not_
+            // want to close our popper.
+            const editorContainer =
+              e.currentTarget.closest('.single-line-editor') || e.currentTarget
+            if (
+              editorContainer.contains(e.relatedTarget) ||
+              e.relatedTarget?.closest('.chakra-popover__content')
+            ) {
+              return
+            }
+            closeSuggestions()
+          }}
+          {...(isDisplayOnly && { style: { border: 'none' } })}
+        >
+          <PopoverTrigger>
+            <Box className={isMulticol ? 'single-line-editor' : undefined}>
+              {showMenuBar && (
+                <MenuBar
+                  editor={editor}
+                  variableMap={varInfo}
+                  editable={editable ?? false}
+                  customMenuOptions={customRteMenuOptions}
+                />
+              )}
+              <EditorContent
+                className="editor__content"
                 editor={editor}
-                variableMap={varInfo}
-                editable={editable ?? false}
-                customMenuOptions={customRteMenuOptions}
-              />
-            )}
-            <EditorContent
-              className="editor__content"
-              editor={editor}
-              onKeyDown={(e) => {
-                if (singleVariableSelection) {
-                  e.preventDefault()
-                }
-              }}
-              {...(isDisplayOnly && { style: { height: '60vh' } })}
-            />
-            <Portal>
-              <PopoverContent
-                w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
-                motionProps={POPOVER_MOTION_PROPS}
-                onFocus={(e) => {
-                  // Go back to previous focus when clicking on suggestions to resume typing
-                  if (e.relatedTarget instanceof HTMLElement) {
-                    e.relatedTarget?.focus()
+                onKeyDown={(e) => {
+                  if (singleVariableSelection) {
+                    e.preventDefault()
                   }
                 }}
-                _focus={{
-                  boxShadow: 'none',
-                  borderColor: 'inherit',
-                }}
-              >
-                <Suggestions
-                  data={stepsWithVariables}
-                  onSuggestionClick={(v) => editable && handleVariableClick(v)}
-                  noVariablesMessage={noVariablesMessage}
-                />
-              </PopoverContent>
-            </Portal>
-          </Box>
-        </PopoverTrigger>
-      </div>
-    </Popover>
+                {...(isDisplayOnly && { style: { height: '60vh' } })}
+              />
+              <Portal>
+                <PopoverContent
+                  w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
+                  motionProps={POPOVER_MOTION_PROPS}
+                  onFocus={(e) => {
+                    // Go back to previous focus when clicking on suggestions to resume typing
+                    if (e.relatedTarget instanceof HTMLElement) {
+                      e.relatedTarget?.focus()
+                    }
+                  }}
+                  _focus={{
+                    boxShadow: 'none',
+                    borderColor: 'inherit',
+                  }}
+                >
+                  <Suggestions
+                    data={stepsWithVariables}
+                    onSuggestionClick={(v) =>
+                      editable && handleVariableClick(v)
+                    }
+                    noVariablesMessage={noVariablesMessage}
+                    supportTableDisplay={supportTableDisplay}
+                  />
+                </PopoverContent>
+              </Portal>
+            </Box>
+          </PopoverTrigger>
+        </div>
+      </Popover>
+    </RichTextEditorContext.Provider>
   )
 }
 
@@ -364,6 +383,7 @@ interface RichTextEditorProps {
   noVariablesMessage?: string
   customRteMenuOptions?: TRteMenuOption[]
   isDisplayOnly?: boolean
+  supportTableDisplay?: boolean
 }
 const RichTextEditor = ({
   required,
@@ -383,6 +403,7 @@ const RichTextEditor = ({
   noVariablesMessage,
   customRteMenuOptions,
   isDisplayOnly = false,
+  supportTableDisplay,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -433,6 +454,7 @@ const RichTextEditor = ({
             noVariablesMessage={noVariablesMessage}
             customRteMenuOptions={customRteMenuOptions}
             isDisplayOnly={isDisplayOnly}
+            supportTableDisplay={supportTableDisplay}
           />
         )}
       />

@@ -6,13 +6,33 @@ import {
   computeForEachParameters,
   ForEachContext,
 } from '@/helpers/compute-for-each-parameters'
+import { hexDecode } from '@/helpers/hex-encoding'
 import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
 
 import Step from '../models/step'
 
+/**
+ * Regex to match step variables with optional hex-encoded modifier
+ *
+ * Format: {{step.<uuid>.<path>}} or {{step.<uuid>.<path>|<hexModifier>}}
+ *
+ * Examples:
+ * - {{step.abc-123-def.data}}
+ * - {{step.abc-123-def.data|7461626c653a636f6c31}} (with hex-encoded "table:col1")
+ */
 const variableRegExp =
-  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+}})/g
+  /({{step\.[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\.[\da-zA-Z-_ ]+)+(?:\|[a-fA-F0-9]+)?}})/g
+
+/**
+ * Marker object returned when a table modifier is detected.
+ * This is processed by the action's preprocessVariable function.
+ */
+export interface TableVariableMarker {
+  __type: 'table'
+  data: unknown
+  selectedColumnIds: string[]
+}
 
 function findAndSubstituteVariables(
   // i.e. the `key` corresponding to this variable's form field in defineAction
@@ -76,7 +96,14 @@ function findAndSubstituteVariables(
     const isVariable = part.match(variableRegExp)
     if (isVariable) {
       const stepIdAndKeyPath = part.replace(/{{step.|}}/g, '') as string
-      const [stepId, ...keyPaths] = stepIdAndKeyPath.split('.')
+
+      // Check for hex-encoded modifier (e.g., "|7461626c653a636f6c31")
+      const modifierMatch = stepIdAndKeyPath.match(/\|([a-fA-F0-9]+)$/)
+      const cleanStepIdAndKeyPath = modifierMatch
+        ? stepIdAndKeyPath.replace(/\|[a-fA-F0-9]+$/, '')
+        : stepIdAndKeyPath
+
+      const [stepId, ...keyPaths] = cleanStepIdAndKeyPath.split('.')
       const executionStep = executionSteps.find((executionStep) => {
         return executionStep.stepId === stepId
       })
@@ -98,23 +125,67 @@ function findAndSubstituteVariables(
         })
       }
 
-      // NOTE: dataValue could be an array if it is not processed on variables.ts
-      // which is the case for formSG checkbox only, this is to deal with forEach next time
-      if (preprocessVariable) {
-        return preprocessVariable(parameterKey, dataValue)
+      // Handle hex-encoded modifier (e.g., table:col1,col2)
+      if (modifierMatch) {
+        const decodedModifier = hexDecode(modifierMatch[1])
+        const [modifierType, ...modifierArgs] = decodedModifier.split(':')
+
+        if (modifierType === 'table') {
+          // Parse column IDs from modifier args (e.g., "col1,col2,col3")
+          const selectedColumnIds = modifierArgs[0]
+            ? modifierArgs[0].split(',').filter(Boolean)
+            : []
+
+          // Handle FormSG tables where dataValue is a stringified JSON
+          let tableData = dataValue
+          if (typeof dataValue === 'string') {
+            try {
+              tableData = JSON.parse(dataValue)
+            } catch {
+              // Not valid JSON, keep as-is (will fail validation in formatTable)
+            }
+          }
+
+          // Return marker object for preprocessVariable to handle
+          const marker: TableVariableMarker = {
+            __type: 'table',
+            data: tableData,
+            selectedColumnIds,
+          }
+
+          if (preprocessVariable) {
+            return preprocessVariable(parameterKey, marker)
+          }
+
+          // If no preprocessVariable, return original variable string
+          // to avoid [object Object] in string context
+          return part
+        }
+
+        // Unknown modifier type - return original variable string
+        logger.warn('Unsupported variable modifier type', {
+          event: 'unsupported-variable-modifier-type',
+          modifierType,
+        })
+        return part
       }
 
+      // NOTE: dataValue could be an array if it is not processed on variables.ts
+      // which is the case for formSG checkbox only, this is to deal with forEach next time
+      let resolvedValue = dataValue
       if (Array.isArray(dataValue)) {
         // NOTE: we do not stringify the array if its a for each step
         // to avoid having to parse it back into an array again
-        if (isForEachStep) {
-          return dataValue
+        if (!isForEachStep) {
+          resolvedValue = dataValue.join(', ')
         }
-
-        return dataValue.join(', ')
       }
 
-      return dataValue
+      if (preprocessVariable) {
+        return preprocessVariable(parameterKey, resolvedValue)
+      }
+
+      return resolvedValue
     }
 
     return part

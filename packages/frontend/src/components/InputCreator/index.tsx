@@ -148,6 +148,8 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         isRich
         noVariablesMessage={noVariablesMessage}
         customRteMenuOptions={schema?.customRteMenuOptions}
+        variableTypes={schema.variableTypes}
+        supportTableDisplay={schema.supportTableDisplay}
       />
     )
   }

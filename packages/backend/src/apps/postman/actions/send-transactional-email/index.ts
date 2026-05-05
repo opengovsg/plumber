@@ -4,6 +4,8 @@ import { SafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
+import { TableVariableMarker } from '@/helpers/compute-parameters'
+import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
@@ -22,12 +24,56 @@ import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachmen
 import { throwPostmanStepError } from '../../common/throw-errors'
 
 import getDataOutMetadata from './get-data-out-metadata'
+/**
+ * Type guard to check if a value is a TableVariableMarker
+ */
+function isTableMarker(value: unknown): value is TableVariableMarker {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '__type' in value &&
+    (value as TableVariableMarker).__type === 'table'
+  )
+}
 
 const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
   description: 'Sends an email using Postman',
   arguments: transactionalEmailFields,
+
+  preprocessVariable(key: string, value: unknown) {
+    // Handle table variable markers - convert to HTML table
+    if (isTableMarker(value)) {
+      // Only allow table rendering in the body field
+      if (key !== 'body') {
+        logger.warn('Table variable used in unsupported field', {
+          event: 'table-variable-unsupported-field',
+          field: key,
+        })
+        return ''
+      }
+
+      const result = formatTable(value.data, {
+        selectedColumnIds: value.selectedColumnIds,
+      })
+
+      if (result.success === false) {
+        logger.warn('Table variable failed to render', {
+          event: 'table-variable-render-failed',
+          error: result.error,
+          message: result.message,
+        })
+        return ''
+      }
+
+      return result.output
+    }
+
+    // Return unchanged for non-table values
+    return value
+  },
+
   doesFileProcessing: (step: Step) => {
     return (
       step.parameters.attachments &&
