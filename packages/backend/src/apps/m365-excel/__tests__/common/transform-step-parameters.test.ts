@@ -2,10 +2,9 @@ import { IJSONObject } from '@plumber/types'
 
 import { describe, expect, it } from 'vitest'
 
-import {
-  getLatestStepVersion,
-  transformStepParameters,
-} from '../../common/transform-step-parameters'
+import { stepTransformer } from '../../common/transform-step-parameters'
+
+const { transformStepParameters, getLatestStepVersion } = stepTransformer
 
 // There is 1 transformer (v1→v2), so latest version is 2.
 describe('transformStepParameters', () => {

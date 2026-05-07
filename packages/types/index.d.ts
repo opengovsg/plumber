@@ -663,32 +663,28 @@ export interface IApp {
   setupMessage?: SetupMessage
 
   /**
-   * Optional transformation function for step parameters.
+   * Optional versioned step parameter transformer for an app.
    *
-   * Enables zero-downtime parameter format migrations by transforming
-   * legacy parameters to the current format when steps are fetched from
-   * the database or executed.
+   * Both functions must be provided together — use `createVersionedStepTransformer`
+   * from `@/helpers/transform-step-parameters` which returns them as a coupled pair.
    *
-   * Example: Excel actions migrated from individual `lookupColumn` and
-   * `lookupValue` parameters to a `filters` array. This function transforms
-   * old format to new on-the-fly.
+   * Enables zero-downtime parameter format migrations by transforming legacy
+   * parameters to the current format when steps are fetched or executed.
    *
-   * @param stepKey - The step key  (e.g., 'getTableRow')
-   * @param stepParameters - The step parameters from database
-   * @param stepVersion - The step version
-   * @returns Transformed parameters in current format
+   * `transformStepParameters` — called on every step fetch (afterFind hook); applies
+   * all migrations from `stepVersion` onwards.
+   *
+   * `getLatestStepVersion` — used when creating new steps so they start at the
+   * latest version and require no transformation.
    */
-  transformStepParameters?: (
-    stepKey: string,
-    stepParameters: IJSONObject,
-    stepVersion: number,
-  ) => IJSONObject
-
-  /**
-   * Returns the latest version number for the given step key.
-   * New steps should be created at this version so no transformation is needed.
-   */
-  getLatestStepVersion?: (stepKey: string) => number
+  stepTransformer?: {
+    transformStepParameters: (
+      stepKey: string,
+      stepParameters: IJSONObject,
+      stepVersion: number,
+    ) => IJSONObject
+    getLatestStepVersion: (stepKey: string) => number
+  }
 }
 
 export type AppCategory = 'data' | 'communication' | 'logic' | 'others' | 'ai'

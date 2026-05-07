@@ -54,5 +54,5 @@ export function transformLookupConditionsToFilters(
   return parameters
 }
 
-export const { transformStepParameters, getLatestStepVersion } =
+export const stepTransformer =
   createVersionedStepTransformer(ACTION_TRANSFORMERS)
