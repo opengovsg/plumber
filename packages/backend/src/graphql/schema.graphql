@@ -495,7 +495,6 @@ type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
   templateConfig: FlowTemplateConfig
-  showSurvey: Boolean
   attachments: [FlowAttachmentConfig]
 }
 
@@ -633,7 +632,6 @@ input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
   notificationRecipients: [NotificationRecipients]
-  showSurvey: Boolean
   hasLoadedOnce: Boolean
   attachments: [FlowAttachmentsConfigInput]
 }

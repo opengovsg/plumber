@@ -17,8 +17,8 @@ const helmetOptions: HelmetOptions = {
         'https://*.launchdarkly.com',
         // For proxying datadog rum
         'https://rum-proxy.plumber.gov.sg',
-        // For Lens Survey
-        'https://lens.open.gov.sg',
+        // For Confetti Survey
+        'https://confetti.gov.sg',
         // For S3 bucket
         'https://plumber-uat-attachment-bucket-private-0d9400e.s3.ap-southeast-1.amazonaws.com',
         'https://plumber-staging-attachment-bucket-private-ab28487.s3.ap-southeast-1.amazonaws.com',

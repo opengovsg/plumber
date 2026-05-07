@@ -211,9 +211,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
-      config: {
-        showSurvey: true,
-      },
+      config: {},
       updatedBy: owner.id,
     })
 
@@ -250,9 +248,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
       publishedAt: null,
-      config: {
-        showSurvey: undefined,
-      },
+      config: {},
       updatedBy: owner.id,
     })
 
@@ -275,9 +271,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: true,
       publishedAt: expect.any(String),
-      config: {
-        showSurvey: true,
-      },
+      config: {},
       updatedBy: owner.id,
     })
 
@@ -303,9 +297,7 @@ describe('updateFlowStatus', () => {
     expect(patchSpy).toHaveBeenCalledWith({
       active: false,
       publishedAt: null,
-      config: {
-        showSurvey: undefined,
-      },
+      config: {},
       updatedBy: owner.id,
     })
 
@@ -326,9 +318,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {
-          showSurvey: true,
-        },
+        config: {},
         updatedBy: owner.id,
       })
     })
@@ -347,9 +337,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {
-          showSurvey: true,
-        },
+        config: {},
         updatedBy: editor.id,
       })
     })
@@ -395,9 +383,7 @@ describe('updateFlowStatus', () => {
       expect(patchSpy).toHaveBeenCalledWith({
         active: true,
         publishedAt: expect.any(String),
-        config: {
-          showSurvey: true,
-        },
+        config: {},
         updatedBy: editor.id,
       })
     })
