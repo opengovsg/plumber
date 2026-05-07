@@ -9,7 +9,7 @@ import Context from '@/types/express/context'
 
 import m365Excel from '../..'
 import getTableRowsAction from '../../actions/get-table-rows'
-import { transformStepParameters } from '../../common/transform-step-parameters'
+import { stepTransformer } from '../../common/transform-step-parameters'
 import { HexEncodedRowObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
 
 const DEFAULT_PARAMETERS = {
@@ -18,6 +18,8 @@ const DEFAULT_PARAMETERS = {
   lookupColumn: 'Column1',
   lookupValue: 'test-value',
 }
+
+const { transformStepParameters } = stepTransformer
 
 const getHexEncodedColumnName = (columnName: string) =>
   Buffer.from(columnName).toString('hex')
