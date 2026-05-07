@@ -1,5 +1,10 @@
 import z from 'zod/v3'
 
+import {
+  outputFieldNameSchema,
+  toSanitizedOutputFieldNamePair,
+} from '../../common/schema'
+
 export const schema = z.object({
   promptType: z.enum(['analyse', 'categorise', 'summarise', 'write', 'custom']),
   prompt: z.string().min(1),
@@ -7,17 +12,15 @@ export const schema = z.object({
     .array(
       z
         .object({
-          fieldName: z
-            .string()
-            .min(1)
-            .max(64)
-            .regex(
-              /^[a-zA-Z0-9_-]+$/,
-              'Field name cannot contain spaces. Use only letters, numbers, underscores (_), and hyphens (-)',
-            ),
+          fieldName: outputFieldNameSchema,
           fieldType: z.enum(['text', 'number', 'category']),
           fieldCategories: z.string().optional(),
         })
+        .transform((field) => ({
+          ...toSanitizedOutputFieldNamePair(field.fieldName),
+          fieldType: field.fieldType,
+          fieldCategories: field.fieldCategories,
+        }))
         .refine(
           (data: {
             fieldName?: string

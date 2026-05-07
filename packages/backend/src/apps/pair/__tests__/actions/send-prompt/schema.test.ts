@@ -81,13 +81,13 @@ describe('call-pair schema', () => {
     describe('fieldName validation', () => {
       it.each([
         'field1',
-        'field_name',
-        'field-name',
         'Field123',
-        'field_123-test',
-        'ABC123_test-name',
+        'field name',
+        'field 123',
+        'ABC 123 Test',
+        'field with   multiple spaces',
       ])(
-        'should accept valid field names with letters, numbers, underscores, and hyphens: %s',
+        'should accept valid field names with letters, numbers, and spaces: %s',
         (fieldName) => {
           const result = schema.safeParse({
             promptType: 'analyse',
@@ -100,12 +100,15 @@ describe('call-pair schema', () => {
             ],
           })
           assert(result.success === true)
-          assert(result.data.responseFields[0].fieldName === fieldName)
+          const parsedField = result.data.responseFields[0]
+          assert(parsedField.fieldName === fieldName.replace(/\s/g, '_'))
+          assert(parsedField.originalFieldName === fieldName)
         },
       )
 
       it.each([
-        'field name',
+        'field_name',
+        'field-name',
         'field@name',
         'field.name',
         'field#name',
@@ -173,11 +176,11 @@ describe('call-pair schema', () => {
           prompt: 'test prompt',
           responseFields: [
             {
-              fieldName: 'Field1',
+              fieldName: 'Field 1',
               fieldType: 'text',
             },
             {
-              fieldName: 'field1',
+              fieldName: 'field 1',
               fieldType: 'text',
             },
             {
@@ -453,7 +456,7 @@ describe('call-pair schema', () => {
             fieldType: 'text',
           },
           {
-            fieldName: 'confidence_score',
+            fieldName: 'confidence score',
             fieldType: 'number',
           },
         ],
