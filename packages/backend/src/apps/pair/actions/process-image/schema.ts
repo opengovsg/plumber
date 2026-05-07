@@ -1,5 +1,10 @@
 import z from 'zod/v3'
 
+import {
+  outputFieldNameSchema,
+  toSanitizedOutputFieldNamePair,
+} from '../../common/schema'
+
 export const schema = z.object({
   // NOTE: this is an array because the attachment field returns an array
   image: z
@@ -12,16 +17,7 @@ export const schema = z.object({
     .array(
       z
         .object({
-          fieldName: z
-            .string()
-            .min(1, { message: 'Output name is required' })
-            .max(64, {
-              message: 'Output name cannot be more than 64 characters',
-            })
-            .regex(/^[a-zA-Z0-9 ]+$/, {
-              message:
-                'Output name can only contain letters, numbers, and spaces',
-            }),
+          fieldName: outputFieldNameSchema,
 
           description: z
             .string()
@@ -31,7 +27,7 @@ export const schema = z.object({
             }),
         })
         .transform((field) => ({
-          fieldName: field.fieldName.replace(/ /g, '_'),
+          ...toSanitizedOutputFieldNamePair(field.fieldName),
           description: field.description,
         })),
     )
