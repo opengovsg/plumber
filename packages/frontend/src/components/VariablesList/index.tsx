@@ -176,10 +176,17 @@ export function VariableItem({
       <Flex justifyContent="space-between" gap={4}>
         <Flex flexDir="column" minW={0}>
           <Flex alignItems="center" gap={2}>
-            <Text textStyle="body-1" color="base.content.strong" isTruncated>
-              {variable.label ?? variable.name}
+            <Text
+              textStyle="body-1"
+              color="base.content.strong"
+              display="flex"
+              alignItems="center"
+              gap={2}
+              isTruncated
+            >
+              {variable.label ?? variable.name}{' '}
+              <VariableTag type={variable.type} />
             </Text>
-            <VariableTag type={variable.type} />
           </Flex>
           <Flex flexDirection="column" gap={1}>
             <Flex alignItems="center" gap={2}>
@@ -194,6 +201,7 @@ export function VariableItem({
                 {displayValue.length ? (
                   displayValue
                 ) : (
+                  // padding right to ensure the 'y' is not cut off
                   <i style={{ opacity: 0.5, paddingRight: 2 }}>empty</i>
                 )}
               </Text>
