@@ -683,6 +683,12 @@ export interface IApp {
     stepParameters: IJSONObject,
     stepVersion: number,
   ) => IJSONObject
+
+  /**
+   * Returns the latest version number for the given step key.
+   * New steps should be created at this version so no transformation is needed.
+   */
+  getLatestStepVersion?: (stepKey: string) => number
 }
 
 export type AppCategory = 'data' | 'communication' | 'logic' | 'others' | 'ai'

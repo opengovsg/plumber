@@ -1,6 +1,6 @@
 import type { IJSONObject } from '@plumber/types'
 
-import { createStepParameterTransformer } from '@/helpers/transform-step-parameters'
+import { createVersionedStepTransformer } from '@/helpers/transform-step-parameters'
 
 const ACTION_TRANSFORMERS: Record<
   string,
@@ -54,5 +54,5 @@ export function transformLookupConditionsToFilters(
   return parameters
 }
 
-export const transformStepParameters =
-  createStepParameterTransformer(ACTION_TRANSFORMERS)
+export const { transformStepParameters, getLatestStepVersion } =
+  createVersionedStepTransformer(ACTION_TRANSFORMERS)

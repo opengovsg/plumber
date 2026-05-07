@@ -28,19 +28,20 @@ import type { IJSONObject } from '@plumber/types'
  *   getTableRow: [migrateV1toV2, migrateV2toV3],
  * }
  *
- * export const transformStepParameters =
- *   createStepParameterTransformer(ACTION_TRANSFORMERS)
+ * export const { transformStepParameters, getLatestStepVersion } =
+ *   createVersionedStepTransformer(ACTION_TRANSFORMERS)
  * ```
  *
- * The returned function has the signature:
- *   `transformStepParameters(stepKey, stepParameters, version) => IJSONObject`
+ * The returned object has two functions:
+ *   - `transformStepParameters(stepKey, stepParameters, version) => IJSONObject`
+ *   - `getLatestStepVersion(stepKey) => number` — use this when creating new steps
  *
  * @param transformers - Map of action key → ordered array of migration functions
  */
-function createStepParameterTransformer(
+function createVersionedStepTransformer(
   transformers: Record<string, ((parameters: IJSONObject) => IJSONObject)[]>,
 ) {
-  return function transformStepParameters(
+  function transformStepParameters(
     stepKey: string,
     stepParameters: IJSONObject,
     stepVersion: number,
@@ -63,6 +64,14 @@ function createStepParameterTransformer(
         stepParameters,
       )
   }
+
+  // Version N+1 is the latest, where N is the number of transformers.
+  // New steps should be created at this version so no transformation is needed.
+  function getLatestStepVersion(stepKey: string): number {
+    return (transformers[stepKey]?.length ?? 0) + 1
+  }
+
+  return { transformStepParameters, getLatestStepVersion }
 }
 
-export { createStepParameterTransformer }
+export { createVersionedStepTransformer }

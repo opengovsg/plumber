@@ -2,7 +2,10 @@ import { IJSONObject } from '@plumber/types'
 
 import { describe, expect, it } from 'vitest'
 
-import { transformStepParameters } from '../../common/transform-step-parameters'
+import {
+  getLatestStepVersion,
+  transformStepParameters,
+} from '../../common/transform-step-parameters'
 
 // There is 1 transformer (v1→v2), so latest version is 2.
 describe('transformStepParameters', () => {
@@ -364,6 +367,18 @@ describe('transformStepParameters', () => {
           },
         ],
       })
+    })
+  })
+
+  describe('getLatestStepVersion', () => {
+    it('returns 2 for actions with one transformer', () => {
+      expect(getLatestStepVersion('getTableRow')).toBe(2)
+      expect(getLatestStepVersion('getTableRows')).toBe(2)
+      expect(getLatestStepVersion('updateTableRow')).toBe(2)
+    })
+
+    it('returns 1 for actions with no transformers', () => {
+      expect(getLatestStepVersion('createTableRow')).toBe(1)
     })
   })
 
