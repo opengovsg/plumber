@@ -131,7 +131,7 @@ const Editor = ({
   const isMulticol = parentType === 'multicol'
   const hasCustomMenuOptions =
     !customRteMenuOptions || customRteMenuOptions.length > 0
-  const shouldShowMenuBar = isRich && hasCustomMenuOptions
+  const shouldShowMenuBar = isRich && hasCustomMenuOptions && !isDisplayOnly
 
   // ref to track the defaultValue
   // this is to sync the content of the editor with the defaultValue
