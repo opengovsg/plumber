@@ -101,7 +101,7 @@ export const DEFAULT_PROMPT_VALUES = {
 export const DEFAULT_RESPONSE_FIELDS_VALUES = {
   analyse: [
     {
-      fieldName: 'key_patterns_or_trends',
+      fieldName: 'key patterns or trends',
       fieldType: 'text',
     },
     {
@@ -113,11 +113,11 @@ export const DEFAULT_RESPONSE_FIELDS_VALUES = {
       fieldType: 'text',
     },
     {
-      fieldName: 'implications_or_recommendations',
+      fieldName: 'implications or recommendations',
       fieldType: 'text',
     },
     {
-      fieldName: 'supporting_evidence_for_your_conclusions',
+      fieldName: 'supporting evidence for your conclusions',
       fieldType: 'text',
     },
   ],
