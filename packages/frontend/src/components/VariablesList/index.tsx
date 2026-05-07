@@ -1,7 +1,6 @@
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { IconType } from 'react-icons/lib'
 import {
   Accordion,
   AccordionButton,
@@ -10,12 +9,12 @@ import {
   AccordionPanel,
   Box,
   Flex,
-  Icon,
   type SystemStyleObject,
   Tag,
   Text,
   Tooltip,
 } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
 import { type Variable } from '@/helpers/variables'
@@ -92,22 +91,22 @@ export function VariableItem({
   variable,
   onClick,
   isLast,
-  withIcon,
+  withViewButton,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
   isLast?: boolean
-  withIcon?: IconType
+  withViewButton?: boolean
 }): JSX.Element {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isOverflowing, setIsOverflowing] = useState(false)
   const textRef = useRef<HTMLParagraphElement>(null)
-  const shouldShowBottomBorder = !withIcon && (onClick || isLast)
+  const shouldShowBottomBorder = !withViewButton && (onClick || isLast)
 
   const displayValue =
     variable.displayedValue ?? variable.value?.toString() ?? ''
 
-  const isSuggestionVariable = onClick && !withIcon
+  const isSuggestionVariable = onClick && !withViewButton
 
   // Check if text is overflowing after render
   useEffect(() => {
@@ -170,50 +169,60 @@ export function VariableItem({
           : undefined
       }
     >
-      <Text
-        textStyle="body-1"
-        color="base.content.strong"
-        display="flex"
-        alignItems="center"
-        gap={2}
-      >
-        {variable.label ?? variable.name} <VariableTag type={variable.type} />
-      </Text>
-      <Flex flexDirection="column" gap={1}>
-        <Flex alignItems="center" gap={2}>
-          <Text
-            ref={textRef}
-            textStyle="body-2"
-            color="base.content.medium"
-            whiteSpace={isExpanded ? 'pre-wrap' : 'nowrap'}
-            overflow={isExpanded ? 'visible' : 'hidden'}
-            textOverflow={isExpanded ? 'clip' : 'ellipsis'}
-            textDecoration={withIcon ? 'underline' : undefined}
-          >
-            {displayValue.length ? (
-              displayValue
-            ) : (
-              <i style={{ opacity: 0.5 }}>empty</i>
+      <Flex justifyContent="space-between" gap={4}>
+        <Flex flexDir="column" minW={0}>
+          <Flex alignItems="center" gap={2}>
+            <Text
+              textStyle="body-1"
+              color="base.content.strong"
+              display="flex"
+              alignItems="center"
+              gap={2}
+            >
+              {variable.label ?? variable.name}{' '}
+              <VariableTag type={variable.type} />
+            </Text>
+          </Flex>
+          <Flex flexDirection="column" gap={1}>
+            <Flex alignItems="center" gap={2}>
+              <Text
+                ref={textRef}
+                textStyle="body-2"
+                color="base.content.medium"
+                whiteSpace={isExpanded ? 'pre-wrap' : 'nowrap'}
+                overflow={isExpanded ? 'visible' : 'hidden'}
+                textOverflow={isExpanded ? 'clip' : 'ellipsis'}
+              >
+                {displayValue.length ? (
+                  displayValue
+                ) : (
+                  <i style={{ opacity: 0.5 }}>empty</i>
+                )}
+              </Text>
+            </Flex>
+            {shouldShowToggle && (
+              <Text
+                textStyle="body-2"
+                color="primary.500"
+                cursor="pointer"
+                _hover={{ textDecoration: 'underline' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsExpanded(!isExpanded)
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation()
+                }}
+              >
+                {isExpanded ? 'Show less' : 'Show more'}
+              </Text>
             )}
-          </Text>
-          {withIcon && <Icon as={withIcon} />}
+          </Flex>
         </Flex>
-        {shouldShowToggle && (
-          <Text
-            textStyle="body-2"
-            color="primary.500"
-            cursor="pointer"
-            _hover={{ textDecoration: 'underline' }}
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsExpanded(!isExpanded)
-            }}
-            onMouseDown={(e) => {
-              e.stopPropagation()
-            }}
-          >
-            {isExpanded ? 'Show less' : 'Show more'}
-          </Text>
+        {onClick && withViewButton && (
+          <Button variant="clear" onClick={() => onClick(variable)}>
+            View
+          </Button>
         )}
       </Flex>
     </Box>

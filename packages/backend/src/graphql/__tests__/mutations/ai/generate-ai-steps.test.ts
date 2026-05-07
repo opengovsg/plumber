@@ -7,8 +7,6 @@ const mocks = vi.hoisted(() => ({
   langfusePromptGet: vi.fn(),
   getAllLdFlags: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
-  getLdFlagValue: vi.fn(),
-  getLangfuseClient: vi.fn(),
 }))
 
 vi.mock('ai', () => ({
@@ -16,7 +14,11 @@ vi.mock('ai', () => ({
 }))
 
 vi.mock('@/helpers/langfuse', () => ({
-  getLangfuseClient: mocks.getLangfuseClient,
+  getLangfuseClient: () => ({
+    prompt: {
+      get: mocks.langfusePromptGet,
+    },
+  }),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
