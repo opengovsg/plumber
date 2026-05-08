@@ -10,7 +10,9 @@ import useAuthentication from '@/hooks/useAuthentication'
 export function ConfettiSurvey() {
   const { currentUser } = useAuthentication()
 
-  const { flowId } = useContext(EditorContext)
+  const { flow } = useContext(EditorContext)
+  const { id: flowId, role: userRole = 'Unknown role' } = flow
+  const userEmail = currentUser?.email ?? 'Unknown user email'
 
   return (
     <div
@@ -20,12 +22,13 @@ export function ConfettiSurvey() {
       <PopoverConfetti
         surveyId={appConfig.confettiSurveyId}
         publishableKey={appConfig.confettiSurveyPublishableKey}
-        respondent={flowId} // key to maintain the state
+        respondent={`${userEmail}-${flowId}`} // key to maintain the state
         isSurveyVisible={({ lastRespondedAt, lastDismissedAt }) => {
           return !lastRespondedAt && !lastDismissedAt
         }}
         metadata={{
-          UserEmail: currentUser?.email ?? 'Unknown user email',
+          userEmail,
+          userRole,
         }}
       />
     </div>
