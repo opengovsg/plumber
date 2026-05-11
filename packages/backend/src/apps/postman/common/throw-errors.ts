@@ -48,6 +48,64 @@ export function getPostmanErrorStatus(
   }
 }
 
+/**
+ * Maps SES SDK errors to our internal status codes.
+ *
+ * SES error reference: https://docs.aws.amazon.com/ses/latest/dg/troubleshoot-error-messages.html
+ *
+ * Key SES errors from @aws-sdk/client-sesv2:
+ *  - MessageRejected (400): email rejected — identity not verified, blacklisted, etc.
+ *  - SendingPausedException (400): account sending paused by AWS
+ *  - AccountSuspendedException (400): account suspended
+ *  - MailFromDomainNotVerifiedException (400): MAIL FROM domain not verified
+ *  - TooManyRequestsException (429): daily quota or max send rate exceeded
+ *  - BadRequestException (400): malformed request
+ *  - NotFoundException (404): configuration set does not exist
+ *  - InternalServiceErrorException (500): SES internal error
+ */
+export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
+  if (!(error instanceof Error)) {
+    return 'ERROR'
+  }
+
+  // SES SDK errors expose $metadata.httpStatusCode
+  const httpStatus = (error as { $metadata?: { httpStatusCode?: number } })
+    .$metadata?.httpStatusCode
+
+  // Rate limiting — 429 or known throttling error names
+  if (
+    httpStatus === 429 ||
+    error.name === 'TooManyRequestsException' ||
+    error.name === 'ThrottlingException'
+  ) {
+    return 'RATE-LIMITED'
+  }
+
+  // Server errors — 500+ are transient, worth retrying
+  if (httpStatus >= 500) {
+    return 'INTERMITTENT-ERROR'
+  }
+
+  // MessageRejected — check message for specific sub-cases
+  if (error.name === 'MessageRejected') {
+    const msg = error.message?.toLowerCase() ?? ''
+    if (msg.includes('blacklisted') || msg.includes('suppression list')) {
+      return 'BLACKLISTED'
+    }
+    return 'ERROR'
+  }
+
+  // Account-level issues — not retriable, surface as ERROR
+  if (
+    error.name === 'SendingPausedException' ||
+    error.name === 'AccountSuspendedException'
+  ) {
+    return 'ERROR'
+  }
+
+  return 'ERROR'
+}
+
 function getInvalidAttachmentSolution({
   invalidAttachments,
   showAttachmentsList = true,
@@ -56,14 +114,14 @@ function getInvalidAttachmentSolution({
   showAttachmentsList?: boolean
 }) {
   if (showAttachmentsList) {
-    return `The following attachment(s) are not supported by Postman and have been removed from the email:
+    return `The following attachment(s) are not supported and have been removed from the email:
     \n${invalidAttachments
       .map((attachment) => `**${attachment}**`)
       .join('\n\n')}
     \nIf you require the attachment(s), log in to your form to download them for this submission.
     `
   }
-  return `There were attachment(s) that could not be sent by Postman and have been removed from the email.
+  return `There were attachment(s) that could not be sent and have been removed from the email.
     \nIf you require the attachment(s), log in to your form to download them for this submission.
   `
 }
@@ -103,15 +161,15 @@ export function throwPostmanStepError({
 
       // log individual blacklisted recipients
       blacklistedRecipients.forEach((recipient) => {
-        logger.info('Blacklisted recipient for postman email step', {
-          event: 'postman-step-blacklisted-recipient',
+        logger.info('Blacklisted recipient for email step', {
+          event: 'email-step-blacklisted-recipient',
           blacklistedEmail: recipient,
           stepId: $.step.id,
           executionId: $.execution.id,
         })
       })
 
-      let solution = `The following email addresses have been blacklisted by Postman:
+      let solution = `The following email addresses have been blacklisted:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
            .join('\n\n')}
@@ -142,7 +200,7 @@ export function throwPostmanStepError({
     case 'RATE-LIMITED':
       // this will be auto-retried later on
       throw new RetriableError({
-        error: error.details,
+        error: error.details ?? error.message,
         delayInMs: 'default',
         delayType: 'queue',
       })
@@ -160,15 +218,17 @@ export function throwPostmanStepError({
       )
     case 'INTERMITTENT-ERROR':
       throw new RetriableError({
-        error: error.details,
+        error: error.details ?? error.message,
         delayInMs: 'default',
         delayType: 'step',
       })
     case 'ERROR':
     default:
+      // socket hang up is a Cloudflare/Postman-specific issue; only retry
+      // if the error came from the Postman path (not SES).
       if (error?.message === 'socket hang up') {
         throw new RetriableError({
-          error: `Retrying ${error.message} from Postman`,
+          error: `Retrying ${error.message}`,
           delayInMs: 'default',
           delayType: 'step',
         })

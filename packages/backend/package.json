@@ -34,6 +34,8 @@
     "@as-integrations/express4": "1.1.2",
     "@aws-sdk/client-dynamodb": "3.1027.0",
     "@aws-sdk/client-s3": "3.1027.0",
+    "@aws-sdk/client-sesv2": "^3.1045.0",
+    "@aws-sdk/credential-providers": "^3.1045.0",
     "@aws-sdk/s3-presigned-post": "3.1027.0",
     "@bull-board/express": "5.17.0",
     "@databricks/sql": "1.13.0",
