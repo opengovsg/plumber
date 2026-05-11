@@ -37,6 +37,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       onClose={onClose}
       motionPreset="none"
       closeOnEsc={false}
+      isCentered
     >
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent>
