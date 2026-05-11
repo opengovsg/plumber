@@ -53,15 +53,13 @@ export default function FlowNameAndModeContent({
         </Flex>
       </ModalBody>
       <ModalFooter>
-        {createMode && (
-          <Button
-            type="submit"
-            isDisabled={isButtonDisabled}
-            isLoading={loading}
-          >
-            Next <Icon boxSize={6} as={BiRightArrowAlt} />
-          </Button>
-        )}
+        <Button
+          type="submit"
+          isDisabled={!createMode || isButtonDisabled}
+          isLoading={loading}
+        >
+          Next <Icon boxSize={6} as={BiRightArrowAlt} />
+        </Button>
       </ModalFooter>
     </Form>
   )

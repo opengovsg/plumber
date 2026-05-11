@@ -39,19 +39,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       closeOnEsc={false}
     >
       <ModalOverlay bg="base.canvas.overlay" />
-      <ModalContent
-        sx={{
-          // The theme applies `margin: auto` which re-centers the modal
-          // vertically on every height change (e.g. when the flow name input
-          // appears), causing the top to jump. Overriding with a fixed top
-          // margin pins the top edge so the modal only grows downward.
-          // CSS media query is used instead of useIsMobile to avoid a
-          // JS-driven re-render that would cause the same shift on open.
-          '@media (min-width: 48em)': {
-            margin: 'clamp(2rem, 15vh, 8rem) auto 0 !important',
-          },
-        }}
-      >
+      <ModalContent>
         <FlowNameAndModeContent
           isButtonDisabled={isButtonDisabled}
           loading={loading}
