@@ -15,10 +15,7 @@ export function ConfettiSurvey() {
   const userEmail = currentUser?.email ?? 'Unknown user email'
 
   return (
-    <div
-      className="confetti-survey"
-      style={{ position: 'fixed', bottom: '1rem', right: '1rem' }}
-    >
+    <div className="confetti-survey">
       <PopoverConfetti
         surveyId={appConfig.confettiSurveyId}
         publishableKey={appConfig.confettiSurveyPublishableKey}
