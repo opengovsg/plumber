@@ -78,6 +78,15 @@ const myInfoChildSubfieldMap: Record<ChildSubfield, ChildSubfieldDetails> = {
   },
 }
 
+const myInfoSampleResponses: Record<string, string> = {
+  regadd: '411 CHUA CHU KANG AVE 3, #12-3, SINGAPORE 238823',
+  name: 'PHUA CHU KANG',
+  passportnumber: 'E1234567X',
+  vehno: 'SHA1234X',
+  employment: 'PCK PTE LTD',
+  marriagecertno: '123456789012345',
+}
+
 // Adapted from https://github.com/opengovsg/FormSG/blob/82c5ba6fff7e9628b6c32449148e89c0224e9ff5/shared/types/form/form.ts#L96
 type PaymentProduct = {
   _id: string
@@ -229,6 +238,13 @@ function patchMockData(
       if (mockData.responses[formFields[i]._id].fieldType === 'address') {
         mockData.responses[formFields[i]._id].answerArray =
           generateMockAddressData()
+      }
+
+      // myInfo fields that do not have a proper sample response
+      const myInfoAttr = formFields[i].myInfo?.attr
+      if (myInfoAttr && myInfoAttr in myInfoSampleResponses) {
+        mockData.responses[formFields[i]._id].answer =
+          myInfoSampleResponses[myInfoAttr]
       }
 
       if (mockData.responses[formFields[i]._id].fieldType === 'children') {
