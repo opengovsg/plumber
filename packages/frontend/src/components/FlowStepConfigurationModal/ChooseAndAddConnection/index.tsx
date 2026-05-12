@@ -36,6 +36,7 @@ export const optionGenerator = (
   appKey: string,
 ): ConnectionDropdownOption => {
   const screenName = connection?.formattedData?.screenName as string
+  const description = connection?.description as string
   if (appKey === 'formsg') {
     // old form connections will have env as undefined and be treated as prod
     const env = (connection?.formattedData?.env as string) ?? 'prod'
@@ -52,7 +53,7 @@ export const optionGenerator = (
     return {
       label: `${env === 'prod' ? '' : `[${env.toUpperCase()}] `}${formTitle}`,
       value: connection?.id as string,
-      description: formId,
+      description: description ? `${formId} - ${description}` : formId,
       env,
     }
   }

@@ -1,9 +1,11 @@
 import type { IApp, IGlobalVariable } from '@plumber/types'
 
 import apps from '@/apps'
+import { ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import type Connection from '@/models/connection'
 import type User from '@/models/user'
+import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -26,8 +28,10 @@ async function makeGlobalVariableForPerFlowRegistration(
   flowId: string,
 ): Promise<IGlobalVariable> {
   const flow = await currentUser
-    .$relatedQuery('flows')
-    .findById(flowId)
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findOne({
+      id: flowId,
+    })
     .throwIfNotFound()
 
   return await globalVariable({
@@ -45,10 +49,29 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
 ) => {
   const { connectionId, flowId } = params.input
 
-  const connection = await context.currentUser
-    .$relatedQuery('connections')
-    .findById(connectionId)
+  const flow = await context.currentUser
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findOne({
+      id: flowId,
+    })
     .throwIfNotFound()
+
+  const connection = await getConnection({
+    context,
+    connectionId,
+    flowId,
+    includeOwnConnections: flow.role === 'owner',
+  })
+
+  // GUARD: Prevent updating personal connections owned by others
+  if (
+    connection.userId !== null &&
+    connection.userId !== context.currentUser.id
+  ) {
+    throw new ForbiddenError(
+      'You cannot register a personal connection that you do not own',
+    )
+  }
 
   const app = apps[connection.key]
   if (!app) {
