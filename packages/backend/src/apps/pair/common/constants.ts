@@ -34,9 +34,8 @@ export const PROMPT_PRESETS = [
  */
 export const DEFAULT_PROMPT_VALUES = {
   analyse: [
-    '<span style="margin: 0;font-weight: bold;">',
-    'Analyse the following content and provide insights on:',
-    '</span>',
+    '<p style="margin: 0;font-weight: bold;">Analyse the following content and provide insights on:</p>',
+    '<p></p>',
     '<span ',
     'data-type="variable" ',
     'data-id="step.00000000-0000-0000-0000-000000000000.Replace this with the content to analyse" ',
@@ -44,6 +43,7 @@ export const DEFAULT_PROMPT_VALUES = {
     'data-value>',
     '{{step.00000000-0000-0000-0000-000000000000.Replace this with the content to analyse}}',
     '</span>',
+    '<p></p>',
     '<p style="margin: 0;font-weight: bold;">Focus on:</p>',
     '<p>- Key patterns or trends</p>',
     '<p>- Strengths and weaknesses</p>',

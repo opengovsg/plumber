@@ -295,7 +295,7 @@ type ActionSubstepArgument {
   # Only for rich text
   customRteMenuOptions: [RteMenuOption]
   supportTableDisplay: Boolean
-  presets: JSONObject
+  presets: [ActionSubStepPreset]
 
   # Only for attachments
   maxFiles: Int
@@ -315,6 +315,18 @@ type ActionSubstepArgumentSource {
 type ActionSubstepArgumentSourceArgument {
   name: String
   value: String
+}
+
+type ActionSubStepPresetAssignment {
+  fieldKey: String!
+  value: JSONObject
+}
+
+type ActionSubStepPreset {
+  key: String!
+  label: String!
+  description: String!
+  assignments: [ActionSubStepPresetAssignment!]!
 }
 
 type App {

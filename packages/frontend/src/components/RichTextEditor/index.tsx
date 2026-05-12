@@ -107,7 +107,6 @@ interface EditorProps {
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
   containerClassName?: string
-  formControlClassName?: string
   triggerContainerClassName?: string
 }
 const Editor = ({
@@ -329,7 +328,7 @@ const Editor = ({
         placement={getPopoverPlacement(editor)}
       >
         <div
-          className={`editor ${containerClassName ?? ''}`.trim()}
+          className={clsx('editor', containerClassName)}
           onClick={(e) => {
             e.stopPropagation()
             openSuggestions()
