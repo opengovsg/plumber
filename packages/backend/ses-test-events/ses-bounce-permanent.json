@@ -1,0 +1,12 @@
+{
+  "Type": "Notification",
+  "MessageId": "fixture-msg-001",
+  "TopicArn": "arn:aws:sns:ap-southeast-2:123456789012:ses-events",
+  "Subject": null,
+  "Message": "{\"eventType\":\"Bounce\",\"bounce\":{\"bounceType\":\"Permanent\",\"bounceSubType\":\"NoEmail\",\"bouncedRecipients\":[{\"emailAddress\":\"bounce@example.com\",\"action\":\"failed\",\"status\":\"5.1.1\",\"diagnosticCode\":\"smtp; 550 5.1.1 user unknown\"}],\"timestamp\":\"2026-05-11T10:00:00.000Z\",\"feedbackId\":\"feedback-001\"},\"mail\":{\"timestamp\":\"2026-05-11T09:59:00.000Z\",\"source\":\"noreply@plumber.gov.sg\",\"sourceArn\":\"arn:aws:ses:ap-southeast-2:123456789012:identity/plumber.gov.sg\",\"sendingAccountId\":\"123456789012\",\"messageId\":\"ses-msg-001\",\"destination\":[\"bounce@example.com\"]}}",
+  "Timestamp": "2026-05-11T10:00:01.000Z",
+  "SignatureVersion": "1",
+  "Signature": "EXAMPLE",
+  "SigningCertURL": "https://sns.ap-southeast-2.amazonaws.com/SimpleNotificationService-example.pem",
+  "UnsubscribeURL": "https://sns.ap-southeast-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:ap-southeast-2:123456789012:ses-events:example"
+}
