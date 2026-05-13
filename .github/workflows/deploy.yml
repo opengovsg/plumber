@@ -42,9 +42,9 @@ on:
       NPM_TASKFORCESH_TOKEN:
         required: true
       SLACK_BOT_TOKEN:
-        required: false
+        required: true
       SLACK_CHANNEL_ID:
-        required: false
+        required: true
 
 permissions:
   id-token: write
