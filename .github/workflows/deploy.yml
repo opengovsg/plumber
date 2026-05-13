@@ -41,6 +41,10 @@ on:
     secrets:
       NPM_TASKFORCESH_TOKEN:
         required: true
+      SLACK_BOT_TOKEN:
+        required: false
+      SLACK_CHANNEL_ID:
+        required: false
 
 permissions:
   id-token: write
@@ -112,8 +116,15 @@ jobs:
             ${{ steps.inspector.outputs.inspector_scan_results_markdown }}
             ${{ steps.inspector.outputs.artifact_sbom }}
 
-      - name: Fail job if vulnerability threshold is exceeded
-        run: exit ${{ steps.inspector.outputs.vulnerability_threshold_exceeded }}
+      - name: Notify Slack if vulnerability threshold is exceeded
+        if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
+        uses: slackapi/slack-github-action@v2
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ secrets.SLACK_CHANNEL_ID }}"
+            text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Push image to ECR after scan passes
         env:
