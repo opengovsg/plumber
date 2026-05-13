@@ -44,7 +44,7 @@
     "@launchdarkly/node-server-sdk": "9.0.4",
     "@opengovsg/formsg-sdk": "0.16.1",
     "@opengovsg/sgid-client": "2.3.0",
-    "@opentelemetry/sdk-node": "0.207.0",
+    "@opentelemetry/sdk-node": "0.217.0",
     "@plumber/types": "file:../types",
     "@taskforcesh/bullmq-pro": "7.8.1",
     "ai": "5.0.81",
