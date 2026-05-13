@@ -17,6 +17,7 @@ export function ConfettiSurvey() {
   return (
     <div className="confetti-survey">
       <PopoverConfetti
+        apiBaseUrl="https://confetti.plumber.gov.sg/api"
         surveyId={appConfig.confettiSurveyId}
         publishableKey={appConfig.confettiSurveyPublishableKey}
         respondent={`${userEmail}-${flowId}`} // key to maintain the state
