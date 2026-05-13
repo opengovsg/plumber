@@ -68,13 +68,6 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
     updatedBy: context.currentUser.id,
     config: {
       ...flow.config,
-      // When publishing: set to true if undefined else false
-      // When unpublishing: keep existing value
-      showSurvey: params.input.active
-        ? flow.config?.showSurvey === undefined
-          ? true
-          : false
-        : flow.config?.showSurvey,
     },
   })
 

@@ -13,6 +13,7 @@ type Query {
     appKey: String
     connectionId: String
     name: String
+    active: Boolean
   ): PaginatedFlows
   getTestExecutionSteps(
     flowId: String!
@@ -495,7 +496,6 @@ type FlowConfig {
   errorConfig: FlowErrorConfig
   duplicateCount: Int
   templateConfig: FlowTemplateConfig
-  showSurvey: Boolean
   attachments: [FlowAttachmentConfig]
 }
 
@@ -633,7 +633,6 @@ input UpdateFlowConfigInput {
   id: String!
   notificationFrequency: NotificationFrequency
   notificationRecipients: [NotificationRecipients]
-  showSurvey: Boolean
   hasLoadedOnce: Boolean
   attachments: [FlowAttachmentsConfigInput]
 }

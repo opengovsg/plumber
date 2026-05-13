@@ -21,6 +21,9 @@ const getFlows: QueryResolvers['getFlows'] = async (
         if (params.name) {
           builder.where('name', 'ilike', `%${params.name}%`)
         }
+        if (params.active !== undefined && params.active !== null) {
+          builder.where('active', params.active)
+        }
       })
   ).map((f) => f.id)
 

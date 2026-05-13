@@ -11,7 +11,6 @@ type Params = {
     id: string
     notificationFrequency: IFlowErrorConfig['notificationFrequency']
     notificationRecipients: IFlowErrorConfig['notificationRecipients']
-    showSurvey: boolean
     attachments?: IFlowAttachmentsConfig[]
   }
 }
@@ -44,10 +43,6 @@ const updateFlowConfig = async (
       ...newConfig.errorConfig, // If ever undefined (should never be), it gets set to an empty object first
       notificationRecipients: params.input.notificationRecipients,
     }
-  }
-
-  if (params.input.showSurvey !== undefined) {
-    newConfig.showSurvey = params.input.showSurvey
   }
 
   // Adds uploaded attachments to flow config

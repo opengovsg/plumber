@@ -219,7 +219,6 @@ export interface IFlowConfig {
   errorConfig?: IFlowErrorConfig
   duplicateCount?: number
   templateConfig?: IFlowTemplateConfig
-  showSurvey?: boolean
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
   aiBuilderConfig?: {

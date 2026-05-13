@@ -25,9 +25,9 @@ import AnnouncementModal, {
   LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
   LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
 } from './AnnouncementModal'
+import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
-import { LensSurvey } from './LensSurvey'
 
 export default function EditorLayout() {
   const cancelRef = useRef(null)
@@ -257,9 +257,7 @@ export default function EditorLayout() {
           overflowY="auto"
         >
           <Editor />
-          {flow?.active &&
-            flow?.config?.showSurvey &&
-            flow?.role !== 'viewer' && <LensSurvey />}
+          {flow?.active && flow?.role !== 'viewer' && <ConfettiSurvey />}
         </Container>
       </Flex>
 
