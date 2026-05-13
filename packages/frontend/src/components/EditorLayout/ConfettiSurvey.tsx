@@ -18,9 +18,10 @@ export function ConfettiSurvey() {
 
   const steps = flow?.steps ?? []
   const stepsCount = String(steps.length)
-  const stepsList = [...new Set(steps.map((s) => `${s.appKey}-${s.key}`))].join(
-    ', ',
-  )
+  // Confetti only accepts up to 1000 characters long for the metadata value
+  const stepsList = [...new Set(steps.map((s) => `${s.appKey}-${s.key}`))]
+    .join(', ')
+    .substring(0, 1000)
 
   const { data: flowsData } = useQuery(GET_FLOWS, {
     variables: { limit: 1, offset: 0, active: true },
