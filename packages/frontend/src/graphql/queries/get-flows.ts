@@ -7,6 +7,7 @@ export const GET_FLOWS = gql`
     $appKey: String
     $connectionId: String
     $name: String
+    $active: Boolean
   ) {
     getFlows(
       limit: $limit
@@ -14,6 +15,7 @@ export const GET_FLOWS = gql`
       appKey: $appKey
       connectionId: $connectionId
       name: $name
+      active: $active
     ) {
       pageInfo {
         currentPage

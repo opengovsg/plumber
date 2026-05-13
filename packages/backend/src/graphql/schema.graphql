@@ -13,6 +13,7 @@ type Query {
     appKey: String
     connectionId: String
     name: String
+    active: Boolean
   ): PaginatedFlows
   getTestExecutionSteps(
     flowId: String!
