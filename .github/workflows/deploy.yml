@@ -124,6 +124,7 @@ jobs:
           token: ${{ secrets.SLACK_BOT_TOKEN }}
           payload: |
             channel: "${{ secrets.SLACK_CHANNEL_ID }}"
+            username: "Plumber Deployment Scanner"
             text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Push image to ECR after scan passes
