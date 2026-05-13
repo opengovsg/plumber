@@ -49,7 +49,6 @@ export const FLOW_FIELDS = gql`
         formId
         tileId
       }
-      showSurvey
       attachments {
         name
         displayedValue

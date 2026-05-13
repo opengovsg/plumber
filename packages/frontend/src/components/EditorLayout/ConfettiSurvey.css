@@ -1,0 +1,29 @@
+.confetti-survey {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  --confetti-max-width: 360px;
+  --confetti-box-padding: 28px;
+  --confetti-submit-button-color: #cf1a68;
+  --confetti-rating-active-bg-color: #cf1a68;
+  --confetti-indicator-active-bg-color: #cf1a68;
+}
+
+.confetti-survey .confetti {
+  gap: 20px;
+}
+
+.confetti-survey .cf-rating-section {
+  gap: 8px;
+}
+
+.confetti-survey .cf-title {
+  font-size: 1.05em;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .confetti-survey {
+    bottom: 6rem !important;
+  }
+}

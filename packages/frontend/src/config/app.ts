@@ -4,9 +4,10 @@ interface AppConfig {
   isDev: boolean
   env: string
   version: string
-  lensSurveyClientKey: string
   ssoClientId: string
   ssoHostname: string
+  confettiSurveyPublishableKey: string
+  confettiSurveyId: string
 }
 
 function getAppConfig(): AppConfig {
@@ -14,9 +15,12 @@ function getAppConfig(): AppConfig {
   // use it as it is not available in development mode
   const env = import.meta.env.MODE
   const version = import.meta.env.PACKAGE_VERSION
+  const confettiSurveyPublishableKey =
+    'cfti_pk_dfde134552a318551e05559024f432ba'
   const commonEnv = {
     env,
     version,
+    confettiSurveyPublishableKey,
   }
 
   switch (env) {
@@ -25,20 +29,19 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ae',
         sgidClientId: 'PLUMBER-c24255a5',
         isDev: false,
-        lensSurveyClientKey: 'cm85ca2f300053ooz4vydrmyw',
         ssoClientId: 'plumber-prod',
         ssoHostname: 'https://sso.open.gov.sg',
+        confettiSurveyId: 'n1yv6rl15ynq6wazr3x1pdjc',
         ...commonEnv,
       }
-    // UAT and staging differ for the lens survey client key only
     case 'uat':
       return {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-        lensSurveyClientKey: 'cm8fp8i030008zm2tbuc07xe5',
         ssoClientId: 'plumber-uat',
         ssoHostname: 'https://sso.open.gov.sg',
+        confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
         ...commonEnv,
       }
     case 'staging':
@@ -46,9 +49,9 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-        lensSurveyClientKey: 'cm86psst900052orfqetz3gz5',
         ssoClientId: 'plumber-staging',
         ssoHostname: 'https://sso.open.gov.sg',
+        confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
         ...commonEnv,
       }
     default:
@@ -56,9 +59,9 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ad',
         sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         isDev: true,
-        lensSurveyClientKey: 'cm8fpeah2000gzm2t572lhfti',
         ssoClientId: 'plumber-local',
         ssoHostname: 'http://localhost:5354',
+        confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
         ...commonEnv,
       }
   }
