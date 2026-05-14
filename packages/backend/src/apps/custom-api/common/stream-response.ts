@@ -8,9 +8,7 @@ import { createSizeMonitor } from './size-monitor'
 export const streamResponse = async (response: AxiosResponse) => {
   if (response.data && typeof response.data.pipe === 'function') {
     const contentLength = response.headers['content-length']
-    const compressedSize = contentLength
-      ? parseInt(contentLength, 10)
-      : undefined
+    const compressedSize = contentLength ? Number(contentLength) : undefined
 
     // Create a size monitor stream
     const sizeMonitor = createSizeMonitor(compressedSize)
