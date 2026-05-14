@@ -1,6 +1,10 @@
+import { WorkerPro } from '@taskforcesh/bullmq-pro'
+
+import { createRedisClient } from '@/config/redis'
 import logger from '@/helpers/logger'
 import { SesEvent, SesEventType } from '@/helpers/ses-event-parser'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
+import { startSqsPoller } from '@/queues/ses-events'
 
 export interface SesEventInput {
   sesEvent: SesEvent
@@ -97,3 +101,52 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
     return
   }
 }
+
+export const worker = new WorkerPro(
+  'ses-events',
+  async (job) => {
+    await processSesEvent(job.data)
+  },
+  {
+    prefix: '{sesEventsQ}',
+    connection: createRedisClient(),
+    concurrency: 5,
+  },
+)
+
+worker.on('completed', (job) => {
+  logger.info(`SES event job completed: ${job.id}`)
+})
+
+worker.on('failed', (job, err) => {
+  logger.error(`SES event job failed: ${job.id} — ${err.message}`, {
+    event: 'ses-event-job-failed',
+    jobId: job.id,
+    error: err.stack,
+  })
+})
+
+worker.on('ready', () => {
+  logger.info('SES events worker is ready!')
+})
+
+worker.on('closed', () => {
+  logger.info('SES events worker is closed!')
+})
+
+worker.on('error', (err) => {
+  if (!err) {
+    logger.error('SES events worker undefined error')
+    return
+  }
+  logger.error(`SES events worker errored with ${err.message}`, {
+    err: err.stack,
+  })
+})
+
+process.on('SIGTERM', async () => {
+  await worker.close()
+})
+
+// Start the SQS poller after worker is registered
+startSqsPoller()

@@ -5,6 +5,7 @@ import '@/helpers/check-worker-readiness'
 import '@/workers/flow'
 import '@/workers/trigger'
 import '@/workers/action'
+import '@/workers/ses-events'
 
 import logger from '@/helpers/logger'
 
