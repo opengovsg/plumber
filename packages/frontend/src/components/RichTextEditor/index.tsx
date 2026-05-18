@@ -32,6 +32,7 @@ import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import clsx from 'clsx'
 import escapeHtml from 'escape-html'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -110,6 +111,8 @@ interface EditorProps {
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
   previewType?: TFieldPreviewType
+  containerClassName?: string
+  triggerContainerClassName?: string
 }
 const Editor = ({
   onChange,
@@ -129,6 +132,8 @@ const Editor = ({
   isDisplayOnly = false,
   supportTableDisplay,
   previewType,
+  containerClassName,
+  triggerContainerClassName,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -329,7 +334,7 @@ const Editor = ({
         placement={getPopoverPlacement(editor)}
       >
         <div
-          className="editor"
+          className={clsx('editor', containerClassName)}
           onClick={(e) => {
             e.stopPropagation()
             openSuggestions()
@@ -350,7 +355,12 @@ const Editor = ({
           {...(isDisplayOnly && { style: { border: 'none' } })}
         >
           <PopoverTrigger>
-            <Box className={isMulticol ? 'single-line-editor' : undefined}>
+            <Box
+              className={clsx(
+                isMulticol && 'single-line-editor',
+                triggerContainerClassName,
+              )}
+            >
               {shouldShowMenuBar && (
                 <MenuBar
                   editor={editor}
@@ -423,6 +433,8 @@ interface RichTextEditorProps {
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
   previewType?: TFieldPreviewType
+  containerClassName?: string
+  triggerContainerClassName?: string
 }
 const RichTextEditor = ({
   required,
@@ -444,6 +456,8 @@ const RichTextEditor = ({
   isDisplayOnly = false,
   supportTableDisplay,
   previewType,
+  containerClassName,
+  triggerContainerClassName,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -497,6 +511,8 @@ const RichTextEditor = ({
             isDisplayOnly={isDisplayOnly}
             supportTableDisplay={supportTableDisplay}
             previewType={previewType}
+            containerClassName={containerClassName}
+            triggerContainerClassName={triggerContainerClassName}
           />
         )}
       />

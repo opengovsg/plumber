@@ -6,7 +6,6 @@ import {
 } from '../../common/schema'
 
 export const schema = z.object({
-  promptType: z.enum(['analyse', 'categorise', 'summarise', 'write', 'custom']),
   prompt: z.string().min(1),
   responseFields: z
     .array(
