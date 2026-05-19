@@ -88,8 +88,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         const rowsToRender =
           !rows.length && required ? [{ ...newRowDefaultValue }] : rows
         const canRemoveRow = !required || rowsToRender.length > 1
-        const canAddRow =
-          maxRows == null || rowsToRender.length < Number(maxRows)
+        const canAddRow = maxRows == null || rowsToRender.length < maxRows
 
         return (
           <Flex flexDir="column">
