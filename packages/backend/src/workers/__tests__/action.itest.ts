@@ -1,5 +1,6 @@
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -11,8 +12,12 @@ import {
 
 import RetriableError from '@/errors/retriable-error'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import { enqueueActionJob, mainActionQueue } from '@/queues/action'
-import { mainActionWorker } from '@/workers/action'
+import {
+  actionQueuesByName,
+  enqueueActionJob,
+  mainActionQueue,
+} from '@/queues/action'
+import { appActionWorkers, mainActionWorker } from '@/workers/action'
 
 import {
   backupWorker,
@@ -90,6 +95,17 @@ describe('Action worker', () => {
     await restoreWorker(mainActionWorker, originalWorkerState)
 
     vi.restoreAllMocks()
+  })
+
+  // Close workers and queues so they don't linger in the shared test process
+  // and steal jobs from later itest files on the same Redis queue.
+  afterAll(async () => {
+    await Promise.all(
+      [mainActionWorker, ...Object.values(appActionWorkers)].map((w) =>
+        w.close(),
+      ),
+    )
+    await Promise.all(Object.values(actionQueuesByName).map((q) => q.close()))
   })
 
   describe('Automatic retries with default job options', () => {
