@@ -24,6 +24,7 @@ export type MultiRowProps = {
   showDivider?: boolean
   addRowButtonText?: string
   type?: string
+  maxRows?: number
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -36,6 +37,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     addRowButtonText,
     showDivider,
     type,
+    maxRows,
     ...forwardedInputCreatorProps
   } = props
 
@@ -86,6 +88,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         const rowsToRender =
           !rows.length && required ? [{ ...newRowDefaultValue }] : rows
         const canRemoveRow = !required || rowsToRender.length > 1
+        const canAddRow = maxRows == null || rowsToRender.length < maxRows
 
         return (
           <Flex flexDir="column">
@@ -171,15 +174,17 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               )
             })}
 
-            <Button
-              variant="outline"
-              leftIcon={<BiPlus />}
-              onClick={handleAddRow}
-              isDisabled={isEditorReadOnly}
-              maxW="fit-content"
-            >
-              {addRowButtonText ?? 'And'}
-            </Button>
+            {canAddRow && (
+              <Button
+                variant="outline"
+                leftIcon={<BiPlus />}
+                onClick={handleAddRow}
+                isDisabled={isEditorReadOnly}
+                maxW="fit-content"
+              >
+                {addRowButtonText ?? 'And'}
+              </Button>
+            )}
           </Flex>
         )
       }}
