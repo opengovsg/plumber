@@ -451,6 +451,7 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
   value?: string
   addRowButtonText?: string
   subFields: IFieldMultiRowMultiColSubField[]
+  maxRows?: number
 }
 
 export interface IFieldMultiRow extends IBaseField {
@@ -459,6 +460,7 @@ export interface IFieldMultiRow extends IBaseField {
   addRowButtonText?: string
 
   subFields: IField[]
+  maxRows?: number
 }
 
 export type TRteMenuOption =
