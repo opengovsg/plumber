@@ -6,7 +6,9 @@ import { fromZodError } from 'zod-validation-error'
 import StepError from '@/errors/step'
 import { TableVariableMarker } from '@/helpers/compute-parameters'
 import { formatTable } from '@/helpers/format-table-variable'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import { shouldUseSes } from '@/helpers/ses-email-helper'
 import Step from '@/models/step'
 
 import { dataOutSchema } from '../../common/data-out-validator'
@@ -141,6 +143,18 @@ const action: IRawAction = {
       // Don't do partial retry in test runs! always send to all recipients
       !$.execution.testRun
 
+    // Compute provider routing BEFORE filtering attachments so we can apply
+    // the correct allowlist/denylist. Mirrors the all-or-nothing routing
+    // decision in sendTransactionalEmails.
+    const sesEnabledDomains = await getLdFlagValue<string[]>(
+      'ses_enabled_domains',
+      null,
+      [],
+    )
+    const useSes = recipientsToSend.every((r) =>
+      shouldUseSes(r, sesEnabledDomains),
+    )
+
     const {
       attachmentFiles,
       invalidAttachments,
@@ -151,6 +165,7 @@ const action: IRawAction = {
       attachmentsList: result.data.attachments,
       isPartialRetry,
       lastExecutionStep,
+      useSes,
     })
 
     if (isPartialRetry) {

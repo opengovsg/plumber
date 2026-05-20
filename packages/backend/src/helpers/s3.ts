@@ -39,7 +39,14 @@ export const MALWARE_SCAN_FAILURE = [
   MALWARE_SCAN_STATUS.FAILED,
 ]
 
+// Union of types accepted at upload time. The actual filter applied at
+// send time depends on the email provider:
+//   - Postman path: see POSTMAN_ACCEPTED_EXTENSIONS (allowlist)
+//   - SES path:     see BLOCKED_ATTACHMENT_EXTENSIONS (denylist)
+// Files that pass upload but fail the send-time provider filter trigger
+// the existing "unsupported attachment" notification email.
 export const ACCEPTED_FILE_TYPES = [
+  // --- Postman-compatible types ---
   'text/plain', // .txt, .asc
   'video/x-msvideo', // .avi
   'image/bmp', // .bmp
@@ -69,6 +76,23 @@ export const ACCEPTED_FILE_TYPES = [
   'image/tiff', // .tif, .tiff
   'video/x-ms-wmv', // .wmv
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  // --- SES-only types (Postman API will still reject these at send time) ---
+  'image/svg+xml', // .svg
+  'image/webp', // .webp
+  'image/heic', // .heic
+  'image/heif', // .heif
+  'image/avif', // .avif
+  'application/zip', // .zip
+  'application/x-7z-compressed', // .7z
+  'application/vnd.rar', // .rar
+  'application/json', // .json
+  'application/xml', // .xml
+  'text/calendar', // .ics — meeting invites
+  'text/markdown', // .md
+  'message/rfc822', // .eml — saved emails
+  'application/vnd.ms-outlook', // .msg — Outlook saved emails
+  'video/mp4', // .mp4
+  'video/webm', // .webm
 ]
 export const MAX_FILE_SIZE = 1024 * 1024 * 10 // 10MB
 

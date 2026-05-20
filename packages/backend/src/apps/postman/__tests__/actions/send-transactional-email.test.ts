@@ -24,6 +24,9 @@ const mocks = vi.hoisted(() => ({
   createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
   getLdFlagValue: vi.fn(async () => [] as string[]),
   sesSend: vi.fn(async () => ({})),
+  sendEmailViaSes: vi.fn(async () => {
+    return
+  }),
   getSuppressedEmails: vi.fn(async () => [] as string[]),
 }))
 
@@ -38,6 +41,7 @@ vi.mock('@/helpers/ses-email-helper', async () => {
   return {
     ...actual,
     getSesClient: () => ({ send: mocks.sesSend }),
+    sendEmailViaSes: mocks.sendEmailViaSes,
   }
 })
 
@@ -723,40 +727,49 @@ describe('send transactional email', () => {
 
   describe('SES routing via ses_enabled_domains flag', () => {
     it('routes to SES when all recipients are in flagged domains', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      mocks.getLdFlagValue.mockImplementation(async () => ['open.gov.sg'])
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
       $.step.parameters.attachments = []
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
       expect($.http.post).not.toHaveBeenCalled()
-      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+      expect(mocks.sendEmailViaSes).toHaveBeenCalledTimes(2)
     })
 
     it('falls back to Postman when any recipient is outside flagged domains', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      mocks.getLdFlagValue.mockImplementation(async () => ['open.gov.sg'])
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@gmail.com'
       $.step.parameters.attachments = []
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(mocks.sendEmailViaSes).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(2)
     })
 
-    it('falls back to Postman when batch has attachments even if all domains qualify', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['*'])
+    it('routes to SES even when batch has attachments (denylist applied)', async () => {
+      mocks.getLdFlagValue.mockImplementation(async () => ['*'])
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       mocks.filterAttachments.mockReturnValueOnce({
-        attachmentFiles: [{ fileName: 'f.txt', data: new Uint8Array([0]) }],
+        attachmentFiles: [
+          { fileName: 'safe.txt', data: new Uint8Array([0]) },
+          { fileName: 'malware.exe', data: new Uint8Array([0]) },
+        ],
         invalidAttachments: [],
         submissionId: null,
       })
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
-      expect($.http.post).toHaveBeenCalledTimes(1)
+      expect($.http.post).not.toHaveBeenCalled()
+      expect(mocks.sendEmailViaSes).toHaveBeenCalledTimes(1)
+      // Denylist filtered out the .exe; only the safe attachment is passed.
+      expect(mocks.sendEmailViaSes).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [{ fileName: 'safe.txt', data: new Uint8Array([0]) }],
+        }),
+      )
     })
 
     it('uses Postman when ses_enabled_domains flag is empty (default kill switch)', async () => {
@@ -765,7 +778,7 @@ describe('send transactional email', () => {
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(mocks.sendEmailViaSes).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 

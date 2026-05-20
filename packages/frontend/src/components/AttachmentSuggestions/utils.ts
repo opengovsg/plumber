@@ -10,7 +10,13 @@ export const MAX_NUM_FILES = 10
 const MAX_FILE_SIZE = 10 * MB // 10MB
 const MAX_TOTAL_FILE_SIZE = 10 * MB // 10MB
 
+// Mirrors backend ACCEPTED_FILE_TYPES (helpers/s3.ts). This is the union
+// of types allowed at upload time; the backend applies a stricter or
+// looser provider-specific filter at send time:
+//   - Postman path: 35-type allowlist
+//   - SES path: denylist (executables/scripts only)
 export const ACCEPTED_FILE_TYPES = [
+  // --- Postman-compatible types ---
   'text/plain', // .txt, .asc
   'video/x-msvideo', // .avi
   'image/bmp', // .bmp
@@ -40,6 +46,23 @@ export const ACCEPTED_FILE_TYPES = [
   'image/tiff', // .tif, .tiff
   'video/x-ms-wmv', // .wmv
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  // --- SES-only types (Postman API will still reject these at send time) ---
+  'image/svg+xml', // .svg
+  'image/webp', // .webp
+  'image/heic', // .heic
+  'image/heif', // .heif
+  'image/avif', // .avif
+  'application/zip', // .zip
+  'application/x-7z-compressed', // .7z
+  'application/vnd.rar', // .rar
+  'application/json', // .json
+  'application/xml', // .xml
+  'text/calendar', // .ics — meeting invites
+  'text/markdown', // .md
+  'message/rfc822', // .eml — saved emails
+  'application/vnd.ms-outlook', // .msg — Outlook saved emails
+  'video/mp4', // .mp4
+  'video/webm', // .webm
 ]
 
 export interface AttachmentConfigInput {

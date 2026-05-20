@@ -1,6 +1,5 @@
 import { IHttpClient } from '@plumber/types'
 
-import { SendEmailCommand } from '@aws-sdk/client-sesv2'
 import FormData from 'form-data'
 import { sortBy } from 'lodash'
 
@@ -8,8 +7,11 @@ import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
-import { incrementMetric } from '@/helpers/metrics'
-import { getSesClient, shouldUseSes } from '@/helpers/ses-email-helper'
+import {
+  filterSesAttachments,
+  sendEmailViaSes,
+  shouldUseSes,
+} from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import {
@@ -140,31 +142,16 @@ async function sendViaSes(
   // dataOut below — only the API call is filtered.
   ccAddressesToSend: string[] | undefined,
 ): Promise<PostmanPromiseFulfilled> {
-  const client = getSesClient()
   const fromAddress = `${email.senderName} <${appConfig.ses.fromAddress}>`
 
-  await client.send(
-    new SendEmailCommand({
-      FromEmailAddress: fromAddress,
-      Destination: {
-        ToAddresses: [recipientEmail],
-        ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
-      },
-      Content: {
-        Simple: {
-          Subject: { Data: email.subject, Charset: 'UTF-8' },
-          Body: {
-            Html: { Data: email.body, Charset: 'UTF-8' },
-          },
-        },
-      },
-      ...(email.replyTo && { ReplyToAddresses: [email.replyTo] }),
-      ...(appConfig.ses.configurationSet && {
-        ConfigurationSetName: appConfig.ses.configurationSet,
-      }),
-    }),
-  )
-  incrementMetric('ses.email.sent')
+  await sendEmailViaSes({
+    subject: email.subject,
+    body: email.body,
+    recipient: recipientEmail,
+    replyTo: email.replyTo,
+    cc: ccAddressesToSend,
+    attachments: email.attachments,
+  })
 
   // TODO: remove this log once the SES rollout is verified and stable.
   logger.info('Postman step email sent via SES', {
@@ -203,12 +190,26 @@ export async function sendTransactionalEmails(
     [],
   )
 
-  // Use SES only if ALL recipients are in SES-enabled domains and no
-  // attachments (SES Phase 1 does not support attachments). Otherwise,
-  // send everything via Postman to avoid mixed error-handling paths.
-  const useSes =
-    !email.attachments?.length &&
-    recipients.every((r) => shouldUseSes(r, sesEnabledDomains))
+  // Use SES only if ALL recipients are in SES-enabled domains. Mixed
+  // batches go entirely through Postman to keep error handling simple.
+  // SES now handles attachments via raw MIME (see sendEmailViaSes).
+  const useSes = recipients.every((r) => shouldUseSes(r, sesEnabledDomains))
+
+  // When routing via SES, filter out blocked attachment types up-front so
+  // every recipient in the batch gets a consistent payload. The denylist
+  // is applied defensively inside sendEmailViaSes as well; doing it here
+  // also lets us surface the dropped attachments via the existing
+  // sendInvalidAttachmentsEmail flow if needed downstream.
+  if (useSes && email.attachments?.length) {
+    const { allowed, blocked } = filterSesAttachments(email.attachments)
+    if (blocked.length > 0) {
+      logger.warn('Blocked attachment(s) filtered before SES batch send', {
+        event: 'ses-blocked-attachment-batch',
+        blocked,
+      })
+    }
+    email = { ...email, attachments: allowed }
+  }
 
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to

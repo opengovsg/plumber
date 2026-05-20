@@ -1,9 +1,29 @@
 import { IExecutionStep, IGlobalVariable, IJSONObject } from '@plumber/types'
 
 import { COMMON_S3_BUCKET, getObjectFromS3Id } from '@/helpers/s3'
+import { isBlockedAttachment } from '@/helpers/ses-email-helper'
 import Flow from '@/models/flow'
 
 import { POSTMAN_ACCEPTED_EXTENSIONS } from './constants'
+
+/**
+ * Provider-aware attachment filter.
+ *
+ * - SES: anything not in the SES denylist (BLOCKED_ATTACHMENT_EXTENSIONS).
+ *        Much broader — allows e.g. SVG, ZIP, JSON, WEBP, MP4.
+ * - Postman: extension must be in POSTMAN_ACCEPTED_EXTENSIONS (35-type
+ *            allowlist enforced by the Postman API).
+ */
+function isAttachmentAllowed(fileName: string, useSes: boolean): boolean {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  if (!ext) {
+    return false
+  }
+  if (useSes) {
+    return !isBlockedAttachment(fileName)
+  }
+  return POSTMAN_ACCEPTED_EXTENSIONS.includes(ext)
+}
 
 export async function getDefaultReplyTo(flowId: string): Promise<string> {
   const flow = await Flow.query()
@@ -18,11 +38,13 @@ export async function filterAttachments({
   attachmentsList,
   isPartialRetry,
   lastExecutionStep,
+  useSes = false,
 }: {
   $: IGlobalVariable
   attachmentsList: string[]
   isPartialRetry: boolean
   lastExecutionStep: IExecutionStep | null
+  useSes?: boolean
 }) {
   let submissionId: string | null = null
   const invalidAttachments: string[] = []
@@ -63,14 +85,13 @@ export async function filterAttachments({
       // maliciously/ manually injected by another user who does not have access to this attachment
       const obj = await getObjectFromS3Id(attachment, { flowId: $.flow.id })
       const fileName = obj.name
-      const fileType = obj.name.split('.').pop()?.toLowerCase()
 
       if (isRetryWithoutAttachments) {
         invalidAttachments.push(fileName)
         return
       }
 
-      if (!fileType || !POSTMAN_ACCEPTED_EXTENSIONS.includes(fileType)) {
+      if (!isAttachmentAllowed(fileName, useSes)) {
         invalidAttachments.push(fileName)
 
         if (submissionId === null) {
