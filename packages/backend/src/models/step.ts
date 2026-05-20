@@ -36,6 +36,7 @@ class Step extends Base {
   executionSteps: ExecutionStep[]
   config: IStepConfig
   updatedBy?: string
+  version: number
 
   static tableName = 'steps'
 
@@ -57,6 +58,7 @@ class Step extends Base {
       },
       position: { type: 'integer' },
       parameters: { type: 'object' },
+      version: { type: 'integer', default: 1 },
     },
   }
 

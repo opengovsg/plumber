@@ -38,6 +38,7 @@ describe('create payment', () => {
           description: 'test-description',
           paymentAmountCents: '12345',
         },
+        version: 1,
       },
       http: {
         post: mocks.httpPost,

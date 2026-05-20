@@ -1014,6 +1014,7 @@ export type IGlobalVariable = {
     appKey: string
     position: number
     parameters: IJSONObject
+    version: number
   }
   nextStep?: {
     id: string

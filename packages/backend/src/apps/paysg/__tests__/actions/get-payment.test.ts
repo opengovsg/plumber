@@ -32,6 +32,7 @@ describe('get payment', () => {
           // Pre-fill some required fields
           paymentId: 'sample-payment-id',
         },
+        version: 1,
       },
       http: {
         get: mocks.httpGet,
