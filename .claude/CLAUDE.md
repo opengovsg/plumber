@@ -2,11 +2,11 @@
 
 Plumber is a no-code workflow automation tool. Users build "flows" out of triggers and actions provided by integrated "apps" (FormSG, Postman, M365 Excel, Slack, etc.). Flow executions are queued and run by background workers (some flow triggers run on the server).
 
-This uses a npm workspaces monorepo:
+This uses an npm workspaces monorepo:
 
-- [packages/backend/](packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](.claude/rules/backend.md).
-- [packages/frontend/](packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](.claude/rules/frontend.md).
-- [packages/types/](packages/types/) — shared `@plumber/types` (linked via `file:` deps).
+- [packages/backend/](../packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](rules/backend.md).
+- [packages/frontend/](../packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](rules/frontend.md).
+- [packages/types/](../packages/types/) — shared `@plumber/types` (linked via `file:` deps).
 
 ## Important top-level commands
 
@@ -22,7 +22,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 
 - `npm test` — runs all unit tests (vitest, project-aware).
 - `npx vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
-- Backend integration tests use the `.itest.ts` suffix and a different vitest config — see [.claude/rules/backend.md](.claude/rules/backend.md).
+- Backend integration tests use the `.itest.ts` suffix and a different vitest config — see [.claude/rules/backend.md](rules/backend.md).
 
 ## Conventions
 
