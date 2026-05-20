@@ -130,6 +130,7 @@ describe('decrypt form response - MRF specific', () => {
         parameters: {
           nricFilter: undefined,
         },
+        version: 1,
       },
       flow: {
         id: 'flowid',

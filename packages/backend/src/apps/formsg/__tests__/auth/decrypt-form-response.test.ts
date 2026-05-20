@@ -97,6 +97,7 @@ describe('decrypt form response', () => {
         parameters: {
           nricFilter: undefined,
         },
+        version: 1,
       },
       flow: {
         id: 'flowid',

@@ -59,6 +59,7 @@ describe('make http request', () => {
         appKey: 'webhook',
         position: 1,
         parameters: {},
+        version: 1,
       },
       http: {
         request: mocks.httpRequest,

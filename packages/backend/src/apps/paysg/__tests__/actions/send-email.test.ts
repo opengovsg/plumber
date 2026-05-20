@@ -29,6 +29,7 @@ describe('send payment email', () => {
           // Pre-fill some required fields
           paymentId: 'sample-payment-id',
         },
+        version: 1,
       },
       http: {
         post: mocks.httpPost,
