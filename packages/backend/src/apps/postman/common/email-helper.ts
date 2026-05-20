@@ -8,6 +8,7 @@ import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import { incrementMetric } from '@/helpers/metrics'
 import { getSesClient, shouldUseSes } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
@@ -158,6 +159,7 @@ async function sendViaSes(
       }),
     }),
   )
+  incrementMetric('ses.email.sent')
 
   // TODO: remove this log once the SES rollout is verified and stable.
   logger.info('Email sent via SES', {
