@@ -20,9 +20,10 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 
 **Testing:**
 
-- `npm test` — runs all unit tests (vitest, project-aware).
+- `npm test` — runs the configured Vitest projects for frontend, backend unit, and backend integration tests.
+- `npm run -w backend test:unit` — runs backend unit tests only.
 - `npx vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
-- Backend integration tests use the `.itest.ts` suffix and a different vitest config — see [.claude/rules/backend.md](rules/backend.md).
+- Backend integration tests use the `.itest.ts` suffix and require Docker/testcontainers — see [.claude/rules/backend.md](rules/backend.md).
 
 ## Conventions
 
