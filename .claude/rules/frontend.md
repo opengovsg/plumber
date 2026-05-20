@@ -1,6 +1,6 @@
 ---
 paths:
-  - "packages/frontend/**"
+  - 'packages/frontend/**/*'
 ---
 
 # Frontend
@@ -25,8 +25,8 @@ Schema lives in the backend at [packages/backend/src/graphql/schema.graphql](../
 
 Codegen config: [gql-codegen.ts](../../gql-codegen.ts). It writes:
 
-- [packages/backend/src/graphql/__generated__/](../../packages/backend/src/graphql/__generated__/) — server resolver types. Default context is `AuthenticatedGraphQLContext`, overridden per-field (e.g. `Query.getCurrentUser` uses `UnauthenticatedGraphQLContext`).
-- [packages/frontend/src/graphql/__generated__/](../../packages/frontend/src/graphql/__generated__/) — client preset, immutable types.
+- [packages/backend/src/graphql/**generated**/](../../packages/backend/src/graphql/__generated__/) — server resolver types. Default context is `AuthenticatedGraphQLContext`, overridden per-field (e.g. `Query.getCurrentUser` uses `UnauthenticatedGraphQLContext`).
+- [packages/frontend/src/graphql/**generated**/](../../packages/frontend/src/graphql/__generated__/) — client preset, immutable types.
 
 Run `npm run gqlc` (root) after editing `.graphql` files or any `*.gql-to-typescript.ts` mapper. Codegen runs automatically via `postinstall`.
 
