@@ -688,6 +688,26 @@ export interface IApp {
    * precedence.
    */
   setupMessage?: SetupMessage
+
+  /**
+   * Optional transformation function for step parameters.
+   *
+   * Enables zero-downtime parameter format migrations by transforming
+   * legacy parameters to the current format when steps are fetched from
+   * the database or executed.
+   *
+   * Example: Excel actions migrated from individual `lookupColumn` and
+   * `lookupValue` parameters to a `filters` array. This function transforms
+   * old format to new on-the-fly.
+   *
+   * @param actionKey - The action identifier (e.g., 'getTableRow')
+   * @param parameters - The step parameters from database
+   * @returns Transformed parameters in current format
+   */
+  transformStepParameters?: (
+    actionKey: string,
+    parameters: IJSONObject,
+  ) => IJSONObject
 }
 
 export type AppCategory = 'data' | 'communication' | 'logic' | 'others' | 'ai'

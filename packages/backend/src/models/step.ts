@@ -310,6 +310,19 @@ class Step extends Base {
       })
     }
   }
+
+  /**
+   * This hook transforms step parameters to ensure the frontend always receives
+   * data in the latest format, even when the database contains legacy formats.
+   *
+   * This approach allows zero-downtime migrations without database updates.
+   */
+  async $afterFind(): Promise<void> {
+    const app = apps[this.appKey]
+    if (app?.transformStepParameters && this.key && this.parameters) {
+      this.parameters = app.transformStepParameters(this.key, this.parameters)
+    }
+  }
 }
 
 export default Step
