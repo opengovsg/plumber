@@ -1,7 +1,6 @@
 import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
 
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-import { ref } from 'objection'
 
 import {
   FOR_EACH_ITERATION_DELAY,
@@ -137,10 +136,11 @@ export const processAction = async (options: ProcessActionOptions) => {
       // NOTE: when the step is within a for-each loop, we only want to retrieve the execution steps before the for-each
       // and all the execution steps for the current iteration.
       if (isInsideForEach) {
-        builder.whereNull(ref('metadata:iteration'))
-        if (metadata?.iteration !== undefined) {
-          builder.orWhere(ref('metadata:iteration'), metadata.iteration)
-        }
+        builder.whereRaw(`(execution_steps.metadata ->> 'iteration') is null`)
+        builder.orWhereRaw(
+          `(execution_steps.metadata ->> 'iteration')::int = ?`,
+          [metadata.iteration],
+        )
       }
     })
 

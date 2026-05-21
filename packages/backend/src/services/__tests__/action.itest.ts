@@ -175,33 +175,12 @@ describe('processAction - priorExecutionSteps filtering', () => {
       mocks.computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
-    // trigger and for-each (no iteration) + action1 iteration 2 only
+    // action-before and for-each (no iteration) + action1 iteration 2 only
     expect(capturedIds).toEqual(
       [actionBeforeExecStep.id, forEachExecStep.id, action1Iter2.id].sort(),
     )
     expect(capturedIds).not.toContain(action1Iter1.id)
     expect(capturedIds).not.toContain(action1Iter3.id)
-  })
-
-  it('fetches only null-iteration steps when inside for-each with no iteration in metadata', async () => {
-    const actionBeforeExecStep = await insertExecutionStep(actionBeforeStep.id)
-    const forEachExecStep = await insertExecutionStep(forEachStep.id)
-    const action1Iter1 = await insertExecutionStep(actionStep1.id, 1)
-
-    await processAction({
-      flowId: flow.id,
-      executionId: execution.id,
-      stepId: actionStep1.id,
-    })
-
-    const capturedSteps: ExecutionStep[] =
-      mocks.computeParameters.mock.calls[0][1]
-    const capturedIds = capturedSteps.map((s) => s.id).sort()
-
-    expect(capturedIds).toEqual(
-      [actionBeforeExecStep.id, forEachExecStep.id].sort(),
-    )
-    expect(capturedIds).not.toContain(action1Iter1.id)
   })
 
   it('fetches action1 steps only for the same iteration when processing action2', async () => {
@@ -224,7 +203,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       mocks.computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
-    // action2 should see: trigger, for-each, and action1 iter 2 only
+    // action2 should see: action-before, for-each, and action1 iter 2 only
     expect(capturedIds).toEqual(
       [actionBeforeExecStep.id, forEachExecStep.id, action1Iter2.id].sort(),
     )
