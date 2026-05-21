@@ -1,6 +1,7 @@
 import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
 
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
+import { ref } from 'objection'
 
 import {
   FOR_EACH_ITERATION_DELAY,
@@ -103,8 +104,13 @@ export const processAction = async (options: ProcessActionOptions) => {
     .findById(executionId)
     .throwIfNotFound()
 
-  const { forEachStepPosition, stepPositions, isForEachStep, isLastStep } =
-    getStepContext(flow, step)
+  const {
+    forEachStepPosition,
+    stepPositions,
+    isForEachStep,
+    isLastStep,
+    isInsideForEach,
+  } = getStepContext(flow, step)
 
   // we use this to indicate an iteration in the for-each is complete
   if (!testRun && forEachStepPosition > -1 && isLastStep && metadata) {
@@ -121,11 +127,22 @@ export const processAction = async (options: ProcessActionOptions) => {
     metadata,
   })
 
-  const priorExecutionSteps = await ExecutionStep.query().where({
-    execution_id: $.execution.id,
-    // only get successful execution steps
-    status: 'success',
-  })
+  const priorExecutionSteps = await ExecutionStep.query()
+    .where({
+      execution_id: $.execution.id,
+      // only get successful execution steps
+      status: 'success',
+    })
+    .where((builder) => {
+      // NOTE: when the step is within a for-each loop, we only want to retrieve the execution steps before the for-each
+      // and all the execution steps for the current iteration.
+      if (isInsideForEach) {
+        builder.whereNull(ref('metadata:iteration'))
+        if (metadata?.iteration !== undefined) {
+          builder.orWhere(ref('metadata:iteration'), metadata.iteration)
+        }
+      }
+    })
 
   const actionCommand = await step.getActionCommand()
   const forEachContext: ForEachContext = {
