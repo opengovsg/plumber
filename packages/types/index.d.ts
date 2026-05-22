@@ -988,6 +988,7 @@ export type IGlobalVariable = {
   step?: {
     id: string
     appKey: string
+    key: string
     position: number
     parameters: IJSONObject
     version: number

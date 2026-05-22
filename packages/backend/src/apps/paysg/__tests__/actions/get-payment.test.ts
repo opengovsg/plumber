@@ -27,6 +27,7 @@ describe('get payment', () => {
       step: {
         id: 'herp-derp',
         appKey: 'paysg',
+        key: 'getPayment',
         position: 2,
         parameters: {
           // Pre-fill some required fields

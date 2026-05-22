@@ -76,6 +76,7 @@ const globalVariable = async (
     step: {
       id: step?.id,
       appKey: step?.appKey,
+      key: step?.key,
       position: step?.position,
       parameters: step?.parameters || {},
       version: step?.version,
