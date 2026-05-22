@@ -321,8 +321,8 @@ class Step extends Base {
    */
   async $afterFind(): Promise<void> {
     const app = apps[this.appKey]
-    if (app?.transformStepParameters && this.key && this.parameters) {
-      this.parameters = app.transformStepParameters(
+    if (app?.stepTransformer && this.key && this.parameters) {
+      this.parameters = app.stepTransformer.transformStepParameters(
         this.key,
         this.parameters,
         this.version,

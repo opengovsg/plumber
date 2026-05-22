@@ -2,18 +2,19 @@ import type { IJSONObject } from '@plumber/types'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { createStepParameterTransformer } from '../transform-step-parameters'
+import { createVersionedStepTransformer } from '../transform-step-parameters'
 
 const transformerA = vi.fn((p: IJSONObject) => ({ ...p, a: true }))
 const transformerB = vi.fn((p: IJSONObject) => ({ ...p, b: true }))
 const transformerC = vi.fn((p: IJSONObject) => ({ ...p, c: true }))
 
 // 3 transformers: A (v1→v2), B (v2→v3), C (v3→v4). Latest version is 4.
-const transform = createStepParameterTransformer({
-  myAction: [transformerA, transformerB, transformerC],
-})
+const { transformStepParameters: transform, getLatestStepVersion } =
+  createVersionedStepTransformer({
+    myAction: [transformerA, transformerB, transformerC],
+  })
 
-describe('createStepParameterTransformer', () => {
+describe('createVersionedStepTransformer', () => {
   it('version 1: runs all transformers (A → B → C)', () => {
     const result = transform('myAction', { x: 1 }, 1)
     expect(result).toEqual({ x: 1, a: true, b: true, c: true })
@@ -41,5 +42,15 @@ describe('createStepParameterTransformer', () => {
   it('returns parameters unchanged for unknown action keys', () => {
     const input = { x: 1 }
     expect(transform('unknownAction', input, 1)).toEqual(input)
+  })
+})
+
+describe('getLatestStepVersion', () => {
+  it('returns transformers.length + 1 for a known action', () => {
+    expect(getLatestStepVersion('myAction')).toBe(4)
+  })
+
+  it('returns 1 for an unknown action (no transformers)', () => {
+    expect(getLatestStepVersion('unknownAction')).toBe(1)
   })
 })
