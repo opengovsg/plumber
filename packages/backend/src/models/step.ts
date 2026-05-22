@@ -322,7 +322,11 @@ class Step extends Base {
   async $afterFind(): Promise<void> {
     const app = apps[this.appKey]
     if (app?.transformStepParameters && this.key && this.parameters) {
-      this.parameters = app.transformStepParameters(this.key, this.parameters)
+      this.parameters = app.transformStepParameters(
+        this.key,
+        this.parameters,
+        this.version,
+      )
     }
   }
 }

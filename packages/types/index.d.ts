@@ -673,13 +673,15 @@ export interface IApp {
    * `lookupValue` parameters to a `filters` array. This function transforms
    * old format to new on-the-fly.
    *
-   * @param actionKey - The action identifier (e.g., 'getTableRow')
-   * @param parameters - The step parameters from database
+   * @param stepKey - The step key  (e.g., 'getTableRow')
+   * @param stepParameters - The step parameters from database
+   * @param stepVersion - The step version
    * @returns Transformed parameters in current format
    */
   transformStepParameters?: (
-    actionKey: string,
-    parameters: IJSONObject,
+    stepKey: string,
+    stepParameters: IJSONObject,
+    stepVersion: number,
   ) => IJSONObject
 }
 
