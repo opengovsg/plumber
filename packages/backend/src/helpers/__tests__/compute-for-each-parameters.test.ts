@@ -314,7 +314,6 @@ describe('getStepContext', () => {
       stepPositions: {},
       isForEachStep: false,
       isLastStep: false,
-      isInsideForEach: false,
     })
   })
 
