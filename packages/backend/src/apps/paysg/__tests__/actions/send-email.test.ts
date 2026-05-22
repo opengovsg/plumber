@@ -24,6 +24,7 @@ describe('send payment email', () => {
       step: {
         id: 'herp-derp',
         appKey: 'paysg',
+        key: 'sendEmail',
         position: 2,
         parameters: {
           // Pre-fill some required fields

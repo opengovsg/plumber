@@ -38,6 +38,7 @@ describe('http request interceptors', () => {
       step: {
         id: 'herp-derp',
         appKey: 'webhook',
+        key: 'catchRawWebhook',
         position: 2,
         parameters: {
           url: CF_REDIRECTION_WORKER_FOR_UNIT_TESTS,
