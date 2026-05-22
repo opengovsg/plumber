@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import createStep from '@/graphql/mutations/create-step'
 import Flow from '@/models/flow'
@@ -447,6 +448,77 @@ describe('createStep mutation integration tests', async () => {
 
     expect(newStep).toBeDefined()
     expect((newStep as any).connectionId).toBeNull()
+  })
+
+  describe('version assignment', () => {
+    it('defaults to version 1 when app has no stepTransformer', async () => {
+      // postman has no stepTransformer - version should default to 1
+      const newStep = await createStep(
+        null,
+        {
+          input: {
+            flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
+            previousStep: { id: existingSteps[0].id },
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      expect((newStep as any).version).toBe(1)
+    })
+
+    it('defaults to version 1 when no appKey is provided', async () => {
+      const newStep = await createStep(
+        null,
+        {
+          input: {
+            flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
+            previousStep: { id: existingSteps[2].id },
+          },
+        },
+        context,
+      )
+
+      expect((newStep as any).version).toBe(1)
+    })
+
+    it('uses the version from stepTransformer.getLatestStepVersion when app has a stepTransformer', async () => {
+      const mockGetLatestStepVersion = vi.fn().mockReturnValue(3)
+      const originalPostman = (apps as any)['postman']
+      apps['postman'] = {
+        ...originalPostman,
+        stepTransformer: {
+          getLatestStepVersion: mockGetLatestStepVersion,
+          transformStepParameters: vi.fn(),
+        },
+      }
+
+      try {
+        const newStep = await createStep(
+          null,
+          {
+            input: {
+              flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
+              previousStep: { id: existingSteps[0].id },
+              key: 'sendTransactionalEmail',
+              appKey: 'postman',
+              parameters: {},
+            },
+          },
+          context,
+        )
+
+        expect(mockGetLatestStepVersion).toHaveBeenCalledWith(
+          'sendTransactionalEmail',
+        )
+        expect((newStep as any).version).toBe(3)
+      } finally {
+        ;(apps as any)['postman'] = originalPostman
+      }
+    })
   })
 
   describe('updatedAt and updatedBy validation', () => {
