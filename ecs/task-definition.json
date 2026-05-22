@@ -2,12 +2,14 @@
   "containerDefinitions": [
     {
       "name": "server",
-      "cpu": 1024,
+      "cpu": 512,
       "command": ["npm", "run", "start"],
-      "environment": [{
-        "name": "NODE_OPTIONS",
-        "value": "--max-old-space-size=3072"
-      }],
+      "environment": [
+        {
+          "name": "NODE_OPTIONS",
+          "value": "--max-old-space-size=3072"
+        }
+      ],
       "portMappings": [
         {
           "containerPort": 8080,
@@ -28,7 +30,7 @@
     },
     {
       "name": "worker",
-      "cpu": 512,
+      "cpu": 1024,
       "command": ["npm", "run", "start:worker"],
       "essential": true,
       "stopTimeout": 120,
