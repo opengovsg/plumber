@@ -29,6 +29,7 @@ export type ForEachContext = {
  * - stepPositions: map of step ids and their corresponding positions
  * - isForEachStep: whether the step is a for-each step
  * - isLastStep: whether the step is the last step in the pipe
+
  */
 export function getStepContext(
   flow: Flow,
@@ -90,8 +91,10 @@ export function getStepContext(
     },
   )
 
+  const forEachStepPosition = forEachSteps[0].position
+
   return {
-    forEachStepPosition: forEachSteps[0].position,
+    forEachStepPosition,
     stepPositions,
     isForEachStep,
     isLastStep: lastStepId === step.id,

@@ -121,11 +121,23 @@ export const processAction = async (options: ProcessActionOptions) => {
     metadata,
   })
 
-  const priorExecutionSteps = await ExecutionStep.query().where({
-    execution_id: $.execution.id,
-    // only get successful execution steps
-    status: 'success',
-  })
+  const priorExecutionSteps = await ExecutionStep.query()
+    .where({
+      execution_id: $.execution.id,
+      // only get successful execution steps
+      status: 'success',
+    })
+    .where((builder) => {
+      // NOTE: when the step is within a for-each loop, we only want to retrieve the execution steps before the for-each
+      // and all the execution steps for the current iteration.
+      if (metadata.iteration !== undefined) {
+        builder.whereRaw(`(execution_steps.metadata ->> 'iteration') is null`)
+        builder.orWhereRaw(
+          `(execution_steps.metadata ->> 'iteration')::int = ?`,
+          [metadata.iteration],
+        )
+      }
+    })
 
   const actionCommand = await step.getActionCommand()
   const forEachContext: ForEachContext = {
