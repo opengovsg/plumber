@@ -479,19 +479,6 @@ describe('getStepContext', () => {
       expect(context.isForEachStep).toBe(expected)
     },
   )
-
-  it.each([
-    { step: mockFlow.steps[0], expected: false }, // trigger before for-each
-    { step: mockFlow.steps[1], expected: false }, // the for-each step itself
-    { step: mockFlow.steps[2], expected: true }, // action inside for-each
-    { step: mockFlow.steps[3], expected: true }, // last action inside for-each
-  ])(
-    'should return correct isInsideForEach for step $step.id',
-    ({ step, expected }) => {
-      const context = getStepContext(mockFlow, step)
-      expect(context.isInsideForEach).toBe(expected)
-    },
-  )
 })
 
 describe('computeForEachParameters', () => {

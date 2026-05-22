@@ -29,7 +29,7 @@ export type ForEachContext = {
  * - stepPositions: map of step ids and their corresponding positions
  * - isForEachStep: whether the step is a for-each step
  * - isLastStep: whether the step is the last step in the pipe
- * - isInsideForEach: whether the step is within the for-each loop
+
  */
 export function getStepContext(
   flow: Flow,
@@ -39,7 +39,6 @@ export function getStepContext(
   stepPositions: Record<string, number>
   isForEachStep: boolean
   isLastStep: boolean
-  isInsideForEach: boolean
 } {
   const isForEachStep =
     step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH
@@ -59,7 +58,6 @@ export function getStepContext(
       stepPositions: {},
       isForEachStep,
       isLastStep: false,
-      isInsideForEach: false,
     }
   }
 
@@ -94,14 +92,12 @@ export function getStepContext(
   )
 
   const forEachStepPosition = forEachSteps[0].position
-  const isInsideForEach = stepPositions[step.id] > forEachStepPosition
 
   return {
     forEachStepPosition,
     stepPositions,
     isForEachStep,
     isLastStep: lastStepId === step.id,
-    isInsideForEach,
   }
 }
 

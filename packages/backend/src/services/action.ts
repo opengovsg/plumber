@@ -103,13 +103,8 @@ export const processAction = async (options: ProcessActionOptions) => {
     .findById(executionId)
     .throwIfNotFound()
 
-  const {
-    forEachStepPosition,
-    stepPositions,
-    isForEachStep,
-    isLastStep,
-    isInsideForEach,
-  } = getStepContext(flow, step)
+  const { forEachStepPosition, stepPositions, isForEachStep, isLastStep } =
+    getStepContext(flow, step)
 
   // we use this to indicate an iteration in the for-each is complete
   if (!testRun && forEachStepPosition > -1 && isLastStep && metadata) {
@@ -135,7 +130,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     .where((builder) => {
       // NOTE: when the step is within a for-each loop, we only want to retrieve the execution steps before the for-each
       // and all the execution steps for the current iteration.
-      if (isInsideForEach) {
+      if (metadata.iteration !== undefined) {
         builder.whereRaw(`(execution_steps.metadata ->> 'iteration') is null`)
         builder.orWhereRaw(
           `(execution_steps.metadata ->> 'iteration')::int = ?`,

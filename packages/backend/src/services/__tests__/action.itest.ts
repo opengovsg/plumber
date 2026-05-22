@@ -210,4 +210,38 @@ describe('processAction - priorExecutionSteps filtering', () => {
     expect(capturedIds).not.toContain(action1Iter1.id)
     expect(capturedIds).not.toContain(action1Iter3.id)
   })
+
+  it('does not throw when test-running a step inside for-each without iteration metadata', async () => {
+    // mirrors how test-step.ts invokes processAction: testRun: true with no metadata.
+    // With the iteration filter bound to `undefined`, knex throws an undefined-binding
+    // error before computeParameters is reached.
+    const actionBeforeExecStep = await insertExecutionStep(actionBeforeStep.id)
+    const forEachExecStep = await insertExecutionStep(forEachStep.id)
+    const action1Iter1 = await insertExecutionStep(actionStep1.id, 1)
+    const action1Iter2 = await insertExecutionStep(actionStep1.id, 2)
+
+    await processAction({
+      flowId: flow.id,
+      executionId: execution.id,
+      stepId: actionStep1.id,
+      testRun: true,
+    })
+
+    expect(mocks.computeParameters).toHaveBeenCalledTimes(1)
+
+    const capturedSteps: ExecutionStep[] =
+      mocks.computeParameters.mock.calls[0][1]
+    const capturedIds = capturedSteps.map((s) => s.id).sort()
+
+    // without an iteration to scope to, the filter should be skipped and all
+    // prior execution steps should be visible (same behavior as not-inside-for-each)
+    expect(capturedIds).toEqual(
+      [
+        actionBeforeExecStep.id,
+        forEachExecStep.id,
+        action1Iter1.id,
+        action1Iter2.id,
+      ].sort(),
+    )
+  })
 })
