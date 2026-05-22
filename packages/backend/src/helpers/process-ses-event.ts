@@ -2,13 +2,13 @@ import logger from '@/helpers/logger'
 import { SesEvent, SesEventType } from '@/helpers/ses-event-parser'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
-export interface SesEventJobData {
+export interface SesEventInput {
   sesEvent: SesEvent
   sqsMessageId: string
 }
 
 /**
- * Process a parsed SES event from the BullMQ queue.
+ * Process a parsed SES event (called by the SQS consumer's handleMessage).
  *
  * NOTE on recipient arrays:
  *   `bouncedRecipients` and `complainedRecipients` are arrays per the SES
@@ -18,7 +18,7 @@ export interface SesEventJobData {
  *   still iterate to remain faithful to the spec and to be safe if Phase 2
  *   ever introduces multi-recipient sends via SendBulkEmailCommand.
  */
-export async function processSesEvent(data: SesEventJobData): Promise<void> {
+export async function processSesEvent(data: SesEventInput): Promise<void> {
   const { sesEvent, sqsMessageId } = data
   const { eventType, mail } = sesEvent
 

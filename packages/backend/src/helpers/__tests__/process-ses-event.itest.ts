@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { parseSqsMessage } from '@/helpers/ses-event-parser'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
-import { processSesEvent } from '../ses-events'
+import { processSesEvent } from '../process-ses-event'
 
 function loadFixture(name: string): string {
   return readFileSync(
