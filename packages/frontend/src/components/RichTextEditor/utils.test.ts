@@ -1,7 +1,11 @@
 import escapeHTML from 'escape-html'
 import { describe, expect, it } from 'vitest'
 
-import { removeProblematicWhitespace, substituteOldTemplates } from './utils'
+import {
+  removeProblematicWhitespace,
+  substituteForPreview,
+  substituteOldTemplates,
+} from './utils'
 
 const varInfo = new Map<
   string,
@@ -166,6 +170,47 @@ describe('replaceOldTemplates', () => {
     const expected =
       'Hello <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span> world! <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa" data-label="papa" data-value="mama">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa}}</span><br><span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span> <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa" data-label="papa" data-value="mama">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa}}</span>'
     expect(substituteOldTemplates(input, varInfo)).toEqual(expected)
+  })
+})
+
+describe('substituteForPreview', () => {
+  it('replaces a variable span with its resolved value from varInfo', () => {
+    const input =
+      'Hi <span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}</span>!'
+    expect(substituteForPreview(input, varInfo)).toEqual('Hi world!')
+  })
+
+  it('replaces a table-variable span with its resolved value', () => {
+    const input =
+      '<div data-type="tableVariable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello|abcd" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello|abcd}}</div>'
+    expect(substituteForPreview(input, varInfo)).toEqual('world')
+  })
+
+  it('substitutes legacy {{step.…}} patterns in plain text nodes', () => {
+    const input =
+      '<p>Aloha {{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello}}, meet {{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.papa}}.</p>'
+    expect(substituteForPreview(input, varInfo)).toEqual(
+      '<p>Aloha world, meet mama.</p>',
+    )
+  })
+
+  it('falls back to data-value when var is missing from varInfo', () => {
+    const input =
+      '<span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.missing" data-label="missing" data-value="stale-fallback">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.missing}}</span>'
+    expect(substituteForPreview(input, varInfo)).toEqual('stale-fallback')
+  })
+
+  it('falls back to empty string when both varInfo and data-value are missing', () => {
+    const input =
+      '<span data-type="variable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.missing">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.missing}}</span>'
+    expect(substituteForPreview(input, varInfo)).toEqual('')
+  })
+
+  it('returns empty string for nullish input', () => {
+    const inputs = [undefined, null] as unknown as string[]
+    for (const input of inputs) {
+      expect(substituteForPreview(input, varInfo)).toEqual('')
+    }
   })
 })
 
