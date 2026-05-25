@@ -99,8 +99,9 @@ const action: IRawAction = {
       )
     }
 
-    const { fileId, tableId, lookupColumn, lookupValue, columnsToUpdate } =
+    const { fileId, tableId, filters, columnsToUpdate } =
       parametersParseResult.data
+    const { lookupColumn, lookupValue } = filters![0]
 
     //
     // Find index of row to update

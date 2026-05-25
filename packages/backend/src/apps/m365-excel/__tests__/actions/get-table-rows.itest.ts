@@ -9,7 +9,17 @@ import Context from '@/types/express/context'
 
 import m365Excel from '../..'
 import getTableRowsAction from '../../actions/get-table-rows'
+import { stepTransformer } from '../../common/transform-step-parameters'
 import { HexEncodedRowObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
+
+const DEFAULT_PARAMETERS = {
+  fileId: 'test-file-id',
+  tableId: '{test-table-id}',
+  lookupColumn: 'Column1',
+  lookupValue: 'test-value',
+}
+
+const { transformStepParameters } = stepTransformer
 
 const getHexEncodedColumnName = (columnName: string) =>
   Buffer.from(columnName).toString('hex')
@@ -55,12 +65,8 @@ describe('getTableRowsAction', () => {
         appKey: m365Excel.name,
         key: getTableRowsAction.key,
         position: 2,
-        parameters: {
-          fileId: 'test-file-id',
-          tableId: '{test-table-id}',
-          lookupColumn: 'Column1',
-          lookupValue: 'test-value',
-        },
+        parameters: DEFAULT_PARAMETERS,
+        version: 1,
       },
       app: {
         name: m365Excel.name,
@@ -70,6 +76,14 @@ describe('getTableRowsAction', () => {
         request: vi.fn(),
       },
     } as unknown as IGlobalVariable
+
+    // Simulate the Step model's afterFind hook, which transforms parameters
+    // before they reach the action's run function in real execution.
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
 
     // Setup default mock implementations
     mocks.getTopNTableRows.mockResolvedValue({
@@ -121,7 +135,6 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
 
-    $.step.parameters.lookupValue = 'test-value'
     await getTableRowsAction.run($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -201,7 +214,12 @@ describe('getTableRowsAction', () => {
   })
 
   it('should return matching rows when lookup value is empty', async () => {
-    $.step.parameters.lookupValue = ''
+    $.step.parameters = { ...DEFAULT_PARAMETERS, lookupValue: '' }
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
     await getTableRowsAction.run($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -260,7 +278,12 @@ describe('getTableRowsAction', () => {
 
   it('should handle case-sensitive matching', async () => {
     // Change the lookup value to be different case
-    $.step.parameters.lookupValue = 'TEST-VALUE'
+    $.step.parameters = { ...DEFAULT_PARAMETERS, lookupValue: 'TEST-VALUE' }
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
 
     await getTableRowsAction.run($)
 
@@ -300,7 +323,12 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
     // Change the lookup value to be different case
-    $.step.parameters.lookupValue = 'TEST-VALUE'
+    $.step.parameters = { ...DEFAULT_PARAMETERS, lookupValue: 'TEST-VALUE' }
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
 
     await getTableRowsAction.run($)
 
