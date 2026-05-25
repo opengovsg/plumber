@@ -1,4 +1,9 @@
-import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
+import {
+  IBaseTrigger,
+  IStep,
+  ITriggerInstructions,
+  TFieldPreviewType,
+} from '@plumber/types'
 
 import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
@@ -10,6 +15,7 @@ import {
   Icon,
   Text,
   Tooltip,
+  useDisclosure,
   VStack,
 } from '@chakra-ui/react'
 import {
@@ -25,7 +31,9 @@ import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
+import EmailPreviewModal from '../EmailPreviewModal'
 import ErrorResult from '../ErrorResult'
+import { substituteForPreview } from '../RichTextEditor/utils'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
 import { CheckAgainButton } from './CheckAgainButton'
@@ -37,6 +45,10 @@ import {
   isSameAppAndAppKey,
   matchParamsToDataIn,
 } from './utils'
+
+const PREVIEW_BUTTON_COPY: Record<TFieldPreviewType, string> = {
+  email: 'Preview email',
+}
 
 const defaultTriggerInstructions: ITriggerInstructions = {
   beforeUrlMsg: `# 1. You'll need to configure your application with this webhook URL.`,
@@ -122,7 +134,45 @@ export default function FlowStepTestController(
     lastErrorDetails,
     isWebhookSubstep,
     testVariables,
+    previewAction,
   } = useTestDetails(step, currentTestExecutionStep, allApps, substeps)
+
+  const {
+    isOpen: isPreviewModalOpen,
+    onOpen: onPreviewModalOpen,
+    onClose: onPreviewModalClose,
+  } = useDisclosure()
+
+  const previewModal = useMemo(() => {
+    if (!previewAction) {
+      return null
+    }
+    switch (previewAction.kind) {
+      case 'email': {
+        const previewHtml = substituteForPreview(previewAction.html, varInfoMap)
+        return (
+          <EmailPreviewModal
+            isOpen={isPreviewModalOpen}
+            onClose={onPreviewModalClose}
+            html={previewHtml}
+          />
+        )
+      }
+    }
+  }, [previewAction, varInfoMap, isPreviewModalOpen, onPreviewModalClose])
+
+  const previewButton = previewAction ? (
+    <Button
+      variant="outline"
+      colorScheme="black"
+      size="sm"
+      onClick={onPreviewModalOpen}
+      mr={2}
+      data-test={`preview-${previewAction.kind}-button`}
+    >
+      {PREVIEW_BUTTON_COPY[previewAction.kind]}
+    </Button>
+  ) : null
   const containerRef = useRef<HTMLDivElement>(null)
   const webhookUrlInfoRef = useRef<HTMLDivElement>(null)
   const [collapseDirection, setCollapseDirection] = useState<'up' | 'down'>(
@@ -337,6 +387,7 @@ export default function FlowStepTestController(
                       {!isDirty ? 'Saved' : 'Save without checking'}
                     </Button>
                   )}
+                  {previewButton}
                   <CheckAgainButton
                     isUnstyledInfobox={isStepUnchecked}
                     onClick={handleSaveAndTest}
@@ -379,6 +430,7 @@ export default function FlowStepTestController(
                   {isDirty ? 'Save' : 'Saved'}
                 </Button>
               )}
+              {previewButton}
               <CheckStepTooltip
                 hasDeletedVars={hasDeletedVars}
                 isDisabled={shouldAllowCheckStep}
@@ -397,6 +449,7 @@ export default function FlowStepTestController(
           </VStack>
         )}
       </VStack>
+      {previewModal}
     </>
   )
 }
