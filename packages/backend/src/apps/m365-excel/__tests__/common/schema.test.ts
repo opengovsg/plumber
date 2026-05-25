@@ -3,7 +3,7 @@ import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { fileIdSchema, tableIdSchema } from '../../common/schema'
+import { fileIdSchema, filtersSchema, tableIdSchema } from '../../common/schema'
 
 const VALID_FILE_ID = '1234ABCD1234ABCD1234ABCD1234ABCD'
 const VALID_TABLE_ID = `{${VALID_FILE_ID}}`
@@ -76,6 +76,61 @@ describe('validate dynamic fields', () => {
           $,
         }),
       ).toHaveProperty('success', true)
+    })
+  })
+})
+
+describe('filtersSchema', () => {
+  describe('invalid filters', () => {
+    it('rejects empty array', () => {
+      expect(filtersSchema.safeParse([])).toHaveProperty('success', false)
+    })
+
+    it('rejects duplicate lookup columns', () => {
+      expect(
+        filtersSchema.safeParse([
+          { lookupColumn: 'Name', lookupValue: 'Alice' },
+          { lookupColumn: 'Name', lookupValue: 'Bob' },
+        ]),
+      ).toHaveProperty('success', false)
+    })
+
+    it('rejects multiple duplicates across filters', () => {
+      expect(
+        filtersSchema.safeParse([
+          { lookupColumn: 'Name', lookupValue: 'Alice' },
+          { lookupColumn: 'Age', lookupValue: '30' },
+          { lookupColumn: 'Name', lookupValue: 'Bob' },
+        ]),
+      ).toHaveProperty('success', false)
+    })
+  })
+
+  describe('valid filters', () => {
+    it('accepts a single filter', () => {
+      expect(
+        filtersSchema.safeParse([
+          { lookupColumn: 'Name', lookupValue: 'Alice' },
+        ]),
+      ).toHaveProperty('success', true)
+    })
+
+    it('accepts multiple filters with unique columns', () => {
+      expect(
+        filtersSchema.safeParse([
+          { lookupColumn: 'Name', lookupValue: 'Alice' },
+          { lookupColumn: 'Age', lookupValue: '30' },
+          { lookupColumn: 'Department', lookupValue: 'Engineering' },
+        ]),
+      ).toHaveProperty('success', true)
+    })
+
+    it('defaults lookupValue to empty string when omitted', () => {
+      const result = filtersSchema.safeParse([{ lookupColumn: 'Name' }])
+      expect(result).toHaveProperty('success', true)
+      if (result.success) {
+        expect(result.data[0].lookupValue).toBe('')
+      }
     })
   })
 })

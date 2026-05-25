@@ -101,7 +101,6 @@ const action: IRawAction = {
 
     const { fileId, tableId, filters, columnsToUpdate } =
       parametersParseResult.data
-    const { lookupColumn, lookupValue } = filters![0]
 
     //
     // Find index of row to update
@@ -115,8 +114,7 @@ const action: IRawAction = {
       $,
       session,
       tableId,
-      lookupValue,
-      lookupColumn,
+      filters,
     })
 
     if (!findRowResults) {
