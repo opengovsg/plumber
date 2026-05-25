@@ -548,7 +548,7 @@ describe('send transactional email', () => {
     })
   })
 
-  it('should send to all recipients in test runs', async () => {
+  it('skips partial retry and sends only to the test runner in test runs', async () => {
     const recipients = [
       'recipient1@open.gov.sg',
       'recipient2@open.gov.sg',
@@ -573,11 +573,11 @@ describe('send transactional email', () => {
     })
     $.execution.testRun = true
     await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-    expect($.http.post).toBeCalledTimes(5)
+    expect($.http.post).toBeCalledTimes(1)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
-        status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
-        recipient: recipients,
+        status: ['ACCEPTED'],
+        recipient: [$.user.email],
         subject: 'test subject',
         body: 'test body',
         from: 'jack',
@@ -620,6 +620,70 @@ describe('send transactional email', () => {
         from: 'jack',
         reply_to: 'replyTo@open.gov.sg',
       },
+    })
+  })
+
+  describe('test-run recipient override', () => {
+    it("redirects email to the test runner's address and drops CCs when testRun is true", async () => {
+      $.step.parameters.destinationEmail = 'recipient@example.com'
+      $.step.parameters.destinationEmailCc = 'cc@example.com'
+      $.user.email = 'me@example.com'
+      $.execution.testRun = true
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      expect($.http.post).toBeCalledTimes(1)
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          status: ['ACCEPTED'],
+          recipient: ['me@example.com'],
+          subject: 'test subject',
+          body: 'test body',
+          from: 'jack',
+          reply_to: 'replyTo@open.gov.sg',
+        },
+      })
+    })
+
+    it('does not override recipients on a normal (non-test) run', async () => {
+      const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
+      const ccRecipients = ['cc1@open.gov.sg', 'cc2@open.gov.sg']
+      $.step.parameters.destinationEmail = recipients.join(',')
+      $.step.parameters.destinationEmailCc = ccRecipients.join(',')
+      $.user.email = 'me@example.com'
+      $.execution.testRun = false
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          status: ['ACCEPTED', 'ACCEPTED'],
+          recipient: recipients,
+          subject: 'test subject',
+          body: 'test body',
+          cc: ccRecipients,
+          from: 'jack',
+          reply_to: 'replyTo@open.gov.sg',
+        },
+      })
+    })
+
+    it("collapses multiple configured recipients to the test runner's address in test mode", async () => {
+      $.step.parameters.destinationEmail = 'a@x.com, b@x.com, c@x.com'
+      $.step.parameters.destinationEmailCc = 'cc1@x.com, cc2@x.com'
+      $.user.email = 'me@example.com'
+      $.execution.testRun = true
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      expect($.http.post).toBeCalledTimes(1)
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          status: ['ACCEPTED'],
+          recipient: ['me@example.com'],
+          subject: 'test subject',
+          body: 'test body',
+          from: 'jack',
+          reply_to: 'replyTo@open.gov.sg',
+        },
+      })
     })
   })
 

@@ -40,6 +40,7 @@ const action: IRawAction = {
   name: 'Send email',
   key: 'sendTransactionalEmail',
   description: 'Sends an email using Postman',
+  testStepTooltip: 'Test email will only be sent to your email address.',
   arguments: transactionalEmailFields,
 
   preprocessVariable(key: string, value: unknown) {
@@ -93,9 +94,18 @@ const action: IRawAction = {
       replyTo,
       attachments = [],
     } = $.step.parameters
+    // During test runs, redirect all recipients to the test runner's own
+    // email so test sends never spam unrelated addresses configured on the
+    // step.
+    const effectiveDestinationEmail = $.execution.testRun
+      ? $.user.email
+      : destinationEmail
+    const effectiveDestinationEmailCc = $.execution.testRun
+      ? undefined
+      : destinationEmailCc
     const result = transactionalEmailSchema.safeParse({
-      destinationEmail,
-      destinationEmailCc,
+      destinationEmail: effectiveDestinationEmail,
+      destinationEmailCc: effectiveDestinationEmailCc,
       senderName,
       subject,
       body,
