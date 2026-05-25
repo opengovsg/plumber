@@ -78,7 +78,7 @@ const action: IRawAction = {
       type: 'multirow-multicol' as const,
       required: true,
       subFields: LOOKUP_CONDITIONS_SUBFIELDS,
-      maxRows: 1, // Phase 1: Restrict to single filter
+      maxRows: 3,
       hiddenIf: {
         fieldKey: 'tableId',
         op: 'is_empty',
@@ -101,7 +101,6 @@ const action: IRawAction = {
     }
 
     const { fileId, tableId, filters } = parametersParseResult.data
-    const { lookupColumn, lookupValue } = filters![0]
 
     const session = await WorkbookSession.acquire($, fileId)
     const { columns: rawColumns, rows } = await getTopNTableRows(
@@ -111,18 +110,25 @@ const action: IRawAction = {
       MAX_ROWS,
     )
 
-    const columnIndex = rawColumns.indexOf(lookupColumn)
-    if (columnIndex === -1) {
-      throw new StepError(
-        `Column "${lookupColumn}" does not exist in your table.`,
-        `Check that your Excel table contains the "${lookupColumn}" column.`,
-      )
-    }
+    const columnIndices = filters.map(({ lookupColumn }) => {
+      const idx = rawColumns.indexOf(lookupColumn)
+      if (idx === -1) {
+        throw new StepError(
+          `Column "${lookupColumn}" does not exist in your table.`,
+          `Check that your Excel table contains the "${lookupColumn}" column.`,
+        )
+      }
+      return idx
+    })
 
     const rowsToReturn: { data: Record<string, string> }[] = []
 
     for (const [_, row] of rows.entries()) {
-      if (row[columnIndex] === lookupValue) {
+      if (
+        filters.every(
+          ({ lookupValue }, i) => row[columnIndices[i]] === lookupValue,
+        )
+      ) {
         rowsToReturn.push({
           data: convertRowToHexKeyedObject({ row, columns: rawColumns }),
         })

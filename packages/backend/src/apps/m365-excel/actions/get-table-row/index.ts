@@ -74,7 +74,7 @@ const action: IRawAction = {
       type: 'multirow-multicol' as const,
       required: true,
       subFields: LOOKUP_CONDITIONS_SUBFIELDS,
-      maxRows: 1, // Phase 1: Restrict to single filter
+      maxRows: 3,
       hiddenIf: {
         fieldKey: 'tableId',
         op: 'is_empty',
@@ -102,15 +102,13 @@ const action: IRawAction = {
     }
 
     const { fileId, tableId, filters } = parametersParseResult.data
-    const { lookupColumn, lookupValue } = filters![0]
 
     const session = await WorkbookSession.acquire($, fileId)
     const results = await getTableRowImpl({
       $,
       session,
       tableId,
-      lookupValue,
-      lookupColumn,
+      filters,
     })
 
     if (!results) {

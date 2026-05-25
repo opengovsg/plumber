@@ -38,6 +38,15 @@ export const filtersSchema = z
     }),
   )
   .min(1, { message: 'Please add at least one lookup condition.' })
+  .refine(
+    (filters) => {
+      const columns = filters.map((f) => f.lookupColumn)
+      return new Set(columns).size === columns.length
+    },
+    {
+      message: 'Each lookup condition must use a different column.',
+    },
+  )
 
 export const lookupParametersSchema = z.object({
   fileId: fileIdSchema,
