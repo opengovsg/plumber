@@ -2,7 +2,7 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import type { z } from 'zod'
 
-import { lookupParametersSchema } from '@/apps/m365-excel/common/schema'
+import { filtersSchema } from '@/apps/m365-excel/common/schema'
 import StepError from '@/errors/step'
 
 import getTopNTableRows from '../../../common/get-top-n-table-rows'
@@ -19,7 +19,7 @@ interface GetTableRowImplParams {
   $: IGlobalVariable
   session: WorkbookSession
   tableId: string
-  filters: z.infer<typeof lookupParametersSchema>['filters']
+  filters: z.infer<typeof filtersSchema>
 }
 
 interface GetTableRowImplResults {
