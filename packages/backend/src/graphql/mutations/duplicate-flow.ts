@@ -1,5 +1,6 @@
 import { isEmpty } from 'lodash'
 
+import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
 import Flow from '@/models/flow'
@@ -83,6 +84,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
             oldToNewStepIdsMap,
           ),
           config: !isEmpty(prevStepConfig) ? prevStepConfig : undefined,
+          version: getStepVersion(oldStep.appKey, oldStep.key),
         })
       oldToNewStepIdsMap[oldStep.id] = duplicatedStep.id // update map after duplicating step
     }

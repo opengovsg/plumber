@@ -3,6 +3,7 @@ import { IStepConfig } from '@plumber/types'
 import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { getStepVersion } from '@/helpers/get-step-version'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
 
@@ -81,6 +82,7 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
         parameters,
         connectionId: connection?.id,
         config: config as IStepConfig,
+        version: getStepVersion(appKey, key),
       })
 
       newSteps.push(step)
