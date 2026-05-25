@@ -6,6 +6,8 @@ export const MS_GRAPH_OAUTH_BASE_URL = 'https://login.microsoftonline.com'
 
 export const GET_TABLE_ROWS_LIMIT = 500
 
+export const MAX_LOOKUP_CONDITIONS = 3
+
 export const LOOKUP_CONDITIONS_SUBFIELDS = [
   {
     placeholder: 'Lookup column',

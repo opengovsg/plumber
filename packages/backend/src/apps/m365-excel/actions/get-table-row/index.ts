@@ -4,7 +4,10 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
-import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
+import {
+  LOOKUP_CONDITIONS_SUBFIELDS,
+  MAX_LOOKUP_CONDITIONS,
+} from '../../common/constants'
 import { lookupParametersSchema } from '../../common/schema'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -74,7 +77,7 @@ const action: IRawAction = {
       type: 'multirow-multicol' as const,
       required: true,
       subFields: LOOKUP_CONDITIONS_SUBFIELDS,
-      maxRows: 3,
+      maxRows: MAX_LOOKUP_CONDITIONS,
       hiddenIf: {
         fieldKey: 'tableId',
         op: 'is_empty',
