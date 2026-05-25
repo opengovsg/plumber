@@ -12,6 +12,7 @@ import {
   MenuItem,
   MenuList,
   Text,
+  Tooltip,
 } from '@chakra-ui/react'
 import { Button, IconButton, Menu } from '@opengovsg/design-system-react'
 
@@ -28,10 +29,12 @@ interface CheckAgainButtonProps {
   isDisabled: boolean
   step: IStep
   executionStepMetadata?: IExecutionStepMetadata
+  tooltip?: string
 }
 
 export function CheckAgainButton(props: CheckAgainButtonProps) {
-  const { isUnstyledInfobox, onClick, isLoading, isDisabled, step } = props
+  const { isUnstyledInfobox, onClick, isLoading, isDisabled, step, tooltip } =
+    props
   const isFormSgTrigger =
     step.appKey === FORMSG_APP_KEY && step.key === FORMSG_TRIGGER_KEY
   const isFormSgAction =
@@ -44,17 +47,24 @@ export function CheckAgainButton(props: CheckAgainButtonProps) {
     return <FormSGCheckAgainButton {...props} />
   }
   return (
-    <Button
-      variant={isUnstyledInfobox ? 'solid' : 'outline'}
-      onClick={() => onClick()}
-      isLoading={isLoading}
-      colorScheme={isUnstyledInfobox ? 'primary' : 'black'}
-      size="sm"
-      isDisabled={isDisabled}
-      data-test="check-again-button"
+    <Tooltip
+      label={tooltip}
+      isDisabled={!tooltip || isDisabled}
+      aria-label="check step again tooltip"
+      hasArrow
     >
-      Check step again
-    </Button>
+      <Button
+        variant={isUnstyledInfobox ? 'solid' : 'outline'}
+        onClick={() => onClick()}
+        isLoading={isLoading}
+        colorScheme={isUnstyledInfobox ? 'primary' : 'black'}
+        size="sm"
+        isDisabled={isDisabled}
+        data-test="check-again-button"
+      >
+        Check step again
+      </Button>
+    </Tooltip>
   )
 }
 

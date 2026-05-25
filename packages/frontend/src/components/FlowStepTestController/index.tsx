@@ -60,22 +60,27 @@ type CheckStepTooltipProps = {
   isDisabled: boolean
   isReadOnly: boolean
   hasDeletedVars?: boolean
+  tooltip?: string
   children: React.ReactNode
 }
 
 const CheckStepTooltip = (props: CheckStepTooltipProps) => {
-  const { children, hasDeletedVars, isDisabled, isReadOnly } = props
+  const { children, hasDeletedVars, isDisabled, isReadOnly, tooltip } = props
+  // `isDisabled` here forwards Chakra Tooltip semantics: truthy means the
+  // button is currently enabled (so the disabled-state hint should be hidden).
+  const isButtonEnabled = isDisabled
+  const disabledLabel = isReadOnly
+    ? 'Unpublish your pipe to check step'
+    : hasDeletedVars
+    ? 'Remove variables from deleted steps to check step'
+    : 'Complete required fields to check step'
+  const label = isButtonEnabled ? tooltip : disabledLabel
+  const tooltipHidden = isButtonEnabled && !tooltip
   return (
     <Tooltip
-      label={
-        isReadOnly
-          ? 'Unpublish your pipe to check step'
-          : hasDeletedVars
-          ? 'Remove variables from deleted steps to check step'
-          : 'Complete required fields to check step'
-      }
+      label={label}
       aria-label="check step tooltip"
-      isDisabled={isDisabled}
+      isDisabled={tooltipHidden}
       hasArrow
     >
       {children}
@@ -116,6 +121,8 @@ export default function FlowStepTestController(
     substeps,
     isAiStep,
   } = useStepMetadata(step)
+
+  const testStepTooltip = selectedActionOrTrigger?.testStepTooltip
 
   const {
     isTestSuccessful,
@@ -344,6 +351,7 @@ export default function FlowStepTestController(
                     isDisabled={!isValid || readOnly}
                     step={step}
                     executionStepMetadata={currentTestExecutionStep?.metadata}
+                    tooltip={testStepTooltip}
                   />
                 </Flex>
               </Flex>
@@ -383,6 +391,7 @@ export default function FlowStepTestController(
                 hasDeletedVars={hasDeletedVars}
                 isDisabled={shouldAllowCheckStep}
                 isReadOnly={readOnly}
+                tooltip={testStepTooltip}
               >
                 <Button
                   onClick={() => handleSaveAndTest()}

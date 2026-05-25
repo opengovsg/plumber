@@ -212,6 +212,7 @@ type Action {
   setupMessage: SetupMessage
   isNew: Boolean
   linkToGuide: String
+  testStepTooltip: String
   substeps: [ActionSubstep]
 }
 
@@ -860,6 +861,7 @@ type Trigger {
   substeps: [TriggerSubstep]
   isNew: Boolean
   noAuthRequired: Boolean
+  testStepTooltip: String
 }
 
 type TriggerInstructions {

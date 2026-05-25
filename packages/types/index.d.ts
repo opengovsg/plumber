@@ -812,6 +812,10 @@ export interface IBaseTrigger {
 
   // if true, the trigger does not require authentication
   noAuthRequired?: boolean
+
+  // If set, shown as a tooltip on the test-step button to warn users about
+  // non-obvious test-run behavior (e.g. recipients being rewritten).
+  testStepTooltip?: string
 }
 
 export interface IRawTrigger extends IBaseTrigger {
@@ -927,6 +931,10 @@ export interface IBaseAction {
 
   // if true, the action does not require authentication
   noAuthRequired?: boolean
+
+  // If set, shown as a tooltip on the test-step button to warn users about
+  // non-obvious test-run behavior (e.g. recipients being rewritten).
+  testStepTooltip?: string
 }
 
 export interface IRawAction extends IBaseAction {
