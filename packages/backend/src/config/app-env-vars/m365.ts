@@ -25,6 +25,15 @@ if (
   )
 }
 
+// Gates BullMQ Pro batching on the m365-excel action queue. When true, the
+// queue's worker fetches up to `batch.size` jobs at once and the action's
+// `runBatch` (if defined) coalesces per-job side effects. Off by default
+// because batching shifts the rate-limit unit from 1 job to 1 coalesced
+// batch and changes the failure mode (POST is now all-or-nothing across the
+// batch); requires explicit opt-in per environment.
+export const M365_EXCEL_BATCH_ENABLED =
+  process.env.M365_EXCEL_BATCH_ENABLED === 'true'
+
 const sensitivityLabelGuidsSchema = z
   .string()
   .trim()

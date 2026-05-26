@@ -618,6 +618,25 @@ export interface IAppQueue {
    * The type of worker to use for this queue.
    */
   workerType: 'action' | 'sub-trigger'
+
+  /**
+   * Enables BullMQ Pro batches on this queue's worker. When set, the worker
+   * fetches up to `size` jobs at once and invokes the processor on the batch.
+   *
+   * Always pair with `getGroupConfigForJob` and `groupAffinity: true` so that
+   * every job in a batch belongs to the same group (e.g. same per-file
+   * serialization unit). Pairing batches with group affinity is what makes
+   * coalescing per-job side effects (e.g. one upstream API call per batch)
+   * correct.
+   *
+   * @see {@link WorkerProOptions.batch}
+   */
+  batch?: {
+    size: number
+    minSize?: number
+    timeout?: number
+    groupAffinity: true
+  }
 }
 
 export interface IApp {
@@ -932,6 +951,29 @@ export interface IBaseAction {
 
 export interface IRawAction extends IBaseAction {
   arguments?: IField[]
+
+  /**
+   * Opt-in batch processor. When defined, the action worker routes every
+   * dispatch through `runBatch` — including single-item dispatches — instead
+   * of `run`. This gives the action a chance to coalesce side effects (e.g.
+   * one API call covering N items in the batch) when its queue is configured
+   * with {@link IAppQueue.batch} and `groupAffinity: true`.
+   *
+   * Each item carries its own `$` (i.e. its own auth, step, parameters, etc)
+   * plus a `markFailed` callback that fails just that one item while letting
+   * the rest of the batch commit. `markFailed(err)` defaults to retryable
+   * (regular `Error` → BullMQ retries); pass `{ retryable: false }` after
+   * external state has already changed (e.g. a Graph POST succeeded for some
+   * sub-group), where a retry would duplicate. Items that `runBatch` does not
+   * `markFailed` are treated as succeeded; if `runBatch` itself throws, every
+   * un-`markFailed` item in the dispatched sub-batch fails with that error.
+   */
+  runBatch?(
+    items: Array<{
+      $: IGlobalVariable
+      markFailed: (err: Error, opts?: { retryable?: boolean }) => void
+    }>,
+  ): Promise<void>
 }
 
 export interface IAction extends IBaseAction {

@@ -13,6 +13,7 @@ import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
+import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -66,6 +67,21 @@ function convertParamsToBullMqOptions(
     workerOptions.group = groupSettings
   }
 
+  if (queueConfig.batch) {
+    // Without a group config the worker has no notion of "all jobs in this
+    // batch share the same unit of work", which is the only reason we ever
+    // turn batches on. Warn loudly instead of crashing — m365-excel (the
+    // only batched queue today) does set this, so this branch is purely
+    // future-proofing for the next caller who forgets.
+    if (!queueConfig.getGroupConfigForJob) {
+      logger.warn(
+        `[make-action-worker] Queue '${queueName}' enables batch without getGroupConfigForJob; batches will not respect grouping.`,
+        { event: 'action-worker-batch-without-group-config', queueName },
+      )
+    }
+    workerOptions.batch = queueConfig.batch
+  }
+
   return {
     queueName,
     workerOptions,
@@ -99,6 +115,17 @@ export function makeActionWorker(
       'workers.action',
       async (job) => {
         const span = tracer.scope().active()
+
+        // PR A stub: real batch dispatch lives in PR B. Today no caller has
+        // `batch` enabled in prod (m365-excel's flag is off by default), so
+        // this guard is unreachable at runtime — its purpose is to fail
+        // loudly the moment somebody flips the flag before PR B ships.
+        const batchSiblings = job.getBatch?.() ?? []
+        if (batchSiblings.length > 1) {
+          throw new UnrecoverableError(
+            `Batch dispatch not yet implemented (received ${batchSiblings.length} jobs in batch for queue '${queueName}')`,
+          )
+        }
 
         const jobData = job.data
         const jobId = makeActionJobId(queueName, job.id)
