@@ -25,7 +25,6 @@ import { model, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import { AuthenticatedRequest } from '@/types/express/context'
 
-import { getChatReadiness } from './get-chat-readiness'
 import { serializeMessagesForLangfuse } from './helpers'
 import { chatRequestSchema } from './schema'
 
@@ -48,13 +47,8 @@ const handleChatStream = observe(
     // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
     const restrictedApps = getRestrictedAppKeys(allLdFlags)
 
-    const {
-      chatPromptName,
-      chatReadinessPromptName,
-      chatReadinessModel,
-      chatSummaryPromptName,
-      version,
-    } = aiBuilderFlag.config
+    const { chatPromptName, chatSummaryPromptName, version } =
+      aiBuilderFlag.config
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -142,19 +136,13 @@ const handleChatStream = observe(
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
 
-                let isChatReady = false
-                if (!isAtLimit) {
-                  // Check if chat is ready for step generation using a fast structured call
-                  // only do this if the chat is not at the limit yet
-                  isChatReady = await getChatReadiness({
-                    context,
-                    promptName: chatReadinessPromptName,
-                    promptVersion: version,
-                    llmResponse: event.text,
-                    sessionId: sessionId || '',
-                    modelId: chatReadinessModel,
-                  })
-                }
+                /**
+                 * We are using this custom marker to check if the chat is ready for step generation.
+                 * The system prompt tells the LLM to generate this marker
+                 */
+                const isChatReady = event.text.includes(
+                  '<!-- WORKFLOW_METADATA',
+                )
 
                 // Write chat readiness status as a data annotation
                 // NOTE: type MUST start with "data-" - SDK enforces this

@@ -64,8 +64,4 @@ export const chatRequestSchema = z.object({
     .optional(),
 })
 
-export const isChatReadySchema = z.object({
-  isReady: z.boolean(),
-})
-
 export type ChatRequest = z.infer<typeof chatRequestSchema>
