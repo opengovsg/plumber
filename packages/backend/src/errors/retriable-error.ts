@@ -6,6 +6,7 @@ interface RetriableErrorParams {
   error: ConstructorParameters<typeof BaseError>[0]
   delayInMs: number | 'default'
   delayType: 'step' | 'group' | 'queue'
+  maxDelayMs?: number
 }
 
 /**
@@ -35,11 +36,18 @@ interface RetriableErrorParams {
 export default class RetriableError extends BaseError {
   delayInMs: number
   delayType: RetriableErrorParams['delayType']
+  maxDelayMs?: number
 
-  constructor({ error, delayInMs, delayType }: RetriableErrorParams) {
+  constructor({
+    error,
+    delayInMs,
+    delayType,
+    maxDelayMs,
+  }: RetriableErrorParams) {
     super(error)
 
     this.delayInMs = delayInMs === 'default' ? DEFAULT_DELAY_MS : delayInMs
     this.delayType = delayType
+    this.maxDelayMs = maxDelayMs
   }
 }

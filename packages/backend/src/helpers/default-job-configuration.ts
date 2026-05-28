@@ -27,6 +27,11 @@ export const DEFAULT_JOB_DELAY_DURATION = 0
 // - We round that up to 10 just in case.
 export const MAXIMUM_JOB_ATTEMPTS = appConfig.maxJobAttempts
 
+// Separate, smaller budget for transient DB errors so a flaky Postgres can't
+// burn the broader MAXIMUM_JOB_ATTEMPTS budget reserved for app-side
+// RetriableError causes (rate limits, etc.).
+export const MAX_TRANSIENT_DB_ATTEMPTS = 3
+
 export const DEFAULT_JOB_OPTIONS: JobsProOptions = {
   removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   removeOnFail: REMOVE_AFTER_30_DAYS,

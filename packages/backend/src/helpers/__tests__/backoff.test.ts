@@ -87,6 +87,38 @@ describe('Backoff', () => {
     },
   )
 
+  it('caps the jittered delay at maxDelayMs when set', () => {
+    const err = new RetriableError({
+      error: 'test error',
+      delayInMs: 1000,
+      delayType: 'step',
+      maxDelayMs: 5000,
+    })
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    // Attempt 1: prevFullDelay = 1000, jittered = 1500 → uncapped.
+    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(1500)
+    // Attempt 2: prevFullDelay = 2000, jittered = 3000 → uncapped.
+    expect(exponentialBackoffWithJitter(2, null, err)).toEqual(3000)
+    // Attempt 3: prevFullDelay = 4000, jittered = 6000 → capped at 5000.
+    expect(exponentialBackoffWithJitter(3, null, err)).toEqual(5000)
+    // Attempt 4: prevFullDelay = 8000, jittered = 12000 → capped at 5000.
+    expect(exponentialBackoffWithJitter(4, null, err)).toEqual(5000)
+  })
+
+  it('does not cap the delay when maxDelayMs is omitted', () => {
+    const err = new RetriableError({
+      error: 'test error',
+      delayInMs: 1000,
+      delayType: 'step',
+    })
+    vi.spyOn(Math, 'random').mockReturnValue(0.5)
+
+    expect(exponentialBackoffWithJitter(10, null, err)).toEqual(
+      Math.pow(2, 9) * 1000 + Math.pow(2, 9) * 500,
+    )
+  })
+
   it("uses RetriableError's default delay and logs if error is not RetriableError", () => {
     const err = new Error('test error')
     vi.spyOn(Math, 'random').mockReturnValue(0)

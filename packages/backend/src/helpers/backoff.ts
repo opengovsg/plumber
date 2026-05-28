@@ -39,5 +39,9 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   const initialDelay =
     err instanceof RetriableError ? err.delayInMs : DEFAULT_DELAY_MS
   const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
-  return prevFullDelay + Math.round(Math.random() * prevFullDelay)
+  const jitteredDelay =
+    prevFullDelay + Math.round(Math.random() * prevFullDelay)
+  const maxDelayMs =
+    err instanceof RetriableError ? err.maxDelayMs ?? Infinity : Infinity
+  return Math.min(jitteredDelay, maxDelayMs)
 }
