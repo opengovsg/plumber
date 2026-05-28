@@ -51,6 +51,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
   const {
     flowName,
     chatInput,
+    chatMessages,
     output,
     steps,
     triggerStep,
@@ -62,6 +63,10 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     ddSessionId,
     clearPersistedState,
   } = useAiBuilderContext()
+
+  const chatTraceId = chatMessages?.findLast(
+    (m) => !m.isUser && m.traceId,
+  )?.traceId
 
   const isMobile = useIsMobile()
   const navigate = useNavigate()
@@ -98,6 +103,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
             input: {
               prompt,
               sessionId: ddSessionId,
+              traceId: chatTraceId,
             },
           },
           context: {
@@ -114,7 +120,7 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
         setError(true)
       }
     },
-    [generateAiStepsMutation, ddSessionId],
+    [generateAiStepsMutation, ddSessionId, chatTraceId],
   )
 
   const onGenerateAiSteps = useCallback(async () => {

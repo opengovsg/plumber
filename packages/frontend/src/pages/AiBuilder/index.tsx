@@ -44,8 +44,8 @@ function AiBuilderContent() {
   // - New messages beyond persisted state
   // - Currently streaming a response
   const hasUnsavedWork = useMemo(
-    () => chatMessages.length > 0 || messages.length > 0 || isStreaming,
-    [chatMessages.length, messages.length, isStreaming],
+    () => chatMessages?.length > 0 || messages.length > 0 || isStreaming,
+    [chatMessages?.length, messages.length, isStreaming],
   )
 
   // Guard navigation - clear persisted state when user confirms exit

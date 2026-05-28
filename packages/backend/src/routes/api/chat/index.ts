@@ -18,6 +18,7 @@ import { Router } from 'express'
 import appConfig from '@/config/app'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import { getPrompt } from '@/helpers/ai/get-prompt'
+import { WORKFLOW_METADATA_MARKER } from '@/helpers/ai/parse-workflow-metadata'
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -141,7 +142,7 @@ const handleChatStream = observe(
                  * The system prompt tells the LLM to generate this marker
                  */
                 const isChatReady = event.text.includes(
-                  '<!-- WORKFLOW_METADATA',
+                  WORKFLOW_METADATA_MARKER,
                 )
 
                 // Write chat readiness status as a data annotation
