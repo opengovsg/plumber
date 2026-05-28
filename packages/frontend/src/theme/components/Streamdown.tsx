@@ -97,6 +97,9 @@ export function ChakraStreamdown({
         <Text textStyle="h6" mt={2} mb={2} {...props} />
       ),
       p: (props: React.ComponentProps<typeof Text>) => <Text {...props} />,
+      strong: (props: React.ComponentProps<'strong'>) => (
+        <Box as="strong" fontWeight="semibold" display="inline" {...props} />
+      ),
       code: (props: React.ComponentProps<typeof Code>) => (
         <Code colorScheme="gray" {...props} />
       ),
@@ -104,10 +107,18 @@ export function ChakraStreamdown({
         <Link color="blue.500" {...props} />
       ),
       ul: (props: React.ComponentProps<typeof List>) => (
-        <List styleType="disc" spacing={2} pl={4} {...props} />
+        <List styleType="disc" spacing={2} pl={4} m={4} {...props} />
       ),
       ol: (props: React.ComponentProps<typeof List>) => (
-        <List as="ol" styleType="decimal" spacing={6} pl={4} {...props} />
+        <List
+          as="ol"
+          styleType="decimal"
+          spacing={2}
+          pl={4}
+          m={2}
+          sx={{ 'li > ol': { listStyleType: 'lower-alpha' } }}
+          {...props}
+        />
       ),
       li: (props: React.ComponentProps<typeof ListItem>) => (
         <ListItem {...props} />
