@@ -8,7 +8,28 @@ import type {
 // types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
 
-import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
+// Inline types that replace @taskforcesh/bullmq-pro for local development.
+// These mirror the Pro shapes used by IAppQueue so the rest of the codebase
+// continues to compile against the free bullmq package.
+interface _GroupJobConfig {
+  id: string
+  limit?: { max: number; duration: number }
+}
+interface _GroupWorkerConfig {
+  concurrency?: number
+  limit?: { max: number; duration: number }
+}
+interface _RateLimiter {
+  max: number
+  duration: number
+}
+// JobsProOptions: standard bullmq JobsOptions + group
+type JobsProOptions = import('bullmq').JobsOptions & { group?: _GroupJobConfig }
+// WorkerProOptions: standard bullmq WorkerOptions + group + limiter
+type WorkerProOptions = import('bullmq').WorkerOptions & {
+  group?: _GroupWorkerConfig
+  limiter?: _RateLimiter
+}
 import type { RelatedQueryBuilder } from 'objection'
 
 import HttpError from '@/errors/http'

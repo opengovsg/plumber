@@ -7,11 +7,13 @@ import apps from '@/apps'
 import appConfig from '@/config/app'
 import { APP_FLAG_REGEX } from '@/config/flags'
 
-const client = init(appConfig.launchDarklySdkKey)
+const isConfigured =
+  appConfig.launchDarklySdkKey && appConfig.launchDarklySdkKey !== '...'
 
 // No top level awaits means that the 1st call _might_ need to wait a bit longer
 // for init... :(
 const getClient = memoize(async () => {
+  const client = init(appConfig.launchDarklySdkKey)
   await client.waitForInitialization()
   return client
 })
@@ -21,6 +23,9 @@ export async function getLdFlagValue<T extends IJSONValue>(
   userEmail: string | null,
   fallbackValue: T,
 ): Promise<T> {
+  if (!isConfigured) {
+    return fallbackValue
+  }
   const client = await getClient()
   // LD's API returns us `any`, but their docs state it's limited to any JSON
   // value. So we do a yucky cast.
@@ -39,6 +44,9 @@ export async function getLdFlagValue<T extends IJSONValue>(
 export async function getAllLdFlags(
   userEmail: string | null,
 ): Promise<Record<string, any>> {
+  if (!isConfigured) {
+    return {}
+  }
   const client = await getClient()
 
   const allFlags = await client.allFlagsState({

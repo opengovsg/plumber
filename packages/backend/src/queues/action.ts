@@ -1,13 +1,12 @@
 import type { IActionJobData } from '@plumber/types'
 
+import apps from '@/apps'
+import logger from '@/helpers/logger'
 import {
   type JobPro,
   type JobsProOptions,
   type QueuePro,
-} from '@taskforcesh/bullmq-pro'
-
-import apps from '@/apps'
-import logger from '@/helpers/logger'
+} from '@/lib/bullmq-pro-compat'
 import { makeActionQueue } from '@/queues/helpers/make-action-queue'
 
 //

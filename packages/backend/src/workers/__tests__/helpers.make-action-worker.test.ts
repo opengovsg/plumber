@@ -23,7 +23,7 @@ vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
 }))
 
-vi.mock('@taskforcesh/bullmq-pro', () => ({
+vi.mock('@/lib/bullmq-pro-compat', () => ({
   WorkerPro: mocks.workerConstructor,
 }))
 

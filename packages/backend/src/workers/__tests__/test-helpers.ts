@@ -1,4 +1,4 @@
-import type { QueuePro, WorkerPro } from '@taskforcesh/bullmq-pro'
+import type { QueuePro, WorkerPro } from '@/lib/bullmq-pro-compat'
 
 export async function flushQueue(
   queue: QueuePro,

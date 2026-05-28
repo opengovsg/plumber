@@ -1,7 +1,7 @@
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import { UnrecoverableError } from '@/lib/bullmq-pro-compat'
 import { mainActionWorker } from '@/workers/action'
 
 import {

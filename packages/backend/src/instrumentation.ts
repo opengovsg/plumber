@@ -3,20 +3,35 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 
 import appConfig from '@/config/app'
 
-const langfuseSpanProcessor = new LangfuseSpanProcessor({
-  publicKey: appConfig.pair.rome.publicKey,
-  secretKey: appConfig.pair.rome.secretKey,
-  baseUrl: appConfig.pair.rome.baseUrl,
-  additionalHeaders: {
-    'CF-Access-Client-Id': appConfig.pair.rome.cloudflare.zeroTrustClientKey,
-    'CF-Access-Client-Secret':
-      appConfig.pair.rome.cloudflare.zeroTrustSecretKey,
-  },
-  environment: appConfig.appEnv,
-})
+const { publicKey, secretKey, baseUrl } = appConfig.pair.rome
+const { zeroTrustClientKey, zeroTrustSecretKey } =
+  appConfig.pair.rome.cloudflare
 
-const sdk = new NodeSDK({
-  spanProcessors: [langfuseSpanProcessor],
-})
+const isConfigured =
+  publicKey &&
+  secretKey &&
+  baseUrl &&
+  zeroTrustClientKey &&
+  zeroTrustSecretKey &&
+  ![publicKey, secretKey, baseUrl, zeroTrustClientKey, zeroTrustSecretKey].some(
+    (v) => v === '...',
+  )
 
-sdk.start()
+if (isConfigured) {
+  const langfuseSpanProcessor = new LangfuseSpanProcessor({
+    publicKey,
+    secretKey,
+    baseUrl,
+    additionalHeaders: {
+      'CF-Access-Client-Id': zeroTrustClientKey,
+      'CF-Access-Client-Secret': zeroTrustSecretKey,
+    },
+    environment: appConfig.appEnv,
+  })
+
+  const sdk = new NodeSDK({
+    spanProcessors: [langfuseSpanProcessor],
+  })
+
+  sdk.start()
+}

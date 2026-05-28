@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => {
   }
 })
 
-vi.mock('@taskforcesh/bullmq-pro', () => ({
+vi.mock('@/lib/bullmq-pro-compat', () => ({
   QueuePro: mocks.queueConstructor,
 }))
 

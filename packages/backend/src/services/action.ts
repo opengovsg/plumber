@@ -1,7 +1,5 @@
 import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
 
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-
 import {
   FOR_EACH_ITERATION_DELAY,
   FOR_EACH_MAX_ITERATIONS,
@@ -17,6 +15,7 @@ import computeParameters from '@/helpers/compute-parameters'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import { UnrecoverableError } from '@/lib/bullmq-pro-compat'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
