@@ -1,3 +1,5 @@
+import { IFlowSteps } from '@plumber/types'
+
 import z from 'zod/v3'
 
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
@@ -5,7 +7,6 @@ import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import {
   formatWorkflowError,
   parseWorkflowMetadata,
-  WorkflowData,
 } from '@/helpers/ai/parse-workflow-metadata'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -33,7 +34,7 @@ const generateAiSteps: MutationResolvers['generateAiSteps'] = async (
   const triggerSchema = getTriggerSchema(restrictedApps)
   const actionsSchema = getActionsSchema(restrictedApps)
 
-  let workflowData: WorkflowData | undefined
+  let workflowData: IFlowSteps
 
   try {
     const validatedInput = INPUT_SCHEMA.parse(params.input)

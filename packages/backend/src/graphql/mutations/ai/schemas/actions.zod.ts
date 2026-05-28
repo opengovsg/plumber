@@ -37,7 +37,7 @@ function getActionSchema(restrictedAppKeys: string[] = []) {
 export function getActionsSchema(restrictedAppKeys: string[] = []) {
   return z
     .array(getActionSchema(restrictedAppKeys))
-    .min(1)
+    .min(1, 'At least one action step is required.')
     .max(29) // max of 30 steps including trigger
     .superRefine(validateActionStepsRules)
 }

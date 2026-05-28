@@ -1,3 +1,5 @@
+import { IFlowSteps } from '@plumber/types'
+
 import {
   getActiveTraceId,
   observe,
@@ -16,9 +18,13 @@ import type { Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import { getPrompt } from '@/helpers/ai/get-prompt'
-import { WORKFLOW_METADATA_MARKER } from '@/helpers/ai/parse-workflow-metadata'
+import {
+  parseWorkflowMetadata,
+  WORKFLOW_METADATA_REGEX,
+} from '@/helpers/ai/parse-workflow-metadata'
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -57,7 +63,7 @@ const handleChatStream = observe(
       if (!validationResult.success) {
         res.status(400).json({
           error: 'Invalid request body',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         })
         return
       }
@@ -100,6 +106,7 @@ const handleChatStream = observe(
         content: buildSystemPrompt(prompt.prompt, restrictedApps),
       }
       const allMessages = [systemMessage, ...messages]
+      let workflowError = 'Unable to generate the workflow.'
 
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
@@ -137,30 +144,47 @@ const handleChatStream = observe(
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
 
-                /**
-                 * We are using this custom marker to check if the chat is ready for step generation.
-                 * The system prompt tells the LLM to generate this marker
-                 */
-                const isChatReady = event.text.includes(
-                  WORKFLOW_METADATA_MARKER,
+                const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
+                  event.text,
                 )
 
-                // Write chat readiness status as a data annotation
+                let flowSteps: IFlowSteps | undefined = undefined
+
+                if (hasWorkflowMetadata) {
+                  try {
+                    const parsedWorkflowMetadata = parseWorkflowMetadata(
+                      event.text,
+                      restrictedApps,
+                    )
+                    flowSteps = { ...parsedWorkflowMetadata, traceId }
+                  } catch (error) {
+                    workflowError =
+                      error instanceof BadUserInputError
+                        ? error.message
+                        : 'Unable to generate the workflow.'
+                  }
+                }
+
+                // isChatReady: true whenever WORKFLOW_METADATA is present (success or error)
+                // isChatReady: false only when there is no WORKFLOW_METADATA block
                 // NOTE: type MUST start with "data-" - SDK enforces this
                 writer.write({
                   type: 'data-isChatReady',
-                  data: { isChatReady },
+                  data: {
+                    isChatReady: hasWorkflowMetadata,
+                    ...(hasWorkflowMetadata &&
+                      (flowSteps ? { flowSteps } : { error: workflowError })),
+                  },
                 })
               } catch (error) {
-                logger.error('Error checking chat readiness', {
+                logger.error('Error parsing workflow', {
                   traceId,
                   error: error instanceof Error ? error.message : String(error),
                 })
 
-                // Write fallback isReady: false to ensure client receives a response
                 writer.write({
                   type: 'data-isChatReady',
-                  data: { isChatReady: false },
+                  data: { isChatReady: false, error: workflowError },
                 })
               } finally {
                 // Manually end the span since we're streaming

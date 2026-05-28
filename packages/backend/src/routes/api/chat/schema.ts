@@ -1,4 +1,6 @@
-import { z } from 'zod/v3'
+import { z } from 'zod/v4'
+
+import { flowStepsSchema } from '@/helpers/ai/types'
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -22,9 +24,13 @@ const messagePartSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('data-isChatReady'),
-    data: z.object({
-      isChatReady: z.boolean(),
-    }),
+    data: z.union([
+      z.object({ isChatReady: z.boolean(), flowSteps: flowStepsSchema }),
+      z.object({ isChatReady: z.boolean(), error: z.string() }),
+      // TODO (kevinkim-ogp): remove this in the next release
+      // Legacy format from clients before this deploy — can be removed after one release cycle
+      z.object({ isChatReady: z.boolean() }),
+    ]),
   }),
 ])
 

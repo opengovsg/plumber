@@ -1,3 +1,5 @@
+import { IFlowSteps } from '@plumber/types'
+
 import { parse as parseYaml } from 'yaml'
 import z from 'zod/v3'
 import { fromZodError } from 'zod-validation-error'
@@ -7,6 +9,8 @@ import {
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { getActionsSchema } from '@/graphql/mutations/ai/schemas/actions.zod'
+import { getTriggerSchema } from '@/graphql/mutations/ai/schemas/triggers.zod'
 
 export const WORKFLOW_METADATA_MARKER = '<!-- WORKFLOW_METADATA'
 export const WORKFLOW_METADATA_REGEX =
@@ -22,46 +26,42 @@ export type WorkflowData = ReturnType<typeof parseWorkflowMetadata>
 // - fallback: fromZodError for anything else (e.g. missing fields, array length).
 function formatWorkflowError(
   error: z.ZodError,
-  workflowData?: WorkflowData,
+  workflowData?: IFlowSteps,
 ): string {
   for (const issue of error.issues) {
     if (issue.code === z.ZodIssueCode.invalid_union) {
       const [field, index] = issue.path
 
       if (field === 'trigger' && workflowData) {
-        return `Invalid trigger detected. Modify the prompt and try again.`
+        return `Invalid trigger detected.`
       }
 
       if (field === 'actions' && typeof index === 'number' && workflowData) {
         // actions[0] is step 2 (step 1 is the trigger), so offset by 2
         const stepNum = index + 2
-        return `Invalid action detected at step ${stepNum}. Modify the prompt and try again.`
+        return `Invalid action detected at step ${stepNum}.`
       }
     }
 
     if (issue.code === z.ZodIssueCode.custom && issue.message) {
-      return issue.message
+      return `${issue.message}.`
     }
   }
 
   return fromZodError(error).message
 }
 
-function parseWorkflowMetadata(text: string) {
+function parseRawWorkflowData(text: string): IFlowSteps {
   const match = text.match(WORKFLOW_METADATA_REGEX)
   if (!match) {
-    throw new BadUserInputError(
-      'Unable to generate the workflow. Modify the prompt and try again.',
-    )
+    throw new BadUserInputError('Unable to generate the workflow.')
   }
 
   let parsed: any
   try {
     parsed = parseYaml(match[1].trim())
   } catch {
-    throw new BadUserInputError(
-      'Unable to generate the workflow. Modify the prompt and try again.',
-    )
+    throw new BadUserInputError('Unable to generate the workflow.')
   }
 
   if (
@@ -69,9 +69,7 @@ function parseWorkflowMetadata(text: string) {
     !Array.isArray(parsed.steps) ||
     parsed.steps.length === 0
   ) {
-    throw new BadUserInputError(
-      'Unable to generate the workflow. Modify the prompt and try again.',
-    )
+    throw new BadUserInputError('Unable to generate the workflow.')
   }
 
   const [firstStep, ...remainingSteps] = parsed.steps
@@ -108,6 +106,34 @@ function parseWorkflowMetadata(text: string) {
       }
     }),
   }
+}
+
+function parseWorkflowMetadata(
+  text: string,
+  restrictedAppKeys: string[] = [],
+): IFlowSteps {
+  const workflowData = parseRawWorkflowData(text)
+
+  const schema = z.object({
+    trigger: getTriggerSchema(restrictedAppKeys),
+    actions: getActionsSchema(restrictedAppKeys),
+    name: z.string().max(64).default('Build with AI'),
+  })
+
+  const result = schema.safeParse(workflowData)
+  if (!result.success) {
+    throw new BadUserInputError(formatWorkflowError(result.error, workflowData))
+  }
+
+  const flowSteps: IFlowSteps = {
+    name: result.data.name,
+    trigger: result.data.trigger,
+    actions: result.data.actions.map((action) => ({
+      ...action,
+      config: { ...action.config, templateConfig: {} },
+    })),
+  }
+  return flowSteps
 }
 
 export { formatWorkflowError, parseWorkflowMetadata }
