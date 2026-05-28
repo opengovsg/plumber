@@ -136,4 +136,4 @@ function parseWorkflowMetadata(
   return flowSteps
 }
 
-export { formatWorkflowError, parseWorkflowMetadata }
+export { parseWorkflowMetadata }
