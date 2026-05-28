@@ -14,6 +14,10 @@ import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import {
+  isTransientDbError,
+  throwAsTransientIfDbTransient,
+} from '@/helpers/retry-on-transient-db-error'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -183,6 +187,12 @@ export function makeSubTriggerWorker(
           await executionStep.$query(trx).patch({ status: 'success' })
         })
       } catch (error) {
+        if (isTransientDbError(error)) {
+          throwAsTransientIfDbTransient(error, {
+            attemptsStarted: job.attemptsStarted,
+            context: `sub-trigger-worker:${queueName}`,
+          })
+        }
         logger.error('[sub-trigger] error', { error })
         // log raw http error from StepError
         if (error instanceof StepError && error.cause) {

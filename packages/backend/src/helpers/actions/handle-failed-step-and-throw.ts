@@ -12,6 +12,10 @@ import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
 import { parseRetryAfterToMs } from '../parse-retry-after-to-ms'
+import {
+  isTransientDbError,
+  throwAsTransientIfDbTransient,
+} from '../retry-on-transient-db-error'
 
 /**
  * For queue and group delays, we need to manually check for max attempts ourselves
@@ -157,6 +161,13 @@ export function handleFailedStepAndThrow(
 
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
+    if (isTransientDbError(executionError)) {
+      throwAsTransientIfDbTransient(executionError, {
+        attemptsStarted: job.attemptsStarted,
+        context: 'handle-failed-step-and-throw',
+      })
+    }
+
     if (executionError instanceof RetriableError) {
       return handleRetriableError(executionError, context)
     }

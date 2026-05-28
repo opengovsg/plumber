@@ -5,6 +5,10 @@ import { UnrecoverableError, WorkerPro } from '@taskforcesh/bullmq-pro'
 import { createRedisClient } from '@/config/redis'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import {
+  isTransientDbError,
+  throwAsTransientIfDbTransient,
+} from '@/helpers/retry-on-transient-db-error'
 import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
@@ -19,35 +23,44 @@ type JobData = {
 export const worker = new WorkerPro(
   'trigger',
   async (job) => {
-    const { flowId, executionId, stepId, executionStep } = await processTrigger(
-      job.data as JobData,
-    )
-
-    if (executionStep.isFailed) {
-      return
-    }
-
-    const step = await Step.query().findById(stepId).throwIfNotFound()
-    const nextStep = await step.getNextStep()
-    const jobName = `${executionId}-${nextStep.id}`
-
-    const jobData = {
-      flowId,
-      executionId,
-      stepId: nextStep.id,
-    }
-
     try {
-      await enqueueActionJob({
-        appKey: nextStep.appKey,
-        jobName,
-        jobData,
-        jobOptions: DEFAULT_JOB_OPTIONS,
-      })
-    } catch (error) {
-      // Don't retry if we failed to enqueue the next step (e.g. if
-      // getGroupConfigForJob throws an error)
-      throw new UnrecoverableError(error.message)
+      const { flowId, executionId, stepId, executionStep } =
+        await processTrigger(job.data as JobData)
+
+      if (executionStep.isFailed) {
+        return
+      }
+
+      const step = await Step.query().findById(stepId).throwIfNotFound()
+      const nextStep = await step.getNextStep()
+      const jobName = `${executionId}-${nextStep.id}`
+
+      const jobData = {
+        flowId,
+        executionId,
+        stepId: nextStep.id,
+      }
+
+      try {
+        await enqueueActionJob({
+          appKey: nextStep.appKey,
+          jobName,
+          jobData,
+          jobOptions: DEFAULT_JOB_OPTIONS,
+        })
+      } catch (error) {
+        // Don't retry if we failed to enqueue the next step (e.g. if
+        // getGroupConfigForJob throws an error)
+        throw new UnrecoverableError(error.message)
+      }
+    } catch (err) {
+      if (isTransientDbError(err)) {
+        throwAsTransientIfDbTransient(err, {
+          attemptsStarted: job.attemptsStarted,
+          context: 'trigger-worker',
+        })
+      }
+      throw err
     }
   },
   {

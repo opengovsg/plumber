@@ -6,6 +6,10 @@ import {
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import {
+  isTransientDbError,
+  throwAsTransientIfDbTransient,
+} from '@/helpers/retry-on-transient-db-error'
 import Flow from '@/models/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
@@ -15,40 +19,50 @@ export const worker = new WorkerPro(
   async (job) => {
     const { flowId } = job.data
 
-    const flow = await Flow.query().findById(flowId).throwIfNotFound()
-    const triggerStep = await flow.getTriggerStep()
+    try {
+      const flow = await Flow.query().findById(flowId).throwIfNotFound()
+      const triggerStep = await flow.getTriggerStep()
 
-    const { data, error } = await processFlow({ flowId })
+      const { data, error } = await processFlow({ flowId })
 
-    const reversedData = data.reverse()
+      const reversedData = data.reverse()
 
-    const jobOptions = {
-      removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-      removeOnFail: REMOVE_AFTER_30_DAYS,
-    }
-
-    for (const triggerItem of reversedData) {
-      const jobName = `${triggerStep.id}-${triggerItem.meta.internalId}`
-
-      const jobPayload = {
-        flowId,
-        stepId: triggerStep.id,
-        triggerItem,
+      const jobOptions = {
+        removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
+        removeOnFail: REMOVE_AFTER_30_DAYS,
       }
 
-      await triggerQueue.add(jobName, jobPayload, jobOptions)
-    }
+      for (const triggerItem of reversedData) {
+        const jobName = `${triggerStep.id}-${triggerItem.meta.internalId}`
 
-    if (error) {
-      const jobName = `${triggerStep.id}-error`
+        const jobPayload = {
+          flowId,
+          stepId: triggerStep.id,
+          triggerItem,
+        }
 
-      const jobPayload = {
-        flowId,
-        stepId: triggerStep.id,
-        error,
+        await triggerQueue.add(jobName, jobPayload, jobOptions)
       }
 
-      await triggerQueue.add(jobName, jobPayload, jobOptions)
+      if (error) {
+        const jobName = `${triggerStep.id}-error`
+
+        const jobPayload = {
+          flowId,
+          stepId: triggerStep.id,
+          error,
+        }
+
+        await triggerQueue.add(jobName, jobPayload, jobOptions)
+      }
+    } catch (err) {
+      if (isTransientDbError(err)) {
+        throwAsTransientIfDbTransient(err, {
+          attemptsStarted: job.attemptsStarted,
+          context: 'flow-worker',
+        })
+      }
+      throw err
     }
   },
   {
