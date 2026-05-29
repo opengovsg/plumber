@@ -25,6 +25,28 @@ if (
   )
 }
 
+// Feature flag for coalescing m365-excel createTableRow jobs into a dedicated
+// batch queue. Off by default; when off, m365-excel behaves byte-identically
+// to today (no batch queue/worker, no enqueue routing divergence).
+export const M365_EXCEL_BATCH_ENABLED =
+  process.env.M365_EXCEL_BATCH_ENABLED === 'true'
+
+// Max number of createTableRow jobs coalesced into a single Graph POST.
+// Hardcoded well under Graph's ~4MB request ceiling; 413 handling deferred.
+export const M365_EXCEL_BATCH_SIZE = Number(
+  process.env.M365_EXCEL_BATCH_SIZE ?? '20',
+)
+
+if (
+  isNaN(M365_EXCEL_BATCH_SIZE) ||
+  !Number.isInteger(M365_EXCEL_BATCH_SIZE) ||
+  M365_EXCEL_BATCH_SIZE < 1
+) {
+  throw new Error(
+    'M365_EXCEL_BATCH_SIZE environment variable is not a valid positive integer!',
+  )
+}
+
 const sensitivityLabelGuidsSchema = z
   .string()
   .trim()

@@ -51,6 +51,7 @@ vi.mock('@/helpers/logger', () => ({
 
 vi.mock('@/config/app-env-vars/m365', () => ({
   M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS: 1000,
+  M365_EXCEL_BATCH_ENABLED: false,
   isM365TenantKey: vi.fn(() => true),
 }))
 

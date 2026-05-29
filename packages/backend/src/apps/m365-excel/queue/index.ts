@@ -1,6 +1,10 @@
 import type { IAppQueue } from '@plumber/types'
 
-import { M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS } from '@/config/app-env-vars/m365'
+import {
+  M365_EXCEL_BATCH_ENABLED,
+  M365_EXCEL_BATCH_SIZE,
+  M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS,
+} from '@/config/app-env-vars/m365'
 import Step from '@/models/step'
 
 //
@@ -38,6 +42,34 @@ const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async (
   }
 }
 
+// Group key for the dedicated createTableRow batch queue. We group by
+// `(fileId, tableId, stepKey)` so every batch targets a single table on a
+// single file ⇒ exactly one Graph POST per batch. This is finer than the
+// existing per-file group key above.
+const getBatchGroupConfigForJob: NonNullable<
+  IAppQueue['batch']
+>['getGroupConfigForJob'] = async (jobData) => {
+  const step = await Step.query().findById(jobData.stepId).throwIfNotFound()
+  const fileId = step.parameters['fileId'] as string
+  const tableId = step.parameters['tableId'] as string
+
+  if (!fileId) {
+    throw new Error(
+      `Expected fileId to be non-empty for step ${jobData.stepId}`,
+    )
+  }
+
+  if (!tableId) {
+    throw new Error(
+      `Expected tableId to be non-empty for step ${jobData.stepId}`,
+    )
+  }
+
+  return {
+    id: `${fileId}-${tableId}-${step.key}`,
+  }
+}
+
 const queueSettings = {
   getGroupConfigForJob,
   groupLimits: {
@@ -50,6 +82,18 @@ const queueSettings = {
     duration: M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS,
   },
   workerType: 'action',
+  // Flag-gated: when off, `batch` is undefined ⇒ no batch queue/worker is
+  // registered and enqueue routing never diverts (byte-identical to today).
+  ...(M365_EXCEL_BATCH_ENABLED
+    ? {
+        batch: {
+          size: M365_EXCEL_BATCH_SIZE,
+          groupAffinity: true,
+          actionKeys: ['createTableRow'],
+          getGroupConfigForJob: getBatchGroupConfigForJob,
+        },
+      }
+    : {}),
 } satisfies IAppQueue
 
 export default queueSettings

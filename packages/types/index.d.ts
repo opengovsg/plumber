@@ -597,6 +597,56 @@ export interface IAppQueue {
   queueRateLimit?: WorkerProOptions['limiter']
 
   /**
+   * Opt this app into a dedicated batch queue for a subset of its action
+   * keys. When set, jobs whose step key is in `actionKeys` are routed to a
+   * separate `{app-actions-${appKey}-batch}` queue and coalesced into batches
+   * via BullMQ Pro's batch worker option.
+   *
+   * Jobs whose step key is not in `actionKeys` continue to enqueue to the
+   * app's existing queue with `getGroupConfigForJob` grouping.
+   */
+  batch?: {
+    /**
+     * Maximum number of jobs per batch. Maps to `WorkerProOptions.batch.size`.
+     */
+    size: number
+
+    /**
+     * Minimum number of jobs to form a batch before `timeout` elapses. Maps to
+     * `WorkerProOptions.batch.minSize`.
+     */
+    minSize?: number
+
+    /**
+     * Max time (ms) to wait for a batch to fill to `minSize` before processing
+     * whatever has accumulated. Maps to `WorkerProOptions.batch.timeout`.
+     */
+    timeout?: number
+
+    /**
+     * Must be true: batches must respect group affinity so every batch belongs
+     * to a single group (one `(fileId, tableId, actionKey)` ⇒ one Graph POST).
+     */
+    groupAffinity: true
+
+    /**
+     * The step keys that route to the batch queue (e.g. `['createTableRow']`).
+     */
+    actionKeys: string[]
+
+    /**
+     * Obtains the group config for a job that is about to be enqueued to the
+     * batch queue. Distinct from {@link getGroupConfigForJob} because the batch
+     * queue groups by a finer key (e.g. `(fileId, tableId, actionKey)`).
+     *
+     * @see {@link JobsProOptions.group}
+     */
+    getGroupConfigForJob(
+      jobData: IActionJobData,
+    ): Promise<JobsProOptions['group']>
+  }
+
+  /**
    * Configures if we are allowed to delay or rate limit the entire queue.
    *
    * Concretely speaking, if this is true, RetriableErrors with delayType set
