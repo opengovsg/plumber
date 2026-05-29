@@ -2,6 +2,7 @@ import type { IJSONObject, ITriggerItem } from '@plumber/types'
 
 import { z } from 'zod'
 
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
@@ -67,29 +68,37 @@ export const processTrigger = async (
     }
   }
 
-  // non-FormSG triggers or test runs proceed without advisory lock
-  const execution = await Execution.query().insert({
-    flowId,
-    testRun,
-    internalId: triggerItem?.meta.internalId,
-    ...(error && { status: 'failure' }),
-  })
+  // Retry the inserts inline on a transient DB blip so the write succeeds in
+  // place, rather than letting it surface to the worker boundary and trigger a
+  // whole-job retry (which would re-run the processor and risk a duplicate row).
+  const execution = await retryOnTransientDbError(
+    async () =>
+      Execution.query().insert({
+        flowId,
+        testRun,
+        internalId: triggerItem?.meta.internalId,
+        ...(error && { status: 'failure' }),
+      }),
+    'trigger-insert-execution',
+  )
 
   // We store all metadata except internalId
   const { internalId: _, ...metadataToStore } = triggerItem?.meta ?? {}
 
-  const executionStep = await execution
-    .$relatedQuery('executionSteps')
-    .insertAndFetch({
-      stepId: step.id,
-      status: error ? 'failure' : 'success',
-      dataIn: step.parameters,
-      dataOut: !error ? triggerItem?.raw : null,
-      errorDetails: error,
-      appKey: step.appKey,
-      metadata: metadataToStore ?? {},
-      key: step.key,
-    })
+  const executionStep = await retryOnTransientDbError(
+    async () =>
+      execution.$relatedQuery('executionSteps').insertAndFetch({
+        stepId: step.id,
+        status: error ? 'failure' : 'success',
+        dataIn: step.parameters,
+        dataOut: !error ? triggerItem?.raw : null,
+        errorDetails: error,
+        appKey: step.appKey,
+        metadata: metadataToStore ?? {},
+        key: step.key,
+      }),
+    'trigger-insert-execution-step',
+  )
 
   const customWebhookResponse = getCustomWebhookResponse(step)
 

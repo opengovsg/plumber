@@ -100,10 +100,15 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
- * For HTTP-edge call sites (webhook handler, partial-retry mutation) where
- * there's no BullMQ to fall back on. Retries the function up to
- * `MAX_TRANSIENT_DB_ATTEMPTS` times on transient DB errors. Rethrows on
- * non-transient errors and on the final attempt.
+ * Retries `fn` up to `MAX_TRANSIENT_DB_ATTEMPTS` times on transient DB errors,
+ * with a capped jittered backoff. Rethrows on non-transient errors and on the
+ * final attempt.
+ *
+ * Used both at HTTP-edge call sites (webhook handler, partial-retry mutation),
+ * where there's no BullMQ to fall back on, and around worker-path inserts
+ * (`processAction` / `processTrigger`), so a transient blip during the write is
+ * absorbed in place rather than triggering a whole-job retry that could
+ * duplicate the row.
  */
 export async function retryOnTransientDbError<T>(
   fn: () => Promise<T>,

@@ -17,6 +17,7 @@ import computeParameters from '@/helpers/compute-parameters'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -209,19 +210,24 @@ export const processAction = async (options: ProcessActionOptions) => {
     })
   }
 
-  const executionStep = await execution
-    .$relatedQuery('executionSteps')
-    .insertAndFetch({
-      stepId: $.step.id,
-      status,
-      dataIn: computedParameters,
-      dataOut: $.actionOutput.data?.raw ?? null,
-      errorDetails: $.actionOutput.error ?? null,
-      appKey: $.app.key,
-      jobId,
-      key: step.key,
-      metadata: { ...metadata, ...$.actionOutput.data?.meta },
-    })
+  // Retry the insert inline on a transient DB blip so the write succeeds in
+  // place, rather than letting it surface to the worker boundary and trigger a
+  // whole-job retry (which would re-run the processor and risk a duplicate row).
+  const executionStep = await retryOnTransientDbError(
+    async () =>
+      execution.$relatedQuery('executionSteps').insertAndFetch({
+        stepId: $.step.id,
+        status,
+        dataIn: computedParameters,
+        dataOut: $.actionOutput.data?.raw ?? null,
+        errorDetails: $.actionOutput.error ?? null,
+        appKey: $.app.key,
+        jobId,
+        key: step.key,
+        metadata: { ...metadata, ...$.actionOutput.data?.meta },
+      }),
+    'action-insert-execution-step',
+  )
 
   let nextStep = null
   switch (runResult.nextStep?.command) {
