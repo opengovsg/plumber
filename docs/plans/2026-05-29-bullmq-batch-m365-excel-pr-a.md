@@ -6,7 +6,7 @@
 
 ## Resume from here
 
-Phases 1 & 2 done (combined into one PR per user). Phase 1: added `batch?` to `IAppQueue` in `packages/types/index.d.ts` (size/minSize/timeout/groupAffinity/actionKeys/getGroupConfigForJob) and `M365_EXCEL_BATCH_ENABLED` (default false) + `M365_EXCEL_BATCH_SIZE` (=20, validated) to `packages/backend/src/config/app-env-vars/m365.ts`. Phase 2: added the flag-gated `batch` block to `packages/backend/src/apps/m365-excel/queue/index.ts` (actionKeys `['createTableRow']`, group key `${fileId}-${tableId}-${step.key}` via a new `getBatchGroupConfigForJob` that validates fileId+tableId, `size = M365_EXCEL_BATCH_SIZE`, `groupAffinity: true`). Existing config untouched; flag-off ⇒ `batch` undefined. Backend typecheck clean both phases. **Next: Phase 3** — register `{app-actions-${appKey}-batch}` queue + enqueue routing in `packages/backend/src/queues/action.ts` (this is where the scaled batch rate limit `max: size, duration: size × interval` gets applied). Real dispatch is PR B (`docs/plans/2026-05-29-bullmq-batch-m365-excel-pr-b.md`).
+Phases 1–3 done. Phase 1: `batch?` on `IAppQueue` + `M365_EXCEL_BATCH_ENABLED`/`M365_EXCEL_BATCH_SIZE` (=20). Phase 2: flag-gated `batch` block in `packages/backend/src/apps/m365-excel/queue/index.ts` (actionKeys `['createTableRow']`, group `${fileId}-${tableId}-${step.key}`, `groupAffinity: true`). Phase 3: in `packages/backend/src/queues/action.ts` — new `appBatchActionQueues` record; registered `{app-actions-${appKey}-batch}` (added to `actionQueuesByName` so `getActionJob` resolves batch-queue retries) for apps with `queue.batch`; `enqueueActionJob` now fetches the `Step` and routes `actionKeys` to the batch queue with `batch.getGroupConfigForJob`, else the existing path. **Scope note:** the batch queue carries no rate limit — limiters are applied at the worker (`make-action-worker.ts:48`), so the scaled batch rate limit moves to Phase 5, not Phase 3 (the old resume note was wrong). Backend typecheck clean. **Next: Phase 4** — extract `makeActionWorker`'s processor body into exported `processSingleActionJob` and export `convertParamsToBullMqOptions` (behavior-preserving) in `packages/backend/src/workers/helpers/make-action-worker.ts`. Real dispatch is PR B (`docs/plans/2026-05-29-bullmq-batch-m365-excel-pr-b.md`).
 
 ## Context
 
@@ -73,8 +73,8 @@ Verify: flag-off → `batch` undefined, config identical to today; flag-on → `
 
 ### Phase 3: Batch queue registration + enqueue routing
 
-- [ ] Register `{app-actions-${appKey}-batch}` for apps with `queue.batch`; add to `actionQueuesByName` + `appBatchActionQueues`.
-- [ ] In `enqueueActionJob`, fetch the `Step` once and route batchable keys to the batch queue (batch group config), else existing behavior.
+- [x] Register `{app-actions-${appKey}-batch}` for apps with `queue.batch`; add to `actionQueuesByName` + `appBatchActionQueues`.
+- [x] In `enqueueActionJob`, fetch the `Step` once and route batchable keys to the batch queue (batch group config), else existing behavior.
 
 Files: `packages/backend/src/queues/action.ts`
 Verify: flag-on → a `createTableRow` job lands in the batch queue with group `fileId-tableId-createTableRow`; a `writeCellValues` job lands in the existing queue with group `fileId`. Flag-off → both in the existing queue.
@@ -123,6 +123,11 @@ Verify: scoped vitest passes; full m365-excel + worker/queue suites green.
 3. Itest: `action.batch.itest.ts` (testcontainers Redis/PG).
 4. Regression: existing `action.itest.ts` + m365-excel action itests green (existing queue/worker path untouched; flag off elsewhere).
 5. Staging: set `M365_EXCEL_BATCH_ENABLED=true`, drive concurrent `createTableRow` submissions to one file/table, read the `batchSize` Datadog distribution to size `minSize`/`timeout` before PR B.
+
+## Deviations
+
+- **2026-05-29 (Phase 3):** The original "Resume from here" note claimed the scaled batch rate limit (`max: size, duration: size × interval`) is applied in `queues/action.ts`. It isn't — `makeActionQueue` carries no limiter; rate limits are applied at the **worker** level (`make-action-worker.ts:48`, `workerOptions.limiter`). Phase 3 is therefore queue-object creation + storage + routing only; the scaled batch limiter moves to Phase 5 (batch worker). Phase 3 code is otherwise as planned.
+- **2026-05-29 (Phase 3):** Decided to keep routing confined to `action.ts` and accept one redundant `Step` PK read (routing reads `step.key`; the group helper re-reads the Step). The plan's "single shared Step fetch" aspiration would require threading an optional `Step` through the public `IAppQueue` helper signatures — deferred as not worth the surface area. Mirrors the existing accepted double-read at `make-action-worker.ts:106-109`.
 
 ## Open questions
 

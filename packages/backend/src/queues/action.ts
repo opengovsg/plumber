@@ -8,6 +8,7 @@ import {
 
 import apps from '@/apps'
 import logger from '@/helpers/logger'
+import Step from '@/models/step'
 import { makeActionQueue } from '@/queues/helpers/make-action-queue'
 
 //
@@ -39,6 +40,14 @@ export const appActionQueues: Record<
   ReturnType<typeof makeActionQueue>
 > = Object.create(null)
 
+// Dedicated batch action queues, keyed by appKey. Only populated for apps whose
+// queue config sets `batch` (flag-gated). Batchable action keys are routed here
+// instead of the app's regular queue; see enqueueActionJob below.
+export const appBatchActionQueues: Record<
+  string,
+  ReturnType<typeof makeActionQueue>
+> = Object.create(null)
+
 for (const [appKey, app] of Object.entries(apps)) {
   if (!app.queue) {
     continue
@@ -51,6 +60,19 @@ for (const [appKey, app] of Object.entries(apps)) {
 
   actionQueuesByName[queueName] = queue
   appActionQueues[appKey] = queue
+
+  // Register the dedicated batch queue when the app opts in. Adding it to
+  // actionQueuesByName is what lets getActionJob resolve retries of batch-queue
+  // jobs (their jobId encodes the batch queue name) - no schema change needed.
+  if (app.queue.batch) {
+    const batchQueueName = `{app-actions-${appKey}-batch}`
+    const batchQueue = makeActionQueue({
+      queueName: batchQueueName,
+    })
+
+    actionQueuesByName[batchQueueName] = batchQueue
+    appBatchActionQueues[appKey] = batchQueue
+  }
 }
 
 //
@@ -77,6 +99,26 @@ export async function enqueueActionJob({
   }
 
   const appQueue = appActionQueues[appKey]
+  const batchConfig = apps[appKey].queue.batch
+  const batchQueue = appBatchActionQueues[appKey]
+
+  // Route batchable action keys to the dedicated batch queue (with its finer
+  // grouping). We need the step's key to decide, so fetch the Step here; the
+  // chosen group helper re-reads it - an accepted redundant indexed lookup,
+  // mirroring the existing worker -> processAction double-read.
+  if (batchConfig && batchQueue) {
+    const step = await Step.query().findById(jobData.stepId).throwIfNotFound()
+
+    if (batchConfig.actionKeys.includes(step.key)) {
+      const batchGroupConfig = await batchConfig.getGroupConfigForJob(jobData)
+
+      return await batchQueue.add(jobName, jobData, {
+        ...jobOptions,
+        ...(batchGroupConfig ? { group: batchGroupConfig } : {}),
+      })
+    }
+  }
+
   const groupConfig = await apps[appKey].queue.getGroupConfigForJob?.(jobData)
 
   return await appQueue.add(jobName, jobData, {
