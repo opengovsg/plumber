@@ -30,6 +30,7 @@ const isEditorValueEmpty = (value?: string) => {
   const normalized = value
     .replace(/<br\s*\/?>/gi, '')
     .replace(/<[^>]*>/g, '')
+    .replace(/[<>]/g, '')
     .trim()
   return normalized.length === 0
 }
