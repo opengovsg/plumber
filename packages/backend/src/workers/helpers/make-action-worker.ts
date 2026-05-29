@@ -1,6 +1,7 @@
 import type { IActionJobData, IAppQueue } from '@plumber/types'
 
 import {
+  type JobPro,
   UnrecoverableError,
   WorkerPro,
   type WorkerProOptions,
@@ -23,7 +24,7 @@ import { processAction } from '@/services/action'
 import processForEachStatus from './for-each-status-manager'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
-function convertParamsToBullMqOptions(
+export function convertParamsToBullMqOptions(
   params: MakeActionWorkerParams,
 ) /* inferred type */ {
   const { appKey, queueName, redisConnectionPrefix, queueConfig } = params
@@ -73,11 +74,136 @@ function convertParamsToBullMqOptions(
   }
 }
 
-interface MakeActionWorkerParams {
+export interface MakeActionWorkerParams {
   appKey: string
   queueName: string
   redisConnectionPrefix?: string
   queueConfig: IAppQueue
+}
+
+/**
+ * Context the single-job processor needs from its enclosing worker.
+ */
+export interface ProcessSingleActionJobContext {
+  queueName: string
+  worker: WorkerPro<IActionJobData>
+  isQueueDelayable: boolean
+}
+
+/**
+ * Processes a single action job. Extracted verbatim from makeActionWorker's
+ * processor callback so it can be reused as the N=1 path of the batch worker.
+ * Must be invoked from within a `tracer.wrap('workers.action', ...)` callback so
+ * that `tracer.scope().active()` resolves the correct span.
+ */
+export async function processSingleActionJob(
+  job: JobPro<IActionJobData>,
+  { queueName, worker, isQueueDelayable }: ProcessSingleActionJobContext,
+) {
+  const span = tracer.scope().active()
+
+  const jobData = job.data
+  const jobId = makeActionJobId(queueName, job.id)
+
+  // The reason why we dont add .throwIfNotFound() here is to prevent job
+  // retries delegating the error throwing and handling to processAction
+  // where it also queries for Step.
+  const currStep = await Step.query().findById(jobData.stepId)
+
+  span?.addTags({
+    queueName,
+    flowId: jobData.flowId,
+    executionId: jobData.executionId,
+    stepId: jobData.stepId,
+    actionKey: currStep?.key,
+    appKey: currStep?.appKey,
+    jobId,
+    jobEnqueueTime: job.timestamp,
+    jobDelay: job.opts?.delay ?? 0,
+    attempts: job.attemptsStarted,
+    timeInJobQueue: Date.now() - job.timestamp - (job.opts?.delay ?? 0),
+    workerVersion: appConfig.version,
+  })
+
+  const {
+    flowId,
+    executionId,
+    nextStep,
+    executionStep,
+    nextStepMetadata,
+    executionError,
+  } = await processAction({ ...jobData, jobId }).catch(async (err) => {
+    // This happens when the prerequisite steps for the action fails (e.g.
+    // db error, missing execution, flow, step, etc...) in such cases, we
+    // do not want to retry
+    throw new UnrecoverableError(err.message || 'Action failed to execute')
+  })
+
+  if (executionStep.isFailed) {
+    if (nextStepMetadata?.iteration) {
+      await ExecutionStep.patchIterationStatus(
+        executionId,
+        nextStepMetadata.iteration,
+        'failure',
+      )
+    }
+    return handleFailedStepAndThrow({
+      errorDetails: executionStep.errorDetails,
+      executionError,
+      context: {
+        isQueueDelayable,
+        worker,
+        span,
+        job,
+      },
+    })
+  }
+
+  if (!nextStep) {
+    const shouldContinue = await processForEachStatus({
+      executionId,
+      currStep,
+      nextStepMetadata,
+    })
+
+    if (!shouldContinue) {
+      return
+    }
+
+    await Execution.setStatus(executionId, 'success')
+    return
+  }
+
+  const jobName = `${executionId}-${nextStep.id}`
+
+  const jobPayload = {
+    flowId,
+    executionId,
+    stepId: nextStep.id,
+    metadata: nextStepMetadata,
+  }
+
+  let jobOptions = DEFAULT_JOB_OPTIONS
+
+  if (currStep.appKey === 'delay') {
+    jobOptions = {
+      ...DEFAULT_JOB_OPTIONS,
+      delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
+    }
+  }
+
+  try {
+    await enqueueActionJob({
+      appKey: nextStep.appKey,
+      jobName,
+      jobData: jobPayload,
+      jobOptions,
+    })
+  } catch (error) {
+    // Don't retry if we failed to enqueue the next step (e.g. if
+    // getGroupConfigForJob throws an error)
+    throw new UnrecoverableError(error.message)
+  }
 }
 
 /**
@@ -97,114 +223,8 @@ export function makeActionWorker(
       // Fix trace service name to workers.action regardless of queue name, so
       // that we can more easily monitor all actions.
       'workers.action',
-      async (job) => {
-        const span = tracer.scope().active()
-
-        const jobData = job.data
-        const jobId = makeActionJobId(queueName, job.id)
-
-        // The reason why we dont add .throwIfNotFound() here is to prevent job
-        // retries delegating the error throwing and handling to processAction
-        // where it also queries for Step.
-        const currStep = await Step.query().findById(jobData.stepId)
-
-        span?.addTags({
-          queueName,
-          flowId: jobData.flowId,
-          executionId: jobData.executionId,
-          stepId: jobData.stepId,
-          actionKey: currStep?.key,
-          appKey: currStep?.appKey,
-          jobId,
-          jobEnqueueTime: job.timestamp,
-          jobDelay: job.opts?.delay ?? 0,
-          attempts: job.attemptsStarted,
-          timeInJobQueue: Date.now() - job.timestamp - (job.opts?.delay ?? 0),
-          workerVersion: appConfig.version,
-        })
-
-        const {
-          flowId,
-          executionId,
-          nextStep,
-          executionStep,
-          nextStepMetadata,
-          executionError,
-        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
-          // This happens when the prerequisite steps for the action fails (e.g.
-          // db error, missing execution, flow, step, etc...) in such cases, we
-          // do not want to retry
-          throw new UnrecoverableError(
-            err.message || 'Action failed to execute',
-          )
-        })
-
-        if (executionStep.isFailed) {
-          if (nextStepMetadata?.iteration) {
-            await ExecutionStep.patchIterationStatus(
-              executionId,
-              nextStepMetadata.iteration,
-              'failure',
-            )
-          }
-          return handleFailedStepAndThrow({
-            errorDetails: executionStep.errorDetails,
-            executionError,
-            context: {
-              isQueueDelayable,
-              worker,
-              span,
-              job,
-            },
-          })
-        }
-
-        if (!nextStep) {
-          const shouldContinue = await processForEachStatus({
-            executionId,
-            currStep,
-            nextStepMetadata,
-          })
-
-          if (!shouldContinue) {
-            return
-          }
-
-          await Execution.setStatus(executionId, 'success')
-          return
-        }
-
-        const jobName = `${executionId}-${nextStep.id}`
-
-        const jobPayload = {
-          flowId,
-          executionId,
-          stepId: nextStep.id,
-          metadata: nextStepMetadata,
-        }
-
-        let jobOptions = DEFAULT_JOB_OPTIONS
-
-        if (currStep.appKey === 'delay') {
-          jobOptions = {
-            ...DEFAULT_JOB_OPTIONS,
-            delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
-          }
-        }
-
-        try {
-          await enqueueActionJob({
-            appKey: nextStep.appKey,
-            jobName,
-            jobData: jobPayload,
-            jobOptions,
-          })
-        } catch (error) {
-          // Don't retry if we failed to enqueue the next step (e.g. if
-          // getGroupConfigForJob throws an error)
-          throw new UnrecoverableError(error.message)
-        }
-      },
+      async (job) =>
+        processSingleActionJob(job, { queueName, worker, isQueueDelayable }),
     ),
     workerOptions,
   )

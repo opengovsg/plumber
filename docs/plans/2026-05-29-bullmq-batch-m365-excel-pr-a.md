@@ -6,7 +6,7 @@
 
 ## Resume from here
 
-Phases 1–3 done. Phase 1: `batch?` on `IAppQueue` + `M365_EXCEL_BATCH_ENABLED`/`M365_EXCEL_BATCH_SIZE` (=20). Phase 2: flag-gated `batch` block in `packages/backend/src/apps/m365-excel/queue/index.ts` (actionKeys `['createTableRow']`, group `${fileId}-${tableId}-${step.key}`, `groupAffinity: true`). Phase 3: in `packages/backend/src/queues/action.ts` — new `appBatchActionQueues` record; registered `{app-actions-${appKey}-batch}` (added to `actionQueuesByName` so `getActionJob` resolves batch-queue retries) for apps with `queue.batch`; `enqueueActionJob` now fetches the `Step` and routes `actionKeys` to the batch queue with `batch.getGroupConfigForJob`, else the existing path. **Scope note:** the batch queue carries no rate limit — limiters are applied at the worker (`make-action-worker.ts:48`), so the scaled batch rate limit moves to Phase 5, not Phase 3 (the old resume note was wrong). Backend typecheck clean. **Next: Phase 4** — extract `makeActionWorker`'s processor body into exported `processSingleActionJob` and export `convertParamsToBullMqOptions` (behavior-preserving) in `packages/backend/src/workers/helpers/make-action-worker.ts`. Real dispatch is PR B (`docs/plans/2026-05-29-bullmq-batch-m365-excel-pr-b.md`).
+Phases 1–5 done. Phases 1–3 as before (types/flags; flag-gated `batch` block; batch queue registration + enqueue routing in `queues/action.ts`). Phase 4 (combined into one PR with Phase 5 per user): extracted `makeActionWorker`'s processor body into exported `processSingleActionJob(job, ctx)` and exported `convertParamsToBullMqOptions` + `MakeActionWorkerParams` in `make-action-worker.ts` (pure refactor; existing worker/queue unit tests green). Phase 5: new `packages/backend/src/workers/helpers/make-batch-action-worker.ts` — sets `workerOptions.batch` (`size`/`groupAffinity`/optional `minSize`,`timeout`), scales the limiter to `{ max: max×size, duration: duration×size }`, tags the span with `batchSize`, processes N≤1 via `processSingleActionJob`, throws `UnrecoverableError` stub for N>1 (real dispatch = PR B). `workers/action.ts` now builds a flag-gated `makeBatchActionWorker` per app with a batch queue (new `appBatchActionWorkers` record; included in SIGTERM cleanup). Batch worker reuses the m365 `queueConfig`, so group concurrency stays 1 (per-table serialization). Backend typecheck clean; worker/queue unit tests pass. **Next: Phase 6** — unit tests (queue-config flag parity + enqueue routing) and `action.batch.itest.ts` (flag-on N=1 processes; N>1 throws stub with `batchSize` tagged). Real dispatch is PR B (`docs/plans/2026-05-29-bullmq-batch-m365-excel-pr-b.md`).
 
 ## Context
 
@@ -81,15 +81,15 @@ Verify: flag-on → a `createTableRow` job lands in the batch queue with group `
 
 ### Phase 4: Extract `processSingleActionJob` (behavior-preserving)
 
-- [ ] Lift `makeActionWorker`'s processor body into exported `processSingleActionJob`; export `convertParamsToBullMqOptions`.
+- [x] Lift `makeActionWorker`'s processor body into exported `processSingleActionJob`; export `convertParamsToBullMqOptions`.
 
 Files: `packages/backend/src/workers/helpers/make-action-worker.ts`
 Verify: existing `action.itest.ts` + worker unit tests pass unchanged (pure refactor).
 
 ### Phase 5: Batch worker + bootstrap wiring
 
-- [ ] Implement `make-batch-action-worker.ts` (batch options; `batchSize` tag; N=1 → `processSingleActionJob`; N>1 → stub throw).
-- [ ] In `workers/action.ts`, create the batch worker for apps with a batch queue (flag-gated).
+- [x] Implement `make-batch-action-worker.ts` (batch options; `batchSize` tag; N=1 → `processSingleActionJob`; N>1 → stub throw).
+- [x] In `workers/action.ts`, create the batch worker for apps with a batch queue (flag-gated).
 
 Files: `packages/backend/src/workers/helpers/make-batch-action-worker.ts`, `packages/backend/src/workers/action.ts`
 Verify: flag-off → no batch worker. Flag-on → batch worker on the batch queue; N=1 processes; N>1 throws stub.
@@ -128,6 +128,8 @@ Verify: scoped vitest passes; full m365-excel + worker/queue suites green.
 
 - **2026-05-29 (Phase 3):** The original "Resume from here" note claimed the scaled batch rate limit (`max: size, duration: size × interval`) is applied in `queues/action.ts`. It isn't — `makeActionQueue` carries no limiter; rate limits are applied at the **worker** level (`make-action-worker.ts:48`, `workerOptions.limiter`). Phase 3 is therefore queue-object creation + storage + routing only; the scaled batch limiter moves to Phase 5 (batch worker). Phase 3 code is otherwise as planned.
 - **2026-05-29 (Phase 3):** Decided to keep routing confined to `action.ts` and accept one redundant `Step` PK read (routing reads `step.key`; the group helper re-reads the Step). The plan's "single shared Step fetch" aspiration would require threading an optional `Step` through the public `IAppQueue` helper signatures — deferred as not worth the surface area. Mirrors the existing accepted double-read at `make-action-worker.ts:106-109`.
+
+- **2026-05-29 (Phases 4+5):** Combined into a single PR per user. The batch worker reuses the m365 `queueConfig` as-is, so `group.concurrency` stays 1 (per-`(fileId,tableId)` serialization). The Goals line "concurrency = BATCH_SIZE" is interpreted as `batch.size` (jobs coalesced per batch), not a worker/group concurrency override — overriding group concurrency would allow concurrent batches against the same table. The scaled limiter is derived in `make-batch-action-worker.ts` from the reused `queueRateLimit` (`{ max×size, duration×size }`).
 
 ## Open questions
 
