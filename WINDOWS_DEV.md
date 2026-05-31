@@ -37,9 +37,7 @@ S3_SECRET_KEY=minio-password
 ### 3. Start Docker services
 
 ```powershell
-cd packages/backend
-docker compose -f docker-compose.dev.yml up -d
-cd ../..
+docker compose -f packages/backend/docker-compose.dev.yml up -d
 ```
 
 > Use `docker compose` (no hyphen) — newer Docker Desktop dropped the standalone `docker-compose` command.
