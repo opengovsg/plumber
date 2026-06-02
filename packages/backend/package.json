@@ -46,7 +46,7 @@
     "@opengovsg/sgid-client": "2.3.0",
     "@opentelemetry/sdk-node": "0.207.0",
     "@plumber/types": "file:../types",
-    "@taskforcesh/bullmq-pro": "7.8.1",
+    "@taskforcesh/bullmq-pro": "7.44.0",
     "ai": "5.0.81",
     "ajv-formats": "2.1.1",
     "async-mutex": "0.4.0",
