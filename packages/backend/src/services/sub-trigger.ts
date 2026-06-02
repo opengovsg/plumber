@@ -1,8 +1,10 @@
 import type { ITriggerItem, SubtriggerData } from '@plumber/types'
 
+import { randomUUID } from 'crypto'
 import get from 'lodash.get'
 
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
@@ -107,35 +109,45 @@ export const processSubTrigger = async (
     return null
   }
 
-  const executionStep = await ExecutionStep.transaction(async (trx) => {
-    // Check if the execution step already exists
-    const existing = await ExecutionStep.query(trx)
-      .findOne({
-        execution_id: execution.id,
-        step_id: mrfStep.id,
-      })
-      .forUpdate() // Prevents race conditions
+  // we generate an execution step id here instead of relying on the db generation to prevent possibility of duplicate entry during retries
+  const executionStepId = randomUUID()
+  const executionStep = await retryOnTransientDbError(
+    () =>
+      ExecutionStep.transaction(async (trx) => {
+        // Check if the execution step already exists
+        const existing = await ExecutionStep.query(trx)
+          .findOne({
+            execution_id: execution.id,
+            step_id: mrfStep.id,
+          })
+          .forUpdate() // Prevents race conditions
 
-    // if the execution step already exists, do not process again
-    if (existing) {
-      logger.warn({
-        event: 'sub-trigger-execution-step-already-exists',
-        executionId: execution.id,
-        stepId: mrfStep.id,
-      })
-      // we don't throw an error so formsg does not retry the webhook
-      return null
-    }
-    // Create the execution step for the MRF action step
-    return await ExecutionStep.query(trx).insertAndFetch({
-      stepId: mrfStep.id,
-      executionId: execution.id,
-      dataIn: mrfStep.parameters,
-      dataOut: triggerItem.raw,
-      appKey: mrfStep.appKey,
-      key: mrfStep.key,
-    })
-  })
+        // if the execution step already exists, do not process again
+        if (existing) {
+          logger.warn({
+            event: 'sub-trigger-execution-step-already-exists',
+            executionId: execution.id,
+            stepId: mrfStep.id,
+          })
+          // we don't throw an error so formsg does not retry the webhook
+          return null
+        }
+        // Create the execution step for the MRF action step
+        return await ExecutionStep.query(trx)
+          .insertAndFetch({
+            id: executionStepId,
+            stepId: mrfStep.id,
+            executionId: execution.id,
+            dataIn: mrfStep.parameters,
+            dataOut: triggerItem.raw,
+            appKey: mrfStep.appKey,
+            key: mrfStep.key,
+          })
+          .onConflict('id')
+          .ignore()
+      }),
+    { context: { flowId, executionId: execution.id, stepId: mrfStep.id } },
+  )
 
   return {
     executionId: execution.id,

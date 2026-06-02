@@ -1,7 +1,9 @@
 import type { IJSONObject, ITriggerItem } from '@plumber/types'
 
+import { randomUUID } from 'crypto'
 import { z } from 'zod'
 
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
@@ -67,29 +69,49 @@ export const processTrigger = async (
     }
   }
 
-  // non-FormSG triggers or test runs proceed without advisory lock
-  const execution = await Execution.query().insert({
-    flowId,
-    testRun,
-    internalId: triggerItem?.meta.internalId,
-    ...(error && { status: 'failure' }),
-  })
-
   // We store all metadata except internalId
   const { internalId: _, ...metadataToStore } = triggerItem?.meta ?? {}
 
-  const executionStep = await execution
-    .$relatedQuery('executionSteps')
-    .insertAndFetch({
-      stepId: step.id,
-      status: error ? 'failure' : 'success',
-      dataIn: step.parameters,
-      dataOut: !error ? triggerItem?.raw : null,
-      errorDetails: error,
-      appKey: step.appKey,
-      metadata: metadataToStore ?? {},
-      key: step.key,
-    })
+  // non-FormSG triggers or test runs proceed without advisory lock.
+  // Both inserts share one transaction so a partial failure rolls back before
+  // any retry, avoiding orphan execution rows with no step.
+  // we generate an execution id and execution step id here instead of relying on the db generation to prevent possibility of duplicate entry during retries
+  const executionId = randomUUID()
+  const executionStepId = randomUUID()
+  const { execution, executionStep } = await retryOnTransientDbError(
+    () =>
+      Execution.transaction(async (trx) => {
+        const execution = await Execution.query(trx)
+          .insert({
+            id: executionId,
+            flowId,
+            testRun,
+            internalId: triggerItem?.meta.internalId,
+            ...(error && { status: 'failure' }),
+          })
+          .onConflict('id')
+          .ignore()
+
+        const executionStep = await execution
+          .$relatedQuery('executionSteps', trx)
+          .insertAndFetch({
+            id: executionStepId,
+            stepId: step.id,
+            status: error ? 'failure' : 'success',
+            dataIn: step.parameters,
+            dataOut: !error ? triggerItem?.raw : null,
+            errorDetails: error,
+            appKey: step.appKey,
+            metadata: metadataToStore ?? {},
+            key: step.key,
+          })
+          .onConflict('id')
+          .ignore()
+
+        return { execution, executionStep }
+      }),
+    { context: { flowId, stepId } },
+  )
 
   const customWebhookResponse = getCustomWebhookResponse(step)
 

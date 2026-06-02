@@ -141,3 +141,5 @@ tmp/
 
 # claude stuff
 .claude/settings.local.json
+
+docs/plans
