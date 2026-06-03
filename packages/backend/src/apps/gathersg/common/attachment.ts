@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
-import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
+import { COMMON_S3_BUCKET, MAX_FILE_SIZE, putObject } from '@/helpers/s3'
 
 export const attachmentsSchema = z.record(
   z.string(),
@@ -16,6 +16,7 @@ export const attachmentsSchema = z.record(
   }),
 )
 type ParsedAttachment = z.infer<typeof attachmentsSchema>[string]
+type EnrichedAttachment = ParsedAttachment & { s3Id: string }
 
 async function downloadAndStoreAttachmentInS3(
   $: IGlobalVariable,
@@ -24,6 +25,16 @@ async function downloadAndStoreAttachmentInS3(
   attachment: ParsedAttachment,
 ): Promise<string> {
   try {
+    const filename = attachment.name
+
+    if (attachment.size > MAX_FILE_SIZE) {
+      const sizeText = MAX_FILE_SIZE / (1024 * 1024)
+      throw new StepError(
+        `Attachment ${filename} exceeds maximum size of ${sizeText}MB`,
+        `Please check that your case attachments do not exceed ${sizeText}MB.`,
+      )
+    }
+
     const { data: attachmentBinary } = await $.http.get(
       '/cases/:caseUuid/attachments/:attachmentUuid',
       {
@@ -34,11 +45,6 @@ async function downloadAndStoreAttachmentInS3(
         },
       },
     )
-
-    const filename =
-      typeof attachment.name === 'string' && attachment.name.length > 0
-        ? attachment.name
-        : attachmentUuid
 
     const objectKey = `${$.execution.id}/${$.step.appKey}/${String(
       caseUuid,
@@ -64,6 +70,11 @@ async function downloadAndStoreAttachmentInS3(
       `Failed to process attachment ${attachmentUuid} for case ${caseUuid}:`,
       error,
     )
+
+    if (error instanceof StepError) {
+      throw error
+    }
+
     throw new StepError(
       `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
       'Please check that your case attachments are accessible and try again.',
@@ -75,13 +86,12 @@ async function downloadAndStoreAttachmentInS3(
 export async function processAttachments(
   $: IGlobalVariable,
   caseUuid: IJSONValue,
-  attachments: Record<string, any>,
-): Promise<Record<string, any>> {
+  attachments: Record<string, unknown>,
+): Promise<Record<string, EnrichedAttachment>> {
   if (!attachments) {
     return {}
   }
 
-  let processedAttachments = {}
   const parsedAttachments = attachmentsSchema.safeParse(attachments)
 
   if (!parsedAttachments.success) {
@@ -90,6 +100,7 @@ export async function processAttachments(
       'Please check that your case attachments are accessible and try again.',
     )
   }
+
   const attachmentEntries = await Promise.all(
     Object.entries(parsedAttachments.data).map(
       async ([attachmentUuid, attachment]) => {
@@ -105,7 +116,5 @@ export async function processAttachments(
     ),
   )
 
-  processedAttachments = Object.fromEntries(attachmentEntries)
-
-  return processedAttachments
+  return Object.fromEntries(attachmentEntries)
 }
