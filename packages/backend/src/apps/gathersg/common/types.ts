@@ -29,3 +29,13 @@ export interface GatherSGCase {
   fields: Record<string, string | string[] | null | number>
   tags: string[]
 }
+
+export type CaseAttachment = {
+  name: string
+  mimeType: string
+  size: number
+  /* s3Id is absent before processAttachments runs, present once uploaded to S3.
+   * Optional for backward compatibility with execution steps stored before S3 upload was added.
+   */
+  s3Id?: string
+}
