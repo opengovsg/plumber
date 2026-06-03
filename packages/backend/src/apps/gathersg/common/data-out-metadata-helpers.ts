@@ -1,6 +1,35 @@
 import { IJSONArray } from '@plumber/types'
 
+import { parseS3Id } from '@/helpers/s3'
+
 import { HEX_ENCODED_FIELD_PREFIX } from './constants'
+
+// Helper function to build metadata for a single attachment entry
+export function buildAttachmentMetadata(attachment: {
+  name?: string | null
+  s3Id?: string | null
+}) {
+  const name = attachment.name ?? ''
+  const s3Id =
+    typeof attachment.s3Id === 'string' && attachment.s3Id.length > 0
+      ? attachment.s3Id
+      : undefined
+
+  return {
+    name: { isHidden: true },
+    mimeType: { isHidden: true },
+    size: { isHidden: true },
+    ...(s3Id
+      ? {
+          s3Id: {
+            type: 'file' as const,
+            label: name,
+            displayedValue: parseS3Id(s3Id)?.objectName ?? name,
+          },
+        }
+      : {}),
+  }
+}
 
 // Helper function to decode hex-encoded field keys
 export function decodeFieldKey(key: string): string {
