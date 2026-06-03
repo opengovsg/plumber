@@ -1,3 +1,5 @@
+import type { IFlowSteps } from '@plumber/types'
+
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { UIMessage } from '@ai-sdk/react'
@@ -38,6 +40,8 @@ export type IsChatReadyPart = {
   type: 'data-isChatReady'
   data: {
     isChatReady: boolean
+    flowSteps?: IFlowSteps
+    error?: string
   }
 }
 
@@ -142,14 +146,15 @@ export function useChatStream(options: UseChatStreamOptions) {
         ...transformedMessages,
       ])
 
-      let isChatReady = false
       const lastMessage = messages[messages.length - 1]
       const isChatReadyPart = lastMessage.parts.find(
         (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
       )
-      if (isChatReadyPart) {
-        isChatReady = isChatReadyPart.data.isChatReady
-        setIsReady(isChatReady)
+
+      const { isChatReady, flowSteps, error } = isChatReadyPart?.data ?? {}
+
+      if (isChatReady) {
+        setIsReady(true)
       }
 
       // Get current output from the ref (ensures we see latest state from other navigates)
@@ -160,11 +165,11 @@ export function useChatStream(options: UseChatStreamOptions) {
           ...locationRef.current.state,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
-          // When isChatReady is true: clear output to trigger step generation
+          // isChatReady: populate output from stream (steps or error), drawer opens
+          // !isChatReady: preserve current output
           ...(isChatReady
-            ? { output: undefined }
-            : // When isChatReady is false: preserve current output from ref
-            currentOutput
+            ? { output: flowSteps ?? { error } }
+            : currentOutput
             ? { output: currentOutput }
             : {}),
         },

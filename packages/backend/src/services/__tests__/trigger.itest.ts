@@ -6,6 +6,14 @@ import Step from '@/models/step'
 
 import { processTrigger } from '../trigger'
 
+// processTrigger chains `.onConflict('id').ignore()` after insert/insertAndFetch,
+// so the mocks must return a query-builder-like object rather than resolving directly.
+const mockInsertChain = (resolved: unknown) => ({
+  onConflict: vi.fn().mockReturnValue({
+    ignore: vi.fn().mockResolvedValue(resolved),
+  }),
+})
+
 describe('processTrigger', () => {
   it('should prevent duplicate executions from concurrent requests', async () => {
     // Setup test data
@@ -36,16 +44,18 @@ describe('processTrigger', () => {
       internalId,
       testRun: false,
       $relatedQuery: vi.fn().mockReturnValue({
-        insertAndFetch: vi.fn().mockResolvedValue({
-          id: randomUUID(),
-          stepId,
-          status: 'success',
-          dataIn: {},
-          dataOut: triggerItem.raw,
-          errorDetails: null,
-          appKey: 'formsg',
-          metadata: {},
-        }),
+        insertAndFetch: vi.fn().mockReturnValue(
+          mockInsertChain({
+            id: randomUUID(),
+            stepId,
+            status: 'success',
+            dataIn: {},
+            dataOut: triggerItem.raw,
+            errorDetails: null,
+            appKey: 'formsg',
+            metadata: {},
+          }),
+        ),
       }),
     }
 
@@ -58,10 +68,11 @@ describe('processTrigger', () => {
         lockAcquired = false
         return Promise.resolve(result)
       }),
+      transaction: vi.fn().mockImplementation((cb) => cb({})),
     } as any)
 
     vi.spyOn(Execution, 'query').mockReturnValue({
-      insert: vi.fn().mockResolvedValue(mockExecution),
+      insert: vi.fn().mockReturnValue(mockInsertChain(mockExecution)),
       where: vi.fn().mockReturnValue({
         first: vi.fn().mockResolvedValue(null),
       }),
@@ -134,28 +145,33 @@ describe('processTrigger', () => {
       // Mock knex raw query for advisory lock - lock acquired successfully
       vi.spyOn(Execution, 'knex').mockReturnValue({
         raw: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] }),
+        transaction: vi.fn().mockImplementation((cb) => cb({})),
       } as any)
 
       // Mock Execution query to return null (no existing execution)
       vi.spyOn(Execution, 'query').mockReturnValue({
-        insert: vi.fn().mockResolvedValue({
-          id: randomUUID(),
-          flowId,
-          internalId: triggerItem.meta.internalId,
-          testRun: false,
-          $relatedQuery: vi.fn().mockReturnValue({
-            insertAndFetch: vi.fn().mockResolvedValue({
-              id: randomUUID(),
-              stepId,
-              status: 'success',
-              dataIn: {},
-              dataOut: triggerItem.raw,
-              errorDetails: null,
-              appKey: 'gathersg',
-              metadata: {},
+        insert: vi.fn().mockReturnValue(
+          mockInsertChain({
+            id: randomUUID(),
+            flowId,
+            internalId: triggerItem.meta.internalId,
+            testRun: false,
+            $relatedQuery: vi.fn().mockReturnValue({
+              insertAndFetch: vi.fn().mockReturnValue(
+                mockInsertChain({
+                  id: randomUUID(),
+                  stepId,
+                  status: 'success',
+                  dataIn: {},
+                  dataOut: triggerItem.raw,
+                  errorDetails: null,
+                  appKey: 'gathersg',
+                  metadata: {},
+                }),
+              ),
             }),
           }),
-        }),
+        ),
         where: vi.fn().mockReturnValue({
           first: vi.fn().mockResolvedValue(null),
         }),
@@ -194,16 +210,18 @@ describe('processTrigger', () => {
         internalId,
         testRun: false,
         $relatedQuery: vi.fn().mockReturnValue({
-          insertAndFetch: vi.fn().mockResolvedValue({
-            id: randomUUID(),
-            stepId,
-            status: 'success',
-            dataIn: {},
-            dataOut: triggerItem.raw,
-            errorDetails: null,
-            appKey: 'gathersg',
-            metadata: {},
-          }),
+          insertAndFetch: vi.fn().mockReturnValue(
+            mockInsertChain({
+              id: randomUUID(),
+              stepId,
+              status: 'success',
+              dataIn: {},
+              dataOut: triggerItem.raw,
+              errorDetails: null,
+              appKey: 'gathersg',
+              metadata: {},
+            }),
+          ),
         }),
       }
 
@@ -216,12 +234,13 @@ describe('processTrigger', () => {
           lockAcquired = false
           return Promise.resolve(result)
         }),
+        transaction: vi.fn().mockImplementation((cb) => cb({})),
       } as any)
 
       // Mock Execution query
       // First request: finds no existing execution, creates new one
       // Second request: fails to acquire lock, returns early
-      const mockInsert = vi.fn().mockResolvedValue(mockExecution)
+      const mockInsert = vi.fn().mockReturnValue(mockInsertChain(mockExecution))
 
       vi.spyOn(Execution, 'query').mockReturnValue({
         insert: mockInsert,

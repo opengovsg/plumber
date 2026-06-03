@@ -1,14 +1,7 @@
 import { IStepConfig } from '@plumber/types'
 
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Fragment, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Box,
@@ -22,11 +15,9 @@ import {
 import { Button, useIsMobile } from '@opengovsg/design-system-react'
 
 import Error from '@/components/FlowStepGroup/Content/Error'
-import { MultiStepLoader } from '@/components/MultiStepLoader'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
 import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-steps'
-import { GENERATE_AI_STEPS } from '@/graphql/mutations/generate-ai-steps'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
@@ -35,22 +26,10 @@ import BranchStep from './BranchStep'
 import GroupedStepContainer from './GroupedStepContainer'
 import Step from './Step'
 
-const LOADING_STATES = [
-  { text: 'Thinking...' },
-  { text: 'Setting up your steps' },
-  { text: 'Writing descriptions for each step' },
-  { text: 'Putting it all together...' },
-]
-
-interface StepsPreviewProps {
-  isReadyForPreview: boolean
-}
-
-export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
-  const location = useLocation()
+export default function StepsPreview() {
+  const navigate = useNavigate()
   const {
     flowName,
-    chatInput,
     output,
     steps,
     triggerStep,
@@ -59,103 +38,14 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     groupedSteps,
     stepGroupType,
     stepGroupCaption,
-    ddSessionId,
     clearPersistedState,
   } = useAiBuilderContext()
 
   const isMobile = useIsMobile()
-  const navigate = useNavigate()
-  const [error, setError] = useState<boolean>(false)
-  const abortControllerRef = useRef<AbortController | null>(null)
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
   )
-  const [generateAiStepsMutation, { loading: isGeneratingSteps }] =
-    useMutation(GENERATE_AI_STEPS)
-
-  const generateAiSteps = useCallback(
-    async (prompt: string) => {
-      // GUARD: skip the call altogether if the prompt is empty
-      if (!prompt) {
-        setError(true)
-        return
-      }
-
-      // Cancel any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-
-      // Create new AbortController for this request
-      const abortController = new AbortController()
-      abortControllerRef.current = abortController
-
-      try {
-        setError(false)
-        const { data } = await generateAiStepsMutation({
-          variables: {
-            input: {
-              prompt,
-              sessionId: ddSessionId,
-            },
-          },
-          context: {
-            fetchOptions: {
-              signal: abortController.signal,
-            },
-          },
-        })
-        return data?.generateAiSteps
-      } catch {
-        if (abortController.signal.aborted) {
-          return
-        }
-        setError(true)
-      }
-    },
-    [generateAiStepsMutation, ddSessionId],
-  )
-
-  const onGenerateAiSteps = useCallback(async () => {
-    const prompt = chatInput
-    const aiSteps = await generateAiSteps(prompt)
-
-    // Avoid navigating with undefined output on error, which would reset
-    // location state and re-trigger the useEffect that watches `output`
-    if (!aiSteps) {
-      return
-    }
-
-    navigate(location.pathname, {
-      state: {
-        ...location.state,
-        output: aiSteps,
-        flowName: aiSteps?.name || 'Build with AI',
-      },
-      replace: true, // Use replace to avoid adding to history
-    })
-
-    // NOTE: we don't need to include the location.state in the dependencies
-    // as we don't want to re-run the function if the location state changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatInput, generateAiSteps, navigate, location.pathname])
-
-  useEffect(() => {
-    if (output || !isReadyForPreview) {
-      return
-    }
-    onGenerateAiSteps()
-  }, [onGenerateAiSteps, output, isReadyForPreview])
-
-  // Cleanup: abort mutation on unmount or navigation
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [])
 
   /** FOR EACH STEPS COMPUTATION */
   const forEachSteps = groupedSteps[0]
@@ -217,20 +107,11 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
     clearPersistedState,
   ])
 
-  if (isGeneratingSteps) {
-    return (
-      <Center h="100%">
-        <MultiStepLoader
-          loadingStates={LOADING_STATES}
-          loading={isGeneratingSteps}
-          duration={1500}
-          loop={false}
-        />
-      </Center>
-    )
-  }
-
-  if (error || !(output?.trigger && output?.actions?.length) || !steps) {
+  if (
+    output?.error ||
+    !steps ||
+    !(output?.trigger && output?.actions?.length)
+  ) {
     return (
       <Center h="80%">
         <Flex
@@ -241,11 +122,12 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
           w="100%"
           maxW="400px"
         >
-          <Image src={aiBuilderErrorImg} alt="ai-bulilder-error" w="400px" />
+          <Image src={aiBuilderErrorImg} alt="ai-builder-error" w="400px" />
           <Text textStyle="h4" fontWeight="normal">
             Something went wrong.
           </Text>
-          <Text>Modify your prompt or try again.</Text>
+          {output?.error && <Text>{output.error}</Text>}
+          <Text>Modify your prompt and try again.</Text>
           <Text>
             If this issue persists,{' '}
             <a href={URLS.SUPPORT_FORM_LINK} target="_blank" rel="noreferrer">
@@ -253,7 +135,6 @@ export default function StepsPreview({ isReadyForPreview }: StepsPreviewProps) {
             </a>
             .
           </Text>
-          <Button onClick={onGenerateAiSteps}>Try again</Button>
         </Flex>
       </Center>
     )

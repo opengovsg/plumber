@@ -5,15 +5,10 @@ import StepsPreview from '../StepsPreview'
 
 interface SideDrawerProps {
   isOpen: boolean
-  isReadyForPreview: boolean
   onClose: () => void
 }
 
-export default function SideDrawer({
-  isOpen,
-  isReadyForPreview,
-  onClose,
-}: SideDrawerProps) {
+export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
   const isMobile = useIsMobile()
 
   return (
@@ -55,7 +50,7 @@ export default function SideDrawer({
           py={isMobile ? 4 : 6}
           px={isMobile ? 4 : 0}
         >
-          {isOpen && <StepsPreview isReadyForPreview={isReadyForPreview} />}
+          {isOpen && <StepsPreview />}
         </Box>
       </Flex>
     </Box>

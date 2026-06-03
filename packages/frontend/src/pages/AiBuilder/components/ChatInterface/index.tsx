@@ -212,7 +212,6 @@ export default function ChatInterface(props: ChatInterfaceProps) {
 
       <SideDrawer
         isOpen={isDrawerOpen}
-        isReadyForPreview={isReadyForPreview}
         onClose={() => setIsDrawerOpen(false)}
       />
     </Flex>

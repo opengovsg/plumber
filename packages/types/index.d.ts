@@ -1152,3 +1152,37 @@ export interface CustomGraphQLFormattedError {
   code: string
   data?: IJSONObject
 }
+
+/**
+ * AI Builder step types — represent a parsed workflow configuration produced by
+ * the chat stream, before it is persisted as real IStep records.
+ *
+ * Not derived via Pick from IBaseTrigger/IBaseAction (app definitions with run/testRun/sort)
+ * or IStep (persisted DB model with id/flowId/status), because neither shape overlaps
+ * meaningfully with what the AI builder needs.
+ */
+export interface IFlowStepsTrigger {
+  type: 'trigger'
+  appKey: string
+  key: string
+  description: string
+}
+
+export interface IFlowStepsAction {
+  type: 'action'
+  appKey: string
+  key: string
+  description: string
+  config: {
+    stepName: string
+    templateConfig?: Record<string, string>
+  }
+  parameters?: { depth: 0; branchName: string }
+}
+
+export interface IFlowSteps {
+  name: string
+  trigger: IFlowStepsTrigger
+  actions: IFlowStepsAction[]
+  traceId?: string
+}

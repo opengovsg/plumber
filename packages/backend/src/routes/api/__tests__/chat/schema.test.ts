@@ -47,6 +47,81 @@ describe('chatRequestSchema', () => {
       })
       expect(result.success).toBe(true)
     })
+
+    it('should accept data-isChatReady part with flowSteps', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'data-isChatReady',
+                data: {
+                  isChatReady: true,
+                  flowSteps: {
+                    name: 'My Workflow',
+                    trigger: {
+                      type: 'trigger',
+                      appKey: 'formsg',
+                      key: 'newSubmission',
+                      description: 'New form submission',
+                    },
+                    actions: [
+                      {
+                        type: 'action',
+                        appKey: 'postman',
+                        key: 'sendTransactionalEmail',
+                        description: 'Send email',
+                        config: { stepName: 'Send email' },
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept data-isChatReady part with error', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'data-isChatReady',
+                data: {
+                  isChatReady: true,
+                  error: 'Invalid trigger detected.',
+                },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    // TODO (kevinkim-ogp): remove this in the next release
+    it('should accept data-isChatReady part with only isChatReady (legacy format)', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'data-isChatReady',
+                data: { isChatReady: false },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
   })
 
   describe('messages validation', () => {

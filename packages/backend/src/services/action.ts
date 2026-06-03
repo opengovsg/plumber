@@ -1,6 +1,7 @@
 import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
 
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
+import { randomUUID } from 'crypto'
 
 import {
   FOR_EACH_ITERATION_DELAY,
@@ -17,6 +18,7 @@ import computeParameters from '@/helpers/compute-parameters'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -209,19 +211,28 @@ export const processAction = async (options: ProcessActionOptions) => {
     })
   }
 
-  const executionStep = await execution
-    .$relatedQuery('executionSteps')
-    .insertAndFetch({
-      stepId: $.step.id,
-      status,
-      dataIn: computedParameters,
-      dataOut: $.actionOutput.data?.raw ?? null,
-      errorDetails: $.actionOutput.error ?? null,
-      appKey: $.app.key,
-      jobId,
-      key: step.key,
-      metadata: { ...metadata, ...$.actionOutput.data?.meta },
-    })
+  // we generate an execution step id here instead of relying on the db generation to prevent possibility of duplicate entry during retries
+  const executionStepId = randomUUID()
+  const executionStep = await retryOnTransientDbError(
+    () =>
+      execution
+        .$relatedQuery('executionSteps')
+        .insertAndFetch({
+          id: executionStepId,
+          stepId: $.step.id,
+          status,
+          dataIn: computedParameters,
+          dataOut: $.actionOutput.data?.raw ?? null,
+          errorDetails: $.actionOutput.error ?? null,
+          appKey: $.app.key,
+          jobId,
+          key: step.key,
+          metadata: { ...metadata, ...$.actionOutput.data?.meta },
+        })
+        .onConflict('id')
+        .ignore(),
+    { context: { executionId: execution.id, stepId: $.step.id, jobId } },
+  )
 
   let nextStep = null
   switch (runResult.nextStep?.command) {
