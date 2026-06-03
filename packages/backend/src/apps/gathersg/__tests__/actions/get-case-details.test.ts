@@ -14,6 +14,7 @@ vi.mock('@/helpers/s3', async (importOriginal) => {
   return {
     ...actual,
     COMMON_S3_BUCKET: 'common-bucket',
+    MAX_FILE_SIZE: 1024 * 1024, // 1MB, small enough to test the size guard
     putObject: mocks.putObject,
   }
 })
@@ -192,5 +193,28 @@ describe('get case details', () => {
     await expect(getCaseDetailsAction.run($)).rejects.toThrow(
       'Please check that you have configured your step correctly',
     )
+  })
+
+  it('throws when attachment exceeds maximum size', async () => {
+    httpGet.mockImplementationOnce(async () => ({
+      data: {
+        traceId: 'trace-1',
+        data: {
+          fields: { name: 'value' },
+          attachments: {
+            [MOCK_ATTACHMENT_UUID]: {
+              name: MOCK_ATTACHMENT_NAME,
+              mimeType: 'application/octet-stream',
+              size: 1024 * 1024 * 2, // 2MB, exceeds mocked MAX_FILE_SIZE of 1MB
+            },
+          },
+        },
+      },
+    }))
+
+    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+      'exceeds maximum size',
+    )
+    expect(mocks.putObject).not.toHaveBeenCalled()
   })
 })
