@@ -34,7 +34,8 @@ import type { IJSONObject } from '@plumber/types'
  *
  * The returned object has two functions:
  *   - `transformStepParameters(stepKey, stepParameters, version) => IJSONObject`
- *   - `getLatestStepVersion(stepKey) => number` — use this when creating new steps
+ *   - `getLatestStepVersion(stepKey) => number` — prefer `getStepVersion(appKey, key)` from `@/helpers/get-step-version` when creating new steps;
+ *      call this directly only when you already hold a `transformer` reference (e.g. update-step)
  *
  * @param transformers - Map of action key → ordered array of migration functions
  */

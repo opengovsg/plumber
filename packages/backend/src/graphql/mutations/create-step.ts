@@ -2,8 +2,8 @@ import { IStepConfig } from '@plumber/types'
 
 import { raw } from 'objection'
 
-import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import { validateApprovalConfig } from '@/helpers/validate-approval-config'
 import App from '@/models/app'
@@ -97,11 +97,7 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .where('position', '>=', validationResult.newStepPosition)
 
-    const app = input.appKey ? apps[input.appKey] : undefined
-    const version =
-      input.key && app?.stepTransformer
-        ? app.stepTransformer.getLatestStepVersion(input.key)
-        : 1
+    const version = getStepVersion(input.appKey, input.key)
 
     const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
       key: input.key,
