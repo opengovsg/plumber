@@ -1,5 +1,6 @@
 import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 
+import { buildAttachmentMetadata } from '../../common/data-out-metadata-helpers'
 import { decodeFieldName } from '../../common/utils'
 
 import { dataOutSchema } from './schema'
@@ -75,12 +76,9 @@ async function getDataOutMetadata(
   const attachmentKeys: string[] = []
   if (dataOut.attachments) {
     for (const key of Object.keys(dataOut.attachments)) {
-      attachmentsMetadata[key] = {
-        name: { isHidden: true },
-        mimeType: { isHidden: true },
-        size: { isHidden: true },
-      }
-
+      attachmentsMetadata[key] = buildAttachmentMetadata(
+        dataOut.attachments[key],
+      )
       attachmentKeys.push(key)
     }
   }

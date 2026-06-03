@@ -35,6 +35,7 @@ export const dataOutSchema = z.object({
             name: z.string().min(1),
             mimeType: z.string().min(1),
             size: z.number(),
+            s3Id: z.string().min(1).optional(),
           }),
         )
         .nullish(),
