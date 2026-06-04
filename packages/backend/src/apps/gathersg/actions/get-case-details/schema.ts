@@ -29,9 +29,9 @@ export const dataOutSchema = z.object({
         .nullish(),
       tags: z.array(z.string()).nullish(),
       attachments: z
-        .record(
-          z.string(),
+        .array(
           z.object({
+            attachmentUuid: z.string().min(1),
             name: z.string().min(1),
             mimeType: z.string().min(1),
             size: z.number(),

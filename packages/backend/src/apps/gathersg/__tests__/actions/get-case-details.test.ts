@@ -130,14 +130,15 @@ describe('get case details', () => {
           fields: {
             __HEX_ENCODED__412f42: 'value',
           },
-          attachments: {
-            [MOCK_ATTACHMENT_UUID]: {
+          attachments: [
+            {
+              attachmentUuid: MOCK_ATTACHMENT_UUID,
               name: MOCK_ATTACHMENT_NAME,
               mimeType: 'application/octet-stream',
               size: 12,
               s3Id: `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID}/${MOCK_ATTACHMENT_NAME}`,
             },
-          },
+          ],
         },
       },
     })
@@ -161,7 +162,7 @@ describe('get case details', () => {
         traceId: 'trace-1',
         data: {
           fields: { name: 'value' },
-          attachments: {},
+          attachments: [],
         },
       },
     })
@@ -216,5 +217,87 @@ describe('get case details', () => {
       'exceeds maximum size',
     )
     expect(mocks.putObject).not.toHaveBeenCalled()
+  })
+
+  it('routes each attachment uuid to the correct download call and stores both in order', async () => {
+    const MOCK_ATTACHMENT_UUID_2 = 'attach-uuid-2'
+    const MOCK_ATTACHMENT_NAME_2 = 'receipt.png'
+
+    httpGet.mockImplementation(async (path: string, options?: any) => {
+      if (path === '/cases/:caseUuid') {
+        return {
+          data: {
+            traceId: 'trace-1',
+            data: {
+              fields: {},
+              attachments: {
+                [MOCK_ATTACHMENT_UUID]: {
+                  name: MOCK_ATTACHMENT_NAME,
+                  mimeType: 'application/pdf',
+                  size: 10,
+                },
+                [MOCK_ATTACHMENT_UUID_2]: {
+                  name: MOCK_ATTACHMENT_NAME_2,
+                  mimeType: 'image/png',
+                  size: 20,
+                },
+              },
+            },
+          },
+        }
+      }
+
+      if (path === '/cases/:caseUuid/attachments/:attachmentUuid') {
+        const uuid = options?.urlPathParams?.attachmentUuid
+        return { data: Buffer.from(`content-${uuid}`) }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    mocks.putObject
+      .mockResolvedValueOnce(
+        `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID}/${MOCK_ATTACHMENT_NAME}`,
+      )
+      .mockResolvedValueOnce(
+        `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID_2}/${MOCK_ATTACHMENT_NAME_2}`,
+      )
+
+    await getCaseDetailsAction.run($)
+
+    expect(httpGet).toHaveBeenCalledWith(
+      '/cases/:caseUuid/attachments/:attachmentUuid',
+      expect.objectContaining({
+        urlPathParams: expect.objectContaining({
+          attachmentUuid: MOCK_ATTACHMENT_UUID,
+        }),
+      }),
+    )
+    expect(httpGet).toHaveBeenCalledWith(
+      '/cases/:caseUuid/attachments/:attachmentUuid',
+      expect.objectContaining({
+        urlPathParams: expect.objectContaining({
+          attachmentUuid: MOCK_ATTACHMENT_UUID_2,
+        }),
+      }),
+    )
+
+    const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const attachments = call.raw.data.attachments
+    expect(attachments).toHaveLength(2)
+    expect(
+      attachments.find((a: any) => a.attachmentUuid === MOCK_ATTACHMENT_UUID),
+    ).toMatchObject({
+      attachmentUuid: MOCK_ATTACHMENT_UUID,
+      name: MOCK_ATTACHMENT_NAME,
+      mimeType: 'application/pdf',
+    })
+    expect(
+      attachments.find((a: any) => a.attachmentUuid === MOCK_ATTACHMENT_UUID_2),
+    ).toMatchObject({
+      attachmentUuid: MOCK_ATTACHMENT_UUID_2,
+      name: MOCK_ATTACHMENT_NAME_2,
+      mimeType: 'image/png',
+    })
   })
 })

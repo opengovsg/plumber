@@ -72,14 +72,12 @@ async function getDataOutMetadata(
     }
   }
 
-  const attachmentsMetadata = Object.create(null)
+  const attachmentsMetadata: ReturnType<typeof buildAttachmentMetadata>[] = []
   const attachmentKeys: string[] = []
   if (dataOut.attachments) {
-    for (const key of Object.keys(dataOut.attachments)) {
-      attachmentsMetadata[key] = buildAttachmentMetadata(
-        dataOut.attachments[key],
-      )
-      attachmentKeys.push(key)
+    for (const attachment of dataOut.attachments) {
+      attachmentsMetadata.push(buildAttachmentMetadata(attachment))
+      attachmentKeys.push(attachment.attachmentUuid)
     }
   }
 

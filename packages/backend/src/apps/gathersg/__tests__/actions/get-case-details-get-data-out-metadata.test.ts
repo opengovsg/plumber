@@ -23,14 +23,15 @@ const minimalValidDataOut = {
   data: {
     type: { name: 'Case type', uuid: 'type-uuid-1' },
     fields: {},
-    attachments: {
-      'attach-1': {
+    attachments: [
+      {
+        attachmentUuid: 'attach-1',
         name: 'invoice.pdf',
         mimeType: 'application/octet-stream',
         size: 12,
         s3Id: 's3:common-bucket:exec/gathersg/case/attach-1/invoice.pdf',
       },
-    },
+    ],
   },
 }
 
@@ -46,7 +47,8 @@ describe('get-case-details getDataOutMetadata', () => {
 
     const result = await getDataOutMetadata(step)
 
-    expect(result?.data.attachments['attach-1']).toEqual({
+    expect(result?.data.attachments[0]).toEqual({
+      attachmentUuid: { isHidden: true },
       name: { isHidden: true },
       mimeType: { isHidden: true },
       size: { isHidden: true },
@@ -68,23 +70,42 @@ describe('get-case-details getDataOutMetadata', () => {
         data: {
           type: { name: 'Case type', uuid: 'type-uuid-1' },
           fields: {},
-          attachments: {
-            'attach-1': {
+          attachments: [
+            {
+              attachmentUuid: 'attach-1',
               name: 'invoice.pdf',
               mimeType: 'application/pdf',
               size: 100,
             },
-          },
+          ],
         },
       },
     } as unknown as IExecutionStep
 
     const result = await getDataOutMetadata(step)
 
-    expect(result?.data.attachments['attach-1']).toEqual({
+    expect(result?.data.attachments[0]).toEqual({
+      attachmentUuid: { isHidden: true },
       name: { isHidden: true },
       mimeType: { isHidden: true },
       size: { isHidden: true },
     })
+  })
+
+  it('returns empty attachments array when no attachments', async () => {
+    const step = {
+      dataOut: {
+        traceId: 'trace-1',
+        data: {
+          type: { name: 'Case type', uuid: 'type-uuid-1' },
+          fields: {},
+          attachments: [],
+        },
+      },
+    } as unknown as IExecutionStep
+
+    const result = await getDataOutMetadata(step)
+
+    expect(result?.data.attachments).toEqual([])
   })
 })
