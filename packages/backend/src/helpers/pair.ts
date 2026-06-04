@@ -8,6 +8,7 @@ const engineProvider = createOpenAICompatible({
   baseURL: 'https://engine.pair.gov.sg',
   apiKey: appConfig.pair.foundry.apiKey,
   supportsStructuredOutputs: true,
+  includeUsage: true,
 })
 const model = engineProvider.chatModel(MODEL_TYPE)
 
