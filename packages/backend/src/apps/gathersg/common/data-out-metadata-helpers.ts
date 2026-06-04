@@ -6,6 +6,7 @@ import { HEX_ENCODED_FIELD_PREFIX } from './constants'
 
 // Helper function to build metadata for a single attachment entry
 export function buildAttachmentMetadata(attachment: {
+  attachmentUuid?: string | null
   name?: string | null
   s3Id?: string | null
 }) {
@@ -16,6 +17,7 @@ export function buildAttachmentMetadata(attachment: {
       : undefined
 
   return {
+    attachmentUuid: { isHidden: true },
     name: { isHidden: true },
     mimeType: { isHidden: true },
     size: { isHidden: true },

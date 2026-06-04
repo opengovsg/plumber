@@ -17,6 +17,9 @@ export const attachmentsSchema = z.record(
 )
 type ParsedAttachment = z.infer<typeof attachmentsSchema>[string]
 type EnrichedAttachment = ParsedAttachment & { s3Id: string }
+export type ProcessedAttachment = EnrichedAttachment & {
+  attachmentUuid: string
+}
 
 async function downloadAndStoreAttachmentInS3(
   $: IGlobalVariable,
@@ -87,9 +90,9 @@ export async function processAttachments(
   $: IGlobalVariable,
   caseUuid: IJSONValue,
   attachments: Record<string, unknown>,
-): Promise<Record<string, EnrichedAttachment>> {
+): Promise<ProcessedAttachment[]> {
   if (!attachments) {
-    return {}
+    return []
   }
 
   const parsedAttachments = attachmentsSchema.safeParse(attachments)
@@ -101,7 +104,7 @@ export async function processAttachments(
     )
   }
 
-  const attachmentEntries = await Promise.all(
+  return Promise.all(
     Object.entries(parsedAttachments.data).map(
       async ([attachmentUuid, attachment]) => {
         const s3Id = await downloadAndStoreAttachmentInS3(
@@ -111,10 +114,8 @@ export async function processAttachments(
           attachment,
         )
 
-        return [attachmentUuid, { ...attachment, s3Id }] as const
+        return { attachmentUuid, ...attachment, s3Id }
       },
     ),
   )
-
-  return Object.fromEntries(attachmentEntries)
 }
