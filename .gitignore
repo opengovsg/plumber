@@ -143,3 +143,4 @@ tmp/
 .claude/settings.local.json
 
 docs/plans
+.codegraph
