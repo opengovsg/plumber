@@ -9,18 +9,13 @@ import {
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
-import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
-import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import delayAsMilliseconds from '@/helpers/delay-as-milliseconds'
 import tracer from '@/helpers/tracer'
-import Execution from '@/models/execution'
-import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
-import { enqueueActionJob, makeActionJobId } from '@/queues/action'
+import { makeActionJobId } from '@/queues/action'
 import { processAction } from '@/services/action'
 
-import processForEachStatus from './for-each-status-manager'
+import { advanceAfterStep } from './advance-after-step'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 function convertParamsToBullMqOptions(
@@ -123,87 +118,27 @@ export function makeActionWorker(
           workerVersion: appConfig.version,
         })
 
-        const {
-          flowId,
-          executionId,
-          nextStep,
-          executionStep,
-          nextStepMetadata,
-          executionError,
-        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
-          // This happens when the prerequisite steps for the action fails (e.g.
-          // db error, missing execution, flow, step, etc...) in such cases, we
-          // do not want to retry
-          throw new UnrecoverableError(
-            err.message || 'Action failed to execute',
-          )
-        })
-
-        if (executionStep.isFailed) {
-          if (nextStepMetadata?.iteration) {
-            await ExecutionStep.patchIterationStatus(
-              executionId,
-              nextStepMetadata.iteration,
-              'failure',
+        const processResult = await processAction({ ...jobData, jobId }).catch(
+          async (err) => {
+            // This happens when the prerequisite steps for the action fails
+            // (e.g. db error, missing execution, flow, step, etc...) in such
+            // cases, we do not want to retry
+            throw new UnrecoverableError(
+              err.message || 'Action failed to execute',
             )
-          }
-          return handleFailedStepAndThrow({
-            errorDetails: executionStep.errorDetails,
-            executionError,
-            context: {
-              isQueueDelayable,
-              worker,
-              span,
-              job,
-            },
-          })
-        }
+          },
+        )
 
-        if (!nextStep) {
-          const shouldContinue = await processForEachStatus({
-            executionId,
-            currStep,
-            nextStepMetadata,
-          })
-
-          if (!shouldContinue) {
-            return
-          }
-
-          await Execution.setStatus(executionId, 'success')
-          return
-        }
-
-        const jobName = `${executionId}-${nextStep.id}`
-
-        const jobPayload = {
-          flowId,
-          executionId,
-          stepId: nextStep.id,
-          metadata: nextStepMetadata,
-        }
-
-        let jobOptions = DEFAULT_JOB_OPTIONS
-
-        if (currStep.appKey === 'delay') {
-          jobOptions = {
-            ...DEFAULT_JOB_OPTIONS,
-            delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
-          }
-        }
-
-        try {
-          await enqueueActionJob({
-            appKey: nextStep.appKey,
-            jobName,
-            jobData: jobPayload,
-            jobOptions,
-          })
-        } catch (error) {
-          // Don't retry if we failed to enqueue the next step (e.g. if
-          // getGroupConfigForJob throws an error)
-          throw new UnrecoverableError(error.message)
-        }
+        await advanceAfterStep({
+          processResult,
+          currStep,
+          context: {
+            isQueueDelayable,
+            span,
+            worker,
+            job,
+          },
+        })
       },
     ),
     workerOptions,
