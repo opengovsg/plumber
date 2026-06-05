@@ -691,6 +691,38 @@ export interface IAppQueue {
   workerType: 'action' | 'sub-trigger'
 }
 
+/**
+ * Configuration declared by an action that opts into BullMQ Pro batch
+ * processing (see {@link IBaseAction.runBatch}). Jobs for such an action are
+ * routed to a dedicated batch queue instead of the per-app / main action queue.
+ *
+ * Mirrors the relevant parts of {@link IAppQueue}, but for the batch queue: the
+ * group id derived here is the unit a single `runBatch` call serves, and group
+ * affinity (`batch.groupAffinity`) guarantees every job in a batch shares it.
+ */
+export interface IActionBatchQueue {
+  /**
+   * Derives the BullMQ Pro group config for a job about to be enqueued to the
+   * batch queue. Group affinity batches together only jobs sharing this id, so
+   * it must capture everything a single `runBatch` call requires to be correct
+   * (e.g. `${fileId}::${tableId}` for m365-excel createTableRow — one table per
+   * group, so exactly one multi-row insert per batch).
+   *
+   * @see {@link JobsProOptions.group}
+   */
+  getGroupConfigForJob(
+    jobData: IActionJobData,
+  ): Promise<JobsProOptions['group']>
+
+  /**
+   * Rate limit for the entire batch queue, applied between batches so we don't
+   * hammer the upstream API. Retained from the non-batch per-file queue.
+   *
+   * @see {@link IAppQueue.queueRateLimit}
+   */
+  queueRateLimit?: WorkerProOptions['limiter']
+}
+
 export interface IApp {
   name: string
   key: string
@@ -973,6 +1005,27 @@ export interface IBaseAction {
     $: IGlobalVariable,
     testRunMetadata?: TestRunStepMetadata,
   ): Promise<IActionRunResult | void>
+
+  /**
+   * Processes a batch of jobs that all share the same batch group (see
+   * {@link IBaseAction.batch}) in a single underlying operation — e.g. one
+   * multi-row MS Graph insert for many createTableRow jobs that target the same
+   * file + table.
+   *
+   * Each job carries its own `$` (its own step, parameters and execution), and
+   * `runBatch` must set each job's own action output via `$.setActionItem`.
+   *
+   * All-or-none: if `runBatch` throws, the whole batch is treated as failed and
+   * no job's output should have been set.
+   */
+  runBatch?(jobs: Array<{ $: IGlobalVariable }>): Promise<void>
+
+  /**
+   * If set, this action opts into batch processing: its jobs are routed to a
+   * dedicated batch queue and processed via {@link IBaseAction.runBatch}. The
+   * config derives the batch group id (the unit a single `runBatch` serves).
+   */
+  batch?: IActionBatchQueue
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.

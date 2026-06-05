@@ -35,6 +35,137 @@ interface TableHeaderInfo {
   columnNames: string[] // Ordered
 }
 
+// Performs a single multi-row insert for a batch of createTableRow jobs that
+// all target the same file + table. Each job carries its own `$` (its own
+// step / params / execution) and gets its own `sheetRowNumber` output.
+//
+// `run($)` (test runs + the single-job drain path) delegates here with a batch
+// of one, so the insert logic lives in exactly one place.
+//
+// All-or-none: any error throws before any job's output is set, so the whole
+// batch fails (and is retried) together.
+async function runBatch(jobs: Array<{ $: IGlobalVariable }>): Promise<void> {
+  if (jobs.length === 0) {
+    return
+  }
+
+  // Parse + validate every job's params up front. A single bad job fails the
+  // whole batch (all-or-none) before any Graph call is made.
+  const parsedJobs = jobs.map(({ $ }) => {
+    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+
+    if (parametersParseResult.success === false) {
+      throw new StepError(
+        'There was a problem with the input.',
+        parametersParseResult.error.issues[0].message,
+      )
+    }
+
+    return { $, ...parametersParseResult.data }
+  })
+
+  // Group affinity guarantees every job in the batch shares one file + table,
+  // but assert it defensively: runBatch issues exactly one POST to one
+  // (fileId, tableId), so a mixed batch would write rows to the wrong table.
+  const { fileId, tableId } = parsedJobs[0]
+  for (const parsedJob of parsedJobs) {
+    if (parsedJob.fileId !== fileId || parsedJob.tableId !== tableId) {
+      throw new Error(
+        'createTableRow batch contains jobs for different files or tables; ' +
+          `expected ${String(fileId)}::${String(tableId)}.`,
+      )
+    }
+  }
+
+  const session = await WorkbookSession.acquire(
+    parsedJobs[0].$,
+    fileId as string,
+  )
+
+  const tableHeaderInfoResponse = await session.request<{
+    rowIndex: number
+    values: string[][] // Guaranteed to be length 1 at top level
+  }>(`/tables/:tableId/headerRowRange?$select=rowIndex,values`, 'get', {
+    urlPathParams: {
+      tableId,
+    },
+  })
+
+  // This occurs when a user selected all the columns and created a table by accident...
+  // Reference: https://learn.microsoft.com/en-us/answers/questions/1837007/excel-api-cant-reach-data-on-the-last-column-xfd
+  if (!tableHeaderInfoResponse.data.values?.[0]?.length) {
+    throw new StepError(
+      'Could not read table headers.',
+      'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
+    )
+  }
+
+  const tableHeaderInfo: TableHeaderInfo = {
+    rowIndex: tableHeaderInfoResponse.data.rowIndex,
+    columnNames: tableHeaderInfoResponse.data.values[0],
+  }
+
+  // One ordered values row per job, in batch order. Note: we disallow
+  // blacklisted formulas and sanitise when necessary.
+  const values = parsedJobs.map(({ $, columnValues }) =>
+    buildRowUpdateArgs(
+      $,
+      tableHeaderInfo.columnNames,
+      columnValues.map((col) => ({
+        columnName: col.columnName,
+        value: sanitiseInputValue(col.value),
+      })),
+    ),
+  )
+
+  const createRowResponse = await session.request<{ index: number }>(
+    `/tables/:tableId/rows`,
+    'post',
+    {
+      data: {
+        index: null,
+        values,
+      },
+      urlPathParams: {
+        tableId,
+      },
+    },
+  )
+
+  // The multi-row response returns a single `index`: the table-index of the
+  // FIRST inserted row (Approach A). Rows are inserted contiguously, so job i
+  // lands at responseStartIndex + i. (Gated by the >=2-row test, and by the
+  // per-file lock which guarantees no concurrent appends shift these rows.)
+  const responseStartIndex = createRowResponse.data.index
+
+  // Only now that all rows are committed do we set each job's own output.
+  parsedJobs.forEach(({ $ }, index) => {
+    $.setActionItem({
+      raw: {
+        // `sheetRowNumber` exposes the actual row number of the created row.
+        //
+        // e.g. if I initially have an empty table with header row at row 10,
+        // and I add a row of data, that created row's sheetRowNumber would be
+        // 11.
+        //
+        // tableHeaderInfo.rowIndex contains the 0-indexed row number of the
+        // table's _header_ row. It follows that we can compute the sheet row
+        // number via:
+        //
+        //   /* Compute the header's row number ... */
+        //   tableHeaderInfo.rowIndex + 1
+        //   /* ...and add... */
+        //   +
+        //   /* ... the new row's index from the header row (1-indexed) */
+        //   (responseStartIndex + index) + 1
+        sheetRowNumber:
+          tableHeaderInfo.rowIndex + 1 + (responseStartIndex + index) + 1,
+        success: true,
+      },
+    })
+  })
+}
+
 const action: IRawAction = {
   name: 'Create table row',
   key: 'createTableRow',
@@ -138,93 +269,12 @@ const action: IRawAction = {
       await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
     }
 
-    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
-
-    if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
-    }
-
-    const { fileId, tableId, columnValues } = parametersParseResult.data
-
-    const session = await WorkbookSession.acquire($, fileId as string)
-
-    const tableHeaderInfoResponse = await session.request<{
-      rowIndex: number
-      values: string[][] // Guaranteed to be length 1 at top level
-    }>(`/tables/:tableId/headerRowRange?$select=rowIndex,values`, 'get', {
-      urlPathParams: {
-        tableId,
-      },
-    })
-
-    // This occurs when a user selected all the columns and created a table by accident...
-    // Reference: https://learn.microsoft.com/en-us/answers/questions/1837007/excel-api-cant-reach-data-on-the-last-column-xfd
-    if (!tableHeaderInfoResponse.data.values?.[0]?.length) {
-      throw new StepError(
-        'Could not read table headers.',
-        'Your Excel table may span the maximum number of columns (XFD). Delete unused columns at the end of the table.',
-      )
-    }
-
-    const tableHeaderInfo: TableHeaderInfo = {
-      rowIndex: tableHeaderInfoResponse.data.rowIndex,
-      columnNames: tableHeaderInfoResponse.data.values[0],
-    }
-
-    // Note: we disallow blacklisted formulas and sanitise when necessary
-    const createRowResponse = await session.request<{ index: number }>(
-      `/tables/:tableId/rows`,
-      'post',
-      {
-        data: {
-          index: null,
-          values: [
-            buildRowUpdateArgs(
-              $,
-              tableHeaderInfo.columnNames,
-              columnValues.map((col) => ({
-                columnName: col.columnName,
-                value: sanitiseInputValue(col.value),
-              })),
-            ),
-          ],
-        },
-        urlPathParams: {
-          tableId,
-        },
-      },
-    )
-
-    $.setActionItem({
-      raw: {
-        // `sheetRowNumber` exposes the actual row number of the created row.
-        //
-        // e.g. if I initially have an empty table with header row at row 10,
-        // and I add a row of data, that created row's sheetRowNumber would be
-        // 11.
-        //
-        // tableHeaderInfoResponse.data.rowIndex contains the 0-indexed row
-        // number of the table's _header_ row. It follows that we can compute
-        // the sheet row number via:
-        //
-        //   /* Compute the header's row number ... */
-        //   tableHeaderInfoResponse.data.rowIndex + 1
-        //   /* ...and add... */
-        //   +
-        //   /* ... the new row's index from the header row (1-indexed) */
-        //   createRowResponse.data.index + 1
-        sheetRowNumber:
-          tableHeaderInfoResponse.data.rowIndex +
-          1 +
-          createRowResponse.data.index +
-          1,
-        success: true,
-      },
-    })
+    // A test run (or a single-job drain off the old queue) is just a batch of
+    // one. All insert logic lives in runBatch so there's one code path.
+    await runBatch([{ $ }])
   },
+
+  runBatch,
 }
 
 export default action
