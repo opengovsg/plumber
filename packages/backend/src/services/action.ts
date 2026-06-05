@@ -1,4 +1,8 @@
-import type { IActionRunResult, TestRunStepMetadata } from '@plumber/types'
+import type {
+  IActionRunResult,
+  IGlobalVariable,
+  TestRunStepMetadata,
+} from '@plumber/types'
 
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { randomUUID } from 'crypto'
@@ -84,12 +88,39 @@ async function enqueueFirstForEachStep({
   }
 }
 
-export const processAction = async (options: ProcessActionOptions) => {
+/**
+ * The shared execution context for a single action job: everything loaded and
+ * computed by `prepareActionExecution` (helper A) before the action runs.
+ *
+ * The same `metadata` object reference is threaded through prepare → run →
+ * record → resolve so in-place mutations (`isLastStep`, for-each bookkeeping)
+ * are visible everywhere, exactly as the original monolithic `processAction`.
+ */
+type PreparedActionExecution = {
+  step: Step
+  flow: Flow
+  execution: Execution
+  $: IGlobalVariable
+  actionCommand: Awaited<ReturnType<Step['getActionCommand']>>
+  forEachContext: ForEachContext
+  computedParameters: ReturnType<typeof computeParameters>
+  metadata: TestRunStepMetadata
+  testRun: boolean
+}
+
+/**
+ * Helper A — load the Step/Flow/Execution, build the global variable `$`, run
+ * the iteration-aware prior-execution-steps query and compute the step's
+ * parameters. Does NOT run the action. Shared by the single-job path
+ * (`processAction`) and the batch path (called once per job before `runBatch`).
+ */
+export async function prepareActionExecution(
+  options: ProcessActionOptions,
+): Promise<PreparedActionExecution> {
   const {
     flowId,
     stepId,
     executionId,
-    jobId,
     testRun = false,
     metadata = {},
   } = options
@@ -162,42 +193,45 @@ export const processAction = async (options: ProcessActionOptions) => {
 
   $.step.parameters = computedParameters
 
-  let runResult: IActionRunResult = {}
-  let executionError: unknown = null
-  try {
-    // Cannot assign directly to runResult due to void return type.
-    const result =
-      testRun && actionCommand.testRun
-        ? await actionCommand.testRun($, metadata)
-        : await actionCommand.run($, metadata)
-    if (result) {
-      runResult = result
-    }
-  } catch (error) {
-    executionError = error
-
-    if (error instanceof HttpError) {
-      $.actionOutput.error = {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
-      logger.error('Action error', {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      })
-    } else {
-      try {
-        const parsedError = JSON.parse(error.message)
-        $.actionOutput.error = parsedError
-        logger.error('Action error', parsedError)
-      } catch {
-        $.actionOutput.error = { error: error.message }
-        logger.error('Action error', { error: error.message })
-      }
-    }
+  return {
+    step,
+    flow,
+    execution,
+    $,
+    actionCommand,
+    forEachContext,
+    computedParameters,
+    metadata,
+    testRun,
   }
+}
+
+/**
+ * Helper B — record a single job's execution step. Computes the success/failure
+ * status (including the non-test PartialStepError success-flip), mutates the
+ * for-each metadata for non-test runs, and inserts the execution step (with an
+ * app-generated id, idempotent on conflict). Returns the inserted step.
+ */
+export async function recordExecutionStep({
+  prepared,
+  runResult,
+  executionError,
+  jobId,
+}: {
+  prepared: PreparedActionExecution
+  runResult: IActionRunResult
+  executionError: unknown
+  jobId?: string
+}): Promise<ExecutionStep> {
+  const {
+    execution,
+    $,
+    step,
+    testRun,
+    metadata,
+    forEachContext,
+    computedParameters,
+  } = prepared
 
   /**
    * During non-test runs and the error is a PartialStepError, we want to mark the step as successful
@@ -241,7 +275,28 @@ export const processAction = async (options: ProcessActionOptions) => {
     { context: { executionId: execution.id, stepId: $.step.id, jobId } },
   )
 
-  let nextStep = null
+  return executionStep
+}
+
+/**
+ * Helper C — resolve the next step to enqueue from the action's run result.
+ * Handles jump-to-step, the start-for-each fan-out side-effect, stop-execution,
+ * the disallowed pause-execution, and the default `getNextStep()`. Returns the
+ * resolved next step (or null when there is none / the fan-out enqueues itself).
+ */
+export async function resolveNextStep({
+  prepared,
+  runResult,
+}: {
+  prepared: PreparedActionExecution
+  runResult: IActionRunResult
+}): Promise<Step | null> {
+  const { step, flow, execution, $, metadata, testRun } = prepared
+  const flowId = flow.id
+  const stepId = step.id
+  const executionId = execution.id
+
+  let nextStep: Step | null = null
   switch (runResult.nextStep?.command) {
     case 'jump-to-step':
       nextStep = await flow
@@ -302,6 +357,61 @@ export const processAction = async (options: ProcessActionOptions) => {
     default:
       nextStep = await step.getNextStep()
   }
+
+  return nextStep
+}
+
+export const processAction = async (options: ProcessActionOptions) => {
+  const { flowId, stepId, executionId, jobId } = options
+
+  const prepared = await prepareActionExecution(options)
+  const { $, actionCommand, testRun, metadata, computedParameters } = prepared
+
+  let runResult: IActionRunResult = {}
+  let executionError: unknown = null
+  try {
+    // Cannot assign directly to runResult due to void return type.
+    const result =
+      testRun && actionCommand.testRun
+        ? await actionCommand.testRun($, metadata)
+        : await actionCommand.run($, metadata)
+    if (result) {
+      runResult = result
+    }
+  } catch (error) {
+    executionError = error
+
+    if (error instanceof HttpError) {
+      $.actionOutput.error = {
+        details: error.details,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      }
+      logger.error('Action error', {
+        details: error.details,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      })
+    } else {
+      try {
+        const parsedError = JSON.parse(error.message)
+        $.actionOutput.error = parsedError
+        logger.error('Action error', parsedError)
+      } catch {
+        $.actionOutput.error = { error: error.message }
+        logger.error('Action error', { error: error.message })
+      }
+    }
+  }
+
+  const executionStep = await recordExecutionStep({
+    prepared,
+    runResult,
+    executionError,
+    jobId,
+  })
+
+  const nextStep = await resolveNextStep({ prepared, runResult })
 
   return {
     flowId,
