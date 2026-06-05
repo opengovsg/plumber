@@ -13,6 +13,7 @@
     "test:unit": "vitest --config ./vitest.config.ts",
     "test:integration": "vitest --config ./vitest.config.integration.ts",
     "lint": "eslint . --ignore-path ../../.eslintignore && tsc --noEmit",
+    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore && tsc --noEmit",
     "db": "DOTENV_CONFIG_PATH=.env knex",
     "readme:db:migration:create": "HOW TO USE: npm run -w backend db:migration:create your_migration_name",
     "db:migration:create": "npm run db -- migrate:make",

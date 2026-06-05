@@ -8,6 +8,7 @@
     "build:lib": "vite build -c vite.config.lib.ts --mode=${VITE_MODE:-prod} && tsc-alias -p tsconfig.lib.json",
     "prebuild": "rimraf ./build",
     "lint": "eslint . --ignore-path ../../.eslintignore && tsc --noEmit",
+    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore && tsc --noEmit",
     "test": "vitest",
     "gen:theme-typings": "chakra-cli tokens ./src/theme/index.ts",
     "postinstall": "npm run gen:theme-typings"

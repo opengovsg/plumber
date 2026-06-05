@@ -14,6 +14,7 @@
     "start": "npm run -w backend start",
     "start:worker": "npm run -w backend start:worker",
     "lint": "npm run --workspaces --if-present lint",
+    "lint:fix": "npm run --workspaces --if-present lint:fix",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "migrate": "npm run -w backend db:migrate",
