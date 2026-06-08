@@ -3,7 +3,9 @@ import axios from 'axios'
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 
+import { getLdFlagValue } from './launch-darkly'
 import logger from './logger'
+import { sendEmailViaSes, shouldUseSes } from './ses-email-helper'
 
 export interface PostmanEmailRequestBody {
   subject: string
@@ -13,7 +15,7 @@ export interface PostmanEmailRequestBody {
   cc?: string[]
 }
 
-export async function sendEmail({
+async function sendEmailViaPostman({
   subject,
   body,
   recipient,
@@ -42,10 +44,11 @@ export async function sendEmail({
   } catch (e) {
     let errorMsg = 'Error sending email. Please try again later.'
     if (axios.isAxiosError(e)) {
-      logger.error('Error sending email', { error: new HttpError(e).response })
+      logger.error('Error sending email via Postman', {
+        error: new HttpError(e).response,
+      })
       errorMsg = e.response?.data?.message ?? e.message
 
-      // User has been added to Postman's blacklist, we need to contact them to remove it
       if (errorMsg.includes('blacklisted')) {
         logger.info('Blacklisted email', { email: recipient })
         errorMsg =
@@ -54,4 +57,19 @@ export async function sendEmail({
     }
     throw new Error(errorMsg)
   }
+}
+
+export async function sendEmail(
+  params: PostmanEmailRequestBody,
+): Promise<void> {
+  const sesEnabledDomains = await getLdFlagValue<string[]>(
+    'ses_enabled_domains',
+    null,
+    [],
+  )
+  if (shouldUseSes(params.recipient, sesEnabledDomains)) {
+    return sendEmailViaSes(params)
+  }
+
+  return sendEmailViaPostman(params)
 }
