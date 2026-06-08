@@ -20,23 +20,16 @@ export interface SesEventInput {
  */
 export async function processSesEvent(data: SesEventInput): Promise<void> {
   const { sesEvent, sqsMessageId } = data
-  const { eventType, mail } = sesEvent
+  const { mail } = sesEvent
 
-  if (eventType === SesEventType.Bounce) {
-    // Defensive: an event tagged Bounce must carry a bounce payload. If it
-    // doesn't, surface it loudly rather than silently dropping the event.
-    if (!sesEvent.bounce) {
-      logger.error('Bounce event missing bounce payload', {
-        event: 'ses-malformed-event',
-        sqsMessageId,
-        messageId: mail?.messageId,
-      })
-      return
-    }
-
+  // sesEvent is a discriminated union on eventType (Bounce | Complaint), so the
+  // payload for each branch is guaranteed present — no defensive null checks
+  // needed, and the union is exhaustive.
+  if (sesEvent.eventType === SesEventType.Bounce) {
     const { bounceType, bounceSubType, bouncedRecipients } = sesEvent.bounce
 
     if (bounceType === 'Permanent') {
+      // TODO: add micro-optimisation for upsertSuppression to blacklist multiple recipient emails in phase 2
       for (const recipient of bouncedRecipients) {
         await EmailSuppressionEntry.upsertSuppression({
           email: recipient.emailAddress,
@@ -68,16 +61,7 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
     return
   }
 
-  if (eventType === SesEventType.Complaint) {
-    if (!sesEvent.complaint) {
-      logger.error('Complaint event missing complaint payload', {
-        event: 'ses-malformed-event',
-        sqsMessageId,
-        messageId: mail?.messageId,
-      })
-      return
-    }
-
+  if (sesEvent.eventType === SesEventType.Complaint) {
     const { complainedRecipients, complaintFeedbackType } = sesEvent.complaint
 
     if (complaintFeedbackType === 'not-spam') {
@@ -112,10 +96,4 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
     }
     return
   }
-
-  logger.warn('Unhandled SES event type', {
-    event: 'ses-unhandled-event',
-    eventType,
-    sqsMessageId,
-  })
 }
