@@ -9,6 +9,7 @@ import HttpError from '@/errors/http'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { getSesClient, shouldUseSes } from '@/helpers/ses-email-helper'
+import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import {
   PostmanEmailDataOut,
@@ -201,7 +202,26 @@ export async function sendTransactionalEmails(
     !email.attachments?.length &&
     recipients.every((r) => shouldUseSes(r, sesEnabledDomains))
 
-  const promises = recipients.map(async (recipientEmail) => {
+  // Pre-send suppression check (SES path only)
+  let suppressedSet = new Set<string>()
+  if (useSes) {
+    const suppressedEmails = await EmailSuppressionEntry.getSuppressedEmails(
+      recipients,
+    )
+    suppressedSet = new Set(suppressedEmails)
+
+    if (suppressedSet.size > 0) {
+      logger.info('Suppressed emails filtered out before sending', {
+        event: 'pre-send-suppression-check',
+        suppressedCount: suppressedSet.size,
+        totalRecipients: recipients.length,
+      })
+    }
+  }
+
+  const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
+
+  const promises = activeRecipients.map(async (recipientEmail) => {
     try {
       if (useSes) {
         return await sendViaSes(recipientEmail, email)
@@ -231,7 +251,25 @@ export async function sendTransactionalEmails(
   let params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
   const errors: PostmanPromiseRejected[] = []
 
-  results.forEach((result) => {
+  // Merge suppressed entries and send results back into input order so
+  // dataOut.status[i] / dataOut.recipient[i] stay positionally aligned with
+  // the original recipients list (retry logic relies on this).
+  let resultIdx = 0
+  recipients.forEach((recipientEmail) => {
+    if (suppressedSet.has(recipientEmail)) {
+      status.push('BLACKLISTED')
+      recipient.push(recipientEmail)
+      errors.push({
+        status: 'BLACKLISTED',
+        recipient: recipientEmail,
+        error: {
+          message: 'Email address is in suppression list',
+        } as HttpError,
+      })
+      return
+    }
+
+    const result = results[resultIdx++]
     if (result.status === 'fulfilled') {
       status.push(result.value.status)
       recipient.push(result.value.recipient)
