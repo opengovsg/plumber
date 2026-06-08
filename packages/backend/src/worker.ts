@@ -7,6 +7,9 @@ import '@/workers/trigger'
 import '@/workers/action'
 
 import logger from '@/helpers/logger'
+import { startSesConsumer } from '@/helpers/ses-consumer'
+
+startSesConsumer()
 
 process.on('uncaughtException', (err) => {
   try {

@@ -55,10 +55,10 @@ const complaintEventSchema = z.object({
   mail: sesMailSchema,
 })
 
-// The SQS queue's SNS subscription is filtered to Bounce + Complaint only, so
-// the tagged union is exhaustive. Any other eventType is unexpected and fails
-// validation here (surfaced by the consumer's error handling) rather than
-// being silently accepted.
+// Bounce + Complaint are the only events we handle. Any other eventType (the
+// SES config set may also publish Delivery/Open/Send/... to the same topic)
+// fails this strict union and is treated as a poison message by the consumer —
+// the intended signal to tighten the SNS subscription filter upstream.
 const sesEventSchema = z.discriminatedUnion('eventType', [
   bounceEventSchema,
   complaintEventSchema,
@@ -78,7 +78,8 @@ export type SesEvent = z.infer<typeof sesEventSchema>
  * -> SES event (JSON string inside `Message`).
  *
  * Throws if the body isn't valid JSON (SyntaxError) or the payload doesn't
- * match the expected shape (ZodError) — callers handle/log the failure.
+ * match a Bounce/Complaint event (ZodError) — the consumer treats either as a
+ * poison message.
  */
 export function parseSqsMessage(sqsBody: string): SesEvent {
   const { Message } = snsEnvelopeSchema.parse(JSON.parse(sqsBody))
