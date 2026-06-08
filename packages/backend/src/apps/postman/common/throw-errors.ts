@@ -114,14 +114,14 @@ function getInvalidAttachmentSolution({
   showAttachmentsList?: boolean
 }) {
   if (showAttachmentsList) {
-    return `The following attachment(s) are not supported and have been removed from the email:
+    return `The following attachment(s) are not supported by Postman and have been removed from the email:
     \n${invalidAttachments
       .map((attachment) => `**${attachment}**`)
       .join('\n\n')}
     \nIf you require the attachment(s), log in to your form to download them for this submission.
     `
   }
-  return `There were attachment(s) that could not be sent and have been removed from the email.
+  return `There were attachment(s) that could not be sent by Postman and have been removed from the email.
     \nIf you require the attachment(s), log in to your form to download them for this submission.
   `
 }
@@ -161,15 +161,15 @@ export function throwPostmanStepError({
 
       // log individual blacklisted recipients
       blacklistedRecipients.forEach((recipient) => {
-        logger.info('Blacklisted recipient for email step', {
-          event: 'email-step-blacklisted-recipient',
+        logger.info('Blacklisted recipient for postman email step', {
+          event: 'postman-step-blacklisted-recipient',
           blacklistedEmail: recipient,
           stepId: $.step.id,
           executionId: $.execution.id,
         })
       })
 
-      let solution = `The following email addresses have been blacklisted:
+      let solution = `The following email addresses have been blacklisted by Postman:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
            .join('\n\n')}

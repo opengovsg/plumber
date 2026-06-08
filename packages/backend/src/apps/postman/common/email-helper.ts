@@ -7,6 +7,7 @@ import { sortBy } from 'lodash'
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
+import logger from '@/helpers/logger'
 import { getSesClient, shouldUseSes } from '@/helpers/ses-email-helper'
 
 import {
@@ -61,13 +62,13 @@ interface Email {
   ccList?: string[]
 }
 
-interface PromiseFulfilled {
+interface PostmanPromiseFulfilled {
   status: 'ACCEPTED'
   recipient: string
   params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
 }
 
-interface PromiseRejected {
+interface PostmanPromiseRejected {
   status: PostmanEmailSendStatus
   recipient: string
   error: HttpError
@@ -77,7 +78,7 @@ async function sendViaPostman(
   http: IHttpClient,
   recipientEmail: string,
   email: Email,
-): Promise<PromiseFulfilled> {
+): Promise<PostmanPromiseFulfilled> {
   const requestData = new FormData()
   requestData.append('subject', email.subject)
   requestData.append('body', email.body)
@@ -131,9 +132,9 @@ async function sendViaPostman(
 async function sendViaSes(
   recipientEmail: string,
   email: Email,
-): Promise<PromiseFulfilled> {
+): Promise<PostmanPromiseFulfilled> {
   const client = getSesClient()
-  const fromAddress = `Plumber <${appConfig.ses.fromAddress}>`
+  const fromAddress = `${email.senderName} <${appConfig.ses.fromAddress}>`
 
   await client.send(
     new SendEmailCommand({
@@ -156,6 +157,12 @@ async function sendViaSes(
       }),
     }),
   )
+
+  // TODO: remove this log once the SES rollout is verified and stable.
+  logger.info('Email sent via SES', {
+    event: 'postman-step-ses-email-sent',
+    emailContent: email,
+  })
 
   return {
     status: 'ACCEPTED',
@@ -199,11 +206,20 @@ export async function sendTransactionalEmails(
       }
       return await sendViaPostman(http, recipientEmail, email)
     } catch (e) {
+      if (useSes) {
+        logger.error('Email send failed via SES', {
+          event: 'postman-step-ses-email-failed',
+          recipient: recipientEmail,
+          errorName: e instanceof Error ? e.name : undefined,
+          httpStatus: (e as { $metadata?: { httpStatusCode?: number } })
+            ?.$metadata?.httpStatusCode,
+        })
+      }
       throw {
         status: useSes ? getSesErrorStatus(e) : getPostmanErrorStatus(e),
         recipient: recipientEmail,
         error: e,
-      } satisfies PromiseRejected
+      } satisfies PostmanPromiseRejected
     }
   })
 
@@ -211,13 +227,15 @@ export async function sendTransactionalEmails(
   const status: PostmanEmailSendStatus[] = []
   const recipient: string[] = []
   let params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
-  const errors: PromiseRejected[] = []
+  const errors: PostmanPromiseRejected[] = []
 
   results.forEach((result) => {
     if (result.status === 'fulfilled') {
       status.push(result.value.status)
       recipient.push(result.value.recipient)
       if (!params) {
+        // params will be same for all successful recipients
+        //  so we store the first params only
         params = result.value.params
       }
     } else {
@@ -228,13 +246,13 @@ export async function sendTransactionalEmails(
   })
 
   /**
-   * Since we can only return one error per step, we select by priority:
+   * Since we can only return one error per postman step, we have to select in terms of priority:
    * 1. RATE-LIMITED (so we can auto-retry)
    * 2. INVALID-ATTACHMENT (probably all recipients should fail)
    * 3. ATTACHMENT-SIZE-EXCEEDED (probably all recipients should fail)
    * 4. INTERMITTENT-ERROR (some recipients failed, auto-retry)
    * 5. ERROR (probably all recipients should fail)
-   * 6. BLACKLISTED (blacklisted errors are returned even if there are other errors)
+   * 6. BLACKLISTED (blacklisted errors are returned even if there are other errors like invalid attachment)
    */
   const sortedErrors = sortBy(errors, (error) =>
     [
