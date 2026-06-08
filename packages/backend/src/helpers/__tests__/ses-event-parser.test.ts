@@ -66,7 +66,7 @@ describe('ses-event-parser', () => {
       expect(() => parseSqsMessage(snsEnvelope)).toThrow(/eventType/)
     })
 
-    it('should throw on an unhandled event type', () => {
+    it('should throw on an unhandled event type (e.g. Delivery)', () => {
       const snsEnvelope = JSON.stringify({
         Type: 'Notification',
         Message: JSON.stringify({ eventType: 'Delivery', mail: {} }),

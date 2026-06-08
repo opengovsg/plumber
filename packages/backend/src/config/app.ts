@@ -84,6 +84,7 @@ type AppConfig = {
     region: string
     roleArn: string
     configurationSet?: string
+    sqsQueueUrl?: string
   }
 }
 
@@ -187,6 +188,7 @@ const appConfig: AppConfig = {
     ...(process.env.SES_CONFIGURATION_SET && {
       configurationSet: process.env.SES_CONFIGURATION_SET,
     }),
+    sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
   },
 }
 
