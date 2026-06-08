@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
   getLdFlagValue: vi.fn(async () => [] as string[]),
   sesSend: vi.fn(async () => ({})),
+  getSuppressedEmails: vi.fn(async () => [] as string[]),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -64,6 +65,12 @@ vi.mock('../../common/send-blacklist-email', () => ({
 vi.mock('../../common/send-invalid-attachments-email', () => ({
   sendInvalidAttachmentsEmail: mocks.sendInvalidAttachmentsEmail,
   createInvalidAttachmentsMessage: mocks.createInvalidAttachmentsMessage,
+}))
+
+vi.mock('@/models/email-suppression-entry', () => ({
+  default: {
+    getSuppressedEmails: mocks.getSuppressedEmails,
+  },
 }))
 
 describe('send transactional email', () => {
