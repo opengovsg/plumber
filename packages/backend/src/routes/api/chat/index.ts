@@ -33,6 +33,7 @@ import { pipeWebResponseToExpress } from '@/helpers/stream'
 import { AuthenticatedRequest } from '@/types/express/context'
 
 import { serializeMessagesForLangfuse } from './helpers'
+import { parseClarificationBlock } from './parse-clarification-block'
 import { chatRequestSchema } from './schema'
 
 const MAX_MESSAGES = 50
@@ -176,6 +177,16 @@ const handleChatStream = observe(
                       (flowSteps ? { flowSteps } : { error: workflowError })),
                   },
                 })
+
+                if (!hasWorkflowMetadata) {
+                  const questions = parseClarificationBlock(event.text)
+                  if (questions) {
+                    writer.write({
+                      type: 'data-clarification',
+                      data: { questions },
+                    })
+                  }
+                }
               } catch (error) {
                 logger.error('Error parsing workflow', {
                   traceId,

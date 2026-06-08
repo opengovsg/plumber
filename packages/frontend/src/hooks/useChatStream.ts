@@ -28,6 +28,7 @@ export interface Message {
    * only assistant messages should have this.
    */
   isChatReady: boolean
+  clarification?: ClarificationPart['data']['questions']
 }
 
 // Custom message type with metadata
@@ -42,6 +43,19 @@ export type IsChatReadyPart = {
     isChatReady: boolean
     flowSteps?: IFlowSteps
     error?: string
+  }
+}
+
+export interface ClarificationQuestion {
+  question: string
+  options: string[]
+}
+
+// Type for clarification questions data annotation
+export type ClarificationPart = {
+  type: 'data-clarification'
+  data: {
+    questions: ClarificationQuestion[]
   }
 }
 
