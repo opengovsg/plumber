@@ -22,14 +22,17 @@ function extractMessageIds(
 
 export function startSesConsumer(): void {
   const queueUrl = appConfig.ses.sqsQueueUrl
+  // Local dev does not need SES consumer if not testing for email suppressions, and we want to avoid noisy logs about missing SQS_QUEUE_URL, so short-circuit if not set.
   if (!queueUrl) {
     logger.info('SQS_QUEUE_URL not set — SES consumer will not start.')
     return
   }
+
   if (sesConsumer) {
     return
   }
 
+  // Note that N consumers will be polling the same SQS queue with N ECS tasks, but each message goes to exactly one consumer, and the queue's visibility timeout prevents two from processing the same message.
   sesConsumer = Consumer.create({
     queueUrl,
     sqs: new SQSClient({ region: 'ap-southeast-1' }),
@@ -59,7 +62,7 @@ export function startSesConsumer(): void {
         logger.error('Failed to parse SQS message — deleting as poison', {
           event: 'ses-poison-message',
           sqsMessageId: messageId,
-          bodyPreview: message.Body?.slice(0, 200),
+          bodyLength: message.Body?.length,
           err:
             parseError instanceof Error ? parseError.stack : String(parseError),
         })
