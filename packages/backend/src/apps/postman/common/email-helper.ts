@@ -161,7 +161,9 @@ async function sendViaSes(
   // TODO: remove this log once the SES rollout is verified and stable.
   logger.info('Email sent via SES', {
     event: 'postman-step-ses-email-sent',
-    emailContent: email,
+    subject: email.subject,
+    from: fromAddress,
+    recipient: recipientEmail,
   })
 
   return {

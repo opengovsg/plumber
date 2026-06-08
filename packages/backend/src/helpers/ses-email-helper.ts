@@ -29,11 +29,17 @@ export function shouldUseSes(
   if (sesEnabledDomains.length === 0) {
     return false
   }
-  if (sesEnabledDomains.includes('*')) {
+
+  const normalizedEnabledDomains = sesEnabledDomains.map((d) =>
+    d.trim().toLowerCase(),
+  )
+
+  if (normalizedEnabledDomains.includes('*')) {
     return true
   }
+
   const domain = recipientEmail.split('@')[1]?.toLowerCase()
-  return sesEnabledDomains.includes(domain)
+  return domain ? normalizedEnabledDomains.includes(domain) : false
 }
 
 interface SesEmailParams {
