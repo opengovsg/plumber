@@ -1,3 +1,4 @@
+import type { ModelOptions, QueryContext } from 'objection'
 import { raw } from 'objection'
 
 import Base from './base'
@@ -63,6 +64,28 @@ class EmailSuppressionEntry extends Base {
     },
   }
 
+  // Lowercase email on write so stored rows have a canonical casing.
+  // Suppression matching must be case-insensitive — the read methods below
+  // lowercase their inputs to match. (Email parsing elsewhere in the codebase
+  // already lowercases, e.g. recipient parsing + the dataOut schema.)
+  async $beforeInsert(queryContext: QueryContext): Promise<void> {
+    await super.$beforeInsert(queryContext)
+    if (this.email) {
+      this.email = this.email.toLowerCase()
+    }
+  }
+
+  async $beforeUpdate(
+    opts: ModelOptions,
+    queryContext: QueryContext,
+  ): Promise<void> {
+    await super.$beforeUpdate(opts, queryContext)
+    // `email` is absent on patches that don't touch it (e.g. whitelistEmails).
+    if (this.email) {
+      this.email = this.email.toLowerCase()
+    }
+  }
+
   /**
    * Upsert a suppression record from an SES bounce/complaint event.
    *
@@ -89,6 +112,13 @@ class EmailSuppressionEntry extends Base {
     const { email, reason, reasonDetail, sesMessageId } = params
 
     await this.query()
+      // Safeguard because deleted_at should always be null:
+      // The base query builder appends `deleted_at IS NULL` to every query,
+      // which would otherwise land on the ON CONFLICT ... DO UPDATE clause and
+      // skip the merge for a soft-deleted row — leaving it deleted instead of
+      // re-suppressed. withSoftDeleted() drops that filter so the upsert can
+      // undelete (reset deleted_at below).
+      .withSoftDeleted()
       .insert({
         email,
         reason,
@@ -103,6 +133,7 @@ class EmailSuppressionEntry extends Base {
         reasonDetail: reasonDetail ?? null,
         sesMessageId: sesMessageId ?? null,
         lastWhitelistedAt: null,
+        updatedAt: new Date().toISOString(),
         // increment only when re-suppressing a previously whitelisted email
         whitelistCount: raw(
           `CASE
@@ -123,13 +154,17 @@ class EmailSuppressionEntry extends Base {
    * Returns the subset of input emails that are suppressed.
    */
   static async getSuppressedEmails(emails: string[]): Promise<string[]> {
-    if (emails.length === 0) {
+    const lowercasedEmails = emails
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.length > 0)
+
+    if (lowercasedEmails.length === 0) {
       return []
     }
 
     const results = await this.query()
       .select('email')
-      .whereIn('email', emails)
+      .whereIn('email', lowercasedEmails)
       .whereNull('last_whitelisted_at')
 
     return results.map((row) => row.email)
@@ -148,11 +183,12 @@ class EmailSuppressionEntry extends Base {
       return []
     }
 
+    const lowercasedEmails = emails.map((email) => email.toLowerCase())
     const results = await this.query()
       .patch({
         lastWhitelistedAt: new Date().toISOString(),
       })
-      .whereIn('email', emails)
+      .whereIn('email', lowercasedEmails)
       .whereNull('last_whitelisted_at')
       .returning('email')
 

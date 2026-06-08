@@ -90,6 +90,37 @@ describe('EmailSuppressionEntry model', () => {
       expect(row.reasonDetail).toBe('NoEmail')
     })
 
+    it('should undelete (reset deleted_at) when upserting onto a soft-deleted row', async () => {
+      // Create then soft-delete the row.
+      await EmailSuppressionEntry.upsertSuppression({
+        email: testEmail,
+        reason: 'BOUNCE',
+        reasonDetail: 'NoEmail',
+      })
+      await EmailSuppressionEntry.query().where({ email: testEmail }).delete()
+
+      // Sanity: the row is now hidden from normal (soft-delete-filtered) queries.
+      const hiddenBefore = await EmailSuppressionEntry.query().findOne({
+        email: testEmail,
+      })
+      expect(hiddenBefore).toBeUndefined()
+
+      // Re-suppression event for the same email should undelete + update it.
+      await EmailSuppressionEntry.upsertSuppression({
+        email: testEmail,
+        reason: 'COMPLAINT',
+        reasonDetail: 'abuse',
+      })
+
+      const row = await EmailSuppressionEntry.query().findOne({
+        email: testEmail,
+      })
+      expect(row).toBeDefined()
+      expect(row.deletedAt).toBeNull()
+      expect(row.reason).toBe('COMPLAINT')
+      expect(row.reasonDetail).toBe('abuse')
+    })
+
     it('should reject invalid reason values via DB CHECK constraint', async () => {
       await expect(
         EmailSuppressionEntry.upsertSuppression({
@@ -97,6 +128,38 @@ describe('EmailSuppressionEntry model', () => {
           reason: 'TRANSIENT' as never,
         }),
       ).rejects.toThrow()
+    })
+
+    it('should lowercase the email before storing', async () => {
+      await EmailSuppressionEntry.upsertSuppression({
+        email: 'MixedCase@Example.com',
+        reason: 'BOUNCE',
+      })
+
+      const row = await EmailSuppressionEntry.query().findOne({
+        email: 'mixedcase@example.com',
+      })
+      expect(row).toBeDefined()
+      expect(row.email).toBe('mixedcase@example.com')
+    })
+
+    it('should treat differently-cased emails as the same row', async () => {
+      await EmailSuppressionEntry.upsertSuppression({
+        email: 'dupe@example.com',
+        reason: 'BOUNCE',
+        reasonDetail: 'NoEmail',
+      })
+      await EmailSuppressionEntry.upsertSuppression({
+        email: 'DUPE@example.com',
+        reason: 'COMPLAINT',
+        reasonDetail: 'abuse',
+      })
+
+      const rows = await EmailSuppressionEntry.query().where({
+        email: 'dupe@example.com',
+      })
+      expect(rows).toHaveLength(1)
+      expect(rows[0].reason).toBe('COMPLAINT')
     })
   })
 
@@ -133,6 +196,13 @@ describe('EmailSuppressionEntry model', () => {
     it('should return empty array for empty input', async () => {
       const result = await EmailSuppressionEntry.getSuppressedEmails([])
       expect(result).toEqual([])
+    })
+
+    it('should match suppressed emails case-insensitively', async () => {
+      const result = await EmailSuppressionEntry.getSuppressedEmails([
+        'SUPPRESSED@Example.com',
+      ])
+      expect(result).toEqual(['suppressed@example.com'])
     })
   })
 
@@ -181,6 +251,18 @@ describe('EmailSuppressionEntry model', () => {
     it('should return empty array for empty input', async () => {
       const result = await EmailSuppressionEntry.whitelistEmails([])
       expect(result).toEqual([])
+    })
+
+    it('should whitelist case-insensitively', async () => {
+      const result = await EmailSuppressionEntry.whitelistEmails([
+        'SUPPRESSED@Example.com',
+      ])
+      expect(result).toEqual(['suppressed@example.com'])
+
+      const row = await EmailSuppressionEntry.query().findOne({
+        email: 'suppressed@example.com',
+      })
+      expect(row.lastWhitelistedAt).not.toBeNull()
     })
   })
 })
