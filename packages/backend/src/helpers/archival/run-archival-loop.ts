@@ -1,0 +1,138 @@
+import { archivalConfig } from './config'
+import { archivalDb } from './db'
+import logger from './logger'
+import { archiveExecution } from './archive-execution'
+import { archiveS3Client } from './s3-client'
+import type { ExecutionRow, ExecutionStepRow } from './types'
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
+  const {
+    archiveDryRun: dryRun,
+    archiveRetentionDays: retentionDays,
+    archiveBatchSize: batchSize,
+    archiveBatchSleepMs: sleepMs,
+    archiveExecutionsBucket: execsBucket,
+    archiveTestExecutionsBucket: testExecsBucket,
+  } = archivalConfig
+
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - retentionDays)
+
+  let cursor: string | null = null
+  let totalArchived = 0
+  let totalSkipped = 0
+  const startedAt = Date.now()
+
+  while (!signal.aborted) {
+    const batch = (await archivalDb('executions')
+      .select(
+        'id',
+        'flow_id as flowId',
+        'status',
+        'test_run as testRun',
+        'internal_id as internalId',
+        'created_at as createdAt',
+        'updated_at as updatedAt',
+        'deleted_at as deletedAt',
+      )
+      .where((builder) => {
+        builder
+          .where((b) =>
+            b.where('test_run', false).whereIn('status', ['success', 'failure']),
+          )
+          .orWhere((b) =>
+            b.where('test_run', true).whereNotIn(
+              'id',
+              archivalDb('flows')
+                .select('test_execution_id')
+                .whereNotNull('test_execution_id'),
+            ),
+          )
+      })
+      .where('created_at', '<', cutoff)
+      .modify((qb) => {
+        if (cursor) {
+          qb.whereRaw('id > ?::uuid', [cursor])
+        }
+      })
+      .orderBy('id')
+      .limit(batchSize)) as ExecutionRow[]
+
+    if (!batch.length) {
+      break
+    }
+
+    let batchArchived = 0
+    let batchSkipped = 0
+
+    for (const execution of batch) {
+      if (signal.aborted) break
+
+      const steps = (await archivalDb('execution_steps')
+        .select(
+          'id',
+          'execution_id as executionId',
+          'step_id as stepId',
+          'app_key as appKey',
+          'key',
+          'job_id as jobId',
+          'status',
+          'data_in as dataIn',
+          'data_out as dataOut',
+          'error_details as errorDetails',
+          'metadata',
+          'created_at as createdAt',
+          'updated_at as updatedAt',
+          'deleted_at as deletedAt',
+        )
+        .where('execution_id', execution.id)
+        .orderBy('created_at')) as ExecutionStepRow[]
+
+      try {
+        const result = await archiveExecution(execution, steps, {
+          dryRun,
+          execsBucket,
+          testExecsBucket,
+          s3Client: archiveS3Client,
+          knexClient: archivalDb,
+        })
+        if (result === 'archived') {
+          batchArchived++
+        } else {
+          batchSkipped++
+        }
+      } catch (err) {
+        logger.error(
+          { executionId: execution.id, err },
+          'archival: unexpected error, skipping execution',
+        )
+        batchSkipped++
+      }
+    }
+
+    cursor = batch[batch.length - 1].id
+    totalArchived += batchArchived
+    totalSkipped += batchSkipped
+
+    logger.info({
+      event: 'archival.batch.complete',
+      batchArchived,
+      batchSkipped,
+      cursor,
+      durationMs: Date.now() - startedAt,
+    })
+
+    if (!signal.aborted && sleepMs > 0) {
+      await sleep(sleepMs)
+    }
+  }
+
+  logger.info({
+    event: 'archival.run.complete',
+    executions_archived: totalArchived,
+    executions_skipped: totalSkipped,
+    durationMs: Date.now() - startedAt,
+  })
+}
