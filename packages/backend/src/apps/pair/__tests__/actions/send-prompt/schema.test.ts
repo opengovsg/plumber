@@ -25,6 +25,43 @@ describe('call-pair schema', () => {
       assert(result.success === false)
     })
 
+    it('should reject whitespace-only prompts', () => {
+      const result = schema.safeParse({
+        prompt: '   ',
+      })
+      assert(result.success === false)
+    })
+
+    it('should trim leading and trailing whitespace from prompts', () => {
+      const result = schema.safeParse({
+        prompt: '  Analyze this document  ',
+        responseFields: [{ fieldName: 'summary', fieldType: 'text' }],
+      })
+      assert(result.success === true)
+      assert(result.data.prompt === 'Analyze this document')
+    })
+
+    it('should reject prompts longer than 10,000 characters', () => {
+      const result = schema.safeParse({
+        prompt: 'a'.repeat(10001),
+        responseFields: [{ fieldName: 'summary', fieldType: 'text' }],
+      })
+      assert(result.success === false)
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe(
+          'Prompt cannot exceed 10,000 characters',
+        )
+      }
+    })
+
+    it('should accept prompts exactly 10,000 characters long', () => {
+      const result = schema.safeParse({
+        prompt: 'a'.repeat(10000),
+        responseFields: [{ fieldName: 'summary', fieldType: 'text' }],
+      })
+      assert(result.success === true)
+    })
+
     it('should require prompt field', () => {
       const result = schema.safeParse({})
       assert(result.success === false)
@@ -89,6 +126,24 @@ describe('call-pair schema', () => {
           ],
         })
         assert(result.success === false)
+      })
+
+      it('should reject whitespace-only field names', () => {
+        const result = schema.safeParse({
+          prompt: 'test prompt',
+          responseFields: [{ fieldName: '   ', fieldType: 'text' }],
+        })
+        assert(result.success === false)
+      })
+
+      it('should trim leading and trailing whitespace from field names', () => {
+        const result = schema.safeParse({
+          prompt: 'test prompt',
+          responseFields: [{ fieldName: '  summary  ', fieldType: 'text' }],
+        })
+        assert(result.success === true)
+        assert(result.data.responseFields[0].fieldName === 'summary')
+        assert(result.data.responseFields[0].originalFieldName === 'summary')
       })
 
       it('should reject field names longer than 64 characters', () => {

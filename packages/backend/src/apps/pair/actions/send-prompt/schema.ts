@@ -6,7 +6,11 @@ import {
 } from '../../common/schema'
 
 export const schema = z.object({
-  prompt: z.string().min(1),
+  prompt: z
+    .string()
+    .trim()
+    .min(1)
+    .max(10000, { message: 'Prompt cannot exceed 10,000 characters' }),
   responseFields: z
     .array(
       z
