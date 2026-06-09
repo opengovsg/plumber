@@ -151,6 +151,56 @@ export function substituteOldTemplates(
   return substitutedDom.outerHTML
 }
 
+/**
+ * Renders RichTextEditor HTML to plain final-form HTML, suitable for feeding
+ * into an email preview pipeline.
+ *
+ * - Variable / table-variable spans are replaced with their resolved value:
+ *   prefer the entry in `varInfo`, fall back to the node's own `data-value`
+ *   attribute (kept current by `recursiveSubstitute`).
+ * - Legacy `{{step.…}}` patterns remaining in plain text nodes are resolved
+ *   via `simpleSubstitute`.
+ */
+export function substituteForPreview(
+  html: string,
+  varInfo: VariableInfoMap,
+): string {
+  if (!html) {
+    return ''
+  }
+
+  const root = parse(html)
+
+  function processChildren(parent: NodeHTMLElement): void {
+    const newChildren: Node[] = []
+    for (const child of parent.childNodes) {
+      if (child instanceof NodeHTMLElement) {
+        const dataType = child.getAttribute('data-type')
+        const dataId = child.getAttribute('data-id')
+        if (
+          (dataType === 'variable' || dataType === 'tableVariable') &&
+          dataId != null
+        ) {
+          const fromMap = varInfo.get(`{{${dataId}}}`)?.testRunValue
+          const fallback = child.getAttribute('data-value') ?? ''
+          newChildren.push(new TextNode(fromMap ?? fallback))
+          continue
+        }
+        processChildren(child)
+        newChildren.push(child)
+      } else if (child instanceof TextNode) {
+        newChildren.push(new TextNode(simpleSubstitute(child.rawText, varInfo)))
+      } else {
+        newChildren.push(child)
+      }
+    }
+    parent.childNodes = newChildren
+  }
+
+  processChildren(root)
+  return root.outerHTML
+}
+
 export function getPopoverPlacement(
   editor: Editor | null,
 ): PlacementWithLogical {
