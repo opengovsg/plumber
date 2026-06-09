@@ -45,14 +45,23 @@ export async function archiveExecution(
     }),
   )
 
-  const head = await opts.s3Client.send(
-    new HeadObjectCommand({ Bucket: bucket, Key: key }),
-  )
+  let head: { ContentLength?: number }
+  try {
+    head = await opts.s3Client.send(
+      new HeadObjectCommand({ Bucket: bucket, Key: key }),
+    )
+  } catch (err) {
+    logger.error(
+      { executionId: execution.id, key, err },
+      'archival: S3 verify threw, skipping',
+    )
+    return 'skipped'
+  }
 
   if (!head.ContentLength) {
     logger.error(
       { executionId: execution.id, key },
-      'archival: S3 verify failed, skipping',
+      'archival: S3 verify failed (zero ContentLength), skipping',
     )
     return 'skipped'
   }
