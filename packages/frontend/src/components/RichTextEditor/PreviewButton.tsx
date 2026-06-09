@@ -15,9 +15,7 @@ import { Editor } from '@tiptap/react'
 
 import { substituteForPreview, type VariableInfoMap } from './utils'
 
-const LazyEmailPreviewModal = lazy(
-  () => import('@/components/EmailPreviewModal'),
-)
+const LazyViewAsEmailModal = lazy(() => import('@/components/ViewAsEmailModal'))
 
 interface PreviewerProps {
   isOpen: boolean
@@ -29,7 +27,7 @@ function usePreviewer(previewType: TFieldPreviewType | undefined) {
   const preloadPreviewer = useCallback(() => {
     switch (previewType) {
       case 'email':
-        import('@/components/EmailPreviewModal')
+        import('@/components/ViewAsEmailModal')
         break
     }
   }, [previewType])
@@ -38,7 +36,7 @@ function usePreviewer(previewType: TFieldPreviewType | undefined) {
     (props: PreviewerProps): ReactNode => {
       switch (previewType) {
         case 'email':
-          return <LazyEmailPreviewModal {...props} title="Preview your email" />
+          return <LazyViewAsEmailModal {...props} title="Preview your email" />
       }
       return null
     },

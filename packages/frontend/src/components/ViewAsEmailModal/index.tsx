@@ -59,7 +59,11 @@ interface PreviewPaneProps {
 // above the transformForClient() call, which is what can actually throw.
 function PreviewPane({ html, clientId }: PreviewPaneProps) {
   const transformed = useMemo(() => {
-    return transformForClient(html, clientId).html
+    return transformForClient(html, clientId).html.replace(
+      // Replicate logic in backend - see send-transactional-email/index.ts
+      /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+      '<p style="margin: 0">&nbsp;</p>',
+    )
   }, [html, clientId])
 
   return (
@@ -129,19 +133,19 @@ function ClientOptionsList({
   )
 }
 
-interface EmailPreviewModalProps {
+interface ViewAsEmailModalProps {
   isOpen: boolean
   onClose: () => void
   html: string
   title: string
 }
 
-export default function EmailPreviewModal({
+export default function ViewAsEmailModal({
   isOpen,
   onClose,
   html,
   title,
-}: EmailPreviewModalProps) {
+}: ViewAsEmailModalProps) {
   const [selectedClientId, setSelectedClientId] = useState<string>(
     'outlook-windows-legacy',
   )

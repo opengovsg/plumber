@@ -9,7 +9,7 @@ import HtmlVariableModal from './HtmlVariableModal'
 import TableVariableModal from './TableVariableModal'
 import { VariableItem } from '.'
 
-const LazyEmailPreviewModal = lazy(() => import('../EmailPreviewModal'))
+const LazyViewAsEmailModal = lazy(() => import('../ViewAsEmailModal'))
 
 interface VariableItemWithModalProps {
   variable: Variable
@@ -42,7 +42,7 @@ export default function VariableItemWithModal(
 
   const preloadModal = useCallback(() => {
     if (variable.type === 'email') {
-      import('../EmailPreviewModal')
+      import('../ViewAsEmailModal')
     }
   }, [variable.type])
 
@@ -102,7 +102,7 @@ export default function VariableItemWithModal(
         return (
           <Suspense fallback={null}>
             {isModalOpen && (
-              <LazyEmailPreviewModal
+              <LazyViewAsEmailModal
                 isOpen={isModalOpen}
                 onClose={onModalClose}
                 html={(variable.value as string) ?? ''}
