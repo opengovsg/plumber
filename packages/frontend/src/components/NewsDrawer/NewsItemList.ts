@@ -11,6 +11,17 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-06-09',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: '🔎 Preview your Postman emails before sending',
+    details: dedent`
+      Use the preview button in the email editor to see how your email will look across Outlook, Gmail and other providers without having to check step.
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-email-preview.png',
+    },
+  },
+  {
     date: '2026-05-05',
     tag: NEW_ENHANCEMENT_TAG,
     title: '📊 Display table data in your Postman emails',

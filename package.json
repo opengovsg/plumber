@@ -14,6 +14,7 @@
     "start": "npm run -w backend start",
     "start:worker": "npm run -w backend start:worker",
     "lint": "npm run --workspaces --if-present lint",
+    "lint:fix": "npm run --workspaces --if-present lint:fix",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "migrate": "npm run -w backend db:migrate",
@@ -69,5 +70,5 @@
     "vitest": "^3.2.4",
     "wait-on": "^7.2.0"
   },
-  "version": "1.66.1"
+  "version": "1.67.0"
 }

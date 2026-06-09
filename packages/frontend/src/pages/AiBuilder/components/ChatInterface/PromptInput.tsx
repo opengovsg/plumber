@@ -10,6 +10,8 @@ import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 
+import { type ClarificationQuestion } from '@/hooks/useChatStream'
+import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
@@ -20,6 +22,7 @@ interface PromptInputProps {
   initialValue?: string
   sendMessage: (message: string) => void
   cancelStream: () => void
+  clarification?: ClarificationQuestion[]
 }
 
 export default function PromptInput({
@@ -29,15 +32,27 @@ export default function PromptInput({
   initialValue = '',
   sendMessage,
   cancelStream,
+  clarification,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<number, string>
+  >({})
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
 
-  const handleSubmit = async (e: SyntheticEvent) => {
+  // Reset state whenever a new clarification arrives
+  useEffect(() => {
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+  }, [clarification])
+
+  const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault()
     if (input?.trim() && !isStreaming) {
       sendMessage(input)
       setInput('')
+      setSelectedAnswers({})
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
       }
@@ -56,7 +71,7 @@ export default function PromptInput({
     if (!target) {
       return
     }
-    const maxHeight = window.innerHeight * 0.4 - 100 // 40vh minus padding/margins
+    const maxHeight = window.innerHeight * 0.4 - 100
     target.style.height = 'auto'
     target.style.height = Math.min(target.scrollHeight, maxHeight) + 'px'
   }
@@ -69,8 +84,47 @@ export default function PromptInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const handleAnswer = (answer: string) => {
+    if (isStreaming || !clarification) {
+      return
+    }
+
+    const newAnswers = { ...selectedAnswers, [currentQuestionIdx]: answer }
+    setSelectedAnswers(newAnswers)
+
+    const isLast = currentQuestionIdx === clarification.length - 1
+    if (isLast) {
+      const combined = clarification.map((_, i) => newAnswers[i]).join('\n')
+      sendMessage(combined)
+      setSelectedAnswers({})
+      setCurrentQuestionIdx(0)
+    } else {
+      setCurrentQuestionIdx((prev) => prev + 1)
+    }
+  }
+
+  const handleOptionClick = (optionIdx: number) => {
+    if (!clarification) {
+      return
+    }
+    handleAnswer(clarification[currentQuestionIdx].options[optionIdx])
+  }
+
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()
+
+  if (clarification && clarification.length > 0) {
+    return (
+      <ChoicePicker
+        clarification={clarification}
+        currentQuestionIdx={currentQuestionIdx}
+        isStreaming={isStreaming}
+        onOptionClick={handleOptionClick}
+        onFreeTextSubmit={handleAnswer}
+        cancelStream={cancelStream}
+      />
+    )
+  }
 
   return (
     <Box w="full" maxW="4xl">

@@ -1,6 +1,6 @@
 import './RichTextEditor.scss'
 
-import type { TRteMenuOption } from '@plumber/types'
+import type { TFieldPreviewType, TRteMenuOption } from '@plumber/types'
 import { TDataOutMetadatumType } from '@plumber/types'
 
 import { useCallback, useContext, useEffect, useMemo } from 'react'
@@ -104,6 +104,7 @@ interface EditorProps {
   customRteMenuOptions?: TRteMenuOption[]
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
+  previewType?: TFieldPreviewType
 }
 const Editor = ({
   onChange,
@@ -121,6 +122,7 @@ const Editor = ({
   customRteMenuOptions,
   isDisplayOnly = false,
   supportTableDisplay,
+  previewType,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -320,6 +322,7 @@ const Editor = ({
                   variableMap={varInfo}
                   editable={editable ?? false}
                   customMenuOptions={customRteMenuOptions}
+                  previewType={previewType}
                 />
               )}
               <EditorContent
@@ -384,6 +387,7 @@ interface RichTextEditorProps {
   customRteMenuOptions?: TRteMenuOption[]
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
+  previewType?: TFieldPreviewType
 }
 const RichTextEditor = ({
   required,
@@ -404,6 +408,7 @@ const RichTextEditor = ({
   customRteMenuOptions,
   isDisplayOnly = false,
   supportTableDisplay,
+  previewType,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -455,6 +460,7 @@ const RichTextEditor = ({
             customRteMenuOptions={customRteMenuOptions}
             isDisplayOnly={isDisplayOnly}
             supportTableDisplay={supportTableDisplay}
+            previewType={previewType}
           />
         )}
       />

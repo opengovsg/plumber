@@ -49,6 +49,12 @@ export default function ChatInterface(props: ChatInterfaceProps) {
 
   const hasMessages = messages.length > 0 || isStreaming
 
+  const lastMessage = messages[messages.length - 1]
+  const activeClarification =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.clarification
+      : undefined
+
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
@@ -194,6 +200,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   sendMessage={sendMessage}
                   isStreaming={isStreaming}
                   cancelStream={cancelStream}
+                  clarification={activeClarification}
                 />
               )}
               {!isMobile && (

@@ -16,7 +16,7 @@ async function getDataOutMetadata(
     body: {
       label: 'Body',
       order: 2,
-      type: 'html',
+      type: 'email',
       displayedValue: 'Preview body',
     },
     recipient: {

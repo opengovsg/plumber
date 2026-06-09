@@ -1,6 +1,7 @@
 import { TextPart } from 'ai'
 
 import {
+  ClarificationPart,
   CustomUIMessage,
   IsChatReadyPart,
   Message,
@@ -27,7 +28,7 @@ export const extractTextContent = (msg: CustomUIMessage): string => {
     .join('')
 }
 
-export const transformMessages = (messages: CustomUIMessage[]) => {
+export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
   let lastReadyIndex = -1
 
   const transformed = messages.map((msg, index) => {
@@ -39,12 +40,17 @@ export const transformMessages = (messages: CustomUIMessage[]) => {
       lastReadyIndex = index
     }
 
+    const clarificationPart = msg.parts.find(
+      (part): part is ClarificationPart => part.type === 'data-clarification',
+    )
+
     return {
       id: msg.id,
       text: extractTextContent(msg),
       isUser: msg.role === 'user',
       traceId: msg.metadata?.traceId,
-      isChatReady: false, // default to false
+      isChatReady: false,
+      clarification: clarificationPart?.data.questions,
     }
   })
 

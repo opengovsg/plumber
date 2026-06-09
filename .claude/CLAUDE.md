@@ -28,3 +28,20 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 ## Conventions
 
 - **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, single-threaded). Don't mix.
+- **Package manager**: only use `npm`. Never use `yarn`, `pnpm`, or other package managers.
+- **Installing packages**: always pass the `-E` (exact version) flag.
+- **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and fix remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root command.
+- **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill. Before creating a new branch, ask the user what to name it. Naming: `feat/<feature>[/<subfeature>]` or `chore/<chore>[/<subchore>]`.
+
+## Skills
+
+Skills live under `.claude/skills/` at the repo root and inside individual packages (e.g. [packages/frontend/.claude/skills/](../packages/frontend/.claude/skills/), [packages/backend/.claude/skills/](../packages/backend/.claude/skills/)). Prefer repo-committed skills over locally/globally-installed ones.
+
+There are two kinds of skills, distinguished by whether they are listed in the sibling `skills-lock.json` (root, `packages/frontend/`, `packages/backend/`):
+
+- **Upstream skills** — listed in `skills-lock.json`, installed via `skills add <repo> --skill <name> --agent claude-code -y`. Do **not** edit their files (`SKILL.md`, etc.); upstream updates may be merged later and would clobber local changes. Per-repo overrides to their behavior go in the "Skill overrides" section below (or in the relevant `rules/*.md` for package-scoped ones).
+- **Plumber-specific skills** — anything in `.claude/skills/` that is **not** in `skills-lock.json`. These are authored in-repo and are freely editable. Create one with `skills init <name>` from the directory whose `.claude/skills/` should host it (repo root for cross-cutting skills, package root for package-scoped ones).
+
+### Skill overrides
+
+- **caveman**: default to `lite` mode (overrides the skill's own default of `full`).

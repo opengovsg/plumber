@@ -47,3 +47,8 @@ An app may declare its own queue config (concurrency, rate limits, etc.) via the
 ## Frontend integration
 
 GraphQL schema and resolvers also live here ([packages/backend/src/graphql/](../../packages/backend/src/graphql/)). `graphql-shield` handles authz, `graphql-rate-limit` rate-limits. The frontend code is documented in [.claude/rules/frontend.md](frontend.md).
+
+## Conventions
+
+- **Tests**: try to add unit tests (`*.test.ts`) for any new code.
+- **APIs**: prefer adding REST endpoints over new root GraphQL fields (queries/mutations) when exposing new functionality.

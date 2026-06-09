@@ -150,6 +150,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         customRteMenuOptions={schema?.customRteMenuOptions}
         variableTypes={schema.variableTypes}
         supportTableDisplay={schema.supportTableDisplay}
+        previewType={schema.previewType}
       />
     )
   }

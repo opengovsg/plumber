@@ -63,6 +63,7 @@ export type TDataOutMetadatumType =
   | 'approval'
   | 'ai_response'
   | 'html'
+  | 'email'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array
@@ -462,6 +463,13 @@ export interface IFieldMultiRow extends IBaseField {
   subFields: IField[]
 }
 
+/**
+ * Marks a rich-text field as previewable in a kind-specific modal in
+ * FlowStepTestController. Keep this union narrow; expand only as new preview
+ * kinds (e.g. 'sms') ship.
+ */
+export type TFieldPreviewType = 'email'
+
 export type TRteMenuOption =
   | 'Bold'
   | 'Italic'
@@ -497,6 +505,12 @@ export interface IFieldRichText extends IBaseField {
   // Specifies the order and what menu options to show in the RTE
   // 'Divider' is specified manually to determine when a divider should be shown
   customRteMenuOptions?: TRteMenuOption[]
+
+  /**
+   * If set, renders a kind-specific Preview button at the end of the
+   * RichTextEditor toolbar that previews the editor's live HTML.
+   */
+  previewType?: TFieldPreviewType
 }
 
 export interface IFieldDragDrop extends IBaseField {
