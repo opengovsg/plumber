@@ -51,8 +51,7 @@ async function sendEmailViaPostman({
 
       if (errorMsg.includes('blacklisted')) {
         logger.info('Blacklisted email', { email: recipient })
-        errorMsg =
-          'Your email may be blocked. Contact us at support@plumber.gov.sg'
+        errorMsg = 'Your email may be blocked.'
       }
     }
     throw new Error(errorMsg)

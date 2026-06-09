@@ -2,6 +2,7 @@ import { SendEmailCommand, SESv2Client } from '@aws-sdk/client-sesv2'
 import { fromTemporaryCredentials } from '@aws-sdk/credential-providers'
 
 import appConfig from '@/config/app'
+import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import logger from './logger'
 import { incrementMetric } from './metrics'
@@ -61,6 +62,20 @@ export async function sendEmailViaSes({
   const client = getSesClient()
   const fromAddress = `Plumber <${appConfig.ses.fromAddress}>`
 
+  // Pre-send suppression check: block sending to recipients that previously
+  // bounced/complained (mirrors Postman's blacklist rejection). Throwing here
+  // surfaces as an alert banner via the caller's error handling.
+  const suppressed = await EmailSuppressionEntry.getSuppressedEmails([
+    recipient,
+  ])
+  if (suppressed.length > 0) {
+    logger.info('Blacklisted email', { email: recipient })
+
+    throw new Error(
+      'Your email is on our suppression list (it previously bounced or reported spam).',
+    )
+  }
+
   try {
     await client.send(
       new SendEmailCommand({
@@ -85,7 +100,7 @@ export async function sendEmailViaSes({
     )
     incrementMetric('ses.email.sent')
   } catch (e) {
-    logger.error('Error sending email via SES', {
+    logger.error('Error sending email via SES, please try again later.', {
       error: e,
       recipient,
     })
