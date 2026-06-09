@@ -21,6 +21,7 @@ type PutArchiveObjectParams = {
   body: Buffer | string
   contentType: string
   metadata?: Record<string, string>
+  checksumAlgorithm?: 'SHA256'
 }
 
 export async function putArchiveObject({
@@ -30,6 +31,7 @@ export async function putArchiveObject({
   body,
   contentType,
   metadata,
+  checksumAlgorithm,
 }: PutArchiveObjectParams): Promise<void> {
   await s3Client.send(
     new PutObjectCommand({
@@ -38,6 +40,7 @@ export async function putArchiveObject({
       Body: body,
       ContentType: contentType,
       Metadata: metadata,
+      ChecksumAlgorithm: checksumAlgorithm,
     }),
   )
 }
