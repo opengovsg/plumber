@@ -150,6 +150,27 @@ describe('archiveExecution', () => {
     expect(knexClient.transaction).not.toHaveBeenCalled()
   })
 
+  it('returns skipped and does not delete when HeadObject throws', async () => {
+    const knexClient = makeMockKnex()
+    const s3 = {
+      send: vi.fn().mockImplementation((cmd) => {
+        if (cmd instanceof HeadObjectCommand) {
+          return Promise.reject(new Error('S3 503'))
+        }
+        return Promise.resolve({})
+      }),
+    } as unknown as S3Client
+
+    const result = await archiveExecution(mockExecution, mockSteps, {
+      ...baseOpts,
+      s3Client: s3,
+      knexClient,
+    })
+
+    expect(result).toBe('skipped')
+    expect(knexClient.transaction).not.toHaveBeenCalled()
+  })
+
   it('builds the correct S3 key', async () => {
     const s3 = makeMockS3()
     const knexClient = makeMockKnex()
