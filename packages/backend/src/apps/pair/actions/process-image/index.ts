@@ -23,13 +23,14 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Image',
-      description: 'Select an image from a previous step or upload one',
+      description: 'Select an image from a previous step',
       key: 'image',
       type: 'attachment' as const,
       required: true,
       variableTypes: ['file'],
       // TODO(kevinkim-ogp): restrict the supported file types
       maxFiles: 1,
+      disableUpload: true,
     },
     {
       label: 'What do you want to extract?',

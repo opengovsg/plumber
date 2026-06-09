@@ -72,7 +72,7 @@ export default function Suggestions(props: SuggestionsProps) {
 
   const SuggestionsRightPanel = ({ values }: { values: any }) => {
     if (suggestions.length === 0) {
-      return <Text style={noVariablesTextStyles}>No variables available</Text>
+      return <Text {...noVariablesTextStyles}>No attachments available</Text>
     }
 
     return (
