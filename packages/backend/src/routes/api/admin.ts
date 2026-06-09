@@ -1,9 +1,37 @@
+import validator from 'email-validator'
 import { Router } from 'express'
+import { z } from 'zod'
 
 import logger from '@/helpers/logger'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 const router = Router()
+
+const whitelistRequestSchema = z.object({
+  emails: z
+    .array(z.string(), {
+      required_error: 'emails is required',
+      invalid_type_error: 'emails must be an array of strings',
+    })
+    .transform((emails) => emails.map((e) => e.trim()).filter(Boolean))
+    .superRefine((emails, ctx) => {
+      if (emails.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'emails must contain at least one non-empty value',
+        })
+        return
+      }
+      // Reject the whole request if any address is malformed, and name which.
+      const invalid = emails.filter((email) => !validator.validate(email))
+      if (invalid.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Invalid email(s): ${invalid.join(', ')}`,
+        })
+      }
+    }),
+})
 
 /**
  * Middleware to ensure only plumber admins can access admin routes.
@@ -17,30 +45,23 @@ router.use((req, res, next) => {
 })
 
 /**
- * GET /api/admin/email-suppression/whitelist?emails=a@x.com,b+1@x.com
+ * POST /api/admin/email-suppression/whitelist
+ * Body: { "emails": ["a@x.com", "b+1@x.com"] }
  *
  * Whitelists one or more emails from the suppression list.
  * Requires x-plumber-admin-token header.
  */
-router.get('/email-suppression/whitelist', async (req, res) => {
-  const emailsParam = req.query.emails as string
-  if (!emailsParam) {
-    res.status(400).json({ error: 'emails query parameter is required' })
+router.post('/email-suppression/whitelist', async (req, res) => {
+  const result = whitelistRequestSchema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({
+      error: 'Invalid request body',
+      details: result.error.issues,
+    })
     return
   }
 
-  // `+` in query strings is decoded to a space; restore it since spaces
-  // are not valid in email addresses. This lets callers paste URLs with
-  // unencoded `+` characters directly.
-  const emails = emailsParam
-    .split(',')
-    .map((e) => e.trim().replace(/ /g, '+'))
-    .filter(Boolean)
-  if (emails.length === 0) {
-    res.status(400).json({ error: 'emails must not be empty' })
-    return
-  }
-
+  const { emails } = result.data
   const whitelisted = await EmailSuppressionEntry.whitelistEmails(emails)
 
   logger.info('Admin whitelisted emails from suppression list', {
