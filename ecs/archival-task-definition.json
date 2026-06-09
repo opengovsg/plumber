@@ -1,0 +1,43 @@
+{
+  "family": "plumber-<ENVIRONMENT>-archival",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-archival-task-exec-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-archival-task-role",
+  "containerDefinitions": [
+    {
+      "name": "archival",
+      "image": "plumber",
+      "command": ["node", "dist/scripts/archive-executions.js"],
+      "essential": true,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/archival",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "archival"
+        }
+      },
+      "environment": [
+        { "name": "APP_ENV",            "value": "<ENVIRONMENT>" },
+        { "name": "POSTGRES_PORT",      "value": "5432" },
+        { "name": "POSTGRES_ENABLE_SSL","value": "true" }
+      ],
+      "secrets": [
+        { "name": "RDS_PROXY_HOST",                  "valueFrom": "plumber-<ENVIRONMENT>-rds-proxy-host" },
+        { "name": "POSTGRES_DATABASE",               "valueFrom": "plumber-<ENVIRONMENT>-postgres-database" },
+        { "name": "POSTGRES_USERNAME",               "valueFrom": "plumber-<ENVIRONMENT>-postgres-username" },
+        { "name": "POSTGRES_PASSWORD",               "valueFrom": "plumber-<ENVIRONMENT>-postgres-password" },
+        { "name": "ARCHIVE_ENABLED",                 "valueFrom": "plumber-<ENVIRONMENT>-archive-enabled" },
+        { "name": "ARCHIVE_DRY_RUN",                 "valueFrom": "plumber-<ENVIRONMENT>-archive-dry-run" },
+        { "name": "ARCHIVE_RETENTION_DAYS",          "valueFrom": "plumber-<ENVIRONMENT>-archive-retention-days" },
+        { "name": "ARCHIVE_BATCH_SIZE",              "valueFrom": "plumber-<ENVIRONMENT>-archive-batch-size" },
+        { "name": "ARCHIVE_BATCH_SLEEP_MS",          "valueFrom": "plumber-<ENVIRONMENT>-archive-batch-sleep-ms" },
+        { "name": "ARCHIVE_EXECUTIONS_BUCKET",       "valueFrom": "plumber-<ENVIRONMENT>-archive-executions-bucket" },
+        { "name": "ARCHIVE_TEST_EXECUTIONS_BUCKET",  "valueFrom": "plumber-<ENVIRONMENT>-archive-test-executions-bucket" }
+      ]
+    }
+  ]
+}
