@@ -66,6 +66,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
     let batchArchived = 0
     let batchSkipped = 0
+    let lastProcessed: ExecutionRow | null = null
 
     for (const execution of batch) {
       if (signal.aborted) break
@@ -110,9 +111,12 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         )
         batchSkipped++
       }
+      lastProcessed = execution
     }
 
-    cursor = batch[batch.length - 1].id
+    if (lastProcessed) {
+      cursor = lastProcessed.id
+    }
     totalArchived += batchArchived
     totalSkipped += batchSkipped
 
