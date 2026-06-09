@@ -5,6 +5,8 @@ import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
+import { failOnLeakedNodeBuiltins } from './vite-config-utils'
+
 export default defineConfig({
   plugins: [
     react(),
@@ -44,6 +46,7 @@ export default defineConfig({
         'react-router-dom',
         'zod',
       ],
+      onwarn: failOnLeakedNodeBuiltins,
     },
   },
 })

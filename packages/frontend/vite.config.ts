@@ -3,6 +3,8 @@ import { defineConfig } from 'vite'
 import loadVersion from 'vite-plugin-package-version'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
+import { failOnLeakedNodeBuiltins } from './vite-config-utils'
+
 // https://vitejs.dev/config/
 export default defineConfig({
   // loadVersion injects package.json version into import.meta.env.PACKAGE_VERSION
@@ -10,6 +12,9 @@ export default defineConfig({
   build: {
     // disable inline images since we don't allow them in csp
     assetsInlineLimit: 0,
+    rollupOptions: {
+      onwarn: failOnLeakedNodeBuiltins,
+    },
   },
   server: {
     open: 'http://localhost:3001',
