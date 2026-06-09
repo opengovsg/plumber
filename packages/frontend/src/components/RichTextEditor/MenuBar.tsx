@@ -1,6 +1,6 @@
 import './MenuBar.scss'
 
-import type { TRteMenuOption } from '@plumber/types'
+import type { TFieldPreviewType, TRteMenuOption } from '@plumber/types'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { LuHeading1, LuHeading2, LuHeading3, LuHeading4 } from 'react-icons/lu'
@@ -41,6 +41,7 @@ import Form from '@/components/Form'
 import { RteMenuOption } from '@/graphql/__generated__/graphql'
 import { makeExternalLink } from '@/helpers/urls'
 
+import { PreviewButton } from './PreviewButton'
 import { simpleSubstitute, type VariableInfoMap } from './utils'
 import { BareEditor } from '.'
 
@@ -234,6 +235,7 @@ interface MenuBarProps {
   variableMap: VariableInfoMap
   editable: boolean
   customMenuOptions?: TRteMenuOption[]
+  previewType?: TFieldPreviewType
 }
 
 export const MenuBar = ({
@@ -241,6 +243,7 @@ export const MenuBar = ({
   variableMap,
   editable,
   customMenuOptions,
+  previewType,
 }: MenuBarProps) => {
   const {
     isOpen: isDialogOpen,
@@ -356,52 +359,59 @@ export const MenuBar = ({
   return (
     <>
       <div className="editor__header">
-        {menuButtons.map(({ onClick, label, icon, isActive }, index) => {
-          if (!onClick) {
-            return (
-              <div
-                className="divider"
-                style={{
-                  opacity: editable ? 1 : 0.5,
-                }}
-                key={`${label}${index}`}
-              />
-            )
-          }
-          const isDisabled =
-            !editable ||
-            (selectionContainsTableVariable &&
-              FORMATTING_BUTTONS_DISABLED_FOR_TABLE_VARIABLE.has(label))
+        <div className="editor__formatting">
+          {menuButtons.map(({ onClick, label, icon, isActive }, index) => {
+            if (!onClick) {
+              return (
+                <div
+                  className="divider"
+                  style={{
+                    opacity: editable ? 1 : 0.5,
+                  }}
+                  key={`${label}${index}`}
+                />
+              )
+            }
+            const isDisabled =
+              !editable ||
+              (selectionContainsTableVariable &&
+                FORMATTING_BUTTONS_DISABLED_FOR_TABLE_VARIABLE.has(label))
 
-          return (
-            <button
-              key={`${label}${index}`}
-              title={label}
-              disabled={isDisabled}
-              style={{
-                borderRadius: '0.25rem',
-                width: 'auto',
-                minWidth: 0,
-                backgroundColor: isActive?.(editor)
-                  ? 'rgba(0,0,0,0.1)'
-                  : 'transparent',
-                opacity: isDisabled ? 0.5 : 1,
-                cursor: isDisabled ? 'default' : 'pointer',
-              }}
-              className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
-              onClick={() => {
-                const clickOverride = onClickOverrides[label]
-                if (clickOverride) {
-                  clickOverride()
-                  return
-                }
-                onClick(editor)
-              }}
-            >
-              {icon}
-            </button>
-          )
-        })}
+            return (
+              <button
+                key={`${label}${index}`}
+                title={label}
+                disabled={isDisabled}
+                style={{
+                  borderRadius: '0.25rem',
+                  width: 'auto',
+                  minWidth: 0,
+                  backgroundColor: isActive?.(editor)
+                    ? 'rgba(0,0,0,0.1)'
+                    : 'transparent',
+                  opacity: isDisabled ? 0.5 : 1,
+                  cursor: isDisabled ? 'default' : 'pointer',
+                }}
+                className={`menu-item${isActive?.(editor) ? ' is-active' : ''}`}
+                onClick={() => {
+                  const clickOverride = onClickOverrides[label]
+                  if (clickOverride) {
+                    clickOverride()
+                    return
+                  }
+                  onClick(editor)
+                }}
+              >
+                {icon}
+              </button>
+            )
+          })}
+        </div>
+        <PreviewButton
+          previewType={previewType}
+          editor={editor}
+          variableMap={variableMap}
+        />
       </div>
       {isDialogOpen && dialogLabel && (
         <AlertDialog

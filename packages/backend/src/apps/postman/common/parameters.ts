@@ -52,6 +52,7 @@ export const transactionalEmailFields: IField[] = [
       'table',
     ],
     supportTableDisplay: true,
+    previewType: 'email' as const,
   },
   {
     label: 'Recipient email(s)',

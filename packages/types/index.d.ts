@@ -506,8 +506,8 @@ export interface IFieldRichText extends IBaseField {
   customRteMenuOptions?: TRteMenuOption[]
 
   /**
-   * If set, FlowStepTestController renders a kind-specific "Preview" button
-   * next to "Check step" and feeds it the live form value of this field.
+   * If set, renders a kind-specific Preview button at the end of the
+   * RichTextEditor toolbar that previews the editor's live HTML.
    */
   previewType?: TFieldPreviewType
 }

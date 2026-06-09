@@ -1,17 +1,25 @@
 import { useMemo, useState } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
+import { RiArrowDownSLine } from 'react-icons/ri'
 import {
   Box,
   Flex,
   Heading,
   Icon,
+  List,
+  ListItem,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Text,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { transformForClient } from '@emailens/engine'
@@ -21,29 +29,24 @@ import { BrokenPipeIcon } from '@/components/Icons'
 interface ClientOption {
   id: string
   label: string
-  subtitle: string
 }
 
 const CLIENT_OPTIONS: ClientOption[] = [
   {
     id: 'outlook-windows-legacy',
-    label: 'Outlook Classic',
-    subtitle: 'Microsoft Word engine',
+    label: 'Microsoft Outlook',
   },
   {
     id: 'gmail-web',
     label: 'Gmail',
-    subtitle: 'Gmail Web',
   },
   {
     id: 'apple-mail-macos',
     label: 'Apple Mail',
-    subtitle: 'WebKit on macOS',
   },
   {
     id: 'yahoo-mail',
     label: 'Yahoo Mail',
-    subtitle: 'Yahoo webmail',
   },
 ]
 
@@ -89,6 +92,42 @@ function PreviewErrorFallback() {
     </Flex>
   )
 }
+interface ClientOptionsListProps {
+  selectedClientId: string
+  onSelect: (id: string) => void
+}
+
+function ClientOptionsList({
+  selectedClientId,
+  onSelect,
+}: ClientOptionsListProps) {
+  return (
+    <List spacing={1}>
+      {CLIENT_OPTIONS.map((option) => {
+        const isSelected = option.id === selectedClientId
+        return (
+          <ListItem key={option.id}>
+            <Box
+              as="button"
+              type="button"
+              w="100%"
+              textAlign="left"
+              px={5}
+              py={2}
+              borderRadius="md"
+              bg={isSelected ? 'primary.100' : undefined}
+              _hover={{ bg: isSelected ? undefined : 'grey.100' }}
+              aria-current={isSelected || undefined}
+              onClick={() => onSelect(option.id)}
+            >
+              <Text textStyle="body-1">{option.label}</Text>
+            </Box>
+          </ListItem>
+        )
+      })}
+    </List>
+  )
+}
 
 interface EmailPreviewModalProps {
   isOpen: boolean
@@ -105,6 +144,12 @@ export default function EmailPreviewModal({
     'outlook-windows-legacy',
   )
 
+  const selectedClient =
+    CLIENT_OPTIONS.find((option) => option.id === selectedClientId) ??
+    CLIENT_OPTIONS[0]
+
+  const clientPopover = useDisclosure()
+
   return (
     <Modal
       isOpen={isOpen}
@@ -115,51 +160,62 @@ export default function EmailPreviewModal({
     >
       <ModalOverlay />
       <ModalContent maxH="85vh" overflow="hidden" borderRadius="lg">
-        <ModalHeader
-          position="sticky"
-          top={0}
-          bg="white"
-          zIndex={1}
-          borderBottom="1px solid"
-          borderColor="base.divider.medium"
-        >
-          <Flex direction="column">Email preview</Flex>
+        <ModalHeader borderBottom="1px solid" borderColor="base.divider.medium">
+          <Flex direction="column">Preview your email</Flex>
           <ModalCloseButton />
         </ModalHeader>
         <ModalBody p={4}>
-          <Flex direction="row" gap={4} h="70vh">
-            <Flex
-              direction="column"
-              flex="0 0 220px"
+          <Flex direction={{ base: 'column', sm: 'row' }} gap={4} h="70vh">
+            <Box
+              display={{ base: 'none', sm: 'block' }}
               borderRight="1px solid"
               borderColor="base.divider.medium"
               pr={2}
-              gap={1}
-              overflowY="auto"
             >
-              {CLIENT_OPTIONS.map((option) => {
-                const isSelected = option.id === selectedClientId
-                return (
+              <ClientOptionsList
+                selectedClientId={selectedClientId}
+                onSelect={setSelectedClientId}
+              />
+            </Box>
+            <Box display={{ base: 'block', sm: 'none' }}>
+              <Popover
+                isOpen={clientPopover.isOpen}
+                onOpen={clientPopover.onOpen}
+                onClose={clientPopover.onClose}
+                matchWidth
+                placement="bottom-start"
+              >
+                <PopoverTrigger>
                   <Box
-                    key={option.id}
                     as="button"
                     type="button"
-                    textAlign="left"
+                    w="100%"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
                     px={3}
                     py={2}
                     borderRadius="md"
-                    bg={isSelected ? 'primary.50' : undefined}
-                    _hover={{ bg: isSelected ? 'primary.50' : 'grey.100' }}
-                    onClick={() => setSelectedClientId(option.id)}
+                    borderWidth="1px"
+                    borderColor="base.divider.medium"
                   >
-                    <Text textStyle="body-1">{option.label}</Text>
-                    <Text textStyle="body-2" mt={1} color="secondary.500">
-                      {option.subtitle}
-                    </Text>
+                    <Text textStyle="body-1">{selectedClient.label}</Text>
+                    <RiArrowDownSLine />
                   </Box>
-                )
-              })}
-            </Flex>
+                </PopoverTrigger>
+                <PopoverContent w="100%" minW={0}>
+                  <PopoverBody p={2}>
+                    <ClientOptionsList
+                      selectedClientId={selectedClientId}
+                      onSelect={(id) => {
+                        setSelectedClientId(id)
+                        clientPopover.onClose()
+                      }}
+                    />
+                  </PopoverBody>
+                </PopoverContent>
+              </Popover>
+            </Box>
             <Box flex="1" minW={0}>
               <ErrorBoundary
                 fallback={<PreviewErrorFallback />}
