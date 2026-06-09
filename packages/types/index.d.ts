@@ -478,6 +478,12 @@ export interface IFieldMultiSelect extends IBaseField {
 
 type IFieldMultiRowMultiColSubField = IField & {
   customStyle?: Record<string, string | number>
+  /**
+   * Key of a sibling field in the same row whose value is used as placeholder
+   * text. Evaluated at render time so each row can show a distinct hint.
+   * Only honoured by MultiCol for string-type subfields.
+   */
+  dynamicPlaceholderKey?: string
 }
 
 export interface IFieldMultiRowMultiCol extends IBaseField {
