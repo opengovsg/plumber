@@ -22,7 +22,7 @@ import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import VariableItemWithModal from './VariableItemWithModal'
 
-const VARIABLES_WITH_MODALS = ['table', 'html']
+const VARIABLES_WITH_MODALS = ['table', 'html', 'email']
 const VARIABLE_ITEM_HEIGHT = 77
 const SUGGESTION_VARIABLE_ITEM_HEIGHT = 61
 
@@ -92,11 +92,15 @@ export function VariableItem({
   onClick,
   isLast,
   withViewButton,
+  onViewButtonPreload,
+  isViewButtonLoading,
 }: {
   variable: Variable
   onClick?: (variable: Variable) => void
   isLast?: boolean
   withViewButton?: boolean
+  onViewButtonPreload?: () => void
+  isViewButtonLoading?: boolean
 }): JSX.Element {
   const shouldShowBottomBorder = !withViewButton && (onClick || isLast)
 
@@ -172,7 +176,14 @@ export function VariableItem({
         </Flex>
 
         {onClick && withViewButton && (
-          <Button variant="clear" onClick={() => onClick(variable)}>
+          <Button
+            variant="clear"
+            onClick={() => onClick(variable)}
+            onMouseEnter={onViewButtonPreload}
+            onFocus={onViewButtonPreload}
+            onPointerDown={onViewButtonPreload}
+            isLoading={isViewButtonLoading}
+          >
             View
           </Button>
         )}

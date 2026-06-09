@@ -63,6 +63,7 @@ export type TDataOutMetadatumType =
   | 'approval'
   | 'ai_response'
   | 'html'
+  | 'email'
 
 /**
  * This should only be defined on _leaf_ nodes (i.e. **primitive array

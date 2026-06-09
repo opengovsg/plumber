@@ -38,7 +38,7 @@ function usePreviewer(previewType: TFieldPreviewType | undefined) {
     (props: PreviewerProps): ReactNode => {
       switch (previewType) {
         case 'email':
-          return <LazyEmailPreviewModal {...props} />
+          return <LazyEmailPreviewModal {...props} title="Preview your email" />
       }
       return null
     },

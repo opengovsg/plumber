@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { lazy, Suspense, useCallback, useContext, useTransition } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -8,6 +8,8 @@ import { TableVariable, Variable } from '@/helpers/variables'
 import HtmlVariableModal from './HtmlVariableModal'
 import TableVariableModal from './TableVariableModal'
 import { VariableItem } from '.'
+
+const LazyEmailPreviewModal = lazy(() => import('../EmailPreviewModal'))
 
 interface VariableItemWithModalProps {
   variable: Variable
@@ -35,7 +37,16 @@ export default function VariableItemWithModal(
   const canOpenModal =
     // we do not want to show a table preview if there are no rows
     (variable.type === 'table' && variable.displayedValue !== '0 rows') ||
-    variable.type === 'html'
+    variable.type === 'html' ||
+    variable.type === 'email'
+
+  const preloadModal = useCallback(() => {
+    if (variable.type === 'email') {
+      import('../EmailPreviewModal')
+    }
+  }, [variable.type])
+
+  const [isPending, startTransition] = useTransition()
 
   const handleClick = () => {
     if (!onClick) {
@@ -87,6 +98,19 @@ export default function VariableItemWithModal(
             onClose={onModalClose}
           />
         )
+      case 'email':
+        return (
+          <Suspense fallback={null}>
+            {isModalOpen && (
+              <LazyEmailPreviewModal
+                isOpen={isModalOpen}
+                onClose={onModalClose}
+                html={(variable.value as string) ?? ''}
+                title="View email"
+              />
+            )}
+          </Suspense>
+        )
     }
   }
 
@@ -97,8 +121,14 @@ export default function VariableItemWithModal(
         <VariableItem
           key={`variable-${variable.name}`}
           variable={variable}
-          onClick={canOpenModal ? onModalOpen : undefined}
+          onClick={
+            canOpenModal
+              ? () => startTransition(() => onModalOpen())
+              : undefined
+          }
           withViewButton={canOpenModal}
+          onViewButtonPreload={preloadModal}
+          isViewButtonLoading={isPending}
         />
         {renderModal()}
       </>
