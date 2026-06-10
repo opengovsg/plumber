@@ -69,6 +69,10 @@
         {
           "name": "ARCHIVE_TEST_EXECUTIONS_BUCKET",
           "valueFrom": "plumber-<ENVIRONMENT>-archive-test-executions-bucket"
+        },
+        {
+          "name": "ARCHIVE_DELETED_FLOWS_ONLY",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-deleted-flows-only"
         }
       ]
     }
