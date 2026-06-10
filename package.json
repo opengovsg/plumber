@@ -26,7 +26,7 @@
     ]
   },
   "overrides": {
-    "axios": "1.15.2",
+    "axios": "1.17.0",
     "graphql-rate-limit": {
       "@graphql-tools/utils": {
         "graphql": "16.11.0"
@@ -47,7 +47,8 @@
     "lodash-es": "4.18.1",
     "vite": "6.4.2",
     "immutable": "4.3.8",
-    "picomatch": "4.0.4"
+    "picomatch": "4.0.4",
+    "shell-quote": "1.8.4"
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
@@ -70,5 +71,5 @@
     "vitest": "^3.2.4",
     "wait-on": "^7.2.0"
   },
-  "version": "1.67.0"
+  "version": "1.67.1"
 }

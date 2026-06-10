@@ -51,7 +51,7 @@
     "ai": "5.0.81",
     "ajv-formats": "2.1.1",
     "async-mutex": "0.4.0",
-    "axios": "1.15.2",
+    "axios": "1.17.0",
     "big.js": "6.2.1",
     "cookie-parser": "1.4.7",
     "cors": "^2.8.5",
@@ -122,5 +122,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.67.0"
+  "version": "1.67.1"
 }
