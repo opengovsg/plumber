@@ -71,7 +71,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         if (archiveDeletedFlowsOnly) {
           qb.whereIn(
             'flow_id',
-            archivalDb('flows').select('id').whereNotNull('deleted_at'),
+            archivalDbReader('flows').select('id').whereNotNull('deleted_at'),
           )
         }
       })
