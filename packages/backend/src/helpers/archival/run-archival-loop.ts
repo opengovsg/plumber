@@ -23,6 +23,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   let cursor: string | null = null
   let totalArchived = 0
   let totalSkipped = 0
+  const archivedByFlow = new Map<string, string[]>()
   const startedAt = Date.now()
 
   while (!signal.aborted) {
@@ -42,7 +43,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           .where((b) =>
             b
               .where('test_run', false)
-              .whereIn('status', ['success', 'failure']),
+              .where((c) =>
+                c
+                  .whereIn('status', ['success', 'failure'])
+                  .orWhereIn(
+                    'flow_id',
+                    archivalDb('flows').select('id').whereNotNull('deleted_at'),
+                  ),
+              ),
           )
           .orWhere((b) =>
             b
@@ -51,7 +59,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
                 'id',
                 archivalDb('flows')
                   .select('test_execution_id')
-                  .whereNotNull('test_execution_id'),
+                  .whereNotNull('test_execution_id')
+                  .whereNull('deleted_at'),
               ),
           )
       })
@@ -107,6 +116,9 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         })
         if (result === 'archived') {
           batchArchived++
+          const ids = archivedByFlow.get(execution.flowId) ?? []
+          ids.push(execution.id)
+          archivedByFlow.set(execution.flowId, ids)
         } else {
           batchSkipped++
         }
@@ -137,6 +149,15 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     if (!signal.aborted && sleepMs > 0) {
       await sleep(sleepMs)
     }
+  }
+
+  for (const [flowId, executionIds] of archivedByFlow) {
+    logger.info({
+      event: 'archival.flow.archived',
+      flowId,
+      executionIds,
+      count: executionIds.length,
+    })
   }
 
   logger.info({
