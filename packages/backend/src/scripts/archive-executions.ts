@@ -16,19 +16,21 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  if (!archivalConfig.archiveExecutionsBucket || !archivalConfig.archiveTestExecutionsBucket) {
+  if (
+    !archivalConfig.archiveExecutionsBucket ||
+    !archivalConfig.archiveTestExecutionsBucket
+  ) {
     logger.error(
+      'archival: ARCHIVE_EXECUTIONS_BUCKET and ARCHIVE_TEST_EXECUTIONS_BUCKET must be set',
       {
         archiveExecutionsBucket: archivalConfig.archiveExecutionsBucket,
         archiveTestExecutionsBucket: archivalConfig.archiveTestExecutionsBucket,
       },
-      'archival: ARCHIVE_EXECUTIONS_BUCKET and ARCHIVE_TEST_EXECUTIONS_BUCKET must be set',
     )
     process.exit(1)
   }
 
-  logger.info({
-    event: 'archival.run.start',
+  logger.info('archival.run.start', {
     dryRun: archivalConfig.archiveDryRun,
     retentionDays: archivalConfig.archiveRetentionDays,
     batchSize: archivalConfig.archiveBatchSize,
@@ -38,7 +40,7 @@ async function main(): Promise<void> {
   try {
     await runArchivalLoop(controller.signal)
   } catch (err) {
-    logger.error({ event: 'archival.run.error', err }, 'archival: fatal error')
+    logger.error('archival: fatal error', { event: 'archival.run.error', err })
     await archivalDb.destroy()
     process.exit(1)
   }
