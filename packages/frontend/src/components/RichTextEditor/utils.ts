@@ -14,7 +14,9 @@ import type { StepWithVariables, TableVariable } from '@/helpers/variables'
 
 interface TableVariablePreviewData {
   columns: Array<{ id: string; name: string }>
-  sampleRows: Array<Record<string, unknown>>
+  // All rows, so the preview matches the full table the email sends — not the
+  // truncated `sampleRows` used by the in-editor pill.
+  rows: Array<Record<string, unknown>>
 }
 
 export interface VariableInfo {
@@ -52,6 +54,24 @@ export function simpleSubstitute(
   })
 }
 
+/**
+ * Extracts every row's data from a table variable for the email preview.
+ *
+ * `tableVar.value` is the full table JSON (`{ columns, rows }`) the editor
+ * stores (set via `JSON.stringify` in helpers/variables.ts), so we parse it to
+ * get all rows — unlike the truncated `sampleRows` the in-editor pill uses. The
+ * value is always valid JSON from that single producer, so no parse guard is
+ * needed; a malformed value should surface loudly rather than silently degrade.
+ */
+function extractAllTableRows(
+  tableVar: TableVariable,
+): Array<Record<string, unknown>> {
+  const parsed = JSON.parse(tableVar.value as string) as {
+    rows?: Array<{ data?: Record<string, unknown> }>
+  }
+  return (parsed.rows ?? []).map((row) => row?.data ?? {})
+}
+
 export function genVariableInfoMap(
   stepsWithVariables: StepWithVariables[],
 ): VariableInfoMap {
@@ -72,7 +92,7 @@ export function genVariableInfoMap(
         const tableVar = variable as TableVariable
         entry.table = {
           columns: tableVar.columns,
-          sampleRows: tableVar.sampleRows,
+          rows: extractAllTableRows(tableVar),
         }
       }
       result.set(placeholderString, entry)
@@ -173,15 +193,6 @@ export function substituteOldTemplates(
 
 const HEX_MODIFIER_SUFFIX_REGEX = new RegExp(`\\|${HEX_MODIFIER_PATTERN}$`)
 
-// Inline styles mirror the backend's table renderer
-// (packages/backend/src/helpers/format-table-variable.ts) so the email preview
-// matches the table that actually gets sent.
-const TABLE_HEADER_BG = '#F3F4F6' // gray.100
-const TABLE_ROW_ODD_BG = '#FFFFFF' // white
-const TABLE_ROW_EVEN_BG = '#F9FAFB' // gray.50
-const TABLE_CELL_STYLE =
-  'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
-
 function cellToString(value: unknown): string {
   if (value === null || value === undefined) {
     return ''
@@ -193,17 +204,26 @@ function cellToString(value: unknown): string {
 }
 
 /**
- * Builds an email-safe HTML table string from the resolved table data, mirroring
- * the backend renderer. Cell content is escaped to prevent HTML injection.
+ * Builds an email-safe HTML table string from the resolved table data. Cell
+ * content is escaped to prevent HTML injection.
+ *
+ * The markup/styles mirror the backend's email table renderer (formatAsHtml in
+ * packages/backend/src/helpers/format-table-variable.ts) so the preview matches
+ * the table that actually gets sent — keep the two in sync.
  */
 function buildTableHtml(
   columns: Array<{ id: string; name: string }>,
   rows: Array<Record<string, unknown>>,
 ): string {
+  const headerBg = '#F3F4F6' // gray.100
+  const rowOddBg = '#FFFFFF' // white
+  const rowEvenBg = '#F9FAFB' // gray.50
+  const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
+
   const headerCells = columns
     .map(
       (col) =>
-        `<td style="${TABLE_CELL_STYLE} background-color: ${TABLE_HEADER_BG}; font-weight: 600;"><p style="margin: 0;">${escapeHtml(
+        `<td style="${cell} background-color: ${headerBg}; font-weight: 600;"><p style="margin: 0;">${escapeHtml(
           col.name,
         )}</p></td>`,
     )
@@ -211,11 +231,11 @@ function buildTableHtml(
 
   const dataRows = rows
     .map((row, i) => {
-      const bg = i % 2 === 0 ? TABLE_ROW_ODD_BG : TABLE_ROW_EVEN_BG
+      const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
       const cells = columns
         .map(
           (col) =>
-            `<td style="${TABLE_CELL_STYLE} background-color: ${bg};"><p style="margin: 0;">${escapeHtml(
+            `<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${escapeHtml(
               cellToString(row[col.id]),
             )}</p></td>`,
         )
@@ -270,7 +290,7 @@ function renderTableVariableHtml(
     return null
   }
 
-  return buildTableHtml(selectedColumns, tableData.sampleRows)
+  return buildTableHtml(selectedColumns, tableData.rows)
 }
 
 /**

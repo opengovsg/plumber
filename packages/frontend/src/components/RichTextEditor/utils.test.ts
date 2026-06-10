@@ -2,8 +2,10 @@ import escapeHTML from 'escape-html'
 import { describe, expect, it } from 'vitest'
 
 import { hexEncode } from '@/helpers/hex-encoding'
+import type { StepWithVariables, TableVariable } from '@/helpers/variables'
 
 import {
+  genVariableInfoMap,
   removeProblematicWhitespace,
   substituteForPreview,
   substituteOldTemplates,
@@ -207,7 +209,7 @@ describe('substituteForPreview', () => {
               { id: 'c1', name: 'Name' },
               { id: 'c2', name: 'Email' },
             ],
-            sampleRows: [
+            rows: [
               { c1: 'Alice', c2: 'alice@example.sg' },
               { c1: 'Bob', c2: 'bob@example.sg' },
             ],
@@ -216,6 +218,8 @@ describe('substituteForPreview', () => {
       ],
     ])
 
+    // Rebuild the expected markup independently of buildTableHtml (don't import
+    // its constants) so these stay a byte-for-byte pin on the renderer's output.
     const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
     const headerCell = (name: string) =>
       `<td style="${cell} background-color: #F3F4F6; font-weight: 600;"><p style="margin: 0;">${name}</p></td>`
@@ -267,7 +271,7 @@ describe('substituteForPreview', () => {
             testRunValue: '1 row',
             table: {
               columns: [{ id: 'c1', name: 'Name' }],
-              sampleRows: [{ c1: '<script>alert(1)</script>' }],
+              rows: [{ c1: '<script>alert(1)</script>' }],
             },
           },
         ],
@@ -316,6 +320,51 @@ describe('substituteForPreview', () => {
     for (const input of inputs) {
       expect(substituteForPreview(input, varInfo)).toEqual('')
     }
+  })
+})
+
+describe('genVariableInfoMap', () => {
+  it('carries all table rows (not the truncated pill sampleRows) for the preview', () => {
+    const allRows = [
+      { data: { c1: 'r1' } },
+      { data: { c1: 'r2' } },
+      { data: { c1: 'r3' } },
+      { data: { c1: 'r4' } },
+      { data: { c1: 'r5' } },
+    ]
+    const tableVar: TableVariable = {
+      name: 'step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.data',
+      type: 'table',
+      label: 'My table',
+      displayedValue: '5 rows',
+      // value is the full table data, exactly as the editor stores it
+      value: JSON.stringify({
+        columns: [{ id: 'c1', name: 'Name' }],
+        rows: allRows,
+      }),
+      columns: [{ id: 'c1', name: 'Name' }],
+      // sampleRows is intentionally truncated for the in-editor pill
+      sampleRows: allRows.slice(0, 3).map((r) => r.data),
+      totalRowCount: allRows.length,
+    }
+    const steps: StepWithVariables[] = [
+      {
+        id: 'ff5000f5-021c-4488-b6c2-c582c42ba3cf',
+        name: '1. Step',
+        output: [tableVar],
+      },
+    ]
+
+    const map = genVariableInfoMap(steps)
+    const entry = map.get('{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.data}}')
+
+    expect(entry?.table?.rows).toEqual([
+      { c1: 'r1' },
+      { c1: 'r2' },
+      { c1: 'r3' },
+      { c1: 'r4' },
+      { c1: 'r5' },
+    ])
   })
 })
 
