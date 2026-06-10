@@ -94,7 +94,9 @@ export default function PromptInput({
 
     const isLast = currentQuestionIdx === clarification.length - 1
     if (isLast) {
-      const combined = clarification.map((_, i) => newAnswers[i]).join('\n')
+      const combined = clarification
+        .map((q, i) => `Q: ${q.question}\nA: ${newAnswers[i]}`)
+        .join('\n\n')
       sendMessage(combined)
       setSelectedAnswers({})
       setCurrentQuestionIdx(0)
