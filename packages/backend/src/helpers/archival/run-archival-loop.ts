@@ -111,10 +111,10 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           batchSkipped++
         }
       } catch (err) {
-        logger.error(
-          { executionId: execution.id, err },
-          'archival: unexpected error, skipping execution',
-        )
+        logger.error('archival: unexpected error, skipping execution', {
+          executionId: execution.id,
+          err,
+        })
         batchSkipped++
       }
       lastProcessed = execution
