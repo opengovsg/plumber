@@ -1,10 +1,13 @@
 import escapeHTML from 'escape-html'
 import { describe, expect, it } from 'vitest'
 
+import { hexEncode } from '@/helpers/hex-encoding'
+
 import {
   removeProblematicWhitespace,
   substituteForPreview,
   substituteOldTemplates,
+  type VariableInfoMap,
 } from './utils'
 
 const varInfo = new Map<
@@ -184,6 +187,108 @@ describe('substituteForPreview', () => {
     const input =
       '<div data-type="tableVariable" data-id="step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello|abcd" data-label="hello" data-value="world">{{step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.hello|abcd}}</div>'
     expect(substituteForPreview(input, varInfo)).toEqual('world')
+  })
+
+  // These assert the table markup byte-for-byte on purpose: the preview renderer
+  // mirrors the backend's email table renderer (formatAsHtml in
+  // packages/backend/src/helpers/format-table-variable.ts). If the backend markup
+  // changes, update buildTableHtml and these expectations so the preview keeps
+  // matching the sent email.
+  describe('table variables (real editor HTML, no data-value)', () => {
+    const TABLE_BASE_PATH = 'step.ff5000f5-021c-4488-b6c2-c582c42ba3cf.data'
+    const tableVarInfo: VariableInfoMap = new Map([
+      [
+        `{{${TABLE_BASE_PATH}}}`,
+        {
+          label: 'My table',
+          testRunValue: '2 rows',
+          table: {
+            columns: [
+              { id: 'c1', name: 'Name' },
+              { id: 'c2', name: 'Email' },
+            ],
+            sampleRows: [
+              { c1: 'Alice', c2: 'alice@example.sg' },
+              { c1: 'Bob', c2: 'bob@example.sg' },
+            ],
+          },
+        },
+      ],
+    ])
+
+    const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
+    const headerCell = (name: string) =>
+      `<td style="${cell} background-color: #F3F4F6; font-weight: 600;"><p style="margin: 0;">${name}</p></td>`
+    const dataCell = (value: string, bg: string) =>
+      `<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${value}</p></td>`
+
+    const makeInput = (modifier: string) => {
+      const hex = hexEncode(modifier)
+      const id = `${TABLE_BASE_PATH}|${hex}`
+      return `<div data-type="tableVariable" data-id="${id}">{{${id}}}</div>`
+    }
+
+    it('renders the table variable as an HTML table from varInfo table data', () => {
+      const expected =
+        '<table style="border-collapse: collapse;"><tbody>' +
+        `<tr>${headerCell('Name')}${headerCell('Email')}</tr>` +
+        `<tr>${dataCell('Alice', '#FFFFFF')}${dataCell(
+          'alice@example.sg',
+          '#FFFFFF',
+        )}</tr>` +
+        `<tr>${dataCell('Bob', '#F9FAFB')}${dataCell(
+          'bob@example.sg',
+          '#F9FAFB',
+        )}</tr>` +
+        '</tbody></table>'
+      expect(
+        substituteForPreview(makeInput('table:c1,c2'), tableVarInfo),
+      ).toEqual(expected)
+    })
+
+    it('renders only the columns selected in the hex modifier', () => {
+      const expected =
+        '<table style="border-collapse: collapse;"><tbody>' +
+        `<tr>${headerCell('Email')}</tr>` +
+        `<tr>${dataCell('alice@example.sg', '#FFFFFF')}</tr>` +
+        `<tr>${dataCell('bob@example.sg', '#F9FAFB')}</tr>` +
+        '</tbody></table>'
+      expect(substituteForPreview(makeInput('table:c2'), tableVarInfo)).toEqual(
+        expected,
+      )
+    })
+
+    it('escapes HTML in cell values to prevent injection', () => {
+      const injectInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          {
+            label: 'My table',
+            testRunValue: '1 row',
+            table: {
+              columns: [{ id: 'c1', name: 'Name' }],
+              sampleRows: [{ c1: '<script>alert(1)</script>' }],
+            },
+          },
+        ],
+      ])
+      const out = substituteForPreview(makeInput('table:c1'), injectInfo)
+      expect(out).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+      expect(out).not.toContain('<script>')
+    })
+
+    it('falls back to text value when the table cannot be rendered', () => {
+      // varInfo entry has no table data → cannot render a table
+      const noTableInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          { label: 'My table', testRunValue: '2 rows' },
+        ],
+      ])
+      expect(substituteForPreview(makeInput('table:c1'), noTableInfo)).toEqual(
+        '2 rows',
+      )
+    })
   })
 
   it('substitutes legacy {{step.…}} patterns in plain text nodes', () => {

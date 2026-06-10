@@ -56,6 +56,11 @@ function cellToString(value: unknown): string {
 /**
  * Formats table data as an HTML table with inline CSS for email compatibility
  * Simple black borders with background colors matching the preview
+ *
+ * NOTE: the frontend email preview mirrors this exact markup in
+ * `buildTableHtml` (packages/frontend/src/components/RichTextEditor/utils.ts).
+ * If you change the markup/styles here, update that mirror and its
+ * markup-pinning test so the preview keeps matching the sent email.
  */
 function formatAsHtml(rows: TableRow[], columns: TableColumn[]): string {
   const headerBg = '#F3F4F6' // gray.100
