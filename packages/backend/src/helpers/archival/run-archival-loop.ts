@@ -14,6 +14,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     archiveBatchSize: batchSize,
     archiveBatchSleepMs: sleepMs,
     archiveBucket,
+    archiveDeletedFlowsOnly,
   } = archivalConfig
 
   const cutoff = new Date()
@@ -66,6 +67,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           )
       })
       .where('created_at', '<', cutoff)
+      .modify((qb) => {
+        if (archiveDeletedFlowsOnly) {
+          qb.whereIn(
+            'flow_id',
+            archivalDb('flows').select('id').whereNotNull('deleted_at'),
+          )
+        }
+      })
       .modify((qb) => {
         if (cursor) {
           qb.whereRaw('id > ?::uuid', [cursor])

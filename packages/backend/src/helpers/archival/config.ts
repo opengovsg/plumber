@@ -60,4 +60,7 @@ export const archivalConfig = {
   archiveBatchSize: requireInt('ARCHIVE_BATCH_SIZE', 500),
   archiveBatchSleepMs: requireInt('ARCHIVE_BATCH_SLEEP_MS', 2000),
   archiveBucket: requireString('ARCHIVE_BUCKET'),
+  // When true, only archive executions belonging to soft-deleted flows.
+  // Use for phased rollout: archive low-risk data first.
+  archiveDeletedFlowsOnly: process.env.ARCHIVE_DELETED_FLOWS_ONLY === 'true',
 }
