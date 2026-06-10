@@ -7,6 +7,7 @@ vi.mock('./config', () => ({
     archiveBatchSize: 500,
     archiveBatchSleepMs: 0,
     archiveBucket: 'archive-bucket',
+    archiveDeletedFlowsOnly: false,
   },
 }))
 vi.mock('./logger')
@@ -18,6 +19,7 @@ vi.mock('./db', () => ({
 }))
 
 import { archiveExecution } from './archive-execution'
+import { archivalConfig } from './config'
 import { archivalDb, archivalDbReader } from './db'
 import { runArchivalLoop } from './run-archival-loop'
 import type { ExecutionRow } from './types'
@@ -208,6 +210,44 @@ describe('runArchivalLoop', () => {
       expect.anything(),
       expect.objectContaining({ knexClient: archivalDb }),
     )
+  })
+
+  describe('archiveDeletedFlowsOnly', () => {
+    it('does not add a flow_id filter when flag is false', async () => {
+      ;(archivalConfig as any).archiveDeletedFlowsOnly = false
+      setupDb([[]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      // capturedModifyCbs[0] is the deleted-flows modifier; invoke it with a spy qb
+      const qb = { whereIn: vi.fn() }
+      capturedModifyCbs[0](qb)
+      expect(qb.whereIn).not.toHaveBeenCalled()
+    })
+
+    it('restricts to deleted flows when flag is true', async () => {
+      ;(archivalConfig as any).archiveDeletedFlowsOnly = true
+      setupDb([[]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const qb = { whereIn: vi.fn() }
+      capturedModifyCbs[0](qb)
+      expect(qb.whereIn).toHaveBeenCalledWith('flow_id', expect.anything())
+    })
+
+    it('uses a subquery on flows.deleted_at for the filter', async () => {
+      ;(archivalConfig as any).archiveDeletedFlowsOnly = true
+      setupDb([[]])
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const qb = { whereIn: vi.fn() }
+      capturedModifyCbs[0](qb)
+
+      // The subquery should be archivalDbReader('flows').select('id').whereNotNull('deleted_at')
+      expect(archivalDbReader).toHaveBeenCalledWith('flows')
+    })
   })
 
   describe('eligibility WHERE clause', () => {
