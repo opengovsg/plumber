@@ -1,6 +1,10 @@
-import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { archiveExecution } from './archive-execution'
 import type { ExecutionRow, ExecutionStepRow } from './types'
@@ -94,11 +98,11 @@ describe('archiveExecution', () => {
     const s3 = makeMockS3()
     const knexClient = makeMockKnex()
 
-    await archiveExecution(
-      { ...mockExecution, testRun: true },
-      mockSteps,
-      { ...baseOpts, s3Client: s3, knexClient },
-    )
+    await archiveExecution({ ...mockExecution, testRun: true }, mockSteps, {
+      ...baseOpts,
+      s3Client: s3,
+      knexClient,
+    })
 
     const putCall = (s3.send as ReturnType<typeof vi.fn>).mock.calls.find(
       ([cmd]) => cmd instanceof PutObjectCommand,

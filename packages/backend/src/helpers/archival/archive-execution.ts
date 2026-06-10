@@ -1,8 +1,11 @@
-import { gzip } from 'node:zlib'
-import { promisify } from 'node:util'
-
-import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import {
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
+import { promisify } from 'node:util'
+import { gzip } from 'node:zlib'
 
 import { buildS3Key } from './build-s3-key'
 import logger from './logger'
@@ -39,6 +42,7 @@ export async function archiveExecution(
       Metadata: {
         'flow-id': execution.flowId,
         'execution-id': execution.id,
+        'execution-created-at': new Date(execution.createdAt).toISOString(),
         'archived-at': new Date().toISOString(),
         'step-count': String(steps.length),
       },
@@ -51,18 +55,19 @@ export async function archiveExecution(
       new HeadObjectCommand({ Bucket: bucket, Key: key }),
     )
   } catch (err) {
-    logger.error(
-      { executionId: execution.id, key, err },
-      'archival: S3 verify threw, skipping',
-    )
+    logger.error('archival: S3 verify threw, skipping', {
+      executionId: execution.id,
+      key,
+      err,
+    })
     return 'skipped'
   }
 
   if (!head.ContentLength) {
-    logger.error(
-      { executionId: execution.id, key },
-      'archival: S3 verify failed (zero ContentLength), skipping',
-    )
+    logger.error('archival: S3 verify failed (zero ContentLength), skipping', {
+      executionId: execution.id,
+      key,
+    })
     return 'skipped'
   }
 
