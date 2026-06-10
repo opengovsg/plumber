@@ -8,7 +8,15 @@ const archivalLogger = winston.createLogger({
     ? winston.format.combine(
         winston.format.errors({ stack: true }),
         winston.format.colorize(),
-        winston.format.simple(),
+        winston.format.printf(({ level, message, ...meta }) => {
+          if (typeof message === 'object') {
+            return `${level}: ${JSON.stringify({ ...meta, ...message })}`
+          }
+          const metaStr = Object.keys(meta).length
+            ? ` ${JSON.stringify(meta)}`
+            : ''
+          return `${level}: ${message}${metaStr}`
+        }),
       )
     : winston.format.combine(
         winston.format.errors({ stack: true }),
