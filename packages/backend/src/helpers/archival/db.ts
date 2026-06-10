@@ -1,5 +1,5 @@
-import pg from 'pg'
 import knex, { type Knex } from 'knex'
+import pg from 'pg'
 
 import { archivalConfig } from './config'
 
