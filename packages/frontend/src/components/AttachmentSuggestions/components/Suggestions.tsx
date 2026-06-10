@@ -162,7 +162,11 @@ export default function Suggestions(props: SuggestionsProps) {
               }}
               tags={tags}
             />
-            <PopoverContent w="100%" motionProps={POPOVER_MOTION_PROPS}>
+            <PopoverContent
+              w="100%"
+              cursor="default"
+              motionProps={POPOVER_MOTION_PROPS}
+            >
               {loading ? (
                 <PrimarySpinner margin="auto" fontSize="4xl" p="5" />
               ) : (
