@@ -15,12 +15,15 @@ vi.mock('./s3-client', () => ({ archiveS3Client: {} }))
 vi.mock('./archive-execution')
 vi.mock('./db', () => ({ archivalDb: vi.fn() }))
 
-import { archivalDb } from './db'
 import { archiveExecution } from './archive-execution'
+import { archivalDb } from './db'
 import { runArchivalLoop } from './run-archival-loop'
 import type { ExecutionRow } from './types'
 
-function makeExecution(id: string, overrides: Partial<ExecutionRow> = {}): ExecutionRow {
+function makeExecution(
+  id: string,
+  overrides: Partial<ExecutionRow> = {},
+): ExecutionRow {
   return {
     id,
     flowId: 'flow-1',
@@ -71,12 +74,18 @@ function setupDb(batches: ExecutionRow[][]) {
       return execBuilder
     }),
     orderBy: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockImplementation(() => Promise.resolve(batches[batchIdx++] ?? [])),
+    limit: vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(batches[batchIdx++] ?? [])),
   }
 
   ;(archivalDb as any).mockImplementation((table: string) => {
-    if (table === 'flows') return flowsBuilder
-    if (table === 'execution_steps') return stepsBuilder
+    if (table === 'flows') {
+      return flowsBuilder
+    }
+    if (table === 'execution_steps') {
+      return stepsBuilder
+    }
     return execBuilder
   })
 }
@@ -117,7 +126,10 @@ describe('runArchivalLoop', () => {
       return 'archived'
     })
 
-    setupDb([[makeExecution('e1'), makeExecution('e2'), makeExecution('e3')], []])
+    setupDb([
+      [makeExecution('e1'), makeExecution('e2'), makeExecution('e3')],
+      [],
+    ])
 
     await runArchivalLoop(controller.signal)
 
@@ -129,14 +141,18 @@ describe('runArchivalLoop', () => {
     setupDb([[makeExecution('e1')], []])
 
     // Should complete without throwing even when all executions are skipped
-    await expect(runArchivalLoop(new AbortController().signal)).resolves.toBeUndefined()
+    await expect(
+      runArchivalLoop(new AbortController().signal),
+    ).resolves.toBeUndefined()
   })
 
   it('counts skipped executions when archiveExecution throws', async () => {
     vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 timeout'))
     setupDb([[makeExecution('e1')], []])
 
-    await expect(runArchivalLoop(new AbortController().signal)).resolves.toBeUndefined()
+    await expect(
+      runArchivalLoop(new AbortController().signal),
+    ).resolves.toBeUndefined()
   })
 
   describe('cutoff date', () => {
@@ -144,7 +160,9 @@ describe('runArchivalLoop', () => {
       setupDb([[]])
       await runArchivalLoop(new AbortController().signal)
 
-      const cutoffCall = capturedWhereCalls.find((args) => args[0] === 'created_at')
+      const cutoffCall = capturedWhereCalls.find(
+        (args) => args[0] === 'created_at',
+      )
       expect(cutoffCall).toBeDefined()
       expect(cutoffCall![1]).toBe('<')
     })
@@ -160,7 +178,9 @@ describe('runArchivalLoop', () => {
       const after = new Date()
       after.setDate(after.getDate() - 90)
 
-      const cutoffCall = capturedWhereCalls.find((args) => args[0] === 'created_at')
+      const cutoffCall = capturedWhereCalls.find(
+        (args) => args[0] === 'created_at',
+      )
       const cutoff: Date = cutoffCall![2]
       expect(cutoff.getTime()).toBeGreaterThanOrEqual(before.getTime() - 100)
       expect(cutoff.getTime()).toBeLessThanOrEqual(after.getTime() + 100)
@@ -190,7 +210,10 @@ describe('runArchivalLoop', () => {
       nonTestCb(nonTestQb)
 
       expect(nonTestQb.where).toHaveBeenCalledWith('test_run', false)
-      expect(nonTestQb.whereIn).toHaveBeenCalledWith('status', ['success', 'failure'])
+      expect(nonTestQb.whereIn).toHaveBeenCalledWith('status', [
+        'success',
+        'failure',
+      ])
     })
 
     it('excludes test executions that are still referenced by flows.test_execution_id', async () => {

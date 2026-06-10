@@ -1,7 +1,7 @@
+import { archiveExecution } from './archive-execution'
 import { archivalConfig } from './config'
 import { archivalDb } from './db'
 import logger from './logger'
-import { archiveExecution } from './archive-execution'
 import { archiveS3Client } from './s3-client'
 import type { ExecutionRow, ExecutionStepRow } from './types'
 
@@ -40,15 +40,19 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       .where((builder) => {
         builder
           .where((b) =>
-            b.where('test_run', false).whereIn('status', ['success', 'failure']),
+            b
+              .where('test_run', false)
+              .whereIn('status', ['success', 'failure']),
           )
           .orWhere((b) =>
-            b.where('test_run', true).whereNotIn(
-              'id',
-              archivalDb('flows')
-                .select('test_execution_id')
-                .whereNotNull('test_execution_id'),
-            ),
+            b
+              .where('test_run', true)
+              .whereNotIn(
+                'id',
+                archivalDb('flows')
+                  .select('test_execution_id')
+                  .whereNotNull('test_execution_id'),
+              ),
           )
       })
       .where('created_at', '<', cutoff)
@@ -69,7 +73,9 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     let lastProcessed: ExecutionRow | null = null
 
     for (const execution of batch) {
-      if (signal.aborted) break
+      if (signal.aborted) {
+        break
+      }
 
       const steps = (await archivalDb('execution_steps')
         .select(
