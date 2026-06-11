@@ -7,6 +7,7 @@ export const optionalFlowIdSchema = z.string().uuid().nullish()
 
 export const outputFieldNameSchema = z
   .string()
+  .trim()
   .min(1, { message: 'Output name is required' })
   .max(64, {
     message: 'Output name cannot be more than 64 characters',
