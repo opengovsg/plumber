@@ -3,6 +3,8 @@ import type { IGlobalVariable } from '@plumber/types'
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
+const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
+
 import logger from '@/helpers/logger'
 
 import type { FormSchemaField } from '../../common/types'
@@ -56,13 +58,17 @@ export async function processResponsesV3(
       continue
     }
     if (value.fieldType === 'checkbox') {
+      const answerArray = (value.answer.value as string[]).map((v) =>
+        v === CHECKBOX_OTHERS_MARKER
+          ? `Others: ${value.answer.othersInput}`
+          : v,
+      )
       mappedResponses.push({
         _id: key,
         fieldType: value.fieldType,
         // we fallback to Question # if the question is not found in the form schema
         question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
-        // this is kinda weird, but it's the way formsg returns the answer for checkbox fields
-        answerArray: value.answer.value,
+        answerArray,
       })
       continue
     }

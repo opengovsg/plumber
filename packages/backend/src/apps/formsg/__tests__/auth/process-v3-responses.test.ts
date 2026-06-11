@@ -86,6 +86,33 @@ describe('processResponsesV3', () => {
       ])
     })
 
+    it('replaces the internal others marker with "Others: <othersInput>"', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'cb1', title: 'Hobbies', fieldType: 'checkbox' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        cb1: {
+          fieldType: 'checkbox',
+          answer: {
+            value: ['reading', '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'],
+            othersInput: 'custom hobby',
+          },
+        },
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'cb1',
+          fieldType: 'checkbox',
+          question: 'Hobbies',
+          answerArray: ['reading', 'Others: custom hobby'],
+        },
+      ])
+    })
+
     it.each(['radiobutton', 'email', 'mobile'])(
       'maps %s fields with answer from answer.value',
       async (fieldType) => {
