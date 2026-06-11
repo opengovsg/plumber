@@ -63,12 +63,8 @@
           "valueFrom": "plumber-<ENVIRONMENT>-archive-batch-sleep-ms"
         },
         {
-          "name": "ARCHIVE_EXECUTIONS_BUCKET",
-          "valueFrom": "plumber-<ENVIRONMENT>-archive-executions-bucket"
-        },
-        {
-          "name": "ARCHIVE_TEST_EXECUTIONS_BUCKET",
-          "valueFrom": "plumber-<ENVIRONMENT>-archive-test-executions-bucket"
+          "name": "ARCHIVE_BUCKET",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-bucket"
         },
         {
           "name": "ARCHIVE_DELETED_FLOWS_ONLY",
