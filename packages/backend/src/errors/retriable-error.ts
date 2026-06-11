@@ -6,8 +6,8 @@ interface RetriableErrorParams {
   error: ConstructorParameters<typeof BaseError>[0]
   delayInMs: number | 'default'
   delayType: 'step' | 'group' | 'queue'
-  /** Optional error code for custom retry behavior (e.g., different max attempts) */
-  errorCode?: string
+  /** Optional override for the max number of job attempts before failing. */
+  maxAttempts?: number
 }
 
 /**
@@ -37,18 +37,18 @@ interface RetriableErrorParams {
 export default class RetriableError extends BaseError {
   delayInMs: number
   delayType: RetriableErrorParams['delayType']
-  errorCode?: string
+  maxAttempts?: number
 
   constructor({
     error,
     delayInMs,
     delayType,
-    errorCode,
+    maxAttempts,
   }: RetriableErrorParams) {
     super(error)
 
     this.delayInMs = delayInMs === 'default' ? DEFAULT_DELAY_MS : delayInMs
     this.delayType = delayType
-    this.errorCode = errorCode
+    this.maxAttempts = maxAttempts
   }
 }

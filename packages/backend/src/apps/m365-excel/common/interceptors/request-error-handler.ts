@@ -104,7 +104,6 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
 // Test runs: fail immediately with helpful message.
 // Live runs: retry up to 3 times, then fail with helpful message.
 //
-export const EXCEL_504_ERROR_CODE = 'EXCEL_504'
 export const EXCEL_504_MAX_ATTEMPTS = 3
 const EXCEL_504_ERROR_MESSAGE = {
   name: 'Excel request timed out',
@@ -137,7 +136,7 @@ const handle504: ThrowingHandler = function ($, error) {
     error: EXCEL_504_ERROR_MESSAGE,
     delayType: 'step',
     delayInMs: 'default',
-    errorCode: EXCEL_504_ERROR_CODE,
+    maxAttempts: EXCEL_504_MAX_ATTEMPTS,
   })
 }
 

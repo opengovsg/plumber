@@ -17,7 +17,7 @@ import StepError from '@/errors/step'
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
 
 import m365ExcelApp from '../..'
-import { EXCEL_504_ERROR_CODE } from '../../common/interceptors/request-error-handler'
+import { EXCEL_504_MAX_ATTEMPTS } from '../../common/interceptors/request-error-handler'
 
 function mockAxiosAdapterToThrowOnce(
   status: AxiosResponse['status'],
@@ -219,7 +219,7 @@ describe('M365 request error handlers', () => {
     )
   })
 
-  it('throws RetriableError with EXCEL_504 errorCode on 504 (live run)', async () => {
+  it('throws RetriableError with custom max attempts on 504 (live run)', async () => {
     // Default $ doesn't have execution.testRun, so this is the live run path
     mockAxiosAdapterToThrowOnce(504)
     await http
@@ -231,7 +231,7 @@ describe('M365 request error handlers', () => {
         expect(error).toBeInstanceOf(RetriableError)
         expect(error.delayType).toEqual('step')
         expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
-        expect(error.errorCode).toEqual(EXCEL_504_ERROR_CODE)
+        expect(error.maxAttempts).toEqual(EXCEL_504_MAX_ATTEMPTS)
         // Message contains the user-friendly error (will be saved as errorDetails)
         expect(error.message).toContain('Excel request timed out')
       })
