@@ -29,6 +29,5 @@ export const archivalConfig = {
   archiveRetentionDays: requireInt('ARCHIVE_RETENTION_DAYS', 90),
   archiveBatchSize: requireInt('ARCHIVE_BATCH_SIZE', 500),
   archiveBatchSleepMs: requireInt('ARCHIVE_BATCH_SLEEP_MS', 2000),
-  archiveExecutionsBucket: process.env.ARCHIVE_EXECUTIONS_BUCKET ?? '',
-  archiveTestExecutionsBucket: process.env.ARCHIVE_TEST_EXECUTIONS_BUCKET ?? '',
+  archiveBucket: process.env.ARCHIVE_BUCKET ?? '',
 }
