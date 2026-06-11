@@ -11,7 +11,7 @@ import { engineProvider } from '@/helpers/pair'
 
 import { getImageContent } from '../../common/get-image-content'
 
-import getDataOutMetadata from './get-data-out-metadata'
+import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)

@@ -12,8 +12,8 @@ import {
 } from '../../common/constants'
 import generateObject from '../../common/generate-object'
 import { generateSchemaFromFields } from '../../common/generate-schema'
+import getDataOutMetadata from '../../common/get-data-out-metadata'
 
-import getDataOutMetadata from './get-data-out-metadata'
 import { schema } from './schema'
 
 const turndownService = new TurndownService()
