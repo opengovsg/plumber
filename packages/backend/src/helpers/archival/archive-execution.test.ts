@@ -7,6 +7,7 @@ import type { Knex } from 'knex'
 import { describe, expect, it, vi } from 'vitest'
 
 import { archiveExecution } from './archive-execution'
+import { S3_PREFIX_EXECUTIONS, S3_PREFIX_TEST_EXECUTIONS } from './build-s3-key'
 import type { ExecutionRow, ExecutionStepRow } from './types'
 
 vi.mock('./logger')
@@ -73,12 +74,11 @@ function makeMockKnex() {
 
 const baseOpts = {
   dryRun: false,
-  execsBucket: 'plumber-archive-executions-test',
-  testExecsBucket: 'plumber-archive-test-executions-test',
+  bucket: 'plumber-archive-test',
 }
 
 describe('archiveExecution', () => {
-  it('uploads to prod bucket for non-test-run executions', async () => {
+  it('non-test executions use executions/ key prefix', async () => {
     const s3 = makeMockS3()
     const knexClient = makeMockKnex()
 
@@ -91,10 +91,13 @@ describe('archiveExecution', () => {
     const putCall = (s3.send as ReturnType<typeof vi.fn>).mock.calls.find(
       ([cmd]) => cmd instanceof PutObjectCommand,
     )
-    expect(putCall[0].input.Bucket).toBe('plumber-archive-executions-test')
+    expect(putCall[0].input.Bucket).toBe('plumber-archive-test')
+    expect(putCall[0].input.Key).toMatch(
+      new RegExp(`^${S3_PREFIX_EXECUTIONS}/`),
+    )
   })
 
-  it('uploads to test bucket for test-run executions', async () => {
+  it('test-run executions use test-executions/ key prefix', async () => {
     const s3 = makeMockS3()
     const knexClient = makeMockKnex()
 
@@ -107,7 +110,9 @@ describe('archiveExecution', () => {
     const putCall = (s3.send as ReturnType<typeof vi.fn>).mock.calls.find(
       ([cmd]) => cmd instanceof PutObjectCommand,
     )
-    expect(putCall[0].input.Bucket).toBe('plumber-archive-test-executions-test')
+    expect(putCall[0].input.Key).toMatch(
+      new RegExp(`^${S3_PREFIX_TEST_EXECUTIONS}/`),
+    )
   })
 
   it('returns archived and deletes from DB on success', async () => {
@@ -189,7 +194,7 @@ describe('archiveExecution', () => {
       ([cmd]) => cmd instanceof PutObjectCommand,
     )
     expect(putCall[0].input.Key).toBe(
-      'archives/executions/flow_id=flow-1/year=2025/month=01/execution_id=exec-1.json.gz',
+      `${S3_PREFIX_EXECUTIONS}/flow_id=flow-1/year=2025/month=01/execution_id=exec-1.json.gz`,
     )
   })
 })

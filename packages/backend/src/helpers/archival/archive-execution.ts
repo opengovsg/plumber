@@ -15,8 +15,7 @@ const gzipAsync = promisify(gzip)
 
 type ArchiveOpts = {
   dryRun: boolean
-  execsBucket: string
-  testExecsBucket: string
+  bucket: string
   s3Client: S3Client
   knexClient: Knex
 }
@@ -29,7 +28,7 @@ export async function archiveExecution(
   const payload = JSON.stringify({ execution, steps })
   const compressed = await gzipAsync(payload)
 
-  const bucket = execution.testRun ? opts.testExecsBucket : opts.execsBucket
+  const bucket = opts.bucket
   const key = buildS3Key(execution)
 
   await opts.s3Client.send(
