@@ -16,17 +16,10 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  if (
-    !archivalConfig.archiveExecutionsBucket ||
-    !archivalConfig.archiveTestExecutionsBucket
-  ) {
-    logger.error(
-      'archival: ARCHIVE_EXECUTIONS_BUCKET and ARCHIVE_TEST_EXECUTIONS_BUCKET must be set',
-      {
-        archiveExecutionsBucket: archivalConfig.archiveExecutionsBucket,
-        archiveTestExecutionsBucket: archivalConfig.archiveTestExecutionsBucket,
-      },
-    )
+  if (!archivalConfig.archiveBucket) {
+    logger.error('archival: ARCHIVE_BUCKET must be set', {
+      archiveBucket: archivalConfig.archiveBucket,
+    })
     process.exit(1)
   }
 
