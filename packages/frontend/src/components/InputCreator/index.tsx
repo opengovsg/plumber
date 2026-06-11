@@ -223,6 +223,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         variableTypes={schema.variableTypes}
         required={required}
         maxFiles={schema.maxFiles}
+        disableUpload={schema.disableUpload}
       />
     )
   }

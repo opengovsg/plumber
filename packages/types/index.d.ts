@@ -454,6 +454,7 @@ export interface IFieldAttachment extends IBaseField {
 
   // Only for attachments
   maxFiles?: number
+  disableUpload?: boolean
 }
 
 export interface IFieldMultiline extends IBaseField {
