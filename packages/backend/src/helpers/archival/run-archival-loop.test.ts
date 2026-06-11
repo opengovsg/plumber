@@ -6,8 +6,7 @@ vi.mock('./config', () => ({
     archiveRetentionDays: 90,
     archiveBatchSize: 500,
     archiveBatchSleepMs: 0,
-    archiveExecutionsBucket: 'exec-bucket',
-    archiveTestExecutionsBucket: 'test-exec-bucket',
+    archiveBucket: 'archive-bucket',
   },
 }))
 vi.mock('./logger')
@@ -51,6 +50,7 @@ function setupDb(batches: ExecutionRow[][]) {
   const flowsBuilder = {
     select: vi.fn().mockReturnThis(),
     whereNotNull: vi.fn().mockReturnThis(),
+    whereNull: vi.fn().mockReturnThis(),
   }
 
   const stepsBuilder = {
@@ -203,14 +203,26 @@ describe('runArchivalLoop', () => {
       expect(outerQb.where).toHaveBeenCalledOnce()
 
       const nonTestCb = outerQb.where.mock.calls[0][0] as (qb: any) => void
+
+      // The non-test branch is: b.where('test_run', false).where((c) => c.whereIn(...).orWhereIn(...))
+      // The inner callback needs to be invoked to observe whereIn calls.
+      const innerQb = {
+        whereIn: vi.fn().mockReturnThis(),
+        orWhereIn: vi.fn().mockReturnThis(),
+      }
       const nonTestQb = {
-        where: vi.fn().mockReturnThis(),
+        where: vi.fn().mockImplementation((...args: any[]) => {
+          if (typeof args[0] === 'function') {
+            args[0](innerQb)
+          }
+          return nonTestQb
+        }),
         whereIn: vi.fn().mockReturnThis(),
       }
       nonTestCb(nonTestQb)
 
       expect(nonTestQb.where).toHaveBeenCalledWith('test_run', false)
-      expect(nonTestQb.whereIn).toHaveBeenCalledWith('status', [
+      expect(innerQb.whereIn).toHaveBeenCalledWith('status', [
         'success',
         'failure',
       ])

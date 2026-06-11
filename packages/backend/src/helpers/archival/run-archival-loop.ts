@@ -13,8 +13,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     archiveRetentionDays: retentionDays,
     archiveBatchSize: batchSize,
     archiveBatchSleepMs: sleepMs,
-    archiveExecutionsBucket: execsBucket,
-    archiveTestExecutionsBucket: testExecsBucket,
+    archiveBucket,
   } = archivalConfig
 
   const cutoff = new Date()
@@ -109,8 +108,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       try {
         const result = await archiveExecution(execution, steps, {
           dryRun,
-          execsBucket,
-          testExecsBucket,
+          bucket: archiveBucket,
           s3Client: archiveS3Client,
           knexClient: archivalDb,
         })
