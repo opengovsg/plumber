@@ -1,6 +1,7 @@
 import { FieldValues, UseFormGetValues } from 'react-hook-form'
 import { PlacementWithLogical } from '@chakra-ui/react'
 import { Editor } from '@tiptap/react'
+import escapeHtml from 'escape-html'
 import {
   HTMLElement as NodeHTMLElement,
   Node,
@@ -8,15 +9,28 @@ import {
   TextNode,
 } from 'node-html-parser'
 
-import type { StepWithVariables } from '@/helpers/variables'
+import { hexDecode } from '@/helpers/hex-encoding'
+import type { StepWithVariables, TableVariable } from '@/helpers/variables'
 
-export type VariableInfoMap = Map<
-  string,
-  {
-    label: string
-    testRunValue: string
-  }
->
+interface TableVariablePreviewData {
+  columns: Array<{ id: string; name: string }>
+  // All rows, so the preview matches the full table the email sends — not the
+  // truncated `sampleRows` used by the in-editor pill.
+  rows: Array<Record<string, unknown>>
+}
+
+export interface VariableInfo {
+  label: string
+  testRunValue: string
+  /**
+   * Present only for table-type variables. Carries the structured data
+   * needed to render an HTML table in the email preview (see
+   * `substituteForPreview`), mirroring the backend's table rendering.
+   */
+  table?: TableVariablePreviewData
+}
+
+export type VariableInfoMap = Map<string, VariableInfo>
 
 const HEX_MODIFIER_PATTERN = '[a-fA-F0-9]+'
 
@@ -40,6 +54,24 @@ export function simpleSubstitute(
   })
 }
 
+/**
+ * Extracts every row's data from a table variable for the email preview.
+ *
+ * `tableVar.value` is the full table JSON (`{ columns, rows }`) the editor
+ * stores (set via `JSON.stringify` in helpers/variables.ts), so we parse it to
+ * get all rows — unlike the truncated `sampleRows` the in-editor pill uses. The
+ * value is always valid JSON from that single producer, so no parse guard is
+ * needed; a malformed value should surface loudly rather than silently degrade.
+ */
+function extractAllTableRows(
+  tableVar: TableVariable,
+): Array<Record<string, unknown>> {
+  const parsed = JSON.parse(tableVar.value as string) as {
+    rows?: Array<{ data?: Record<string, unknown> }>
+  }
+  return (parsed.rows ?? []).map((row) => row?.data ?? {})
+}
+
 export function genVariableInfoMap(
   stepsWithVariables: StepWithVariables[],
 ): VariableInfoMap {
@@ -52,10 +84,18 @@ export function genVariableInfoMap(
         variable.label ??
         variable.name.replace(`step.${step.id}.`, `step${stepPosition + 1}.`)
       const testRunValue = variable.displayedValue ?? String(variable.value)
-      result.set(placeholderString, {
+      const entry: VariableInfo = {
         label,
         testRunValue,
-      })
+      }
+      if (variable.type === 'table') {
+        const tableVar = variable as TableVariable
+        entry.table = {
+          columns: tableVar.columns,
+          rows: extractAllTableRows(tableVar),
+        }
+      }
+      result.set(placeholderString, entry)
     }
   }
   return result
@@ -151,13 +191,118 @@ export function substituteOldTemplates(
   return substitutedDom.outerHTML
 }
 
+// Matches a trailing `|<hexModifier>` suffix, capturing the hex in group 1.
+// Reused for both `.match` (read the modifier) and `.replace` (strip it).
+const HEX_MODIFIER_SUFFIX_REGEX = new RegExp(`\\|(${HEX_MODIFIER_PATTERN})$`)
+
+function cellToString(value: unknown): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  if (typeof value === 'object') {
+    return JSON.stringify(value)
+  }
+  return String(value)
+}
+
+/**
+ * Builds an email-safe HTML table string from the resolved table data. Cell
+ * content is escaped to prevent HTML injection.
+ *
+ * The markup/styles mirror the backend's email table renderer (formatAsHtml in
+ * packages/backend/src/helpers/format-table-variable.ts) so the preview matches
+ * the table that actually gets sent — keep the two in sync.
+ */
+function buildTableHtml(
+  columns: Array<{ id: string; name: string }>,
+  rows: Array<Record<string, unknown>>,
+): string {
+  const headerBg = '#F3F4F6' // gray.100
+  const rowOddBg = '#FFFFFF' // white
+  const rowEvenBg = '#F9FAFB' // gray.50
+  const cell = 'border: 1px solid black; padding: 5px 10px; min-width: 100px;'
+
+  const headerCells = columns
+    .map(
+      (col) =>
+        `<td style="${cell} background-color: ${headerBg}; font-weight: 600;"><p style="margin: 0;">${escapeHtml(
+          col.name,
+        )}</p></td>`,
+    )
+    .join('')
+
+  const dataRows = rows
+    .map((row, i) => {
+      const bg = i % 2 === 0 ? rowOddBg : rowEvenBg
+      const cells = columns
+        .map(
+          (col) =>
+            `<td style="${cell} background-color: ${bg};"><p style="margin: 0;">${escapeHtml(
+              cellToString(row[col.id]),
+            )}</p></td>`,
+        )
+        .join('')
+      return `<tr>${cells}</tr>`
+    })
+    .join('')
+
+  return `<table style="border-collapse: collapse;"><tbody><tr>${headerCells}</tr>${dataRows}</tbody></table>`
+}
+
+/**
+ * Renders a table-variable node's `data-id` (e.g. `step.uuid.path|hexModifier`)
+ * into an HTML table string, or returns null when it can't be rendered (no table
+ * data in varInfo, malformed modifier, or no valid selected columns).
+ */
+function renderTableVariableHtml(
+  dataId: string,
+  varInfo: VariableInfoMap,
+): string | null {
+  const modifierMatch = dataId.match(HEX_MODIFIER_SUFFIX_REGEX)
+  if (!modifierMatch) {
+    return null
+  }
+  const basePath = dataId.replace(HEX_MODIFIER_SUFFIX_REGEX, '')
+  const tableData = varInfo.get(`{{${basePath}}}`)?.table
+  if (!tableData) {
+    return null
+  }
+
+  let decodedModifier: string
+  try {
+    decodedModifier = hexDecode(modifierMatch[1])
+  } catch {
+    return null
+  }
+  if (!decodedModifier.startsWith('table:')) {
+    return null
+  }
+  const selectedColumnIds = decodedModifier
+    .slice('table:'.length)
+    .split(',')
+    .filter(Boolean)
+
+  const columnById = new Map(tableData.columns.map((col) => [col.id, col]))
+  const selectedColumns = selectedColumnIds
+    .map((id) => columnById.get(id))
+    .filter((col): col is { id: string; name: string } => col != null)
+  if (selectedColumns.length === 0) {
+    return null
+  }
+
+  return buildTableHtml(selectedColumns, tableData.rows)
+}
+
 /**
  * Renders RichTextEditor HTML to plain final-form HTML, suitable for feeding
  * into an email preview pipeline.
  *
- * - Variable / table-variable spans are replaced with their resolved value:
- *   prefer the entry in `varInfo`, fall back to the node's own `data-value`
- *   attribute (kept current by `recursiveSubstitute`).
+ * - Variable spans are replaced with their resolved value: prefer the entry in
+ *   `varInfo`, fall back to the node's own `data-value` attribute (kept current
+ *   by `recursiveSubstitute`).
+ * - Table-variable nodes are rendered as an HTML table from the resolved table
+ *   data in `varInfo` (mirroring the email), falling back to the resolved text
+ *   value if the table can't be rendered.
  * - Legacy `{{step.…}}` patterns remaining in plain text nodes are resolved
  *   via `simpleSubstitute`.
  */
@@ -177,10 +322,20 @@ export function substituteForPreview(
       if (child instanceof NodeHTMLElement) {
         const dataType = child.getAttribute('data-type')
         const dataId = child.getAttribute('data-id')
-        if (
-          (dataType === 'variable' || dataType === 'tableVariable') &&
-          dataId != null
-        ) {
+        if (dataType === 'tableVariable' && dataId != null) {
+          const tableHtml = renderTableVariableHtml(dataId, varInfo)
+          if (tableHtml != null) {
+            newChildren.push(...parse(tableHtml).childNodes)
+            continue
+          }
+          // Couldn't render a table: fall back to the resolved text value.
+          const basePath = dataId.replace(HEX_MODIFIER_SUFFIX_REGEX, '')
+          const fromMap = varInfo.get(`{{${basePath}}}`)?.testRunValue
+          const fallback = child.getAttribute('data-value') ?? ''
+          newChildren.push(new TextNode(fromMap ?? fallback))
+          continue
+        }
+        if (dataType === 'variable' && dataId != null) {
           const fromMap = varInfo.get(`{{${dataId}}}`)?.testRunValue
           const fallback = child.getAttribute('data-value') ?? ''
           newChildren.push(new TextNode(fromMap ?? fallback))
