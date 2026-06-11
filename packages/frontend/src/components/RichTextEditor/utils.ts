@@ -191,7 +191,9 @@ export function substituteOldTemplates(
   return substitutedDom.outerHTML
 }
 
-const HEX_MODIFIER_SUFFIX_REGEX = new RegExp(`\\|${HEX_MODIFIER_PATTERN}$`)
+// Matches a trailing `|<hexModifier>` suffix, capturing the hex in group 1.
+// Reused for both `.match` (read the modifier) and `.replace` (strip it).
+const HEX_MODIFIER_SUFFIX_REGEX = new RegExp(`\\|(${HEX_MODIFIER_PATTERN})$`)
 
 function cellToString(value: unknown): string {
   if (value === null || value === undefined) {
@@ -256,9 +258,7 @@ function renderTableVariableHtml(
   dataId: string,
   varInfo: VariableInfoMap,
 ): string | null {
-  const modifierMatch = dataId.match(
-    new RegExp(`\\|(${HEX_MODIFIER_PATTERN})$`),
-  )
+  const modifierMatch = dataId.match(HEX_MODIFIER_SUFFIX_REGEX)
   if (!modifierMatch) {
     return null
   }
