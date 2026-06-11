@@ -3,12 +3,12 @@ import type { IGlobalVariable } from '@plumber/types'
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
 import { DateTime } from 'luxon'
 
-const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
-
 import logger from '@/helpers/logger'
 
 import type { FormSchemaField } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
+
+const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
 
 export async function processResponsesV3(
   $: IGlobalVariable,
@@ -32,6 +32,7 @@ export async function processResponsesV3(
   }
   const mappedResponses: FormField[] = []
   let questionNumber = 0
+
   for (const [key, value] of Object.entries(responsesV3)) {
     questionNumber++
     if (value.fieldType === 'table') {
@@ -72,10 +73,25 @@ export async function processResponsesV3(
       })
       continue
     }
+    if (value.fieldType === 'radiobutton') {
+      // When "Others" is selected, the SDK returns { othersInput: '...' } with no value field
+      const answer =
+        value.answer.othersInput != null
+          ? `Others: ${value.answer.othersInput}`
+          : value.answer.value
+      mappedResponses.push({
+        _id: key,
+        fieldType: value.fieldType,
+        // we fallback to Question # if the question is not found in the form schema
+        question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
+        answer,
+      })
+      continue
+    }
     /**
      * Similary, formv3 responses put these fields in value.answer.value
      */
-    if (['radiobutton', 'email', 'mobile'].includes(value.fieldType)) {
+    if (['email', 'mobile'].includes(value.fieldType)) {
       mappedResponses.push({
         _id: key,
         fieldType: value.fieldType,
