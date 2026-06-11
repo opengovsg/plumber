@@ -44,7 +44,10 @@ describe('getDataOutMetadata', () => {
 
     assert(result !== null)
     expect(result['Signature_present']).toEqual(
-      expect.objectContaining({ label: 'Signature present', type: 'ai_response' }),
+      expect.objectContaining({
+        label: 'Signature present',
+        type: 'ai_response',
+      }),
     )
     expect(result['Document_type']).toEqual(
       expect.objectContaining({ label: 'Document type', type: 'ai_response' }),
@@ -125,7 +128,11 @@ describe('getDataOutMetadata', () => {
 
     const result = await getDataOutMetadata(executionStep)
     assert(result !== null)
-    expect(Object.keys(result)).toEqual(['summary', 'sentiment', 'total_amount'])
+    expect(Object.keys(result)).toEqual([
+      'summary',
+      'sentiment',
+      'total_amount',
+    ])
     expect(result['summary'].order).toBe(0)
     expect(result['sentiment'].order).toBe(1)
     expect(result['total_amount'].order).toBe(2)
