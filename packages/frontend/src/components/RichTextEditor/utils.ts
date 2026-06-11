@@ -49,6 +49,14 @@ export function simpleSubstitute(
 ): string {
   return original.replaceAll(GLOBAL_VARIABLE_REGEX, (match) => {
     const id = match.replace('{{', '').replace('}}', '')
+    // Table variables (id ends with a `|hexModifier`) resolve to the rendered
+    // HTML table, mirroring the backend's computeParameters. This keeps the
+    // substituted body in sync with the test execution's dataIn so the step's
+    // "set up successfully" check (matchParamsToDataIn) matches.
+    const tableHtml = renderTableVariableHtml(id, varInfo)
+    if (tableHtml != null) {
+      return tableHtml
+    }
     const varInfoForNode = varInfo.get(`{{${id}}}`)
     return varInfoForNode?.testRunValue || ''
   })

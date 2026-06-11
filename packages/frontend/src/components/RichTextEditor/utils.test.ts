@@ -7,6 +7,7 @@ import type { StepWithVariables, TableVariable } from '@/helpers/variables'
 import {
   genVariableInfoMap,
   removeProblematicWhitespace,
+  simpleSubstitute,
   substituteForPreview,
   substituteOldTemplates,
   type VariableInfoMap,
@@ -292,6 +293,45 @@ describe('substituteForPreview', () => {
       expect(substituteForPreview(makeInput('table:c1'), noTableInfo)).toEqual(
         '2 rows',
       )
+    })
+
+    // simpleSubstitute powers the "has anything changed since the last test?"
+    // check (matchParamsToDataIn). For the comparison to match the backend's
+    // computed dataIn.body, it must swap only the {{token}} for the rendered
+    // table HTML and leave the surrounding wrapper untouched — exactly what the
+    // backend's computeParameters does.
+    it('simpleSubstitute renders a table token to HTML, keeping the surrounding wrapper', () => {
+      const expectedTable =
+        '<table style="border-collapse: collapse;"><tbody>' +
+        `<tr>${headerCell('Name')}${headerCell('Email')}</tr>` +
+        `<tr>${dataCell('Alice', '#FFFFFF')}${dataCell(
+          'alice@example.sg',
+          '#FFFFFF',
+        )}</tr>` +
+        `<tr>${dataCell('Bob', '#F9FAFB')}${dataCell(
+          'bob@example.sg',
+          '#F9FAFB',
+        )}</tr>` +
+        '</tbody></table>'
+      const hex = hexEncode('table:c1,c2')
+      const id = `${TABLE_BASE_PATH}|${hex}`
+      const input = `<div data-type="tableVariable" data-id="${id}">{{${id}}}</div>`
+      expect(simpleSubstitute(input, tableVarInfo)).toEqual(
+        `<div data-type="tableVariable" data-id="${id}">${expectedTable}</div>`,
+      )
+    })
+
+    it('simpleSubstitute leaves a table token as empty when there is no table data', () => {
+      const noTableInfo: VariableInfoMap = new Map([
+        [
+          `{{${TABLE_BASE_PATH}}}`,
+          { label: 'My table', testRunValue: '2 rows' },
+        ],
+      ])
+      const hex = hexEncode('table:c1')
+      const id = `${TABLE_BASE_PATH}|${hex}`
+      const input = `{{${id}}}`
+      expect(simpleSubstitute(input, noTableInfo)).toEqual('')
     })
   })
 
