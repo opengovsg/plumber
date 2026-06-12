@@ -73,6 +73,10 @@ vi.mock('@/models/email-suppression-entry', () => ({
   },
 }))
 
+vi.mock('@/helpers/metrics', () => ({
+  incrementMetric: vi.fn(),
+}))
+
 describe('send transactional email', () => {
   let $: IGlobalVariable
 
