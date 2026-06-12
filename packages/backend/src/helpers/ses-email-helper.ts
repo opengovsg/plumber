@@ -4,6 +4,7 @@ import { fromTemporaryCredentials } from '@aws-sdk/credential-providers'
 import appConfig from '@/config/app'
 
 import logger from './logger'
+import { incrementMetric } from './metrics'
 
 let sesClient: SESv2Client | null = null
 
@@ -82,6 +83,7 @@ export async function sendEmailViaSes({
         }),
       }),
     )
+    incrementMetric('ses.email.sent')
   } catch (e) {
     logger.error('Error sending email via SES', {
       error: e,

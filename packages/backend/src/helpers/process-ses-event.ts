@@ -1,4 +1,5 @@
 import logger from '@/helpers/logger'
+import { incrementMetric } from '@/helpers/metrics'
 import { SesEvent, SesEventType } from '@/helpers/ses-event-parser'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
@@ -27,6 +28,11 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
   // needed, and the union is exhaustive.
   if (sesEvent.eventType === SesEventType.Bounce) {
     const { bounceType, bounceSubType, bouncedRecipients } = sesEvent.bounce
+
+    incrementMetric('ses.email.bounce', {
+      bounce_type: bounceType,
+      bounce_sub_type: bounceSubType ?? 'unknown',
+    })
 
     if (bounceType === 'Permanent') {
       // TODO: add micro-optimisation for upsertSuppression to blacklist multiple recipient emails in phase 2
@@ -63,6 +69,10 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
 
   if (sesEvent.eventType === SesEventType.Complaint) {
     const { complainedRecipients, complaintFeedbackType } = sesEvent.complaint
+
+    incrementMetric('ses.email.complaint', {
+      complaint_feedback_type: complaintFeedbackType ?? 'other',
+    })
 
     if (complaintFeedbackType === 'not-spam') {
       // Auto-whitelist: recipient marked the email as not-spam
