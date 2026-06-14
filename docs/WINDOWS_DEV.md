@@ -123,6 +123,8 @@ A minimal working flow that triggers on demand, waits a fixed time, then sends a
 
 ### Triggering the flow
 
+> The URL provided in the editor points to the production domain. To test locally, replace the domain with `http://localhost:3000` — the flow ID in the path remains the same. This sends the request directly to your local backend, bypassing the Cloudflare tunnel.
+
 ```powershell
 # Empty trigger
 Invoke-WebRequest -Method POST `
