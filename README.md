@@ -15,7 +15,11 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 1. Run DB migrations `npm run migrate` (only for first time setup)
 1. Start the server `npm run dev`
 
-> Windows users: see [WINDOWS_DEV.md](./WINDOWS_DEV.md) for platform-specific setup steps and known issues.
+### On Windows?
+
+Plumber doesn't officially support Windows as a dev environment, but some contributors have managed to get it working.
+
+See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup steps and known issues.
 
 ## Acknowledgements
 
