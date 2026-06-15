@@ -40,6 +40,7 @@ export const worker = new WorkerPro(
     try {
       await enqueueActionJob({
         appKey: nextStep.appKey,
+        actionKey: nextStep.key,
         jobName,
         jobData,
         jobOptions: DEFAULT_JOB_OPTIONS,
