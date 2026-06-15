@@ -62,6 +62,7 @@ async function enqueueFirstForEachStep({
     Array.from({ length: iterations }, (_, i) =>
       enqueueActionJob({
         appKey: firstStepInForEach.appKey,
+        actionKey: firstStepInForEach.key,
         jobName: `${executionId}-${firstStepInForEach.id}-${i + 1}`,
         jobData: {
           flowId: flowId,

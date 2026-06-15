@@ -188,6 +188,7 @@ export default async (request: IRequest, response: Response) => {
 
       await enqueueActionJob({
         appKey: nextStep.appKey,
+        actionKey: nextStep.key,
         jobName,
         jobData,
         jobOptions: DEFAULT_JOB_OPTIONS,
@@ -233,6 +234,7 @@ export default async (request: IRequest, response: Response) => {
 
   await enqueueActionJob({
     appKey: nextStep.appKey,
+    actionKey: nextStep.key,
     jobName,
     jobData,
     jobOptions: DEFAULT_JOB_OPTIONS,
