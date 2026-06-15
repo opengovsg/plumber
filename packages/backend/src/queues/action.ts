@@ -1,4 +1,4 @@
-import type { IActionJobData } from '@plumber/types'
+import type { IActionBatchQueue, IActionJobData } from '@plumber/types'
 
 import {
   type JobPro,
@@ -53,6 +53,46 @@ for (const [appKey, app] of Object.entries(apps)) {
   appActionQueues[appKey] = queue
 }
 
+// Action batch queues
+// ---
+// An action may opt into BullMQ Pro batch processing by declaring a `batch`
+// config (see IActionBatchQueue / IBaseAction.batch). Jobs for such actions are
+// routed to a dedicated per-app batch queue instead of the per-app / main
+// action queue, where a batch worker collapses many jobs into one operation.
+//
+// The batch queues are registered in actionQueuesByName as well, so that
+// getActionJob / parseActionJobId can resolve a batched job's jobId back to its
+// queue (e.g. for bulk-retry, which re-enqueues from a stored jobId).
+export const actionBatchQueues: Record<
+  string,
+  ReturnType<typeof makeActionQueue>
+> = Object.create(null)
+
+// Routing lookup: appKey -> (actionKey -> batch config). Precomputed once at
+// module load so enqueueActionJob can route without any extra DB query.
+const batchActionsByAppKey = new Map<string, Map<string, IActionBatchQueue>>()
+
+for (const [appKey, app] of Object.entries(apps)) {
+  const batchActions = (app.actions ?? []).filter((action) => action.batch)
+  if (batchActions.length === 0) {
+    continue
+  }
+
+  const queueName = `{app-actions-${appKey}-batch}`
+  const queue = makeActionQueue({
+    queueName,
+  })
+
+  actionQueuesByName[queueName] = queue
+  actionBatchQueues[appKey] = queue
+
+  const actionsByKey = new Map<string, IActionBatchQueue>()
+  for (const action of batchActions) {
+    actionsByKey.set(action.key, action.batch)
+  }
+  batchActionsByAppKey.set(appKey, actionsByKey)
+}
+
 //
 // Queue manipulation API
 // ---
@@ -61,6 +101,7 @@ for (const [appKey, app] of Object.entries(apps)) {
 
 interface EnqueueActionJobParams {
   appKey: string | null
+  actionKey: string | null
   jobName: string
   jobData: IActionJobData
   jobOptions: Omit<JobsProOptions, 'group'>
@@ -68,10 +109,28 @@ interface EnqueueActionJobParams {
 
 export async function enqueueActionJob({
   appKey,
+  actionKey,
   jobName,
   jobData,
   jobOptions,
 }: EnqueueActionJobParams): Promise<JobPro<IActionJobData>> {
+  // Route batch-enabled actions to their dedicated batch queue. This takes
+  // precedence over the per-app / main queue.
+  const batchConfig =
+    appKey && actionKey
+      ? batchActionsByAppKey.get(appKey)?.get(actionKey)
+      : undefined
+
+  if (batchConfig) {
+    const batchQueue = actionBatchQueues[appKey]
+    const groupConfig = await batchConfig.getGroupConfigForJob(jobData)
+
+    return await batchQueue.add(jobName, jobData, {
+      ...jobOptions,
+      ...(groupConfig ? { group: groupConfig } : {}),
+    })
+  }
+
   if (!(appKey in appActionQueues)) {
     return await mainActionQueue.add(jobName, jobData, jobOptions)
   }
