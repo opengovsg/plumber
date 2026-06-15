@@ -86,7 +86,79 @@ describe('processResponsesV3', () => {
       ])
     })
 
-    it.each(['radiobutton', 'email', 'mobile'])(
+    it('replaces the internal others marker with "Others: <othersInput>"', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'cb1', title: 'Hobbies', fieldType: 'checkbox' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        cb1: {
+          fieldType: 'checkbox',
+          answer: {
+            value: ['reading', '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'],
+            othersInput: 'custom hobby',
+          },
+        },
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'cb1',
+          fieldType: 'checkbox',
+          question: 'Hobbies',
+          answerArray: ['reading', 'Others: custom hobby'],
+        },
+      ])
+    })
+
+    it('maps radiobutton field with answer from answer.value', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'f1', title: 'Choice', fieldType: 'radiobutton' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        f1: { fieldType: 'radiobutton', answer: { value: 'Option 2' } },
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'radiobutton',
+          question: 'Choice',
+          answer: 'Option 2',
+        },
+      ])
+    })
+
+    it('maps radiobutton Others selection to "Others: <othersInput>"', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'f1', title: 'Choice', fieldType: 'radiobutton' },
+        ]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        f1: {
+          fieldType: 'radiobutton',
+          answer: { othersInput: 'radio others' },
+        },
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'radiobutton',
+          question: 'Choice',
+          answer: 'Others: radio others',
+        },
+      ])
+    })
+
+    it.each(['email', 'mobile'])(
       'maps %s fields with answer from answer.value',
       async (fieldType) => {
         mocks.fetchFormSchema.mockResolvedValueOnce(
