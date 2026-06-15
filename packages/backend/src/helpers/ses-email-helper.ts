@@ -101,6 +101,7 @@ export async function sendEmailViaSes({
     incrementMetric('ses.email.sent')
   } catch (e) {
     logger.error('Error sending email via SES, please try again later.', {
+      event: 'ses-email-failed',
       error: e,
       recipient,
     })
