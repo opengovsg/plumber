@@ -20,6 +20,19 @@ export const COMMON_S3_BUCKET = appConfig.s3CommonBucket
 export const COMMON_S3_MOCK_FOLDER_PREFIX = `s3:${COMMON_S3_BUCKET}:mock/`
 
 const MALWARE_SCAN_TAG_KEY = 'GuardDutyMalwareScanStatus'
+const ATTACHMENT_TYPE_TAG_KEY = 'AttachmentType'
+export const ATTACHMENT_TYPE = {
+  TRANSITIVE: 'transitive',
+  TEST: 'test',
+  MANUAL: 'manual',
+} as const
+
+export function buildAttachmentTypeTagging(
+  type: (typeof ATTACHMENT_TYPE)[keyof typeof ATTACHMENT_TYPE],
+): string {
+  return `${encodeURIComponent(ATTACHMENT_TYPE_TAG_KEY)}=${encodeURIComponent(type)}`
+}
+
 export const MALWARE_SCAN_STATUS = {
   THREATS_FOUND: 'THREATS_FOUND',
   NO_THREATS_FOUND: 'NO_THREATS_FOUND',
@@ -244,11 +257,12 @@ export async function getPresignedPost(
     throw new Error('Metadata is required')
   }
 
-  // There's no guard duty scanning in dev environment
-  // so we just tag the object as scanned
-  const tags = appConfig.isDev
-    ? `<Tagging><TagSet><Tag><Key>${MALWARE_SCAN_TAG_KEY}</Key><Value>${MALWARE_SCAN_STATUS.NO_THREATS_FOUND}</Value></Tag></TagSet></Tagging>`
-    : undefined
+  // Always tag manual uploads with AttachmentType. In dev, also mock the
+  // GuardDuty scan tag since GuardDuty doesn't run locally.
+  const devMalwareTag = appConfig.isDev
+    ? `<Tag><Key>${MALWARE_SCAN_TAG_KEY}</Key><Value>${MALWARE_SCAN_STATUS.NO_THREATS_FOUND}</Value></Tag>`
+    : ''
+  const tagging = `<Tagging><TagSet><Tag><Key>${ATTACHMENT_TYPE_TAG_KEY}</Key><Value>${ATTACHMENT_TYPE.MANUAL}</Value></Tag>${devMalwareTag}</TagSet></Tagging>`
 
   const presignedPost = await createPresignedPost(s3Client, {
     Bucket: bucket,
@@ -261,7 +275,7 @@ export async function getPresignedPost(
       'x-amz-meta-filename': metadata.filename,
       'x-amz-meta-size': metadata.size,
       'x-amz-meta-updatedAt': metadata.updatedAt,
-      ...(tags ? { tagging: tags } : {}),
+      tagging,
     },
     Expires: 5 * 60, // 5 minutes
     Conditions: [
@@ -274,7 +288,7 @@ export async function getPresignedPost(
       { 'x-amz-meta-filename': metadata.filename },
       { 'x-amz-meta-size': metadata.size },
       { 'x-amz-meta-updatedAt': metadata.updatedAt },
-      ...(tags ? [{ tagging: tags }] : []),
+      { tagging },
     ],
   })
 
