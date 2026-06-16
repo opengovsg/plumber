@@ -237,31 +237,54 @@ describe('chatRequestSchema', () => {
     })
   })
 
-  describe('sessionId validation', () => {
-    it('should reject invalid UUID format', () => {
+  describe('tracing id validation', () => {
+    const validUuid = '550e8400-e29b-41d4-a716-446655440000'
+
+    it('should accept a request with chatId and ddRumSessionId', () => {
       const result = chatRequestSchema.safeParse({
         messages: [validMessage],
-        sessionId: 'not-a-uuid',
+        chatId: validUuid,
+        ddRumSessionId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
       })
-      expect(result.success).toBe(false)
-      expect(result.error?.issues[0].message).toBe(
-        'Session ID must be a valid UUID',
-      )
+      expect(result.success).toBe(true)
     })
 
-    it('should accept missing sessionId', () => {
+    it('should accept a legacy request with only sessionId', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [validMessage],
+        sessionId: validUuid,
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should accept a request with all tracing ids missing', () => {
       const result = chatRequestSchema.safeParse({
         messages: [validMessage],
       })
       expect(result.success).toBe(true)
     })
 
-    it('should accept empty sessionId', () => {
-      const result = chatRequestSchema.safeParse({
-        messages: [validMessage],
-        sessionId: '',
-      })
-      expect(result.success).toBe(true)
-    })
+    it.each(['chatId', 'ddRumSessionId', 'sessionId'])(
+      'should accept an empty %s',
+      (field) => {
+        const result = chatRequestSchema.safeParse({
+          messages: [validMessage],
+          [field]: '',
+        })
+        expect(result.success).toBe(true)
+      },
+    )
+
+    it.each(['chatId', 'ddRumSessionId', 'sessionId'])(
+      'should reject a malformed %s',
+      (field) => {
+        const result = chatRequestSchema.safeParse({
+          messages: [validMessage],
+          [field]: 'not-a-uuid',
+        })
+        expect(result.success).toBe(false)
+        expect(result.error?.issues[0].message).toBe('Must be a valid UUID')
+      },
+    )
   })
 })
