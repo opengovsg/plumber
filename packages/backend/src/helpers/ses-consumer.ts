@@ -46,27 +46,29 @@ export function startSesConsumer(): void {
     // Contract with sqs-consumer:
     //   return message  -> ack & delete
     //   throw           -> nack; SQS redelivers per the queue's MaxReceiveCount
-    // Do NOT add a blanket try/catch here — the poison-message branch is
-    // the only intentional swallow.
+    // Do NOT add a blanket try/catch here — re-throwing is intentional so SQS
+    // can redrive failures to the DLQ.
     handleMessage: async (message) => {
       const messageId = message.MessageId ?? 'unknown'
 
-      // Poison-message handling: until the DLQ ships (see ses-migration-plan
-      // "Alternatives Considered — DLQ"), catch parse failures and ack the
-      // message so it does not redeliver for the full SQS retention window.
-      // Switch this to a re-throw once the DLQ is in place.
+      // Poison-message handling: a parse failure means a genuinely malformed
+      // message — the SNS subscription is filtered to Bounce/Complaint only, so
+      // unhandled event types never reach this queue. Re-throw to nack: SQS
+      // redelivers up to MaxReceiveCount, then the queue's redrive policy routes
+      // the message to the DLQ for inspection. (MaxReceiveCount / redrive policy
+      // are owned by SQS queue config in infra, like visibilityTimeout above.)
       let sesEvent
       try {
         sesEvent = parseSqsMessage(message.Body ?? '')
       } catch (parseError) {
-        logger.error('Failed to parse SQS message — deleting as poison', {
+        logger.error('Failed to parse SQS message — nacking for DLQ', {
           event: 'ses-poison-message',
           sqsMessageId: messageId,
-          bodyLength: message.Body?.length,
+          body: message.Body,
           err:
             parseError instanceof Error ? parseError.stack : String(parseError),
         })
-        return message
+        throw parseError
       }
 
       await processSesEvent({ sesEvent, sqsMessageId: messageId })

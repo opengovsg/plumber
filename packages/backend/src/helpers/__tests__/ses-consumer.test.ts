@@ -133,7 +133,7 @@ describe('SES consumer wiring', () => {
     expect(result).toBe(message)
   })
 
-  it('handleMessage acks poison messages (unparseable body) and logs', async () => {
+  it('handleMessage re-throws on poison messages (unparseable body) so SQS redelivers to the DLQ', async () => {
     const { startSesConsumer } = await importFresh()
     startSesConsumer()
 
@@ -143,10 +143,39 @@ describe('SES consumer wiring', () => {
       Body: 'not valid json {{{',
     }
 
-    const result = await handleMessage(message)
+    // Throwing nacks the message; SQS redelivers up to MaxReceiveCount, then the
+    // queue's redrive policy routes it to the DLQ. It must NOT be ack'd.
+    await expect(handleMessage(message)).rejects.toThrow()
 
     expect(mocks.processSesEvent).not.toHaveBeenCalled()
-    expect(result).toBe(message)
+    expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to parse SQS message'),
+      expect.objectContaining({
+        event: 'ses-poison-message',
+        sqsMessageId: 'sqs-msg-poison',
+        // full body is logged (not just its length) to aid debugging
+        body: 'not valid json {{{',
+      }),
+    )
+  })
+
+  it('handleMessage re-throws on a valid SES event of an unhandled type (rejected by the parser)', async () => {
+    const { startSesConsumer } = await importFresh()
+    startSesConsumer()
+
+    const { handleMessage } = mocks.consumerCreate.mock.calls[0][0]
+    // SNS only subscribes Bounce/Complaint, but if anything else slips through
+    // it fails the strict union and is treated as poison.
+    const message = {
+      MessageId: 'sqs-msg-delivery',
+      Body: JSON.stringify({
+        Message: JSON.stringify({ eventType: 'Delivery', mail: {} }),
+      }),
+    }
+
+    await expect(handleMessage(message)).rejects.toThrow()
+
+    expect(mocks.processSesEvent).not.toHaveBeenCalled()
     expect(mocks.loggerError).toHaveBeenCalledWith(
       expect.stringContaining('Failed to parse SQS message'),
       expect.objectContaining({ event: 'ses-poison-message' }),
