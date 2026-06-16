@@ -17,7 +17,7 @@ import {
 import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
-const getCaseUuidFromVariable = async (
+export const getCaseUuidFromVariable = async (
   $: IGlobalVariable,
   variable: string,
 ) => {
