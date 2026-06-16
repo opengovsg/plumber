@@ -37,7 +37,7 @@
     "minimatch": "10.2.3",
     "rollup": "4.59.0",
     "dd-trace": {
-      "@opentelemetry/core": "2.2.0",
+      "@opentelemetry/core": "2.8.0",
       "path-to-regexp": "0.1.13"
     },
     "@opentelemetry/core": {
