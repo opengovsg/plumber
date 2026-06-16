@@ -30,7 +30,9 @@ export const ATTACHMENT_TYPE = {
 export function buildAttachmentTypeTagging(
   type: (typeof ATTACHMENT_TYPE)[keyof typeof ATTACHMENT_TYPE],
 ): string {
-  return `${encodeURIComponent(ATTACHMENT_TYPE_TAG_KEY)}=${encodeURIComponent(type)}`
+  return `${encodeURIComponent(ATTACHMENT_TYPE_TAG_KEY)}=${encodeURIComponent(
+    type,
+  )}`
 }
 
 export const MALWARE_SCAN_STATUS = {
