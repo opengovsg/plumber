@@ -8,6 +8,7 @@ import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
+import { createNewChatDraft } from '@/pages/AiBuilder/new-chat'
 
 import MessageLimitBanner from './MessageLimitBanner'
 import PromptInput from './PromptInput'
@@ -54,17 +55,11 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     resetChat()
     setIsDrawerOpen(false)
 
-    // Extract continuation prompt from the last assistant message (between <code> tags)
+    // Build the new draft from the last assistant message's continuation prompt. This
+    // mints a fresh chatId so the new chat starts a new Langfuse session (set explicitly,
+    // not relying on the provider's mint-if-absent, so it never carries the old id).
     const lastMessage = messages[messages.length - 1]
-    const match = lastMessage?.text?.match(/<code[^>]*>([\s\S]*?)<\/code>/)
-    const continuationPrompt = match ? match[1].trim() : ''
-
-    const newState = {
-      flowName: 'Build with AI',
-      chatInput: continuationPrompt,
-      chatMessages: [],
-      output: { trigger: '', actions: '', name: 'Build with AI', traceId: '' },
-    }
+    const newState = createNewChatDraft(lastMessage?.text)
 
     // Synchronously update persisted state so the next render sees empty messages
     // immediately (avoids a stale intermediate render with old messages)

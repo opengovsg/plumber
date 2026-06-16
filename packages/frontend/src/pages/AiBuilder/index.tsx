@@ -144,11 +144,18 @@ export default function AiBuilder() {
   // Sync location state updates (from useChatStream navigate calls) to persisted state
   useEffect(() => {
     if (locationState) {
-      setPersistedState(locationState)
+      setPersistedState((prev: typeof persistedState) => ({
+        ...locationState,
+        // Preserve the existing chatId when the navigation state doesn't carry one.
+        // onFinish navigates after every message; without this the minted chatId would
+        // be wiped and regenerated each message. "New Chat" sets a fresh chatId in
+        // locationState, so it still correctly starts a new session.
+        chatId: locationState.chatId ?? prev.chatId,
+      }))
     }
   }, [locationState, setPersistedState])
 
-  const { flowName, output, chatInput, chatMessages } = persistedState
+  const { flowName, output, chatInput, chatMessages, chatId } = persistedState
 
   return (
     <AiBuilderContextProvider
@@ -156,6 +163,7 @@ export default function AiBuilder() {
       chatInput={chatInput}
       chatMessages={chatMessages}
       output={output}
+      chatId={chatId}
       clearPersistedState={clearPersistedState}
       setChatState={setPersistedState}
     >

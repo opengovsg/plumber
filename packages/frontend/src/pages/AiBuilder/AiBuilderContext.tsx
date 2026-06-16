@@ -17,6 +17,12 @@ export interface AIBuilderDraftState {
   // output can be populated (IStep values) or the initial empty state (empty strings)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   output: Record<string, any>
+  /**
+   * Unique id for this chat session, used as the Langfuse session id. Optional on the
+   * type because freshly-created / legacy drafts may not have one yet; the provider
+   * mints one when it is absent (see AiBuilderContextProvider).
+   */
+  chatId?: string
 }
 
 interface AIBuilderSharedProps extends AIBuilderDraftState {
@@ -40,6 +46,8 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   stepGroupCaption: string | null
   // DataDog RUM Session ID so we can associate the trace with the RUM
   ddSessionId: string
+  // Unique id for this chat session, used as the Langfuse session id
+  chatId: string
   isDrawerOpen: boolean
   setIsDrawerOpen: (open: boolean) => void
 }
@@ -68,6 +76,7 @@ export const AiBuilderContextProvider = ({
   chatInput,
   chatMessages,
   output,
+  chatId,
   clearPersistedState,
   setChatState,
 }: AiBuilderContextProviderProps) => {
@@ -75,6 +84,23 @@ export const AiBuilderContextProvider = ({
   const ddSessionId = datadogRum.getInternalContext()?.session_id ?? ''
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
+  // Invariant: a draft must always have a chatId. Mint one when it is absent (a fresh
+  // default draft, or a legacy draft from before this feature). crypto.randomUUID() is
+  // called here at effect time, so each detected absence yields a genuinely new id.
+  // "New Chat" mints its own id explicitly (see ChatInterface) so it does not rely on
+  // this and is guaranteed a new session.
+  useEffect(() => {
+    if (!chatId) {
+      setChatState({
+        flowName,
+        chatInput,
+        chatMessages,
+        output,
+        chatId: crypto.randomUUID(),
+      })
+    }
+  }, [chatId, flowName, chatInput, chatMessages, output, setChatState])
 
   // Update drawer state when isMobile or output changes (handles async isMobile hook)
   useEffect(() => {
@@ -144,6 +170,7 @@ export const AiBuilderContextProvider = ({
         stepGroupType,
         stepGroupCaption,
         ddSessionId,
+        chatId: chatId ?? '',
         clearPersistedState,
         setChatState,
         isDrawerOpen,
