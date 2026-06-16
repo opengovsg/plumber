@@ -5,7 +5,12 @@ import {
   FormField,
 } from '@opengovsg/formsg-sdk/dist/types'
 
-import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
+import {
+  ATTACHMENT_TYPE,
+  buildAttachmentTypeTagging,
+  COMMON_S3_BUCKET,
+  putObject,
+} from '@/helpers/s3'
 
 /**
  * If a field has an associated attachment, stores that attachment on our S3.
@@ -39,9 +44,12 @@ async function storeAttachmentInS3(
     metadata: {
       flowId: $.flow.id,
       stepId: $.step.id,
-      executionId: $.execution.id ?? '', // Empty = test runs.
+      executionId: $.execution.id ?? '',
       formId: $.auth.data.formId as string,
     },
+    tagging: buildAttachmentTypeTagging(
+      $.execution.testRun ? ATTACHMENT_TYPE.TEST : ATTACHMENT_TYPE.TRANSITIVE,
+    ),
   })
 }
 
