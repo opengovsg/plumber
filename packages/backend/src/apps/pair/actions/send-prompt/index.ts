@@ -86,14 +86,13 @@ const action: IRawAction = {
           type: 'string' as const,
           required: true,
           variables: false,
-          dynamicPlaceholderKey: 'fieldNameHint',
         },
         {
           label: 'Categories',
           placeholder: 'Separated by commas',
           key: 'fieldCategories',
-          dynamicPlaceholderKey: 'fieldCategoriesHint',
           type: 'string' as const,
+          required: true,
           variables: true,
           hiddenIf: {
             fieldKey: 'fieldType',
