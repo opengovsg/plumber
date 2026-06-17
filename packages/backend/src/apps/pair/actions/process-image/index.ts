@@ -9,9 +9,9 @@ import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { engineProvider } from '@/helpers/pair'
 
+import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 
-import getDataOutMetadata from './get-data-out-metadata'
 import { schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
