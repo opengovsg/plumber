@@ -29,6 +29,7 @@ interface MockWithAccessibleStepsOptions {
   stepStatus?: string
   stepRole?: string
   stepConfig?: Record<string, any>
+  stepVersion?: number
   stepNotFound?: boolean
   flowUpdatedAt?: string
 }
@@ -44,6 +45,7 @@ export function createMockWithAccessibleSteps({
   stepStatus = 'completed',
   stepRole = 'owner',
   stepConfig = {},
+  stepVersion,
   stepNotFound = false,
   flowUpdatedAt = MOCK_FLOW_UPDATED_AT,
 }: MockWithAccessibleStepsOptions) {
@@ -67,6 +69,7 @@ export function createMockWithAccessibleSteps({
             status: stepStatus,
             role: stepRole,
             flowId,
+            version: stepVersion,
             connection: stepAppKey === 'tiles' ? {} : stepConnection,
             config: stepConfig,
             flow: {

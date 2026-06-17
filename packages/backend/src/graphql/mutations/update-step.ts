@@ -1,4 +1,5 @@
 import { IAction } from '@/../../types'
+import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   addFlowConnection,
@@ -83,12 +84,29 @@ const updateStep: MutationResolvers['updateStep'] = async (
     const stepName = input?.config?.stepName ?? step?.config?.stepName
     const existingConfig = step?.config ?? {}
 
+    let parameters = input.parameters
+    let version = step.version
+
+    // transform the parameters if the step has a stepTransformer
+    const transformer = input.key
+      ? apps[input.appKey]?.stepTransformer
+      : undefined
+    if (transformer) {
+      parameters = transformer.transformStepParameters(
+        input.key,
+        input.parameters,
+        version,
+      )
+      version = transformer.getLatestStepVersion(input.key)
+    }
+
     const updatedStep = await Step.query(trx)
       .patchAndFetchById(input.id, {
         key: input.key,
         appKey: input.appKey,
         connectionId: input.connection.id,
-        parameters: input.parameters,
+        parameters,
+        version,
         status: shouldInvalidate ? 'incomplete' : step.status,
         updatedBy: context.currentUser.id,
         config: {

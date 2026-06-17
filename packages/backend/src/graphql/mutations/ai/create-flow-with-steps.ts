@@ -2,6 +2,7 @@ import type { IStep } from '@plumber/types'
 
 import z from 'zod/v3'
 
+import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
@@ -93,6 +94,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
     const normalizedSteps = [steps[0], ...normalizedActionSteps]
     const stepsToInsert = normalizedSteps.map((step: IStep) => {
       return {
+        version: getStepVersion(step.appKey, step.key),
         type: step.type,
         appKey: step.appKey,
         key: step.key,

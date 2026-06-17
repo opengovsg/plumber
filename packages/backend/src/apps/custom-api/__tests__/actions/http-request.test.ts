@@ -57,8 +57,10 @@ describe('make http request', () => {
       step: {
         id: 'herp-derp',
         appKey: 'webhook',
+        key: 'catchRawWebhook',
         position: 1,
         parameters: {},
+        version: 1,
       },
       http: {
         request: mocks.httpRequest,

@@ -97,6 +97,7 @@ describe('createMrfSteps', () => {
       expect(step.parameters).toEqual({ mrf: mrfWorkflow.actions[i] })
       expect(step.config?.stepName).toBe(mrfWorkflow.actions[i].defaultStepName)
       expect(step.connectionId).toBe(allSteps[0].connectionId)
+      expect(step.version).toBe(1)
     }
   })
 

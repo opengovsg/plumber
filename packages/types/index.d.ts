@@ -453,6 +453,7 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
   value?: string
   addRowButtonText?: string
   subFields: IFieldMultiRowMultiColSubField[]
+  maxRows?: number
 }
 
 export interface IFieldMultiRow extends IBaseField {
@@ -461,6 +462,7 @@ export interface IFieldMultiRow extends IBaseField {
   addRowButtonText?: string
 
   subFields: IField[]
+  maxRows?: number
 }
 
 /**
@@ -686,6 +688,30 @@ export interface IApp {
    * precedence.
    */
   setupMessage?: SetupMessage
+
+  /**
+   * Optional versioned step parameter transformer for an app.
+   *
+   * Both functions must be provided together — use `createVersionedStepTransformer`
+   * from `@/helpers/transform-step-parameters` which returns them as a coupled pair.
+   *
+   * Enables zero-downtime parameter format migrations by transforming legacy
+   * parameters to the current format when steps are fetched or executed.
+   *
+   * `transformStepParameters` — called on every step fetch (afterFind hook); applies
+   * all migrations from `stepVersion` onwards.
+   *
+   * `getLatestStepVersion` — used when creating new steps so they start at the
+   * latest version and require no transformation.
+   */
+  stepTransformer?: {
+    transformStepParameters: (
+      stepKey: string,
+      stepParameters: IJSONObject,
+      stepVersion: number,
+    ) => IJSONObject
+    getLatestStepVersion: (stepKey: string) => number
+  }
 }
 
 export type AppCategory = 'data' | 'communication' | 'logic' | 'others' | 'ai'
@@ -990,8 +1016,10 @@ export type IGlobalVariable = {
   step?: {
     id: string
     appKey: string
+    key: string
     position: number
     parameters: IJSONObject
+    version: number
   }
   nextStep?: {
     id: string

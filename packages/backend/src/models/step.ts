@@ -36,6 +36,7 @@ class Step extends Base {
   executionSteps: ExecutionStep[]
   config: IStepConfig
   updatedBy?: string
+  version: number
 
   static tableName = 'steps'
 
@@ -57,6 +58,7 @@ class Step extends Base {
       },
       position: { type: 'integer' },
       parameters: { type: 'object' },
+      version: { type: 'integer', default: 1 },
     },
   }
 
@@ -308,6 +310,23 @@ class Step extends Base {
         message: 'Cannot edit published pipe.',
         type: 'editingPublishedPipeError',
       })
+    }
+  }
+
+  /**
+   * This hook transforms step parameters to ensure the frontend always receives
+   * data in the latest format, even when the database contains legacy formats.
+   *
+   * This approach allows zero-downtime migrations without database updates.
+   */
+  async $afterFind(): Promise<void> {
+    const app = apps[this.appKey]
+    if (app?.stepTransformer && this.key && this.parameters) {
+      this.parameters = app.stepTransformer.transformStepParameters(
+        this.key,
+        this.parameters,
+        this.version,
+      )
     }
   }
 }

@@ -27,6 +27,7 @@ describe('create payment', () => {
       step: {
         id: 'herp-derp',
         appKey: 'paysg',
+        key: 'createPayment',
         position: 2,
         parameters: {
           // Pre-fill some required fields
@@ -38,6 +39,7 @@ describe('create payment', () => {
           description: 'test-description',
           paymentAmountCents: '12345',
         },
+        version: 1,
       },
       http: {
         post: mocks.httpPost,

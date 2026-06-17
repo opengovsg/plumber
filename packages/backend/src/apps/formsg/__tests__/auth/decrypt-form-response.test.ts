@@ -93,10 +93,12 @@ describe('decrypt form response', () => {
       step: {
         id: '123',
         appKey: apps.formsg.key,
+        key: 'newSubmission',
         position: 0,
         parameters: {
           nricFilter: undefined,
         },
+        version: 1,
       },
       flow: {
         id: 'flowid',
