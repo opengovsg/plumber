@@ -4,6 +4,7 @@ import { ATTENDANCE_TAKING_TEMPLATE } from './attendance-taking-v2'
 import { FOR_EACH_REMINDER_TEMPLATE } from './for-each-reminder'
 import { GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE } from './get-live-updates-through-telegram'
 import { ROUTE_SUPPORT_ENQUIRIES_TEMPLATE } from './route-support-enquiries'
+import { ROUTE_SUPPORT_ENQUIRIES_WITH_PAIR_TEMPLATE } from './route-support-enquiries-with-pair'
 import { SEND_A_COPY_OF_FORM_RESPONSE_TEMPLATE } from './send-a-copy-of-form-response'
 import { SEND_FOLLOW_UPS_TEMPLATE } from './send-follow-ups'
 import { SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE } from './send-message-to-a-slack-channel'
@@ -40,6 +41,7 @@ export const TEMPLATES: ITemplate[] = deepFreeze<ITemplate[]>([
   ATTENDANCE_TAKING_TEMPLATE,
   UPDATE_MAILING_LISTS_TEMPLATE,
   ROUTE_SUPPORT_ENQUIRIES_TEMPLATE,
+  ROUTE_SUPPORT_ENQUIRIES_WITH_PAIR_TEMPLATE,
   GET_LIVE_UPDATES_THROUGH_TELEGRAM_TEMPLATE,
   SEND_MESSAGE_TO_A_SLACK_CHANNEL_TEMPLATE,
 ])
