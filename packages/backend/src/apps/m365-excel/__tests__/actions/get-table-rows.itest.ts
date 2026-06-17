@@ -9,10 +9,26 @@ import Context from '@/types/express/context'
 
 import m365Excel from '../..'
 import getTableRowsAction from '../../actions/get-table-rows'
+import { stepTransformer } from '../../common/transform-step-parameters'
 import { HexEncodedRowObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
+
+const DEFAULT_PARAMETERS = {
+  fileId: 'test-file-id',
+  tableId: '{test-table-id}',
+  lookupColumn: 'Column1',
+  lookupValue: 'test-value',
+}
+
+const { transformStepParameters } = stepTransformer
 
 const getHexEncodedColumnName = (columnName: string) =>
   Buffer.from(columnName).toString('hex')
+
+const getColumnObject = (columnName: string) => ({
+  id: getHexEncodedColumnName(columnName),
+  name: columnName,
+  value: `data.rows.*.data.${getHexEncodedColumnName(columnName)}`,
+})
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -55,12 +71,8 @@ describe('getTableRowsAction', () => {
         appKey: m365Excel.name,
         key: getTableRowsAction.key,
         position: 2,
-        parameters: {
-          fileId: 'test-file-id',
-          tableId: '{test-table-id}',
-          lookupColumn: 'Column1',
-          lookupValue: 'test-value',
-        },
+        parameters: DEFAULT_PARAMETERS,
+        version: 1,
       },
       app: {
         name: m365Excel.name,
@@ -71,16 +83,24 @@ describe('getTableRowsAction', () => {
       },
     } as unknown as IGlobalVariable
 
+    // Simulate the Step model's afterFind hook, which transforms parameters
+    // before they reach the action's run function in real execution.
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
+
     // Setup default mock implementations
     mocks.getTopNTableRows.mockResolvedValue({
-      columns: ['Column1', 'Column2'],
+      columns: ['Column1', 'Column2', 'Column3', 'Column4'],
       rows: [
-        ['non-matching', 'data1'],
-        ['test-value', 'data2'],
-        ['test-value', 'data3'],
-        ['', 'data4'],
-        ['row5', ''],
-        ['', 'data6'],
+        ['non-matching', 'data1', 'a', '1'],
+        ['test-value', 'data2', 'b', '2'],
+        ['test-value', 'data3', 'a', '3'],
+        ['', 'data4', 'a', '3'],
+        ['row5', '', 'b', '2'],
+        ['', 'data6', 'c', '1'],
       ],
       headerSheetRowIndex: 0,
     })
@@ -121,24 +141,12 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
 
-    $.step.parameters.lookupValue = 'test-value'
     await getTableRowsAction.run($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         data: {
-          columns: expect.arrayContaining([
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column1'),
-              name: 'Column1',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
-            }),
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column2'),
-              name: 'Column2',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
-            }),
-          ]),
+          columns: [getColumnObject('Column1'), getColumnObject('Column2')],
           rows: [],
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
@@ -151,38 +159,36 @@ describe('getTableRowsAction', () => {
     await getTableRowsAction.run($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
-      raw: expect.objectContaining({
+      raw: {
         rowsFound: 2, // Two rows match 'test-value'
         data: {
-          columns: expect.arrayContaining([
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column1'),
-              name: 'Column1',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
-            }),
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column2'),
-              name: 'Column2',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
-            }),
-          ]),
-          rows: expect.arrayContaining([
-            expect.objectContaining({
+          columns: [
+            getColumnObject('Column1'),
+            getColumnObject('Column2'),
+            getColumnObject('Column3'),
+            getColumnObject('Column4'),
+          ],
+          rows: [
+            {
               data: {
                 [getHexEncodedColumnName('Column1')]: 'test-value',
                 [getHexEncodedColumnName('Column2')]: 'data2',
+                [getHexEncodedColumnName('Column3')]: 'b',
+                [getHexEncodedColumnName('Column4')]: '2',
               },
-            }),
-            expect.objectContaining({
+            },
+            {
               data: {
                 [getHexEncodedColumnName('Column1')]: 'test-value',
                 [getHexEncodedColumnName('Column2')]: 'data3',
+                [getHexEncodedColumnName('Column3')]: 'a',
+                [getHexEncodedColumnName('Column4')]: '3',
               },
-            }),
-          ]),
+            },
+          ],
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
-      }),
+      },
     })
 
     // Verify the rowData contains the expected rows
@@ -201,42 +207,45 @@ describe('getTableRowsAction', () => {
   })
 
   it('should return matching rows when lookup value is empty', async () => {
-    $.step.parameters.lookupValue = ''
+    $.step.parameters = { ...DEFAULT_PARAMETERS, lookupValue: '' }
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
     await getTableRowsAction.run($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
-      raw: expect.objectContaining({
+      raw: {
         rowsFound: 2,
         data: {
-          columns: expect.arrayContaining([
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column1'),
-              name: 'Column1',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
-            }),
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column2'),
-              name: 'Column2',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
-            }),
-          ]),
-          rows: expect.arrayContaining([
-            expect.objectContaining({
+          columns: [
+            getColumnObject('Column1'),
+            getColumnObject('Column2'),
+            getColumnObject('Column3'),
+            getColumnObject('Column4'),
+          ],
+          rows: [
+            {
               data: {
                 [getHexEncodedColumnName('Column1')]: '',
                 [getHexEncodedColumnName('Column2')]: 'data4',
+                [getHexEncodedColumnName('Column3')]: 'a',
+                [getHexEncodedColumnName('Column4')]: '3',
               },
-            }),
-            expect.objectContaining({
+            },
+            {
               data: {
                 [getHexEncodedColumnName('Column1')]: '',
                 [getHexEncodedColumnName('Column2')]: 'data6',
+                [getHexEncodedColumnName('Column3')]: 'c',
+                [getHexEncodedColumnName('Column4')]: '1',
               },
-            }),
-          ]),
+            },
+          ],
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
-      }),
+      },
     })
 
     // Verify the rowData contains the expected rows
@@ -260,7 +269,12 @@ describe('getTableRowsAction', () => {
 
   it('should handle case-sensitive matching', async () => {
     // Change the lookup value to be different case
-    $.step.parameters.lookupValue = 'TEST-VALUE'
+    $.step.parameters = { ...DEFAULT_PARAMETERS, lookupValue: 'TEST-VALUE' }
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
 
     await getTableRowsAction.run($)
 
@@ -269,16 +283,10 @@ describe('getTableRowsAction', () => {
       raw: {
         data: {
           columns: [
-            {
-              id: getHexEncodedColumnName('Column1'),
-              name: 'Column1',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
-            },
-            {
-              id: getHexEncodedColumnName('Column2'),
-              name: 'Column2',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
-            },
+            getColumnObject('Column1'),
+            getColumnObject('Column2'),
+            getColumnObject('Column3'),
+            getColumnObject('Column4'),
           ],
           rows: [],
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
@@ -300,38 +308,32 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
     // Change the lookup value to be different case
-    $.step.parameters.lookupValue = 'TEST-VALUE'
+    $.step.parameters = { ...DEFAULT_PARAMETERS, lookupValue: 'TEST-VALUE' }
+    $.step.parameters = transformStepParameters(
+      $.step.key,
+      $.step.parameters,
+      $.step.version,
+    )
 
     await getTableRowsAction.run($)
 
     // Should find the exact case match
     expect($.setActionItem).toHaveBeenCalledWith({
-      raw: expect.objectContaining({
+      raw: {
         rowsFound: 1,
         data: {
-          rows: expect.arrayContaining([
-            expect.objectContaining({
+          rows: [
+            {
               data: {
                 [getHexEncodedColumnName('Column1')]: 'TEST-VALUE',
                 [getHexEncodedColumnName('Column2')]: 'data2',
               },
-            }),
-          ]),
-          columns: expect.arrayContaining([
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column1'),
-              name: 'Column1',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
-            }),
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column2'),
-              name: 'Column2',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
-            }),
-          ]),
+            },
+          ],
+          columns: [getColumnObject('Column1'), getColumnObject('Column2')],
           inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
         },
-      }),
+      },
     })
   })
 
@@ -353,18 +355,7 @@ describe('getTableRowsAction', () => {
       raw: expect.objectContaining({
         rowsFound: 500, // Should be limited to 500 rows
         data: {
-          columns: expect.arrayContaining([
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column1'),
-              name: 'Column1',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column1')}`,
-            }),
-            expect.objectContaining({
-              id: getHexEncodedColumnName('Column2'),
-              name: 'Column2',
-              value: `data.rows.*.data.${getHexEncodedColumnName('Column2')}`,
-            }),
-          ]),
+          columns: [getColumnObject('Column1'), getColumnObject('Column2')],
           rows: expect.arrayContaining(
             Array.from({ length: 500 }, (_, i) =>
               expect.objectContaining({
@@ -396,5 +387,113 @@ describe('getTableRowsAction', () => {
     expect(rowData[499].data[getHexEncodedColumnName('Column2')]).toBe(
       'data500',
     )
+  })
+
+  describe('multiple filters', () => {
+    it('should find rows matching all filters', async () => {
+      $.step.parameters.filters = [
+        { lookupColumn: 'Column3', lookupValue: 'a' },
+        { lookupColumn: 'Column4', lookupValue: '3' },
+      ]
+
+      await getTableRowsAction.run($)
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          rowsFound: 2,
+          data: {
+            columns: [
+              getColumnObject('Column1'),
+              getColumnObject('Column2'),
+              getColumnObject('Column3'),
+              getColumnObject('Column4'),
+            ],
+            rows: [
+              {
+                data: {
+                  [getHexEncodedColumnName('Column1')]: 'test-value',
+                  [getHexEncodedColumnName('Column2')]: 'data3',
+                  [getHexEncodedColumnName('Column3')]: 'a',
+                  [getHexEncodedColumnName('Column4')]: '3',
+                },
+              },
+              {
+                data: {
+                  [getHexEncodedColumnName('Column1')]: '',
+                  [getHexEncodedColumnName('Column2')]: 'data4',
+                  [getHexEncodedColumnName('Column3')]: 'a',
+                  [getHexEncodedColumnName('Column4')]: '3',
+                },
+              },
+            ],
+            inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          },
+        },
+      })
+
+      const call = ($.setActionItem as ReturnType<typeof vi.fn>).mock
+        .calls[0][0]
+      const rowData = call.raw.data.rows
+      expect(rowData).toHaveLength(2)
+    })
+
+    it('should return no rows when only some filters match', async () => {
+      $.step.parameters.filters = [
+        { lookupColumn: 'Column1', lookupValue: 'test-value' },
+        { lookupColumn: 'Column2', lookupValue: 'non-matching' },
+      ]
+
+      await getTableRowsAction.run($)
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          data: {
+            columns: [
+              getColumnObject('Column1'),
+              getColumnObject('Column2'),
+              getColumnObject('Column3'),
+              getColumnObject('Column4'),
+            ],
+            rows: [],
+            inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          },
+          rowsFound: 0,
+        },
+      })
+    })
+
+    it('should handle empty string in multiple filters', async () => {
+      $.step.parameters.filters = [
+        { lookupColumn: 'Column1', lookupValue: '' },
+        { lookupColumn: 'Column2', lookupValue: 'data4' },
+      ]
+
+      await getTableRowsAction.run($)
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          rowsFound: 1,
+          data: {
+            columns: [
+              getColumnObject('Column1'),
+              getColumnObject('Column2'),
+              getColumnObject('Column3'),
+              getColumnObject('Column4'),
+            ],
+            rows: [
+              {
+                data: {
+                  [getHexEncodedColumnName('Column1')]: '',
+                  [getHexEncodedColumnName('Column2')]: 'data4',
+                  [getHexEncodedColumnName('Column3')]: 'a',
+                  [getHexEncodedColumnName('Column4')]: '3',
+                },
+              },
+            ],
+            inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
+          },
+        },
+      })
+    })
   })
 })

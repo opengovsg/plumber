@@ -227,6 +227,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         type={type}
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
+        maxRows={schema.maxRows}
       />
     )
   }

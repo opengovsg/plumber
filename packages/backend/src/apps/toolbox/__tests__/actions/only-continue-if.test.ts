@@ -154,6 +154,7 @@ describe('Only continue if', () => {
         condition: 'equals',
         text: 1,
       },
+      version: 1,
     }
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
@@ -177,6 +178,7 @@ describe('Only continue if', () => {
         condition: 'equals',
         text: 1,
       },
+      version: 1,
     }
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)

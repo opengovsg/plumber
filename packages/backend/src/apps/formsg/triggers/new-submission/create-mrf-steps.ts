@@ -3,6 +3,7 @@ import { IGlobalVariable, IStep } from '@plumber/types'
 import get from 'lodash.get'
 import { raw, Transaction } from 'objection'
 
+import { getStepVersion } from '@/helpers/get-step-version'
 import Step from '@/models/step'
 
 import { ParsedMrfWorkflow } from '../../common/types'
@@ -168,6 +169,7 @@ export async function createMrfSteps(
         config: {
           stepName,
         },
+        version: getStepVersion(MRF_APP_KEY, MRF_KEY),
       })
       newMrfSteps.push(newStep)
       newMrfStepPositionToInsert = newStep.position + 1

@@ -99,7 +99,7 @@ const action: IRawAction = {
       )
     }
 
-    const { fileId, tableId, lookupColumn, lookupValue, columnsToUpdate } =
+    const { fileId, tableId, filters, columnsToUpdate } =
       parametersParseResult.data
 
     //
@@ -114,8 +114,7 @@ const action: IRawAction = {
       $,
       session,
       tableId,
-      lookupValue,
-      lookupColumn,
+      filters,
     })
 
     if (!findRowResults) {

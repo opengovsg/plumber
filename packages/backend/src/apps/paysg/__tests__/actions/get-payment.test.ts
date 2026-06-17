@@ -27,11 +27,13 @@ describe('get payment', () => {
       step: {
         id: 'herp-derp',
         appKey: 'paysg',
+        key: 'getPayment',
         position: 2,
         parameters: {
           // Pre-fill some required fields
           paymentId: 'sample-payment-id',
         },
+        version: 1,
       },
       http: {
         get: mocks.httpGet,

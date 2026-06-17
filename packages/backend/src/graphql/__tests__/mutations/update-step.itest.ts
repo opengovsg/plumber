@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStep from '@/graphql/mutations/update-step'
 import Flow from '@/models/flow'
@@ -485,6 +486,121 @@ describe('updateStep mutation', () => {
         })
       },
     )
+  })
+
+  describe('version assignment', () => {
+    it('does not include version in patch when app has no stepTransformer', async () => {
+      // postman has no stepTransformer
+      await updateStep(null, { input: { ...genericInputParams } }, context)
+
+      expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
+        mockStepId,
+        expect.not.objectContaining({ version: expect.anything() }),
+      )
+    })
+
+    it('transforms parameters and sets latest version when app has a stepTransformer', async () => {
+      const mockTransformStepParameters = vi
+        .fn()
+        .mockReturnValue({ transformed: true })
+      const mockGetLatestStepVersion = vi.fn().mockReturnValue(3)
+      const originalPostman = apps['postman']
+      apps['postman'] = {
+        ...originalPostman,
+        stepTransformer: {
+          transformStepParameters: mockTransformStepParameters,
+          getLatestStepVersion: mockGetLatestStepVersion,
+        },
+      }
+
+      context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
+        owner,
+        currentUser: context.currentUser,
+        stepKey: 'sendTransactionalEmail',
+        stepAppKey: 'postman',
+        stepVersion: 1,
+        stepConnection: { id: mockConnectionId, userId: owner.id },
+        flowUpdatedAt: testFlowISODateString,
+      })
+
+      try {
+        await updateStep(null, { input: { ...genericInputParams } }, context)
+
+        expect(mockTransformStepParameters).toHaveBeenCalledWith(
+          'sendTransactionalEmail',
+          genericInputParams.parameters,
+          1, // step.version is undefined in mock, falls back to 1
+        )
+        expect(mockGetLatestStepVersion).toHaveBeenCalledWith(
+          'sendTransactionalEmail',
+        )
+        expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
+          mockStepId,
+          expect.objectContaining({
+            parameters: { transformed: true },
+            version: 3,
+          }),
+        )
+      } finally {
+        apps['postman'] = originalPostman
+      }
+    })
+
+    it('uses step.version from DB (not frontend) when transforming — stale frontend fix', async () => {
+      const mockTransformStepParameters = vi
+        .fn()
+        .mockReturnValue({ upgraded: true })
+      const mockGetLatestStepVersion = vi.fn().mockReturnValue(2)
+      const originalPostman = apps['postman']
+      apps['postman'] = {
+        ...originalPostman,
+        stepTransformer: {
+          transformStepParameters: mockTransformStepParameters,
+          getLatestStepVersion: mockGetLatestStepVersion,
+        },
+      }
+
+      // DB step is at version 1 (old format)
+      context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
+        owner,
+        currentUser: context.currentUser,
+        stepKey: 'sendTransactionalEmail',
+        stepAppKey: 'postman',
+        stepVersion: 1,
+        stepConnection: { id: mockConnectionId, userId: owner.id },
+        flowUpdatedAt: testFlowISODateString,
+      })
+
+      try {
+        // Frontend sends params in old format (stale)
+        await updateStep(
+          null,
+          {
+            input: {
+              ...genericInputParams,
+              parameters: { oldFormatParam: 'value' },
+            },
+          },
+          context,
+        )
+
+        // Transformer should be called with DB version (1), not whatever frontend thinks
+        expect(mockTransformStepParameters).toHaveBeenCalledWith(
+          'sendTransactionalEmail',
+          { oldFormatParam: 'value' },
+          1,
+        )
+        expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
+          mockStepId,
+          expect.objectContaining({
+            parameters: { upgraded: true },
+            version: 2,
+          }),
+        )
+      } finally {
+        apps['postman'] = originalPostman
+      }
+    })
   })
 
   describe('FlowConnections integration', () => {

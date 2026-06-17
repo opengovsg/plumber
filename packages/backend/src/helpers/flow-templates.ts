@@ -14,6 +14,7 @@ import type {
   FlowConfig,
   StepConfig,
 } from '@/graphql/__generated__/types.generated'
+import { getStepVersion } from '@/helpers/get-step-version'
 import Flow from '@/models/flow'
 import { createTableRows } from '@/models/tiles/dynamodb/table-row'
 import User from '@/models/user'
@@ -254,6 +255,7 @@ export async function createFlowFromTemplate(
         appKey,
         key: eventKey,
         parameters: updatedParameters,
+        version: getStepVersion(appKey, eventKey),
         config: {
           templateConfig: {
             appEventKey,

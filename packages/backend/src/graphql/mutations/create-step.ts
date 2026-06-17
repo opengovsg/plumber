@@ -3,6 +3,7 @@ import { IStepConfig } from '@plumber/types'
 import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
+import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import { validateApprovalConfig } from '@/helpers/validate-approval-config'
 import App from '@/models/app'
@@ -96,6 +97,8 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .where('position', '>=', validationResult.newStepPosition)
 
+    const version = getStepVersion(input.appKey, input.key)
+
     const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
       key: input.key,
       appKey: input.appKey,
@@ -104,6 +107,7 @@ const createStep: MutationResolvers['createStep'] = async (
       parameters: input.parameters,
       connectionId: input.connection?.id,
       config: input.config as IStepConfig,
+      version,
     })
 
     // NOTE: add flow connection to the flow_connections table
