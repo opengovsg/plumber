@@ -10,55 +10,48 @@ const baseSubField = {
 }
 
 describe('applyDynamicPlaceholder', () => {
-  it('returns the original schema when dynamicPlaceholderKey is not set', () => {
+  it('overrides placeholder with the `${key}Hint` value when present and non-empty', () => {
     const result = applyDynamicPlaceholder(baseSubField, {
       fieldNameHint: 'summary',
     })
-    expect(result).toBe(baseSubField)
-  })
-
-  it('overrides placeholder with the hint when key is present and non-empty', () => {
-    const subF = { ...baseSubField, dynamicPlaceholderKey: 'fieldNameHint' }
-    const result = applyDynamicPlaceholder(subF, { fieldNameHint: 'summary' })
     expect(result.placeholder).toBe('summary')
   })
 
   it('preserves all other schema properties when overriding placeholder', () => {
-    const subF = { ...baseSubField, dynamicPlaceholderKey: 'fieldNameHint' }
-    const result = applyDynamicPlaceholder(subF, { fieldNameHint: 'summary' })
+    const result = applyDynamicPlaceholder(baseSubField, {
+      fieldNameHint: 'summary',
+    })
     expect(result.key).toBe(baseSubField.key)
     expect(result.label).toBe(baseSubField.label)
     expect(result.type).toBe(baseSubField.type)
   })
 
-  it('returns original schema when hint key is absent from rowValues', () => {
-    const subF = { ...baseSubField, dynamicPlaceholderKey: 'fieldNameHint' }
-    const result = applyDynamicPlaceholder(subF, {})
-    expect(result).toBe(subF)
+  it('returns original schema when the `${key}Hint` key is absent from rowValues', () => {
+    const result = applyDynamicPlaceholder(baseSubField, {})
+    expect(result).toBe(baseSubField)
   })
 
   it('returns original schema when rowValues is undefined', () => {
-    const subF = { ...baseSubField, dynamicPlaceholderKey: 'fieldNameHint' }
-    const result = applyDynamicPlaceholder(subF, undefined)
-    expect(result).toBe(subF)
+    const result = applyDynamicPlaceholder(baseSubField, undefined)
+    expect(result).toBe(baseSubField)
   })
 
-  it('returns original schema when hint is an empty string', () => {
-    const subF = { ...baseSubField, dynamicPlaceholderKey: 'fieldNameHint' }
-    const result = applyDynamicPlaceholder(subF, { fieldNameHint: '' })
-    expect(result).toBe(subF)
+  it('returns original schema when the hint is an empty string', () => {
+    const result = applyDynamicPlaceholder(baseSubField, { fieldNameHint: '' })
+    expect(result).toBe(baseSubField)
   })
 
-  it('returns original schema when hint is a non-string value', () => {
-    const subF = { ...baseSubField, dynamicPlaceholderKey: 'fieldNameHint' }
+  it('returns original schema when the hint is a non-string value', () => {
     expect(
-      applyDynamicPlaceholder(subF, { fieldNameHint: 42 }).placeholder,
+      applyDynamicPlaceholder(baseSubField, { fieldNameHint: 42 }).placeholder,
     ).toBe(baseSubField.placeholder)
     expect(
-      applyDynamicPlaceholder(subF, { fieldNameHint: true }).placeholder,
+      applyDynamicPlaceholder(baseSubField, { fieldNameHint: true })
+        .placeholder,
     ).toBe(baseSubField.placeholder)
     expect(
-      applyDynamicPlaceholder(subF, { fieldNameHint: null }).placeholder,
+      applyDynamicPlaceholder(baseSubField, { fieldNameHint: null })
+        .placeholder,
     ).toBe(baseSubField.placeholder)
   })
 })
