@@ -12,10 +12,13 @@ vi.mock('./config', () => ({
 vi.mock('./logger')
 vi.mock('./s3-client', () => ({ archiveS3Client: {} }))
 vi.mock('./archive-execution')
-vi.mock('./db', () => ({ archivalDb: vi.fn() }))
+vi.mock('./db', () => ({
+  archivalDb: vi.fn(),
+  archivalDbReader: vi.fn(),
+}))
 
 import { archiveExecution } from './archive-execution'
-import { archivalDb } from './db'
+import { archivalDb, archivalDbReader } from './db'
 import { runArchivalLoop } from './run-archival-loop'
 import type { ExecutionRow } from './types'
 
@@ -79,7 +82,7 @@ function setupDb(batches: ExecutionRow[][]) {
       .mockImplementation(() => Promise.resolve(batches[batchIdx++] ?? [])),
   }
 
-  ;(archivalDb as any).mockImplementation((table: string) => {
+  const tableRouter = (table: string) => {
     if (table === 'flows') {
       return flowsBuilder
     }
@@ -87,7 +90,9 @@ function setupDb(batches: ExecutionRow[][]) {
       return stepsBuilder
     }
     return execBuilder
-  })
+  }
+  ;(archivalDbReader as any).mockImplementation(tableRouter)
+  ;(archivalDb as any).mockImplementation(tableRouter)
 }
 
 describe('runArchivalLoop', () => {
@@ -185,6 +190,24 @@ describe('runArchivalLoop', () => {
       expect(cutoff.getTime()).toBeGreaterThanOrEqual(before.getTime() - 100)
       expect(cutoff.getTime()).toBeLessThanOrEqual(after.getTime() + 100)
     })
+  })
+
+  it('uses archivalDbReader for eligibility + execution_steps, archivalDb for the DELETE', async () => {
+    const batch = [makeExecution('e1')]
+    setupDb([batch, []])
+
+    await runArchivalLoop(new AbortController().signal)
+
+    // Reads use the replica
+    expect(archivalDbReader).toHaveBeenCalledWith('executions')
+    expect(archivalDbReader).toHaveBeenCalledWith('execution_steps')
+
+    // DELETE transaction uses the writer (passed into archiveExecution)
+    expect(archiveExecution).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ knexClient: archivalDb }),
+    )
   })
 
   describe('eligibility WHERE clause', () => {

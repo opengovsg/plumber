@@ -1,6 +1,6 @@
 import { archiveExecution } from './archive-execution'
 import { archivalConfig } from './config'
-import { archivalDb } from './db'
+import { archivalDb, archivalDbReader } from './db'
 import logger from './logger'
 import { archiveS3Client } from './s3-client'
 import type { ExecutionRow, ExecutionStepRow } from './types'
@@ -26,7 +26,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const startedAt = Date.now()
 
   while (!signal.aborted) {
-    const batch = (await archivalDb('executions')
+    const batch = (await archivalDbReader('executions')
       .select(
         'id',
         'flow_id as flowId',
@@ -47,7 +47,9 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
                   .whereIn('status', ['success', 'failure'])
                   .orWhereIn(
                     'flow_id',
-                    archivalDb('flows').select('id').whereNotNull('deleted_at'),
+                    archivalDbReader('flows')
+                      .select('id')
+                      .whereNotNull('deleted_at'),
                   ),
               ),
           )
@@ -56,7 +58,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
               .where('test_run', true)
               .whereNotIn(
                 'id',
-                archivalDb('flows')
+                archivalDbReader('flows')
                   .select('test_execution_id')
                   .whereNotNull('test_execution_id')
                   .whereNull('deleted_at'),
@@ -85,7 +87,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         break
       }
 
-      const steps = (await archivalDb('execution_steps')
+      const steps = (await archivalDbReader('execution_steps')
         .select(
           'id',
           'execution_id as executionId',
