@@ -20,3 +20,25 @@ export const archivalDb: Knex = knex({
   } satisfies pg.ClientConfig,
   pool: { min: 0, max: 5 },
 })
+
+// Reader connection. Used for archival's eligibility scan, execution_steps
+// fetch, and Phase 5 cleanup-pass fetches. Falls back to the writer host if
+// ARCHIVE_POSTGRES_READER_HOST is unset.
+//
+// Pool sized smaller than the writer — the eligibility query is one-shot per
+// batch, and execution_steps fetches happen at most archiveIntraBatchConcurrency
+// at once. 10 is plenty of headroom at concurrency=10.
+export const archivalDbReader: Knex = knex({
+  client: 'pg',
+  connection: {
+    host: archivalConfig.postgresReaderHost,
+    port: archivalConfig.postgresPort,
+    user: archivalConfig.postgresUsername,
+    password: archivalConfig.postgresPassword,
+    database: archivalConfig.postgresDatabase,
+    ssl: archivalConfig.postgresEnableSsl
+      ? { rejectUnauthorized: false }
+      : false,
+  } satisfies pg.ClientConfig,
+  pool: { min: 0, max: 10 },
+})
