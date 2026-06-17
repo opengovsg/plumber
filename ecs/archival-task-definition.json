@@ -2,8 +2,8 @@
   "family": "plumber-<ENVIRONMENT>-archival",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
+  "cpu": "1024",
+  "memory": "2048",
   "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-archival-task-exec-role",
   "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/plumber-<ENVIRONMENT>-archival-task-role",
   "containerDefinitions": [
@@ -69,6 +69,14 @@
         {
           "name": "ARCHIVE_DELETED_FLOWS_ONLY",
           "valueFrom": "plumber-<ENVIRONMENT>-archive-deleted-flows-only"
+        },
+        {
+          "name": "ARCHIVE_POSTGRES_READER_HOST",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-postgres-reader-host"
+        },
+        {
+          "name": "ARCHIVE_INTRA_BATCH_CONCURRENCY",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-intra-batch-concurrency"
         }
       ]
     }
