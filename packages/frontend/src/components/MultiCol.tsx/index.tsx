@@ -1,12 +1,15 @@
 import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 
 import React, { useContext } from 'react'
+import { useFormContext } from 'react-hook-form'
 import { BiTrash } from 'react-icons/bi'
 import { Divider, Flex } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
+
+import { applyDynamicPlaceholder } from './utils'
 
 type MultiColProps = {
   name: string
@@ -29,6 +32,7 @@ export default function MultiCol(props: MultiColProps) {
   } = props
 
   const { isMobile } = useContext(EditorContext)
+  const { getValues } = useFormContext()
 
   const DeleteButton = () => {
     return (
@@ -50,7 +54,7 @@ export default function MultiCol(props: MultiColProps) {
     const { type, variables } = subF
 
     // Only show labels, descriptions, and tooltips on the first row
-    const schemaWithConditionalLabel =
+    let schemaWithConditionalLabel =
       index === 0
         ? subF
         : {
@@ -59,6 +63,11 @@ export default function MultiCol(props: MultiColProps) {
             description: undefined,
             tooltipText: undefined,
           }
+
+    schemaWithConditionalLabel = applyDynamicPlaceholder(
+      schemaWithConditionalLabel,
+      getValues(name),
+    )
 
     return (
       <InputCreator

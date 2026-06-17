@@ -92,6 +92,7 @@ const action: IRawAction = {
           placeholder: 'Separated by commas',
           key: 'fieldCategories',
           type: 'string' as const,
+          required: true,
           variables: true,
           hiddenIf: {
             fieldKey: 'fieldType',
