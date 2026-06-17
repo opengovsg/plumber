@@ -19,6 +19,15 @@ export const archivalConfig = {
   postgresUsername: process.env.POSTGRES_USERNAME ?? 'postgres',
   postgresPassword: process.env.POSTGRES_PASSWORD,
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
+  // Postgres reader endpoint for archival read traffic (eligibility scan,
+  // execution_steps fetch, Phase 5 cleanup fetches). Falls back to the writer
+  // host if unset — safe for local dev and gradual rollout. Writes always go
+  // to postgresHost (the writer).
+  postgresReaderHost:
+    process.env.ARCHIVE_POSTGRES_READER_HOST ??
+    process.env.RDS_PROXY_HOST ??
+    process.env.POSTGRES_HOST ??
+    'localhost',
   // S3 dev credentials (prod uses IAM role — no explicit credentials needed)
   s3Endpoint: process.env.S3_ENDPOINT,
   s3AccessKey: process.env.S3_ACCESS_KEY,
