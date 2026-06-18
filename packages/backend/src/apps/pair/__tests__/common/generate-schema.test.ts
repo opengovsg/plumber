@@ -47,6 +47,23 @@ describe('generateSchemaFromFields', () => {
 
       expect(schemaShape.summary.description).toBe('Text field: summary')
     })
+
+    it('should use default value when text field is omitted', () => {
+      const fields = [
+        {
+          fieldName: 'description',
+          fieldType: 'text' as const,
+        },
+      ]
+
+      const schema = generateSchemaFromFields(fields)
+      const result = schema.safeParse({})
+
+      assert(result.success === true)
+      expect(result.data.description).toBe(
+        'Sample text. Refine your prompt to generate different outputs!',
+      )
+    })
   })
 
   describe('number field type', () => {
@@ -106,6 +123,21 @@ describe('generateSchemaFromFields', () => {
       const schemaShape = schema._def.shape()
 
       expect(schemaShape.amount.description).toBe('Number field: amount')
+    })
+
+    it('should use default value 0 when number field is omitted', () => {
+      const fields = [
+        {
+          fieldName: 'count',
+          fieldType: 'number' as const,
+        },
+      ]
+
+      const schema = generateSchemaFromFields(fields)
+      const result = schema.safeParse({})
+
+      assert(result.success === true)
+      expect(result.data.count).toBe(0)
     })
   })
 
@@ -348,25 +380,25 @@ describe('generateSchemaFromFields', () => {
       assert(result.success === false)
     })
 
-    it('should require all defined fields', () => {
+    it('should accept all defined fields when explicitly provided', () => {
       const fields = [
         {
-          fieldName: 'required1',
+          fieldName: 'field1',
           fieldType: 'text' as const,
         },
         {
-          fieldName: 'required2',
+          fieldName: 'field2',
           fieldType: 'number' as const,
         },
       ]
 
       const schema = generateSchemaFromFields(fields)
       const result = schema.safeParse({
-        required1: 'value',
-        // missing required2
+        field1: 'value',
+        field2: 0,
       })
 
-      assert(result.success === false)
+      assert(result.success === true)
     })
   })
 
