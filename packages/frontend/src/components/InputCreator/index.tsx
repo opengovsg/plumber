@@ -5,6 +5,7 @@ import { useContext } from 'react'
 import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
 import DragDropInput from '@/components/DragDropInput'
+import GroupedMultiRow from '@/components/GroupedMultiRow'
 import MultiRow from '@/components/MultiRow'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
@@ -228,6 +229,24 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
         maxRows={schema.maxRows}
+      />
+    )
+  }
+
+  if (type === 'grouped-multirow') {
+    return (
+      <GroupedMultiRow
+        name={computedName}
+        label={label}
+        description={description}
+        subFields={schema.subFields}
+        required={required}
+        maxGroups={schema.maxGroups}
+        maxRowsPerGroup={schema.maxRowsPerGroup}
+        addRowButtonText={schema.addRowButtonText}
+        addGroupButtonText={schema.addGroupButtonText}
+        // Forwarded to the inner MultiRow / InputCreator.
+        stepId={stepId}
       />
     )
   }

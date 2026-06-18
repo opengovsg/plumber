@@ -10,7 +10,23 @@ const action: IRawAction = {
   name: 'Only continue if',
   key: 'onlyContinueIf',
   description: 'Only runs later actions if specified conditions are met',
-  arguments: getConditionArgs({ usePlaceholders: false }),
+  arguments: [
+    ...getConditionArgs({ usePlaceholders: false }),
+    // TEMPORARY (remove in feat/or-condition/cutover): renders the new generic
+    // `grouped-multirow` builder inside the real flow editor for manual QA.
+    // Uses a distinct key + `required: false` so it does not feed `run()` or
+    // affect step completeness — the real cutover replaces `arguments` wholesale.
+    {
+      label: 'OR condition groups (temporary QA — do not ship)',
+      key: 'groupedMultirowQa',
+      type: 'grouped-multirow' as const,
+      required: false,
+      variables: false,
+      maxGroups: 10,
+      maxRowsPerGroup: 10,
+      subFields: getConditionArgs({ usePlaceholders: true }),
+    },
+  ],
 
   async run($) {
     let result

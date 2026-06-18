@@ -1,6 +1,6 @@
 import type { IField } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
+import { ReactNode, useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
@@ -25,6 +25,9 @@ export type MultiRowProps = {
   addRowButtonText?: string
   type?: string
   maxRows?: number
+  // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
+  // own controls). Renders even when the add-row button is hidden at maxRows.
+  addButtonSuffix?: ReactNode
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -38,6 +41,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     showDivider,
     type,
     maxRows,
+    addButtonSuffix,
     ...forwardedInputCreatorProps
   } = props
 
@@ -174,17 +178,20 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               )
             })}
 
-            {canAddRow && (
-              <Button
-                variant="outline"
-                leftIcon={<BiPlus />}
-                onClick={handleAddRow}
-                isDisabled={isEditorReadOnly}
-                maxW="fit-content"
-              >
-                {addRowButtonText ?? 'And'}
-              </Button>
-            )}
+            <Flex gap={2} alignItems="center">
+              {canAddRow && (
+                <Button
+                  variant="outline"
+                  leftIcon={<BiPlus />}
+                  onClick={handleAddRow}
+                  isDisabled={isEditorReadOnly}
+                  maxW="fit-content"
+                >
+                  {addRowButtonText ?? 'And'}
+                </Button>
+              )}
+              {addButtonSuffix}
+            </Flex>
           </Flex>
         )
       }}
