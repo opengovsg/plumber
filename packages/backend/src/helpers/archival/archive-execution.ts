@@ -37,11 +37,10 @@ export async function archiveExecution(
       Key: key,
       Body: compressed,
       ContentType: 'application/gzip',
-      ContentEncoding: 'gzip',
       Metadata: {
         'flow-id': execution.flowId,
         'execution-id': execution.id,
-        'execution-created-at': new Date(execution.createdAt).toISOString(),
+        'execution-created-at': execution.createdAt,
         'archived-at': new Date().toISOString(),
         'step-count': String(steps.length),
       },

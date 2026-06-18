@@ -18,8 +18,8 @@ const mockExecution: ExecutionRow = {
   status: 'success',
   testRun: false,
   internalId: null,
-  createdAt: new Date('2025-01-15T00:00:00.000Z'),
-  updatedAt: new Date('2025-01-15T00:00:00.000Z'),
+  createdAt: '2025-01-15T00:00:00.000Z',
+  updatedAt: '2025-01-15T00:00:00.000Z',
   deletedAt: null,
 }
 
@@ -36,8 +36,8 @@ const mockSteps: ExecutionStepRow[] = [
     dataOut: { result: 'ok' },
     errorDetails: null,
     metadata: {},
-    createdAt: new Date('2025-01-15T00:00:01.000Z'),
-    updatedAt: new Date('2025-01-15T00:00:01.000Z'),
+    createdAt: '2025-01-15T00:00:01.000Z',
+    updatedAt: '2025-01-15T00:00:01.000Z',
     deletedAt: null,
   },
 ]
