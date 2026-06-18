@@ -99,6 +99,14 @@ export async function sendEmailViaSes({
       }),
     )
     incrementMetric('ses.email.sent')
+
+    // TODO: remove this log once the SES rollout is verified and stable.
+    logger.info('System email sent via SES', {
+      event: 'system-ses-email-sent',
+      subject,
+      from: fromAddress,
+      recipient,
+    })
   } catch (e) {
     logger.error('Error sending email via SES, please try again later.', {
       event: 'ses-email-failed',

@@ -162,7 +162,7 @@ async function sendViaSes(
   incrementMetric('ses.email.sent')
 
   // TODO: remove this log once the SES rollout is verified and stable.
-  logger.info('Email sent via SES', {
+  logger.info('Postman step email sent via SES', {
     event: 'postman-step-ses-email-sent',
     subject: email.subject,
     from: fromAddress,

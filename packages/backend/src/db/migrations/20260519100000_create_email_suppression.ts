@@ -18,12 +18,10 @@ import { Knex } from 'knex'
  */
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('email_suppression', (table) => {
-    table
-      .uuid('id')
-      .primary()
-      .notNullable()
-      .defaultTo(knex.raw('gen_random_uuid()'))
-    table.string('email', 255).notNullable().unique()
+    // email is the natural primary key — there is exactly one suppression row
+    // per address and every access path looks up by email. .primary() implies
+    // NOT NULL + UNIQUE, so no separate unique constraint is needed.
+    table.string('email', 255).primary()
     table.string('reason', 20).notNullable()
     table.string('reason_detail', 50).nullable()
     table.string('ses_message_id', 255).nullable()

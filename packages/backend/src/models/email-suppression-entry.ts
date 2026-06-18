@@ -36,7 +36,6 @@ export type SuppressionReason = 'BOUNCE' | 'COMPLAINT'
  */
 
 class EmailSuppressionEntry extends Base {
-  id!: string
   email!: string
   reason!: SuppressionReason
   reasonDetail?: string
@@ -46,12 +45,16 @@ class EmailSuppressionEntry extends Base {
 
   static tableName = 'email_suppression'
 
+  // email is the primary key (no surrogate id column). Objection defaults
+  // idColumn to 'id', so this must be set explicitly or instance operations
+  // (e.g. $query(), $id()) would target a non-existent column.
+  static idColumn = 'email'
+
   static jsonSchema = {
     type: 'object',
     required: ['email', 'reason'],
 
     properties: {
-      id: { type: 'string', format: 'uuid' },
       email: { type: 'string', maxLength: 255 },
       reason: { type: 'string', enum: ['BOUNCE', 'COMPLAINT'] },
       reasonDetail: { type: ['string', 'null'], maxLength: 50 },
