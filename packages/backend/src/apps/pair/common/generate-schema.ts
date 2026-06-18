@@ -18,12 +18,20 @@ export function generateSchemaFromFields(fields: ResponseField[]) {
 
     switch (fieldType) {
       case 'text':
-        schemaShape[fieldName] = z.string().describe(`Text field: ${fieldName}`)
+        schemaShape[fieldName] = z
+          .string()
+          .describe(`Text field: ${fieldName}`)
+          // Default value for text fields to avoid issues when the prompt is too vague or when the user is testing with presets
+          .default(
+            'Sample text. Refine your prompt to generate different outputs!',
+          )
         break
       case 'number':
         schemaShape[fieldName] = z
           .number()
           .describe(`Number field: ${fieldName}`)
+          // Default value for number fields to avoid issues when the prompt is too vague or when the user is testing with presetss
+          .default(0)
         break
       case 'category':
         if (fieldCategories) {
