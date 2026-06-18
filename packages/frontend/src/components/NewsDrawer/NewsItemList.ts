@@ -11,6 +11,17 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-06-18',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'M365 Excel - Multi-condition lookup',
+    details: dedent`
+      Find or update Excel rows using up to 3 AND-combined lookup conditions — available for Find table row, Find multiple table rows, and Update table row actions. [Learn more](https://guide.plumber.gov.sg/user-guides/actions/m365-excel-.gov.sg-agencies-only)
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-excel-multiple-lookup-conditions.png',
+    },
+  },
+  {
     date: '2026-06-09',
     tag: NEW_ENHANCEMENT_TAG,
     title: '🔎 Preview your Postman emails before sending',
