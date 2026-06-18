@@ -23,6 +23,7 @@ const action: IRawAction = {
   key: 'sendPrompt',
   description:
     'Enter a custom prompt to summarise, categorise or analyse data with Pair',
+  linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [
     {
       label: 'Describe what you want Pair to do',
