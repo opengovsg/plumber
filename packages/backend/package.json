@@ -43,7 +43,7 @@
     "@langfuse/otel": "4.2.0",
     "@langfuse/tracing": "4.2.0",
     "@launchdarkly/node-server-sdk": "9.0.4",
-    "@opengovsg/formsg-sdk": "0.16.1",
+    "@opengovsg/formsg-sdk": "7.2.0",
     "@opengovsg/sgid-client": "2.3.0",
     "@opentelemetry/sdk-node": "0.219.0",
     "@plumber/types": "file:../types",
@@ -63,7 +63,7 @@
     "electrodb": "3.5.3",
     "email-validator": "2.0.4",
     "express": "4.22.1",
-    "form-data": "4.0.4",
+    "form-data": "4.0.6",
     "graphql": "16.11.0",
     "graphql-middleware": "6.1.35",
     "graphql-rate-limit": "3.3.0",
@@ -122,5 +122,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.68.0"
+  "version": "1.68.1"
 }

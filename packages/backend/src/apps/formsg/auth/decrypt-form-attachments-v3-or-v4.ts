@@ -1,37 +1,24 @@
-import {
-  DecryptedAttachments,
-  FormField,
-} from '@opengovsg/formsg-sdk/dist/types'
-import {
-  convertEncryptedAttachmentToFileContent,
-  decryptContent,
-} from '@opengovsg/formsg-sdk/dist/util/crypto'
+import { FormField } from '@opengovsg/formsg-sdk'
+import { DecryptedAttachments } from '@opengovsg/formsg-sdk/dist/types'
 import axios from 'axios'
 
 import logger from '@/helpers/logger'
 
 import { getSdk } from '../common/form-env'
 
-export function decryptSubmissionSecretKey(
-  formSecretKey: string,
-  encryptedSubmissionSecretKey: string,
-): string | null {
-  const decrypted = decryptContent(formSecretKey, encryptedSubmissionSecretKey)
-  if (!decrypted) {
-    return null
-  }
-  return Buffer.from(decrypted).toString('base64')
-}
-
 /**
- * Decrypts V3 form attachments from presigned S3 download URLs.
+ * Decrypts form attachments from presigned S3 download URLs.
+ *
+ * Works for both v3- and v4-shaped MRF submissions: attachments are
+ * encrypted the same way in both, with only the decrypted response shape
+ * differing (and that is handled upstream by processResponsesV3/V4).
  *
  * @param formSgSdk - The FormSG SDK instance
  * @param submissionSecretKey - The decrypted submission secret key (base64)
  * @param attachmentDownloadUrls - Map of field ID to presigned S3 download URL
  * @param formFields - All decrypted form fields - it will be filtered to attachment fields only later
  */
-export async function decryptFormAttachmentsV3(
+export async function decryptFormAttachmentsV3OrV4(
   formSgSdk: ReturnType<typeof getSdk>,
   submissionSecretKey: string,
   attachmentDownloadUrls: Record<string, string>,
@@ -53,15 +40,21 @@ export async function decryptFormAttachmentsV3(
   await Promise.all(
     Object.entries(attachmentDownloadUrls).map(async ([fieldId, url]) => {
       try {
-        const { data: downloadResponse } = await axios.get(url, {
+        const {
+          data: { encryptedFile },
+        } = await axios.get(url, {
           responseType: 'json',
         })
 
-        const encryptedFile =
-          convertEncryptedAttachmentToFileContent(downloadResponse)
         const decryptedBinary = await formSgSdk.cryptoV3.decryptFile(
           submissionSecretKey,
-          encryptedFile,
+          // Reverse engineered from convertEncryptedAttachmentToFileContent
+          // until the official SDK releases the decryptAttachmentV4 function.
+          {
+            submissionPublicKey: encryptedFile.submissionPublicKey,
+            nonce: encryptedFile.nonce,
+            binary: new Uint8Array(Buffer.from(encryptedFile.binary, 'base64')),
+          },
         )
 
         if (!decryptedBinary) {
