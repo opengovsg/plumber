@@ -48,3 +48,12 @@ export const LOOKUP_CONDITIONS_SUBFIELDS = [
     customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
   },
 ]
+// Per-request timeout for all m365 (Graph + OAuth) HTTP calls. Without it axios
+// waits on the OS TCP timeout (minutes) for a hung request. We hold the per-file
+// distributed lock across an action's requests and renew it on a heartbeat, so a
+// hung request would otherwise keep the (renewed) lock held indefinitely. Bounding
+// a single request to 3 min - bounded against the lock TTL (LOCK_TTL_MS in
+// helpers/distributed-lock.ts, kept alive by auto-extension while the request
+// runs) - guarantees the lock is released within a knowable window. Graph calls normally
+// finish in seconds, so this is a ceiling, not a target.
+export const M365_REQUEST_TIMEOUT_MS = 3 * 60 * 1000

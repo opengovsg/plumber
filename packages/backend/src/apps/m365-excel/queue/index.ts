@@ -3,6 +3,8 @@ import type { IAppQueue } from '@plumber/types'
 import { M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS } from '@/config/app-env-vars/m365'
 import Step from '@/models/step'
 
+import { getLockKey } from '../common/file-lock'
+
 //
 // This config sets up a per-app queue to serialize Excel actions by file, as
 // per guidelines from Microsoft.
@@ -40,6 +42,12 @@ const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async (
 
 const queueSettings = {
   getGroupConfigForJob,
+  // Serializes all WorkbookSession access to a file across BOTH this per-app
+  // queue and the createTableRow batch queue (and test runs), via a per-file
+  // distributed lock taken around run/runBatch. The bare-fileId group id above
+  // only serializes within this queue; the lock (keyed `<tenant>:<fileId>`) is
+  // what restores cross-queue serialization. See common/file-lock.ts.
+  getLockKey,
   groupLimits: {
     type: 'concurrency',
     concurrency: 1,
