@@ -149,7 +149,7 @@ export function setActionOutputError($: IGlobalVariable, error: unknown): void {
  * record → resolve so in-place mutations (`isLastStep`, for-each bookkeeping)
  * are visible everywhere, exactly as the original monolithic `processAction`.
  */
-type PreparedActionExecution = {
+export type PreparedActionExecution = {
   step: Step
   flow: Flow
   execution: Execution
