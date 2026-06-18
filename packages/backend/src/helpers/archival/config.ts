@@ -9,6 +9,14 @@ function requireInt(name: string, defaultValue: number): number {
   return value
 }
 
+function requireString(name: string): string {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`${name} must be set`)
+  }
+  return value
+}
+
 export const archivalConfig = {
   isDev: (process.env.APP_ENV ?? 'development') === 'development',
   // Postgres — mirrors the fields used by @/config/database
@@ -20,14 +28,9 @@ export const archivalConfig = {
   postgresPassword: process.env.POSTGRES_PASSWORD,
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
   // Postgres reader endpoint for archival read traffic (eligibility scan,
-  // execution_steps fetch, Phase 5 cleanup fetches). Falls back to the writer
-  // host if unset — safe for local dev and gradual rollout. Writes always go
-  // to postgresHost (the writer).
-  postgresReaderHost:
-    process.env.ARCHIVE_POSTGRES_READER_HOST ??
-    process.env.RDS_PROXY_HOST ??
-    process.env.POSTGRES_HOST ??
-    'localhost',
+  // execution_steps fetch, Phase 5 cleanup fetches). Must be set explicitly —
+  // reads never fall back to the writer. Use localhost for local dev.
+  postgresReaderHost: requireString('ARCHIVE_POSTGRES_READER_HOST'),
   // S3 dev credentials (prod uses IAM role — no explicit credentials needed)
   s3Endpoint: process.env.S3_ENDPOINT,
   s3AccessKey: process.env.S3_ACCESS_KEY,
