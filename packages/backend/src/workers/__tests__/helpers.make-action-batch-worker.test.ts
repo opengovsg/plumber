@@ -41,7 +41,8 @@ vi.mock('process', async () => {
   }
 })
 
-vi.mock('@/config/redis', () => ({
+vi.mock('@/config/redis', async (importActual) => ({
+  ...(await importActual<typeof import('@/config/redis')>()),
   createRedisClient: vi.fn(() => 'mock redis client'),
 }))
 
