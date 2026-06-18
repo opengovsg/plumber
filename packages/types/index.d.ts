@@ -732,6 +732,26 @@ export interface IAppQueue {
   ): Promise<JobsProOptions['group']>
 
   /**
+   * If set, the generic execution path (`processAction` / the batch worker)
+   * acquires a per-resource distributed lock around `run` / `runBatch`, keyed
+   * on the string returned here. This is the cross-queue serialization key,
+   * the counterpart to {@link getGroupConfigForJob}'s grouping key.
+   *
+   * Unlike `getGroupConfigForJob` (which runs at enqueue time with only
+   * `jobData`), this is resolved at execution time from the fully-built `$`, so
+   * it can read computed params and auth (e.g. m365-excel derives
+   * `<tenant>:<fileId>` to serialize all `WorkbookSession` access to a file
+   * across the per-app queue, the batch queue and test runs — restoring the
+   * per-file serialization that splitting `createTableRow` onto its own queue
+   * would otherwise break).
+   *
+   * Return `null` to skip locking (e.g. no file selected, or read-only dynamic
+   * data). Must be cheap (no network calls): it runs on every job before the
+   * action.
+   */
+  getLockKey?($: IGlobalVariable): Promise<string | null>
+
+  /**
    * Set per-group concurrency or rate limits. This is mutually exclusive
    * because BullMQ Pro does not support using both together.
    *
