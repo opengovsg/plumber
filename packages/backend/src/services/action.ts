@@ -14,6 +14,7 @@ import {
 import FileLockContentionError from '@/errors/file-lock-contention'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
+import StepError from '@/errors/step'
 import {
   ForEachContext,
   getStepContext,
@@ -130,7 +131,7 @@ export function setActionOutputError($: IGlobalVariable, error: unknown): void {
  * record → resolve so in-place mutations (`isLastStep`, for-each bookkeeping)
  * are visible everywhere, exactly as the original monolithic `processAction`.
  */
-type PreparedActionExecution = {
+export type PreparedActionExecution = {
   step: Step
   flow: Flow
   execution: Execution

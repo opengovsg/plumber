@@ -809,8 +809,9 @@ export interface IActionBatchQueue {
    * Derives the BullMQ Pro group config for a job about to be enqueued to the
    * batch queue. Group affinity batches together only jobs sharing this id, so
    * it must capture everything a single `runBatch` call requires to be correct
-   * (e.g. `${fileId}::${tableId}` for m365-excel createTableRow — one table per
-   * group, so exactly one multi-row insert per batch).
+   * (e.g. `${fileId}::${tableId}::${connectionId}` for m365-excel createTableRow
+   * — one table + connection per group, so exactly one multi-row insert per
+   * batch, authorized by a single file-access check under that one connection).
    *
    * @see {@link JobsProOptions.group}
    */
@@ -1102,6 +1103,18 @@ export interface IActionItem {
   meta?: IExecutionStepMetadata
 }
 
+/**
+ * The per-job outcome of {@link IBaseAction.runBatch}, aligned by index to the
+ * jobs passed in. A job that fails its own pre-write validation (e.g. bad params
+ * or a per-user authorization failure) is reported `failed` and excluded from
+ * the shared write, so the batch worker can isolate it while the healthy jobs
+ * commit. `runBatch` THROWS (rather than returning `failed`) for a genuine write
+ * failure, which is all-or-none and retried for the whole batch.
+ */
+export type RunBatchJobResult =
+  | { status: 'success' }
+  | { status: 'failed'; error: unknown }
+
 export interface IBaseAction {
   name: string
   key: string
@@ -1125,12 +1138,22 @@ export interface IBaseAction {
    * file + table.
    *
    * Each job carries its own `$` (its own step, parameters and execution), and
-   * `runBatch` must set each job's own action output via `$.setActionItem`.
+   * `runBatch` sets each successful job's output via `$.setActionItem`.
    *
-   * All-or-none: if `runBatch` throws, the whole batch is treated as failed and
-   * no job's output should have been set.
+   * `runBatch` owns its own per-job pre-write validation (e.g. params and a
+   * per-user authorization check) and returns one {@link RunBatchJobResult} per
+   * input job, aligned by index: a job that fails its validation is reported
+   * `failed` and EXCLUDED from the write (so the caller can isolate it), while
+   * the valid jobs still commit. Running the per-user check for every job (not
+   * just the first) matters because the whole batch is written through a single
+   * session/auth (the first valid job's), so otherwise a job's rows could be
+   * written under another job's authorization.
+   *
+   * A genuine WRITE failure (the shared operation itself failing) THROWS instead
+   * of returning, so the whole batch is failed and retried all-or-none (nothing
+   * was committed).
    */
-  runBatch?(jobs: Array<{ $: IGlobalVariable }>): Promise<void>
+  runBatch?(jobs: Array<{ $: IGlobalVariable }>): Promise<RunBatchJobResult[]>
 
   /**
    * If set, this action opts into batch processing: its jobs are routed to a
