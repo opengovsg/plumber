@@ -4,9 +4,9 @@ export type ExecutionRow = {
   status: 'success' | 'failure' | null
   testRun: boolean
   internalId: string | null
-  createdAt: Date
-  updatedAt: Date
-  deletedAt: Date | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
 
 export type ExecutionStepRow = {
@@ -21,7 +21,7 @@ export type ExecutionStepRow = {
   dataOut: Record<string, unknown> | null
   errorDetails: Record<string, unknown> | null
   metadata: Record<string, unknown>
-  createdAt: Date
-  updatedAt: Date
-  deletedAt: Date | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
