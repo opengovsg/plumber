@@ -11,7 +11,7 @@ describe('buildS3Key', () => {
     const key = buildS3Key({
       flowId: 'flow-abc-123',
       id: 'exec-xyz-789',
-      createdAt: new Date('2025-01-15T10:30:00.000Z'),
+      createdAt: '2025-01-15T10:30:00.000Z',
       testRun: false,
     })
     expect(key).toBe(
@@ -23,7 +23,7 @@ describe('buildS3Key', () => {
     const key = buildS3Key({
       flowId: 'flow-abc-123',
       id: 'exec-xyz-789',
-      createdAt: new Date('2025-01-15T10:30:00.000Z'),
+      createdAt: '2025-01-15T10:30:00.000Z',
       testRun: true,
     })
     expect(key).toBe(
@@ -35,21 +35,9 @@ describe('buildS3Key', () => {
     const key = buildS3Key({
       flowId: 'f',
       id: 'e',
-      createdAt: new Date('2025-03-05T00:00:00.000Z'),
+      createdAt: '2025-03-05T00:00:00.000Z',
       testRun: false,
     })
     expect(key).toContain('month=03')
   })
-
-  it('accepts a date string for createdAt', () => {
-    const key = buildS3Key({
-      flowId: 'f',
-      id: 'e',
-      createdAt: '2025-11-20T00:00:00.000Z',
-      testRun: false,
-    })
-    expect(key).toContain('month=11')
-    expect(key).toContain('year=2025')
-  })
 })
-
