@@ -7,14 +7,18 @@ import logger from '@/helpers/logger'
 import { getSdk } from '../common/form-env'
 
 /**
- * Decrypts V3 form attachments from presigned S3 download URLs.
+ * Decrypts form attachments from presigned S3 download URLs.
+ *
+ * Works for both v3- and v4-shaped MRF submissions: attachments are
+ * encrypted the same way in both, with only the decrypted response shape
+ * differing (and that is handled upstream by processResponsesV3/V4).
  *
  * @param formSgSdk - The FormSG SDK instance
  * @param submissionSecretKey - The decrypted submission secret key (base64)
  * @param attachmentDownloadUrls - Map of field ID to presigned S3 download URL
  * @param formFields - All decrypted form fields - it will be filtered to attachment fields only later
  */
-export async function decryptFormAttachmentsV3(
+export async function decryptFormAttachmentsV3OrV4(
   formSgSdk: ReturnType<typeof getSdk>,
   submissionSecretKey: string,
   attachmentDownloadUrls: Record<string, string>,

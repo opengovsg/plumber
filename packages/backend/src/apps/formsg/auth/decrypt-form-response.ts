@@ -1,5 +1,6 @@
 import type { IAuth, IGlobalVariable } from '@plumber/types'
 
+import { isFieldResponsesV4 } from '@opengovsg/formsg-sdk/adapters'
 import {
   DecryptedAttachments,
   DecryptedContent,
@@ -15,8 +16,9 @@ import { NricFilter } from '../triggers/new-submission/index'
 
 import { computeSubmissionTime } from './helpers/compute-submission-time'
 import { processResponsesV3 } from './helpers/process-v3-responses'
+import { processResponsesV4 } from './helpers/process-v4-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
-import { decryptFormAttachmentsV3 } from './decrypt-form-attachments-v3'
+import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -111,22 +113,21 @@ export async function decryptFormResponse(
       return { verified: false, internalId: null }
     }
 
-    const responsesV3 = decryptedSubmission?.responses
-    const mappedResponses = await processResponsesV3(
-      $,
-      data.formId,
-      responsesV3,
-    )
+    const rawResponses = decryptedSubmission.responses
+    const mappedResponses = isFieldResponsesV4(rawResponses)
+      ? await processResponsesV4($, data.formId, rawResponses)
+      : // NOTE: V3 will be deprecated soon (tm)
+        await processResponsesV3($, data.formId, rawResponses)
 
     submission = {
       responses: mappedResponses,
-      verified: decryptedSubmission?.verified,
+      verified: decryptedSubmission.verified,
     }
 
     // shouldStoreAttachments should only consider steps after the mrf step instead of the whole pipe
     // but leaving it as such for now to avoid complexity
     if (shouldStoreAttachments && data.attachmentDownloadUrls) {
-      attachments = await decryptFormAttachmentsV3(
+      attachments = await decryptFormAttachmentsV3OrV4(
         formSgSdk,
         decryptedSubmission.submissionSecretKey,
         data.attachmentDownloadUrls,

@@ -3,7 +3,7 @@ import { IGlobalVariable, IRequest } from '@plumber/types'
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { decryptFormAttachmentsV3 } from '../../auth/decrypt-form-attachments-v3'
+import { decryptFormAttachmentsV3OrV4 } from '../../auth/decrypt-form-attachments-v3-or-v4'
 import { getSdk } from '../../common/form-env'
 
 const mocks = vi.hoisted(() => {
@@ -94,7 +94,7 @@ describe('decrypt form attachments v3', () => {
 
   describe('decrypt attachments v3', () => {
     it('should return decrypted attachments when attachmentDownloadUrls is present', async () => {
-      const result = await decryptFormAttachmentsV3(
+      const result = await decryptFormAttachmentsV3OrV4(
         formSgSdk,
         SUBMISSION_SECRET_KEY,
         $.request.body.data.attachmentDownloadUrls,
@@ -108,7 +108,7 @@ describe('decrypt form attachments v3', () => {
     })
 
     it('should return empty object when attachmentDownloadUrls is empty', async () => {
-      const result = await decryptFormAttachmentsV3(
+      const result = await decryptFormAttachmentsV3OrV4(
         formSgSdk,
         SUBMISSION_SECRET_KEY,
         {},
@@ -118,7 +118,7 @@ describe('decrypt form attachments v3', () => {
     })
 
     it('should return all attachments even if form fields are not present', async () => {
-      const result = await decryptFormAttachmentsV3(
+      const result = await decryptFormAttachmentsV3OrV4(
         formSgSdk,
         SUBMISSION_SECRET_KEY,
         $.request.body.data.attachmentDownloadUrls,
@@ -129,7 +129,7 @@ describe('decrypt form attachments v3', () => {
 
     it('should throw an error if decryption fails', async () => {
       await expect(
-        decryptFormAttachmentsV3(
+        decryptFormAttachmentsV3OrV4(
           formSgSdk,
           'Lrw9HdnQwiCE5umnmrIkhff60WKmMGXrCgtLXgdZtzs=', // invalid
           $.request.body.data.attachmentDownloadUrls,
@@ -141,7 +141,7 @@ describe('decrypt form attachments v3', () => {
     it('should throw an error if downloading fails', async () => {
       mocks.axiosGet.mockRejectedValueOnce(new Error('Download failed'))
       await expect(
-        decryptFormAttachmentsV3(
+        decryptFormAttachmentsV3OrV4(
           formSgSdk,
           SUBMISSION_SECRET_KEY,
           $.request.body.data.attachmentDownloadUrls,

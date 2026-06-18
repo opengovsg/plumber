@@ -10,6 +10,11 @@ import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
 
+/**
+ * Moving to v4 soon (tm)
+ * @see processResponsesV4
+ * @deprecated
+ **/
 export async function processResponsesV3(
   $: IGlobalVariable,
   formId: string,
