@@ -20,6 +20,7 @@ const action: IRawAction = {
   name: 'Process an image',
   key: 'processImage',
   description: 'Extract information from an image or PDF',
+  linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [
     {
       label: 'Image',
