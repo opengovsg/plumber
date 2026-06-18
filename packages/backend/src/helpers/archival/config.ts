@@ -38,8 +38,8 @@ export const archivalConfig = {
   // Archival job settings
   archiveEnabled: process.env.ARCHIVE_ENABLED === 'true',
   archiveDryRun: process.env.ARCHIVE_DRY_RUN === 'true',
-  archiveRetentionDays: requireInt('ARCHIVE_RETENTION_DAYS', 90),
+  archiveRetentionDays: requireInt('ARCHIVE_RETENTION_DAYS', 365),
   archiveBatchSize: requireInt('ARCHIVE_BATCH_SIZE', 500),
   archiveBatchSleepMs: requireInt('ARCHIVE_BATCH_SLEEP_MS', 2000),
-  archiveBucket: process.env.ARCHIVE_BUCKET ?? '',
+  archiveBucket: requireString('ARCHIVE_BUCKET'),
 }
