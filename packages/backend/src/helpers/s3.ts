@@ -252,18 +252,28 @@ export async function deleteObjects(
  * *Note 2:* This doesn't validate `objectKey`; the caller is expected to make
  * sure it's formatted correctly.
  */
-export async function putObject(
-  bucket: string,
-  objectKey: string,
-  body: PutObjectCommandInput['Body'],
-  metadata: PutObjectCommandInput['Metadata'] | null,
-): Promise<string> {
+export interface PutObjectParams {
+  bucket: string
+  objectKey: string
+  body: PutObjectCommandInput['Body']
+  metadata?: PutObjectCommandInput['Metadata']
+  tagging?: PutObjectCommandInput['Tagging']
+}
+
+export async function putObject({
+  bucket,
+  objectKey,
+  body,
+  metadata,
+  tagging,
+}: PutObjectParams): Promise<string> {
   await s3Client.send(
     new PutObjectCommand({
       Bucket: bucket,
       Key: objectKey,
       Body: body,
       Metadata: metadata,
+      Tagging: tagging,
     }),
   )
   return `s3:${bucket}:${objectKey}`

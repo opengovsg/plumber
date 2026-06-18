@@ -16,10 +16,7 @@ import { NricFilter } from '../triggers/new-submission/index'
 import { computeSubmissionTime } from './helpers/compute-submission-time'
 import { processResponsesV3 } from './helpers/process-v3-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
-import {
-  decryptFormAttachmentsV3,
-  decryptSubmissionSecretKey,
-} from './decrypt-form-attachments-v3'
+import { decryptFormAttachmentsV3 } from './decrypt-form-attachments-v3'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -129,13 +126,9 @@ export async function decryptFormResponse(
     // shouldStoreAttachments should only consider steps after the mrf step instead of the whole pipe
     // but leaving it as such for now to avoid complexity
     if (shouldStoreAttachments && data.attachmentDownloadUrls) {
-      const submissionSecretKey = decryptSubmissionSecretKey(
-        formSecretKey,
-        data.encryptedSubmissionSecretKey,
-      )
       attachments = await decryptFormAttachmentsV3(
         formSgSdk,
-        submissionSecretKey,
+        decryptedSubmission.submissionSecretKey,
         data.attachmentDownloadUrls,
         mappedResponses,
       )

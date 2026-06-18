@@ -32,17 +32,17 @@ async function storeAttachmentInS3(
     return ''
   }
 
-  return await putObject(
-    COMMON_S3_BUCKET,
-    `${submissionId}/${formField._id}/${attachment.filename}`,
-    attachment.content,
-    {
+  return await putObject({
+    bucket: COMMON_S3_BUCKET,
+    objectKey: `${submissionId}/${formField._id}/${attachment.filename}`,
+    body: attachment.content,
+    metadata: {
       flowId: $.flow.id,
       stepId: $.step.id,
       executionId: $.execution.id ?? '', // Empty = test runs.
       formId: $.auth.data.formId as string,
     },
-  )
+  })
 }
 
 export default storeAttachmentInS3

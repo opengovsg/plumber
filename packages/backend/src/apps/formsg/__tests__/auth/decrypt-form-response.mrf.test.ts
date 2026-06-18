@@ -29,7 +29,6 @@ const mocks = vi.hoisted(() => {
     parseFormEnv: vi.fn(),
     storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
     fetchFormSchema: vi.fn(() => null),
-    decryptSubmissionSecretKey: vi.fn(() => 'mock-secret-key'),
     decryptFormAttachmentsV3: vi.fn(() => ({})),
   }
 })
@@ -55,7 +54,6 @@ vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
 }))
 
 vi.mock('../../auth/decrypt-form-attachments-v3', () => ({
-  decryptSubmissionSecretKey: mocks.decryptSubmissionSecretKey,
   decryptFormAttachmentsV3: mocks.decryptFormAttachmentsV3,
 }))
 
@@ -173,15 +171,15 @@ describe('decrypt form response - MRF specific', () => {
       expect(mocks.fetchFormSchema).toHaveBeenCalledWith($, 'formId123')
     })
 
-    it('should call decryptSubmissionSecretKey and decryptFormAttachmentsV3 for v3 attachments', async () => {
+    it('should pass the decrypted submissionSecretKey to decryptFormAttachmentsV3 for v3 attachments', async () => {
       $.flow.hasFileProcessingActions = true
       $.request.body.data.attachmentDownloadUrls = {
         attachField1:
           'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/123',
       }
-      $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
 
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        submissionSecretKey: 'mock-secret-key',
         responses: {
           attachField1: {
             fieldType: 'attachment',
@@ -199,10 +197,6 @@ describe('decrypt form response - MRF specific', () => {
 
       await decryptFormResponse($)
 
-      expect(mocks.decryptSubmissionSecretKey).toHaveBeenCalledWith(
-        'secretkey',
-        'encrypted-key',
-      )
       expect(mocks.decryptFormAttachmentsV3).toHaveBeenCalledWith(
         mocks.getSdk(),
         'mock-secret-key',
@@ -235,7 +229,6 @@ describe('decrypt form response - MRF specific', () => {
 
       await decryptFormResponse($)
 
-      expect(mocks.decryptSubmissionSecretKey).not.toHaveBeenCalled()
       expect(mocks.decryptFormAttachmentsV3).not.toHaveBeenCalled()
     })
 
@@ -254,7 +247,6 @@ describe('decrypt form response - MRF specific', () => {
 
       await decryptFormResponse($)
 
-      expect(mocks.decryptSubmissionSecretKey).not.toHaveBeenCalled()
       expect(mocks.decryptFormAttachmentsV3).not.toHaveBeenCalled()
     })
   })

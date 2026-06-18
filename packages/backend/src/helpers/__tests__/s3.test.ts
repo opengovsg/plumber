@@ -82,22 +82,20 @@ describe('s3', () => {
 
   describe('putObject', () => {
     it("invokes AWS's s3-client's send", async () => {
-      await putObject(
-        COMMON_S3_BUCKET,
-        'abcd/my file.txt',
-        'file data bytes',
-        null,
-      )
+      await putObject({
+        bucket: COMMON_S3_BUCKET,
+        objectKey: 'abcd/my file.txt',
+        body: 'file data bytes',
+      })
       expect(mocks.s3Client.send).toHaveBeenCalledOnce()
     })
 
     it('returns a valid S3 ID', async () => {
-      const result = await putObject(
-        COMMON_S3_BUCKET,
-        'abcd/my file.txt',
-        '',
-        null,
-      )
+      const result = await putObject({
+        bucket: COMMON_S3_BUCKET,
+        objectKey: 'abcd/my file.txt',
+        body: '',
+      })
       expect(result).toEqual(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`)
     })
   })

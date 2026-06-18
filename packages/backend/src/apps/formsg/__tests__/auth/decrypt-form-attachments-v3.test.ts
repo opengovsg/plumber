@@ -3,10 +3,7 @@ import { IGlobalVariable, IRequest } from '@plumber/types'
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  decryptFormAttachmentsV3,
-  decryptSubmissionSecretKey,
-} from '../../auth/decrypt-form-attachments-v3'
+import { decryptFormAttachmentsV3 } from '../../auth/decrypt-form-attachments-v3'
 import { getSdk } from '../../common/form-env'
 
 const mocks = vi.hoisted(() => {
@@ -41,8 +38,8 @@ vi.mock('axios', () => ({
 
 const formSgSdk = getSdk('prod')
 
-// test form secret key - OK to commit
-const FORM_SECRET_KEY = 'Lrw8HdnQwiCE5umnmrIkhff60WKmMGXrCgtLXgdZtzs='
+// OK to commit - test data.
+const SUBMISSION_SECRET_KEY = 'UEHWr01L6Fura3bGYxCH22w9kocYhxOcfUuznnCL21I='
 const FORM_FIELDS: FormField[] = [
   {
     _id: '68f7ac5bd9b9803e70a2db61',
@@ -66,7 +63,6 @@ const FORM_FIELDS: FormField[] = [
 
 describe('decrypt form attachments v3', () => {
   let $: IGlobalVariable
-  let decryptedSubmissionSecretKey: string | null
   beforeEach(() => {
     $ = {
       request: {
@@ -90,35 +86,17 @@ describe('decrypt form attachments v3', () => {
         },
       } as IRequest,
     } as IGlobalVariable
-    decryptedSubmissionSecretKey = decryptSubmissionSecretKey(
-      FORM_SECRET_KEY,
-      $.request.body.data.encryptedSubmissionSecretKey,
-    )
   })
 
   afterEach(() => {
     vi.resetAllMocks()
   })
 
-  describe('decrypt submission secret key', () => {
-    it('should return null when encrypted submission secret key is invalid', () => {
-      const result = decryptSubmissionSecretKey(FORM_SECRET_KEY, 'invalid')
-      expect(result).toBeNull()
-    })
-    it('should return the decrypted submission secret key', () => {
-      const result = decryptSubmissionSecretKey(
-        FORM_SECRET_KEY,
-        $.request.body.data.encryptedSubmissionSecretKey,
-      )
-      expect(result).toBe('UEHWr01L6Fura3bGYxCH22w9kocYhxOcfUuznnCL21I=')
-    })
-  })
-
   describe('decrypt attachments v3', () => {
     it('should return decrypted attachments when attachmentDownloadUrls is present', async () => {
       const result = await decryptFormAttachmentsV3(
         formSgSdk,
-        decryptedSubmissionSecretKey,
+        SUBMISSION_SECRET_KEY,
         $.request.body.data.attachmentDownloadUrls,
         FORM_FIELDS,
       )
@@ -132,7 +110,7 @@ describe('decrypt form attachments v3', () => {
     it('should return empty object when attachmentDownloadUrls is empty', async () => {
       const result = await decryptFormAttachmentsV3(
         formSgSdk,
-        decryptedSubmissionSecretKey,
+        SUBMISSION_SECRET_KEY,
         {},
         FORM_FIELDS,
       )
@@ -142,7 +120,7 @@ describe('decrypt form attachments v3', () => {
     it('should return all attachments even if form fields are not present', async () => {
       const result = await decryptFormAttachmentsV3(
         formSgSdk,
-        decryptedSubmissionSecretKey,
+        SUBMISSION_SECRET_KEY,
         $.request.body.data.attachmentDownloadUrls,
         [],
       )
@@ -165,7 +143,7 @@ describe('decrypt form attachments v3', () => {
       await expect(
         decryptFormAttachmentsV3(
           formSgSdk,
-          decryptedSubmissionSecretKey,
+          SUBMISSION_SECRET_KEY,
           $.request.body.data.attachmentDownloadUrls,
           FORM_FIELDS,
         ),
