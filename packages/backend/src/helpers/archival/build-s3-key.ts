@@ -4,7 +4,7 @@ export const S3_PREFIX_TEST_EXECUTIONS = 'test-executions'
 export function buildS3Key(execution: {
   flowId: string
   id: string
-  createdAt: Date | string
+  createdAt: string
   testRun: boolean
 }): string {
   const date = new Date(execution.createdAt)
