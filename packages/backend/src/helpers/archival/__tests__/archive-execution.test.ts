@@ -67,18 +67,34 @@ function makeMockS3(contentLength = 42) {
 function makeMockKnex() {
   const deleteStepsFn = vi.fn().mockResolvedValue(1)
   const deleteExecFn = vi.fn().mockResolvedValue(1)
-  const trx = (table: string) => ({
-    where: () => ({
-      delete: table === 'execution_steps' ? deleteStepsFn : deleteExecFn,
-    }),
-  })
+  const incrementFlowsFn = vi.fn().mockResolvedValue(1)
+
+  function makeTableProxy(table: string) {
+    const proxy: Record<string, unknown> = {
+      where: vi.fn(() => proxy),
+      delete:
+        table === 'execution_steps'
+          ? deleteStepsFn
+          : table === 'executions'
+          ? deleteExecFn
+          : vi.fn().mockResolvedValue(0),
+      increment: table === 'flows' ? incrementFlowsFn : vi.fn().mockResolvedValue(0),
+    }
+    return proxy
+  }
+
   const knexClient = {
-    transaction: vi.fn(async (cb: (trx: unknown) => Promise<void>) => cb(trx)),
+    transaction: vi.fn(
+      async (cb: (trx: (table: string) => unknown) => Promise<void>) =>
+        cb(makeTableProxy),
+    ),
     _deleteStepsFn: deleteStepsFn,
     _deleteExecFn: deleteExecFn,
+    _incrementFlowsFn: incrementFlowsFn,
   } as unknown as Knex & {
     _deleteStepsFn: ReturnType<typeof vi.fn>
     _deleteExecFn: ReturnType<typeof vi.fn>
+    _incrementFlowsFn: ReturnType<typeof vi.fn>
   }
   return knexClient
 }
@@ -258,5 +274,31 @@ describe('archiveExecution', () => {
     expect(putCall[0].input.Key).toBe(
       `${S3_PREFIX_EXECUTIONS}/flow_id=flow-1/year=2025/month=01/execution_id=exec-1.json.gz`,
     )
+  })
+
+  it('increments archived_execution_count for non-test executions', async () => {
+    const s3 = makeMockS3()
+    const knexClient = makeMockKnex()
+
+    await archiveExecution(mockExecution, mockSteps, {
+      ...baseOpts,
+      s3Client: s3,
+      knexClient,
+    })
+
+    expect((knexClient as any)._incrementFlowsFn).toHaveBeenCalledOnce()
+  })
+
+  it('does not increment archived_execution_count for test-run executions', async () => {
+    const s3 = makeMockS3()
+    const knexClient = makeMockKnex()
+
+    await archiveExecution(
+      { ...mockExecution, testRun: true },
+      mockSteps,
+      { ...baseOpts, s3Client: s3, knexClient },
+    )
+
+    expect((knexClient as any)._incrementFlowsFn).not.toHaveBeenCalled()
   })
 })
