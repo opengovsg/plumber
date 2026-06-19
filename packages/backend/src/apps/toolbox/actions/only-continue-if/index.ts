@@ -1,8 +1,6 @@
-import type { IRawAction } from '@plumber/types'
+import type { IConditionRow, IMultiRowGroup, IRawAction } from '@plumber/types'
 
-import StepError from '@/errors/step'
-
-import conditionIsTrue from '../../common/condition-is-true'
+import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
 
@@ -11,17 +9,11 @@ const action: IRawAction = {
   key: 'onlyContinueIf',
   description: 'Only runs later actions if specified conditions are met',
   arguments: [
-    ...getConditionArgs({ usePlaceholders: false }),
-    // TEMPORARY (remove in feat/or-condition/cutover): renders the new generic
-    // `grouped-multirow` builder inside the real flow editor for manual QA.
-    // Uses a distinct key + `required: false` so it does not feed `run()` or
-    // affect step completeness — the real cutover replaces `arguments` wholesale.
     {
-      label: 'OR condition groups (temporary QA — do not ship)',
-      key: 'groupedMultirowQa',
+      label: 'Conditions',
+      key: 'conditions',
       type: 'grouped-multirow' as const,
-      required: false,
-      variables: false,
+      required: true,
       maxGroups: 10,
       maxRowsPerGroup: 10,
       subFields: getConditionArgs({ usePlaceholders: true }),
@@ -29,15 +21,10 @@ const action: IRawAction = {
   ],
 
   async run($) {
-    let result
-    try {
-      result = conditionIsTrue($.step.parameters)
-    } catch (err) {
-      throw new StepError(
-        err.message,
-        'Check that one of valid options in the condition dropdown is being selected.',
-      )
-    }
+    // Strict v2 shape: Step.$afterFind has already migrated legacy params.
+    const groups = ($.step.parameters.conditions ??
+      []) as unknown as IMultiRowGroup<IConditionRow>[]
+    const result = evaluateConditionGroups(groups)
     $.setActionItem({
       raw: { result },
     })
