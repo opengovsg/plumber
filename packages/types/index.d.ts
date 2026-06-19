@@ -350,6 +350,34 @@ export interface IBaseField {
 
   // message to show when no variables are available
   noVariablesMessage?: string
+
+  /**
+   * Allows setting a default value for the field.
+   * ---
+   * Can be either:
+   * - A static string value that is always used
+   * - A dynamic object that determines the default based on another field's value
+   * ---
+   * Static example:
+   * defaultValue: 'Default text here'
+   *
+   * Dynamic example:
+   * {
+   *   fieldKey: 'promptType',
+   *   options: {
+   *     analyse: 'Analyse this document',
+   *     categorise: 'Categorise this document',
+   *     summarise: 'Summarise this document',
+   *     write: 'Write this document',
+   *   },
+   * }
+   */
+  defaultValue?:
+    | string
+    | {
+        fieldKey: string
+        options: Record<string, string | IJSONValue>
+      }
 }
 
 export type DropdownAddNewType = 'modal' | 'inline'
@@ -423,6 +451,10 @@ export interface IFieldAttachment extends IBaseField {
   type: 'attachment'
   value?: string
   variableTypes?: TDataOutMetadatumType[]
+
+  // Only for attachments
+  maxFiles?: number
+  disableUpload?: boolean
 }
 
 export interface IFieldMultiline extends IBaseField {
@@ -503,6 +535,7 @@ export interface IFieldRichText extends IBaseField {
   // Enables table variable insertion with preview and column selection
   // When true, table variables will be rendered as TableVariablePill in the editor
   supportTableDisplay?: boolean
+  presets?: IPreset[]
 
   // Specifies the order and what menu options to show in the RTE
   // 'Divider' is specified manually to determine when a divider should be shown
@@ -513,6 +546,29 @@ export interface IFieldRichText extends IBaseField {
    * RichTextEditor toolbar that previews the editor's live HTML.
    */
   previewType?: TFieldPreviewType
+}
+
+/**
+ * A selectable preset shown beside rich-text inputs.
+ *
+ * Selecting a preset applies one or more field assignments to sibling fields
+ * in the same form scope (e.g. `prompt`, `responseFields`).
+ */
+export interface IPreset {
+  key: string
+  label: string
+  description: string
+  assignments: IPresetAssignment[]
+}
+
+/**
+ * A single field update applied when a preset is selected.
+ *
+ * `fieldKey` is relative to the current form scope/base path.
+ */
+export interface IPresetAssignment {
+  fieldKey: string
+  value: IJSONValue
 }
 
 export interface IFieldDragDrop extends IBaseField {

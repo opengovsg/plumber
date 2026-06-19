@@ -1,6 +1,6 @@
-import type { IField } from '@plumber/types'
+import type { IField, IJSONValue } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
@@ -25,6 +25,7 @@ export type MultiRowProps = {
   addRowButtonText?: string
   type?: string
   maxRows?: number
+  defaultValue?: string | IJSONValue
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -38,10 +39,11 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     showDivider,
     type,
     maxRows,
+    defaultValue,
     ...forwardedInputCreatorProps
   } = props
 
-  const { control } = useFormContext()
+  const { control, setValue } = useFormContext()
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   // react-hook-form requires a non-undefined default value for _every_
@@ -63,6 +65,12 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     name,
     rules: { required },
   })
+
+  useEffect(() => {
+    if (defaultValue) {
+      setValue(name, defaultValue)
+    }
+  }, [defaultValue, name, setValue])
 
   const handleAddRow = useCallback(() => {
     // NOTE: only need to use this flag to focus on the rte

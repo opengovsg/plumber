@@ -270,6 +270,12 @@ type ActionSubstepArgument {
   addRowButtonText: String
   tooltipText: String
   noVariablesMessage: String
+  """
+  Can be either:
+  - A static string value (e.g., "Default text")
+  - A dynamic object with fieldKey and options (e.g., { fieldKey: "promptType", options: { analyse: "Analyse this" } })
+  """
+  defaultValue: JSONObject
 
   # Only for string and multiline
   singleVariableSelection: Boolean
@@ -285,6 +291,10 @@ type ActionSubstepArgument {
   # Only for rich text
   customRteMenuOptions: [RteMenuOption]
   supportTableDisplay: Boolean
+  presets: [ActionSubStepPreset]
+
+  # Only for attachments
+  maxFiles: Int
 }
 
 type DropdownClickableLink {
@@ -301,6 +311,18 @@ type ActionSubstepArgumentSource {
 type ActionSubstepArgumentSourceArgument {
   name: String
   value: String
+}
+
+type ActionSubStepPresetAssignment {
+  fieldKey: String!
+  value: JSONObject
+}
+
+type ActionSubStepPreset {
+  key: String!
+  label: String!
+  description: String!
+  assignments: [ActionSubStepPresetAssignment!]!
 }
 
 type App {
