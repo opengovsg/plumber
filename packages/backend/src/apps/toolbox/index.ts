@@ -1,5 +1,6 @@
 import { IApp } from '@plumber/types'
 
+import { stepTransformer } from './common/transform-step-parameters'
 import actions from './actions'
 
 const app: IApp = {
@@ -11,6 +12,7 @@ const app: IApp = {
   apiBaseUrl: '',
   primaryColor: '000000',
   actions,
+  stepTransformer,
   description:
     "Use Plumber's built in tools like If-then and Only continue if to add more functionality to your pipes",
   category: 'logic',
