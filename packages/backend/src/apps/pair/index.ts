@@ -13,5 +13,6 @@ const app: IApp = {
   primaryColor: '',
   actions,
   category: 'ai',
+  isNewApp: true,
 }
 export default app
