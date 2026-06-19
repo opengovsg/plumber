@@ -1284,3 +1284,55 @@ export interface IFlowSteps {
   actions: IFlowStepsAction[]
   traceId?: string
 }
+
+// ── MCP Bridge API types ────────────────────────────────────────────────────
+
+export interface IMcpAppAction {
+  key: string
+  name: string
+  description?: string
+}
+
+export interface IMcpApp {
+  key: string
+  name: string
+  triggers: IMcpAppAction[]
+  actions: IMcpAppAction[]
+}
+
+export interface IMcpStepDetail {
+  id: string
+  position: number
+  appKey: string
+  key: string
+  type: 'trigger' | 'action'
+  /** Configured parameter values — never contains connection credentials */
+  parameters: Record<string, unknown>
+}
+
+export interface IMcpPipeSummary {
+  id: string
+  name: string
+  active: boolean
+  stepCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpPipeDetail extends IMcpPipeSummary {
+  steps: IMcpStepDetail[]
+}
+
+export interface IMcpExecution {
+  id: string
+  pipeId: string
+  status: 'success' | 'failure' | null
+  testRun: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpVerifyResponse {
+  userId: string
+  email: string
+}
