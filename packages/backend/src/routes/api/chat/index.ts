@@ -92,6 +92,7 @@ const handleChatStream = observe(
       // Get the prompt from Langfuse
       const prompt = await getPrompt(
         isAtLimit ? chatSummaryPromptName : chatPromptName,
+        'aiBuilder',
         version,
       )
 
@@ -119,6 +120,7 @@ const handleChatStream = observe(
             }),
             experimental_telemetry: {
               isEnabled: true,
+              functionId: 'ai-chat-stream',
               metadata: {
                 name: 'ai-chat-stream',
                 sessionId: sessionId || 'unknown',

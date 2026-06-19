@@ -170,6 +170,7 @@ export function validateFiles(
   file: File | CheckboxVariable,
   options: CheckboxVariable[],
   currentSelection: string[],
+  maxFiles: number = MAX_NUM_FILES,
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
   const selectedOptions = options.filter((o) =>
@@ -182,10 +183,10 @@ export function validateFiles(
   const totalSize = currentTotalSize + fileSize
   const currentFileCount = currentSelection.length + 1
 
-  if (currentFileCount > MAX_NUM_FILES) {
+  if (currentFileCount > maxFiles) {
     return {
       isValid: false,
-      error: 'Total number of files cannot exceed 10',
+      error: `Total number of files cannot exceed ${maxFiles}`,
     }
   }
 

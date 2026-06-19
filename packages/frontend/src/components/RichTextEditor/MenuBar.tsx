@@ -381,6 +381,7 @@ export const MenuBar = ({
               <button
                 key={`${label}${index}`}
                 title={label}
+                type="button"
                 disabled={isDisabled}
                 style={{
                   borderRadius: '0.25rem',

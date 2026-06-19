@@ -1,6 +1,7 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
 
 import { useContext } from 'react'
+import { useFormContext } from 'react-hook-form'
 
 import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
@@ -8,8 +9,10 @@ import DragDropInput from '@/components/DragDropInput'
 import MultiRow from '@/components/MultiRow'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
+import RichTextEditorWithPresets from '@/components/RichTextEditorWithPresets'
 import TextField from '@/components/TextField'
 import { EditorContext } from '@/contexts/Editor'
+import { getDefaultValue } from '@/helpers/editor'
 import { useIsFieldHidden } from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
 
@@ -35,6 +38,7 @@ const optionGenerator = (options: RawOption[]): IFieldDropdownOption[] =>
 
 export default function InputCreator(props: InputCreatorProps): JSX.Element {
   const { schema, namePrefix, stepId, parentType, autoFocus } = props
+  const formContext = useFormContext()
 
   const {
     key: name,
@@ -137,6 +141,24 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   }
 
   if (type === 'rich-text') {
+    if (schema?.presets?.length) {
+      return (
+        <RichTextEditorWithPresets
+          name={computedName}
+          basePath={namePrefix}
+          presets={schema?.presets}
+          required={required}
+          label={label}
+          description={description}
+          placeholder={placeholder}
+          variablesEnabled={variables}
+          noVariablesMessage={noVariablesMessage}
+          customRteMenuOptions={schema?.customRteMenuOptions}
+          defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
+        />
+      )
+    }
+
     return (
       <RichTextEditor
         name={computedName}
@@ -151,6 +173,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         variableTypes={schema.variableTypes}
         supportTableDisplay={schema.supportTableDisplay}
         previewType={schema.previewType}
+        defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
       />
     )
   }
@@ -198,6 +221,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         label={label}
         description={description}
         variableTypes={schema.variableTypes}
+        required={required}
+        maxFiles={schema.maxFiles}
+        disableUpload={schema.disableUpload}
       />
     )
   }
@@ -228,6 +254,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
         maxRows={schema.maxRows}
+        defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
       />
     )
   }

@@ -68,14 +68,21 @@ type AppConfig = {
     foundry: {
       apiKey: string
       model: string
+      imageModel: string
     }
     rome: {
-      publicKey: string
-      secretKey: string
       baseUrl: string
       cloudflare: {
         zeroTrustClientKey: string
         zeroTrustSecretKey: string
+      }
+      aiBuilder: {
+        publicKey: string
+        secretKey: string
+      }
+      pairAction: {
+        publicKey: string
+        secretKey: string
       }
     }
   }
@@ -160,16 +167,23 @@ const appConfig: AppConfig = {
     foundry: {
       apiKey: process.env.PAIR_FOUNDRY_API_KEY,
       model: process.env.PAIR_FOUNDRY_MODEL,
+      imageModel: process.env.PAIR_FOUNDRY_IMAGE_MODEL,
     },
     rome: {
-      publicKey: process.env.PAIR_ROME_PUBLIC_KEY,
-      secretKey: process.env.PAIR_ROME_SECRET_KEY,
       baseUrl: process.env.PAIR_ROME_BASE_URL,
       cloudflare: {
         zeroTrustClientKey:
           process.env.PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY,
         zeroTrustSecretKey:
           process.env.PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY,
+      },
+      aiBuilder: {
+        publicKey: process.env.PAIR_ROME_AI_BUILDER_PUBLIC_KEY,
+        secretKey: process.env.PAIR_ROME_AI_BUILDER_SECRET_KEY,
+      },
+      pairAction: {
+        publicKey: process.env.PAIR_ROME_PAIR_ACTION_PUBLIC_KEY,
+        secretKey: process.env.PAIR_ROME_PAIR_ACTION_SECRET_KEY,
       },
     },
   },
@@ -229,16 +243,22 @@ if (!appConfig.gathersg.publicKey) {
   throw new Error('GATHERSG_PUBLIC_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.pair.foundry.apiKey || !appConfig.pair.foundry.model) {
+if (
+  !appConfig.pair.foundry.apiKey ||
+  !appConfig.pair.foundry.model ||
+  !appConfig.pair.foundry.imageModel
+) {
   throw new Error('Pair Foundry environment variables need to be set!')
 }
 
 if (
-  !appConfig.pair.rome.publicKey ||
-  !appConfig.pair.rome.secretKey ||
   !appConfig.pair.rome.baseUrl ||
   !appConfig.pair.rome.cloudflare.zeroTrustClientKey ||
-  !appConfig.pair.rome.cloudflare.zeroTrustSecretKey
+  !appConfig.pair.rome.cloudflare.zeroTrustSecretKey ||
+  !appConfig.pair.rome.aiBuilder.publicKey ||
+  !appConfig.pair.rome.aiBuilder.secretKey ||
+  !appConfig.pair.rome.pairAction.publicKey ||
+  !appConfig.pair.rome.pairAction.secretKey
 ) {
   throw new Error('Pair Rome environment variables need to be set!')
 }

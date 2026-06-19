@@ -27,6 +27,8 @@ interface AttachmentSuggestionsProps {
   description?: string
   required?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  maxFiles?: number
+  disableUpload?: boolean
 }
 
 function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
@@ -37,6 +39,8 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     label,
     variableTypes = null,
     defaultValue = [],
+    maxFiles,
+    disableUpload,
   } = props
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const cancelRef = useRef<HTMLButtonElement>(null)
@@ -70,6 +74,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
     flowData?.getFlow?.config,
     priorExecutionSteps,
     variableTypes,
+    disableUpload,
   )
 
   const onSuggestionClick = useCallback(
@@ -99,6 +104,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
           variable,
           options,
           getValues(name),
+          maxFiles,
         )
         if (!isValid) {
           setError(name, { type: 'invalidFile', message: error })
@@ -107,7 +113,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         }
       }
     },
-    [getValues, name, setError, options],
+    [getValues, name, setError, options, maxFiles],
   )
 
   useOutsideClick({

@@ -13,7 +13,6 @@ export const FOR_EACH_REMINDER_TEMPLATE: ITemplate = {
   name: 'Schedule reminders to a list of emails',
   description: 'Schedule a recurring reminder to a group of people',
   iconName: 'BiCalendar',
-  tags: ['new'],
   // Steps: scheduler --> tiles --> for-each --> postman --> tiles
   steps: [
     {

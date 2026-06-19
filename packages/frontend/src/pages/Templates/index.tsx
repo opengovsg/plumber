@@ -1,5 +1,6 @@
 import type { ITemplate } from '@plumber/types'
 
+import { useContext } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Flex, Grid, Text } from '@chakra-ui/react'
@@ -8,6 +9,7 @@ import { Link } from '@opengovsg/design-system-react'
 import Container from '@/components/Container'
 import PageTitle from '@/components/PageTitle'
 import * as URLS from '@/config/urls'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { useApps } from '@/hooks/useApps'
 
@@ -22,7 +24,19 @@ const TEMPLATES_COUNT = 9
 export default function Templates(): JSX.Element {
   const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
 
-  const templates: ITemplate[] = data?.getTemplates
+  // TODO (kevinkim-ogp): remove this when Pair is released to all users
+  // we do this to avoid adding extra flags or parameters into the query
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const isPairEnabled = getFlagValue('app_pair') as boolean
+  const templates: ITemplate[] =
+    data?.getTemplates?.filter((template: ITemplate) => {
+      if (isPairEnabled) {
+        return template.id !== '2a84e2f6-4806-46a2-890a-0dba1411b12f' // ROUTE_SUPPORT_ENQUIRIES_TEMPLATE
+      } else if (!isPairEnabled) {
+        return template.id !== '8f0a3052-db94-45de-b984-29647f2b09c9' // ROUTE_SUPPORT_ENQUIRIES_WITH_PAIR_TEMPLATE
+      }
+      return true
+    }) ?? []
   const { templateId } = useParams()
   const template = templates?.find((template) => template.id === templateId)
 

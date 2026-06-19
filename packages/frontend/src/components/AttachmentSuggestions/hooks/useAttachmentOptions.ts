@@ -19,6 +19,7 @@ export function useAttachmentOptions(
   flowConfig: Flow['config'],
   priorExecutionSteps: IExecutionStep[],
   variableTypes: TDataOutMetadatumType[] | null,
+  disableUpload?: boolean,
 ) {
   const { allApps } = useContext(EditorContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -53,12 +54,14 @@ export function useAttachmentOptions(
 
     return [
       ...filteredVars,
-      {
-        id: 'uploaded',
-        name: 'Uploaded attachments',
-        output: uploadedItems,
-        addNew: true,
-      },
+      disableUpload
+        ? null
+        : {
+            id: 'uploaded',
+            name: 'Uploaded attachments',
+            output: uploadedItems,
+            addNew: true,
+          },
     ].filter(Boolean) as StepWithVariables[]
   }, [
     priorExecutionSteps,
@@ -66,6 +69,7 @@ export function useAttachmentOptions(
     allApps,
     uploadedItems,
     variableTypes,
+    disableUpload,
   ])
 
   return {

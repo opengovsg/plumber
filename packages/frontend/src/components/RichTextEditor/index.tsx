@@ -1,9 +1,13 @@
 import './RichTextEditor.scss'
 
-import type { TFieldPreviewType, TRteMenuOption } from '@plumber/types'
-import { TDataOutMetadatumType } from '@plumber/types'
+import type {
+  TDataOutMetadatumType,
+  TFieldPreviewType,
+  TRteMenuOption,
+} from '@plumber/types'
+import { IJSONValue } from '@plumber/types'
 
-import { useCallback, useContext, useEffect, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import {
   Box,
@@ -28,6 +32,7 @@ import Text from '@tiptap/extension-text'
 import Underline from '@tiptap/extension-underline'
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import clsx from 'clsx'
 import escapeHtml from 'escape-html'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -91,6 +96,7 @@ const RICH_TEXT_EXTENSIONS = [
 interface EditorProps {
   onChange: (...event: any[]) => void
   initialValue: string
+  defaultValue?: string | IJSONValue
   editable: boolean
   placeholder?: string
   variablesEnabled?: boolean
@@ -105,10 +111,13 @@ interface EditorProps {
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
   previewType?: TFieldPreviewType
+  containerClassName?: string
+  triggerContainerClassName?: string
 }
 const Editor = ({
   onChange,
   initialValue,
+  defaultValue,
   editable,
   placeholder,
   variablesEnabled,
@@ -123,13 +132,21 @@ const Editor = ({
   isDisplayOnly = false,
   supportTableDisplay,
   previewType,
+  containerClassName,
+  triggerContainerClassName,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
   const { allApps } = useContext(EditorContext)
   const isMobile = useIsMobile()
   const isMulticol = parentType === 'multicol'
-  const showMenuBar = isRich && !isDisplayOnly
+  const hasCustomMenuOptions =
+    !customRteMenuOptions || customRteMenuOptions.length > 0
+  const shouldShowMenuBar = isRich && hasCustomMenuOptions && !isDisplayOnly
+
+  // ref to track the defaultValue
+  // this is to sync the content of the editor with the defaultValue
+  const previousDefaultValueRef = useRef(defaultValue)
 
   const [stepsWithVariables, varInfo] = useMemo(() => {
     const stepsWithVars = filterVariables(
@@ -234,6 +251,29 @@ const Editor = ({
     editor?.setOptions({ editable })
   }, [editable, editor])
 
+  useEffect(() => {
+    // this is to sync the content of the editor with the defaultValue
+    // only do this if the defaultValue has actually changed
+    // for simplicity, we don't check if the initialValue has changed
+    // and just overwrite the content of the editor with the defaultValue
+    // this is a trade-off that we make as defaultValues are updated at once
+    // in multiple fields, and a warning may be required to warn the user
+    // that changes have been made and will be overwritten.
+    const hasDefaultValueChanged =
+      defaultValue !== previousDefaultValueRef.current
+
+    if (editor && defaultValue !== undefined && hasDefaultValueChanged) {
+      editor?.commands.setContent(defaultValue as string)
+      onChange(
+        isRich
+          ? removeProblematicWhitespace(editor.getHTML())
+          : removeProblematicWhitespace(editor.getText()),
+      )
+
+      previousDefaultValueRef.current = defaultValue
+    }
+  }, [defaultValue, editor, isRich, onChange])
+
   const handleVariableClick = useCallback(
     (variable: Variable) => {
       // if the selection is a node, means the user clicked on a variable
@@ -294,7 +334,7 @@ const Editor = ({
         placement={getPopoverPlacement(editor)}
       >
         <div
-          className="editor"
+          className={clsx('editor', containerClassName)}
           onClick={(e) => {
             e.stopPropagation()
             openSuggestions()
@@ -315,8 +355,13 @@ const Editor = ({
           {...(isDisplayOnly && { style: { border: 'none' } })}
         >
           <PopoverTrigger>
-            <Box className={isMulticol ? 'single-line-editor' : undefined}>
-              {showMenuBar && (
+            <Box
+              className={clsx(
+                isMulticol && 'single-line-editor',
+                triggerContainerClassName,
+              )}
+            >
+              {shouldShowMenuBar && (
                 <MenuBar
                   editor={editor}
                   variableMap={varInfo}
@@ -370,7 +415,7 @@ const Editor = ({
 
 interface RichTextEditorProps {
   required?: boolean
-  defaultValue?: string
+  defaultValue?: string | IJSONValue
   name: string
   label?: string
   description?: string
@@ -388,6 +433,8 @@ interface RichTextEditorProps {
   isDisplayOnly?: boolean
   supportTableDisplay?: boolean
   previewType?: TFieldPreviewType
+  containerClassName?: string
+  triggerContainerClassName?: string
 }
 const RichTextEditor = ({
   required,
@@ -409,6 +456,8 @@ const RichTextEditor = ({
   isDisplayOnly = false,
   supportTableDisplay,
   previewType,
+  containerClassName,
+  triggerContainerClassName,
 }: RichTextEditorProps) => {
   const { readOnly } = useContext(EditorContext)
   const { control, getValues } = useFormContext()
@@ -447,6 +496,7 @@ const RichTextEditor = ({
           <Editor
             onChange={onChange}
             initialValue={value}
+            defaultValue={defaultValue}
             editable={!readOnly && !isDisplayOnly}
             placeholder={placeholder}
             variablesEnabled={variablesEnabled}
@@ -461,6 +511,8 @@ const RichTextEditor = ({
             isDisplayOnly={isDisplayOnly}
             supportTableDisplay={supportTableDisplay}
             previewType={previewType}
+            containerClassName={containerClassName}
+            triggerContainerClassName={triggerContainerClassName}
           />
         )}
       />
