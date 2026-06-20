@@ -290,9 +290,7 @@ describe('createTableRow runBatch', () => {
     expect(results.every((r) => r.status === 'failed')).toBe(true)
     expect(mocks.acquire).not.toHaveBeenCalled()
     expect(postCalls()).toHaveLength(0)
-    jobs.forEach((job) =>
-      expect(job.$.setActionItem).not.toHaveBeenCalled(),
-    )
+    jobs.forEach((job) => expect(job.$.setActionItem).not.toHaveBeenCalled())
   })
 
   it('rethrows a transient access-check error so the whole batch retries', async () => {

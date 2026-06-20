@@ -3,8 +3,8 @@ import '@/apps'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import m365ExcelApp from '..'
 import batchQueueConfig from '../queue/batch'
+import m365ExcelApp from '..'
 
 const mocks = vi.hoisted(() => ({
   stepQueryResult: vi.fn(),

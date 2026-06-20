@@ -593,9 +593,9 @@ describe('m365-excel batch worker (integration)', () => {
     )
     await sleep(200)
 
-    expect(mocks.validateCanAccessFile.mock.calls.length).toBeGreaterThanOrEqual(
-      2,
-    )
+    expect(
+      mocks.validateCanAccessFile.mock.calls.length,
+    ).toBeGreaterThanOrEqual(2)
     expect(postConfigs()).toHaveLength(0)
     expect((await createTableRowSteps('success')).length).toBe(0)
     expect(await mainActionQueue.getWaiting()).toHaveLength(0)
