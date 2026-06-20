@@ -235,6 +235,52 @@ describe('createTableRow runBatch', () => {
     expect(jobs[1].$.setActionItem).not.toHaveBeenCalled()
   })
 
+  it('isolates a job whose column does not exist and still writes the valid jobs', async () => {
+    // First inserted row at table-index 3 (relative to the header row).
+    mockGraph(3)
+
+    const jobs = [
+      { $: makeGlobalVariable(rowParameters('Alice', '30')) },
+      {
+        $: makeGlobalVariable({
+          fileId: 'file-1',
+          tableId: '{table-1}',
+          // Passes the params schema (a valid, non-empty string), but no such
+          // column exists in the table - so it survives the per-job parse and
+          // fails only at row-build time, against the real table columns.
+          columnValues: [{ columnName: 'Nonexistent', value: 'x' }],
+        }),
+      },
+      { $: makeGlobalVariable(rowParameters('Carol', '50')) },
+    ]
+
+    const results = await createTableRowAction.runBatch(jobs)
+
+    // The bad-column job is isolated; the whole batch is NOT sunk.
+    expect(results[0]).toEqual({ status: 'success' })
+    expect(results[1].status).toBe('failed')
+    expect(results[2]).toEqual({ status: 'success' })
+
+    // One POST carrying only the two valid rows; the un-buildable row is excluded.
+    expect(postCalls()).toHaveLength(1)
+    const [, , postConfig] = postCalls()[0]
+    expect(postConfig.data.values).toEqual([
+      ['Alice', '30'],
+      ['Carol', '50'],
+    ])
+
+    // sheetRowNumber uses the position in the WRITTEN set, not the batch index:
+    // the surviving rows are contiguous from firstRowIndex 3, so
+    // 9 + 1 + (3 + 0) + 1 = 14 and 9 + 1 + (3 + 1) + 1 = 15.
+    expect(jobs[0].$.setActionItem).toHaveBeenCalledWith({
+      raw: { sheetRowNumber: 14, success: true },
+    })
+    expect(jobs[2].$.setActionItem).toHaveBeenCalledWith({
+      raw: { sheetRowNumber: 15, success: true },
+    })
+    expect(jobs[1].$.setActionItem).not.toHaveBeenCalled()
+  })
+
   it('reports every job failed and never touches Graph when all jobs are invalid', async () => {
     const jobs = [
       {
