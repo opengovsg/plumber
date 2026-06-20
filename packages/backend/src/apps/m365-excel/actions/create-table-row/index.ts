@@ -180,13 +180,11 @@ async function runBatch(
     return results
   }
 
-  // All parsed jobs are authorized: they are the healthy set, already in batch
-  // order. Mark each `success` now; the shared write below commits their rows.
-  const healthy = parsed
-  for (const { index } of healthy) {
-    results[index] = { status: 'success' }
-  }
-
+  // All parsed jobs are authorized: they are the candidate set, in batch order.
+  // Each still has to build its row (a per-job step that can fail on a column
+  // name that doesn't exist in the table), so we don't mark `success` until the
+  // row is built AND committed below.
+  //
   // The whole batch is written through ONE session (the first job's). Every job
   // shares that job's connection (asserted above) and the single check
   // authorized it, so this session's authorization is correct for every row.
@@ -217,18 +215,38 @@ async function runBatch(
     columnNames: tableHeaderInfoResponse.data.values[0],
   }
 
-  // One ordered values row per valid job, in batch order. Note: we disallow
+  // Build each parsed job's ordered values row INDIVIDUALLY, isolating a per-job
+  // build failure (e.g. a `columnName` that doesn't exist in the table) the same
+  // way a bad-params job is isolated above - one un-buildable row must not sink
+  // the whole batch. buildRowUpdateArgs throws a StepError, recorded as that
+  // job's failure (and re-thrown on the single-job `run` path). The schema parse
+  // above can't catch this: a non-existent column is still a valid non-empty
+  // string, so it only fails here, against the table's real columns. We disallow
   // blacklisted formulas and sanitise when necessary.
-  const values = healthy.map(({ $, params }) =>
-    buildRowUpdateArgs(
-      $,
-      tableHeaderInfo.columnNames,
-      params.columnValues.map((col) => ({
-        columnName: col.columnName,
-        value: sanitiseInputValue(col.value),
-      })),
-    ),
-  )
+  const writable: Array<{ index: number; $: IGlobalVariable }> = []
+  const values: Array<ReturnType<typeof buildRowUpdateArgs>> = []
+  parsed.forEach(({ index, $, params }) => {
+    try {
+      values.push(
+        buildRowUpdateArgs(
+          $,
+          tableHeaderInfo.columnNames,
+          params.columnValues.map((col) => ({
+            columnName: col.columnName,
+            value: sanitiseInputValue(col.value),
+          })),
+        ),
+      )
+      writable.push({ index, $ })
+    } catch (error) {
+      results[index] = { status: 'failed', error }
+    }
+  })
+
+  // Every parsed job failed to build its row: nothing to write, no Graph POST.
+  if (writable.length === 0) {
+    return results
+  }
 
   const createRowResponse = await session.request<{ index: number }>(
     `/tables/:tableId/rows`,
@@ -245,14 +263,19 @@ async function runBatch(
   )
 
   // The multi-row response returns a single `index`: the table-index of the
-  // FIRST inserted row (Approach A). Rows are inserted contiguously, so the
-  // i-th valid job lands at responseStartIndex + i. (Gated by the >=2-row test,
-  // and by the per-file lock which guarantees no concurrent appends shift these
-  // rows.)
+  // FIRST inserted row (Approach A). Rows are inserted contiguously in `values`
+  // order, so the i-th WRITTEN job lands at responseStartIndex + i. (Gated by the
+  // >=2-row test, and by the per-file lock which guarantees no concurrent appends
+  // shift these rows.)
   const responseStartIndex = createRowResponse.data.index
 
-  // Only now that all rows are committed do we set each valid job's own output.
-  healthy.forEach(({ $ }, index) => {
+  // Only now that all rows are committed do we mark each written job `success`
+  // and set its own output. `writeIndex` is the row's position in the POSTed
+  // `values` (NOT the original batch index): isolated build-failures were
+  // excluded from the write, so the surviving rows are contiguous from
+  // responseStartIndex.
+  writable.forEach(({ $, index }, writeIndex) => {
+    results[index] = { status: 'success' }
     $.setActionItem({
       raw: {
         // `sheetRowNumber` exposes the actual row number of the created row.
@@ -270,9 +293,9 @@ async function runBatch(
         //   /* ...and add... */
         //   +
         //   /* ... the new row's index from the header row (1-indexed) */
-        //   (responseStartIndex + index) + 1
+        //   (responseStartIndex + writeIndex) + 1
         sheetRowNumber:
-          tableHeaderInfo.rowIndex + 1 + (responseStartIndex + index) + 1,
+          tableHeaderInfo.rowIndex + 1 + (responseStartIndex + writeIndex) + 1,
         success: true,
       },
     })

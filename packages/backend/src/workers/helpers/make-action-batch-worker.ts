@@ -503,11 +503,31 @@ async function finalizeBatch(
  * fires on sustained contention.
  */
 async function requeueBatchOnContention(ctx: BatchContext): Promise<void> {
-  const { job, span } = ctx
+  const { job, span, queueName } = ctx
   span?.addTags({ 'lock.requeued': true })
+
+  // Capture member identity BEFORE setBatch([]) empties the container, and log an
+  // explicit re-queue line in the same `JOB ID / FLOW ID` shape as the worker
+  // event logs. Without this, the only trace of a contention re-queue is the
+  // emptied container's no-op `completed` event (which worker-event-handlers.ts
+  // suppresses), so the member's later second run would look unexplained.
+  const members = job.getBatch()
+  const jobIds = members.map((member) => member.id).join(',')
+  const flowIds = [
+    ...new Set(members.map((member) => member.data.flowId)),
+  ].join(',')
+  logger.info(
+    `[${queueName}] JOB ID: ${jobIds} - FLOW ID: ${flowIds} re-queued on file-lock contention (moved to delayed)`,
+    {
+      queueName,
+      batchSize: members.length,
+      workerVersion: appConfig.version,
+    },
+  )
+
   const requeueAt = Date.now() + fileLockRequeueDelayMs()
   await Promise.all(
-    job.getBatch().map((member) => member.moveToDelayed(requeueAt, job.token)),
+    members.map((member) => member.moveToDelayed(requeueAt, job.token)),
   )
   job.setBatch([])
 }

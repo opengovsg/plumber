@@ -422,6 +422,39 @@ export const processAction = async (options: ProcessActionOptions) => {
   const lockKey = await resolveLockKey($)
   const span = tracer.scope().active()
 
+  // Record the execution step, resolve the next step, and build the
+  // processAction result. Shared by the normal run path AND the test-run
+  // contention path below, so a test run whose file lock is contended surfaces
+  // as a recorded FAILED step (which the editor renders inline) rather than a
+  // thrown error - exactly like any other step failure.
+  const recordAndResolve = async (
+    runResult: IActionRunResult,
+    executionError: unknown,
+  ) => {
+    const executionStep = await recordExecutionStep({
+      prepared,
+      runResult,
+      executionError,
+      jobId,
+    })
+
+    const nextStep = await resolveNextStep({ prepared, runResult })
+
+    return {
+      flowId,
+      stepId,
+      executionId,
+      executionStep,
+      computedParameters,
+      nextStep,
+      nextStepMetadata: {
+        ...runResult.nextStepMetadata,
+        ...metadata,
+      },
+      executionError,
+    }
+  }
+
   return withLock(
     lockKey,
     async () => {
@@ -441,37 +474,23 @@ export const processAction = async (options: ProcessActionOptions) => {
         setActionOutputError($, error)
       }
 
-      const executionStep = await recordExecutionStep({
-        prepared,
-        runResult,
-        executionError,
-        jobId,
-      })
-
-      const nextStep = await resolveNextStep({ prepared, runResult })
-
-      return {
-        flowId,
-        stepId,
-        executionId,
-        executionStep,
-        computedParameters,
-        nextStep,
-        nextStepMetadata: {
-          ...runResult.nextStepMetadata,
-          ...metadata,
-        },
-        executionError,
-      }
+      return recordAndResolve(runResult, executionError)
     },
     {
       span,
       onContention: (key) => {
+        // A test run cannot be re-queued, so surface contention as a normal
+        // failed step: record the friendly StepError as this step's failure and
+        // RETURN the result, so the editor renders it inline (via the executeStep
+        // resolver's `executionStep` return) instead of throwing out of
+        // processAction as a raw error.
         if (testRun) {
-          throw new StepError(
+          const executionError = new StepError(
             'This file is busy right now.',
             'Please try again in a moment.',
           )
+          setActionOutputError($, executionError)
+          return recordAndResolve({}, executionError)
         }
         span?.addTags({ 'lock.requeued': true })
         throw new FileLockContentionError(key)
