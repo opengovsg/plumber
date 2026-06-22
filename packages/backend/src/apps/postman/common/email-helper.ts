@@ -134,6 +134,11 @@ async function sendViaPostman(
 async function sendViaSes(
   recipientEmail: string,
   email: Email,
+  // CC addresses to actually send to. Suppressed CCs are dropped from the SES
+  // call so we don't re-send to known-bad addresses (which would re-bounce and
+  // inflate the bounce rate). The full email.ccList is still reported in
+  // dataOut below — only the API call is filtered.
+  ccAddressesToSend: string[] | undefined,
 ): Promise<PostmanPromiseFulfilled> {
   const client = getSesClient()
   const fromAddress = `${email.senderName} <${appConfig.ses.fromAddress}>`
@@ -143,7 +148,7 @@ async function sendViaSes(
       FromEmailAddress: fromAddress,
       Destination: {
         ToAddresses: [recipientEmail],
-        ...(email.ccList?.length && { CcAddresses: email.ccList }),
+        ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
       },
       Content: {
         Simple: {
@@ -167,6 +172,7 @@ async function sendViaSes(
     subject: email.subject,
     from: fromAddress,
     recipient: recipientEmail,
+    ccAddressesToSend,
   })
 
   return {
@@ -204,12 +210,16 @@ export async function sendTransactionalEmails(
     !email.attachments?.length &&
     recipients.every((r) => shouldUseSes(r, sesEnabledDomains))
 
-  // Pre-send suppression check (SES path only)
+  // Pre-send suppression check (SES path only). CC addresses are included so a
+  // blacklisted CC can be dropped from the SES call rather than re-sent to
+  // (which would re-bounce and inflate the bounce rate). CC suppression is
+  // silent — the full ccList is still reported in dataOut.
   let suppressedSet = new Set<string>()
   if (useSes) {
-    const suppressedEmails = await EmailSuppressionEntry.getSuppressedEmails(
-      recipients,
-    )
+    const suppressedEmails = await EmailSuppressionEntry.getSuppressedEmails([
+      ...recipients,
+      ...(email.ccList ?? []),
+    ])
     suppressedSet = new Set(suppressedEmails)
 
     if (suppressedSet.size > 0) {
@@ -222,11 +232,14 @@ export async function sendTransactionalEmails(
   }
 
   const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
+  // Suppressed CCs are removed from the API call only — dataOut keeps the full
+  // ccList (CC status is not tracked per the field's documented behaviour).
+  const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
   const promises = activeRecipients.map(async (recipientEmail) => {
     try {
       if (useSes) {
-        return await sendViaSes(recipientEmail, email)
+        return await sendViaSes(recipientEmail, email, ccAddressesToSend)
       }
       return await sendViaPostman(http, recipientEmail, email)
     } catch (e) {
