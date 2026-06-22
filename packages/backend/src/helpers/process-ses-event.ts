@@ -8,12 +8,29 @@ export interface SesEventInput {
   sqsMessageId: string
 }
 
-// AWS SES mailbox simulator addresses. Sending to these generates real
-// Bounce/Complaint events used to exercise this pipeline end to end, so they
-// must be excluded from the bounce/complaint metrics — otherwise routine
-// testing inflates the rates we alert on. Addresses are always lowercase.
-const SES_SIMULATOR_BOUNCE_ADDRESS = 'bounce@simulator.amazonses.com'
-const SES_SIMULATOR_COMPLAINT_ADDRESS = 'complaint@simulator.amazonses.com'
+const SES_SIMULATOR_DOMAIN = 'simulator.amazonses.com'
+
+/**
+ * Whether an address is an AWS SES mailbox simulator address for the given
+ * scenario. Sending to these generates real Bounce/Complaint events used to
+ * exercise this pipeline, so they are excluded from the bounce/complaint
+ * metrics — otherwise routine testing inflates the rates we alert on.
+ *
+ * Matches both the bare form (bounce@simulator.amazonses.com) and the
+ * `+label` subaddress form (bounce+anylabel@simulator.amazonses.com), which
+ * SES allows for sending multiple distinguishable test emails. Case-insensitive.
+ */
+function isSesSimulatorAddress(
+  email: string,
+  scenario: 'bounce' | 'complaint',
+): boolean {
+  const [localPart, domain] = email.toLowerCase().split('@')
+  if (domain !== SES_SIMULATOR_DOMAIN) {
+    return false
+  }
+  // Strip optional +label subaddressing before matching the scenario.
+  return localPart.split('+')[0] === scenario
+}
 
 /**
  * Process a parsed SES event (called by the SQS consumer's handleMessage).
@@ -40,7 +57,7 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
     // ses.email.sent denominator), excluding the SES bounce simulator so test
     // sends don't skew the bounce rate.
     const meteredRecipients = bouncedRecipients.filter(
-      (r) => r.emailAddress.toLowerCase() !== SES_SIMULATOR_BOUNCE_ADDRESS,
+      (r) => !isSesSimulatorAddress(r.emailAddress, 'bounce'),
     )
     if (meteredRecipients.length > 0) {
       incrementMetric(
@@ -93,7 +110,7 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
     // ses.email.sent denominator), excluding the SES complaint simulator so
     // test sends don't skew the complaint rate.
     const meteredRecipients = complainedRecipients.filter(
-      (r) => r.emailAddress.toLowerCase() !== SES_SIMULATOR_COMPLAINT_ADDRESS,
+      (r) => !isSesSimulatorAddress(r.emailAddress, 'complaint'),
     )
     if (meteredRecipients.length > 0) {
       incrementMetric(
