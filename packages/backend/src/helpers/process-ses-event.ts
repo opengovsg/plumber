@@ -8,6 +8,13 @@ export interface SesEventInput {
   sqsMessageId: string
 }
 
+// AWS SES mailbox simulator addresses. Sending to these generates real
+// Bounce/Complaint events used to exercise this pipeline end to end, so they
+// must be excluded from the bounce/complaint metrics — otherwise routine
+// testing inflates the rates we alert on. Addresses are always lowercase.
+const SES_SIMULATOR_BOUNCE_ADDRESS = 'bounce@simulator.amazonses.com'
+const SES_SIMULATOR_COMPLAINT_ADDRESS = 'complaint@simulator.amazonses.com'
+
 /**
  * Process a parsed SES event (called by the SQS consumer's handleMessage).
  *
@@ -29,10 +36,22 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
   if (sesEvent.eventType === SesEventType.Bounce) {
     const { bounceType, bounceSubType, bouncedRecipients } = sesEvent.bounce
 
-    incrementMetric('ses.email.bounce', {
-      bounce_type: bounceType,
-      bounce_sub_type: bounceSubType ?? 'unknown',
-    })
+    // Count one bounce per affected recipient (matching the per-recipient
+    // ses.email.sent denominator), excluding the SES bounce simulator so test
+    // sends don't skew the bounce rate.
+    const meteredRecipients = bouncedRecipients.filter(
+      (r) => r.emailAddress.toLowerCase() !== SES_SIMULATOR_BOUNCE_ADDRESS,
+    )
+    if (meteredRecipients.length > 0) {
+      incrementMetric(
+        'ses.email.bounce',
+        {
+          bounce_type: bounceType,
+          bounce_sub_type: bounceSubType ?? 'unknown',
+        },
+        meteredRecipients.length,
+      )
+    }
 
     if (bounceType === 'Permanent') {
       // TODO: add micro-optimisation for upsertSuppression to blacklist multiple recipient emails in phase 2
@@ -70,9 +89,21 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
   if (sesEvent.eventType === SesEventType.Complaint) {
     const { complainedRecipients, complaintFeedbackType } = sesEvent.complaint
 
-    incrementMetric('ses.email.complaint', {
-      complaint_feedback_type: complaintFeedbackType ?? 'other',
-    })
+    // Count one complaint per affected recipient (matching the per-recipient
+    // ses.email.sent denominator), excluding the SES complaint simulator so
+    // test sends don't skew the complaint rate.
+    const meteredRecipients = complainedRecipients.filter(
+      (r) => r.emailAddress.toLowerCase() !== SES_SIMULATOR_COMPLAINT_ADDRESS,
+    )
+    if (meteredRecipients.length > 0) {
+      incrementMetric(
+        'ses.email.complaint',
+        {
+          complaint_feedback_type: complaintFeedbackType ?? 'other',
+        },
+        meteredRecipients.length,
+      )
+    }
 
     if (complaintFeedbackType === 'not-spam') {
       // Auto-whitelist: recipient marked the email as not-spam
