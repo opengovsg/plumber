@@ -55,20 +55,21 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
               .where('created_at', '<', cutoff)
               .whereIn('status', ['success', 'failure']),
           )
-          // Test executions on active flows: past cutoff, not the live test execution.
+          // Test executions on active flows: past cutoff.
           .orWhere((b) =>
             b
               .where('test_run', true)
-              .where('created_at', '<', cutoff)
-              .whereNotIn(
-                'id',
-                archivalDbReader('flows')
-                  .select('test_execution_id')
-                  .whereNotNull('test_execution_id')
-                  .whereNull('deleted_at'),
-              ),
+              .where('created_at', '<', cutoff),
           )
       })
+      // Never archive the designated test execution of any flow (deleted or active).
+      // This avoids having to NULL flows.test_execution_id in the archival transaction.
+      .whereNotIn(
+        'id',
+        archivalDbReader('flows')
+          .select('test_execution_id')
+          .whereNotNull('test_execution_id'),
+      )
       .modify((qb) => {
         if (archiveDeletedFlowsOnly) {
           qb.whereIn(
