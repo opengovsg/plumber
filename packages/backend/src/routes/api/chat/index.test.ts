@@ -74,6 +74,14 @@ vi.mock('@/helpers/stream', () => ({
   pipeWebResponseToExpress: vi.fn().mockResolvedValue(undefined),
 }))
 
+vi.mock('@/helpers/mcp-bridge-tools', () => ({
+  createMcpBridgeTools: vi.fn().mockReturnValue({ plumber_tool: vi.fn() }),
+}))
+
+vi.mock('jsonwebtoken', () => ({
+  default: { sign: vi.fn().mockReturnValue('mock-internal-token') },
+}))
+
 vi.mock('@langfuse/tracing', () => ({
   observe: vi.fn(
     (fn: (...args: unknown[]) => unknown) =>
@@ -102,7 +110,7 @@ function makeReq(body = {}) {
       ...body,
     },
     context: {
-      currentUser: { email: 'test@example.com' },
+      currentUser: { id: 'user-1', email: 'test@example.com' },
     },
   }
 }
@@ -116,18 +124,27 @@ function makeRes() {
   }
 }
 
+import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
+
 describe('chat handler — GitBook MCP integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('passes tools and stopWhen to streamText when MCP client connects', async () => {
-    const mockTools = { search_documentation: vi.fn(), get_page: vi.fn() }
+  it('passes merged gitbook + bridge tools and stopWhen to streamText when MCP client connects', async () => {
+    const mockGitbookTools = {
+      search_documentation: vi.fn(),
+      get_page: vi.fn(),
+    }
+    const mockBridgeTools = { plumber_tool: vi.fn() }
     const mockClose = vi.fn()
     vi.mocked(experimental_createMCPClient).mockResolvedValue({
-      tools: vi.fn().mockResolvedValue(mockTools),
+      tools: vi.fn().mockResolvedValue(mockGitbookTools),
       close: mockClose,
     } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+    vi.mocked(createMcpBridgeTools).mockReturnValue(
+      mockBridgeTools as ReturnType<typeof createMcpBridgeTools>,
+    )
 
     const handler = router.stack[0].route.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,16 +152,20 @@ describe('chat handler — GitBook MCP integration', () => {
 
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
-        tools: mockTools,
+        tools: { ...mockGitbookTools, ...mockBridgeTools },
         stopWhen: expect.anything(),
       }),
     )
     expect(mockClose).toHaveBeenCalledTimes(1)
   })
 
-  it('calls streamText with empty tools and logs error when MCP client fails', async () => {
+  it('calls streamText with only bridge tools and logs error when GitBook MCP client fails', async () => {
+    const mockBridgeTools = { plumber_tool: vi.fn() }
     vi.mocked(experimental_createMCPClient).mockRejectedValue(
       new Error('connection refused'),
+    )
+    vi.mocked(createMcpBridgeTools).mockReturnValue(
+      mockBridgeTools as ReturnType<typeof createMcpBridgeTools>,
     )
 
     const handler = router.stack[0].route.stack[0].handle
@@ -153,7 +174,7 @@ describe('chat handler — GitBook MCP integration', () => {
 
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
-        tools: {},
+        tools: { ...mockBridgeTools },
       }),
     )
   })
