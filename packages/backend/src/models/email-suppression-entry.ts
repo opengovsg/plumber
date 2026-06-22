@@ -99,8 +99,8 @@ class EmailSuppressionEntry extends Base {
    * On conflict:
    *   - Overwrites reason / reason_detail / ses_message_id with latest event
    *   - Re-suppresses the row (last_whitelisted_at = NULL)
-   *   - Increments whitelist_count ONLY if the email was whitelisted before
-   *     this event — a signal that an admin's whitelist decision was wrong
+   *   - Leaves whitelist_count untouched — it counts successful whitelists
+   *     (incremented in whitelistEmails), not re-suppressions
    *   - Resets deleted_at so a previously soft-deleted row becomes visible
    *     to the suppression check again
    *
@@ -137,14 +137,8 @@ class EmailSuppressionEntry extends Base {
         sesMessageId: sesMessageId ?? null,
         lastWhitelistedAt: null,
         updatedAt: new Date().toISOString(),
-        // increment only when re-suppressing a previously whitelisted email
-        whitelistCount: raw(
-          `CASE
-            WHEN email_suppression.last_whitelisted_at IS NOT NULL
-            THEN email_suppression.whitelist_count + 1
-            ELSE email_suppression.whitelist_count
-          END`,
-        ),
+        // whitelist_count is intentionally not updated here — it tracks
+        // successful whitelists (see whitelistEmails), not re-suppressions.
         // undelete: re-suppression should always be visible to suppression checks
         deletedAt: null,
       })
@@ -175,8 +169,10 @@ class EmailSuppressionEntry extends Base {
 
   /**
    * Whitelist one or more emails (admin force-whitelist).
-   * Sets last_whitelisted_at = now() for emails that are currently suppressed.
-   * Does NOT reset whitelist_count.
+   * Sets last_whitelisted_at = now() for emails that are currently suppressed,
+   * and increments whitelist_count once per suppressed -> whitelisted
+   * transition (already-whitelisted emails are skipped by the WHERE clause, so
+   * the count is not double-incremented).
    *
    * Returns the list of emails that were actually whitelisted
    * (i.e. were suppressed and are now whitelisted).
@@ -190,6 +186,7 @@ class EmailSuppressionEntry extends Base {
     const results = await this.query()
       .patch({
         lastWhitelistedAt: new Date().toISOString(),
+        whitelistCount: raw('whitelist_count + 1'),
       })
       .whereIn('email', lowercasedEmails)
       .whereNull('last_whitelisted_at')

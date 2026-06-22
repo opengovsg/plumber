@@ -47,15 +47,15 @@ describe('EmailSuppressionEntry model', () => {
       expect(rows[0].whitelistCount).toBe(0)
     })
 
-    it('should increment whitelist_count when re-suppressing a whitelisted email', async () => {
+    it('should not change whitelist_count when re-suppressing a whitelisted email', async () => {
       // Suppress
       await EmailSuppressionEntry.upsertSuppression({
         email: testEmail,
         reason: 'BOUNCE',
       })
-      // Whitelist
+      // Whitelist — this is what increments whitelist_count (to 1)
       await EmailSuppressionEntry.whitelistEmails([testEmail])
-      // Re-suppress
+      // Re-suppress — must NOT touch whitelist_count
       await EmailSuppressionEntry.upsertSuppression({
         email: testEmail,
         reason: 'BOUNCE',
@@ -226,6 +226,30 @@ describe('EmailSuppressionEntry model', () => {
       expect(row.lastWhitelistedAt).not.toBeNull()
     })
 
+    it('should increment whitelist_count on a successful whitelist', async () => {
+      // Starts at 0 from the suppression in beforeEach.
+      await EmailSuppressionEntry.whitelistEmails(['suppressed@example.com'])
+
+      const row = await EmailSuppressionEntry.query().findOne({
+        email: 'suppressed@example.com',
+      })
+      expect(row.whitelistCount).toBe(1)
+    })
+
+    it('should not increment whitelist_count for an already-whitelisted email', async () => {
+      await EmailSuppressionEntry.whitelistEmails(['suppressed@example.com'])
+      // Second call is a no-op (email is no longer suppressed).
+      const result = await EmailSuppressionEntry.whitelistEmails([
+        'suppressed@example.com',
+      ])
+      expect(result).toEqual([])
+
+      const row = await EmailSuppressionEntry.query().findOne({
+        email: 'suppressed@example.com',
+      })
+      expect(row.whitelistCount).toBe(1)
+    })
+
     it('should not return emails that are not suppressed or do not exist', async () => {
       const result = await EmailSuppressionEntry.whitelistEmails([
         'unknown@example.com',
@@ -233,18 +257,21 @@ describe('EmailSuppressionEntry model', () => {
       expect(result).toEqual([])
     })
 
-    it('should not reset whitelist_count', async () => {
+    it('should count each whitelist across re-suppression cycles', async () => {
+      // whitelist (count -> 1)
       await EmailSuppressionEntry.whitelistEmails(['suppressed@example.com'])
+      // re-suppress (count unchanged)
       await EmailSuppressionEntry.upsertSuppression({
         email: 'suppressed@example.com',
         reason: 'BOUNCE',
       })
+      // whitelist again (count -> 2)
       await EmailSuppressionEntry.whitelistEmails(['suppressed@example.com'])
 
       const row = await EmailSuppressionEntry.query().findOne({
         email: 'suppressed@example.com',
       })
-      expect(row.whitelistCount).toBe(1)
+      expect(row.whitelistCount).toBe(2)
       expect(row.lastWhitelistedAt).not.toBeNull()
     })
 
