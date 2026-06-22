@@ -12,7 +12,7 @@ const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
 // so allow enough headroom for up to ~10 tool calls per assistant turn.
 const MAX_PARTS_PER_MESSAGE = 50
 
-const messagePartSchema = z.discriminatedUnion('type', [
+const messagePartSchema = z.union([
   z.object({
     type: z.literal('text'),
     text: z
