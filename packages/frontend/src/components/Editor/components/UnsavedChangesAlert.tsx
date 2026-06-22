@@ -42,15 +42,14 @@ export default function UnsavedChangesAlert({
 
           <AlertDialogFooter>
             <Button
-              ref={cancelRef}
-              onClick={onClose}
+              onClick={handleLeave}
               variant="clear"
               colorScheme="secondary"
             >
-              Continue editing
-            </Button>
-            <Button colorScheme="critical" onClick={handleLeave} ml={3}>
               Discard changes
+            </Button>
+            <Button ref={cancelRef} onClick={onClose} ml={3}>
+              Continue editing
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
