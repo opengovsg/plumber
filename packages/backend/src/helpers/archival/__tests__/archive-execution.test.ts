@@ -78,7 +78,8 @@ function makeMockKnex() {
           : table === 'executions'
           ? deleteExecFn
           : vi.fn().mockResolvedValue(0),
-      increment: table === 'flows' ? incrementFlowsFn : vi.fn().mockResolvedValue(0),
+      increment:
+        table === 'flows' ? incrementFlowsFn : vi.fn().mockResolvedValue(0),
     }
     return proxy
   }
@@ -293,11 +294,11 @@ describe('archiveExecution', () => {
     const s3 = makeMockS3()
     const knexClient = makeMockKnex()
 
-    await archiveExecution(
-      { ...mockExecution, testRun: true },
-      mockSteps,
-      { ...baseOpts, s3Client: s3, knexClient },
-    )
+    await archiveExecution({ ...mockExecution, testRun: true }, mockSteps, {
+      ...baseOpts,
+      s3Client: s3,
+      knexClient,
+    })
 
     expect((knexClient as any)._incrementFlowsFn).not.toHaveBeenCalled()
   })
