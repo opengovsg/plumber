@@ -1287,10 +1287,20 @@ export interface IFlowSteps {
 
 // ── MCP Bridge API types ────────────────────────────────────────────────────
 
+export interface IMcpAppField {
+  key: string
+  label: string
+  type: string
+  description?: string
+  required: boolean
+  options?: Array<{ label: string; value: string }>
+}
+
 export interface IMcpAppAction {
   key: string
   name: string
   description?: string
+  fields: IMcpAppField[]
 }
 
 export interface IMcpApp {
@@ -1335,4 +1345,48 @@ export interface IMcpExecution {
 export interface IMcpVerifyResponse {
   userId: string
   email: string
+}
+
+export interface IMcpConnection {
+  id: string
+  appKey: string
+  label: string
+  verified: boolean
+}
+
+export interface IMcpFieldOption {
+  label: string
+  value: string
+}
+
+export interface IMcpCreatePipeStep {
+  appKey: string
+  triggerKey?: string
+  actionKey?: string
+}
+
+export interface IMcpCreatedStep {
+  stepId: string
+  appKey: string
+  triggerKey?: string
+  actionKey?: string
+  position: number
+}
+
+export interface IMcpCreatePipeResult {
+  pipeId: string
+  steps: IMcpCreatedStep[]
+}
+
+export interface IMcpIncompleteStep {
+  stepId: string
+  position: number
+  appKey: string | null
+  missingFields: Array<{ key: string; label: string }>
+  missingConnection: boolean
+}
+
+export interface IMcpActivateError {
+  isError: true
+  incompleteSteps: IMcpIncompleteStep[]
 }
