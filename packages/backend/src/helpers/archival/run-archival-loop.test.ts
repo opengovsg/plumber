@@ -43,11 +43,13 @@ function makeExecution(
 
 // Callbacks captured from the executions query builder during each test run
 let capturedEligibilityCb: ((qb: any) => void) | null = null
+let capturedTestExecExclusionSubquery: any = null
 let capturedModifyCbs: Array<(qb: any) => void> = []
 
 function setupDb(batches: ExecutionRow[][]) {
   let batchIdx = 0
   capturedEligibilityCb = null
+  capturedTestExecExclusionSubquery = null
   capturedModifyCbs = []
 
   const flowsBuilder = {
@@ -68,6 +70,10 @@ function setupDb(batches: ExecutionRow[][]) {
       if (typeof args[0] === 'function') {
         capturedEligibilityCb = args[0]
       }
+      return execBuilder
+    }),
+    whereNotIn: vi.fn().mockImplementation((_col: string, subquery: any) => {
+      capturedTestExecExclusionSubquery = subquery
       return execBuilder
     }),
     modify: vi.fn().mockImplementation((cb: (qb: any) => void) => {
@@ -340,7 +346,7 @@ describe('runArchivalLoop', () => {
       ])
     })
 
-    it('excludes test executions that are still referenced by flows.test_execution_id', async () => {
+    it('selects test executions on active flows by test_run + cutoff only', async () => {
       setupDb([[]])
       await runArchivalLoop(new AbortController().signal)
 
@@ -360,8 +366,19 @@ describe('runArchivalLoop', () => {
       testActiveCb(testActiveQb)
 
       expect(testActiveQb.where).toHaveBeenCalledWith('test_run', true)
-      // whereNotIn (not whereIn) ensures live test executions are excluded
-      expect(testActiveQb.whereNotIn).toHaveBeenCalledWith('id', expect.anything())
+      // test_execution_id protection is a global top-level guard, not per-branch
+      expect(testActiveQb.whereNotIn).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('test_execution_id guard', () => {
+    it('excludes flows.test_execution_id rows for all flows at the top level', async () => {
+      setupDb([[]])
+      await runArchivalLoop(new AbortController().signal)
+
+      expect(capturedTestExecExclusionSubquery).not.toBeNull()
+      // Subquery must use archivalDbReader('flows') — verified by the mock
+      expect(archivalDbReader).toHaveBeenCalledWith('flows')
     })
   })
 })
