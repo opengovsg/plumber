@@ -48,6 +48,14 @@ vi.mock('@ai-sdk/mcp', () => ({
   }),
 }))
 
+vi.mock('@/helpers/mcp-bridge-tools', () => ({
+  createMcpBridgeTools: vi.fn().mockReturnValue({}),
+}))
+
+vi.mock('jsonwebtoken', () => ({
+  default: { sign: vi.fn().mockReturnValue('mock-internal-token') },
+}))
+
 vi.mock('@/helpers/stream', () => ({
   pipeWebResponseToExpress: mocks.pipeWebResponseToExpress,
 }))
