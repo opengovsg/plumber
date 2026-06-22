@@ -53,24 +53,25 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
   if (sesEvent.eventType === SesEventType.Bounce) {
     const { bounceType, bounceSubType, bouncedRecipients } = sesEvent.bounce
 
-    // Count one bounce per affected recipient (matching the per-recipient
-    // ses.email.sent denominator), excluding the SES bounce simulator so test
-    // sends don't skew the bounce rate.
-    const meteredRecipients = bouncedRecipients.filter(
-      (r) => !isSesSimulatorAddress(r.emailAddress, 'bounce'),
-    )
-    if (meteredRecipients.length > 0) {
-      incrementMetric(
-        'ses.email.bounce',
-        {
-          bounce_type: bounceType,
-          bounce_sub_type: bounceSubType ?? 'unknown',
-        },
-        meteredRecipients.length,
-      )
-    }
-
     if (bounceType === 'Permanent') {
+      // Increment one bounce per recipient we actually suppress (matching the
+      // per-recipient ses.email.sent denominator). Only permanent bounces
+      // suppress, so the metric fires only here. The SES bounce simulator is
+      // excluded so test sends don't skew the bounce rate.
+      const meteredRecipients = bouncedRecipients.filter(
+        (r) => !isSesSimulatorAddress(r.emailAddress, 'bounce'),
+      )
+      if (meteredRecipients.length > 0) {
+        incrementMetric(
+          'ses.email.bounce',
+          {
+            bounce_type: bounceType,
+            bounce_sub_type: bounceSubType ?? 'unknown',
+          },
+          meteredRecipients.length,
+        )
+      }
+
       // TODO: add micro-optimisation for upsertSuppression to blacklist multiple recipient emails in phase 2
       for (const recipient of bouncedRecipients) {
         await EmailSuppressionEntry.upsertSuppression({
@@ -106,24 +107,9 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
   if (sesEvent.eventType === SesEventType.Complaint) {
     const { complainedRecipients, complaintFeedbackType } = sesEvent.complaint
 
-    // Count one complaint per affected recipient (matching the per-recipient
-    // ses.email.sent denominator), excluding the SES complaint simulator so
-    // test sends don't skew the complaint rate.
-    const meteredRecipients = complainedRecipients.filter(
-      (r) => !isSesSimulatorAddress(r.emailAddress, 'complaint'),
-    )
-    if (meteredRecipients.length > 0) {
-      incrementMetric(
-        'ses.email.complaint',
-        {
-          complaint_feedback_type: complaintFeedbackType ?? 'other',
-        },
-        meteredRecipients.length,
-      )
-    }
-
     if (complaintFeedbackType === 'not-spam') {
-      // Auto-whitelist: recipient marked the email as not-spam
+      // Auto-whitelist: recipient marked the email as not-spam. No suppression
+      // happens here, so the complaint metric is not incremented.
       const emails = complainedRecipients.map((r) => r.emailAddress)
       const whitelisted = await EmailSuppressionEntry.whitelistEmails(emails)
 
@@ -135,6 +121,24 @@ export async function processSesEvent(data: SesEventInput): Promise<void> {
       })
     } else {
       // abuse, fraud, virus, other, null — suppress
+
+      // Increment one complaint per recipient we actually suppress (matching
+      // the per-recipient ses.email.sent denominator). Only this path
+      // suppresses, so the metric fires only here. The SES complaint simulator
+      // is excluded so test sends don't skew the complaint rate.
+      const meteredRecipients = complainedRecipients.filter(
+        (r) => !isSesSimulatorAddress(r.emailAddress, 'complaint'),
+      )
+      if (meteredRecipients.length > 0) {
+        incrementMetric(
+          'ses.email.complaint',
+          {
+            complaint_feedback_type: complaintFeedbackType ?? 'other',
+          },
+          meteredRecipients.length,
+        )
+      }
+
       for (const recipient of complainedRecipients) {
         await EmailSuppressionEntry.upsertSuppression({
           email: recipient.emailAddress,
