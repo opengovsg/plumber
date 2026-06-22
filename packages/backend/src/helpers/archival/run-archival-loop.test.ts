@@ -356,9 +356,7 @@ describe('runArchivalLoop', () => {
       }
       capturedEligibilityCb!(outerQb)
 
-      const testActiveCb = outerQb.orWhere.mock.calls[1][0] as (
-        qb: any,
-      ) => void
+      const testActiveCb = outerQb.orWhere.mock.calls[1][0] as (qb: any) => void
       const testActiveQb = {
         where: vi.fn().mockReturnThis(),
         whereNotIn: vi.fn().mockReturnThis(),

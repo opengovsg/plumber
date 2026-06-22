@@ -57,9 +57,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           )
           // Test executions on active flows: past cutoff.
           .orWhere((b) =>
-            b
-              .where('test_run', true)
-              .where('created_at', '<', cutoff),
+            b.where('test_run', true).where('created_at', '<', cutoff),
           )
       })
       // Never archive the designated test execution of any flow (deleted or active).
