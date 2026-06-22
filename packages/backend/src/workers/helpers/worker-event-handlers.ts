@@ -13,6 +13,21 @@ import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 
 /**
+ * Records a stalled job (lock expired and the job was moved back to be
+ * reprocessed). Logs a structured warning so Datadog can derive a log-based
+ * metric (filter `event:job-stalled`, tag by `queueName`). Shared across all
+ * workers - the `stalled` event only provides the job ID.
+ */
+export function recordStalledJob(queueName: string, jobId: string): void {
+  logger.warn(`[${queueName}] JOB ID: ${jobId} has stalled`, {
+    queueName,
+    jobId,
+    event: 'job-stalled',
+    workerVersion: appConfig.version,
+  })
+}
+
+/**
  * Attaches standard event listeners to a worker for logging and error handling.
  * Used by both action workers and sub-trigger workers.
  */
@@ -104,6 +119,10 @@ export function registerWorkerEventHandlers(
         },
       )
     }
+  })
+
+  worker.on('stalled', (jobId) => {
+    recordStalledJob(queueName, jobId)
   })
 
   worker.on('ready', () => {

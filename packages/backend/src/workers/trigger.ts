@@ -8,6 +8,7 @@ import logger from '@/helpers/logger'
 import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 import { processTrigger } from '@/services/trigger'
+import { recordStalledJob } from '@/workers/helpers/worker-event-handlers'
 
 type JobData = {
   flowId: string
@@ -64,6 +65,10 @@ worker.on('failed', (job, err) => {
   logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
   )
+})
+
+worker.on('stalled', (jobId) => {
+  recordStalledJob('trigger', jobId)
 })
 
 worker.on('ready', () => {
