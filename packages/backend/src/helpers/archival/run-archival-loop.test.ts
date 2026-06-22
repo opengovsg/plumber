@@ -43,13 +43,11 @@ function makeExecution(
 
 // Callbacks captured from the executions query builder during each test run
 let capturedEligibilityCb: ((qb: any) => void) | null = null
-let capturedWhereCalls: Array<any[]> = []
 let capturedModifyCbs: Array<(qb: any) => void> = []
 
 function setupDb(batches: ExecutionRow[][]) {
   let batchIdx = 0
   capturedEligibilityCb = null
-  capturedWhereCalls = []
   capturedModifyCbs = []
 
   const flowsBuilder = {
@@ -69,8 +67,6 @@ function setupDb(batches: ExecutionRow[][]) {
     where: vi.fn().mockImplementation((...args: any[]) => {
       if (typeof args[0] === 'function') {
         capturedEligibilityCb = args[0]
-      } else {
-        capturedWhereCalls.push(args)
       }
       return execBuilder
     }),
@@ -163,13 +159,36 @@ describe('runArchivalLoop', () => {
   })
 
   describe('cutoff date', () => {
-    it('uses strict less-than so executions exactly at the cutoff are not selected', async () => {
+    function invokeActiveFlowBranch(branchIndex: 0 | 1): any[] {
+      // The eligibility callback has three branches:
+      //   where(deletedFlows), orWhere(nonTestActive), orWhere(testActive)
+      // branchIndex 0 = nonTestActive (first orWhere), 1 = testActive (second orWhere)
+      const whereCalls: any[][] = []
+      const outerQb = {
+        where: vi.fn().mockReturnThis(),
+        orWhere: vi.fn().mockReturnThis(),
+      }
+      capturedEligibilityCb!(outerQb)
+
+      const branchCb = outerQb.orWhere.mock.calls[branchIndex][0]
+      const branchQb = {
+        where: vi.fn().mockImplementation((...args: any[]) => {
+          whereCalls.push(args)
+          return branchQb
+        }),
+        whereIn: vi.fn().mockReturnThis(),
+        whereNotIn: vi.fn().mockReturnThis(),
+      }
+      branchCb(branchQb)
+      return whereCalls
+    }
+
+    it('uses strict less-than so active-flow executions exactly at the cutoff are not selected', async () => {
       setupDb([[]])
       await runArchivalLoop(new AbortController().signal)
 
-      const cutoffCall = capturedWhereCalls.find(
-        (args) => args[0] === 'created_at',
-      )
+      const whereCalls = invokeActiveFlowBranch(0)
+      const cutoffCall = whereCalls.find((args) => args[0] === 'created_at')
       expect(cutoffCall).toBeDefined()
       expect(cutoffCall![1]).toBe('<')
     })
@@ -185,12 +204,40 @@ describe('runArchivalLoop', () => {
       const after = new Date()
       after.setDate(after.getDate() - 90)
 
-      const cutoffCall = capturedWhereCalls.find(
-        (args) => args[0] === 'created_at',
-      )
+      const whereCalls = invokeActiveFlowBranch(0)
+      const cutoffCall = whereCalls.find((args) => args[0] === 'created_at')
       const cutoff: Date = cutoffCall![2]
       expect(cutoff.getTime()).toBeGreaterThanOrEqual(before.getTime() - 100)
       expect(cutoff.getTime()).toBeLessThanOrEqual(after.getTime() + 100)
+    })
+
+    it('does not apply the cutoff to deleted-flow executions', async () => {
+      setupDb([[]])
+      await runArchivalLoop(new AbortController().signal)
+
+      const outerQb = {
+        where: vi.fn().mockReturnThis(),
+        orWhere: vi.fn().mockReturnThis(),
+      }
+      capturedEligibilityCb!(outerQb)
+
+      // The deleted-flows branch is the first .where() call
+      const deletedFlowsCb = outerQb.where.mock.calls[0][0]
+      const deletedFlowsQb = {
+        where: vi.fn().mockReturnThis(),
+        whereIn: vi.fn().mockReturnThis(),
+      }
+      deletedFlowsCb(deletedFlowsQb)
+
+      expect(deletedFlowsQb.where).not.toHaveBeenCalledWith(
+        'created_at',
+        expect.anything(),
+        expect.anything(),
+      )
+      expect(deletedFlowsQb.whereIn).toHaveBeenCalledWith(
+        'flow_id',
+        expect.anything(),
+      )
     })
   })
 
@@ -251,7 +298,7 @@ describe('runArchivalLoop', () => {
   })
 
   describe('eligibility WHERE clause', () => {
-    it('includes non-test executions with terminal statuses', async () => {
+    it('has three branches: deleted-flows, non-test-active, test-active', async () => {
       setupDb([[]])
       await runArchivalLoop(new AbortController().signal)
 
@@ -264,28 +311,30 @@ describe('runArchivalLoop', () => {
       capturedEligibilityCb!(outerQb)
 
       expect(outerQb.where).toHaveBeenCalledOnce()
+      expect(outerQb.orWhere).toHaveBeenCalledTimes(2)
+    })
 
-      const nonTestCb = outerQb.where.mock.calls[0][0] as (qb: any) => void
+    it('includes non-test executions on active flows with terminal statuses', async () => {
+      setupDb([[]])
+      await runArchivalLoop(new AbortController().signal)
 
-      // The non-test branch is: b.where('test_run', false).where((c) => c.whereIn(...).orWhereIn(...))
-      // The inner callback needs to be invoked to observe whereIn calls.
-      const innerQb = {
-        whereIn: vi.fn().mockReturnThis(),
-        orWhereIn: vi.fn().mockReturnThis(),
+      const outerQb = {
+        where: vi.fn().mockReturnThis(),
+        orWhere: vi.fn().mockReturnThis(),
       }
-      const nonTestQb = {
-        where: vi.fn().mockImplementation((...args: any[]) => {
-          if (typeof args[0] === 'function') {
-            args[0](innerQb)
-          }
-          return nonTestQb
-        }),
+      capturedEligibilityCb!(outerQb)
+
+      const nonTestActiveCb = outerQb.orWhere.mock.calls[0][0] as (
+        qb: any,
+      ) => void
+      const nonTestActiveQb = {
+        where: vi.fn().mockReturnThis(),
         whereIn: vi.fn().mockReturnThis(),
       }
-      nonTestCb(nonTestQb)
+      nonTestActiveCb(nonTestActiveQb)
 
-      expect(nonTestQb.where).toHaveBeenCalledWith('test_run', false)
-      expect(innerQb.whereIn).toHaveBeenCalledWith('status', [
+      expect(nonTestActiveQb.where).toHaveBeenCalledWith('test_run', false)
+      expect(nonTestActiveQb.whereIn).toHaveBeenCalledWith('status', [
         'success',
         'failure',
       ])
@@ -295,26 +344,24 @@ describe('runArchivalLoop', () => {
       setupDb([[]])
       await runArchivalLoop(new AbortController().signal)
 
-      expect(capturedEligibilityCb).not.toBeNull()
-
       const outerQb = {
         where: vi.fn().mockReturnThis(),
         orWhere: vi.fn().mockReturnThis(),
       }
       capturedEligibilityCb!(outerQb)
 
-      expect(outerQb.orWhere).toHaveBeenCalledOnce()
-
-      const testRunCb = outerQb.orWhere.mock.calls[0][0] as (qb: any) => void
-      const testRunQb = {
+      const testActiveCb = outerQb.orWhere.mock.calls[1][0] as (
+        qb: any,
+      ) => void
+      const testActiveQb = {
         where: vi.fn().mockReturnThis(),
         whereNotIn: vi.fn().mockReturnThis(),
       }
-      testRunCb(testRunQb)
+      testActiveCb(testActiveQb)
 
-      expect(testRunQb.where).toHaveBeenCalledWith('test_run', true)
+      expect(testActiveQb.where).toHaveBeenCalledWith('test_run', true)
       // whereNotIn (not whereIn) ensures live test executions are excluded
-      expect(testRunQb.whereNotIn).toHaveBeenCalledWith('id', expect.anything())
+      expect(testActiveQb.whereNotIn).toHaveBeenCalledWith('id', expect.anything())
     })
   })
 })
