@@ -81,19 +81,55 @@ export function createMcpBridgeTools(userToken: string, bridgeBaseUrl: string) {
     }),
 
     update_step_parameter: tool({
-      description:
-        'Set or update configuration parameters for a specific step in a pipe.',
+      description: `Configure a step in a pipe. All fields except pipe_id and step_id are optional — only provided fields are updated.
+- Use app_key to set which app this step uses (e.g. "slack", "formsg"). Use list_apps to discover available app keys.
+- Use key to set which trigger or action within the app (e.g. "sendMessageToChannel"). The valid keys are listed under each app in list_apps.
+- Use connection_id to assign saved credentials. Use list_pipes or get_pipe to find existing connection IDs on configured steps.
+- Use parameters to set field values. Field keys and types are listed under each action/trigger in list_apps.`,
       inputSchema: z.object({
         pipe_id: z.string().describe('The pipe ID'),
         step_id: z.string().describe('The step ID to configure'),
+        app_key: z
+          .string()
+          .optional()
+          .describe(
+            'App key for this step (e.g. "slack", "formsg"). See list_apps.',
+          ),
+        key: z
+          .string()
+          .optional()
+          .describe(
+            'Trigger or action key within the app (e.g. "sendMessageToChannel"). See list_apps.',
+          ),
+        connection_id: z
+          .string()
+          .optional()
+          .describe(
+            'ID of the saved connection/credentials to use for this step.',
+          ),
         parameters: z
           .record(z.unknown())
-          .describe('Key-value parameters to set on this step'),
+          .optional()
+          .describe(
+            'Field values for the step. Keys must match the field keys listed for the action/trigger in list_apps.',
+          ),
       }),
-      execute: async ({ pipe_id, step_id, parameters }) => {
+      execute: async ({
+        pipe_id,
+        step_id,
+        app_key,
+        key,
+        connection_id,
+        parameters,
+      }) => {
         return bridgePatch<IMcpStepDetail>(
           `/internal/mcp/pipes/${pipe_id}/steps/${step_id}`,
-          { parameters },
+          {
+            appKey: app_key,
+            key,
+            connectionId: connection_id,
+            parameters,
+          },
         )
       },
     }),
