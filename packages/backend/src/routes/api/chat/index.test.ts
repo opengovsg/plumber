@@ -1,17 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@ai-sdk/mcp', () => ({
-  createMCPClient: vi.fn(),
+  experimental_createMCPClient: vi.fn(),
 }))
 
 vi.mock('ai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ai')>()
   return {
     ...actual,
-    streamText: vi.fn().mockReturnValue({
-      toUIMessageStream: vi.fn().mockReturnValue({}),
-    }),
-    createUIMessageStream: vi.fn().mockReturnValue({}),
+    streamText: vi
+      .fn()
+      .mockImplementation(
+        ({
+          onFinish,
+        }: {
+          onFinish?: (event: { text: string }) => Promise<void>
+        }) => {
+          if (onFinish) {
+            void onFinish({ text: '' })
+          }
+          return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+        },
+      ),
+    createUIMessageStream: vi
+      .fn()
+      .mockImplementation(
+        ({ execute }: { execute: (arg: { writer: unknown }) => unknown }) => {
+          void execute({ writer: { merge: vi.fn(), write: vi.fn() } })
+          return {}
+        },
+      ),
     createUIMessageStreamResponse: vi.fn().mockReturnValue(new Response()),
     convertToModelMessages: vi.fn((msgs) => msgs),
   }
@@ -71,9 +89,10 @@ vi.mock('@opentelemetry/api', () => ({
   trace: { getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }) },
 }))
 
-import { createMCPClient } from '@ai-sdk/mcp'
+import { experimental_createMCPClient } from '@ai-sdk/mcp'
 import { streamText } from 'ai'
 
+// @ts-expect-error top-level await is supported by Vitest's ESM runner
 const { default: router } = await import('./index')
 
 function makeReq(body = {}) {
@@ -105,13 +124,14 @@ describe('chat handler — GitBook MCP integration', () => {
   it('passes tools and stopWhen to streamText when MCP client connects', async () => {
     const mockTools = { search_documentation: vi.fn(), get_page: vi.fn() }
     const mockClose = vi.fn()
-    vi.mocked(createMCPClient).mockResolvedValue({
+    vi.mocked(experimental_createMCPClient).mockResolvedValue({
       tools: vi.fn().mockResolvedValue(mockTools),
       close: mockClose,
-    } as unknown as Awaited<ReturnType<typeof createMCPClient>>)
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
 
     const handler = router.stack[0].route.stack[0].handle
-    await handler(makeReq(), makeRes(), vi.fn())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
 
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -119,13 +139,17 @@ describe('chat handler — GitBook MCP integration', () => {
         stopWhen: expect.anything(),
       }),
     )
+    expect(mockClose).toHaveBeenCalledTimes(1)
   })
 
   it('calls streamText with empty tools and logs error when MCP client fails', async () => {
-    vi.mocked(createMCPClient).mockRejectedValue(new Error('connection refused'))
+    vi.mocked(experimental_createMCPClient).mockRejectedValue(
+      new Error('connection refused'),
+    )
 
     const handler = router.stack[0].route.stack[0].handle
-    await handler(makeReq(), makeRes(), vi.fn())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
 
     expect(streamText).toHaveBeenCalledWith(
       expect.objectContaining({
