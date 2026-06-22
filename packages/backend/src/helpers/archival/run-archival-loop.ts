@@ -40,23 +40,26 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       )
       .where((builder) => {
         builder
+          // Deleted-flow executions are archived immediately — no cutoff, no status check.
+          // The flow is already gone from the UI; retention age is irrelevant.
           .where((b) =>
+            b.whereIn(
+              'flow_id',
+              archivalDbReader('flows').select('id').whereNotNull('deleted_at'),
+            ),
+          )
+          // Non-test executions on active flows: terminal status + past cutoff.
+          .orWhere((b) =>
             b
               .where('test_run', false)
-              .where((c) =>
-                c
-                  .whereIn('status', ['success', 'failure'])
-                  .orWhereIn(
-                    'flow_id',
-                    archivalDbReader('flows')
-                      .select('id')
-                      .whereNotNull('deleted_at'),
-                  ),
-              ),
+              .where('created_at', '<', cutoff)
+              .whereIn('status', ['success', 'failure']),
           )
+          // Test executions on active flows: past cutoff, not the live test execution.
           .orWhere((b) =>
             b
               .where('test_run', true)
+              .where('created_at', '<', cutoff)
               .whereNotIn(
                 'id',
                 archivalDbReader('flows')
@@ -66,7 +69,6 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
               ),
           )
       })
-      .where('created_at', '<', cutoff)
       .modify((qb) => {
         if (archiveDeletedFlowsOnly) {
           qb.whereIn(
