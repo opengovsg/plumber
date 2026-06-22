@@ -8,9 +8,9 @@ const UUID_REGEX =
 // Limits to protect API and LLM costs
 const MAX_MESSAGES = 50
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
-// 5 steps × up to 4 parts each (step-start + empty-text + dynamic-tool + data-*)
-// plus headroom; must exceed stepCountIs(5) × parts-per-step
-const MAX_PARTS_PER_MESSAGE = 25
+// Tool-use turns can produce many parts (step-start + tool-invocation per call + text),
+// so allow enough headroom for up to ~10 tool calls per assistant turn.
+const MAX_PARTS_PER_MESSAGE = 50
 
 const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
@@ -61,6 +61,19 @@ const messagePartSchema = z.discriminatedUnion('type', [
     state: z.string(),
     input: z.unknown().optional(),
     output: z.unknown().optional(),
+  }),
+  // Tool-invocation parts are added by the Vercel AI SDK when the LLM calls a
+  // tool. They are included in subsequent turns so the LLM has call/result
+  // context. We validate structure loosely — the SDK owns the shape.
+  z.object({
+    type: z.literal('tool-invocation'),
+    toolInvocation: z.object({
+      state: z.enum(['call', 'partial-call', 'result']),
+      toolCallId: z.string(),
+      toolName: z.string(),
+      input: z.unknown(),
+      output: z.unknown().optional(),
+    }),
   }),
 ])
 
