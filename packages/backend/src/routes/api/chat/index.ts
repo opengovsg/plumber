@@ -12,10 +12,12 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   smoothStream,
+  stepCountIs,
   streamText,
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
+import jwt from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -28,6 +30,7 @@ import {
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import { AuthenticatedRequest } from '@/types/express/context'
@@ -110,11 +113,23 @@ const handleChatStream = observe(
       const allMessages = [systemMessage, ...messages]
       let workflowError = 'Unable to generate the workflow.'
 
+      const internalToken = jwt.sign(
+        { userId: context.currentUser.id },
+        appConfig.mcpInternalJwtSecret,
+        { expiresIn: '15m' },
+      )
+      const mcpTools = createMcpBridgeTools(
+        internalToken,
+        appConfig.backendInternalUrl,
+      )
+
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
           const result = streamText({
             model,
             messages: allMessages,
+            tools: mcpTools,
+            stopWhen: stepCountIs(10),
             experimental_transform: smoothStream({
               chunking: 'word', // Stream word-by-word for typing effect
             }),
