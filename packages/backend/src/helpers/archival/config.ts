@@ -46,7 +46,7 @@ export const archivalConfig = {
   // reads never fall back to the writer. Use localhost for local dev.
   postgresReaderHost: requireString('ARCHIVE_POSTGRES_READER_HOST'),
   // S3 dev credentials (prod uses IAM role — no explicit credentials needed)
-  s3Endpoint: process.env.S3_ENDPOINT,
+  s3Endpoint: isDev ? requireString('S3_ENDPOINT') : process.env.S3_ENDPOINT,
   s3AccessKey: isDev
     ? requireString('S3_ACCESS_KEY')
     : process.env.S3_ACCESS_KEY,
