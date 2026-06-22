@@ -9,6 +9,7 @@ import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
+import { recordStalledJob } from '@/workers/helpers/worker-event-handlers'
 
 export const worker = new WorkerPro(
   'flow',
@@ -65,6 +66,10 @@ worker.on('failed', (job, err) => {
   logger.error(
     `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
   )
+})
+
+worker.on('stalled', (jobId) => {
+  recordStalledJob('flow', jobId)
 })
 
 worker.on('ready', () => {
