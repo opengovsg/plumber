@@ -8,6 +8,7 @@ vi.mock('../config', () => ({
     archiveBatchSleepMs: 0,
     archiveBucket: 'archive-bucket',
     archiveDeletedFlowsOnly: false,
+    archiveIntraBatchConcurrency: 10,
   },
 }))
 vi.mock('../logger')
@@ -177,8 +178,10 @@ describe('runArchivalLoop', () => {
     )
   })
 
-  it('stops processing mid-batch when signal is aborted', async () => {
+  it('does not start a new batch after signal is aborted', async () => {
     const controller = new AbortController()
+    // Use concurrency=1 so abort is observed before subsequent executions start
+    ;(archivalConfig as any).archiveIntraBatchConcurrency = 1
     vi.mocked(archiveExecution).mockImplementation(async () => {
       controller.abort()
       return 'archived'
@@ -186,12 +189,50 @@ describe('runArchivalLoop', () => {
 
     setupDb([
       [makeExecution('e1'), makeExecution('e2'), makeExecution('e3')],
-      [],
+      [makeExecution('e4')],
     ])
 
     await runArchivalLoop(controller.signal)
 
+    // With concurrency=1: e1 runs and aborts; e2/e3 see signal.aborted before
+    // calling archiveExecution. The second batch is never fetched.
     expect(archiveExecution).toHaveBeenCalledTimes(1)
+  })
+
+  it('continues processing remaining executions after one throws (allSettled)', async () => {
+    vi.mocked(archiveExecution)
+      .mockRejectedValueOnce(new Error('S3 timeout'))
+      .mockResolvedValue('archived')
+
+    setupDb([
+      [makeExecution('e1'), makeExecution('e2'), makeExecution('e3')],
+      [],
+    ])
+
+    await runArchivalLoop(new AbortController().signal)
+
+    expect(archiveExecution).toHaveBeenCalledTimes(3)
+  })
+
+  it('advances cursor to the last batch item even when some executions fail', async () => {
+    // All fail — cursor should still move to the last batch item
+    vi.mocked(archiveExecution).mockRejectedValue(new Error('S3 error'))
+
+    const batch = [
+      makeExecution('00000000-0000-0000-0000-000000000001'),
+      makeExecution('00000000-0000-0000-0000-000000000002'),
+      makeExecution('00000000-0000-0000-0000-000000000003'),
+    ]
+    setupDb([batch, []])
+
+    await runArchivalLoop(new AbortController().signal)
+
+    // The second batch SELECT uses whereRaw(id > cursor); capturedModifyCbs[1] is the cursor modifier
+    const qb = { whereRaw: vi.fn() }
+    capturedModifyCbs[1](qb)
+    expect(qb.whereRaw).toHaveBeenCalledWith('id > ?::uuid', [
+      '00000000-0000-0000-0000-000000000003',
+    ])
   })
 
   it('counts skipped executions when archiveExecution returns skipped', async () => {

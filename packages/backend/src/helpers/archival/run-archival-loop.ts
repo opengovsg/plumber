@@ -1,3 +1,5 @@
+import pLimit from 'p-limit'
+
 import { archiveExecution } from './archive-execution'
 import { archivalConfig } from './config'
 import { archivalDb, archivalDbReader } from './db'
@@ -15,6 +17,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     archiveBatchSleepMs: sleepMs,
     archiveBucket,
     archiveDeletedFlowsOnly,
+    archiveIntraBatchConcurrency,
   } = archivalConfig
 
   const cutoff = new Date()
@@ -23,7 +26,10 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   let cursor: string | null = null
   let totalArchived = 0
   let totalSkipped = 0
-  const archivedByFlow = new Map<string, string[]>()
+  const archivedByFlow = new Map<
+    string,
+    { executionIds: string[]; testExecutionIds: string[] }
+  >()
   const stepCounts = new Map<string, Map<string, number>>()
   let nullStepCount = 0
   const startedAt = Date.now()
@@ -113,83 +119,112 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
     let batchArchived = 0
     let batchSkipped = 0
-    let lastProcessed: ExecutionRow | null = null
 
-    for (const execution of batch) {
-      if (signal.aborted) {
-        break
-      }
+    const limit = pLimit(archiveIntraBatchConcurrency)
 
-      // LEFT JOIN steps to fill in app_key/key for old rows that predate the
-      // denormalised columns being added to execution_steps.
-      // TODO: once all pre-denormalisation rows have been archived, drop the
-      // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
-      const steps = (await archivalDbReader('execution_steps')
-        .select(
-          'execution_steps.id',
-          'execution_steps.execution_id as executionId',
-          'execution_steps.step_id as stepId',
-          archivalDbReader.raw(
-            'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
-          ),
-          archivalDbReader.raw(
-            'COALESCE(execution_steps.key, steps.key) as "key"',
-          ),
-          'execution_steps.job_id as jobId',
-          'execution_steps.status',
-          'execution_steps.data_in as dataIn',
-          'execution_steps.data_out as dataOut',
-          'execution_steps.error_details as errorDetails',
-          'execution_steps.metadata',
-          'execution_steps.created_at as createdAt',
-          'execution_steps.updated_at as updatedAt',
-          'execution_steps.deleted_at as deletedAt',
-        )
-        .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
-        .where('execution_steps.execution_id', execution.id)
-        .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
-
-      try {
-        const result = await archiveExecution(execution, steps, {
-          dryRun,
-          bucket: archiveBucket,
-          s3Client: archiveS3Client,
-          knexClient: archivalDb,
-          runAt,
-        })
-        if (result === 'archived') {
-          batchArchived++
-          const ids = archivedByFlow.get(execution.flowId) ?? []
-          ids.push(execution.id)
-          archivedByFlow.set(execution.flowId, ids)
-
-          for (const step of steps) {
-            if (step.appKey && step.key) {
-              const keyMap =
-                stepCounts.get(step.appKey) ?? new Map<string, number>()
-              keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
-              stepCounts.set(step.appKey, keyMap)
-            } else {
-              nullStepCount++
+    const results = await Promise.allSettled(
+      batch.map((execution) =>
+        limit(async () => {
+          if (signal.aborted) {
+            return {
+              execution,
+              outcome: 'skipped' as const,
+              steps: [] as ExecutionStepRow[],
             }
           }
-        } else {
-          batchSkipped++
+
+          // LEFT JOIN steps to fill in app_key/key for old rows that predate
+          // the denormalised columns being added to execution_steps.
+          // TODO: once all pre-denormalisation rows have been archived, drop the
+          // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
+          const steps = (await archivalDbReader('execution_steps')
+            .select(
+              'execution_steps.id',
+              'execution_steps.execution_id as executionId',
+              'execution_steps.step_id as stepId',
+              archivalDbReader.raw(
+                'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
+              ),
+              archivalDbReader.raw(
+                'COALESCE(execution_steps.key, steps.key) as "key"',
+              ),
+              'execution_steps.job_id as jobId',
+              'execution_steps.status',
+              'execution_steps.data_in as dataIn',
+              'execution_steps.data_out as dataOut',
+              'execution_steps.error_details as errorDetails',
+              'execution_steps.metadata',
+              'execution_steps.created_at as createdAt',
+              'execution_steps.updated_at as updatedAt',
+              'execution_steps.deleted_at as deletedAt',
+            )
+            .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
+            .where('execution_steps.execution_id', execution.id)
+            .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
+
+          try {
+            const outcome = await archiveExecution(execution, steps, {
+              dryRun,
+              bucket: archiveBucket,
+              s3Client: archiveS3Client,
+              knexClient: archivalDb,
+              runAt,
+            })
+            return { execution, outcome, steps }
+          } catch (err) {
+            logger.error({
+              event: 'archival.execution.error',
+              executionId: execution.id,
+              err,
+            })
+            return {
+              execution,
+              outcome: 'skipped' as const,
+              steps: [] as ExecutionStepRow[],
+            }
+          }
+        }),
+      ),
+    )
+
+    for (const settled of results) {
+      if (settled.status === 'rejected') {
+        batchSkipped++
+        continue
+      }
+
+      const { execution, outcome, steps } = settled.value
+      if (outcome === 'archived') {
+        batchArchived++
+        const entry = archivedByFlow.get(execution.flowId) ?? {
+          executionIds: [],
+          testExecutionIds: [],
         }
-      } catch (err) {
-        logger.error({
-          event: 'archival.execution.error',
-          executionId: execution.id,
-          err,
-        })
+        if (execution.testRun) {
+          entry.testExecutionIds.push(execution.id)
+        } else {
+          entry.executionIds.push(execution.id)
+        }
+        archivedByFlow.set(execution.flowId, entry)
+
+        for (const step of steps) {
+          if (step.appKey && step.key) {
+            const keyMap =
+              stepCounts.get(step.appKey) ?? new Map<string, number>()
+            keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
+            stepCounts.set(step.appKey, keyMap)
+          } else {
+            nullStepCount++
+          }
+        }
+      } else {
         batchSkipped++
       }
-      lastProcessed = execution
     }
 
-    if (lastProcessed) {
-      cursor = lastProcessed.id
-    }
+    // Cursor advances to the last execution in the batch regardless of outcome.
+    // Failed executions stay eligible and are retried on the next scheduled run.
+    cursor = batch[batch.length - 1].id
     totalArchived += batchArchived
     totalSkipped += batchSkipped
 
@@ -206,12 +241,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     }
   }
 
-  for (const [flowId, executionIds] of archivedByFlow) {
+  for (const [flowId, { executionIds, testExecutionIds }] of archivedByFlow) {
     logger.info({
       event: 'archival.flow.archived',
       flowId,
       executionIds,
-      count: executionIds.length,
+      testExecutionIds,
+      executionsCount: executionIds.length,
+      testExecutionsCount: testExecutionIds.length,
     })
   }
 
