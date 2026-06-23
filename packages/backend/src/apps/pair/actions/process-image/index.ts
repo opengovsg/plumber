@@ -47,7 +47,7 @@ const action: IRawAction = {
           placeholder: 'Whether the image contains a handwritten signature',
           type: 'string',
           required: true,
-          customStyle: { flex: 3 },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '75%' },
         },
         {
           key: 'fieldName',

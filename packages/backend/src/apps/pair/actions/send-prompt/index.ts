@@ -100,7 +100,7 @@ const action: IRawAction = {
             fieldValue: 'category',
             op: 'not_equals',
           },
-          customStyle: { flex: 3 },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },
