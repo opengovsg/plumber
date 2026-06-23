@@ -127,6 +127,22 @@ describe('postman transactional email schema zod validation', () => {
     expect(result.error?.errors[0].message).toEqual('Empty sender name')
   })
 
+  it('should strip display-name-breaking characters from sender name', () => {
+    // "Foo <x@y.com>" would otherwise yield a malformed "from" address that
+    // SES rejects (e.g. two angle-addrs).
+    validPayload.senderName = 'Foo <x@y.com>'
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.senderName).toEqual('Foo x@y.com')
+  })
+
+  it('should strip newlines from sender name', () => {
+    validPayload.senderName = 'Foo\r\nBcc: evil@example.com'
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.senderName).toEqual('Foo Bcc: evil@example.com')
+  })
+
   it('should work with legacy body value', () => {
     validPayload.body = 'hello\nhihi'
     const result = transactionalEmailSchema.safeParse(validPayload)
