@@ -16,7 +16,8 @@ const messagePartSchema = z.discriminatedUnion('type', [
     text: z
       .string()
       .trim()
-      .min(1, 'Text cannot be empty')
+      // Allow empty text: the LLM emits a text part before a tool call with no
+      // preceding prose, so assistant messages can legitimately contain text: "".
       .max(MAX_TEXT_LENGTH, `Text cannot exceed ${MAX_TEXT_LENGTH} characters`),
   }),
   z.object({
@@ -45,18 +46,15 @@ const messagePartSchema = z.discriminatedUnion('type', [
         .min(1),
     }),
   }),
-  // Tool use parts — present in assistant messages when the LLM calls an MCP tool
+  // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
+  // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
   z.object({
-    type: z.literal('tool-call'),
+    type: z.literal('dynamic-tool'),
     toolCallId: z.string(),
     toolName: z.string(),
-    args: z.unknown(),
-  }),
-  z.object({
-    type: z.literal('tool-result'),
-    toolCallId: z.string(),
-    toolName: z.string(),
-    result: z.unknown(),
+    state: z.string(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
   }),
 ])
 
