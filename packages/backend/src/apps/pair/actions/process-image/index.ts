@@ -8,6 +8,7 @@ import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { engineProvider } from '@/helpers/pair'
+import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
@@ -60,6 +61,12 @@ const action: IRawAction = {
       ],
     },
   ],
+
+  doesFileProcessing: (step: Step) => {
+    return (
+      Array.isArray(step.parameters.image) && step.parameters.image.length > 0
+    )
+  },
 
   getDataOutMetadata,
 
