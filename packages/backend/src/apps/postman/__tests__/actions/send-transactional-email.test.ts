@@ -768,5 +768,38 @@ describe('send transactional email', () => {
       expect(mocks.sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
+
+    it('drops a suppressed CC from the SES call but keeps it in dataOut', async () => {
+      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      // Only the CC is suppressed — the To recipient still sends.
+      mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
+
+      $.step.parameters.destinationEmail = 'recipient@open.gov.sg'
+      $.step.parameters.destinationEmailCc =
+        'cc-good@open.gov.sg,cc-bad@open.gov.sg'
+      $.step.parameters.attachments = []
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // Sent once for the single (non-suppressed) To recipient, and the
+      // suppressed CC is dropped from the actual SES API call.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+        { input: { Destination: { CcAddresses?: string[] } } },
+      ]
+      expect(sentCommand.input.Destination.CcAddresses).toEqual([
+        'cc-good@open.gov.sg',
+      ])
+
+      // ...but the full CC list (including the suppressed address) is still
+      // reported in dataOut, since CC status is not tracked.
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED'],
+          recipient: ['recipient@open.gov.sg'],
+          cc: ['cc-good@open.gov.sg', 'cc-bad@open.gov.sg'],
+        }),
+      })
+    })
   })
 })
