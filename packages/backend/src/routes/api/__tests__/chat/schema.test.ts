@@ -174,33 +174,32 @@ describe('chatRequestSchema', () => {
       )
     })
 
-    it('should reject more than 10 parts', () => {
-      const parts = Array(11).fill({ type: 'text', text: 'part' })
+    it('should reject more than 25 parts', () => {
+      const parts = Array(26).fill({ type: 'text', text: 'part' })
       const result = chatRequestSchema.safeParse({
         messages: [{ role: 'user', parts }],
       })
       expect(result.success).toBe(false)
       expect(result.error?.issues[0].message).toBe(
-        'Message cannot have more than 10 parts',
+        'Message cannot have more than 25 parts',
       )
     })
   })
 
   describe('text validation', () => {
-    it('should reject empty text', () => {
+    it('should accept empty text from assistant tool-call steps', () => {
+      // The AI SDK emits text: "" before each tool call when the LLM goes
+      // straight to calling a tool. This part is echoed back by the frontend
+      // on subsequent turns, so empty strings must be valid.
       const result = chatRequestSchema.safeParse({
-        messages: [{ role: 'user', parts: [{ type: 'text', text: '' }] }],
+        messages: [
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', text: '' }],
+          },
+        ],
       })
-      expect(result.success).toBe(false)
-      expect(result.error?.issues[0].message).toBe('Text cannot be empty')
-    })
-
-    it('should reject whitespace-only text', () => {
-      const result = chatRequestSchema.safeParse({
-        messages: [{ role: 'user', parts: [{ type: 'text', text: '   ' }] }],
-      })
-      expect(result.success).toBe(false)
-      expect(result.error?.issues[0].message).toBe('Text cannot be empty')
+      expect(result.success).toBe(true)
     })
 
     it('should reject text exceeding 10000 characters', () => {
