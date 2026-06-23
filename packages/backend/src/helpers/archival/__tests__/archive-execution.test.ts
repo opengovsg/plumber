@@ -6,9 +6,12 @@ import {
 import type { Knex } from 'knex'
 import { describe, expect, it, vi } from 'vitest'
 
-import { archiveExecution } from './archive-execution'
-import { S3_PREFIX_EXECUTIONS, S3_PREFIX_TEST_EXECUTIONS } from './build-s3-key'
-import type { ExecutionRow, ExecutionStepRow } from './types'
+import { archiveExecution } from '../archive-execution'
+import {
+  S3_PREFIX_EXECUTIONS,
+  S3_PREFIX_TEST_EXECUTIONS,
+} from '../build-s3-key'
+import type { ExecutionRow, ExecutionStepRow } from '../types'
 
 vi.mock('./logger')
 
