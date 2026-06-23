@@ -63,7 +63,9 @@ const action: IRawAction = {
   ],
 
   doesFileProcessing: (step: Step) => {
-    return step.parameters.image && step.parameters.image !== ''
+    return (
+      Array.isArray(step.parameters.image) && step.parameters.image.length > 0
+    )
   },
 
   getDataOutMetadata,
