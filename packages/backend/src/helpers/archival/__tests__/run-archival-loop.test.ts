@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('./config', () => ({
+vi.mock('../config', () => ({
   archivalConfig: {
     archiveDryRun: false,
     archiveRetentionDays: 90,
@@ -10,19 +10,19 @@ vi.mock('./config', () => ({
     archiveDeletedFlowsOnly: false,
   },
 }))
-vi.mock('./logger')
-vi.mock('./s3-client', () => ({ archiveS3Client: {} }))
-vi.mock('./archive-execution')
-vi.mock('./db', () => ({
+vi.mock('../logger')
+vi.mock('../s3-client', () => ({ archiveS3Client: {} }))
+vi.mock('../archive-execution')
+vi.mock('../db', () => ({
   archivalDb: vi.fn(),
   archivalDbReader: vi.fn(),
 }))
 
-import { archiveExecution } from './archive-execution'
-import { archivalConfig } from './config'
-import { archivalDb, archivalDbReader } from './db'
-import { runArchivalLoop } from './run-archival-loop'
-import type { ExecutionRow } from './types'
+import { archiveExecution } from '../archive-execution'
+import { archivalConfig } from '../config'
+import { archivalDb, archivalDbReader } from '../db'
+import { runArchivalLoop } from '../run-archival-loop'
+import type { ExecutionRow } from '../types'
 
 function makeExecution(
   id: string,
