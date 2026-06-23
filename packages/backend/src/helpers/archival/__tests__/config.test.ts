@@ -13,13 +13,13 @@ describe('archival/config', () => {
   })
 
   it('reads postgresReaderHost from ARCHIVE_POSTGRES_READER_HOST', async () => {
-    const { archivalConfig } = await import('./config')
+    const { archivalConfig } = await import('../config')
     expect(archivalConfig.postgresReaderHost).toBe(READER_HOST)
   })
 
   it('throws when ARCHIVE_POSTGRES_READER_HOST is not set', async () => {
     delete process.env.ARCHIVE_POSTGRES_READER_HOST
-    await expect(import('./config')).rejects.toThrow(
+    await expect(import('../config')).rejects.toThrow(
       'ARCHIVE_POSTGRES_READER_HOST',
     )
   })
