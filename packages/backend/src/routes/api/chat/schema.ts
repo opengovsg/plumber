@@ -45,6 +45,19 @@ const messagePartSchema = z.discriminatedUnion('type', [
         .min(1),
     }),
   }),
+  // Tool use parts — present in assistant messages when the LLM calls an MCP tool
+  z.object({
+    type: z.literal('tool-call'),
+    toolCallId: z.string(),
+    toolName: z.string(),
+    args: z.unknown(),
+  }),
+  z.object({
+    type: z.literal('tool-result'),
+    toolCallId: z.string(),
+    toolName: z.string(),
+    result: z.unknown(),
+  }),
 ])
 
 const messageSchema = z.object({
