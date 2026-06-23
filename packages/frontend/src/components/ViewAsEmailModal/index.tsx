@@ -22,9 +22,10 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
-import { transformForClient } from '@emailens/engine'
 
 import { BrokenPipeIcon } from '@/components/Icons'
+
+import { buildPreviewDocument } from './buildPreviewDocument'
 
 interface ClientOption {
   id: string
@@ -56,21 +57,18 @@ interface PreviewPaneProps {
 }
 
 // Renders the transformed email. Extracted so the ErrorBoundary below sits
-// above the transformForClient() call, which is what can actually throw.
+// above the transformForClient() call (inside buildPreviewDocument), which is
+// what can actually throw.
 function PreviewPane({ html, clientId }: PreviewPaneProps) {
   const transformed = useMemo(() => {
-    return transformForClient(html, clientId).html.replace(
-      // Replicate logic in backend - see send-transactional-email/index.ts
-      /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
-      '<p style="margin: 0">&nbsp;</p>',
-    )
+    return buildPreviewDocument(html, clientId)
   }, [html, clientId])
 
   return (
     <iframe
       title="Email preview"
       srcDoc={transformed}
-      sandbox=""
+      sandbox="" // MUST stay empty.
       style={{ width: '100%', height: '100%', border: 0 }}
     />
   )

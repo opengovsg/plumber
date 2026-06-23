@@ -34,6 +34,9 @@
     "@as-integrations/express4": "1.1.2",
     "@aws-sdk/client-dynamodb": "3.1027.0",
     "@aws-sdk/client-s3": "3.1027.0",
+    "@aws-sdk/client-sesv2": "^3.1045.0",
+    "@aws-sdk/client-sqs": "^3.1045.0",
+    "@aws-sdk/credential-providers": "^3.1045.0",
     "@aws-sdk/s3-presigned-post": "3.1027.0",
     "@bull-board/express": "5.17.0",
     "@databricks/sql": "1.13.0",
@@ -79,7 +82,7 @@
     "lottie-web": "5.12.2",
     "luxon": "2.5.2",
     "morgan": "^1.10.0",
-    "multer": "2.1.1",
+    "multer": "2.2.0",
     "nanoid": "3.3.8",
     "objection": "^3.0.0",
     "openid-client": "5.4.0",
@@ -90,6 +93,7 @@
     "remark-breaks": "3.0.3",
     "remark-gfm": "3.0.1",
     "turndown": "7.2.2",
+    "sqs-consumer": "^15.0.1",
     "typescript": "^5.5.4",
     "ulid": "3.0.0",
     "urlcat": "3.1.0",
@@ -113,7 +117,7 @@
     "@types/lodash.get": "4.4.9",
     "@types/luxon": "^2.4.0",
     "@types/morgan": "^1.9.3",
-    "@types/multer": "2.0.0",
+    "@types/multer": "2.1.0",
     "@types/pg": "^8.6.1",
     "@types/turndown": "^5.0.6",
     "axios-mock-adapter": "^2.1.0",
@@ -124,5 +128,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.69.0"
+  "version": "1.70.0"
 }

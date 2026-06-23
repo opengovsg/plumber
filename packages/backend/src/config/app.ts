@@ -86,6 +86,13 @@ type AppConfig = {
       }
     }
   }
+  ses: {
+    fromAddress: string
+    region: string
+    roleArn: string
+    configurationSet?: string
+    sqsQueueUrl?: string
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -187,6 +194,16 @@ const appConfig: AppConfig = {
       },
     },
   },
+  // AWS postman SES
+  ses: {
+    fromAddress: 'info@plumber.gov.sg',
+    region: 'ap-southeast-2',
+    roleArn: process.env.SES_ROLE_ARN,
+    ...(process.env.SES_CONFIGURATION_SET && {
+      configurationSet: process.env.SES_CONFIGURATION_SET,
+    }),
+    sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
+  },
 }
 
 if (!appConfig.encryptionKey) {
@@ -261,6 +278,10 @@ if (
   !appConfig.pair.rome.pairAction.secretKey
 ) {
   throw new Error('Pair Rome environment variables need to be set!')
+}
+
+if (!appConfig.ses.roleArn) {
+  throw new Error('SES_ROLE_ARN environment variable needs to be set!')
 }
 
 // Force SGT date-time formatting no matter what

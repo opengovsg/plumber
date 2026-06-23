@@ -144,6 +144,17 @@ export const transactionalEmailSchema = z.object({
     .string()
     .min(1, { message: 'Empty sender name' })
     .trim()
+    // Strip characters that would break the RFC 5322 display name in the
+    // constructed "{senderName} <info@plumber.gov.sg>" address. A value like
+    // "Foo <x@y.com>" otherwise yields a malformed address that SES rejects
+    // (Postman happens to tolerate it). Collapse the resulting whitespace so
+    // stripped characters don't leave double spaces.
+    .transform((value) =>
+      value
+        .replace(/[\r\n<>"]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
     // NOTE: we trim the sender name so that long sender names do not cause the email to fail.
     // Postman limits the sender name to 255 characters.
     // the API sends "{senderName} <info@plumber.gov.sg>" so it needs to be included in the calculation.

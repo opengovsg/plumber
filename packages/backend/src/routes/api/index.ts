@@ -5,6 +5,7 @@ import {
   requireAuthentication,
   setCurrentUserContext,
 } from './middleware/authentication'
+import adminRouter from './admin'
 import appsRouter from './apps'
 import chatRouter from './chat'
 
@@ -17,6 +18,7 @@ router.use(requireAuthentication)
 
 // Mount routes that admins can access before blockAdminOperations
 router.use('/apps', appsRouter)
+router.use('/admin', adminRouter)
 
 // Block admin mutations for all subsequent routes
 router.use(blockAdminOperations)

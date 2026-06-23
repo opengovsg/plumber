@@ -22,7 +22,24 @@ const mocks = vi.hoisted(() => ({
   sendBlacklistEmail: vi.fn(),
   sendInvalidAttachmentsEmail: vi.fn(),
   createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
+  getLdFlagValue: vi.fn(async () => [] as string[]),
+  sesSend: vi.fn(async () => ({})),
+  getSuppressedEmails: vi.fn(async () => [] as string[]),
 }))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
+
+vi.mock('@/helpers/ses-email-helper', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/helpers/ses-email-helper')
+  >('@/helpers/ses-email-helper')
+  return {
+    ...actual,
+    getSesClient: () => ({ send: mocks.sesSend }),
+  }
+})
 
 vi.mock('@/helpers/s3', async () => {
   // No reason to mock other things like parseS3Id
@@ -48,6 +65,16 @@ vi.mock('../../common/send-blacklist-email', () => ({
 vi.mock('../../common/send-invalid-attachments-email', () => ({
   sendInvalidAttachmentsEmail: mocks.sendInvalidAttachmentsEmail,
   createInvalidAttachmentsMessage: mocks.createInvalidAttachmentsMessage,
+}))
+
+vi.mock('@/models/email-suppression-entry', () => ({
+  default: {
+    getSuppressedEmails: mocks.getSuppressedEmails,
+  },
+}))
+
+vi.mock('@/helpers/metrics', () => ({
+  incrementMetric: vi.fn(),
 }))
 
 describe('send transactional email', () => {
@@ -691,6 +718,88 @@ describe('send transactional email', () => {
       submissionId: 'abc',
       invalidAttachments: ['file-2.svg'],
       hasInvalidAttachments: true,
+    })
+  })
+
+  describe('SES routing via ses_enabled_domains flag', () => {
+    it('routes to SES when all recipients are in flagged domains', async () => {
+      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+      $.step.parameters.attachments = []
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect($.http.post).not.toHaveBeenCalled()
+      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+    })
+
+    it('falls back to Postman when any recipient is outside flagged domains', async () => {
+      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@gmail.com'
+      $.step.parameters.attachments = []
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.http.post).toHaveBeenCalledTimes(2)
+    })
+
+    it('falls back to Postman when batch has attachments even if all domains qualify', async () => {
+      mocks.getLdFlagValue.mockImplementationOnce(async () => ['*'])
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      mocks.filterAttachments.mockReturnValueOnce({
+        attachmentFiles: [{ fileName: 'f.txt', data: new Uint8Array([0]) }],
+        invalidAttachments: [],
+        submissionId: null,
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.http.post).toHaveBeenCalledTimes(1)
+    })
+
+    it('uses Postman when ses_enabled_domains flag is empty (default kill switch)', async () => {
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      $.step.parameters.attachments = []
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.http.post).toHaveBeenCalledTimes(1)
+    })
+
+    it('drops a suppressed CC from the SES call but keeps it in dataOut', async () => {
+      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      // Only the CC is suppressed — the To recipient still sends.
+      mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
+
+      $.step.parameters.destinationEmail = 'recipient@open.gov.sg'
+      $.step.parameters.destinationEmailCc =
+        'cc-good@open.gov.sg,cc-bad@open.gov.sg'
+      $.step.parameters.attachments = []
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // Sent once for the single (non-suppressed) To recipient, and the
+      // suppressed CC is dropped from the actual SES API call.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+        { input: { Destination: { CcAddresses?: string[] } } },
+      ]
+      expect(sentCommand.input.Destination.CcAddresses).toEqual([
+        'cc-good@open.gov.sg',
+      ])
+
+      // ...but the full CC list (including the suppressed address) is still
+      // reported in dataOut, since CC status is not tracked.
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED'],
+          recipient: ['recipient@open.gov.sg'],
+          cc: ['cc-good@open.gov.sg', 'cc-bad@open.gov.sg'],
+        }),
+      })
     })
   })
 })
