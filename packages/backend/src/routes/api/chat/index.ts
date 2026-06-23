@@ -126,6 +126,7 @@ const handleChatStream = observe(
           (await mcpClient.tools()) as Parameters<typeof streamText>[0]['tools']
       } catch (error) {
         await mcpClient?.close()
+        mcpClient = null
         logger.error('Failed to connect to GitBook MCP server', {
           traceId,
           error: error instanceof Error ? error.message : String(error),
