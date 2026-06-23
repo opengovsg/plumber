@@ -35,9 +35,17 @@ vi.mock('@langfuse/tracing', () => ({
 vi.mock('ai', () => ({
   convertToModelMessages: vi.fn((msgs) => msgs),
   smoothStream: vi.fn(() => ({})),
+  stepCountIs: vi.fn(() => () => false),
   streamText: mocks.streamText,
   createUIMessageStream: mocks.createUIMessageStream,
   createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
+}))
+
+vi.mock('@ai-sdk/mcp', () => ({
+  experimental_createMCPClient: vi.fn().mockResolvedValue({
+    tools: vi.fn().mockResolvedValue({}),
+    close: vi.fn().mockResolvedValue(undefined),
+  }),
 }))
 
 vi.mock('@/helpers/stream', () => ({
@@ -257,6 +265,75 @@ describe('Chat Route Handler', () => {
           }),
         ]),
       })
+    })
+
+    it('should accept assistant messages with empty text parts from multi-step tool use', async () => {
+      // On turns after a tool call the frontend echoes the full assistant message
+      // back, including the empty text part the AI SDK emits when the LLM goes
+      // straight to calling a tool without generating any preamble first.
+      mockReq.body = {
+        messages: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                text: 'what data classification can plumber handle?',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              { type: 'step-start' },
+              { type: 'text', text: '' }, // empty — LLM went straight to tool call
+              {
+                type: 'dynamic-tool',
+                toolCallId: 'tool-123',
+                toolName: 'searchDocumentation',
+                state: 'output-available',
+                input: { query: 'data classification' },
+                output: {
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Plumber handles Restricted and Sensitive-Normal.',
+                    },
+                  ],
+                },
+              },
+              { type: 'step-start' },
+              {
+                type: 'text',
+                text: 'Plumber handles Restricted and Sensitive-Normal data.',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'thanks' }],
+          },
+        ],
+      }
+
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: { chatPromptName: 'chat-v0', version: 'production' },
+        },
+      })
+      mocks.getRestrictedAppKeys.mockReturnValueOnce([])
+      mocks.getPrompt.mockResolvedValueOnce({
+        prompt: 'test prompt',
+        toJSON: vi.fn(),
+      })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      // Schema accepted the payload — streaming was invoked, not a 400
+      expect(mockRes.status).not.toHaveBeenCalledWith(400)
+      expect(mocks.streamText).toHaveBeenCalled()
     })
 
     it('should throw error when AI Builder is not enabled', async () => {
