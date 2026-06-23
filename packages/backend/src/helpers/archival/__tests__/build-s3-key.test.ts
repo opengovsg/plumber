@@ -4,7 +4,7 @@ import {
   buildS3Key,
   S3_PREFIX_EXECUTIONS,
   S3_PREFIX_TEST_EXECUTIONS,
-} from './build-s3-key'
+} from '../build-s3-key'
 
 describe('buildS3Key', () => {
   it('builds the correct key for non-test executions', () => {
