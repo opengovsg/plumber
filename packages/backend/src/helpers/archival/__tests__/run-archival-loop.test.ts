@@ -11,7 +11,10 @@ vi.mock('../config', () => ({
   },
 }))
 vi.mock('../logger')
-vi.mock('../s3-client', () => ({ archiveS3Client: {} }))
+vi.mock('../s3-client', () => ({
+  archiveS3Client: {},
+  putArchiveObject: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../archive-execution')
 vi.mock('../db', () => ({
   archivalDb: vi.fn(),
@@ -60,6 +63,7 @@ function setupDb(batches: ExecutionRow[][]) {
 
   const stepsBuilder = {
     select: vi.fn().mockReturnThis(),
+    leftJoin: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     orderBy: vi.fn().mockResolvedValue([]),
   }
@@ -96,6 +100,7 @@ function setupDb(batches: ExecutionRow[][]) {
     return execBuilder
   }
   ;(archivalDbReader as any).mockImplementation(tableRouter)
+  ;(archivalDbReader as any).raw = vi.fn().mockImplementation((expr: string) => expr)
   ;(archivalDb as any).mockImplementation(tableRouter)
 }
 
