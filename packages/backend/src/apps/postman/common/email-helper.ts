@@ -9,6 +9,7 @@ import HttpError from '@/errors/http'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { incrementMetric } from '@/helpers/metrics'
+import { sanitizeEmailHtml } from '@/helpers/sanitize-email-html'
 import { getSesClient, shouldUseSes } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
@@ -154,8 +155,13 @@ async function sendViaSes(
         Simple: {
           Subject: { Data: email.subject, Charset: 'UTF-8' },
           Body: {
-            Html: { Data: email.body, Charset: 'UTF-8' },
+            // SES sends the body verbatim; sanitise to match the server-side
+            // filtering the Postman path gets for free.
+            Html: { Data: sanitizeEmailHtml(email.body), Charset: 'UTF-8' },
           },
+          // Marks the message as sent via the SES direct path (absent =>
+          // routed through Postman). Recipient-invisible; for triage only.
+          Headers: [{ Name: 'X-Plumber-Transport', Value: 'ses' }],
         },
       },
       ...(email.replyTo && { ReplyToAddresses: [email.replyTo] }),

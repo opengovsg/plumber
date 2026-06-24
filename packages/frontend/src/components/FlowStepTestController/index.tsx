@@ -1,6 +1,13 @@
 import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
 
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  forwardRef,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import {
@@ -14,12 +21,14 @@ import {
 } from '@chakra-ui/react'
 import {
   Button,
+  ButtonProps,
   BxsCheckCircle,
   BxsErrorCircle,
   BxsInfoCircle,
   Infobox,
 } from '@opengovsg/design-system-react'
 
+import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
 import { EditorContext } from '@/contexts/Editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
@@ -28,7 +37,6 @@ import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
-import { CheckAgainButton } from './CheckAgainButton'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
@@ -63,25 +71,33 @@ type CheckStepTooltipProps = {
   children: React.ReactNode
 }
 
-const CheckStepTooltip = (props: CheckStepTooltipProps) => {
-  const { children, hasDeletedVars, isDisabled, isReadOnly } = props
-  return (
-    <Tooltip
-      label={
-        isReadOnly
-          ? 'Unpublish your pipe to check step'
-          : hasDeletedVars
-          ? 'Remove variables from deleted steps to check step'
-          : 'Complete required fields to check step'
-      }
-      aria-label="check step tooltip"
-      isDisabled={isDisabled}
-      hasArrow
-    >
-      {children}
-    </Tooltip>
-  )
-}
+const CheckStepTooltip = forwardRef<HTMLDivElement, CheckStepTooltipProps>(
+  (props, ref) => {
+    const { children, hasDeletedVars, isDisabled, isReadOnly } = props
+    return (
+      <Tooltip
+        ref={ref}
+        label={
+          isReadOnly
+            ? 'Unpublish your pipe to check step'
+            : hasDeletedVars
+            ? 'Remove variables from deleted steps to check step'
+            : 'Complete required fields to check step'
+        }
+        aria-label="check step tooltip"
+        isDisabled={isDisabled}
+        hasArrow
+        shouldWrapChildren
+      >
+        {children}
+      </Tooltip>
+    )
+  },
+)
+
+const NoOpCheckStepButtonExtension = ({
+  children,
+}: CheckStepButtonExtensionProps) => children
 
 export default function FlowStepTestController(
   props: FlowStepTestControllerProps,
@@ -248,6 +264,23 @@ export default function FlowStepTestController(
     return collapseDirection === 'up' ? <BiChevronUp /> : <BiChevronDown />
   }
 
+  const appExtension = getExtension(step.appKey, step.key)
+  const CheckStepButtonExtension =
+    appExtension?.CheckStepButton ?? NoOpCheckStepButtonExtension
+
+  const checkAgainButtonProps: Omit<ButtonProps, 'onClick'> = {
+    variant: isStepUnchecked ? 'solid' : 'outline',
+    colorScheme: isStepUnchecked ? 'primary' : 'black',
+    size: 'sm',
+    isLoading: isTestExecuting,
+    isDisabled: !isValid || readOnly,
+  }
+
+  const checkStepButtonProps: Omit<ButtonProps, 'onClick'> = {
+    isLoading: isTestExecuting,
+    isDisabled: !shouldAllowCheckStep,
+  }
+
   return (
     <>
       {isWebhookSubstep && (
@@ -337,14 +370,20 @@ export default function FlowStepTestController(
                       {!isDirty ? 'Saved' : 'Save without checking'}
                     </Button>
                   )}
-                  <CheckAgainButton
-                    isUnstyledInfobox={isStepUnchecked}
-                    onClick={handleSaveAndTest}
-                    isLoading={isTestExecuting}
-                    isDisabled={!isValid || readOnly}
+                  <CheckStepButtonExtension
                     step={step}
+                    buttonProps={checkAgainButtonProps}
+                    onClick={handleSaveAndTest}
                     executionStepMetadata={currentTestExecutionStep?.metadata}
-                  />
+                  >
+                    <Button
+                      {...checkAgainButtonProps}
+                      onClick={() => handleSaveAndTest()}
+                      data-test="check-again-button"
+                    >
+                      Check step again
+                    </Button>
+                  </CheckStepButtonExtension>
                 </Flex>
               </Flex>
             </Infobox>
@@ -384,14 +423,19 @@ export default function FlowStepTestController(
                 isDisabled={shouldAllowCheckStep}
                 isReadOnly={readOnly}
               >
-                <Button
-                  onClick={() => handleSaveAndTest()}
-                  data-test="flow-substep-continue-button"
-                  isDisabled={!shouldAllowCheckStep}
-                  isLoading={isTestExecuting}
+                <CheckStepButtonExtension
+                  step={step}
+                  buttonProps={checkStepButtonProps}
+                  onClick={handleSaveAndTest}
                 >
-                  Check step
-                </Button>
+                  <Button
+                    {...checkStepButtonProps}
+                    onClick={() => handleSaveAndTest()}
+                    data-test="flow-substep-continue-button"
+                  >
+                    Check step
+                  </Button>
+                </CheckStepButtonExtension>
               </CheckStepTooltip>
             </HStack>
           </VStack>

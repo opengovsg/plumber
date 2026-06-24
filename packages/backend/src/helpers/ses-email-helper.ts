@@ -6,6 +6,7 @@ import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import logger from './logger'
 import { incrementMetric } from './metrics'
+import { sanitizeEmailHtml } from './sanitize-email-html'
 
 let sesClient: SESv2Client | null = null
 
@@ -88,8 +89,13 @@ export async function sendEmailViaSes({
           Simple: {
             Subject: { Data: subject, Charset: 'UTF-8' },
             Body: {
-              Html: { Data: body, Charset: 'UTF-8' },
+              // SES sends the body verbatim; sanitise to match the server-side
+              // filtering the Postman path gets for free.
+              Html: { Data: sanitizeEmailHtml(body), Charset: 'UTF-8' },
             },
+            // Marks the message as sent via the SES direct path (absent =>
+            // routed through Postman). Recipient-invisible; for triage only.
+            Headers: [{ Name: 'X-Plumber-Transport', Value: 'ses' }],
           },
         },
         ...(replyTo && { ReplyToAddresses: [replyTo] }),

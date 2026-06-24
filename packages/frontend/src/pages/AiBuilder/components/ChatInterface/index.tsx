@@ -38,14 +38,8 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   } = props
   const navigate = useNavigate()
   const location = useLocation()
-  const {
-    flowName,
-    chatInput,
-    isMobile,
-    isDrawerOpen,
-    setIsDrawerOpen,
-    setChatState,
-  } = useAiBuilderContext()
+  const { chatInput, isMobile, isDrawerOpen, setIsDrawerOpen, setChatState } =
+    useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
 
@@ -91,7 +85,6 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
           ...location.state,
-          flowName,
           chatInput: messages[messages.length - 1].text,
           chatMessages: messages,
         },
@@ -102,15 +95,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     if (!isMobile) {
       setIsDrawerOpen(true)
     }
-  }, [
-    chatInput,
-    messages,
-    setIsDrawerOpen,
-    navigate,
-    location.state,
-    flowName,
-    isMobile,
-  ])
+  }, [chatInput, messages, setIsDrawerOpen, navigate, location.state, isMobile])
 
   // Auto-open preview when streaming completes and result is ready
   useEffect(() => {

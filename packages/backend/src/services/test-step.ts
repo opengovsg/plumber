@@ -91,6 +91,7 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
       stepId: stepToTest.id,
       executionId: flow.testExecutionId,
       testRun: true,
+      metadata: options.testRunMetadata,
     })
 
     // Delete old execution steps of the same step
