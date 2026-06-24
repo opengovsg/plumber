@@ -87,6 +87,7 @@ const CheckStepTooltip = forwardRef<HTMLDivElement, CheckStepTooltipProps>(
         aria-label="check step tooltip"
         isDisabled={isDisabled}
         hasArrow
+        shouldWrapChildren
       >
         {children}
       </Tooltip>
@@ -417,15 +418,15 @@ export default function FlowStepTestController(
                   {isDirty ? 'Save' : 'Saved'}
                 </Button>
               )}
-              <CheckStepButtonExtension
-                step={step}
-                buttonProps={checkStepButtonProps}
-                onClick={handleSaveAndTest}
+              <CheckStepTooltip
+                hasDeletedVars={hasDeletedVars}
+                isDisabled={shouldAllowCheckStep}
+                isReadOnly={readOnly}
               >
-                <CheckStepTooltip
-                  hasDeletedVars={hasDeletedVars}
-                  isDisabled={shouldAllowCheckStep}
-                  isReadOnly={readOnly}
+                <CheckStepButtonExtension
+                  step={step}
+                  buttonProps={checkStepButtonProps}
+                  onClick={handleSaveAndTest}
                 >
                   <Button
                     {...checkStepButtonProps}
@@ -434,8 +435,8 @@ export default function FlowStepTestController(
                   >
                     Check step
                   </Button>
-                </CheckStepTooltip>
-              </CheckStepButtonExtension>
+                </CheckStepButtonExtension>
+              </CheckStepTooltip>
             </HStack>
           </VStack>
         )}
