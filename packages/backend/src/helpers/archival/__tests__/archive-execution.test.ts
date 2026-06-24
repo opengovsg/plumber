@@ -78,6 +78,7 @@ function makeMockKnex() {
 const baseOpts = {
   dryRun: false,
   bucket: 'plumber-archive-test',
+  runAt: '2025-01-15T00:00:00.000Z',
 }
 
 describe('archiveExecution', () => {
