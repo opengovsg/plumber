@@ -1,9 +1,20 @@
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import executeStep from '@/graphql/mutations/execute-step'
+import Execution from '@/models/execution'
+import Flow from '@/models/flow'
+import Step from '@/models/step'
 import User from '@/models/user'
 import { TestStepOptions, TestStepResult } from '@/services/test-step'
 import Context from '@/types/express/context'
@@ -303,5 +314,81 @@ describe('executeStep mutation - access control', () => {
     await expect(executeStep(null, { input }, context)).rejects.toThrow(
       NotFoundError,
     )
+  })
+})
+
+describe('executeStep mutation - testRunMetadata propagation to actions', () => {
+  let context: Context
+  let flow: Flow
+  let actionStep: Step
+  let testRunSpy: ReturnType<typeof vi.fn>
+
+  beforeEach(async () => {
+    vi.resetAllMocks()
+
+    context = await generateMockContext()
+
+    flow = await Flow.query().insertGraphAndFetch({
+      userId: context.currentUser.id,
+      name: 'testRunMetadata propagation flow',
+      steps: [
+        {
+          key: 'mock-trigger',
+          appKey: 'mock-app',
+          type: 'trigger',
+          position: 1,
+          status: 'completed',
+        },
+        {
+          key: 'mock-action',
+          appKey: 'mock-app',
+          type: 'action',
+          position: 2,
+          status: 'completed',
+        },
+      ],
+    })
+    actionStep = flow.steps[1]
+
+    const execution = await Execution.query().insertAndFetch({
+      flowId: flow.id,
+      testRun: true,
+    })
+    await flow.$query().patch({ testExecutionId: execution.id })
+
+    testRunSpy = vi.fn().mockResolvedValue({})
+
+    vi.spyOn(Step.prototype, 'getApp').mockResolvedValue({
+      key: 'mock-app',
+      apiBaseUrl: null,
+      beforeRequest: [],
+      requestErrorHandler: null,
+    } as any)
+    vi.spyOn(Step.prototype, 'getActionCommand').mockResolvedValue({
+      run: vi.fn(),
+      testRun: testRunSpy,
+      preprocessVariable: undefined,
+    } as any)
+    vi.spyOn(Step.prototype, 'getNextStep').mockResolvedValue(null)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("forwards testRunMetadata to the action's testRun handler", async () => {
+    const { default: realTestStep } = await vi.importActual<
+      typeof import('@/services/test-step')
+    >('@/services/test-step')
+
+    const testRunMetadata = { 'fake:key': { hello: 'world' } }
+
+    await realTestStep({
+      stepId: actionStep.id,
+      testRunMetadata,
+    })
+
+    expect(testRunSpy).toHaveBeenCalledTimes(1)
+    expect(testRunSpy.mock.calls[0][1]).toEqual(testRunMetadata)
   })
 })
