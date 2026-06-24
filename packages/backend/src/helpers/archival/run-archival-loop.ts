@@ -2,7 +2,7 @@ import { archiveExecution } from './archive-execution'
 import { archivalConfig } from './config'
 import { archivalDb, archivalDbReader } from './db'
 import logger from './logger'
-import { archiveS3Client } from './s3-client'
+import { archiveS3Client, putArchiveObject } from './s3-client'
 import type { ExecutionRow, ExecutionStepRow } from './types'
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -24,7 +24,10 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   let totalArchived = 0
   let totalSkipped = 0
   const archivedByFlow = new Map<string, string[]>()
+  const stepCounts = new Map<string, Map<string, number>>()
+  let nullStepCount = 0
   const startedAt = Date.now()
+  const runAt = new Date(startedAt).toISOString()
 
   while (!signal.aborted) {
     const batch = (await archivalDbReader('executions')
@@ -97,25 +100,32 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         break
       }
 
+      // LEFT JOIN steps to fill in app_key/key for old rows that predate the
+      // denormalised columns being added to execution_steps.
       const steps = (await archivalDbReader('execution_steps')
         .select(
-          'id',
-          'execution_id as executionId',
-          'step_id as stepId',
-          'app_key as appKey',
-          'key',
-          'job_id as jobId',
-          'status',
-          'data_in as dataIn',
-          'data_out as dataOut',
-          'error_details as errorDetails',
-          'metadata',
-          'created_at as createdAt',
-          'updated_at as updatedAt',
-          'deleted_at as deletedAt',
+          'execution_steps.id',
+          'execution_steps.execution_id as executionId',
+          'execution_steps.step_id as stepId',
+          archivalDbReader.raw(
+            'COALESCE(execution_steps.app_key, steps.app_key) as "appKey"',
+          ),
+          archivalDbReader.raw(
+            'COALESCE(execution_steps.key, steps.key) as "key"',
+          ),
+          'execution_steps.job_id as jobId',
+          'execution_steps.status',
+          'execution_steps.data_in as dataIn',
+          'execution_steps.data_out as dataOut',
+          'execution_steps.error_details as errorDetails',
+          'execution_steps.metadata',
+          'execution_steps.created_at as createdAt',
+          'execution_steps.updated_at as updatedAt',
+          'execution_steps.deleted_at as deletedAt',
         )
-        .where('execution_id', execution.id)
-        .orderBy('created_at')) as ExecutionStepRow[]
+        .leftJoin('steps', 'execution_steps.step_id', 'steps.id')
+        .where('execution_steps.execution_id', execution.id)
+        .orderBy('execution_steps.created_at')) as ExecutionStepRow[]
 
       try {
         const result = await archiveExecution(execution, steps, {
@@ -123,12 +133,24 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           bucket: archiveBucket,
           s3Client: archiveS3Client,
           knexClient: archivalDb,
+          runAt,
         })
         if (result === 'archived') {
           batchArchived++
           const ids = archivedByFlow.get(execution.flowId) ?? []
           ids.push(execution.id)
           archivedByFlow.set(execution.flowId, ids)
+
+          for (const step of steps) {
+            if (step.appKey && step.key) {
+              const keyMap =
+                stepCounts.get(step.appKey) ?? new Map<string, number>()
+              keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
+              stepCounts.set(step.appKey, keyMap)
+            } else {
+              nullStepCount++
+            }
+          }
         } else {
           batchSkipped++
         }
@@ -175,5 +197,27 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     executions_archived: totalArchived,
     executions_skipped: totalSkipped,
     durationMs: Date.now() - startedAt,
+  })
+
+  const stepCountsObj: Record<string, Record<string, number>> = {}
+  for (const [appKey, keyMap] of stepCounts) {
+    stepCountsObj[appKey] = Object.fromEntries(keyMap)
+  }
+
+  await putArchiveObject({
+    s3Client: archiveS3Client,
+    bucket: archiveBucket,
+    key: `_meta/runs/${runAt}.json`,
+    body: JSON.stringify({
+      runAt,
+      dryRun,
+      executionsArchived: totalArchived,
+      executionsSkipped: totalSkipped,
+      flowsAffected: archivedByFlow.size,
+      stepCounts: stepCountsObj,
+      nullStepCount,
+      durationMs: Date.now() - startedAt,
+    }),
+    contentType: 'application/json',
   })
 }
