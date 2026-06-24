@@ -21,6 +21,7 @@ import {
 } from '@chakra-ui/react'
 import {
   Button,
+  ButtonProps,
   BxsCheckCircle,
   BxsErrorCircle,
   BxsInfoCircle,
@@ -36,7 +37,6 @@ import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 
-import { CheckAgainButton } from './CheckAgainButton'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
@@ -265,9 +265,20 @@ export default function FlowStepTestController(
 
   const appExtension = getExtension(step.appKey, step.key)
   const CheckStepButtonExtension =
-    shouldAllowCheckStep && appExtension?.CheckStepButton != null
-      ? appExtension.CheckStepButton
-      : NoOpCheckStepButtonExtension
+    appExtension?.CheckStepButton ?? NoOpCheckStepButtonExtension
+
+  const checkAgainButtonProps: Omit<ButtonProps, 'onClick'> = {
+    variant: isStepUnchecked ? 'solid' : 'outline',
+    colorScheme: isStepUnchecked ? 'primary' : 'black',
+    size: 'sm',
+    isLoading: isTestExecuting,
+    isDisabled: !isValid || readOnly,
+  }
+
+  const checkStepButtonProps: Omit<ButtonProps, 'onClick'> = {
+    isLoading: isTestExecuting,
+    isDisabled: !shouldAllowCheckStep,
+  }
 
   return (
     <>
@@ -358,15 +369,19 @@ export default function FlowStepTestController(
                       {!isDirty ? 'Saved' : 'Save without checking'}
                     </Button>
                   )}
-                  <CheckStepButtonExtension step={step}>
-                    <CheckAgainButton
-                      isUnstyledInfobox={isStepUnchecked}
-                      onClick={handleSaveAndTest}
-                      isLoading={isTestExecuting}
-                      isDisabled={!isValid || readOnly}
-                      step={step}
-                      executionStepMetadata={currentTestExecutionStep?.metadata}
-                    />
+                  <CheckStepButtonExtension
+                    step={step}
+                    buttonProps={checkAgainButtonProps}
+                    onClick={handleSaveAndTest}
+                    executionStepMetadata={currentTestExecutionStep?.metadata}
+                  >
+                    <Button
+                      {...checkAgainButtonProps}
+                      onClick={() => handleSaveAndTest()}
+                      data-test="check-again-button"
+                    >
+                      Check step again
+                    </Button>
                   </CheckStepButtonExtension>
                 </Flex>
               </Flex>
@@ -402,17 +417,20 @@ export default function FlowStepTestController(
                   {isDirty ? 'Save' : 'Saved'}
                 </Button>
               )}
-              <CheckStepButtonExtension step={step}>
+              <CheckStepButtonExtension
+                step={step}
+                buttonProps={checkStepButtonProps}
+                onClick={handleSaveAndTest}
+              >
                 <CheckStepTooltip
                   hasDeletedVars={hasDeletedVars}
                   isDisabled={shouldAllowCheckStep}
                   isReadOnly={readOnly}
                 >
                   <Button
+                    {...checkStepButtonProps}
                     onClick={() => handleSaveAndTest()}
                     data-test="flow-substep-continue-button"
-                    isDisabled={!shouldAllowCheckStep}
-                    isLoading={isTestExecuting}
                   >
                     Check step
                   </Button>

@@ -1,6 +1,4 @@
-import { IExecutionStepMetadata, IStep } from '@plumber/types'
-
-import { forwardRef, useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { IconType } from 'react-icons'
 import { BiChevronDown } from 'react-icons/bi'
 import { PiRobot, PiUser } from 'react-icons/pi'
@@ -15,63 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { Button, IconButton, Menu } from '@opengovsg/design-system-react'
 
-import {
-  FORMSG_APP_KEY,
-  FORMSG_TRIGGER_KEY,
-  MRF_ACTION_KEY,
-} from '@/helpers/formsg'
-
-interface CheckAgainButtonProps {
-  isUnstyledInfobox: boolean
-  onClick: (testRunMetadata?: Record<string, unknown>) => void
-  isLoading: boolean
-  isDisabled: boolean
-  step: IStep
-  executionStepMetadata?: IExecutionStepMetadata
-}
-
-export const CheckAgainButton = forwardRef<
-  HTMLButtonElement,
-  CheckAgainButtonProps
->((props, ref) => {
-  const { isUnstyledInfobox, onClick, isLoading, isDisabled, step } = props
-  const isFormSgTrigger =
-    step.appKey === FORMSG_APP_KEY && step.key === FORMSG_TRIGGER_KEY
-  const isFormSgAction =
-    step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
-
-  if (isFormSgTrigger) {
-    return <FormSGCheckAgainButton ref={ref} {...props} />
-  }
-  if (isFormSgAction) {
-    return <FormSGCheckAgainButton ref={ref} {...props} />
-  }
-  return (
-    <Button
-      ref={ref}
-      variant={isUnstyledInfobox ? 'solid' : 'outline'}
-      onClick={() => onClick()}
-      isLoading={isLoading}
-      colorScheme={isUnstyledInfobox ? 'primary' : 'black'}
-      size="sm"
-      isDisabled={isDisabled}
-      data-test="check-again-button"
-    >
-      Check step again
-    </Button>
-  )
-})
-
-/**
- * For UX reasons, we need to have a different button for FormSG.
- * The user flow goes like this:
- * - If user first connects the form, the button should be "Check step again"
- *   and display only mock data (no dropdown button)
- * - After the real submission is made, the button should be "Check again with submission"
- *   and display the dropdown button and real submission data
- * - If the user clicks on the dropdown button and select "Use mock data",
- *   the button should still show the dropdown and allow user to toggle between mock and real data
- */
+import type { CheckStepButtonExtensionProps } from '@/app-extensions/types'
 
 interface FormSGMenuItemProps {
   icon: IconType
@@ -108,19 +50,14 @@ function FormSGMenuItem({
   )
 }
 
-const FormSGCheckAgainButton = forwardRef<
-  HTMLButtonElement,
-  CheckAgainButtonProps
->((props, ref) => {
-  const {
-    isUnstyledInfobox: isTransparentInfobox,
-    onClick,
-    isLoading,
-    isDisabled,
-    executionStepMetadata,
-  } = props
-
+export default function FormSGCheckAgainButton({
+  buttonProps,
+  onClick,
+  executionStepMetadata,
+  children,
+}: CheckStepButtonExtensionProps) {
   const { isMock = false, lastTestSubmissionDate } = executionStepMetadata ?? {}
+  const { isLoading, isDisabled, size, variant, colorScheme } = buttonProps
 
   const buttonText = useMemo(() => {
     if (!lastTestSubmissionDate) {
@@ -133,14 +70,13 @@ const FormSGCheckAgainButton = forwardRef<
           <Text>Check with mock data</Text>
         </>
       )
-    } else {
-      return (
-        <>
-          <Icon as={PiUser} fontSize={20} mb={0.5} />
-          <Text>Check with last submission</Text>
-        </>
-      )
     }
+    return (
+      <>
+        <Icon as={PiUser} fontSize={20} mb={0.5} />
+        <Text>Check with last submission</Text>
+      </>
+    )
   }, [lastTestSubmissionDate, isMock])
 
   const onTestClick = useCallback(() => {
@@ -153,16 +89,19 @@ const FormSGCheckAgainButton = forwardRef<
     return onClick({ preferMock: false })
   }, [lastTestSubmissionDate, isMock, onClick])
 
+  if (!executionStepMetadata) {
+    return children
+  }
+
   return (
     <ButtonGroup
       isAttached
       isDisabled={isDisabled}
-      size="sm"
-      variant={isTransparentInfobox ? 'solid' : 'outline'}
-      colorScheme={isTransparentInfobox ? 'primary' : 'black'}
+      size={size}
+      variant={variant}
+      colorScheme={colorScheme}
     >
       <Button
-        ref={ref}
         onClick={onTestClick}
         isLoading={isLoading}
         gap={2}
@@ -198,4 +137,4 @@ const FormSGCheckAgainButton = forwardRef<
       )}
     </ButtonGroup>
   )
-})
+}

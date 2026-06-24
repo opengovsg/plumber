@@ -1,3 +1,4 @@
+import formsgExtensions from './formsg'
 import postmanExtensions from './postman'
 import type { FrontEndAppExtension } from './types'
 
@@ -6,6 +7,7 @@ import type { FrontEndAppExtension } from './types'
  */
 const APP_EXTENSIONS: Record<string, FrontEndAppExtension> = {
   ...postmanExtensions,
+  ...formsgExtensions,
 }
 
 export function getExtension(
