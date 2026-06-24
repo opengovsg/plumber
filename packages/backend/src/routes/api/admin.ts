@@ -66,6 +66,7 @@ router.post('/email-suppression/whitelist', async (req, res) => {
 
   logger.info('Admin whitelisted emails from suppression list', {
     event: 'admin-email-suppression-whitelist',
+    adminEmail: req.context?.currentUser?.email ?? 'unknown',
     requested: emails,
     whitelisted,
   })
