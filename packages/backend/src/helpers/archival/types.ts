@@ -1,3 +1,8 @@
+export type ArchivedPayload = {
+  execution: ExecutionRow
+  steps: ExecutionStepRow[]
+}
+
 export type ExecutionRow = {
   id: string
   flowId: string
