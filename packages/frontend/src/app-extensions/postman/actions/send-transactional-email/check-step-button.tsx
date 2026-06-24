@@ -1,91 +1,114 @@
-import { IconType } from 'react-icons'
-import { BiChevronDown } from 'react-icons/bi'
-import { PiAddressBook } from 'react-icons/pi'
-import {
-  ButtonGroup,
-  Flex,
-  Icon,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  Text,
-} from '@chakra-ui/react'
-import { Button, IconButton, Menu } from '@opengovsg/design-system-react'
+import { type ReactNode, useContext } from 'react'
+import { useFormContext, useWatch } from 'react-hook-form'
+import { Box, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
+import { Button, Menu } from '@opengovsg/design-system-react'
 
 import type { CheckStepButtonExtensionProps } from '@/app-extensions/types'
+import { simpleSubstitute } from '@/components/RichTextEditor/utils'
+import { AuthenticationContext } from '@/contexts/Authentication'
+import { EditorContext } from '@/contexts/Editor'
 
 interface PostmanMenuItemProps {
-  icon: IconType
   title: string
-  description: string
+  description: ReactNode
   onClick: () => void
+  isDisabled?: boolean
 }
 
 function PostmanMenuItem({
-  icon,
   title,
   description,
   onClick,
+  isDisabled,
 }: PostmanMenuItemProps) {
   return (
     <MenuItem
       display="block"
-      _hover={{
-        bg: 'grey.100',
-      }}
+      isDisabled={isDisabled}
+      _hover={isDisabled ? undefined : { bg: 'primary.50' }}
       onClick={onClick}
     >
-      <Flex alignItems="center" gap={2}>
-        <Icon as={icon} fontSize={20} mb={0.5} />
-        <Text textStyle="body-1">{title}</Text>
-      </Flex>
-      <Text textStyle="body-2" mt={1} color="secondary.500">
+      <Text textStyle="body-1">{title}</Text>
+      <Box textStyle="body-2" mt={1} color="base.content.medium">
         {description}
-      </Text>
+      </Box>
     </MenuItem>
   )
 }
 
 export default function PostmanCheckStepButton({
+  step,
   buttonProps,
   onClick,
   executionStepMetadata,
 }: CheckStepButtonExtensionProps) {
-  const { isLoading, isDisabled, size, variant, colorScheme } = buttonProps
+  const { isLoading, isDisabled } = buttonProps
+  const { varInfoMap } = useContext(EditorContext)
+  const { currentUser } = useContext(AuthenticationContext)
+  const { control } = useFormContext()
+
   const buttonText = executionStepMetadata
-    ? 'Check step again with my email'
-    : 'Check step with my email'
+    ? 'Check step again...'
+    : 'Check step...'
+
+  // Mirror the email preview: resolve any variables in the recipient/CC fields
+  // using the latest test-run values. Read the live form inputs so the preview
+  // reflects edits the user hasn't saved yet, falling back to the saved params
+  // when a field isn't registered (e.g. before the form mounts).
+  const liveDestinationEmail = useWatch({
+    control,
+    name: 'parameters.destinationEmail',
+  })
+  const liveDestinationEmailCc = useWatch({
+    control,
+    name: 'parameters.destinationEmailCc',
+  })
+  const substituteEmails = (value: unknown) =>
+    typeof value === 'string' ? simpleSubstitute(value, varInfoMap).trim() : ''
+  const toEmails = substituteEmails(
+    liveDestinationEmail ?? step.parameters.destinationEmail,
+  )
+  const ccEmails = substituteEmails(
+    liveDestinationEmailCc ?? step.parameters.destinationEmailCc,
+  )
+  const hasConfiguredEmails = Boolean(toEmails || ccEmails)
 
   return (
-    <ButtonGroup
-      isAttached
-      isDisabled={isDisabled || isLoading}
-      size={size}
-      variant={variant}
-      colorScheme={colorScheme}
-    >
-      <Button
-        onClick={() => onClick({ useConfiguredEmails: false })}
+    <Menu gutter={4} colorScheme="grey" autoSelect={false}>
+      <MenuButton
+        as={Button}
+        {...buttonProps}
+        isDisabled={isDisabled || isLoading}
         isLoading={isLoading}
         data-test="postman-check-step-button"
       >
         {buttonText}
-      </Button>
-      <Menu gutter={0} colorScheme="grey" autoSelect={false}>
-        <MenuButton
-          as={IconButton}
-          icon={<BiChevronDown />}
-          data-test="postman-check-step-button-dropdown"
+      </MenuButton>
+      <MenuList maxW="350px" py={0}>
+        <Box px={4} pt={3} pb={2}>
+          <Text textStyle="subhead-2">Send test email to</Text>
+        </Box>
+        <PostmanMenuItem
+          onClick={() => onClick({ useConfiguredEmails: false })}
+          title="Myself"
+          description={<Text noOfLines={1}>{currentUser?.email}</Text>}
         />
-        <MenuList maxW="350px" py={0}>
-          <PostmanMenuItem
-            onClick={() => onClick({ useConfiguredEmails: true })}
-            icon={PiAddressBook}
-            title="Check step with configured emails"
-            description="Recipients and CCs in this step will receive the email."
-          />
-        </MenuList>
-      </Menu>
-    </ButtonGroup>
+        <PostmanMenuItem
+          onClick={() => onClick({ useConfiguredEmails: true })}
+          title="Emails entered as recipients/CC"
+          description={
+            hasConfiguredEmails ? (
+              <>
+                <Text noOfLines={1}>{toEmails}</Text>
+                {ccEmails ? <Text noOfLines={1}>{ccEmails}</Text> : null}
+              </>
+            ) : (
+              'No recipients entered yet'
+            )
+          }
+          isDisabled={!hasConfiguredEmails}
+        />
+      </MenuList>
+    </Menu>
   )
 }

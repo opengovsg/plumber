@@ -11,6 +11,17 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-06-24',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Send test emails to yourself first',
+    details: dedent`
+      Now you can send Postman's test email to your own inbox instead of the listed recipients. Preview exactly how it looks before sending the real thing.
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-postman-email-new-test-methods.png',
+    },
+  },
+  {
     date: '2026-06-18',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'M365 Excel - Multi-condition lookup',
