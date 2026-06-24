@@ -1,6 +1,6 @@
 import { IExecutionStepMetadata, IStep } from '@plumber/types'
 
-import { useCallback, useMemo } from 'react'
+import { forwardRef, useCallback, useMemo } from 'react'
 import { IconType } from 'react-icons'
 import { BiChevronDown } from 'react-icons/bi'
 import { PiRobot, PiUser } from 'react-icons/pi'
@@ -30,7 +30,10 @@ interface CheckAgainButtonProps {
   executionStepMetadata?: IExecutionStepMetadata
 }
 
-export function CheckAgainButton(props: CheckAgainButtonProps) {
+export const CheckAgainButton = forwardRef<
+  HTMLButtonElement,
+  CheckAgainButtonProps
+>((props, ref) => {
   const { isUnstyledInfobox, onClick, isLoading, isDisabled, step } = props
   const isFormSgTrigger =
     step.appKey === FORMSG_APP_KEY && step.key === FORMSG_TRIGGER_KEY
@@ -38,13 +41,14 @@ export function CheckAgainButton(props: CheckAgainButtonProps) {
     step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
 
   if (isFormSgTrigger) {
-    return <FormSGCheckAgainButton {...props} />
+    return <FormSGCheckAgainButton ref={ref} {...props} />
   }
   if (isFormSgAction) {
-    return <FormSGCheckAgainButton {...props} />
+    return <FormSGCheckAgainButton ref={ref} {...props} />
   }
   return (
     <Button
+      ref={ref}
       variant={isUnstyledInfobox ? 'solid' : 'outline'}
       onClick={() => onClick()}
       isLoading={isLoading}
@@ -56,7 +60,7 @@ export function CheckAgainButton(props: CheckAgainButtonProps) {
       Check step again
     </Button>
   )
-}
+})
 
 /**
  * For UX reasons, we need to have a different button for FormSG.
@@ -104,7 +108,10 @@ function FormSGMenuItem({
   )
 }
 
-function FormSGCheckAgainButton(props: CheckAgainButtonProps) {
+const FormSGCheckAgainButton = forwardRef<
+  HTMLButtonElement,
+  CheckAgainButtonProps
+>((props, ref) => {
   const {
     isUnstyledInfobox: isTransparentInfobox,
     onClick,
@@ -155,6 +162,7 @@ function FormSGCheckAgainButton(props: CheckAgainButtonProps) {
       colorScheme={isTransparentInfobox ? 'primary' : 'black'}
     >
       <Button
+        ref={ref}
         onClick={onTestClick}
         isLoading={isLoading}
         gap={2}
@@ -190,4 +198,4 @@ function FormSGCheckAgainButton(props: CheckAgainButtonProps) {
       )}
     </ButtonGroup>
   )
-}
+})
