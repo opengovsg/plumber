@@ -182,7 +182,10 @@ export function useChatStream(options: UseChatStreamOptions) {
           // isChatReady: populate output from stream (steps or error), drawer opens
           // !isChatReady: preserve current output
           ...(isChatReady
-            ? { output: flowSteps ?? { error } }
+            ? {
+                output: flowSteps ?? { error },
+                ...(flowSteps?.name ? { flowName: flowSteps.name } : {}),
+              }
             : currentOutput
             ? { output: currentOutput }
             : {}),
