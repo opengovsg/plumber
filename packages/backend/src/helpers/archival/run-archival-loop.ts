@@ -110,6 +110,15 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           qb.whereRaw('id > ?::uuid', [cursor])
         }
       })
+      // Exclude flows with archiveDisabled set in flow config. Applies to all
+      // flows (active and deleted) so rehydrated executions are protected until
+      // the operator clears the flag.
+      .whereNotIn(
+        'flow_id',
+        archivalDbReader('flows')
+          .select('id')
+          .whereRaw(`config->>'archiveDisabled' = 'true'`),
+      )
       .orderBy('id')
       .limit(batchSize)) as ExecutionRow[]
 

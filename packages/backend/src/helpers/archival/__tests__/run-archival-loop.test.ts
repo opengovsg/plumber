@@ -87,6 +87,7 @@ function setupDb(
     select: vi.fn().mockReturnThis(),
     whereNotNull: vi.fn().mockReturnThis(),
     whereNull: vi.fn().mockReturnThis(),
+    whereRaw: vi.fn().mockReturnThis(),
   }
 
   const stepsBuilder: any = {
