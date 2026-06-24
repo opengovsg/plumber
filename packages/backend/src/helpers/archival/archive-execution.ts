@@ -18,6 +18,7 @@ type ArchiveOpts = {
   bucket: string
   s3Client: S3Client
   knexClient: Knex
+  runAt: string
 }
 
 export async function archiveExecution(
@@ -43,6 +44,7 @@ export async function archiveExecution(
         'execution-created-at': execution.createdAt,
         'archived-at': new Date().toISOString(),
         'step-count': String(steps.length),
+        'archival-run-at': opts.runAt,
       },
     }),
   )
