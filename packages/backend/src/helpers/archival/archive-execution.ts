@@ -1,14 +1,11 @@
-import {
-  HeadObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3'
+import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 import { promisify } from 'node:util'
 import { gzip } from 'node:zlib'
 
 import { buildS3Key } from './build-s3-key'
 import logger from './logger'
+import { putArchiveObject } from './s3-client'
 import type { ExecutionRow, ExecutionStepRow } from './types'
 
 const gzipAsync = promisify(gzip)
@@ -32,22 +29,21 @@ export async function archiveExecution(
   const bucket = opts.bucket
   const key = buildS3Key(execution)
 
-  await opts.s3Client.send(
-    new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: compressed,
-      ContentType: 'application/gzip',
-      Metadata: {
-        'flow-id': execution.flowId,
-        'execution-id': execution.id,
-        'execution-created-at': execution.createdAt,
-        'archived-at': new Date().toISOString(),
-        'step-count': String(steps.length),
-        'archival-run-at': opts.runAt,
-      },
-    }),
-  )
+  await putArchiveObject({
+    s3Client: opts.s3Client,
+    bucket,
+    key,
+    body: compressed,
+    contentType: 'application/gzip',
+    metadata: {
+      'flow-id': execution.flowId,
+      'execution-id': execution.id,
+      'execution-created-at': execution.createdAt,
+      'archived-at': new Date().toISOString(),
+      'step-count': String(steps.length),
+      'archival-run-at': opts.runAt,
+    },
+  })
 
   let head: { ContentLength?: number }
   try {
