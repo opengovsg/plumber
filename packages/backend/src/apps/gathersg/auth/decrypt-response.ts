@@ -25,6 +25,7 @@ function validateData(data: any, flowId: string, app: string) {
   if (!validationResult.success) {
     logger.error(
       `GatherSG: potential infinite loop! Webhook not triggered by user! flowId: ${flowId}. app: ${app}. case type: ${data?.type}. case uuid: ${data?.uuid}`,
+      { event: 'ownself-gather-potential-infinite-loop', flowId },
     )
     throw new Error(
       'GatherSG: potential infinite loop! Webhook not triggered by user!',
