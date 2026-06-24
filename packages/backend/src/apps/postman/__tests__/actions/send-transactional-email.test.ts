@@ -851,6 +851,15 @@ describe('send transactional email', () => {
 
       expect($.http.post).not.toHaveBeenCalled()
       expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+
+      // Every SES-direct message carries the transport marker header.
+      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+        { input: { Content: { Simple: { Headers?: unknown[] } } } },
+      ]
+      expect(sentCommand.input.Content.Simple.Headers).toContainEqual({
+        Name: 'X-Plumber-Transport',
+        Value: 'ses',
+      })
     })
 
     it('falls back to Postman when any recipient is outside flagged domains', async () => {

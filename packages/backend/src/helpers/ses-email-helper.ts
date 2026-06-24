@@ -93,6 +93,9 @@ export async function sendEmailViaSes({
               // filtering the Postman path gets for free.
               Html: { Data: sanitizeEmailHtml(body), Charset: 'UTF-8' },
             },
+            // Marks the message as sent via the SES direct path (absent =>
+            // routed through Postman). Recipient-invisible; for triage only.
+            Headers: [{ Name: 'X-Plumber-Transport', Value: 'ses' }],
           },
         },
         ...(replyTo && { ReplyToAddresses: [replyTo] }),
