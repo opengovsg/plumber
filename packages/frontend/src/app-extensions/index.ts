@@ -1,7 +1,12 @@
+import postmanExtensions from './postman'
 import type { FrontEndAppExtension } from './types'
 
-// Nothing for now
-const APP_EXTENSIONS: Record<string, FrontEndAppExtension> = {}
+/**
+ * Keys are `${appKey}-${stepKey}`.
+ */
+const APP_EXTENSIONS: Record<string, FrontEndAppExtension> = {
+  ...postmanExtensions,
+}
 
 export function getExtension(
   appKey?: string,

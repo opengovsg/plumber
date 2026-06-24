@@ -93,9 +93,18 @@ const action: IRawAction = {
       replyTo,
       attachments = [],
     } = $.step.parameters
+    // During test runs, redirect all recipients to the test runner's own
+    // email so test sends never spam unrelated addresses configured on the
+    // step.
+    const effectiveDestinationEmail = $.execution.testRun
+      ? $.user.email
+      : destinationEmail
+    const effectiveDestinationEmailCc = $.execution.testRun
+      ? undefined
+      : destinationEmailCc
     const result = transactionalEmailSchema.safeParse({
-      destinationEmail,
-      destinationEmailCc,
+      destinationEmail: effectiveDestinationEmail,
+      destinationEmailCc: effectiveDestinationEmailCc,
       senderName,
       subject,
       body,
