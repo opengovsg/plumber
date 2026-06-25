@@ -25,7 +25,8 @@ import { archiveExecution } from '../archive-execution'
 import { archivalConfig } from '../config'
 import { archivalDb, archivalDbReader } from '../db'
 import { runArchivalLoop } from '../run-archival-loop'
-import type { ExecutionRow } from '../types'
+import { putArchiveObject } from '../s3-client'
+import type { ExecutionRow, ExecutionStepRow } from '../types'
 
 function makeExecution(
   id: string,
@@ -44,13 +45,37 @@ function makeExecution(
   }
 }
 
+function makeStep(overrides: Partial<ExecutionStepRow> = {}): ExecutionStepRow {
+  return {
+    id: 'step-1',
+    executionId: 'exec-1',
+    stepId: 'step-def-1',
+    appKey: 'formsg',
+    key: 'trigger',
+    jobId: null,
+    status: 'success',
+    dataIn: {},
+    dataOut: {},
+    errorDetails: null,
+    metadata: {},
+    createdAt: '2024-01-01T00:00:01.000Z',
+    updatedAt: '2024-01-01T00:00:01.000Z',
+    deletedAt: null,
+    ...overrides,
+  }
+}
+
 // Callbacks captured from the executions query builder during each test run
 let capturedEligibilityCb: ((qb: any) => void) | null = null
 let capturedTestExecExclusionSubquery: any = null
 let capturedModifyCbs: Array<(qb: any) => void> = []
 
-function setupDb(batches: ExecutionRow[][]) {
+function setupDb(
+  batches: ExecutionRow[][],
+  stepsByExecutionId: Record<string, ExecutionStepRow[]> = {},
+) {
   let batchIdx = 0
+  let currentStepsExecutionId: string | null = null
   capturedEligibilityCb = null
   capturedTestExecExclusionSubquery = null
   capturedModifyCbs = []
@@ -61,11 +86,19 @@ function setupDb(batches: ExecutionRow[][]) {
     whereNull: vi.fn().mockReturnThis(),
   }
 
-  const stepsBuilder = {
+  const stepsBuilder: any = {
     select: vi.fn().mockReturnThis(),
     leftJoin: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockResolvedValue([]),
+    where: vi.fn().mockImplementation((...args: any[]) => {
+      if (args[0] === 'execution_steps.execution_id') {
+        currentStepsExecutionId = args[1]
+      }
+      return stepsBuilder
+    }),
+    orderBy: vi.fn().mockImplementation(() => {
+      const steps = stepsByExecutionId[currentStepsExecutionId ?? ''] ?? []
+      return Promise.resolve(steps)
+    }),
   }
 
   const execBuilder: any = {
@@ -382,6 +415,97 @@ describe('runArchivalLoop', () => {
       expect(capturedTestExecExclusionSubquery).not.toBeNull()
       // Subquery must use archivalDbReader('flows') — verified by the mock
       expect(archivalDbReader).toHaveBeenCalledWith('flows')
+    })
+  })
+
+  describe('stepCounts', () => {
+    it('accumulates counts per appKey:key from archived execution steps', async () => {
+      const exec1 = makeExecution('e1')
+      const exec2 = makeExecution('e2')
+      setupDb([[exec1, exec2], []], {
+        e1: [
+          makeStep({ id: 's1', executionId: 'e1', appKey: 'formsg', key: 'trigger' }),
+          makeStep({ id: 's2', executionId: 'e1', appKey: 'postman', key: 'send-sms' }),
+        ],
+        e2: [
+          makeStep({ id: 's3', executionId: 'e2', appKey: 'formsg', key: 'trigger' }),
+        ],
+      })
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
+        args.key.startsWith('_meta/runs/'),
+      )
+      expect(metaCall).toBeDefined()
+      const payload = JSON.parse(metaCall![0].body as string)
+      expect(payload.stepCounts).toEqual({
+        formsg: { trigger: 2 },
+        postman: { 'send-sms': 1 },
+      })
+    })
+
+    it('increments nullStepCount for steps where appKey or key is null', async () => {
+      const exec1 = makeExecution('e1')
+      setupDb([[exec1], []], {
+        e1: [
+          makeStep({ id: 's1', executionId: 'e1', appKey: null, key: 'trigger' }),
+          makeStep({ id: 's2', executionId: 'e1', appKey: 'formsg', key: null }),
+          makeStep({ id: 's3', executionId: 'e1', appKey: 'formsg', key: 'trigger' }),
+        ],
+      })
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
+        args.key.startsWith('_meta/runs/'),
+      )!
+      const payload = JSON.parse(metaCall[0].body as string)
+      expect(payload.nullStepCount).toBe(2)
+      expect(payload.stepCounts).toEqual({ formsg: { trigger: 1 } })
+    })
+
+    it('does not count steps from skipped executions', async () => {
+      vi.mocked(archiveExecution).mockResolvedValueOnce('skipped')
+      const exec1 = makeExecution('e1')
+      setupDb([[exec1], []], {
+        e1: [makeStep({ id: 's1', executionId: 'e1', appKey: 'formsg', key: 'trigger' })],
+      })
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
+        args.key.startsWith('_meta/runs/'),
+      )!
+      const payload = JSON.parse(metaCall[0].body as string)
+      expect(payload.stepCounts).toEqual({})
+      expect(payload.nullStepCount).toBe(0)
+    })
+
+    it('writes meta file to _meta/runs/{runAt}.json with correct summary fields', async () => {
+      const exec1 = makeExecution('e1')
+      setupDb([[exec1], []], {
+        e1: [makeStep({ id: 's1', executionId: 'e1', appKey: 'formsg', key: 'trigger' })],
+      })
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
+        args.key.startsWith('_meta/runs/'),
+      )
+      expect(metaCall).toBeDefined()
+      expect(metaCall![0].key).toMatch(/^_meta\/runs\/.+\.json$/)
+      expect(metaCall![0].contentType).toBe('application/json')
+
+      const payload = JSON.parse(metaCall![0].body as string)
+      expect(payload).toMatchObject({
+        dryRun: false,
+        executionsArchived: 1,
+        executionsSkipped: 0,
+        flowsAffected: 1,
+      })
+      expect(typeof payload.runAt).toBe('string')
+      expect(typeof payload.durationMs).toBe('number')
     })
   })
 })
