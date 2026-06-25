@@ -3,6 +3,7 @@ import { Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
+import BaseError from '@/errors/base'
 import User from '@/models/user'
 
 import logger from './logger'
@@ -67,11 +68,22 @@ export function deleteAuthCookie(res: Response) {
   res.clearCookie(AUTH_COOKIE_NAME)
 }
 
+// TEMPORARY: block new sign-ups from these domains while a migration is in
+// progress. Existing users with these domains are unaffected. Remove after the
+// migration date (7th July 2026).
+const BLOCKED_SIGNUP_DOMAINS = ['swda.gov.sg']
+
 export async function getOrCreateUser(email: string): Promise<User> {
   email = email.trim().toLowerCase()
 
   let user = await User.query().findOne({ email })
   if (!user) {
+    const domain = email.split('@')[1]
+    if (BLOCKED_SIGNUP_DOMAINS.includes(domain)) {
+      throw new BaseError(
+        'New accounts with swda email domain are prohibited till 7th July 2026 as we will perform a migration for you.',
+      )
+    }
     user = await User.query().insertAndFetch({ email })
   }
 
