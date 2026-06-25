@@ -103,7 +103,13 @@ export const transactionalEmailFields: IField[] = [
 ]
 
 export const transactionalEmailSchema = z.object({
-  subject: z.string().min(1, { message: 'Empty subject' }).trim(),
+  subject: z
+    .string()
+    .min(1, { message: 'Empty subject' })
+    .trim()
+    // Collapse whitespace so newlines (which can't appear in a header) become
+    // spaces — keeps the subject single-line and avoids header injection.
+    .transform((value) => value.replace(/\s+/g, ' ').trim()),
   body: z
     .string()
     .min(1, { message: 'Empty body' })
@@ -144,17 +150,11 @@ export const transactionalEmailSchema = z.object({
     .string()
     .min(1, { message: 'Empty sender name' })
     .trim()
-    // Strip characters that would break the RFC 5322 display name in the
-    // constructed "{senderName} <info@plumber.gov.sg>" address. A value like
-    // "Foo <x@y.com>" otherwise yields a malformed address that SES rejects
-    // (Postman happens to tolerate it). Collapse the resulting whitespace so
-    // stripped characters don't leave double spaces.
-    .transform((value) =>
-      value
-        .replace(/[\r\n<>"]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim(),
-    )
+    // Collapse whitespace so newlines (which can't appear in an email header)
+    // become spaces — prevents header injection (e.g. "Foo\r\nBcc: evil@x.com").
+    // Display-name specials like commas/angle brackets are preserved; they're
+    // RFC 5322-quoted when the From address is built (see formatFromAddress).
+    .transform((value) => value.replace(/\s+/g, ' ').trim())
     // NOTE: we trim the sender name so that long sender names do not cause the email to fail.
     // Postman limits the sender name to 255 characters.
     // the API sends "{senderName} <info@plumber.gov.sg>" so it needs to be included in the calculation.
