@@ -133,7 +133,9 @@ function setupDb(
     return execBuilder
   }
   ;(archivalDbReader as any).mockImplementation(tableRouter)
-  ;(archivalDbReader as any).raw = vi.fn().mockImplementation((expr: string) => expr)
+  ;(archivalDbReader as any).raw = vi
+    .fn()
+    .mockImplementation((expr: string) => expr)
   ;(archivalDb as any).mockImplementation(tableRouter)
 }
 
@@ -424,19 +426,34 @@ describe('runArchivalLoop', () => {
       const exec2 = makeExecution('e2')
       setupDb([[exec1, exec2], []], {
         e1: [
-          makeStep({ id: 's1', executionId: 'e1', appKey: 'formsg', key: 'trigger' }),
-          makeStep({ id: 's2', executionId: 'e1', appKey: 'postman', key: 'send-sms' }),
+          makeStep({
+            id: 's1',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: 'trigger',
+          }),
+          makeStep({
+            id: 's2',
+            executionId: 'e1',
+            appKey: 'postman',
+            key: 'send-sms',
+          }),
         ],
         e2: [
-          makeStep({ id: 's3', executionId: 'e2', appKey: 'formsg', key: 'trigger' }),
+          makeStep({
+            id: 's3',
+            executionId: 'e2',
+            appKey: 'formsg',
+            key: 'trigger',
+          }),
         ],
       })
 
       await runArchivalLoop(new AbortController().signal)
 
-      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
-        args.key.startsWith('_meta/runs/'),
-      )
+      const metaCall = vi
+        .mocked(putArchiveObject)
+        .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))
       expect(metaCall).toBeDefined()
       const payload = JSON.parse(metaCall![0].body as string)
       expect(payload.stepCounts).toEqual({
@@ -449,17 +466,32 @@ describe('runArchivalLoop', () => {
       const exec1 = makeExecution('e1')
       setupDb([[exec1], []], {
         e1: [
-          makeStep({ id: 's1', executionId: 'e1', appKey: null, key: 'trigger' }),
-          makeStep({ id: 's2', executionId: 'e1', appKey: 'formsg', key: null }),
-          makeStep({ id: 's3', executionId: 'e1', appKey: 'formsg', key: 'trigger' }),
+          makeStep({
+            id: 's1',
+            executionId: 'e1',
+            appKey: null,
+            key: 'trigger',
+          }),
+          makeStep({
+            id: 's2',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: null,
+          }),
+          makeStep({
+            id: 's3',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: 'trigger',
+          }),
         ],
       })
 
       await runArchivalLoop(new AbortController().signal)
 
-      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
-        args.key.startsWith('_meta/runs/'),
-      )!
+      const metaCall = vi
+        .mocked(putArchiveObject)
+        .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))!
       const payload = JSON.parse(metaCall[0].body as string)
       expect(payload.nullStepCount).toBe(2)
       expect(payload.stepCounts).toEqual({ formsg: { trigger: 1 } })
@@ -469,14 +501,21 @@ describe('runArchivalLoop', () => {
       vi.mocked(archiveExecution).mockResolvedValueOnce('skipped')
       const exec1 = makeExecution('e1')
       setupDb([[exec1], []], {
-        e1: [makeStep({ id: 's1', executionId: 'e1', appKey: 'formsg', key: 'trigger' })],
+        e1: [
+          makeStep({
+            id: 's1',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: 'trigger',
+          }),
+        ],
       })
 
       await runArchivalLoop(new AbortController().signal)
 
-      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
-        args.key.startsWith('_meta/runs/'),
-      )!
+      const metaCall = vi
+        .mocked(putArchiveObject)
+        .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))!
       const payload = JSON.parse(metaCall[0].body as string)
       expect(payload.stepCounts).toEqual({})
       expect(payload.nullStepCount).toBe(0)
@@ -485,14 +524,21 @@ describe('runArchivalLoop', () => {
     it('writes meta file to _meta/runs/{runAt}.json with correct summary fields', async () => {
       const exec1 = makeExecution('e1')
       setupDb([[exec1], []], {
-        e1: [makeStep({ id: 's1', executionId: 'e1', appKey: 'formsg', key: 'trigger' })],
+        e1: [
+          makeStep({
+            id: 's1',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: 'trigger',
+          }),
+        ],
       })
 
       await runArchivalLoop(new AbortController().signal)
 
-      const metaCall = vi.mocked(putArchiveObject).mock.calls.find(([args]) =>
-        args.key.startsWith('_meta/runs/'),
-      )
+      const metaCall = vi
+        .mocked(putArchiveObject)
+        .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))
       expect(metaCall).toBeDefined()
       expect(metaCall![0].key).toMatch(/^_meta\/runs\/.+\.json$/)
       expect(metaCall![0].contentType).toBe('application/json')
