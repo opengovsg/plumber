@@ -103,7 +103,7 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
         const { isValid, error } = validateFiles(
           variable,
           options,
-          getValues(name),
+          currentValues,
           maxFiles,
         )
         if (!isValid) {
