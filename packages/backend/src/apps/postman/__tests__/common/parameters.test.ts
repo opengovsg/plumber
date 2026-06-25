@@ -127,20 +127,31 @@ describe('postman transactional email schema zod validation', () => {
     expect(result.error?.errors[0].message).toEqual('Empty sender name')
   })
 
-  it('should strip display-name-breaking characters from sender name', () => {
-    // "Foo <x@y.com>" would otherwise yield a malformed "from" address that
-    // SES rejects (e.g. two angle-addrs).
+  it('preserves display-name specials in the sender name', () => {
+    // Display-name specials (angle brackets, commas, etc.) are no longer
+    // stripped at the schema layer — the From address is RFC 5322-quoted when
+    // sent via SES (see formatFromAddress in ses-email-helper), and the Postman
+    // API handles its own encoding.
     validPayload.senderName = 'Foo <x@y.com>'
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === true)
-    expect(result.data.senderName).toEqual('Foo x@y.com')
+    expect(result.data.senderName).toEqual('Foo <x@y.com>')
   })
 
-  it('should strip newlines from sender name', () => {
+  it('collapses whitespace (incl. newlines) in the sender name', () => {
+    // Newlines can't appear in an email header; collapsing them to spaces
+    // prevents header injection (e.g. a smuggled "Bcc:" line).
     validPayload.senderName = 'Foo\r\nBcc: evil@example.com'
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === true)
     expect(result.data.senderName).toEqual('Foo Bcc: evil@example.com')
+  })
+
+  it('collapses whitespace (incl. newlines) in the subject', () => {
+    validPayload.subject = 'Hello\r\n\tworld   again'
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.subject).toEqual('Hello world again')
   })
 
   it('should work with legacy body value', () => {

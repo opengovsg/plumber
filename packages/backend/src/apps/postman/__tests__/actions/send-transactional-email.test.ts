@@ -862,6 +862,30 @@ describe('send transactional email', () => {
       })
     })
 
+    it('quotes a comma sender name for SES but keeps dataOut unquoted', async () => {
+      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      $.step.parameters.senderName = 'Acme, Inc'
+      $.step.parameters.attachments = []
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // SES gets the RFC 5322-quoted display name...
+      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+        { input: { FromEmailAddress: string } },
+      ]
+      expect(sentCommand.input.FromEmailAddress).toBe(
+        '"Acme, Inc" <info@plumber.gov.sg>',
+      )
+
+      // ...but dataOut shows the clean, unquoted form.
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          from: 'Acme, Inc <info@plumber.gov.sg>',
+        }),
+      })
+    })
+
     it('falls back to Postman when any recipient is outside flagged domains', async () => {
       mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@gmail.com'
