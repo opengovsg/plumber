@@ -10,7 +10,11 @@ import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { incrementMetric } from '@/helpers/metrics'
 import { sanitizeEmailHtml } from '@/helpers/sanitize-email-html'
-import { getSesClient, shouldUseSes } from '@/helpers/ses-email-helper'
+import {
+  formatFromAddress,
+  getSesClient,
+  shouldUseSes,
+} from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import {
@@ -142,7 +146,14 @@ async function sendViaSes(
   ccAddressesToSend: string[] | undefined,
 ): Promise<PostmanPromiseFulfilled> {
   const client = getSesClient()
-  const fromAddress = `${email.senderName} <${appConfig.ses.fromAddress}>`
+  // Address sent to SES: display name is RFC 5322-quoted when it contains
+  // specials (e.g. a comma) so the header isn't malformed.
+  const fromAddress = formatFromAddress(
+    email.senderName,
+    appConfig.ses.fromAddress,
+  )
+  // Human-readable form for dataOut — no quoting artifacts shown to the user.
+  const displayFrom = `${email.senderName} <${appConfig.ses.fromAddress}>`
 
   await client.send(
     new SendEmailCommand({
@@ -187,7 +198,7 @@ async function sendViaSes(
     params: {
       body: email.body,
       subject: email.subject,
-      from: fromAddress,
+      from: displayFrom,
       reply_to: email.replyTo,
       ...(email.ccList?.length && { cc: email.ccList }),
     },
@@ -254,6 +265,10 @@ export async function sendTransactionalEmails(
           event: 'postman-step-ses-email-failed',
           recipient: recipientEmail,
           errorName: e instanceof Error ? e.name : undefined,
+          // The AWS error message is the actual reason (e.g. unverified
+          // identity, malformed address/header). e.message is non-enumerable,
+          // so it must be logged explicitly — `error: e` alone drops it.
+          errorMessage: e instanceof Error ? e.message : String(e),
           httpStatus: (e as { $metadata?: { httpStatusCode?: number } })
             ?.$metadata?.httpStatusCode,
         })

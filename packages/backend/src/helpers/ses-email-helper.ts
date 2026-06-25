@@ -45,6 +45,23 @@ export function shouldUseSes(
   return domain ? normalizedEnabledDomains.includes(domain) : false
 }
 
+/**
+ * Build an RFC 5322 From address (`Display Name <email>`).
+ *
+ * If the display name contains "specials" — most importantly a comma — it must
+ * be a quoted-string, otherwise the address is malformed (e.g. `Acme, Inc
+ * <x@y>` parses as two addresses) and SES rejects it with a BadRequestException
+ * while Postman silently tolerates it. We quote only when needed so simple
+ * names are unchanged, escaping any embedded `"`/`\`.
+ */
+export function formatFromAddress(displayName: string, email: string): string {
+  const needsQuoting = /[,;:<>@()[\]\\"]/.test(displayName)
+  const name = needsQuoting
+    ? `"${displayName.replace(/(["\\])/g, '\\$1')}"`
+    : displayName
+  return `${name} <${email}>`
+}
+
 interface SesEmailParams {
   subject: string
   body: string
@@ -116,8 +133,13 @@ export async function sendEmailViaSes({
   } catch (e) {
     logger.error('Error sending email via SES, please try again later.', {
       event: 'ses-email-failed',
-      error: e,
       recipient,
+      errorName: e instanceof Error ? e.name : undefined,
+      // e.message is non-enumerable, so `error: e` alone drops the actual
+      // reason — log it explicitly. Keep the full error for the stack too.
+      errorMessage: e instanceof Error ? e.message : String(e),
+      httpStatus: (e as { $metadata?: { httpStatusCode?: number } })?.$metadata
+        ?.httpStatusCode,
     })
     throw e
   }
