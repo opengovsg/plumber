@@ -24,7 +24,7 @@ describe('createMcpBridgeTools', () => {
 
   it('list_apps calls listAppsService', async () => {
     const tools = createMcpBridgeTools(mockUser)
-    await tools.list_apps.execute({})
+    await tools.list_apps.execute({}, { toolCallId: 'list_apps', messages: [] })
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
   })
 })
