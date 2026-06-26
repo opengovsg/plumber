@@ -12,13 +12,18 @@ const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
 // so allow enough headroom for up to ~10 tool calls per assistant turn.
 const MAX_PARTS_PER_MESSAGE = 50
 
-const messagePartSchema = z.union([
+const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('text'),
     text: z
       .string()
       .trim()
-      .min(1, 'Text cannot be empty')
+      // No .min(1) here. When the LLM uses a tool, the AI SDK opens each
+      // generation step with a text part before emitting the tool call. If the
+      // model goes straight to calling a tool without generating any preamble,
+      // that part lands as text: "". The frontend echoes the full assistant
+      // message back on subsequent turns, so we must accept empty strings or
+      // every multi-step tool-use conversation breaks on the second turn.
       .max(MAX_TEXT_LENGTH, `Text cannot exceed ${MAX_TEXT_LENGTH} characters`),
   }),
   z.object({
@@ -47,10 +52,14 @@ const messagePartSchema = z.union([
         .min(1),
     }),
   }),
-  // Catch-all for Vercel AI SDK part types we don't validate strictly:
-  // tool-{toolName} (e.g. tool-list_apps), dynamic-tool, reasoning, file, etc.
-  // These are sent back on subsequent turns for LLM context; the SDK owns their shape.
-  z.object({ type: z.string() }).passthrough(),
+  z.object({
+    type: z.literal('tool-list_apps'),
+    toolCallId: z.string(),
+    toolName: z.string(),
+    state: z.string(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
+  }),
 ])
 
 const messageSchema = z.object({

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   pipeWebResponseToExpress: vi.fn(),
   loggerError: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
+  createMcpBridgeTools: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -35,6 +36,7 @@ vi.mock('@langfuse/tracing', () => ({
 vi.mock('ai', () => ({
   convertToModelMessages: vi.fn((msgs) => msgs),
   smoothStream: vi.fn(() => ({})),
+  stepCountIs: vi.fn(() => false),
   streamText: mocks.streamText,
   createUIMessageStream: mocks.createUIMessageStream,
   createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
@@ -57,6 +59,10 @@ vi.mock('@/helpers/pair', () => ({
   engineProvider: {
     chat: vi.fn().mockReturnValue({}),
   },
+}))
+
+vi.mock('@/helpers/mcp-bridge-tools', () => ({
+  createMcpBridgeTools: mocks.createMcpBridgeTools,
 }))
 
 // Helper function to get and execute the POST handler from the chat router
@@ -113,6 +119,8 @@ describe('Chat Route Handler', () => {
 
     // Reset mocks
     vi.clearAllMocks()
+
+    mocks.createMcpBridgeTools.mockReturnValue({})
 
     // Set up default streaming mocks
     setupStreamingMocks()

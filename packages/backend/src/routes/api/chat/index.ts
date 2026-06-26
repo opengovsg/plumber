@@ -17,6 +17,7 @@ import {
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
+
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
