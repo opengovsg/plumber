@@ -18,8 +18,6 @@ import {
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
-import jwt from 'jsonwebtoken'
-
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
@@ -137,15 +135,7 @@ const handleChatStream = observe(
 
       let workflowError = 'Unable to generate the workflow.'
 
-      const internalToken = jwt.sign(
-        { userId: context.currentUser.id },
-        appConfig.mcpInternalJwtSecret,
-        { expiresIn: '15m' },
-      )
-      const mcpTools = createMcpBridgeTools(
-        internalToken,
-        appConfig.backendInternalUrl,
-      )
+      const mcpTools = createMcpBridgeTools(context.currentUser)
 
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
