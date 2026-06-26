@@ -84,7 +84,7 @@ export function ApproveReject({ stepId }: { stepId: string }) {
     >
       <Popover
         isOpen={isHintOpen}
-        onClose={dismissHint}
+        onClose={() => setIsHintOpen(false)}
         placement="bottom"
         closeOnBlur={false}
       >
