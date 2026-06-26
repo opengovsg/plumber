@@ -174,14 +174,14 @@ describe('chatRequestSchema', () => {
       )
     })
 
-    it('should reject more than 25 parts', () => {
-      const parts = Array(26).fill({ type: 'text', text: 'part' })
+    it('should reject more than 50 parts', () => {
+      const parts = Array(51).fill({ type: 'text', text: 'part' })
       const result = chatRequestSchema.safeParse({
         messages: [{ role: 'user', parts }],
       })
       expect(result.success).toBe(false)
       expect(result.error?.issues[0].message).toBe(
-        'Message cannot have more than 25 parts',
+        'Message cannot have more than 50 parts',
       )
     })
   })
@@ -192,12 +192,7 @@ describe('chatRequestSchema', () => {
       // straight to calling a tool. This part is echoed back by the frontend
       // on subsequent turns, so empty strings must be valid.
       const result = chatRequestSchema.safeParse({
-        messages: [
-          {
-            role: 'assistant',
-            parts: [{ type: 'text', text: '' }],
-          },
-        ],
+        messages: [{ role: 'assistant', parts: [{ type: 'text', text: '' }] }],
       })
       expect(result.success).toBe(true)
     })
