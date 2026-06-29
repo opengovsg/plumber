@@ -8,9 +8,15 @@ vi.mock('@/services/mcp/create-flow-with-steps', () => ({
     .fn()
     .mockResolvedValue({ id: 'f1', name: 'My Pipe', steps: [] }),
 }))
+vi.mock('@/services/mcp/update-step-parameters', () => ({
+  updateStepParametersService: vi
+    .fn()
+    .mockResolvedValue({ id: 's1', parameters: {} }),
+}))
 
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
+import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
 
@@ -19,7 +25,11 @@ const mockUser = { id: 'u1' } as any
 describe('createMcpBridgeTools', () => {
   it('contains list_apps and create_pipe tools', () => {
     const tools = createMcpBridgeTools(mockUser)
-    expect(Object.keys(tools)).toEqual(['list_apps', 'create_pipe'])
+    expect(Object.keys(tools)).toEqual([
+      'list_apps',
+      'create_pipe',
+      'update_step_parameters',
+    ])
   })
 
   it('each tool has description and execute function', () => {
@@ -34,6 +44,24 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser)
     await tools.list_apps.execute({}, { toolCallId: 'list_apps', messages: [] })
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
+  })
+
+  it('update_step_parameters calls updateStepParametersService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser)
+    await tools.update_step_parameters.execute(
+      {
+        pipe_id: 'flow-1',
+        step_id: 'step-1',
+        parameters: { subject: 'Hello' },
+      },
+      { toolCallId: 'update_step_parameters', messages: [] },
+    )
+    expect(vi.mocked(updateStepParametersService)).toHaveBeenCalledWith({
+      user: mockUser,
+      pipeId: 'flow-1',
+      stepId: 'step-1',
+      parameters: { subject: 'Hello' },
+    })
   })
 
   it('create_pipe maps snake_case input to IStep-shaped steps', async () => {

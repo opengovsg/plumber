@@ -4,12 +4,14 @@ import { tool } from 'ai'
 import { z } from 'zod/v4'
 
 import type Flow from '@/models/flow'
+import Step from '@/models/step'
 import type User from '@/models/user'
 import { listAppsService } from '@/services/mcp/apps'
 import {
   createFlowWithStepsService,
   type McpStepInput,
 } from '@/services/mcp/create-flow-with-steps'
+import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
 
@@ -71,6 +73,28 @@ export function createMcpBridgeTools(user: User) {
             }),
           ),
           traceId,
+        })
+      },
+    }),
+
+    update_step_parameters: tool({
+      description:
+        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.",
+      inputSchema: z.object({
+        pipe_id: z.string().describe('ID of the pipe that contains the step'),
+        step_id: z.string().describe('ID of the step to update'),
+        parameters: z
+          .record(z.string(), z.unknown())
+          .describe(
+            "Parameter key/value pairs to save. Only keys matching the step's field schema are kept.",
+          ),
+      }),
+      execute: async ({ pipe_id, step_id, parameters }): Promise<Step> => {
+        return updateStepParametersService({
+          user,
+          pipeId: pipe_id,
+          stepId: step_id,
+          parameters,
         })
       },
     }),
