@@ -19,11 +19,17 @@ vi.mock('@/services/mcp/create-step', () => ({
 vi.mock('@/services/mcp/delete-step', () => ({
   deleteStepService: vi.fn().mockResolvedValue({ id: 'f1', steps: [] }),
 }))
+vi.mock('@/services/mcp/get-dynamic-data', () => ({
+  getDynamicDataService: vi
+    .fn()
+    .mockResolvedValue([{ name: 'Channel', value: 'C123' }]),
+}))
 
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
+import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
@@ -40,6 +46,7 @@ describe('createMcpBridgeTools', () => {
       'update_step_parameters',
       'create_step',
       'delete_step',
+      'get_dynamic_data',
     ])
   })
 
@@ -105,6 +112,24 @@ describe('createMcpBridgeTools', () => {
       user: mockUser,
       pipeId: 'flow-1',
       stepId: 'step-1',
+    })
+  })
+
+  it('get_dynamic_data calls getDynamicDataService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser)
+    await tools.get_dynamic_data.execute(
+      {
+        step_id: 'step-1',
+        key: 'listChannels',
+        parameters: { tableId: 'xyz' },
+      },
+      { toolCallId: 'get_dynamic_data', messages: [] },
+    )
+    expect(vi.mocked(getDynamicDataService)).toHaveBeenCalledWith({
+      user: mockUser,
+      stepId: 'step-1',
+      key: 'listChannels',
+      parameters: { tableId: 'xyz' },
     })
   })
 
