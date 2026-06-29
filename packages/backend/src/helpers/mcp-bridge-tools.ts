@@ -11,6 +11,7 @@ import {
   createFlowWithStepsService,
   type McpStepInput,
 } from '@/services/mcp/create-flow-with-steps'
+import { createStepService } from '@/services/mcp/create-step'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
@@ -94,6 +95,38 @@ export function createMcpBridgeTools(user: User, traceId: string) {
           pipeId: pipe_id,
           stepId: step_id,
           parameters,
+        })
+      },
+    }),
+
+    create_step: tool({
+      description:
+        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId if given; otherwise appends at the end. Returns the created step.',
+      inputSchema: z.object({
+        pipe_id: z.string().describe('ID of the pipe to add the step to'),
+        app_key: z.string().describe('App key (e.g. "slack")'),
+        action_key: z
+          .string()
+          .describe('Action key (e.g. "sendMessageToChannel")'),
+        previous_step_id: z
+          .string()
+          .optional()
+          .describe(
+            'ID of the step after which to insert. Omit to append at the end.',
+          ),
+      }),
+      execute: async ({
+        pipe_id,
+        app_key,
+        action_key,
+        previous_step_id,
+      }): Promise<Step> => {
+        return createStepService({
+          user,
+          pipeId: pipe_id,
+          appKey: app_key,
+          key: action_key,
+          previousStepId: previous_step_id,
         })
       },
     }),
