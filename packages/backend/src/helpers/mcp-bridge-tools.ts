@@ -1,4 +1,4 @@
-import type { IApp, IMcpApp } from '@plumber/types'
+import type { IApp, IJSONObject, IMcpApp } from '@plumber/types'
 
 import { tool } from 'ai'
 import { z } from 'zod/v4'
@@ -147,7 +147,9 @@ export function createMcpBridgeTools(user: User) {
       description:
         'Fetch live options for a dynamic dropdown field on a configured step (e.g. list channels, list tables, list files). Requires the step to have a verified connection. For cascading selections (e.g. list columns for a chosen table), pass the dependency value in parameters.',
       inputSchema: z.object({
-        step_id: z.string().describe('ID of the step whose dynamic data to fetch'),
+        step_id: z
+          .string()
+          .describe('ID of the step whose dynamic data to fetch'),
         key: z
           .string()
           .describe(
@@ -169,7 +171,7 @@ export function createMcpBridgeTools(user: User) {
           user,
           stepId: step_id,
           key,
-          parameters,
+          parameters: parameters as IJSONObject | undefined,
         })
       },
     }),
