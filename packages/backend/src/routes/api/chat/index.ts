@@ -166,7 +166,6 @@ const handleChatStream = observe(
             abortSignal: abortController.signal,
             onFinish: async (event) => {
               try {
-                await mcpClient?.close()
                 logger.info('Stream finished', {
                   traceId,
                   textLength: event.text.length,
@@ -228,12 +227,25 @@ const handleChatStream = observe(
                   data: { isChatReady: false, error: workflowError },
                 })
               } finally {
+                try {
+                  await mcpClient?.close()
+                } catch (closeError) {
+                  logger.warn('Failed to close GitBook MCP client', {
+                    traceId,
+                    error:
+                      closeError instanceof Error
+                        ? closeError.message
+                        : String(closeError),
+                  })
+                }
+
                 // Manually end the span since we're streaming
                 trace.getActiveSpan()?.end()
               }
             },
             onError: (error) => {
               void mcpClient?.close()
+              mcpClient = null
               const errorMessage =
                 error instanceof Error ? error.message : String(error)
 
