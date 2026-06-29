@@ -28,6 +28,12 @@ export type MultiRowProps = {
   // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
   // own controls). Renders even when the add-row button is hidden at maxRows.
   addButtonSuffix?: ReactNode
+  // Optional override for deleting the LAST remaining row. When provided, the
+  // last row's delete control is shown (even when `required`) and clicking it
+  // calls this instead of the internal remove — letting a wrapper (e.g.
+  // GroupedMultiRow) remove the whole containing group instead of leaving it
+  // empty. When omitted, `required` keeps the last row undeletable as before.
+  onRequestRemoveLastRow?: () => void
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -42,6 +48,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     type,
     maxRows,
     addButtonSuffix,
+    onRequestRemoveLastRow,
     ...forwardedInputCreatorProps
   } = props
 
@@ -91,8 +98,20 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         // remaining.
         const rowsToRender =
           !rows.length && required ? [{ ...newRowDefaultValue }] : rows
-        const canRemoveRow = !required || rowsToRender.length > 1
+        const canRemoveRow =
+          !required || rowsToRender.length > 1 || !!onRequestRemoveLastRow
         const canAddRow = maxRows == null || rowsToRender.length < maxRows
+
+        // Deleting the last remaining row is delegated to the wrapper (e.g. to
+        // remove the whole group) when onRequestRemoveLastRow is provided;
+        // otherwise it's an internal row removal.
+        const removeRow = (index: number) => {
+          if (rowsToRender.length === 1 && onRequestRemoveLastRow) {
+            onRequestRemoveLastRow()
+          } else {
+            remove(index)
+          }
+        }
 
         return (
           <Flex flexDir="column">
@@ -123,7 +142,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                         subFields={subFields}
                         canRemoveRow={canRemoveRow}
                         isEditorReadOnly={isEditorReadOnly}
-                        remove={() => remove(index)}
+                        remove={() => removeRow(index)}
                         index={index}
                         {...forwardedInputCreatorProps}
                       />
@@ -154,7 +173,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                             aria-label="Remove"
                             icon={<BiTrash />}
                             isDisabled={isEditorReadOnly}
-                            onClick={() => remove(index)}
+                            onClick={() => removeRow(index)}
                             colorScheme="secondary"
                           />
                         )}
