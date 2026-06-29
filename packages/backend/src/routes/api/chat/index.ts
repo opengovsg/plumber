@@ -1,5 +1,6 @@
 import { IFlowSteps } from '@plumber/types'
 
+import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp'
 import {
   getActiveTraceId,
   observe,
@@ -12,6 +13,7 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   smoothStream,
+  stepCountIs,
   streamText,
 } from 'ai'
 import type { Response } from 'express'
@@ -108,6 +110,29 @@ const handleChatStream = observe(
         content: buildSystemPrompt(prompt.prompt, restrictedApps),
       }
       const allMessages = [systemMessage, ...messages]
+
+      let mcpClient: Awaited<ReturnType<typeof createMCPClient>> | null = null
+      let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
+
+      try {
+        mcpClient = await createMCPClient({
+          transport: {
+            type: 'http',
+            url: 'https://guide.plumber.gov.sg/~gitbook/mcp',
+          },
+        })
+        gitbookTools =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (await mcpClient.tools()) as Parameters<typeof streamText>[0]['tools']
+      } catch (error) {
+        await mcpClient?.close()
+        mcpClient = null
+        logger.error('Failed to connect to GitBook MCP server', {
+          traceId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+
       let workflowError = 'Unable to generate the workflow.'
 
       const stream = createUIMessageStream({
@@ -115,6 +140,8 @@ const handleChatStream = observe(
           const result = streamText({
             model,
             messages: allMessages,
+            tools: gitbookTools,
+            stopWhen: stepCountIs(5),
             experimental_transform: smoothStream({
               chunking: 'word', // Stream word-by-word for typing effect
             }),
@@ -200,11 +227,25 @@ const handleChatStream = observe(
                   data: { isChatReady: false, error: workflowError },
                 })
               } finally {
+                try {
+                  await mcpClient?.close()
+                } catch (closeError) {
+                  logger.warn('Failed to close GitBook MCP client', {
+                    traceId,
+                    error:
+                      closeError instanceof Error
+                        ? closeError.message
+                        : String(closeError),
+                  })
+                }
+
                 // Manually end the span since we're streaming
                 trace.getActiveSpan()?.end()
               }
             },
             onError: (error) => {
+              void mcpClient?.close()
+              mcpClient = null
               const errorMessage =
                 error instanceof Error ? error.message : String(error)
 
