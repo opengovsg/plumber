@@ -13,6 +13,37 @@ import { AuthData } from './auth-data'
 // https://learn.microsoft.com/en-us/graph/api/resources/permission?view=graph-rest-1.0#roles-property-values
 const sharePointRolesSchema = z.array(z.enum(['read', 'write', 'owner']))
 
+// TEMPORARY (migration-scoped): SSG, WSG and SSG-WSG are merging into SWDA.
+// During the migration, a user still logs into Plumber with their legacy email
+// (e.g. test@wsg.gov.sg) but their SharePoint file permissions may be
+// granted to their new SWDA identity (test@swda.gov.sg) - or vice versa.
+// We therefore check write access against both identities. The local part is
+// preserved across the migration; only the domain changes.
+//
+// Remove once the migration is complete and all permissions reference the SWDA
+// identity. See also BLOCKED_SIGNUP_DOMAINS in helpers/auth.ts.
+const SWDA_LEGACY_DOMAINS = new Set([
+  'wsg.gov.sg',
+  'ssg.gov.sg',
+  'ssg-wsg.gov.sg',
+])
+const SWDA_DOMAIN = 'swda.gov.sg'
+
+/**
+ * Expands a (lowercased) user email into all identities to check for write
+ * access. For users on a legacy SWDA domain, this additionally returns the
+ * equivalent @swda.gov.sg email. All other users get back just their own email.
+ */
+export function getWriteAccessEmailCandidates(
+  emailLowerCase: string,
+): string[] {
+  const [localPart, domain] = emailLowerCase.split('@')
+  if (localPart && SWDA_LEGACY_DOMAINS.has(domain)) {
+    return [emailLowerCase, `${localPart}@${SWDA_DOMAIN}`]
+  }
+  return [emailLowerCase]
+}
+
 // https://learn.microsoft.com/en-us/graph/api/resources/sharepointidentityset?view=graph-rest-1.0
 const sharepointFilePermissionsSchema = z
   .object({
@@ -51,7 +82,7 @@ const sharepointFilePermissionsSchema = z
 async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPONLY(
   tenant: M365TenantInfo,
   fileId: string,
-  userEmailLowerCase: string,
+  emailCandidatesLowerCase: string[],
   http: IHttpClient,
 ): Promise<boolean> {
   logger.error(
@@ -84,17 +115,18 @@ async function userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPON
   )
 
   return permissions.some((permission) => {
-    // Ignore permissions that are not targeted at the pipe owner. We prefix `|`
-    // to ensure we don't match the wrong email suffix.
+    // Ignore permissions that are not targeted at the pipe owner (or their
+    // SWDA-migration alias). We prefix `|` to ensure we don't match the wrong
+    // email suffix.
     //
     // NOTE: Although | is allowed in emails in general, it's not allowed in
     // M365. Thus we should not need to worry about false positives like:
     //   User's email: |b@domain.com
     //   Owner's email: a|b@domain.com
-    const isRelevantPermission =
-      permission.grantedToV2.siteUser.loginName.endsWith(
-        `|${userEmailLowerCase}`,
-      )
+    const loginName = permission.grantedToV2.siteUser.loginName
+    const isRelevantPermission = emailCandidatesLowerCase.some((candidate) =>
+      loginName.endsWith(`|${candidate}`),
+    )
     if (!isRelevantPermission) {
       return false
     }
@@ -238,13 +270,13 @@ export async function validateCanAccessFile(
     throw new Error('File must be in your Plumber folder')
   }
 
-  const userEmailLowerCase = userEmail.toLowerCase()
+  const emailCandidates = getWriteAccessEmailCandidates(userEmail.toLowerCase())
   const userCanWriteToFile = usersWithWriteAccess
-    ? usersWithWriteAccess.has(userEmailLowerCase)
+    ? emailCandidates.some((candidate) => usersWithWriteAccess.has(candidate))
     : await userHasWriteAccessAccordingToSharePointFilePermissionsFORBACKUPONLY(
         tenant,
         fileId,
-        userEmailLowerCase,
+        emailCandidates,
         http,
       )
   if (!userCanWriteToFile) {
