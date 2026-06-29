@@ -1,11 +1,15 @@
-import type { IApp, IMcpApp, IMcpCreatePipeResult } from '@plumber/types'
+import type { IApp, IMcpApp } from '@plumber/types'
 
 import { tool } from 'ai'
 import { z } from 'zod/v4'
 
+import type Flow from '@/models/flow'
 import type User from '@/models/user'
 import { listAppsService } from '@/services/mcp/apps'
-import { createPipeService } from '@/services/mcp/create-pipe'
+import {
+  createFlowWithStepsService,
+  type McpStepInput,
+} from '@/services/mcp/create-flow-with-steps'
 
 type ListAppsInput = Record<string, IApp[]>
 
@@ -45,17 +49,22 @@ export function createMcpBridgeTools(user: User) {
           .describe(
             'Ordered list of steps. First element must have trigger_key.',
           ),
+        traceId: z.string().describe('Langfuse trace ID for this tool call'),
       }),
-      execute: async ({ name, steps }): Promise<IMcpCreatePipeResult> => {
-        return createPipeService(
+      execute: async ({ name, steps, traceId }): Promise<Flow> => {
+        return createFlowWithStepsService({
           user,
           name,
-          steps.map((s) => ({
-            appKey: s.app_key,
-            triggerKey: s.trigger_key,
-            actionKey: s.action_key,
-          })),
-        )
+          steps: steps.map(
+            (s, index): McpStepInput => ({
+              appKey: s.app_key,
+              key: s.trigger_key ?? s.action_key ?? null,
+              type: index === 0 ? 'trigger' : 'action',
+              position: index + 1,
+            }),
+          ),
+          traceId,
+        })
       },
     }),
   }
