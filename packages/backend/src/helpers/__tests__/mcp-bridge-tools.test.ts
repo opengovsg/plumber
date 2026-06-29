@@ -13,9 +13,13 @@ vi.mock('@/services/mcp/update-step-parameters', () => ({
     .fn()
     .mockResolvedValue({ id: 's1', parameters: {} }),
 }))
+vi.mock('@/services/mcp/create-step', () => ({
+  createStepService: vi.fn().mockResolvedValue({ id: 's2', appKey: 'slack' }),
+}))
 
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
+import { createStepService } from '@/services/mcp/create-step'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
@@ -29,6 +33,7 @@ describe('createMcpBridgeTools', () => {
       'list_apps',
       'create_pipe',
       'update_step_parameters',
+      'create_step',
     ])
   })
 
@@ -61,6 +66,26 @@ describe('createMcpBridgeTools', () => {
       pipeId: 'flow-1',
       stepId: 'step-1',
       parameters: { subject: 'Hello' },
+    })
+  })
+
+  it('create_step calls createStepService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser)
+    await tools.create_step.execute(
+      {
+        pipe_id: 'flow-1',
+        app_key: 'slack',
+        action_key: 'sendMessageToChannel',
+        previous_step_id: 'step-0',
+      },
+      { toolCallId: 'create_step', messages: [] },
+    )
+    expect(vi.mocked(createStepService)).toHaveBeenCalledWith({
+      user: mockUser,
+      pipeId: 'flow-1',
+      appKey: 'slack',
+      key: 'sendMessageToChannel',
+      previousStepId: 'step-0',
     })
   })
 
