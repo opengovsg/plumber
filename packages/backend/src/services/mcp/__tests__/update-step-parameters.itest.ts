@@ -33,7 +33,12 @@ describe('updateStepParametersService', () => {
       user,
       name: 'Filter Test Pipe',
       steps: [
-        { appKey: 'formsg', key: 'newSubmission', type: 'trigger', position: 1 },
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
         {
           appKey: 'postman',
           key: 'sendTransactionalEmail',
@@ -52,9 +57,9 @@ describe('updateStepParametersService', () => {
       pipeId: flow.id,
       stepId: actionStep.id,
       parameters: {
-        subject: 'Hello world',            // valid — in postman sendTransactionalEmail schema
-        destinationEmail: ['a@b.com'],      // valid — in postman sendTransactionalEmail schema
-        unknownHallucinatedField: 'drop',  // invalid — not in schema, must be dropped
+        subject: 'Hello world', // valid — in postman sendTransactionalEmail schema
+        destinationEmail: ['a@b.com'], // valid — in postman sendTransactionalEmail schema
+        unknownHallucinatedField: 'drop', // invalid — not in schema, must be dropped
       },
     })
 
@@ -75,7 +80,12 @@ describe('updateStepParametersService', () => {
       user,
       name: 'Status Test Pipe',
       steps: [
-        { appKey: 'formsg', key: 'newSubmission', type: 'trigger', position: 1 },
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
         {
           appKey: 'postman',
           key: 'sendTransactionalEmail',
@@ -113,7 +123,12 @@ describe('updateStepParametersService', () => {
       user: owner,
       name: 'Owned Pipe',
       steps: [
-        { appKey: 'formsg', key: 'newSubmission', type: 'trigger', position: 1 },
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
         {
           appKey: 'postman',
           key: 'sendTransactionalEmail',
@@ -147,7 +162,12 @@ describe('updateStepParametersService', () => {
       user,
       name: 'Mismatch Pipe',
       steps: [
-        { appKey: 'formsg', key: 'newSubmission', type: 'trigger', position: 1 },
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
       ],
       traceId: 'trace-mismatch-4',
     })

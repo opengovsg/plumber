@@ -4,7 +4,7 @@ import { tool } from 'ai'
 import { z } from 'zod/v4'
 
 import type Flow from '@/models/flow'
-import Step from '@/models/step'
+import type Step from '@/models/step'
 import type User from '@/models/user'
 import { listAppsService } from '@/services/mcp/apps'
 import {
