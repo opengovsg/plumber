@@ -1,6 +1,6 @@
 import type { IField } from '@plumber/types'
 
-import { Fragment, useCallback, useContext } from 'react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus } from 'react-icons/bi'
 import Markdown from 'react-markdown'
@@ -56,15 +56,39 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
   const { control } = useFormContext()
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
-  const { fields: groups, append } = useFieldArray({
+  const {
+    fields: groups,
+    append,
+    remove,
+  } = useFieldArray({
     name,
     rules: { required },
   })
 
+  // react-hook-form needs a non-undefined default for every subfield of a new
+  // row (mirrors MultiRow), otherwise it can repopulate it with deleted data.
+  const newRowDefaultValue = useMemo(() => {
+    const result: Record<string, unknown> = {}
+    for (const subField of subFields) {
+      result[subField.key] = subField.value ?? undefined
+    }
+    return result
+  }, [subFields])
+
   const handleAddGroup = useCallback(() => {
-    // A new group starts empty; MultiRow renders one blank row by default.
-    append({ rows: [] })
-  }, [append])
+    // Seed the new group with one row so focus lands on the first field. When
+    // that field is a variable-enabled RTE, flag the row `isNew` so it
+    // auto-focuses — same mechanism MultiRow uses for "+ And".
+    const firstColIsRte =
+      subFields?.[0]?.type === 'string' && subFields?.[0]?.variables
+    append({
+      rows: [
+        firstColIsRte
+          ? { ...newRowDefaultValue, isNew: true }
+          : newRowDefaultValue,
+      ],
+    })
+  }, [append, newRowDefaultValue, subFields])
 
   return (
     <Controller
@@ -76,6 +100,10 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
           ? groups
           : [{ id: `${name}-default-group` }]
         const canAdd = canAddGroup(groupsToRender.length, maxGroups)
+        // Floor: at least one group with at least one row must always remain.
+        // When more than one group exists, deleting a group's last row removes
+        // the whole group; otherwise the last group's last row is undeletable.
+        const canRemoveGroup = groupsToRender.length > 1
 
         return (
           <Flex flexDir="column">
@@ -102,6 +130,9 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
                     showDivider={false}
                     addRowButtonText={addRowButtonText ?? 'And'}
                     maxRows={maxRowsPerGroup}
+                    onRequestRemoveLastRow={
+                      canRemoveGroup ? () => remove(index) : undefined
+                    }
                     addButtonSuffix={
                       // `+ Or` lives next to the last group's `+ And`.
                       isLastGroup && canAdd ? (
