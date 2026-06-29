@@ -28,7 +28,7 @@ vi.mock('@/apps', async (importOriginal) => {
       'test-dynamic': {
         key: 'test-dynamic',
         name: 'Test Dynamic App',
-        auth: null,
+        auth: undefined,
         triggers: [],
         actions: [],
         dynamicData: [
@@ -138,6 +138,26 @@ describe('getDynamicDataService', () => {
     ).rejects.toThrow(
       "Dynamic data key 'nonExistentKey' not found for app 'test-dynamic'",
     )
+  })
+
+  it('throws if the dynamic data handler returns an error', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `get-dynamic-data-error-${randomUUID()}@example.com`,
+    })
+    const { step } = await setupFlowAndStep(user.id)
+    mocks.runDynamicData.mockResolvedValue({
+      data: [],
+      error: { message: 'upstream failure' },
+    })
+
+    await expect(
+      getDynamicDataService({
+        user,
+        stepId: step.id,
+        key: 'listThings',
+      }),
+    ).rejects.toThrow('upstream failure')
   })
 
   it('throws if the user does not have access to the step', async () => {
