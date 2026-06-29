@@ -127,14 +127,28 @@ export function ChakraStreamdown({
         <Table variant="simple" size="sm" mb={4} {...props} />
       ),
       thead: (props: React.ComponentProps<typeof Thead>) => (
-        <Thead {...props} />
+        <Tbody {...props} />
       ),
       tbody: (props: React.ComponentProps<typeof Tbody>) => (
         <Tbody {...props} />
       ),
       tr: (props: React.ComponentProps<typeof Tr>) => <Tr {...props} />,
-      th: (props: React.ComponentProps<typeof Th>) => <Th {...props} />,
-      td: (props: React.ComponentProps<typeof Td>) => <Td {...props} />,
+      th: (props: React.ComponentProps<typeof Th>) => (
+        <Td
+          {...props}
+          sx={{
+            '&:first-of-type': { width: '120px', fontWeight: 500 },
+          }}
+        />
+      ),
+      td: (props: React.ComponentProps<typeof Td>) => (
+        <Td
+          {...props}
+          sx={{
+            '&:first-of-type': { width: '120px', fontWeight: 500 },
+          }}
+        />
+      ),
       pre: (props: React.ComponentProps<'pre'>) => <CodeBlock {...props} />,
     }),
     [],
