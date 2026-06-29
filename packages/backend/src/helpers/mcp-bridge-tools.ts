@@ -13,6 +13,7 @@ import {
 } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
+import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
@@ -138,6 +139,37 @@ export function createMcpBridgeTools(user: User) {
           user,
           pipeId: pipe_id,
           stepId: step_id,
+        })
+      },
+    }),
+
+    get_dynamic_data: tool({
+      description:
+        'Fetch live options for a dynamic dropdown field on a configured step (e.g. list channels, list tables, list files). Requires the step to have a verified connection. For cascading selections (e.g. list columns for a chosen table), pass the dependency value in parameters.',
+      inputSchema: z.object({
+        step_id: z.string().describe('ID of the step whose dynamic data to fetch'),
+        key: z
+          .string()
+          .describe(
+            'Dynamic data key declared by the app (e.g. "listChannels", "listTables"). Check isDynamic fields from list_apps to find valid keys.',
+          ),
+        parameters: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe(
+            'Optional parameter overrides for cascading selections (e.g. { "tableId": "..." } to list columns for a specific table).',
+          ),
+      }),
+      execute: async ({
+        step_id,
+        key,
+        parameters,
+      }): Promise<Array<{ name: string; value: string }>> => {
+        return getDynamicDataService({
+          user,
+          stepId: step_id,
+          key,
+          parameters,
         })
       },
     }),
