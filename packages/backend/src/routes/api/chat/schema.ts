@@ -8,7 +8,9 @@ const UUID_REGEX =
 // Limits to protect API and LLM costs
 const MAX_MESSAGES = 50
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
-const MAX_PARTS_PER_MESSAGE = 10
+// 5 steps × up to 4 parts each (step-start + empty-text + dynamic-tool + data-*)
+// plus headroom; must exceed stepCountIs(5) × parts-per-step
+const MAX_PARTS_PER_MESSAGE = 25
 
 const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
@@ -16,7 +18,12 @@ const messagePartSchema = z.discriminatedUnion('type', [
     text: z
       .string()
       .trim()
-      .min(1, 'Text cannot be empty')
+      // No .min(1) here. When the LLM uses a tool, the AI SDK opens each
+      // generation step with a text part before emitting the tool call. If the
+      // model goes straight to calling a tool without generating any preamble,
+      // that part lands as text: "". The frontend echoes the full assistant
+      // message back on subsequent turns, so we must accept empty strings or
+      // every multi-step tool-use conversation breaks on the second turn.
       .max(MAX_TEXT_LENGTH, `Text cannot exceed ${MAX_TEXT_LENGTH} characters`),
   }),
   z.object({
@@ -44,6 +51,16 @@ const messagePartSchema = z.discriminatedUnion('type', [
         )
         .min(1),
     }),
+  }),
+  // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
+  // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
+  z.object({
+    type: z.literal('dynamic-tool'),
+    toolCallId: z.string(),
+    toolName: z.string(),
+    state: z.string(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
   }),
 ])
 
