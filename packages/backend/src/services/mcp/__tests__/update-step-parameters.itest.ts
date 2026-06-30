@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import Connection from '@/models/connection'
 import User from '@/models/user'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
@@ -234,5 +235,151 @@ describe('updateStepParametersService', () => {
       subject: 'Hello world',
       destinationEmail: ['a@b.com'],
     })
+  })
+
+  it('sets connectionId on the step when a valid connection is provided', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `conn-assign-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Connection Assign Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-conn-assign',
+    })
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'postman', // matches actionStep.appKey
+      userId: user.id,
+      verified: true,
+      draft: false,
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { subject: 'Hello' },
+      connectionId: connection.id,
+    })
+
+    expect(result.connectionId).toBe(connection.id)
+  })
+
+  it('throws when the connection belongs to another user', async () => {
+    const owner = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `owner-conn-${randomUUID()}@example.com`,
+    })
+    const intruder = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `intruder-conn-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user: owner,
+      name: 'Owned Pipe Conn',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-intruder-conn',
+    })
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    // connection belongs to owner, not intruder
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'postman',
+      userId: owner.id,
+      verified: true,
+      draft: false,
+    })
+
+    await expect(
+      updateStepParametersService({
+        user: intruder,
+        pipeId: flow.id,
+        stepId: actionStep.id,
+        parameters: {},
+        connectionId: connection.id,
+      }),
+    ).rejects.toThrow('Step not found') // access denied at step level before connection check
+  })
+
+  it("throws when the connection's app does not match the step's app", async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `app-mismatch-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'App Mismatch Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-app-mismatch',
+    })
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    // connection is for 'slack', but step is 'postman'
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'slack',
+      userId: user.id,
+      verified: true,
+      draft: false,
+    })
+
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId: flow.id,
+        stepId: actionStep.id,
+        parameters: {},
+        connectionId: connection.id,
+      }),
+    ).rejects.toThrow(
+      "Connection app 'slack' does not match step app 'postman'",
+    )
   })
 })
