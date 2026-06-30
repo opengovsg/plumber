@@ -85,8 +85,14 @@ export async function updateStepParametersService({
     action.validateStepParameters?.(patchedParameters)
   }
 
+  // Merge so repeated tool calls (one param at a time) accumulate rather than overwrite.
+  const mergedParameters = {
+    ...(step.parameters ?? {}),
+    ...patchedParameters,
+  } as IJSONObject
+
   return Step.query().patchAndFetchById(stepId, {
-    parameters: patchedParameters,
+    parameters: mergedParameters,
     version,
     status: 'incomplete',
   })
