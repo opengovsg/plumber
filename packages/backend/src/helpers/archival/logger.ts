@@ -2,6 +2,19 @@ import winston from 'winston'
 
 import { archivalConfig } from './config'
 
+function safeStringify(obj: unknown): string {
+  const seen = new WeakSet()
+  return JSON.stringify(obj, (_, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]'
+      }
+      seen.add(value)
+    }
+    return value
+  })
+}
+
 const archivalLogger = winston.createLogger({
   level: archivalConfig.isDev ? 'debug' : 'info',
   format: archivalConfig.isDev
@@ -10,10 +23,10 @@ const archivalLogger = winston.createLogger({
         winston.format.colorize(),
         winston.format.printf(({ level, message, ...meta }) => {
           if (typeof message === 'object') {
-            return `${level}: ${JSON.stringify({ ...meta, ...message })}`
+            return `${level}: ${safeStringify({ ...meta, ...message })}`
           }
           const metaStr = Object.keys(meta).length
-            ? ` ${JSON.stringify(meta)}`
+            ? ` ${safeStringify(meta)}`
             : ''
           return `${level}: ${message}${metaStr}`
         }),
