@@ -30,39 +30,67 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const runAt = new Date(startedAt).toISOString()
 
   while (!signal.aborted) {
-    const batch = (await archivalDbReader('executions')
-      .select(
-        'id',
-        'flow_id as flowId',
-        'status',
-        'test_run as testRun',
-        'internal_id as internalId',
-        'created_at as createdAt',
-        'updated_at as updatedAt',
-        'deleted_at as deletedAt',
-      )
-      .where((builder) => {
-        builder
-          // Deleted-flow executions are archived immediately — no cutoff, no status check.
-          // The flow is already gone from the UI; retention age is irrelevant.
-          .where((b) =>
-            b.whereIn(
-              'flow_id',
-              archivalDbReader('flows').select('id').whereNotNull('deleted_at'),
-            ),
-          )
-          // Non-test executions on active flows: terminal status + past cutoff.
-          .orWhere((b) =>
-            b
-              .where('test_run', false)
-              .where('created_at', '<', cutoff)
-              .whereIn('status', ['success', 'failure']),
-          )
-          // Test executions on active flows: past cutoff.
-          .orWhere((b) =>
-            b.where('test_run', true).where('created_at', '<', cutoff),
-          )
-      })
+    // When archiveDeletedFlowsOnly is set we skip the full three-branch OR
+    // entirely — just a single whereIn on deleted flows. This avoids asking
+    // Postgres to plan a complex multi-branch query when the full query will
+    // be filtered down to the same deleted-flows set anyway.
+    //
+    // Note: this subquery is evaluated live per batch, not snapshotted at run
+    // start. A flow soft-deleted mid-run will have its executions picked up on
+    // the next batch (immediately, with no cutoff check). Retries are therefore
+    // not fully idempotent with respect to the deleted-flows set — but this is
+    // harmless since already-archived rows are removed from source, making
+    // double-archiving impossible.
+    const deletedFlowsSubquery = archivalDbReader('flows')
+      .select('id')
+      .whereNotNull('deleted_at')
+
+    let eligibilityQuery
+    if (archiveDeletedFlowsOnly) {
+      eligibilityQuery = archivalDbReader('executions')
+        .select(
+          'id',
+          'flow_id as flowId',
+          'status',
+          'test_run as testRun',
+          'internal_id as internalId',
+          'created_at as createdAt',
+          'updated_at as updatedAt',
+          'deleted_at as deletedAt',
+        )
+        .whereIn('flow_id', deletedFlowsSubquery)
+    } else {
+      eligibilityQuery = archivalDbReader('executions')
+        .select(
+          'id',
+          'flow_id as flowId',
+          'status',
+          'test_run as testRun',
+          'internal_id as internalId',
+          'created_at as createdAt',
+          'updated_at as updatedAt',
+          'deleted_at as deletedAt',
+        )
+        .where((builder) => {
+          builder
+            // Deleted-flow executions: archived immediately — no cutoff, no status check.
+            // The flow is already gone from the UI; retention age is irrelevant.
+            .where((b) => b.whereIn('flow_id', deletedFlowsSubquery))
+            // Non-test executions on active flows: terminal status + past cutoff.
+            .orWhere((b) =>
+              b
+                .where('test_run', false)
+                .where('created_at', '<', cutoff)
+                .whereIn('status', ['success', 'failure']),
+            )
+            // Test executions on active flows: past cutoff only.
+            .orWhere((b) =>
+              b.where('test_run', true).where('created_at', '<', cutoff),
+            )
+        })
+    }
+
+    const batch = (await eligibilityQuery
       // Never archive the designated test execution of any flow (deleted or active).
       // This avoids having to NULL flows.test_execution_id in the archival transaction.
       .whereNotIn(
@@ -71,14 +99,6 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           .select('test_execution_id')
           .whereNotNull('test_execution_id'),
       )
-      .modify((qb) => {
-        if (archiveDeletedFlowsOnly) {
-          qb.whereIn(
-            'flow_id',
-            archivalDbReader('flows').select('id').whereNotNull('deleted_at'),
-          )
-        }
-      })
       .modify((qb) => {
         if (cursor) {
           qb.whereRaw('id > ?::uuid', [cursor])
@@ -102,6 +122,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
       // LEFT JOIN steps to fill in app_key/key for old rows that predate the
       // denormalised columns being added to execution_steps.
+      // TODO: once all pre-denormalisation rows have been archived, drop the
+      // LEFT JOIN and COALESCE and select app_key/key directly from execution_steps.
       const steps = (await archivalDbReader('execution_steps')
         .select(
           'execution_steps.id',
@@ -155,7 +177,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           batchSkipped++
         }
       } catch (err) {
-        logger.error('archival: unexpected error, skipping execution', {
+        logger.error({
+          event: 'archival.execution.error',
           executionId: execution.id,
           err,
         })

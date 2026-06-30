@@ -68,6 +68,7 @@ function makeStep(overrides: Partial<ExecutionStepRow> = {}): ExecutionStepRow {
 // Callbacks captured from the executions query builder during each test run
 let capturedEligibilityCb: ((qb: any) => void) | null = null
 let capturedTestExecExclusionSubquery: any = null
+let capturedDeletedFlowsWhereIn: any = null
 let capturedModifyCbs: Array<(qb: any) => void> = []
 
 function setupDb(
@@ -78,6 +79,7 @@ function setupDb(
   let currentStepsExecutionId: string | null = null
   capturedEligibilityCb = null
   capturedTestExecExclusionSubquery = null
+  capturedDeletedFlowsWhereIn = null
   capturedModifyCbs = []
 
   const flowsBuilder = {
@@ -106,6 +108,12 @@ function setupDb(
     where: vi.fn().mockImplementation((...args: any[]) => {
       if (typeof args[0] === 'function') {
         capturedEligibilityCb = args[0]
+      }
+      return execBuilder
+    }),
+    whereIn: vi.fn().mockImplementation((col: string, subquery: any) => {
+      if (col === 'flow_id') {
+        capturedDeletedFlowsWhereIn = subquery
       }
       return execBuilder
     }),
@@ -146,6 +154,7 @@ describe('runArchivalLoop', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
+    ;(archivalConfig as any).archiveDeletedFlowsOnly = false
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -306,27 +315,25 @@ describe('runArchivalLoop', () => {
   })
 
   describe('archiveDeletedFlowsOnly', () => {
-    it('does not add a flow_id filter when flag is false', async () => {
+    it('uses the full three-branch eligibility query when flag is false', async () => {
       ;(archivalConfig as any).archiveDeletedFlowsOnly = false
       setupDb([[]])
 
       await runArchivalLoop(new AbortController().signal)
 
-      // capturedModifyCbs[0] is the deleted-flows modifier; invoke it with a spy qb
-      const qb = { whereIn: vi.fn() }
-      capturedModifyCbs[0](qb)
-      expect(qb.whereIn).not.toHaveBeenCalled()
+      expect(capturedEligibilityCb).not.toBeNull()
+      expect(capturedDeletedFlowsWhereIn).toBeNull()
     })
 
-    it('restricts to deleted flows when flag is true', async () => {
+    it('uses a simple whereIn(flow_id, deleted flows) query when flag is true', async () => {
       ;(archivalConfig as any).archiveDeletedFlowsOnly = true
       setupDb([[]])
 
       await runArchivalLoop(new AbortController().signal)
 
-      const qb = { whereIn: vi.fn() }
-      capturedModifyCbs[0](qb)
-      expect(qb.whereIn).toHaveBeenCalledWith('flow_id', expect.anything())
+      // No three-branch WHERE — skipped entirely for the fast path
+      expect(capturedEligibilityCb).toBeNull()
+      expect(capturedDeletedFlowsWhereIn).not.toBeNull()
     })
 
     it('uses a subquery on flows.deleted_at for the filter', async () => {
@@ -335,10 +342,7 @@ describe('runArchivalLoop', () => {
 
       await runArchivalLoop(new AbortController().signal)
 
-      const qb = { whereIn: vi.fn() }
-      capturedModifyCbs[0](qb)
-
-      // The subquery should be archivalDbReader('flows').select('id').whereNotNull('deleted_at')
+      expect(capturedDeletedFlowsWhereIn).not.toBeNull()
       expect(archivalDbReader).toHaveBeenCalledWith('flows')
     })
   })
