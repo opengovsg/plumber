@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('@/services/mcp/apps', () => ({
   listAppsService: vi.fn().mockReturnValue([]),
 }))
+vi.mock('@/services/mcp/list-connections', () => ({
+  listConnectionsService: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('@/services/mcp/create-flow-with-steps', () => ({
   createFlowWithStepsService: vi
     .fn()
@@ -203,6 +206,71 @@ describe('createMcpBridgeTools', () => {
         },
       ],
       traceId: 'trace-456',
+    })
+  })
+
+  describe('onPipeChange callback', () => {
+    it('is called with pipeId after create_pipe succeeds', async () => {
+      const onPipeChange = vi.fn()
+      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      await tools.create_pipe.execute(
+        {
+          name: 'My Pipe',
+          steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
+          traceId: 'trace-1',
+        },
+        { toolCallId: 'create_pipe', messages: [] },
+      )
+      expect(onPipeChange).toHaveBeenCalledWith('f1')
+    })
+
+    it('is called with pipe_id after update_step_parameters succeeds', async () => {
+      const onPipeChange = vi.fn()
+      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      await tools.update_step_parameters.execute(
+        { pipe_id: 'flow-1', step_id: 's1', parameters: {} },
+        { toolCallId: 'update_step_parameters', messages: [] },
+      )
+      expect(onPipeChange).toHaveBeenCalledWith('flow-1')
+    })
+
+    it('is called with pipe_id after create_step succeeds', async () => {
+      const onPipeChange = vi.fn()
+      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      await tools.create_step.execute(
+        {
+          pipe_id: 'flow-1',
+          app_key: 'slack',
+          action_key: 'sendMessageToChannel',
+          previous_step_id: 'step-1',
+        },
+        { toolCallId: 'create_step', messages: [] },
+      )
+      expect(onPipeChange).toHaveBeenCalledWith('flow-1')
+    })
+
+    it('is called with pipe_id after delete_step succeeds', async () => {
+      const onPipeChange = vi.fn()
+      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      await tools.delete_step.execute(
+        { pipe_id: 'flow-1', step_id: 's1' },
+        { toolCallId: 'delete_step', messages: [] },
+      )
+      expect(onPipeChange).toHaveBeenCalledWith('flow-1')
+    })
+
+    it('does not throw when onPipeChange is not provided', async () => {
+      const tools = createMcpBridgeTools(mockUser)
+      await expect(
+        tools.create_pipe.execute(
+          {
+            name: 'My Pipe',
+            steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
+            traceId: 'trace-1',
+          },
+          { toolCallId: 'create_pipe', messages: [] },
+        ),
+      ).resolves.not.toThrow()
     })
   })
 })
