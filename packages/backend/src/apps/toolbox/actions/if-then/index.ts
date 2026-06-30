@@ -43,6 +43,21 @@ const action: IRawAction = {
       variables: false,
     },
     {
+      // The step to jump to if the branch is not taken. Computed by front end
+      // when adding a branch within an if-then, or a step _after_ (outside) an
+      // if-then.
+      key: 'stepIdToJumpTo',
+      type: 'string' as const,
+      label: 'FILE A BUG IF YOU SEE THIS',
+
+      // Always hidden
+      hiddenIf: {
+        op: 'always_true',
+      },
+      required: false,
+      variables: false,
+    },
+    {
       label: 'Conditions',
       key: 'conditions',
       type: 'multirow-multicol' as const,

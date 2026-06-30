@@ -43,6 +43,21 @@ export async function getBranchStepIdToSkipTo(
     return null
   }
 
+  // New-style pipes store this key on every if-then: a string means there is a
+  // later branch to jump to, while null means "stop".
+  //
+  // NOTE: Returning here skips the MRF approval-boundary check below, which is
+  // safe - the front-end will never set stepIdToJumpTo across an MRF
+  // approval/reject boundary.
+  const params = currBranchStep.parameters
+  if (params && Object.hasOwn(params, 'stepIdToJumpTo')) {
+    const jumpTo = params.stepIdToJumpTo
+    return typeof jumpTo === 'string' ? jumpTo : null
+  }
+
+  // Everything below supports legacy pipes: those created before If-then-then
+  // was implemented, which lack a stored stepIdToJumpTo. They are handled by
+  // the original depth scan (plus the MRF approval-boundary check).
   let currDepth = parseInt(currBranchStep.parameters?.depth as string)
 
   if (isNaN(currDepth)) {

@@ -975,4 +975,185 @@ describe('createMrfSteps', () => {
       expect(rejectSteps).toHaveLength(0)
     })
   })
+
+  describe('if-then jump targets', () => {
+    function jumpTarget(step: Step): unknown {
+      return (step.parameters as Record<string, unknown>)?.stepIdToJumpTo
+    }
+
+    async function assertNoDanglingJumpTargets(flowId: string): Promise<void> {
+      const steps = await Step.query().where('flow_id', flowId)
+      const ids = new Set(steps.map((step) => step.id))
+      for (const step of steps) {
+        const target = jumpTarget(step)
+        if (typeof target === 'string') {
+          expect(ids.has(target)).toBe(true)
+        }
+      }
+    }
+
+    /**
+     * Appends, after the existing steps, an if-then block chained into a second
+     * if-then block plus a single step after it, wiring the chain of steps to
+     * jump to (target-first so the forward-pointing ids exist):
+     *
+     *   ifThenA   (startPosition)      stepIdToJumpTo -> ifThenB
+     *   actionA   (startPosition + 1)
+     *   ifThenB   (startPosition + 2)  stepIdToJumpTo -> afterStep
+     *   actionB   (startPosition + 3)
+     *   afterStep (startPosition + 4)
+     */
+    async function appendIfThenBlock(startPosition: number) {
+      const afterStep = await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        startPosition + 4,
+      )
+      const ifThenB = await generateMockStep(
+        context,
+        'ifThen',
+        'toolbox',
+        'action',
+        mockFlowId,
+        startPosition + 2,
+        { depth: 0, branchName: 'B', stepIdToJumpTo: afterStep.id },
+      )
+      const ifThenA = await generateMockStep(
+        context,
+        'ifThen',
+        'toolbox',
+        'action',
+        mockFlowId,
+        startPosition,
+        { depth: 0, branchName: 'A', stepIdToJumpTo: ifThenB.id },
+      )
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        startPosition + 1,
+      )
+      await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        mockFlowId,
+        startPosition + 3,
+      )
+      return { afterStep, ifThenB, ifThenA }
+    }
+
+    it('keeps stepIdToJumpTo pointers valid when a new MRF step shifts positions', async () => {
+      await createMrfSteps($, {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+          },
+        ],
+      })
+      // trigger(1) + MRF-001(2); block occupies positions 3..7.
+      const { afterStep, ifThenB, ifThenA } = await appendIfThenBlock(3)
+
+      // Add a second MRF step: inserted at the front, shifting the block down.
+      await createMrfSteps($, {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+          },
+          {
+            defaultStepName: 'Action 2',
+            formWorkflowStepId: 'action-002',
+            type: 'static',
+            fields: [],
+          },
+        ],
+      })
+
+      const reloadedA = await Step.query().findById(ifThenA.id)
+      const reloadedB = await Step.query().findById(ifThenB.id)
+
+      // ids are stable across the position shift, so the pointers still resolve.
+      expect(jumpTarget(reloadedA)).toBe(ifThenB.id)
+      expect(jumpTarget(reloadedB)).toBe(afterStep.id)
+      expect(reloadedA.position).toBeGreaterThan(3)
+      await assertNoDanglingJumpTargets(mockFlowId)
+    })
+
+    it('removes an if-then block and its after-steps together on a trailing MRF delete', async () => {
+      await createMrfSteps($, {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+          },
+          {
+            defaultStepName: 'Action 2',
+            formWorkflowStepId: 'action-002',
+            type: 'static',
+            fields: [],
+          },
+        ],
+      })
+      // trigger(1) + MRF-001(2) + MRF-002(3); block occupies positions 4..8.
+      await appendIfThenBlock(4)
+
+      // Delete the trailing MRF step (action-002); its whole branch — the block
+      // and its after-steps — is removed together.
+      await createMrfSteps($, {
+        trigger: {
+          defaultStepName: 'Trigger',
+          formWorkflowStepId: 'trigger-001',
+          type: 'static',
+        },
+        actions: [
+          {
+            defaultStepName: 'Action 1',
+            formWorkflowStepId: 'action-001',
+            type: 'static',
+            fields: [],
+          },
+        ],
+      })
+
+      const remaining = await Step.query()
+        .where('flow_id', mockFlowId)
+        .orderBy('position', 'asc')
+
+      // Only trigger + the surviving MRF-001 remain; no if-then steps linger.
+      expect(remaining.map((step) => step.key)).toEqual([
+        'newSubmission',
+        'mrfSubmission',
+      ])
+      await assertNoDanglingJumpTargets(mockFlowId)
+    })
+  })
 })

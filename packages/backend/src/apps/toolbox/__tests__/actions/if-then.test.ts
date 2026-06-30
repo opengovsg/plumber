@@ -318,6 +318,195 @@ describe('If-then', () => {
     })
   })
 
+  describe('pipes with a stored stepIdToJumpTo (after-block / chained blocks)', () => {
+    /**
+     * [T = trigger, S = single step, B = branch]
+     *
+     *   T
+     *   |
+     *   B1 (branch-1)  stepIdToJumpTo -> branch-2 (next if-then)
+     *     \
+     *      S1 (branch-1-action-1)
+     *     /
+     *   B2 (branch-2)  stepIdToJumpTo -> after-step (single step after block)
+     *     \
+     *      S2 (branch-2-action-1)
+     *     /
+     *   S3 (after-step) // runs after the block via position+1
+     */
+    const AFTER_BLOCK_PIPE_STEPS = [
+      {
+        id: 'trigger',
+        appKey: 'fakeTrigger',
+        key: 'nom-nom-nom',
+        position: 1,
+      },
+      {
+        id: 'branch-1',
+        appKey: toolboxApp.key,
+        key: ifThenAction.key,
+        position: 2,
+        parameters: {
+          depth: 0,
+          stepIdToJumpTo: 'branch-2',
+        },
+      },
+      {
+        id: 'branch-1-action-1',
+        appKey: 'coffeeMaker',
+        key: 'makeEspresso',
+        position: 3,
+      },
+      {
+        id: 'branch-2',
+        appKey: toolboxApp.key,
+        key: ifThenAction.key,
+        position: 4,
+        parameters: {
+          depth: 0,
+          stepIdToJumpTo: 'after-step',
+        },
+      },
+      {
+        id: 'branch-2-action-1',
+        appKey: 'coffeeMaker',
+        key: 'makeEspresso',
+        position: 5,
+      },
+      {
+        id: 'after-step',
+        appKey: 'coffeeMaker',
+        key: 'makeEspresso',
+        position: 6,
+      },
+    ]
+
+    const failingCondition = [
+      {
+        field: 1,
+        is: 'is',
+        condition: 'equals',
+        text: 9999,
+      },
+    ]
+
+    beforeEach(() => {
+      mocks.stepQueryResult.mockResolvedValue(AFTER_BLOCK_PIPE_STEPS)
+
+      $ = {
+        flow: {
+          id: 'fake-pipe',
+        },
+        step: {
+          ...AFTER_BLOCK_PIPE_STEPS[1],
+        },
+        setActionItem: mocks.setActionItem,
+      } as unknown as IGlobalVariable
+    })
+
+    it.each([
+      // Non-last branch: the stored target is the next if-then.
+      { stepId: 'branch-1', expectedNextStepId: 'branch-2' },
+      // Last branch: the stored target is the single step after the block.
+      // The scan would return null here, so this proves the pointer is used.
+      { stepId: 'branch-2', expectedNextStepId: 'after-step' },
+    ])(
+      'returns the stored stepIdToJumpTo verbatim when a branch condition fails',
+      async ({ stepId, expectedNextStepId }) => {
+        $.step = {
+          ...AFTER_BLOCK_PIPE_STEPS.find((step) => step.id === stepId),
+        } as unknown as IGlobalVariable['step']
+        $.step.parameters.conditions = failingCondition
+
+        const result = await ifThenAction.run($)
+
+        expect(result).toEqual({
+          nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
+        })
+        expect(mocks.setActionItem).toBeCalledWith({
+          raw: { isConditionMet: false },
+        })
+      },
+    )
+
+    it('returns the stored target verbatim even when it differs from the scan result', async () => {
+      // branch-1's stored target deliberately differs from what the scan would
+      // return for this non-last branch (the next if-then 'branch-2'), proving
+      // the pointer is read verbatim rather than recomputed by the scan.
+      mocks.stepQueryResult.mockResolvedValueOnce(
+        AFTER_BLOCK_PIPE_STEPS.map((step) =>
+          step.id === 'branch-1'
+            ? {
+                ...step,
+                parameters: {
+                  ...step.parameters,
+                  stepIdToJumpTo: 'after-step',
+                },
+              }
+            : step,
+        ),
+      )
+      $.step = {
+        ...AFTER_BLOCK_PIPE_STEPS.find((step) => step.id === 'branch-1'),
+      } as unknown as IGlobalVariable['step']
+      $.step.parameters.conditions = failingCondition
+
+      const result = await ifThenAction.run($)
+
+      expect(result).toEqual({
+        nextStep: { command: 'jump-to-step', stepId: 'after-step' },
+      })
+    })
+
+    it('stops execution when the stored target is null, without falling back to the scan', async () => {
+      // branch-1 stores null (the "stop" sentinel) even though a next sibling
+      // (branch-2) exists — the scan would jump there, so returning stop proves
+      // the stored null is honoured instead of the legacy scan.
+      mocks.stepQueryResult.mockResolvedValueOnce(
+        AFTER_BLOCK_PIPE_STEPS.map((step) =>
+          step.id === 'branch-1'
+            ? {
+                ...step,
+                parameters: { ...step.parameters, stepIdToJumpTo: null },
+              }
+            : step,
+        ),
+      )
+      $.step = {
+        ...AFTER_BLOCK_PIPE_STEPS.find((step) => step.id === 'branch-1'),
+      } as unknown as IGlobalVariable['step']
+      $.step.parameters.conditions = failingCondition
+
+      const result = await ifThenAction.run($)
+
+      expect(result).toEqual({
+        nextStep: { command: 'stop-execution' },
+      })
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { isConditionMet: false },
+      })
+    })
+
+    it('runs the branch and returns void if the branch condition passes', async () => {
+      $.step.parameters.conditions = [
+        {
+          field: 1,
+          is: 'is',
+          condition: 'equals',
+          text: 1,
+        },
+      ]
+
+      const result = await ifThenAction.run($)
+
+      // A true branch ignores stepIdToJumpTo and falls through via position+1.
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { isConditionMet: true },
+      })
+    })
+  })
+
   describe('pipes with nested branches', () => {
     beforeEach(() => {
       mocks.stepQueryResult.mockResolvedValue(NESTED_BRANCH_PIPE_STEPS)
