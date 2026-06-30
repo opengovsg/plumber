@@ -46,6 +46,23 @@ export function isSesEnabledForRecipient(
 }
 
 /**
+ * Whether attachment-over-SES is enabled for a recipient.
+ * `ses_attachments_enabled` is a boolean flag, targeted in LaunchDarkly the same
+ * way as `ses_enabled`. It is additive: an email with attachments uses SES only
+ * when both flags are on for all recipients. Defaults to false (routes via
+ * Postman) when the flag is off or unset.
+ */
+export function isSesAttachmentsEnabledForRecipient(
+  recipientEmail: string,
+): Promise<boolean> {
+  return getLdFlagValue<boolean>(
+    'ses_attachments_enabled',
+    recipientEmail.toLowerCase(),
+    false,
+  )
+}
+
+/**
  * Build an RFC 5322 From address (`Display Name <email>`).
  *
  * If the display name contains "specials" — most importantly a comma — it must

@@ -12,10 +12,12 @@ import { sanitizeEmailHtml } from '@/helpers/sanitize-email-html'
 import {
   formatFromAddress,
   getSesClient,
+  isSesAttachmentsEnabledForRecipient,
   isSesEnabledForRecipient,
 } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
+import { buildRawEmail } from './build-raw-mime'
 import {
   PostmanEmailDataOut,
   PostmanEmailSendStatus,
@@ -135,6 +137,21 @@ async function sendViaPostman(
   }
 }
 
+// Parity with Postman's server-side total-attachment limit (10MB), which the
+// SES path bypasses. Compared against raw (pre-base64) bytes — the same basis
+// Postman uses. SES itself allows up to 40MB, so this is the parity cap, not an
+// SES limit.
+const SES_MAX_TOTAL_ATTACHMENT_SIZE = 10 * 1024 * 1024
+
+// Thrown by the SES path when attachments exceed the parity cap. Mapped to
+// ATTACHMENT-SIZE-EXCEEDED by getSesErrorStatus (matched by name).
+class AttachmentSizeExceededError extends Error {
+  constructor() {
+    super('Total attachment size exceeds 10MB')
+    this.name = 'AttachmentSizeExceededError'
+  }
+}
+
 async function sendViaSes(
   recipientEmail: string,
   email: Email,
@@ -154,32 +171,78 @@ async function sendViaSes(
   // Human-readable form for dataOut — no quoting artifacts shown to the user.
   const displayFrom = `${email.senderName} <${appConfig.ses.fromAddress}>`
 
-  await client.send(
-    new SendEmailCommand({
-      FromEmailAddress: fromAddress,
-      Destination: {
-        ToAddresses: [recipientEmail],
-        ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
-      },
-      Content: {
-        Simple: {
-          Subject: { Data: email.subject, Charset: 'UTF-8' },
-          Body: {
-            // SES sends the body verbatim; sanitise to match the server-side
-            // filtering the Postman path gets for free.
-            Html: { Data: sanitizeEmailHtml(email.body), Charset: 'UTF-8' },
-          },
-          // Marks the message as sent via the SES direct path (absent =>
-          // routed through Postman). Recipient-invisible; for triage only.
-          Headers: [{ Name: 'X-Plumber-Transport', Value: 'ses' }],
+  // Logged for rollout visibility — counts/sizes only, never filenames/content.
+  const attachmentCount = email.attachments?.length ?? 0
+  const totalAttachmentBytes =
+    email.attachments?.reduce(
+      (sum, attachment) => sum + attachment.data.byteLength,
+      0,
+    ) ?? 0
+
+  if (email.attachments?.length) {
+    // SES has no structured size error, so enforce the parity cap ourselves
+    // before building the (larger, base64-encoded) MIME message.
+    if (totalAttachmentBytes > SES_MAX_TOTAL_ATTACHMENT_SIZE) {
+      throw new AttachmentSizeExceededError()
+    }
+
+    // Attachments require a raw MIME message — Content.Simple can't carry them.
+    // From/To/Cc/Reply-To/Subject/body and the transport header all live in the
+    // MIME; the envelope is still set via FromEmailAddress/Destination, matching
+    // the Simple path.
+    const rawMessage = await buildRawEmail({
+      from: fromAddress,
+      to: recipientEmail,
+      cc: ccAddressesToSend,
+      replyTo: email.replyTo,
+      subject: email.subject,
+      // Sanitise to match the server-side filtering the Postman path gets free.
+      html: sanitizeEmailHtml(email.body),
+      attachments: email.attachments,
+      headers: { 'X-Plumber-Transport': 'ses' },
+    })
+
+    await client.send(
+      new SendEmailCommand({
+        FromEmailAddress: fromAddress,
+        Destination: {
+          ToAddresses: [recipientEmail],
+          ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
         },
-      },
-      ...(email.replyTo && { ReplyToAddresses: [email.replyTo] }),
-      ...(appConfig.ses.configurationSet && {
-        ConfigurationSetName: appConfig.ses.configurationSet,
+        Content: { Raw: { Data: rawMessage } },
+        ...(appConfig.ses.configurationSet && {
+          ConfigurationSetName: appConfig.ses.configurationSet,
+        }),
       }),
-    }),
-  )
+    )
+  } else {
+    await client.send(
+      new SendEmailCommand({
+        FromEmailAddress: fromAddress,
+        Destination: {
+          ToAddresses: [recipientEmail],
+          ...(ccAddressesToSend?.length && { CcAddresses: ccAddressesToSend }),
+        },
+        Content: {
+          Simple: {
+            Subject: { Data: email.subject, Charset: 'UTF-8' },
+            Body: {
+              // SES sends the body verbatim; sanitise to match the server-side
+              // filtering the Postman path gets for free.
+              Html: { Data: sanitizeEmailHtml(email.body), Charset: 'UTF-8' },
+            },
+            // Marks the message as sent via the SES direct path (absent =>
+            // routed through Postman). Recipient-invisible; for triage only.
+            Headers: [{ Name: 'X-Plumber-Transport', Value: 'ses' }],
+          },
+        },
+        ...(email.replyTo && { ReplyToAddresses: [email.replyTo] }),
+        ...(appConfig.ses.configurationSet && {
+          ConfigurationSetName: appConfig.ses.configurationSet,
+        }),
+      }),
+    )
+  }
   incrementMetric('ses.email.sent')
 
   // TODO: remove this log once the SES rollout is verified and stable.
@@ -189,6 +252,8 @@ async function sendViaSes(
     from: fromAddress,
     recipient: recipientEmail,
     ccAddressesToSend,
+    attachmentCount,
+    totalAttachmentBytes,
   })
 
   return {
@@ -213,16 +278,22 @@ export async function sendTransactionalEmails(
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }> {
-  // Whether SES routing applies is a per-recipient boolean LaunchDarkly flag
-  // (`ses_enabled`); targeting is configured in LaunchDarkly. Use SES only when
-  // it is enabled for ALL recipients and there are no attachments — attachment
-  // support over SES lands in a later change. Otherwise send everything via
+  // SES routing is gated by per-recipient boolean LaunchDarkly flags; targeting
+  // is configured in LaunchDarkly. Use SES only when `ses_enabled` is true for
+  // ALL recipients. When the email has attachments, additionally require
+  // `ses_attachments_enabled` for all recipients — otherwise fall back to
   // Postman to avoid mixed error-handling paths.
   const sesEnabledPerRecipient = await Promise.all(
     recipients.map(isSesEnabledForRecipient),
   )
-  const useSes =
-    !email.attachments?.length && sesEnabledPerRecipient.every(Boolean)
+  let useSes = sesEnabledPerRecipient.every(Boolean)
+
+  if (useSes && email.attachments?.length) {
+    const attachmentsEnabledPerRecipient = await Promise.all(
+      recipients.map(isSesAttachmentsEnabledForRecipient),
+    )
+    useSes = attachmentsEnabledPerRecipient.every(Boolean)
+  }
 
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to
