@@ -72,6 +72,11 @@ export async function archiveExecution(
     await opts.knexClient.transaction(async (trx) => {
       await trx('execution_steps').where('execution_id', execution.id).delete()
       await trx('executions').where('id', execution.id).delete()
+      if (!execution.testRun) {
+        await trx('flows')
+          .where('id', execution.flowId)
+          .increment('archived_execution_count', 1)
+      }
     })
   }
 
