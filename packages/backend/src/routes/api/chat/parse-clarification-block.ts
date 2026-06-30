@@ -55,6 +55,6 @@ export function parseClarificationBlock(
     questions.push(current)
   }
 
-  const valid = questions.filter((q) => q.options.length >= 2)
+  const valid = questions.filter((q) => q.question.length > 0)
   return valid.length > 0 ? valid : null
 }
