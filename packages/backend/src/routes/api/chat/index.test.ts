@@ -136,14 +136,14 @@ describe('chat handler — GitBook MCP integration', () => {
       search_documentation: vi.fn(),
       get_page: vi.fn(),
     }
-    const mockBridgeTools = { plumber_tool: vi.fn() }
+    const mockBridgeTools = { list_apps: vi.fn() }
     const mockClose = vi.fn()
     vi.mocked(experimental_createMCPClient).mockResolvedValue({
       tools: vi.fn().mockResolvedValue(mockGitbookTools),
       close: mockClose,
     } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
     vi.mocked(createMcpBridgeTools).mockReturnValue(
-      mockBridgeTools as ReturnType<typeof createMcpBridgeTools>,
+      mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
     )
 
     const handler = router.stack[0].route.stack[0].handle
@@ -165,7 +165,7 @@ describe('chat handler — GitBook MCP integration', () => {
       new Error('connection refused'),
     )
     vi.mocked(createMcpBridgeTools).mockReturnValue(
-      mockBridgeTools as ReturnType<typeof createMcpBridgeTools>,
+      mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
     )
 
     const handler = router.stack[0].route.stack[0].handle
