@@ -9,6 +9,8 @@ import type {
 import apps from '@/apps'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 
+const TOOLBOX_APP_KEY = 'toolbox'
+
 function serializeField(
   field: NonNullable<IRawTrigger['arguments']>[number],
 ): IMcpAppField {
@@ -32,33 +34,44 @@ function serializeField(
 }
 
 export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
-  // NOTE: filter out disabled apps based on LD flags.
   const allLdFlags = await getAllLdFlags(user.email)
   const restrictedApps = getRestrictedAppKeys(allLdFlags)
-  const filteredApps = Object.fromEntries(
-    Object.entries(apps).filter(([key]) => !restrictedApps.includes(key)),
-  )
 
-  return Object.values(filteredApps).map((app) => ({
-    key: app.key,
-    name: app.name,
-    triggers: (app.triggers ?? []).map((t) => {
-      const raw = t as unknown as IRawTrigger
-      return {
-        key: t.key,
-        name: t.name,
-        description: t.description,
-        fields: (raw.arguments ?? []).map(serializeField),
+  return Object.values(apps)
+    .filter((app) => {
+      if (restrictedApps.includes(app.key)) {
+        return false
       }
-    }),
-    actions: (app.actions ?? []).map((a) => {
-      const raw = a as unknown as IRawAction
-      return {
-        key: a.key,
-        name: a.name,
-        description: a.description,
-        fields: (raw.arguments ?? []).map(serializeField),
+      // Toolbox is hidden by default; only show if explicitly enabled
+      if (app.key === TOOLBOX_APP_KEY) {
+        return allLdFlags[`app_${app.key}`] === true
       }
-    }),
-  }))
+      return true
+    })
+    .map((app) => ({
+      key: app.key,
+      name: app.name,
+      triggers: (app.triggers ?? [])
+        .filter((t) => allLdFlags[`app_${app.key}_trigger_${t.key}`] !== false)
+        .map((t) => {
+          const raw = t as unknown as IRawTrigger
+          return {
+            key: t.key,
+            name: t.name,
+            description: t.description,
+            fields: (raw.arguments ?? []).map(serializeField),
+          }
+        }),
+      actions: (app.actions ?? [])
+        .filter((a) => allLdFlags[`app_${app.key}_action_${a.key}`] !== false)
+        .map((a) => {
+          const raw = a as unknown as IRawAction
+          return {
+            key: a.key,
+            name: a.name,
+            description: a.description,
+            fields: (raw.arguments ?? []).map(serializeField),
+          }
+        }),
+    }))
 }
