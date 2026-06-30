@@ -6,14 +6,13 @@ import { sortBy } from 'lodash'
 
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { incrementMetric } from '@/helpers/metrics'
 import { sanitizeEmailHtml } from '@/helpers/sanitize-email-html'
 import {
   formatFromAddress,
   getSesClient,
-  shouldUseSes,
+  isSesEnabledForRecipient,
 } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
@@ -214,18 +213,16 @@ export async function sendTransactionalEmails(
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }> {
-  const sesEnabledDomains = await getLdFlagValue<string[]>(
-    'ses_enabled_domains',
-    null,
-    [],
+  // Whether SES routing applies is a per-recipient boolean LaunchDarkly flag
+  // (`ses_enabled`); targeting is configured in LaunchDarkly. Use SES only when
+  // it is enabled for ALL recipients and there are no attachments — attachment
+  // support over SES lands in a later change. Otherwise send everything via
+  // Postman to avoid mixed error-handling paths.
+  const sesEnabledPerRecipient = await Promise.all(
+    recipients.map(isSesEnabledForRecipient),
   )
-
-  // Use SES only if ALL recipients are in SES-enabled domains and no
-  // attachments (SES Phase 1 does not support attachments). Otherwise,
-  // send everything via Postman to avoid mixed error-handling paths.
   const useSes =
-    !email.attachments?.length &&
-    recipients.every((r) => shouldUseSes(r, sesEnabledDomains))
+    !email.attachments?.length && sesEnabledPerRecipient.every(Boolean)
 
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to
