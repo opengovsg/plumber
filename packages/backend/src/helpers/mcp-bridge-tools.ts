@@ -22,7 +22,11 @@ import { updateStepParametersService } from '@/services/mcp/update-step-paramete
 
 type ListAppsInput = Record<string, IApp[]>
 
-export function createMcpBridgeTools(user: User, traceId: string) {
+export function createMcpBridgeTools(
+  user: User,
+  traceId: string,
+  onPipeChange?: (pipeId: string) => void,
+) {
   return {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
       description:
@@ -82,7 +86,7 @@ export function createMcpBridgeTools(user: User, traceId: string) {
           ),
       }),
       execute: async ({ name, steps }): Promise<Flow> => {
-        return createFlowWithStepsService({
+        const flow = await createFlowWithStepsService({
           user,
           name,
           steps: steps.map(
@@ -96,6 +100,8 @@ export function createMcpBridgeTools(user: User, traceId: string) {
           ),
           traceId,
         })
+        onPipeChange?.(flow.id)
+        return flow
       },
     }),
 
@@ -123,13 +129,15 @@ export function createMcpBridgeTools(user: User, traceId: string) {
         parameters,
         connection_id,
       }): Promise<Step> => {
-        return updateStepParametersService({
+        const step = await updateStepParametersService({
           user,
           pipeId: pipe_id,
           stepId: step_id,
           parameters,
           connectionId: connection_id,
         })
+        onPipeChange?.(pipe_id)
+        return step
       },
     }),
 
@@ -154,13 +162,15 @@ export function createMcpBridgeTools(user: User, traceId: string) {
         action_key,
         previous_step_id,
       }): Promise<Step> => {
-        return createStepService({
+        const step = await createStepService({
           user,
           pipeId: pipe_id,
           appKey: app_key,
           key: action_key,
           previousStepId: previous_step_id,
         })
+        onPipeChange?.(pipe_id)
+        return step
       },
     }),
 
@@ -172,11 +182,13 @@ export function createMcpBridgeTools(user: User, traceId: string) {
         step_id: z.uuid().describe('ID of the step to delete'),
       }),
       execute: async ({ pipe_id, step_id }): Promise<Flow> => {
-        return deleteStepService({
+        const flow = await deleteStepService({
           user,
           pipeId: pipe_id,
           stepId: step_id,
         })
+        onPipeChange?.(pipe_id)
+        return flow
       },
     }),
 
