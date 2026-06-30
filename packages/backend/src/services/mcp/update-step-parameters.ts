@@ -15,6 +15,7 @@ export interface UpdateStepParametersInput {
   pipeId: string
   stepId: string
   parameters: Record<string, unknown>
+  connectionId?: string
 }
 
 export async function updateStepParametersService({
@@ -22,6 +23,7 @@ export async function updateStepParametersService({
   pipeId,
   stepId,
   parameters,
+  connectionId,
 }: UpdateStepParametersInput): Promise<Step> {
   const step = await user
     .withAccessibleSteps({ requiredRole: 'editor' })
@@ -85,9 +87,31 @@ export async function updateStepParametersService({
     action.validateStepParameters?.(patchedParameters)
   }
 
+  let resolvedConnectionId: string | undefined
+  if (connectionId !== undefined) {
+    const connection = await user
+      .withAccessibleConnections({ requiredRole: 'viewer' })
+      .findOne({ 'connections.id': connectionId })
+
+    if (!connection) {
+      throw new Error('Connection not found')
+    }
+
+    if (connection.key !== step.appKey) {
+      throw new Error(
+        `Connection app '${connection.key}' does not match step app '${step.appKey}'`,
+      )
+    }
+
+    resolvedConnectionId = connectionId
+  }
+
   return Step.query().patchAndFetchById(stepId, {
     parameters: patchedParameters,
     version,
     status: 'incomplete',
+    ...(resolvedConnectionId !== undefined && {
+      connectionId: resolvedConnectionId,
+    }),
   })
 }

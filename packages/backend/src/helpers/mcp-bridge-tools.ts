@@ -88,7 +88,7 @@ export function createMcpBridgeTools(user: User) {
 
     update_step_parameters: tool({
       description:
-        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.",
+        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Optionally assign a connection by passing connection_id (obtain from list_connections; must match the step's app). Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.",
       inputSchema: z.object({
         pipe_id: z.string().describe('ID of the pipe that contains the step'),
         step_id: z.string().describe('ID of the step to update'),
@@ -97,13 +97,25 @@ export function createMcpBridgeTools(user: User) {
           .describe(
             "Parameter key/value pairs to save. Only keys matching the step's field schema are kept.",
           ),
+        connection_id: z
+          .string()
+          .optional()
+          .describe(
+            "Connection ID to assign to this step. Obtain from list_connections. The connection's app must match the step's app.",
+          ),
       }),
-      execute: async ({ pipe_id, step_id, parameters }): Promise<Step> => {
+      execute: async ({
+        pipe_id,
+        step_id,
+        parameters,
+        connection_id,
+      }): Promise<Step> => {
         return updateStepParametersService({
           user,
           pipeId: pipe_id,
           stepId: step_id,
           parameters,
+          connectionId: connection_id,
         })
       },
     }),
