@@ -40,12 +40,12 @@ describe('listConnectionsService', () => {
 
     expect(result).toEqual(
       expect.arrayContaining([
-        {
+        expect.objectContaining({
           id: conn.id,
           appKey: 'slack',
           verified: true,
           label: 'My Slack connection',
-        },
+        }),
       ]),
     )
   })
@@ -107,5 +107,51 @@ describe('listConnectionsService', () => {
     const found = result.find((c) => c.id === conn.id)
 
     expect(found?.label).toBe('postman')
+  })
+
+  it('filters by appKey when provided', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `filter-appkey-${randomUUID()}@example.com`,
+    })
+    const slackConn = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'slack',
+      userId: user.id,
+      verified: true,
+      draft: false,
+    })
+    const postmanConn = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'postman',
+      userId: user.id,
+      verified: true,
+      draft: false,
+    })
+
+    const result = await listConnectionsService(user, 'slack')
+
+    expect(result.map((c) => c.id)).toContain(slackConn.id)
+    expect(result.map((c) => c.id)).not.toContain(postmanConn.id)
+  })
+
+  it('includes formattedData on the returned connection', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `formatted-data-${randomUUID()}@example.com`,
+    })
+    const conn = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'slack',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: { screenName: 'My Workspace' },
+    })
+
+    const result = await listConnectionsService(user)
+    const found = result.find((c) => c.id === conn.id)
+
+    expect(found?.formattedData).toEqual({ screenName: 'My Workspace' })
   })
 })
