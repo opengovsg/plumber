@@ -21,15 +21,46 @@ function serializeField(
     description: (field as any).description,
     required: (field as any).required ?? false,
   }
+
   const options = (field as any).options as
     | Array<{ label: string; value: unknown }>
     | undefined
-  if (field.type === 'dropdown' && options?.length && !(field as any).source) {
+  const source = (field as any).source as
+    | {
+        type: string
+        name: string
+        arguments?: Array<{ name: string; value: string }>
+      }
+    | undefined
+  const subFields = (field as any).subFields as
+    | NonNullable<IRawTrigger['arguments']>
+    | undefined
+
+  if (field.type === 'dropdown' && options?.length && !source) {
     base.options = options.map((o) => ({
       label: o.label,
       value: String(o.value),
     }))
+  } else if (field.type === 'dropdown' && source?.arguments?.length) {
+    base.isDynamic = true
+    const keyArg = source.arguments.find((a) => a.name === 'key')
+    if (keyArg) {
+      base.dynamicDataKey = keyArg.value
+    }
+    const paramArgs = source.arguments.filter((a) =>
+      a.name.startsWith('parameters.'),
+    )
+    if (paramArgs.length > 0) {
+      base.dynamicDataParameters = Object.fromEntries(
+        paramArgs.map((a) => [a.name.slice('parameters.'.length), a.value]),
+      )
+    }
   }
+
+  if (subFields?.length) {
+    base.subFields = subFields.map(serializeField)
+  }
+
   return base
 }
 
