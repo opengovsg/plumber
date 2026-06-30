@@ -12,6 +12,19 @@ const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
 // so allow enough headroom for up to ~10 tool calls per assistant turn.
 const MAX_PARTS_PER_MESSAGE = 50
 
+// Tool invocation part shape — shared by all MCP bridge tool entries below.
+// The backend does not process these parts; it only needs to accept them when
+// the AI SDK echoes the full assistant message back on subsequent turns.
+const toolPart = <T extends string>(toolType: T) =>
+  z.object({
+    type: z.literal(toolType),
+    toolCallId: z.string().optional(),
+    toolName: z.string().optional(),
+    state: z.string().optional(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
+  })
+
 const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('text'),
@@ -53,13 +66,31 @@ const messagePartSchema = z.discriminatedUnion('type', [
     }),
   }),
   z.object({
-    type: z.literal('tool-list_apps'),
-    toolCallId: z.string(),
-    toolName: z.string(),
-    state: z.string(),
-    input: z.unknown().optional(),
-    output: z.unknown().optional(),
+    type: z.literal('data-pipeState'),
+    data: z.object({
+      pipeId: z.string(),
+      steps: z.array(
+        z.object({
+          id: z.string(),
+          appKey: z.string(),
+          key: z.string(),
+          type: z.string(),
+          position: z.number(),
+          status: z.string(),
+          parameters: z.record(z.string(), z.unknown()),
+          connectionId: z.string().nullable(),
+        }),
+      ),
+    }),
   }),
+  // One entry per MCP bridge tool — keeps discriminatedUnion error quality intact.
+  toolPart('tool-list_apps'),
+  toolPart('tool-list_connections'),
+  toolPart('tool-create_pipe'),
+  toolPart('tool-update_step_parameters'),
+  toolPart('tool-create_step'),
+  toolPart('tool-delete_step'),
+  toolPart('tool-get_dynamic_data'),
 ])
 
 const messageSchema = z.object({
