@@ -165,6 +165,74 @@ describe('updateStepPositions mutation', () => {
     })
   })
 
+  it('sets an if-then branch stepIdToJumpTo via jsonb_set, leaving omitted steps untouched', async () => {
+    const input = {
+      stepPositions: [
+        {
+          id: 'step-1',
+          position: 2,
+          type: 'action' as const,
+          stepIdToJumpTo: 'step-3',
+        },
+        {
+          id: 'step-2',
+          position: 3,
+          type: 'action' as const,
+        },
+      ],
+      flow: {
+        updatedAt: new Date().toISOString(),
+      },
+    }
+
+    await updateStepPositions(null, { input }, context)
+
+    // step-1 carries the jump target: position + a jsonb_set on parameters.
+    const firstPatch: any = stepPatchSpy.mock.calls[0][0]
+    expect(firstPatch.position).toBe(2)
+    expect(firstPatch.parameters._sql).toBe(
+      `jsonb_set(parameters, '{stepIdToJumpTo}', ?::jsonb, true)`,
+    )
+    expect(firstPatch.parameters._args).toEqual([JSON.stringify('step-3')])
+
+    // step-2 omitted stepIdToJumpTo => parameters left untouched.
+    const secondPatch: any = stepPatchSpy.mock.calls[1][0]
+    expect(secondPatch).toEqual({ position: 3 })
+    expect('parameters' in secondPatch).toBe(false)
+  })
+
+  it('stores JSON null as the stop sentinel when stepIdToJumpTo is null', async () => {
+    const input = {
+      stepPositions: [
+        {
+          id: 'step-1',
+          position: 2,
+          type: 'action' as const,
+          stepIdToJumpTo: null as string | null,
+        },
+        {
+          id: 'step-2',
+          position: 3,
+          type: 'action' as const,
+        },
+      ],
+      flow: {
+        updatedAt: new Date().toISOString(),
+      },
+    }
+
+    await updateStepPositions(null, { input }, context)
+
+    // null keeps the key present (set to JSON null) rather than removing it, so
+    // execution stops via the pointer instead of falling back to the scan.
+    const firstPatch: any = stepPatchSpy.mock.calls[0][0]
+    expect(firstPatch.position).toBe(2)
+    expect(firstPatch.parameters._sql).toBe(
+      `jsonb_set(parameters, '{stepIdToJumpTo}', ?::jsonb, true)`,
+    )
+    expect(firstPatch.parameters._args).toEqual([JSON.stringify(null)])
+  })
+
   it('should throw an error if the step ids are not found', async () => {
     // Mock throwIfNotFound to throw an error for missing steps
     fakeQuery.throwIfNotFound.mockRejectedValue(new Error('Step not found'))
@@ -213,13 +281,13 @@ describe('updateStepPositions mutation', () => {
       stepPositions: [
         {
           id: 'step-1',
-          position: 1,
-          step: { id: 'step-1', type: 'action' as const },
+          position: 2,
+          type: 'action' as const,
         },
         {
           id: 'step-2',
-          position: 3,
-          step: { id: 'step-2', type: 'action' as const },
+          position: 4,
+          type: 'action' as const,
         },
       ],
     } as any
@@ -229,6 +297,73 @@ describe('updateStepPositions mutation', () => {
     )
     await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
       'Failed to update: must update contiguous action steps!',
+    )
+  })
+
+  it('applies auxiliary if-then jump-target changes alongside the reposition', async () => {
+    // A reorder repositions a contiguous run (step-1@2, step-2@3) and, via
+    // auxiliaryChanges, repoints an out-of-run if-then (step-4) — kept separate
+    // so stepPositions stays purely about positions.
+    const input = {
+      stepPositions: [
+        {
+          id: 'step-1',
+          position: 2,
+          type: 'action' as const,
+        },
+        {
+          id: 'step-2',
+          position: 3,
+          type: 'action' as const,
+        },
+      ],
+      auxiliaryChanges: [
+        { ifThen: { stepId: 'step-4', stepIdToJumpTo: 'step-2' } },
+      ],
+      flow: {
+        updatedAt: new Date().toISOString(),
+      },
+    }
+
+    await updateStepPositions(null, { input }, context)
+
+    // Two reposition patches, then the auxiliary jsonb_set repoint on step-4.
+    expect(stepPatchSpy).toHaveBeenCalledTimes(3)
+    expect(stepPatchSpy.mock.calls[0][0]).toEqual({ position: 2 })
+    expect(stepPatchSpy.mock.calls[1][0]).toEqual({ position: 3 })
+    const auxPatch: any = stepPatchSpy.mock.calls[2][0]
+    expect(stepFindByIdSpy).toHaveBeenNthCalledWith(3, 'step-4')
+    expect(auxPatch.parameters._sql).toBe(
+      `jsonb_set(parameters, '{stepIdToJumpTo}', ?::jsonb, true)`,
+    )
+    expect(auxPatch.parameters._args).toEqual([JSON.stringify('step-2')])
+  })
+
+  it('throws when an auxiliary change step is not in the flow', async () => {
+    // The reposition fetch resolves normally; the auxiliary fetch resolves a
+    // step belonging to a different flow, which must be rejected.
+    fakeQuery.throwIfNotFound
+      .mockResolvedValueOnce(fakeSteps)
+      .mockResolvedValueOnce([{ id: 'step-4', flowId: 'different-flow-id' }])
+
+    const input = {
+      stepPositions: [
+        {
+          id: 'step-1',
+          position: 2,
+          type: 'action' as const,
+        },
+      ],
+      auxiliaryChanges: [
+        { ifThen: { stepId: 'step-4', stepIdToJumpTo: 'step-2' } },
+      ],
+      flow: {
+        updatedAt: new Date().toISOString(),
+      },
+    }
+
+    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+      'Failed to update: auxiliary change steps were not found in this flow',
     )
   })
 

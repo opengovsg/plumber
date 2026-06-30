@@ -14,8 +14,10 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
   context,
 ) => {
   const { input } = params
-  const { stepPositions } = input
+  const { stepPositions, auxiliaryChanges } = input
 
+  // stepPositions repositions a contiguous run of action steps. Jump-target
+  // changes to if-thens outside that run travel separately in auxiliaryChanges.
   if (
     !stepPositions.every(
       (
@@ -90,7 +92,55 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
             ])
           : raw(`config - 'approval'`)
       }
+      // Maintain an if-then branch's step to jump to. Omitted => leave the
+      // existing parameters untouched. A string sets the target; null stores the
+      // "stop" sentinel (last branch of the last block). Both keep the key
+      // present, so execution reads the pointer instead of the legacy scan.
+      if (stepPosition.stepIdToJumpTo !== undefined) {
+        patchData.parameters = raw(
+          `jsonb_set(parameters, '{stepIdToJumpTo}', ?::jsonb, true)`,
+          [JSON.stringify(stepPosition.stepIdToJumpTo)],
+        )
+      }
       await Step.query(trx).findById(stepPosition.id).patch(patchData)
+    }
+
+    // Apply auxiliary if-then jump-target changes: steps outside the
+    // repositioned run whose stepIdToJumpTo must move in the same transaction
+    // (e.g. reordering an after-block region repoints the block's last branch).
+    const auxIfThenChanges = (auxiliaryChanges ?? [])
+      .map((change) => change.ifThen)
+      .filter((ifThen): ifThen is NonNullable<typeof ifThen> => !!ifThen)
+    if (auxIfThenChanges.length > 0) {
+      const auxStepIds = auxIfThenChanges.map((change) => change.stepId)
+      const auxSteps = await context.currentUser
+        .withAccessibleSteps({ requiredRole: 'editor', trx })
+        .whereIn('steps.id', auxStepIds)
+        .throwIfNotFound()
+
+      // Authz + same-flow guard: every referenced step must be accessible and
+      // belong to the flow being edited, so a change can't reach into another.
+      const inFlowAuxStepIds = new Set(
+        auxSteps
+          .filter((step) => step.flowId === flow.id)
+          .map((step) => step.id),
+      )
+      if (auxStepIds.some((id) => !inFlowAuxStepIds.has(id))) {
+        throw new BadUserInputError(
+          'Failed to update: auxiliary change steps were not found in this flow',
+        )
+      }
+
+      for (const change of auxIfThenChanges) {
+        await Step.query(trx)
+          .findById(change.stepId)
+          .patch({
+            parameters: raw(
+              `jsonb_set(parameters, '{stepIdToJumpTo}', ?::jsonb, true)`,
+              [JSON.stringify(change.stepIdToJumpTo)],
+            ),
+          })
+      }
     }
 
     // Update the flow's lastUpdatedAt timestamp

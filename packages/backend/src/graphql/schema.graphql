@@ -726,11 +726,30 @@ input StepPositionInput {
   position: Int!
   type: StepEnumType!
   config: StepConfigInput
+  # If-then branch's step to jump to (parameters.stepIdToJumpTo). A string
+  # sets/updates it; null stores the "stop" sentinel (last branch of the last
+  # block); omitted leaves it untouched.
+  stepIdToJumpTo: String
 }
 
 input UpdateStepPositionsInput {
   stepPositions: [StepPositionInput!]!
   flow: StepFlowInput!
+  # Changes to steps outside the repositioned run (e.g. repointing an if-then
+  # block's last branch when reordering the region after it), kept separate so
+  # stepPositions stays purely about positions.
+  auxiliaryChanges: [UpdateStepPositionsAuxiliaryChangeInput!]
+}
+
+# oneOf is to support future expansion for other aux changes
+input UpdateStepPositionsAuxiliaryChangeInput @oneOf {
+  ifThen: UpdateStepPositionsAuxiliaryChangeForIfThenInput
+}
+
+input UpdateStepPositionsAuxiliaryChangeForIfThenInput {
+  # StepID of the if-then step to change.
+  stepId: String!
+  stepIdToJumpTo: String!
 }
 
 input DeleteStepInput {
