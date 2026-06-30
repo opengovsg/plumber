@@ -184,4 +184,55 @@ describe('updateStepParametersService', () => {
       }),
     ).rejects.toThrow('Step not found')
   })
+
+  it('merges parameters across repeated calls instead of overwriting', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `update-params-merge-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Merge Test Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-merge-1',
+    })
+
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    // First call: set subject
+    await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { subject: 'Hello world' },
+    })
+
+    // Second call: set destinationEmail — must not wipe out subject
+    const result = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { destinationEmail: ['a@b.com'] },
+    })
+
+    expect(result.parameters).toMatchObject({
+      subject: 'Hello world',
+      destinationEmail: ['a@b.com'],
+    })
+  })
 })
