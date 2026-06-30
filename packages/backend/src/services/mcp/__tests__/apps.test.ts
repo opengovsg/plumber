@@ -55,6 +55,62 @@ vi.mock('@/apps', () => ({
         },
       ],
     },
+    tiles: {
+      key: 'tiles',
+      name: 'Tiles',
+      triggers: [],
+      actions: [
+        {
+          key: 'updateSingleRow',
+          name: 'Update Single Row',
+          description: 'Updates a row in a tile',
+          arguments: [
+            {
+              key: 'tableId',
+              label: 'Select Tile',
+              type: 'dropdown',
+              required: true,
+              source: {
+                type: 'query',
+                name: 'getDynamicData',
+                arguments: [{ name: 'key', value: 'listTables' }],
+              },
+            },
+            {
+              key: 'rowData',
+              label: 'Row data',
+              type: 'multirow-multicol',
+              required: true,
+              subFields: [
+                {
+                  key: 'columnId',
+                  label: 'Column',
+                  type: 'dropdown',
+                  required: true,
+                  source: {
+                    type: 'query',
+                    name: 'getDynamicData',
+                    arguments: [
+                      { name: 'key', value: 'listColumns' },
+                      {
+                        name: 'parameters.tableId',
+                        value: '{parameters.tableId}',
+                      },
+                    ],
+                  },
+                },
+                {
+                  key: 'value',
+                  label: 'Value',
+                  type: 'string',
+                  required: true,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     toolbox: {
       key: 'toolbox',
       name: 'Toolbox',
@@ -91,8 +147,8 @@ describe('listAppsService', () => {
 
   it('returns visible apps with triggers and actions', async () => {
     const apps = await listAppsService(user)
-    // toolbox excluded by default; formsg + slack returned
-    expect(apps).toHaveLength(2)
+    // toolbox excluded by default; formsg + slack + tiles returned
+    expect(apps).toHaveLength(3)
     const formsg = apps.find((a) => a.key === 'formsg')
     expect(formsg?.triggers).toHaveLength(1)
     expect(formsg?.actions).toHaveLength(0)
@@ -107,8 +163,62 @@ describe('listAppsService', () => {
     const channelField = slack?.actions[0].fields.find(
       (f) => f.key === 'channel',
     )
-    // dynamic source dropdown — options should be omitted
+    // source with no arguments — not a getDynamicData source, no isDynamic
     expect(channelField?.options).toBeUndefined()
+    expect(channelField?.isDynamic).toBeUndefined()
+  })
+
+  describe('dynamic dropdown fields', () => {
+    it('exposes dynamicDataKey for a dropdown with getDynamicData source (no cascading deps)', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const tableIdField = tiles?.actions[0].fields.find(
+        (f) => f.key === 'tableId',
+      )
+      expect(tableIdField?.isDynamic).toBe(true)
+      expect(tableIdField?.dynamicDataKey).toBe('listTables')
+      expect(tableIdField?.dynamicDataParameters).toBeUndefined()
+      expect(tableIdField?.options).toBeUndefined()
+    })
+
+    it('exposes dynamicDataKey and dynamicDataParameters for a cascading dropdown', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const rowDataField = tiles?.actions[0].fields.find(
+        (f) => f.key === 'rowData',
+      )
+      const columnIdField = rowDataField?.subFields?.find(
+        (f) => f.key === 'columnId',
+      )
+      expect(columnIdField?.isDynamic).toBe(true)
+      expect(columnIdField?.dynamicDataKey).toBe('listColumns')
+      expect(columnIdField?.dynamicDataParameters).toEqual({
+        tableId: '{parameters.tableId}',
+      })
+      expect(columnIdField?.options).toBeUndefined()
+    })
+
+    it('serializes subFields on compound fields', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const rowDataField = tiles?.actions[0].fields.find(
+        (f) => f.key === 'rowData',
+      )
+      expect(rowDataField?.subFields).toHaveLength(2)
+      const valueField = rowDataField?.subFields?.find((f) => f.key === 'value')
+      expect(valueField?.type).toBe('string')
+      expect(valueField?.isDynamic).toBeUndefined()
+    })
+
+    it('leaves source-less dynamic dropdown without isDynamic (no source.arguments)', async () => {
+      const apps = await listAppsService(user)
+      const slack = apps.find((a) => a.key === 'slack')
+      const channelField = slack?.actions[0].fields.find(
+        (f) => f.key === 'channel',
+      )
+      expect(channelField?.isDynamic).toBeUndefined()
+      expect(channelField?.dynamicDataKey).toBeUndefined()
+    })
   })
 
   it('includes required flag on fields', async () => {
