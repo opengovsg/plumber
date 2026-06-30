@@ -4,7 +4,8 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
-import { describe, expect, it, vi } from 'vitest'
+import { Settings as LuxonSettings } from 'luxon'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { archiveExecution } from '../archive-execution'
 import {
@@ -14,6 +15,13 @@ import {
 import type { ExecutionRow, ExecutionStepRow } from '../types'
 
 vi.mock('./logger')
+
+// TZ formatting replicated here (see appConfig) as tests don't load the app
+// config module.
+beforeAll(() => {
+  LuxonSettings.defaultZone = 'Asia/Singapore'
+  LuxonSettings.defaultLocale = 'en-SG'
+})
 
 const mockExecution: ExecutionRow = {
   id: 'exec-1',
@@ -182,6 +190,56 @@ describe('archiveExecution', () => {
 
     expect(result).toBe('skipped')
     expect(knexClient.transaction).not.toHaveBeenCalled()
+  })
+
+  describe('archived-at metadata', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('is stamped in SGT (UTC+8), not UTC', async () => {
+      // 2025-01-15T00:00:00Z UTC = 2025-01-15T08:00:00+08:00 SGT
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2025-01-15T00:00:00.000Z'))
+
+      const s3 = makeMockS3()
+      const knexClient = makeMockKnex()
+
+      await archiveExecution(mockExecution, mockSteps, {
+        ...baseOpts,
+        s3Client: s3,
+        knexClient,
+      })
+
+      const putCall = (s3.send as ReturnType<typeof vi.fn>).mock.calls.find(
+        ([cmd]) => cmd instanceof PutObjectCommand,
+      )
+      expect(putCall[0].input.Metadata['archived-at']).toBe(
+        '2025-01-15T08:00:00.000+08:00',
+      )
+    })
+
+    it('correctly crosses midnight — UTC 16:00 is next SGT day', async () => {
+      // 2025-01-15T16:00:00Z UTC = 2025-01-16T00:00:00+08:00 SGT
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2025-01-15T16:00:00.000Z'))
+
+      const s3 = makeMockS3()
+      const knexClient = makeMockKnex()
+
+      await archiveExecution(mockExecution, mockSteps, {
+        ...baseOpts,
+        s3Client: s3,
+        knexClient,
+      })
+
+      const putCall = (s3.send as ReturnType<typeof vi.fn>).mock.calls.find(
+        ([cmd]) => cmd instanceof PutObjectCommand,
+      )
+      expect(putCall[0].input.Metadata['archived-at']).toBe(
+        '2025-01-16T00:00:00.000+08:00',
+      )
+    })
   })
 
   it('builds the correct S3 key', async () => {

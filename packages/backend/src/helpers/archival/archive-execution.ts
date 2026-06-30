@@ -1,5 +1,6 @@
 import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
+import { DateTime } from 'luxon'
 import { promisify } from 'node:util'
 import { gzip } from 'node:zlib'
 
@@ -39,7 +40,7 @@ export async function archiveExecution(
       'flow-id': execution.flowId,
       'execution-id': execution.id,
       'execution-created-at': execution.createdAt,
-      'archived-at': new Date().toISOString(),
+      'archived-at': DateTime.now().toISO(),
       'step-count': String(steps.length),
       'archival-run-at': opts.runAt,
     },
