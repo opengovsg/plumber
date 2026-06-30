@@ -38,6 +38,59 @@ describe('buildS3Key', () => {
       createdAt: '2025-03-05T00:00:00.000Z',
       testRun: false,
     })
+    // 2025-03-05T00:00Z is 2025-03-05T08:00 SGT — still March
     expect(key).toContain('month=03')
+  })
+
+  describe('SGT month boundary', () => {
+    // SGT = UTC+8, so the flip point is 16:00:00 UTC (= 00:00:00 SGT next day)
+
+    it('last second of month in SGT stays in that month', () => {
+      // 2025-01-31T15:59:59Z = 2025-01-31T23:59:59+08:00 SGT
+      const key = buildS3Key({
+        flowId: 'f',
+        id: 'e',
+        createdAt: '2025-01-31T15:59:59.000Z',
+        testRun: false,
+      })
+      expect(key).toContain('year=2025')
+      expect(key).toContain('month=01')
+    })
+
+    it('first second of next month in SGT rolls over', () => {
+      // 2025-01-31T16:00:00Z = 2025-02-01T00:00:00+08:00 SGT
+      const key = buildS3Key({
+        flowId: 'f',
+        id: 'e',
+        createdAt: '2025-01-31T16:00:00.000Z',
+        testRun: false,
+      })
+      expect(key).toContain('year=2025')
+      expect(key).toContain('month=02')
+    })
+
+    it('last second of year in SGT stays in that year', () => {
+      // 2024-12-31T15:59:59Z = 2024-12-31T23:59:59+08:00 SGT
+      const key = buildS3Key({
+        flowId: 'f',
+        id: 'e',
+        createdAt: '2024-12-31T15:59:59.000Z',
+        testRun: false,
+      })
+      expect(key).toContain('year=2024')
+      expect(key).toContain('month=12')
+    })
+
+    it('first second of new year in SGT rolls over', () => {
+      // 2024-12-31T16:00:00Z = 2025-01-01T00:00:00+08:00 SGT
+      const key = buildS3Key({
+        flowId: 'f',
+        id: 'e',
+        createdAt: '2024-12-31T16:00:00.000Z',
+        testRun: false,
+      })
+      expect(key).toContain('year=2025')
+      expect(key).toContain('month=01')
+    })
   })
 })
