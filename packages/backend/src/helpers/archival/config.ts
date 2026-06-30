@@ -1,5 +1,7 @@
 import 'dotenv/config'
 
+const isDev = (process.env.APP_ENV ?? 'development') === 'development'
+
 function requireInt(name: string, defaultValue: number): number {
   const raw = process.env[name]
   const value = parseInt(raw ?? String(defaultValue), 10)
@@ -17,14 +19,26 @@ function requireString(name: string): string {
   return value
 }
 
+// Falls back to devDefault in dev; throws in non-dev envs.
+function devString(name: string, devDefault: string): string {
+  const value = process.env[name]
+  if (value) {
+    return value
+  }
+  if (isDev) {
+    return devDefault
+  }
+  throw new Error(`${name} must be set`)
+}
+
 export const archivalConfig = {
-  isDev: (process.env.APP_ENV ?? 'development') === 'development',
+  isDev,
   // Postgres — mirrors the fields used by @/config/database
   postgresHost:
-    process.env.RDS_PROXY_HOST ?? process.env.POSTGRES_HOST ?? 'localhost',
+    process.env.RDS_PROXY_HOST ?? devString('POSTGRES_HOST', 'localhost'),
   postgresPort: requireInt('POSTGRES_PORT', 5432),
-  postgresDatabase: process.env.POSTGRES_DATABASE ?? 'plumber_dev',
-  postgresUsername: process.env.POSTGRES_USERNAME ?? 'postgres',
+  postgresDatabase: devString('POSTGRES_DATABASE', 'plumber_dev'),
+  postgresUsername: devString('POSTGRES_USERNAME', 'postgres'),
   postgresPassword: process.env.POSTGRES_PASSWORD,
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
   // Postgres reader endpoint for archival read traffic (eligibility scan,
