@@ -1294,6 +1294,10 @@ export interface IMcpAppField {
   description?: string
   required: boolean
   options?: Array<{ label: string; value: string }>
+  isDynamic?: boolean
+  dynamicDataKey?: string
+  dynamicDataParameters?: Record<string, string>
+  subFields?: IMcpAppField[]
 }
 
 export interface IMcpAppAction {
