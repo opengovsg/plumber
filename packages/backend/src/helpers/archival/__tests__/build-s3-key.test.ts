@@ -1,10 +1,18 @@
-import { describe, expect, it } from 'vitest'
+import { Settings as LuxonSettings } from 'luxon'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   buildS3Key,
   S3_PREFIX_EXECUTIONS,
   S3_PREFIX_TEST_EXECUTIONS,
 } from '../build-s3-key'
+
+// TZ formatting replicated here (see appConfig) as tests don't load the app
+// config module.
+beforeAll(() => {
+  LuxonSettings.defaultZone = 'Asia/Singapore'
+  LuxonSettings.defaultLocale = 'en-SG'
+})
 
 describe('buildS3Key', () => {
   it('builds the correct key for non-test executions', () => {
