@@ -32,6 +32,7 @@ vi.mock('@/apps', () => ({
     slack: {
       key: 'slack',
       name: 'Slack',
+      auth: {},
       triggers: [],
       actions: [
         {
@@ -99,6 +100,14 @@ describe('listAppsService', () => {
     const slack = apps.find((a) => a.key === 'slack')
     expect(slack?.triggers).toHaveLength(0)
     expect(slack?.actions).toHaveLength(1)
+  })
+
+  it('sets requiresConnection based on whether app has auth', async () => {
+    const apps = await listAppsService(user)
+    const slack = apps.find((a) => a.key === 'slack')
+    const formsg = apps.find((a) => a.key === 'formsg')
+    expect(slack?.requiresConnection).toBe(true)
+    expect(formsg?.requiresConnection).toBe(false)
   })
 
   it('serializes static dropdown options', async () => {
