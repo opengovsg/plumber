@@ -14,13 +14,21 @@ import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
+import {
+  POSTMAN_ACCEPTED_EXTENSIONS,
+  SES_BLOCKED_EXTENSIONS,
+} from '../../common/constants'
 import { dataOutSchema } from '../../common/data-out-validator'
-import { sendTransactionalEmails } from '../../common/email-helper'
+import {
+  resolveSesRouting,
+  sendTransactionalEmails,
+} from '../../common/email-helper'
 import {
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
 import {
+  AttachmentExtensionPolicy,
   filterAttachments,
   getDefaultReplyTo,
 } from '../../common/parameters-helper'
@@ -208,6 +216,24 @@ async function sendEmail(
     // Don't do partial retry in test runs! always send to all recipients
     !$.execution.testRun
 
+  if (isPartialRetry) {
+    const { status, recipient } = prevDataOutParseResult.data
+    recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
+  }
+
+  // Resolve the transport once, on the configured attachments and the actual
+  // send recipients. This single decision drives both the file-type policy (SES
+  // accepts everything except its executable block-list; Postman keeps its
+  // narrower allow-list) and the send itself, so the transport can't flip if
+  // filtering later strips every attachment.
+  const useSes = await resolveSesRouting(
+    recipientsToSend,
+    result.data.attachments.length > 0,
+  )
+  const extensionPolicy: AttachmentExtensionPolicy = useSes
+    ? { mode: 'block', extensions: SES_BLOCKED_EXTENSIONS }
+    : { mode: 'allow', extensions: POSTMAN_ACCEPTED_EXTENSIONS }
+
   const {
     attachmentFiles,
     invalidAttachments,
@@ -218,12 +244,8 @@ async function sendEmail(
     attachmentsList: result.data.attachments,
     isPartialRetry,
     lastExecutionStep,
+    extensionPolicy,
   })
-
-  if (isPartialRetry) {
-    const { status, recipient } = prevDataOutParseResult.data
-    recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
-  }
 
   const { dataOut, error, errorStatus } = await sendTransactionalEmails(
     $.http,
@@ -241,6 +263,7 @@ async function sendEmail(
       senderName: result.data.senderName,
       attachments: attachmentFiles,
     },
+    useSes,
   )
 
   /**

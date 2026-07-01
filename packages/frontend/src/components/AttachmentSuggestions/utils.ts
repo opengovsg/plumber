@@ -10,38 +10,6 @@ export const MAX_NUM_FILES = 10
 const MAX_FILE_SIZE = 10 * MB // 10MB
 const MAX_TOTAL_FILE_SIZE = 10 * MB // 10MB
 
-export const ACCEPTED_FILE_TYPES = [
-  'text/plain', // .txt, .asc
-  'video/x-msvideo', // .avi
-  'image/bmp', // .bmp
-  'text/csv', // .csv
-  'application/x-dgn', // .dgn
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-  'application/x-dwf', // .dwf
-  'application/x-dwg', // .dwg
-  'application/x-dxf', // .dxf
-  'application/x-ent', // .ent
-  'image/gif', // .gif
-  'image/jpeg', // .jpg, .jpeg
-  'video/mpeg', // .mpeg, .mpg
-  'application/vnd.ms-project', // .mpp
-  'application/vnd.oasis.opendocument.database', // .odb
-  'application/vnd.oasis.opendocument.formula', // .odf
-  'application/vnd.oasis.opendocument.graphics', // .odg
-  'application/vnd.oasis.opendocument.spreadsheet', // .ods
-  'application/pdf', // .pdf
-  'image/png', // .png
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-  'application/rtf', // .rtf
-  'application/vnd.sun.xml.calc', // .sxc
-  'application/vnd.sun.xml.draw', // .sxd
-  'application/vnd.sun.xml.impress', // .sxi
-  'application/vnd.sun.xml.writer', // .sxw
-  'image/tiff', // .tif, .tiff
-  'video/x-ms-wmv', // .wmv
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-]
-
 export interface AttachmentConfigInput {
   name: string
   displayedValue: string
