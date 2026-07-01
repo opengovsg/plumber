@@ -1,8 +1,57 @@
 import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 
+import { buildAttachmentMetadata } from '../../common/data-out-metadata-helpers'
 import { decodeFieldName } from '../../common/utils'
 
 import { dataOutSchema } from './schema'
+
+type Attachment = {
+  attachmentUuid?: string
+  name?: string
+  mimeType?: string
+  size?: number
+  s3Id?: string
+}
+
+function resolveAttachments(
+  attachments: Attachment[] | Record<string, unknown> | null | undefined,
+) {
+  // New format (array): each attachment has an s3Id and is surfaced as a
+  // downloadable file link via buildAttachmentMetadata.
+  if (Array.isArray(attachments)) {
+    const keys: string[] = []
+    const metadata: ReturnType<typeof buildAttachmentMetadata>[] = []
+    for (const attachment of attachments) {
+      if (attachment.attachmentUuid) {
+        keys.push(attachment.attachmentUuid)
+      }
+      try {
+        metadata.push(buildAttachmentMetadata(attachment))
+      } catch {
+        // skip malformed attachment without aborting the rest
+      }
+    }
+    return { metadata, keys }
+  }
+
+  // Legacy format (Record<attachmentUuid, {name,mimeType,size}>): no s3Id, so
+  // nothing useful to show — hide all fields but still track the UUIDs so the
+  // attachment ID arrays in fieldsMetadata are correctly hidden too.
+  if (attachments) {
+    const keys = Object.keys(attachments)
+    const metadata = Object.create(null)
+    for (const key of keys) {
+      metadata[key] = {
+        name: { isHidden: true },
+        mimeType: { isHidden: true },
+        size: { isHidden: true },
+      }
+    }
+    return { metadata, keys }
+  }
+
+  return { metadata: undefined, keys: [] as string[] }
+}
 
 async function getDataOutMetadata(
   step: IExecutionStep,
@@ -71,19 +120,8 @@ async function getDataOutMetadata(
     }
   }
 
-  const attachmentsMetadata = Object.create(null)
-  const attachmentKeys: string[] = []
-  if (dataOut.attachments) {
-    for (const key of Object.keys(dataOut.attachments)) {
-      attachmentsMetadata[key] = {
-        name: { isHidden: true },
-        mimeType: { isHidden: true },
-        size: { isHidden: true },
-      }
-
-      attachmentKeys.push(key)
-    }
-  }
+  const { metadata: attachmentsMetadata, keys: attachmentKeys } =
+    resolveAttachments(dataOut.attachments)
 
   // handle hex-encoded field names from dataOut
   const fieldsMetadata = Object.create(null)

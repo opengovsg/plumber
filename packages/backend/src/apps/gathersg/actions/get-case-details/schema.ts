@@ -29,14 +29,18 @@ export const dataOutSchema = z.object({
         .nullish(),
       tags: z.array(z.string()).nullish(),
       attachments: z
-        .record(
-          z.string(),
-          z.object({
-            name: z.string().min(1),
-            mimeType: z.string().min(1),
-            size: z.number(),
-          }),
-        )
+        .union([
+          z.array(
+            z.object({
+              attachmentUuid: z.string().min(1),
+              name: z.string().min(1),
+              mimeType: z.string().min(1),
+              size: z.number(),
+              s3Id: z.string().min(1).optional(),
+            }),
+          ),
+          z.record(z.string(), z.any()),
+        ])
         .nullish(),
       email: z.record(z.string(), z.any()).nullish(),
     })
