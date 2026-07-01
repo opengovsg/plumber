@@ -78,7 +78,7 @@ export default function ChoicePicker({
         </Flex>
 
         {currentQ.options.length > 0 && (
-          <Flex direction="column" gap={2}>
+          <Flex direction="column" gap={2} maxH="360px" overflowY="auto">
             {currentQ.options.map((opt, optIdx) => (
               <Button
                 key={optIdx}
