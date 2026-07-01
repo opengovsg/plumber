@@ -51,6 +51,7 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
     .map((app) => ({
       key: app.key,
       name: app.name,
+      requiresConnection: !!app.auth,
       triggers: (app.triggers ?? [])
         .filter((t) => allLdFlags[`app_${app.key}_trigger_${t.key}`] !== false)
         .map((t) => {
