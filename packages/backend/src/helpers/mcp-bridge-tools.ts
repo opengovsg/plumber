@@ -102,7 +102,7 @@ export function createMcpBridgeTools(user: User) {
 
     create_step: tool({
       description:
-        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId if given; otherwise appends at the end. Returns the created step.',
+        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.',
       inputSchema: z.object({
         pipe_id: z.string().describe('ID of the pipe to add the step to'),
         app_key: z.string().describe('App key (e.g. "slack")'),
@@ -111,9 +111,8 @@ export function createMcpBridgeTools(user: User) {
           .describe('Action key (e.g. "sendMessageToChannel")'),
         previous_step_id: z
           .string()
-          .optional()
           .describe(
-            'ID of the step after which to insert. Omit to append at the end.',
+            "ID of the step after which to insert. Pass the last step's id to append at the end.",
           ),
       }),
       execute: async ({
