@@ -38,6 +38,7 @@ import { AuthenticatedRequest } from '@/types/express/context'
 
 import { serializeMessagesForLangfuse } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
+import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { chatRequestSchema } from './schema'
 
 const MAX_MESSAGES = 50
@@ -257,6 +258,14 @@ const handleChatStream = observe(
                       data: { questions },
                     })
                   }
+
+                  const dynamicPicker = parseDynamicPickerBlock(event.text)
+                  if (dynamicPicker) {
+                    writer.write({
+                      type: 'data-dynamicPicker',
+                      data: dynamicPicker,
+                    })
+                  }
                 } else {
                   // Old YAML path — unchanged
                   const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
@@ -298,6 +307,14 @@ const handleChatStream = observe(
                       writer.write({
                         type: 'data-clarification',
                         data: { questions },
+                      })
+                    }
+
+                    const dynamicPicker = parseDynamicPickerBlock(event.text)
+                    if (dynamicPicker) {
+                      writer.write({
+                        type: 'data-dynamicPicker',
+                        data: dynamicPicker,
                       })
                     }
                   }
