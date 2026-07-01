@@ -969,12 +969,12 @@ describe('send transactional email', () => {
       expect(mime).toContain('X-Plumber-Transport: ses')
     })
 
-    it('rejects with ATTACHMENT-SIZE-EXCEEDED when SES attachments exceed 10MB total', async () => {
+    it('rejects with ATTACHMENT-SIZE-EXCEEDED when SES attachments exceed 20MB total', async () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       mocks.filterAttachments.mockReturnValueOnce({
         attachmentFiles: [
-          { fileName: 'big.pdf', data: new Uint8Array(10 * 1024 * 1024 + 1) },
+          { fileName: 'big.pdf', data: new Uint8Array(20 * 1024 * 1024 + 1) },
         ],
         invalidAttachments: [],
         submissionId: null,
