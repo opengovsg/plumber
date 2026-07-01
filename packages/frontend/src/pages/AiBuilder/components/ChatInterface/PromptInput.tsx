@@ -10,8 +10,12 @@ import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 
-import { type ClarificationQuestion } from '@/hooks/useChatStream'
+import {
+  type ClarificationQuestion,
+  type DynamicPickerPart,
+} from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
+import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
@@ -23,6 +27,7 @@ interface PromptInputProps {
   sendMessage: (message: string) => void
   cancelStream: () => void
   clarification?: ClarificationQuestion[]
+  dynamicPicker?: DynamicPickerPart['data']
 }
 
 export default function PromptInput({
@@ -33,6 +38,7 @@ export default function PromptInput({
   sendMessage,
   cancelStream,
   clarification,
+  dynamicPicker,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -114,6 +120,21 @@ export default function PromptInput({
 
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()
+
+  if (dynamicPicker) {
+    return (
+      <DynamicPicker
+        question={dynamicPicker.question}
+        stepId={dynamicPicker.stepId}
+        dynamicKey={dynamicPicker.key}
+        isStreaming={isStreaming}
+        onSelect={(name, value) => {
+          sendMessage(`Q: ${dynamicPicker.question}\nA: ${name} (id: ${value})`)
+        }}
+        cancelStream={cancelStream}
+      />
+    )
+  }
 
   if (clarification && clarification.length > 0) {
     return (
