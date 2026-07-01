@@ -1,6 +1,7 @@
 import { IStep } from '@plumber/types'
 
-import { useCallback, useContext, useMemo } from 'react'
+import { Fragment, useCallback, useContext, useMemo } from 'react'
+import { useMutation } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -9,11 +10,19 @@ import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
+import { StepEnumType } from '@/graphql/__generated__/graphql'
+import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
+import { GET_FLOW } from '@/graphql/queries/get-flow'
+import {
+  getEarlierBranchesStepIdToJumpTo,
+  isIfThenStep,
+} from '@/helpers/toolbox'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import { EDITOR_RIGHT_DRAWER_WIDTH } from '../constants'
 import { editorStyles } from '../styles'
 
+import { AddStepButton } from './AddStepButton'
 import FlowStepWithAddButton from './FlowStepWithAddButton'
 
 interface StepsListProps {
@@ -26,6 +35,9 @@ export function StepsList({ isNested }: StepsListProps) {
   const { flow, isDrawerOpen, isMobile, readOnly } = useContext(EditorContext)
   const { mrfSteps, mrfApprovalSteps, approvalBranches } =
     useContext(MrfContext)
+  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
+    refetchQueries: [GET_FLOW],
+  })
 
   const { calculateReorderedSteps, handleReorderUpdate } = useReorderSteps(
     flow.id,
@@ -136,12 +148,66 @@ export function StepsList({ isNested }: StepsListProps) {
           const previousRegion = regionList[regionIndex - 1]
           const stepsBeforeGroup =
             previousRegion?.type === 'SingleSteps' ? previousRegion.steps : []
+          const { branches } = region
+          const isIfThenBlock = isIfThenStep(branches[0]?.[0])
+          const lastBranch = branches[branches.length - 1]
+          const lastBranchIfThen = lastBranch?.[0]
+          const blockLastStep = lastBranch?.[lastBranch.length - 1]
           return (
-            <FlowStepGroup
-              key={`block-${region.branches[0]?.[0]?.id ?? regionIndex}`}
-              stepsBeforeGroup={stepsBeforeGroup}
-              groupedSteps={region.branches}
-            />
+            <Fragment key={`block-${branches[0]?.[0]?.id ?? regionIndex}`}>
+              <FlowStepGroup
+                stepsBeforeGroup={stepsBeforeGroup}
+                groupedSteps={branches}
+              />
+              {/* Add a step immediately after the block, before any following
+                  region. Rendered after every if-then block (for-each stays a
+                  terminal group). Repoints the block's last branch at the new
+                  step so the block ends there instead of absorbing it; the new
+                  step becomes the first step of the following region (or a fresh
+                  trailing region when the block is last). isLastStep reflects
+                  whether the block currently ends the flow. */}
+              {isIfThenBlock && lastBranchIfThen && blockLastStep && (
+                <AddStepButton
+                  isLastStep={isLastRegion}
+                  step={blockLastStep}
+                  isHidden={readOnly}
+                  isDisabled={false}
+                  showEmptyAction={false}
+                  onAfterCreateStep={async (createdStep) => {
+                    // Repoint the block's last branch at the new step (its
+                    // position is unchanged; the entry just carries the new step
+                    // to jump to and anchors the mutation). For a legacy block
+                    // the earlier branches carry no chain yet, so send their
+                    // step-to-jump-to updates as auxiliary changes (branch
+                    // if-thens aren't contiguous) — this upgrades the whole block
+                    // to new-style so buildRegionList reads the new step as the
+                    // block's exit. No-ops for an already-chained block.
+                    const earlierBranchJumpTargets =
+                      getEarlierBranchesStepIdToJumpTo(branches)
+                    await updateStepPositions({
+                      variables: {
+                        input: {
+                          stepPositions: [
+                            {
+                              id: lastBranchIfThen.id,
+                              position: lastBranchIfThen.position,
+                              type: lastBranchIfThen.type as StepEnumType,
+                              stepIdToJumpTo: createdStep.id,
+                            },
+                          ],
+                          ...(earlierBranchJumpTargets.length > 0 && {
+                            auxiliaryChanges: earlierBranchJumpTargets.map(
+                              (jumpTarget) => ({ ifThen: jumpTarget }),
+                            ),
+                          }),
+                          flow: { updatedAt: createdStep.flow.updatedAt },
+                        },
+                      },
+                    })
+                  }}
+                />
+              )}
+            </Fragment>
           )
         }
 

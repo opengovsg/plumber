@@ -4,6 +4,11 @@ import { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 
 import { createContext, useCallback, useState } from 'react'
 
+// Runs after the modal creates a step (after the editor's onCreateStep and its
+// refetch), receiving the created step. Used e.g. to repoint an if-then block's
+// last branch at the new step; the hook issues its own write + refetch.
+export type OnAfterCreateStep = (createdStep: IStep) => Promise<void>
+
 interface FlowStepConfigurationContextValue {
   modalState: ModalState
   patchModalState: (modalState: Partial<ModalState>) => void
@@ -12,6 +17,9 @@ interface FlowStepConfigurationContextValue {
   prevStep?: IStep
   prevStepId?: string
   step?: IStep
+  // Optional hook forwarded to the editor's onCreateStep, run after the step is
+  // created (e.g. to repoint an if-then block's last branch at the new step).
+  onAfterCreateStep?: OnAfterCreateStep
 }
 
 export const FlowStepConfigurationContext =
@@ -52,6 +60,7 @@ interface FlowStepConfigurationContextProps {
   isTrigger: boolean
   isLastStep: boolean
   prevStep?: IStep
+  onAfterCreateStep?: OnAfterCreateStep
   children: React.ReactNode
 }
 
@@ -62,6 +71,7 @@ export const FlowStepConfigurationContextProvider = ({
   isTrigger,
   isLastStep,
   prevStep,
+  onAfterCreateStep,
   children,
 }: FlowStepConfigurationContextProps) => {
   const [modalState, setModalState] = useState<ModalState>({
@@ -86,6 +96,7 @@ export const FlowStepConfigurationContextProvider = ({
         prevStep,
         prevStepId: prevStep?.id,
         step,
+        onAfterCreateStep,
       }}
     >
       {children}

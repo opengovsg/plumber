@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildRegionList,
   computeJumpTargets,
+  getEarlierBranchesStepIdToJumpTo,
   type StepRegion,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
@@ -118,5 +119,83 @@ describe('computeJumpTargets', () => {
     // The recomputed targets match what the steps already store.
     expect(targets.get('b1')).toBe('b2')
     expect(targets.get('b2')).toBe('after')
+  })
+})
+
+describe('getEarlierBranchesStepIdToJumpTo', () => {
+  it("points each branch except the last at the next branch's if-then", () => {
+    const b1 = ifThen('b1')
+    const b1a = step()
+    const b2 = ifThen('b2')
+    const b2a = step()
+    const b3 = ifThen('b3')
+    const b3a = step()
+
+    expect(
+      getEarlierBranchesStepIdToJumpTo([
+        [b1, b1a],
+        [b2, b2a],
+        [b3, b3a],
+      ]),
+    ).toEqual([
+      { stepId: 'b1', stepIdToJumpTo: 'b2' },
+      { stepId: 'b2', stepIdToJumpTo: 'b3' },
+    ])
+  })
+
+  it('returns an empty array for a single-branch block', () => {
+    const b1 = ifThen('b1')
+    const b1a = step()
+
+    expect(getEarlierBranchesStepIdToJumpTo([[b1, b1a]])).toEqual([])
+  })
+
+  it('upgrades a legacy block so an added after-block step reads as its exit', () => {
+    // A legacy if-then block (no branch carries a step to jump to) at the end
+    // of the flow, with a step freshly added after it.
+    const b1 = ifThen('b1')
+    const b1a = step()
+    const b2 = ifThen('b2')
+    const b2a = step()
+    const created = step({ id: 'created' })
+    const steps = [b1, b1a, b2, b2a, created]
+
+    // Before the handler's writes, the legacy block runs to the end of the flow
+    // and swallows the new step into its last branch.
+    const before = buildRegionList(steps, GROUPING_ACTIONS)
+    expect(before.map((r) => r.type)).toEqual(['SingleSteps', 'Block'])
+    expect(before[1]).toMatchObject({
+      branches: [
+        [b1, b1a],
+        [b2, b2a, created],
+      ],
+    })
+
+    // Apply exactly what the after-block handler writes: the last branch jumps
+    // to the new step, and getEarlierBranchesStepIdToJumpTo chains the rest.
+    b2.parameters = { ...b2.parameters, stepIdToJumpTo: 'created' }
+    for (const { stepId, stepIdToJumpTo } of getEarlierBranchesStepIdToJumpTo([
+      [b1, b1a],
+      [b2, b2a],
+    ])) {
+      const branchStep = steps.find((s) => s.id === stepId)!
+      branchStep.parameters = { ...branchStep.parameters, stepIdToJumpTo }
+    }
+
+    // Now the block exits at the new step: two branches, then a SingleSteps
+    // region holding the added step.
+    const after = buildRegionList(steps, GROUPING_ACTIONS)
+    expect(after.map((r) => r.type)).toEqual([
+      'SingleSteps',
+      'Block',
+      'SingleSteps',
+    ])
+    expect(after[1]).toMatchObject({
+      branches: [
+        [b1, b1a],
+        [b2, b2a],
+      ],
+    })
+    expect(after[2]).toEqual({ type: 'SingleSteps', steps: [created] })
   })
 })

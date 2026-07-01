@@ -8,6 +8,7 @@ import ChooseAppAndEvent from './ChooseAppAndEvent'
 import {
   FlowStepConfigurationContext,
   FlowStepConfigurationContextProvider,
+  type OnAfterCreateStep,
 } from './FlowStepConfigurationContext'
 import InvalidModalScreen from './InvalidModalScreen'
 import LoadingOverlay from './LoadingOverlay'
@@ -21,6 +22,9 @@ interface FlowStepConfigurationModalProps {
   app?: IApp
   event?: ITrigger | IAction
   prevStep?: IStep
+  // Post-create hook forwarded to onCreateStep; used e.g. to repoint an if-then
+  // block's last branch when adding a step after the block.
+  onAfterCreateStep?: OnAfterCreateStep
 }
 
 function FlowStepConfigurationModalContent({
@@ -53,7 +57,16 @@ function FlowStepConfigurationModalContent({
 export default function FlowStepConfigurationModal(
   props: FlowStepConfigurationModalProps,
 ): JSX.Element {
-  const { onClose, isTrigger, isLastStep, step, app, event, prevStep } = props
+  const {
+    onClose,
+    isTrigger,
+    isLastStep,
+    step,
+    app,
+    event,
+    prevStep,
+    onAfterCreateStep,
+  } = props
 
   return (
     <FlowStepConfigurationContextProvider
@@ -62,6 +75,7 @@ export default function FlowStepConfigurationModal(
       app={app}
       event={event}
       prevStep={prevStep}
+      onAfterCreateStep={onAfterCreateStep}
       step={step}
     >
       <Modal

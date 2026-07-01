@@ -232,7 +232,18 @@ export const EditorProvider = ({
 
       // account for the for-each and if-then
       if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
-        newStep = await initializeIfThen(newStep)
+        // The new block exits to the step that followed the anchor step before
+        // the insert, or stops (the null sentinel) when the block is added at
+        // the end of the flow. `flow.steps` still holds the pre-insert flow.
+        const previousStep = flow.steps.find(
+          (s: IStep) => s.id === previousStepId,
+        )
+        const nextStep =
+          previousStep &&
+          flow.steps.find(
+            (s: IStep) => s.position === previousStep.position + 1,
+          )
+        newStep = await initializeIfThen(newStep, nextStep?.id ?? null)
       }
       // we refetch GET_FLOW after everything is completed
       await client.refetchQueries({ include: [GET_FLOW] })

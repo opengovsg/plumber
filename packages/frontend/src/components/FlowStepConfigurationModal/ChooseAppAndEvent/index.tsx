@@ -47,12 +47,18 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     allApps,
     onDrawerOpen,
     setCurrentStepId,
+    flow,
     flowId,
   } = useContext(EditorContext)
 
-  const { modalState, patchModalState, prevStep, isTrigger, step } = useContext(
-    FlowStepConfigurationContext,
-  )
+  const {
+    modalState,
+    patchModalState,
+    prevStep,
+    isTrigger,
+    step,
+    onAfterCreateStep,
+  } = useContext(FlowStepConfigurationContext)
   const { approvalBranches } = useContext(MrfContext)
 
   const { currentScreen, selectedApp } = modalState
@@ -131,6 +137,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             systemConnection?.id || undefined,
             approvalConfig && { approval: approvalConfig },
           )
+          await onAfterCreateStep?.(createdStep)
           newStepId = createdStep.id
         } else if (step) {
           // This part of the code happens when updating an empty step
@@ -139,7 +146,13 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             app.key === TOOLBOX_APP_KEY &&
             triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
           ) {
-            const ifThen = await initializeIfThen(step)
+            // The converted step keeps its position, so the new block exits to
+            // the step that follows it — or stops (the null sentinel) when the
+            // converted step is the last in the flow.
+            const nextStep = flow.steps.find(
+              (s) => s.position === step.position + 1,
+            )
+            const ifThen = await initializeIfThen(step, nextStep?.id ?? null)
             newStepId = ifThen.id
           } else {
             const updatedStep = await onUpdateStep({
@@ -166,6 +179,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     },
     [
       fetchAppConnections,
+      flow,
       flowId,
       patchModalState,
       prevStep,
@@ -175,6 +189,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       setCurrentStepId,
       approvalBranches,
       onCreateStep,
+      onAfterCreateStep,
       initializeIfThen,
       onUpdateStep,
     ],

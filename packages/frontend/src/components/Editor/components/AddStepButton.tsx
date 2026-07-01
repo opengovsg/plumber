@@ -6,6 +6,7 @@ import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
+import { type OnAfterCreateStep } from '@/components/FlowStepConfigurationModal/FlowStepConfigurationContext'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import UnsavedChangesAlert from './UnsavedChangesAlert'
@@ -16,10 +17,20 @@ interface AddStepButtonProps {
   isLastStep: boolean
   showEmptyAction: boolean
   step: IStep
+  // Post-create hook forwarded to onCreateStep; used e.g. to repoint an if-then
+  // block's last branch when adding a step after the block.
+  onAfterCreateStep?: OnAfterCreateStep
 }
 
 export function AddStepButton(props: AddStepButtonProps): JSX.Element {
-  const { isHidden, isLastStep, step, isDisabled, showEmptyAction } = props
+  const {
+    isHidden,
+    isLastStep,
+    step,
+    isDisabled,
+    showEmptyAction,
+    onAfterCreateStep,
+  } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const {
@@ -111,6 +122,7 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
               isTrigger={false} // Can only add an action all the time
               isLastStep={isLastStep}
               prevStep={step}
+              onAfterCreateStep={onAfterCreateStep}
             />
           )}
         </>

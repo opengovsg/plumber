@@ -124,9 +124,14 @@ export function areAllIfThenBranchesCompleted(
 /**
  * Hook used for initializing If-then when the user _first_ chooses it via the
  * "Choose App & Event" substep.
+ *
+ * `lastBranchStepIdToJumpTo` is the new block's exit: the id of the step that
+ * follows the block (callers pass the step that followed the anchor step when
+ * the block was created), or null — the "stop" sentinel — when the block is
+ * added at the end of the flow.
  */
 export function useIfThenInitializer(): [
-  (currStep: IStep) => Promise<IStep>,
+  (currStep: IStep, lastBranchStepIdToJumpTo: string | null) => Promise<IStep>,
   boolean,
 ] {
   const [isInitializing, setIsInitializing] = useState(false)
@@ -144,7 +149,7 @@ export function useIfThenInitializer(): [
   const [createStep] = useMutation(CREATE_STEP, { fetchPolicy: 'no-cache' })
 
   const initialize = useCallback(
-    async (currStep: IStep) => {
+    async (currStep: IStep, lastBranchStepIdToJumpTo: string | null) => {
       setIsInitializing(true)
 
       const commonConfig = {
@@ -154,9 +159,10 @@ export function useIfThenInitializer(): [
       }
 
       // Create Branch 2 first so Branch 1 can point its step to jump to
-      // (stepIdToJumpTo) at Branch 2's if-then. A freshly created block is the
-      // last thing in the flow, so Branch 2 — the block's last branch — stops
-      // execution: its stepIdToJumpTo is the "stop" sentinel (null).
+      // (stepIdToJumpTo) at Branch 2's if-then. Branch 2 — the block's last
+      // branch — jumps to the block's exit: the step that followed the anchor
+      // step when the block was created, or the "stop" sentinel (null) when
+      // the block is added at the end of the flow.
       const createSecondBranch = await createStep({
         variables: {
           input: {
@@ -172,7 +178,7 @@ export function useIfThenInitializer(): [
             parameters: {
               depth,
               branchName: 'Branch 2',
-              stepIdToJumpTo: null,
+              stepIdToJumpTo: lastBranchStepIdToJumpTo,
             },
             config: commonConfig,
           },
@@ -352,4 +358,28 @@ export function computeJumpTargets(
   }
 
   return targets
+}
+
+/**
+ * The step-to-jump-to updates for every branch *except the last* of an if-then
+ * block: each points at the next branch's if-then. Returned as
+ * `{ stepId, stepIdToJumpTo }` pairs (empty for a single-branch block).
+ *
+ * Used when adding a step immediately after a block. The caller repoints the
+ * last branch at the new step; these updates chain the earlier branches. They
+ * matter for a *legacy* block (branches carry no step to jump to): the read
+ * path (`buildRegionList` → `findIfThenBlockExitIndex`) locates a block's exit
+ * by following the chain from the *first* branch, so unless every earlier
+ * branch also carries a marker the block is still read as running to the end of
+ * the flow — swallowing the new step into the last branch. Writing the whole
+ * chain upgrades the block to new-style. For an already-chained block these
+ * repeat existing values (no-ops).
+ */
+export function getEarlierBranchesStepIdToJumpTo(
+  branches: IStep[][],
+): Array<{ stepId: string; stepIdToJumpTo: string }> {
+  return branches.slice(0, -1).map((branch, index) => ({
+    stepId: branch[0].id,
+    stepIdToJumpTo: branches[index + 1][0].id,
+  }))
 }
