@@ -36,7 +36,6 @@ export async function archiveExecution(
     key,
     body: compressed,
     contentType: 'application/gzip',
-    checksumAlgorithm: 'SHA256',
     metadata: {
       'flow-id': execution.flowId,
       'execution-id': execution.id,
