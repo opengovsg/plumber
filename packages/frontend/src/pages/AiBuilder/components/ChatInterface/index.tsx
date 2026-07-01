@@ -49,6 +49,11 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       ? lastMessage.clarification
       : undefined
 
+  const activeDynamicPicker =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.dynamicPicker
+      : undefined
+
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
@@ -186,6 +191,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   isStreaming={isStreaming}
                   cancelStream={cancelStream}
                   clarification={activeClarification}
+                  dynamicPicker={activeDynamicPicker}
                 />
               )}
               {!isMobile && (
