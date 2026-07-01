@@ -1,3 +1,5 @@
+import type { IJSONObject } from '@plumber/types'
+
 import z from 'zod/v3'
 
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
@@ -13,6 +15,7 @@ export interface McpStepInput {
   key?: string | null
   type: 'trigger' | 'action'
   position: number
+  parameters?: Record<string, unknown>
 }
 
 export async function createFlowWithStepsService({
@@ -84,16 +87,26 @@ export async function createFlowWithStepsService({
       config: { aiBuilderConfig: { traceId } },
     })
 
+    let ifThenCount = 0
     await createdFlow.$relatedQuery('steps', trx).insert(
-      steps.map((step) => ({
-        version: getStepVersion(step.appKey, step.key ?? undefined),
-        type: step.type,
-        appKey: step.appKey,
-        key: step.key ?? null,
-        config: {},
-        parameters: {},
-        position: step.position,
-      })),
+      steps.map((step) => {
+        let defaults: Record<string, unknown> = {}
+        if (step.appKey === 'toolbox' && step.key === 'ifThen') {
+          defaults = { branchName: `Branch ${++ifThenCount}`, depth: '0' }
+        }
+        return {
+          version: getStepVersion(step.appKey, step.key ?? undefined),
+          type: step.type,
+          appKey: step.appKey,
+          key: step.key ?? null,
+          config: {},
+          parameters: {
+            ...defaults,
+            ...(step.parameters ?? {}),
+          } as IJSONObject,
+          position: step.position,
+        }
+      }),
     )
 
     return createdFlow

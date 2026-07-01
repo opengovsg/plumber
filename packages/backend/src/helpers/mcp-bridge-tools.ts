@@ -26,7 +26,7 @@ export function createMcpBridgeTools(user: User) {
 
     create_pipe: tool({
       description:
-        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation.',
+        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen steps, include parameters with branchName and conditions in the step.',
       inputSchema: z.object({
         name: z.string().describe('Human-readable name for the pipe'),
         steps: z
@@ -42,6 +42,12 @@ export function createMcpBridgeTools(user: User) {
                 .optional()
                 .describe(
                   'Action key for steps 1+ (e.g. "sendMessageToChannel")',
+                ),
+              parameters: z
+                .record(z.string(), z.unknown())
+                .optional()
+                .describe(
+                  'Initial parameter values for this step. For toolbox/ifThen steps pass branchName and conditions here.',
                 ),
             }),
           )
@@ -61,6 +67,7 @@ export function createMcpBridgeTools(user: User) {
               key: s.trigger_key ?? s.action_key ?? null,
               type: index === 0 ? 'trigger' : 'action',
               position: index + 1,
+              ...(s.parameters && { parameters: s.parameters }),
             }),
           ),
           traceId,

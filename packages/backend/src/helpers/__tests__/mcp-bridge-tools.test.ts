@@ -69,4 +69,43 @@ describe('createMcpBridgeTools', () => {
       traceId: 'trace-123',
     })
   })
+
+  it('create_pipe forwards parameters when present on a step', async () => {
+    const tools = createMcpBridgeTools(mockUser)
+    await tools.create_pipe.execute(
+      {
+        name: 'If-Then Pipe',
+        steps: [
+          { app_key: 'formsg', trigger_key: 'newSubmission' },
+          {
+            app_key: 'toolbox',
+            action_key: 'ifThen',
+            parameters: { branchName: 'High Priority' },
+          },
+        ],
+        traceId: 'trace-456',
+      },
+      { toolCallId: 'create_pipe', messages: [] },
+    )
+    expect(vi.mocked(createFlowWithStepsService)).toHaveBeenCalledWith({
+      user: mockUser,
+      name: 'If-Then Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+          parameters: { branchName: 'High Priority' },
+        },
+      ],
+      traceId: 'trace-456',
+    })
+  })
 })
