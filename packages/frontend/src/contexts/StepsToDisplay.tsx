@@ -3,7 +3,11 @@ import type { IApp, IStep } from '@plumber/types'
 import type { ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo } from 'react'
 
-import { extractBranchesWithSteps } from '@/helpers/toolbox'
+import {
+  buildRegionList,
+  extractBranchesWithSteps,
+  type StepRegion,
+} from '@/helpers/toolbox'
 
 import { EditorContext } from './Editor'
 import { MrfContext } from './MrfContext'
@@ -12,6 +16,7 @@ export type StepToDisplayContextValue = {
   triggerStep: IStep | null
   actionStepsBeforeGroup: IStep[]
   groupedSteps: IStep[][]
+  regionList: StepRegion[]
   appsWithActions: IApp[]
   groupingActions: Set<string> | null
   stepIdToOrder: Record<string, number>
@@ -21,6 +26,7 @@ export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
   triggerStep: null,
   actionStepsBeforeGroup: [],
   groupedSteps: [],
+  regionList: [],
   appsWithActions: [],
   groupingActions: null,
   stepIdToOrder: {},
@@ -128,6 +134,14 @@ export function StepsToDisplayProvider({
       : [triggerStep, stepsToDisplay.slice(1, groupStepIdx), branchesWithSteps]
   }, [groupingActions, stepsToDisplay])
 
+  const regionList = useMemo(() => {
+    if (!groupingActions) {
+      return []
+    }
+    // Region list covers the steps after the trigger.
+    return buildRegionList(stepsToDisplay.slice(1), groupingActions)
+  }, [groupingActions, stepsToDisplay])
+
   useEffect(() => {
     if (
       currentStepId &&
@@ -144,6 +158,7 @@ export function StepsToDisplayProvider({
         triggerStep,
         actionStepsBeforeGroup,
         groupedSteps,
+        regionList,
         appsWithActions,
         groupingActions,
         stepIdToOrder,
