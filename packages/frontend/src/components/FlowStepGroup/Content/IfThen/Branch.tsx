@@ -16,7 +16,9 @@ import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAl
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
+import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
+import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import useReorderSteps from '@/hooks/useReorderSteps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
@@ -30,10 +32,14 @@ import useDuplicateBranch from './useDuplicateBranch'
 interface BranchProps {
   branchSteps: IStep[]
   stepsBeforeGroup: IStep[]
+  // The if-then step of the branch immediately before this one in the block, or
+  // undefined for the first branch. Used to maintain the stepIdToJumpTo chain on
+  // deletion: the predecessor inherits this branch's step to jump to.
+  previousBranchStep?: IStep
 }
 
 export default function Branch(props: BranchProps) {
-  const { branchSteps } = props
+  const { branchSteps, previousBranchStep } = props
 
   const {
     flow,
@@ -55,6 +61,7 @@ export default function Branch(props: BranchProps) {
   const [deleteStep, { loading: isDeletingBranch }] = useMutation(DELETE_STEP, {
     refetchQueries: [GET_FLOW],
   })
+  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS)
   const { handleReorderUpdate } = useReorderSteps(flow.id)
   const openDeleteConfirmation = useCallback<MouseEventHandler>(
     (e) => {
@@ -65,9 +72,42 @@ export default function Branch(props: BranchProps) {
   )
   const deleteBranch = useCallback(async () => {
     const idsToDelete = branchSteps.map((step) => step.id)
+
+    // The predecessor branch inherits this branch's step to jump to so the
+    // chain skips the gap left by the deletion. Skip when there's no predecessor
+    // (deleting the first branch — nothing points to it) or when this is a
+    // legacy branch with no stored step to jump to (the execution scan handles
+    // those) — a branch is new-style iff parameters has the stepIdToJumpTo key.
+    const deletionParams = branchSteps[0].parameters
+    let updatedAt = flow.updatedAt
+    if (
+      previousBranchStep &&
+      deletionParams &&
+      Object.hasOwn(deletionParams, 'stepIdToJumpTo')
+    ) {
+      const deletedTarget = deletionParams.stepIdToJumpTo as string | null
+      const updatedPositions = await updateStepPositions({
+        variables: {
+          input: {
+            stepPositions: [
+              {
+                id: previousBranchStep.id,
+                position: previousBranchStep.position,
+                type: previousBranchStep.type as StepEnumType,
+                stepIdToJumpTo: deletedTarget,
+              },
+            ],
+            flow: { updatedAt },
+          },
+        },
+      })
+      updatedAt =
+        updatedPositions.data?.updateStepPositions?.updatedAt ?? updatedAt
+    }
+
     await deleteStep({
       variables: {
-        input: { ids: idsToDelete, flow: { updatedAt: flow.updatedAt } },
+        input: { ids: idsToDelete, flow: { updatedAt } },
       },
     })
 
@@ -76,6 +116,8 @@ export default function Branch(props: BranchProps) {
     onDrawerClose()
   }, [
     branchSteps,
+    previousBranchStep,
+    updateStepPositions,
     deleteStep,
     onDrawerClose,
     closeDeleteConfirmation,

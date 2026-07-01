@@ -8,7 +8,9 @@ import { Button } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
+import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
+import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
@@ -46,13 +48,26 @@ export default function IfThen(props: IfThenProps): JSX.Element {
   const [createStep, { loading: isAddingBranch }] = useMutation(CREATE_STEP, {
     refetchQueries: [GET_FLOW],
   })
+  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS)
   const onAddBranch = useCallback(async () => {
     if (isAddingBranch) {
       return
     }
 
-    const lastGroup = groupedSteps[groupedSteps.length - 1]
-    const lastStep = lastGroup[lastGroup.length - 1]
+    const lastBranch = groupedSteps[groupedSteps.length - 1]
+    const lastBranchIfThen = lastBranch[0]
+    const lastStep = lastBranch[lastBranch.length - 1]
+
+    // The new branch is appended at the end of the block, so it takes over as
+    // the last branch: it inherits the old last branch's step to jump to, and
+    // the old last branch is repointed at the new branch's if-then. A legacy
+    // last branch has no stored target, so the new branch inherits the "stop"
+    // sentinel (null) — a legacy block runs to the end of the flow.
+    const lastBranchStepIdToJumpTo =
+      (lastBranchIfThen.parameters?.stepIdToJumpTo as
+        | string
+        | null
+        | undefined) ?? null
 
     const approvalConfig = getMrfApprovalConfig({
       previousStep: lastStep,
@@ -74,10 +89,29 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           parameters: {
             depth,
             branchName: `Branch ${numBranches + 1}`,
+            stepIdToJumpTo: lastBranchStepIdToJumpTo,
           },
           config: {
             approval: approvalConfig,
           },
+        },
+      },
+    })
+    const newBranchStep = branchStep.data.createStep
+
+    // Repoint the old last branch's step to jump to at the new branch.
+    const updatedPositions = await updateStepPositions({
+      variables: {
+        input: {
+          stepPositions: [
+            {
+              id: lastBranchIfThen.id,
+              position: lastBranchIfThen.position,
+              type: lastBranchIfThen.type as StepEnumType,
+              stepIdToJumpTo: newBranchStep.id,
+            },
+          ],
+          flow: { updatedAt: newBranchStep.flow.updatedAt },
         },
       },
     })
@@ -88,11 +122,11 @@ export default function IfThen(props: IfThenProps): JSX.Element {
       variables: {
         input: {
           previousStep: {
-            id: branchStep.data.createStep.id,
+            id: newBranchStep.id,
           },
           flow: {
             id: flowId,
-            updatedAt: branchStep.data.createStep.flow.updatedAt,
+            updatedAt: updatedPositions.data?.updateStepPositions?.updatedAt,
           },
           config: {
             approval: approvalConfig,
@@ -101,12 +135,13 @@ export default function IfThen(props: IfThenProps): JSX.Element {
       },
     })
 
-    setCurrentStepId(branchStep.data.createStep.id)
+    setCurrentStepId(newBranchStep.id)
     onDrawerOpen()
   }, [
     isAddingBranch,
     groupedSteps,
     createStep,
+    updateStepPositions,
     flowId,
     depth,
     approvalBranches,
@@ -119,12 +154,15 @@ export default function IfThen(props: IfThenProps): JSX.Element {
   return (
     <Flex flexDir="column" alignItems="center" gap={4} w="100%" mt={2}>
       <Flex flexDir="column" w="100%" px={2} gap={4}>
-        {groupedSteps.map((branchSteps) => {
+        {groupedSteps.map((branchSteps, index) => {
           return (
             <Branch
               key={branchSteps[0].id}
               branchSteps={branchSteps}
               stepsBeforeGroup={stepsBeforeGroup}
+              previousBranchStep={
+                index > 0 ? groupedSteps[index - 1][0] : undefined
+              }
             />
           )
         })}

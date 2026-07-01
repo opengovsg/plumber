@@ -153,28 +153,10 @@ export function useIfThenInitializer(): [
         }),
       }
 
-      const updateFirstBranch = await updateStep({
-        variables: {
-          input: {
-            id: currStep.id,
-            appKey: TOOLBOX_APP_KEY,
-            key: TOOLBOX_ACTIONS.IfThen,
-            flow: {
-              id: currStep.flowId,
-              updatedAt: currStep.flow.updatedAt,
-            },
-            parameters: {
-              branchName: 'Branch 1',
-              depth,
-            },
-            connection: {
-              id: null,
-            },
-            // no need to set config here since it's already set
-          },
-        },
-      })
-      const updatedFirstBranch = updateFirstBranch?.data?.updateStep
+      // Create Branch 2 first so Branch 1 can point its step to jump to
+      // (stepIdToJumpTo) at Branch 2's if-then. A freshly created block is the
+      // last thing in the flow, so Branch 2 — the block's last branch — stops
+      // execution: its stepIdToJumpTo is the "stop" sentinel (null).
       const createSecondBranch = await createStep({
         variables: {
           input: {
@@ -185,21 +167,42 @@ export function useIfThenInitializer(): [
             },
             flow: {
               id: currStep.flowId,
-              updatedAt: updatedFirstBranch?.flow?.updatedAt,
+              updatedAt: currStep.flow.updatedAt,
             },
             parameters: {
               depth,
               branchName: 'Branch 2',
+              stepIdToJumpTo: null,
             },
             config: commonConfig,
           },
         },
       })
       const createdSecondBranch = createSecondBranch?.data?.createStep
-      const [_firstBranch, secondBranch] = await Promise.all([
-        updateFirstBranch,
-        createSecondBranch,
-      ])
+
+      const updateFirstBranch = await updateStep({
+        variables: {
+          input: {
+            id: currStep.id,
+            appKey: TOOLBOX_APP_KEY,
+            key: TOOLBOX_ACTIONS.IfThen,
+            flow: {
+              id: currStep.flowId,
+              updatedAt: createdSecondBranch.flow.updatedAt,
+            },
+            parameters: {
+              branchName: 'Branch 1',
+              depth,
+              stepIdToJumpTo: createdSecondBranch.id,
+            },
+            connection: {
+              id: null,
+            },
+            // no need to set config here since it's already set
+          },
+        },
+      })
+      const updatedFirstBranch = updateFirstBranch?.data?.updateStep
 
       // After creating branches, we create a sample step to each branch. This is
       // because users always get confused on how to add actions within a
@@ -215,7 +218,7 @@ export function useIfThenInitializer(): [
             },
             flow: {
               id: currStep.flowId,
-              updatedAt: createdSecondBranch.flow.updatedAt,
+              updatedAt: updatedFirstBranch?.flow?.updatedAt,
             },
             config: commonConfig,
           },
@@ -226,7 +229,7 @@ export function useIfThenInitializer(): [
         variables: {
           input: {
             previousStep: {
-              id: secondBranch.data.createStep.id,
+              id: createdSecondBranch.id,
             },
             flow: {
               id: currStep.flowId,
