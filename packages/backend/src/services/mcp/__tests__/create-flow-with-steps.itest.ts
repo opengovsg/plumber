@@ -81,6 +81,73 @@ describe('createFlowWithStepsService', () => {
     expect(secondActionStep.position).toBe(3)
   })
 
+  it('auto-initialises branchName and depth for toolbox/ifThen steps', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-ifthen-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'If-Then Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        { appKey: 'toolbox', key: 'ifThen', type: 'action', position: 2 },
+        { appKey: 'toolbox', key: 'ifThen', type: 'action', position: 3 },
+      ],
+      traceId: 'trace-ifthen',
+    })
+
+    const [, branch1, branch2] = result.steps
+    expect(branch1.parameters).toMatchObject({
+      branchName: 'Branch 1',
+      depth: '0',
+    })
+    expect(branch2.parameters).toMatchObject({
+      branchName: 'Branch 2',
+      depth: '0',
+    })
+  })
+
+  it('caller-supplied parameters override ifThen defaults', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-ifthen-override-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'Override Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+          parameters: { branchName: 'High Priority' },
+        },
+      ],
+      traceId: 'trace-override',
+    })
+
+    const [, branch] = result.steps
+    expect(branch.parameters).toMatchObject({
+      branchName: 'High Priority',
+      depth: '0',
+    })
+  })
+
   it('stores null keys when not provided', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
