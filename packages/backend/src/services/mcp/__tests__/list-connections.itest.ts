@@ -38,7 +38,7 @@ describe('listConnectionsService', () => {
       userId: user.id,
       verified: true,
       draft: false,
-      description: 'My Slack connection',
+      formattedData: {},
     })
 
     const result = await listConnectionsService(user)
@@ -49,7 +49,6 @@ describe('listConnectionsService', () => {
           id: conn.id,
           appKey: 'slack',
           verified: true,
-          label: 'My Slack connection',
         }),
       ]),
     )
@@ -70,6 +69,7 @@ describe('listConnectionsService', () => {
       userId: owner.id,
       verified: true,
       draft: false,
+      formattedData: {},
     })
 
     const result = await listConnectionsService(other)
@@ -88,6 +88,7 @@ describe('listConnectionsService', () => {
       userId: user.id,
       verified: false,
       draft: true,
+      formattedData: {},
     })
 
     const result = await listConnectionsService(user)
@@ -106,6 +107,7 @@ describe('listConnectionsService', () => {
       userId: user.id,
       verified: true,
       draft: false,
+      formattedData: {},
     })
 
     const result = await listConnectionsService(user)
@@ -125,6 +127,7 @@ describe('listConnectionsService', () => {
       userId: user.id,
       verified: true,
       draft: false,
+      formattedData: {},
     })
     const postmanConn = await Connection.query().insertAndFetch({
       id: randomUUID(),
@@ -132,6 +135,7 @@ describe('listConnectionsService', () => {
       userId: user.id,
       verified: true,
       draft: false,
+      formattedData: {},
     })
 
     const result = await listConnectionsService(user, 'slack')
