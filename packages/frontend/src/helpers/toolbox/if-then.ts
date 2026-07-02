@@ -383,3 +383,33 @@ export function getEarlierBranchesStepIdToJumpTo(
     stepIdToJumpTo: branches[index + 1][0].id,
   }))
 }
+
+/**
+ * Computes the repoint needed when a single step is deleted: if a block's last
+ * branch jumps to the deleted step (it's the first step after the block), that
+ * branch must be repointed at the step following the deleted one — the next
+ * single step, the next block's if-then when the region empties (the blocks
+ * merge), or the "stop" sentinel (null) when the flow ends there. Returns null
+ * when no branch jumps to the deleted step. At most one branch can jump to any
+ * given step, so a single repoint suffices.
+ *
+ * Deleting an if-then step itself is branch deletion, handled by deleteBranch
+ * in Branch.tsx (the predecessor inherits the deleted branch's target).
+ */
+export function getUpdatedStepToJumpToOnStepDelete(
+  steps: IStep[],
+  deletedStep: IStep,
+): { branchStep: IStep; stepIdToJumpTo: string | null } | null {
+  const matchingBranchStep = steps.find(
+    (s) => isIfThenStep(s) && s.parameters?.stepIdToJumpTo === deletedStep.id,
+  )
+  if (!matchingBranchStep) {
+    return null
+  }
+
+  const nextStep = steps.find((s) => s.position === deletedStep.position + 1)
+  return {
+    branchStep: matchingBranchStep,
+    stepIdToJumpTo: nextStep?.id ?? null,
+  }
+}

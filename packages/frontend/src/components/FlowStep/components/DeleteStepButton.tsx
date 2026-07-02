@@ -9,11 +9,14 @@ import { IconButton } from '@opengovsg/design-system-react'
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { EditorContext } from '@/contexts/Editor'
+import { StepEnumType } from '@/graphql/__generated__/graphql'
 import client from '@/graphql/client'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
+import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
+import { getUpdatedStepToJumpToOnStepDelete } from '@/helpers/toolbox'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
@@ -68,14 +71,46 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
   const [createStep, { loading: isCreatingStep }] = useMutation(CREATE_STEP, {
     fetchPolicy: 'no-cache',
   })
+  const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
+    fetchPolicy: 'no-cache',
+  })
 
   const onDelete = useCallback<MouseEventHandler>(
     async (e) => {
       e.stopPropagation()
 
+      // If an if-then branch jumps to this step (it's the first step after a
+      // block), repoint the branch at the step after it before deleting, so
+      // its stored step to jump to never dangles.
+      const matchingBranchUpdateInfo = getUpdatedStepToJumpToOnStepDelete(
+        flow.steps,
+        step,
+      )
+      let updatedAt = flow.updatedAt
+      if (matchingBranchUpdateInfo) {
+        const updatedPositions = await updateStepPositions({
+          variables: {
+            input: {
+              stepPositions: [
+                {
+                  id: matchingBranchUpdateInfo.branchStep.id,
+                  position: matchingBranchUpdateInfo.branchStep.position,
+                  type: matchingBranchUpdateInfo.branchStep
+                    .type as StepEnumType,
+                  stepIdToJumpTo: matchingBranchUpdateInfo.stepIdToJumpTo,
+                },
+              ],
+              flow: { updatedAt },
+            },
+          },
+        })
+        updatedAt =
+          updatedPositions.data?.updateStepPositions?.updatedAt ?? updatedAt
+      }
+
       const deletedStep = await deleteStep({
         variables: {
-          input: { ids: [step.id], flow: { updatedAt: flow.updatedAt } },
+          input: { ids: [step.id], flow: { updatedAt } },
         },
       })
       const updatedFlow = deletedStep.data?.deleteStep
@@ -113,6 +148,7 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       flow,
       step,
       deleteStep,
+      updateStepPositions,
       setCurrentStepId,
       setShouldWarnOnLeave,
       onDrawerClose,

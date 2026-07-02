@@ -6,6 +6,7 @@ import {
   buildRegionList,
   computeJumpTargets,
   getEarlierBranchesStepIdToJumpTo,
+  getUpdatedStepToJumpToOnStepDelete,
   type StepRegion,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
@@ -30,7 +31,7 @@ function step(overrides: Partial<IStep> = {}): IStep {
   } as IStep
 }
 
-function ifThen(id: string, stepIdToJumpTo?: string): IStep {
+function ifThen(id: string, stepIdToJumpTo?: string | null): IStep {
   return step({
     id,
     appKey: TOOLBOX_APP_KEY,
@@ -119,6 +120,72 @@ describe('computeJumpTargets', () => {
     // The recomputed targets match what the steps already store.
     expect(targets.get('b1')).toBe('b2')
     expect(targets.get('b2')).toBe('after')
+  })
+})
+
+describe('getUpdatedStepToJumpToOnStepDelete', () => {
+  it('repoints the last branch at the next step when the first after-block step is deleted', () => {
+    const b1 = ifThen('b1', 'b2')
+    const b1a = step()
+    const b2 = ifThen('b2', 'after1')
+    const b2a = step()
+    const after1 = step({ id: 'after1' })
+    const after2 = step({ id: 'after2' })
+    const steps = [b1, b1a, b2, b2a, after1, after2]
+
+    expect(getUpdatedStepToJumpToOnStepDelete(steps, after1)).toEqual({
+      branchStep: b2,
+      stepIdToJumpTo: 'after2',
+    })
+  })
+
+  it('repoints the last branch to null (stop) when the only after-block step is deleted', () => {
+    const b1 = ifThen('b1', 'b2')
+    const b1a = step()
+    const b2 = ifThen('b2', 'after')
+    const b2a = step()
+    const after = step({ id: 'after' })
+    const steps = [b1, b1a, b2, b2a, after]
+
+    expect(getUpdatedStepToJumpToOnStepDelete(steps, after)).toEqual({
+      branchStep: b2,
+      stepIdToJumpTo: null,
+    })
+  })
+
+  it('repoints at the next block when the only step between two blocks is deleted (blocks merge)', () => {
+    const b1 = ifThen('b1', 'mid')
+    const b1a = step()
+    const mid = step({ id: 'mid' })
+    const c1 = ifThen('c1', null)
+    const c1a = step()
+    const steps = [b1, b1a, mid, c1, c1a]
+
+    expect(getUpdatedStepToJumpToOnStepDelete(steps, mid)).toEqual({
+      branchStep: b1,
+      stepIdToJumpTo: 'c1',
+    })
+  })
+
+  it('returns null when no branch jumps to the deleted step', () => {
+    const b1 = ifThen('b1', 'b2')
+    const b1a = step()
+    const b2 = ifThen('b2', 'after')
+    const after = step({ id: 'after' })
+    const steps = [b1, b1a, b2, after]
+
+    // b1a is a step inside a branch; nothing jumps to it.
+    expect(getUpdatedStepToJumpToOnStepDelete(steps, b1a)).toBeNull()
+  })
+
+  it('returns null for legacy if-thens with no stored step to jump to', () => {
+    const b1 = ifThen('b1')
+    const b1a = step()
+    const b2 = ifThen('b2')
+    const b2a = step()
+    const steps = [b1, b1a, b2, b2a]
+
+    expect(getUpdatedStepToJumpToOnStepDelete(steps, b2a)).toBeNull()
   })
 })
 
