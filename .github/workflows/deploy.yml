@@ -206,3 +206,22 @@ jobs:
           codedeploy-appspec: appspec.json
           codedeploy-application: ${{ inputs.codedeploy-application }}
           codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
+
+      - name: (Archival) Replace variables in task definition
+        run: |
+          cp ecs/archival-task-definition.json ecs-archival-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-archival-task-definition.json
+          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-archival-task-definition.json
+
+      - name: (Archival) Fill in the new image ID in the Amazon ECS task definition
+        id: archival-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ecs-archival-task-definition.json
+          container-name: archival
+          image: ${{ steps.ecr-image-uri.outputs.image }}
+
+      - name: (Archival) Register task definition
+        run: |
+          aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.archival-task-def.outputs.task-definition }}
