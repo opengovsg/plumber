@@ -270,6 +270,7 @@ describe('updateStepParametersService', () => {
       userId: user.id,
       verified: true,
       draft: false,
+      formattedData: {},
     })
 
     const result = await updateStepParametersService({
@@ -321,6 +322,7 @@ describe('updateStepParametersService', () => {
       userId: owner.id,
       verified: true,
       draft: false,
+      formattedData: {},
     })
 
     await expect(
@@ -367,6 +369,7 @@ describe('updateStepParametersService', () => {
       key: 'slack',
       userId: user.id,
       verified: true,
+      formattedData: {},
       draft: false,
     })
 
