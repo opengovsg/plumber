@@ -1,6 +1,7 @@
 import type { IApp } from '@plumber/types'
 
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
 
@@ -99,6 +100,47 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
 }
 
 //
+// Handle 504 Gateway Timeout - typically caused by long-running formulas.
+// Test runs: fail immediately with helpful message.
+// Live runs: retry up to 3 times, then fail with helpful message.
+//
+export const EXCEL_504_MAX_ATTEMPTS = 3
+const EXCEL_504_ERROR_MESSAGE = {
+  name: 'Excel request timed out',
+  solution:
+    'Your Excel file most likely has long-running formulas. Please either simplify the formulas or set the calculation options (under the Formulas tab) to manual instead of automatic.',
+}
+
+const handle504: ThrowingHandler = function ($, error) {
+  logger.warn('Received HTTP 504 from MS Graph', {
+    event: 'm365-http-504',
+    tenant: $.auth?.data?.tenantKey as string,
+    baseUrl: error.response.config.baseURL,
+    url: error.response.config.url,
+    flowId: $.flow?.id,
+    stepId: $.step?.id,
+    executionId: $.execution?.id,
+  })
+
+  // For test runs, fail immediately with user-friendly message
+  if ($.execution?.testRun) {
+    throw new StepError(
+      EXCEL_504_ERROR_MESSAGE.name,
+      EXCEL_504_ERROR_MESSAGE.solution,
+    )
+  }
+
+  // For live runs, throw RetriableError with user-friendly message
+  // The message will be saved as errorDetails, so it's correct from the start
+  throw new RetriableError({
+    error: EXCEL_504_ERROR_MESSAGE,
+    delayType: 'step',
+    delayInMs: 'default',
+    maxAttempts: EXCEL_504_MAX_ATTEMPTS,
+  })
+}
+
+//
 // Handle exceeding bandwidth limit
 //
 const handle509: ThrowingHandler = function ($, error) {
@@ -131,6 +173,8 @@ const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
     case 502: // Bad gateway
     case 503: // Transient error
       return handle500and502and503($, error)
+    case 504: // Gateway timeout - likely due to long-running formulas
+      return handle504($, error)
     case 509: // Bandwidth limit reached
       return handle509($, error)
     default:
