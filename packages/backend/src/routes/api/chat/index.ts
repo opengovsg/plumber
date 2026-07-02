@@ -89,8 +89,12 @@ const handleChatStream = observe(
       // Get the active trace ID from Langfuse context
       const traceId = getActiveTraceId() || ''
 
-      // +1 for the system message
-      const isAtLimit = messages.length + 1 >= MAX_MESSAGES
+      // Use rawMessages (UIMessage count from the client) rather than the expanded
+      // ModelMessages array. convertToModelMessages inflates the count because each
+      // tool call round-trip becomes separate assistant + tool_result model messages,
+      // which would trigger summary mode far too early on tool-heavy conversations.
+      // +1 accounts for the system message added below.
+      const isAtLimit = rawMessages.length + 1 >= MAX_MESSAGES
 
       // Get the prompt from Langfuse
       const prompt = await getPrompt(
