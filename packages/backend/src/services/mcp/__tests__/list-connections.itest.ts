@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import App from '@/models/app'
 import Connection from '@/models/connection'
 import User from '@/models/user'
 
@@ -20,6 +21,10 @@ describe('listConnectionsService', () => {
   beforeEach(() => {
     mocks.getAllLdFlags.mockResolvedValue({})
     mocks.getRestrictedAppKeys.mockReturnValue([])
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('returns connections owned by the user', async () => {
@@ -133,6 +138,37 @@ describe('listConnectionsService', () => {
 
     expect(result.map((c) => c.id)).toContain(slackConn.id)
     expect(result.map((c) => c.id)).not.toContain(postmanConn.id)
+  })
+
+  it('delegates to getSystemAddedConnections for system-added apps', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `system-added-${randomUUID()}@example.com`,
+    })
+    const mockConn = {
+      id: randomUUID(),
+      key: 'm365-excel',
+      verified: true,
+      description: 'Shared Excel connection',
+      formattedData: { screenName: 'Excel' },
+    }
+    const getSystemAddedConnections = vi.fn().mockResolvedValue([mockConn])
+    vi.spyOn(App, 'findOneByKey').mockResolvedValueOnce({
+      auth: { connectionType: 'system-added', getSystemAddedConnections },
+    } as any)
+
+    const result = await listConnectionsService(user, 'm365-excel')
+
+    expect(getSystemAddedConnections).toHaveBeenCalledWith(user)
+    expect(result).toEqual([
+      {
+        id: mockConn.id,
+        appKey: 'm365-excel',
+        verified: true,
+        label: 'Shared Excel connection',
+        formattedData: { screenName: 'Excel' },
+      },
+    ])
   })
 
   it('includes formattedData on the returned connection', async () => {
