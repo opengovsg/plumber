@@ -92,7 +92,7 @@ export async function createFlowWithStepsService({
       steps.map((step) => {
         let defaults: Record<string, unknown> = {}
         if (step.appKey === 'toolbox' && step.key === 'ifThen') {
-          defaults = { branchName: `Branch ${++ifThenCount}`, depth: '0' }
+          defaults = { branchName: `Branch ${++ifThenCount}`, depth: 0 }
         }
         return {
           version: getStepVersion(step.appKey, step.key ?? undefined),

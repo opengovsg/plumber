@@ -51,7 +51,12 @@ describe('createFlowWithStepsService', () => {
           type: 'action',
           position: 2,
         },
-        { appKey: 'slack', key: 'sendMessage', type: 'action', position: 3 },
+        {
+          appKey: 'slack',
+          key: 'sendMessageToChannel',
+          type: 'action',
+          position: 3,
+        },
       ],
       traceId: 'trace-id-123',
     })
@@ -77,7 +82,7 @@ describe('createFlowWithStepsService', () => {
 
     expect(secondActionStep.type).toBe('action')
     expect(secondActionStep.appKey).toBe('slack')
-    expect(secondActionStep.key).toBe('sendMessage')
+    expect(secondActionStep.key).toBe('sendMessageToChannel')
     expect(secondActionStep.position).toBe(3)
   })
 
@@ -97,20 +102,42 @@ describe('createFlowWithStepsService', () => {
           type: 'trigger',
           position: 1,
         },
-        { appKey: 'toolbox', key: 'ifThen', type: 'action', position: 2 },
-        { appKey: 'toolbox', key: 'ifThen', type: 'action', position: 3 },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 3,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 4,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 5,
+        },
       ],
       traceId: 'trace-ifthen',
     })
 
-    const [, branch1, branch2] = result.steps
+    const [, branch1, _, branch2] = result.steps
     expect(branch1.parameters).toMatchObject({
       branchName: 'Branch 1',
-      depth: '0',
+      depth: 0,
     })
     expect(branch2.parameters).toMatchObject({
       branchName: 'Branch 2',
-      depth: '0',
+      depth: 0,
     })
   })
 
@@ -137,6 +164,12 @@ describe('createFlowWithStepsService', () => {
           position: 2,
           parameters: { branchName: 'High Priority' },
         },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 3,
+        },
       ],
       traceId: 'trace-override',
     })
@@ -144,7 +177,7 @@ describe('createFlowWithStepsService', () => {
     const [, branch] = result.steps
     expect(branch.parameters).toMatchObject({
       branchName: 'High Priority',
-      depth: '0',
+      depth: 0,
     })
   })
 
