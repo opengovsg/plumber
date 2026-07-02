@@ -131,6 +131,9 @@ export default function PromptInput({
         onSelect={(name, value) => {
           sendMessage(`Q: ${dynamicPicker.question}\nA: ${name} (id: ${value})`)
         }}
+        onSkip={() => {
+          sendMessage(`Q: ${dynamicPicker.question}\nA: skip`)
+        }}
         cancelStream={cancelStream}
       />
     )
