@@ -48,11 +48,15 @@ describe('createStepService', () => {
       traceId: 'trace-create-1',
     })
 
+    const loadedFlow = await flow.$fetchGraph('steps')
+    const lastStep = loadedFlow.steps.find((s) => s.position === 2)
+
     const step = await createStepService({
       user,
       pipeId: flow.id,
       appKey: 'slack',
       key: 'sendMessageToChannel',
+      previousStepId: lastStep.id,
     })
 
     expect(step.appKey).toBe('slack')
@@ -141,6 +145,7 @@ describe('createStepService', () => {
         pipeId: flow.id,
         appKey: 'slack',
         key: 'nonExistentAction',
+        previousStepId: randomUUID(),
       }),
     ).rejects.toThrow('No such trigger or action')
   })
@@ -175,6 +180,7 @@ describe('createStepService', () => {
         pipeId: flow.id,
         appKey: 'slack',
         key: 'sendMessageToChannel',
+        previousStepId: randomUUID(),
       }),
     ).rejects.toThrow('Pipe not found')
   })

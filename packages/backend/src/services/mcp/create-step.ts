@@ -10,7 +10,7 @@ export interface CreateStepInput {
   pipeId: string
   appKey: string
   key: string
-  previousStepId?: string
+  previousStepId: string
 }
 
 export async function createStepService({
@@ -41,26 +41,15 @@ export async function createStepService({
       throw new Error('Pipe not found')
     }
 
-    let newStepPosition: number
+    const previousStep = await flow
+      .$relatedQuery('steps', trx)
+      .findOne({ id: previousStepId })
 
-    if (previousStepId) {
-      const previousStep = await flow
-        .$relatedQuery('steps', trx)
-        .findOne({ id: previousStepId })
-
-      if (!previousStep) {
-        throw new Error('Previous step not found')
-      }
-
-      newStepPosition = previousStep.position + 1
-    } else {
-      const lastStep = await flow
-        .$relatedQuery('steps', trx)
-        .orderBy('position', 'desc')
-        .first()
-
-      newStepPosition = lastStep ? lastStep.position + 1 : 2
+    if (!previousStep) {
+      throw new Error('Previous step not found')
     }
+
+    const newStepPosition = previousStep.position + 1
 
     await flow
       .$relatedQuery('steps', trx)
