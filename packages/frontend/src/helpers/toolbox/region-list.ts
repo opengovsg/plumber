@@ -138,3 +138,51 @@ export function buildRegionList(
 
   return regions
 }
+
+/**
+ * Whether the given step sits inside an if-then branch — it's the branch's
+ * if-then or one of the branch's steps. Used to stop if-thens from nesting:
+ * the add-step modal must not offer if-then when it is anchored at a step
+ * inside a branch. Checked per branch (not per block) so that if-then branches
+ * nested inside a for-each block also count, while the for-each's own body
+ * steps don't (if-then remains selectable there).
+ */
+export function isStepWithinIfThenBlock(
+  regions: StepRegion[],
+  stepId?: string,
+): boolean {
+  if (!stepId) {
+    return false
+  }
+  return regions.some(
+    (region) =>
+      region.type === 'Block' &&
+      region.branches.some(
+        (branch) =>
+          isIfThenStep(branch[0]) && branch.some((step) => step.id === stepId),
+      ),
+  )
+}
+
+/**
+ * Whether the given step sits inside a for-each block (including inside an
+ * if-then nested within it). The for-each content doesn't render regions, so
+ * a mid-body if-then would wrongly absorb the body steps after it — if-then
+ * stays last-step-only inside a for-each.
+ */
+export function isStepWithinForEachBlock(
+  regions: StepRegion[],
+  stepId?: string,
+): boolean {
+  if (!stepId) {
+    return false
+  }
+  return regions.some(
+    (region) =>
+      region.type === 'Block' &&
+      isForEachStep(region.branches[0]?.[0]) &&
+      region.branches.some((branch) =>
+        branch.some((step) => step.id === stepId),
+      ),
+  )
+}

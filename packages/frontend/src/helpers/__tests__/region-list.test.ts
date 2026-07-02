@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildRegionList,
+  isStepWithinForEachBlock,
+  isStepWithinIfThenBlock,
   type StepRegion,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
@@ -28,7 +30,7 @@ function step(overrides: Partial<IStep> = {}): IStep {
   } as IStep
 }
 
-function ifThen(id: string, stepIdToJumpTo?: string): IStep {
+function ifThen(id: string, stepIdToJumpTo?: string | null): IStep {
   return step({
     id,
     appKey: TOOLBOX_APP_KEY,
@@ -183,5 +185,95 @@ describe('buildRegionList', () => {
       expect(regions[0]).toEqual({ type: 'SingleSteps', steps: [before] })
       expect(regions[1]).toMatchObject({ branches: [[fe, body]] })
     })
+  })
+})
+
+describe('isStepWithinIfThenBlock', () => {
+  // before | b1 (-> b2), b1a | b2 (-> after), b2a | after
+  const before = step({ id: 'before' })
+  const b1 = ifThen('b1', 'b2')
+  const b1a = step({ id: 'b1a' })
+  const b2 = ifThen('b2', 'after')
+  const b2a = step({ id: 'b2a' })
+  const after = step({ id: 'after' })
+  const regions = buildRegionList(
+    [before, b1, b1a, b2, b2a, after],
+    GROUPING_ACTIONS,
+  )
+
+  it('returns true for a branch if-then and for a step inside a branch', () => {
+    expect(isStepWithinIfThenBlock(regions, 'b1')).toBe(true)
+    expect(isStepWithinIfThenBlock(regions, 'b1a')).toBe(true)
+    expect(isStepWithinIfThenBlock(regions, 'b2a')).toBe(true)
+  })
+
+  it('returns false for single steps before and after the block', () => {
+    expect(isStepWithinIfThenBlock(regions, 'before')).toBe(false)
+    expect(isStepWithinIfThenBlock(regions, 'after')).toBe(false)
+  })
+
+  it('returns false for steps inside a for-each block', () => {
+    const fe = forEach('fe')
+    const body = step({ id: 'body' })
+    const forEachRegions = buildRegionList([fe, body], GROUPING_ACTIONS)
+
+    expect(isStepWithinIfThenBlock(forEachRegions, 'fe')).toBe(false)
+    expect(isStepWithinIfThenBlock(forEachRegions, 'body')).toBe(false)
+  })
+
+  it('returns true for if-then branches nested inside a for-each block', () => {
+    // fe, body | nested if-then branches: n1, n1a | n2, n2a
+    const fe = forEach('fe')
+    const body = step({ id: 'body' })
+    const n1 = ifThen('n1', 'n2')
+    const n1a = step({ id: 'n1a' })
+    const n2 = ifThen('n2', null)
+    const n2a = step({ id: 'n2a' })
+    const forEachRegions = buildRegionList(
+      [fe, body, n1, n1a, n2, n2a],
+      GROUPING_ACTIONS,
+    )
+
+    // The for-each's own body stays selectable...
+    expect(isStepWithinIfThenBlock(forEachRegions, 'fe')).toBe(false)
+    expect(isStepWithinIfThenBlock(forEachRegions, 'body')).toBe(false)
+    // ...but the nested if-then branches are not.
+    expect(isStepWithinIfThenBlock(forEachRegions, 'n1')).toBe(true)
+    expect(isStepWithinIfThenBlock(forEachRegions, 'n1a')).toBe(true)
+    expect(isStepWithinIfThenBlock(forEachRegions, 'n2a')).toBe(true)
+  })
+
+  it('returns false when no step id is given', () => {
+    expect(isStepWithinIfThenBlock(regions, undefined)).toBe(false)
+  })
+})
+
+describe('isStepWithinForEachBlock', () => {
+  // before | fe, body (with nested if-then branch n1)
+  const before = step({ id: 'before' })
+  const fe = forEach('fe')
+  const body = step({ id: 'body' })
+  const n1 = ifThen('n1')
+  const n1a = step({ id: 'n1a' })
+  const regions = buildRegionList([before, fe, body, n1, n1a], GROUPING_ACTIONS)
+
+  it('returns true for any step inside the for-each, including nested if-then branches', () => {
+    expect(isStepWithinForEachBlock(regions, 'fe')).toBe(true)
+    expect(isStepWithinForEachBlock(regions, 'body')).toBe(true)
+    expect(isStepWithinForEachBlock(regions, 'n1')).toBe(true)
+    expect(isStepWithinForEachBlock(regions, 'n1a')).toBe(true)
+  })
+
+  it('returns false for steps outside the for-each and for if-then blocks', () => {
+    expect(isStepWithinForEachBlock(regions, 'before')).toBe(false)
+
+    const b1 = ifThen('b1', 'after')
+    const after = step({ id: 'after' })
+    const ifThenRegions = buildRegionList([b1, after], GROUPING_ACTIONS)
+    expect(isStepWithinForEachBlock(ifThenRegions, 'b1')).toBe(false)
+  })
+
+  it('returns false when no step id is given', () => {
+    expect(isStepWithinForEachBlock(regions, undefined)).toBe(false)
   })
 })

@@ -2,11 +2,12 @@ import { IStep } from '@plumber/types'
 
 import { useContext } from 'react'
 
-import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
-import { NESTED_IFTHEN_FEATURE_FLAG } from '@/config/flags'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import {
+  isStepWithinForEachBlock,
+  isStepWithinIfThenBlock,
+  TOOLBOX_ACTIONS,
+} from '@/helpers/toolbox'
 
 /**
  * Helper function to check if Delay action should be selectable
@@ -38,46 +39,6 @@ function isDelaySelectable({
   return !isStepWithinForEach
 }
 
-/**
- * Helper function to check if If-then action should be selectable; supports edge
- * case in ChooseEvent component.
- *
- * If-then should only be selectable if:
- * - We're the last step.
- * - We are not inside a branch (unless we're whitelisted for nested
- *   branches via LD).
- *
- * Using many consts as purpose of the conditions may not be immediately
- * apparent.
- */
-function isIfThenSelectable({
-  depth,
-  hasIfThen,
-  isLastStep,
-  getFlagValue,
-}: {
-  depth: number
-  hasIfThen: boolean
-  isLastStep: boolean
-  getFlagValue: (
-    flagKey: string,
-    defaultValue?: boolean | string,
-  ) => boolean | string
-}) {
-  if (!isLastStep || hasIfThen) {
-    return false
-  }
-
-  const canUseNestedBranch = getFlagValue(NESTED_IFTHEN_FEATURE_FLAG, false)
-  if (canUseNestedBranch) {
-    return true
-  }
-
-  const isNestedBranch = depth > 0
-
-  return !isNestedBranch
-}
-
 export const useIsAppSelectable = ({
   isLastStep,
   step,
@@ -87,9 +48,7 @@ export const useIsAppSelectable = ({
   step?: IStep
   prevStepId?: string
 }): Record<string, boolean> => {
-  const { depth } = useContext(BranchContext)
-  const { groupedSteps } = useContext(StepsToDisplayContext)
-  const { getFlagValue } = useContext(LaunchDarklyContext)
+  const { groupedSteps, regionList } = useContext(StepsToDisplayContext)
 
   const hasIfThen = groupedSteps.some((group) =>
     group.some((step) => step.key === TOOLBOX_ACTIONS.IfThen),
@@ -99,13 +58,27 @@ export const useIsAppSelectable = ({
     group.some((step) => step.key === TOOLBOX_ACTIONS.ForEach),
   )
 
+  // The step the modal is anchored at: the empty step being configured, or the
+  // step we're adding after.
+  const anchorStepId = step?.id ?? prevStepId
+  const isWithinIfThenBlock = isStepWithinIfThenBlock(regionList, anchorStepId)
+  const isWithinForEach = isStepWithinForEachBlock(regionList, anchorStepId)
+
   return {
-    [TOOLBOX_ACTIONS.IfThen]: isIfThenSelectable({
-      depth,
-      hasIfThen,
-      isLastStep,
-      getFlagValue,
-    }),
+    /**
+     * If-then should only be selectable if:
+     * - We are not inside an if-then branch — no nesting if-thens.
+     * - Inside a for-each body, we're the last step (the for-each content
+     *   doesn't render regions yet, so a mid-body block would wrongly absorb
+     *   the body steps after it; we will make for-each render regions in a
+     *   later PR).
+     * It is otherwise addable anywhere, even mid-flow: an inserted block exits
+     * to the step that followed the anchor step (see useIfThenInitializer),
+     * and an if-then elsewhere in the flow no longer disables it (blocks can
+     * follow one another, chained via each branch's step to jump to).
+     */
+    [TOOLBOX_ACTIONS.IfThen]:
+      !isWithinIfThenBlock && (!isWithinForEach || isLastStep),
     /**
      * For-each should only be selectable if:
      * - We're the last step.
