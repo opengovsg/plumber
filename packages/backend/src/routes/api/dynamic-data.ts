@@ -34,14 +34,19 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
 
   const { stepId, key, parameters } = parsed.data
 
-  const data = await getDynamicDataService({
-    user,
-    stepId,
-    key,
-    parameters: parameters as IJSONObject | undefined,
-  })
-
-  res.json({ data })
+  try {
+    const data = await getDynamicDataService({
+      user,
+      stepId,
+      key,
+      parameters: parameters as IJSONObject | undefined,
+    })
+    res.json({ data })
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Internal server error'
+    res.status(400).json({ error: message })
+  }
 })
 
 export default router
