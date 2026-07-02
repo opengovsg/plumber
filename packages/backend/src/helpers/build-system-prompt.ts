@@ -16,25 +16,6 @@
 
 import apps from '@/apps'
 
-// Appended to every system prompt so the LLM knows the correct block format.
-// This is hard-coded (not in LaunchDarkly) because it is tightly coupled to
-// parseDynamicPickerBlock in routes/api/chat/parse-dynamic-picker-block.ts.
-const DYNAMIC_PICKER_INSTRUCTIONS = `
-
-## Dynamic Picker
-
-When you need the user to select a value from live data (e.g. a Slack channel, a Google Sheet, a database table), emit a \`DYNAMIC_PICKER_DATA\` HTML comment block. The frontend fetches and renders the options automatically — you must NOT call \`get_dynamic_data\` to list them, and must NOT include \`N:\`/\`V:\` option lines.
-
-Format:
-\`\`\`
-<!-- DYNAMIC_PICKER_DATA
-Q: <question to show the user>
-STEP_ID: <the step UUID from the current pipe state>
-KEY: <dynamic data key declared by the app, e.g. listChannels>
--->
-\`\`\`
-`
-
 const APP_DISPLAY_NAMES: Record<string, string> = Object.fromEntries(
   Object.values(apps).map((app) => [app.key, app.name]),
 )
@@ -58,7 +39,7 @@ export function buildSystemPrompt(
   restrictedApps: string[],
 ): string {
   if (restrictedApps.length === 0) {
-    return basePrompt + DYNAMIC_PICKER_INSTRUCTIONS
+    return basePrompt
   }
 
   // Pre-compile regex patterns once (efficiency)
@@ -131,5 +112,5 @@ export function buildSystemPrompt(
   const safetyNote = `\n\nNote: this user does not have access to the following apps: ${restrictedApps.join(
     ', ',
   )}.`
-  return filteredLines.join('\n') + safetyNote + DYNAMIC_PICKER_INSTRUCTIONS
+  return filteredLines.join('\n') + safetyNote
 }
