@@ -15,13 +15,17 @@ export async function listConnectionsService(
   user: User,
   appKey?: string,
 ): Promise<McpConnection[]> {
-  // Mirror GetAppConnections (get-app.ts): branch on connectionType when an
-  // appKey is known, just as the pipe editor does.
+  // Mirrors the GetAppConnections GraphQL resolver (get-app.ts) which branches
+  // on connectionType. Today only the pipe owner can invoke MCP tools, so we
+  // return only connections the owner has access to.
   //
-  // Future enhancement — collaborator support: when collaborators are allowed to
-  // use this tool, accept a flowId parameter and also merge in shared connections
-  // via withAccessibleFlowConnections filtered by that flowId, mirroring the
-  // getSharedConnections helper in get-app.ts.
+  // Collaborator support (future): the call site always has a flowId available.
+  // When collaborators gain access, thread flowId through this function and:
+  //   • system-added: also call getSharedConnections(flowId, isDraft=true) and
+  //     return those shared connections, same as getApp does for editor-role users.
+  //   • user-added: merge own connections with getSharedConnections(flowId,
+  //     isDraft=false), same as getApp does for owner/viewer-role users.
+  // See getSharedConnections in get-app.ts for the reference implementation.
   if (appKey) {
     const app = await App.findOneByKey(appKey)
 
@@ -38,7 +42,7 @@ export async function listConnectionsService(
   }
 
   // user-added connections (or no appKey — system-added across all apps is
-  // not enumerable without knowing each app's auth handler)
+  // not enumerable without iterating every app's auth handler)
   const query = user.$relatedQuery('connections').where('draft', false)
   if (appKey) {
     query.andWhere('key', appKey)
