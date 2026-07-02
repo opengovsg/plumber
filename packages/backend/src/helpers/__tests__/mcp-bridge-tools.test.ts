@@ -50,6 +50,7 @@ describe('createMcpBridgeTools', () => {
       'create_step',
       'delete_step',
       'get_dynamic_data',
+      'execute_step',
     ])
   })
 
