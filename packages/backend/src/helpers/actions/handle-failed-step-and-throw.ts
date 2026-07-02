@@ -33,16 +33,19 @@ function handleRetriableError(
   executionError: RetriableError,
   context: HandleFailedStepAndThrowParams['context'],
 ): never {
-  const { delayType, delayInMs } = executionError
+  const {
+    delayType,
+    delayInMs,
+    maxAttempts: customMaxAttempts,
+  } = executionError
   const { worker, job, isQueueDelayable } = context
+
+  // Use the error's custom max attempts if it specified one
+  const maxAttempts = customMaxAttempts ?? MAXIMUM_JOB_ATTEMPTS
 
   switch (delayType) {
     case 'queue':
-      checkIfAttemptsExhausted(
-        job.attemptsStarted,
-        MAXIMUM_JOB_ATTEMPTS,
-        executionError,
-      )
+      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
       if (isQueueDelayable) {
         worker.rateLimit(delayInMs)
         throw WorkerPro.RateLimitError()
@@ -56,11 +59,7 @@ function handleRetriableError(
       // off a small alert.
       throw executionError
     case 'group': {
-      checkIfAttemptsExhausted(
-        job.attemptsStarted,
-        MAXIMUM_JOB_ATTEMPTS,
-        executionError,
-      )
+      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
       const groupId = job.opts?.group?.id
       if (groupId) {
         worker.rateLimitGroup(job, delayInMs)
@@ -72,7 +71,9 @@ function handleRetriableError(
       throw executionError
     }
     case 'step':
-      // Finally, OK to pass this through to our worker's retry handler
+      // Check if max attempts reached for custom error codes
+      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
+      // OK to pass this through to our worker's retry handler
       throw executionError
   }
 }
@@ -168,12 +169,18 @@ export function handleFailedStepAndThrow(
     throw new UnrecoverableError(JSON.stringify(errorDetails))
   } catch (finalError) {
     // Update span and execution status as necessary.
+    // Use the error's custom max attempts if it specified one.
+    const effectiveMaxAttempts =
+      (executionError instanceof RetriableError
+        ? executionError.maxAttempts
+        : undefined) ?? MAXIMUM_JOB_ATTEMPTS
+
     const isRetriable =
       !(finalError instanceof UnrecoverableError) &&
       // -1 is needed because BullMQ only increments attemptsMade _after_ the
       // job processor finishes, but we're currently still inside the job
       // processor.
-      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS - 1
+      job.attemptsMade < effectiveMaxAttempts - 1
 
     span?.addTags({
       willRetry: isRetriable ? 'true' : 'false',

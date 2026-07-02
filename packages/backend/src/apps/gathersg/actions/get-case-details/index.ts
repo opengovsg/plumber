@@ -3,6 +3,7 @@ import { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
+import { processAttachments } from '../../common/attachment'
 import { processFields } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -57,12 +58,20 @@ const action: IRawAction = {
       // hex encode the field names
       const processedFields = processFields(fields)
 
+      // process the attachments
+      const attachments = await processAttachments(
+        $,
+        caseUuid,
+        rawData.data?.attachments,
+      )
+
       $.setActionItem({
         raw: {
           ...rawData,
           data: {
             ...rawData.data,
             fields: processedFields,
+            attachments,
           },
         },
       })
