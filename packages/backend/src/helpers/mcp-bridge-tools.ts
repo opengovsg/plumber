@@ -22,7 +22,10 @@ import {
   listConnectionsService,
   type McpConnection,
 } from '@/services/mcp/list-connections'
-import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
+import {
+  type McpUpdateStepParametersResult,
+  updateStepParametersService,
+} from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
 
@@ -132,8 +135,8 @@ export function createMcpBridgeTools(
         step_id,
         parameters,
         connection_id,
-      }): Promise<Step> => {
-        const step = await updateStepParametersService({
+      }): Promise<McpUpdateStepParametersResult> => {
+        const result = await updateStepParametersService({
           user,
           pipeId: pipe_id,
           stepId: step_id,
@@ -141,7 +144,7 @@ export function createMcpBridgeTools(
           connectionId: connection_id,
         })
         onPipeChange?.(pipe_id)
-        return step
+        return result
       },
     }),
 

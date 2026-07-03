@@ -6,9 +6,18 @@ import type {
 } from '@plumber/types'
 
 import apps from '@/apps'
+import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
+import type { FormSchema } from '@/apps/formsg/common/types'
+import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
+import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
+import Connection from '@/models/connection'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
+
+import { registerConnectionService } from './register-connection'
+import { verifyConnectionRegistrationService } from './verify-connection-registration'
 
 export interface UpdateStepParametersInput {
   user: User
@@ -18,14 +27,63 @@ export interface UpdateStepParametersInput {
   connectionId?: string
 }
 
+export interface FormField {
+  id: string
+  title: string
+  fieldType: string
+}
+
+export interface McpUpdateStepParametersResult {
+  step: Step
+  connectionRegistered?: boolean
+  connectionConflict?: boolean
+  connectionConflictMessage?: string
+  connectionError?: string
+  formFields?: FormField[]
+}
+
+async function fetchFormSchemaForStep(
+  user: User,
+  stepId: string,
+  connectionId: string,
+): Promise<FormSchema> {
+  const step = await Step.query().findById(stepId)
+  if (!step) {
+    throw new Error('Step not found')
+  }
+
+  const connection = await Connection.query().findById(connectionId)
+  if (!connection) {
+    throw new Error('Connection not found')
+  }
+
+  const app = apps[step.appKey ?? '']
+  if (!app) {
+    throw new Error('App not found')
+  }
+
+  const flow = await Flow.query().findById(step.flowId)
+  if (!flow) {
+    throw new Error('Flow not found')
+  }
+
+  const $ = await globalVariable({ connection, app, flow, user })
+  const formId = parseFormIdFormat($)
+  if (!formId) {
+    throw new Error('Form ID not found in connection auth data')
+  }
+
+  return fetchFormSchema($, formId)
+}
+
 export async function updateStepParametersService({
   user,
   pipeId,
   stepId,
   parameters,
   connectionId,
-}: UpdateStepParametersInput): Promise<Step> {
-  return Step.transaction(async (trx) => {
+}: UpdateStepParametersInput): Promise<McpUpdateStepParametersResult> {
+  const { step, rawApp } = await Step.transaction(async (trx) => {
     const accessible = await user
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .findOne({
@@ -82,7 +140,7 @@ export async function updateStepParametersService({
     let patchedParameters = filteredParameters
     let version = step.version
 
-    const transformer = apps[step.appKey]?.stepTransformer
+    const transformer = rawApp?.stepTransformer
     if (transformer) {
       patchedParameters = transformer.transformStepParameters(
         step.key,
@@ -119,11 +177,102 @@ export async function updateStepParametersService({
       }
     }
 
-    return Step.query(trx).patchAndFetchById(stepId, {
+    // Write parameters without connectionId; connectionId is set only after registration succeeds
+    const updatedStep = await Step.query(trx).patchAndFetchById(stepId, {
       parameters: mergedParameters,
       version,
       status: 'incomplete',
-      ...(connectionId !== undefined && { connectionId }),
     })
+
+    return { step: updatedStep, rawApp }
   })
+
+  const result: McpUpdateStepParametersResult = { step }
+
+  if (connectionId !== undefined) {
+    const registrationType = rawApp?.auth?.connectionRegistrationType
+
+    if (registrationType === 'per-step') {
+      try {
+        const verification = await verifyConnectionRegistrationService(
+          user,
+          stepId,
+          connectionId,
+        )
+
+        if (verification.status === 'VERIFIED') {
+          await Step.query().findById(stepId).patch({
+            connectionId,
+          })
+          result.step.connectionId = connectionId
+          result.connectionRegistered = true
+        } else if (verification.status === 'UNREGISTERED') {
+          await registerConnectionService(user, stepId, connectionId)
+          result.step.connectionId = connectionId
+          result.connectionRegistered = true
+        } else {
+          result.connectionConflict = true
+          result.connectionConflictMessage = verification.message
+          try {
+            const schema = await fetchFormSchemaForStep(
+              user,
+              stepId,
+              connectionId,
+            )
+            result.formFields = schema.form.form_fields.map((f) => ({
+              id: f._id,
+              title: f.title,
+              fieldType: f.fieldType,
+            }))
+          } catch {
+            // formFields is best-effort
+          }
+        }
+      } catch (err) {
+        result.connectionError =
+          err instanceof Error ? err.message : String(err)
+        try {
+          const schema = await fetchFormSchemaForStep(
+            user,
+            stepId,
+            connectionId,
+          )
+          result.formFields = schema.form.form_fields.map((f) => ({
+            id: f._id,
+            title: f.title,
+            fieldType: f.fieldType,
+          }))
+        } catch {
+          // best-effort
+        }
+      }
+    } else if (registrationType === 'global') {
+      try {
+        const verification = await verifyConnectionRegistrationService(
+          user,
+          stepId,
+          connectionId,
+        )
+        if (verification.status !== 'VERIFIED') {
+          await registerConnectionService(user, stepId, connectionId)
+        } else {
+          await Step.query().findById(stepId).patch({
+            connectionId,
+          })
+        }
+        result.step.connectionId = connectionId
+        result.connectionRegistered = true
+      } catch (err) {
+        result.connectionError =
+          err instanceof Error ? err.message : String(err)
+      }
+    } else {
+      await Step.query().findById(stepId).patch({
+        connectionId,
+      })
+      result.step.connectionId = connectionId
+    }
+  }
+
+  return result
 }
