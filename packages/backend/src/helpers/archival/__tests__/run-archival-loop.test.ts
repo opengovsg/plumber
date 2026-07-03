@@ -111,10 +111,12 @@ function setupDb(
 
   const execBuilder: any = {
     select: vi.fn().mockReturnThis(),
-    leftJoin: vi.fn().mockImplementation((table: string, col1: string, col2: string) => {
-      capturedTestExecAntiJoin = { table, col1, col2 }
-      return execBuilder
-    }),
+    leftJoin: vi
+      .fn()
+      .mockImplementation((table: string, col1: string, col2: string) => {
+        capturedTestExecAntiJoin = { table, col1, col2 }
+        return execBuilder
+      }),
     where: vi.fn().mockImplementation((...args: any[]) => {
       if (typeof args[0] === 'function') {
         capturedEligibilityCb = args[0]
