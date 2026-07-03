@@ -32,8 +32,14 @@ const useReorderSteps = (flowId: string) => {
       mrfApprovalSteps: IStep[]
       approvalBranches: { [stepId: string]: IStepApprovalBranch }
     }): StepPositionInput[] => {
-      // we start from 2 because the first step is the trigger step and not part of the sortable list
-      let nextPosition = 2
+      // A region's steps occupy a contiguous run of positions; a reorder
+      // permutes the steps within that run, so numbering restarts at the
+      // region's lowest position (e.g. 2 for the region right after the trigger
+      // step (which is not part of the sortable list, another number for the
+      // region right after an if-then block, etc).
+      let nextPosition = Math.min(
+        ...reorderedSteps.map((step) => step.position),
+      )
       let currentApprovalBranch: {
         stepId: string
         branch: 'approve' | 'reject'
@@ -123,11 +129,24 @@ const useReorderSteps = (flowId: string) => {
     [],
   )
 
-  const handleReorderUpdate = async (stepPositions: StepPositionInput[]) => {
+  const handleReorderUpdate = async (
+    stepPositions: StepPositionInput[],
+    // An if-then outside the reordered run whose step to jump to changes with it
+    // (a reorder that moved a block's exit step). Sent via auxiliaryChanges so
+    // stepPositions stays a pure contiguous run; folded into the optimistic
+    // cache update so the block boundary doesn't flicker during the refetch.
+    ifThenRepoint?: { stepId: string; stepIdToJumpTo: string },
+  ) => {
     try {
       await updateStepPositions({
         variables: {
-          input: { stepPositions, flow: { updatedAt: flow.updatedAt } },
+          input: {
+            stepPositions,
+            flow: { updatedAt: flow.updatedAt },
+            ...(ifThenRepoint && {
+              auxiliaryChanges: [{ ifThen: ifThenRepoint }],
+            }),
+          },
         },
         optimisticResponse: {
           updateStepPositions: {
@@ -156,16 +175,29 @@ const useReorderSteps = (flowId: string) => {
               ]),
             )
 
-            // Update steps with new positions
+            // Update steps with new positions, and apply the if-then repoint so
+            // the block boundary doesn't flicker while the refetch is in flight.
             const updatedSteps = flow.steps.map((step: IStep) => {
-              const updatedStep = updatedStepMap.get(step.id)
-              return updatedStep !== undefined
-                ? {
-                    ...step,
-                    position: updatedStep.position,
-                    config: { ...step.config, ...updatedStep.config },
-                  }
-                : step
+              const repositioned = updatedStepMap.get(step.id)
+              const isRepoint =
+                ifThenRepoint && step.id === ifThenRepoint.stepId
+              if (!repositioned && !isRepoint) {
+                return step
+              }
+              return {
+                ...step,
+                ...(repositioned && {
+                  position: repositioned.position,
+                  config: { ...step.config, ...repositioned.config },
+                }),
+                ...(ifThenRepoint &&
+                  step.id === ifThenRepoint.stepId && {
+                    parameters: {
+                      ...step.parameters,
+                      stepIdToJumpTo: ifThenRepoint.stepIdToJumpTo,
+                    },
+                  }),
+              }
             })
 
             // Sort steps by position to maintain proper order

@@ -6,6 +6,7 @@ import {
   buildRegionList,
   computeJumpTargets,
   getEarlierBranchesStepIdToJumpTo,
+  getUpdatedIfThenConfigOnRegionReorder,
   getUpdatedStepToJumpToOnStepDelete,
   type StepRegion,
   TOOLBOX_ACTIONS,
@@ -264,5 +265,47 @@ describe('getEarlierBranchesStepIdToJumpTo', () => {
       ],
     })
     expect(after[2]).toEqual({ type: 'SingleSteps', steps: [created] })
+  })
+})
+
+describe('getUpdatedIfThenConfigOnRegionReorder', () => {
+  it("repoints the last branch when the region's first step changes", () => {
+    const b1 = ifThen('b1', 'b2')
+    const b1a = step()
+    const b2 = ifThen('b2', 'after1')
+    const b2a = step()
+    const after1 = step({ id: 'after1' })
+    const after2 = step({ id: 'after2' })
+    const steps = [b1, b1a, b2, b2a, after1, after2]
+
+    // Drag after2 in front of after1.
+    expect(
+      getUpdatedIfThenConfigOnRegionReorder(steps, [after2, after1]),
+    ).toEqual({ branchStep: b2, stepIdToJumpTo: 'after2' })
+  })
+
+  it("returns null when the region's first step is unchanged", () => {
+    const b1 = ifThen('b1', 'after1')
+    const b1a = step()
+    const after1 = step({ id: 'after1' })
+    const after2 = step({ id: 'after2' })
+    const after3 = step({ id: 'after3' })
+    const steps = [b1, b1a, after1, after2, after3]
+
+    // Only the region's tail changed; the block still exits at after1.
+    expect(
+      getUpdatedIfThenConfigOnRegionReorder(steps, [after1, after3, after2]),
+    ).toBeNull()
+  })
+
+  it('returns null when no branch jumps to the old first step', () => {
+    // The region before the first block: nothing jumps to its steps.
+    const s1 = step({ id: 's1' })
+    const s2 = step({ id: 's2' })
+    const b1 = ifThen('b1', null)
+    const b1a = step()
+    const steps = [s1, s2, b1, b1a]
+
+    expect(getUpdatedIfThenConfigOnRegionReorder(steps, [s2, s1])).toBeNull()
   })
 })

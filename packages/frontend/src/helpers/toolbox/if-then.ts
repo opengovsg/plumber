@@ -413,3 +413,40 @@ export function getUpdatedStepToJumpToOnStepDelete(
     stepIdToJumpTo: nextStep?.id ?? null,
   }
 }
+
+/**
+ * Computes the repoint needed when a SingleSteps region is reordered: if the
+ * reorder changes the region's first step and a block's last branch jumps to
+ * the old first step (the region is that block's exit), the branch must jump
+ * to the new first step instead. Returns null when the first step is
+ * unchanged, or when no branch jumps to it (a region with no block before it,
+ * or a legacy pipe).
+ */
+export function getUpdatedIfThenConfigOnRegionReorder(
+  steps: IStep[],
+  // The region's steps in their new order (positions not yet renumbered).
+  reorderedRegionSteps: IStep[],
+): { branchStep: IStep; stepIdToJumpTo: string } | null {
+  if (reorderedRegionSteps.length < 2) {
+    return null
+  }
+
+  // Positions are pre-reorder values, so the old first step is the one with
+  // the lowest position.
+  const oldFirst = reorderedRegionSteps.reduce((lowest, step) =>
+    step.position < lowest.position ? step : lowest,
+  )
+  const newFirst = reorderedRegionSteps[0]
+  if (oldFirst.id === newFirst.id) {
+    return null
+  }
+
+  const branchStep = steps.find(
+    (s) => isIfThenStep(s) && s.parameters?.stepIdToJumpTo === oldFirst.id,
+  )
+  if (!branchStep) {
+    return null
+  }
+
+  return { branchStep, stepIdToJumpTo: newFirst.id }
+}

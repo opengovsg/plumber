@@ -9,12 +9,16 @@ import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
-import { StepEnumType } from '@/graphql/__generated__/graphql'
+import {
+  StepEnumType,
+  StepPositionInput,
+} from '@/graphql/__generated__/graphql'
 import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import {
   buildRegionList,
   getEarlierBranchesStepIdToJumpTo,
+  getUpdatedIfThenConfigOnRegionReorder,
   isIfThenStep,
   type StepRegion,
 } from '@/helpers/toolbox'
@@ -68,14 +72,29 @@ export default function ForEach(props: ForEachProps) {
     // A region's steps occupy a contiguous run of positions; a reorder
     // permutes the steps within that run.
     const basePosition = regionSteps[0].position
-    const stepPositions = items.map((item, index) => ({
+    const stepPositions: StepPositionInput[] = items.map((item, index) => ({
       id: item.id,
       position: basePosition + index,
       type: item.step.type,
     }))
 
+    // If the reorder changed the region's first step and a nested block's last
+    // branch jumps to it (this region is that block's exit), repoint the
+    // branch at the new first step. It sits outside the reordered run, so it
+    // travels as an auxiliary change rather than a reposition.
+    const updatedIfThenConfig = getUpdatedIfThenConfigOnRegionReorder(
+      flow.steps,
+      items.map((item) => item.step),
+    )
+    const ifThenRepoint = updatedIfThenConfig
+      ? {
+          stepId: updatedIfThenConfig.branchStep.id,
+          stepIdToJumpTo: updatedIfThenConfig.stepIdToJumpTo,
+        }
+      : undefined
+
     try {
-      handleReorderUpdate(stepPositions)
+      handleReorderUpdate(stepPositions, ifThenRepoint)
     } catch (error) {
       console.error(
         'Error updating step positions: ',

@@ -15,6 +15,7 @@ import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import {
   getEarlierBranchesStepIdToJumpTo,
+  getUpdatedIfThenConfigOnRegionReorder,
   isIfThenStep,
 } from '@/helpers/toolbox'
 import useReorderSteps from '@/hooks/useReorderSteps'
@@ -46,7 +47,7 @@ export function StepsList({ isNested }: StepsListProps) {
   const handleReorderSteps = useCallback(
     async (reorderedSteps: IStep[]) => {
       const allSteps = flow.steps
-      const allReorderedSteps = calculateReorderedSteps({
+      const newStepConfigs = calculateReorderedSteps({
         reorderedSteps,
         allSteps,
         mrfSteps,
@@ -54,13 +55,28 @@ export function StepsList({ isNested }: StepsListProps) {
         approvalBranches,
       })
 
+      // If an earlier if-then is pointing to this region's first step, update
+      // that if-then to the new first step after the reorder. It sits outside
+      // the reordered run, so it travels as an auxiliary change rather than a
+      // reposition.
+      const updatedIfThenConfig = getUpdatedIfThenConfigOnRegionReorder(
+        allSteps,
+        reorderedSteps,
+      )
+      const ifThenRepoint = updatedIfThenConfig
+        ? {
+            stepId: updatedIfThenConfig.branchStep.id,
+            stepIdToJumpTo: updatedIfThenConfig.stepIdToJumpTo,
+          }
+        : undefined
+
       try {
-        await handleReorderUpdate(allReorderedSteps)
+        await handleReorderUpdate(newStepConfigs, ifThenRepoint)
       } catch (error) {
         console.error(
           'Error updating step positions: ',
           error,
-          JSON.stringify(allReorderedSteps),
+          JSON.stringify(newStepConfigs),
         )
       }
     },
