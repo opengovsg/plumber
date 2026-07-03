@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildRegionList,
-  isStepWithinForEachBlock,
   isStepWithinIfThenBlock,
   type StepRegion,
   TOOLBOX_ACTIONS,
@@ -245,35 +244,5 @@ describe('isStepWithinIfThenBlock', () => {
 
   it('returns false when no step id is given', () => {
     expect(isStepWithinIfThenBlock(regions, undefined)).toBe(false)
-  })
-})
-
-describe('isStepWithinForEachBlock', () => {
-  // before | fe, body (with nested if-then branch n1)
-  const before = step({ id: 'before' })
-  const fe = forEach('fe')
-  const body = step({ id: 'body' })
-  const n1 = ifThen('n1')
-  const n1a = step({ id: 'n1a' })
-  const regions = buildRegionList([before, fe, body, n1, n1a], GROUPING_ACTIONS)
-
-  it('returns true for any step inside the for-each, including nested if-then branches', () => {
-    expect(isStepWithinForEachBlock(regions, 'fe')).toBe(true)
-    expect(isStepWithinForEachBlock(regions, 'body')).toBe(true)
-    expect(isStepWithinForEachBlock(regions, 'n1')).toBe(true)
-    expect(isStepWithinForEachBlock(regions, 'n1a')).toBe(true)
-  })
-
-  it('returns false for steps outside the for-each and for if-then blocks', () => {
-    expect(isStepWithinForEachBlock(regions, 'before')).toBe(false)
-
-    const b1 = ifThen('b1', 'after')
-    const after = step({ id: 'after' })
-    const ifThenRegions = buildRegionList([b1, after], GROUPING_ACTIONS)
-    expect(isStepWithinForEachBlock(ifThenRegions, 'b1')).toBe(false)
-  })
-
-  it('returns false when no step id is given', () => {
-    expect(isStepWithinForEachBlock(regions, undefined)).toBe(false)
   })
 })

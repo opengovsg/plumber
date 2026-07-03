@@ -3,11 +3,7 @@ import { IStep } from '@plumber/types'
 import { useContext } from 'react'
 
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
-import {
-  isStepWithinForEachBlock,
-  isStepWithinIfThenBlock,
-  TOOLBOX_ACTIONS,
-} from '@/helpers/toolbox'
+import { isStepWithinIfThenBlock, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 /**
  * Helper function to check if Delay action should be selectable
@@ -62,23 +58,17 @@ export const useIsAppSelectable = ({
   // step we're adding after.
   const anchorStepId = step?.id ?? prevStepId
   const isWithinIfThenBlock = isStepWithinIfThenBlock(regionList, anchorStepId)
-  const isWithinForEach = isStepWithinForEachBlock(regionList, anchorStepId)
 
   return {
     /**
-     * If-then should only be selectable if:
-     * - We are not inside an if-then branch — no nesting if-thens.
-     * - Inside a for-each body, we're the last step (the for-each content
-     *   doesn't render regions yet, so a mid-body block would wrongly absorb
-     *   the body steps after it; we will make for-each render regions in a
-     *   later PR).
-     * It is otherwise addable anywhere, even mid-flow: an inserted block exits
-     * to the step that followed the anchor step (see useIfThenInitializer),
-     * and an if-then elsewhere in the flow no longer disables it (blocks can
-     * follow one another, chained via each branch's step to jump to).
+     * If-then should only be selectable if we are not inside an if-then
+     * branch — no nesting if-thens. It is otherwise addable anywhere, even
+     * mid-flow or inside a for-each body: an inserted block exits to the step
+     * that followed the anchor step (see useIfThenInitializer), and an if-then
+     * elsewhere in the flow no longer disables it (blocks can follow one
+     * another, chained via each branch's step to jump to).
      */
-    [TOOLBOX_ACTIONS.IfThen]:
-      !isWithinIfThenBlock && (!isWithinForEach || isLastStep),
+    [TOOLBOX_ACTIONS.IfThen]: !isWithinIfThenBlock,
     /**
      * For-each should only be selectable if:
      * - We're the last step.

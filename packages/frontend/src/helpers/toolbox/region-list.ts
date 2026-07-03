@@ -163,26 +163,3 @@ export function isStepWithinIfThenBlock(
       ),
   )
 }
-
-/**
- * Whether the given step sits inside a for-each block (including inside an
- * if-then nested within it). The for-each content doesn't render regions, so
- * a mid-body if-then would wrongly absorb the body steps after it — if-then
- * stays last-step-only inside a for-each.
- */
-export function isStepWithinForEachBlock(
-  regions: StepRegion[],
-  stepId?: string,
-): boolean {
-  if (!stepId) {
-    return false
-  }
-  return regions.some(
-    (region) =>
-      region.type === 'Block' &&
-      isForEachStep(region.branches[0]?.[0]) &&
-      region.branches.some((branch) =>
-        branch.some((step) => step.id === stepId),
-      ),
-  )
-}
