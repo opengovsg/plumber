@@ -96,20 +96,28 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         })
     }
 
+    // TODO(perf): the batch query still hits `flows` twice via subqueries
+    // (deleted_at, archiveDisabled). If batch times climb, add a partial index
+    // on `(id) WHERE config->>'archiveDisabled' = 'true'` for the JSONB filter.
     const batch = (await eligibilityQuery
       // Never archive the designated test execution of any flow (deleted or active).
-      // This avoids having to NULL flows.test_execution_id in the archival transaction.
-      .whereNotIn(
-        'id',
-        archivalDbReader('flows')
-          .select('test_execution_id')
-          .whereNotNull('test_execution_id'),
-      )
+      // LEFT JOIN anti-join: cheaper than NOT IN (subquery) when the flows table grows.
+      .leftJoin('flows as f_tex', 'executions.id', 'f_tex.test_execution_id')
+      .whereNull('f_tex.test_execution_id')
       .modify((qb) => {
         if (cursor) {
           qb.whereRaw('id > ?::uuid', [cursor])
         }
       })
+      // Exclude flows with archiveDisabled set in flow config. Applies to all
+      // flows (active and deleted) so rehydrated executions are protected until
+      // the operator clears the flag.
+      .whereNotIn(
+        'flow_id',
+        archivalDbReader('flows')
+          .select('id')
+          .whereRaw(`config->>'archiveDisabled' = 'true'`),
+      )
       .orderBy('id')
       .limit(batchSize)) as ExecutionRow[]
 

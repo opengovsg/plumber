@@ -68,7 +68,11 @@ function makeStep(overrides: Partial<ExecutionStepRow> = {}): ExecutionStepRow {
 
 // Callbacks captured from the executions query builder during each test run
 let capturedEligibilityCb: ((qb: any) => void) | null = null
-let capturedTestExecExclusionSubquery: any = null
+let capturedTestExecAntiJoin: {
+  table: string
+  col1: string
+  col2: string
+} | null = null
 let capturedDeletedFlowsWhereIn: any = null
 let capturedModifyCbs: Array<(qb: any) => void> = []
 
@@ -79,7 +83,7 @@ function setupDb(
   let batchIdx = 0
   let currentStepsExecutionId: string | null = null
   capturedEligibilityCb = null
-  capturedTestExecExclusionSubquery = null
+  capturedTestExecAntiJoin = null
   capturedDeletedFlowsWhereIn = null
   capturedModifyCbs = []
 
@@ -87,6 +91,7 @@ function setupDb(
     select: vi.fn().mockReturnThis(),
     whereNotNull: vi.fn().mockReturnThis(),
     whereNull: vi.fn().mockReturnThis(),
+    whereRaw: vi.fn().mockReturnThis(),
   }
 
   const stepsBuilder: any = {
@@ -106,6 +111,12 @@ function setupDb(
 
   const execBuilder: any = {
     select: vi.fn().mockReturnThis(),
+    leftJoin: vi
+      .fn()
+      .mockImplementation((table: string, col1: string, col2: string) => {
+        capturedTestExecAntiJoin = { table, col1, col2 }
+        return execBuilder
+      }),
     where: vi.fn().mockImplementation((...args: any[]) => {
       if (typeof args[0] === 'function') {
         capturedEligibilityCb = args[0]
@@ -118,10 +129,8 @@ function setupDb(
       }
       return execBuilder
     }),
-    whereNotIn: vi.fn().mockImplementation((_col: string, subquery: any) => {
-      capturedTestExecExclusionSubquery = subquery
-      return execBuilder
-    }),
+    whereNotIn: vi.fn().mockReturnThis(),
+    whereNull: vi.fn().mockReturnThis(),
     modify: vi.fn().mockImplementation((cb: (qb: any) => void) => {
       capturedModifyCbs.push(cb)
       return execBuilder
@@ -455,13 +464,15 @@ describe('runArchivalLoop', () => {
   })
 
   describe('test_execution_id guard', () => {
-    it('excludes flows.test_execution_id rows for all flows at the top level', async () => {
+    it('excludes flows.test_execution_id rows via LEFT JOIN anti-join at the top level', async () => {
       setupDb([[]])
       await runArchivalLoop(new AbortController().signal)
 
-      expect(capturedTestExecExclusionSubquery).not.toBeNull()
-      // Subquery must use archivalDbReader('flows') — verified by the mock
-      expect(archivalDbReader).toHaveBeenCalledWith('flows')
+      expect(capturedTestExecAntiJoin).toEqual({
+        table: 'flows as f_tex',
+        col1: 'executions.id',
+        col2: 'f_tex.test_execution_id',
+      })
     })
   })
 
