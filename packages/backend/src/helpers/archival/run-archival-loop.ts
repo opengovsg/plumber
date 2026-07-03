@@ -96,6 +96,11 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         })
     }
 
+    // TODO(perf): the batch query hits `flows` three times via subqueries
+    // (deleted_at, test_execution_id, archiveDisabled). Postgres likely merges
+    // the scans, but if batch times climb: (1) add a partial index on
+    // `(id) WHERE config->>'archiveDisabled' = 'true'` for the JSONB filter,
+    // and (2) rewrite the test_execution_id exclusion as a LEFT JOIN anti-join.
     const batch = (await eligibilityQuery
       // Never archive the designated test execution of any flow (deleted or active).
       // This avoids having to NULL flows.test_execution_id in the archival transaction.
