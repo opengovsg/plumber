@@ -23,6 +23,10 @@ import {
   type McpConnection,
 } from '@/services/mcp/list-connections'
 import {
+  type RegisterConnectionResult,
+  registerConnectionService,
+} from '@/services/mcp/register-connection'
+import {
   type McpUpdateStepParametersResult,
   updateStepParametersService,
 } from '@/services/mcp/update-step-parameters'
@@ -114,7 +118,7 @@ export function createMcpBridgeTools(
 
     update_step_parameters: tool({
       description:
-        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Optionally assign a connection by passing connection_id (obtain from list_connections; must match the step's app). Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.",
+        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Optionally assign a connection by passing connection_id (obtain from list_connections; must match the step's app). Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.\n\nWhen connection_id is provided for a FormSG trigger or M365-Excel step, connection registration runs automatically. Inspect the result before proceeding:\n- connectionRegistered: true — registration succeeded; step is fully connected.\n- connectionConflict: true + connectionConflictMessage — webhook already claimed; relay connectionConflictMessage to the user verbatim and call register_connection with the same step_id and connection_id only after explicit confirmation.\n- connectionError — permission or technical error; surface to user. Do not retry.\n- formFields (FormSG only, present on conflict or error) — trimmed field list for wiring downstream steps even when trigger is unconnected.",
       inputSchema: z.object({
         pipe_id: z.string().describe('ID of the pipe that contains the step'),
         step_id: z.string().describe('ID of the step to update'),
@@ -249,6 +253,35 @@ export function createMcpBridgeTools(
             onPipeChange?.(pipeId)
           }
         }
+      },
+    }),
+
+    register_connection: tool({
+      description:
+        'Register a FormSG connection on a trigger step, overwriting any existing webhook. ' +
+        'Call ONLY after the user has explicitly confirmed they want to overwrite the existing webhook. ' +
+        'On success the connection is persisted to the step.',
+      inputSchema: z.object({
+        pipe_id: z.string().describe('ID of the pipe containing the step'),
+        step_id: z.string().describe('ID of the trigger step to register'),
+        connection_id: z
+          .string()
+          .describe(
+            'Connection ID to register and persist on the step. Pass the same connection_id from the preceding update_step_parameters call.',
+          ),
+      }),
+      execute: async ({
+        pipe_id,
+        step_id,
+        connection_id,
+      }): Promise<RegisterConnectionResult> => {
+        const result = await registerConnectionService(
+          user,
+          step_id,
+          connection_id,
+        )
+        onPipeChange?.(pipe_id)
+        return result
       },
     }),
   }
