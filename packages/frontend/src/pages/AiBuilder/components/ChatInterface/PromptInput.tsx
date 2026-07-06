@@ -46,11 +46,13 @@ export default function PromptInput({
     Record<number, string>
   >({})
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
+  const [reviewMode, setReviewMode] = useState(false)
 
   // Reset state whenever a new clarification arrives
   useEffect(() => {
     setSelectedAnswers({})
     setCurrentQuestionIdx(0)
+    setReviewMode(false)
   }, [clarification])
 
   const handleSubmit = (e: SyntheticEvent) => {
@@ -100,15 +102,29 @@ export default function PromptInput({
 
     const isLast = currentQuestionIdx === clarification.length - 1
     if (isLast) {
-      const combined = clarification
-        .map((q, i) => `Q: ${q.question}\nA: ${newAnswers[i]}`)
-        .join('\n\n')
-      sendMessage(combined)
-      setSelectedAnswers({})
-      setCurrentQuestionIdx(0)
+      setReviewMode(true)
     } else {
       setCurrentQuestionIdx((prev) => prev + 1)
     }
+  }
+
+  const handleConfirm = () => {
+    if (!clarification) {
+      return
+    }
+    const combined = clarification
+      .map((q, i) => `Q: ${q.question}\nA: ${selectedAnswers[i]}`)
+      .join('\n\n')
+    sendMessage(combined)
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+    setReviewMode(false)
+  }
+
+  const handleReset = () => {
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+    setReviewMode(false)
   }
 
   const handleOptionClick = (optionIdx: number) => {
@@ -144,9 +160,13 @@ export default function PromptInput({
       <ChoicePicker
         clarification={clarification}
         currentQuestionIdx={currentQuestionIdx}
+        selectedAnswers={selectedAnswers}
+        reviewMode={reviewMode}
         isStreaming={isStreaming}
         onOptionClick={handleOptionClick}
         onFreeTextSubmit={handleAnswer}
+        onConfirm={handleConfirm}
+        onReset={handleReset}
         cancelStream={cancelStream}
       />
     )
