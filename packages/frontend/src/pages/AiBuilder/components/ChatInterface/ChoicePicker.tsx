@@ -9,18 +9,26 @@ import { type ClarificationQuestion } from '@/hooks/useChatStream'
 interface ChoicePickerProps {
   clarification: ClarificationQuestion[]
   currentQuestionIdx: number
+  selectedAnswers: Record<number, string>
+  reviewMode: boolean
   isStreaming: boolean
   onOptionClick: (optionIdx: number) => void
   onFreeTextSubmit: (text: string) => void
+  onConfirm: () => void
+  onReset: () => void
   cancelStream: () => void
 }
 
 export default function ChoicePicker({
   clarification,
   currentQuestionIdx,
+  selectedAnswers,
+  reviewMode,
   isStreaming,
   onOptionClick,
   onFreeTextSubmit,
+  onConfirm,
+  onReset,
   cancelStream,
 }: ChoicePickerProps) {
   const [input, setInput] = useState('')
@@ -28,6 +36,73 @@ export default function ChoicePicker({
 
   const currentQ = clarification[currentQuestionIdx] ?? clarification[0]
   const isMulti = clarification.length > 1
+
+  if (reviewMode) {
+    return (
+      <Box w="full" maxW="4xl">
+        <Box
+          bg="white"
+          border="1px"
+          borderColor="gray.200"
+          borderRadius="16px"
+          boxShadow="0 2px 4px rgba(0,0,0,0.1)"
+          p={4}
+          w="full"
+        >
+          <Flex direction="column" gap={3}>
+            {clarification.map((q, i) => (
+              <Box key={i}>
+                <Text fontSize="sm" color="gray.500">
+                  {q.question}
+                </Text>
+                <Text fontWeight="medium" color="gray.900">
+                  {selectedAnswers[i] ?? '—'}
+                </Text>
+              </Box>
+            ))}
+          </Flex>
+
+          <Flex
+            justify="space-between"
+            align="center"
+            mt={4}
+            pt={3}
+            borderTop="1px"
+            borderColor="gray.100"
+          >
+            <Button
+              variant="link"
+              size="sm"
+              color="gray.500"
+              onClick={onReset}
+              isDisabled={isStreaming}
+              fontWeight="normal"
+            >
+              Change answers
+            </Button>
+            {isStreaming ? (
+              <Icon
+                as={FaCircleStop}
+                fontSize="24px"
+                color="red.500"
+                cursor="pointer"
+                onClick={cancelStream}
+                _hover={{ color: 'red.600' }}
+              />
+            ) : (
+              <Icon
+                as={FaArrowCircleUp}
+                fontSize="24px"
+                color="primary.500"
+                cursor="pointer"
+                onClick={onConfirm}
+              />
+            )}
+          </Flex>
+        </Box>
+      </Box>
+    )
+  }
 
   const handleResize = (e?: FormEvent<HTMLTextAreaElement>) => {
     const target = e?.currentTarget || textareaRef.current
