@@ -45,7 +45,9 @@ export default function DynamicPicker({
   const [options, setOptions] = useState<DynamicPickerOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [query, setQuery] = useState('')
-  const [manualInput, setManualInput] = useState('')
+  const [selectedOption, setSelectedOption] =
+    useState<DynamicPickerOption | null>(null)
+  const [inputValue, setInputValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -84,7 +86,6 @@ export default function DynamicPicker({
     : options
 
   const hasOptions = !isLoading && options.length > 0
-  const noOptions = !isLoading && options.length === 0
 
   const handleResize = (e?: FormEvent<HTMLTextAreaElement>) => {
     const target = e?.currentTarget || textareaRef.current
@@ -95,17 +96,22 @@ export default function DynamicPicker({
     target.style.height = Math.min(target.scrollHeight, 120) + 'px'
   }
 
-  const handleManualSubmit = () => {
-    if (!manualInput.trim() || isStreaming) {
+  const handleOptionClick = (opt: DynamicPickerOption) => {
+    setSelectedOption(opt)
+    setInputValue(opt.name)
+  }
+
+  const handleSubmit = () => {
+    if (!inputValue.trim() || isStreaming) {
       return
     }
-    onSelect(manualInput, manualInput)
+    onSelect(inputValue, selectedOption?.value ?? inputValue)
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleManualSubmit()
+      handleSubmit()
     }
   }
 
@@ -151,9 +157,15 @@ export default function DynamicPicker({
                   h="auto"
                   py={2}
                   isDisabled={isStreaming}
-                  onClick={() => onSelect(opt.name, opt.value)}
-                  borderColor="gray.200"
-                  bg="white"
+                  onClick={() => handleOptionClick(opt)}
+                  borderColor={
+                    selectedOption?.value === opt.value
+                      ? 'primary.500'
+                      : 'gray.200'
+                  }
+                  bg={
+                    selectedOption?.value === opt.value ? 'primary.50' : 'white'
+                  }
                   color="gray.800"
                   _hover={{ borderColor: 'primary.300', bg: 'primary.50' }}
                   _active={{ bg: 'primary.100' }}
@@ -167,90 +179,72 @@ export default function DynamicPicker({
           ) : null}
         </Flex>
 
-        {noOptions && (
-          <Box borderTop="1px" borderColor="gray.100" mt={2} pt={3}>
-            <Flex gap={2} align="flex-end">
-              <Textarea
-                ref={textareaRef}
-                value={manualInput}
-                onChange={(e) => setManualInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter a value manually…"
-                resize="none"
-                border="none"
-                bg="transparent"
-                p={0}
-                color="gray.900"
-                _placeholder={{ color: 'gray.400' }}
-                _focus={{ outline: 'none', boxShadow: 'none' }}
-                fontSize="md"
-                rows={1}
-                maxH="120px"
-                overflowY="auto"
-                onInput={handleResize}
-                isDisabled={isStreaming}
-              />
-              <Flex align="flex-end" flexShrink={0} h="24px">
-                {isStreaming ? (
+        <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
+          <Flex gap={2} align="flex-end">
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value)
+                setSelectedOption(null)
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder={
+                hasOptions
+                  ? 'Or describe your answer…'
+                  : 'Enter a value manually…'
+              }
+              resize="none"
+              border="none"
+              bg="transparent"
+              p={0}
+              color="gray.900"
+              _placeholder={{ color: 'gray.400' }}
+              _focus={{ outline: 'none', boxShadow: 'none' }}
+              fontSize="md"
+              rows={1}
+              maxH="120px"
+              overflowY="auto"
+              onInput={handleResize}
+              isDisabled={isStreaming}
+            />
+            <Flex align="flex-end" flexShrink={0} h="24px">
+              {isStreaming ? (
+                <Icon
+                  as={FaCircleStop}
+                  fontSize="24px"
+                  color="red.500"
+                  cursor="pointer"
+                  onClick={cancelStream}
+                  _hover={{ color: 'red.600' }}
+                />
+              ) : (
+                inputValue.trim() && (
                   <Icon
-                    as={FaCircleStop}
+                    as={FaArrowCircleUp}
                     fontSize="24px"
-                    color="red.500"
+                    color="primary.500"
+                    onClick={handleSubmit}
                     cursor="pointer"
-                    onClick={cancelStream}
-                    _hover={{ color: 'red.600' }}
                   />
-                ) : (
-                  manualInput.trim() && (
-                    <Icon
-                      as={FaArrowCircleUp}
-                      fontSize="24px"
-                      color="primary.500"
-                      onClick={handleManualSubmit}
-                      cursor="pointer"
-                    />
-                  )
-                )}
-              </Flex>
+                )
+              )}
             </Flex>
+          </Flex>
+
+          <Flex justify="flex-end" mt={2}>
             <Button
-              variant="ghost"
+              variant="link"
               size="sm"
-              mt={2}
-              color="gray.500"
+              color="gray.400"
               isDisabled={isStreaming}
               onClick={onSkip}
+              fontWeight="normal"
             >
-              Skip this field
+              skip this step
             </Button>
-          </Box>
-        )}
-
-        {(isLoading || hasOptions) && (
-          <Flex justify="flex-end" mt={3} h="24px">
-            {isStreaming ? (
-              <Icon
-                as={FaCircleStop}
-                fontSize="24px"
-                color="red.500"
-                cursor="pointer"
-                onClick={cancelStream}
-                _hover={{ color: 'red.600' }}
-              />
-            ) : (
-              hasOptions && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  color="gray.500"
-                  onClick={onSkip}
-                >
-                  Skip this field
-                </Button>
-              )
-            )}
           </Flex>
-        )}
+        </Box>
       </Box>
     </Box>
   )
