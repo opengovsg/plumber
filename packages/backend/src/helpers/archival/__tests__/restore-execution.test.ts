@@ -35,22 +35,24 @@ const mockPayload: ArchivedPayload = {
   ],
 }
 
+function makeInsertChain(returning: object[]) {
+  return {
+    onConflict: vi.fn().mockReturnThis(),
+    ignore: vi.fn().mockReturnThis(),
+    returning: vi.fn().mockResolvedValue(returning),
+  }
+}
+
 function makeMockKnex({ executionExists = false, stepExists = false } = {}) {
-  const insertExecFn = vi.fn().mockResolvedValue([])
-  const insertStepFn = vi.fn().mockResolvedValue([])
   const rawFn = vi.fn().mockResolvedValue([])
 
+  const execChain = makeInsertChain(executionExists ? [] : [{ id: 'exec-1' }])
+  const stepChain = makeInsertChain(stepExists ? [] : [{ id: 'step-1' }])
+
+  const insertExecFn = vi.fn().mockReturnValue(execChain)
+  const insertStepFn = vi.fn().mockReturnValue(stepChain)
+
   const trx = (table: string) => ({
-    where: (_col: string, _val: string) => ({
-      first: () =>
-        Promise.resolve(
-          (table === 'executions' && executionExists) ||
-            (table === 'execution_steps' && stepExists)
-            ? { id: 'existing' }
-            : undefined,
-        ),
-      insert: table === 'executions' ? insertExecFn : insertStepFn,
-    }),
     insert: table === 'executions' ? insertExecFn : insertStepFn,
   })
   const trxWithRaw = Object.assign(trx, { raw: rawFn })
@@ -80,18 +82,18 @@ describe('restoreExecution', () => {
     expect((knex as any)._insertStepFn).toHaveBeenCalledOnce()
   })
 
-  it('skips execution insert when it already exists', async () => {
+  it('reports executionInserted=false when execution already exists', async () => {
     const knex = makeMockKnex({ executionExists: true })
     const result = await restoreExecution(mockPayload, knex)
     expect(result.executionInserted).toBe(false)
-    expect((knex as any)._insertExecFn).not.toHaveBeenCalled()
+    expect((knex as any)._insertExecFn).toHaveBeenCalledOnce()
   })
 
-  it('skips step insert when it already exists', async () => {
+  it('reports stepsInserted=0 when steps already exist', async () => {
     const knex = makeMockKnex({ stepExists: true })
     const result = await restoreExecution(mockPayload, knex)
     expect(result.stepsInserted).toBe(0)
-    expect((knex as any)._insertStepFn).not.toHaveBeenCalled()
+    expect((knex as any)._insertStepFn).toHaveBeenCalledOnce()
   })
 
   it('runs inside a transaction', async () => {
@@ -100,12 +102,22 @@ describe('restoreExecution', () => {
     expect(knex.transaction).toHaveBeenCalledOnce()
   })
 
-  it('sets archiveDisabled on the flow config after restoring', async () => {
+  it('sets archiveDisabled on the flow config before restoring', async () => {
     const knex = makeMockKnex()
     await restoreExecution(mockPayload, knex)
     const rawCall = (knex as any)._rawFn.mock.calls[0]
     expect(rawCall[0]).toContain('UPDATE flows')
     expect(rawCall[1][0]).toBe(JSON.stringify({ archiveDisabled: true }))
     expect(rawCall[1][1]).toBe('flow-1')
+    expect((knex as any)._rawFn).toHaveBeenCalledBefore(
+      (knex as any)._insertExecFn,
+    )
+  })
+
+  it('handles empty steps array', async () => {
+    const knex = makeMockKnex()
+    const result = await restoreExecution({ ...mockPayload, steps: [] }, knex)
+    expect(result.stepsInserted).toBe(0)
+    expect((knex as any)._insertStepFn).not.toHaveBeenCalled()
   })
 })
