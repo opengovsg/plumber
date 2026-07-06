@@ -22,6 +22,7 @@ import {
   isIfThenStep,
   type StepRegion,
 } from '@/helpers/toolbox'
+import { useIfThenThenEnabled } from '@/hooks/useIfThenThenEnabled'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
@@ -48,6 +49,7 @@ export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
   const { flow, readOnly } = useContext(EditorContext)
   const { groupingActions } = useContext(StepsToDisplayContext)
+  const ifThenThenEnabled = useIfThenThenEnabled()
   const { handleReorderUpdate } = useReorderSteps(flow.id)
   const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
     refetchQueries: [GET_FLOW],
@@ -138,45 +140,47 @@ export default function ForEach(props: ForEachProps) {
                 {/* Add a step immediately after the nested block, mirroring
                     the top-level after-block affordance: repoints the block's
                     last branch at the new step so the block ends there instead
-                    of absorbing it. */}
-                {isIfThenStep(lastBranchIfThen) && blockLastStep && (
-                  <AddStepButton
-                    isLastStep={isLastRegion}
-                    step={blockLastStep}
-                    isHidden={readOnly}
-                    isDisabled={false}
-                    showEmptyAction={false}
-                    onAfterCreateStep={async (createdStep) => {
-                      // See StepsList for the reasoning: repoint the last branch
-                      // at the new step, and chain the earlier branches via
-                      // auxiliary changes so a legacy (marker-less) block is
-                      // upgraded to new-style rather than swallowing the new
-                      // step. No-ops for an already-chained block.
-                      const earlierBranchJumpTargets =
-                        getEarlierBranchesStepIdToJumpTo(branches)
-                      await updateStepPositions({
-                        variables: {
-                          input: {
-                            stepPositions: [
-                              {
-                                id: lastBranchIfThen.id,
-                                position: lastBranchIfThen.position,
-                                type: lastBranchIfThen.type as StepEnumType,
-                                stepIdToJumpTo: createdStep.id,
-                              },
-                            ],
-                            ...(earlierBranchJumpTargets.length > 0 && {
-                              auxiliaryChanges: earlierBranchJumpTargets.map(
-                                (jumpTarget) => ({ ifThen: jumpTarget }),
-                              ),
-                            }),
-                            flow: { updatedAt: createdStep.flow.updatedAt },
+                    of absorbing it. Gated behind the if-then-then flag. */}
+                {ifThenThenEnabled &&
+                  isIfThenStep(lastBranchIfThen) &&
+                  blockLastStep && (
+                    <AddStepButton
+                      isLastStep={isLastRegion}
+                      step={blockLastStep}
+                      isHidden={readOnly}
+                      isDisabled={false}
+                      showEmptyAction={false}
+                      onAfterCreateStep={async (createdStep) => {
+                        // See StepsList for the reasoning: repoint the last
+                        // branch at the new step, and chain the earlier branches
+                        // via auxiliary changes so a legacy (marker-less) block
+                        // is upgraded to new-style rather than swallowing the new
+                        // step. No-ops for an already-chained block.
+                        const earlierBranchJumpTargets =
+                          getEarlierBranchesStepIdToJumpTo(branches)
+                        await updateStepPositions({
+                          variables: {
+                            input: {
+                              stepPositions: [
+                                {
+                                  id: lastBranchIfThen.id,
+                                  position: lastBranchIfThen.position,
+                                  type: lastBranchIfThen.type as StepEnumType,
+                                  stepIdToJumpTo: createdStep.id,
+                                },
+                              ],
+                              ...(earlierBranchJumpTargets.length > 0 && {
+                                auxiliaryChanges: earlierBranchJumpTargets.map(
+                                  (jumpTarget) => ({ ifThen: jumpTarget }),
+                                ),
+                              }),
+                              flow: { updatedAt: createdStep.flow.updatedAt },
+                            },
                           },
-                        },
-                      })
-                    }}
-                  />
-                )}
+                        })
+                      }}
+                    />
+                  )}
               </Fragment>
             )
           }

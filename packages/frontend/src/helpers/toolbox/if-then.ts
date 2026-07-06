@@ -6,6 +6,7 @@ import { useMutation } from '@apollo/client'
 import { BranchContext } from '@/components/FlowStepGroup/Content/IfThen/BranchContext'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { UPDATE_STEP } from '@/graphql/mutations/update-step'
+import { useIfThenThenEnabled } from '@/hooks/useIfThenThenEnabled'
 
 import { getGroupingActions, TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from './common'
 import type { StepRegion } from './region-list'
@@ -136,6 +137,7 @@ export function useIfThenInitializer(): [
 ] {
   const [isInitializing, setIsInitializing] = useState(false)
   const { depth } = useContext(BranchContext)
+  const ifThenThenEnabled = useIfThenThenEnabled()
 
   // We run these in parallel without updating the cache, and explicitly
   // re-fetch pipe _after_. This is because we don't want users on slow
@@ -163,6 +165,10 @@ export function useIfThenInitializer(): [
       // branch — jumps to the block's exit: the step that followed the anchor
       // step when the block was created, or the "stop" sentinel (null) when
       // the block is added at the end of the flow.
+      //
+      // When the if-then-then feature is off, the marker is omitted entirely
+      // (pre-feature behaviour) so a block built while off stays legacy and
+      // executes via the scan.
       const createSecondBranch = await createStep({
         variables: {
           input: {
@@ -178,7 +184,9 @@ export function useIfThenInitializer(): [
             parameters: {
               depth,
               branchName: 'Branch 2',
-              stepIdToJumpTo: lastBranchStepIdToJumpTo,
+              ...(ifThenThenEnabled && {
+                stepIdToJumpTo: lastBranchStepIdToJumpTo,
+              }),
             },
             config: commonConfig,
           },
@@ -199,7 +207,9 @@ export function useIfThenInitializer(): [
             parameters: {
               branchName: 'Branch 1',
               depth,
-              stepIdToJumpTo: createdSecondBranch.id,
+              ...(ifThenThenEnabled && {
+                stepIdToJumpTo: createdSecondBranch.id,
+              }),
             },
             connection: {
               id: null,
@@ -252,7 +262,7 @@ export function useIfThenInitializer(): [
 
       return currStep
     },
-    [createStep, depth, updateStep],
+    [createStep, depth, ifThenThenEnabled, updateStep],
   )
 
   return [initialize, isInitializing]

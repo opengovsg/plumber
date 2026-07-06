@@ -4,6 +4,7 @@ import { useContext } from 'react'
 
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { isStepWithinIfThenBlock, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useIfThenThenEnabled } from '@/hooks/useIfThenThenEnabled'
 
 /**
  * Helper function to check if Delay action should be selectable
@@ -45,6 +46,7 @@ export const useIsAppSelectable = ({
   prevStepId?: string
 }): Record<string, boolean> => {
   const { groupedSteps, regionList } = useContext(StepsToDisplayContext)
+  const ifThenThenEnabled = useIfThenThenEnabled()
 
   const hasIfThen = groupedSteps.some((group) =>
     group.some((step) => step.key === TOOLBOX_ACTIONS.IfThen),
@@ -61,14 +63,17 @@ export const useIsAppSelectable = ({
 
   return {
     /**
-     * If-then should only be selectable if we are not inside an if-then
-     * branch — no nesting if-thens. It is otherwise addable anywhere, even
-     * mid-flow or inside a for-each body: an inserted block exits to the step
-     * that followed the anchor step (see useIfThenInitializer), and an if-then
-     * elsewhere in the flow no longer disables it (blocks can follow one
-     * another, chained via each branch's step to jump to).
+     * When the if-then-then feature is ON, if-then is selectable anywhere
+     * except inside an if-then branch (no nesting) — addable mid-flow, after a
+     * block, or inside a for-each body; an existing if-then no longer disables
+     * a second one (blocks chain via each branch's step to jump to).
+     *
+     * When OFF, restore the pre-feature rule: if-then only at the last step,
+     * and only when the flow has no if-then yet.
      */
-    [TOOLBOX_ACTIONS.IfThen]: !isWithinIfThenBlock,
+    [TOOLBOX_ACTIONS.IfThen]: ifThenThenEnabled
+      ? !isWithinIfThenBlock
+      : isLastStep && !hasIfThen,
     /**
      * For-each should only be selectable if:
      * - We're the last step.

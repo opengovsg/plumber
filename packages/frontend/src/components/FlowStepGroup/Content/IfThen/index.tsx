@@ -14,6 +14,7 @@ import { UPDATE_STEP_POSITIONS } from '@/graphql/mutations/update-step-positions
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { getMrfApprovalConfig } from '@/helpers/formsg'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
+import { useIfThenThenEnabled } from '@/hooks/useIfThenThenEnabled'
 
 import Branch from './Branch'
 import { BranchContext } from './BranchContext'
@@ -28,6 +29,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
   const { groupedSteps, stepsBeforeGroup } = props
 
   const { depth } = useContext(BranchContext)
+  const ifThenThenEnabled = useIfThenThenEnabled()
   const { approvalBranches } = useContext(MrfContext)
   const {
     flow,
@@ -69,6 +71,14 @@ export default function IfThen(props: IfThenProps): JSX.Element {
         | null
         | undefined) ?? null
 
+    // Maintain the step-to-jump-to chain only when the feature is on, or when
+    // the block already has markers (built while on). When off and the block is
+    // marker-less, add the branch the pre-feature way — no marker written, no
+    // repoint — so an off-built block stays legacy.
+    const maintainChain =
+      ifThenThenEnabled ||
+      Object.hasOwn(lastBranchIfThen.parameters ?? {}, 'stepIdToJumpTo')
+
     const approvalConfig = getMrfApprovalConfig({
       previousStep: lastStep,
       approvalBranches,
@@ -89,7 +99,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           parameters: {
             depth,
             branchName: `Branch ${numBranches + 1}`,
-            stepIdToJumpTo: lastBranchStepIdToJumpTo,
+            ...(maintainChain && { stepIdToJumpTo: lastBranchStepIdToJumpTo }),
           },
           config: {
             approval: approvalConfig,
@@ -99,22 +109,28 @@ export default function IfThen(props: IfThenProps): JSX.Element {
     })
     const newBranchStep = branchStep.data.createStep
 
-    // Repoint the old last branch's step to jump to at the new branch.
-    const updatedPositions = await updateStepPositions({
-      variables: {
-        input: {
-          stepPositions: [
-            {
-              id: lastBranchIfThen.id,
-              position: lastBranchIfThen.position,
-              type: lastBranchIfThen.type as StepEnumType,
-              stepIdToJumpTo: newBranchStep.id,
-            },
-          ],
-          flow: { updatedAt: newBranchStep.flow.updatedAt },
+    // Repoint the old last branch's step to jump to at the new branch (only
+    // when maintaining the chain).
+    let updatedAt = newBranchStep.flow.updatedAt
+    if (maintainChain) {
+      const updatedPositions = await updateStepPositions({
+        variables: {
+          input: {
+            stepPositions: [
+              {
+                id: lastBranchIfThen.id,
+                position: lastBranchIfThen.position,
+                type: lastBranchIfThen.type as StepEnumType,
+                stepIdToJumpTo: newBranchStep.id,
+              },
+            ],
+            flow: { updatedAt },
+          },
         },
-      },
-    })
+      })
+      updatedAt =
+        updatedPositions.data?.updateStepPositions?.updatedAt ?? updatedAt
+    }
 
     // Add an empty blank step; otherwise users are confused how to add more
     // steps to the branch.
@@ -126,7 +142,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
           },
           flow: {
             id: flowId,
-            updatedAt: updatedPositions.data?.updateStepPositions?.updatedAt,
+            updatedAt,
           },
           config: {
             approval: approvalConfig,
@@ -139,6 +155,7 @@ export default function IfThen(props: IfThenProps): JSX.Element {
     onDrawerOpen()
   }, [
     isAddingBranch,
+    ifThenThenEnabled,
     groupedSteps,
     createStep,
     updateStepPositions,

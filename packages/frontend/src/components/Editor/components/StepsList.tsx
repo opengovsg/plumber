@@ -18,6 +18,7 @@ import {
   getUpdatedIfThenConfigOnRegionReorder,
   isIfThenStep,
 } from '@/helpers/toolbox'
+import { useIfThenThenEnabled } from '@/hooks/useIfThenThenEnabled'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import { EDITOR_RIGHT_DRAWER_WIDTH } from '../constants'
@@ -36,6 +37,7 @@ export function StepsList({ isNested }: StepsListProps) {
   const { flow, isDrawerOpen, isMobile, readOnly } = useContext(EditorContext)
   const { mrfSteps, mrfApprovalSteps, approvalBranches } =
     useContext(MrfContext)
+  const ifThenThenEnabled = useIfThenThenEnabled()
   const [updateStepPositions] = useMutation(UPDATE_STEP_POSITIONS, {
     refetchQueries: [GET_FLOW],
   })
@@ -181,48 +183,52 @@ export function StepsList({ isNested }: StepsListProps) {
                   step so the block ends there instead of absorbing it; the new
                   step becomes the first step of the following region (or a fresh
                   trailing region when the block is last). isLastStep reflects
-                  whether the block currently ends the flow. */}
-              {isIfThenBlock && lastBranchIfThen && blockLastStep && (
-                <AddStepButton
-                  isLastStep={isLastRegion}
-                  step={blockLastStep}
-                  isHidden={readOnly}
-                  isDisabled={false}
-                  showEmptyAction={false}
-                  onAfterCreateStep={async (createdStep) => {
-                    // Repoint the block's last branch at the new step (its
-                    // position is unchanged; the entry just carries the new step
-                    // to jump to and anchors the mutation). For a legacy block
-                    // the earlier branches carry no chain yet, so send their
-                    // step-to-jump-to updates as auxiliary changes (branch
-                    // if-thens aren't contiguous) — this upgrades the whole block
-                    // to new-style so buildRegionList reads the new step as the
-                    // block's exit. No-ops for an already-chained block.
-                    const earlierBranchJumpTargets =
-                      getEarlierBranchesStepIdToJumpTo(branches)
-                    await updateStepPositions({
-                      variables: {
-                        input: {
-                          stepPositions: [
-                            {
-                              id: lastBranchIfThen.id,
-                              position: lastBranchIfThen.position,
-                              type: lastBranchIfThen.type as StepEnumType,
-                              stepIdToJumpTo: createdStep.id,
-                            },
-                          ],
-                          ...(earlierBranchJumpTargets.length > 0 && {
-                            auxiliaryChanges: earlierBranchJumpTargets.map(
-                              (jumpTarget) => ({ ifThen: jumpTarget }),
-                            ),
-                          }),
-                          flow: { updatedAt: createdStep.flow.updatedAt },
+                  whether the block currently ends the flow. Gated behind the
+                  if-then-then flag — the only creation affordance here. */}
+              {ifThenThenEnabled &&
+                isIfThenBlock &&
+                lastBranchIfThen &&
+                blockLastStep && (
+                  <AddStepButton
+                    isLastStep={isLastRegion}
+                    step={blockLastStep}
+                    isHidden={readOnly}
+                    isDisabled={false}
+                    showEmptyAction={false}
+                    onAfterCreateStep={async (createdStep) => {
+                      // Repoint the block's last branch at the new step (its
+                      // position is unchanged; the entry just carries the new
+                      // step to jump to and anchors the mutation). For a legacy
+                      // block the earlier branches carry no chain yet, so send
+                      // their step-to-jump-to updates as auxiliary changes
+                      // (branch if-thens aren't contiguous) — this upgrades the
+                      // whole block to new-style so buildRegionList reads the new
+                      // step as the block's exit. No-ops for a chained block.
+                      const earlierBranchJumpTargets =
+                        getEarlierBranchesStepIdToJumpTo(branches)
+                      await updateStepPositions({
+                        variables: {
+                          input: {
+                            stepPositions: [
+                              {
+                                id: lastBranchIfThen.id,
+                                position: lastBranchIfThen.position,
+                                type: lastBranchIfThen.type as StepEnumType,
+                                stepIdToJumpTo: createdStep.id,
+                              },
+                            ],
+                            ...(earlierBranchJumpTargets.length > 0 && {
+                              auxiliaryChanges: earlierBranchJumpTargets.map(
+                                (jumpTarget) => ({ ifThen: jumpTarget }),
+                              ),
+                            }),
+                            flow: { updatedAt: createdStep.flow.updatedAt },
+                          },
                         },
-                      },
-                    })
-                  }}
-                />
-              )}
+                      })
+                    }}
+                  />
+                )}
             </Fragment>
           )
         }
