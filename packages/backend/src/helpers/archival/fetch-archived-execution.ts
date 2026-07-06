@@ -6,7 +6,10 @@ import {
 import { promisify } from 'node:util'
 import { gunzip } from 'node:zlib'
 
+import logger from '../logger'
+
 import { S3_PREFIX_EXECUTIONS, S3_PREFIX_TEST_EXECUTIONS } from './build-s3-key'
+import { ArchivedPayloadSchema } from './schemas'
 import type { ArchivedPayload } from './types'
 
 const gunzipAsync = promisify(gunzip)
@@ -67,9 +70,13 @@ export async function fetchArchivedExecution(
     new GetObjectCommand({ Bucket: opts.bucket, Key: key }),
   )
   if (!response.Body) {
+    logger.error({
+      event: 'rehydration.fetch.no_body',
+      key,
+    })
     throw new Error(`S3 object has no body: ${key}`)
   }
   const compressed = await response.Body.transformToByteArray()
   const json = await gunzipAsync(compressed)
-  return JSON.parse(json.toString()) as ArchivedPayload
+  return ArchivedPayloadSchema.parse(JSON.parse(json.toString()))
 }
