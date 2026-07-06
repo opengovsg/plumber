@@ -16,12 +16,18 @@ export async function restoreExecution(
   let stepsInserted = 0
 
   await knexClient.transaction(async (trx) => {
-    const existing = await trx('executions')
-      .where('id', execution.id)
-      .first('id')
+    // Protect the flow from same-night re-archival before we start restoring,
+    // so there is no race window with the archival routine. Sets archiveDisabled
+    // in the flow's config JSONB so the eligibility query skips it until the
+    // operator clears the flag:
+    //   UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<id>';
+    await trx.raw(
+      `UPDATE flows SET config = COALESCE(config, '{}') || ?::jsonb WHERE id = ?`,
+      [JSON.stringify({ archiveDisabled: true }), execution.flowId],
+    )
 
-    if (!existing) {
-      await trx('executions').insert({
+    const insertedExecution = await trx('executions')
+      .insert({
         id: execution.id,
         flow_id: execution.flowId,
         status: execution.status,
@@ -31,43 +37,36 @@ export async function restoreExecution(
         updated_at: execution.updatedAt,
         deleted_at: execution.deletedAt,
       })
-      executionInserted = true
+      .onConflict('id')
+      .ignore()
+      .returning('id')
+    executionInserted = insertedExecution.length > 0
+
+    if (steps.length > 0) {
+      const insertedSteps = await trx('execution_steps')
+        .insert(
+          steps.map((step) => ({
+            id: step.id,
+            execution_id: step.executionId,
+            step_id: step.stepId,
+            app_key: step.appKey,
+            key: step.key,
+            job_id: step.jobId,
+            status: step.status,
+            data_in: step.dataIn,
+            data_out: step.dataOut,
+            error_details: step.errorDetails,
+            metadata: step.metadata,
+            created_at: step.createdAt,
+            updated_at: step.updatedAt,
+            deleted_at: step.deletedAt,
+          })),
+        )
+        .onConflict('id')
+        .ignore()
+        .returning('id')
+      stepsInserted = insertedSteps.length
     }
-
-    for (const step of steps) {
-      const existingStep = await trx('execution_steps')
-        .where('id', step.id)
-        .first('id')
-
-      if (!existingStep) {
-        await trx('execution_steps').insert({
-          id: step.id,
-          execution_id: step.executionId,
-          step_id: step.stepId,
-          app_key: step.appKey,
-          key: step.key,
-          job_id: step.jobId,
-          status: step.status,
-          data_in: step.dataIn,
-          data_out: step.dataOut,
-          error_details: step.errorDetails,
-          metadata: step.metadata,
-          created_at: step.createdAt,
-          updated_at: step.updatedAt,
-          deleted_at: step.deletedAt,
-        })
-        stepsInserted++
-      }
-    }
-
-    // Protect the flow from same-night re-archival. Sets archiveDisabled in the
-    // flow's config JSONB so the eligibility query skips it until the operator
-    // clears the flag:
-    //   UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<id>';
-    await trx.raw(
-      `UPDATE flows SET config = COALESCE(config, '{}') || ?::jsonb WHERE id = ?`,
-      [JSON.stringify({ archiveDisabled: true }), execution.flowId],
-    )
   })
 
   return { executionInserted, stepsInserted }
