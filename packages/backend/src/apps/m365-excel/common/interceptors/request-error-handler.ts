@@ -107,8 +107,13 @@ const handle500and502and503: ThrowingHandler = function ($, error) {
 export const EXCEL_504_MAX_ATTEMPTS = 3
 const EXCEL_504_ERROR_MESSAGE = {
   name: 'Excel request timed out',
-  solution:
-    'Your Excel file most likely has long-running formulas. Please either simplify the formulas or set the calculation options (under the Formulas tab) to manual instead of automatic.',
+  solution: `This usually happens for one of two reasons:
+
+1. **Unnecessary formatting is bloating your file size.**
+   - Fix: Review > Check Performance > Optimize Sheet.
+
+2. **Your file has long-running or complex formulas.**
+   - Fix: Simplify the formulas, or set the calculation mode to Manual (Formulas tab > Calculation Options).`,
 }
 
 const handle504: ThrowingHandler = function ($, error) {
