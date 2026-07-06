@@ -15,7 +15,7 @@ export const fieldSchema = z.object({
 
 export const field = {
   key: ensureZodObjectKey(fieldSchema, 'formatDateTimeToFormat'),
-  label: 'What format do you want to transform value to?',
+  label: 'What format do you want to convert to?',
   type: 'dropdown' as const,
   required: true,
   variables: false,

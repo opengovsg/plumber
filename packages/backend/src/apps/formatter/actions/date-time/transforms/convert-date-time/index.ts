@@ -37,7 +37,7 @@ export const spec = {
   id: 'formatDateTime',
 
   dropdownConfig: {
-    label: 'Format',
+    label: 'Change the format',
     description: 'Change a date or time to a new format style',
   },
 
