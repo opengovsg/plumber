@@ -1,7 +1,7 @@
 import '@/types/luxon-extensions'
 
 import { DateTime, Settings as LuxonSettings } from 'luxon'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   dateTimeToString,
@@ -75,6 +75,58 @@ describe('common date-time formatter functions', () => {
     it('supports parsing MyInfo Child date field', () => {
       const dateTime = parseDateTime('dd/LL/yyyy', '25/03/2024')
       expect(dateTime.toUnixInteger()).toEqual(1711296000)
+    })
+  })
+
+  describe('excelFormattedDate', () => {
+    // EXCEL_EPOCH = 1899-12-30 (SG time). This corrects for Excel's phantom
+    // Feb 29 1900 leap-year bug: serial 45292 = 2024-01-01T00:00:00+08:00.
+    it('parses a known serial to the correct SG date (45292 = 2024-01-01)', () => {
+      const dateTime = parseDateTime('excelFormattedDate', '45292')
+      // 2024-01-01T00:00:00+08:00 = 2023-12-31T16:00:00Z
+      expect(dateTime.toUnixInteger()).toEqual(1704038400)
+    })
+
+    it('converts fractional serials to time of day (0.5 = 12:00 noon)', () => {
+      const dateTime = parseDateTime('excelFormattedDate', '45292.5')
+      // 2024-01-01T12:00:00+08:00 = 2024-01-01T04:00:00Z
+      expect(dateTime.toUnixInteger()).toEqual(1704081600)
+    })
+
+    it('trims whitespace from input', () => {
+      const dateTime = parseDateTime('excelFormattedDate', '  45292  ')
+      expect(dateTime.toUnixInteger()).toEqual(1704038400)
+    })
+
+    it.each(['0', '-1', 'abc', ''])('throws for invalid serial %s', (input) => {
+      expect(() => parseDateTime('excelFormattedDate', input)).toThrowError()
+    })
+
+    it('stringify throws (input-only format)', () => {
+      expect(() =>
+        dateTimeToString('excelFormattedDate', DateTime.now()),
+      ).toThrowError()
+    })
+  })
+
+  describe('now', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.setSystemTime(1718445600000) // 2024-06-15T10:00:00.000Z = 18:00 SG
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('ignores the input value and returns the current time in SG timezone', () => {
+      expect(parseDateTime('now', 'ignored').toISO()).toEqual(
+        '2024-06-15T18:00:00.000+08:00',
+      )
+    })
+
+    it('stringify throws (input-only format)', () => {
+      expect(() => dateTimeToString('now', DateTime.now())).toThrowError()
     })
   })
 })

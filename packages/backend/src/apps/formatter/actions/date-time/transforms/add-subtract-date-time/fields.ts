@@ -1,20 +1,11 @@
-import { type DurationLikeObject } from 'luxon'
 import z from 'zod'
 
 import { type TransformSpec } from '@/apps/formatter/common/transform-spec'
 import { ensureZodObjectKey } from '@/helpers/zod-utils'
 
-const opTypeEnum = z.enum(['add', 'subtract'])
+import { timeUnitEnum, timeUnitOptions } from '../../common/time-units'
 
-const timeUnitEnum = z.enum([
-  'seconds',
-  'minutes',
-  'hours',
-  'days',
-  'months',
-  // To simplify date math code, values have the same keys as luxton
-  // duration objects.
-] as const satisfies ReadonlyArray<keyof DurationLikeObject>)
+const opTypeEnum = z.enum(['add', 'subtract'])
 
 const opsSchema = z.object({
   opType: opTypeEnum,
@@ -47,7 +38,7 @@ function sentenceCase(s: string): string {
 
 export const fields: TransformSpec['fields'] = [
   {
-    label: 'Specify the amount of time you want to add or subtract',
+    label: 'How much time do you want to add or subtract?',
     key: ensureZodObjectKey(fieldSchema.sourceType(), 'addSubtractDateTimeOps'),
     type: 'multirow-multicol' as const,
     required: true,
@@ -80,10 +71,7 @@ export const fields: TransformSpec['fields'] = [
         required: true,
         variables: false,
         showOptionValue: false,
-        options: timeUnitEnum.options.map((unit) => ({
-          label: sentenceCase(unit),
-          value: unit,
-        })),
+        options: timeUnitOptions,
         customStyle: { flex: 3 },
       },
     ],
