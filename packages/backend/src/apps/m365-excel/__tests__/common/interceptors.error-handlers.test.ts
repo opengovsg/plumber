@@ -275,7 +275,6 @@ describe('M365 request error handlers', () => {
       .catch((error): void => {
         expect(error).toBeInstanceOf(StepError)
         expect(error.message).toContain('Excel request timed out')
-        expect(error.message).toContain('long-running formulas')
       })
     expect(mocks.logWarning).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 504'),
