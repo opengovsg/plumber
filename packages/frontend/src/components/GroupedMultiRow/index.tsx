@@ -53,7 +53,7 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
     ...forwardedInputCreatorProps
   } = props
 
-  const { control } = useFormContext()
+  const { control, getValues, setValue } = useFormContext()
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   const {
@@ -88,7 +88,26 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
           : newRowDefaultValue,
       ],
     })
-  }, [append, newRowDefaultValue, subFields])
+    // Mirrors MultiRow: a field array's `append`/`remove` update the form
+    // value but don't fire the form's `watch` subject, so subscribers like
+    // the step validator never recompute. Re-assert the already-updated
+    // value through `setValue`, which does notify.
+    setValue(name, getValues(name), {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }, [append, newRowDefaultValue, subFields, setValue, getValues, name])
+
+  const handleRemoveGroup = useCallback(
+    (index: number) => {
+      remove(index)
+      setValue(name, getValues(name), {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    },
+    [remove, setValue, getValues, name],
+  )
 
   return (
     <Controller
@@ -131,7 +150,9 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
                     addRowButtonText={addRowButtonText ?? 'And'}
                     maxRows={maxRowsPerGroup}
                     onRequestRemoveLastRow={
-                      canRemoveGroup ? () => remove(index) : undefined
+                      canRemoveGroup
+                        ? () => handleRemoveGroup(index)
+                        : undefined
                     }
                     addButtonSuffix={
                       // `+ Or` lives next to the last group's `+ And`.
