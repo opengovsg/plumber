@@ -26,9 +26,7 @@
     "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
     "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
     "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
-    "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src",
-    "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts"
+    "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "1.0.23",

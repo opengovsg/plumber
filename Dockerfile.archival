@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+FROM node:22-alpine as build
+
+ARG APP_ENV=prod
+ENV VITE_MODE=$APP_ENV
+
+WORKDIR /opt/plumber
+COPY . ./
+RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
+  (export NPM_TASKFORCESH_TOKEN=$(cat /run/secrets/NPM_TASKFORCESH_TOKEN); npm ci)
+RUN npm run -w backend-archive build
+RUN npm prune --production
+
+FROM node:22-alpine as main
+
+WORKDIR /opt/plumber
+
+COPY --from=build /opt/plumber/packages/backend-archive/dist ./packages/backend-archive/dist
+COPY --from=build /opt/plumber/packages/backend-archive/package.json ./packages/backend-archive
+COPY --from=build /opt/plumber/node_modules ./node_modules
+COPY --from=build /opt/plumber/package.json ./
+
+CMD ["node", "packages/backend-archive/dist/scripts/archive-executions.js"]
