@@ -57,6 +57,7 @@ async function main(): Promise<void> {
     const executionIds = await listArchivedExecutions(flowId, opts)
 
     if (restore) {
+      // TODO: if restoring large flows is too slow, consider a bulk COPY-from-S3 strategy
       for (const id of executionIds) {
         const payload = await fetchArchivedExecution(flowId, id, opts)
         const result = await restoreExecution(payload, archivalDb)
