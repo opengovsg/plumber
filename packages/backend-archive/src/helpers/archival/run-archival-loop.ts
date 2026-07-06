@@ -55,27 +55,27 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     if (archiveDeletedFlowsOnly) {
       eligibilityQuery = archivalDbReader('executions')
         .select(
-          'id',
-          'flow_id as flowId',
-          'status',
-          'test_run as testRun',
-          'internal_id as internalId',
-          'created_at as createdAt',
-          'updated_at as updatedAt',
-          'deleted_at as deletedAt',
+          'executions.id as id',
+          'executions.flow_id as flowId',
+          'executions.status as status',
+          'executions.test_run as testRun',
+          'executions.internal_id as internalId',
+          'executions.created_at as createdAt',
+          'executions.updated_at as updatedAt',
+          'executions.deleted_at as deletedAt',
         )
         .whereIn('flow_id', deletedFlowsSubquery)
     } else {
       eligibilityQuery = archivalDbReader('executions')
         .select(
-          'id',
-          'flow_id as flowId',
-          'status',
-          'test_run as testRun',
-          'internal_id as internalId',
-          'created_at as createdAt',
-          'updated_at as updatedAt',
-          'deleted_at as deletedAt',
+          'executions.id as id',
+          'executions.flow_id as flowId',
+          'executions.status as status',
+          'executions.test_run as testRun',
+          'executions.internal_id as internalId',
+          'executions.created_at as createdAt',
+          'executions.updated_at as updatedAt',
+          'executions.deleted_at as deletedAt',
         )
         .where((builder) => {
           builder
@@ -86,12 +86,14 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
             .orWhere((b) =>
               b
                 .where('test_run', false)
-                .where('created_at', '<', cutoff)
+                .where('executions.created_at', '<', cutoff)
                 .whereIn('status', ['success', 'failure']),
             )
             // Test executions on active flows: past cutoff only.
             .orWhere((b) =>
-              b.where('test_run', true).where('created_at', '<', cutoff),
+              b
+                .where('test_run', true)
+                .where('executions.created_at', '<', cutoff),
             )
         })
     }
@@ -106,7 +108,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
       .whereNull('f_tex.test_execution_id')
       .modify((qb) => {
         if (cursor) {
-          qb.whereRaw('id > ?::uuid', [cursor])
+          qb.whereRaw('executions.id > ?::uuid', [cursor])
         }
       })
       // Exclude flows with archiveDisabled set in flow config. Applies to all
@@ -118,7 +120,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
           .select('id')
           .whereRaw(`config->>'archiveDisabled' = 'true'`),
       )
-      .orderBy('id')
+      .orderBy('executions.id')
       .limit(batchSize)) as ExecutionRow[]
 
     if (!batch.length) {
