@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import {
   CloseButton,
   Container,
+  Divider,
   Flex,
   HStack,
   Text,
@@ -107,27 +108,33 @@ function AiBuilderContent() {
 
               <Text>{flowName}</Text>
 
+              <Divider
+                orientation="vertical"
+                h={4}
+                borderColor="base.divider.medium"
+              />
+
+              <Text
+                textStyle="caption-1"
+                color="base.content.medium"
+                fontWeight="semibold"
+                letterSpacing="wider"
+                textTransform="uppercase"
+                whiteSpace="nowrap"
+                flexShrink={0}
+              >
+                Chat ID
+              </Text>
+
               <Flex
                 alignItems="center"
-                gap={1}
                 px={2}
                 py={0.5}
                 borderRadius="md"
                 border="1px solid"
                 borderColor="base.divider.medium"
-                bg="base.canvas.alt"
                 flexShrink={0}
               >
-                <Text
-                  textStyle="caption-1"
-                  color="base.content.medium"
-                  fontWeight="semibold"
-                  letterSpacing="wider"
-                  textTransform="uppercase"
-                  whiteSpace="nowrap"
-                >
-                  Chat ID
-                </Text>
                 <Text
                   textStyle="caption-1"
                   fontFamily="mono"
@@ -139,21 +146,23 @@ function AiBuilderContent() {
                 >
                   {chatId}
                 </Text>
-                <Tooltip label={copied ? 'Copied!' : 'Copy chat ID'} hasArrow>
-                  <Flex
-                    as="button"
-                    onClick={handleCopyChatId}
-                    alignItems="center"
-                    justifyContent="center"
-                    color="base.content.medium"
-                    _hover={{ color: 'base.content.default' }}
-                    cursor="pointer"
-                    aria-label="Copy chat ID"
-                  >
-                    <BiCopy size={14} />
-                  </Flex>
-                </Tooltip>
               </Flex>
+
+              <Tooltip label={copied ? 'Copied!' : 'Copy chat ID'} hasArrow>
+                <Flex
+                  as="button"
+                  onClick={handleCopyChatId}
+                  alignItems="center"
+                  justifyContent="center"
+                  color="base.content.medium"
+                  _hover={{ color: 'base.content.default' }}
+                  cursor="pointer"
+                  aria-label="Copy chat ID"
+                  flexShrink={0}
+                >
+                  <BiCopy size={16} />
+                </Flex>
+              </Tooltip>
             </Flex>
           </HStack>
         )}
