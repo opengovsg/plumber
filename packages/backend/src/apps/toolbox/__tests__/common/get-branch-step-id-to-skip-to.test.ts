@@ -411,6 +411,216 @@ describe('getBranchStepIdToSkipTo', () => {
     })
   })
 
+  describe('new-style step to jump to (marker)', () => {
+    it('returns the stored step to jump to when it points forward', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce([
+        {
+          id: 'step1',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          parameters: {},
+          position: 1,
+        },
+        {
+          id: 'step2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: 'step4' },
+          position: 2,
+        },
+        {
+          id: 'step3',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+        },
+        {
+          id: 'step4',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: null },
+          position: 4,
+        },
+        {
+          id: 'step5',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 5,
+        },
+      ])
+
+      const $ = {
+        flow: { id: 'flow-marker' },
+        step: { id: 'step2', position: 2 },
+      }
+      expect(await getBranchStepIdToSkipTo($ as any)).toBe('step4')
+      expect(consoleErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('returns null when the last branch stores the "stop" sentinel', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce([
+        {
+          id: 'step1',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          parameters: {},
+          position: 1,
+        },
+        {
+          id: 'step2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: 'step4' },
+          position: 2,
+        },
+        {
+          id: 'step3',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+        },
+        {
+          id: 'step4',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: null },
+          position: 4,
+        },
+      ])
+
+      const $ = {
+        flow: { id: 'flow-marker' },
+        step: { id: 'step4', position: 4 },
+      }
+      expect(await getBranchStepIdToSkipTo($ as any)).toBeNull()
+      expect(consoleErrorSpy).not.toHaveBeenCalled()
+    })
+
+    // L1: an "only continue if" placed *after* the block resolves its preceding
+    // if-then to the block's last branch, whose marker points back into the
+    // after-block region. The forward guard must stop rather than jump — a
+    // self-jump would loop forever; a backward jump would re-run earlier steps.
+    it('returns null (stop) when the marker points at the current step (self-jump)', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce([
+        {
+          id: 'step1',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          parameters: {},
+          position: 1,
+        },
+        // Block's last branch; its exit is the after-block OCI (step4).
+        {
+          id: 'step2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: 'step4' },
+          position: 2,
+        },
+        {
+          id: 'step3',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+        },
+        // After-block region: the OCI is its first step (and the current step).
+        {
+          id: 'step4',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          parameters: {},
+          position: 4,
+        },
+      ])
+
+      const $ = {
+        flow: { id: 'flow-after-block' },
+        step: { id: 'step4', position: 4 },
+      }
+      expect(await getBranchStepIdToSkipTo($ as any)).toBeNull()
+      expect(consoleErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('returns null (stop) when the marker points before the current step (backward jump)', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce([
+        {
+          id: 'step1',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          parameters: {},
+          position: 1,
+        },
+        {
+          id: 'step2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: 'step4' },
+          position: 2,
+        },
+        {
+          id: 'step3',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+        },
+        // After-block region: step4 first, the OCI (step5) later in the region.
+        {
+          id: 'step4',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 4,
+        },
+        {
+          id: 'step5',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          parameters: {},
+          position: 5,
+        },
+      ])
+
+      const $ = {
+        flow: { id: 'flow-after-block' },
+        step: { id: 'step5', position: 5 },
+      }
+      expect(await getBranchStepIdToSkipTo($ as any)).toBeNull()
+      expect(consoleErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('returns a dangling forward id unchanged (fails loudly downstream)', async () => {
+      mocks.stepQueryResult.mockResolvedValueOnce([
+        {
+          id: 'step1',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          parameters: {},
+          position: 1,
+        },
+        {
+          id: 'step2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { depth: '1', stepIdToJumpTo: 'ghost' },
+          position: 2,
+        },
+        {
+          id: 'step3',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+        },
+      ])
+
+      const $ = {
+        flow: { id: 'flow-marker' },
+        step: { id: 'step2', position: 2 },
+      }
+      // Not remapped to null: an id absent from the flow is left to
+      // findById().throwIfNotFound() so a corrupt marker fails loudly.
+      expect(await getBranchStepIdToSkipTo($ as any)).toBe('ghost')
+    })
+  })
+
   describe('MRF approval flows', () => {
     const makeSteps = (step2Config: object, step4Config: object) => [
       {

@@ -52,7 +52,23 @@ export async function getBranchStepIdToSkipTo(
   const params = currBranchStep.parameters
   if (params && Object.hasOwn(params, 'stepIdToJumpTo')) {
     const jumpTo = params.stepIdToJumpTo
-    return typeof jumpTo === 'string' ? jumpTo : null
+    if (typeof jumpTo !== 'string') {
+      return null
+    }
+
+    // A branch's step to jump to always points *forward* — to a later branch or
+    // to a step after the block. If the current step sits outside the branch
+    // (e.g. an "only continue if" placed after the block), the nearest preceding
+    // if-then is the block's last branch, whose target points back to the
+    // after-block region's first step — at or before this step. Jumping there
+    // would re-run earlier steps or loop forever, so stop instead. A genuinely
+    // dangling id (not in this flow) is left to fail loudly downstream.
+    const targetIndex = flowSteps.findIndex((step) => step.id === jumpTo)
+    if (targetIndex !== -1 && targetIndex <= indexOfCurrentStep) {
+      return null
+    }
+
+    return jumpTo
   }
 
   // Everything below supports legacy pipes: those created before If-then-then
