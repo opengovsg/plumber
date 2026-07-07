@@ -7,7 +7,9 @@ import Markdown from 'react-markdown'
 import { Flex } from '@chakra-ui/react'
 import { Button, FormLabel } from '@opengovsg/design-system-react'
 
+import { OR_CONDITION_FEATURE_FLAG } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 
 import { InputCreatorProps } from '../InputCreator'
 import MultiRow from '../MultiRow'
@@ -55,6 +57,11 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
 
   const { control, getValues, setValue } = useFormContext()
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
+  // Gates the `+ Or` capability. When off, users can only build a single group
+  // (pure AND) — identical to the legacy MultiRow behaviour. The persisted shape
+  // and evaluator are unaffected; this only hides the group-add control.
+  const canUseOrGroups = getFlagValue(OR_CONDITION_FEATURE_FLAG, false)
 
   const {
     fields: groups,
@@ -118,7 +125,8 @@ function GroupedMultiRow(props: GroupedMultiRowProps): JSX.Element {
         const groupsToRender = groups.length
           ? groups
           : [{ id: `${name}-default-group` }]
-        const canAdd = canAddGroup(groupsToRender.length, maxGroups)
+        const canAdd =
+          canUseOrGroups && canAddGroup(groupsToRender.length, maxGroups)
         // Floor: at least one group with at least one row must always remain.
         // When more than one group exists, deleting a group's last row removes
         // the whole group; otherwise the last group's last row is undeletable.
