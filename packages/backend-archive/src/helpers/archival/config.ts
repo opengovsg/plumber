@@ -65,6 +65,11 @@ export const archivalConfig = {
   // TODO: remove this flag (and the fast-path branch in run-archival-loop.ts)
   // once the deleted-flows phase has been verified and we move to archiving all flows.
   archiveDeletedFlowsOnly: process.env.ARCHIVE_DELETED_FLOWS_ONLY === 'true',
+  // When archiveDeletedFlowsOnly is true, also archive test_run=true executions
+  // on active flows (subject to the retention cutoff). Has no effect when
+  // archiveDeletedFlowsOnly is false — the full three-branch query includes
+  // test executions regardless.
+  archiveTestRuns: process.env.ARCHIVE_TEST_RUNS === 'true',
   // Number of executions processed concurrently within each batch.
   // Must be >= 1. Reader pool max should be >= this value; writer max >= this value.
   archiveIntraBatchConcurrency: requireInt(

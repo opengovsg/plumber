@@ -17,6 +17,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     archiveBatchSleepMs: sleepMs,
     archiveBucket,
     archiveDeletedFlowsOnly,
+    archiveTestRuns,
     archiveIntraBatchConcurrency,
   } = archivalConfig
 
@@ -53,18 +54,29 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
     let eligibilityQuery
     if (archiveDeletedFlowsOnly) {
-      eligibilityQuery = archivalDbReader('executions')
-        .select(
-          'executions.id as id',
-          'executions.flow_id as flowId',
-          'executions.status as status',
-          'executions.test_run as testRun',
-          'executions.internal_id as internalId',
-          'executions.created_at as createdAt',
-          'executions.updated_at as updatedAt',
-          'executions.deleted_at as deletedAt',
-        )
-        .whereIn('flow_id', deletedFlowsSubquery)
+      const base = archivalDbReader('executions').select(
+        'executions.id as id',
+        'executions.flow_id as flowId',
+        'executions.status as status',
+        'executions.test_run as testRun',
+        'executions.internal_id as internalId',
+        'executions.created_at as createdAt',
+        'executions.updated_at as updatedAt',
+        'executions.deleted_at as deletedAt',
+      )
+      if (archiveTestRuns) {
+        eligibilityQuery = base.where((builder) => {
+          builder
+            .where((b) => b.whereIn('flow_id', deletedFlowsSubquery))
+            .orWhere((b) =>
+              b
+                .where('test_run', true)
+                .where('executions.created_at', '<', cutoff),
+            )
+        })
+      } else {
+        eligibilityQuery = base.whereIn('flow_id', deletedFlowsSubquery)
+      }
     } else {
       eligibilityQuery = archivalDbReader('executions')
         .select(
