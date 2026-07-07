@@ -88,6 +88,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
     data: z.object({
       stepId: z.uuid(),
       parameters: z.record(z.string(), z.unknown()),
+      parameterLabels: z.record(z.string(), z.string()).optional(),
     }),
   }),
   z.object({

@@ -37,6 +37,7 @@ function AiBuilderContent() {
     hasReachedLimit,
     activeStepId,
     stepParametersByStepId,
+    parameterLabelsByStepId,
     completedStepIds,
   } = useChatStream({ initialMessages: chatMessages })
 
@@ -69,7 +70,12 @@ function AiBuilderContent() {
 
   return (
     <StepConfigContext.Provider
-      value={{ activeStepId, stepParametersByStepId, completedStepIds }}
+      value={{
+        activeStepId,
+        stepParametersByStepId,
+        parameterLabelsByStepId,
+        completedStepIds,
+      }}
     >
       <>
         <Helmet>

@@ -94,6 +94,7 @@ export type StepUpdatePart = {
   data: {
     stepId: string
     parameters: IJSONObject
+    parameterLabels?: Record<string, string>
   }
 }
 
@@ -311,38 +312,52 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
-  const { stepParametersByStepId, activeStepId, completedStepIds } =
-    useMemo(() => {
-      const byStepId: Record<string, IJSONObject> = {}
-      let latestStepId: string | null = null
-      const completed = new Set<string>()
+  const {
+    stepParametersByStepId,
+    parameterLabelsByStepId,
+    activeStepId,
+    completedStepIds,
+  } = useMemo(() => {
+    const byStepId: Record<string, IJSONObject> = {}
+    const labelsByStepId: Record<string, Record<string, string>> = {}
+    let latestStepId: string | null = null
+    const completed = new Set<string>()
 
-      for (const msg of aiMessages) {
-        if (msg.role !== 'assistant') {
-          continue
-        }
-        for (const part of msg.parts ?? []) {
-          if (part.type === 'data-stepUpdate') {
-            const { stepId, parameters } = (part as StepUpdatePart).data
-            byStepId[stepId] = parameters
-            latestStepId = stepId
+    for (const msg of aiMessages) {
+      if (msg.role !== 'assistant') {
+        continue
+      }
+      for (const part of msg.parts ?? []) {
+        if (part.type === 'data-stepUpdate') {
+          const { stepId, parameters, parameterLabels } = (
+            part as StepUpdatePart
+          ).data
+          byStepId[stepId] = parameters
+          if (parameterLabels) {
+            labelsByStepId[stepId] = {
+              ...(labelsByStepId[stepId] ?? {}),
+              ...parameterLabels,
+            }
           }
-          if (part.type === 'data-pipeState') {
-            for (const step of (part as PipeStatePart).data.steps) {
-              if (step.status === 'completed') {
-                completed.add(step.id)
-              }
+          latestStepId = stepId
+        }
+        if (part.type === 'data-pipeState') {
+          for (const step of (part as PipeStatePart).data.steps) {
+            if (step.status === 'completed') {
+              completed.add(step.id)
             }
           }
         }
       }
+    }
 
-      return {
-        stepParametersByStepId: byStepId,
-        activeStepId: latestStepId,
-        completedStepIds: completed,
-      }
-    }, [aiMessages])
+    return {
+      stepParametersByStepId: byStepId,
+      parameterLabelsByStepId: labelsByStepId,
+      activeStepId: latestStepId,
+      completedStepIds: completed,
+    }
+  }, [aiMessages])
 
   const resetChat = useCallback(() => {
     setMessages([])
@@ -374,6 +389,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     hasReachedLimit: messages.length >= MAX_MESSAGES,
     activeStepId,
     stepParametersByStepId,
+    parameterLabelsByStepId,
     completedStepIds,
   }
 }

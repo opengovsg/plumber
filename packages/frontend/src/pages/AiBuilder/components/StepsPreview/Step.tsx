@@ -154,6 +154,7 @@ export default function Step(props: StepProps) {
               parameters={parameters}
               appKey={step.appKey ?? ''}
               stepKey={step.key ?? ''}
+              stepId={step.id ?? ''}
             />
           )}
         </Flex>

@@ -37,7 +37,11 @@ export function createMcpBridgeTools(
   user: User,
   traceId: string,
   onPipeChange?: (pipeId: string) => void,
-  onStepUpdate?: (stepId: string, parameters: IJSONObject) => void,
+  onStepUpdate?: (
+    stepId: string,
+    parameters: IJSONObject,
+    parameterLabels?: Record<string, string>,
+  ) => void,
 ) {
   return {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
@@ -134,12 +138,19 @@ export function createMcpBridgeTools(
           .describe(
             "Connection ID to assign to this step. Obtain from list_connections. The connection's app must match the step's app.",
           ),
+        parameter_labels: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe(
+            'Human-readable display labels for parameter values that are IDs or opaque keys (e.g. dynamic dropdown selections). Map each parameter key to the label the user would recognise. Used for display only — does not affect what is saved.',
+          ),
       }),
       execute: async ({
         pipe_id,
         step_id,
         parameters,
         connection_id,
+        parameter_labels,
       }): Promise<McpUpdateStepParametersResult> => {
         const result = await updateStepParametersService({
           user,
@@ -149,7 +160,7 @@ export function createMcpBridgeTools(
           connectionId: connection_id,
         })
         onPipeChange?.(pipe_id)
-        onStepUpdate?.(step_id, result.step.parameters)
+        onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
         return result
       },
     }),

@@ -6,6 +6,7 @@ import { Box, Flex, Text } from '@chakra-ui/react'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { parseParameterValue } from '@/pages/AiBuilder/helpers/parseParameterValue'
+import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
 import VariablePill from './VariablePill'
 
@@ -108,14 +109,18 @@ interface StepParameterRowsProps {
   parameters: IJSONObject
   appKey: string
   stepKey: string
+  stepId: string
 }
 
 export default function StepParameterRows({
   parameters,
   appKey,
   stepKey,
+  stepId,
 }: StepParameterRowsProps) {
   const { allApps } = useAiBuilderContext()
+  const { parameterLabelsByStepId } = useStepConfigContext()
+  const parameterLabels = parameterLabelsByStepId[stepId] ?? {}
 
   const stepFields = getStepFields(allApps, appKey, stepKey)
   const rows = Object.entries(parameters)
@@ -125,7 +130,10 @@ export default function StepParameterRows({
       return {
         key,
         label: resolveFieldLabel(allApps, appKey, stepKey, key),
-        displayValue: resolveDisplayValue(allApps, appKey, stepKey, key, value),
+        // AI-provided labels take priority over static option resolution
+        displayValue:
+          parameterLabels[key] ??
+          resolveDisplayValue(allApps, appKey, stepKey, key, value),
         hiddenIf: field?.hiddenIf,
       }
     })
@@ -147,20 +155,13 @@ export default function StepParameterRows({
       pl="58px"
       pr={4}
       borderTop="1px solid"
-      borderColor="base.divider.weak"
+      borderColor="base.divider.medium"
     >
-      {rows.map(({ key, label, displayValue }, rowIndex) => {
+      {rows.map(({ key, label, displayValue }) => {
         const segments = parseParameterValue(displayValue as string)
 
         return (
-          <Flex
-            key={key}
-            align="center"
-            gap={2.5}
-            py="5px"
-            borderBottom={rowIndex < rows.length - 1 ? '1px solid' : 'none'}
-            borderColor="base.divider.weak"
-          >
+          <Flex key={key} align="center" gap={2.5} py="5px">
             <Text
               as="span"
               fontSize="12px"
