@@ -149,7 +149,7 @@ export function createMcpBridgeTools(
           connectionId: connection_id,
         })
         onPipeChange?.(pipe_id)
-        onStepUpdate?.(step_id, result.step.parameters)
+        onStepUpdate?.(step_id, result.step.parameters as IJSONObject)
         return result
       },
     }),
