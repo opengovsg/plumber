@@ -118,7 +118,7 @@ function AiBuilderContent() {
 
               <Text
                 textStyle="caption-1"
-                color="base.content.medium"
+                color="base.content.disabled-content"
                 fontWeight="semibold"
                 letterSpacing="wider"
                 textTransform="uppercase"
