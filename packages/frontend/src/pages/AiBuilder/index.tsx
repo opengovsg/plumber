@@ -116,6 +116,18 @@ function AiBuilderContent() {
                 borderColor="base.divider.strong"
               />
 
+              <Text
+                textStyle="caption-1"
+                color="interaction.support.disabled-content"
+                fontWeight="medium"
+                letterSpacing="wider"
+                textTransform="uppercase"
+                whiteSpace="nowrap"
+                flexShrink={0}
+              >
+                Chat ID
+              </Text>
+
               <Badge
                 bgColor="secondary.50"
                 color="secondary.700"
@@ -123,7 +135,6 @@ function AiBuilderContent() {
                 fontWeight="normal"
                 flexShrink={0}
               >
-                Chat ID:{' '}
                 {chatId.length > 16 ? `${chatId.slice(0, 16)}…` : chatId}
               </Badge>
 
