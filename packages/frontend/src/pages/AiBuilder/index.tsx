@@ -110,8 +110,9 @@ function AiBuilderContent() {
 
               <Divider
                 orientation="vertical"
-                h={4}
-                borderColor="base.divider.medium"
+                h={5}
+                mx={2}
+                borderColor="base.divider.strong"
               />
 
               <Text
