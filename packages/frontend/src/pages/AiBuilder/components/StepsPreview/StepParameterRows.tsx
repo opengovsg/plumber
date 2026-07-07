@@ -69,14 +69,20 @@ function flattenValue(
   }
 
   if (typeof value === 'object' && value !== null) {
-    // Object row: resolve each key against its subField options, join with ' '
-    const parts = Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== '' && v != null)
-      .map(([k, v]) => {
+    const obj = value as Record<string, unknown>
+    // Follow subField definition order if available; otherwise use object key order
+    const keys = subFields
+      ? subFields
+          .map((f) => (f as unknown as { key?: string }).key)
+          .filter((k): k is string => k != null && k in obj)
+      : Object.keys(obj)
+    const parts = keys
+      .filter((k) => obj[k] !== '' && obj[k] != null)
+      .map((k) => {
         const subField = subFields?.find(
           (f) => (f as unknown as { key?: string }).key === k,
         )
-        return resolveOptionLabel(subField, String(v))
+        return resolveOptionLabel(subField, String(obj[k]))
       })
     return parts.length > 0 ? parts.join(' ') : null
   }
