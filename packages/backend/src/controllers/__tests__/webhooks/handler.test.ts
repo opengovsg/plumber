@@ -218,4 +218,20 @@ describe('webhook handler', () => {
       expect(mocks.response.sendStatus).toHaveReturnedWith(200)
     })
   })
+
+  describe('pipe force clog', () => {
+    beforeEach(() => {
+      mocks.flow.config = {}
+    })
+
+    it('returns 423 and does not process the trigger or enqueue a job', async () => {
+      mocks.flow.config = { isForceClogged: true }
+
+      await webhookHandler(request, mocks.response)
+
+      expect(mocks.response.sendStatus).toHaveReturnedWith(423)
+      expect(mocks.processTrigger).not.toHaveBeenCalled()
+      expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
+    })
+  })
 })

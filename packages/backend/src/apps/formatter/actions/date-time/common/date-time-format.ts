@@ -22,9 +22,16 @@ interface DateFormatConverter {
   stringify: (dateTime: DateTime) => string
 }
 
+// All date parsing is pinned to Singapore time so that comparisons and
+// differences are not subject to off-by-one errors from a differing server
+// timezone.
+export const SG_TIMEZONE = 'Asia/Singapore'
+
 const supportedFormats = z.enum([
   'formsgSubmissionTime',
   'formsgDateField', // dd LLL yyyy; this is kept due to backwards compatibility
+  'now', // input-only: ignores the value field, uses current SG time
+  'excelFormattedDate', // input-only: e.g. 45292 -> 1 Jan 2024
   ...commonDateFormats,
 ])
 
@@ -48,6 +55,40 @@ const formatConverters = Object.assign({
     description: 'FormSG submission time',
     parse: (input: string): DateTime => DateTime.fromISO(input),
     stringify: (dateTime: DateTime): string => dateTime.toISO(),
+  },
+  now: {
+    description: 'current date / time',
+    // Input-only: the value field is ignored (hidden in the UI). We always
+    // use the current time in Singapore.
+    parse: (_input: string): DateTime => DateTime.now().setZone(SG_TIMEZONE),
+    stringify: (): string => {
+      throw new Error('"Now" is an input-only format and cannot be output to')
+    },
+  },
+  excelFormattedDate: {
+    description: 'Excel formatted date',
+    parse: (input: string): DateTime => {
+      const serial = Number(input?.toString().trim())
+      // Reject non-numbers and <= 0 (the 0 / negative serials are the
+      // "1900-01-00" oddity we don't want to support).
+      if (!Number.isFinite(serial) || serial <= 0) {
+        return DateTime.invalid('Invalid Excel formatted date')
+      }
+      // Excel's 1900 date system. Serial 1 = 1900-01-01, but Excel incorrectly
+      // treats 1900 as a leap year, so the corrected epoch is 1899-12-30.
+      // The fractional part of the serial is the time of day, so a plain
+      // `.plus({ days })` handles both date and time.
+      const excelEpoch = DateTime.fromObject(
+        { year: 1899, month: 12, day: 30 },
+        { zone: SG_TIMEZONE },
+      )
+      return excelEpoch.plus({ days: serial })
+    },
+    stringify: (): string => {
+      throw new Error(
+        'Excel formatted date is an input-only format and cannot be output to',
+      )
+    },
   },
   formsgDateField: {
     description: 'FormSG date field',
@@ -112,6 +153,10 @@ const formatConverters = Object.assign({
 // Field definitions and schema
 //
 
+// Exported so the schema can be reused by other actions (e.g. the
+// compare / calculate action's two date operands).
+export { supportedFormats }
+
 export const fieldSchema = z.object({
   // NOTE: Likely we will support arbitrary input in the future and this can no
   // longer be an enum. If that happens we can use a type guard to simulate
@@ -119,31 +164,50 @@ export const fieldSchema = z.object({
   dateTimeFormat: supportedFormats,
 })
 
+// The full list of input format options. Exported so any field that lets a
+// user declare the format of an incoming date (e.g. each operand of the
+// compare / calculate action) can reuse the exact same list.
+export const inputFormatOptions = [
+  {
+    label: 'Now (current date / time)',
+    description: 'Uses the current date and time in Singapore',
+    value: supportedFormats.enum.now,
+  },
+  {
+    label: 'FormSG Submission Time',
+    description: '2024-03-25T08:15:30.250+08:00',
+    value: supportedFormats.enum.formsgSubmissionTime,
+  },
+  {
+    // FormSG UI is a bit misleading; although the field shows dd/mm/yyyy,
+    // date fields are sent as dd MMM yyyy over webhooks.
+    label: 'FormSG Date Field - DD MMM YYYY',
+    description: '25 Mar 2024',
+    value: supportedFormats.enum.formsgDateField,
+  },
+  {
+    label: 'Excel formatted date',
+    description: 'e.g. 45292 → 1 Jan 2024',
+    value: supportedFormats.enum.excelFormattedDate,
+  },
+  // Exclude repeated option due to formsgDateField
+  ...commonDateFormatOptions.filter((option) => option.value !== 'dd LLL yyyy'),
+]
+
 export const field = {
-  label: 'Select the format of your value',
+  label: 'What format is your date / time in?',
   key: fieldSchema.keyof().enum.dateTimeFormat,
   type: 'dropdown' as const,
   required: true,
   variables: false,
   showOptionValue: false,
-  options: [
-    {
-      label: 'FormSG Submission Time',
-      description: '2024-03-25T08:15:30.250+08:00',
-      value: supportedFormats.enum.formsgSubmissionTime,
-    },
-    {
-      // FormSG UI is a bit misleading; although the field shows dd/mm/yyyy,
-      // date fields are sent as dd MMM yyyy over webhooks.
-      label: 'FormSG Date Field - DD MMM YYYY',
-      description: '25 Mar 2024',
-      value: supportedFormats.enum.formsgDateField,
-    },
-    // Exclude repeated option due to formsgDateField
-    ...commonDateFormatOptions.filter(
-      (option) => option.value !== 'dd LLL yyyy',
-    ),
-  ],
+  // "Now" is excluded here: it's a date *source*, not a format, and in this
+  // action the value field can't be hidden when it's picked (single-condition
+  // `hiddenIf`), so it would read confusingly. It stays available in the
+  // compare/calculate action, where the value field does hide.
+  options: inputFormatOptions.filter(
+    (option) => option.value !== supportedFormats.enum.now,
+  ),
 } satisfies IField
 
 //

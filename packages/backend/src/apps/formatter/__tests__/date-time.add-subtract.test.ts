@@ -128,6 +128,26 @@ describe('add / subtract date time', () => {
       op: { opType: 'subtract', timeUnit: 'months', timeAmount: '-7' },
       expectedResult: '2024-11-01T12:05:10.000+08:00',
     },
+
+    // Weeks (= exactly 7 days in Luxon)
+    {
+      op: { opType: 'add', timeUnit: 'weeks', timeAmount: '2' },
+      expectedResult: '2024-04-15T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'weeks', timeAmount: '1' },
+      expectedResult: '2024-03-25T12:05:10.000+08:00',
+    },
+
+    // Years
+    {
+      op: { opType: 'add', timeUnit: 'years', timeAmount: '1' },
+      expectedResult: '2025-04-01T12:05:10.000+08:00',
+    },
+    {
+      op: { opType: 'subtract', timeUnit: 'years', timeAmount: '1' },
+      expectedResult: '2023-04-01T12:05:10.000+08:00',
+    },
   ])(
     'can $op.opType $op.timeAmount $op.timeUnit (without overflow / underflow)',
     ({ op, expectedResult }) => {
@@ -297,6 +317,19 @@ describe('add / subtract date time', () => {
     transformData($, valueToTransform)
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { result: expectedResult },
+    })
+  })
+
+  it('clamps to end of month when adding a year onto a leap day (Feb 29 → Feb 28)', () => {
+    $.step.parameters = {
+      dateTimeFormat: 'formsgSubmissionTime',
+      addSubtractDateTimeOps: [
+        { opType: 'add', timeUnit: 'years', timeAmount: '1' },
+      ],
+    }
+    transformData($, '2024-02-29T00:00:00.000+08:00')
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: '2025-02-28T00:00:00.000+08:00' },
     })
   })
 })

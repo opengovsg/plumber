@@ -21,7 +21,7 @@ export const VALUE_TO_TRANSFORM_FIELD_KEY = ensureZodObjectKey(
 )
 
 export const VALUE_TO_TRANSFORM_FIELD = {
-  label: 'Value to transform',
+  label: 'Value to change',
   key: VALUE_TO_TRANSFORM_FIELD_KEY,
   type: 'string' as const,
   required: true,
@@ -36,7 +36,7 @@ export function createSelectTransformDropdown(
   transforms: TransformSpec[],
 ): IFieldDropdown {
   return {
-    label: 'Select how you want to transform your data',
+    label: 'What do you want to do?',
     key: SELECT_TRANSFORM_DROPDOWN_FIELD_KEY,
     type: 'dropdown' as const,
     required: true,
