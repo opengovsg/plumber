@@ -3,6 +3,7 @@ import type { IJSONObject } from '@plumber/types'
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
+import { UserFacingError } from '@/errors/user-facing-error'
 import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
 import type { AuthenticatedRequest } from '@/types/express/context'
 
@@ -43,9 +44,11 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     })
     res.json({ data })
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Internal server error'
-    res.status(400).json({ error: message })
+    if (error instanceof UserFacingError) {
+      res.status(400).json({ error: error.message })
+    } else {
+      res.status(500).json({ error: 'Internal server error' })
+    }
   }
 })
 
