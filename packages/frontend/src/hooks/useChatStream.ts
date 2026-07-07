@@ -1,4 +1,4 @@
-import type { IJSONObject, IFlowSteps } from '@plumber/types'
+import type { IFlowSteps, IJSONObject } from '@plumber/types'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -311,23 +311,38 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
-  const { stepParametersByStepId, activeStepId } = useMemo(() => {
-    const byStepId: Record<string, IJSONObject> = {}
-    let latestStepId: string | null = null
+  const { stepParametersByStepId, activeStepId, completedStepIds } =
+    useMemo(() => {
+      const byStepId: Record<string, IJSONObject> = {}
+      let latestStepId: string | null = null
+      const completed = new Set<string>()
 
-    for (const msg of aiMessages) {
-      if (msg.role !== 'assistant') continue
-      for (const part of msg.parts ?? []) {
-        if (part.type === 'data-stepUpdate') {
-          const { stepId, parameters } = (part as StepUpdatePart).data
-          byStepId[stepId] = parameters
-          latestStepId = stepId
+      for (const msg of aiMessages) {
+        if (msg.role !== 'assistant') {
+          continue
+        }
+        for (const part of msg.parts ?? []) {
+          if (part.type === 'data-stepUpdate') {
+            const { stepId, parameters } = (part as StepUpdatePart).data
+            byStepId[stepId] = parameters
+            latestStepId = stepId
+          }
+          if (part.type === 'data-pipeState') {
+            for (const step of (part as PipeStatePart).data.steps) {
+              if (step.status === 'completed') {
+                completed.add(step.id)
+              }
+            }
+          }
         }
       }
-    }
 
-    return { stepParametersByStepId: byStepId, activeStepId: latestStepId }
-  }, [aiMessages])
+      return {
+        stepParametersByStepId: byStepId,
+        activeStepId: latestStepId,
+        completedStepIds: completed,
+      }
+    }, [aiMessages])
 
   const resetChat = useCallback(() => {
     setMessages([])
@@ -359,5 +374,6 @@ export function useChatStream(options: UseChatStreamOptions) {
     hasReachedLimit: messages.length >= MAX_MESSAGES,
     activeStepId,
     stepParametersByStepId,
+    completedStepIds,
   }
 }

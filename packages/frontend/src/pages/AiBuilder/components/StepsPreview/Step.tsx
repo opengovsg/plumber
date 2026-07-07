@@ -1,7 +1,7 @@
 import { IApp, IJSONObject, IStep } from '@plumber/types'
 
 import { useState } from 'react'
-import { BiInfoCircle, BiSolidCheckCircle } from 'react-icons/bi'
+import { BiInfoCircle } from 'react-icons/bi'
 import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
@@ -28,14 +28,8 @@ interface StepProps {
 }
 
 export default function Step(props: StepProps) {
-  const {
-    step,
-    isNested,
-    isLastStep,
-    isActive = false,
-    isConfigured = false,
-    parameters,
-  } = props
+  const { step, isNested, isLastStep, isActive, isConfigured, parameters } =
+    props
   const { allApps } = useAiBuilderContext()
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -44,7 +38,9 @@ export default function Step(props: StepProps) {
   )
   const { stepName } = getStepName(allApps, step as IStep)
 
-  const isPending = !isActive && !isConfigured
+  // Only mute when we're in configuration mode (props explicitly set to false)
+  // Undefined means proposal mode — show all steps at full opacity
+  const isPending = isActive === false && isConfigured === false
   const showParams = parameters && (isActive || (isConfigured && isExpanded))
 
   if (!step) {
@@ -124,37 +120,14 @@ export default function Step(props: StepProps) {
           })}
         >
           <Flex {...flowStepStyles.topHeader} py={isNested ? 3 : 4}>
-            {/* App icon with optional completed badge */}
-            <Box position="relative" flexShrink={0} mr={4}>
-              <StepAppIcon
-                isCompleted={false}
-                isNested={isNested}
-                isTestSuccessful={undefined}
-                shouldTestStepAgain={false}
-                app={app}
-                step={step}
-              />
-              {isConfigured && (
-                <Box
-                  position="absolute"
-                  bottom="-3px"
-                  right="-3px"
-                  bg="white"
-                  borderRadius="full"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  w="14px"
-                  h="14px"
-                >
-                  <Icon
-                    as={BiSolidCheckCircle}
-                    color="#0F796F"
-                    boxSize="14px"
-                  />
-                </Box>
-              )}
-            </Box>
+            <StepAppIcon
+              isCompleted={isConfigured}
+              isNested={isNested}
+              isTestSuccessful={isConfigured ? true : undefined}
+              shouldTestStepAgain={false}
+              app={app}
+              step={step}
+            />
 
             <Box w="100%">
               <StepNameAndDemo
@@ -187,7 +160,7 @@ export default function Step(props: StepProps) {
       </Flex>
       {!isLastStep && (
         <Flex justifyContent="center" h={isNested ? 6 : 12}>
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
+          <Divider orientation="vertical" borderColor="base.divider.medium" />
         </Flex>
       )}
     </Flex>

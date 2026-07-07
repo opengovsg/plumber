@@ -42,12 +42,26 @@ export default function StepsPreview() {
     stepGroupCaption,
     clearPersistedState,
   } = useAiBuilderContext()
-  const { activeStepId, stepParametersByStepId } = useStepConfigContext()
+  const { stepParametersByStepId, completedStepIds } = useStepConfigContext()
 
   const isMobile = useIsMobile()
 
   const isMcpPipeMode = Boolean(output?.pipeId) // Phase 2b+: DB pipe exists
   const isMcpProposalMode = !isMcpPipeMode && Boolean(output?.mcpMode) // Phase 2a: proposal, no DB
+
+  // Derive the active step as the first uncompleted step in order.
+  // This correctly highlights the step currently being configured even before
+  // any update_step_parameters call has been made for it (e.g. while collecting
+  // field value clarifications for a step with no connection requirement).
+  const effectiveActiveStepId = useMemo(() => {
+    if (!isMcpPipeMode || !output?.steps?.length) {
+      return null
+    }
+    const firstUncompleted = output.steps.find(
+      (s: { id: string }) => !completedStepIds.has(s.id),
+    )
+    return firstUncompleted?.id ?? null
+  }, [isMcpPipeMode, output?.steps, completedStepIds])
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
@@ -157,14 +171,15 @@ export default function StepsPreview() {
       >
         <Step
           step={triggerStep}
-          isActive={Boolean(triggerStep?.id && triggerStep.id === activeStepId)}
-          isConfigured={Boolean(
-            triggerStep?.id &&
-              stepParametersByStepId[triggerStep.id] !== undefined,
-          )}
-          parameters={
-            triggerStep?.id ? stepParametersByStepId[triggerStep.id] : undefined
-          }
+          {...(isMcpPipeMode && {
+            isActive: triggerStep?.id === effectiveActiveStepId,
+            isConfigured: Boolean(
+              triggerStep?.id && completedStepIds.has(triggerStep.id),
+            ),
+            parameters: triggerStep?.id
+              ? stepParametersByStepId[triggerStep.id]
+              : undefined,
+          })}
         />
         {stepsBeforeGroup.map((action) => (
           <Fragment key={`${action.position}-${action.appKey}`}>
@@ -172,13 +187,15 @@ export default function StepsPreview() {
               key={`${action.position}-${action.appKey}`}
               step={action}
               isLastStep={action.position === actionSteps.length + 1}
-              isActive={Boolean(action.id && action.id === activeStepId)}
-              isConfigured={Boolean(
-                action.id && stepParametersByStepId[action.id] !== undefined,
-              )}
-              parameters={
-                action.id ? stepParametersByStepId[action.id] : undefined
-              }
+              {...(isMcpPipeMode && {
+                isActive: action.id === effectiveActiveStepId,
+                isConfigured: Boolean(
+                  action.id && completedStepIds.has(action.id),
+                ),
+                parameters: action.id
+                  ? stepParametersByStepId[action.id]
+                  : undefined,
+              })}
             />
           </Fragment>
         ))}

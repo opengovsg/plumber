@@ -37,6 +37,7 @@ function AiBuilderContent() {
     hasReachedLimit,
     activeStepId,
     stepParametersByStepId,
+    completedStepIds,
   } = useChatStream({ initialMessages: chatMessages })
 
   const cancelRef = useRef(null)
@@ -68,7 +69,7 @@ function AiBuilderContent() {
 
   return (
     <StepConfigContext.Provider
-      value={{ activeStepId, stepParametersByStepId }}
+      value={{ activeStepId, stepParametersByStepId, completedStepIds }}
     >
       <>
         <Helmet>
