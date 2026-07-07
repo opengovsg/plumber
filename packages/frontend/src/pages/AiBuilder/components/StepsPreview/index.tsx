@@ -227,6 +227,7 @@ export default function StepsPreview() {
                     key={String(branchSteps[0].position)}
                     branchSteps={branchSteps}
                     isMobile={isMobile}
+                    effectiveActiveStepId={effectiveActiveStepId}
                   />
                 ))}
               </Flex>
@@ -242,6 +243,15 @@ export default function StepsPreview() {
                         forEachSteps.length - 1 === index &&
                         ifThenSteps.length === 0
                       }
+                      {...(isMcpPipeMode && {
+                        isActive: step.id === effectiveActiveStepId,
+                        isConfigured: Boolean(
+                          step.id && completedStepIds.has(step.id),
+                        ),
+                        parameters: step.id
+                          ? stepParametersByStepId[step.id]
+                          : undefined,
+                      })}
                     />
                   ))}
                   {ifThenSteps.length > 0 && (
@@ -256,6 +266,7 @@ export default function StepsPreview() {
                             key={String(branchSteps[0].position)}
                             branchSteps={branchSteps}
                             isMobile={isMobile}
+                            effectiveActiveStepId={effectiveActiveStepId}
                           />
                         ))}
                       </Flex>
