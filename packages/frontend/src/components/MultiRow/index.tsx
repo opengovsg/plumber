@@ -29,7 +29,7 @@ export type MultiRowProps = {
   // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
   // own controls). Renders even when the add-row button is hidden at maxRows.
   addButtonSuffix?: ReactNode
-  // Optional override for deleting the LAST remaining row. When provided, the
+  // Optional override for deleting the LAST remaining row. When provided and non-null, the
   // last row's delete control is shown (even when `required`) and clicking it
   // calls this instead of the internal remove — letting a wrapper (e.g.
   // GroupedMultiRow) remove the whole containing group instead of leaving it
