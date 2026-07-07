@@ -8,7 +8,7 @@ import { useIsMobile } from '@opengovsg/design-system-react'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 import { useApps } from '@/hooks/useApps'
-import { Message } from '@/hooks/useChatStream'
+import { Message, PipeStatePart } from '@/hooks/useChatStream'
 
 export interface AIBuilderDraftState {
   flowName: string
@@ -103,8 +103,8 @@ export const AiBuilderContextProvider = ({
   const steps = useMemo(() => {
     // Phase 2b+: DB-backed pipe state — steps already have correct positions
     if (output?.pipeId && Array.isArray(output?.steps)) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return output.steps as any as AiBuilderStep[]
+      return (output as PipeStatePart['data'])
+        .steps as unknown as AiBuilderStep[]
     }
     // Phase 2a (proposal) and legacy path
     return [
@@ -114,7 +114,7 @@ export const AiBuilderContextProvider = ({
       ...step,
       position: index + 1,
     }))
-  }, [output?.pipeId, output?.steps, output?.trigger, output?.actions])
+  }, [output])
   const [triggerStep, stepsBeforeGroup, groupedSteps] = useMemo(
     () => getStepStructure(appsWithActions, steps),
     [appsWithActions, steps],
