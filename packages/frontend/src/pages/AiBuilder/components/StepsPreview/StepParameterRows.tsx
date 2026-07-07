@@ -1,4 +1,4 @@
-import type { IApp, IField, IJSONObject } from '@plumber/types'
+import type { IApp, IFieldDropdown, IJSONObject } from '@plumber/types'
 
 import { Fragment } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
@@ -14,24 +14,58 @@ function camelToSentence(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase()
 }
 
-function resolveFieldDef(
+function getStepFields(allApps: IApp[], appKey: string, stepKey: string) {
+  const app = allApps.find((a) => a.key === appKey)
+  if (!app) {
+    return []
+  }
+  const trigger = app.triggers?.find((t) => t.key === stepKey)
+  const action = app.actions?.find((a) => a.key === stepKey)
+  return [
+    ...(trigger?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
+    ...(action?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
+  ]
+}
+
+function resolveFieldLabel(
   allApps: IApp[],
   appKey: string,
   stepKey: string,
   paramKey: string,
-): IField | undefined {
-  const app = allApps.find((a) => a.key === appKey)
-  if (!app) {
-    return undefined
+): string {
+  const fields = getStepFields(allApps, appKey, stepKey)
+  return (
+    fields.find((f) => f.key === paramKey)?.label ?? camelToSentence(paramKey)
+  )
+}
+
+function resolveDisplayValue(
+  allApps: IApp[],
+  appKey: string,
+  stepKey: string,
+  paramKey: string,
+  value: unknown,
+): string | null {
+  // Skip object/array values — they can't be displayed meaningfully as a flat string
+  if (typeof value === 'object' && value !== null) {
+    return null
   }
 
-  const trigger = app.triggers?.find((t) => t.key === stepKey)
-  const action = app.actions?.find((a) => a.key === stepKey)
-  const fields = [
-    ...(trigger?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
-    ...(action?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
-  ]
-  return fields.find((f) => f.key === paramKey)
+  const strValue = String(value)
+
+  // For dropdown fields with static options, show the option label not the raw key
+  const fields = getStepFields(allApps, appKey, stepKey)
+  const field = fields.find((f) => f.key === paramKey)
+  if (field?.type === 'dropdown') {
+    const option = (field as IFieldDropdown).options?.find(
+      (o) => String(o.value) === strValue,
+    )
+    if (option) {
+      return option.label
+    }
+  }
+
+  return strValue
 }
 
 interface StepParameterRowsProps {
@@ -47,17 +81,23 @@ export default function StepParameterRows({
 }: StepParameterRowsProps) {
   const { allApps } = useAiBuilderContext()
 
+  const stepFields = getStepFields(allApps, appKey, stepKey)
   const rows = Object.entries(parameters)
-    .map(([key, value]) => ({
-      key,
-      value,
-      field: resolveFieldDef(allApps, appKey, stepKey, key),
-    }))
+    .filter(([, value]) => value !== '' && value != null)
+    .map(([key, value]) => {
+      const field = stepFields.find((f) => f.key === key)
+      return {
+        key,
+        label: resolveFieldLabel(allApps, appKey, stepKey, key),
+        displayValue: resolveDisplayValue(allApps, appKey, stepKey, key, value),
+        hiddenIf: field?.hiddenIf,
+      }
+    })
     .filter(
-      ({ value, field }) =>
-        value !== '' &&
-        value != null &&
-        !isFieldHidden(field?.hiddenIf, parameters),
+      ({ displayValue, hiddenIf }) =>
+        displayValue !== null &&
+        displayValue !== '' &&
+        !isFieldHidden(hiddenIf, parameters),
     )
 
   if (rows.length === 0) {
@@ -73,15 +113,13 @@ export default function StepParameterRows({
       borderTop="1px solid"
       borderColor="base.divider.weak"
     >
-      {rows.map(({ key, value, field }, rowIndex) => {
-        const label = field?.label ?? camelToSentence(key)
-        const strValue = String(value)
-        const segments = parseParameterValue(strValue)
+      {rows.map(({ key, label, displayValue }, rowIndex) => {
+        const segments = parseParameterValue(displayValue as string)
 
         return (
           <Flex
             key={key}
-            align="baseline"
+            align="center"
             gap={2.5}
             py="5px"
             borderBottom={rowIndex < rows.length - 1 ? '1px solid' : 'none'}
