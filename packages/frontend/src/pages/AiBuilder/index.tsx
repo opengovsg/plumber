@@ -130,7 +130,7 @@ function AiBuilderContent() {
 
               <Badge
                 bgColor="secondary.50"
-                color="secondary.700"
+                color="base.content.medium"
                 fontFamily="mono"
                 fontWeight="normal"
                 flexShrink={0}
