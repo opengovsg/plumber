@@ -11,6 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@chakra-ui/react'
+import { Badge } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
 
 import * as URLS from '@/config/urls'
@@ -127,26 +128,18 @@ function AiBuilderContent() {
                 Chat ID
               </Text>
 
-              <Flex
-                alignItems="center"
-                px={2}
-                py={0.5}
-                borderRadius="full"
-                bg="base.canvas.alt"
+              <Badge
+                colorScheme="grey"
+                variant="subtle"
+                fontFamily="mono"
+                maxW="120px"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
                 flexShrink={0}
               >
-                <Text
-                  textStyle="caption-1"
-                  fontFamily="mono"
-                  color="base.content.default"
-                  maxW="120px"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  whiteSpace="nowrap"
-                >
-                  {chatId}
-                </Text>
-              </Flex>
+                {chatId}
+              </Badge>
 
               <Tooltip label={copied ? 'Copied!' : 'Copy chat ID'} hasArrow>
                 <Flex
