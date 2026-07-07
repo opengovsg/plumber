@@ -267,6 +267,7 @@ export function getInfoBoxDetails({
   isDirty,
   isIfThenStep,
   isLastTestExecutionCurrent,
+  isLastTestExecutionSuccessful,
   isTestSuccessful,
   isTestExecuting,
   stepId,
@@ -276,6 +277,9 @@ export function getInfoBoxDetails({
   isDirty: boolean
   isIfThenStep: boolean
   isLastTestExecutionCurrent: boolean
+  // Whether the last execution step itself succeeded, independent of the
+  // persisted step.status (which only `executeStep` promotes to 'completed').
+  isLastTestExecutionSuccessful: boolean
   isTestSuccessful: boolean
   isTestExecuting: boolean
   stepId: string
@@ -296,7 +300,21 @@ export function getInfoBoxDetails({
     ]
   }
 
-  if (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty)) {
+  // Show a neutral "Previous result" (prompting a re-check rather than
+  // asserting failure) whenever the shown result no longer describes the step
+  // as it now stands:
+  //   - the current params no longer match the last test's input,
+  //   - there are unsaved edits (also signalled by the "Save without checking"
+  //     button), or
+  //   - the last execution succeeded but the step isn't marked completed yet
+  //     (invalidated after a successful test, or saved without re-checking).
+  //     `isLastTestExecutionSuccessful && !isTestSuccessful` is equivalent to
+  //     "last execution succeeded but step.status !== 'completed'".
+  if (
+    !isLastTestExecutionCurrent ||
+    isDirty ||
+    (isLastTestExecutionSuccessful && !isTestSuccessful)
+  ) {
     return ['unstyled', 'Previous result']
   }
 
@@ -309,6 +327,9 @@ export function getInfoBoxDetails({
     return ['success', 'Step was set up successfully!']
   }
 
+  // Only reached when the last execution did not succeed (and carried no
+  // errorDetails, so it wasn't rendered via ErrorResult) — the step isn't set
+  // up.
   return ['error', 'Failed to set up step']
 }
 
