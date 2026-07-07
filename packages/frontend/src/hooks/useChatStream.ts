@@ -1,4 +1,4 @@
-import type { IFlowSteps } from '@plumber/types'
+import type { IJSONObject, IFlowSteps } from '@plumber/types'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -86,6 +86,14 @@ export type ClarificationPart = {
   type: 'data-clarification'
   data: {
     questions: ClarificationQuestion[]
+  }
+}
+
+export type StepUpdatePart = {
+  type: 'data-stepUpdate'
+  data: {
+    stepId: string
+    parameters: IJSONObject
   }
 }
 
@@ -303,6 +311,24 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
+  const { stepParametersByStepId, activeStepId } = useMemo(() => {
+    const byStepId: Record<string, IJSONObject> = {}
+    let latestStepId: string | null = null
+
+    for (const msg of aiMessages) {
+      if (msg.role !== 'assistant') continue
+      for (const part of msg.parts ?? []) {
+        if (part.type === 'data-stepUpdate') {
+          const { stepId, parameters } = (part as StepUpdatePart).data
+          byStepId[stepId] = parameters
+          latestStepId = stepId
+        }
+      }
+    }
+
+    return { stepParametersByStepId: byStepId, activeStepId: latestStepId }
+  }, [aiMessages])
+
   const resetChat = useCallback(() => {
     setMessages([])
     setIsReady(false)
@@ -331,5 +357,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     cancelStream: stop,
     resetChat,
     hasReachedLimit: messages.length >= MAX_MESSAGES,
+    activeStepId,
+    stepParametersByStepId,
   }
 }
