@@ -1,6 +1,8 @@
-import { IApp, IStep } from '@plumber/types'
+import { IApp, IJSONObject, IStep } from '@plumber/types'
 
-import { BiInfoCircle } from 'react-icons/bi'
+import { useState } from 'react'
+import { BiInfoCircle, BiSolidCheckCircle } from 'react-icons/bi'
+import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
@@ -10,6 +12,8 @@ import { SUPPORT_FORM_LINK } from '@/config/urls'
 import getStepName from '@/helpers/getStepName'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 
+import StepParameterRows from './StepParameterRows'
+
 interface AiStep extends IStep {
   description?: string
 }
@@ -18,16 +22,30 @@ interface StepProps {
   step?: AiStep | null
   isNested?: boolean
   isLastStep?: boolean
+  isActive?: boolean
+  isConfigured?: boolean
+  parameters?: IJSONObject
 }
 
 export default function Step(props: StepProps) {
-  const { step, isNested, isLastStep } = props
+  const {
+    step,
+    isNested,
+    isLastStep,
+    isActive = false,
+    isConfigured = false,
+    parameters,
+  } = props
   const { allApps } = useAiBuilderContext()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const app = allApps?.find(
     (currentApp: IApp) => currentApp.key === step?.appKey,
   )
   const { stepName } = getStepName(allApps, step as IStep)
+
+  const isPending = !isActive && !isConfigured
+  const showParams = parameters && (isActive || (isConfigured && isExpanded))
 
   if (!step) {
     return (
@@ -71,7 +89,12 @@ export default function Step(props: StepProps) {
   }
 
   return (
-    <Flex flexDir="column" w="100%">
+    <Flex
+      flexDir="column"
+      w="100%"
+      opacity={isPending ? 0.55 : 1}
+      transition="opacity 0.15s"
+    >
       <Flex justifyContent="center">
         <Flex
           data-test="flow-step"
@@ -79,17 +102,60 @@ export default function Step(props: StepProps) {
           borderTopWidth="1px"
           borderTopRadius="lg"
           w={isNested ? '100%' : '600px'}
-          pointerEvents="none"
+          pointerEvents={isPending ? 'none' : 'auto'}
+          flexDir="column"
+          alignItems="stretch"
+          justifyContent="flex-start"
+          cursor={isConfigured && !isActive ? 'pointer' : 'default'}
+          onClick={
+            isConfigured && !isActive
+              ? () => setIsExpanded((v) => !v)
+              : undefined
+          }
+          // Active: override border + suppress hover background
+          {...(isActive && {
+            borderColor: '#cf1a68',
+            boxShadow: '0 0 0 3px rgba(207, 26, 104, 0.10)',
+            _hover: { bg: 'white', cursor: 'default' },
+          })}
+          // Pending: suppress hover
+          {...(isPending && {
+            _hover: { bg: 'white', cursor: 'default' },
+          })}
         >
           <Flex {...flowStepStyles.topHeader} py={isNested ? 3 : 4}>
-            <StepAppIcon
-              isCompleted={step.status === 'completed'}
-              isNested={isNested}
-              isTestSuccessful={step.status === 'completed' ? true : undefined}
-              shouldTestStepAgain={false}
-              app={app}
-              step={step}
-            />
+            {/* App icon with optional completed badge */}
+            <Box position="relative" flexShrink={0} mr={4}>
+              <StepAppIcon
+                isCompleted={false}
+                isNested={isNested}
+                isTestSuccessful={undefined}
+                shouldTestStepAgain={false}
+                app={app}
+                step={step}
+              />
+              {isConfigured && (
+                <Box
+                  position="absolute"
+                  bottom="-3px"
+                  right="-3px"
+                  bg="white"
+                  borderRadius="full"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  w="14px"
+                  h="14px"
+                >
+                  <Icon
+                    as={BiSolidCheckCircle}
+                    color="#0F796F"
+                    boxSize="14px"
+                  />
+                </Box>
+              )}
+            </Box>
+
             <Box w="100%">
               <StepNameAndDemo
                 stepName={stepName}
@@ -97,7 +163,26 @@ export default function Step(props: StepProps) {
               />
               <Text textStyle="body-2">{step.description}</Text>
             </Box>
+
+            {/* Chevron for configured accordion toggle */}
+            {isConfigured && !isActive && (
+              <Icon
+                as={isExpanded ? RiArrowUpSLine : RiArrowDownSLine}
+                boxSize={5}
+                color="base.content.medium"
+                flexShrink={0}
+                ml={2}
+              />
+            )}
           </Flex>
+
+          {showParams && (
+            <StepParameterRows
+              parameters={parameters}
+              appKey={step.appKey ?? ''}
+              stepKey={step.key ?? ''}
+            />
+          )}
         </Flex>
       </Flex>
       {!isLastStep && (

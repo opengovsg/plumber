@@ -22,7 +22,9 @@ function resolveFieldLabel(
   paramKey: string,
 ): string {
   const app = allApps.find((a) => a.key === appKey)
-  if (!app) return camelToSentence(paramKey)
+  if (!app) {
+    return camelToSentence(paramKey)
+  }
 
   const trigger = app.triggers?.find((t) => t.key === stepKey)
   const action = app.actions?.find((a) => a.key === stepKey)
@@ -31,7 +33,9 @@ function resolveFieldLabel(
     ...(action?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
   ]
 
-  return fields.find((f) => f.key === paramKey)?.label ?? camelToSentence(paramKey)
+  return (
+    fields.find((f) => f.key === paramKey)?.label ?? camelToSentence(paramKey)
+  )
 }
 
 interface StepParameterRowsProps {
@@ -51,7 +55,9 @@ export default function StepParameterRows({
     ([key, value]) => !HIDDEN_KEYS.has(key) && value !== '' && value != null,
   )
 
-  if (rows.length === 0) return null
+  if (rows.length === 0) {
+    return null
+  }
 
   return (
     <Box
