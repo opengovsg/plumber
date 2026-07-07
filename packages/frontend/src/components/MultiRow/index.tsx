@@ -54,7 +54,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     ...forwardedInputCreatorProps
   } = props
 
-  const { control, setValue } = useFormContext()
+  const { control, getValues, setValue } = useFormContext()
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   // react-hook-form requires a non-undefined default value for _every_
@@ -93,7 +93,15 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     } else {
       append(newRowDefaultValue)
     }
-  }, [append, newRowDefaultValue, subFields])
+    // A nested useFieldArray's `append` (like `remove`) updates the form value
+    // but does not fire the form's `watch` subject, so subscribers such as the
+    // step validator gating "Check step" never recompute. Re-assert the
+    // already-updated value through `setValue`, which does notify.
+    setValue(name, getValues(name), {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }, [append, newRowDefaultValue, subFields, setValue, getValues, name])
 
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
@@ -116,9 +124,17 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         const removeRow = (index: number) => {
           if (rowsToRender.length === 1 && onRequestRemoveLastRow) {
             onRequestRemoveLastRow()
-          } else {
-            remove(index)
+            return
           }
+          remove(index)
+          // A nested useFieldArray's `remove` updates the form value but does not
+          // fire the form's `watch` subject, so subscribers (e.g. the step
+          // validator that gates "Check step") never recompute. Re-assert the
+          // already-updated value through `setValue`, which does notify.
+          setValue(name, getValues(name), {
+            shouldDirty: true,
+            shouldValidate: true,
+          })
         }
 
         return (
