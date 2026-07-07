@@ -44,6 +44,7 @@ export default function DynamicPicker({
 }: DynamicPickerProps) {
   const [options, setOptions] = useState<DynamicPickerOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isError, setIsError] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedOption, setSelectedOption] =
     useState<DynamicPickerOption | null>(null)
@@ -57,6 +58,7 @@ export default function DynamicPicker({
     abortRef.current = controller
 
     setIsLoading(true)
+    setIsError(false)
     fetch('/api/dynamic-data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,9 +76,14 @@ export default function DynamicPicker({
       .catch((err) => {
         if ((err as Error).name !== 'AbortError') {
           setOptions([])
+          setIsError(true)
         }
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
+      })
 
     return () => controller.abort()
   }, [stepId, dynamicKey])
@@ -176,6 +183,10 @@ export default function DynamicPicker({
                 </Button>
               ))
             )
+          ) : isError ? (
+            <Text color="red.400" fontSize="sm" px={2}>
+              Couldn&apos;t load options — enter a value manually below.
+            </Text>
           ) : null}
         </Flex>
 
