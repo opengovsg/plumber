@@ -4,8 +4,6 @@ interface GetConditionArgsOptions {
   usePlaceholders: boolean
 }
 
-// FIXME (ogp-weeloong): migrate to multi-row for both ifThen and
-// onlyContinueIf.
 export default function getConditionArgs({
   usePlaceholders,
 }: GetConditionArgsOptions): IFieldMultiRowMultiColSubField[] {

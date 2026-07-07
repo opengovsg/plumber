@@ -1,4 +1,4 @@
-import { type IGlobalVariable } from '@plumber/types'
+import { type IGlobalVariable, type IJSONObject } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -22,6 +22,11 @@ vi.mock('@/models/step', () => ({
     })),
   },
 }))
+
+// Wraps a single condition row into the v2 grouped shape (one OR-group).
+function singleGroup(row: IJSONObject) {
+  return { conditions: [{ rows: [row] }] }
+}
 
 const MOCK_FLOW = [
   {
@@ -111,11 +116,26 @@ describe('Only continue if', () => {
   })
 
   it('returns void if condition passes', async () => {
-    $.step.parameters = {
+    $.step.parameters = singleGroup({
       field: 1,
       is: 'is',
       condition: 'equals',
       text: 1,
+    })
+
+    const result = await onlyContinueIfAction.run($)
+    expect(result).toBeFalsy()
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: true },
+    })
+  })
+
+  it('passes when any OR-group passes (first group fails, second passes)', async () => {
+    $.step.parameters = {
+      conditions: [
+        { rows: [{ field: 1, is: 'is', condition: 'equals', text: 2 }] },
+        { rows: [{ field: 1, is: 'is', condition: 'equals', text: 1 }] },
+      ],
     }
 
     const result = await onlyContinueIfAction.run($)
@@ -125,13 +145,36 @@ describe('Only continue if', () => {
     })
   })
 
-  it('stops execution if condition fails before branches', async () => {
+  it('AND-s rows within a group (all rows must pass)', async () => {
     $.step.parameters = {
+      conditions: [
+        {
+          rows: [
+            { field: 1, is: 'is', condition: 'equals', text: 1 },
+            { field: 'a', is: 'is', condition: 'equals', text: 'b' },
+          ],
+        },
+      ],
+    }
+
+    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+
+    const result = await onlyContinueIfAction.run($)
+    expect(result).toEqual({
+      nextStep: { command: 'stop-execution' },
+    })
+    expect(mocks.setActionItem).toBeCalledWith({
+      raw: { result: false },
+    })
+  })
+
+  it('stops execution if condition fails before branches', async () => {
+    $.step.parameters = singleGroup({
       field: 1,
       is: 'is',
       condition: 'contains',
       text: 0,
-    }
+    })
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
@@ -148,13 +191,13 @@ describe('Only continue if', () => {
     // update only continue if to step 4
     $.step = {
       ...MOCK_FLOW[3],
-      parameters: {
+      parameters: singleGroup({
         field: 1,
         is: 'not',
         condition: 'equals',
         text: 1,
-      },
-      version: 1,
+      }),
+      version: 2,
     }
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
@@ -172,13 +215,13 @@ describe('Only continue if', () => {
     // update only continue if to step 7
     $.step = {
       ...MOCK_FLOW[6],
-      parameters: {
+      parameters: singleGroup({
         field: 1,
         is: 'not',
         condition: 'equals',
         text: 1,
-      },
-      version: 1,
+      }),
+      version: 2,
     }
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
@@ -194,12 +237,12 @@ describe('Only continue if', () => {
 
   it('should throw step error if invalid condition is configured', async () => {
     const invalidCondition = '==='
-    $.step.parameters = {
+    $.step.parameters = singleGroup({
       field: 1,
       is: 'is',
       condition: invalidCondition,
       text: 0,
-    }
+    })
 
     // throw partial step error message
     await expect(onlyContinueIfAction.run($)).rejects.toThrowError(
@@ -208,11 +251,11 @@ describe('Only continue if', () => {
   })
 
   it('returns void if field is empty', async () => {
-    $.step.parameters = {
+    $.step.parameters = singleGroup({
       field: '',
       is: 'is',
       condition: 'empty',
-    }
+    })
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
@@ -230,12 +273,12 @@ describe('Only continue if', () => {
   ])(
     'returns void if numbers are used for operator comparison',
     async ({ field, is, condition, text }) => {
-      $.step.parameters = {
+      $.step.parameters = singleGroup({
         field,
         is,
         condition,
         text,
-      }
+      })
 
       const result = await onlyContinueIfAction.run($)
       expect(result).toBeFalsy()
@@ -246,12 +289,12 @@ describe('Only continue if', () => {
   )
 
   it('should throw step error if a non-number is used for operator comparison', async () => {
-    $.step.parameters = {
+    $.step.parameters = singleGroup({
       field: 123,
       is: 'is',
       condition: 'gte',
       text: '19 Nov 2021',
-    }
+    })
 
     await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
   })
