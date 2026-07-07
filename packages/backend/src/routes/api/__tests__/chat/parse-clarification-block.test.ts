@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseClarificationBlock } from './parse-clarification-block'
+import { parseClarificationBlock } from '../../chat/parse-clarification-block'
 
 describe('parseClarificationBlock', () => {
   it('returns null when no block is present', () => {
