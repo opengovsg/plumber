@@ -132,6 +132,8 @@ function AiBuilderContent() {
                 colorScheme="grey"
                 variant="subtle"
                 fontFamily="mono"
+                fontWeight="normal"
+                color="base.content.medium"
                 flexShrink={0}
               >
                 {chatId.length > 16 ? `${chatId.slice(0, 16)}…` : chatId}
