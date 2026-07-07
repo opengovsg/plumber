@@ -84,6 +84,13 @@ const messagePartSchema = z.discriminatedUnion('type', [
     output: z.unknown().optional(),
   }),
   z.object({
+    type: z.literal('data-stepUpdate'),
+    data: z.object({
+      stepId: z.string(),
+      parameters: z.record(z.string(), z.unknown()),
+    }),
+  }),
+  z.object({
     type: z.literal('data-pipeState'),
     data: z.object({
       pipeId: z.string(),
