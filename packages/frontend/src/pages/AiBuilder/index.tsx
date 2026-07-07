@@ -132,13 +132,9 @@ function AiBuilderContent() {
                 colorScheme="grey"
                 variant="subtle"
                 fontFamily="mono"
-                maxW="120px"
-                overflow="hidden"
-                textOverflow="ellipsis"
-                whiteSpace="nowrap"
                 flexShrink={0}
               >
-                {chatId}
+                {chatId.length > 16 ? `${chatId.slice(0, 16)}…` : chatId}
               </Badge>
 
               <Tooltip label={copied ? 'Copied!' : 'Copy chat ID'} hasArrow>
