@@ -22,6 +22,7 @@ import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-ste
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
+import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
 import BranchStep from './BranchStep'
 import GroupedStepContainer from './GroupedStepContainer'
@@ -41,6 +42,7 @@ export default function StepsPreview() {
     stepGroupCaption,
     clearPersistedState,
   } = useAiBuilderContext()
+  const { activeStepId, stepParametersByStepId } = useStepConfigContext()
 
   const isMobile = useIsMobile()
 
@@ -153,13 +155,30 @@ export default function StepsPreview() {
         pos="relative"
         w="100%"
       >
-        <Step step={triggerStep} />
+        <Step
+          step={triggerStep}
+          isActive={Boolean(triggerStep?.id && triggerStep.id === activeStepId)}
+          isConfigured={Boolean(
+            triggerStep?.id &&
+              stepParametersByStepId[triggerStep.id] !== undefined,
+          )}
+          parameters={
+            triggerStep?.id ? stepParametersByStepId[triggerStep.id] : undefined
+          }
+        />
         {stepsBeforeGroup.map((action) => (
           <Fragment key={`${action.position}-${action.appKey}`}>
             <Step
               key={`${action.position}-${action.appKey}`}
               step={action}
               isLastStep={action.position === actionSteps.length + 1}
+              isActive={Boolean(action.id && action.id === activeStepId)}
+              isConfigured={Boolean(
+                action.id && stepParametersByStepId[action.id] !== undefined,
+              )}
+              parameters={
+                action.id ? stepParametersByStepId[action.id] : undefined
+              }
             />
           </Fragment>
         ))}
