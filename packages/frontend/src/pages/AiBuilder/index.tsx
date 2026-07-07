@@ -131,9 +131,8 @@ function AiBuilderContent() {
                 alignItems="center"
                 px={2}
                 py={0.5}
-                borderRadius="md"
-                border="1px solid"
-                borderColor="base.divider.medium"
+                borderRadius="full"
+                bg="base.canvas.alt"
                 flexShrink={0}
               >
                 <Text
