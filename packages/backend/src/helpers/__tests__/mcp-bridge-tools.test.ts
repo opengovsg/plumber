@@ -41,6 +41,7 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser)
     expect(Object.keys(tools)).toEqual([
       'list_apps',
+      'list_connections',
       'create_pipe',
       'update_step_parameters',
       'create_step',
