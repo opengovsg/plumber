@@ -552,6 +552,27 @@ export type IField =
   | IFieldBooleanRadio
   | IFieldDragDrop
 
+/**
+ * A single condition row, as evaluated by the toolbox `conditionIsTrue` helper.
+ * The row shape is unchanged from the original flat condition format; `text` is
+ * the legacy name for the comparison "value".
+ */
+export interface IConditionRow {
+  field: IJSONValue
+  is: 'is' | 'not'
+  condition: string // existing operator union
+  text: IJSONValue // legacy name for "value"
+}
+
+/**
+ * Generic group shape used by the `grouped-multirow` builder: an outer OR of
+ * inner AND-ed `rows`. Generic over the row type so the structure can be reused
+ * across apps (the inner key is always the neutral `rows`).
+ */
+export interface IMultiRowGroup<TRow = IJSONObject> {
+  rows: TRow[]
+}
+
 export interface IAuthenticationStepField {
   name: string
   value: string | null
