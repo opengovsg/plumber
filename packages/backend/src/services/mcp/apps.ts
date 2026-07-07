@@ -42,18 +42,18 @@ function serializeField(
       value: String(o.value),
     }))
   } else if (field.type === 'dropdown' && source?.arguments?.length) {
-    base.isDynamic = true
     const keyArg = source.arguments.find((a) => a.name === 'key')
     if (keyArg) {
+      base.isDynamic = true
       base.dynamicDataKey = keyArg.value
-    }
-    const paramArgs = source.arguments.filter((a) =>
-      a.name.startsWith('parameters.'),
-    )
-    if (paramArgs.length > 0) {
-      base.dynamicDataParameters = Object.fromEntries(
-        paramArgs.map((a) => [a.name.slice('parameters.'.length), a.value]),
+      const paramArgs = source.arguments.filter((a) =>
+        a.name.startsWith('parameters.'),
       )
+      if (paramArgs.length > 0) {
+        base.dynamicDataParameters = Object.fromEntries(
+          paramArgs.map((a) => [a.name.slice('parameters.'.length), a.value]),
+        )
+      }
     }
   }
 

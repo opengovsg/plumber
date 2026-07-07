@@ -52,6 +52,16 @@ vi.mock('@/apps', () => ({
               type: 'string',
               required: true,
             },
+            {
+              key: 'noKeySource',
+              label: 'No Key Source',
+              type: 'dropdown',
+              source: {
+                type: 'query',
+                name: 'getDynamicData',
+                arguments: [{ name: 'notKey', value: 'something' }],
+              },
+            },
           ],
         },
       ],
@@ -227,6 +237,16 @@ describe('listAppsService', () => {
       )
       expect(channelField?.isDynamic).toBeUndefined()
       expect(channelField?.dynamicDataKey).toBeUndefined()
+    })
+
+    it('does not set isDynamic when source has arguments but no key argument', async () => {
+      const apps = await listAppsService(user)
+      const slack = apps.find((a) => a.key === 'slack')
+      const field = slack?.actions[0].fields.find(
+        (f) => f.key === 'noKeySource',
+      )
+      expect(field?.isDynamic).toBeUndefined()
+      expect(field?.dynamicDataKey).toBeUndefined()
     })
   })
 
