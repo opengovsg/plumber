@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
+import FlowCollaborator from '@/models/flow-collaborators'
 import User from '@/models/user'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
@@ -384,5 +385,101 @@ describe('updateStepParametersService', () => {
     ).rejects.toThrow(
       "Connection app 'slack' does not match step app 'postman'",
     )
+  })
+
+  it('throws when the connection does not exist', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `conn-notfound-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Conn Not Found Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-conn-notfound',
+    })
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId: flow.id,
+        stepId: actionStep.id,
+        parameters: {},
+        connectionId: randomUUID(), // does not exist
+      }),
+    ).rejects.toThrow('Connection not found')
+  })
+
+  it('throws when a collaborator tries to assign a connection they do not own', async () => {
+    const owner = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `collab-owner-${randomUUID()}@example.com`,
+    })
+    const collaborator = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `collab-editor-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user: owner,
+      name: 'Collab Conn IDOR Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-collab-idor',
+    })
+    await FlowCollaborator.query().insert({
+      flowId: flow.id,
+      userId: collaborator.id,
+      role: 'editor',
+      updatedBy: owner.id,
+    })
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    // connection owned by owner, not linked to any shared flow
+    const ownerConnection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'postman',
+      userId: owner.id,
+      verified: true,
+      draft: false,
+      formattedData: {},
+    })
+
+    await expect(
+      updateStepParametersService({
+        user: collaborator,
+        pipeId: flow.id,
+        stepId: actionStep.id,
+        parameters: {},
+        connectionId: ownerConnection.id,
+      }),
+    ).rejects.toThrow('Connection not found')
   })
 })

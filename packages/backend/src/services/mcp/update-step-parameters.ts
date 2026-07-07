@@ -55,14 +55,6 @@ export async function updateStepParametersService({
       throw new Error('No such trigger or action')
     }
 
-    if (triggerOrAction.hiddenFromUser) {
-      throw new Error(
-        `${
-          step.type === 'trigger' ? 'Trigger' : 'Action'
-        } can only be updated by system`,
-      )
-    }
-
     // Get arguments from the raw app registry (before getApp transforms them into substeps)
     const rawApp = apps[step.appKey]
     const rawTriggerOrAction = (
