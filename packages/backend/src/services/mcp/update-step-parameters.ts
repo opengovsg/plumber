@@ -93,7 +93,6 @@ export async function updateStepParametersService({
     ...patchedParameters,
   } as IJSONObject
 
-  let resolvedConnectionId: string | undefined
   if (connectionId !== undefined) {
     const connection = await user
       .withAccessibleConnections({ requiredRole: 'viewer' })
@@ -108,16 +107,12 @@ export async function updateStepParametersService({
         `Connection app '${connection.key}' does not match step app '${step.appKey}'`,
       )
     }
-
-    resolvedConnectionId = connectionId
   }
 
   return Step.query().patchAndFetchById(stepId, {
     parameters: mergedParameters,
     version,
     status: 'incomplete',
-    ...(resolvedConnectionId !== undefined && {
-      connectionId: resolvedConnectionId,
-    }),
+    ...(connectionId !== undefined && { connectionId }),
   })
 }
