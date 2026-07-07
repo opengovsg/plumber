@@ -1,4 +1,4 @@
-import type { IApp, IFieldDropdown, IJSONObject } from '@plumber/types'
+import type { IApp, IJSONObject } from '@plumber/types'
 
 import { Fragment } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
@@ -39,6 +39,50 @@ function resolveFieldLabel(
   )
 }
 
+type FieldWithOptions = {
+  options?: Array<{ label: string; value: string | number }>
+  subFields?: FieldWithOptions[]
+}
+
+// Resolve a single scalar value against a field's option list.
+function resolveOptionLabel(
+  field: FieldWithOptions | undefined,
+  strValue: string,
+): string {
+  const option = field?.options?.find((o) => String(o.value) === strValue)
+  return option ? option.label : strValue
+}
+
+// Recursively flatten object/array values into a readable string,
+// resolving option labels from subField definitions where available.
+function flattenValue(
+  value: unknown,
+  subFields?: FieldWithOptions[],
+): string | null {
+  if (Array.isArray(value)) {
+    // Array of rows (e.g. multirow-multicol): join each row with ', '
+    const rows = value
+      .map((item) => flattenValue(item, subFields))
+      .filter(Boolean)
+    return rows.length > 0 ? rows.join(', ') : null
+  }
+
+  if (typeof value === 'object' && value !== null) {
+    // Object row: resolve each key against its subField options, join with ' '
+    const parts = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== '' && v != null)
+      .map(([k, v]) => {
+        const subField = subFields?.find(
+          (f) => (f as unknown as { key?: string }).key === k,
+        )
+        return resolveOptionLabel(subField, String(v))
+      })
+    return parts.length > 0 ? parts.join(' ') : null
+  }
+
+  return String(value)
+}
+
 function resolveDisplayValue(
   allApps: IApp[],
   appKey: string,
@@ -46,26 +90,18 @@ function resolveDisplayValue(
   paramKey: string,
   value: unknown,
 ): string | null {
-  // Skip object/array values — they can't be displayed meaningfully as a flat string
-  if (typeof value === 'object' && value !== null) {
-    return null
-  }
-
-  const strValue = String(value)
-
-  // For dropdown fields with static options, show the option label not the raw key
   const fields = getStepFields(allApps, appKey, stepKey)
-  const field = fields.find((f) => f.key === paramKey)
-  if (field?.type === 'dropdown') {
-    const option = (field as IFieldDropdown).options?.find(
-      (o) => String(o.value) === strValue,
-    )
-    if (option) {
-      return option.label
-    }
+  const field = fields.find((f) => f.key === paramKey) as
+    | FieldWithOptions
+    | undefined
+
+  // For objects/arrays (e.g. multirow-multicol), recursively flatten with sub-field label resolution
+  if (typeof value === 'object' && value !== null) {
+    return flattenValue(value, field?.subFields)
   }
 
-  return strValue
+  // For scalar values, resolve option label if the field has static options
+  return resolveOptionLabel(field, String(value))
 }
 
 interface StepParameterRowsProps {
