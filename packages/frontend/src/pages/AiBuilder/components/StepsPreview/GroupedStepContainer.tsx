@@ -11,13 +11,21 @@ interface GroupedStepContainerProps {
   isNested: boolean
   stepGroupType: string
   stepGroupCaption: string
+  isPending?: boolean
 }
 
 export default function GroupedStepContainer(props: GroupedStepContainerProps) {
-  const { children, isNested, stepGroupType, stepGroupCaption } = props
+  const { children, isNested, stepGroupType, stepGroupCaption, isPending } =
+    props
   const isMobile = useIsMobile()
   return (
-    <Flex justifyContent="center" w="100%">
+    <Flex
+      justifyContent="center"
+      w="100%"
+      opacity={isPending ? 0.55 : 1}
+      transition="opacity 0.15s"
+      pointerEvents={isPending ? 'none' : 'auto'}
+    >
       <Flex
         {...flowStepGroupStyles.container}
         display={isMobile ? 'block' : 'flex'}

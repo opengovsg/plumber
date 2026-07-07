@@ -76,6 +76,20 @@ export default function StepsPreview() {
     return groupedSteps.slice(1)
   }, [groupedSteps])
 
+  // When in pipe mode, mute the grouped container if none of its steps are active or completed.
+  const isGroupedContainerPending = useMemo(() => {
+    if (!isMcpPipeMode) {
+      return false
+    }
+    const allGroupedSteps = groupedSteps.flat()
+    const hasActiveOrCompleted = allGroupedSteps.some(
+      (s) =>
+        s.id === effectiveActiveStepId ||
+        (s.id != null && completedStepIds.has(s.id)),
+    )
+    return !hasActiveOrCompleted
+  }, [isMcpPipeMode, groupedSteps, effectiveActiveStepId, completedStepIds])
+
   const onCreateFlowWithSteps = useCallback(async () => {
     const { data } = await createFlowWithSteps({
       variables: {
@@ -204,6 +218,7 @@ export default function StepsPreview() {
             stepGroupType={stepGroupType as string}
             stepGroupCaption={stepGroupCaption as string}
             isNested={false}
+            isPending={isGroupedContainerPending}
           >
             {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
               <Flex flexDir="column" w="100%" px={2} gap={4} mt={2}>
