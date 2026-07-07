@@ -43,7 +43,7 @@ const action: IRawAction = {
       type: 'grouped-multirow' as const,
       required: true,
       description:
-        'Every condition has to be satisfied for this branch to be taken.',
+        'This branch is taken when **any** condition group is met. Within a group, **all** conditions must be satisfied.',
       maxGroups: MAX_CONDITION_GROUPS,
       maxRowsPerGroup: MAX_ROWS_PER_CONDITION_GROUP,
       subFields: getConditionArgs({ usePlaceholders: true }),

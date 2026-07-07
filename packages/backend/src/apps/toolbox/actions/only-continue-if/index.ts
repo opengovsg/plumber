@@ -19,6 +19,8 @@ const action: IRawAction = {
       key: 'conditions',
       type: 'grouped-multirow' as const,
       required: true,
+      description:
+        'Later steps run only when **any** condition group is met. Within a group, **all** conditions must be satisfied.',
       maxGroups: MAX_CONDITION_GROUPS,
       maxRowsPerGroup: MAX_ROWS_PER_CONDITION_GROUP,
       subFields: getConditionArgs({ usePlaceholders: true }),
