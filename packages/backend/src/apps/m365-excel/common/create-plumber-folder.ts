@@ -65,7 +65,7 @@ export async function createPlumberFolder(
 
   if (!folderId) {
     throw new Error(
-      'There was a problem creating your folder. Please contact support@plumber.gov.sg for assistance.',
+      'There was a problem creating your folder. Please visit https://go.gov.sg/plumber-support for assistance.',
     )
   }
 

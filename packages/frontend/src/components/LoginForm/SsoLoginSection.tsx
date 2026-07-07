@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Flex, Text } from '@chakra-ui/react'
+import { Flex, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import { generateSsoAuthUrl } from '@/helpers/oidc'
@@ -38,8 +38,11 @@ export default function SsoLoginSection(): JSX.Element {
       </Button>
       {hasError && (
         <Infobox variant="error" mb={2}>
-          There was a problem generating encryption parameters; please contact
-          support@plumber.gov.sg for help.
+          There was a problem generating encryption parameters; please visit our{' '}
+          <Link href="https://go.gov.sg/plumber-support" isExternal>
+            support form
+          </Link>{' '}
+          for help.
         </Infobox>
       )}
       <Text textStyle="body-2">For OGP officers only</Text>

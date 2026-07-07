@@ -123,7 +123,7 @@ describe('updateFlowStatus', () => {
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
     ).rejects.toThrow(
-      'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
+      'Step positions are out of order. Please visit https://go.gov.sg/plumber-support for help.',
     )
   })
 
@@ -148,7 +148,7 @@ describe('updateFlowStatus', () => {
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
     ).rejects.toThrow(
-      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
+      'Flow must have exactly one for-each step. Please visit https://go.gov.sg/plumber-support for help.',
     )
   })
 
@@ -173,7 +173,7 @@ describe('updateFlowStatus', () => {
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
     ).rejects.toThrow(
-      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
+      'Flow must have exactly one for-each step. Please visit https://go.gov.sg/plumber-support for help.',
     )
   })
 

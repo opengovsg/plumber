@@ -16,7 +16,7 @@ const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 const validateFlowSteps = (steps: Step[]) => {
   if (!steps.every((step, index) => step.position === index + 1)) {
     throw new Error(
-      'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
+      'Step positions are out of order. Please visit https://go.gov.sg/plumber-support for help.',
     )
   }
 
@@ -32,7 +32,7 @@ const validateFlowSteps = (steps: Step[]) => {
         forEachSteps[1].config.approval?.branch)
   ) {
     throw new Error(
-      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
+      'Flow must have exactly one for-each step. Please visit https://go.gov.sg/plumber-support for help.',
     )
   }
 }
