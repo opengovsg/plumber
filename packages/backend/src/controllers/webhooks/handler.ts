@@ -63,6 +63,10 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
+  if (flow.config?.isForceClogged) {
+    return response.sendStatus(423)
+  }
+
   const { maxQps = DEFAULT_MAX_QPS, rejectIfOverMaxQps = true } =
     flow.config ?? {}
 

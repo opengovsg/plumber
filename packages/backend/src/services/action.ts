@@ -101,6 +101,11 @@ export const processAction = async (options: ProcessActionOptions) => {
     .withGraphJoined('user')
     .withGraphFetched('steps')
     .throwIfNotFound()
+
+  if (flow.config?.isForceClogged) {
+    throw new UnrecoverableError(`Pipe ${flowId} has been force clogged`)
+  }
+
   const execution = await Execution.query()
     .findById(executionId)
     .throwIfNotFound()
