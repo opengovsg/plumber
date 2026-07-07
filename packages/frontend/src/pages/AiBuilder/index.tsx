@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
+import { BiCopy } from 'react-icons/bi'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
+import {
+  CloseButton,
+  Container,
+  Flex,
+  HStack,
+  Text,
+  Tooltip,
+} from '@chakra-ui/react'
+import copy from 'clipboard-copy'
 
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
@@ -23,7 +32,16 @@ function AiBuilderContent() {
     clearPersistedState,
     isMobile,
     isDrawerOpen,
+    chatId,
   } = useAiBuilderContext()
+
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyChatId = useCallback(async () => {
+    await copy(chatId)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [chatId])
 
   const {
     messages,
@@ -88,6 +106,54 @@ function AiBuilderContent() {
               <CloseButton size="sm" onClick={handleClose} />
 
               <Text>{flowName}</Text>
+
+              <Flex
+                alignItems="center"
+                gap={1}
+                px={2}
+                py={0.5}
+                borderRadius="md"
+                border="1px solid"
+                borderColor="base.divider.medium"
+                bg="base.canvas.alt"
+                flexShrink={0}
+              >
+                <Text
+                  textStyle="caption-1"
+                  color="base.content.medium"
+                  fontWeight="semibold"
+                  letterSpacing="wider"
+                  textTransform="uppercase"
+                  whiteSpace="nowrap"
+                >
+                  Chat ID
+                </Text>
+                <Text
+                  textStyle="caption-1"
+                  fontFamily="mono"
+                  color="base.content.default"
+                  maxW="120px"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace="nowrap"
+                >
+                  {chatId}
+                </Text>
+                <Tooltip label={copied ? 'Copied!' : 'Copy chat ID'} hasArrow>
+                  <Flex
+                    as="button"
+                    onClick={handleCopyChatId}
+                    alignItems="center"
+                    justifyContent="center"
+                    color="base.content.medium"
+                    _hover={{ color: 'base.content.default' }}
+                    cursor="pointer"
+                    aria-label="Copy chat ID"
+                  >
+                    <BiCopy size={14} />
+                  </Flex>
+                </Tooltip>
+              </Flex>
             </Flex>
           </HStack>
         )}
