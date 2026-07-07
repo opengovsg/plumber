@@ -499,6 +499,23 @@ export interface IFieldMultiRow extends IBaseField {
 }
 
 /**
+ * Generic "OR of AND" builder: an array of groups, each holding AND-ed rows.
+ * Persisted shape is `[{ rows: [row, ...] }, ...]` (outer = OR, inner = AND).
+ * It is agnostic to its rows — `subFields` describe a single row, exactly like
+ * `multirow-multicol`. `maxGroups` / `maxRowsPerGroup` are soft caps (the UI
+ * disables the add buttons at the limit; the backend re-checks them).
+ */
+export interface IFieldGroupedMultiRow extends IBaseField {
+  type: 'grouped-multirow'
+  value?: string
+  subFields: IField[]
+  maxGroups?: number
+  maxRowsPerGroup?: number
+  addRowButtonText?: string
+  addGroupButtonText?: string
+}
+
+/**
  * Marks a rich-text field as previewable in a kind-specific modal in
  * FlowStepTestController. Keep this union narrow; expand only as new preview
  * kinds (e.g. 'sms') ship.
@@ -605,6 +622,7 @@ export type IField =
   | IFieldMultiRowMultiCol
   | IFieldMultiSelect
   | IFieldMultiRow
+  | IFieldGroupedMultiRow
   | IFieldRichText
   | IFieldBooleanRadio
   | IFieldDragDrop
