@@ -226,7 +226,9 @@ const handleChatStream = observe(
 
                   // Phase 2b+: MCP tools ran this turn — emit fresh pipe state from DB
                   if (activePipeId) {
-                    const flow = await Flow.query().findById(activePipeId)
+                    const flow = await Flow.query()
+                      .findById(activePipeId)
+                      .where('user_id', context.currentUser.id)
                     const steps = flow
                       ? await flow
                           .$relatedQuery('steps')
