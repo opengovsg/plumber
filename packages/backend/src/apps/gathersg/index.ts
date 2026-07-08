@@ -4,6 +4,7 @@ import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
 import dynamicData from './dynamic-data'
+import queue from './queue'
 import triggers from './triggers'
 
 const app: IApp = {
@@ -20,6 +21,7 @@ const app: IApp = {
   actions,
   triggers,
   dynamicData,
+  queue,
   category: 'data',
 }
 
