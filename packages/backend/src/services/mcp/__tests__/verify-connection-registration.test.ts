@@ -6,6 +6,7 @@ import { verifyConnectionRegistrationService } from '../verify-connection-regist
 
 const mocks = vi.hoisted(() => ({
   verifyConnectionRegistration: vi.fn(),
+  flowFindById: vi.fn(),
 }))
 
 vi.mock('@/apps', () => ({
@@ -27,7 +28,7 @@ vi.mock('@/helpers/global-variable', () => ({
 vi.mock('@/models/flow', () => ({
   default: {
     query: vi.fn().mockReturnValue({
-      findById: vi.fn().mockResolvedValue({ id: 'flow-1', name: 'Test' }),
+      findById: mocks.flowFindById,
     }),
   },
 }))
@@ -54,6 +55,7 @@ describe('verifyConnectionRegistrationService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     user = makeUser()
+    mocks.flowFindById.mockResolvedValue({ id: 'flow-1', name: 'Test' })
   })
 
   it('returns VERIFIED when registrationVerified is true', async () => {
@@ -110,5 +112,77 @@ describe('verifyConnectionRegistrationService', () => {
     await expect(
       verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
     ).rejects.toThrow(FORMSG_WEBHOOK_VERIFICATION_MESSAGE.UNAUTHORIZED)
+  })
+
+  describe('guard branches', () => {
+    it('throws when step is not found', async () => {
+      user.withAccessibleSteps.mockReturnValue({
+        findOne: vi.fn().mockResolvedValue(null),
+      })
+
+      await expect(
+        verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
+      ).rejects.toThrow('Step not found')
+    })
+
+    it('throws when connection is not found', async () => {
+      user.withAccessibleConnections.mockReturnValue({
+        findOne: vi.fn().mockResolvedValue(null),
+      })
+
+      await expect(
+        verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
+      ).rejects.toThrow('Connection not found')
+    })
+
+    it('throws when connection belongs to another user', async () => {
+      user.withAccessibleConnections.mockReturnValue({
+        findOne: vi
+          .fn()
+          .mockResolvedValue({ id: 'conn-1', key: 'formsg', userId: 'other-user' }),
+      })
+
+      await expect(
+        verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
+      ).rejects.toThrow('You cannot use a personal connection that you do not own')
+    })
+
+    it('throws when connection app does not match step app', async () => {
+      user.withAccessibleConnections.mockReturnValue({
+        findOne: vi
+          .fn()
+          .mockResolvedValue({ id: 'conn-1', key: 'slack', userId: 'user-1' }),
+      })
+
+      await expect(
+        verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
+      ).rejects.toThrow('Connection app does not match step app')
+    })
+
+    it('throws when app does not support connection registration verification', async () => {
+      // Use an appKey not present in the mocked apps registry
+      user.withAccessibleSteps.mockReturnValue({
+        findOne: vi
+          .fn()
+          .mockResolvedValue({ id: 'step-1', appKey: 'slack', flowId: 'flow-1' }),
+      })
+      user.withAccessibleConnections.mockReturnValue({
+        findOne: vi
+          .fn()
+          .mockResolvedValue({ id: 'conn-1', key: 'slack', userId: 'user-1' }),
+      })
+
+      await expect(
+        verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
+      ).rejects.toThrow('App does not support connection registration verification')
+    })
+
+    it('throws when flow is not found', async () => {
+      mocks.flowFindById.mockResolvedValue(null)
+
+      await expect(
+        verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
+      ).rejects.toThrow('Flow not found')
+    })
   })
 })
