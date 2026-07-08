@@ -113,6 +113,9 @@ describe('executeStepService', () => {
 
     const updated = await Step.query().findById(actionStep.id)
     expect(updated.status).toBe('completed')
+
+    const updatedFlow = await Flow.query().findById(flow.id)
+    expect(updatedFlow.testExecutionId).toBe(execution.id)
   })
 
   it('does not mark step as completed and returns success:false when testStep fails', async () => {
