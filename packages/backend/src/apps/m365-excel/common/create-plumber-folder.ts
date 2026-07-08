@@ -64,9 +64,7 @@ export async function createPlumberFolder(
   }
 
   if (!folderId) {
-    throw new Error(
-      'There was a problem creating your folder. Please contact support@plumber.gov.sg for assistance.',
-    )
+    throw new Error('There was a problem creating your folder.')
   }
 
   // Make user the folder owner.
