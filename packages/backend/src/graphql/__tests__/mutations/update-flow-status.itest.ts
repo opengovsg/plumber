@@ -122,9 +122,7 @@ describe('updateFlowStatus', () => {
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
-    ).rejects.toThrow(
-      'Step positions are out of order. Please contact support@plumber.gov.sg for help.',
-    )
+    ).rejects.toThrow('Step positions are out of order.')
   })
 
   it('throws an error when publishing a flow with more than one for-each step', async () => {
@@ -147,9 +145,7 @@ describe('updateFlowStatus', () => {
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
-    ).rejects.toThrow(
-      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
-    )
+    ).rejects.toThrow('Flow must have exactly one for-each step.')
   })
 
   it('throws an error when publishing a flow with 2 for-each step in the same branch', async () => {
@@ -172,9 +168,7 @@ describe('updateFlowStatus', () => {
 
     await expect(
       updateFlowStatus({}, { input: defaultInput }, context),
-    ).rejects.toThrow(
-      'Flow must have exactly one for-each step. Please contact support@plumber.gov.sg for help.',
-    )
+    ).rejects.toThrow('Flow must have exactly one for-each step.')
   })
 
   it('should not throw an error when publishing a flow with 2 for-each step in different branches', async () => {

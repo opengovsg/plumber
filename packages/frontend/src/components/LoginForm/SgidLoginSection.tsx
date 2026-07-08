@@ -40,8 +40,11 @@ export default function SgidLoginSection(): JSX.Element {
     <>
       {hasError && (
         <Infobox variant="error" mb={2}>
-          There was a problem generating encryption parameters; please contact
-          support@plumber.gov.sg for help.
+          There was a problem generating encryption parameters; please visit our{' '}
+          <Link href="https://go.gov.sg/plumber-support" isExternal>
+            support form
+          </Link>{' '}
+          for help.
         </Infobox>
       )}
 

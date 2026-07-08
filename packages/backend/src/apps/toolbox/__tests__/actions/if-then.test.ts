@@ -1,11 +1,14 @@
-import { type IGlobalVariable } from '@plumber/types'
+import { type IGlobalVariable, type IJSONObject } from '@plumber/types'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import StepError from '@/errors/step'
-
 import toolboxApp from '../..'
 import ifThenAction from '../../actions/if-then'
+
+// Wraps a single condition row into the v2 grouped shape (one OR-group).
+function singleGroup(row: IJSONObject) {
+  return [{ rows: [row] }]
+}
 
 /**
  * [T = trigger S = normal step, B = branch]
@@ -239,13 +242,24 @@ describe('If-then', () => {
     })
 
     it('runs the branch and returns void if branch condition passes', async () => {
+      $.step.parameters.conditions = singleGroup({
+        field: 1,
+        is: 'is',
+        condition: 'equals',
+        text: 1,
+      })
+      const result = await ifThenAction.run($)
+
+      expect(result).toBeFalsy()
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { isConditionMet: true },
+      })
+    })
+
+    it('takes the branch when any OR-group passes', async () => {
       $.step.parameters.conditions = [
-        {
-          field: 1,
-          is: 'is',
-          condition: 'equals',
-          text: 1,
-        },
+        { rows: [{ field: 1, is: 'is', condition: 'equals', text: 9999 }] },
+        { rows: [{ field: 1, is: 'is', condition: 'equals', text: 1 }] },
       ]
       const result = await ifThenAction.run($)
 
@@ -255,13 +269,13 @@ describe('If-then', () => {
       })
     })
 
-    it('skips to the next branch if branch condition fails and there is a next branch', async () => {
+    it('AND-s rows within a group (all rows must pass)', async () => {
       $.step.parameters.conditions = [
         {
-          field: 1,
-          is: 'is',
-          condition: 'equals',
-          text: 9999,
+          rows: [
+            { field: 1, is: 'is', condition: 'equals', text: 1 },
+            { field: 'a', is: 'is', condition: 'equals', text: 'b' },
+          ],
         },
       ]
       const result = await ifThenAction.run($)
@@ -274,15 +288,30 @@ describe('If-then', () => {
       })
     })
 
+    it('skips to the next branch if branch condition fails and there is a next branch', async () => {
+      $.step.parameters.conditions = singleGroup({
+        field: 1,
+        is: 'is',
+        condition: 'equals',
+        text: 9999,
+      })
+      const result = await ifThenAction.run($)
+
+      expect(result).toEqual({
+        nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
+      })
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { isConditionMet: false },
+      })
+    })
+
     it('ends the pipe if branch condition fails and there is no next branch', async () => {
-      $.step.parameters.conditions = [
-        {
-          field: 1,
-          is: 'is',
-          condition: 'equals',
-          text: 9999,
-        },
-      ]
+      $.step.parameters.conditions = singleGroup({
+        field: 1,
+        is: 'is',
+        condition: 'equals',
+        text: 9999,
+      })
       // Exclude all of branch-2 from pipe for this test.
       mocks.stepQueryResult.mockResolvedValueOnce(FLAT_PIPE_STEPS.slice(0, 3))
       const result = await ifThenAction.run($)
@@ -295,21 +324,29 @@ describe('If-then', () => {
       })
     })
 
-    it('should throw step error if no condition is configured', async () => {
+    it('treats missing conditions as not met and skips to the next branch', async () => {
+      // The evaluator is strict but defensive: missing conditions evaluate to
+      // false rather than throwing (empty conditions are caught by frontend
+      // "Check step" validation and the incomplete-step activation guard).
       $.step.parameters.conditions = undefined
-      await expect(ifThenAction.run($)).rejects.toThrowError(StepError)
+      const result = await ifThenAction.run($)
+
+      expect(result).toEqual({
+        nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
+      })
+      expect(mocks.setActionItem).toBeCalledWith({
+        raw: { isConditionMet: false },
+      })
     })
 
     it('should throw step error if invalid condition is configured', async () => {
       const invalidCondition = '==='
-      $.step.parameters.conditions = [
-        {
-          field: 1,
-          is: 'is',
-          condition: invalidCondition,
-          text: 9999,
-        },
-      ]
+      $.step.parameters.conditions = singleGroup({
+        field: 1,
+        is: 'is',
+        condition: invalidCondition,
+        text: 9999,
+      })
 
       // throw partial step error message
       await expect(ifThenAction.run($)).rejects.toThrowError(
@@ -341,14 +378,12 @@ describe('If-then', () => {
     ])(
       'runs the branch and returns void if the branch condition passes',
       async () => {
-        $.step.parameters.conditions = [
-          {
-            field: 1,
-            is: 'is',
-            condition: 'equals',
-            text: 1,
-          },
-        ]
+        $.step.parameters.conditions = singleGroup({
+          field: 1,
+          is: 'is',
+          condition: 'equals',
+          text: 1,
+        })
         const result = await ifThenAction.run($)
 
         expect(result).toBeFalsy()
@@ -369,14 +404,12 @@ describe('If-then', () => {
         $.step = {
           ...NESTED_BRANCH_PIPE_STEPS.find((step) => step.id === stepId),
         } as unknown as IGlobalVariable['step']
-        $.step.parameters.conditions = [
-          {
-            field: 1,
-            is: 'is',
-            condition: 'equals',
-            text: 9999,
-          },
-        ]
+        $.step.parameters.conditions = singleGroup({
+          field: 1,
+          is: 'is',
+          condition: 'equals',
+          text: 9999,
+        })
 
         const result = await ifThenAction.run($)
 
@@ -399,14 +432,12 @@ describe('If-then', () => {
         $.step = {
           ...NESTED_BRANCH_PIPE_STEPS.find((step) => step.id === stepId),
         } as unknown as IGlobalVariable['step']
-        $.step.parameters.conditions = [
-          {
-            field: 1,
-            is: 'is',
-            condition: 'equals',
-            text: 9999,
-          },
-        ]
+        $.step.parameters.conditions = singleGroup({
+          field: 1,
+          is: 'is',
+          condition: 'equals',
+          text: 9999,
+        })
 
         const result = await ifThenAction.run($)
 
@@ -430,14 +461,12 @@ describe('If-then', () => {
         $.step = {
           ...NESTED_BRANCH_PIPE_STEPS.find((step) => step.id === stepId),
         } as unknown as IGlobalVariable['step']
-        $.step.parameters.conditions = [
-          {
-            field: 1,
-            is: 'is',
-            condition: 'equals',
-            text: 9999,
-          },
-        ]
+        $.step.parameters.conditions = singleGroup({
+          field: 1,
+          is: 'is',
+          condition: 'equals',
+          text: 9999,
+        })
 
         const result = await ifThenAction.run($)
 
@@ -458,14 +487,12 @@ describe('If-then', () => {
     ])(
       'should handle begins with condition',
       async ({ field, text, expectedResult }) => {
-        $.step.parameters.conditions = [
-          {
-            field,
-            is: 'is',
-            condition: 'begins',
-            text,
-          },
-        ]
+        $.step.parameters.conditions = singleGroup({
+          field,
+          is: 'is',
+          condition: 'begins',
+          text,
+        })
 
         await ifThenAction.run($)
         expect(mocks.setActionItem).toBeCalledWith({

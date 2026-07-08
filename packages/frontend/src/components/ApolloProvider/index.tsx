@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client'
-import { Flex, Text } from '@chakra-ui/react'
+import { Flex, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
 
 import { NOT_AUTHORISED } from '@/config/errors'
@@ -76,8 +76,15 @@ const ApolloProvider = (props: ApolloProviderProps): React.ReactElement => {
         toast({
           id,
           title: message,
-          description:
-            'If this error persists, contact us at support@plumber.gov.sg.',
+          description: (
+            <>
+              If this error persists, please visit our{' '}
+              <Link href="https://go.gov.sg/plumber-support" isExternal>
+                support form
+              </Link>{' '}
+              for help.
+            </>
+          ),
           status: 'error',
           duration: 3000,
           isClosable: true,

@@ -84,7 +84,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
 
         if (connections.length > 1 && app.key === EXCEL_APP_KEY) {
           console.error(
-            'Multiple connections found for Excel. Please contact support@plumber.gov.sg for assistance.',
+            'Multiple connections found for Excel. Please visit https://go.gov.sg/plumber-support for assistance.',
           )
         }
 
