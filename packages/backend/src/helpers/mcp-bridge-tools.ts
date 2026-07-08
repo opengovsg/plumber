@@ -236,9 +236,16 @@ export function createMcpBridgeTools(
         step_id: z.string().describe('ID of the step to test'),
       }),
       execute: async ({ step_id }): Promise<McpExecuteStepResult> => {
-        const result = await executeStepService(user, step_id)
-        onPipeChange?.(result.pipeId)
-        return result
+        let pipeId: string | undefined
+        try {
+          const result = await executeStepService(user, step_id)
+          pipeId = result.pipeId
+          return result
+        } finally {
+          if (pipeId) {
+            onPipeChange?.(pipeId)
+          }
+        }
       },
     }),
   }
