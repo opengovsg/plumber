@@ -38,16 +38,18 @@ const makeUser = () =>
     id: 'user-1',
     email: 'test@example.com',
     withAccessibleSteps: vi.fn().mockReturnValue({
-      findOne: vi
-        .fn()
-        .mockResolvedValue({ id: 'step-1', appKey: 'formsg', flowId: 'flow-1' }),
+      findOne: vi.fn().mockResolvedValue({
+        id: 'step-1',
+        appKey: 'formsg',
+        flowId: 'flow-1',
+      }),
     }),
     withAccessibleConnections: vi.fn().mockReturnValue({
       findOne: vi
         .fn()
         .mockResolvedValue({ id: 'conn-1', key: 'formsg', userId: 'user-1' }),
     }),
-  }) as any
+  } as any)
 
 describe('verifyConnectionRegistrationService', () => {
   let user: ReturnType<typeof makeUser>
@@ -64,7 +66,11 @@ describe('verifyConnectionRegistrationService', () => {
       message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.VERIFIED,
     })
 
-    const result = await verifyConnectionRegistrationService(user, 'step-1', 'conn-1')
+    const result = await verifyConnectionRegistrationService(
+      user,
+      'step-1',
+      'conn-1',
+    )
 
     expect(result.status).toBe('VERIFIED')
   })
@@ -75,10 +81,16 @@ describe('verifyConnectionRegistrationService', () => {
       message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT,
     })
 
-    const result = await verifyConnectionRegistrationService(user, 'step-1', 'conn-1')
+    const result = await verifyConnectionRegistrationService(
+      user,
+      'step-1',
+      'conn-1',
+    )
 
     expect(result.status).toBe('ANOTHER_ENDPOINT')
-    expect(result.message).toBe(FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT)
+    expect(result.message).toBe(
+      FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT,
+    )
   })
 
   it('returns ANOTHER_PIPE when message matches that constant', async () => {
@@ -87,10 +99,16 @@ describe('verifyConnectionRegistrationService', () => {
       message: FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_PIPE,
     })
 
-    const result = await verifyConnectionRegistrationService(user, 'step-1', 'conn-1')
+    const result = await verifyConnectionRegistrationService(
+      user,
+      'step-1',
+      'conn-1',
+    )
 
     expect(result.status).toBe('ANOTHER_PIPE')
-    expect(result.message).toBe(FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_PIPE)
+    expect(result.message).toBe(
+      FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_PIPE,
+    )
   })
 
   it('returns UNREGISTERED when registrationVerified is false and message is undefined', async () => {
@@ -98,7 +116,11 @@ describe('verifyConnectionRegistrationService', () => {
       registrationVerified: false,
     })
 
-    const result = await verifyConnectionRegistrationService(user, 'step-1', 'conn-1')
+    const result = await verifyConnectionRegistrationService(
+      user,
+      'step-1',
+      'conn-1',
+    )
 
     expect(result.status).toBe('UNREGISTERED')
   })
@@ -137,14 +159,18 @@ describe('verifyConnectionRegistrationService', () => {
 
     it('throws when connection belongs to another user', async () => {
       user.withAccessibleConnections.mockReturnValue({
-        findOne: vi
-          .fn()
-          .mockResolvedValue({ id: 'conn-1', key: 'formsg', userId: 'other-user' }),
+        findOne: vi.fn().mockResolvedValue({
+          id: 'conn-1',
+          key: 'formsg',
+          userId: 'other-user',
+        }),
       })
 
       await expect(
         verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
-      ).rejects.toThrow('You cannot use a personal connection that you do not own')
+      ).rejects.toThrow(
+        'You cannot use a personal connection that you do not own',
+      )
     })
 
     it('throws when connection app does not match step app', async () => {
@@ -162,9 +188,11 @@ describe('verifyConnectionRegistrationService', () => {
     it('throws when app does not support connection registration verification', async () => {
       // Use an appKey not present in the mocked apps registry
       user.withAccessibleSteps.mockReturnValue({
-        findOne: vi
-          .fn()
-          .mockResolvedValue({ id: 'step-1', appKey: 'slack', flowId: 'flow-1' }),
+        findOne: vi.fn().mockResolvedValue({
+          id: 'step-1',
+          appKey: 'slack',
+          flowId: 'flow-1',
+        }),
       })
       user.withAccessibleConnections.mockReturnValue({
         findOne: vi
@@ -174,7 +202,9 @@ describe('verifyConnectionRegistrationService', () => {
 
       await expect(
         verifyConnectionRegistrationService(user, 'step-1', 'conn-1'),
-      ).rejects.toThrow('App does not support connection registration verification')
+      ).rejects.toThrow(
+        'App does not support connection registration verification',
+      )
     })
 
     it('throws when flow is not found', async () => {
