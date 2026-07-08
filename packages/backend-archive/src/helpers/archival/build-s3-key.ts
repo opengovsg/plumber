@@ -8,11 +8,16 @@ export const S3_PREFIX_TEST_EXECUTIONS = 'test-executions'
 export function buildS3Key(execution: {
   flowId: string
   id: string
-  createdAt: string
+  createdAt: Date | string
   testRun: boolean
 }): string {
   // Partition by SGT so re-hydration matches user-reported run times.
-  const sgt = DateTime.fromISO(execution.createdAt)
+  // pg returns TIMESTAMP columns as Date objects; handle both Date and string.
+  const sgt = DateTime.fromJSDate(
+    execution.createdAt instanceof Date
+      ? execution.createdAt
+      : new Date(execution.createdAt),
+  )
   const year = sgt.toPlumberFormat('yyyy')
   const month = sgt.toPlumberFormat('MM')
   const prefix = execution.testRun
