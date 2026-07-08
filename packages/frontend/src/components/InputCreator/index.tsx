@@ -6,6 +6,7 @@ import { useFormContext } from 'react-hook-form'
 import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
 import DragDropInput from '@/components/DragDropInput'
+import GroupedMultiRow from '@/components/GroupedMultiRow'
 import MultiRow from '@/components/MultiRow'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
@@ -255,6 +256,24 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         stepId={stepId}
         maxRows={schema.maxRows}
         defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
+      />
+    )
+  }
+
+  if (type === 'grouped-multirow') {
+    return (
+      <GroupedMultiRow
+        name={computedName}
+        label={label}
+        description={description}
+        subFields={schema.subFields}
+        required={required}
+        maxGroups={schema.maxGroups}
+        maxRowsPerGroup={schema.maxRowsPerGroup}
+        addRowButtonText={schema.addRowButtonText}
+        addGroupButtonText={schema.addGroupButtonText}
+        // Forwarded to the inner MultiRow / InputCreator.
+        stepId={stepId}
       />
     )
   }

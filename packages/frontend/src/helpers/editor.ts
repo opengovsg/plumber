@@ -14,6 +14,10 @@ import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'
 
 import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
+import {
+  areRowsComplete,
+  isGroupedMultiRowComplete,
+} from '@/helpers/grouped-multirow-validation'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 export const getFlowStepHeaderWidth = (
@@ -56,36 +60,20 @@ export function validateSubstep(substep: ISubstep, step: IStep): boolean {
     }
 
     // Edge case: multirow doesn't have a value; it has nested fields instead.
+    // Every row must have all required subfields filled.
     if (arg.type === 'multirow') {
       const rows = (step.parameters[arg.key] ?? []) as IJSONObject[]
-      if (rows.length === 0) {
-        return false
-      }
+      return areRowsComplete(rows, arg.subFields)
+    }
 
-      //
-      // For each required subfield in the multirow, check that every row has a
-      // value for it.
-      //
-      for (const subField of arg.subFields) {
-        // Ignore optional subfield
-        // (required is true by default, so we strict equality against false)
-        if (subField.required === false) {
-          continue
-        }
-
-        for (const row of rows) {
-          // Ignore subfield if it's hidden in this particular row
-          if (isFieldHidden(subField.hiddenIf, row)) {
-            continue
-          }
-
-          if (!isValidArgValue(row[subField.key])) {
-            return false
-          }
-        }
-      }
-
-      return true
+    // grouped-multirow: every OR-group must have >=1 complete row (i.e. be
+    // non-empty with all its rows complete). The `empty`-operator value field is
+    // skipped per row via its `hiddenIf`.
+    if (arg.type === 'grouped-multirow') {
+      const groups = (step.parameters[arg.key] ?? []) as {
+        rows?: IJSONObject[]
+      }[]
+      return isGroupedMultiRowComplete(groups, arg.subFields)
     }
 
     return isValidArgValue(step.parameters[arg.key])

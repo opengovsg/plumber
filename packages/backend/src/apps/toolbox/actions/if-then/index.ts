@@ -1,20 +1,15 @@
-import type { IGlobalVariable, IJSONObject, IRawAction } from '@plumber/types'
+import type { IConditionRow, IMultiRowGroup, IRawAction } from '@plumber/types'
 
-import StepError from '@/errors/step'
-
-import conditionIsTrue from '../../common/condition-is-true'
+import {
+  MAX_CONDITION_GROUPS,
+  MAX_ROWS_PER_CONDITION_GROUP,
+  validateConditionGroupParameters,
+} from '../../common/condition-group-limits'
+import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
 
 const ACTION_KEY = 'ifThen'
-
-function shouldTakeBranch($: IGlobalVariable): boolean {
-  const conditions = $.step.parameters.conditions as IJSONObject[]
-  if (!Array.isArray(conditions)) {
-    throw new Error('No conditions found')
-  }
-  return conditions.every((condition) => conditionIsTrue(condition))
-}
 
 const action: IRawAction = {
   name: 'If-then',
@@ -45,24 +40,23 @@ const action: IRawAction = {
     {
       label: 'Conditions',
       key: 'conditions',
-      type: 'multirow-multicol' as const,
+      type: 'grouped-multirow' as const,
       required: true,
       description:
-        'Every condition has to be satisfied for this branch to be taken.',
+        'This branch is taken when **any** condition group is met. Within a group, **all** conditions must be satisfied.',
+      maxGroups: MAX_CONDITION_GROUPS,
+      maxRowsPerGroup: MAX_ROWS_PER_CONDITION_GROUP,
       subFields: getConditionArgs({ usePlaceholders: true }),
     },
   ],
 
+  validateStepParameters: validateConditionGroupParameters,
+
   async run($) {
-    let isConditionMet
-    try {
-      isConditionMet = shouldTakeBranch($)
-    } catch (err) {
-      throw new StepError(
-        err.message,
-        'Check that the condition has been configured properly.',
-      )
-    }
+    // Strict v2 shape: Step.$afterFind has already migrated legacy params.
+    const groups = ($.step.parameters.conditions ??
+      []) as unknown as IMultiRowGroup<IConditionRow>[]
+    const isConditionMet = evaluateConditionGroups(groups)
     $.setActionItem({
       raw: { isConditionMet },
     })

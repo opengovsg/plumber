@@ -135,6 +135,7 @@ export default function FlowStepTestController(
 
   const {
     isTestSuccessful,
+    isLastTestExecutionSuccessful,
     lastErrorDetails,
     isWebhookSubstep,
     testVariables,
@@ -161,6 +162,7 @@ export default function FlowStepTestController(
     isDirty,
     isIfThenStep,
     isLastTestExecutionCurrent,
+    isLastTestExecutionSuccessful,
     isTestSuccessful,
     isTestExecuting,
     stepId: step.id,
@@ -202,7 +204,34 @@ export default function FlowStepTestController(
   const shouldAllowCheckStep = isValid && !readOnly && !isSaving
 
   const shouldShowSaveButton =
-    !readOnly && (!isLastTestExecutionCurrent || (isTestSuccessful && isDirty))
+    !readOnly &&
+    // Users may exit and continue configuring their step in a different
+    // session. As long as the config differs from the last test execution,
+    // show the save button to let them split their work across multiple
+    // sessions (note: save button is disabled unless it's dirty, but that's ok
+    // as we also use it to signal "saved-or-not" status to users)
+    (!isLastTestExecutionCurrent ||
+      // Edge case: Users may update the step config to a state where it's
+      // exactly the same as the previous test execution, even if the persisted
+      // database state is not. Example (via OR condition):
+      //   1. Add Only-Continue-If, configure the initial condition and test
+      //      successfully
+      //   2. Add a new OR group, do NOT configure anything.
+      //   3. Save the step (this updates the DB and inserts a new empty array
+      //      for the OR-ed condition. It also makes the step incomplete)
+      //   4. Delete the OR group from step 2. This makes the data in match the
+      //      test execution, but we still need to show the "Save" button as the
+      //      config differs from DB state.
+      // Some more notes:
+      // - We require at least one successful test execution; otherwise, we
+      //   should show "Check step" instead of "Save + Check step again".
+      // - We also show the "Save" button when the status is incomplete;
+      //   otherwise, it becomes not dirty after saving and the button will
+      //   disappear. This is inconsistent with other user journeys (current
+      //   config differs from last tested config) where the button stays on
+      //   screen.
+      (isLastTestExecutionSuccessful &&
+        (isDirty || step.status !== 'completed')))
   const shouldShowTestResults =
     isSameAppAndAppKey(step, currentTestExecutionStep) &&
     !lastErrorDetails &&

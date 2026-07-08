@@ -1,8 +1,11 @@
-import type { IRawAction } from '@plumber/types'
+import type { IConditionRow, IMultiRowGroup, IRawAction } from '@plumber/types'
 
-import StepError from '@/errors/step'
-
-import conditionIsTrue from '../../common/condition-is-true'
+import {
+  MAX_CONDITION_GROUPS,
+  MAX_ROWS_PER_CONDITION_GROUP,
+  validateConditionGroupParameters,
+} from '../../common/condition-group-limits'
+import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
 
@@ -10,18 +13,27 @@ const action: IRawAction = {
   name: 'Only continue if',
   key: 'onlyContinueIf',
   description: 'Only runs later actions if specified conditions are met',
-  arguments: getConditionArgs({ usePlaceholders: false }),
+  arguments: [
+    {
+      label: 'Conditions',
+      key: 'conditions',
+      type: 'grouped-multirow' as const,
+      required: true,
+      description:
+        'Later steps run only when **any** condition group is met. Within a group, **all** conditions must be satisfied.',
+      maxGroups: MAX_CONDITION_GROUPS,
+      maxRowsPerGroup: MAX_ROWS_PER_CONDITION_GROUP,
+      subFields: getConditionArgs({ usePlaceholders: true }),
+    },
+  ],
+
+  validateStepParameters: validateConditionGroupParameters,
 
   async run($) {
-    let result
-    try {
-      result = conditionIsTrue($.step.parameters)
-    } catch (err) {
-      throw new StepError(
-        err.message,
-        'Check that one of valid options in the condition dropdown is being selected.',
-      )
-    }
+    // Strict v2 shape: Step.$afterFind has already migrated legacy params.
+    const groups = ($.step.parameters.conditions ??
+      []) as unknown as IMultiRowGroup<IConditionRow>[]
+    const result = evaluateConditionGroups(groups)
     $.setActionItem({
       raw: { result },
     })

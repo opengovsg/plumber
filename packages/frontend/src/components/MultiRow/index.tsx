@@ -1,6 +1,6 @@
 import type { IField, IJSONValue } from '@plumber/types'
 
-import { useCallback, useContext, useEffect, useMemo } from 'react'
+import { ReactNode, useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
@@ -26,6 +26,15 @@ export type MultiRowProps = {
   type?: string
   maxRows?: number
   defaultValue?: string | IJSONValue
+  // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
+  // own controls). Renders even when the add-row button is hidden at maxRows.
+  addButtonSuffix?: ReactNode
+  // Optional override for deleting the LAST remaining row. When provided and non-null, the
+  // last row's delete control is shown (even when `required`) and clicking it
+  // calls this instead of the internal remove — letting a wrapper (e.g.
+  // GroupedMultiRow) remove the whole containing group instead of leaving it
+  // empty. When omitted, `required` keeps the last row undeletable as before.
+  onRequestRemoveLastRow?: () => void
 } & Omit<InputCreatorProps, 'schema' | 'namePrefix'>
 
 function MultiRow(props: MultiRowProps): JSX.Element {
@@ -40,10 +49,12 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     type,
     maxRows,
     defaultValue,
+    addButtonSuffix,
+    onRequestRemoveLastRow,
     ...forwardedInputCreatorProps
   } = props
 
-  const { control, setValue } = useFormContext()
+  const { control, getValues, setValue } = useFormContext()
   const { readOnly: isEditorReadOnly } = useContext(EditorContext)
 
   // react-hook-form requires a non-undefined default value for _every_
@@ -82,7 +93,15 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     } else {
       append(newRowDefaultValue)
     }
-  }, [append, newRowDefaultValue, subFields])
+    // A nested useFieldArray's `append` (like `remove`) updates the form value
+    // but does not fire the form's `watch` subject, so subscribers such as the
+    // step validator gating "Check step" never recompute. Re-assert the
+    // already-updated value through `setValue`, which does notify.
+    setValue(name, getValues(name), {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  }, [append, newRowDefaultValue, subFields, setValue, getValues, name])
 
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
@@ -95,8 +114,28 @@ function MultiRow(props: MultiRowProps): JSX.Element {
         // remaining.
         const rowsToRender =
           !rows.length && required ? [{ ...newRowDefaultValue }] : rows
-        const canRemoveRow = !required || rowsToRender.length > 1
+        const canRemoveRow =
+          !required || rowsToRender.length > 1 || !!onRequestRemoveLastRow
         const canAddRow = maxRows == null || rowsToRender.length < maxRows
+
+        // Deleting the last remaining row is delegated to the wrapper (e.g. to
+        // remove the whole group) when onRequestRemoveLastRow is provided;
+        // otherwise it's an internal row removal.
+        const removeRow = (index: number) => {
+          if (rowsToRender.length === 1 && onRequestRemoveLastRow) {
+            onRequestRemoveLastRow()
+            return
+          }
+          remove(index)
+          // A nested useFieldArray's `remove` updates the form value but does not
+          // fire the form's `watch` subject, so subscribers (e.g. the step
+          // validator that gates "Check step") never recompute. Re-assert the
+          // already-updated value through `setValue`, which does notify.
+          setValue(name, getValues(name), {
+            shouldDirty: true,
+            shouldValidate: true,
+          })
+        }
 
         return (
           <Flex flexDir="column">
@@ -127,7 +166,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                         subFields={subFields}
                         canRemoveRow={canRemoveRow}
                         isEditorReadOnly={isEditorReadOnly}
-                        remove={() => remove(index)}
+                        remove={() => removeRow(index)}
                         index={index}
                         {...forwardedInputCreatorProps}
                       />
@@ -158,7 +197,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                             aria-label="Remove"
                             icon={<BiTrash />}
                             isDisabled={isEditorReadOnly}
-                            onClick={() => remove(index)}
+                            onClick={() => removeRow(index)}
                             colorScheme="secondary"
                           />
                         )}
@@ -182,17 +221,20 @@ function MultiRow(props: MultiRowProps): JSX.Element {
               )
             })}
 
-            {canAddRow && (
-              <Button
-                variant="outline"
-                leftIcon={<BiPlus />}
-                onClick={handleAddRow}
-                isDisabled={isEditorReadOnly}
-                maxW="fit-content"
-              >
-                {addRowButtonText ?? 'And'}
-              </Button>
-            )}
+            <Flex gap={2} alignItems="center">
+              {canAddRow && (
+                <Button
+                  variant="outline"
+                  leftIcon={<BiPlus />}
+                  onClick={handleAddRow}
+                  isDisabled={isEditorReadOnly}
+                  maxW="fit-content"
+                >
+                  {addRowButtonText ?? 'And'}
+                </Button>
+              )}
+              {addButtonSuffix}
+            </Flex>
           </Flex>
         )
       }}

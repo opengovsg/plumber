@@ -6,6 +6,9 @@ import { isSameAppAndAppKey } from './utils'
 
 interface UseTestDetailsResult {
   isTestSuccessful: boolean
+  // Whether the last execution itself succeeded, independent of the persisted
+  // step.status (which only executeStep promotes to 'completed').
+  isLastTestExecutionSuccessful: boolean
   isWebhookSubstep: boolean
   lastErrorDetails?: IJSONObject | null
   testVariables: Variable[] | null
@@ -23,15 +26,18 @@ export function useTestDetails(
   if (!isSameAppAndAppKey(step, currentTestExecutionStep)) {
     return {
       isTestSuccessful: false,
+      isLastTestExecutionSuccessful: false,
       isWebhookSubstep,
       lastErrorDetails: null,
       testVariables: null,
     }
   }
 
-  const isTestSuccessful =
-    step.status === 'completed' &&
+  const isLastTestExecutionSuccessful =
     currentTestExecutionStep?.status === 'success'
+
+  const isTestSuccessful =
+    step.status === 'completed' && isLastTestExecutionSuccessful
 
   const lastErrorDetails = currentTestExecutionStep?.errorDetails
 
@@ -42,6 +48,7 @@ export function useTestDetails(
 
   return {
     isTestSuccessful,
+    isLastTestExecutionSuccessful,
     isWebhookSubstep,
     lastErrorDetails,
     testVariables,
