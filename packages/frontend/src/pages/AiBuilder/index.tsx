@@ -35,7 +35,6 @@ function AiBuilderContent() {
     cancelStream,
     resetChat,
     hasReachedLimit,
-    activeStepId,
     stepParametersByStepId,
     parameterLabelsByStepId,
     completedStepIds,
@@ -71,7 +70,6 @@ function AiBuilderContent() {
   return (
     <StepConfigContext.Provider
       value={{
-        activeStepId,
         stepParametersByStepId,
         parameterLabelsByStepId,
         completedStepIds,

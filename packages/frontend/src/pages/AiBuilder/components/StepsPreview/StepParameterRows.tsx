@@ -29,18 +29,16 @@ function getStepFields(allApps: IApp[], appKey: string, stepKey: string) {
 }
 
 function resolveFieldLabel(
-  allApps: IApp[],
-  appKey: string,
-  stepKey: string,
+  fields: ReturnType<typeof getStepFields>,
   paramKey: string,
 ): string {
-  const fields = getStepFields(allApps, appKey, stepKey)
   return (
     fields.find((f) => f.key === paramKey)?.label ?? camelToSentence(paramKey)
   )
 }
 
 type FieldWithOptions = {
+  key?: string
   options?: Array<{ label: string; value: string | number }>
   subFields?: FieldWithOptions[]
 }
@@ -73,15 +71,13 @@ function flattenValue(
     // Follow subField definition order if available; otherwise use object key order
     const keys = subFields
       ? subFields
-          .map((f) => (f as unknown as { key?: string }).key)
+          .map((f) => f.key)
           .filter((k): k is string => k != null && k in obj)
       : Object.keys(obj)
     const parts = keys
       .filter((k) => obj[k] !== '' && obj[k] != null)
       .map((k) => {
-        const subField = subFields?.find(
-          (f) => (f as unknown as { key?: string }).key === k,
-        )
+        const subField = subFields?.find((f) => f.key === k)
         return resolveOptionLabel(subField, String(obj[k]))
       })
     return parts.length > 0 ? parts.join(' ') : null
@@ -91,13 +87,10 @@ function flattenValue(
 }
 
 function resolveDisplayValue(
-  allApps: IApp[],
-  appKey: string,
-  stepKey: string,
+  fields: ReturnType<typeof getStepFields>,
   paramKey: string,
   value: unknown,
 ): string | null {
-  const fields = getStepFields(allApps, appKey, stepKey)
   const field = fields.find((f) => f.key === paramKey) as
     | FieldWithOptions
     | undefined
@@ -135,11 +128,10 @@ export default function StepParameterRows({
       const field = stepFields.find((f) => f.key === key)
       return {
         key,
-        label: resolveFieldLabel(allApps, appKey, stepKey, key),
+        label: resolveFieldLabel(stepFields, key),
         // AI-provided labels take priority over static option resolution
         displayValue:
-          parameterLabels[key] ??
-          resolveDisplayValue(allApps, appKey, stepKey, key, value),
+          parameterLabels[key] ?? resolveDisplayValue(stepFields, key, value),
         hiddenIf: field?.hiddenIf,
       }
     })

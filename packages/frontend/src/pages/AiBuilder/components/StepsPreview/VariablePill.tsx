@@ -20,7 +20,9 @@ export default function VariablePill({ label }: VariablePillProps) {
       whiteSpace="nowrap"
       lineHeight={1.4}
     >
-      <span style={{ color: '#888', fontWeight: 400 }}>{'{}'}</span>
+      <Box as="span" color="base.content.medium" fontWeight={400} mr="2px">
+        {'{}'}
+      </Box>
       {label}
     </Box>
   )

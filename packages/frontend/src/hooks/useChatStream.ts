@@ -334,10 +334,7 @@ export function useChatStream(options: UseChatStreamOptions) {
           ).data
           byStepId[stepId] = parameters
           if (parameterLabels) {
-            labelsByStepId[stepId] = {
-              ...(labelsByStepId[stepId] ?? {}),
-              ...parameterLabels,
-            }
+            labelsByStepId[stepId] = parameterLabels
           }
           latestStepId = stepId
         }
