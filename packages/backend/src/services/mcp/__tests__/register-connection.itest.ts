@@ -59,7 +59,12 @@ describe('registerConnectionService', () => {
       user,
       name: 'Register Test Pipe',
       steps: [
-        { appKey: 'formsg', key: 'newSubmission', type: 'trigger', position: 1 },
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
       ],
       traceId: 'trace-register',
     })
@@ -77,7 +82,11 @@ describe('registerConnectionService', () => {
   })
 
   it('registers connection and persists connectionId on the step', async () => {
-    const result = await registerConnectionService(user, triggerStepId, connection.id)
+    const result = await registerConnectionService(
+      user,
+      triggerStepId,
+      connection.id,
+    )
 
     expect(result.registered).toBe(true)
     expect(mocks.registerConnection).toHaveBeenCalledOnce()
@@ -99,7 +108,9 @@ describe('registerConnectionService', () => {
 
   it('throws when registerConnection throws and does not write connectionId', async () => {
     mocks.registerConnection.mockRejectedValue(
-      new Error("We couldn't connect your form. Ensure that you are either the form owner or have been added as an editor."),
+      new Error(
+        "We couldn't connect your form. Ensure that you are either the form owner or have been added as an editor.",
+      ),
     )
 
     await expect(
@@ -108,6 +119,25 @@ describe('registerConnectionService', () => {
 
     const updatedStep = await Step.query().findById(triggerStepId)
     expect(updatedStep?.connectionId).toBeNull()
+  })
+
+  it('throws when connection app does not match step app', async () => {
+    const wrongConnection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'slack',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: {},
+    })
+
+    await expect(
+      registerConnectionService(user, triggerStepId, wrongConnection.id),
+    ).rejects.toThrow('Connection app does not match step app')
+
+    const updatedStep = await Step.query().findById(triggerStepId)
+    expect(updatedStep?.connectionId).toBeNull()
+    expect(mocks.registerConnection).not.toHaveBeenCalled()
   })
 
   it('throws when the user is not an editor on the flow and does not call registerConnection', async () => {
