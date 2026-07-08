@@ -114,8 +114,8 @@ export default function Step(props: StepProps) {
           }
           // Active: override border + suppress hover background
           {...(isActive && {
-            borderColor: '#cf1a68',
-            boxShadow: '0 0 0 3px rgba(207, 26, 104, 0.10)',
+            borderColor: 'primary.500',
+            boxShadow: '0 0 0 3px var(--chakra-colors-primary-100)',
             _hover: { bg: 'white', cursor: 'default' },
           })}
           // Pending: suppress hover

@@ -1,30 +1,27 @@
-import type { IApp, IJSONObject } from '@plumber/types'
+import type { IApp, IField, IJSONObject } from '@plumber/types'
 
 import { Fragment } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
+import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { parseParameterValue } from '@/pages/AiBuilder/helpers/parseParameterValue'
 
 import VariablePill from './VariablePill'
-
-const HIDDEN_KEYS = new Set(['depth', 'branchName'])
 
 function camelToSentence(key: string): string {
   const words = key.replace(/([A-Z])/g, ' $1').trim()
   return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase()
 }
 
-function resolveFieldLabel(
+function resolveFieldDef(
   allApps: IApp[],
   appKey: string,
   stepKey: string,
   paramKey: string,
-): string {
+): IField | undefined {
   const app = allApps.find((a) => a.key === appKey)
-  if (!app) {
-    return camelToSentence(paramKey)
-  }
+  if (!app) return undefined
 
   const trigger = app.triggers?.find((t) => t.key === stepKey)
   const action = app.actions?.find((a) => a.key === stepKey)
@@ -32,10 +29,7 @@ function resolveFieldLabel(
     ...(trigger?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
     ...(action?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
   ]
-
-  return (
-    fields.find((f) => f.key === paramKey)?.label ?? camelToSentence(paramKey)
-  )
+  return fields.find((f) => f.key === paramKey)
 }
 
 interface StepParameterRowsProps {
@@ -51,9 +45,18 @@ export default function StepParameterRows({
 }: StepParameterRowsProps) {
   const { allApps } = useAiBuilderContext()
 
-  const rows = Object.entries(parameters).filter(
-    ([key, value]) => !HIDDEN_KEYS.has(key) && value !== '' && value != null,
-  )
+  const rows = Object.entries(parameters)
+    .map(([key, value]) => ({
+      key,
+      value,
+      field: resolveFieldDef(allApps, appKey, stepKey, key),
+    }))
+    .filter(
+      ({ value, field }) =>
+        value !== '' &&
+        value != null &&
+        !isFieldHidden(field?.hiddenIf, parameters),
+    )
 
   if (rows.length === 0) {
     return null
@@ -68,8 +71,8 @@ export default function StepParameterRows({
       borderTop="1px solid"
       borderColor="base.divider.weak"
     >
-      {rows.map(([key, value], rowIndex) => {
-        const label = resolveFieldLabel(allApps, appKey, stepKey, key)
+      {rows.map(({ key, value, field }, rowIndex) => {
+        const label = field?.label ?? camelToSentence(key)
         const strValue = String(value)
         const segments = parseParameterValue(strValue)
 
