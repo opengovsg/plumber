@@ -1,3 +1,5 @@
+import { IFlowConfig } from '@plumber/types'
+
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -30,10 +32,13 @@ describe('processTrigger', () => {
       id: stepId,
       appKey: 'formsg',
       parameters: {},
+      flow: { id: flowId, config: null as IFlowConfig | null },
     }
     vi.spyOn(Step, 'query').mockReturnValue({
       findById: vi.fn().mockReturnValue({
-        throwIfNotFound: vi.fn().mockResolvedValue(mockStep),
+        withGraphFetched: vi.fn().mockReturnValue({
+          throwIfNotFound: vi.fn().mockResolvedValue(mockStep),
+        }),
       }),
     } as any)
 
@@ -121,10 +126,15 @@ describe('processTrigger', () => {
         id: stepId,
         appKey: 'gathersg',
         parameters: {},
+        flow: {
+          id: flowId,
+        },
       }
       vi.spyOn(Step, 'query').mockReturnValue({
         findById: vi.fn().mockReturnValue({
-          throwIfNotFound: vi.fn().mockResolvedValue(mockStep),
+          withGraphFetched: vi.fn().mockReturnValue({
+            throwIfNotFound: vi.fn().mockResolvedValue(mockStep),
+          }),
         }),
       } as any)
     })

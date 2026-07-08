@@ -143,4 +143,10 @@ tmp/
 .claude/settings.local.json
 
 docs/plans
+docs/superpowers/specs
 .codegraph
+
+# superset worktree port allocation (local / per-machine, never committed)
+/.superset/port-registry
+/.superset/port-registry.lock
+/.superset/config.local.json

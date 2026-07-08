@@ -1,5 +1,6 @@
 import type { IJSONObject, ITriggerItem } from '@plumber/types'
 
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { randomUUID } from 'crypto'
 import { z } from 'zod'
 
@@ -55,7 +56,14 @@ export const processTrigger = async (
 ): Promise<ProcessTriggerResult> => {
   const { flowId, stepId, triggerItem, error, testRun } = options
 
-  const step = await Step.query().findById(stepId).throwIfNotFound()
+  const step = await Step.query()
+    .findById(stepId)
+    .withGraphFetched('flow')
+    .throwIfNotFound()
+
+  if (step.flow?.config?.isForceClogged) {
+    throw new UnrecoverableError(`Pipe ${flowId} has been force clogged`)
+  }
 
   // only need to check if can proceed if there is no error and not a test run
   // if error, skip and let the error throw
