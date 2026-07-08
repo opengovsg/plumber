@@ -21,7 +21,9 @@ function resolveFieldDef(
   paramKey: string,
 ): IField | undefined {
   const app = allApps.find((a) => a.key === appKey)
-  if (!app) return undefined
+  if (!app) {
+    return undefined
+  }
 
   const trigger = app.triggers?.find((t) => t.key === stepKey)
   const action = app.actions?.find((a) => a.key === stepKey)
