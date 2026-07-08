@@ -42,6 +42,10 @@ export async function verifyConnectionRegistrationService(
     throw new Error('You cannot use a personal connection that you do not own')
   }
 
+  if (connection.key !== step.appKey) {
+    throw new Error('Connection app does not match step app')
+  }
+
   const app = apps[step.appKey ?? '']
   if (!app?.auth?.verifyConnectionRegistration) {
     throw new Error('App does not support connection registration verification')
@@ -64,6 +68,9 @@ export async function verifyConnectionRegistrationService(
     return { status: 'UNREGISTERED' }
   }
 
+  // The statuses below reflect FormSG's specific message constants. If a future
+  // app implements verifyConnectionRegistration with its own message semantics,
+  // add a dedicated branch here (or move status derivation into each app module).
   if (output.message === FORMSG_WEBHOOK_VERIFICATION_MESSAGE.ANOTHER_ENDPOINT) {
     return { status: 'ANOTHER_ENDPOINT', message: output.message }
   }
