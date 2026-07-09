@@ -8,9 +8,9 @@ const UUID_REGEX =
 // Limits to protect API and LLM costs
 const MAX_MESSAGES = 50
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
-// 5 steps × up to 4 parts each (step-start + empty-text + dynamic-tool + data-*)
-// plus headroom; must exceed stepCountIs(5) × parts-per-step
-const MAX_PARTS_PER_MESSAGE = 25
+// Tool-use turns can produce many parts (step-start + tool-invocation per call + text),
+// so allow enough headroom for up to ~10 tool calls per assistant turn.
+const MAX_PARTS_PER_MESSAGE = 50
 
 const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
@@ -59,6 +59,14 @@ const messagePartSchema = z.discriminatedUnion('type', [
     toolCallId: z.string(),
     toolName: z.string(),
     state: z.string(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
+  }),
+  z.object({
+    type: z.literal('tool-list_apps'),
+    toolCallId: z.string().optional(),
+    toolName: z.string().optional(),
+    state: z.string().optional(),
     input: z.unknown().optional(),
     output: z.unknown().optional(),
   }),
