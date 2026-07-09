@@ -34,6 +34,10 @@ export async function createFlowWithStepsService({
     throw new Error('Pipe name needs to have at least 1 character.')
   }
 
+  if (steps.length === 0) {
+    throw new Error('At least one step is required.')
+  }
+
   if (
     !steps.every((step, index) => {
       if (index === 0) {
@@ -45,12 +49,11 @@ export async function createFlowWithStepsService({
     throw new Error('Must be contiguous steps!')
   }
 
-  const restrictedApps = getRestrictedAppKeys(await getAllLdFlags(user.email))
-
   // Validate only when all steps have keys
   const allKeysProvided = steps.every((s) => !!s.key)
 
   if (allKeysProvided) {
+    const restrictedApps = getRestrictedAppKeys(await getAllLdFlags(user.email))
     const triggerSchema = generateSchema(
       z.object({ type: z.literal('trigger') }),
       'trigger',

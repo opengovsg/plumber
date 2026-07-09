@@ -15,15 +15,16 @@ import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-step
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
 
 const mockUser = { id: 'u1' } as any
+const mockTraceId = 'trace-123'
 
 describe('createMcpBridgeTools', () => {
   it('contains list_apps and create_pipe tools', () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     expect(Object.keys(tools)).toEqual(['list_apps', 'create_pipe'])
   })
 
   it('each tool has description and execute function', () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     for (const t of Object.values(tools)) {
       expect(t).toHaveProperty('description')
       expect(typeof t.execute).toBe('function')
@@ -31,13 +32,13 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('list_apps calls listAppsService', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.list_apps.execute({}, { toolCallId: 'list_apps', messages: [] })
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
   })
 
   it('create_pipe maps snake_case input to IStep-shaped steps', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.create_pipe.execute(
       {
         name: 'My Pipe',
@@ -45,7 +46,6 @@ describe('createMcpBridgeTools', () => {
           { app_key: 'formsg', trigger_key: 'newSubmission' },
           { app_key: 'slack', action_key: 'sendMessageToChannel' },
         ],
-        traceId: 'trace-123',
       },
       { toolCallId: 'create_pipe', messages: [] },
     )
@@ -66,12 +66,12 @@ describe('createMcpBridgeTools', () => {
           position: 2,
         },
       ],
-      traceId: 'trace-123',
+      traceId: mockTraceId,
     })
   })
 
   it('create_pipe forwards parameters when present on a step', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.create_pipe.execute(
       {
         name: 'If-Then Pipe',
@@ -83,7 +83,6 @@ describe('createMcpBridgeTools', () => {
             parameters: { branchName: 'High Priority' },
           },
         ],
-        traceId: 'trace-456',
       },
       { toolCallId: 'create_pipe', messages: [] },
     )
