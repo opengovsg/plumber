@@ -250,6 +250,7 @@ export default function FlowStep(
                 borderBottomRadius="none"
                 borderBottomWidth={0}
                 w={headerWidth}
+                overflow="hidden"
               >
                 <Infobox
                   icon={<BiSolidErrorCircle />}
