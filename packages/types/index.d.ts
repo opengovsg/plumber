@@ -1284,3 +1284,109 @@ export interface IFlowSteps {
   actions: IFlowStepsAction[]
   traceId?: string
 }
+
+// ── MCP Bridge API types ────────────────────────────────────────────────────
+
+export interface IMcpAppField {
+  key: string
+  label: string
+  type: string
+  description?: string
+  required: boolean
+  options?: IMcpFieldOption[]
+}
+
+export interface IMcpAppAction {
+  key: string
+  name: string
+  description?: string
+  fields: IMcpAppField[]
+}
+
+export interface IMcpApp {
+  key: string
+  name: string
+  triggers: IMcpAppAction[]
+  actions: IMcpAppAction[]
+}
+
+export interface IMcpStepDetail {
+  id: string
+  position: number
+  appKey: string
+  key: string
+  type: 'trigger' | 'action'
+  /** Configured parameter values — never contains connection credentials */
+  parameters: Record<string, unknown>
+}
+
+export interface IMcpPipeSummary {
+  id: string
+  name: string
+  active: boolean
+  stepCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpPipeDetail extends IMcpPipeSummary {
+  steps: IMcpStepDetail[]
+}
+
+export interface IMcpExecution {
+  id: string
+  pipeId: string
+  status: 'success' | 'failure' | null
+  testRun: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpVerifyResponse {
+  userId: string
+  email: string
+}
+
+export interface IMcpConnection {
+  id: string
+  appKey: string
+  label: string
+  verified: boolean
+}
+
+export interface IMcpFieldOption {
+  label: string
+  value: string
+}
+
+export interface IMcpCreatePipeStep {
+  appKey: string
+  triggerKey?: string
+  actionKey?: string
+}
+
+export interface IMcpCreatedStep {
+  stepId: string
+  appKey: string
+  triggerKey?: string
+  actionKey?: string
+  position: number
+}
+
+export interface IMcpCreatePipeResult {
+  pipeId: string
+  steps: IMcpCreatedStep[]
+}
+
+export interface IMcpIncompleteStep {
+  stepId: string
+  position: number
+  appKey: string | null
+  missingFields: Array<{ key: string; label: string }>
+  missingConnection: boolean
+}
+
+export interface IMcpActivateError {
+  isError: true
+  incompleteSteps: IMcpIncompleteStep[]
+}
