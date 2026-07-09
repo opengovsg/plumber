@@ -31,15 +31,15 @@
         },
         {
           "name": "POSTGRES_DATABASE",
-          "valueFrom": "plumber-<ENVIRONMENT>-postgres-database"
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-database"
         },
         {
           "name": "POSTGRES_USERNAME",
-          "valueFrom": "plumber-<ENVIRONMENT>-postgres-username"
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-username"
         },
         {
           "name": "POSTGRES_PASSWORD",
-          "valueFrom": "plumber-<ENVIRONMENT>-postgres-password"
+          "valueFrom": "plumber-<ENVIRONMENT>-rds-password"
         },
         {
           "name": "ARCHIVE_ENABLED",
