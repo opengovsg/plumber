@@ -1,7 +1,7 @@
 import type { IStep } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
-import { BiInfoCircle } from 'react-icons/bi'
+import { BiInfoCircle, BiSolidErrorCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
 
@@ -80,6 +80,8 @@ export default function FlowStep(
     shouldShowDragHandle,
     isDeletable,
     isApprovalStep,
+    isMrfStep,
+    warnsMrfNoGate,
   } = useStepMetadata(step, allowReorder)
 
   const {
@@ -172,10 +174,18 @@ export default function FlowStep(
       !!templateStepHelpMessage) ||
     !!step.config.templateConfig?.customTemplate
 
+  // Persistent reminder on the MRF trigger step that the FormSG connection is
+  // read-only: these steps are based on the form, Plumber never edits it.
+  const showMrfReadOnlyNote = isMrfStep && isTrigger
+
   // NOTE: there will only be 1 infobox shown at a time
   // there will not be a situation where both are shown as template messages
   // are removed once user executes a successful test
-  const hasInfoBox = shouldShowTemplateMsg || shouldTestStepAgain
+  const hasInfoBox =
+    shouldShowTemplateMsg ||
+    shouldTestStepAgain ||
+    showMrfReadOnlyNote ||
+    warnsMrfNoGate
 
   if (!allApps) {
     return <CircularProgress isIndeterminate my={2} />
@@ -206,6 +216,56 @@ export default function FlowStep(
             flex="1"
             minW="0"
           >
+            {showMrfReadOnlyNote && (
+              <Box
+                borderColor={
+                  shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+                }
+                borderRadius="lg"
+                borderWidth="1px"
+                borderBottomRadius="none"
+                borderBottomWidth={0}
+                w={headerWidth}
+              >
+                <Infobox
+                  icon={<BiInfoCircle />}
+                  variant="secondary"
+                  style={{
+                    borderBottomLeftRadius: '0',
+                    borderBottomRightRadius: '0',
+                  }}
+                >
+                  These steps are based on your form in FormSG. Plumber only
+                  reads your form and never makes changes to it.
+                </Infobox>
+              </Box>
+            )}
+            {warnsMrfNoGate && (
+              <Box
+                borderColor={
+                  shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
+                }
+                borderRadius="lg"
+                borderWidth="1px"
+                borderBottomRadius="none"
+                borderBottomWidth={0}
+                w={headerWidth}
+                overflow="hidden"
+              >
+                <Infobox
+                  icon={<BiSolidErrorCircle />}
+                  variant="warning"
+                  style={{
+                    borderBottomLeftRadius: '0',
+                    borderBottomRightRadius: '0',
+                  }}
+                >
+                  This won&rsquo;t stop the next respondent. FormSG still sends
+                  them the form. &ldquo;Only continue if&rdquo; only skips the
+                  Plumber steps below.
+                </Infobox>
+              </Box>
+            )}
             {shouldTestStepAgain && (
               <TestAgainInfobox
                 isNested={isNested}
@@ -248,7 +308,8 @@ export default function FlowStep(
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={isNested ? '56px' : isApprovalStep ? '124px' : '64px'}
+              h={isNested ? '56px' : isApprovalStep ? undefined : '64px'}
+              minH={isApprovalStep && !isNested ? '124px' : undefined}
               w={headerWidth}
               onClick={handleClick}
             >

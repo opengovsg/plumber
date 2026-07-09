@@ -12,6 +12,7 @@ import { useContext, useMemo } from 'react'
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
+import { shouldWarnMrfOnlyContinueIf } from '@/helpers/formsg'
 import getStepName from '@/helpers/getStepName'
 import {
   isIfThenStep as checkIfThenStep,
@@ -41,6 +42,7 @@ interface UseStepMetadataResult {
   isApprovalStep: boolean
   approvalBranch: IStepApprovalBranch | null
   isAiStep: boolean
+  warnsMrfNoGate: boolean
 }
 
 function isAiStep(step: IStep): boolean {
@@ -183,6 +185,13 @@ export function useStepMetadata(
 
   const displayPosition = stepIdToOrder[step?.id ?? ''] ?? step?.position ?? 0
 
+  // Warn when an "Only continue if" sits before a downstream MRF subtrigger:
+  // it can't stop the form's respondents, only the Plumber steps below it.
+  const warnsMrfNoGate = useMemo(
+    () => (step ? shouldWarnMrfOnlyContinueIf({ step, mrfSteps }) : false),
+    [step, mrfSteps],
+  )
+
   return {
     app,
     selectedActionOrTrigger,
@@ -201,5 +210,6 @@ export function useStepMetadata(
     isApprovalStep,
     approvalBranch,
     isAiStep: step ? isAiStep(step) : false,
+    warnsMrfNoGate,
   }
 }

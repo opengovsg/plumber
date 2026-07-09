@@ -12,6 +12,14 @@ export const TOOLBOX_APP_KEY = 'toolbox'
 export enum TOOLBOX_ACTIONS {
   IfThen = 'ifThen',
   ForEach = 'forEach',
+  OnlyContinueIf = 'onlyContinueIf',
+}
+
+export function isOnlyContinueIfStep(step: IStep): boolean {
+  return (
+    step.appKey === TOOLBOX_APP_KEY &&
+    step.key === TOOLBOX_ACTIONS.OnlyContinueIf
+  )
 }
 
 //
