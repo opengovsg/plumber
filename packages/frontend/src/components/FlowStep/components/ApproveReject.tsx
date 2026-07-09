@@ -74,15 +74,7 @@ export function ApproveReject({ stepId }: { stepId: string }) {
   )
 
   return (
-    <Flex
-      onClick={(e) => e.stopPropagation()}
-      flexDir="column"
-      w="100%"
-      maxW="600px"
-      px={4}
-      pb={3}
-      gap={1}
-    >
+    <Flex flexDir="column" w="100%" maxW="600px" px={4} pb={3} gap={1}>
       <Box onClick={(e) => e.stopPropagation()}>
         <Popover
           isOpen={isHintOpen}
