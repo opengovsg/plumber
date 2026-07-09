@@ -242,14 +242,16 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         }
         archivedByFlow.set(execution.flowId, entry)
 
-        for (const step of steps) {
-          if (step.appKey && step.key) {
-            const keyMap =
-              stepCounts.get(step.appKey) ?? new Map<string, number>()
-            keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
-            stepCounts.set(step.appKey, keyMap)
-          } else {
-            nullStepCount++
+        if (!execution.testRun) {
+          for (const step of steps) {
+            if (step.appKey && step.key) {
+              const keyMap =
+                stepCounts.get(step.appKey) ?? new Map<string, number>()
+              keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
+              stepCounts.set(step.appKey, keyMap)
+            } else {
+              nullStepCount++
+            }
           }
         }
       } else {
