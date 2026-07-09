@@ -1346,6 +1346,7 @@ export interface IMcpAppAction {
 export interface IMcpApp {
   key: string
   name: string
+  requiresConnection: boolean
   triggers: IMcpAppAction[]
   actions: IMcpAppAction[]
 }
