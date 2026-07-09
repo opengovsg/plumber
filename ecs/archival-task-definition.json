@@ -70,12 +70,20 @@
           "valueFrom": "plumber-<ENVIRONMENT>-archive-deleted-flows-only"
         },
         {
+          "name": "ARCHIVE_TEST_RUNS",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-test-runs"
+        },
+        {
           "name": "ARCHIVE_POSTGRES_READER_HOST",
           "valueFrom": "plumber-<ENVIRONMENT>-archive-postgres-reader-host"
         },
         {
           "name": "ARCHIVE_INTRA_BATCH_CONCURRENCY",
           "valueFrom": "plumber-<ENVIRONMENT>-archive-intra-batch-concurrency"
+        },
+        {
+          "name": "ARCHIVE_MAX_RUNTIME_MS",
+          "valueFrom": "plumber-<ENVIRONMENT>-archive-max-runtime-ms"
         }
       ]
     }

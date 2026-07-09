@@ -19,6 +19,18 @@ function requireString(name: string): string {
   return value
 }
 
+function requireIntStrict(name: string): number {
+  const raw = process.env[name]
+  if (raw === undefined || raw === '') {
+    throw new Error(`${name} must be set`)
+  }
+  const value = parseInt(raw, 10)
+  if (isNaN(value)) {
+    throw new Error(`${name} must be a valid integer, got: "${raw}"`)
+  }
+  return value
+}
+
 // Falls back to devDefault in dev; throws in non-dev envs.
 function devString(name: string, devDefault: string): string {
   const value = process.env[name]
@@ -76,4 +88,7 @@ export const archivalConfig = {
     'ARCHIVE_INTRA_BATCH_CONCURRENCY',
     10,
   ),
+  // Wall-clock limit for a single archival run. The loop exits cleanly once
+  // this is exceeded so the task finishes well within the nightly schedule window.
+  archiveMaxRuntimeMs: requireIntStrict('ARCHIVE_MAX_RUNTIME_MS'),
 }

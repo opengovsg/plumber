@@ -19,6 +19,7 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     archiveDeletedFlowsOnly,
     archiveTestRuns,
     archiveIntraBatchConcurrency,
+    archiveMaxRuntimeMs,
   } = archivalConfig
 
   const cutoff = new Date()
@@ -37,6 +38,18 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const runAt = new Date(startedAt).toISOString()
 
   while (!signal.aborted) {
+    if (
+      archiveMaxRuntimeMs > 0 &&
+      Date.now() - startedAt >= archiveMaxRuntimeMs
+    ) {
+      logger.info({
+        event: 'archival.run.max_runtime_reached',
+        maxRuntimeMs: archiveMaxRuntimeMs,
+        durationMs: Date.now() - startedAt,
+      })
+      break
+    }
+
     // When archiveDeletedFlowsOnly is set we skip the full three-branch OR
     // entirely — just a single whereIn on deleted flows. This avoids asking
     // Postgres to plan a complex multi-branch query when the full query will

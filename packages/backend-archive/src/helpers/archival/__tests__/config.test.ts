@@ -10,6 +10,7 @@ describe('archival/config', () => {
   const REQUIRED_ENV: Record<string, string> = {
     ARCHIVE_POSTGRES_READER_HOST: 'test-reader.internal',
     ARCHIVE_BUCKET: 'test-bucket',
+    ARCHIVE_MAX_RUNTIME_MS: '14400000',
     POSTGRES_HOST: 'prod-host.internal',
     POSTGRES_DATABASE: 'plumber',
     POSTGRES_USERNAME: 'app_user',
@@ -30,6 +31,28 @@ describe('archival/config', () => {
     }
     delete process.env.APP_ENV
     delete process.env.RDS_PROXY_HOST
+    delete process.env.ARCHIVE_MAX_RUNTIME_MS
+  })
+
+  describe('requireIntStrict fields', () => {
+    it('reads archiveMaxRuntimeMs from ARCHIVE_MAX_RUNTIME_MS', async () => {
+      const { archivalConfig } = await import('../config')
+      expect(archivalConfig.archiveMaxRuntimeMs).toBe(14400000)
+    })
+
+    it('throws when ARCHIVE_MAX_RUNTIME_MS is not set', async () => {
+      delete process.env.ARCHIVE_MAX_RUNTIME_MS
+      await expect(import('../config')).rejects.toThrow(
+        'ARCHIVE_MAX_RUNTIME_MS',
+      )
+    })
+
+    it('throws when ARCHIVE_MAX_RUNTIME_MS is not a valid integer', async () => {
+      process.env.ARCHIVE_MAX_RUNTIME_MS = 'not-a-number'
+      await expect(import('../config')).rejects.toThrow(
+        'ARCHIVE_MAX_RUNTIME_MS',
+      )
+    })
   })
 
   describe('requireString fields', () => {
