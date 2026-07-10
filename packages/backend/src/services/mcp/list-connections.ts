@@ -11,6 +11,18 @@ export interface McpConnection {
   formattedData?: IJSONObject
 }
 
+function connectionLabel(c: {
+  formattedData?: IJSONObject
+  description?: string
+  key: string
+}): string {
+  return (
+    (c.formattedData?.screenName as string | undefined) ??
+    c.description ??
+    c.key
+  )
+}
+
 export async function listConnectionsService(
   user: User,
   appKey?: string,
@@ -38,7 +50,7 @@ export async function listConnectionsService(
         id: c.id,
         appKey: c.key,
         verified: c.verified,
-        label: c.description ?? c.key,
+        label: connectionLabel(c),
         formattedData: c.formattedData,
       }))
     }
@@ -56,7 +68,7 @@ export async function listConnectionsService(
     id: c.id,
     appKey: c.key,
     verified: c.verified,
-    label: c.description ?? c.key,
+    label: connectionLabel(c),
     formattedData: c.formattedData,
   }))
 }
