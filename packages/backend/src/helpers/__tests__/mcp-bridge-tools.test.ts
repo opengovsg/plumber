@@ -116,7 +116,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('get_dynamic_data calls getDynamicDataService with camelCase args', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.get_dynamic_data.execute(
       {
         step_id: 'step-1',
