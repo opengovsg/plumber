@@ -16,10 +16,14 @@ vi.mock('@/services/mcp/update-step-parameters', () => ({
 vi.mock('@/services/mcp/create-step', () => ({
   createStepService: vi.fn().mockResolvedValue({ id: 's2', appKey: 'slack' }),
 }))
+vi.mock('@/services/mcp/delete-step', () => ({
+  deleteStepService: vi.fn().mockResolvedValue({ id: 'f1', steps: [] }),
+}))
 
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
+import { deleteStepService } from '@/services/mcp/delete-step'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
@@ -35,6 +39,7 @@ describe('createMcpBridgeTools', () => {
       'create_pipe',
       'update_step_parameters',
       'create_step',
+      'delete_step',
     ])
   })
 
@@ -87,6 +92,19 @@ describe('createMcpBridgeTools', () => {
       appKey: 'slack',
       key: 'sendMessageToChannel',
       previousStepId: 'step-0',
+    })
+  })
+
+  it('delete_step calls deleteStepService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.delete_step.execute(
+      { pipe_id: 'flow-1', step_id: 'step-1' },
+      { toolCallId: 'delete_step', messages: [] },
+    )
+    expect(vi.mocked(deleteStepService)).toHaveBeenCalledWith({
+      user: mockUser,
+      pipeId: 'flow-1',
+      stepId: 'step-1',
     })
   })
 
