@@ -15,6 +15,15 @@ import {
 export const stripHtmlComments = (text: string): string =>
   text.replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/, '')
 
+// Ensure markdown headings are preceded by a newline so the parser treats them
+// as block-level elements. Only fires when a heading marker immediately follows
+// non-newline content (e.g. "text.##### Heading" → "text.\n##### Heading").
+export const normalizeMarkdownHeadings = (text: string): string =>
+  text.replace(/([^\n])(#{1,6} )/g, '$1\n$2')
+
+export const prepareAiText = (text: string): string =>
+  normalizeMarkdownHeadings(stripHtmlComments(text))
+
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
 export const deduplicateMessages = (messages: Message[]) => {

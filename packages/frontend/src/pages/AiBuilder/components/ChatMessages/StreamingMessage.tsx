@@ -1,6 +1,6 @@
 import { Box, Flex } from '@chakra-ui/react'
 
-import { stripHtmlComments } from '@/pages/AiBuilder/helpers'
+import { prepareAiText } from '@/pages/AiBuilder/helpers'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
 
 import Loader from './Loader'
@@ -15,7 +15,7 @@ const StreamingMessage = ({ currentResponse }: StreamingMessageProps) => {
       <Flex gap={3} w="full" align="start">
         <Box flex={1} px={2} color="gray.900">
           <ChakraStreamdown isAnimating={true}>
-            {stripHtmlComments(currentResponse)}
+            {prepareAiText(currentResponse)}
           </ChakraStreamdown>
         </Box>
       </Flex>
