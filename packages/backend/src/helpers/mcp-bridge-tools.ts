@@ -150,7 +150,7 @@ export function createMcpBridgeTools(user: User, traceId: string) {
 
     get_dynamic_data: tool({
       description:
-        'Fetch live options for a dynamic dropdown field on a configured step (e.g. list channels, list tables, list files). Requires the step to have a verified connection. For cascading selections (e.g. list columns for a chosen table), pass the dependency value in parameters.',
+        'Fetch live options for a dynamic dropdown field on a configured step (e.g. list channels, list tables, list files). Requires the step to have a connection set up. For cascading selections (e.g. list columns for a chosen table), pass the dependency value in parameters.',
       inputSchema: z.object({
         step_id: z
           .string()

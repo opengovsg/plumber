@@ -1293,7 +1293,7 @@ export interface IMcpAppField {
   type: string
   description?: string
   required: boolean
-  options?: Array<{ label: string; value: string }>
+  options?: IMcpFieldOption[]
   isDynamic?: boolean
   dynamicDataKey?: string
   dynamicDataParameters?: Record<string, string>

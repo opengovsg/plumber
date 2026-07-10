@@ -18,47 +18,38 @@ function serializeField(
     key: field.key,
     label: field.label,
     type: field.type,
-    description: (field as any).description,
-    required: (field as any).required ?? false,
+    description: field.description,
+    required: field.required ?? false,
   }
 
-  const options = (field as any).options as
-    | Array<{ label: string; value: unknown }>
-    | undefined
-  const source = (field as any).source as
-    | {
-        type: string
-        name: string
-        arguments?: Array<{ name: string; value: string }>
-      }
-    | undefined
-  const subFields = (field as any).subFields as
-    | NonNullable<IRawTrigger['arguments']>
-    | undefined
-
-  if (field.type === 'dropdown' && options?.length && !source) {
-    base.options = options.map((o) => ({
-      label: o.label,
-      value: String(o.value),
-    }))
-  } else if (field.type === 'dropdown' && source?.arguments?.length) {
-    const keyArg = source.arguments.find((a) => a.name === 'key')
-    if (keyArg) {
-      base.isDynamic = true
-      base.dynamicDataKey = keyArg.value
-      const paramArgs = source.arguments.filter((a) =>
-        a.name.startsWith('parameters.'),
-      )
-      if (paramArgs.length > 0) {
-        base.dynamicDataParameters = Object.fromEntries(
-          paramArgs.map((a) => [a.name.slice('parameters.'.length), a.value]),
+  if (field.type === 'dropdown') {
+    if (field.options?.length && !field.source) {
+      base.options = field.options.map((o) => ({
+        label: o.label,
+        value: String(o.value),
+      }))
+    } else if (field.source?.arguments?.length) {
+      const keyArg = field.source.arguments.find((a) => a.name === 'key')
+      if (keyArg) {
+        base.isDynamic = true
+        base.dynamicDataKey = keyArg.value
+        const paramArgs = field.source.arguments.filter((a) =>
+          a.name.startsWith('parameters.'),
         )
+        if (paramArgs.length > 0) {
+          base.dynamicDataParameters = Object.fromEntries(
+            paramArgs.map((a) => [a.name.slice('parameters.'.length), a.value]),
+          )
+        }
       }
     }
   }
 
-  if (subFields?.length) {
-    base.subFields = subFields.map(serializeField)
+  if (
+    (field.type === 'multirow' || field.type === 'multirow-multicol') &&
+    field.subFields.length
+  ) {
+    base.subFields = field.subFields.map(serializeField)
   }
 
   return base
