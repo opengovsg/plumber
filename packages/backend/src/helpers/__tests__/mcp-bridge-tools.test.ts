@@ -211,12 +211,11 @@ describe('createMcpBridgeTools', () => {
   describe('onPipeChange callback', () => {
     it('is called with pipeId after create_pipe succeeds', async () => {
       const onPipeChange = vi.fn()
-      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
       await tools.create_pipe.execute(
         {
           name: 'My Pipe',
           steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
-          traceId: 'trace-1',
         },
         { toolCallId: 'create_pipe', messages: [] },
       )
@@ -225,7 +224,7 @@ describe('createMcpBridgeTools', () => {
 
     it('is called with pipe_id after update_step_parameters succeeds', async () => {
       const onPipeChange = vi.fn()
-      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
       await tools.update_step_parameters.execute(
         { pipe_id: 'flow-1', step_id: 's1', parameters: {} },
         { toolCallId: 'update_step_parameters', messages: [] },
@@ -235,7 +234,7 @@ describe('createMcpBridgeTools', () => {
 
     it('is called with pipe_id after create_step succeeds', async () => {
       const onPipeChange = vi.fn()
-      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
       await tools.create_step.execute(
         {
           pipe_id: 'flow-1',
@@ -250,7 +249,7 @@ describe('createMcpBridgeTools', () => {
 
     it('is called with pipe_id after delete_step succeeds', async () => {
       const onPipeChange = vi.fn()
-      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
       await tools.delete_step.execute(
         { pipe_id: 'flow-1', step_id: 's1' },
         { toolCallId: 'delete_step', messages: [] },
@@ -259,13 +258,12 @@ describe('createMcpBridgeTools', () => {
     })
 
     it('does not throw when onPipeChange is not provided', async () => {
-      const tools = createMcpBridgeTools(mockUser)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId)
       await expect(
         tools.create_pipe.execute(
           {
             name: 'My Pipe',
             steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
-            traceId: 'trace-1',
           },
           { toolCallId: 'create_pipe', messages: [] },
         ),
