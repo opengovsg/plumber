@@ -197,7 +197,9 @@ export const EditorProvider = ({
   // On mount, restore the drawer for a previously selected step.
   // If the step no longer exists in the flow, clear the stale persisted ID.
   useEffect(() => {
-    if (!currentStepId) return
+    if (!currentStepId) {
+      return
+    }
     if (flow.steps.some((s) => s.id === currentStepId)) {
       onDrawerOpen()
     } else {
@@ -255,7 +257,7 @@ export const EditorProvider = ({
 
       return newStep as IStep
     },
-    [createStep, flow, flowId, initializeIfThen],
+    [createStep, flow.updatedAt, flowId, initializeIfThen, setCurrentStepId],
   )
 
   /**

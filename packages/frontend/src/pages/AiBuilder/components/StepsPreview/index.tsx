@@ -42,11 +42,8 @@ export default function StepsPreview() {
     stepGroupCaption,
     clearPersistedState,
   } = useAiBuilderContext()
-  const {
-    stepParametersByStepId,
-    completedStepIds,
-    activeStepId,
-  } = useStepConfigContext()
+  const { stepParametersByStepId, completedStepIds, activeStepId } =
+    useStepConfigContext()
 
   const isMobile = useIsMobile()
 
