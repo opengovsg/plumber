@@ -24,16 +24,23 @@ export async function updateStepParametersService({
   parameters,
 }: UpdateStepParametersInput): Promise<Step> {
   return Step.transaction(async (trx) => {
-    const step = await user
+    const accessible = await user
       .withAccessibleSteps({ requiredRole: 'editor', trx })
-      .forUpdate()
       .findOne({
         'steps.id': stepId,
         'steps.flow_id': pipeId,
       })
 
-    if (!step) {
+    if (!accessible) {
       throw new Error('Step not found')
+    }
+
+    // Re-fetch with a row lock to serialise concurrent tool calls for the same
+    // step. forUpdate() cannot be used on the withAccessibleSteps query
+    // directly because it has a LEFT JOIN, which PostgreSQL prohibits locking.
+    const step = await Step.query(trx).forUpdate().findById(stepId)
+    if (!step) {
+      throw new Error('Step cannot be updated')
     }
 
     // Use App.findTriggerOrActionByKey for type/validity checks (hidden actions etc.)
