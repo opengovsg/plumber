@@ -18,7 +18,9 @@ async function executeGetHandler(
   const getHandler = (router as any).stack.find(
     (layer: any) => layer.route?.methods?.get,
   )?.route?.stack[0]?.handle
-  if (!getHandler) throw new Error('GET handler not found in connections router')
+  if (!getHandler) {
+    throw new Error('GET handler not found in connections router')
+  }
   return getHandler(req, res)
 }
 
@@ -48,7 +50,12 @@ describe('GET /api/connections', () => {
   it('returns connections mapped to { name, value } shape', async () => {
     mocks.listConnectionsService.mockResolvedValue([
       { id: 'conn-1', appKey: 'formsg', verified: true, label: 'My FormSG' },
-      { id: 'conn-2', appKey: 'formsg', verified: false, label: 'Other FormSG' },
+      {
+        id: 'conn-2',
+        appKey: 'formsg',
+        verified: false,
+        label: 'Other FormSG',
+      },
     ])
 
     await executeGetHandler(mockReq, mockRes)
@@ -90,6 +97,8 @@ describe('GET /api/connections', () => {
     await executeGetHandler(mockReq, mockRes)
 
     expect(mockRes.status).toHaveBeenCalledWith(500)
-    expect(mockRes.json).toHaveBeenCalledWith({ error: 'Internal server error' })
+    expect(mockRes.json).toHaveBeenCalledWith({
+      error: 'Internal server error',
+    })
   })
 })
