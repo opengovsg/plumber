@@ -278,25 +278,61 @@ export default function DynamicPicker({
           </Box>
         )}
 
-        <Box
-          borderTop={isAppKeyMode ? '1px' : undefined}
-          borderColor="gray.100"
-          mt={isAppKeyMode ? 4 : 2}
-          pt={isAppKeyMode ? 3 : 0}
-        >
-          <Flex justify="flex-end">
-            <Button
-              variant="link"
-              size="sm"
-              color="gray.400"
-              isDisabled={isStreaming}
-              onClick={onSkip}
-              fontWeight="normal"
-            >
-              skip this step
-            </Button>
-          </Flex>
-        </Box>
+        {isAppKeyMode && (
+          <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
+            <Flex justify="space-between" align="center">
+              <Button
+                variant="link"
+                size="sm"
+                color="gray.400"
+                isDisabled={isStreaming}
+                onClick={onSkip}
+                fontWeight="normal"
+              >
+                skip this step
+              </Button>
+              <Flex align="center" h="24px">
+                {isStreaming ? (
+                  <Icon
+                    as={FaCircleStop}
+                    fontSize="24px"
+                    color="red.500"
+                    cursor="pointer"
+                    onClick={cancelStream}
+                    _hover={{ color: 'red.600' }}
+                  />
+                ) : (
+                  selectedOption && (
+                    <Icon
+                      as={FaArrowCircleUp}
+                      fontSize="24px"
+                      color="primary.500"
+                      onClick={handleSubmit}
+                      cursor="pointer"
+                    />
+                  )
+                )}
+              </Flex>
+            </Flex>
+          </Box>
+        )}
+
+        {!isAppKeyMode && (
+          <Box mt={2}>
+            <Flex justify="flex-end">
+              <Button
+                variant="link"
+                size="sm"
+                color="gray.400"
+                isDisabled={isStreaming}
+                onClick={onSkip}
+                fontWeight="normal"
+              >
+                skip this step
+              </Button>
+            </Flex>
+          </Box>
+        )}
       </Box>
     </Box>
   )
