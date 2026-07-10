@@ -39,7 +39,6 @@ import {
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
-import { usePersistedState } from '@/hooks/usePersistedState'
 
 interface IEditorContextValue {
   flow: IFlow
@@ -138,10 +137,7 @@ export const EditorProvider = ({
   const readOnly = hasFlowTransfer || flow?.active || flow?.role === 'viewer'
 
   const flowId = flow.id
-  const [currentStepId, setCurrentStepId] = usePersistedState<string | null>(
-    `plumber.editor.${flowId}.currentStepId`,
-    null,
-  )
+  const [currentStepId, setCurrentStepId] = useState<string | null>(null)
   const [resetTimestamp, setResetTimestamp] = useState<number>(Date.now())
 
   // Use REST API for apps data (faster than GraphQL due to caching)
@@ -193,20 +189,6 @@ export const EditorProvider = ({
     onOpen: onDrawerOpen,
     onClose: onDrawerClose,
   } = useDisclosure()
-
-  // On mount, restore the drawer for a previously selected step.
-  // If the step no longer exists in the flow, clear the stale persisted ID.
-  useEffect(() => {
-    if (!currentStepId) {
-      return
-    }
-    if (flow.steps.some((s) => s.id === currentStepId)) {
-      onDrawerOpen()
-    } else {
-      setCurrentStepId(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   /**
    * CreateStep mutation
