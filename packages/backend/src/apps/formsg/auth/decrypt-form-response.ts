@@ -8,6 +8,7 @@ import {
 
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
+import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
 import convertTableAnswerArrayToTableObject from '../common/process-table-field'
@@ -59,6 +60,27 @@ export function filterNric($: IGlobalVariable, value: string): string | null {
   }
 
   return value
+}
+
+/**
+ * Whether a decrypted email field was OTP-verified by FormSG.
+ *
+ * v1 forms carry `isUserVerified` natively; v3/v4 forms never have that
+ * property, so they're detected via the (mapping-preserved) `signature`
+ * field instead.
+ */
+function isVerifiedEmailField(
+  formField: DecryptedContent['responses'][number] & {
+    isUserVerified?: boolean
+  },
+): boolean {
+  if (formField.fieldType !== 'email') {
+    return false
+  }
+  if ('isUserVerified' in formField) {
+    return formField.isUserVerified === true
+  }
+  return !!formField.signature
 }
 
 export async function decryptFormResponse(
@@ -152,8 +174,13 @@ export async function decryptFormResponse(
     const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
 
     const parsedData: Record<string, any> = {}
+    const verifiedEmails: string[] = []
 
     for (const [index, formField] of submission.responses.entries()) {
+      if (isVerifiedEmailField(formField) && formField.answer) {
+        verifiedEmails.push(formField.answer)
+      }
+
       const { _id, ...rest } = formField
       // perform null character sanitisation for all answer fields so that it can be inserted into the DB
       if (rest.answer && typeof rest.answer === 'string') {
@@ -227,6 +254,35 @@ export async function decryptFormResponse(
       parsedData[_id.replaceAll('.', '_')] = {
         order: index + 1,
         ...rest,
+      }
+    }
+
+    if (verifiedEmails.length > 0) {
+      try {
+        const whitelisted = await EmailSuppressionEntry.whitelistEmails(
+          verifiedEmails,
+        )
+        if (whitelisted.length > 0) {
+          logger.info(
+            'Removed verified FormSG email(s) from suppression list',
+            {
+              event: 'formsg-verified-email-whitelist',
+              flowId: $.flow.id,
+              stepId: $.step.id,
+              emails: whitelisted,
+            },
+          )
+        }
+      } catch (error) {
+        logger.error(
+          'Failed to whitelist verified FormSG email(s) from suppression list',
+          {
+            event: 'formsg-verified-email-whitelist-failed',
+            flowId: $.flow.id,
+            stepId: $.step.id,
+            error,
+          },
+        )
       }
     }
 
