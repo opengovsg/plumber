@@ -14,6 +14,10 @@ import {
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
+import {
+  listConnectionsService,
+  type McpConnection,
+} from '@/services/mcp/list-connections'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
@@ -26,6 +30,22 @@ export function createMcpBridgeTools(user: User, traceId: string) {
       inputSchema: z.object({}),
       execute: async (): Promise<IMcpApp[]> => {
         return listAppsService(user)
+      },
+    }),
+
+    list_connections: tool<{ app_key?: string }, McpConnection[]>({
+      description:
+        "List connections the user has set up, optionally filtered to a specific app. Returns each connection's ID, app key, verified status, label, and formattedData. Use the returned id as connection_id when calling update_step_parameters.",
+      inputSchema: z.object({
+        app_key: z
+          .string()
+          .optional()
+          .describe(
+            'App key to filter by (e.g. "slack"). Omit to list all connections.',
+          ),
+      }),
+      execute: async ({ app_key }): Promise<McpConnection[]> => {
+        return listConnectionsService(user, app_key)
       },
     }),
 
