@@ -38,6 +38,7 @@ function AiBuilderContent() {
     stepParametersByStepId,
     parameterLabelsByStepId,
     completedStepIds,
+    activeStepId,
   } = useChatStream({ initialMessages: chatMessages })
 
   const cancelRef = useRef(null)
@@ -73,6 +74,7 @@ function AiBuilderContent() {
         stepParametersByStepId,
         parameterLabelsByStepId,
         completedStepIds,
+        activeStepId,
       }}
     >
       <>

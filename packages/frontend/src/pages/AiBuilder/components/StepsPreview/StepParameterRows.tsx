@@ -122,6 +122,7 @@ export default function StepParameterRows({
   const parameterLabels = parameterLabelsByStepId[stepId] ?? {}
 
   const stepFields = getStepFields(allApps, appKey, stepKey)
+  const fieldIndexMap = new Map(stepFields.map((f, i) => [f.key, i]))
   const rows = Object.entries(parameters)
     .filter(([, value]) => value !== '' && value != null)
     .map(([key, value]) => {
@@ -141,6 +142,11 @@ export default function StepParameterRows({
         displayValue !== '' &&
         !isFieldHidden(hiddenIf, parameters),
     )
+    .sort((a, b) => {
+      const posA = fieldIndexMap.get(a.key) ?? Infinity
+      const posB = fieldIndexMap.get(b.key) ?? Infinity
+      return posA - posB
+    })
 
   if (rows.length === 0) {
     return null

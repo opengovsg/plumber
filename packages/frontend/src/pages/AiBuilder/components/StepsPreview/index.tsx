@@ -42,26 +42,43 @@ export default function StepsPreview() {
     stepGroupCaption,
     clearPersistedState,
   } = useAiBuilderContext()
-  const { stepParametersByStepId, completedStepIds } = useStepConfigContext()
+  const {
+    stepParametersByStepId,
+    completedStepIds,
+    activeStepId,
+  } = useStepConfigContext()
 
   const isMobile = useIsMobile()
 
   const isMcpPipeMode = Boolean(output?.pipeId) // Phase 2b+: DB pipe exists
   const isMcpProposalMode = !isMcpPipeMode && Boolean(output?.mcpMode) // Phase 2a: proposal, no DB
 
-  // Derive the active step as the first uncompleted step in order.
-  // This correctly highlights the step currently being configured even before
-  // any update_step_parameters call has been made for it (e.g. while collecting
-  // field value clarifications for a step with no connection requirement).
+  // Derive the active step as the first uncompleted step in order,
+  // but advance past it if the AI has already moved on (e.g. after a step
+  // failed and was skipped — the failed step stays uncompleted but the AI
+  // is configuring a later one).
   const effectiveActiveStepId = useMemo(() => {
     if (!isMcpPipeMode || !output?.steps?.length) {
       return null
     }
-    const firstUncompleted = output.steps.find(
-      (s: { id: string }) => !completedStepIds.has(s.id),
-    )
-    return firstUncompleted?.id ?? null
-  }, [isMcpPipeMode, output?.steps, completedStepIds])
+    const steps: Array<{ id: string }> = output.steps
+    const firstUncompleted = steps.find((s) => !completedStepIds.has(s.id))
+    if (!firstUncompleted) {
+      return null
+    }
+    // If the AI has sent an update for a step that comes after firstUncompleted
+    // (skipped failure case), highlight that later step instead.
+    if (activeStepId && activeStepId !== firstUncompleted.id) {
+      const firstUncompletedIndex = steps.findIndex(
+        (s) => s.id === firstUncompleted.id,
+      )
+      const activeIndex = steps.findIndex((s) => s.id === activeStepId)
+      if (activeIndex > firstUncompletedIndex) {
+        return activeStepId
+      }
+    }
+    return firstUncompleted.id
+  }, [isMcpPipeMode, output?.steps, completedStepIds, activeStepId])
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
