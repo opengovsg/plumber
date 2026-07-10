@@ -80,8 +80,8 @@ export function createMcpBridgeTools(user: User, traceId: string) {
       description:
         "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.",
       inputSchema: z.object({
-        pipe_id: z.string().describe('ID of the pipe that contains the step'),
-        step_id: z.string().describe('ID of the step to update'),
+        pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
+        step_id: z.uuid().describe('ID of the step to update'),
         parameters: z
           .record(z.string(), z.unknown())
           .describe(
