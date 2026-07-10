@@ -71,7 +71,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('create_step calls createStepService with camelCase args', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.create_step.execute(
       {
         pipe_id: 'flow-1',
