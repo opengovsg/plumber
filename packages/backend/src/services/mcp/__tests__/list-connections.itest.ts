@@ -169,7 +169,7 @@ describe('listConnectionsService', () => {
         id: mockConn.id,
         appKey: 'm365-excel',
         verified: true,
-        label: 'Shared Excel connection',
+        label: 'Excel',
         formattedData: { screenName: 'Excel' },
       },
     ])
