@@ -104,7 +104,7 @@ describe('createMcpBridgeTools', () => {
           parameters: { branchName: 'High Priority' },
         },
       ],
-      traceId: 'trace-456',
+      traceId: mockTraceId,
     })
   })
 })
