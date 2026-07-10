@@ -135,8 +135,8 @@ export function createMcpBridgeTools(user: User, traceId: string) {
       description:
         'Delete a single step from a pipe. Deleting a trigger replaces it with an empty trigger slot; deleting an action removes it and repositions the remaining steps. Steps that reference the deleted step are marked incomplete. Returns the updated pipe with all remaining steps.',
       inputSchema: z.object({
-        pipe_id: z.string().describe('ID of the pipe that contains the step'),
-        step_id: z.string().describe('ID of the step to delete'),
+        pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
+        step_id: z.uuid().describe('ID of the step to delete'),
       }),
       execute: async ({ pipe_id, step_id }): Promise<Flow> => {
         return deleteStepService({
