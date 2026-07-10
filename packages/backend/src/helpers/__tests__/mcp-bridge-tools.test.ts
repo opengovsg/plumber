@@ -96,7 +96,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('delete_step calls deleteStepService with camelCase args', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.delete_step.execute(
       { pipe_id: 'flow-1', step_id: 'step-1' },
       { toolCallId: 'delete_step', messages: [] },
