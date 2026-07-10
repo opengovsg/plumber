@@ -313,7 +313,12 @@ describe('createMcpBridgeTools', () => {
       })
 
       const onStepUpdate = vi.fn()
-      const tools = createMcpBridgeTools(mockUser, undefined, onStepUpdate)
+      const tools = createMcpBridgeTools(
+        mockUser,
+        mockTraceId,
+        undefined,
+        onStepUpdate,
+      )
       await tools.update_step_parameters.execute(
         {
           pipe_id: 'flow-1',
