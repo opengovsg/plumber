@@ -138,11 +138,13 @@ export default function PromptInput({
   const shouldShowIdeas = showIdeas && !input?.trim()
 
   if (dynamicPicker) {
+    const isAppKeyMode = 'appKey' in dynamicPicker
     return (
       <DynamicPicker
         question={dynamicPicker.question}
-        stepId={dynamicPicker.stepId}
-        dynamicKey={dynamicPicker.key}
+        {...(isAppKeyMode
+          ? { appKey: dynamicPicker.appKey }
+          : { stepId: dynamicPicker.stepId, dynamicKey: dynamicPicker.key })}
         isStreaming={isStreaming}
         onSelect={(name, value) => {
           sendMessage(`Q: ${dynamicPicker.question}\nA: ${name} (id: ${value})`)
