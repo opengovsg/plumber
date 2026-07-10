@@ -326,7 +326,7 @@ describe('createMcpBridgeTools', () => {
     })
 
     it('does not throw when onStepUpdate is not provided', async () => {
-      const tools = createMcpBridgeTools(mockUser)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId)
       await expect(
         tools.update_step_parameters.execute(
           { pipe_id: 'flow-1', step_id: 's1', parameters: {} },
