@@ -67,3 +67,36 @@ describe('parseDynamicPickerBlock', () => {
     })
   })
 })
+
+describe('APP_KEY mode', () => {
+  it('returns correct data for a valid APP_KEY block', () => {
+    const text = makeBlock('Q: Which FormSG connection?\nAPP_KEY: formsg')
+    expect(parseDynamicPickerBlock(text)).toEqual({
+      question: 'Which FormSG connection?',
+      appKey: 'formsg',
+    })
+  })
+
+  it('returns null when APP_KEY is empty', () => {
+    const text = makeBlock('Q: Which connection?\nAPP_KEY:')
+    expect(parseDynamicPickerBlock(text)).toBeNull()
+  })
+
+  it('returns null when both APP_KEY and STEP_ID+KEY are present', () => {
+    const text = makeBlock(
+      'Q: Which connection?\nAPP_KEY: formsg\nSTEP_ID: step-uuid\nKEY: listChannels',
+    )
+    expect(parseDynamicPickerBlock(text)).toBeNull()
+  })
+
+  it('returns null when neither APP_KEY nor STEP_ID+KEY are present', () => {
+    const text = makeBlock('Q: Which connection?')
+    expect(parseDynamicPickerBlock(text)).toBeNull()
+  })
+
+  it('returns null when APP_KEY is present but STEP_ID is present without KEY', () => {
+    // APP_KEY + partial step mode — both ambiguous, treat as neither
+    const text = makeBlock('Q: Which?\nSTEP_ID: step-uuid')
+    expect(parseDynamicPickerBlock(text)).toBeNull()
+  })
+})
