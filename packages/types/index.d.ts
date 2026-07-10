@@ -1440,24 +1440,6 @@ export interface IMcpFieldOption {
   value: string
 }
 
-export interface IMcpCreatePipeStep {
-  appKey: string
-  triggerKey?: string
-  actionKey?: string
-}
-
-export interface IMcpCreatedStep {
-  stepId: string
-  appKey: string
-  triggerKey?: string
-  actionKey?: string
-  position: number
-}
-
-export interface IMcpCreatePipeResult {
-  pipeId: string
-  steps: IMcpCreatedStep[]
-}
 
 export interface IMcpIncompleteStep {
   stepId: string
