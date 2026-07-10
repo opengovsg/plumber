@@ -146,7 +146,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('register_connection calls registerConnectionService with correct args', async () => {
-    const tools = createMcpBridgeTools(mockUser)
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.register_connection.execute(
       {
         pipe_id: 'flow-1',
@@ -284,7 +284,7 @@ describe('createMcpBridgeTools', () => {
 
     it('is called with pipe_id after register_connection succeeds', async () => {
       const onPipeChange = vi.fn()
-      const tools = createMcpBridgeTools(mockUser, onPipeChange)
+      const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
       await tools.register_connection.execute(
         { pipe_id: 'flow-1', step_id: 'step-1', connection_id: 'conn-1' },
         { toolCallId: 'register_connection', messages: [] },
