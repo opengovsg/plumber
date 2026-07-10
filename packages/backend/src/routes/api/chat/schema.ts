@@ -80,11 +80,24 @@ const messagePartSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('data-dynamicPicker'),
-    data: z.object({
-      question: z.string(),
-      stepId: z.uuid(),
-      key: z.string(),
-    }),
+    data: z
+      .object({
+        question: z.string(),
+        stepId: z.uuid().optional(),
+        key: z.string().optional(),
+        appKey: z.string().optional(),
+      })
+      .refine(
+        (d) => {
+          const hasStepMode = Boolean(d.stepId && d.key)
+          const hasAppMode = Boolean(d.appKey)
+          return hasStepMode !== hasAppMode
+        },
+        {
+          message:
+            'Either (stepId + key) or appKey must be provided, but not both',
+        },
+      ),
   }),
   // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
   // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
