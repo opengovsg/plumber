@@ -140,7 +140,7 @@ const handleChatStream = observe(
 
       let workflowError = 'Unable to generate the workflow.'
 
-      const mcpTools = createMcpBridgeTools(context.currentUser)
+      const mcpTools = createMcpBridgeTools(context.currentUser, traceId)
 
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
