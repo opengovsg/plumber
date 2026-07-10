@@ -25,8 +25,9 @@ interface DynamicPickerOption {
 
 interface DynamicPickerProps {
   question: string
-  stepId: string
-  dynamicKey: string
+  stepId?: string
+  dynamicKey?: string
+  appKey?: string
   isStreaming: boolean
   onSelect: (name: string, value: string) => void
   onSkip: () => void
@@ -37,6 +38,7 @@ export default function DynamicPicker({
   question,
   stepId,
   dynamicKey,
+  appKey,
   isStreaming,
   onSelect,
   onSkip,
@@ -52,6 +54,8 @@ export default function DynamicPicker({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
+  const isAppKeyMode = Boolean(appKey)
+
   useEffect(() => {
     abortRef.current?.abort()
     const controller = new AbortController()
@@ -59,20 +63,38 @@ export default function DynamicPicker({
 
     setIsLoading(true)
     setIsError(false)
-    fetch('/api/dynamic-data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ stepId, key: dynamicKey }),
-      signal: controller.signal,
-    })
+
+    const fetchPromise = isAppKeyMode
+      ? fetch(`/api/connections?appKey=${encodeURIComponent(appKey!)}`, {
+          method: 'GET',
+          credentials: 'include',
+          signal: controller.signal,
+        })
+      : fetch('/api/dynamic-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ stepId, key: dynamicKey }),
+          signal: controller.signal,
+        })
+
+    fetchPromise
       .then((res) => {
         if (!res.ok) {
           throw new Error(`Fetch failed: ${res.status}`)
         }
         return res.json()
       })
-      .then((json) => setOptions(json.data ?? []))
+      .then((json) => {
+        const data: DynamicPickerOption[] = json.data ?? []
+        setOptions(data)
+
+        // Auto-assign when exactly one connection is available (except FormSG,
+        // which has a separate form-URL flow that requires user confirmation).
+        if (isAppKeyMode && data.length === 1 && appKey !== 'formsg') {
+          onSelect(data[0].name, data[0].value)
+        }
+      })
       .catch((err) => {
         if ((err as Error).name !== 'AbortError') {
           setOptions([])
@@ -86,7 +108,7 @@ export default function DynamicPicker({
       })
 
     return () => controller.abort()
-  }, [stepId, dynamicKey])
+  }, [stepId, dynamicKey, appKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = query
     ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
@@ -122,6 +144,10 @@ export default function DynamicPicker({
     }
   }
 
+  // Zero-connections empty state (appKey mode only)
+  const showEmptyState =
+    isAppKeyMode && !isLoading && !isError && options.length === 0
+
   return (
     <Box w="full" maxW="4xl">
       <Box
@@ -150,6 +176,11 @@ export default function DynamicPicker({
             <Flex justify="center" py={4}>
               <Spinner size="sm" color="primary.500" />
             </Flex>
+          ) : showEmptyState ? (
+            <Text color="gray.500" fontSize="sm" px={2}>
+              No connections found for this app — you can add one in
+              Plumber&apos;s connection settings.
+            </Text>
           ) : hasOptions ? (
             filtered.length === 0 ? (
               <Text color="gray.400" fontSize="sm" px={2}>
@@ -190,60 +221,70 @@ export default function DynamicPicker({
           ) : null}
         </Flex>
 
-        <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
-          <Flex gap={2} align="flex-end">
-            <Textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value)
-                setSelectedOption(null)
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={
-                hasOptions
-                  ? 'Or describe your answer…'
-                  : 'Enter a value manually…'
-              }
-              resize="none"
-              border="none"
-              bg="transparent"
-              p={0}
-              color="gray.900"
-              _placeholder={{ color: 'gray.400' }}
-              _focus={{ outline: 'none', boxShadow: 'none' }}
-              fontSize="md"
-              rows={1}
-              maxH="120px"
-              overflowY="auto"
-              onInput={handleResize}
-              isDisabled={isStreaming}
-            />
-            <Flex align="flex-end" flexShrink={0} h="24px">
-              {isStreaming ? (
-                <Icon
-                  as={FaCircleStop}
-                  fontSize="24px"
-                  color="red.500"
-                  cursor="pointer"
-                  onClick={cancelStream}
-                  _hover={{ color: 'red.600' }}
-                />
-              ) : (
-                inputValue.trim() && (
+        {/* Freetext input — hidden in appKey mode (connection IDs must be exact) */}
+        {!isAppKeyMode && (
+          <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
+            <Flex gap={2} align="flex-end">
+              <Textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value)
+                  setSelectedOption(null)
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  hasOptions
+                    ? 'Or describe your answer…'
+                    : 'Enter a value manually…'
+                }
+                resize="none"
+                border="none"
+                bg="transparent"
+                p={0}
+                color="gray.900"
+                _placeholder={{ color: 'gray.400' }}
+                _focus={{ outline: 'none', boxShadow: 'none' }}
+                fontSize="md"
+                rows={1}
+                maxH="120px"
+                overflowY="auto"
+                onInput={handleResize}
+                isDisabled={isStreaming}
+              />
+              <Flex align="flex-end" flexShrink={0} h="24px">
+                {isStreaming ? (
                   <Icon
-                    as={FaArrowCircleUp}
+                    as={FaCircleStop}
                     fontSize="24px"
-                    color="primary.500"
-                    onClick={handleSubmit}
+                    color="red.500"
                     cursor="pointer"
+                    onClick={cancelStream}
+                    _hover={{ color: 'red.600' }}
                   />
-                )
-              )}
+                ) : (
+                  inputValue.trim() && (
+                    <Icon
+                      as={FaArrowCircleUp}
+                      fontSize="24px"
+                      color="primary.500"
+                      onClick={handleSubmit}
+                      cursor="pointer"
+                    />
+                  )
+                )}
+              </Flex>
             </Flex>
-          </Flex>
+          </Box>
+        )}
 
-          <Flex justify="flex-end" mt={2}>
+        <Box
+          borderTop={isAppKeyMode ? '1px' : undefined}
+          borderColor="gray.100"
+          mt={isAppKeyMode ? 4 : 2}
+          pt={isAppKeyMode ? 3 : 0}
+        >
+          <Flex justify="flex-end">
             <Button
               variant="link"
               size="sm"
