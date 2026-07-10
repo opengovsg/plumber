@@ -16,13 +16,13 @@ import {
   transformMessages,
 } from '@/pages/AiBuilder/helpers'
 
+export type DynamicPickerData =
+  | { question: string; stepId: string; key: string }
+  | { question: string; appKey: string }
+
 export type DynamicPickerPart = {
   type: 'data-dynamicPicker'
-  data: {
-    question: string
-    stepId: string
-    key: string
-  }
+  data: DynamicPickerData
 }
 
 export interface Message {
