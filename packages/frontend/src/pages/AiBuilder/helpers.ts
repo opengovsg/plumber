@@ -8,6 +8,13 @@ import {
   Message,
 } from '@/hooks/useChatStream'
 
+// Strip HTML comment blocks from AI chat text before display.
+// Complete comments (<!-- ... -->) are invisible in HTML but some markdown parsers
+// surface them as raw text. Incomplete comments that haven't reached --> yet
+// (common mid-stream) are stripped so they never flash as visible content.
+export const stripHtmlComments = (text: string): string =>
+  text.replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/, '')
+
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
 export const deduplicateMessages = (messages: Message[]) => {
