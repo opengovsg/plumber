@@ -1,8 +1,6 @@
-export interface DynamicPickerData {
-  question: string
-  stepId: string
-  key: string
-}
+export type DynamicPickerData =
+  | { question: string; stepId: string; key: string }
+  | { question: string; appKey: string }
 
 export function parseDynamicPickerBlock(
   text: string,
@@ -20,6 +18,7 @@ export function parseDynamicPickerBlock(
   let question = ''
   let stepId = ''
   let key = ''
+  let appKey = ''
 
   for (const line of lines) {
     if (line.startsWith('Q:')) {
@@ -28,11 +27,25 @@ export function parseDynamicPickerBlock(
       stepId = line.slice(8).trim()
     } else if (line.startsWith('KEY:')) {
       key = line.slice(4).trim()
+    } else if (line.startsWith('APP_KEY:')) {
+      appKey = line.slice(8).trim()
     }
   }
 
-  if (!question || !stepId || !key) {
+  if (!question) {
     return null
+  }
+
+  const hasStepMode = Boolean(stepId && key)
+  const hasAppMode = Boolean(appKey)
+
+  if (hasStepMode === hasAppMode) {
+    // both present or neither present — invalid
+    return null
+  }
+
+  if (hasAppMode) {
+    return { question, appKey }
   }
 
   return { question, stepId, key }
