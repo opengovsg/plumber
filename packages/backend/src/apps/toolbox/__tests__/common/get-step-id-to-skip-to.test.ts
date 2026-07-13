@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
-import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
+import { getBranchStepIdToSkipTo_LEGACY } from '../../common/get-step-id-to-skip-to'
 
 const mocks = vi.hoisted(() => ({
   stepQueryResult: vi.fn().mockResolvedValue([
@@ -49,7 +49,7 @@ vi.mock('@/models/step', () => ({
   },
 }))
 
-describe('getBranchStepIdToSkipTo', () => {
+describe('getBranchStepIdToSkipTo_LEGACY', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
@@ -64,7 +64,7 @@ describe('getBranchStepIdToSkipTo', () => {
       },
     }
 
-    const result = await getBranchStepIdToSkipTo($ as any)
+    const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
     expect(result).toBe('step4')
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
@@ -78,7 +78,7 @@ describe('getBranchStepIdToSkipTo', () => {
       },
     }
 
-    const result = await getBranchStepIdToSkipTo($ as any)
+    const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
     expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
@@ -129,7 +129,7 @@ describe('getBranchStepIdToSkipTo', () => {
     }
 
     // currDepth defaults to 0; step4 has depth 2 which is > 0, so no next branch matches
-    const result = await getBranchStepIdToSkipTo($ as any)
+    const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
     expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
@@ -178,7 +178,7 @@ describe('getBranchStepIdToSkipTo', () => {
         position: 2,
       },
     }
-    const result = await getBranchStepIdToSkipTo($ as any)
+    const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
     expect(result).toBe('step4')
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
@@ -241,7 +241,7 @@ describe('getBranchStepIdToSkipTo', () => {
       },
     }
 
-    const result = await getBranchStepIdToSkipTo($ as any)
+    const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
     expect(result).toBe('step6')
     expect(consoleErrorSpy).toHaveBeenCalled()
   })
@@ -291,7 +291,7 @@ describe('getBranchStepIdToSkipTo', () => {
       },
     }
 
-    const result = await getBranchStepIdToSkipTo($ as any)
+    const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
     expect(result).toBeNull()
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
@@ -349,7 +349,7 @@ describe('getBranchStepIdToSkipTo', () => {
         },
       }
 
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBe('step5')
       expect(consoleErrorSpy).not.toHaveBeenCalled()
     })
@@ -406,7 +406,7 @@ describe('getBranchStepIdToSkipTo', () => {
         },
       }
 
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBe('step5')
     })
   })
@@ -457,7 +457,7 @@ describe('getBranchStepIdToSkipTo', () => {
 
     it('approval-branch if-then skips to next approval-branch if-then', async () => {
       mocks.stepQueryResult.mockResolvedValueOnce(makeSteps({}, {}))
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBe('step4')
     })
 
@@ -465,7 +465,7 @@ describe('getBranchStepIdToSkipTo', () => {
       mocks.stepQueryResult.mockResolvedValueOnce(
         makeSteps({}, { approval: { branch: 'reject', stepId: 'mrf1' } }),
       )
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBeNull()
     })
 
@@ -476,7 +476,7 @@ describe('getBranchStepIdToSkipTo', () => {
           { approval: { branch: 'reject', stepId: 'mrf1' } },
         ),
       )
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBe('step4')
     })
 
@@ -487,7 +487,7 @@ describe('getBranchStepIdToSkipTo', () => {
           { approval: { branch: 'reject', stepId: 'mrf2' } },
         ),
       )
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBeNull()
     })
 
@@ -495,7 +495,7 @@ describe('getBranchStepIdToSkipTo', () => {
       mocks.stepQueryResult.mockResolvedValueOnce(
         makeSteps({ approval: { branch: 'reject', stepId: 'mrf1' } }, {}),
       )
-      const result = await getBranchStepIdToSkipTo($ as any)
+      const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBeNull()
     })
   })

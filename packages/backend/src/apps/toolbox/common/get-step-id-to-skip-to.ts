@@ -3,7 +3,8 @@ import type { IGlobalVariable, IStep } from '@plumber/types'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
-export async function getBranchStepIdToSkipTo(
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export async function getBranchStepIdToSkipTo_LEGACY(
   $: IGlobalVariable,
 ): Promise<IStep['id']> {
   // PERF-FIXME: Objectionjs does no caching, so this will almost always be
