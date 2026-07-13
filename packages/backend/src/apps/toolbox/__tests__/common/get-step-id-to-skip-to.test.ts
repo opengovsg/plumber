@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
-import { getBranchStepIdToSkipTo_LEGACY } from '../../common/get-step-id-to-skip-to'
+import logger from '@/helpers/logger'
+
+import {
+  getBranchStepIdToSkipTo_LEGACY,
+  getStepIdToSkipTo,
+} from '../../common/get-step-id-to-skip-to'
 
 const mocks = vi.hoisted(() => ({
   stepQueryResult: vi.fn().mockResolvedValue([
@@ -497,6 +502,333 @@ describe('getBranchStepIdToSkipTo_LEGACY', () => {
       )
       const result = await getBranchStepIdToSkipTo_LEGACY($ as any)
       expect(result).toBeNull()
+    })
+  })
+})
+
+describe('getStepIdToSkipTo (new-style dispatch)', () => {
+  let loggerErrorSpy: MockInstance
+
+  beforeEach(() => {
+    // The new dispatch fails loud via logger.error (not console.error); spy so
+    // we can both silence and assert the structured events.
+    loggerErrorSpy = vi
+      .spyOn(logger, 'error')
+      .mockImplementation((() => logger) as any)
+  })
+
+  afterEach(() => {
+    // Restore only the logger spy — vi.restoreAllMocks() would also strip the
+    // module-level Step.query mockReturnThis chain and break sibling tests.
+    loggerErrorSpy.mockRestore()
+  })
+
+  const FLOW_ID = 'flow-new'
+
+  // $ for an if-then step (condition already evaluated FALSE by the action).
+  const ifThen$ = (parameters: Record<string, any>) =>
+    ({
+      flow: { id: FLOW_ID },
+      step: {
+        id: 'blk',
+        appKey: 'toolbox',
+        key: 'ifThen',
+        position: 2,
+        parameters,
+      },
+    }) as any
+
+  // $ for an only-continue-if step.
+  const oci$ = (id: string, position: number) =>
+    ({
+      flow: { id: FLOW_ID },
+      step: {
+        id,
+        appKey: 'toolbox',
+        key: 'onlyContinueIf',
+        position,
+        parameters: {},
+      },
+    }) as any
+
+  describe('when an if-then condition is FALSE', () => {
+    it('resumes after the block endStep via getNextStep', async () => {
+      const endStep = {
+        id: 'blk-last',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: 4,
+        config: {},
+        getNextStep: vi.fn().mockResolvedValue({ id: 'after-block' }),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        { id: 'blk-a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        endStep,
+        { id: 'after-block', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk-last' }))
+
+      expect(result).toBe('after-block')
+      expect(endStep.getNextStep).toHaveBeenCalledOnce()
+      expect(loggerErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('treats an empty block (self-referential endStep) as positional fall-through', async () => {
+      const selfBlock = {
+        id: 'blk',
+        appKey: 'toolbox',
+        key: 'ifThen',
+        position: 2,
+        config: {},
+        parameters: { endStepId: 'blk' },
+        getNextStep: vi.fn().mockResolvedValue({ id: 'next-step' }),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        selfBlock,
+        { id: 'next-step', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk' }))
+
+      expect(result).toBe('next-step')
+      expect(selfBlock.getNextStep).toHaveBeenCalledOnce()
+    })
+
+    it('stops execution when the block ends the flow', async () => {
+      const endStep = {
+        id: 'blk-last',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: 3,
+        config: {},
+        getNextStep: vi.fn().mockResolvedValue(undefined),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        endStep,
+      ])
+
+      const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk-last' }))
+
+      expect(result).toBeNull()
+    })
+
+    it('throws and logs when endStepId is dangling', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'ghost' } },
+        { id: 'blk-a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+      ])
+
+      await expect(
+        getStepIdToSkipTo(ifThen$({ endStepId: 'ghost' })),
+      ).rejects.toThrow(/dangling/i)
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'if-then-dangling-end-step' }),
+      )
+    })
+
+    it('throws and logs when the endStep is positioned before the if-then', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'early', appKey: 'postman', key: 'sendTransactionalEmail', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'early' } },
+      ])
+
+      await expect(
+        getStepIdToSkipTo(ifThen$({ endStepId: 'early' })),
+      ).rejects.toThrow()
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ event: 'if-then-end-step-before-self' }),
+      )
+    })
+
+    it('degrades to the legacy engine (no throw) when a new-style if-then is corruptly on an approval branch', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+          parameters: { endStepId: 'blk-last', depth: 0 },
+        },
+        { id: 'blk-last', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(
+        ifThen$({ endStepId: 'blk-last', depth: 0 }),
+      )
+
+      // No next if-then → the legacy engine returns null (stop).
+      expect(result).toBeNull()
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'if-then-end-step-on-approval-branch',
+        }),
+      )
+    })
+
+    it('delegates a legacy (marker-less) if-then to the depth-scan engine', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'b1', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { depth: 0 } },
+        { id: 'a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        { id: 'b2', appKey: 'toolbox', key: 'ifThen', position: 4, config: {}, parameters: { depth: 0 } },
+        { id: 'c', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo({
+        flow: { id: FLOW_ID },
+        step: { id: 'b1', appKey: 'toolbox', key: 'ifThen', position: 2, parameters: { depth: 0 } },
+      } as any)
+
+      expect(result).toBe('b2')
+    })
+
+    it('resolves in-body when the block sits inside a for-each body', async () => {
+      const endStep = {
+        id: 'body-last',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: 4,
+        config: {},
+        getNextStep: vi.fn().mockResolvedValue({ id: 'body-after' }),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'foreach', appKey: 'toolbox', key: 'forEach', position: 2, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 3, config: {}, parameters: { endStepId: 'body-last' } },
+        endStep,
+        { id: 'body-after', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo({
+        flow: { id: FLOW_ID },
+        step: { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 3, parameters: { endStepId: 'body-last' } },
+      } as any)
+
+      expect(result).toBe('body-after')
+    })
+  })
+
+  describe('when an only-continue-if condition is FALSE', () => {
+    it('stops when there is no preceding if-then', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 2, config: {}, parameters: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 3, config: {}, parameters: { endStepId: 'blk' } },
+      ])
+
+      const result = await getStepIdToSkipTo(oci$('oci', 2))
+      expect(result).toBeNull()
+    })
+
+    it('delegates to the legacy engine when the governing if-then is legacy', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'b1', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { depth: 0 } },
+        { id: 'a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 4, config: {}, parameters: {} },
+        { id: 'b2', appKey: 'toolbox', key: 'ifThen', position: 5, config: {}, parameters: { depth: 0 } },
+        { id: 'c', appKey: 'postman', key: 'sendTransactionalEmail', position: 6, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(oci$('oci', 4))
+      expect(result).toBe('b2')
+    })
+
+    it('resumes after the enclosing new-style block', async () => {
+      const endStep = {
+        id: 'blk-last',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: 4,
+        config: {},
+        getNextStep: vi.fn().mockResolvedValue({ id: 'after-block' }),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 3, config: {}, parameters: {} },
+        endStep,
+        { id: 'after-block', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(oci$('oci', 3))
+      expect(result).toBe('after-block')
+      expect(endStep.getNextStep).toHaveBeenCalledOnce()
+    })
+
+    it('stops (block-scoped abort) when positioned after a non-enclosing new-style block', async () => {
+      const endStep = {
+        id: 'blk-last',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: 3,
+        config: {},
+        getNextStep: vi.fn(),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        endStep,
+        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 4, config: {}, parameters: {} },
+        { id: 'after-block', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(oci$('oci', 4))
+      expect(result).toBeNull()
+      expect(endStep.getNextStep).not.toHaveBeenCalled()
+    })
+
+    it('stops when enclosed by a new-style block that ends the flow', async () => {
+      const endStep = {
+        id: 'blk-last',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        position: 4,
+        config: {},
+        getNextStep: vi.fn().mockResolvedValue(undefined),
+      }
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 3, config: {}, parameters: {} },
+        endStep,
+      ])
+
+      const result = await getStepIdToSkipTo(oci$('oci', 3))
+      expect(result).toBeNull()
+    })
+
+    it('degrades to the legacy engine when the governing new-style block is corruptly on an approval branch', async () => {
+      mocks.stepQueryResult.mockResolvedValue([
+        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
+          parameters: { endStepId: 'blk-last', depth: 0 },
+        },
+        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 3, config: {}, parameters: {} },
+        { id: 'blk-last', appKey: 'postman', key: 'sendTransactionalEmail', position: 4, config: {} },
+      ])
+
+      const result = await getStepIdToSkipTo(oci$('oci', 3))
+      expect(result).toBeNull()
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'if-then-end-step-on-approval-branch',
+        }),
+      )
     })
   })
 })
