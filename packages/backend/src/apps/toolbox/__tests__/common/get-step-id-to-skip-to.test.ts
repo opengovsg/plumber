@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import logger from '@/helpers/logger'
 
@@ -536,7 +544,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         position: 2,
         parameters,
       },
-    }) as any
+    } as any)
 
   // $ for an only-continue-if step.
   const oci$ = (id: string, position: number) =>
@@ -549,7 +557,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         position,
         parameters: {},
       },
-    }) as any
+    } as any)
 
   describe('when an if-then condition is FALSE', () => {
     it('resumes after the block endStep via getNextStep', async () => {
@@ -562,11 +570,36 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn().mockResolvedValue({ id: 'after-block' }),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
-        { id: 'blk-a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'blk-last' },
+        },
+        {
+          id: 'blk-a',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
         endStep,
-        { id: 'after-block', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+        {
+          id: 'after-block',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 5,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk-last' }))
@@ -587,9 +620,21 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn().mockResolvedValue({ id: 'next-step' }),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
         selfBlock,
-        { id: 'next-step', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        {
+          id: 'next-step',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk' }))
@@ -608,8 +653,21 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn().mockResolvedValue(undefined),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'blk-last' },
+        },
         endStep,
       ])
 
@@ -620,9 +678,28 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
 
     it('throws and logs when endStepId is dangling', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'ghost' } },
-        { id: 'blk-a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'ghost' },
+        },
+        {
+          id: 'blk-a',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
       ])
 
       await expect(
@@ -635,8 +712,21 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
 
     it('throws and logs when the endStep is positioned before the if-then', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'early', appKey: 'postman', key: 'sendTransactionalEmail', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'early' } },
+        {
+          id: 'early',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'early' },
+        },
       ])
 
       await expect(
@@ -649,7 +739,13 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
 
     it('degrades to the legacy engine (no throw) when a new-style if-then is corruptly on an approval branch', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
         {
           id: 'blk',
           appKey: 'toolbox',
@@ -658,7 +754,13 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           config: { approval: { branch: 'reject', stepId: 'mrf1' } },
           parameters: { endStepId: 'blk-last', depth: 0 },
         },
-        { id: 'blk-last', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
+        {
+          id: 'blk-last',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(
@@ -676,16 +778,54 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
 
     it('delegates a legacy (marker-less) if-then to the depth-scan engine', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'b1', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { depth: 0 } },
-        { id: 'a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
-        { id: 'b2', appKey: 'toolbox', key: 'ifThen', position: 4, config: {}, parameters: { depth: 0 } },
-        { id: 'c', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'b1',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { depth: 0 },
+        },
+        {
+          id: 'a',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
+        {
+          id: 'b2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 4,
+          config: {},
+          parameters: { depth: 0 },
+        },
+        {
+          id: 'c',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 5,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo({
         flow: { id: FLOW_ID },
-        step: { id: 'b1', appKey: 'toolbox', key: 'ifThen', position: 2, parameters: { depth: 0 } },
+        step: {
+          id: 'b1',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          parameters: { depth: 0 },
+        },
       } as any)
 
       expect(result).toBe('b2')
@@ -701,16 +841,47 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn().mockResolvedValue({ id: 'body-after' }),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'foreach', appKey: 'toolbox', key: 'forEach', position: 2, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 3, config: {}, parameters: { endStepId: 'body-last' } },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'foreach',
+          appKey: 'toolbox',
+          key: 'forEach',
+          position: 2,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 3,
+          config: {},
+          parameters: { endStepId: 'body-last' },
+        },
         endStep,
-        { id: 'body-after', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+        {
+          id: 'body-after',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 5,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo({
         flow: { id: FLOW_ID },
-        step: { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 3, parameters: { endStepId: 'body-last' } },
+        step: {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 3,
+          parameters: { endStepId: 'body-last' },
+        },
       } as any)
 
       expect(result).toBe('body-after')
@@ -720,9 +891,29 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
   describe('when an only-continue-if condition is FALSE', () => {
     it('stops when there is no preceding if-then', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 2, config: {}, parameters: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 3, config: {}, parameters: { endStepId: 'blk' } },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'oci',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          position: 2,
+          config: {},
+          parameters: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 3,
+          config: {},
+          parameters: { endStepId: 'blk' },
+        },
       ])
 
       const result = await getStepIdToSkipTo(oci$('oci', 2))
@@ -731,12 +922,51 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
 
     it('delegates to the legacy engine when the governing if-then is legacy', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'b1', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { depth: 0 } },
-        { id: 'a', appKey: 'postman', key: 'sendTransactionalEmail', position: 3, config: {} },
-        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 4, config: {}, parameters: {} },
-        { id: 'b2', appKey: 'toolbox', key: 'ifThen', position: 5, config: {}, parameters: { depth: 0 } },
-        { id: 'c', appKey: 'postman', key: 'sendTransactionalEmail', position: 6, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'b1',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { depth: 0 },
+        },
+        {
+          id: 'a',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
+        {
+          id: 'oci',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          position: 4,
+          config: {},
+          parameters: {},
+        },
+        {
+          id: 'b2',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 5,
+          config: {},
+          parameters: { depth: 0 },
+        },
+        {
+          id: 'c',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 6,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(oci$('oci', 4))
@@ -753,11 +983,37 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn().mockResolvedValue({ id: 'after-block' }),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
-        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 3, config: {}, parameters: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'blk-last' },
+        },
+        {
+          id: 'oci',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          position: 3,
+          config: {},
+          parameters: {},
+        },
         endStep,
-        { id: 'after-block', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+        {
+          id: 'after-block',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 5,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(oci$('oci', 3))
@@ -775,11 +1031,37 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn(),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'blk-last' },
+        },
         endStep,
-        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 4, config: {}, parameters: {} },
-        { id: 'after-block', appKey: 'postman', key: 'sendTransactionalEmail', position: 5, config: {} },
+        {
+          id: 'oci',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          position: 4,
+          config: {},
+          parameters: {},
+        },
+        {
+          id: 'after-block',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 5,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(oci$('oci', 4))
@@ -797,9 +1079,29 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         getNextStep: vi.fn().mockResolvedValue(undefined),
       }
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
-        { id: 'blk', appKey: 'toolbox', key: 'ifThen', position: 2, config: {}, parameters: { endStepId: 'blk-last' } },
-        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 3, config: {}, parameters: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
+        {
+          id: 'blk',
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+          parameters: { endStepId: 'blk-last' },
+        },
+        {
+          id: 'oci',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          position: 3,
+          config: {},
+          parameters: {},
+        },
         endStep,
       ])
 
@@ -809,7 +1111,13 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
 
     it('degrades to the legacy engine when the governing new-style block is corruptly on an approval branch', async () => {
       mocks.stepQueryResult.mockResolvedValue([
-        { id: 'trigger', appKey: 'formsg', key: 'newSubmission', position: 1, config: {} },
+        {
+          id: 'trigger',
+          appKey: 'formsg',
+          key: 'newSubmission',
+          position: 1,
+          config: {},
+        },
         {
           id: 'blk',
           appKey: 'toolbox',
@@ -818,8 +1126,21 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           config: { approval: { branch: 'reject', stepId: 'mrf1' } },
           parameters: { endStepId: 'blk-last', depth: 0 },
         },
-        { id: 'oci', appKey: 'toolbox', key: 'onlyContinueIf', position: 3, config: {}, parameters: {} },
-        { id: 'blk-last', appKey: 'postman', key: 'sendTransactionalEmail', position: 4, config: {} },
+        {
+          id: 'oci',
+          appKey: 'toolbox',
+          key: 'onlyContinueIf',
+          position: 3,
+          config: {},
+          parameters: {},
+        },
+        {
+          id: 'blk-last',
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 4,
+          config: {},
+        },
       ])
 
       const result = await getStepIdToSkipTo(oci$('oci', 3))
