@@ -7,7 +7,7 @@ import {
 } from '../../common/condition-group-limits'
 import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
 import getConditionArgs from '../../common/get-condition-args'
-import { getBranchStepIdToSkipTo_LEGACY } from '../../common/get-step-id-to-skip-to'
+import { getStepIdToSkipTo } from '../../common/get-step-id-to-skip-to'
 
 const action: IRawAction = {
   name: 'Only continue if',
@@ -40,7 +40,7 @@ const action: IRawAction = {
 
     // only check for next branch step to jump to if result is false
     if (!result) {
-      const nextBranchStepId = await getBranchStepIdToSkipTo_LEGACY($)
+      const nextBranchStepId = await getStepIdToSkipTo($)
       return nextBranchStepId
         ? {
             nextStep: {

@@ -5,9 +5,10 @@ import {
   MAX_ROWS_PER_CONDITION_GROUP,
   validateConditionGroupParameters,
 } from '../../common/condition-group-limits'
+import { IF_THEN_END_STEP_ID_PARAM } from '../../common/constants'
 import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
 import getConditionArgs from '../../common/get-condition-args'
-import { getBranchStepIdToSkipTo_LEGACY } from '../../common/get-step-id-to-skip-to'
+import { getStepIdToSkipTo } from '../../common/get-step-id-to-skip-to'
 
 const ACTION_KEY = 'ifThen'
 
@@ -27,6 +28,21 @@ const action: IRawAction = {
     {
       // This is computed by the front-end when adding a step.
       key: 'depth',
+      type: 'string' as const,
+      label: 'FILE A BUG IF YOU SEE THIS',
+
+      // Always hidden
+      hiddenIf: {
+        op: 'always_true',
+      },
+      required: false,
+      variables: false,
+    },
+    {
+      // Id of the last step inside this block (inclusive); managed entirely by
+      // the backend (create/update/repair). Hidden field only so the FE form
+      // round-trips it — never user-editable.
+      key: IF_THEN_END_STEP_ID_PARAM,
       type: 'string' as const,
       label: 'FILE A BUG IF YOU SEE THIS',
 
@@ -65,7 +81,7 @@ const action: IRawAction = {
       return
     }
 
-    const nextStepId = await getBranchStepIdToSkipTo_LEGACY($)
+    const nextStepId = await getStepIdToSkipTo($)
     return nextStepId
       ? {
           nextStep: {
