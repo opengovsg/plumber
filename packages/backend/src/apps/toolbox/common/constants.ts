@@ -12,6 +12,33 @@ export const TOOLBOX_APP_KEY = 'toolbox'
 export enum TOOLBOX_ACTIONS {
   FOR_EACH = 'forEach',
   IF_THEN = 'ifThen',
+  ONLY_CONTINUE_IF = 'onlyContinueIf',
+}
+
+// Parameter key holding the id of the last step inside a new-style if-then block
+// (inclusive). Its presence (Object.hasOwn) — not its value — distinguishes a
+// new-style if-then from a legacy one. Empty block => self-reference (own id).
+export const IF_THEN_END_STEP_ID_PARAM = 'endStepId'
+
+type IfThenStepLike = {
+  appKey?: string | null
+  key?: string | null
+  parameters?: Record<string, unknown> | null
+}
+
+export function isIfThenStep(step: IfThenStepLike | null | undefined): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.IF_THEN
+  )
+}
+
+export function isNewStyleIfThen(
+  step: IfThenStepLike | null | undefined,
+): boolean {
+  return (
+    isIfThenStep(step) &&
+    Object.hasOwn(step?.parameters ?? {}, IF_THEN_END_STEP_ID_PARAM)
+  )
 }
 
 export const FOR_EACH_TABLE_SOURCES = [
