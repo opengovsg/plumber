@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { type CheckboxVariable } from './components/Checkbox'
-import { validateFiles } from './utils'
+import { validateFileExtension, validateFiles } from './utils'
 
 const makeFile = (name: string): CheckboxVariable => ({
   name,
@@ -44,5 +44,28 @@ describe('validateFiles', () => {
     // This assertion documents that passing raw (stale) values to validateFiles
     // incorrectly blocks the selection — the fix passes filtered currentValues instead.
     expect(result.isValid).toBe(false)
+  })
+})
+
+describe('validateFileExtension', () => {
+  it('blocks a file with a blocked extension', () => {
+    const result = validateFileExtension(new File([''], 'blocked.exe'))
+    expect(result.isValid).toBe(false)
+    expect(result.error).toContain('.exe')
+  })
+
+  it('is case-insensitive when checking the extension', () => {
+    const result = validateFileExtension(new File([''], 'blocked.EXE'))
+    expect(result.isValid).toBe(false)
+  })
+
+  it('allows a file with an accepted extension', () => {
+    const result = validateFileExtension(new File([''], 'report.pdf'))
+    expect(result.isValid).toBe(true)
+  })
+
+  it('allows a file with no extension', () => {
+    const result = validateFileExtension(new File([''], 'README'))
+    expect(result.isValid).toBe(true)
   })
 })

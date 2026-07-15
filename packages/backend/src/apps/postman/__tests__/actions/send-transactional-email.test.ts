@@ -920,6 +920,26 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
+    it('does not flip to SES when configured attachments are all filtered out', async () => {
+      // ses_enabled on, ses_attachments_enabled off. Attachments are configured
+      // (raw list non-empty) but filtering strips them all — the transport must
+      // stay on Postman rather than flip to SES on the now-empty attachment list.
+      mocks.getLdFlagValue.mockImplementation(
+        async (flag: string) => flag === 'ses_enabled',
+      )
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      mocks.filterAttachments.mockReturnValueOnce({
+        attachmentFiles: [],
+        invalidAttachments: [],
+        submissionId: null,
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.http.post).toHaveBeenCalledTimes(1)
+    })
+
     it('sends attachments via SES as a raw MIME message when ses_attachments_enabled is on', async () => {
       // Both ses_enabled and ses_attachments_enabled true for all recipients.
       mocks.getLdFlagValue.mockResolvedValue(true)

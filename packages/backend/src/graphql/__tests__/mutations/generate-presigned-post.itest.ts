@@ -30,7 +30,7 @@ vi.mock('@/helpers/s3', () => ({
   COMMON_S3_MOCK_FOLDER_PREFIX: 's3:test-bucket:mock/',
   parseS3Id: vi.fn(),
   MAX_FILE_SIZE: 1024 * 1024 * 10,
-  ACCEPTED_FILE_TYPES: ['text/plain'],
+  SES_BLOCKED_EXTENSIONS: ['exe', 'bat', 'js', 'msi'],
   validateObjectKey: vi.fn((objectKey) => {
     const invalidCharacters = /[\\{}^`%~#<>|[\]]/
     if (invalidCharacters.test(objectKey)) {
@@ -153,14 +153,11 @@ describe('generatePresignedPost', () => {
     ).rejects.toThrow('Size of attachment exceeds 10MB')
   })
 
-  it.each([
-    'application/octet-stream',
-    'application/x-executable',
-    'application/x-shockwave-flash',
-    'application/x-msdownload',
-  ])(
-    'should throw an error if the file type is not supported: %s',
-    async (fileType) => {
+  // The gate is a block-list keyed on the filename's extension (executables /
+  // scripts); the reported MIME type no longer affects validation.
+  it.each(['virus.exe', 'script.bat', 'payload.js', 'setup.msi'])(
+    'should throw an error if the file extension is blocked: %s',
+    async (filename) => {
       await Flow.query().insert({
         id: VALID_PARAMS.flow.id,
         name: 'Test Flow',
@@ -169,12 +166,35 @@ describe('generatePresignedPost', () => {
 
       const unsupportedParams = {
         ...VALID_PARAMS,
-        fileType,
+        filename,
       }
 
       await expect(
         generatePresignedPost(null, { input: unsupportedParams }, context),
       ).rejects.toThrow('Unsupported file type')
+    },
+  )
+
+  // Types that the old MIME allow-list rejected are now accepted (SES supports
+  // them); only the executable block-list is refused.
+  it.each(['invite.ics', 'archive.zip', 'data.json', 'no-extension'])(
+    'should generate a presigned url for a non-blocked file: %s',
+    async (filename) => {
+      const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
+
+      await generatePresignedPost(
+        null,
+        {
+          input: {
+            ...VALID_PARAMS,
+            filename,
+            flow: { id: mockFlow.id, updatedAt: mockFlow.updatedAt },
+          },
+        },
+        context,
+      )
+
+      expect(getPresignedPost).toHaveBeenCalled()
     },
   )
 })
