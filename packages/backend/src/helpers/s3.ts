@@ -139,7 +139,7 @@ export const SES_BLOCKED_EXTENSIONS = [
   'wsh',
   'xnk',
 ]
-export const MAX_FILE_SIZE = 1024 * 1024 * 10 // 10MB
+export const MAX_FILE_SIZE = 1024 * 1024 * 20 // 20MB
 
 function throwAttachmentError(
   errorType: string,

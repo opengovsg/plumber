@@ -7,8 +7,8 @@ import { type CheckboxVariable } from './components/Checkbox'
 const KB = 1024
 const MB = KB * KB
 export const MAX_NUM_FILES = 10
-const MAX_FILE_SIZE = 10 * MB // 10MB
-const MAX_TOTAL_FILE_SIZE = 10 * MB // 10MB
+const MAX_FILE_SIZE = 20 * MB // 20MB
+const MAX_TOTAL_FILE_SIZE = 20 * MB // 20MB
 
 /**
  * Mirrors SES_BLOCKED_EXTENSIONS in packages/backend/src/helpers/s3.ts — keep
@@ -266,7 +266,7 @@ export function validateFiles(
   if (totalSize > MAX_TOTAL_FILE_SIZE) {
     return {
       isValid: false,
-      error: 'Total size of attachments exceeds 10MB',
+      error: 'Total size of attachments exceeds 20MB',
     }
   }
   return { isValid: true }
@@ -277,7 +277,7 @@ export function validateFileSize(
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
   if (fileSize > MAX_FILE_SIZE) {
-    return { isValid: false, error: 'Size of attachment exceeds 10MB' }
+    return { isValid: false, error: 'Size of attachment exceeds 20MB' }
   }
   return { isValid: true }
 }

@@ -29,7 +29,7 @@ vi.mock('@/helpers/s3', () => ({
   COMMON_S3_BUCKET: 'test-bucket',
   COMMON_S3_MOCK_FOLDER_PREFIX: 's3:test-bucket:mock/',
   parseS3Id: vi.fn(),
-  MAX_FILE_SIZE: 1024 * 1024 * 10,
+  MAX_FILE_SIZE: 1024 * 1024 * 20,
   SES_BLOCKED_EXTENSIONS: ['exe', 'bat', 'js', 'msi'],
   validateObjectKey: vi.fn((objectKey) => {
     const invalidCharacters = /[\\{}^`%~#<>|[\]]/
@@ -147,10 +147,10 @@ describe('generatePresignedPost', () => {
       userId: context.currentUser.id,
     })
 
-    const tooLargeParams = { ...VALID_PARAMS, size: 10 * 1024 * 1024 + 1 }
+    const tooLargeParams = { ...VALID_PARAMS, size: 20 * 1024 * 1024 + 1 }
     await expect(
       generatePresignedPost(null, { input: tooLargeParams }, context),
-    ).rejects.toThrow('Size of attachment exceeds 10MB')
+    ).rejects.toThrow('Size of attachment exceeds 20MB')
   })
 
   // The gate is a block-list keyed on the filename's extension (executables /

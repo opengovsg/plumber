@@ -137,17 +137,17 @@ async function sendViaPostman(
   }
 }
 
-// Parity with Postman's server-side total-attachment limit (10MB), which the
-// SES path bypasses. Compared against raw (pre-base64) bytes — the same basis
-// Postman uses. SES itself allows up to 40MB, so this is the parity cap, not an
-// SES limit.
-const SES_MAX_TOTAL_ATTACHMENT_SIZE = 10 * 1024 * 1024
+// Total attachment cap for the SES path. SES accepts messages up to 40MB after
+// base64 encoding (~1.37x), so we cap raw attachments at 20MB (~27MB encoded) to
+// stay safely under that. Compared against raw (pre-base64) bytes. The Postman
+// route enforces its own (smaller) limit server-side.
+const SES_MAX_TOTAL_ATTACHMENT_SIZE = 20 * 1024 * 1024
 
-// Thrown by the SES path when attachments exceed the parity cap. Mapped to
+// Thrown by the SES path when attachments exceed the cap above. Mapped to
 // ATTACHMENT-SIZE-EXCEEDED by getSesErrorStatus (matched by name).
 class AttachmentSizeExceededError extends Error {
   constructor() {
-    super('Total attachment size exceeds 10MB')
+    super('Total attachment size exceeds 20MB')
     this.name = 'AttachmentSizeExceededError'
   }
 }

@@ -23,7 +23,7 @@ const generatePresignedPost: MutationResolvers['generatePresignedPost'] =
     } = params.input
 
     if (size > MAX_FILE_SIZE) {
-      throw new Error('Size of attachment exceeds 10MB')
+      throw new Error('Size of attachment exceeds 20MB')
     }
     // Block-list gate: accept anything except executables/scripts (mirrors the
     // SES send-time filter). Extension-based to match how attachments are
