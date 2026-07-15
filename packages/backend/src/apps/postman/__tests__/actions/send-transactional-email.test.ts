@@ -902,8 +902,11 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(2)
     })
 
-    it('falls back to Postman when batch has attachments even if ses_enabled is true', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(true)
+    it('falls back to Postman when attachments are present but ses_attachments_enabled is off', async () => {
+      // ses_enabled is on for everyone, but the attachment kill-switch is off.
+      mocks.getLdFlagValue.mockImplementation(
+        async (flag: string) => flag === 'ses_enabled',
+      )
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       mocks.filterAttachments.mockReturnValueOnce({
         attachmentFiles: [{ fileName: 'f.txt', data: new Uint8Array([0]) }],
@@ -915,6 +918,53 @@ describe('send transactional email', () => {
 
       expect(mocks.sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
+    })
+
+    it('sends attachments via SES as a raw MIME message when ses_attachments_enabled is on', async () => {
+      // Both ses_enabled and ses_attachments_enabled true for all recipients.
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      mocks.filterAttachments.mockReturnValueOnce({
+        attachmentFiles: [
+          { fileName: 'report.pdf', data: new Uint8Array([1, 2, 3]) },
+        ],
+        invalidAttachments: [],
+        submissionId: null,
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect($.http.post).not.toHaveBeenCalled()
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+
+      // Attachments go out as a raw MIME message, not Content.Simple.
+      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+        { input: { Content: { Raw: { Data: Uint8Array } } } },
+      ]
+      const mime = Buffer.from(sentCommand.input.Content.Raw.Data).toString(
+        'utf-8',
+      )
+      expect(mime).toContain('multipart/mixed')
+      expect(mime).toContain('report.pdf')
+      expect(mime).toContain('X-Plumber-Transport: ses')
+    })
+
+    it('rejects with ATTACHMENT-SIZE-EXCEEDED when SES attachments exceed 10MB total', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      mocks.filterAttachments.mockReturnValueOnce({
+        attachmentFiles: [
+          { fileName: 'big.pdf', data: new Uint8Array(10 * 1024 * 1024 + 1) },
+        ],
+        invalidAttachments: [],
+        submissionId: null,
+      })
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+        'Total attachment size exceeded',
+      )
+      // The size guard runs before the SES API call.
+      expect(mocks.sesSend).not.toHaveBeenCalled()
     })
 
     it('uses Postman when ses_enabled is false (default kill switch)', async () => {
