@@ -17,7 +17,7 @@ import {
 } from '@/helpers/ses-email-helper'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
-import { buildRawEmail } from './build-raw-mime'
+import { buildRawEmail, withRecipient } from './build-raw-mime'
 import {
   PostmanEmailDataOut,
   PostmanEmailSendStatus,
@@ -160,6 +160,12 @@ async function sendViaSes(
   // inflate the bounce rate). The full email.ccList is still reported in
   // dataOut below — only the API call is filtered.
   ccAddressesToSend: string[] | undefined,
+  // Raw MIME message built once per email (no `To:` header) by
+  // sendTransactionalEmails. Always set when email.attachments?.length (that's
+  // the caller's contract); the per-recipient `To:` header is added cheaply
+  // via withRecipient rather than rebuilding (and re-base64-encoding
+  // attachments for) every recipient.
+  sharedRawMessage: Buffer | undefined,
 ): Promise<PostmanPromiseFulfilled> {
   const client = getSesClient()
   // Address sent to SES: display name is RFC 5322-quoted when it contains
@@ -180,27 +186,11 @@ async function sendViaSes(
     ) ?? 0
 
   if (email.attachments?.length) {
-    // SES has no structured size error, so enforce the parity cap ourselves
-    // before building the (larger, base64-encoded) MIME message.
-    if (totalAttachmentBytes > SES_MAX_TOTAL_ATTACHMENT_SIZE) {
-      throw new AttachmentSizeExceededError()
-    }
-
     // Attachments require a raw MIME message — Content.Simple can't carry them.
-    // From/To/Cc/Reply-To/Subject/body and the transport header all live in the
-    // MIME; the envelope is still set via FromEmailAddress/Destination, matching
-    // the Simple path.
-    const rawMessage = await buildRawEmail({
-      from: fromAddress,
-      to: recipientEmail,
-      cc: ccAddressesToSend,
-      replyTo: email.replyTo,
-      subject: email.subject,
-      // Sanitise to match the server-side filtering the Postman path gets free.
-      html: sanitizeEmailHtml(email.body),
-      attachments: email.attachments,
-      headers: { 'X-Plumber-Transport': 'ses' },
-    })
+    // From/Cc/Reply-To/Subject/body and the transport header all live in the
+    // shared MIME; To: is added per recipient below, and the envelope is still
+    // set via FromEmailAddress/Destination, matching the Simple path.
+    const rawMessage = withRecipient(sharedRawMessage as Buffer, recipientEmail)
 
     await client.send(
       new SendEmailCommand({
@@ -321,10 +311,52 @@ export async function sendTransactionalEmails(
   // ccList (CC status is not tracked per the field's documented behaviour).
   const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
+  // Attachments, subject, body, cc and reply-to are identical across
+  // recipients — only the `To:` header differs. Build the (potentially large)
+  // base64-encoded MIME message once here rather than once per recipient
+  // inside sendViaSes; per-recipient `To:` is added cheaply via withRecipient.
+  // Any build/size-cap failure is captured and re-thrown inside each
+  // recipient's own try/catch below, so per-recipient status/error mapping
+  // (e.g. ATTACHMENT-SIZE-EXCEEDED) is unchanged.
+  let sharedRawMessage: Buffer | undefined
+  let attachmentBuildError: unknown
+  if (useSes && email.attachments?.length && activeRecipients.length) {
+    const totalAttachmentBytes = email.attachments.reduce(
+      (sum, attachment) => sum + attachment.data.byteLength,
+      0,
+    )
+    if (totalAttachmentBytes > SES_MAX_TOTAL_ATTACHMENT_SIZE) {
+      attachmentBuildError = new AttachmentSizeExceededError()
+    } else {
+      try {
+        sharedRawMessage = await buildRawEmail({
+          from: formatFromAddress(email.senderName, appConfig.ses.fromAddress),
+          cc: ccAddressesToSend,
+          replyTo: email.replyTo,
+          subject: email.subject,
+          // Sanitise to match the server-side filtering the Postman path gets free.
+          html: sanitizeEmailHtml(email.body),
+          attachments: email.attachments,
+          headers: { 'X-Plumber-Transport': 'ses' },
+        })
+      } catch (e) {
+        attachmentBuildError = e
+      }
+    }
+  }
+
   const promises = activeRecipients.map(async (recipientEmail) => {
     try {
       if (useSes) {
-        return await sendViaSes(recipientEmail, email, ccAddressesToSend)
+        if (attachmentBuildError) {
+          throw attachmentBuildError
+        }
+        return await sendViaSes(
+          recipientEmail,
+          email,
+          ccAddressesToSend,
+          sharedRawMessage,
+        )
       }
       return await sendViaPostman(http, recipientEmail, email)
     } catch (e) {

@@ -3,7 +3,12 @@ import MailComposer from 'nodemailer/lib/mail-composer'
 export interface RawEmailInput {
   /** RFC 5322 From address, e.g. `Display Name <addr@domain>`. */
   from: string
-  to: string
+  /**
+   * Omit to build a recipient-agnostic message (no `To:` header) that can be
+   * shared across recipients — combine with `withRecipient` to add the header
+   * per recipient without rebuilding the whole message.
+   */
+  to?: string
   cc?: string[]
   replyTo?: string
   subject: string
@@ -27,7 +32,7 @@ export interface RawEmailInput {
 export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
   const composer = new MailComposer({
     from: input.from,
-    to: input.to,
+    ...(input.to && { to: input.to }),
     ...(input.cc?.length && { cc: input.cc }),
     ...(input.replyTo && { replyTo: input.replyTo }),
     subject: input.subject,
@@ -48,4 +53,16 @@ export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
       resolve(message)
     })
   })
+}
+
+/**
+ * Cheaply add a `To:` header to a message built without one (`to` omitted
+ * from `buildRawEmail`'s input), so the expensive part of building a message
+ * (base64-encoding attachments) can happen once and be reused per recipient.
+ *
+ * Safe because the header block isn't terminated until the first blank line,
+ * and `buildRawEmail` never emits one before the first real header.
+ */
+export function withRecipient(rawMessage: Buffer, to: string): Buffer {
+  return Buffer.concat([Buffer.from(`To: ${to}\r\n`, 'utf-8'), rawMessage])
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildRawEmail } from '../../common/build-raw-mime'
+import { buildRawEmail, withRecipient } from '../../common/build-raw-mime'
 
 const baseInput = {
   from: 'HR <hr@plumber.gov.sg>',
@@ -70,5 +70,38 @@ describe('buildRawEmail', () => {
     expect(raw).not.toContain('报告.pdf')
     // RFC 2231 encoded filename: `filename*=`, or the continuation `filename*0*=`.
     expect(raw.toLowerCase()).toMatch(/filename(\*\d+)?\*?=/)
+  })
+
+  it('omits the To header when to is not provided', async () => {
+    const raw = await build({ ...baseInput, to: undefined })
+
+    expect(raw).not.toMatch(/^To:/m)
+  })
+})
+
+describe('withRecipient', () => {
+  it('prepends a To header without disturbing the rest of the message', async () => {
+    const raw = await buildRawEmail({ ...baseInput, to: undefined })
+    const withTo = withRecipient(raw, 'dave@open.gov.sg').toString('utf-8')
+
+    expect(withTo).toMatch(/^To: dave@open\.gov\.sg\r\n/)
+    expect(withTo).toContain('multipart/mixed')
+    expect(withTo).toContain('report.pdf')
+  })
+
+  it('reuses the exact same body/attachments when adding different To headers', async () => {
+    const shared = await buildRawEmail({ ...baseInput, to: undefined })
+
+    const forAlice = withRecipient(shared, 'alice@open.gov.sg').toString(
+      'utf-8',
+    )
+    const forBob = withRecipient(shared, 'bob@open.gov.sg').toString('utf-8')
+
+    // Only the prepended To: line should differ between the two.
+    expect(forAlice.replace(/^To:.*\r\n/, '')).toEqual(
+      forBob.replace(/^To:.*\r\n/, ''),
+    )
+    expect(forAlice).toMatch(/^To: alice@open\.gov\.sg\r\n/)
+    expect(forBob).toMatch(/^To: bob@open\.gov\.sg\r\n/)
   })
 })
