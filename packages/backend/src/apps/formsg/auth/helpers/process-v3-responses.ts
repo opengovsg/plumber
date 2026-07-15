@@ -103,6 +103,12 @@ export async function processResponsesV3(
         // we fallback to Question # if the question is not found in the form schema
         question: formSchemaFields[key]?.title ?? `Question ${questionNumber}`,
         answer: value.answer.value,
+        // preserve the OTP-verification signature for email fields so
+        // downstream code can detect verified emails; formSG only ever
+        // sets this for email, never mobile
+        ...(value.fieldType === 'email' && value.answer.signature
+          ? { signature: value.answer.signature }
+          : {}),
       })
       continue
     }
