@@ -259,32 +259,44 @@ async function sendViaSes(
   }
 }
 
+/**
+ * Resolve whether to route via SES for the given recipients. SES is used only
+ * when `ses_enabled` is true for every recipient; if the email carries
+ * attachments, `ses_attachments_enabled` must also be true for every recipient.
+ * Otherwise the batch goes via Postman.
+ */
+export async function resolveSesRouting(
+  recipients: string[],
+  hasAttachments: boolean,
+): Promise<boolean> {
+  const sesEnabledPerRecipient = await Promise.all(
+    recipients.map(isSesEnabledForRecipient),
+  )
+  if (!sesEnabledPerRecipient.every(Boolean)) {
+    return false
+  }
+  if (!hasAttachments) {
+    return true
+  }
+  const attachmentsEnabledPerRecipient = await Promise.all(
+    recipients.map(isSesAttachmentsEnabledForRecipient),
+  )
+  return attachmentsEnabledPerRecipient.every(Boolean)
+}
+
 export async function sendTransactionalEmails(
   http: IHttpClient,
   recipients: string[],
   email: Email,
+  // Whether to route via SES. Resolved once by the caller (see resolveSesRouting)
+  // on the *configured* attachments rather than the post-filter list, so the
+  // transport can't flip between runs when filtering strips attachments to zero.
+  useSes: boolean,
 ): Promise<{
   dataOut: PostmanEmailDataOut
   errorStatus?: PostmanEmailSendStatus
   error?: HttpError
 }> {
-  // SES routing is gated by per-recipient boolean LaunchDarkly flags; targeting
-  // is configured in LaunchDarkly. Use SES only when `ses_enabled` is true for
-  // ALL recipients. When the email has attachments, additionally require
-  // `ses_attachments_enabled` for all recipients — otherwise fall back to
-  // Postman to avoid mixed error-handling paths.
-  const sesEnabledPerRecipient = await Promise.all(
-    recipients.map(isSesEnabledForRecipient),
-  )
-  let useSes = sesEnabledPerRecipient.every(Boolean)
-
-  if (useSes && email.attachments?.length) {
-    const attachmentsEnabledPerRecipient = await Promise.all(
-      recipients.map(isSesAttachmentsEnabledForRecipient),
-    )
-    useSes = attachmentsEnabledPerRecipient.every(Boolean)
-  }
-
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to
   // (which would re-bounce and inflate the bounce rate). CC suppression is

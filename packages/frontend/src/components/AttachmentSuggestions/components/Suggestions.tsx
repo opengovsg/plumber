@@ -16,7 +16,7 @@ import { StepWithVariables, Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { boxStyles, divWrapperStyles, noVariablesTextStyles } from '../style'
-import { ACCEPTED_FILE_TYPES, AttachmentConfigInput } from '../utils'
+import { AttachmentConfigInput } from '../utils'
 
 import Checkbox, { type CheckboxVariable } from './Checkbox'
 import TagList from './TagList'
@@ -93,7 +93,7 @@ export default function Suggestions(props: SuggestionsProps) {
               >
                 {addNew && (
                   <FileUpload
-                    accept={ACCEPTED_FILE_TYPES.join(',')}
+                    accept="*/*"
                     buttonType="textButton"
                     disabled={isUploading || readOnly}
                     loading={isUploading}
