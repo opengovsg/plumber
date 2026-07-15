@@ -18,7 +18,7 @@ import MenuAlertDialog from '../MenuAlertDialog'
 import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'
-import { validateFiles, validateFileSize } from './utils'
+import { validateFileExtension, validateFiles, validateFileSize } from './utils'
 
 interface AttachmentSuggestionsProps {
   name: string
@@ -151,16 +151,25 @@ function AttachmentSuggestions(props: AttachmentSuggestionsProps) {
   const processFile = useCallback(
     async (file: File) => {
       /**
-       * when uploading the file, we only need to validate the file size.
-       * the total number of files and total size of files are validated when users make
-       * their selection via the suggestions component.
+       * when uploading the file, we only need to validate the file size and
+       * extension. the total number of files and total size of files are
+       * validated when users make their selection via the suggestions
+       * component.
        */
-      const { isValid, error } = validateFileSize(file)
-      if (!isValid) {
-        setError(name, { type: 'invalidFile', message: error })
-      } else {
-        await uploadToS3(file, flow.id, flow.updatedAt)
+      const { isValid: isValidExtension, error: extensionError } =
+        validateFileExtension(file)
+      if (!isValidExtension) {
+        setError(name, { type: 'invalidFile', message: extensionError })
+        return
       }
+
+      const { isValid: isValidSize, error: sizeError } = validateFileSize(file)
+      if (!isValidSize) {
+        setError(name, { type: 'invalidFile', message: sizeError })
+        return
+      }
+
+      await uploadToS3(file, flow.id, flow.updatedAt)
     },
     [flow.id, flow.updatedAt, name, setError, uploadToS3],
   )

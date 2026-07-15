@@ -30,7 +30,9 @@ const generatePresignedPost: MutationResolvers['generatePresignedPost'] =
     // actually filtered on send; the reported MIME type is unreliable and only
     // used for the S3 object's content type. Files with no extension are allowed
     // (consistent with filterAttachments); every object is malware-scanned.
-    const fileExtension = filename.split('.').pop()?.toLowerCase()
+    const parts = filename.split('.')
+    const fileExtension =
+      parts.length > 1 ? parts.pop()?.toLowerCase() : undefined
     if (fileExtension && SES_BLOCKED_EXTENSIONS.includes(fileExtension)) {
       throw new Error('Unsupported file type')
     }

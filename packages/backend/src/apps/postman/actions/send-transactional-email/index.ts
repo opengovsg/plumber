@@ -12,12 +12,10 @@ import StepError from '@/errors/step'
 import { TableVariableMarker } from '@/helpers/compute-parameters'
 import { formatTable } from '@/helpers/format-table-variable'
 import logger from '@/helpers/logger'
+import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
 import Step from '@/models/step'
 
-import {
-  POSTMAN_ACCEPTED_EXTENSIONS,
-  SES_BLOCKED_EXTENSIONS,
-} from '../../common/constants'
+import { POSTMAN_ACCEPTED_EXTENSIONS } from '../../common/constants'
 import { dataOutSchema } from '../../common/data-out-validator'
 import {
   resolveSesRouting,
