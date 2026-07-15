@@ -40,6 +40,12 @@ export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
     attachments: input.attachments.map((attachment) => ({
       filename: attachment.fileName,
       content: Buffer.from(attachment.data),
+      // Force a real download. Without this, nodemailer defaults
+      // Content-Disposition to 'inline' for any content type it detects as
+      // message/* (e.g. .eml -> message/rfc822), which makes mail clients
+      // render the attachment as a nested email instead of a downloadable
+      // file. None of our attachments are ever inline/cid-embedded images.
+      contentDisposition: 'attachment' as const,
     })),
     ...(input.headers && { headers: input.headers }),
   })

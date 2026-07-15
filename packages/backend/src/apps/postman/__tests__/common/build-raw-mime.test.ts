@@ -77,6 +77,21 @@ describe('buildRawEmail', () => {
 
     expect(raw).not.toMatch(/^To:/m)
   })
+
+  it('sends a .eml attachment as a downloadable file, not an inline nested message', async () => {
+    const raw = await build({
+      ...baseInput,
+      attachments: [
+        { fileName: 'original.eml', data: new Uint8Array([1, 2, 3]) },
+      ],
+    })
+
+    // nodemailer defaults message/* content types (which .eml resolves to)
+    // to Content-Disposition: inline unless overridden — assert we override it.
+    expect(raw).toContain('message/rfc822')
+    expect(raw).toMatch(/Content-Disposition: attachment/i)
+    expect(raw).not.toMatch(/Content-Disposition: inline/i)
+  })
 })
 
 describe('withRecipient', () => {
