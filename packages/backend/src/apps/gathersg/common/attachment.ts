@@ -73,7 +73,6 @@ async function downloadAndStoreAttachmentInS3(
         executionId: String($.execution.id),
         caseUuid: String(caseUuid),
         attachmentUuid,
-        filename,
       },
     })
 
