@@ -111,13 +111,16 @@ describe('Rate Limiting Middleware', () => {
       expect(mockNext).toHaveBeenCalledOnce()
     })
 
-    it('should use Cloudflare IP when available', async () => {
+    it('should key off cf-connecting-ip when the request is proxied through Cloudflare', async () => {
       mockReq.context = {
         currentUser: null,
         isAdminOperation: false,
       } as any
+      // 173.245.48.1 is the Cloudflare edge appended by the ALB (orange cloud),
+      // so cf-connecting-ip is authoritative; the X-Forwarded-For junk is ignored.
       mockReq.headers = {
         'cf-connecting-ip': '203.0.113.42',
+        'x-forwarded-for': '198.51.100.99, 173.245.48.1',
       }
 
       mocks.rateLimiterRedis.consume.mockResolvedValueOnce({})

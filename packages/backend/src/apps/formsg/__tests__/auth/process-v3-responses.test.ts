@@ -180,6 +180,51 @@ describe('processResponsesV3', () => {
       },
     )
 
+    it('includes signature for a verified email field', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'f1', title: 'Email', fieldType: 'email' }]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        f1: {
+          fieldType: 'email',
+          answer: { value: 'john@example.com', signature: 'some-signature' },
+        },
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'email',
+          question: 'Email',
+          answer: 'john@example.com',
+          signature: 'some-signature',
+        },
+      ])
+    })
+
+    it('does not include signature for a mobile field even if present', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'f1', title: 'Mobile', fieldType: 'mobile' }]),
+      )
+
+      const result = await processResponsesV3($, 'formId', {
+        f1: {
+          fieldType: 'mobile',
+          answer: { value: '+6591234567', signature: 'some-signature' },
+        },
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'mobile',
+          question: 'Mobile',
+          answer: '+6591234567',
+        },
+      ])
+    })
+
     it('maps signature fields with answerArray from answer.value', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([

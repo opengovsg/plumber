@@ -45,8 +45,10 @@ const mocks = vi.hoisted(() => {
     cryptoDecryptWithAttachments,
     consoleError: vi.fn(),
     consoleWarn: vi.fn(),
+    consoleInfo: vi.fn(),
     getSdk: vi.fn(() => mockSdk),
     parseFormEnv: vi.fn(),
+    whitelistEmails: vi.fn().mockResolvedValue([]),
   }
 })
 
@@ -55,6 +57,14 @@ vi.mock('@/helpers/logger', () => ({
   default: {
     error: mocks.consoleError,
     warn: mocks.consoleWarn,
+    info: mocks.consoleInfo,
+  },
+}))
+
+// mock email suppression model
+vi.mock('@/models/email-suppression-entry', () => ({
+  default: {
+    whitelistEmails: mocks.whitelistEmails,
   },
 }))
 
@@ -954,6 +964,172 @@ describe('decrypt form response', () => {
               order: 1,
             },
           },
+        }),
+      )
+    })
+  })
+
+  describe('verified email suppression removal', () => {
+    it('whitelists the email when isUserVerified is true (v1 shape)', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'emailField',
+            fieldType: 'email',
+            question: 'Email',
+            answer: 'jack@open.gov.sg',
+            isUserVerified: true,
+            signature: 'f=...,v=...,t=...,s=...',
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.whitelistEmails).toHaveBeenCalledWith(['jack@open.gov.sg'])
+    })
+
+    it('whitelists the email via signature presence when isUserVerified is absent (v3/v4 shape)', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'emailField',
+            fieldType: 'email',
+            question: 'Email',
+            answer: 'jane@open.gov.sg',
+            signature: 'f=...,v=...,t=...,s=...',
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.whitelistEmails).toHaveBeenCalledWith(['jane@open.gov.sg'])
+    })
+
+    it('does not whitelist when isUserVerified is false', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'emailField',
+            fieldType: 'email',
+            question: 'Email',
+            answer: 'unverified@open.gov.sg',
+            isUserVerified: false,
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.whitelistEmails).not.toHaveBeenCalled()
+    })
+
+    it('does not whitelist when there is no email field at all', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'textField',
+            fieldType: 'text',
+            question: 'What is your name?',
+            answer: 'John Tan',
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.whitelistEmails).not.toHaveBeenCalled()
+    })
+
+    it('batches multiple verified email fields into a single whitelistEmails call', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'emailField1',
+            fieldType: 'email',
+            question: 'Personal email',
+            answer: 'personal@open.gov.sg',
+            isUserVerified: true,
+          },
+          {
+            _id: 'emailField2',
+            fieldType: 'email',
+            question: 'Work email',
+            answer: 'work@open.gov.sg',
+            isUserVerified: true,
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.whitelistEmails).toHaveBeenCalledTimes(1)
+      expect(mocks.whitelistEmails).toHaveBeenCalledWith([
+        'personal@open.gov.sg',
+        'work@open.gov.sg',
+      ])
+    })
+
+    it('does not affect the decrypt result when whitelistEmails throws', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'emailField',
+            fieldType: 'email',
+            question: 'Email',
+            answer: 'jack@open.gov.sg',
+            isUserVerified: true,
+          },
+        ],
+      })
+      mocks.whitelistEmails.mockRejectedValueOnce(new Error('db error'))
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.consoleError).toHaveBeenCalledWith(
+        'Failed to whitelist verified FormSG email(s) from suppression list',
+        expect.objectContaining({
+          event: 'formsg-verified-email-whitelist-failed',
+        }),
+      )
+    })
+
+    it('logs which emails were actually whitelisted', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'emailField',
+            fieldType: 'email',
+            question: 'Email',
+            answer: 'jack@open.gov.sg',
+            isUserVerified: true,
+          },
+        ],
+      })
+      mocks.whitelistEmails.mockResolvedValueOnce(['jack@open.gov.sg'])
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect(mocks.consoleInfo).toHaveBeenCalledWith(
+        'Removed verified FormSG email(s) from suppression list',
+        expect.objectContaining({
+          event: 'formsg-verified-email-whitelist',
+          emails: ['jack@open.gov.sg'],
         }),
       )
     })

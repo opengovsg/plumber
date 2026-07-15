@@ -155,30 +155,88 @@ describe('processResponsesV4', () => {
       ])
     })
 
-    it.each([
-      ['email', { value: 'test-value', signature: 'some-signature' }],
-      ['mobile', { value: 'test-value' }],
-    ] as const)(
-      'maps %s fields with answer from answer.value',
-      async (fieldType, answer) => {
-        mocks.fetchFormSchema.mockResolvedValueOnce(
-          makeFormSchema([{ _id: 'f1', title: 'Field', fieldType }]),
-        )
+    it('maps mobile fields with answer from answer.value', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'f1', title: 'Field', fieldType: 'mobile' }]),
+      )
 
-        const result = await processResponsesV4($, 'formId', {
-          f1: v4Response(fieldType, answer),
-        })
+      const result = await processResponsesV4($, 'formId', {
+        f1: v4Response('mobile', { value: 'test-value' }),
+      })
 
-        expect(result).toEqual([
-          {
-            _id: 'f1',
-            fieldType,
-            question: 'Field',
-            answer: 'test-value',
-          },
-        ])
-      },
-    )
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'mobile',
+          question: 'Field',
+          answer: 'test-value',
+        },
+      ])
+    })
+
+    it('includes signature for a verified email field', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'f1', title: 'Field', fieldType: 'email' }]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        f1: v4Response('email', {
+          value: 'test-value',
+          signature: 'some-signature',
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'email',
+          question: 'Field',
+          answer: 'test-value',
+          signature: 'some-signature',
+        },
+      ])
+    })
+
+    it('does not include signature for an unverified email field', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'f1', title: 'Field', fieldType: 'email' }]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        f1: v4Response('email', { value: 'test-value' }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'email',
+          question: 'Field',
+          answer: 'test-value',
+        },
+      ])
+    })
+
+    it('does not include signature for a mobile field even if present', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([{ _id: 'f1', title: 'Field', fieldType: 'mobile' }]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        f1: v4Response('mobile', {
+          value: 'test-value',
+          signature: 'some-signature',
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'f1',
+          fieldType: 'mobile',
+          question: 'Field',
+          answer: 'test-value',
+        },
+      ])
+    })
 
     it('maps radiobutton field with answer from answer.value', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
@@ -828,10 +886,18 @@ describe('processResponsesV4', () => {
         'Others: adw',
         'Option 1',
       ])
-      // verified email keeps only the value, not the verification signature
-      expect(byId('69eede812e18526ffea60af3')?.answer).toBe(
-        'ahkow@open.gov.local',
-      )
+      // verified email keeps both the value and the verification signature
+      expect(byId('69eede812e18526ffea60af3')).toMatchObject({
+        answer: 'ahkow@open.gov.local',
+        signature: expect.any(String),
+      })
+      // unverified email keeps only the value, no signature
+      expect(byId('69eede868c2bfbb8748c75d3')).toEqual({
+        _id: '69eede868c2bfbb8748c75d3',
+        fieldType: 'email',
+        question: 'Email',
+        answer: 'ahkow@open.gov.local',
+      })
       // address keeps all six subfields in Plumber order at this level
       // (processLocalAddress only runs downstream in decrypt-form-response)
       expect(byId('69eede9f2f788da6393fbd91')?.answerArray).toEqual([
