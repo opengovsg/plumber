@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => ({
   sendBlacklistEmail: vi.fn(),
   sendInvalidAttachmentsEmail: vi.fn(),
   createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
-  getLdFlagValue: vi.fn(async () => [] as string[]),
+  getLdFlagValue: vi.fn(async (_flag: string, _email: string | null) => false),
   sesSend: vi.fn(async () => ({})),
   getSuppressedEmails: vi.fn(async () => [] as string[]),
 }))
@@ -133,6 +133,8 @@ describe('send transactional email', () => {
         name: 'file-2.png',
         data: '1111',
       })
+
+    mocks.getLdFlagValue.mockResolvedValue(false)
   })
 
   afterEach(() => {
@@ -841,9 +843,9 @@ describe('send transactional email', () => {
     })
   })
 
-  describe('SES routing via ses_enabled_domains flag', () => {
-    it('routes to SES when all recipients are in flagged domains', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+  describe('SES routing via ses_enabled flag', () => {
+    it('routes to SES when ses_enabled is true for all recipients', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
       $.step.parameters.attachments = []
 
@@ -863,7 +865,7 @@ describe('send transactional email', () => {
     })
 
     it('quotes a comma sender name for SES but keeps dataOut unquoted', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      mocks.getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       $.step.parameters.senderName = 'Acme, Inc'
       $.step.parameters.attachments = []
@@ -886,8 +888,11 @@ describe('send transactional email', () => {
       })
     })
 
-    it('falls back to Postman when any recipient is outside flagged domains', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+    it('falls back to Postman when ses_enabled is false for any recipient', async () => {
+      mocks.getLdFlagValue.mockImplementation(
+        async (_flag: string, email: string | null) =>
+          !!email?.endsWith('@open.gov.sg'),
+      )
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@gmail.com'
       $.step.parameters.attachments = []
 
@@ -897,8 +902,8 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(2)
     })
 
-    it('falls back to Postman when batch has attachments even if all domains qualify', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['*'])
+    it('falls back to Postman when batch has attachments even if ses_enabled is true', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       mocks.filterAttachments.mockReturnValueOnce({
         attachmentFiles: [{ fileName: 'f.txt', data: new Uint8Array([0]) }],
@@ -912,7 +917,7 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
-    it('uses Postman when ses_enabled_domains flag is empty (default kill switch)', async () => {
+    it('uses Postman when ses_enabled is false (default kill switch)', async () => {
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       $.step.parameters.attachments = []
 
@@ -923,7 +928,7 @@ describe('send transactional email', () => {
     })
 
     it('drops a suppressed CC from the SES call but keeps it in dataOut', async () => {
-      mocks.getLdFlagValue.mockImplementationOnce(async () => ['open.gov.sg'])
+      mocks.getLdFlagValue.mockResolvedValue(true)
       // Only the CC is suppressed — the To recipient still sends.
       mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
 

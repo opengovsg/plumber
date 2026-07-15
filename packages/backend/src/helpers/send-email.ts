@@ -3,9 +3,8 @@ import axios from 'axios'
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
 
-import { getLdFlagValue } from './launch-darkly'
 import logger from './logger'
-import { sendEmailViaSes, shouldUseSes } from './ses-email-helper'
+import { isSesEnabledForRecipient, sendEmailViaSes } from './ses-email-helper'
 
 export interface PostmanEmailRequestBody {
   subject: string
@@ -61,12 +60,7 @@ async function sendEmailViaPostman({
 export async function sendEmail(
   params: PostmanEmailRequestBody,
 ): Promise<void> {
-  const sesEnabledDomains = await getLdFlagValue<string[]>(
-    'ses_enabled_domains',
-    null,
-    [],
-  )
-  if (shouldUseSes(params.recipient, sesEnabledDomains)) {
+  if (await isSesEnabledForRecipient(params.recipient)) {
     return sendEmailViaSes(params)
   }
 
