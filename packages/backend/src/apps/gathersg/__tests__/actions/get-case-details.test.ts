@@ -119,7 +119,6 @@ describe('get case details', () => {
         executionId: MOCK_EXECUTION_ID,
         caseUuid: MOCK_CASE_UUID,
         attachmentUuid: MOCK_ATTACHMENT_UUID,
-        filename: MOCK_ATTACHMENT_NAME,
       },
     })
 
