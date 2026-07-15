@@ -177,14 +177,15 @@ export async function decryptFormResponse(
     const verifiedEmails: string[] = []
 
     for (const [index, formField] of submission.responses.entries()) {
-      if (isVerifiedEmailField(formField) && formField.answer) {
-        verifiedEmails.push(formField.answer)
-      }
-
       const { _id, ...rest } = formField
       // perform null character sanitisation for all answer fields so that it can be inserted into the DB
       if (rest.answer && typeof rest.answer === 'string') {
         rest.answer = rest.answer.replaceAll('\u0000', '')
+      }
+
+      if (isVerifiedEmailField(formField) && rest.answer) {
+        verifiedEmails.push(rest.answer)
+        delete rest['signature'] // we dont need to store it
       }
 
       if (rest.answerArray && rest.answerArray.length > 0) {
