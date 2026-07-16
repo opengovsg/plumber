@@ -141,13 +141,15 @@ async function sendViaPostman(
 // base64 encoding (~1.37x), so we cap raw attachments at 20MB (~27MB encoded) to
 // stay safely under that. Compared against raw (pre-base64) bytes. The Postman
 // route enforces its own (smaller) limit server-side.
-const SES_MAX_TOTAL_ATTACHMENT_SIZE = 20 * 1024 * 1024
+const SES_MAX_TOTAL_ATTACHMENT_SIZE_MB = 20
+const SES_MAX_TOTAL_ATTACHMENT_SIZE =
+  SES_MAX_TOTAL_ATTACHMENT_SIZE_MB * 1024 * 1024
 
 // Thrown by the SES path when attachments exceed the cap above. Mapped to
 // ATTACHMENT-SIZE-EXCEEDED by getSesErrorStatus (matched by name).
 class AttachmentSizeExceededError extends Error {
   constructor() {
-    super('Total attachment size exceeds 20MB')
+    super(`Total attachment size exceeds ${SES_MAX_TOTAL_ATTACHMENT_SIZE_MB}MB`)
     this.name = 'AttachmentSizeExceededError'
   }
 }
@@ -357,6 +359,29 @@ export async function sendTransactionalEmails(
     }
   }
 
+  // Logged once here (not per recipient below) since the same build error
+  // applies identically to every active recipient. AttachmentSizeExceededError
+  // is an expected/known outcome (user's attachments are just too big), so it's
+  // not logged — only genuine build failures (e.g. buildRawEmail throwing) are.
+  if (
+    useSes &&
+    attachmentBuildError &&
+    !(attachmentBuildError instanceof AttachmentSizeExceededError)
+  ) {
+    logger.error('Email send failed via SES', {
+      event: 'postman-step-ses-email-failed',
+      recipients: activeRecipients,
+      errorName:
+        attachmentBuildError instanceof Error
+          ? attachmentBuildError.name
+          : undefined,
+      errorMessage:
+        attachmentBuildError instanceof Error
+          ? attachmentBuildError.message
+          : String(attachmentBuildError),
+    })
+  }
+
   const promises = activeRecipients.map(async (recipientEmail) => {
     try {
       if (useSes) {
@@ -372,7 +397,9 @@ export async function sendTransactionalEmails(
       }
       return await sendViaPostman(http, recipientEmail, email)
     } catch (e) {
-      if (useSes) {
+      // attachmentBuildError is already logged once above; only log genuine
+      // per-recipient send failures here to avoid logging it once per recipient.
+      if (useSes && e !== attachmentBuildError) {
         logger.error('Email send failed via SES', {
           event: 'postman-step-ses-email-failed',
           recipient: recipientEmail,

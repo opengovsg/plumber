@@ -283,7 +283,8 @@ export function validateFileSize(
 }
 
 export function validateFileExtension(file: File): FileSizeValidationResult {
-  const extension = file.name.split('.').pop()?.toLowerCase()
+  const parts = file.name.split('.')
+  const extension = parts.length > 1 ? parts.pop()?.toLowerCase() : undefined
   if (extension && SES_BLOCKED_EXTENSIONS.has(extension)) {
     return {
       isValid: false,
