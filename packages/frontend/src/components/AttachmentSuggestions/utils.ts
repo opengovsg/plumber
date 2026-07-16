@@ -7,40 +7,107 @@ import { type CheckboxVariable } from './components/Checkbox'
 const KB = 1024
 const MB = KB * KB
 export const MAX_NUM_FILES = 10
-const MAX_FILE_SIZE = 10 * MB // 10MB
-const MAX_TOTAL_FILE_SIZE = 10 * MB // 10MB
+const MAX_FILE_SIZE = 20 * MB // 20MB
+const MAX_TOTAL_FILE_SIZE = 20 * MB // 20MB
 
-export const ACCEPTED_FILE_TYPES = [
-  'text/plain', // .txt, .asc
-  'video/x-msvideo', // .avi
-  'image/bmp', // .bmp
-  'text/csv', // .csv
-  'application/x-dgn', // .dgn
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-  'application/x-dwf', // .dwf
-  'application/x-dwg', // .dwg
-  'application/x-dxf', // .dxf
-  'application/x-ent', // .ent
-  'image/gif', // .gif
-  'image/jpeg', // .jpg, .jpeg
-  'video/mpeg', // .mpeg, .mpg
-  'application/vnd.ms-project', // .mpp
-  'application/vnd.oasis.opendocument.database', // .odb
-  'application/vnd.oasis.opendocument.formula', // .odf
-  'application/vnd.oasis.opendocument.graphics', // .odg
-  'application/vnd.oasis.opendocument.spreadsheet', // .ods
-  'application/pdf', // .pdf
-  'image/png', // .png
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-  'application/rtf', // .rtf
-  'application/vnd.sun.xml.calc', // .sxc
-  'application/vnd.sun.xml.draw', // .sxd
-  'application/vnd.sun.xml.impress', // .sxi
-  'application/vnd.sun.xml.writer', // .sxw
-  'image/tiff', // .tif, .tiff
-  'video/x-ms-wmv', // .wmv
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-]
+/**
+ * Mirrors SES_BLOCKED_EXTENSIONS in packages/backend/src/helpers/s3.ts — keep
+ * in sync if that list changes. Duplicated here (rather than fetched) so the
+ * file picker can reject a blocked file immediately, before it's uploaded to
+ * S3 and generatePresignedPost rejects it server-side.
+ */
+const SES_BLOCKED_EXTENSIONS = new Set([
+  'ade',
+  'adp',
+  'app',
+  'asp',
+  'bas',
+  'bat',
+  'cer',
+  'chm',
+  'cmd',
+  'com',
+  'cpl',
+  'crt',
+  'csh',
+  'der',
+  'exe',
+  'fxp',
+  'gadget',
+  'hlp',
+  'hta',
+  'inf',
+  'ins',
+  'isp',
+  'its',
+  'js',
+  'jse',
+  'ksh',
+  'lib',
+  'lnk',
+  'mad',
+  'maf',
+  'mag',
+  'mam',
+  'maq',
+  'mar',
+  'mas',
+  'mat',
+  'mau',
+  'mav',
+  'maw',
+  'mda',
+  'mdb',
+  'mde',
+  'mdt',
+  'mdw',
+  'mdz',
+  'msc',
+  'msh',
+  'msh1',
+  'msh2',
+  'mshxml',
+  'msh1xml',
+  'msh2xml',
+  'msi',
+  'msp',
+  'mst',
+  'ops',
+  'pcd',
+  'pif',
+  'plg',
+  'prf',
+  'prg',
+  'reg',
+  'scf',
+  'scr',
+  'sct',
+  'shb',
+  'shs',
+  'sys',
+  'ps1',
+  'ps1xml',
+  'ps2',
+  'ps2xml',
+  'psc1',
+  'psc2',
+  'tmp',
+  'url',
+  'vb',
+  'vbe',
+  'vbs',
+  'vps',
+  'vsmacros',
+  'vss',
+  'vst',
+  'vsw',
+  'vxd',
+  'ws',
+  'wsc',
+  'wsf',
+  'wsh',
+  'xnk',
+])
 
 export interface AttachmentConfigInput {
   name: string
@@ -199,7 +266,7 @@ export function validateFiles(
   if (totalSize > MAX_TOTAL_FILE_SIZE) {
     return {
       isValid: false,
-      error: 'Total size of attachments exceeds 10MB',
+      error: 'Total size of attachments exceeds 20MB',
     }
   }
   return { isValid: true }
@@ -210,7 +277,19 @@ export function validateFileSize(
 ): FileSizeValidationResult {
   const fileSize = file.size ?? 0
   if (fileSize > MAX_FILE_SIZE) {
-    return { isValid: false, error: 'Size of attachment exceeds 10MB' }
+    return { isValid: false, error: 'Size of attachment exceeds 20MB' }
+  }
+  return { isValid: true }
+}
+
+export function validateFileExtension(file: File): FileSizeValidationResult {
+  const parts = file.name.split('.')
+  const extension = parts.length > 1 ? parts.pop()?.toLowerCase() : undefined
+  if (extension && SES_BLOCKED_EXTENSIONS.has(extension)) {
+    return {
+      isValid: false,
+      error: `Files with a .${extension} extension are not supported`,
+    }
   }
   return { isValid: true }
 }

@@ -4,6 +4,7 @@ import { fromTemporaryCredentials } from '@aws-sdk/credential-providers'
 import appConfig from '@/config/app'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
+import { getLdFlagValue } from './launch-darkly'
 import logger from './logger'
 import { incrementMetric } from './metrics'
 import { sanitizeEmailHtml } from './sanitize-email-html'
@@ -25,24 +26,40 @@ export function getSesClient(): SESv2Client {
   return sesClient
 }
 
-export function shouldUseSes(
+/**
+ * Whether SES routing is enabled for a recipient. `ses_enabled` is a boolean
+ * flag; which recipients/domains/segments it applies to is configured in
+ * LaunchDarkly. The recipient email is passed as the `user` context key (the
+ * same kind {@link getLdFlagValue} uses), so LD rules can target by "user key
+ * ends with @domain", individual email targets, or segments. The email is
+ * lower-cased because LD string operators are case-sensitive. Defaults to false
+ * (routes via Postman) when the flag is off or unset.
+ */
+export function isSesEnabledForRecipient(
   recipientEmail: string,
-  sesEnabledDomains: string[],
-): boolean {
-  if (sesEnabledDomains.length === 0) {
-    return false
-  }
-
-  const normalizedEnabledDomains = sesEnabledDomains.map((d) =>
-    d.trim().toLowerCase(),
+): Promise<boolean> {
+  return getLdFlagValue<boolean>(
+    'ses_enabled',
+    recipientEmail.toLowerCase(),
+    false,
   )
+}
 
-  if (normalizedEnabledDomains.includes('*')) {
-    return true
-  }
-
-  const domain = recipientEmail.split('@')[1]?.toLowerCase()
-  return domain ? normalizedEnabledDomains.includes(domain) : false
+/**
+ * Whether attachment-over-SES is enabled for a recipient.
+ * `ses_attachments_enabled` is a boolean flag, targeted in LaunchDarkly the same
+ * way as `ses_enabled`. It is additive: an email with attachments uses SES only
+ * when both flags are on for all recipients. Defaults to false (routes via
+ * Postman) when the flag is off or unset.
+ */
+export function isSesAttachmentsEnabledForRecipient(
+  recipientEmail: string,
+): Promise<boolean> {
+  return getLdFlagValue<boolean>(
+    'ses_attachments_enabled',
+    recipientEmail.toLowerCase(),
+    false,
+  )
 }
 
 /**
