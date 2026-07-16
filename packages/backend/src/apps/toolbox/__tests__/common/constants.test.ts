@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  IF_THEN_END_STEP_ID_PARAM,
+  IF_THEN_END_STEP_ID_CONFIG_KEY,
   isIfThenStep,
   isNewStyleIfThen,
   TOOLBOX_ACTIONS,
@@ -12,8 +12,8 @@ describe('toolbox constants', () => {
     expect(TOOLBOX_ACTIONS.ONLY_CONTINUE_IF).toBe('onlyContinueIf')
   })
 
-  it('exposes the endStepId parameter key', () => {
-    expect(IF_THEN_END_STEP_ID_PARAM).toBe('endStepId')
+  it('exposes the endStepId config key', () => {
+    expect(IF_THEN_END_STEP_ID_CONFIG_KEY).toBe('endStepId')
   })
 
   describe('isIfThenStep', () => {
@@ -36,12 +36,12 @@ describe('toolbox constants', () => {
   })
 
   describe('isNewStyleIfThen', () => {
-    it('is true when an if-then carries the endStepId key', () => {
+    it('is true when an if-then carries the endStepId config key', () => {
       expect(
         isNewStyleIfThen({
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { [IF_THEN_END_STEP_ID_PARAM]: 'step-abc' },
+          config: { [IF_THEN_END_STEP_ID_CONFIG_KEY]: 'step-abc' },
         }),
       ).toBe(true)
     })
@@ -51,7 +51,7 @@ describe('toolbox constants', () => {
         isNewStyleIfThen({
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { [IF_THEN_END_STEP_ID_PARAM]: 'own-id' },
+          config: { [IF_THEN_END_STEP_ID_CONFIG_KEY]: 'own-id' },
         }),
       ).toBe(true)
     })
@@ -61,22 +61,35 @@ describe('toolbox constants', () => {
         isNewStyleIfThen({
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { [IF_THEN_END_STEP_ID_PARAM]: undefined },
+          config: { [IF_THEN_END_STEP_ID_CONFIG_KEY]: undefined },
         }),
       ).toBe(true)
     })
 
-    it('is false for a legacy if-then without the endStepId key', () => {
+    it('is false for a legacy if-then without the endStepId config key', () => {
       expect(
         isNewStyleIfThen({
           appKey: 'toolbox',
           key: 'ifThen',
-          parameters: { depth: 0 },
+          config: { stepName: 'legacy branch' },
         }),
       ).toBe(false)
     })
 
-    it('is false when parameters is missing', () => {
+    it('ignores endStepId in parameters (config-only marker)', () => {
+      // A real Step carries both parameters and config; the marker only counts
+      // when it lives in config (cast because IfThenStepLike omits parameters).
+      expect(
+        isNewStyleIfThen({
+          appKey: 'toolbox',
+          key: 'ifThen',
+          parameters: { [IF_THEN_END_STEP_ID_CONFIG_KEY]: 'step-abc' },
+          config: {},
+        } as any),
+      ).toBe(false)
+    })
+
+    it('is false when config is missing', () => {
       expect(isNewStyleIfThen({ appKey: 'toolbox', key: 'ifThen' })).toBe(false)
     })
 
@@ -85,7 +98,7 @@ describe('toolbox constants', () => {
         isNewStyleIfThen({
           appKey: 'toolbox',
           key: 'onlyContinueIf',
-          parameters: { [IF_THEN_END_STEP_ID_PARAM]: 'step-abc' },
+          config: { [IF_THEN_END_STEP_ID_CONFIG_KEY]: 'step-abc' },
         }),
       ).toBe(false)
     })

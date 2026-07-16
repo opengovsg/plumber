@@ -4,7 +4,7 @@ import logger from '@/helpers/logger'
 import Step from '@/models/step'
 
 import {
-  IF_THEN_END_STEP_ID_PARAM,
+  IF_THEN_END_STEP_ID_CONFIG_KEY,
   isIfThenStep,
   isNewStyleIfThen,
 } from './constants'
@@ -22,33 +22,34 @@ async function loadFlowSteps($: IGlobalVariable): Promise<Step[]> {
  * if-then itself. Never silently degrades — a bad marker is a data bug.
  */
 function resolveEndStepOrThrow(
-  ifThen: { id: string; position: number; endStepId: string },
+  ifThen: Step,
   flowSteps: Step[],
   flowId: string,
 ): Step {
-  const endStep = flowSteps.find((step) => step.id === ifThen.endStepId)
+  const endStepId = ifThen.config[IF_THEN_END_STEP_ID_CONFIG_KEY] as string
+  const endStep = flowSteps.find((step) => step.id === endStepId)
   if (!endStep) {
     logger.error({
       event: 'if-then-dangling-end-step',
       ifThenStepId: ifThen.id,
-      endStepId: ifThen.endStepId,
+      endStepId,
       flowId,
     })
     throw new Error(
-      `If-then step ${ifThen.id} has a dangling endStepId ${ifThen.endStepId}`,
+      `If-then step ${ifThen.id} has a dangling endStepId ${endStepId}`,
     )
   }
   if (endStep.position < ifThen.position) {
     logger.error({
       event: 'if-then-end-step-before-self',
       ifThenStepId: ifThen.id,
-      endStepId: ifThen.endStepId,
+      endStepId,
       endStepPosition: endStep.position,
       ifThenPosition: ifThen.position,
       flowId,
     })
     throw new Error(
-      `If-then step ${ifThen.id} has an endStepId ${ifThen.endStepId} positioned before itself`,
+      `If-then step ${ifThen.id} has an endStepId ${endStepId} positioned before itself`,
     )
   }
   return endStep
@@ -67,39 +68,34 @@ function resolveEndStepOrThrow(
 export async function getStepIdToSkipTo(
   $: IGlobalVariable,
 ): Promise<string | null> {
+  // Always load the flow steps: $.step is the trimmed execution object without
+  // `config` (global-variable.ts), so both the endStepId marker and approval
+  // config must be read from the step's own DB row (a full Objection Step).
+  const flowSteps = await loadFlowSteps($)
+
   // if-then FALSE: $.step is the if-then whose single-branch block is skipped.
   if (isIfThenStep($.step)) {
-    // Legacy if-then (no endStepId marker) → depth-scan engine, verbatim. Read
-    // presence straight off $.step so this common path keeps a single query.
-    if (!isNewStyleIfThen($.step)) {
+    const ifThenStep = flowSteps.find((step) => step.id === $.step.id)
+
+    // Legacy if-then (no endStepId marker in config) → depth-scan engine,
+    // verbatim, so pure-legacy flows stay byte-identical.
+    if (!isNewStyleIfThen(ifThenStep)) {
       return getBranchStepIdToSkipTo_LEGACY($)
     }
 
-    const flowSteps = await loadFlowSteps($)
-
     // A new-style if-then must never carry approval config (writes are guarded).
-    // config is not carried on $.step, so read it off the DB row. If a corrupt
-    // one reaches here, degrade loudly to the legacy engine rather than throw —
-    // throwing would brick production MRF pipes.
-    const selfRow = flowSteps.find((step) => step.id === $.step.id)
-    if (selfRow?.config?.approval) {
+    // If a corrupt one reaches here, degrade loudly to the legacy engine rather
+    // than throw — throwing would brick production MRF pipes.
+    if (ifThenStep.config?.approval) {
       logger.error({
         event: 'if-then-end-step-on-approval-branch',
-        ifThenStepId: $.step.id,
+        ifThenStepId: ifThenStep.id,
         flowId: $.flow.id,
       })
       return getBranchStepIdToSkipTo_LEGACY($)
     }
 
-    const endStep = resolveEndStepOrThrow(
-      {
-        id: $.step.id,
-        position: $.step.position,
-        endStepId: $.step.parameters[IF_THEN_END_STEP_ID_PARAM] as string,
-      },
-      flowSteps,
-      $.flow.id,
-    )
+    const endStep = resolveEndStepOrThrow(ifThenStep, flowSteps, $.flow.id)
     // Empty block (self-ref) falls out naturally: getNextStep on the if-then
     // itself is the positional fall-through, identical to condition TRUE.
     return (await endStep.getNextStep())?.id ?? null
@@ -108,7 +104,6 @@ export async function getStepIdToSkipTo(
   // only-continue-if FALSE: the nearest preceding if-then decides. With disjoint
   // ranges no earlier block can enclose a step the nearest one doesn't, so there
   // is no outward walk.
-  const flowSteps = await loadFlowSteps($)
   const indexOfCurrentStep = flowSteps.findIndex(
     (step) => step.id === $.step.id,
   )
@@ -138,17 +133,7 @@ export async function getStepIdToSkipTo(
     return getBranchStepIdToSkipTo_LEGACY($)
   }
 
-  const endStep = resolveEndStepOrThrow(
-    {
-      id: governingIfThen.id,
-      position: governingIfThen.position,
-      endStepId: governingIfThen.parameters[
-        IF_THEN_END_STEP_ID_PARAM
-      ] as string,
-    },
-    flowSteps,
-    $.flow.id,
-  )
+  const endStep = resolveEndStepOrThrow(governingIfThen, flowSteps, $.flow.id)
 
   // Block-scoped abort: resume after the endStep iff the block encloses this
   // only-continue-if; else stop ("not inside any block").

@@ -15,15 +15,20 @@ export enum TOOLBOX_ACTIONS {
   ONLY_CONTINUE_IF = 'onlyContinueIf',
 }
 
-// Parameter key holding the id of the last step inside a new-style if-then block
-// (inclusive). Its presence (Object.hasOwn) — not its value — distinguishes a
-// new-style if-then from a legacy one. Empty block => self-reference (own id).
-export const IF_THEN_END_STEP_ID_PARAM = 'endStepId'
+// Config key holding the id of the last step inside a new-style if-then block
+// (inclusive). It lives in `config`, NOT `parameters` — a system-owned
+// structural marker like `config.approval`, outside the parameters pipeline and
+// invisible to the step form. Its presence (Object.hasOwn) — not its value —
+// distinguishes a new-style if-then from a legacy one. Empty block =>
+// self-reference (own id).
+export const IF_THEN_END_STEP_ID_CONFIG_KEY = 'endStepId'
 
 type IfThenStepLike = {
   appKey?: string | null
   key?: string | null
-  parameters?: Record<string, unknown> | null
+  // `object` (not Record<string, unknown>) so the IStepConfig interface — which
+  // has no index signature — is assignable when a full Step is passed in.
+  config?: object | null
 }
 
 export function isIfThenStep(step: IfThenStepLike | null | undefined): boolean {
@@ -37,7 +42,7 @@ export function isNewStyleIfThen(
 ): boolean {
   return (
     isIfThenStep(step) &&
-    Object.hasOwn(step?.parameters ?? {}, IF_THEN_END_STEP_ID_PARAM)
+    Object.hasOwn(step?.config ?? {}, IF_THEN_END_STEP_ID_CONFIG_KEY)
   )
 }
 

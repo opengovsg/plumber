@@ -534,15 +534,17 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
   const FLOW_ID = 'flow-new'
 
   // $ for an if-then step (condition already evaluated FALSE by the action).
-  const ifThen$ = (parameters: Record<string, any>) =>
+  // $.step is the trimmed execution object — no config, no endStepId; the
+  // dispatch reads the marker off the step's own flow-steps row.
+  const ifThen$ = (id = 'blk', position = 2) =>
     ({
       flow: { id: FLOW_ID },
       step: {
-        id: 'blk',
+        id,
         appKey: 'toolbox',
         key: 'ifThen',
-        position: 2,
-        parameters,
+        position,
+        parameters: {},
       },
     } as any)
 
@@ -582,8 +584,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'blk-last' },
+          config: { endStepId: 'blk-last' },
         },
         {
           id: 'blk-a',
@@ -602,7 +603,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         },
       ])
 
-      const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk-last' }))
+      const result = await getStepIdToSkipTo(ifThen$())
 
       expect(result).toBe('after-block')
       expect(endStep.getNextStep).toHaveBeenCalledOnce()
@@ -615,8 +616,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         appKey: 'toolbox',
         key: 'ifThen',
         position: 2,
-        config: {},
-        parameters: { endStepId: 'blk' },
+        config: { endStepId: 'blk' },
         getNextStep: vi.fn().mockResolvedValue({ id: 'next-step' }),
       }
       mocks.stepQueryResult.mockResolvedValue([
@@ -637,7 +637,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         },
       ])
 
-      const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk' }))
+      const result = await getStepIdToSkipTo(ifThen$())
 
       expect(result).toBe('next-step')
       expect(selfBlock.getNextStep).toHaveBeenCalledOnce()
@@ -665,13 +665,12 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'blk-last' },
+          config: { endStepId: 'blk-last' },
         },
         endStep,
       ])
 
-      const result = await getStepIdToSkipTo(ifThen$({ endStepId: 'blk-last' }))
+      const result = await getStepIdToSkipTo(ifThen$())
 
       expect(result).toBeNull()
     })
@@ -690,8 +689,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'ghost' },
+          config: { endStepId: 'ghost' },
         },
         {
           id: 'blk-a',
@@ -702,9 +700,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         },
       ])
 
-      await expect(
-        getStepIdToSkipTo(ifThen$({ endStepId: 'ghost' })),
-      ).rejects.toThrow(/dangling/i)
+      await expect(getStepIdToSkipTo(ifThen$())).rejects.toThrow(/dangling/i)
       expect(loggerErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({ event: 'if-then-dangling-end-step' }),
       )
@@ -724,14 +720,11 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'early' },
+          config: { endStepId: 'early' },
         },
       ])
 
-      await expect(
-        getStepIdToSkipTo(ifThen$({ endStepId: 'early' })),
-      ).rejects.toThrow()
+      await expect(getStepIdToSkipTo(ifThen$())).rejects.toThrow()
       expect(loggerErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({ event: 'if-then-end-step-before-self' }),
       )
@@ -751,8 +744,13 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
-          parameters: { endStepId: 'blk-last', depth: 0 },
+          // Corrupt: carries BOTH approval and endStepId (writes are guarded
+          // against this) → dispatch falls back to the legacy engine.
+          config: {
+            approval: { branch: 'reject', stepId: 'mrf1' },
+            endStepId: 'blk-last',
+          },
+          parameters: { depth: 0 },
         },
         {
           id: 'blk-last',
@@ -763,9 +761,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         },
       ])
 
-      const result = await getStepIdToSkipTo(
-        ifThen$({ endStepId: 'blk-last', depth: 0 }),
-      )
+      const result = await getStepIdToSkipTo(ifThen$())
 
       // No next if-then → the legacy engine returns null (stop).
       expect(result).toBeNull()
@@ -817,16 +813,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         },
       ])
 
-      const result = await getStepIdToSkipTo({
-        flow: { id: FLOW_ID },
-        step: {
-          id: 'b1',
-          appKey: 'toolbox',
-          key: 'ifThen',
-          position: 2,
-          parameters: { depth: 0 },
-        },
-      } as any)
+      const result = await getStepIdToSkipTo(ifThen$('b1', 2))
 
       expect(result).toBe('b2')
     })
@@ -860,8 +847,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 3,
-          config: {},
-          parameters: { endStepId: 'body-last' },
+          config: { endStepId: 'body-last' },
         },
         endStep,
         {
@@ -873,16 +859,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         },
       ])
 
-      const result = await getStepIdToSkipTo({
-        flow: { id: FLOW_ID },
-        step: {
-          id: 'blk',
-          appKey: 'toolbox',
-          key: 'ifThen',
-          position: 3,
-          parameters: { endStepId: 'body-last' },
-        },
-      } as any)
+      const result = await getStepIdToSkipTo(ifThen$('blk', 3))
 
       expect(result).toBe('body-after')
     })
@@ -911,8 +888,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 3,
-          config: {},
-          parameters: { endStepId: 'blk' },
+          config: { endStepId: 'blk' },
         },
       ])
 
@@ -995,8 +971,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'blk-last' },
+          config: { endStepId: 'blk-last' },
         },
         {
           id: 'oci',
@@ -1043,8 +1018,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'blk-last' },
+          config: { endStepId: 'blk-last' },
         },
         endStep,
         {
@@ -1091,8 +1065,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: {},
-          parameters: { endStepId: 'blk-last' },
+          config: { endStepId: 'blk-last' },
         },
         {
           id: 'oci',
@@ -1123,8 +1096,11 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
           appKey: 'toolbox',
           key: 'ifThen',
           position: 2,
-          config: { approval: { branch: 'reject', stepId: 'mrf1' } },
-          parameters: { endStepId: 'blk-last', depth: 0 },
+          config: {
+            approval: { branch: 'reject', stepId: 'mrf1' },
+            endStepId: 'blk-last',
+          },
+          parameters: { depth: 0 },
         },
         {
           id: 'oci',
