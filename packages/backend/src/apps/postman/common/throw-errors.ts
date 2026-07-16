@@ -68,6 +68,13 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
     return 'ERROR'
   }
 
+  // Pre-send size guard on the SES path: SES has no structured size error, so we
+  // enforce the 20MB total ourselves and surface it like Postman's
+  // `attachment_limit` → ATTACHMENT-SIZE-EXCEEDED.
+  if (error.name === 'AttachmentSizeExceededError') {
+    return 'ATTACHMENT-SIZE-EXCEEDED'
+  }
+
   // SES SDK errors expose $metadata.httpStatusCode
   const httpStatus = (error as { $metadata?: { httpStatusCode?: number } })
     .$metadata?.httpStatusCode
@@ -213,7 +220,7 @@ export function throwPostmanStepError({
     case 'ATTACHMENT-SIZE-EXCEEDED':
       throw new StepError(
         'Total attachment size exceeded',
-        'Check that the attachments do not exceed 10MB in total.',
+        'Check that the attachments do not exceed 20MB in total.',
         error,
       )
     case 'INTERMITTENT-ERROR':

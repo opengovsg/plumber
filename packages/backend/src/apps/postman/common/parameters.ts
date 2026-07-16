@@ -94,7 +94,7 @@ export const transactionalEmailFields: IField[] = [
   {
     label: 'Attachments',
     key: 'attachments',
-    description: `Check supported file types [here](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).\nPlease note that the maximum file size for each file is 2MB, and the total size of all attachments cannot exceed 10MB.`,
+    description: `Check supported file types [here](${POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL}).\nPlease note that the total size of all attachments cannot exceed 20MB.`, // TODO: update the guide on the supported file types
     type: 'attachment' as const,
     required: false,
     variables: true,
