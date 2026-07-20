@@ -1,5 +1,10 @@
 import type { IGlobalVariable, IRawAction } from '@plumber/types'
 
+import {
+  didConditionalStepSkip,
+  getParentConditionalSteps,
+} from '@/apps/toolbox/common/block-execution'
+import { isOnlyContinueIfStep } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import ExecutionStep from '@/models/execution-step'
@@ -12,6 +17,80 @@ import {
   parsedMrfWorkflowStepSchema,
   submittedStepsSchema,
 } from '../../common/types'
+
+import { findPreviousExecutableStep } from './previous-executable-step'
+
+/**
+ * A retried step can have several execution-step rows; only the latest one counts.
+ */
+async function getLatestExecutionStepsByStepId(
+  executionId: string,
+  stepIds: string[],
+): Promise<Map<string, ExecutionStep>> {
+  const executionSteps = await ExecutionStep.query()
+    .where('execution_id', executionId)
+    .whereIn('step_id', stepIds)
+    .orderBy('created_at', 'desc')
+
+  const latestByStepId = new Map<string, ExecutionStep>()
+  for (const executionStep of executionSteps) {
+    if (!latestByStepId.has(executionStep.stepId)) {
+      latestByStepId.set(executionStep.stepId, executionStep)
+    }
+  }
+  return latestByStepId
+}
+
+/**
+ * Checks whether the current execution has executed steps up until this
+ * sub-trigger.
+ *
+ * This is to handle MRF submissions arriving too early (i.e. before steps in
+ * before this sub-trigger could finish running).
+ */
+async function hasExecutionReachedMe(
+  executionId: string,
+  flowSteps: Step[],
+  previousExecutableStep: Step,
+): Promise<boolean> {
+  const parentConditionalSteps = getParentConditionalSteps(
+    flowSteps,
+    previousExecutableStep,
+  )
+  const latestExecutionSteps = await getLatestExecutionStepsByStepId(
+    executionId,
+    [
+      previousExecutableStep.id,
+      ...parentConditionalSteps.map((step) => step.id),
+    ],
+  )
+
+  const previousExecutableExecutionStep = latestExecutionSteps.get(
+    previousExecutableStep.id,
+  )
+  // Defense in depth: never proceed past an immediately preceding failed step.
+  if (previousExecutableExecutionStep?.isFailed) {
+    return false
+  }
+  if (previousExecutableExecutionStep) {
+    // A top-level only-continue-if (i.e. not guarded by an enclosing if-then
+    // V2 block) stops the whole execution on a FALSE condition instead of
+    // skipping forward, so its own success record must not be read as
+    // "reached" here.
+    const isUnguardedStop =
+      parentConditionalSteps.length === 0 &&
+      isOnlyContinueIfStep(previousExecutableStep) &&
+      didConditionalStepSkip(
+        previousExecutableStep,
+        previousExecutableExecutionStep,
+      )
+    return !isUnguardedStop
+  }
+
+  return parentConditionalSteps.some((step) =>
+    didConditionalStepSkip(step, latestExecutionSteps.get(step.id)),
+  )
+}
 
 function validateMrfStep($: IGlobalVariable): ParsedMrfWorkflowStep {
   const { mrf } = $.step.parameters as unknown as {
@@ -116,12 +195,13 @@ const action: IRawAction = {
      * Find the previous executable trigger/action step in the workflow
      * that should be already executed in order for this current step to proceed
      */
-    const previousExecutableStep = await Step.query()
+    const flowSteps = await Step.query()
       .where('flow_id', $.flow.id)
-      .andWhere('position', '<', $.step.position)
-      .andWhereRaw(`config -> 'approval' IS NULL`) // exclude steps in reject branch
-      .orderBy('position', 'desc')
-      .first()
+      .orderBy('position', 'asc')
+    const previousExecutableStep = findPreviousExecutableStep(
+      flowSteps,
+      $.step.position,
+    )
     if (!previousExecutableStep) {
       throw new StepError(
         'Previous executable step not found',
@@ -129,21 +209,19 @@ const action: IRawAction = {
       )
     }
 
-    const previousExecutableExecutionStep = await ExecutionStep.query()
-      .where('step_id', previousExecutableStep.id)
-      .andWhere('execution_id', $.execution.id)
-      .orderBy('created_at', 'desc')
-      .first()
-
     if (
-      !previousExecutableExecutionStep ||
-      previousExecutableExecutionStep.isFailed
+      !(await hasExecutionReachedMe(
+        $.execution.id,
+        flowSteps,
+        previousExecutableStep,
+      ))
     ) {
       // end and do nothing
       logger.info({
         event:
           'mrf-submission - previous executable execution step not found or failed',
         executionId: $.execution.id,
+        previousExecutableStepId: previousExecutableStep.id,
       })
       return {
         nextStep: {
