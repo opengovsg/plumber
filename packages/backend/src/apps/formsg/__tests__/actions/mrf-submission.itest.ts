@@ -385,4 +385,174 @@ describe('mrf-submission action (integration)', () => {
       expect(result).toBeUndefined()
     })
   })
+
+  /**
+   * Region confinement lets a block end right before an MRF step, so a FALSE
+   * condition can resume execution there with the block's last step never run.
+   * That "missing execution step" must not be read as "not reached yet".
+   */
+  describe('run - previous executable step inside an if-then V2 block', () => {
+    let mrfStep2: Step
+    let ifThenStep: Step
+    let blockChild: Step
+    let mrfStep3: Step
+    let execution: Execution
+
+    beforeEach(async () => {
+      mrfStep2 = await createMrfActionStep(2)
+      blockChild = await generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        FLOW_ID,
+        4,
+      )
+      ifThenStep = await generateMockStep(
+        context,
+        'ifThen',
+        'toolbox',
+        'action',
+        FLOW_ID,
+        3,
+        {},
+        { endStepId: blockChild.id },
+      )
+      mrfStep3 = await createMrfActionStep(5)
+
+      execution = await Execution.query().insertAndFetch({
+        flowId: FLOW_ID,
+        testRun: false,
+      })
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: triggerStep.id,
+        status: 'success',
+        dataOut: {},
+        appKey: 'formsg',
+      })
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: mrfStep2.id,
+        status: 'success',
+        dataOut: {},
+        appKey: 'formsg',
+      })
+      // The next respondent has already submitted.
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: mrfStep3.id,
+        status: 'success',
+        dataOut: {
+          workflowContent: {
+            submittedSteps: [
+              { isApproval: false, submittedAt: '2024-01-01T00:00:00.000Z' },
+            ],
+          },
+        },
+        appKey: 'formsg',
+      })
+    })
+
+    async function insertIfThenExecutionStep(isConditionMet: boolean) {
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: ifThenStep.id,
+        status: 'success',
+        dataOut: { isConditionMet },
+        appKey: 'toolbox',
+      })
+    }
+
+    async function insertBlockChildExecutionStep() {
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: blockChild.id,
+        status: 'success',
+        dataOut: {},
+        appKey: 'postman',
+      })
+    }
+
+    it('should continue when the block was skipped by a FALSE condition', async () => {
+      await insertIfThenExecutionStep(false)
+
+      const $ = createGlobalVariable(mrfStep3, execution)
+
+      expect(await action.run($)).toBeUndefined()
+    })
+
+    it('should continue when the block ran to its end', async () => {
+      await insertIfThenExecutionStep(true)
+      await insertBlockChildExecutionStep()
+
+      const $ = createGlobalVariable(mrfStep3, execution)
+
+      expect(await action.run($)).toBeUndefined()
+    })
+
+    it('should pause execution while a TRUE block is still running', async () => {
+      await insertIfThenExecutionStep(true)
+
+      const $ = createGlobalVariable(mrfStep3, execution)
+
+      expect(await action.run($)).toEqual({
+        nextStep: { command: 'pause-execution' },
+      })
+    })
+
+    it('should pause execution before the if-then itself has run', async () => {
+      const $ = createGlobalVariable(mrfStep3, execution)
+
+      expect(await action.run($)).toEqual({
+        nextStep: { command: 'pause-execution' },
+      })
+    })
+
+    it('should pause execution when the if-then failed', async () => {
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: ifThenStep.id,
+        status: 'failure',
+        dataOut: { isConditionMet: false },
+        appKey: 'toolbox',
+      })
+
+      const $ = createGlobalVariable(mrfStep3, execution)
+
+      expect(await action.run($)).toEqual({
+        nextStep: { command: 'pause-execution' },
+      })
+    })
+
+    it('should continue when an only-continue-if inside the block aborted it', async () => {
+      // Add an only-continue-if inside the block, between the if-then and its
+      // last child.
+      await mrfStep3.$query().patch({ position: 6 })
+      await blockChild.$query().patch({ position: 5 })
+      const onlyContinueIfStep = await generateMockStep(
+        context,
+        'onlyContinueIf',
+        'toolbox',
+        'action',
+        FLOW_ID,
+        4,
+      )
+      await insertIfThenExecutionStep(true)
+      await ExecutionStep.query().insert({
+        executionId: execution.id,
+        stepId: onlyContinueIfStep.id,
+        status: 'success',
+        dataOut: { result: false },
+        appKey: 'toolbox',
+      })
+
+      const $ = createGlobalVariable(
+        await Step.query().findById(mrfStep3.id),
+        execution,
+      )
+
+      expect(await action.run($)).toBeUndefined()
+    })
+  })
 })
