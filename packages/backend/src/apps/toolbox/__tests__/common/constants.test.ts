@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BLOCK_END_STEP_ID,
+  isBlockStep,
+  isForEachStep,
   isIfThenStep,
   isIfThenV2,
   isOnlyContinueIfStep,
@@ -54,6 +56,40 @@ describe('toolbox constants', () => {
       { label: 'undefined step', step: undefined },
     ])('is false for $label', ({ step }) => {
       expect(isOnlyContinueIfStep(step)).toBe(false)
+    })
+  })
+
+  describe('isForEachStep', () => {
+    it('is true for a toolbox for-each step', () => {
+      expect(isForEachStep({ appKey: 'toolbox', key: 'forEach' })).toBe(true)
+    })
+
+    it.each([
+      { label: 'if-then', step: { appKey: 'toolbox', key: 'ifThen' } },
+      { label: 'non-toolbox app', step: { appKey: 'formsg', key: 'forEach' } },
+      { label: 'undefined step', step: undefined },
+    ])('is false for $label', ({ step }) => {
+      expect(isForEachStep(step)).toBe(false)
+    })
+  })
+
+  describe('isBlockStep', () => {
+    it.each([
+      { label: 'if-then', step: { appKey: 'toolbox', key: 'ifThen' } },
+      { label: 'for-each', step: { appKey: 'toolbox', key: 'forEach' } },
+    ])('is true for a block step: $label', ({ step }) => {
+      expect(isBlockStep(step)).toBe(true)
+    })
+
+    it.each([
+      {
+        label: 'only-continue-if',
+        step: { appKey: 'toolbox', key: 'onlyContinueIf' },
+      },
+      { label: 'plain action', step: { appKey: 'postman', key: 'sendEmail' } },
+      { label: 'undefined step', step: undefined },
+    ])('is false for a non-block step: $label', ({ step }) => {
+      expect(isBlockStep(step)).toBe(false)
     })
   })
 

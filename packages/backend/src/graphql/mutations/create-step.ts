@@ -2,6 +2,8 @@ import { IStepConfig } from '@plumber/types'
 
 import { raw } from 'objection'
 
+import { BLOCK_END_STEP_ID } from '@/apps/toolbox/common/constants'
+import { validateEndStepOnCreateStep } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
@@ -12,6 +14,21 @@ import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
+
+// Config keys the server owns; a client must never set them directly on create.
+// endStepId is maintained entirely by the endStep write rules (and
+// duplicateBranch's DB-derived remap).
+const SERVER_OWNED_CONFIG_KEYS = [BLOCK_END_STEP_ID] as const
+
+function sanitizeServerSideConfig(
+  config: IStepConfig | null | undefined,
+): IStepConfig {
+  const sanitized = { ...(config ?? {}) }
+  for (const key of SERVER_OWNED_CONFIG_KEYS) {
+    delete sanitized[key]
+  }
+  return sanitized
+}
 
 const createStep: MutationResolvers['createStep'] = async (
   _parent,
@@ -82,8 +99,10 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
+    const newStepConfig = sanitizeServerSideConfig(input.config as IStepConfig)
+
     const validationResult = await validateApprovalConfig(
-      input.config as IStepConfig,
+      newStepConfig,
       previousStep,
     )
     if (!validationResult.isApprovalConfigValid) {
@@ -106,8 +125,18 @@ const createStep: MutationResolvers['createStep'] = async (
       position: validationResult.newStepPosition,
       parameters: input.parameters,
       connectionId: input.connection?.id,
-      config: input.config as IStepConfig,
+      config: newStepConfig,
       version,
+    })
+
+    // Maintain if-then endStep markers for the new step, in-transaction. Any
+    // violation throws and rolls back the whole creation.
+    await validateEndStepOnCreateStep({
+      trx,
+      flow,
+      previousBlockId: input.previousBlockId,
+      previousStep,
+      newStep: step,
     })
 
     // NOTE: add flow connection to the flow_connections table

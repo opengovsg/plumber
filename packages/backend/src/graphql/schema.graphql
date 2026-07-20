@@ -691,6 +691,10 @@ input CreateStepInput {
   parameters: JSONObject
   previousStep: PreviousStepInput
   config: StepConfigInput
+  # if-then stepId of the block the new step is placed immediately AFTER.
+  # Presence = "outside that block" — the one intent the server cannot infer;
+  # it triggers the server-side lazy upgrade / marker pin for that block.
+  previousBlockId: ID
 }
 
 input StepApprovalConfigInput {
@@ -706,6 +710,10 @@ input StepConfigInput {
   stepName: String
   approval: StepApprovalConfigInput
   templateConfig: StepTemplateConfigInput
+  # System-owned structural marker: id of the last step (inclusive) inside a
+  # block (e.g. if-then V2, maybe for-each).
+  # For now, only the if-then initializer writes this via updateStep.
+  endStepId: String
 }
 
 input UpdateStepInput {
@@ -826,6 +834,7 @@ type StepConfig {
   templateConfig: StepTemplateConfig
   stepName: String
   approval: StepApprovalConfig
+  endStepId: String
 }
 
 type StepTemplateConfig {

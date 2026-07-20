@@ -27,8 +27,9 @@ export const BLOCK_END_STEP_ID = 'endStepId'
 
 // The minimal step shape these predicates read, derived from IStep so it stays
 // in sync. Not IStep itself: the execution context's $.step is trimmed (no
-// config) and unit-test fixtures are partials — neither is a full IStep.
-type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
+// config) and unit-test fixtures are partials — neither is a full IStep. Also
+// reused as a base for the slightly wider shapes elsewhere in the toolbox.
+export type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
 
 export function isIfThenStep(step: StepLike | null | undefined): boolean {
   return (
@@ -43,6 +44,18 @@ export function isOnlyContinueIfStep(
     step?.appKey === TOOLBOX_APP_KEY &&
     step?.key === TOOLBOX_ACTIONS.ONLY_CONTINUE_IF
   )
+}
+
+export function isForEachStep(step: StepLike | null | undefined): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.FOR_EACH
+  )
+}
+
+// A block-like step groups a range of later steps under itself (if-then or
+// for-each). Everything else is a plain step that can be a block member.
+export function isBlockStep(step: StepLike | null | undefined): boolean {
+  return isIfThenStep(step) || isForEachStep(step)
 }
 
 // A new-style ("v2") if-then carries the block endStep marker in config;
