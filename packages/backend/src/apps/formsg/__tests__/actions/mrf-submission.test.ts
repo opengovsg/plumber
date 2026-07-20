@@ -217,31 +217,48 @@ describe('mrf-submission action', () => {
   })
 
   describe('run', () => {
-    function setupRunMocks() {
-      // Chain mocks for Step.query().where().andWhere()...
-      const stepChain = {
-        andWhere: vi.fn().mockReturnThis(),
-        andWhereRaw: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        first: vi.fn(),
-      }
-      mocks.stepQueryWhere.mockReturnValue(stepChain)
+    const PREVIOUS_STEP = { id: 'prev-step-id', position: 1 }
 
-      // Chain mocks for ExecutionStep.query().where().andWhere()...
+    /**
+     * Both query chains resolve on `orderBy`, so that's where the mocked rows
+     * are attached.
+     */
+    function setupRunMocks({
+      flowSteps = [PREVIOUS_STEP],
+      executionSteps = [],
+    }: {
+      flowSteps?: unknown[]
+      executionSteps?: unknown[]
+    } = {}) {
+      const flowStepsChain = {
+        orderBy: vi.fn().mockResolvedValue(flowSteps),
+      }
+      mocks.stepQueryWhere.mockReturnValue(flowStepsChain)
+
       const executionStepChain = {
-        andWhere: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        first: vi.fn(),
+        whereIn: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockResolvedValue(executionSteps),
       }
       mocks.executionStepQueryWhere.mockReturnValue(executionStepChain)
 
-      return { stepChain, executionStepChain }
+      // Chain mock for the rejection-branch lookup, which is still one query.
+      const rejectStepChain = {
+        andWhere: vi.fn().mockReturnThis(),
+        andWhereRaw: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        first: vi.fn().mockResolvedValue(null),
+      }
+
+      return { flowStepsChain, executionStepChain, rejectStepChain }
+    }
+
+    function ranSuccessfully(stepId: string) {
+      return { stepId, isFailed: false }
     }
 
     it('should throw when previous executable step is not found', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue(null)
+      setupRunMocks({ flowSteps: [] })
 
       await expect(action.run($)).rejects.toThrow(
         'Previous executable step not found',
@@ -250,9 +267,7 @@ describe('mrf-submission action', () => {
 
     it('should pause execution when previous execution step is not found', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue(null)
+      setupRunMocks({ executionSteps: [] })
 
       const result = await action.run($)
 
@@ -263,9 +278,9 @@ describe('mrf-submission action', () => {
 
     it('should pause execution when previous execution step is failed', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: true })
+      setupRunMocks({
+        executionSteps: [{ stepId: PREVIOUS_STEP.id, isFailed: true }],
+      })
 
       const result = await action.run($)
 
@@ -276,9 +291,7 @@ describe('mrf-submission action', () => {
 
     it('should pause execution when current execution step webhook has not arrived - the next respondent has not submitted yet', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue(
         null,
       )
@@ -292,9 +305,7 @@ describe('mrf-submission action', () => {
 
     it('should throw when submitted steps are invalid', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
         dataOut: {
           workflowContent: {
@@ -310,9 +321,7 @@ describe('mrf-submission action', () => {
 
     it('should throw when submitted step is not found', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
         dataOut: {
           workflowContent: {
@@ -328,9 +337,7 @@ describe('mrf-submission action', () => {
 
     it('should continue when mrf step does not require approval', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
         dataOut: {
           workflowContent: {
@@ -351,9 +358,7 @@ describe('mrf-submission action', () => {
 
     it('should continue when mrf step is approved', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-      stepChain.first.mockResolvedValue({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      setupRunMocks({ executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)] })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
         dataOut: {
           workflowContent: {
@@ -373,13 +378,33 @@ describe('mrf-submission action', () => {
       expect(result).toBeUndefined()
     })
 
+    it('should use the latest execution step of a retried previous step', async () => {
+      const $ = createMockGlobalVariable()
+      // Ordered created_at desc by the query, so the retry's success comes first.
+      setupRunMocks({
+        executionSteps: [
+          ranSuccessfully(PREVIOUS_STEP.id),
+          { stepId: PREVIOUS_STEP.id, isFailed: true },
+        ],
+      })
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          workflowContent: {
+            submittedSteps: [{ isApproval: false, submittedAt: '2024-01-01' }],
+          },
+        },
+      })
+
+      const result = await action.run($)
+
+      expect(result).toBeUndefined()
+    })
+
     it('should jump to rejection branch step when rejected', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-
-      // First call: find previous executable step
-      stepChain.first.mockResolvedValueOnce({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      const { flowStepsChain, rejectStepChain } = setupRunMocks({
+        executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)],
+      })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
         dataOut: {
           workflowContent: {
@@ -394,15 +419,10 @@ describe('mrf-submission action', () => {
         },
       })
 
-      // Second call: find rejection branch step
-      const rejectStepChain = {
-        andWhere: vi.fn().mockReturnThis(),
-        andWhereRaw: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        first: vi.fn().mockResolvedValue({ id: 'reject-step-id' }),
-      }
+      // Second Step.query(): find the rejection branch step
+      rejectStepChain.first.mockResolvedValue({ id: 'reject-step-id' })
       mocks.stepQueryWhere
-        .mockReturnValueOnce(stepChain)
+        .mockReturnValueOnce(flowStepsChain)
         .mockReturnValueOnce(rejectStepChain)
 
       const result = await action.run($)
@@ -417,10 +437,9 @@ describe('mrf-submission action', () => {
 
     it('should stop execution when rejected but no rejection branch exists', async () => {
       const $ = createMockGlobalVariable()
-      const { stepChain, executionStepChain } = setupRunMocks()
-
-      stepChain.first.mockResolvedValueOnce({ id: 'prev-step-id' })
-      executionStepChain.first.mockResolvedValue({ isFailed: false })
+      const { flowStepsChain, rejectStepChain } = setupRunMocks({
+        executionSteps: [ranSuccessfully(PREVIOUS_STEP.id)],
+      })
       ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
         dataOut: {
           workflowContent: {
@@ -435,21 +454,78 @@ describe('mrf-submission action', () => {
         },
       })
 
-      // Second call: no rejection branch found
-      const rejectStepChain = {
-        andWhere: vi.fn().mockReturnThis(),
-        andWhereRaw: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        first: vi.fn().mockResolvedValue(null),
-      }
+      // Second Step.query(): no rejection branch found
       mocks.stepQueryWhere
-        .mockReturnValueOnce(stepChain)
+        .mockReturnValueOnce(flowStepsChain)
         .mockReturnValueOnce(rejectStepChain)
 
       const result = await action.run($)
 
       expect(result).toEqual({
         nextStep: { command: 'stop-execution' },
+      })
+    })
+
+    it('should continue when the previous executable step was skipped by a FALSE if-then V2 block', async () => {
+      const $ = createMockGlobalVariable()
+      const ifThenStep = {
+        id: 'if-then-id',
+        position: 1,
+        appKey: 'toolbox',
+        key: 'ifThen',
+        config: { endStepId: 'prev-step-id' },
+      }
+      // The block's only child is the previous executable step, so it has no
+      // execution step of its own — the if-then's FALSE result is the proof.
+      setupRunMocks({
+        flowSteps: [ifThenStep, { ...PREVIOUS_STEP, position: 2 }],
+        executionSteps: [
+          {
+            stepId: ifThenStep.id,
+            isFailed: false,
+            dataOut: { isConditionMet: false },
+          },
+        ],
+      })
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          workflowContent: {
+            submittedSteps: [{ isApproval: false, submittedAt: '2024-01-01' }],
+          },
+        },
+      })
+
+      const result = await action.run($)
+
+      expect(result).toBeUndefined()
+    })
+
+    it('should pause execution while a TRUE if-then V2 block is still running', async () => {
+      const $ = createMockGlobalVariable()
+      const ifThenStep = {
+        id: 'if-then-id',
+        position: 1,
+        appKey: 'toolbox',
+        key: 'ifThen',
+        config: { endStepId: 'prev-step-id' },
+      }
+      // Condition met, so the block is running and its last step has not
+      // finished — the workflow must not move past this MRF step yet.
+      setupRunMocks({
+        flowSteps: [ifThenStep, { ...PREVIOUS_STEP, position: 2 }],
+        executionSteps: [
+          {
+            stepId: ifThenStep.id,
+            isFailed: false,
+            dataOut: { isConditionMet: true },
+          },
+        ],
+      })
+
+      const result = await action.run($)
+
+      expect(result).toEqual({
+        nextStep: { command: 'pause-execution' },
       })
     })
   })
