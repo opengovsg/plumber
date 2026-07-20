@@ -23,8 +23,9 @@ export enum TOOLBOX_ACTIONS {
 export const BLOCK_END_STEP_ID = 'endStepId'
 
 // Not IStep itself: the execution context's $.step is trimmed (no config), and
-// unit-test fixtures pass partials — neither is a full IStep.
-type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
+// unit-test fixtures pass partials — neither is a full IStep. Also reused as
+// a base for the slightly wider shapes elsewhere in the toolbox.
+export type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
 
 export function isIfThenStep(step: StepLike | null | undefined): boolean {
   return (
@@ -39,6 +40,16 @@ export function isOnlyContinueIfStep(
     step?.appKey === TOOLBOX_APP_KEY &&
     step?.key === TOOLBOX_ACTIONS.ONLY_CONTINUE_IF
   )
+}
+
+export function isForEachStep(step: StepLike | null | undefined): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.FOR_EACH
+  )
+}
+
+export function isBlockStep(step: StepLike | null | undefined): boolean {
+  return isIfThenStep(step) || isForEachStep(step)
 }
 
 // IMPORTANT: presence (Object.hasOwn), not value, distinguishes an if-then V2

@@ -1,5 +1,6 @@
 import { IAction } from '@/../../types'
 import apps from '@/apps'
+import { validateEndStepOnUpdateStep } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   addFlowConnection,
@@ -84,6 +85,15 @@ const updateStep: MutationResolvers['updateStep'] = async (
     const stepName = input?.config?.stepName ?? step?.config?.stepName
     const existingConfig = step?.config ?? {}
 
+    // Returns {} when absent so the config spread below preserves any existing
+    // marker; throws (rolls back) on an invalid target.
+    const endStepConfig = await validateEndStepOnUpdateStep({
+      trx,
+      step,
+      inputConfig: input.config,
+      flowId: input.flow.id,
+    })
+
     let parameters = input.parameters
     let version = step.version
 
@@ -113,6 +123,7 @@ const updateStep: MutationResolvers['updateStep'] = async (
           ...existingConfig,
           // NOTE: check for undefined to allow empty string, which defaults to the action/trigger name
           ...(stepName !== undefined ? { stepName } : {}),
+          ...endStepConfig,
         },
       })
       .withGraphFetched({
