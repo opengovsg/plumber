@@ -180,6 +180,10 @@ export interface IStepApprovalConfig {
 export interface IStepConfig {
   stepName?: string
   approval?: IStepApprovalConfig
+  // Id of the last step (inclusive) inside an if-then V2 block, absent on
+  // if-then V1 steps. System-owned like `approval`, set only by the backend
+  // and never surfaced in the step form.
+  endStepId?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
 }

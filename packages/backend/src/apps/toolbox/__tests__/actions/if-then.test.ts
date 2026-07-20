@@ -312,8 +312,10 @@ describe('If-then', () => {
         condition: 'equals',
         text: 9999,
       })
-      // Exclude all of branch-2 from pipe for this test.
-      mocks.stepQueryResult.mockResolvedValueOnce(FLAT_PIPE_STEPS.slice(0, 3))
+      // Exclude all of branch-2 from pipe for this test. getStepIdToSkipTo
+      // pre-queries to read the step's config, then the legacy engine queries
+      // again on the marker-less path — so both reads need the same steps.
+      mocks.stepQueryResult.mockResolvedValue(FLAT_PIPE_STEPS.slice(0, 3))
       const result = await ifThenAction.run($)
 
       expect(result).toEqual({
