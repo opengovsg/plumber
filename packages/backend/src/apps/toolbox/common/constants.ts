@@ -1,3 +1,5 @@
+import type { IStep } from '@plumber/types'
+
 export const FOR_EACH_ITERATION_KEY = '__ITERATION__'
 export enum FOR_EACH_INPUT_SOURCE {
   M365_EXCEL = 'm365-excel',
@@ -12,6 +14,43 @@ export const TOOLBOX_APP_KEY = 'toolbox'
 export enum TOOLBOX_ACTIONS {
   FOR_EACH = 'forEach',
   IF_THEN = 'ifThen',
+  ONLY_CONTINUE_IF = 'onlyContinueIf',
+}
+
+// Config key holding the id of the last step (inclusive) inside a block-like
+// action's range. Generic across block actions — if-then today, for-each-ready.
+// It lives in `config`, NOT `parameters`: a system-owned structural marker like
+// `config.approval`, outside the parameters pipeline and invisible to the step
+// form. Its presence (Object.hasOwn) — not its value — distinguishes a new-style
+// block from a legacy one. Empty block => self-reference (own id).
+export const BLOCK_END_STEP_ID = 'endStepId'
+
+// The minimal step shape these predicates read, derived from IStep so it stays
+// in sync. Not IStep itself: the execution context's $.step is trimmed (no
+// config) and unit-test fixtures are partials — neither is a full IStep.
+type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
+
+export function isIfThenStep(step: StepLike | null | undefined): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.IF_THEN
+  )
+}
+
+export function isOnlyContinueIfStep(
+  step: StepLike | null | undefined,
+): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY &&
+    step?.key === TOOLBOX_ACTIONS.ONLY_CONTINUE_IF
+  )
+}
+
+// A new-style ("v2") if-then carries the block endStep marker in config;
+// presence (Object.hasOwn) — not value — distinguishes it from a legacy one.
+export function isIfThenV2(step: StepLike | null | undefined): boolean {
+  return (
+    isIfThenStep(step) && Object.hasOwn(step?.config ?? {}, BLOCK_END_STEP_ID)
+  )
 }
 
 export const FOR_EACH_TABLE_SOURCES = [
