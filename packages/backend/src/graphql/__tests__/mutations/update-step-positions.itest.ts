@@ -1,8 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStepPositions from '@/graphql/mutations/update-step-positions'
+import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
+import User from '@/models/user'
+import Context from '@/types/express/context'
+
+// Defaults to false in beforeEach below so pre-existing tests here stay
+// byte-identical; the opportunistic-upgrade tests override it per case.
+const mocks = vi.hoisted(() => ({
+  getLdFlagValue: vi.fn(),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 
@@ -65,6 +79,7 @@ describe('updateStepPositions mutation', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Set up flow patch and fetch spy first
     flowPatchAndFetchSpy = vi.fn().mockReturnValue({
@@ -82,6 +97,11 @@ describe('updateStepPositions mutation', () => {
       active: false,
       $query: vi.fn().mockReturnValue({
         patchAndFetch: flowPatchAndFetchSpy,
+      }),
+      // Used by upgradeIfThenV1BlocksIfEnabled's re-fetch; MOCK_STEPS has no
+      // if-then steps, so it's a no-op regardless of what this returns.
+      $relatedQuery: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue(MOCK_STEPS),
       }),
       assertNotUpdatedSince: vi.fn(),
     }
@@ -106,6 +126,8 @@ describe('updateStepPositions mutation', () => {
     })
     vi.spyOn(Step, 'query').mockReturnValue({
       findById: stepFindByIdSpy,
+      // Subquery builder used to scope the step load to the flow.
+      select: vi.fn().mockReturnValue({ whereIn: vi.fn() }),
     } as any)
 
     // Fake the chained query methods on context.currentUser.$relatedQuery('steps')
@@ -322,5 +344,220 @@ describe('updateStepPositions mutation', () => {
     await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
       'Failed to update: steps were not found',
     )
+  })
+})
+
+// Real-DB integration tests for reorder marker repair. Kept separate from the
+// mock-based suite above (which stubs Step.query/transaction) so the repair
+// runs against real flow steps.
+describe('updateStepPositions endStepId repair', () => {
+  let testFlow: Flow
+  let owner: User
+  let context: Context
+  let loggerInfoSpy: MockInstance
+
+  const flowInput = () => ({
+    updatedAt: new Date(testFlow.updatedAt).getTime().toString(),
+  })
+
+  async function seedSteps(
+    specs: Array<{
+      key: string | null
+      appKey: string | null
+      type: 'trigger' | 'action'
+      config?: Record<string, any>
+      parameters?: Record<string, any>
+    }>,
+  ): Promise<Step[]> {
+    return testFlow.$relatedQuery('steps').insertAndFetch(
+      specs.map((spec, index) => ({
+        key: spec.key,
+        appKey: spec.appKey,
+        type: spec.type,
+        position: index + 1,
+        parameters: spec.parameters ?? {},
+        config: spec.config ?? {},
+      })),
+    ) as unknown as Promise<Step[]>
+  }
+
+  const reload = async (id: string): Promise<Step> =>
+    Step.query().findById(id).throwIfNotFound()
+
+  const wasRepaired = () =>
+    loggerInfoSpy.mock.calls.some(
+      ([arg]) =>
+        arg?.event === 'end-step-repaired' &&
+        arg?.mutation === 'updateStepPositions',
+    )
+
+  beforeEach(async () => {
+    vi.restoreAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
+
+    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    context = {
+      req: null,
+      currentUser: owner,
+      res: null,
+      isAdminOperation: false,
+    } as unknown as Context
+
+    testFlow = await owner.$relatedQuery('flows').insertAndFetch({
+      name: 'Reorder Flow',
+      updatedBy: owner.id,
+    })
+
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => null)
+  })
+
+  it('moves the endStep marker to the new highest member after an interior reorder', async () => {
+    const [, ifThen, s3, s4, s5] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+    await ifThen.$query().patch({ config: { endStepId: s5.id } })
+
+    // Reorder the block interior [s3, s4, s5] -> [s5, s3, s4].
+    await updateStepPositions(
+      null,
+      {
+        input: {
+          stepPositions: [
+            { id: s5.id, position: 3, type: 'action' as const },
+            { id: s3.id, position: 4, type: 'action' as const },
+            { id: s4.id, position: 5, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect((await reload(ifThen.id)).config.endStepId).toBe(s4.id)
+    expect(wasRepaired()).toBe(true)
+  })
+
+  it('leaves the marker untouched when the reorder does not touch the block', async () => {
+    const [, ifThen, s3, a4, a5] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+    await ifThen.$query().patch({ config: { endStepId: s3.id } })
+
+    // Reorder two later steps that sit outside the block.
+    await updateStepPositions(
+      null,
+      {
+        input: {
+          stepPositions: [
+            { id: a5.id, position: 4, type: 'action' as const },
+            { id: a4.id, position: 5, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect((await reload(ifThen.id)).config.endStepId).toBe(s3.id)
+    expect(wasRepaired()).toBe(false)
+  })
+
+  it('reorders a legacy (marker-less) flow without writing any marker', async () => {
+    const [, legacy, s3, s4] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+
+    await updateStepPositions(
+      null,
+      {
+        input: {
+          stepPositions: [
+            { id: s4.id, position: 3, type: 'action' as const },
+            { id: s3.id, position: 4, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect((await reload(legacy.id)).config.endStepId).toBeUndefined()
+    expect(wasRepaired()).toBe(false)
+  })
+
+  describe('opportunistic if-then V1 upgrade', () => {
+    // trigger, ifThenA, childA, ifThenB, childB, trailing — both if-thens are
+    // legacy. Dragging ifThenB's block to before ifThenA's is the exact
+    // reported-bug shape: without pinning ifThenA's extent BEFORE the drag,
+    // re-deriving it afterwards (once it's the last if-then) would silently
+    // balloon to include `trailing`.
+    async function seedTwoBlockFlow() {
+      return seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      ])
+    }
+
+    const swapBlocksInput = (
+      ifThenB: Step,
+      childB: Step,
+      ifThenA: Step,
+      childA: Step,
+    ) => ({
+      stepPositions: [
+        { id: ifThenB.id, position: 2, type: 'action' as const },
+        { id: childB.id, position: 3, type: 'action' as const },
+        { id: ifThenA.id, position: 4, type: 'action' as const },
+        { id: childA.id, position: 5, type: 'action' as const },
+      ],
+      flow: flowInput(),
+    })
+
+    it('pins both legacy blocks to their pre-reorder extents so the drag does not absorb the trailing step', async () => {
+      const [, ifThenA, childA, ifThenB, childB, trailing] =
+        await seedTwoBlockFlow()
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      await updateStepPositions(
+        null,
+        { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
+        context,
+      )
+
+      // ifThenA's block stays pinned to just childA — `trailing` is not
+      // absorbed into it, even though ifThenA is now the last if-then.
+      expect((await reload(ifThenA.id)).config.endStepId).toBe(childA.id)
+      expect((await reload(ifThenB.id)).config.endStepId).toBeDefined()
+      expect((await reload(trailing.id)).config.endStepId).toBeUndefined()
+    })
+
+    it('does not pin any V1 if-then block when the flag is off', async () => {
+      const [, ifThenA, childA, ifThenB, childB] = await seedTwoBlockFlow()
+      mocks.getLdFlagValue.mockResolvedValue(false)
+
+      await updateStepPositions(
+        null,
+        { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
+        context,
+      )
+
+      expect((await reload(ifThenA.id)).config.endStepId).toBeUndefined()
+      expect((await reload(ifThenB.id)).config.endStepId).toBeUndefined()
+    })
   })
 })

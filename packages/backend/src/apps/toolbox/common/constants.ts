@@ -58,6 +58,17 @@ export function isBlockStep(step: StepLike | null | undefined): boolean {
   return isIfThenStep(step) || isForEachStep(step)
 }
 
+// A step created with neither an app nor an event. The only legitimate way
+// this happens is the if-then V1 branch initializer, which stubs a blank
+// child so users see where to add their first action — createStep otherwise
+// requires both fields together, so a step is never mid-configuration with
+// just one of them unset.
+export function isBlankPlaceholderStep(
+  step: StepLike | null | undefined,
+): boolean {
+  return !step?.appKey && !step?.key
+}
+
 // A new-style ("v2") if-then carries the block endStep marker in config;
 // presence (Object.hasOwn) — not value — distinguishes it from a legacy one.
 export function isIfThenV2(step: StepLike | null | undefined): boolean {

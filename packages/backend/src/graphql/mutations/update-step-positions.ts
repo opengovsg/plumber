@@ -2,6 +2,10 @@ import { IStep } from '@plumber/types'
 
 import { PartialModelObject, raw } from 'objection'
 
+import {
+  repairEndStepsOnReorder,
+  upgradeIfThenV1BlocksIfEnabled,
+} from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
@@ -39,23 +43,44 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
   const updatedPositions = await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
-    const steps = await context.currentUser
+    // Query all steps of the impacted flow (scoped via the reordered ids' flow)
+    // so block end steps can be repaired after the reorder; the steps named in
+    // the request params drive the position update itself.
+    let allSteps = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
-      .whereIn('steps.id', stepIds)
+      .whereIn(
+        'steps.flow_id',
+        Step.query(trx).select('flow_id').whereIn('id', stepIds),
+      )
       .orderBy('steps.position', 'asc')
       .throwIfNotFound()
 
-    if (steps[0].flow.active) {
+    const stepsFromParams = allSteps.filter((step) => stepIds.includes(step.id))
+
+    // Confirm the request is single-pipe before deriving the flow, so
+    // `stepsFromParams[0].flow` is unambiguous (allSteps may span pipes if the
+    // request mixed them).
+    if (
+      !stepsFromParams.every(
+        (step) => step.flowId === stepsFromParams[0].flowId,
+      )
+    ) {
+      throw new BadUserInputError(
+        'Failed to update: steps must be from the same pipe!',
+      )
+    }
+
+    const flow = stepsFromParams[0].flow
+    if (flow.active) {
       throw new BadUserInputError(
         'Pipe is active. Cannot update step in active pipe!',
       )
     }
 
-    const flow = steps[0].flow
     flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
 
-    const foundStepIds = steps.map((step) => step.id)
+    const foundStepIds = stepsFromParams.map((step) => step.id)
     const missingStepIds = stepIds.filter(
       (id: string) => !foundStepIds.includes(id),
     )
@@ -67,8 +92,8 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
     // since we are only updating actions based on their groups
     // e.g., non grouped steps, or actions within an if-then branch
     // validate that the step positions are not out of bounds
-    const minPosition = steps[0].position
-    const maxPosition = steps[steps.length - 1].position
+    const minPosition = stepsFromParams[0].position
+    const maxPosition = stepsFromParams[stepsFromParams.length - 1].position
     if (
       stepPositions.some((obj) => obj.position > maxPosition) ||
       stepPositions.some((obj) => obj.position < minPosition)
@@ -77,6 +102,15 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
         'Failed to update: step positions are out of bounds.',
       )
     }
+
+    // Opportunistically pin any legacy if-then block in the flow to its
+    // current extent, if the if-then-then flag is on for the pipe owner, so
+    // its extent gets locked in before this reorder can silently change it.
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, allSteps)
+    // Re-read (positions are still pre-patch) so any block just pinned above
+    // is reflected as V2 below — otherwise the repair pass wouldn't see its
+    // own freshly-written marker.
+    allSteps = await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
 
     // Patch each step individually with its new position
     for (const stepPosition of stepPositions) {
@@ -92,6 +126,15 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
       }
       await Step.query(trx).findById(stepPosition.id).patch(patchData)
     }
+
+    // Repair any new-style if-then block whose endStep is no longer its
+    // highest-positioned member after the reorder.
+    await repairEndStepsOnReorder({
+      trx,
+      flow,
+      preSteps: allSteps,
+      newPositions: stepPositions,
+    })
 
     // Update the flow's lastUpdatedAt timestamp
     const updatedFlow = await flow

@@ -2,8 +2,11 @@ import { IStepConfig } from '@plumber/types'
 
 import { raw } from 'objection'
 
-import { BLOCK_END_STEP_ID } from '@/apps/toolbox/common/constants'
-import { validateEndStepOnCreateStep } from '@/apps/toolbox/common/validate-end-step'
+import {
+  sanitizeServerSideConfig,
+  upgradeIfThenV1BlocksIfEnabled,
+  validateEndStepOnCreateStep,
+} from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
@@ -14,21 +17,6 @@ import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
-
-// Config keys the server owns; a client must never set them directly on create.
-// endStepId is maintained entirely by the endStep write rules (and
-// duplicateBranch's DB-derived remap).
-const SERVER_OWNED_CONFIG_KEYS = [BLOCK_END_STEP_ID] as const
-
-function sanitizeServerSideConfig(
-  config: IStepConfig | null | undefined,
-): IStepConfig {
-  const sanitized = { ...(config ?? {}) }
-  for (const key of SERVER_OWNED_CONFIG_KEYS) {
-    delete sanitized[key]
-  }
-  return sanitized
-}
 
 const createStep: MutationResolvers['createStep'] = async (
   _parent,
@@ -128,6 +116,17 @@ const createStep: MutationResolvers['createStep'] = async (
       config: newStepConfig,
       version,
     })
+
+    // Opportunistically pin any other legacy if-then block in the flow to its
+    // current extent, if the if-then-then flag is on for the pipe owner. Runs
+    // BEFORE validateEndStepOnCreateStep: its rule 2 (tail-extend) only
+    // recognises a block as extendable once it's explicit V2, so pinning
+    // first is what lets a still-legacy block being tail-added to see its own
+    // fresh pin and extend, instead of staying unmarked and getting skipped.
+    const preInsertSteps = (
+      await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
+    ).filter((flowStep) => flowStep.id !== step.id)
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, preInsertSteps)
 
     // Maintain if-then endStep markers for the new step, in-transaction. Any
     // violation throws and rolls back the whole creation.

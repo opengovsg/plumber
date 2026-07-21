@@ -2,6 +2,7 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
+import { validateFlowBlocks } from '@/apps/toolbox/common/validate-end-step'
 import {
   REMOVE_AFTER_7_DAYS_OR_50_JOBS,
   REMOVE_AFTER_30_DAYS,
@@ -56,6 +57,7 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
 
   if (params.input.active) {
     validateFlowSteps(flow.steps)
+    validateFlowBlocks(flow.steps, flow.id)
   }
 
   await flow.$query().patch({

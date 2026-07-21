@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BLOCK_END_STEP_ID,
+  isBlankPlaceholderStep,
   isBlockStep,
   isForEachStep,
   isIfThenStep,
@@ -90,6 +91,34 @@ describe('toolbox constants', () => {
       { label: 'undefined step', step: undefined },
     ])('is false for a non-block step: $label', ({ step }) => {
       expect(isBlockStep(step)).toBe(false)
+    })
+  })
+
+  describe('isBlankPlaceholderStep', () => {
+    it('is true when both appKey and key are missing', () => {
+      expect(isBlankPlaceholderStep({})).toBe(true)
+    })
+
+    it('is true when both appKey and key are null', () => {
+      expect(isBlankPlaceholderStep({ appKey: null, key: null })).toBe(true)
+    })
+
+    it.each([
+      { label: 'undefined step', step: undefined },
+      { label: 'null step', step: null },
+    ])('is true for $label', ({ step }) => {
+      expect(isBlankPlaceholderStep(step)).toBe(true)
+    })
+
+    it.each([
+      {
+        label: 'a fully-configured step',
+        step: { appKey: 'toolbox', key: 'ifThen' },
+      },
+      { label: 'appKey set but key missing', step: { appKey: 'toolbox' } },
+      { label: 'key set but appKey missing', step: { key: 'ifThen' } },
+    ])('is false for $label', ({ step }) => {
+      expect(isBlankPlaceholderStep(step)).toBe(false)
     })
   })
 
