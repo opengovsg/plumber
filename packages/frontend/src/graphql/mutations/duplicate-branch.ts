@@ -19,6 +19,7 @@ export const DUPLICATE_BRANCH = gql`
         }
         config {
           stepName
+          endStepId
         }
       }
     }
