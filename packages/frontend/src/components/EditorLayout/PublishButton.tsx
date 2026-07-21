@@ -2,6 +2,7 @@ import { useContext, useMemo } from 'react'
 import { Skeleton, Spinner, Text } from '@chakra-ui/react'
 import { Button, TouchableTooltip } from '@opengovsg/design-system-react'
 
+import { hasEmptyIfThenV2Block } from '@/components/Editor/helpers/steps-utils'
 import { EditorContext } from '@/contexts/Editor'
 import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
@@ -36,6 +37,13 @@ export default function PublishButton({
     [flow?.steps],
   )
 
+  // The backend already refuses to publish a flow with an empty if-then V2
+  // block. Disable the button here too, so the user doesn't attempt it.
+  const hasEmptyIfThenBlock = useMemo(
+    () => hasEmptyIfThenV2Block(flow?.steps ?? []),
+    [flow?.steps],
+  )
+
   return (
     <TouchableTooltip
       label={
@@ -45,13 +53,18 @@ export default function PublishButton({
           ? 'You cannot publish a pipe with a pending transfer'
           : isFlowIncomplete
           ? 'Set up for all steps must be completed before you can publish your pipe'
+          : hasEmptyIfThenBlock
+          ? 'Your If-then has no steps in it'
           : ''
       }
       wrapperStyles={{ width: '100%' }}
     >
       <Button
         isDisabled={
-          isFlowIncomplete || hasFlowTransfer || flow.role === 'viewer'
+          isFlowIncomplete ||
+          hasEmptyIfThenBlock ||
+          hasFlowTransfer ||
+          flow.role === 'viewer'
         }
         isLoading={loading || isEditorContextLoading}
         spinner={<Spinner fontSize={24} />}

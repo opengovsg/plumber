@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   buildStepsList,
   deriveIfThenV1EndStep,
+  hasEmptyIfThenV2Block,
   hasIfThenV2Block,
   isBlankPlaceholderStep,
   isStepInsideForEachBody,
@@ -555,6 +556,42 @@ describe('hasIfThenV2Block', () => {
     const b1 = plain('b1')
 
     expect(hasIfThenV2Block([ifThenA, block, b1])).toBe(true)
+  })
+})
+
+describe('hasEmptyIfThenV2Block', () => {
+  it('is true for an if-then whose marker self-references (an empty block)', () => {
+    const block = markedIfThen('block', 'block')
+
+    expect(hasEmptyIfThenV2Block([block])).toBe(true)
+  })
+
+  it('is false for an if-then whose marker points at a later child', () => {
+    const block = markedIfThen('block', 's2')
+    const s2 = plain('s2')
+
+    expect(hasEmptyIfThenV2Block([block, s2])).toBe(false)
+  })
+
+  it('is false for a marker-less if-then shaped like real GraphQL data', () => {
+    const ifThenA = nullMarkerIfThen('ifThenA')
+
+    expect(hasEmptyIfThenV2Block([ifThenA])).toBe(false)
+  })
+
+  it('is true when only the second of two blocks is empty', () => {
+    const populated = markedIfThen('populated', 's2')
+    const s2 = plain('s2')
+    const empty = markedIfThen('empty', 'empty')
+
+    expect(hasEmptyIfThenV2Block([populated, s2, empty])).toBe(true)
+  })
+
+  it('is false for a flow with no if-then step at all', () => {
+    const s1 = plain('s1')
+    const s2 = plain('s2')
+
+    expect(hasEmptyIfThenV2Block([s1, s2])).toBe(false)
   })
 })
 

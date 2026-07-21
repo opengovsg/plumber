@@ -25,7 +25,7 @@ import { groupBy } from 'lodash'
 
 import { getAppActionFlag, getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { TOOLBOX_APP_KEY, useIfThenInitializer } from '@/helpers/toolbox'
+import { TOOLBOX_APP_KEY, useIfThenV1Initializer } from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useIsAppSelectable } from '../hooks/useIsAppSelectable'
@@ -54,7 +54,7 @@ export default function ChooseApp(props: ChooseAppProps) {
     prevStepId,
   })
 
-  const [_, isInitializingIfThen] = useIfThenInitializer()
+  const [_, isInitializingIfThen] = useIfThenV1Initializer()
   const isLoading = isInitializingIfThen
 
   const [searchQuery, setSearchQuery] = useState('')
