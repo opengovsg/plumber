@@ -22,7 +22,7 @@ interface IfThenProps {
   stepsBeforeGroup: IStep[]
 }
 
-export default function IfThen(props: IfThenProps): JSX.Element {
+export default function IfThenV1(props: IfThenProps): JSX.Element {
   const { groupedSteps, stepsBeforeGroup } = props
 
   const { depth } = useContext(BranchContext)

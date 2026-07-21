@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   buildStepsList,
   deriveIfThenV1EndStep,
+  hasIfThenV2Block,
+  isBlankPlaceholderStep,
   isStepInsideForEachBody,
   isStepInsideIfThenBlock,
 } from '../steps-utils'
@@ -42,6 +44,10 @@ const forEach = (id: string): IStep =>
 
 const mrfSubmission = (id: string): IStep =>
   ({ id, appKey: 'formsg', key: 'mrfSubmission' } as IStep)
+
+// A leftover blank child from the if-then V1 branch initializer: neither
+// appKey nor key ever set.
+const blank = (id: string): IStep => ({ id } as IStep)
 
 // The set of grouping actions (`groupsLaterSteps`) is exactly if-then and
 // for-each today.
@@ -513,5 +519,55 @@ describe('isStepInsideForEachBody', () => {
     const steps = [block, b1]
 
     expect(isStepInsideForEachBody(b1, steps, GROUPING_ACTIONS)).toBe(false)
+  })
+})
+
+describe('hasIfThenV2Block', () => {
+  it('is true for a populated if-then V2 block', () => {
+    const block = markedIfThen('block', 's2')
+    const s2 = plain('s2')
+
+    expect(hasIfThenV2Block([block, s2])).toBe(true)
+  })
+
+  it('is true for an empty (self-referencing) if-then V2 block', () => {
+    const block = markedIfThen('block', 'block')
+
+    expect(hasIfThenV2Block([block])).toBe(true)
+  })
+
+  it('is false for a marker-less if-then shaped like real GraphQL data', () => {
+    const ifThenA = nullMarkerIfThen('ifThenA')
+
+    expect(hasIfThenV2Block([ifThenA])).toBe(false)
+  })
+
+  it('is false for a flow with no if-then step at all', () => {
+    const s1 = plain('s1')
+    const s2 = plain('s2')
+
+    expect(hasIfThenV2Block([s1, s2])).toBe(false)
+  })
+
+  it('is true when only one of several if-thens carries a marker', () => {
+    const ifThenA = nullMarkerIfThen('ifThenA')
+    const block = markedIfThen('block', 'b1')
+    const b1 = plain('b1')
+
+    expect(hasIfThenV2Block([ifThenA, block, b1])).toBe(true)
+  })
+})
+
+describe('isBlankPlaceholderStep', () => {
+  it('is true for a step with neither appKey nor key', () => {
+    expect(isBlankPlaceholderStep(blank('child'))).toBe(true)
+  })
+
+  it('is false for a fully-configured step', () => {
+    expect(isBlankPlaceholderStep(plain('s1'))).toBe(false)
+  })
+
+  it('is false for an if-then step', () => {
+    expect(isBlankPlaceholderStep(ifThen('block'))).toBe(false)
   })
 })

@@ -53,6 +53,11 @@ export const hoverAddStepButtonStyles = {
     my: 1,
     mx: 0,
     transition: 'all 0.3s ease',
+    // IMPORTANT: some Flex column parents (see the `w` prop in
+    // HoverAddStepButton) don't set alignItems="center" and default to
+    // stretch, which would pull this connector off the flow's centre line.
+    // alignSelf keeps it centred regardless of the parent.
+    alignSelf: 'center',
   },
   button: {
     pos: 'absolute' as FlexProps['pos'],
