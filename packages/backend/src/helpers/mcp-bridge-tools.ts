@@ -19,6 +19,10 @@ import {
 } from '@/services/mcp/execute-step'
 import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
 import {
+  getFormSchemaService,
+  type McpFormSchemaResult,
+} from '@/services/mcp/get-form-schema'
+import {
   listConnectionsService,
   type McpConnection,
 } from '@/services/mcp/list-connections'
@@ -266,6 +270,25 @@ export function createMcpBridgeTools(
             onPipeChange?.(pipeId)
           }
         }
+      },
+    }),
+
+    get_form_schema: tool({
+      description:
+        'Fetch the PUBLIC schema of a FormSG form from its URL or bare 24-character form ID. ' +
+        'Requires no connection and no secret key, so it can be used before a pipe or connection exists. ' +
+        'Returns the form title, storage-mode/MRF flags, warnings, and per-field ' +
+        '{ id, title, fieldType, required, answerType, variablePath } for templating variables as ' +
+        '{{step.<triggerStepId>.<variablePath>}}. Errors are returned as { error } — relay them to the user.',
+      inputSchema: z.object({
+        form_url: z
+          .string()
+          .describe(
+            'FormSG form URL (e.g. https://form.gov.sg/<id>) or bare 24-character form ID.',
+          ),
+      }),
+      execute: async ({ form_url }): Promise<McpFormSchemaResult> => {
+        return getFormSchemaService(form_url)
       },
     }),
 
