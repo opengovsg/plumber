@@ -216,6 +216,20 @@ export function isStepInsideIfThenBlock(
 }
 
 /**
+ * Whether any if-then V2 block in the flow is empty. Mirrors the backend's
+ * `isIfThenV2` check: a block is empty when its `endStepId` marker points at
+ * itself.
+ *
+ * Takes the full `flow.steps`, not the MRF-filtered display list: a block on
+ * an approval branch that is not on screen must still block publish.
+ */
+export function hasEmptyIfThenV2Block(flowSteps: IStep[]): boolean {
+  return flowSteps.some(
+    (step) => isIfThenStep(step) && step.config?.endStepId === step.id,
+  )
+}
+
+/**
  * Whether `step` sits anywhere inside a for-each body (at any depth) — the
  * for-each step itself is not "inside" its own body.
  */

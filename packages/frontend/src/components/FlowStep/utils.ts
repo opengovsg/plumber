@@ -22,9 +22,21 @@ function findAdjacentSteps(
  *    which means that the step being deleted is the 'last' step in the if-then group
  * 2. The previous step is an if-then step and there is no next step,
  *    which means that the step being deleted is the 'last' step in the group
+ *
+ * An explicit if-then V2 block is an exception: the backend repairs its
+ * `endStepId` marker when a member is deleted, so this skips placeholder
+ * injection for it. The check uses `!= null`, not `Object.hasOwn`, because a
+ * marker-less if-then arrives over GraphQL with `endStepId: null` rather than
+ * the key being absent.
  */
 function shouldCreateEmptyStep(prev?: IStep, next?: IStep): boolean {
-  return !!prev && isIfThenStep(prev) && (!next || isIfThenStep(next))
+  if (!prev || !isIfThenStep(prev)) {
+    return false
+  }
+  if (prev.config?.endStepId != null) {
+    return false
+  }
+  return !next || isIfThenStep(next)
 }
 
 export { findAdjacentSteps, shouldCreateEmptyStep }
