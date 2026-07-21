@@ -11,6 +11,29 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-07-21',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'OR conditions for If-then and Only continue if',
+    details: dedent`
+      You can now combine conditions with OR in your If-then and Only continue if actions — the action runs if any condition is met, not just when all of them are (AND).
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/or-condition.png',
+    },
+  },
+  {
+    date: '2026-07-21',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: `We've made Postman integration a lil' better`,
+    details: dedent`
+      **More file attachment types**
+      Send more attachment types with your emails, including .zip, .svg, .ics and more. Not all file types are supported — see the full list [here](https://guide.plumber.gov.sg/user-guides/actions/email-by-postman#invalid-attachment).
+
+      **Bigger attachment size**
+      Attachments can now total up to 20MB per email.
+    `,
+  },
+  {
     date: '2026-06-24',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'Send test emails to yourself first',
