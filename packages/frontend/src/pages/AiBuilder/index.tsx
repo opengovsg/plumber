@@ -1,6 +1,6 @@
 import type { IJSONObject } from '@plumber/types'
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
@@ -10,12 +10,14 @@ import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
 
+import AddFormsgConnectionModal from './components/AddFormsgConnectionModal'
 import ChatInterface from './components/ChatInterface'
 import ExitAlert from './components/ExitAlert'
 import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
+import { extractLastFormUrl } from './helpers'
 import StepConfigContext from './StepConfigContext'
 
 function AiBuilderContent() {
@@ -89,6 +91,28 @@ function AiBuilderContent() {
   }, [steps, completedStepIds])
 
   const cancelRef = useRef(null)
+
+  // In-chat "Add new form" modal (FormSG). Holds the picker question that
+  // opened it so the eventual answer is sent back in the same Q/A format as a
+  // manual selection. The secret key stays browser → GraphQL only (never
+  // through the chat route or the LLM).
+  const [addFormContext, setAddFormContext] = useState<{
+    question: string
+  } | null>(null)
+
+  const prefillFormUrl = useMemo(() => extractLastFormUrl(messages), [messages])
+
+  const handleAddFormSuccess = useCallback(
+    (connectionLabel: string, connectionId: string) => {
+      if (addFormContext) {
+        sendMessage(
+          `Q: ${addFormContext.question}\nA: ${connectionLabel} (id: ${connectionId})`,
+        )
+      }
+      setAddFormContext(null)
+    },
+    [addFormContext, sendMessage],
+  )
 
   // Determine if we have unsaved work
   // Show warning if there's ANY state worth protecting:
@@ -169,9 +193,16 @@ function AiBuilderContent() {
               cancelStream={cancelStream}
               resetChat={resetChat}
               hasReachedLimit={hasReachedLimit}
+              onAddConnection={setAddFormContext}
             />
           </Container>
         </Flex>
+        <AddFormsgConnectionModal
+          isOpen={addFormContext !== null}
+          prefillFormUrl={prefillFormUrl}
+          onClose={() => setAddFormContext(null)}
+          onSuccess={handleAddFormSuccess}
+        />
         <ExitAlert
           cancelRef={cancelRef}
           isOpen={showWarning}

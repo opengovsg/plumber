@@ -14,6 +14,17 @@ const createConnection: MutationResolvers['createConnection'] = async (
 ) => {
   await App.findOneByKey(params.input.key)
 
+  // The AI Builder creates connections before any pipe exists, so there is no
+  // flowId to link — the connection is personal to the current user.
+  if (!params.input.flowId) {
+    return await Connection.query().insertAndFetch({
+      key: params.input.key,
+      formattedData: params.input.formattedData,
+      verified: false,
+      userId: context.currentUser.id,
+    })
+  }
+
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({
