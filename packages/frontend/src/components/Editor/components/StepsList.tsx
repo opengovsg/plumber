@@ -1,15 +1,18 @@
 import { IStep } from '@plumber/types'
 
-import { useCallback, useContext } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
+import { buildStepsList } from '@/components/Editor/helpers/steps-utils'
+import IfThen from '@/components/FlowStepGroup/Content/IfThen/IfThen'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { extractBranchesWithSteps, TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import { EDITOR_RIGHT_DRAWER_WIDTH } from '../constants'
@@ -28,10 +31,13 @@ export function StepsList({ isNested }: StepsListProps) {
     groupedSteps,
     appsWithActions,
     groupingActions,
+    actionStepsToDisplay,
   } = useContext(StepsToDisplayContext)
   const { flow, isDrawerOpen, isMobile, readOnly } = useContext(EditorContext)
   const { mrfSteps, mrfApprovalSteps, approvalBranches } =
     useContext(MrfContext)
+  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
+    useIfThenV2Enabled()
 
   const { calculateReorderedSteps, handleReorderUpdate } = useReorderSteps(
     flow.id,
@@ -68,6 +74,16 @@ export function StepsList({ isNested }: StepsListProps) {
     ],
   )
 
+  // groupingActions is null until the apps load. Guard before building the
+  // list.
+  const blockItems = useMemo(
+    () =>
+      groupingActions
+        ? buildStepsList(actionStepsToDisplay, groupingActions)
+        : [],
+    [actionStepsToDisplay, groupingActions],
+  )
+
   const nonIfThenActionSteps = actionStepsBeforeGroup.filter(
     (step) => step.key !== TOOLBOX_ACTIONS.IfThen,
   )
@@ -83,7 +99,7 @@ export function StepsList({ isNested }: StepsListProps) {
   const shouldDisableAddButton =
     (hasExactlyOneEmptyActionStep || hasNoActionSteps) && !groupedSteps.length
 
-  if (!appsWithActions || !groupingActions) {
+  if (!appsWithActions || !groupingActions || isIfThenV2Loading) {
     return (
       <Center height="100vh" position="fixed" width="full" top={0} left={0}>
         <PrimarySpinner fontSize="4xl" />
@@ -98,6 +114,98 @@ export function StepsList({ isNested }: StepsListProps) {
           lg: '5rem',
         }
     : 0
+
+  if (isIfThenV2Enabled) {
+    const hasNoActionSteps = actionStepsToDisplay.length === 0
+    const hasExactlyOneEmptyActionStep =
+      actionStepsToDisplay.length === 1 && !actionStepsToDisplay[0].appKey
+    // Same trigger add-button rules as the old layout, kept for backwards
+    // compatibility.
+    const shouldShowEmptyAction = hasNoActionSteps
+    const shouldDisableTriggerAddButton =
+      hasExactlyOneEmptyActionStep || hasNoActionSteps
+
+    return (
+      <Flex
+        {...editorStyles.stepHeaderContainer}
+        flex={isDrawerOpen ? (isMobile ? 0 : 1) : undefined}
+        px={leftStepPadding}
+        maxWidth={`calc(100% - ${
+          isDrawerOpen ? EDITOR_RIGHT_DRAWER_WIDTH : '0px'
+        })`}
+        sx={{
+          scrollbarGutter: 'stable',
+        }}
+      >
+        {triggerStep && (
+          <FlowStepWithAddButton
+            step={triggerStep}
+            isLastStep={hasNoActionSteps}
+            isNested={isNested}
+            allowReorder={false}
+            stepsBeforeGroup={[]}
+            groupedSteps={[]}
+            addButtonProps={{
+              isHidden: readOnly,
+              isDisabled: shouldDisableTriggerAddButton,
+              showEmptyAction: shouldShowEmptyAction,
+            }}
+          />
+        )}
+
+        {blockItems.map((item, index) => {
+          const isLast = index === blockItems.length - 1
+
+          if (item.type === 'ifThenBlock') {
+            return (
+              <IfThen
+                key={item.ifThenStep.id}
+                block={item}
+                isLastBlock={isLast}
+              />
+            )
+          }
+
+          if (item.type === 'forEachBlock') {
+            // The for-each still renders through the existing grouped box, which
+            // wants the branch-shaped grouping. Rebuild it from the for-each's
+            // own steps — it swallows every later step, so they are contiguous
+            // from its position onwards.
+            const forEachIndex = actionStepsToDisplay.findIndex(
+              (step) => step.id === item.forEachStep.id,
+            )
+            return (
+              <FlowStepGroup
+                key={item.forEachStep.id}
+                stepsBeforeGroup={actionStepsToDisplay.slice(0, forEachIndex)}
+                groupedSteps={extractBranchesWithSteps(
+                  actionStepsToDisplay.slice(forEachIndex),
+                  0,
+                )}
+              />
+            )
+          }
+
+          return (
+            <FlowStepWithAddButton
+              key={item.step.id}
+              step={item.step}
+              isLastStep={isLast}
+              isNested={isNested}
+              allowReorder={false}
+              stepsBeforeGroup={[]}
+              groupedSteps={[]}
+              addButtonProps={{
+                isHidden: readOnly,
+                isDisabled: false,
+                showEmptyAction: false,
+              }}
+            />
+          )
+        })}
+      </Flex>
+    )
+  }
 
   return (
     <Flex
