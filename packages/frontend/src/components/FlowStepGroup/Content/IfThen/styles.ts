@@ -29,6 +29,19 @@ export const ifThenStyles = {
   },
 }
 
+/**
+ * `boxSize` alone isn't enough: IconButton's own size sets a larger
+ * min-width/min-height that wins, so both are pinned here too — the same way
+ * DeleteStepButton does for a step.
+ */
+export const blockActionButtonStyles = {
+  boxSize: 8,
+  minW: 8,
+  minH: 8,
+  variant: 'clear',
+  colorScheme: 'secondary',
+}
+
 export const branchStyles = {
   container: {
     alignItems: 'center',
