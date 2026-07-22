@@ -24,6 +24,40 @@ export const normalizeMarkdownHeadings = (text: string): string =>
 export const prepareAiText = (text: string): string =>
   normalizeMarkdownHeadings(stripHtmlComments(text))
 
+// First user message sent after connecting a form from the empty state.
+// The parenthetical carries the connection id (for assigning the trigger in
+// Phase 2b) and form id (for get_form_schema); it follows the same "(id: …)"
+// convention as picker answers, so the chat display strips it (see
+// formatUserMessageForDisplay) and the user only sees the form title. The
+// exact shape is a contract with the system prompt's connect-first intake
+// branch — change both together.
+export const buildKickoffMessage = (
+  formTitle: string,
+  connectionId: string,
+  formId: string | null,
+): string => {
+  const technicalRef = formId
+    ? `(id: ${connectionId}, form id: ${formId})`
+    : `(id: ${connectionId})`
+  return `I've connected my FormSG form "${formTitle}" ${technicalRef}. Suggest workflows I can build with this form.`
+}
+
+// Pull the 24-hex-char form ID out of a FormSG connection screenName.
+export const extractFormIdFromLabel = (label: string): string | null =>
+  label.match(/[a-f0-9]{24}/i)?.[0] ?? null
+
+// FormSG connection screenNames look like "[STAGING] [MRF] <24-hex-form-id> -
+// <form title>". Drop the form-id segment for display; keep any env/MRF
+// prefixes since they are informative.
+export const stripFormIdPrefix = (label: string): string =>
+  label.replace(/^((?:\[[A-Z]+\] )*)[a-f0-9]{24} - /i, '$1')
+
+// User messages are displayed verbatim except for machine detail: picker
+// answers and the kickoff message carry "(id: …)" / "(id: …, form id: …)"
+// suffixes that are stripped from display.
+export const formatUserMessageForDisplay = (text: string): string =>
+  text.replace(/ \(id: [a-f0-9-]+(?:, form id: [a-f0-9]+)?\)/g, '').trim()
+
 // Matches FormSG share links across environments (form.gov.sg,
 // staging.form.gov.sg, …) ending in a 24-hex-char form ID.
 const FORM_URL_REGEX =
