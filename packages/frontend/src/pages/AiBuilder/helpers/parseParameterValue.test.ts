@@ -56,4 +56,10 @@ describe('parseParameterValue', () => {
       { type: 'variable', label: 'Body' },
     ])
   })
+
+  it('strips the hex-modifier suffix from table variables', () => {
+    expect(
+      parseParameterValue('{{step.abc-123-def.data|7461626c653a636f6c31}}'),
+    ).toEqual([{ type: 'variable', label: 'Data' }])
+  })
 })
