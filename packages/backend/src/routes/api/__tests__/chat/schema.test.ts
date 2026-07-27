@@ -122,6 +122,26 @@ describe('chatRequestSchema', () => {
       })
       expect(result.success).toBe(true)
     })
+
+    it('should accept data-stepUpdate part', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'data-stepUpdate',
+                data: {
+                  stepId: '550e8400-e29b-41d4-a716-446655440000',
+                  parameters: { subject: 'Hello', recipient: 'test@gov.sg' },
+                },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
   })
 
   describe('messages validation', () => {
