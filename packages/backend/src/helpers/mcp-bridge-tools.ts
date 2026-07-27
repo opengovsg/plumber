@@ -37,6 +37,7 @@ export function createMcpBridgeTools(
   user: User,
   traceId: string,
   onPipeChange?: (pipeId: string) => void,
+  onStepUpdate?: (stepId: string, parameters: IJSONObject) => void,
 ) {
   return {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
@@ -148,6 +149,7 @@ export function createMcpBridgeTools(
           connectionId: connection_id,
         })
         onPipeChange?.(pipe_id)
+        onStepUpdate?.(step_id, result.step.parameters)
         return result
       },
     }),
