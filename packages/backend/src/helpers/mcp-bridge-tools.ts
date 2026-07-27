@@ -231,9 +231,9 @@ export function createMcpBridgeTools(
 
     execute_step: tool({
       description:
-        'Test a configured step in a pipe. Runs the step, marks it as completed on success, and returns its output data. Call after update_step_parameters to verify the step works. The returned dataOut will be used to wire variables into downstream steps.',
+        'Test a configured step in a pipe. Runs the step, marks it as completed on success, and returns its output data. Call after update_step_parameters to verify the step works. The returned dataOut will be used to wire variables into downstream steps. Warning: for steps that send a real message (SMS by Postman sendSms, Telegram sendMessage, Slack sendMessageToChannel, PaySG sendEmail), this actually sends it to the configured recipient/channel/number — confirm the details with the user before calling this for those steps.',
       inputSchema: z.object({
-        step_id: z.string().describe('ID of the step to test'),
+        step_id: z.uuid().describe('ID of the step to test'),
       }),
       execute: async ({ step_id }): Promise<McpExecuteStepResult> => {
         let pipeId: string | undefined
