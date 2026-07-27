@@ -27,12 +27,18 @@ vi.mock('@/services/mcp/get-dynamic-data', () => ({
     .fn()
     .mockResolvedValue([{ name: 'Channel', value: 'C123' }]),
 }))
+vi.mock('@/services/mcp/register-connection', () => ({
+  registerConnectionService: vi
+    .fn()
+    .mockResolvedValue({ connectionRegistered: true }),
+}))
 
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
+import { registerConnectionService } from '@/services/mcp/register-connection'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
@@ -52,6 +58,7 @@ describe('createMcpBridgeTools', () => {
       'delete_step',
       'get_dynamic_data',
       'execute_step',
+      'register_connection',
     ])
   })
 
@@ -136,6 +143,23 @@ describe('createMcpBridgeTools', () => {
       key: 'listChannels',
       parameters: { tableId: 'xyz' },
     })
+  })
+
+  it('register_connection calls registerConnectionService with correct args', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.register_connection.execute(
+      {
+        pipe_id: 'flow-1',
+        step_id: 'step-1',
+        connection_id: 'conn-1',
+      },
+      { toolCallId: 'register_connection', messages: [] },
+    )
+    expect(vi.mocked(registerConnectionService)).toHaveBeenCalledWith(
+      mockUser,
+      'step-1',
+      'conn-1',
+    )
   })
 
   it('create_pipe maps snake_case input to IStep-shaped steps', async () => {
@@ -254,6 +278,16 @@ describe('createMcpBridgeTools', () => {
       await tools.delete_step.execute(
         { pipe_id: 'flow-1', step_id: 's1' },
         { toolCallId: 'delete_step', messages: [] },
+      )
+      expect(onPipeChange).toHaveBeenCalledWith('flow-1')
+    })
+
+    it('is called with pipe_id after register_connection succeeds', async () => {
+      const onPipeChange = vi.fn()
+      const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
+      await tools.register_connection.execute(
+        { pipe_id: 'flow-1', step_id: 'step-1', connection_id: 'conn-1' },
+        { toolCallId: 'register_connection', messages: [] },
       )
       expect(onPipeChange).toHaveBeenCalledWith('flow-1')
     })
