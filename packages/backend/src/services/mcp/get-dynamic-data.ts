@@ -1,6 +1,7 @@
 import type { IDynamicData, IJSONObject } from '@plumber/types'
 
 import apps from '@/apps'
+import { UserFacingError } from '@/errors/user-facing-error'
 import { APP_CONNECTION_FIELDS } from '@/helpers/get-shared-connection-details'
 import globalVariable from '@/helpers/global-variable'
 import type User from '@/models/user'
@@ -32,14 +33,14 @@ export async function getDynamicDataService({
     .findById(stepId)
 
   if (!step || !step.appKey) {
-    throw new Error('Step not found')
+    throw new UserFacingError('Step not found')
   }
 
   const app = apps[step.appKey]
   const connection = step.connection
 
   if (app.auth && !connection) {
-    throw new Error('Step has no verified connection')
+    throw new UserFacingError('Step has no verified connection')
   }
 
   // Phase 1: caller is always the pipe owner; role substitution is never needed.
@@ -56,7 +57,7 @@ export async function getDynamicDataService({
     | undefined
 
   if (!command) {
-    throw new Error(
+    throw new UserFacingError(
       `Dynamic data key '${key}' not found for app '${step.appKey}'`,
     )
   }
@@ -123,7 +124,7 @@ export async function getDynamicDataService({
   }
 
   if (fetchedData.error) {
-    throw new Error(JSON.stringify(fetchedData.error))
+    throw new UserFacingError(JSON.stringify(fetchedData.error))
   }
 
   return fetchedData.data
