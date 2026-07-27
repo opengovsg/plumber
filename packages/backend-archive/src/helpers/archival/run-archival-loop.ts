@@ -1,3 +1,6 @@
+import '@/types/luxon-extensions'
+
+import { DateTime } from 'luxon'
 import pLimit from 'p-limit'
 
 import { archiveExecution } from './archive-execution'
@@ -32,7 +35,8 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     string,
     { executionIds: string[]; testExecutionIds: string[] }
   >()
-  const stepCounts = new Map<string, Map<string, number>>()
+  // SGT date (yyyy-MM-dd) -> appKey -> key -> count
+  const stepCounts = new Map<string, Map<string, Map<string, number>>>()
   let nullStepCount = 0
   const startedAt = Date.now()
   const runAt = new Date(startedAt).toISOString()
@@ -245,10 +249,18 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         if (!execution.testRun) {
           for (const step of steps) {
             if (step.appKey && step.key) {
+              // Partition by SGT so usage rollups match user-reported run times.
+              const date = DateTime.fromJSDate(
+                new Date(step.createdAt),
+              ).toPlumberFormat('yyyy-MM-dd')
+
+              const appMap =
+                stepCounts.get(date) ?? new Map<string, Map<string, number>>()
               const keyMap =
-                stepCounts.get(step.appKey) ?? new Map<string, number>()
+                appMap.get(step.appKey) ?? new Map<string, number>()
               keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
-              stepCounts.set(step.appKey, keyMap)
+              appMap.set(step.appKey, keyMap)
+              stepCounts.set(date, appMap)
             } else {
               nullStepCount++
             }
@@ -296,9 +308,16 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     durationMs: Date.now() - startedAt,
   })
 
-  const stepCountsObj: Record<string, Record<string, number>> = {}
-  for (const [appKey, keyMap] of stepCounts) {
-    stepCountsObj[appKey] = Object.fromEntries(keyMap)
+  const stepCountsObj: Record<
+    string,
+    Record<string, Record<string, number>>
+  > = {}
+  for (const [date, appMap] of stepCounts) {
+    const appObj: Record<string, Record<string, number>> = {}
+    for (const [appKey, keyMap] of appMap) {
+      appObj[appKey] = Object.fromEntries(keyMap)
+    }
+    stepCountsObj[date] = appObj
   }
 
   await putArchiveObject({
