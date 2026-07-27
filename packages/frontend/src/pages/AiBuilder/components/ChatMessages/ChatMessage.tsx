@@ -35,6 +35,7 @@ const AiMessage = memo(
 AiMessage.displayName = 'AiMessage'
 
 const UserMessage = memo(({ message }: ChatMessageProps) => {
+  const displayText = message.text.replace(/ \(id: [^)]+\)$/gm, '')
   return (
     <Flex justify="flex-end">
       <Box
@@ -45,7 +46,7 @@ const UserMessage = memo(({ message }: ChatMessageProps) => {
         py={3}
         borderRadius="lg"
       >
-        <Text whiteSpace="pre-wrap">{message.text}</Text>
+        <Text whiteSpace="pre-wrap">{displayText}</Text>
       </Box>
     </Flex>
   )
