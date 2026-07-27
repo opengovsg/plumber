@@ -1,6 +1,7 @@
 import { IStepConfig } from '@plumber/types'
 
 import { Fragment, useCallback, useMemo } from 'react'
+import { MdOpenInNew } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -42,6 +43,9 @@ export default function StepsPreview() {
   } = useAiBuilderContext()
 
   const isMobile = useIsMobile()
+
+  const isMcpPipeMode = Boolean(output?.pipeId) // Phase 2b+: DB pipe exists
+  const isMcpProposalMode = !isMcpPipeMode && Boolean(output?.mcpMode) // Phase 2a: proposal, no DB
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
@@ -107,11 +111,11 @@ export default function StepsPreview() {
     clearPersistedState,
   ])
 
-  if (
-    output?.error ||
-    !steps ||
-    !(output?.trigger && output?.actions?.length)
-  ) {
+  const hasNoContent = isMcpPipeMode
+    ? !output?.steps?.length
+    : output?.error || !steps || !(output?.trigger && output?.actions?.length)
+
+  if (hasNoContent) {
     return (
       <Center h="80%">
         <Flex
@@ -126,7 +130,7 @@ export default function StepsPreview() {
           <Text textStyle="h4" fontWeight="normal">
             Something went wrong.
           </Text>
-          {output?.error && <Text>{output.error}</Text>}
+          {!isMcpPipeMode && output?.error && <Text>{output.error}</Text>}
           <Text>Modify your prompt and try again.</Text>
           <Text>
             If this issue persists,{' '}
@@ -142,7 +146,13 @@ export default function StepsPreview() {
 
   return (
     <>
-      <Box opacity={isCreatingFlow ? 0.4 : 1} pos="relative" w="100%">
+      <Box
+        opacity={
+          !isMcpPipeMode && !isMcpProposalMode && isCreatingFlow ? 0.4 : 1
+        }
+        pos="relative"
+        w="100%"
+      >
         <Step step={triggerStep} />
         {stepsBeforeGroup.map((action) => (
           <Fragment key={`${action.position}-${action.appKey}`}>
@@ -210,13 +220,34 @@ export default function StepsPreview() {
         <VStack mt={10} gap={2}>
           <Text textStyle="body-1">Looks good?</Text>
           <HStack alignItems="center" justifyContent="center" gap={2}>
-            <Button variant="solid" onClick={onCreateFlowWithSteps} size="sm">
-              Create this workflow
-            </Button>
+            {isMcpPipeMode ? (
+              <Button
+                variant="solid"
+                size="sm"
+                rightIcon={<MdOpenInNew />}
+                onClick={() => {
+                  window.open(
+                    URLS.FLOW_EDITOR(output.pipeId),
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                }}
+              >
+                Open in editor
+              </Button>
+            ) : isMcpProposalMode ? (
+              <Text textStyle="body-2" color="base.content.medium">
+                Reply in chat to confirm and build this pipe
+              </Text>
+            ) : (
+              <Button variant="solid" onClick={onCreateFlowWithSteps} size="sm">
+                Create this workflow
+              </Button>
+            )}
           </HStack>
         </VStack>
       </Box>
-      {isCreatingFlow && (
+      {!isMcpPipeMode && !isMcpProposalMode && isCreatingFlow && (
         <Flex
           pos="absolute"
           top="50%"
