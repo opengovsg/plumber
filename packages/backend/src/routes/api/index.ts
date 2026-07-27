@@ -8,6 +8,7 @@ import {
 import adminRouter from './admin'
 import appsRouter from './apps'
 import chatRouter from './chat'
+import dynamicDataRouter from './dynamic-data'
 
 const router = Router()
 
@@ -24,6 +25,7 @@ router.use('/admin', adminRouter)
 router.use(blockAdminOperations)
 
 router.use('/chat', chatRouter)
+router.use('/dynamic-data', dynamicDataRouter)
 
 // Future routes can be added here:
 // router.use('/users', usersRouter)
