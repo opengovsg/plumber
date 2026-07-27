@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { BiDuplicate, BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
-import { Box, Divider, Flex, useDisclosure } from '@chakra-ui/react'
+import { Box, Flex, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
@@ -17,11 +17,14 @@ import { MIN_FLOW_STEP_WIDTH } from '@/components/Editor/constants'
 import {
   type IfThenBlock,
   isBlankPlaceholderStep,
+  isStepInsideForEachBody,
 } from '@/components/Editor/helpers/steps-utils'
 import { NESTED_FLOW_STEP_HEIGHT } from '@/components/FlowStep/styles'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { SortableList } from '@/components/SortableList'
+import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
+import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStep } from '@/exports/components'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
@@ -33,12 +36,15 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 import { flowStepGroupStyles } from '../../styles'
 
+import { AddAfterBlockButton } from './AddAfterBlockButton'
 import { HoverAddStepButton } from './HoverAddStepButton'
 import { blockActionButtonStyles, branchStyles } from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 
 interface IfThenProps {
   block: IfThenBlock
+  // Whether this block is the last item in the flow, which drives the
+  // add-after button's last-step styling.
   isLastBlock: boolean
   // IMPORTANT: only meaningful when the block renders inside a top-level
   // SortableList.Item. That's what gives it a drag handle at all.
@@ -74,6 +80,9 @@ export default function IfThen({
     setCurrentStepId,
     shouldWarnOnLeave,
   } = useContext(EditorContext)
+  const { actionStepsToDisplay, groupingActions } = useContext(
+    StepsToDisplayContext,
+  )
   const { handleReorderUpdate } = useReorderSteps(flow.id)
 
   const isEmptyBlock = children.length === 0
@@ -83,6 +92,14 @@ export default function IfThen({
   // block, so the (redundant) hover-+ around that placeholder is suppressed.
   const isSoleBlankPlaceholder =
     children.length === 1 && isBlankPlaceholderStep(children[0])
+
+  // Only true for a for-each body today, letting the block borrow that
+  // body's width and connector style instead of the top-level one.
+  const isNestedInBlock = isStepInsideForEachBody(
+    ifThenStep,
+    actionStepsToDisplay,
+    groupingActions ?? new Set<string>(),
+  )
 
   // The single-branch box merges what an if-then V1 group shows as two lines
   // (its own caption, plus the branch name inside it) into one header. A
@@ -97,6 +114,12 @@ export default function IfThen({
   // IMPORTANT: assumes allowReorder already excludes read-only. The caller
   // (StepsList) folds that in before passing it down.
   const showDragHandle = allowReorder && !isDrawerOpen && !isMobile
+
+  // IMPORTANT: without this, a nested block's box sits off-centre because
+  // nothing else absorbs the inline handle's width. Mirrors the offset a
+  // reorderable step's own row makes for its own handle.
+  const blockHandleOffset =
+    isNestedInBlock && showDragHandle ? NESTED_DRAG_HANDLE_WIDTH / 2 : 0
 
   // Whole-block delete. An explicit if-then V2 block sends just the if-then's
   // id, and the backend expands that to the block's range. An if-then V1
@@ -206,13 +229,28 @@ export default function IfThen({
         <Flex
           pos="relative"
           alignItems="center"
-          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
+          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNestedInBlock)}
           minW={MIN_FLOW_STEP_WIDTH}
         >
           <Flex
             {...flowStepGroupStyles.container}
             display={isMobile ? 'block' : 'flex'}
-            w="100%"
+            // Lets the box give up room to the inline drag handle below
+            // instead of overflowing the slot.
+            // Replaced by an explicit width and offset when the handle is
+            // present (see blockHandleOffset).
+            flex={blockHandleOffset ? undefined : '1'}
+            // flexShrink 0 keeps the nudge as a real position shift. Default
+            // shrink would otherwise claw the margin back out of the box's
+            // width.
+            flexShrink={blockHandleOffset ? 0 : undefined}
+            w={
+              blockHandleOffset
+                ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
+                : undefined
+            }
+            ml={blockHandleOffset ? `${blockHandleOffset}px` : undefined}
+            minW="0"
             // The header and branch run edge to edge, so the box clips them to
             // its own rounded corners.
             overflow="hidden"
@@ -430,40 +468,48 @@ export default function IfThen({
           </Flex>
 
           {/*
-            Positioned outside the box (not laid out inside the header)
-            because the box clips overflow, and an inline handle here would
-            eat into the header's title.
+            Sits outside the box so it doesn't crowd the header title.
+            Positioned absolutely at the top level so it can't pull the box
+            off centre. Nested in a for-each it's laid out as a row sibling
+            instead. That slot fills the parent's width, so an
+            absolutely-positioned handle would overflow past the for-each's
+            edge.
           */}
-          {showDragHandle && (
-            <Box pos="absolute" left="100%" top={0} h={NESTED_FLOW_STEP_HEIGHT}>
-              <Flex alignItems="center" h="100%">
-                <SortableList.DragHandle />
+          {showDragHandle &&
+            (isNestedInBlock ? (
+              <Flex
+                alignItems="center"
+                alignSelf="flex-start"
+                h={NESTED_FLOW_STEP_HEIGHT}
+                flexShrink={0}
+              >
+                <SortableList.DragHandle isNested />
               </Flex>
-            </Box>
-          )}
+            ) : (
+              <Box
+                pos="absolute"
+                left="100%"
+                top={0}
+                h={NESTED_FLOW_STEP_HEIGHT}
+              >
+                <Flex alignItems="center" h="100%">
+                  <SortableList.DragHandle />
+                </Flex>
+              </Box>
+            ))}
         </Flex>
       </Flex>
 
       {/*
-        Matches the height AddStepButton draws between two steps: 16+36+16px
-        normally, or a 48px divider in the stronger colour once read-only
-        hides the button. The block has no add-after affordance of its own
-        yet, so it draws a plain line of the same height instead. The last
-        block draws nothing, matching how a last step has no connector.
+        The connector down to whatever follows the block, which doubles as the
+        affordance for adding a step after the whole block. Same place, height
+        and dividers as a plain step's add button relative to its card.
       */}
-      {!isLastBlock && (
-        <Flex flexDir="column" alignItems="center" w="100%">
-          {readOnly ? (
-            <Divider
-              h="48px"
-              orientation="vertical"
-              borderColor="base.divider.strong"
-            />
-          ) : (
-            <Divider h="68px" orientation="vertical" />
-          )}
-        </Flex>
-      )}
+      <AddAfterBlockButton
+        block={block}
+        isLastStep={isLastBlock}
+        isNested={isNestedInBlock}
+      />
     </Flex>
   )
 }

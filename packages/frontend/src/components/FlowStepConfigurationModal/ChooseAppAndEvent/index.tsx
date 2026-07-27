@@ -52,9 +52,14 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     flowId,
   } = useContext(EditorContext)
 
-  const { modalState, patchModalState, prevStep, isTrigger, step } = useContext(
-    FlowStepConfigurationContext,
-  )
+  const {
+    modalState,
+    patchModalState,
+    prevStep,
+    isTrigger,
+    step,
+    previousBlockId,
+  } = useContext(FlowStepConfigurationContext)
   const { approvalBranches } = useContext(MrfContext)
 
   const { currentScreen, selectedApp } = modalState
@@ -134,7 +139,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             triggerOrAction.key,
             systemConnection?.id || undefined,
             approvalConfig && { approval: approvalConfig },
-            { isIfThenV2Enabled },
+            { previousBlockId, isIfThenV2Enabled },
           )
           newStepId = createdStep.id
         } else if (step) {
@@ -177,6 +182,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       flowId,
       patchModalState,
       prevStep,
+      previousBlockId,
       step,
       onClose,
       onDrawerOpen,
