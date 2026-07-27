@@ -8,7 +8,7 @@ import { useIsMobile } from '@opengovsg/design-system-react'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 import { useApps } from '@/hooks/useApps'
-import { Message } from '@/hooks/useChatStream'
+import { Message, PipeStatePart } from '@/hooks/useChatStream'
 
 export interface AIBuilderDraftState {
   flowName: string
@@ -88,8 +88,10 @@ export const AiBuilderContextProvider = ({
 
   // Update drawer state when isMobile or output changes (handles async isMobile hook)
   useEffect(() => {
-    const shouldOpen =
-      !isMobile && Boolean(output?.trigger || output?.actions?.length)
+    const hasSteps = output?.pipeId
+      ? Array.isArray(output?.steps) && output.steps.length > 0
+      : Boolean(output?.trigger || output?.actions?.length)
+    const shouldOpen = !isMobile && hasSteps
 
     if (shouldOpen !== isDrawerOpen) {
       setIsDrawerOpen(shouldOpen)
@@ -108,17 +110,21 @@ export const AiBuilderContextProvider = ({
    * NOTE: process the steps that have been returned by Pair
    * as if its in the Editor, but a lot simpler
    */
-  const steps = useMemo(
-    () =>
-      [
-        ...(output?.trigger ? [output.trigger] : []),
-        ...(output?.actions || []),
-      ].map((step, index) => ({
-        ...step,
-        position: index + 1,
-      })),
-    [output?.trigger, output?.actions],
-  )
+  const steps = useMemo(() => {
+    // Phase 2b+: DB-backed pipe state — steps already have correct positions
+    if (output?.pipeId && Array.isArray(output?.steps)) {
+      return (output as PipeStatePart['data'])
+        .steps as unknown as AiBuilderStep[]
+    }
+    // Phase 2a (proposal) and legacy path
+    return [
+      ...(output?.trigger ? [output.trigger] : []),
+      ...(output?.actions || []),
+    ].map((step, index) => ({
+      ...step,
+      position: index + 1,
+    }))
+  }, [output])
   const [triggerStep, stepsBeforeGroup, groupedSteps] = useMemo(
     () => getStepStructure(appsWithActions, steps),
     [appsWithActions, steps],
@@ -148,7 +154,11 @@ export const AiBuilderContextProvider = ({
         isMobile,
         steps,
         triggerStep,
-        actionSteps: output?.actions || [],
+        actionSteps: output?.pipeId
+          ? (output?.steps || []).filter(
+              (s: { type: string }) => s.type === 'action',
+            )
+          : output?.actions || [],
         stepsBeforeGroup,
         groupedSteps,
         stepGroupType,

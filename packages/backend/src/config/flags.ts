@@ -18,5 +18,6 @@ export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
     chatSummaryPromptName: 'chat-summary',
     generateStepsPromptName: 'generate-steps',
     version: 'production',
+    mcpStepConfig: false,
   },
 }
