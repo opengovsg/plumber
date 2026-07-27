@@ -78,6 +78,11 @@ function flattenValue(
       .filter((k) => obj[k] !== '' && obj[k] != null)
       .map((k) => {
         const subField = subFields?.find((f) => f.key === k)
+        // obj[k] is assumed scalar here: no current app schema nests a
+        // multirow/multirow-multicol subField inside another one's subFields,
+        // even though IField's type allows it. If that ever changes, this
+        // needs a typeof-object branch that recurses into flattenValue
+        // instead of stringifying — see PR #1864 review discussion.
         return resolveOptionLabel(subField, String(obj[k]))
       })
     return parts.length > 0 ? parts.join(' ') : null
