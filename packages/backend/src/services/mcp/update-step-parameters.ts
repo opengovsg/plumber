@@ -45,7 +45,7 @@ export async function updateStepParametersService({
       throw new Error('Step cannot be updated')
     }
 
-    // Use App.findTriggerOrActionByKey for type/validity checks (hidden actions etc.)
+    // Use App.findTriggerOrActionByKey for type/validity checks
     const triggerOrAction = await App.findTriggerOrActionByKey(
       step.appKey,
       step.key,
@@ -53,6 +53,14 @@ export async function updateStepParametersService({
 
     if (!triggerOrAction) {
       throw new Error('No such trigger or action')
+    }
+
+    if (triggerOrAction.hiddenFromUser) {
+      throw new Error(
+        `${
+          step.type === 'trigger' ? 'Trigger' : 'Action'
+        } can only be updated by system`,
+      )
     }
 
     // Get arguments from the raw app registry (before getApp transforms them into substeps)
@@ -95,7 +103,6 @@ export async function updateStepParametersService({
       action.validateStepParameters?.(mergedParameters)
     }
 
-    let resolvedConnectionId: string | undefined
     if (connectionId !== undefined) {
       const connection = await user
         .withAccessibleConnections({ requiredRole: 'viewer' })
@@ -110,17 +117,13 @@ export async function updateStepParametersService({
           `Connection app '${connection.key}' does not match step app '${step.appKey}'`,
         )
       }
-
-      resolvedConnectionId = connectionId
     }
 
     return Step.query(trx).patchAndFetchById(stepId, {
       parameters: mergedParameters,
       version,
       status: 'incomplete',
-      ...(resolvedConnectionId !== undefined && {
-        connectionId: resolvedConnectionId,
-      }),
+      ...(connectionId !== undefined && { connectionId }),
     })
   })
 }

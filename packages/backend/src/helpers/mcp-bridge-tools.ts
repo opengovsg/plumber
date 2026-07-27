@@ -111,7 +111,7 @@ export function createMcpBridgeTools(user: User, traceId: string) {
             "Parameter key/value pairs to save. Only keys matching the step's field schema are kept.",
           ),
         connection_id: z
-          .string()
+          .uuid()
           .optional()
           .describe(
             "Connection ID to assign to this step. Obtain from list_connections. The connection's app must match the step's app.",
