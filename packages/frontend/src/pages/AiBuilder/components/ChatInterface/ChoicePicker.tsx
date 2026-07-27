@@ -77,37 +77,39 @@ export default function ChoicePicker({
           )}
         </Flex>
 
-        <Flex direction="column" gap={2}>
-          {currentQ.options.map((opt, optIdx) => (
-            <Button
-              key={optIdx}
-              variant="outline"
-              justifyContent="flex-start"
-              h="auto"
-              py={2}
-              isDisabled={isStreaming}
-              onClick={() => onOptionClick(optIdx)}
-              borderColor="gray.200"
-              bg="white"
-              color="gray.800"
-              _hover={{ borderColor: 'primary.300', bg: 'primary.50' }}
-              _active={{ bg: 'primary.100' }}
-              gap={2}
-            >
-              <Badge
-                colorScheme="secondary"
-                variant="subtle"
-                size="sm"
-                flexShrink={0}
+        {currentQ.options.length > 0 && (
+          <Flex direction="column" gap={2}>
+            {currentQ.options.map((opt, optIdx) => (
+              <Button
+                key={optIdx}
+                variant="outline"
+                justifyContent="flex-start"
+                h="auto"
+                py={2}
+                isDisabled={isStreaming}
+                onClick={() => onOptionClick(optIdx)}
+                borderColor="gray.200"
+                bg="white"
+                color="gray.800"
+                _hover={{ borderColor: 'primary.300', bg: 'primary.50' }}
+                _active={{ bg: 'primary.100' }}
+                gap={2}
               >
-                {optIdx + 1}
-              </Badge>
-              <Text textAlign="left" whiteSpace="normal" color="gray.800">
-                {opt}
-              </Text>
-            </Button>
-          ))}
-        </Flex>
+                <Badge
+                  colorScheme="secondary"
+                  variant="subtle"
+                  size="sm"
+                  flexShrink={0}
+                >
+                  {optIdx + 1}
+                </Badge>
+                <Text textAlign="left" whiteSpace="normal" color="gray.800">
+                  {opt}
+                </Text>
+              </Button>
+            ))}
+          </Flex>
+        )}
 
         <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
           <Flex gap={2} align="flex-end">
@@ -116,7 +118,11 @@ export default function ChoicePicker({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Or describe your answer..."
+              placeholder={
+                currentQ.options.length > 0
+                  ? 'Or describe your answer...'
+                  : 'Enter your answer...'
+              }
               resize="none"
               border="none"
               bg="transparent"
