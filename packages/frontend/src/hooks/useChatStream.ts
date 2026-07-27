@@ -43,6 +43,26 @@ export type IsChatReadyPart = {
     isChatReady: boolean
     flowSteps?: IFlowSteps
     error?: string
+    mcpMode?: boolean // true when mcpStepConfig LD flag is on — suppresses the create-pipe mutation button
+  }
+}
+
+export type PipeStateStep = {
+  id: string
+  appKey: string
+  key: string
+  type: 'trigger' | 'action'
+  position: number
+  status: 'incomplete' | 'completed'
+  parameters: Record<string, unknown>
+  connectionId: string | null
+}
+
+export type PipeStatePart = {
+  type: 'data-pipeState'
+  data: {
+    pipeId: string
+    steps: PipeStateStep[]
   }
 }
 
@@ -161,13 +181,21 @@ export function useChatStream(options: UseChatStreamOptions) {
       ])
 
       const lastMessage = messages[messages.length - 1]
+
+      // Phase 2b+: DB-backed pipe state from data-pipeState event
+      const pipeStatePart = lastMessage.parts.find(
+        (part): part is PipeStatePart => part.type === 'data-pipeState',
+      )
+
+      // Phase 2a or old path: workflow proposal from data-isChatReady event
       const isChatReadyPart = lastMessage.parts.find(
         (part): part is IsChatReadyPart => part.type === 'data-isChatReady',
       )
 
-      const { isChatReady, flowSteps, error } = isChatReadyPart?.data ?? {}
+      const { isChatReady, flowSteps, error, mcpMode } =
+        isChatReadyPart?.data ?? {}
 
-      if (isChatReady) {
+      if (pipeStatePart || isChatReady) {
         setIsReady(true)
       }
 
@@ -179,11 +207,17 @@ export function useChatStream(options: UseChatStreamOptions) {
           ...locationRef.current.state,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
+          // pipeStatePart: replace output with DB pipe state (Phase 2b+)
           // isChatReady: populate output from stream (steps or error), drawer opens
-          // !isChatReady: preserve current output
-          ...(isChatReady
+          // neither: preserve current output
+          ...(pipeStatePart
+            ? { output: pipeStatePart.data }
+            : isChatReady
             ? {
-                output: flowSteps ?? { error },
+                output: {
+                  ...(flowSteps ?? { error }),
+                  mcpMode: mcpMode ?? false,
+                },
                 ...(flowSteps?.name ? { flowName: flowSteps.name } : {}),
               }
             : currentOutput

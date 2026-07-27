@@ -33,6 +33,7 @@ import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
+import Flow from '@/models/flow'
 import { AuthenticatedRequest } from '@/types/express/context'
 
 import { serializeMessagesForLangfuse } from './helpers'
@@ -140,7 +141,14 @@ const handleChatStream = observe(
 
       let workflowError = 'Unable to generate the workflow.'
 
-      const mcpTools = createMcpBridgeTools(context.currentUser, traceId)
+      let activePipeId: string | null = null
+      const mcpTools = createMcpBridgeTools(
+        context.currentUser,
+        traceId,
+        (pipeId) => {
+          activePipeId = pipeId
+        },
+      )
 
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
@@ -181,46 +189,121 @@ const handleChatStream = observe(
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
 
-                const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
-                  event.text,
-                )
+                const mcpStepConfig =
+                  aiBuilderFlag.config.mcpStepConfig ?? false
 
-                let flowSteps: IFlowSteps | undefined = undefined
-
-                if (hasWorkflowMetadata) {
-                  try {
-                    const parsedWorkflowMetadata = parseWorkflowMetadata(
-                      event.text,
-                      restrictedApps,
-                    )
-                    flowSteps = { ...parsedWorkflowMetadata, traceId }
-                  } catch (error) {
-                    workflowError =
-                      error instanceof BadUserInputError
-                        ? error.message
-                        : 'Unable to generate the workflow.'
+                if (mcpStepConfig) {
+                  // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
+                  const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
+                    event.text,
+                  )
+                  if (hasWorkflowMetadata) {
+                    try {
+                      const parsedWorkflowMetadata = parseWorkflowMetadata(
+                        event.text,
+                        restrictedApps,
+                      )
+                      const flowSteps = { ...parsedWorkflowMetadata, traceId }
+                      writer.write({
+                        type: 'data-isChatReady',
+                        data: { isChatReady: true, flowSteps, mcpMode: true },
+                      })
+                    } catch (error) {
+                      const msg =
+                        error instanceof BadUserInputError
+                          ? error.message
+                          : 'Unable to generate the workflow.'
+                      writer.write({
+                        type: 'data-isChatReady',
+                        data: {
+                          isChatReady: true,
+                          error: msg,
+                          mcpMode: true,
+                        },
+                      })
+                    }
                   }
-                }
 
-                // isChatReady: true whenever WORKFLOW_METADATA is present (success or error)
-                // isChatReady: false only when there is no WORKFLOW_METADATA block
-                // NOTE: type MUST start with "data-" - SDK enforces this
-                writer.write({
-                  type: 'data-isChatReady',
-                  data: {
-                    isChatReady: hasWorkflowMetadata,
-                    ...(hasWorkflowMetadata &&
-                      (flowSteps ? { flowSteps } : { error: workflowError })),
-                  },
-                })
+                  // Phase 2b+: MCP tools ran this turn — emit fresh pipe state from DB
+                  if (activePipeId) {
+                    const flow = await Flow.query()
+                      .findById(activePipeId)
+                      .where('user_id', context.currentUser.id)
+                    const steps = flow
+                      ? await flow
+                          .$relatedQuery('steps')
+                          .orderBy('position', 'asc')
+                      : []
 
-                if (!hasWorkflowMetadata) {
+                    writer.write({
+                      type: 'data-pipeState',
+                      data: {
+                        pipeId: activePipeId,
+                        steps: steps.map((step) => ({
+                          id: step.id,
+                          appKey: step.appKey,
+                          key: step.key,
+                          type: step.type,
+                          position: step.position,
+                          status: step.status,
+                          parameters: step.parameters,
+                          connectionId: step.connectionId ?? null,
+                        })),
+                      },
+                    })
+                  }
+
+                  // Clarification blocks on both phases
                   const questions = parseClarificationBlock(event.text)
                   if (questions) {
                     writer.write({
                       type: 'data-clarification',
                       data: { questions },
                     })
+                  }
+                } else {
+                  // Old YAML path — unchanged
+                  const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
+                    event.text,
+                  )
+
+                  let flowSteps: IFlowSteps | undefined = undefined
+
+                  if (hasWorkflowMetadata) {
+                    try {
+                      const parsedWorkflowMetadata = parseWorkflowMetadata(
+                        event.text,
+                        restrictedApps,
+                      )
+                      flowSteps = { ...parsedWorkflowMetadata, traceId }
+                    } catch (error) {
+                      workflowError =
+                        error instanceof BadUserInputError
+                          ? error.message
+                          : 'Unable to generate the workflow.'
+                    }
+                  }
+
+                  // isChatReady: true whenever WORKFLOW_METADATA is present (success or error)
+                  // isChatReady: false only when there is no WORKFLOW_METADATA block
+                  // NOTE: type MUST start with "data-" - SDK enforces this
+                  writer.write({
+                    type: 'data-isChatReady',
+                    data: {
+                      isChatReady: hasWorkflowMetadata,
+                      ...(hasWorkflowMetadata &&
+                        (flowSteps ? { flowSteps } : { error: workflowError })),
+                    },
+                  })
+
+                  if (!hasWorkflowMetadata) {
+                    const questions = parseClarificationBlock(event.text)
+                    if (questions) {
+                      writer.write({
+                        type: 'data-clarification',
+                        data: { questions },
+                      })
+                    }
                   }
                 }
               } catch (error) {
