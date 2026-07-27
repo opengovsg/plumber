@@ -15,6 +15,7 @@ import {
   smoothStream,
   stepCountIs,
   streamText,
+  type UIMessageStreamWriter,
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
@@ -38,9 +39,28 @@ import { AuthenticatedRequest } from '@/types/express/context'
 
 import { serializeMessagesForLangfuse } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
+import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { chatRequestSchema } from './schema'
 
 const MAX_MESSAGES = 50
+
+function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
+  const questions = parseClarificationBlock(text)
+  if (questions) {
+    writer.write({
+      type: 'data-clarification',
+      data: { questions },
+    })
+  }
+
+  const dynamicPicker = parseDynamicPickerBlock(text)
+  if (dynamicPicker) {
+    writer.write({
+      type: 'data-dynamicPicker',
+      data: dynamicPicker,
+    })
+  }
+}
 
 const handleChatStream = observe(
   async (req: AuthenticatedRequest, res: Response) => {
@@ -254,13 +274,7 @@ const handleChatStream = observe(
                   }
 
                   // Clarification blocks on both phases
-                  const questions = parseClarificationBlock(event.text)
-                  if (questions) {
-                    writer.write({
-                      type: 'data-clarification',
-                      data: { questions },
-                    })
-                  }
+                  emitTextAnnotations(event.text, writer)
                 } else {
                   // Old YAML path — unchanged
                   const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
@@ -297,13 +311,7 @@ const handleChatStream = observe(
                   })
 
                   if (!hasWorkflowMetadata) {
-                    const questions = parseClarificationBlock(event.text)
-                    if (questions) {
-                      writer.write({
-                        type: 'data-clarification',
-                        data: { questions },
-                      })
-                    }
+                    emitTextAnnotations(event.text, writer)
                   }
                 }
               } catch (error) {
