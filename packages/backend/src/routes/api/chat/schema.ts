@@ -69,7 +69,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
     type: z.literal('data-dynamicPicker'),
     data: z.object({
       question: z.string(),
-      stepId: z.string(),
+      stepId: z.uuid(),
       key: z.string(),
     }),
   }),
@@ -84,12 +84,19 @@ const messagePartSchema = z.discriminatedUnion('type', [
     output: z.unknown().optional(),
   }),
   z.object({
+    type: z.literal('data-stepUpdate'),
+    data: z.object({
+      stepId: z.uuid(),
+      parameters: z.record(z.string(), z.unknown()),
+    }),
+  }),
+  z.object({
     type: z.literal('data-pipeState'),
     data: z.object({
-      pipeId: z.string(),
+      pipeId: z.uuid(),
       steps: z.array(
         z.object({
-          id: z.string(),
+          id: z.uuid(),
           appKey: z.string(),
           key: z.string(),
           type: z.string(),

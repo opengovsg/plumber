@@ -162,16 +162,23 @@ const handleChatStream = observe(
       let workflowError = 'Unable to generate the workflow.'
 
       let activePipeId: string | null = null
-      const mcpTools = createMcpBridgeTools(
-        context.currentUser,
-        traceId,
-        (pipeId) => {
-          activePipeId = pipeId
-        },
-      )
 
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
+          const mcpTools = createMcpBridgeTools(
+            context.currentUser,
+            traceId,
+            (pipeId) => {
+              activePipeId = pipeId
+            },
+            (stepId, parameters) => {
+              writer.write({
+                type: 'data-stepUpdate',
+                data: { stepId, parameters },
+              })
+            },
+          )
+
           const result = streamText({
             model,
             messages: allMessages,
