@@ -15,6 +15,7 @@ export interface UpdateStepParametersInput {
   pipeId: string
   stepId: string
   parameters: Record<string, unknown>
+  connectionId?: string
 }
 
 export async function updateStepParametersService({
@@ -22,6 +23,7 @@ export async function updateStepParametersService({
   pipeId,
   stepId,
   parameters,
+  connectionId,
 }: UpdateStepParametersInput): Promise<Step> {
   return Step.transaction(async (trx) => {
     const accessible = await user
@@ -43,7 +45,7 @@ export async function updateStepParametersService({
       throw new Error('Step cannot be updated')
     }
 
-    // Use App.findTriggerOrActionByKey for type/validity checks (hidden actions etc.)
+    // Use App.findTriggerOrActionByKey for type/validity checks
     const triggerOrAction = await App.findTriggerOrActionByKey(
       step.appKey,
       step.key,
@@ -101,10 +103,27 @@ export async function updateStepParametersService({
       action.validateStepParameters?.(mergedParameters)
     }
 
+    if (connectionId !== undefined) {
+      const connection = await user
+        .withAccessibleConnections({ requiredRole: 'viewer' })
+        .findOne({ 'connections.id': connectionId })
+
+      if (!connection) {
+        throw new Error('Connection not found')
+      }
+
+      if (connection.key !== step.appKey) {
+        throw new Error(
+          `Connection app '${connection.key}' does not match step app '${step.appKey}'`,
+        )
+      }
+    }
+
     return Step.query(trx).patchAndFetchById(stepId, {
       parameters: mergedParameters,
       version,
       status: 'incomplete',
+      ...(connectionId !== undefined && { connectionId }),
     })
   })
 }
