@@ -3,6 +3,7 @@ import { TextPart } from 'ai'
 import {
   ClarificationPart,
   CustomUIMessage,
+  DynamicPickerPart,
   IsChatReadyPart,
   Message,
 } from '@/hooks/useChatStream'
@@ -44,6 +45,10 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       (part): part is ClarificationPart => part.type === 'data-clarification',
     )
 
+    const dynamicPickerPart = msg.parts.find(
+      (part): part is DynamicPickerPart => part.type === 'data-dynamicPicker',
+    )
+
     return {
       id: msg.id,
       text: extractTextContent(msg),
@@ -51,6 +56,7 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       traceId: msg.metadata?.traceId,
       isChatReady: false,
       clarification: clarificationPart?.data.questions,
+      dynamicPicker: dynamicPickerPart?.data,
     }
   })
 
