@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
 import FlowCollaborator from '@/models/flow-collaborators'
+import Step from '@/models/step'
 import User from '@/models/user'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
@@ -11,12 +12,48 @@ import { updateStepParametersService } from '../update-step-parameters'
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
+  verifyConnectionRegistrationService: vi.fn(),
+  registerConnectionService: vi.fn(),
+  fetchFormSchema: vi.fn(),
+  globalVariable: vi.fn().mockResolvedValue({}),
+  parseFormIdFormat: vi.fn().mockReturnValue('abc123'),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
 }))
+
+vi.mock('../verify-connection-registration', () => ({
+  verifyConnectionRegistrationService:
+    mocks.verifyConnectionRegistrationService,
+}))
+
+vi.mock('../register-connection', () => ({
+  registerConnectionService: mocks.registerConnectionService,
+}))
+
+vi.mock('@/helpers/global-variable', () => ({ default: mocks.globalVariable }))
+
+vi.mock('@/apps/formsg/triggers/new-submission/fetch-form-schema', () => ({
+  fetchFormSchema: mocks.fetchFormSchema,
+}))
+
+vi.mock('@/apps/formsg/auth/verify-credentials', async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import('@/apps/formsg/auth/verify-credentials')
+  >()
+  return {
+    ...actual,
+    parseFormIdFormat: mocks.parseFormIdFormat,
+  }
+})
+
+beforeEach(() => {
+  mocks.verifyConnectionRegistrationService.mockReset()
+  mocks.registerConnectionService.mockReset()
+  mocks.fetchFormSchema.mockReset()
+})
 
 describe('updateStepParametersService', () => {
   beforeEach(() => {
@@ -65,11 +102,13 @@ describe('updateStepParametersService', () => {
       },
     })
 
-    expect(result.parameters).toMatchObject({
+    expect(result.step.parameters).toMatchObject({
       subject: 'Hello world',
       destinationEmail: ['a@b.com'],
     })
-    expect(result.parameters).not.toHaveProperty('unknownHallucinatedField')
+    expect(result.step.parameters).not.toHaveProperty(
+      'unknownHallucinatedField',
+    )
   })
 
   it('sets status to incomplete after parameter update', async () => {
@@ -108,7 +147,7 @@ describe('updateStepParametersService', () => {
       parameters: { subject: 'Test' },
     })
 
-    expect(result.status).toBe('incomplete')
+    expect(result.step.status).toBe('incomplete')
   })
 
   it('throws if the step does not belong to the requesting user', async () => {
@@ -232,7 +271,7 @@ describe('updateStepParametersService', () => {
       parameters: { destinationEmail: ['a@b.com'] },
     })
 
-    expect(result.parameters).toMatchObject({
+    expect(result.step.parameters).toMatchObject({
       subject: 'Hello world',
       destinationEmail: ['a@b.com'],
     })
@@ -282,7 +321,7 @@ describe('updateStepParametersService', () => {
       connectionId: connection.id,
     })
 
-    expect(result.connectionId).toBe(connection.id)
+    expect(result.step.connectionId).toBe(connection.id)
   })
 
   it('throws when the connection belongs to another user', async () => {
@@ -481,5 +520,361 @@ describe('updateStepParametersService', () => {
         connectionId: ownerConnection.id,
       }),
     ).rejects.toThrow('Connection not found')
+  })
+})
+
+describe('connection registration for FormSG (per-step)', () => {
+  let user: User
+  let triggerStepId: string
+  let pipeId: string
+  let connectionId: string
+
+  beforeEach(async () => {
+    mocks.verifyConnectionRegistrationService.mockReset()
+    mocks.registerConnectionService.mockReset()
+    mocks.fetchFormSchema.mockReset()
+
+    user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `formsg-reg-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'FormSG Reg Test',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-formsg-reg',
+    })
+
+    pipeId = flow.id
+    triggerStepId = flow.steps[0].id
+
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'formsg',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: { formId: 'https://form.gov.sg/abc123abc123abc123abc123' },
+    })
+    connectionId = connection.id
+  })
+
+  it('VERIFIED: persists connectionId without re-registering', async () => {
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'VERIFIED',
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: triggerStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionRegistered).toBe(true)
+    expect(result.step.connectionId).toBe(connectionId)
+    expect(mocks.registerConnectionService).not.toHaveBeenCalled()
+
+    const dbStep = await Step.query().findById(triggerStepId)
+    expect(dbStep?.connectionId).toBe(connectionId)
+  })
+
+  it('UNREGISTERED: auto-registers and marks connectionRegistered', async () => {
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'UNREGISTERED',
+    })
+    mocks.registerConnectionService.mockResolvedValue({
+      registered: true,
+      message: 'ok',
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: triggerStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionRegistered).toBe(true)
+    expect(result.step.connectionId).toBe(connectionId)
+    expect(mocks.registerConnectionService).toHaveBeenCalledWith(
+      user,
+      triggerStepId,
+      connectionId,
+    )
+  })
+
+  it('ANOTHER_ENDPOINT: sets connectionConflict, does NOT persist connectionId, returns formFields', async () => {
+    const conflictMsg =
+      'The form is currently connected to a different endpoint.'
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'ANOTHER_ENDPOINT',
+      message: conflictMsg,
+    })
+    mocks.fetchFormSchema.mockResolvedValue({
+      form: {
+        form_fields: [
+          { _id: 'field-1', title: 'Applicant name', fieldType: 'textfield' },
+        ],
+      },
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: triggerStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionConflict).toBe(true)
+    expect(result.connectionConflictMessage).toBe(conflictMsg)
+    expect(result.step.connectionId).toBeNull()
+    expect(result.formFields).toEqual([
+      { id: 'field-1', title: 'Applicant name', fieldType: 'textfield' },
+    ])
+
+    const dbStep = await Step.query().findById(triggerStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+
+  it('ANOTHER_PIPE: sets connectionConflict, does NOT persist connectionId', async () => {
+    const conflictMsg = 'The form is being used in another pipe.'
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'ANOTHER_PIPE',
+      message: conflictMsg,
+    })
+    mocks.fetchFormSchema.mockResolvedValue({ form: { form_fields: [] } })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: triggerStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionConflict).toBe(true)
+    expect(result.connectionConflictMessage).toBe(conflictMsg)
+    expect(result.step.connectionId).toBeNull()
+  })
+
+  it('verify throws: sets connectionError, does NOT persist connectionId, returns formFields', async () => {
+    mocks.verifyConnectionRegistrationService.mockRejectedValue(
+      new Error("We couldn't verify your form connection"),
+    )
+    mocks.fetchFormSchema.mockResolvedValue({
+      form: {
+        form_fields: [{ _id: 'field-2', title: 'Email', fieldType: 'email' }],
+      },
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: triggerStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toContain("We couldn't verify")
+    expect(result.step.connectionId).toBeNull()
+    expect(result.formFields).toEqual([
+      { id: 'field-2', title: 'Email', fieldType: 'email' },
+    ])
+
+    const dbStep = await Step.query().findById(triggerStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+})
+
+describe('connection registration for M365-Excel (global)', () => {
+  let user: User
+  let actionStepId: string
+  let pipeId: string
+  let connectionId: string
+
+  beforeEach(async () => {
+    mocks.verifyConnectionRegistrationService.mockReset()
+    mocks.registerConnectionService.mockReset()
+
+    user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `m365-reg-${randomUUID()}@example.com`,
+    })
+
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'm365-excel',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: {},
+    })
+    connectionId = connection.id
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'M365 Reg Test',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'm365-excel',
+          key: 'createTableRow',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-m365-reg',
+    })
+
+    pipeId = flow.id
+    actionStepId = flow.steps[1].id
+  })
+
+  it('folder not created: auto-registers, sets connectionId', async () => {
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'UNREGISTERED',
+    })
+    mocks.registerConnectionService.mockResolvedValue({
+      registered: true,
+      message: 'ok',
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionRegistered).toBe(true)
+    expect(result.step.connectionId).toBe(connectionId)
+    expect(mocks.registerConnectionService).toHaveBeenCalledWith(
+      user,
+      actionStepId,
+      connectionId,
+    )
+  })
+
+  it('folder already exists: skips register, persists connectionId directly', async () => {
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'VERIFIED',
+    })
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionRegistered).toBe(true)
+    expect(result.step.connectionId).toBe(connectionId)
+    expect(mocks.registerConnectionService).not.toHaveBeenCalled()
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBe(connectionId)
+  })
+
+  it('registration fails: sets connectionError, does not persist connectionId', async () => {
+    mocks.verifyConnectionRegistrationService.mockRejectedValue(
+      new Error('M365 folder creation failed'),
+    )
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: actionStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    expect(result.connectionError).toContain('M365 folder creation failed')
+    expect(result.step.connectionId).toBeNull()
+
+    const dbStep = await Step.query().findById(actionStepId)
+    expect(dbStep?.connectionId).toBeNull()
+  })
+})
+
+describe('no connectionRegistrationType — connectionId set directly', () => {
+  it('sets connectionId without any registration service calls', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `direct-conn-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Direct Conn Test',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-direct',
+    })
+
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'postman',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: {},
+    })
+
+    const actionStep = flow.steps.find((s) => s.type === 'action')!
+
+    const result = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { subject: 'Hello' },
+      connectionId: connection.id,
+    })
+
+    expect(result.connectionRegistered).toBeUndefined()
+    expect(result.connectionConflict).toBeUndefined()
+    expect(result.connectionError).toBeUndefined()
+    expect(result.step.connectionId).toBe(connection.id)
+    expect(mocks.verifyConnectionRegistrationService).not.toHaveBeenCalled()
+    expect(mocks.registerConnectionService).not.toHaveBeenCalled()
+
+    const dbStep = await Step.query().findById(actionStep.id)
+    expect(dbStep?.connectionId).toBe(connection.id)
   })
 })
