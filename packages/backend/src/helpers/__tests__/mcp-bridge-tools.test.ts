@@ -14,7 +14,7 @@ vi.mock('@/services/mcp/create-flow-with-steps', () => ({
 vi.mock('@/services/mcp/update-step-parameters', () => ({
   updateStepParametersService: vi
     .fn()
-    .mockResolvedValue({ id: 's1', parameters: {} }),
+    .mockResolvedValue({ step: { id: 's1', parameters: {} } }),
 }))
 vi.mock('@/services/mcp/create-step', () => ({
   createStepService: vi.fn().mockResolvedValue({ id: 's2', appKey: 'slack' }),
@@ -301,6 +301,41 @@ describe('createMcpBridgeTools', () => {
             steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
           },
           { toolCallId: 'create_pipe', messages: [] },
+        ),
+      ).resolves.not.toThrow()
+    })
+  })
+
+  describe('onStepUpdate callback', () => {
+    it('is called with step_id and saved parameters after update_step_parameters succeeds', async () => {
+      vi.mocked(updateStepParametersService).mockResolvedValueOnce({
+        step: { id: 'step-1', parameters: { subject: 'Hello' } } as any,
+      })
+
+      const onStepUpdate = vi.fn()
+      const tools = createMcpBridgeTools(
+        mockUser,
+        mockTraceId,
+        undefined,
+        onStepUpdate,
+      )
+      await tools.update_step_parameters.execute(
+        {
+          pipe_id: 'flow-1',
+          step_id: 'step-1',
+          parameters: { subject: 'Hello' },
+        },
+        { toolCallId: 'update_step_parameters', messages: [] },
+      )
+      expect(onStepUpdate).toHaveBeenCalledWith('step-1', { subject: 'Hello' })
+    })
+
+    it('does not throw when onStepUpdate is not provided', async () => {
+      const tools = createMcpBridgeTools(mockUser, mockTraceId)
+      await expect(
+        tools.update_step_parameters.execute(
+          { pipe_id: 'flow-1', step_id: 's1', parameters: {} },
+          { toolCallId: 'update_step_parameters', messages: [] },
         ),
       ).resolves.not.toThrow()
     })
