@@ -1,6 +1,7 @@
 import { IStepConfig } from '@plumber/types'
 
 import { Fragment, useCallback, useMemo } from 'react'
+import { MdOpenInNew } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -223,9 +224,13 @@ export default function StepsPreview() {
               <Button
                 variant="solid"
                 size="sm"
+                rightIcon={<MdOpenInNew />}
                 onClick={() => {
-                  clearPersistedState()
-                  navigate(URLS.FLOW_EDITOR(output.pipeId), { replace: true })
+                  window.open(
+                    URLS.FLOW_EDITOR(output.pipeId),
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
                 }}
               >
                 Open in editor
