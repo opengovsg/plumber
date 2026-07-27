@@ -1,3 +1,5 @@
+import type { IGlobalVariable } from '@plumber/types'
+
 import apps from '@/apps'
 import { UserFacingError } from '@/errors/user-facing-error'
 import globalVariable from '@/helpers/global-variable'
@@ -46,12 +48,24 @@ export async function registerConnectionService(
     throw new UserFacingError('App not found or does not support auth')
   }
 
-  const flow = await Flow.query().findById(step.flowId)
-  if (!flow) {
-    throw new Error('Flow not found')
+  const connectionRegistrationType = app.auth.connectionRegistrationType
+  if (!connectionRegistrationType) {
+    throw new UserFacingError('App does not support connection registration')
   }
 
-  const $ = await globalVariable({ connection, app, flow, user })
+  // 'global' registration (e.g. m365-excel) is not tied to a specific flow, so
+  // $ is built without one — mirrors makeGlobalVariableForGlobalRegistration in
+  // the equivalent GraphQL registerConnection mutation.
+  let $: IGlobalVariable
+  if (connectionRegistrationType === 'global') {
+    $ = await globalVariable({ connection, app, user })
+  } else {
+    const flow = await Flow.query().findById(step.flowId)
+    if (!flow) {
+      throw new UserFacingError('Flow not found')
+    }
+    $ = await globalVariable({ connection, app, flow, user })
+  }
 
   const isVerified = await app.auth.isStillVerified($)
   if (!isVerified) {
