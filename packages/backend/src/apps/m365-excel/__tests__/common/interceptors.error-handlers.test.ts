@@ -22,6 +22,7 @@ import { EXCEL_504_MAX_ATTEMPTS } from '../../common/interceptors/request-error-
 function mockAxiosAdapterToThrowOnce(
   status: AxiosResponse['status'],
   headers?: AxiosResponse['headers'],
+  data?: AxiosResponse['data'],
 ): void {
   mocks.axiosAdapter.mockImplementationOnce((config) => {
     throw new AxiosError(
@@ -32,6 +33,7 @@ function mockAxiosAdapterToThrowOnce(
       {
         status,
         headers,
+        data,
         config,
       } as unknown as AxiosResponse,
     )
@@ -110,6 +112,56 @@ describe('M365 request error handlers', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
+
+  it('logs an error and throws a RetriableError with default step delay on the intermittent 404 "Invalid version" blip', async () => {
+    mockAxiosAdapterToThrowOnce(404, undefined, {
+      error: { code: 'ResourceNotFound', message: 'Invalid version: error' },
+    })
+    await http
+      .get('/test-url')
+      .then(() => {
+        expect.unreachable()
+      })
+      .catch((error): void => {
+        expect(error).toBeInstanceOf(RetriableError)
+        expect(error.delayType).toEqual('step')
+        expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
+        expect(error.message).toEqual('Retrying HTTP 404 from M365 Excel')
+      })
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.stringContaining('HTTP 404'),
+      expect.objectContaining({ event: 'm365-http-404-invalid-version' }),
+    )
+  })
+
+  it.each([
+    {
+      name: 'the error code does not match',
+      data: {
+        error: { code: 'ItemNotFound', message: 'Invalid version: error' },
+      },
+    },
+    {
+      name: 'the error message does not match',
+      data: {
+        error: { code: 'ResourceNotFound', message: 'Item not found' },
+      },
+    },
+    {
+      name: 'the body is not a parseable Graph API error',
+      data: { unexpected: 'body' },
+    },
+  ])(
+    'rethrows the original HttpError on a 404 when $name',
+    async ({ data }) => {
+      mockAxiosAdapterToThrowOnce(404, undefined, data)
+      await expect(http.get('/test-url')).rejects.toThrow(HttpError)
+      expect(mocks.logError).not.toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ event: 'm365-http-404-invalid-version' }),
+      )
+    },
+  )
 
   it.each([500, 502, 503])(
     'logs a warning and throws a RetriableError with default step delay on %s',
