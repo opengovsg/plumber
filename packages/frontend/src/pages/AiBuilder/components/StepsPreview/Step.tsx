@@ -83,9 +83,9 @@ export default function Step(props: StepProps) {
         >
           <Flex {...flowStepStyles.topHeader} py={isNested ? 3 : 4}>
             <StepAppIcon
-              isCompleted={undefined}
+              isCompleted={step.status === 'completed'}
               isNested={isNested}
-              isTestSuccessful={undefined}
+              isTestSuccessful={step.status === 'completed' ? true : undefined}
               shouldTestStepAgain={false}
               app={app}
               step={step}

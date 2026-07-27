@@ -122,6 +122,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
   toolPart('tool-create_step'),
   toolPart('tool-delete_step'),
   toolPart('tool-get_dynamic_data'),
+  toolPart('tool-execute_step'),
 ])
 
 const messageSchema = z.object({
