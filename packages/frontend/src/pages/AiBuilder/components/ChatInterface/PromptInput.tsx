@@ -10,8 +10,12 @@ import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 
-import { type ClarificationQuestion } from '@/hooks/useChatStream'
+import {
+  type ClarificationQuestion,
+  type DynamicPickerPart,
+} from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
+import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
@@ -23,6 +27,7 @@ interface PromptInputProps {
   sendMessage: (message: string) => void
   cancelStream: () => void
   clarification?: ClarificationQuestion[]
+  dynamicPicker?: DynamicPickerPart['data']
 }
 
 export default function PromptInput({
@@ -33,6 +38,7 @@ export default function PromptInput({
   sendMessage,
   cancelStream,
   clarification,
+  dynamicPicker,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -40,11 +46,13 @@ export default function PromptInput({
     Record<number, string>
   >({})
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
+  const [reviewMode, setReviewMode] = useState(false)
 
   // Reset state whenever a new clarification arrives
   useEffect(() => {
     setSelectedAnswers({})
     setCurrentQuestionIdx(0)
+    setReviewMode(false)
   }, [clarification])
 
   const handleSubmit = (e: SyntheticEvent) => {
@@ -94,15 +102,29 @@ export default function PromptInput({
 
     const isLast = currentQuestionIdx === clarification.length - 1
     if (isLast) {
-      const combined = clarification
-        .map((q, i) => `Q: ${q.question}\nA: ${newAnswers[i]}`)
-        .join('\n\n')
-      sendMessage(combined)
-      setSelectedAnswers({})
-      setCurrentQuestionIdx(0)
+      setReviewMode(true)
     } else {
       setCurrentQuestionIdx((prev) => prev + 1)
     }
+  }
+
+  const handleConfirm = () => {
+    if (!clarification) {
+      return
+    }
+    const combined = clarification
+      .map((q, i) => `Q: ${q.question}\nA: ${selectedAnswers[i]}`)
+      .join('\n\n')
+    sendMessage(combined)
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+    setReviewMode(false)
+  }
+
+  const handleReset = () => {
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+    setReviewMode(false)
   }
 
   const handleOptionClick = (optionIdx: number) => {
@@ -115,14 +137,36 @@ export default function PromptInput({
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()
 
+  if (dynamicPicker) {
+    return (
+      <DynamicPicker
+        question={dynamicPicker.question}
+        stepId={dynamicPicker.stepId}
+        dynamicKey={dynamicPicker.key}
+        isStreaming={isStreaming}
+        onSelect={(name, value) => {
+          sendMessage(`Q: ${dynamicPicker.question}\nA: ${name} (id: ${value})`)
+        }}
+        onSkip={() => {
+          sendMessage(`Q: ${dynamicPicker.question}\nA: skip`)
+        }}
+        cancelStream={cancelStream}
+      />
+    )
+  }
+
   if (clarification && clarification.length > 0) {
     return (
       <ChoicePicker
         clarification={clarification}
         currentQuestionIdx={currentQuestionIdx}
+        selectedAnswers={selectedAnswers}
+        reviewMode={reviewMode}
         isStreaming={isStreaming}
         onOptionClick={handleOptionClick}
         onFreeTextSubmit={handleAnswer}
+        onConfirm={handleConfirm}
+        onReset={handleReset}
         cancelStream={cancelStream}
       />
     )
