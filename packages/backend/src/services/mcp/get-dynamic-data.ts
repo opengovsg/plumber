@@ -124,7 +124,7 @@ export async function getDynamicDataService({
   }
 
   if (fetchedData.error) {
-    throw new Error(JSON.stringify(fetchedData.error))
+    throw new UserFacingError(JSON.stringify(fetchedData.error))
   }
 
   return fetchedData.data
