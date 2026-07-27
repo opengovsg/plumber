@@ -13,6 +13,10 @@ import {
 } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
+import {
+  executeStepService,
+  type McpExecuteStepResult,
+} from '@/services/mcp/execute-step'
 import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
 import {
   listConnectionsService,
@@ -222,6 +226,26 @@ export function createMcpBridgeTools(
           key,
           parameters: parameters as IJSONObject | undefined,
         })
+      },
+    }),
+
+    execute_step: tool({
+      description:
+        'Test a configured step in a pipe. Runs the step, marks it as completed on success, and returns its output data. Call after update_step_parameters to verify the step works. The returned dataOut will be used to wire variables into downstream steps. Warning: for steps that send a real message (SMS by Postman sendSms, Telegram sendMessage, Slack sendMessageToChannel, PaySG sendEmail), this actually sends it to the configured recipient/channel/number — confirm the details with the user before calling this for those steps.',
+      inputSchema: z.object({
+        step_id: z.uuid().describe('ID of the step to test'),
+      }),
+      execute: async ({ step_id }): Promise<McpExecuteStepResult> => {
+        let pipeId: string | undefined
+        try {
+          const result = await executeStepService(user, step_id)
+          pipeId = result.pipeId
+          return result
+        } finally {
+          if (pipeId) {
+            onPipeChange?.(pipeId)
+          }
+        }
       },
     }),
   }
