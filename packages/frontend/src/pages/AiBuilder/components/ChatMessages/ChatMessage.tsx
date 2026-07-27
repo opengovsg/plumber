@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
+import { prepareAiText } from '@/pages/AiBuilder/helpers'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
 
 import ChatMessageToolbar from './ChatMessageToolbar'
@@ -18,7 +19,7 @@ const AiMessage = memo(
       <Flex gap={3} w="full" align="start">
         <Box flex={1} px={2} color="gray.900">
           <ChakraStreamdown isAnimating={false}>
-            {message.text || ''}
+            {prepareAiText(message.text || '')}
           </ChakraStreamdown>
           {shouldShowToolbar && (
             <ChatMessageToolbar
