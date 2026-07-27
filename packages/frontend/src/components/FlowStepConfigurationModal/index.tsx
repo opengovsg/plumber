@@ -21,6 +21,8 @@ interface FlowStepConfigurationModalProps {
   app?: IApp
   event?: ITrigger | IAction
   prevStep?: IStep
+  // Set only when launched from an if-then block's add-after affordance.
+  previousBlockId?: string
 }
 
 function FlowStepConfigurationModalContent({
@@ -53,7 +55,16 @@ function FlowStepConfigurationModalContent({
 export default function FlowStepConfigurationModal(
   props: FlowStepConfigurationModalProps,
 ): JSX.Element {
-  const { onClose, isTrigger, isLastStep, step, app, event, prevStep } = props
+  const {
+    onClose,
+    isTrigger,
+    isLastStep,
+    step,
+    app,
+    event,
+    prevStep,
+    previousBlockId,
+  } = props
 
   return (
     <FlowStepConfigurationContextProvider
@@ -62,6 +73,7 @@ export default function FlowStepConfigurationModal(
       app={app}
       event={event}
       prevStep={prevStep}
+      previousBlockId={previousBlockId}
       step={step}
     >
       <Modal
