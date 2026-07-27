@@ -262,10 +262,10 @@ export function createMcpBridgeTools(
         'Call ONLY after the user has explicitly confirmed they want to overwrite the existing webhook. ' +
         'On success the connection is persisted to the step.',
       inputSchema: z.object({
-        pipe_id: z.string().describe('ID of the pipe containing the step'),
-        step_id: z.string().describe('ID of the trigger step to register'),
+        pipe_id: z.uuid().describe('ID of the pipe containing the step'),
+        step_id: z.uuid().describe('ID of the trigger step to register'),
         connection_id: z
-          .string()
+          .uuid()
           .describe(
             'Connection ID to register and persist on the step. Pass the same connection_id from the preceding update_step_parameters call.',
           ),
