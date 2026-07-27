@@ -12,6 +12,10 @@ interface FlowStepConfigurationContextValue {
   prevStep?: IStep
   prevStepId?: string
   step?: IStep
+  // Set only when the modal is launched from an if-then block's add-after
+  // affordance. Sent on the CREATE_STEP so the backend places the new step
+  // after the named block and (for an if-then V1 block) pins its extent.
+  previousBlockId?: string
 }
 
 export const FlowStepConfigurationContext =
@@ -52,6 +56,7 @@ interface FlowStepConfigurationContextProps {
   isTrigger: boolean
   isLastStep: boolean
   prevStep?: IStep
+  previousBlockId?: string
   children: React.ReactNode
 }
 
@@ -62,6 +67,7 @@ export const FlowStepConfigurationContextProvider = ({
   isTrigger,
   isLastStep,
   prevStep,
+  previousBlockId,
   children,
 }: FlowStepConfigurationContextProps) => {
   const [modalState, setModalState] = useState<ModalState>({
@@ -86,6 +92,7 @@ export const FlowStepConfigurationContextProvider = ({
         prevStep,
         prevStepId: prevStep?.id,
         step,
+        previousBlockId,
       }}
     >
       {children}

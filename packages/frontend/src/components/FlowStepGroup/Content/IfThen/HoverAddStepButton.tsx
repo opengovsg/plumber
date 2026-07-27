@@ -23,6 +23,10 @@ interface HoverAddStepButtonProps {
   step: IStep
   allowReorder?: boolean
   canChildStepsReorder?: boolean
+  // Set only when this button stands in for AddAfterBlockButton (an if-then
+  // V2 block nested in a for-each body), to pin/upgrade the block's marker
+  // as the top-level button would.
+  previousBlockId?: string
 }
 
 export function HoverAddStepButton(
@@ -36,6 +40,7 @@ export function HoverAddStepButton(
     step,
     allowReorder,
     canChildStepsReorder,
+    previousBlockId,
   } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isHovered, setIsHovered] = useState(false)
@@ -109,6 +114,7 @@ export function HoverAddStepButton(
           isTrigger={false} // Can only add an action all the time
           isLastStep={isLastStep}
           prevStep={prevStep}
+          previousBlockId={previousBlockId}
         />
       )}
 
