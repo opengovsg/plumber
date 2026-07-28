@@ -1,4 +1,4 @@
-import type { IFlowSteps } from '@plumber/types'
+import type { IFlowSteps, IJSONObject } from '@plumber/types'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -86,6 +86,15 @@ export type ClarificationPart = {
   type: 'data-clarification'
   data: {
     questions: ClarificationQuestion[]
+  }
+}
+
+export type StepUpdatePart = {
+  type: 'data-stepUpdate'
+  data: {
+    stepId: string
+    parameters: IJSONObject
+    parameterLabels?: Record<string, string>
   }
 }
 
@@ -303,6 +312,50 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
+  const {
+    stepParametersByStepId,
+    parameterLabelsByStepId,
+    activeStepId,
+    completedStepIds,
+  } = useMemo(() => {
+    const byStepId: Record<string, IJSONObject> = {}
+    const labelsByStepId: Record<string, Record<string, string>> = {}
+    let latestStepId: string | null = null
+    const completed = new Set<string>()
+
+    for (const msg of aiMessages) {
+      if (msg.role !== 'assistant') {
+        continue
+      }
+      for (const part of msg.parts ?? []) {
+        if (part.type === 'data-stepUpdate') {
+          const { stepId, parameters, parameterLabels } = (
+            part as StepUpdatePart
+          ).data
+          byStepId[stepId] = parameters
+          if (parameterLabels) {
+            labelsByStepId[stepId] = parameterLabels
+          }
+          latestStepId = stepId
+        }
+        if (part.type === 'data-pipeState') {
+          for (const step of (part as PipeStatePart).data.steps) {
+            if (step.status === 'completed') {
+              completed.add(step.id)
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      stepParametersByStepId: byStepId,
+      parameterLabelsByStepId: labelsByStepId,
+      activeStepId: latestStepId,
+      completedStepIds: completed,
+    }
+  }, [aiMessages])
+
   const resetChat = useCallback(() => {
     setMessages([])
     setIsReady(false)
@@ -331,5 +384,9 @@ export function useChatStream(options: UseChatStreamOptions) {
     cancelStream: stop,
     resetChat,
     hasReachedLimit: messages.length >= MAX_MESSAGES,
+    activeStepId,
+    stepParametersByStepId,
+    parameterLabelsByStepId,
+    completedStepIds,
   }
 }
