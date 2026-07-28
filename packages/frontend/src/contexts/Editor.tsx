@@ -239,7 +239,7 @@ export const EditorProvider = ({
 
       return newStep as IStep
     },
-    [createStep, flow, flowId, initializeIfThen],
+    [createStep, flow.updatedAt, flowId, initializeIfThen, setCurrentStepId],
   )
 
   /**
