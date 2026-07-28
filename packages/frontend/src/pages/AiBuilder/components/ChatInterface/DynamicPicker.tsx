@@ -216,23 +216,22 @@ export default function DynamicPicker({
               ))
             )
           ) : isError ? (
-            <Flex align="center" gap={2} px={2}>
-              <Text color="red.400" fontSize="sm">
-                {isAppKeyMode
-                  ? "Couldn't load connections."
-                  : "Couldn't load options — enter a value manually below."}
-              </Text>
-              <Button
-                variant="link"
-                size="sm"
-                color="primary.500"
-                isDisabled={isStreaming}
+            <Text color="red.400" fontSize="sm">
+              {isAppKeyMode
+                ? "Couldn't load connections. "
+                : "Couldn't load options — enter a value manually below, or "}
+              <Text
+                as="button"
+                type="button"
+                disabled={isStreaming}
                 onClick={() => setRetryCount((c) => c + 1)}
-                fontWeight="normal"
+                textDecoration="underline"
+                fontWeight="medium"
+                _disabled={{ opacity: 0.5, cursor: 'not-allowed' }}
               >
                 Retry
-              </Button>
-            </Flex>
+              </Text>
+            </Text>
           ) : null}
         </Flex>
 
