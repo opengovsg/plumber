@@ -167,7 +167,7 @@ UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<flow-id>';
 
 ## Counting archived steps by app and action
 
-Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bucket. The `stepCounts` field breaks down the number of archived steps by `appKey` → `actionKey` for that run.
+Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bucket. The `stepCounts` field breaks down the number of archived steps by SGT date → `appKey` → `actionKey` for that run.
 
 ### Single run (local / MinIO)
 
@@ -180,11 +180,15 @@ Output shape:
 
 ```json
 {
-  "formsg": { "submitForm": 42 },
-  "slack":  { "sendMessage": 17, "findMessage": 3 },
+  "2026-07-27": {
+    "formsg": { "submitForm": 42 },
+    "slack":  { "sendMessage": 17, "findMessage": 3 }
+  },
   ...
 }
 ```
+
+Dates are keyed by the step's `created_at`, converted to SGT (not the archival run date) — a single run can span many historical dates since it works through a backlog of eligible executions.
 
 `nullStepCount` in the same object captures steps where `appKey` or `key` could not be resolved (pre-denormalisation rows).
 
@@ -192,7 +196,7 @@ Output shape:
 
 ### Aggregate across all runs (local)
 
-To get cumulative counts across every run stored in the bucket, download all meta files and sum them:
+To get cumulative counts by date across every run stored in the bucket, download all meta files and sum them. Because the same date can appear in multiple run files (old backlog dates get touched across several runs), group by date + app + action rather than assuming one date lives in one file:
 
 ```bash
 mc ls local/plumber-archive-dev/_meta/runs/ \
@@ -202,12 +206,13 @@ mc ls local/plumber-archive-dev/_meta/runs/ \
     done \
   | jq -s '
       [ .[] | select(.dryRun == false) | .stepCounts | to_entries[] |
+        .key as $date | .value | to_entries[] |
         .key as $app | .value | to_entries[] |
-        { app: $app, action: .key, count: .value } ]
-      | group_by(.app + "." + .action)[]
-      | { app: .[0].app, action: .[0].action, count: ([.[].count] | add) }
+        { date: $date, app: $app, action: .key, count: .value } ]
+      | group_by(.date + "." + .app + "." + .action)[]
+      | { date: .[0].date, app: .[0].app, action: .[0].action, count: ([.[].count] | add) }
     ' \
-  | jq -s 'sort_by(-.count)'
+  | jq -s 'sort_by(.date, -.count)'
 ```
 
 The `select(.dryRun == false)` filter excludes dry-run files, which would double-count executions that were never actually deleted.
@@ -222,12 +227,13 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
     done \
   | jq -s '
       [ .[] | select(.dryRun == false) | .stepCounts | to_entries[] |
+        .key as $date | .value | to_entries[] |
         .key as $app | .value | to_entries[] |
-        { app: $app, action: .key, count: .value } ]
-      | group_by(.app + "." + .action)[]
-      | { app: .[0].app, action: .[0].action, count: ([.[].count] | add) }
+        { date: $date, app: $app, action: .key, count: .value } ]
+      | group_by(.date + "." + .app + "." + .action)[]
+      | { date: .[0].date, app: .[0].app, action: .[0].action, count: ([.[].count] | add) }
     ' \
-  | jq -s 'sort_by(-.count)'
+  | jq -s 'sort_by(.date, -.count)'
 ```
 
 ---

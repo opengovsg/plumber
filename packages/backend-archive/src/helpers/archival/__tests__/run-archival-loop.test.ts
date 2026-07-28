@@ -1,4 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { Settings as LuxonSettings } from 'luxon'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 vi.mock('../config', () => ({
   archivalConfig: {
@@ -159,6 +168,13 @@ function setupDb(
 }
 
 describe('runArchivalLoop', () => {
+  // TZ formatting replicated here (see appConfig) as tests don't load the app
+  // config module.
+  beforeAll(() => {
+    LuxonSettings.defaultZone = 'Asia/Singapore'
+    LuxonSettings.defaultLocale = 'en-SG'
+  })
+
   beforeEach(() => {
     vi.mocked(archiveExecution).mockResolvedValue('archived')
   })
@@ -599,8 +615,44 @@ describe('runArchivalLoop', () => {
       expect(metaCall).toBeDefined()
       const payload = JSON.parse(metaCall![0].body as string)
       expect(payload.stepCounts).toEqual({
-        formsg: { trigger: 2 },
-        postman: { 'send-sms': 1 },
+        '2024-01-01': {
+          formsg: { trigger: 2 },
+          postman: { 'send-sms': 1 },
+        },
+      })
+    })
+
+    it('buckets counts per appKey:key by SGT date, not UTC date', async () => {
+      const exec1 = makeExecution('e1')
+      setupDb([[exec1], []], {
+        e1: [
+          // 2024-01-01T23:30 UTC is 2024-01-02T07:30 SGT (UTC+8).
+          makeStep({
+            id: 's1',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: 'trigger',
+            createdAt: '2024-01-01T23:30:00.000Z',
+          }),
+          makeStep({
+            id: 's2',
+            executionId: 'e1',
+            appKey: 'formsg',
+            key: 'trigger',
+            createdAt: '2024-01-01T01:00:00.000Z',
+          }),
+        ],
+      })
+
+      await runArchivalLoop(new AbortController().signal)
+
+      const metaCall = vi
+        .mocked(putArchiveObject)
+        .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))!
+      const payload = JSON.parse(metaCall[0].body as string)
+      expect(payload.stepCounts).toEqual({
+        '2024-01-01': { formsg: { trigger: 1 } },
+        '2024-01-02': { formsg: { trigger: 1 } },
       })
     })
 
@@ -636,7 +688,9 @@ describe('runArchivalLoop', () => {
         .mock.calls.find(([args]) => args.key.startsWith('_meta/runs/'))!
       const payload = JSON.parse(metaCall[0].body as string)
       expect(payload.nullStepCount).toBe(2)
-      expect(payload.stepCounts).toEqual({ formsg: { trigger: 1 } })
+      expect(payload.stepCounts).toEqual({
+        '2024-01-01': { formsg: { trigger: 1 } },
+      })
     })
 
     it('does not count steps from skipped executions', async () => {
