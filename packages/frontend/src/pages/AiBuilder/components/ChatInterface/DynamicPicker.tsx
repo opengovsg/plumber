@@ -47,6 +47,7 @@ export default function DynamicPicker({
   const [options, setOptions] = useState<DynamicPickerOption[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const [query, setQuery] = useState('')
   const [selectedOption, setSelectedOption] =
     useState<DynamicPickerOption | null>(null)
@@ -108,7 +109,7 @@ export default function DynamicPicker({
       })
 
     return () => controller.abort()
-  }, [stepId, dynamicKey, appKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stepId, dynamicKey, appKey, retryCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = query
     ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
@@ -215,9 +216,23 @@ export default function DynamicPicker({
               ))
             )
           ) : isError ? (
-            <Text color="red.400" fontSize="sm" px={2}>
-              Couldn&apos;t load options — enter a value manually below.
-            </Text>
+            <Flex align="center" gap={2} px={2}>
+              <Text color="red.400" fontSize="sm">
+                {isAppKeyMode
+                  ? "Couldn't load connections."
+                  : "Couldn't load options — enter a value manually below."}
+              </Text>
+              <Button
+                variant="link"
+                size="sm"
+                color="primary.500"
+                isDisabled={isStreaming}
+                onClick={() => setRetryCount((c) => c + 1)}
+                fontWeight="normal"
+              >
+                Retry
+              </Button>
+            </Flex>
           ) : null}
         </Flex>
 
