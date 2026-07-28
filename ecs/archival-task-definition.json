@@ -9,8 +9,7 @@
   "containerDefinitions": [
     {
       "name": "archival",
-      "image": "plumber",
-      "command": ["node", "dist/scripts/archive-executions.js"],
+      "image": "plumber-archival",
       "essential": true,
       "logConfiguration": {
         "logDriver": "awslogs",
