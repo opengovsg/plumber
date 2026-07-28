@@ -50,6 +50,46 @@ describe('buildS3Key', () => {
     expect(key).toContain('month=03')
   })
 
+  // pg returns TIMESTAMP columns as Date objects at runtime; verify the same
+  // key is produced regardless of whether createdAt is a string or a Date.
+  describe('Date object input (pg runtime type)', () => {
+    it('produces the same key as an ISO string for a non-test execution', () => {
+      const key = buildS3Key({
+        flowId: 'flow-abc-123',
+        id: 'exec-xyz-789',
+        createdAt: new Date('2025-01-15T10:30:00.000Z'),
+        testRun: false,
+      })
+      expect(key).toBe(
+        `${S3_PREFIX_EXECUTIONS}/flow_id=flow-abc-123/year=2025/month=01/execution_id=exec-xyz-789.json.gz`,
+      )
+    })
+
+    it('produces the same key as an ISO string for a test execution', () => {
+      const key = buildS3Key({
+        flowId: 'flow-abc-123',
+        id: 'exec-xyz-789',
+        createdAt: new Date('2025-01-15T10:30:00.000Z'),
+        testRun: true,
+      })
+      expect(key).toBe(
+        `${S3_PREFIX_TEST_EXECUTIONS}/flow_id=flow-abc-123/year=2025/month=01/execution_id=exec-xyz-789.json.gz`,
+      )
+    })
+
+    it('applies SGT offset correctly (month rollover) with a Date object', () => {
+      // 2025-01-31T16:00:00Z = 2025-02-01T00:00:00+08:00 SGT
+      const key = buildS3Key({
+        flowId: 'f',
+        id: 'e',
+        createdAt: new Date('2025-01-31T16:00:00.000Z'),
+        testRun: false,
+      })
+      expect(key).toContain('year=2025')
+      expect(key).toContain('month=02')
+    })
+  })
+
   describe('SGT month boundary', () => {
     // SGT = UTC+8, so the flip point is 16:00:00 UTC (= 00:00:00 SGT next day)
 
