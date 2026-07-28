@@ -327,7 +327,11 @@ describe('createMcpBridgeTools', () => {
         },
         { toolCallId: 'update_step_parameters', messages: [] },
       )
-      expect(onStepUpdate).toHaveBeenCalledWith('step-1', { subject: 'Hello' })
+      expect(onStepUpdate).toHaveBeenCalledWith(
+        'step-1',
+        { subject: 'Hello' },
+        undefined,
+      )
     })
 
     it('does not throw when onStepUpdate is not provided', async () => {
