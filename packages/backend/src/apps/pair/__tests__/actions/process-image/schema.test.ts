@@ -236,8 +236,8 @@ describe('process-image schema', () => {
         assert(result.success === false)
       })
 
-      it('should reject descriptions longer than 128 characters', () => {
-        const longDescription = 'a'.repeat(129)
+      it('should accept a single long description under the total limit', () => {
+        const longDescription = 'a'.repeat(5000)
         const result = schema.safeParse({
           image: ['s3-id-123'],
           responseFields: [
@@ -247,17 +247,42 @@ describe('process-image schema', () => {
             },
           ],
         })
-        assert(result.success === false)
+        assert(result.success === true)
       })
 
-      it('should accept descriptions exactly 128 characters long', () => {
-        const maxDescription = 'a'.repeat(128)
+      it('should reject when total description length across all fields exceeds 10,000 characters', () => {
         const result = schema.safeParse({
           image: ['s3-id-123'],
           responseFields: [
             {
               fieldName: 'field1',
-              description: maxDescription,
+              description: 'a'.repeat(5000),
+            },
+            {
+              fieldName: 'field2',
+              description: 'b'.repeat(5001),
+            },
+          ],
+        })
+        assert(result.success === false)
+        if (!result.success) {
+          expect(result.error.issues[0].message).toBe(
+            'Total length of all descriptions cannot exceed 10000 characters',
+          )
+        }
+      })
+
+      it('should accept when total description length across all fields is exactly 10,000 characters', () => {
+        const result = schema.safeParse({
+          image: ['s3-id-123'],
+          responseFields: [
+            {
+              fieldName: 'field1',
+              description: 'a'.repeat(5000),
+            },
+            {
+              fieldName: 'field2',
+              description: 'b'.repeat(5000),
             },
           ],
         })

@@ -5,6 +5,8 @@ import {
   toSanitizedOutputFieldNamePair,
 } from '../../common/schema'
 
+const TOTAL_DESCRIPTION_LENGTH_LIMIT = 10_000
+
 export const schema = z.object({
   // NOTE: this is an array because the attachment field returns an array
   image: z
@@ -21,10 +23,7 @@ export const schema = z.object({
 
           description: z
             .string()
-            .min(1, { message: 'Description is required' })
-            .max(128, {
-              message: 'Description cannot be more than 128 characters',
-            }),
+            .min(1, { message: 'Description is required' }),
         })
         .transform((field) => ({
           ...toSanitizedOutputFieldNamePair(field.fieldName),
@@ -40,6 +39,18 @@ export const schema = z.object({
       },
       {
         message: 'Output names must be unique (case-insensitive)',
+      },
+    )
+    .refine(
+      (fields) => {
+        const totalLength = fields.reduce(
+          (sum, field) => sum + field.description.length,
+          0,
+        )
+        return totalLength <= TOTAL_DESCRIPTION_LENGTH_LIMIT
+      },
+      {
+        message: `Total length of all descriptions cannot exceed ${TOTAL_DESCRIPTION_LENGTH_LIMIT} characters`,
       },
     ),
 })

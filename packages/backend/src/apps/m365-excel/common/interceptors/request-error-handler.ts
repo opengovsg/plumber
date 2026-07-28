@@ -26,6 +26,40 @@ const handleIntermittentError: MaybeThrowingHandler = ($, error) => {
   }
 }
 //
+// Unknown intermittent error from m365
+//
+const handle404: ThrowingHandler = ($, error) => {
+  const graphApiError = tryParseGraphApiError(error)
+  if (!graphApiError) {
+    throw error
+  }
+  // We only want to retry this specific error since it's a temporary blip
+  if (
+    graphApiError.code !== 'ResourceNotFound' ||
+    graphApiError.message !== 'Invalid version: error'
+  ) {
+    throw error
+  }
+
+  logger.error('Received HTTP 404 from MS Graph', {
+    event: 'm365-http-404-invalid-version',
+    tenant: $.auth?.data?.tenantKey as string,
+    baseUrl: error.response.config.baseURL,
+    url: error.response.config.url,
+    flowId: $.flow?.id,
+    stepId: $.step?.id,
+    executionId: $.execution?.id,
+    graphApiError,
+  })
+
+  throw new RetriableError({
+    error: 'Retrying HTTP 404 from M365 Excel',
+    delayType: 'step',
+    delayInMs: 'default',
+  })
+}
+
+//
 // Handle MS rate limiting us
 //
 const handle429: ThrowingHandler = ($, error) => {
@@ -172,6 +206,8 @@ const handle509: ThrowingHandler = function ($, error) {
 
 const errorHandler: IApp['requestErrorHandler'] = async function ($, error) {
   switch (error.response.status) {
+    case 404: // Not found error (specifically Invalid version error blip, caused by intermittent m365 error)
+      return handle404($, error)
     case 429: // Rate limited
       return handle429($, error)
     case 500:
