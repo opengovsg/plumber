@@ -181,10 +181,10 @@ const handleChatStream = observe(
             (pipeId) => {
               activePipeId = pipeId
             },
-            (stepId, parameters) => {
+            (stepId, parameters, parameterLabels) => {
               writer.write({
                 type: 'data-stepUpdate',
-                data: { stepId, parameters },
+                data: { stepId, parameters, parameterLabels },
               })
             },
           )

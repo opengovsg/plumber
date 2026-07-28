@@ -20,6 +20,9 @@ export default function VariablePill({ label }: VariablePillProps) {
       whiteSpace="nowrap"
       lineHeight={1.4}
     >
+      <Box as="span" color="base.content.medium" fontWeight={400} mr="2px">
+        {'{}'}
+      </Box>
       {label}
     </Box>
   )
