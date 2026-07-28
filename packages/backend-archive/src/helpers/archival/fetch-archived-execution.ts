@@ -6,9 +6,8 @@ import {
 import { promisify } from 'node:util'
 import { gunzip } from 'node:zlib'
 
-import logger from '../logger'
-
 import { S3_PREFIX_EXECUTIONS, S3_PREFIX_TEST_EXECUTIONS } from './build-s3-key'
+import logger from './logger'
 import { type ArchivedPayload, ArchivedPayloadSchema } from './types'
 
 const gunzipAsync = promisify(gunzip)
