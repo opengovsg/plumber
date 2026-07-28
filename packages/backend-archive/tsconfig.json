@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "declaration": true,
+    "esModuleInterop": true,
+    "lib": ["es2021", "ES2022.Error"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "outDir": "dist",
+    "paths": {
+      "@/*": ["*"]
+    },
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "target": "es2021",
+    "typeRoots": [
+      "../../node_modules/@types",
+      "node_modules/@types",
+      "node_modules/@plumber/types",
+      "./src/types"
+    ]
+  },
+  "include": ["src/**/*", "*.ts"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
+}
