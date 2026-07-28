@@ -14,6 +14,7 @@ import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
+import StepConfigContext from './StepConfigContext'
 
 function AiBuilderContent() {
   const navigate = useNavigate()
@@ -34,6 +35,10 @@ function AiBuilderContent() {
     cancelStream,
     resetChat,
     hasReachedLimit,
+    stepParametersByStepId,
+    parameterLabelsByStepId,
+    completedStepIds,
+    activeStepId,
   } = useChatStream({ initialMessages: chatMessages })
 
   const cancelRef = useRef(null)
@@ -64,61 +69,70 @@ function AiBuilderContent() {
   }, [guardedNavigate, navigate])
 
   return (
-    <>
-      <Helmet>
-        <title>{flowName} | WIP</title>
-      </Helmet>
-      <Flex h="100vh" flexDirection="column">
-        {!(isMobile && isDrawerOpen) && (
-          <HStack
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            zIndex={10}
-            bg="white"
-            justifyContent="space-between"
-            alignItems="center"
-            py={2}
-            px={{ base: 4, md: 8 }}
-            borderBottom="1px solid"
-            borderColor="base.divider.medium"
-          >
-            <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
-              <CloseButton size="sm" onClick={handleClose} />
+    <StepConfigContext.Provider
+      value={{
+        stepParametersByStepId,
+        parameterLabelsByStepId,
+        completedStepIds,
+        activeStepId,
+      }}
+    >
+      <>
+        <Helmet>
+          <title>{flowName} | WIP</title>
+        </Helmet>
+        <Flex h="100vh" flexDirection="column">
+          {!(isMobile && isDrawerOpen) && (
+            <HStack
+              position="fixed"
+              top={0}
+              left={0}
+              right={0}
+              zIndex={10}
+              bg="white"
+              justifyContent="space-between"
+              alignItems="center"
+              py={2}
+              px={{ base: 4, md: 8 }}
+              borderBottom="1px solid"
+              borderColor="base.divider.medium"
+            >
+              <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
+                <CloseButton size="sm" onClick={handleClose} />
 
-              <Text>{flowName}</Text>
-            </Flex>
-          </HStack>
-        )}
-        <Container
-          maxW="full"
-          px={0}
-          py={0}
-          mt={isMobile && isDrawerOpen ? 0 : '57px'}
-          flex={1}
-          overflowY="auto"
-          bg="white"
-        >
-          <ChatInterface
-            messages={messages}
-            currentResponse={currentResponse}
-            isStreaming={isStreaming}
-            isReadyForPreview={isReadyForPreview}
-            sendMessage={sendMessage}
-            cancelStream={cancelStream}
-            resetChat={resetChat}
-            hasReachedLimit={hasReachedLimit}
-          />
-        </Container>
-      </Flex>
-      <ExitAlert
-        cancelRef={cancelRef}
-        isOpen={showWarning}
-        onClose={cancel}
-        onExit={confirm}
-      />
-    </>
+                <Text>{flowName}</Text>
+              </Flex>
+            </HStack>
+          )}
+          <Container
+            maxW="full"
+            px={0}
+            py={0}
+            mt={isMobile && isDrawerOpen ? 0 : '57px'}
+            flex={1}
+            overflowY="auto"
+            bg="white"
+          >
+            <ChatInterface
+              messages={messages}
+              currentResponse={currentResponse}
+              isStreaming={isStreaming}
+              isReadyForPreview={isReadyForPreview}
+              sendMessage={sendMessage}
+              cancelStream={cancelStream}
+              resetChat={resetChat}
+              hasReachedLimit={hasReachedLimit}
+            />
+          </Container>
+        </Flex>
+        <ExitAlert
+          cancelRef={cancelRef}
+          isOpen={showWarning}
+          onClose={cancel}
+          onExit={confirm}
+        />
+      </>
+    </StepConfigContext.Provider>
   )
 }
 
