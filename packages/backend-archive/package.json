@@ -9,7 +9,7 @@
     "lint": "eslint . --ignore-path ../../.eslintignore && tsc --noEmit",
     "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore && tsc --noEmit",
     "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:rehydrate": "DOTENV_CONFIG_PATH=\"${DOTENV_CONFIG_PATH:-.env}\" ts-node --swc src/scripts/rehydrate-execution.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1027.0",

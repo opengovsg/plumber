@@ -135,6 +135,22 @@ jobs:
         run: |
           docker push ${{ steps.ecr-image-uri.outputs.image }}
 
+      - name: (Archival) Construct ECR image URI
+        id: ecr-archival-image-uri
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.ecr-repository }}-archival
+          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: (Archival) Build and push image to ECR
+        env:
+          DOCKER_BUILDKIT: 1
+          NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+        run: |
+          docker build . -f Dockerfile.archival -t ${{ steps.ecr-archival-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
+          docker push ${{ steps.ecr-archival-image-uri.outputs.image }}
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -207,6 +223,14 @@ jobs:
           codedeploy-application: ${{ inputs.codedeploy-application }}
           codedeploy-deployment-group: ${{ inputs.codedeploy-deployment-group }}
 
+      - name: (Archival) Construct ECR image URI
+        id: ecr-archival-image-uri
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.ecr-repository }}-archival
+          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
       - name: (Archival) Replace variables in task definition
         run: |
           cp ecs/archival-task-definition.json ecs-archival-task-definition.json
@@ -219,7 +243,7 @@ jobs:
         with:
           task-definition: ecs-archival-task-definition.json
           container-name: archival
-          image: ${{ steps.ecr-image-uri.outputs.image }}
+          image: ${{ steps.ecr-archival-image-uri.outputs.image }}
 
       - name: (Archival) Register task definition
         run: |

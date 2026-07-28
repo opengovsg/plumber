@@ -22,6 +22,8 @@ async function main(): Promise<void> {
     retentionDays: archivalConfig.archiveRetentionDays,
     batchSize: archivalConfig.archiveBatchSize,
     sleepMs: archivalConfig.archiveBatchSleepMs,
+    testRuns: archivalConfig.archiveTestRuns,
+    deletedFlowsOnly: archivalConfig.archiveDeletedFlowsOnly,
   })
 
   try {

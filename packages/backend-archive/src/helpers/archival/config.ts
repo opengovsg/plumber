@@ -19,6 +19,18 @@ function requireString(name: string): string {
   return value
 }
 
+function requireIntStrict(name: string): number {
+  const raw = process.env[name]
+  if (raw === undefined || raw === '') {
+    throw new Error(`${name} must be set`)
+  }
+  const value = parseInt(raw, 10)
+  if (isNaN(value)) {
+    throw new Error(`${name} must be a valid integer, got: "${raw}"`)
+  }
+  return value
+}
+
 // Falls back to devDefault in dev; throws in non-dev envs.
 function devString(name: string, devDefault: string): string {
   const value = process.env[name]
@@ -65,10 +77,18 @@ export const archivalConfig = {
   // TODO: remove this flag (and the fast-path branch in run-archival-loop.ts)
   // once the deleted-flows phase has been verified and we move to archiving all flows.
   archiveDeletedFlowsOnly: process.env.ARCHIVE_DELETED_FLOWS_ONLY === 'true',
+  // When archiveDeletedFlowsOnly is true, also archive test_run=true executions
+  // on active flows (subject to the retention cutoff). Has no effect when
+  // archiveDeletedFlowsOnly is false — the full three-branch query includes
+  // test executions regardless.
+  archiveTestRuns: process.env.ARCHIVE_TEST_RUNS === 'true',
   // Number of executions processed concurrently within each batch.
   // Must be >= 1. Reader pool max should be >= this value; writer max >= this value.
   archiveIntraBatchConcurrency: requireInt(
     'ARCHIVE_INTRA_BATCH_CONCURRENCY',
     10,
   ),
+  // Wall-clock limit for a single archival run. The loop exits cleanly once
+  // this is exceeded so the task finishes well within the nightly schedule window.
+  archiveMaxRuntimeMs: requireIntStrict('ARCHIVE_MAX_RUNTIME_MS'),
 }

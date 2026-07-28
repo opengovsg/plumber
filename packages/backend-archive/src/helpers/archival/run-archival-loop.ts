@@ -17,7 +17,9 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
     archiveBatchSleepMs: sleepMs,
     archiveBucket,
     archiveDeletedFlowsOnly,
+    archiveTestRuns,
     archiveIntraBatchConcurrency,
+    archiveMaxRuntimeMs,
   } = archivalConfig
 
   const cutoff = new Date()
@@ -36,6 +38,18 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
   const runAt = new Date(startedAt).toISOString()
 
   while (!signal.aborted) {
+    if (
+      archiveMaxRuntimeMs > 0 &&
+      Date.now() - startedAt >= archiveMaxRuntimeMs
+    ) {
+      logger.info({
+        event: 'archival.run.max_runtime_reached',
+        maxRuntimeMs: archiveMaxRuntimeMs,
+        durationMs: Date.now() - startedAt,
+      })
+      break
+    }
+
     // When archiveDeletedFlowsOnly is set we skip the full three-branch OR
     // entirely — just a single whereIn on deleted flows. This avoids asking
     // Postgres to plan a complex multi-branch query when the full query will
@@ -53,18 +67,29 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
 
     let eligibilityQuery
     if (archiveDeletedFlowsOnly) {
-      eligibilityQuery = archivalDbReader('executions')
-        .select(
-          'executions.id as id',
-          'executions.flow_id as flowId',
-          'executions.status as status',
-          'executions.test_run as testRun',
-          'executions.internal_id as internalId',
-          'executions.created_at as createdAt',
-          'executions.updated_at as updatedAt',
-          'executions.deleted_at as deletedAt',
-        )
-        .whereIn('flow_id', deletedFlowsSubquery)
+      const base = archivalDbReader('executions').select(
+        'executions.id as id',
+        'executions.flow_id as flowId',
+        'executions.status as status',
+        'executions.test_run as testRun',
+        'executions.internal_id as internalId',
+        'executions.created_at as createdAt',
+        'executions.updated_at as updatedAt',
+        'executions.deleted_at as deletedAt',
+      )
+      if (archiveTestRuns) {
+        eligibilityQuery = base.where((builder) => {
+          builder
+            .where((b) => b.whereIn('flow_id', deletedFlowsSubquery))
+            .orWhere((b) =>
+              b
+                .where('test_run', true)
+                .where('executions.created_at', '<', cutoff),
+            )
+        })
+      } else {
+        eligibilityQuery = base.whereIn('flow_id', deletedFlowsSubquery)
+      }
     } else {
       eligibilityQuery = archivalDbReader('executions')
         .select(
@@ -217,14 +242,16 @@ export async function runArchivalLoop(signal: AbortSignal): Promise<void> {
         }
         archivedByFlow.set(execution.flowId, entry)
 
-        for (const step of steps) {
-          if (step.appKey && step.key) {
-            const keyMap =
-              stepCounts.get(step.appKey) ?? new Map<string, number>()
-            keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
-            stepCounts.set(step.appKey, keyMap)
-          } else {
-            nullStepCount++
+        if (!execution.testRun) {
+          for (const step of steps) {
+            if (step.appKey && step.key) {
+              const keyMap =
+                stepCounts.get(step.appKey) ?? new Map<string, number>()
+              keyMap.set(step.key, (keyMap.get(step.key) ?? 0) + 1)
+              stepCounts.set(step.appKey, keyMap)
+            } else {
+              nullStepCount++
+            }
           }
         }
       } else {

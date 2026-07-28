@@ -8,6 +8,7 @@ vi.mock('../config', () => ({
     archiveBatchSleepMs: 0,
     archiveBucket: 'archive-bucket',
     archiveDeletedFlowsOnly: false,
+    archiveTestRuns: false,
     archiveIntraBatchConcurrency: 10,
   },
 }))
@@ -165,6 +166,7 @@ describe('runArchivalLoop', () => {
   afterEach(() => {
     vi.clearAllMocks()
     ;(archivalConfig as any).archiveDeletedFlowsOnly = false
+    ;(archivalConfig as any).archiveTestRuns = false
   })
 
   it('exits immediately when the first batch is empty', async () => {
@@ -239,7 +241,7 @@ describe('runArchivalLoop', () => {
     // The second batch SELECT uses whereRaw(id > cursor); capturedModifyCbs[1] is the cursor modifier
     const qb = { whereRaw: vi.fn() }
     capturedModifyCbs[1](qb)
-    expect(qb.whereRaw).toHaveBeenCalledWith('id > ?::uuid', [
+    expect(qb.whereRaw).toHaveBeenCalledWith('executions.id > ?::uuid', [
       '00000000-0000-0000-0000-000000000003',
     ])
   })
@@ -293,7 +295,9 @@ describe('runArchivalLoop', () => {
       await runArchivalLoop(new AbortController().signal)
 
       const whereCalls = invokeActiveFlowBranch(0)
-      const cutoffCall = whereCalls.find((args) => args[0] === 'created_at')
+      const cutoffCall = whereCalls.find(
+        (args) => args[0] === 'executions.created_at',
+      )
       expect(cutoffCall).toBeDefined()
       expect(cutoffCall![1]).toBe('<')
     })
@@ -310,7 +314,9 @@ describe('runArchivalLoop', () => {
       after.setDate(after.getDate() - 90)
 
       const whereCalls = invokeActiveFlowBranch(0)
-      const cutoffCall = whereCalls.find((args) => args[0] === 'created_at')
+      const cutoffCall = whereCalls.find(
+        (args) => args[0] === 'executions.created_at',
+      )
       const cutoff: Date = cutoffCall![2]
       expect(cutoff.getTime()).toBeGreaterThanOrEqual(before.getTime() - 100)
       expect(cutoff.getTime()).toBeLessThanOrEqual(after.getTime() + 100)
@@ -394,6 +400,86 @@ describe('runArchivalLoop', () => {
 
       expect(capturedDeletedFlowsWhereIn).not.toBeNull()
       expect(archivalDbReader).toHaveBeenCalledWith('flows')
+    })
+
+    describe('archiveTestRuns', () => {
+      it('with archiveDeletedFlowsOnly=true and archiveTestRuns=true, uses a two-branch eligibility query', async () => {
+        ;(archivalConfig as any).archiveDeletedFlowsOnly = true
+        ;(archivalConfig as any).archiveTestRuns = true
+        setupDb([[]])
+
+        await runArchivalLoop(new AbortController().signal)
+
+        // Callback-based query — NOT the simple whereIn fast path
+        expect(capturedEligibilityCb).not.toBeNull()
+
+        const outerQb = {
+          where: vi.fn().mockReturnThis(),
+          orWhere: vi.fn().mockReturnThis(),
+        }
+        capturedEligibilityCb!(outerQb)
+        // Two branches: deleted-flows (where) + test-active (orWhere)
+        expect(outerQb.where).toHaveBeenCalledOnce()
+        expect(outerQb.orWhere).toHaveBeenCalledTimes(1)
+      })
+
+      it('with archiveDeletedFlowsOnly=true and archiveTestRuns=true, test branch selects test_run=true with cutoff', async () => {
+        ;(archivalConfig as any).archiveDeletedFlowsOnly = true
+        ;(archivalConfig as any).archiveTestRuns = true
+        setupDb([[]])
+
+        await runArchivalLoop(new AbortController().signal)
+
+        const outerQb = {
+          where: vi.fn().mockReturnThis(),
+          orWhere: vi.fn().mockReturnThis(),
+        }
+        capturedEligibilityCb!(outerQb)
+
+        const testBranchCb = outerQb.orWhere.mock.calls[0][0] as (
+          qb: any,
+        ) => void
+        const whereCalls: any[][] = []
+        const testBranchQb = {
+          where: vi.fn().mockImplementation((...args: any[]) => {
+            whereCalls.push(args)
+            return testBranchQb
+          }),
+        }
+        testBranchCb(testBranchQb)
+
+        expect(testBranchQb.where).toHaveBeenCalledWith('test_run', true)
+        const cutoffCall = whereCalls.find(
+          (args) => args[0] === 'executions.created_at',
+        )
+        expect(cutoffCall).toBeDefined()
+        expect(cutoffCall![1]).toBe('<')
+      })
+
+      it('with archiveDeletedFlowsOnly=true and archiveTestRuns=false, still uses simple whereIn (unchanged)', async () => {
+        ;(archivalConfig as any).archiveDeletedFlowsOnly = true
+        ;(archivalConfig as any).archiveTestRuns = false
+        setupDb([[]])
+
+        await runArchivalLoop(new AbortController().signal)
+
+        expect(capturedEligibilityCb).toBeNull()
+        expect(capturedDeletedFlowsWhereIn).not.toBeNull()
+      })
+
+      it('with archiveDeletedFlowsOnly=true and archiveTestRuns=true, test_execution_id anti-join still applies', async () => {
+        ;(archivalConfig as any).archiveDeletedFlowsOnly = true
+        ;(archivalConfig as any).archiveTestRuns = true
+        setupDb([[]])
+
+        await runArchivalLoop(new AbortController().signal)
+
+        expect(capturedTestExecAntiJoin).toEqual({
+          table: 'flows as f_tex',
+          col1: 'executions.id',
+          col2: 'f_tex.test_execution_id',
+        })
+      })
     })
   })
 

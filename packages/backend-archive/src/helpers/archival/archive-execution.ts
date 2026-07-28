@@ -39,7 +39,7 @@ export async function archiveExecution(
     metadata: {
       'flow-id': execution.flowId,
       'execution-id': execution.id,
-      'execution-created-at': execution.createdAt,
+      'execution-created-at': new Date(execution.createdAt).toISOString(),
       'archived-at': DateTime.now().toISO(),
       'step-count': String(steps.length),
       'archival-run-at': opts.runAt,
