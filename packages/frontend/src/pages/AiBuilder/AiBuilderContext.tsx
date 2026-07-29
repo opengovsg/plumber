@@ -17,6 +17,11 @@ export interface AIBuilderDraftState {
   // output can be populated (IStep values) or the initial empty state (empty strings)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   output: Record<string, any>
+  // Human-readable overrides for opaque parameter values (e.g. a resolved
+  // Slack channel name), keyed by stepId then parameter key. Display-only —
+  // never persisted server-side, so it's carried in the same draft blob as
+  // the rest of the session to survive a refresh.
+  parameterLabelsByStepId?: Record<string, Record<string, string>>
 }
 
 interface AIBuilderSharedProps extends AIBuilderDraftState {
@@ -69,6 +74,7 @@ export const AiBuilderContextProvider = ({
   chatInput,
   chatMessages,
   output,
+  parameterLabelsByStepId = {},
   clearPersistedState,
   setChatState,
 }: AiBuilderContextProviderProps) => {
@@ -142,6 +148,7 @@ export const AiBuilderContextProvider = ({
         chatInput,
         chatMessages,
         output,
+        parameterLabelsByStepId,
         isMobile,
         steps,
         triggerStep,

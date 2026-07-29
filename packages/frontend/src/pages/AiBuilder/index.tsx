@@ -1,3 +1,5 @@
+import type { IJSONObject } from '@plumber/types'
+
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -21,9 +23,11 @@ function AiBuilderContent() {
   const {
     flowName,
     chatMessages,
+    parameterLabelsByStepId: persistedParameterLabelsByStepId,
     clearPersistedState,
     isMobile,
     isDrawerOpen,
+    steps,
   } = useAiBuilderContext()
 
   const {
@@ -40,6 +44,49 @@ function AiBuilderContent() {
     completedStepIds,
     activeStepId,
   } = useChatStream({ initialMessages: chatMessages })
+
+  // Merge labels persisted in the draft (survive refresh, committed once a
+  // turn finishes) with labels from the current streaming turn (live wins —
+  // it's the freshest within this session, ahead of the next draft commit).
+  const mergedParameterLabelsByStepId = useMemo(() => {
+    const merged = { ...persistedParameterLabelsByStepId }
+    for (const [stepId, labels] of Object.entries(parameterLabelsByStepId)) {
+      merged[stepId] = { ...merged[stepId], ...labels }
+    }
+    return merged
+  }, [persistedParameterLabelsByStepId, parameterLabelsByStepId])
+
+  // stepParametersByStepId from useChatStream is derived by re-scanning the
+  // live aiMessages for data-stepUpdate parts, which resets on refresh. The
+  // steps' own `parameters` field (already persisted via data-pipeState/
+  // output) carries the same saved values across refresh, so fall back to it
+  // per-step; live (this turn's freshest tool result) wins when present.
+  const mergedStepParametersByStepId = useMemo(() => {
+    const merged: Record<string, IJSONObject> = {}
+    for (const step of steps) {
+      if (step.id && step.parameters) {
+        merged[step.id] = step.parameters
+      }
+    }
+    for (const [stepId, parameters] of Object.entries(stepParametersByStepId)) {
+      merged[stepId] = parameters
+    }
+    return merged
+  }, [steps, stepParametersByStepId])
+
+  // completedStepIds from useChatStream is derived by re-scanning the live
+  // aiMessages, which resets on refresh. The steps' own `status` field
+  // (already persisted via data-pipeState/output) carries this same fact
+  // across refresh, so fold it in rather than relying on the live scan alone.
+  const mergedCompletedStepIds = useMemo(() => {
+    const merged = new Set(completedStepIds)
+    for (const step of steps) {
+      if (step.id && step.status === 'completed') {
+        merged.add(step.id)
+      }
+    }
+    return merged
+  }, [steps, completedStepIds])
 
   const cancelRef = useRef(null)
 
@@ -71,9 +118,9 @@ function AiBuilderContent() {
   return (
     <StepConfigContext.Provider
       value={{
-        stepParametersByStepId,
-        parameterLabelsByStepId,
-        completedStepIds,
+        stepParametersByStepId: mergedStepParametersByStepId,
+        parameterLabelsByStepId: mergedParameterLabelsByStepId,
+        completedStepIds: mergedCompletedStepIds,
         activeStepId,
       }}
     >
@@ -152,6 +199,7 @@ export default function AiBuilder() {
           actions: '',
           name: 'Build with AI',
         },
+        parameterLabelsByStepId: {},
       },
     )
 
@@ -162,7 +210,8 @@ export default function AiBuilder() {
     }
   }, [locationState, setPersistedState])
 
-  const { flowName, output, chatInput, chatMessages } = persistedState
+  const { flowName, output, chatInput, chatMessages, parameterLabelsByStepId } =
+    persistedState
 
   return (
     <AiBuilderContextProvider
@@ -170,6 +219,7 @@ export default function AiBuilder() {
       chatInput={chatInput}
       chatMessages={chatMessages}
       output={output}
+      parameterLabelsByStepId={parameterLabelsByStepId}
       clearPersistedState={clearPersistedState}
       setChatState={setPersistedState}
     >
