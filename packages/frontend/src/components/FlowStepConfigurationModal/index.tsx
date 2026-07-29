@@ -3,6 +3,7 @@ import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 import { useContext } from 'react'
 import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 
+import type { AnchorPlacement } from './helpers/anchor-placement'
 import ChooseAndAddConnection from './ChooseAndAddConnection'
 import ChooseAppAndEvent from './ChooseAppAndEvent'
 import {
@@ -23,6 +24,9 @@ interface FlowStepConfigurationModalProps {
   prevStep?: IStep
   // Set only when launched from an if-then block's add-after affordance.
   previousBlockId?: string
+  // Set only by launchers whose anchor step misrepresents where their new step
+  // lands relative to an if-then block. See AnchorPlacement.
+  anchorPlacement?: AnchorPlacement
 }
 
 function FlowStepConfigurationModalContent({
@@ -64,6 +68,7 @@ export default function FlowStepConfigurationModal(
     event,
     prevStep,
     previousBlockId,
+    anchorPlacement,
   } = props
 
   return (
@@ -74,6 +79,7 @@ export default function FlowStepConfigurationModal(
       event={event}
       prevStep={prevStep}
       previousBlockId={previousBlockId}
+      anchorPlacement={anchorPlacement}
       step={step}
     >
       <Modal
