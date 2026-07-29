@@ -55,7 +55,7 @@ export function createMcpBridgeTools(
 
     list_connections: tool<{ app_key?: string }, McpConnection[]>({
       description:
-        "List connections the user has set up, optionally filtered to a specific app. Returns each connection's ID, app key, verified status, label, and formattedData. Use the returned id as connection_id when calling update_step_parameters.",
+        "List connections the user has set up, optionally filtered to a specific app. Returns each connection's ID, app key, verified status, and label. Use the returned id as connection_id when calling update_step_parameters.",
       inputSchema: z.object({
         app_key: z
           .string()
