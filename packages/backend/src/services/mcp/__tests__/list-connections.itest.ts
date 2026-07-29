@@ -170,12 +170,14 @@ describe('listConnectionsService', () => {
         appKey: 'm365-excel',
         verified: true,
         label: 'Excel',
-        formattedData: { screenName: 'Excel' },
       },
     ])
   })
 
-  it('includes formattedData on the returned connection', async () => {
+  // formattedData holds the connection's decrypted credentials (it's used
+  // downstream as $.auth.data — see helpers/global-variable.ts), so it must
+  // never be exposed via the MCP tool surface, which is read by the LLM.
+  it('does not include formattedData in the returned connection', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
       email: `formatted-data-${randomUUID()}@example.com`,
@@ -186,12 +188,16 @@ describe('listConnectionsService', () => {
       userId: user.id,
       verified: true,
       draft: false,
-      formattedData: { screenName: 'My Workspace' },
+      formattedData: {
+        screenName: 'My Workspace',
+        accessToken: 'secret-token',
+      },
     })
 
     const result = await listConnectionsService(user)
     const found = result.find((c) => c.id === conn.id)
 
-    expect(found?.formattedData).toEqual({ screenName: 'My Workspace' })
+    expect(found?.label).toBe('My Workspace')
+    expect(found).not.toHaveProperty('formattedData')
   })
 })
