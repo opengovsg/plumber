@@ -66,6 +66,7 @@ export type PipeStateStep = {
   status: 'incomplete' | 'completed'
   parameters: Record<string, unknown>
   connectionId: string | null
+  connectionLabel?: string | null
 }
 
 export type PipeStatePart = {
