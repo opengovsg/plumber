@@ -33,6 +33,7 @@ interface AIBuilderSharedProps extends AIBuilderDraftState {
 
 interface AiBuilderStep extends IStep {
   description?: string
+  connectionLabel?: string | null
 }
 
 interface AIBuilderContextValue extends AIBuilderSharedProps {

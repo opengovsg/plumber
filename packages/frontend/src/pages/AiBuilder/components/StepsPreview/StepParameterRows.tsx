@@ -1,6 +1,6 @@
 import type { IApp, IJSONObject } from '@plumber/types'
 
-import { Fragment } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
 import { isFieldHidden } from '@/helpers/isFieldHidden'
@@ -109,11 +109,38 @@ function resolveDisplayValue(
   return resolveOptionLabel(field, String(value))
 }
 
+interface ParameterRowProps {
+  label: string
+  children: ReactNode
+}
+
+// Shared row layout for both the connection row and each parameter row —
+// keeps the label column (width, alignment, styling) in one place.
+function ParameterRow({ label, children }: ParameterRowProps) {
+  return (
+    <Flex align="flex-start" gap={4} py={2}>
+      <Text
+        as="span"
+        display="inline-block"
+        fontSize="sm"
+        color="base.content.medium"
+        fontWeight={500}
+        w="80px"
+        flexShrink={0}
+      >
+        {label}
+      </Text>
+      {children}
+    </Flex>
+  )
+}
+
 interface StepParameterRowsProps {
   parameters: IJSONObject
   appKey: string
   stepKey: string
   stepId: string
+  connectionLabel?: string | null
 }
 
 export default function StepParameterRows({
@@ -121,6 +148,7 @@ export default function StepParameterRows({
   appKey,
   stepKey,
   stepId,
+  connectionLabel,
 }: StepParameterRowsProps) {
   const { allApps } = useAiBuilderContext()
   const { parameterLabelsByStepId } = useStepConfigContext()
@@ -153,7 +181,7 @@ export default function StepParameterRows({
       return posA - posB
     })
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && !connectionLabel) {
     return null
   }
 
@@ -166,24 +194,21 @@ export default function StepParameterRows({
       borderTop="1px solid"
       borderColor="base.divider.medium"
     >
+      {connectionLabel && (
+        <ParameterRow label="Connection">
+          <Text as="span" fontSize="sm" color="base.content.default">
+            {connectionLabel}
+          </Text>
+        </ParameterRow>
+      )}
       {rows.map(({ key, label, displayValue }) => {
         const segments = parseParameterValue(displayValue as string)
 
         return (
-          <Flex key={key} align="center" gap={2.5} py="5px">
-            <Text
-              as="span"
-              fontSize="12px"
-              color="base.content.medium"
-              fontWeight={500}
-              minW="54px"
-              flexShrink={0}
-            >
-              {label}
-            </Text>
+          <ParameterRow key={key} label={label}>
             <Box
               as="span"
-              fontSize="13px"
+              fontSize="sm"
               color="base.content.default"
               lineHeight="1.6"
               display="flex"
@@ -201,7 +226,7 @@ export default function StepParameterRows({
                 ),
               )}
             </Box>
-          </Flex>
+          </ParameterRow>
         )
       })}
     </Box>
