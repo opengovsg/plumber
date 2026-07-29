@@ -377,6 +377,9 @@ export default function IfThen({
                     showEmptyAction={true}
                     step={ifThenStep}
                     allowReorder={false}
+                    // The if-then step, this card's anchor, sits outside its
+                    // own block. This step sits inside it.
+                    anchorPlacement="inside-if-then-block"
                   />
                 ) : (
                   <>
@@ -396,6 +399,9 @@ export default function IfThen({
                       step={ifThenStep}
                       allowReorder={false}
                       canChildStepsReorder={children.length > 1}
+                      // Same reasoning as the empty-block placeholder above:
+                      // this step also lands inside the block.
+                      anchorPlacement="inside-if-then-block"
                     />
                     <SortableList
                       items={children.map((step, index) => ({

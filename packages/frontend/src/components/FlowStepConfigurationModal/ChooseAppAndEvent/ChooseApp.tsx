@@ -45,13 +45,20 @@ interface ChooseAppProps {
 export default function ChooseApp(props: ChooseAppProps) {
   const { apps, onSelectAppEvent } = props
   const { getFlagValue } = useContext(LaunchDarklyContext)
-  const { patchModalState, isTrigger, isLastStep, step, prevStepId } =
-    useContext(FlowStepConfigurationContext)
+  const {
+    patchModalState,
+    isTrigger,
+    isLastStep,
+    step,
+    prevStepId,
+    anchorPlacement,
+  } = useContext(FlowStepConfigurationContext)
 
   const appSelectableMap = useIsAppSelectable({
     isLastStep,
     step,
     prevStepId,
+    anchorPlacement,
   })
 
   const [_, isInitializingIfThen] = useIfThenV1Initializer()
@@ -280,7 +287,13 @@ export default function ChooseApp(props: ChooseAppProps) {
                           key={action.key}
                           action={action}
                           onSelectAppEvent={() => onSelectAppEvent(app, action)}
-                          isDisabled={appSelectableMap?.[action.key] === false}
+                          isDisabled={
+                            appSelectableMap?.[action.key]?.isSelectable ===
+                            false
+                          }
+                          disabledReason={
+                            appSelectableMap?.[action.key]?.disabledReason
+                          }
                           searchQuery={searchQuery}
                         />
                       ))
@@ -294,7 +307,8 @@ export default function ChooseApp(props: ChooseAppProps) {
                         ? triggersOrActions[0]
                         : null
 
-                    const isAppDisabled = appSelectableMap?.[app.key] === false
+                    const isAppDisabled =
+                      appSelectableMap?.[app.key]?.isSelectable === false
 
                     if (!triggersOrActions?.length) {
                       return null

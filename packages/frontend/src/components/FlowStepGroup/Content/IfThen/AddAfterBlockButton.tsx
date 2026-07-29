@@ -61,6 +61,9 @@ export function AddAfterBlockButton({
         prevStep={endStep}
         step={endStep}
         previousBlockId={previousBlockId}
+        // Same reasoning as the top-level path below: the anchor (the block's
+        // last child) reads as "inside" the block unless told otherwise.
+        anchorPlacement="after-if-then-block"
       />
     )
   }
@@ -122,6 +125,9 @@ export function AddAfterBlockButton({
           isLastStep={isLastStep}
           prevStep={endStep}
           previousBlockId={previousBlockId}
+          // previousBlockId can't say "after the whole block" either: it is
+          // unset for a region-unconfined block.
+          anchorPlacement="after-if-then-block"
         />
       )}
 
