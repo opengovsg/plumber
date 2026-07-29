@@ -529,6 +529,56 @@ describe('getExecutions', () => {
     })
   })
 
+  describe('execution history window', () => {
+    const OLD_DATE = '2020-01-01T00:00:00.000Z'
+
+    const createExecutionAt = async (flow: Flow, createdAt: string) => {
+      const execution = await flow
+        .$relatedQuery('executions')
+        .insertAndFetch(
+          createExecutionData({ internalId: `exec-${createdAt}` }),
+        )
+      await execution.$query().patch({ createdAt })
+      return execution
+    }
+
+    it('excludes executions older than 3 months for non-admin requests when archival is enabled', async () => {
+      await createExecutionAt(testFlow, OLD_DATE)
+      const recentExecution = await testFlow
+        .$relatedQuery('executions')
+        .insertAndFetch(createExecutionData({ internalId: 'exec-recent' }))
+
+      const result = await callGetExecutions(testFlow.id, context)
+
+      expect(result.edges).toHaveLength(1)
+      expect(result.edges[0].node.id).toBe(recentExecution.id)
+    })
+
+    it('includes executions older than 3 months when the flow has archival disabled', async () => {
+      await testFlow.$query().patch({ config: { archiveDisabled: true } })
+      await createExecutionAt(testFlow, OLD_DATE)
+      await testFlow
+        .$relatedQuery('executions')
+        .insertAndFetch(createExecutionData({ internalId: 'exec-recent' }))
+
+      const result = await callGetExecutions(testFlow.id, context)
+
+      expect(result.edges).toHaveLength(2)
+    })
+
+    it('includes executions older than 3 months for admin operations regardless of archival config', async () => {
+      await createExecutionAt(testFlow, OLD_DATE)
+      await testFlow
+        .$relatedQuery('executions')
+        .insertAndFetch(createExecutionData({ internalId: 'exec-recent' }))
+
+      const adminContext: Context = { ...context, isAdminOperation: true }
+      const result = await callGetExecutions(testFlow.id, adminContext)
+
+      expect(result.edges).toHaveLength(2)
+    })
+  })
+
   describe('access control', () => {
     it('should only return executions for flows owned by current user', async () => {
       // Create another user and their flow
