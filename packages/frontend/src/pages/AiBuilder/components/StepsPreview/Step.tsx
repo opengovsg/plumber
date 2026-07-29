@@ -16,6 +16,7 @@ import StepParameterRows from './StepParameterRows'
 
 interface AiStep extends IStep {
   description?: string
+  connectionLabel?: string | null
 }
 
 interface StepProps {
@@ -155,6 +156,7 @@ export default function Step(props: StepProps) {
               appKey={step.appKey ?? ''}
               stepKey={step.key ?? ''}
               stepId={step.id ?? ''}
+              connectionLabel={step.connectionLabel}
             />
           )}
         </Flex>

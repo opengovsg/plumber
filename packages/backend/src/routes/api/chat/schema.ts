@@ -118,6 +118,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
           status: z.string(),
           parameters: z.record(z.string(), z.unknown()),
           connectionId: z.string().nullable(),
+          connectionLabel: z.string().nullable().optional(),
         }),
       ),
     }),
