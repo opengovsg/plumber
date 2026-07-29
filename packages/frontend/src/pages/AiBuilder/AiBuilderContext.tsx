@@ -24,6 +24,11 @@ export interface AIBuilderDraftState {
    * for where a fresh chatId is actually minted).
    */
   chatId?: string
+  // Human-readable overrides for opaque parameter values (e.g. a resolved
+  // Slack channel name), keyed by stepId then parameter key. Display-only —
+  // never persisted server-side, so it's carried in the same draft blob as
+  // the rest of the session to survive a refresh.
+  parameterLabelsByStepId?: Record<string, Record<string, string>>
 }
 
 interface AIBuilderSharedProps extends AIBuilderDraftState {
@@ -79,6 +84,7 @@ export const AiBuilderContextProvider = ({
   chatMessages,
   output,
   chatId,
+  parameterLabelsByStepId = {},
   clearPersistedState,
   setChatState,
 }: AiBuilderContextProviderProps) => {
@@ -152,6 +158,7 @@ export const AiBuilderContextProvider = ({
         chatInput,
         chatMessages,
         output,
+        parameterLabelsByStepId,
         isMobile,
         steps,
         triggerStep,

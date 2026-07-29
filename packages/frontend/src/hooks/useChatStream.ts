@@ -107,7 +107,19 @@ export function useChatStream(options: UseChatStreamOptions) {
   const toast = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const { ddSessionId, chatId } = useAiBuilderContext()
+  const { ddSessionId, output, chatId } = useAiBuilderContext()
+
+  // Use ref to always access the latest pipe output in prepareSendMessagesRequest
+  const outputRef = useRef(output)
+  outputRef.current = output
+
+  // After a refresh, chatMessages (persisted, text-only) is all that's left of
+  // the conversation — every tool result and data-pipeState part (the only
+  // places real step IDs ever appeared) is gone. Without this, the model has
+  // no ground truth for step IDs on its first post-refresh turn and guesses.
+  // Fires once per mount only — after that, the live conversation carries its
+  // own tool-call history forward same as before.
+  const hasSentPipeContextRef = useRef(false)
 
   // Track step readiness from data-isChatReady annotation
   // Initialize based on whether initialMessages contains a ready message.
@@ -159,11 +171,54 @@ export function useChatStream(options: UseChatStreamOptions) {
             ...(msg.traceId && { metadata: { traceId: msg.traceId } }),
           }))
 
+        // First request since mount: if a pipe already has real step IDs
+        // (data-pipeState survived in the persisted draft) but this mount's
+        // own conversation history doesn't carry them (post-refresh), resync
+        // the model with just the ID mapping it needs — not the full step
+        // config — so it doesn't have to guess a step_id for tool calls like
+        // get_dynamic_data.
+        const pipeContextMsgs = []
+        if (!hasSentPipeContextRef.current) {
+          hasSentPipeContextRef.current = true
+          const currentSteps = outputRef.current?.pipeId
+            ? outputRef.current?.steps
+            : undefined
+          const configuredSteps = Array.isArray(currentSteps)
+            ? currentSteps.filter(
+                (s: { appKey?: string; key?: string }) => s.appKey && s.key,
+              )
+            : []
+          if (configuredSteps.length > 0) {
+            const stepIdMapping = configuredSteps
+              .map(
+                (
+                  s: { id: string; appKey: string; key: string; type: string },
+                  i: number,
+                ) => `${i + 1}. ${s.appKey}/${s.key} (${s.type}) — id: ${s.id}`,
+              )
+              .join('\n')
+            pipeContextMsgs.push({
+              id: 'pipe-context-resync',
+              role: 'assistant' as const,
+              parts: [
+                {
+                  type: 'text' as const,
+                  text: `[Internal resync — do not mention this to the user] Current pipe steps and their real IDs, for use as step_id in tool calls:\n${stepIdMapping}`,
+                },
+              ],
+            })
+          }
+        }
+
         // Prepend initial messages to maintain full conversation context.
         // Filter out assistant messages with no text content — these can be left
         // behind when the user stops the stream before any output is produced,
         // and would fail backend schema validation.
-        const allMessages = [...initialMsgs, ...messages].filter((msg) => {
+        const allMessages = [
+          ...initialMsgs,
+          ...pipeContextMsgs,
+          ...messages,
+        ].filter((msg) => {
           if (msg.role !== 'assistant') {
             return true
           }
@@ -231,11 +286,32 @@ export function useChatStream(options: UseChatStreamOptions) {
       // Get current output from the ref (ensures we see latest state from other navigates)
       const currentOutput = locationRef.current.state?.output
 
+      // Accumulate parameter labels alongside the rest of the draft (never
+      // persisted server-side) so they survive a refresh in lockstep with
+      // chatMessages/output instead of drifting via a separate store.
+      const previousParameterLabels: Record<
+        string,
+        Record<string, string>
+      > = locationRef.current.state?.parameterLabelsByStepId ?? {}
+      const parameterLabelsByStepId = { ...previousParameterLabels }
+      for (const part of lastMessage.parts ?? []) {
+        if (part.type === 'data-stepUpdate') {
+          const { stepId, parameterLabels } = (part as StepUpdatePart).data
+          if (parameterLabels) {
+            parameterLabelsByStepId[stepId] = {
+              ...parameterLabelsByStepId[stepId],
+              ...parameterLabels,
+            }
+          }
+        }
+      }
+
       navigate(`${URLS.EDITOR}/ai`, {
         state: {
           ...locationRef.current.state,
           chatInput: allMessages[allMessages.length - 1].text,
           chatMessages: allMessages,
+          parameterLabelsByStepId,
           // pipeStatePart: replace output with DB pipe state (Phase 2b+)
           // isChatReady: populate output from stream (steps or error), drawer opens
           // neither: preserve current output
