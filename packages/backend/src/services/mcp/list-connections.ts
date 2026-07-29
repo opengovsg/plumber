@@ -8,10 +8,9 @@ export interface McpConnection {
   appKey: string
   verified: boolean
   label: string
-  formattedData?: IJSONObject
 }
 
-function connectionLabel(c: {
+export function connectionLabel(c: {
   formattedData?: IJSONObject
   description?: string
   key: string
@@ -51,7 +50,6 @@ export async function listConnectionsService(
         appKey: c.key,
         verified: c.verified,
         label: connectionLabel(c),
-        formattedData: c.formattedData,
       }))
     }
   }
@@ -69,6 +67,5 @@ export async function listConnectionsService(
     appKey: c.key,
     verified: c.verified,
     label: connectionLabel(c),
-    formattedData: c.formattedData,
   }))
 }
