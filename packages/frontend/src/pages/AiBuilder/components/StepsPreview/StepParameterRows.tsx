@@ -141,6 +141,7 @@ interface StepParameterRowsProps {
   stepKey: string
   stepId: string
   connectionLabel?: string | null
+  stepNameById: Map<string, string>
 }
 
 export default function StepParameterRows({
@@ -149,8 +150,10 @@ export default function StepParameterRows({
   stepKey,
   stepId,
   connectionLabel,
+  stepNameById,
 }: StepParameterRowsProps) {
-  const { allApps } = useAiBuilderContext()
+  const { allApps, variableLabelsByPath, variableValuesByPath } =
+    useAiBuilderContext()
   const { parameterLabelsByStepId } = useStepConfigContext()
   const parameterLabels = parameterLabelsByStepId[stepId] ?? {}
 
@@ -216,15 +219,22 @@ export default function StepParameterRows({
               alignItems="center"
               gap={0.75}
             >
-              {segments.map((seg, i) =>
-                seg.type === 'text' ? (
+              {segments.map((seg, i) => {
+                if (seg.type === 'text') {
                   // eslint-disable-next-line react/no-array-index-key
-                  <Fragment key={i}>{seg.text}</Fragment>
-                ) : (
+                  return <Fragment key={i}>{seg.text}</Fragment>
+                }
+                const variableKey = `step.${seg.stepId}.${seg.path}`
+                return (
                   // eslint-disable-next-line react/no-array-index-key
-                  <VariablePill key={i} label={seg.label} />
-                ),
-              )}
+                  <VariablePill
+                    key={i}
+                    label={variableLabelsByPath.get(variableKey) ?? seg.label}
+                    value={variableValuesByPath.get(variableKey)}
+                    stepName={stepNameById.get(seg.stepId)}
+                  />
+                )
+              })}
             </Box>
           </ParameterRow>
         )

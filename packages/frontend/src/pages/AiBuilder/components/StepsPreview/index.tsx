@@ -294,7 +294,7 @@ export default function StepsPreview() {
           </GroupedStepContainer>
         )}
         <VStack mt={10} gap={2}>
-          <Text textStyle="body-1">Looks good?</Text>
+          {!isMcpPipeMode && <Text textStyle="body-1">Looks good?</Text>}
           <HStack alignItems="center" justifyContent="center" gap={2}>
             {isMcpPipeMode ? (
               <Button
