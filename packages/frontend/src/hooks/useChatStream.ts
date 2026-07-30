@@ -418,10 +418,17 @@ export function useChatStream(options: UseChatStreamOptions) {
     parameterLabelsByStepId,
     activeStepId,
     completedStepIds,
+    hasPipe,
+    knownFormSchema,
   } = useMemo(() => {
     const byStepId: Record<string, IJSONObject> = {}
     const labelsByStepId: Record<string, Record<string, string>> = {}
     let latestStepId: string | null = null
+    let pipeSeen = false
+    // Latest successful get_form_schema tool result — the AI SDK streams
+    // tool outputs as message parts, so the form's real title is already
+    // client-side once the LLM fetches the schema.
+    let latestFormSchema: { title: string; formId: string } | null = null
     const completed = new Set<string>()
 
     for (const msg of aiMessages) {
@@ -440,10 +447,31 @@ export function useChatStream(options: UseChatStreamOptions) {
           latestStepId = stepId
         }
         if (part.type === 'data-pipeState') {
+          pipeSeen = true
           for (const step of (part as PipeStatePart).data.steps) {
             if (step.status === 'completed') {
               completed.add(step.id)
             }
+          }
+        }
+        const toolPart = part as {
+          type: string
+          toolName?: string
+          output?: { title?: unknown; formId?: unknown; error?: unknown }
+        }
+        const isFormSchemaResult =
+          toolPart.type === 'tool-get_form_schema' ||
+          (toolPart.type === 'dynamic-tool' &&
+            toolPart.toolName === 'get_form_schema')
+        if (
+          isFormSchemaResult &&
+          typeof toolPart.output?.title === 'string' &&
+          typeof toolPart.output?.formId === 'string' &&
+          !toolPart.output.error
+        ) {
+          latestFormSchema = {
+            title: toolPart.output.title,
+            formId: toolPart.output.formId,
           }
         }
       }
@@ -454,6 +482,8 @@ export function useChatStream(options: UseChatStreamOptions) {
       parameterLabelsByStepId: labelsByStepId,
       activeStepId: latestStepId,
       completedStepIds: completed,
+      hasPipe: pipeSeen,
+      knownFormSchema: latestFormSchema,
     }
   }, [aiMessages])
 
@@ -489,5 +519,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     stepParametersByStepId,
     parameterLabelsByStepId,
     completedStepIds,
+    hasPipe,
+    knownFormSchema,
   }
 }

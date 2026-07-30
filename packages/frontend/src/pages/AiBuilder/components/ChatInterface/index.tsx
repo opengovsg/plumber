@@ -24,9 +24,10 @@ interface ChatInterfaceProps {
   resetChat: () => void
   hasReachedLimit: boolean
   onAddConnection?: (context: { question: string }) => void
+  knownFormUrl?: string
   onConnectForm?: () => void
   onSelectExistingForm?: (label: string, connectionId: string) => void
-  attachedForm?: { label: string } | null
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -40,6 +41,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     resetChat,
     hasReachedLimit,
     onAddConnection,
+    knownFormUrl,
     onConnectForm,
     onSelectExistingForm,
     attachedForm,
@@ -204,6 +206,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   clarification={activeClarification}
                   dynamicPicker={activeDynamicPicker}
                   onAddConnection={onAddConnection}
+                  knownFormUrl={knownFormUrl}
+                  onConnectForm={onConnectForm}
+                  onSelectExistingForm={onSelectExistingForm}
                   attachedForm={attachedForm}
                 />
               )}

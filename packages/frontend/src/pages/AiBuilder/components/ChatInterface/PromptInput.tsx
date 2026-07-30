@@ -18,7 +18,11 @@ import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicke
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
-import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
+import {
+  AI_CHAT_IDEAS,
+  type AiChatIdea,
+  EMPTY_STATE_FORM_HINT,
+} from '@/pages/AiBuilder/constants'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -30,12 +34,18 @@ interface PromptInputProps {
   clarification?: ClarificationQuestion[]
   dynamicPicker?: DynamicPickerPart['data']
   onAddConnection?: (context: { question: string }) => void
+  /** Form URL already shared in the conversation (drives the picker's forced key-completion card). */
+  knownFormUrl?: string
   /** Opens the Add-new-form modal (empty-state "Connect your form" entry). */
   onConnectForm?: () => void
   /** Kicks off the chat with an existing connection. */
   onSelectExistingForm?: (label: string, connectionId: string) => void
-  /** Display-only chip anchoring the connected form to the composer. */
-  attachedForm?: { label: string } | null
+  /**
+   * Display-only chip anchoring the conversation's form to the composer —
+   * the connected form's title, or the shared URL (isConnected: false)
+   * before a secret key has been added.
+   */
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function PromptInput({
@@ -48,6 +58,7 @@ export default function PromptInput({
   clarification,
   dynamicPicker,
   onAddConnection,
+  knownFormUrl,
   onConnectForm,
   onSelectExistingForm,
   attachedForm,
@@ -169,6 +180,7 @@ export default function PromptInput({
             ? () => onAddConnection({ question: dynamicPicker.question })
             : undefined
         }
+        knownFormUrl={knownFormUrl}
         cancelStream={cancelStream}
       />
     )
@@ -295,6 +307,16 @@ export default function PromptInput({
                 <Text textStyle="caption-1" noOfLines={1} color="gray.700">
                   {attachedForm.label}
                 </Text>
+                {attachedForm.isConnected === false && (
+                  <Text
+                    textStyle="caption-1"
+                    color="gray.400"
+                    flexShrink={0}
+                    whiteSpace="nowrap"
+                  >
+                    · not connected
+                  </Text>
+                )}
               </Flex>
             ) : onConnectForm && onSelectExistingForm ? (
               <ConnectFormPopover
@@ -306,6 +328,12 @@ export default function PromptInput({
           </Flex>
         )}
       </Flex>
+
+      {showIdeas && onConnectForm && (
+        <Text textStyle="caption-1" color="gray.500" mt={2} px={1}>
+          {EMPTY_STATE_FORM_HINT}
+        </Text>
+      )}
 
       {showIdeas && (
         <Box minH={{ base: '200px', md: '60px' }} mt={6}>

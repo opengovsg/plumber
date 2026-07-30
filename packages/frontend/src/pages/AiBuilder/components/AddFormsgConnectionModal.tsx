@@ -30,6 +30,10 @@ import {
 import FileUpload from '@/components/FileUpload'
 import { CREATE_CONNECTION } from '@/graphql/mutations/create-connection'
 import { VERIFY_CONNECTION } from '@/graphql/mutations/verify-connection'
+import {
+  isValidFormUrlInput,
+  normalizeFormUrlInput,
+} from '@/pages/AiBuilder/helpers'
 
 // Matches the format of a form's private key downloaded from FormSG, same
 // check the editor's DragDropInput uses for the same field.
@@ -38,19 +42,32 @@ const SECRET_KEY_REGEX = /^[a-zA-Z0-9/+]+={0,2}$/
 interface AddFormsgConnectionModalProps {
   isOpen: boolean
   // A connection can only be created once the pipe exists (see
-  // AiBuilder/index.tsx's onAddConnection gating) — this is that pipe's id.
+  // AiBuilder/index.tsx's onAddConnection/onConnectForm gating) — this is
+  // that pipe's id. Only meaningful for the 'full' variant, the only one
+  // that calls createConnection.
   flowId?: string
+  // 'url-only': pre-pipe "Connect your form" pill — collects just the URL,
+  // no secret key, no connection row (see onSubmitUrl).
+  // 'full': URL + secret key, creates a real connection (see onSuccess).
+  variant: 'url-only' | 'full'
   prefillFormUrl?: string
+  // The URL is already known from the conversation and hard-locked to that
+  // form — only reachable for the 'full' variant's key-completion path.
+  lockFormUrl?: boolean
   onClose: () => void
   onSuccess: (connectionLabel: string, connectionId: string) => void
+  onSubmitUrl: (formUrl: string) => void
 }
 
 export default function AddFormsgConnectionModal({
   isOpen,
   flowId,
+  variant,
   prefillFormUrl,
+  lockFormUrl,
   onClose,
   onSuccess,
+  onSubmitUrl,
 }: AddFormsgConnectionModalProps) {
   const [formUrl, setFormUrl] = useState('')
   const [secretKey, setSecretKey] = useState('')
@@ -139,7 +156,23 @@ export default function AddFormsgConnectionModal({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!formUrl.trim() || !secretKey.trim() || !flowId || inProgress) {
+    if (inProgress) {
+      return
+    }
+
+    const trimmedUrl = formUrl.trim()
+    if (!isValidFormUrlInput(trimmedUrl)) {
+      return
+    }
+    const normalizedUrl = normalizeFormUrlInput(trimmedUrl)
+
+    if (variant === 'url-only') {
+      onSubmitUrl(normalizedUrl)
+      onClose()
+      return
+    }
+
+    if (!secretKey.trim() || !flowId) {
       return
     }
 
@@ -154,7 +187,7 @@ export default function AddFormsgConnectionModal({
           input: {
             key: 'formsg',
             formattedData: {
-              formId: formUrl.trim(),
+              formId: normalizedUrl,
               privateKey: secretKey.trim(),
             },
             flowId,
@@ -174,7 +207,7 @@ export default function AddFormsgConnectionModal({
       const label =
         (verifyData?.verifyConnection?.formattedData?.screenName as
           | string
-          | undefined) ?? formUrl.trim()
+          | undefined) ?? normalizedUrl
 
       onSuccess(label, connectionId)
       onClose()
@@ -188,13 +221,24 @@ export default function AddFormsgConnectionModal({
     }
   }
 
+  const modalTitle =
+    variant === 'url-only'
+      ? 'Share your form'
+      : lockFormUrl
+      ? 'Add your Form Secret Key'
+      : 'Add new form'
+
+  const isSubmitDisabled =
+    !isValidFormUrlInput(formUrl) ||
+    (variant === 'full' && (!secretKey.trim() || !flowId))
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
       <ModalOverlay />
       <ModalContent borderRadius="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader>
-            Add new form
+            {modalTitle}
             <ModalCloseButton isDisabled={inProgress} />
           </ModalHeader>
           <ModalBody display="flex" flexDirection="column" gap={4}>
@@ -215,68 +259,70 @@ export default function AddFormsgConnectionModal({
                 onChange={(e) => setFormUrl(e.target.value)}
                 placeholder="https://form.gov.sg/…"
                 autoComplete="url"
-                isDisabled={inProgress}
+                isDisabled={inProgress || lockFormUrl}
               />
             </FormControl>
 
-            <FormControl isInvalid={!!secretKeyFileError}>
-              <RequiredFormLabel isRequired mb={1}>
-                Form Secret Key
-              </RequiredFormLabel>
-              <Text textStyle="body-2" color="base.content.medium" mb={2}>
-                This is the key you downloaded/saved when you created the form
-              </Text>
-              <Stack spacing="0.5rem" direction="row">
-                <Input
-                  type="password"
-                  value={secretKey}
-                  onChange={(e) => {
-                    setSecretKeyFileError(null)
-                    setSecretKey(e.target.value)
-                  }}
-                  {...(dragging
-                    ? {
-                        py: 12,
-                        backgroundColor: 'primary.50',
-                        borderColor: 'primary.500',
-                        borderWidth: 2,
-                        borderStyle: 'dashed',
-                        _focusVisible: {
-                          boxShadow: 'none',
-                        },
-                      }
-                    : undefined)}
-                  onDragEnter={inProgress ? undefined : handleDragEnter}
-                  onDragLeave={inProgress ? undefined : handleDragLeave}
-                  onDragOver={inProgress ? undefined : handleDragOver}
-                  onDrop={inProgress ? undefined : handleDrop}
-                  placeholder={
-                    dragging
-                      ? 'Drop your file here'
-                      : 'Enter or drop your Secret Key here to continue'
-                  }
-                  autoComplete="off"
-                  isDisabled={inProgress}
-                  transition="padding 0.2s ease-out"
-                />
-                <FileUpload
-                  accept="text/plain"
-                  processFile={processSecretKeyFile}
-                  disabled={inProgress}
-                />
-              </Stack>
-              {secretKeyFileError && (
-                <FormErrorMessage>{secretKeyFileError}</FormErrorMessage>
-              )}
-            </FormControl>
+            {variant === 'full' && (
+              <FormControl isInvalid={!!secretKeyFileError}>
+                <RequiredFormLabel isRequired mb={1}>
+                  Form Secret Key
+                </RequiredFormLabel>
+                <Text textStyle="body-2" color="base.content.medium" mb={2}>
+                  This is the key you downloaded/saved when you created the form
+                </Text>
+                <Stack spacing="0.5rem" direction="row">
+                  <Input
+                    type="password"
+                    value={secretKey}
+                    onChange={(e) => {
+                      setSecretKeyFileError(null)
+                      setSecretKey(e.target.value)
+                    }}
+                    {...(dragging
+                      ? {
+                          py: 12,
+                          backgroundColor: 'primary.50',
+                          borderColor: 'primary.500',
+                          borderWidth: 2,
+                          borderStyle: 'dashed',
+                          _focusVisible: {
+                            boxShadow: 'none',
+                          },
+                        }
+                      : undefined)}
+                    onDragEnter={inProgress ? undefined : handleDragEnter}
+                    onDragLeave={inProgress ? undefined : handleDragLeave}
+                    onDragOver={inProgress ? undefined : handleDragOver}
+                    onDrop={inProgress ? undefined : handleDrop}
+                    placeholder={
+                      dragging
+                        ? 'Drop your file here'
+                        : 'Enter or drop your Secret Key here to continue'
+                    }
+                    autoComplete="off"
+                    isDisabled={inProgress}
+                    transition="padding 0.2s ease-out"
+                  />
+                  <FileUpload
+                    accept="text/plain"
+                    processFile={processSecretKeyFile}
+                    disabled={inProgress}
+                  />
+                </Stack>
+                {secretKeyFileError && (
+                  <FormErrorMessage>{secretKeyFileError}</FormErrorMessage>
+                )}
+              </FormControl>
+            )}
           </ModalBody>
           <ModalFooter>
             <Button
               type="submit"
               isLoading={inProgress}
-              isDisabled={!formUrl.trim() || !secretKey.trim() || !flowId}
+              isDisabled={isSubmitDisabled}
             >
-              Connect
+              {variant === 'url-only' ? 'Share' : 'Connect'}
             </Button>
           </ModalFooter>
         </form>

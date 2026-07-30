@@ -18,9 +18,13 @@ import {
   useAiBuilderContext,
 } from './AiBuilderContext'
 import {
+  buildFormConnectedMessage,
   buildKickoffMessage,
+  buildUrlSharedKickoffMessage,
+  buildUrlSharedMessage,
   extractFormIdFromLabel,
   extractLastFormUrl,
+  formatFormUrlLabel,
   stripFormIdPrefix,
 } from './helpers'
 import StepConfigContext from './StepConfigContext'
@@ -51,6 +55,8 @@ function AiBuilderContent() {
     parameterLabelsByStepId,
     completedStepIds,
     activeStepId,
+    hasPipe,
+    knownFormSchema,
   } = useChatStream({ initialMessages: chatMessages })
 
   // Merge labels persisted in the draft (survive refresh, committed once a
@@ -96,6 +102,11 @@ function AiBuilderContent() {
     return merged
   }, [steps, completedStepIds])
 
+  // Connecting a form only makes sense before the pipe exists — once created,
+  // connection changes go through the LLM's picker flow. hasPipe covers the
+  // live turn; output.pipeId covers persisted state after a refresh.
+  const pipeCreated = hasPipe || Boolean(output?.pipeId)
+
   const cancelRef = useRef(null)
 
   // A connection can only be created once the pipe (Flow row) exists —
@@ -104,13 +115,15 @@ function AiBuilderContent() {
   const flowId: string | undefined = output?.pipeId
 
   // In-chat "Add new form" modal (FormSG), reached two ways:
-  // - 'picker': mid-chat from the connection picker — the answer goes back in
-  //   the same Q/A format as a manual selection.
-  // - 'kickoff': from the empty-state "Connect your form" chip — connecting
-  //   starts the conversation with a kickoff message.
-  // Either way the secret key stays browser → GraphQL only (never through
-  // the chat route or the LLM), and either way creating a *new* connection
-  // requires flowId (the pipe) to already exist — see the gating below.
+  // - 'picker' (post-pipe, from the connection picker / forced key card):
+  //   full modal (URL + secret key), URL locked when already known; the
+  //   answer goes back in the same Q/A format as a manual selection. Creates
+  //   a real connection, so it requires flowId (the pipe) to already exist.
+  // - 'kickoff' (pre-pipe, from the "Connect your form" pill): url-only
+  //   modal — no secret key, no connection created; the URL just enters the
+  //   conversation so the LLM can fetch the public schema.
+  // The secret key stays browser → GraphQL only (never through the chat
+  // route or the LLM).
   const [addFormContext, setAddFormContext] = useState<
     { kind: 'picker'; question: string } | { kind: 'kickoff' } | null
   >(null)
@@ -121,6 +134,29 @@ function AiBuilderContent() {
   )
 
   const prefillFormUrl = useMemo(() => extractLastFormUrl(messages), [messages])
+
+  // The composer chip anchors whatever form the conversation is about: the
+  // connected form's title once a connection exists; otherwise the shared
+  // form's real title (from the LLM's streamed get_form_schema result) with
+  // a "not connected" cue, falling back to the compact URL until the schema
+  // has been fetched.
+  const displayedForm = useMemo(() => {
+    if (attachedForm) {
+      return { ...attachedForm, isConnected: true }
+    }
+    if (prefillFormUrl) {
+      const urlFormId = extractFormIdFromLabel(prefillFormUrl)
+      const title =
+        knownFormSchema && knownFormSchema.formId === urlFormId
+          ? knownFormSchema.title
+          : null
+      return {
+        label: title ?? formatFormUrlLabel(prefillFormUrl),
+        isConnected: false,
+      }
+    }
+    return null
+  }, [attachedForm, prefillFormUrl, knownFormSchema])
 
   const handleAddConnection = useCallback(
     (context: { question: string }) =>
@@ -133,35 +169,57 @@ function AiBuilderContent() {
     [],
   )
 
-  // Kicks off the chat with a connected form. The connection/form ids ride in
+  // Announces a connected form to the chat. The connection/form ids ride in
   // the message's "(id: …)" parenthetical (stripped from display) so the LLM
-  // can assign the connection and fetch the schema in later setup.
+  // can assign the connection and fetch the schema in later setup. As the
+  // first message it kicks off the conversation with a request for workflow
+  // suggestions; mid-conversation it is a plain announcement so the LLM
+  // continues from wherever the conversation is.
   const kickoffWithForm = useCallback(
     (connectionLabel: string, connectionId: string) => {
       const formTitle = stripFormIdPrefix(connectionLabel)
       const formId = extractFormIdFromLabel(connectionLabel)
       setAttachedForm({ label: formTitle })
-      sendMessage(buildKickoffMessage(formTitle, connectionId, formId))
+      sendMessage(
+        messages.length === 0
+          ? buildKickoffMessage(formTitle, connectionId, formId)
+          : buildFormConnectedMessage(formTitle, connectionId, formId),
+      )
     },
-    [sendMessage],
+    [sendMessage, messages.length],
   )
 
   // Reusing an existing connection kicks off the chat exactly like a freshly
   // added one — no new connection row is created.
   const handleSelectExistingForm = kickoffWithForm
 
+  // Full-variant (URL + key) success — only reachable from the 'picker' kind.
   const handleAddFormSuccess = useCallback(
     (connectionLabel: string, connectionId: string) => {
       if (addFormContext?.kind === 'picker') {
+        setAttachedForm({ label: stripFormIdPrefix(connectionLabel) })
         sendMessage(
           `Q: ${addFormContext.question}\nA: ${connectionLabel} (id: ${connectionId})`,
         )
-      } else if (addFormContext?.kind === 'kickoff') {
-        kickoffWithForm(connectionLabel, connectionId)
       }
       setAddFormContext(null)
     },
-    [addFormContext, sendMessage, kickoffWithForm],
+    [addFormContext, sendMessage],
+  )
+
+  // Url-only-variant submit — the user shared their form without a key. As
+  // the first message it asks for suggestions; mid-conversation it is a
+  // plain share the LLM picks up from where it is.
+  const handleSubmitUrl = useCallback(
+    (formUrl: string) => {
+      sendMessage(
+        messages.length === 0
+          ? buildUrlSharedKickoffMessage(formUrl)
+          : buildUrlSharedMessage(formUrl),
+      )
+      setAddFormContext(null)
+    },
+    [sendMessage, messages.length],
   )
 
   // Determine if we have unsaved work
@@ -244,18 +302,26 @@ function AiBuilderContent() {
               resetChat={resetChat}
               hasReachedLimit={hasReachedLimit}
               onAddConnection={flowId ? handleAddConnection : undefined}
-              onConnectForm={flowId ? handleConnectForm : undefined}
-              onSelectExistingForm={handleSelectExistingForm}
-              attachedForm={attachedForm}
+              knownFormUrl={prefillFormUrl}
+              onConnectForm={pipeCreated ? undefined : handleConnectForm}
+              onSelectExistingForm={
+                pipeCreated ? undefined : handleSelectExistingForm
+              }
+              attachedForm={displayedForm}
             />
           </Container>
         </Flex>
         <AddFormsgConnectionModal
           isOpen={addFormContext !== null}
           flowId={flowId}
+          variant={addFormContext?.kind === 'kickoff' ? 'url-only' : 'full'}
           prefillFormUrl={prefillFormUrl}
+          lockFormUrl={
+            addFormContext?.kind === 'picker' && Boolean(prefillFormUrl)
+          }
           onClose={() => setAddFormContext(null)}
           onSuccess={handleAddFormSuccess}
+          onSubmitUrl={handleSubmitUrl}
         />
         <ExitAlert
           cancelRef={cancelRef}

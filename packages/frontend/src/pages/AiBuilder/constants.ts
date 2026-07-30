@@ -36,7 +36,12 @@ export const PLACEHOLDER_MESSAGES = [
   'Think in order. What happens first, and what follows',
   "Describe what you have in mind and we'll show you what's possible",
   "Share what you're trying to do and we'll help you figure out the best way to automate it",
+  "Paste your FormSG form link and we'll suggest workflows built on its fields",
 ]
+
+// Shown under the empty-state composer alongside the Connect-your-form pill.
+export const EMPTY_STATE_FORM_HINT =
+  'Have a form? Paste its link, or connect it with your Secret Key and we will suggest workflows for you to build on it.'
 
 // Maximum number of messages allowed in a conversation (hard limit)
 export const MAX_MESSAGES = 50
