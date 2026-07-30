@@ -1,6 +1,6 @@
 import { IApp, IJSONObject, IStep } from '@plumber/types'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
@@ -31,13 +31,24 @@ interface StepProps {
 export default function Step(props: StepProps) {
   const { step, isNested, isLastStep, isActive, isConfigured, parameters } =
     props
-  const { allApps } = useAiBuilderContext()
+  const { allApps, steps } = useAiBuilderContext()
   const [isExpanded, setIsExpanded] = useState(false)
 
   const app = allApps?.find(
     (currentApp: IApp) => currentApp.key === step?.appKey,
   )
   const { stepName } = getStepName(allApps, step as IStep)
+
+  const stepNameById = useMemo(
+    () =>
+      new Map(
+        steps.map((s) => [
+          s.id,
+          `${s.position}. ${getStepName(allApps, s).stepName}`,
+        ]),
+      ),
+    [steps, allApps],
+  )
 
   // Only mute when we're in configuration mode (props explicitly set to false)
   // Undefined means proposal mode — show all steps at full opacity
@@ -157,6 +168,7 @@ export default function Step(props: StepProps) {
               stepKey={step.key ?? ''}
               stepId={step.id ?? ''}
               connectionLabel={step.connectionLabel}
+              stepNameById={stepNameById}
             />
           )}
         </Flex>

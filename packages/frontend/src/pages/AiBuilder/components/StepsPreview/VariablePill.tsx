@@ -1,29 +1,52 @@
-import { Box } from '@chakra-ui/react'
+import { Badge, Text } from '@chakra-ui/react'
+import { TouchableTooltip } from '@opengovsg/design-system-react'
+
+import { POPOVER_OPACITY_MOTION_PROPS } from '@/theme/constants'
 
 interface VariablePillProps {
   label: string
+  value?: string
+  stepName?: string
 }
 
-export default function VariablePill({ label }: VariablePillProps) {
+export default function VariablePill({
+  label,
+  value,
+  stepName,
+}: VariablePillProps) {
+  const hasValue = Boolean(value)
+
   return (
-    <Box
-      as="span"
-      display="inline-flex"
-      alignItems="center"
-      bg="primary.100"
-      borderRadius="50px"
-      px="10px"
-      py="2px"
-      fontSize="12px"
-      color="base.content.strong"
-      fontWeight={500}
-      whiteSpace="nowrap"
-      lineHeight={1.4}
+    <TouchableTooltip
+      motionProps={POPOVER_OPACITY_MOTION_PROPS}
+      label={stepName}
+      aria-label="variable pill tooltip"
     >
-      <Box as="span" color="base.content.medium" fontWeight={400} mr="2px">
-        {'{}'}
-      </Box>
-      {label}
-    </Box>
+      <Badge
+        maxW="full"
+        variant="solid"
+        borderRadius="50px"
+        px={3}
+        py={1}
+        cursor="default"
+        bg="primary.100"
+        fontSize="sm"
+      >
+        <Text
+          as="span"
+          isTruncated
+          maxW={hasValue ? '20ch' : 'full'}
+          color="base.content.strong"
+          mr={hasValue ? '0.25rem' : undefined}
+        >
+          {label}
+        </Text>
+        {hasValue && (
+          <Text as="span" isTruncated maxW="40ch" color="base.content.medium">
+            {value}
+          </Text>
+        )}
+      </Badge>
+    </TouchableTooltip>
   )
 }
