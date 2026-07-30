@@ -1,12 +1,15 @@
-import { IApp, IStep } from '@plumber/types'
+import { IApp, IExecutionStep, IStep } from '@plumber/types'
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
+import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
+import { extractVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
 import { Message, PipeStatePart } from '@/hooks/useChatStream'
 
@@ -57,6 +60,13 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   chatId: string
   isDrawerOpen: boolean
   setIsDrawerOpen: (open: boolean) => void
+  // Real output-field labels (from dataOutMetadata) and their test-executed
+  // values, keyed the same way as the {{step.<id>.<path>}} placeholders —
+  // only populated for steps that have actually been test-executed. Labels
+  // fall back to a naive transform elsewhere; values simply aren't shown.
+  variableLabelsByPath: Map<string, string>
+  variableValuesByPath: Map<string, string>
+  refetchTestExecutionSteps: () => Promise<unknown>
 }
 
 const AiBuilderContext = createContext<AIBuilderContextValue | undefined>(
@@ -142,6 +152,43 @@ export const AiBuilderContextProvider = ({
     [groupedSteps],
   )
 
+  const { data: testExecutionStepsData, refetch: refetchTestExecutionSteps } =
+    useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
+      GET_TEST_EXECUTION_STEPS,
+      {
+        variables: { flowId: output?.pipeId },
+        skip: !output?.pipeId,
+      },
+    )
+
+  // Only override the naive parseParameterValue label when the app actually
+  // defined a real one — extractVariables falls back to the raw lodash path
+  // itself when a field has no metadata label, which is worse than the
+  // naive transform, not better. Values have no such fallback: they're only
+  // ever populated for steps that have actually been test-executed.
+  const { variableLabelsByPath, variableValuesByPath } = useMemo(() => {
+    const labels = new Map<string, string>()
+    const values = new Map<string, string>()
+    const stepsWithVars = extractVariables(
+      testExecutionStepsData?.getTestExecutionSteps ?? [],
+      undefined,
+      allApps,
+    )
+    for (const step of stepsWithVars) {
+      for (const variable of step.output) {
+        const path = variable.name.slice(`step.${step.id}.`.length)
+        if (variable.label && variable.label !== path) {
+          labels.set(variable.name, variable.label)
+        }
+        const displayValue = variable.displayedValue ?? variable.value
+        if (displayValue != null && displayValue !== '') {
+          values.set(variable.name, String(displayValue))
+        }
+      }
+    }
+    return { variableLabelsByPath: labels, variableValuesByPath: values }
+  }, [testExecutionStepsData, allApps])
+
   if (isLoadingAllApps) {
     return (
       <Center h="100vh">
@@ -177,6 +224,9 @@ export const AiBuilderContextProvider = ({
         setChatState,
         isDrawerOpen,
         setIsDrawerOpen,
+        variableLabelsByPath,
+        variableValuesByPath,
+        refetchTestExecutionSteps,
       }}
     >
       {children}
