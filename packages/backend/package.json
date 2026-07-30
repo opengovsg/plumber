@@ -40,7 +40,7 @@
     "@aws-sdk/credential-providers": "^3.1045.0",
     "@aws-sdk/s3-presigned-post": "3.1027.0",
     "@bull-board/express": "5.17.0",
-    "@databricks/sql": "1.13.0",
+    "@databricks/sql": "2.0.0",
     "@graphql-tools/schema": "10.0.25",
     "@graphql-tools/utils": "10.9.1",
     "@langfuse/client": "4.2.0",
@@ -132,5 +132,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.75.2"
+  "version": "1.75.3"
 }
