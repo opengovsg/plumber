@@ -138,6 +138,7 @@ function makeGlobalVariable(): IGlobalVariable {
       userId: 'userid',
       hasFileProcessingActions: false,
       name: 'test flow',
+      isActive: true,
     },
     user: {
       id: 'userid',

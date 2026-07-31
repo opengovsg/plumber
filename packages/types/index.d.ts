@@ -1108,6 +1108,7 @@ export type IGlobalVariable = {
     userId: string
     remoteWebhookId?: string
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
+    isActive: boolean
   }
   step?: {
     id: string
