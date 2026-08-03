@@ -1,4 +1,10 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import {
+  type DragEvent as ReactDragEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react'
 import { useMutation } from '@apollo/client'
 import {
   FormControl,
@@ -10,16 +16,24 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Stack,
   Text,
 } from '@chakra-ui/react'
 import {
   Button,
+  FormErrorMessage,
+  FormLabel as RequiredFormLabel,
   Infobox,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
 
+import FileUpload from '@/components/FileUpload'
 import { CREATE_CONNECTION } from '@/graphql/mutations/create-connection'
 import { VERIFY_CONNECTION } from '@/graphql/mutations/verify-connection'
+
+// Matches the format of a form's private key downloaded from FormSG, same
+// check the editor's DragDropInput uses for the same field.
+const SECRET_KEY_REGEX = /^[a-zA-Z0-9/+]+={0,2}$/
 
 interface AddFormsgConnectionModalProps {
   isOpen: boolean
@@ -36,6 +50,10 @@ export default function AddFormsgConnectionModal({
 }: AddFormsgConnectionModalProps) {
   const [formUrl, setFormUrl] = useState('')
   const [secretKey, setSecretKey] = useState('')
+  const [secretKeyFileError, setSecretKeyFileError] = useState<string | null>(
+    null,
+  )
+  const [dragging, setDragging] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [inProgress, setInProgress] = useState(false)
 
@@ -47,9 +65,73 @@ export default function AddFormsgConnectionModal({
     if (isOpen) {
       setFormUrl(prefillFormUrl ?? '')
       setSecretKey('')
+      setSecretKeyFileError(null)
       setErrorMessage(null)
     }
   }, [isOpen, prefillFormUrl])
+
+  // Only suppress the browser's default "open dropped file" behaviour while
+  // this modal is actually open, since the component stays mounted (with
+  // isOpen toggling) for the lifetime of the AI Builder page.
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+    const preventDefault = (event: DragEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    window.addEventListener('dragover', preventDefault)
+    window.addEventListener('drop', preventDefault)
+    return () => {
+      window.removeEventListener('dragover', preventDefault)
+      window.removeEventListener('drop', preventDefault)
+    }
+  }, [isOpen])
+
+  const processSecretKeyFile = useCallback((file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result?.toString()
+      if (!text || !SECRET_KEY_REGEX.test(text)) {
+        setSecretKeyFileError('Selected file seems to be invalid')
+        return
+      }
+      setSecretKeyFileError(null)
+      setSecretKey(text)
+    }
+    reader.readAsText(file)
+  }, [])
+
+  const preventDefaults = (e: ReactDragEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleDragEnter = (e: ReactDragEvent<HTMLInputElement>) => {
+    preventDefaults(e)
+    setDragging(true)
+  }
+
+  const handleDragOver = (e: ReactDragEvent<HTMLInputElement>) => {
+    preventDefaults(e)
+  }
+
+  const handleDragLeave = (e: ReactDragEvent<HTMLInputElement>) => {
+    preventDefaults(e)
+    setDragging(false)
+  }
+
+  const handleDrop = (e: ReactDragEvent<HTMLInputElement>) => {
+    preventDefaults(e)
+    setDragging(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (!file) {
+      return
+    }
+    processSecretKeyFile(file)
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -133,19 +215,55 @@ export default function AddFormsgConnectionModal({
               />
             </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel mb={1}>Form Secret Key</FormLabel>
+            <FormControl isInvalid={!!secretKeyFileError}>
+              <RequiredFormLabel isRequired mb={1}>
+                Form Secret Key
+              </RequiredFormLabel>
               <Text textStyle="body-2" color="base.content.medium" mb={2}>
                 This is the key you downloaded/saved when you created the form
               </Text>
-              <Input
-                type="password"
-                value={secretKey}
-                onChange={(e) => setSecretKey(e.target.value)}
-                placeholder="Enter your Secret Key here to continue"
-                autoComplete="off"
-                isDisabled={inProgress}
-              />
+              <Stack spacing="0.5rem" direction="row">
+                <Input
+                  type="password"
+                  value={secretKey}
+                  onChange={(e) => {
+                    setSecretKeyFileError(null)
+                    setSecretKey(e.target.value)
+                  }}
+                  {...(dragging
+                    ? {
+                        py: 12,
+                        backgroundColor: 'primary.50',
+                        borderColor: 'primary.500',
+                        borderWidth: 2,
+                        borderStyle: 'dashed',
+                        _focusVisible: {
+                          boxShadow: 'none',
+                        },
+                      }
+                    : undefined)}
+                  onDragEnter={inProgress ? undefined : handleDragEnter}
+                  onDragLeave={inProgress ? undefined : handleDragLeave}
+                  onDragOver={inProgress ? undefined : handleDragOver}
+                  onDrop={inProgress ? undefined : handleDrop}
+                  placeholder={
+                    dragging
+                      ? 'Drop your file here'
+                      : 'Enter or drop your Secret Key here to continue'
+                  }
+                  autoComplete="off"
+                  isDisabled={inProgress}
+                  transition="padding 0.2s ease-out"
+                />
+                <FileUpload
+                  accept="text/plain"
+                  processFile={processSecretKeyFile}
+                  disabled={inProgress}
+                />
+              </Stack>
+              {secretKeyFileError && (
+                <FormErrorMessage>{secretKeyFileError}</FormErrorMessage>
+              )}
             </FormControl>
           </ModalBody>
           <ModalFooter>
