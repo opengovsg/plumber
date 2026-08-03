@@ -5,12 +5,12 @@ import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
 import logger from './logger'
 
 type BackoffStrategy = WorkerProOptions['settings']['backoffStrategy']
-export const exponentialBackoffWithJitter: BackoffStrategy = function (
+export const exponentialBackoffWithJitter: BackoffStrategy = async function (
   attemptsMade,
   _type,
   err,
-  _job,
-): number {
+  job,
+): Promise<number> {
   // This implements FullJitter-like jitter, with the following changes:
   //
   // * We wait _at least_ the full duration of the previous delay (or on the 1st
@@ -39,5 +39,21 @@ export const exponentialBackoffWithJitter: BackoffStrategy = function (
   const initialDelay =
     err instanceof RetriableError ? err.delayInMs : DEFAULT_DELAY_MS
   const prevFullDelay = Math.pow(2, attemptsMade - 1) * initialDelay
-  return prevFullDelay + Math.round(Math.random() * prevFullDelay)
+  const delay = prevFullDelay + Math.round(Math.random() * prevFullDelay)
+
+  if (job) {
+    try {
+      await job.updateData({ ...job.data, retryQueuedAt: Date.now() })
+    } catch (updateErr) {
+      // Never let a telemetry-stamp failure break the actual retry - this
+      // await sits directly in BullMQ's moveToFailed() path, so a rejection
+      // here would abort the retry scheduling itself.
+      logger.error('Failed to stamp retryQueuedAt for automatic retry', {
+        event: 'backoff-stamp-retry-queued-at-failed',
+        err: updateErr,
+      })
+    }
+  }
+
+  return delay
 }
