@@ -20,12 +20,20 @@ function getInternalId(data: any) {
   return ''
 }
 
-function validateData(data: any, flowId: string, app: string) {
+export function validateData(
+  data: any,
+  flow: NonNullable<IGlobalVariable['flow']>,
+  app: string,
+) {
   const validationResult = schema.safeParse(data)
   if (!validationResult.success) {
     logger.error(
-      `GatherSG: potential infinite loop! Webhook not triggered by user! flowId: ${flowId}. app: ${app}. case type: ${data?.type}. case uuid: ${data?.uuid}`,
-      { event: 'ownself-gather-potential-infinite-loop', flowId },
+      `GatherSG: potential infinite loop! Webhook not triggered by user! flowId: ${flow.id}. app: ${app}. case type: ${data?.type}. case uuid: ${data?.uuid}`,
+      {
+        event: 'ownself-gather-potential-infinite-loop',
+        flowId: flow.id,
+        isFlowActive: flow.isActive,
+      },
     )
     throw new Error(
       'GatherSG: potential infinite loop! Webhook not triggered by user!',
@@ -116,7 +124,7 @@ export async function decryptResponse(
         decipher.final(),
       ]).toString()
       const decryptedData = JSON.parse(decryptedStr)
-      validateData(decryptedData, $.flow.id, app)
+      validateData(decryptedData, $.flow, app)
 
       const processedFields = processFields(decryptedData.fields)
 
@@ -135,7 +143,7 @@ export async function decryptResponse(
         internalId: getInternalId(decryptedData),
       }
     } else {
-      validateData(data, $.flow.id, app)
+      validateData(data, $.flow, app)
       const processedFields = processFields(data.fields)
       $.request.body = {
         app,
