@@ -204,6 +204,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   dynamicPicker={activeDynamicPicker}
                   onAddConnection={onAddConnection}
                   knownFormUrl={knownFormUrl}
+                  onConnectForm={onConnectForm}
                   attachedForm={attachedForm}
                 />
               )}
