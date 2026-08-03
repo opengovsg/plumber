@@ -37,6 +37,9 @@ const SECRET_KEY_REGEX = /^[a-zA-Z0-9/+]+={0,2}$/
 
 interface AddFormsgConnectionModalProps {
   isOpen: boolean
+  // A connection can only be created once the pipe exists (see
+  // AiBuilder/index.tsx's onAddConnection gating) — this is that pipe's id.
+  flowId?: string
   prefillFormUrl?: string
   onClose: () => void
   onSuccess: (connectionLabel: string, connectionId: string) => void
@@ -44,6 +47,7 @@ interface AddFormsgConnectionModalProps {
 
 export default function AddFormsgConnectionModal({
   isOpen,
+  flowId,
   prefillFormUrl,
   onClose,
   onSuccess,
@@ -135,7 +139,7 @@ export default function AddFormsgConnectionModal({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!formUrl.trim() || !secretKey.trim() || inProgress) {
+    if (!formUrl.trim() || !secretKey.trim() || !flowId || inProgress) {
       return
     }
 
@@ -143,9 +147,8 @@ export default function AddFormsgConnectionModal({
     setErrorMessage(null)
 
     try {
-      // No flowId: the AI Builder creates the connection before any pipe
-      // exists, so this becomes a personal connection. The secret key goes
-      // browser → GraphQL only and never through the chat route or the LLM.
+      // The secret key goes browser → GraphQL only and never through the
+      // chat route or the LLM.
       const { data: createData } = await createConnection({
         variables: {
           input: {
@@ -154,6 +157,7 @@ export default function AddFormsgConnectionModal({
               formId: formUrl.trim(),
               privateKey: secretKey.trim(),
             },
+            flowId,
           },
         },
       })
@@ -164,7 +168,7 @@ export default function AddFormsgConnectionModal({
       }
 
       const { data: verifyData } = await verifyConnection({
-        variables: { input: { id: connectionId } },
+        variables: { input: { id: connectionId, flowId } },
       })
 
       const label =
@@ -270,7 +274,7 @@ export default function AddFormsgConnectionModal({
             <Button
               type="submit"
               isLoading={inProgress}
-              isDisabled={!formUrl.trim() || !secretKey.trim()}
+              isDisabled={!formUrl.trim() || !secretKey.trim() || !flowId}
             >
               Connect
             </Button>

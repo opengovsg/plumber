@@ -576,7 +576,7 @@ input DynamicActionInput {
 input CreateConnectionInput {
   key: String!
   formattedData: JSONObject!
-  flowId: String
+  flowId: String!
 }
 
 input GenerateAuthUrlInput {
@@ -596,7 +596,7 @@ input ResetConnectionInput {
 
 input VerifyConnectionInput {
   id: String!
-  flowId: String
+  flowId: String!
 }
 
 input DeleteConnectionInput {

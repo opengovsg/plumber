@@ -48,38 +48,20 @@ describe('createConnection', () => {
   })
 
   describe('without flowId', () => {
-    // The AI Builder creates connections before any pipe exists (no flowId).
-    it('should create a personal connection owned by the current user', async () => {
-      const result = await createConnection(
-        null,
-        {
-          input: {
-            key: 'slack',
-            formattedData: { screenName: 'Test Slack' },
+    it('should not create connection without a flowId', async () => {
+      await expect(
+        createConnection(
+          null,
+          {
+            // @ts-expect-error - intentionally exclude the flowId
+            input: {
+              key: 'slack',
+              formattedData: { screenName: 'Test Slack' },
+            },
           },
-        },
-        context,
-      )
-
-      const connection = await Connection.query().findById(result.id)
-      expect(connection.userId).toBe(owner.id)
-      expect(connection.verified).toBe(false)
-    })
-
-    it('should not add any flow_connections row', async () => {
-      await createConnection(
-        null,
-        {
-          input: {
-            key: 'slack',
-            formattedData: { screenName: 'Test Slack' },
-          },
-        },
-        context,
-      )
-
-      const flowConnections = await FlowConnections.query()
-      expect(flowConnections).toHaveLength(0)
+          context,
+        ),
+      ).rejects.toThrow()
     })
   })
 
