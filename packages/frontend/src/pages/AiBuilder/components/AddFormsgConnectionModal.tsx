@@ -235,6 +235,11 @@ export default function AddFormsgConnectionModal({
       ? 'Add your Form Secret Key'
       : 'Add new form'
 
+  // The URL stays locked only while it hasn't failed yet — once the backend
+  // rejects it (e.g. "Form does not exist"), the user needs to be able to
+  // correct it rather than being stuck resubmitting the same bad URL.
+  const isFormUrlLocked = lockFormUrl && !errorMessage
+
   const isSubmitDisabled =
     !isValidFormUrlInput(formUrl) ||
     (variant === 'full' && (!secretKey.trim() || !flowId))
@@ -273,7 +278,7 @@ export default function AddFormsgConnectionModal({
                 onChange={(e) => setFormUrl(e.target.value)}
                 placeholder="https://form.gov.sg/…"
                 autoComplete="url"
-                isDisabled={inProgress || lockFormUrl}
+                isDisabled={inProgress || isFormUrlLocked}
               />
             </FormControl>
 

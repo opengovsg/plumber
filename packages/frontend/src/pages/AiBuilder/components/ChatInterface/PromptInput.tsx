@@ -49,6 +49,44 @@ interface PromptInputProps {
   attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
+// Display-only chip anchoring the conversation's form to the composer.
+function FormChip({
+  form,
+}: {
+  form: { label: string; isConnected?: boolean }
+}) {
+  return (
+    <Flex
+      align="center"
+      gap={1.5}
+      bg="gray.50"
+      borderRadius="full"
+      px={2.5}
+      py={1}
+      maxW="full"
+    >
+      <Image
+        src="/apps/formsg/assets/favicon.svg"
+        boxSize="14px"
+        alt="FormSG"
+      />
+      <Text textStyle="caption-1" noOfLines={1} color="gray.700">
+        {form.label}
+      </Text>
+      {form.isConnected === false && (
+        <Text
+          textStyle="caption-1"
+          color="gray.400"
+          flexShrink={0}
+          whiteSpace="nowrap"
+        >
+          · not connected
+        </Text>
+      )}
+    </Flex>
+  )
+}
+
 export default function PromptInput({
   isStreaming,
   showIdeas = false,
@@ -305,35 +343,8 @@ export default function PromptInput({
 
         {showChipsRow && (
           <Flex px={2} pb={1} pt={1} align="center" gap={2}>
-            {attachedForm ? (
-              <Flex
-                align="center"
-                gap={1.5}
-                bg="gray.50"
-                borderRadius="full"
-                px={2.5}
-                py={1}
-                maxW="full"
-              >
-                <Image
-                  src="/apps/formsg/assets/favicon.svg"
-                  boxSize="14px"
-                  alt="FormSG"
-                />
-                <Text textStyle="caption-1" noOfLines={1} color="gray.700">
-                  {attachedForm.label}
-                </Text>
-                {attachedForm.isConnected === false && (
-                  <Text
-                    textStyle="caption-1"
-                    color="gray.400"
-                    flexShrink={0}
-                    whiteSpace="nowrap"
-                  >
-                    · not connected
-                  </Text>
-                )}
-              </Flex>
+            {attachedForm?.isConnected ? (
+              <FormChip form={attachedForm} />
             ) : onConnectForm ? (
               <Tooltip
                 label="Most workflows start with a FormSG form. Connect yours and I'll guide you based on its actual fields."
@@ -368,6 +379,11 @@ export default function PromptInput({
                   </Box>
                 </Flex>
               </Tooltip>
+            ) : attachedForm ? (
+              // Dead-end fallback: a URL is known but not connected, and
+              // there's no trigger left to retry through (e.g. post-pipe,
+              // before the LLM's connection picker has fired).
+              <FormChip form={attachedForm} />
             ) : null}
           </Flex>
         )}
