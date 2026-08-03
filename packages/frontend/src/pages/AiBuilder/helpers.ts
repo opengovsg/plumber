@@ -24,6 +24,35 @@ export const normalizeMarkdownHeadings = (text: string): string =>
 export const prepareAiText = (text: string): string =>
   normalizeMarkdownHeadings(stripHtmlComments(text))
 
+// First user message sent after connecting a form from the empty state.
+// The parenthetical carries the connection id (for assigning the trigger in
+// Phase 2b) and form id (for get_form_schema); it follows the same "(id: …)"
+// convention as picker answers, so the chat display strips it (see
+// formatUserMessageForDisplay) and the user only sees the form title. The
+// exact shape is a contract with the system prompt's connect-first intake
+// branch — change both together.
+export const buildFormConnectedMessage = (
+  formTitle: string,
+  connectionId: string,
+  formId: string | null,
+): string => {
+  const technicalRef = formId
+    ? `(id: ${connectionId}, form id: ${formId})`
+    : `(id: ${connectionId})`
+  return `I've connected my FormSG form "${formTitle}" ${technicalRef}.`
+}
+
+export const buildKickoffMessage = (
+  formTitle: string,
+  connectionId: string,
+  formId: string | null,
+): string =>
+  `${buildFormConnectedMessage(
+    formTitle,
+    connectionId,
+    formId,
+  )} Suggest workflows I can build with this form.`
+
 // Sent when the user shares their form URL (url-only modal) without
 // connecting it — the LLM's URL-first intake branch picks the URL up and
 // fetches the public schema.
