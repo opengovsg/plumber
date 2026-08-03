@@ -967,6 +967,13 @@ export interface IActionJobData {
   executionId: string
   stepId: string
   metadata?: NextStepMetadata
+  /**
+   * Timestamp of the most recent retry (manual, via retryExecutionStep, or
+   * automatic, via exponentialBackoffWithJitter) that made this job eligible
+   * to run again, so queue-timing telemetry measures from that retry instead
+   * of the job's original (potentially very stale) enqueue time.
+   */
+  retryQueuedAt?: number
 }
 
 export interface IActionRunResult {
