@@ -81,8 +81,8 @@ export const stripFormIdPrefix = (label: string): string =>
   label.replace(/^((?:\[[A-Z]+\] )*)[a-f0-9]{24} - /i, '$1')
 
 // User messages are displayed verbatim except for machine detail: picker
-// answers carry "(id: …)" / "(id: …, form id: …)" suffixes that are
-// stripped from display.
+// answers and the kickoff message carry "(id: …)" / "(id: …, form id: …)"
+// suffixes that are stripped from display.
 export const formatUserMessageForDisplay = (text: string): string =>
   text.replace(/ \(id: [a-f0-9-]+(?:, form id: [a-f0-9]+)?\)/g, '').trim()
 

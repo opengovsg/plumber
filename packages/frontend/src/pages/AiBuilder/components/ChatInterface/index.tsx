@@ -213,6 +213,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   onAddConnection={onAddConnection}
                   knownFormUrl={knownFormUrl}
                   onConnectForm={onConnectForm}
+                  onSelectExistingForm={onSelectExistingForm}
                   attachedForm={attachedForm}
                 />
               )}
