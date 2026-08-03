@@ -24,6 +24,9 @@ interface ChatInterfaceProps {
   resetChat: () => void
   hasReachedLimit: boolean
   onAddConnection?: (context: { question: string }) => void
+  knownFormUrl?: string
+  onConnectForm?: () => void
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -37,6 +40,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     resetChat,
     hasReachedLimit,
     onAddConnection,
+    knownFormUrl,
+    onConnectForm,
+    attachedForm,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -134,6 +140,8 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             placeholder={
               PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
             }
+            onConnectForm={onConnectForm}
+            attachedForm={attachedForm}
           />
         </Flex>
       </Flex>
@@ -195,6 +203,8 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   clarification={activeClarification}
                   dynamicPicker={activeDynamicPicker}
                   onAddConnection={onAddConnection}
+                  knownFormUrl={knownFormUrl}
+                  attachedForm={attachedForm}
                 />
               )}
               {!isMobile && (

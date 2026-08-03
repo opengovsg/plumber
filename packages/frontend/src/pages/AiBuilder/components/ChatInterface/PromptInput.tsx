@@ -8,7 +8,15 @@ import {
 } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
+import {
+  Box,
+  Flex,
+  Icon,
+  Image,
+  Text,
+  Textarea,
+  Tooltip,
+} from '@chakra-ui/react'
 
 import {
   type ClarificationQuestion,
@@ -29,6 +37,16 @@ interface PromptInputProps {
   clarification?: ClarificationQuestion[]
   dynamicPicker?: DynamicPickerPart['data']
   onAddConnection?: (context: { question: string }) => void
+  /** Form URL already shared in the conversation (drives the picker's forced key-completion card). */
+  knownFormUrl?: string
+  /** Opens the Add-new-form modal (empty-state "Connect your form" entry). */
+  onConnectForm?: () => void
+  /**
+   * Display-only chip anchoring the conversation's form to the composer —
+   * the connected form's title, or the shared URL (isConnected: false)
+   * before a secret key has been added.
+   */
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function PromptInput({
@@ -41,6 +59,9 @@ export default function PromptInput({
   clarification,
   dynamicPicker,
   onAddConnection,
+  knownFormUrl,
+  onConnectForm,
+  attachedForm,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -93,6 +114,22 @@ export default function PromptInput({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // The resize handler above only fires on typed input, but a long
+  // placeholder wraps onto multiple lines too — without this, the fixed
+  // single-row height overflows and shows a spurious scrollbar. Measure the
+  // placeholder's wrapped height the same way (swap it into the DOM value
+  // just for the measurement) whenever the box is empty.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el || input) {
+      return
+    }
+    const original = el.value
+    el.value = placeholder
+    handleResize({ currentTarget: el } as FormEvent<HTMLTextAreaElement>)
+    el.value = original
+  }, [placeholder, input])
 
   const handleAnswer = (answer: string) => {
     if (isStreaming || !clarification) {
@@ -159,6 +196,7 @@ export default function PromptInput({
             ? () => onAddConnection({ question: dynamicPicker.question })
             : undefined
         }
+        knownFormUrl={knownFormUrl}
         cancelStream={cancelStream}
       />
     )
@@ -181,11 +219,12 @@ export default function PromptInput({
     )
   }
 
+  const showChipsRow = Boolean(onConnectForm || attachedForm)
+
   return (
     <Box w="full" maxW="4xl">
       <Flex
-        direction="row"
-        align="stretch"
+        direction="column"
         bg="white"
         border="1px"
         borderColor="gray.200"
@@ -196,71 +235,142 @@ export default function PromptInput({
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
       >
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder={placeholder}
-          w="full"
-          resize="none"
-          border="none"
-          bg="transparent"
-          p={3}
-          color="gray.900"
-          _placeholder={{ color: 'gray.500' }}
-          _focus={{ outline: 'none', boxShadow: 'none' }}
-          fontSize="base"
-          lineHeight="6"
-          maxH="calc(40vh - 100px)"
-          rows={1}
-          overflowY="auto"
-          sx={{
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            },
-          }}
-          onInput={handleResize}
-          onFocus={(e) => {
-            // prevent iOS Safari from zooming in on input focus
-            e.currentTarget.style.fontSize = '16px'
-          }}
-        />
+        <Flex direction="row" align="stretch" flex={1}>
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={placeholder}
+            w="full"
+            resize="none"
+            border="none"
+            bg="transparent"
+            p={3}
+            color="gray.900"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ outline: 'none', boxShadow: 'none' }}
+            fontSize="base"
+            lineHeight="6"
+            maxH="calc(40vh - 100px)"
+            rows={1}
+            overflowY="auto"
+            sx={{
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              },
+            }}
+            onInput={handleResize}
+            onFocus={(e) => {
+              // prevent iOS Safari from zooming in on input focus
+              e.currentTarget.style.fontSize = '16px'
+            }}
+          />
 
-        <Flex justify="end" align="flex-end" p={3}>
-          {isStreaming ? (
-            <Icon
-              as={FaCircleStop}
-              fontSize="24px"
-              color="red.500"
-              cursor="pointer"
-              onClick={cancelStream}
-              _hover={{ color: 'red.600' }}
-            />
-          ) : (
-            <Icon
-              as={FaArrowCircleUp}
-              fontSize="24px"
-              color={
-                input?.trim()
-                  ? 'primary.500'
-                  : 'interaction.support.disabled-content'
-              }
-              onClick={handleSubmit}
-              cursor={input?.trim() ? 'pointer' : 'default'}
-            />
-          )}
+          <Flex justify="end" align="flex-end" p={3}>
+            {isStreaming ? (
+              <Icon
+                as={FaCircleStop}
+                fontSize="24px"
+                color="red.500"
+                cursor="pointer"
+                onClick={cancelStream}
+                _hover={{ color: 'red.600' }}
+              />
+            ) : (
+              <Icon
+                as={FaArrowCircleUp}
+                fontSize="24px"
+                color={
+                  input?.trim()
+                    ? 'primary.500'
+                    : 'interaction.support.disabled-content'
+                }
+                onClick={handleSubmit}
+                cursor={input?.trim() ? 'pointer' : 'default'}
+              />
+            )}
+          </Flex>
         </Flex>
+
+        {showChipsRow && (
+          <Flex px={2} pb={1} pt={1} align="center" gap={2}>
+            {attachedForm ? (
+              <Flex
+                align="center"
+                gap={1.5}
+                bg="gray.50"
+                borderRadius="full"
+                px={2.5}
+                py={1}
+                maxW="full"
+              >
+                <Image
+                  src="/apps/formsg/assets/favicon.svg"
+                  boxSize="14px"
+                  alt="FormSG"
+                />
+                <Text textStyle="caption-1" noOfLines={1} color="gray.700">
+                  {attachedForm.label}
+                </Text>
+                {attachedForm.isConnected === false && (
+                  <Text
+                    textStyle="caption-1"
+                    color="gray.400"
+                    flexShrink={0}
+                    whiteSpace="nowrap"
+                  >
+                    · not connected
+                  </Text>
+                )}
+              </Flex>
+            ) : onConnectForm ? (
+              <Tooltip
+                label="Most workflows start with a FormSG form. Connect yours and I'll guide you based on its actual fields."
+                hasArrow
+                placement="top-start"
+              >
+                <Flex display="inline-flex">
+                  <Box
+                    as="button"
+                    type="button"
+                    display="inline-flex"
+                    alignItems="center"
+                    gap={1.5}
+                    border="1px"
+                    borderColor="gray.200"
+                    borderRadius="full"
+                    color="gray.700"
+                    fontWeight="medium"
+                    fontSize="xs"
+                    px={2.5}
+                    py={1}
+                    opacity={isStreaming ? 0.5 : 1}
+                    cursor={isStreaming ? 'not-allowed' : 'pointer'}
+                    onClick={isStreaming ? undefined : onConnectForm}
+                  >
+                    <Image
+                      src="/apps/formsg/assets/favicon.svg"
+                      boxSize="14px"
+                      alt=""
+                    />
+                    Connect your form
+                  </Box>
+                </Flex>
+              </Tooltip>
+            ) : null}
+          </Flex>
+        )}
       </Flex>
 
       {showIdeas && (

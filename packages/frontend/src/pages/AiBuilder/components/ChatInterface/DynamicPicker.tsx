@@ -32,6 +32,13 @@ interface DynamicPickerProps {
   onSelect: (name: string, value: string) => void
   onSkip: () => void
   onAddConnection?: () => void
+  /**
+   * FormSG only: a form URL already shared in the conversation. When set,
+   * the picker skips the connections list entirely and shows a single
+   * "finish connecting" card — the user just adds their secret key for the
+   * form they already chose.
+   */
+  knownFormUrl?: string
   cancelStream: () => void
 }
 
@@ -44,6 +51,7 @@ export default function DynamicPicker({
   onSelect,
   onSkip,
   onAddConnection,
+  knownFormUrl,
   cancelStream,
 }: DynamicPickerProps) {
   const [options, setOptions] = useState<DynamicPickerOption[]>([])
@@ -59,7 +67,18 @@ export default function DynamicPicker({
 
   const isAppKeyMode = Boolean(appKey)
 
+  // Forced key-completion mode: the form is already known from the
+  // conversation, so listing other connections would only invite a mismatch.
+  const isKnownFormMode = Boolean(
+    isAppKeyMode && appKey === 'formsg' && knownFormUrl && onAddConnection,
+  )
+
   useEffect(() => {
+    if (isKnownFormMode) {
+      setIsLoading(false)
+      return
+    }
+
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -111,7 +130,7 @@ export default function DynamicPicker({
       })
 
     return () => controller.abort()
-  }, [stepId, dynamicKey, appKey, retryCount]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [stepId, dynamicKey, appKey, retryCount, isKnownFormMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = query
     ? options.filter((o) => o.name.toLowerCase().includes(query.toLowerCase()))
@@ -179,7 +198,27 @@ export default function DynamicPicker({
         )}
 
         <Flex direction="column" gap={2} maxH="240px" overflowY="auto">
-          {isLoading ? (
+          {isKnownFormMode ? (
+            <Flex
+              direction="column"
+              align="flex-start"
+              gap={3}
+              bg="gray.50"
+              borderRadius="lg"
+              p={4}
+            >
+              <Text textStyle="body-2" color="gray.700">
+                We already have your form&apos;s URL — add your{' '}
+                <Text as="span" fontWeight="medium">
+                  Form Secret Key
+                </Text>{' '}
+                to connect it.
+              </Text>
+              <Button isDisabled={isStreaming} onClick={onAddConnection}>
+                Connect your form
+              </Button>
+            </Flex>
+          ) : isLoading ? (
             <Flex justify="center" py={4}>
               <Spinner size="sm" color="primary.500" />
             </Flex>
