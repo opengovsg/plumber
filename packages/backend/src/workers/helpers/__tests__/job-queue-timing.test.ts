@@ -21,7 +21,7 @@ describe('getJobQueueTimingTags', () => {
     vi.restoreAllMocks()
   })
 
-  it('measures from job.timestamp when retryQueuedAt is absent', () => {
+  it('measures from job.timestamp when retryTimestamp is absent', () => {
     vi.spyOn(Date, 'now').mockReturnValue(5000)
     const job = makeJob({
       timestamp: 1000,
@@ -38,7 +38,7 @@ describe('getJobQueueTimingTags', () => {
     })
   })
 
-  it('defaults jobDelay to 0 when opts.delay is absent and retryQueuedAt is absent', () => {
+  it('defaults jobDelay to 0 when opts.delay is absent and retryTimestamp is absent', () => {
     vi.spyOn(Date, 'now').mockReturnValue(5000)
     const job = makeJob({
       timestamp: 1000,
@@ -54,7 +54,7 @@ describe('getJobQueueTimingTags', () => {
     })
   })
 
-  it('measures from retryQueuedAt and ignores opts.delay once a retry has been stamped', () => {
+  it('measures from retryTimestamp and ignores opts.delay once a retry has been stamped', () => {
     vi.spyOn(Date, 'now').mockReturnValue(10000)
     const job = makeJob({
       timestamp: 1000, // stale original enqueue time
@@ -64,7 +64,7 @@ describe('getJobQueueTimingTags', () => {
         flowId: 'f',
         executionId: 'e',
         stepId: 's',
-        retryQueuedAt: 8000,
+        retryTimestamp: 8000,
       },
     })
 

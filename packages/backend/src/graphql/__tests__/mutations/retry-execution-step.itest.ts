@@ -228,21 +228,21 @@ describe('retryExecutionStep mutation', () => {
       expect(mockJob.retry).toHaveBeenCalled()
     })
 
-    it('should stamp retryQueuedAt on the job before calling retry', async () => {
+    it('should stamp retryTimestamp on the job before calling retry', async () => {
       vi.spyOn(Date, 'now').mockReturnValue(123456789)
 
       await retryExecutionStep(null, { input: genericInputParams }, context)
 
       expect(mockJob.updateData).toHaveBeenCalledWith({
         ...mockJobData,
-        retryQueuedAt: 123456789,
+        retryTimestamp: 123456789,
       })
       expect(mockJob.updateData.mock.invocationCallOrder[0]).toBeLessThan(
         mockJob.retry.mock.invocationCallOrder[0],
       )
     })
 
-    it('should revert the retryQueuedAt stamp if job.retry() throws', async () => {
+    it('should revert the retryTimestamp stamp if job.retry() throws', async () => {
       const retryErr = new Error('job is not in the failed state')
       mockJob.retry.mockRejectedValue(retryErr)
 
@@ -252,7 +252,7 @@ describe('retryExecutionStep mutation', () => {
 
       expect(mockJob.updateData).toHaveBeenNthCalledWith(1, {
         ...mockJobData,
-        retryQueuedAt: expect.any(Number),
+        retryTimestamp: expect.any(Number),
       })
       expect(mockJob.updateData).toHaveBeenNthCalledWith(2, mockJobData)
     })

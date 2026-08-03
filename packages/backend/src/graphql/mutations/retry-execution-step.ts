@@ -35,7 +35,7 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
   }
 
   const originalJobData = job.data
-  await job.updateData({ ...originalJobData, retryQueuedAt: Date.now() })
+  await job.updateData({ ...originalJobData, retryTimestamp: Date.now() })
   try {
     await job.retry()
   } catch (err) {

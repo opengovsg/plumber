@@ -973,7 +973,7 @@ export interface IActionJobData {
    * to run again, so queue-timing telemetry measures from that retry instead
    * of the job's original (potentially very stale) enqueue time.
    */
-  retryQueuedAt?: number
+  retryTimestamp?: number
 }
 
 export interface IActionRunResult {

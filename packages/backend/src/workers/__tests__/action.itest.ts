@@ -435,7 +435,7 @@ describe('Action worker', () => {
       vi.setSystemTime(startTime)
       await failedJob.updateData({
         ...failedJob.data,
-        retryQueuedAt: Date.now(),
+        retryTimestamp: Date.now(),
       })
 
       mocks.processAction.mockResolvedValueOnce({

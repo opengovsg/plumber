@@ -123,8 +123,8 @@ describe('Backoff', () => {
     )
   })
 
-  describe('retryQueuedAt stamping', () => {
-    it('stamps retryQueuedAt on the job before returning the delay', async () => {
+  describe('retryTimestamp stamping', () => {
+    it('stamps retryTimestamp on the job before returning the delay', async () => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs: 1000,
@@ -146,7 +146,7 @@ describe('Backoff', () => {
         flowId: 'flow-id',
         executionId: 'exec-id',
         stepId: 'step-id',
-        retryQueuedAt: 123456789,
+        retryTimestamp: 123456789,
       })
     })
 
@@ -163,7 +163,7 @@ describe('Backoff', () => {
       )
     })
 
-    it('logs and still returns the delay if stamping retryQueuedAt fails', async () => {
+    it('logs and still returns the delay if stamping retryTimestamp fails', async () => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs: 1000,
@@ -182,9 +182,9 @@ describe('Backoff', () => {
       ).resolves.toEqual(1000)
 
       expect(mocks.logError).toHaveBeenCalledWith(
-        'Failed to stamp retryQueuedAt for automatic retry',
+        'Failed to stamp retryTimestamp for automatic retry',
         {
-          event: 'backoff-stamp-retry-queued-at-failed',
+          event: 'backoff-stamp-retry-timestamp-failed',
           err: updateErr,
         },
       )

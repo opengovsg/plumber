@@ -43,13 +43,13 @@ export const exponentialBackoffWithJitter: BackoffStrategy = async function (
 
   if (job) {
     try {
-      await job.updateData({ ...job.data, retryQueuedAt: Date.now() })
+      await job.updateData({ ...job.data, retryTimestamp: Date.now() })
     } catch (updateErr) {
       // Never let a telemetry-stamp failure break the actual retry - this
       // await sits directly in BullMQ's moveToFailed() path, so a rejection
       // here would abort the retry scheduling itself.
-      logger.error('Failed to stamp retryQueuedAt for automatic retry', {
-        event: 'backoff-stamp-retry-queued-at-failed',
+      logger.error('Failed to stamp retryTimestamp for automatic retry', {
+        event: 'backoff-stamp-retry-timestamp-failed',
         err: updateErr,
       })
     }
