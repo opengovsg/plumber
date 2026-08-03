@@ -21,6 +21,7 @@ import { enqueueActionJob, makeActionJobId } from '@/queues/action'
 import { processAction } from '@/services/action'
 
 import processForEachStatus from './for-each-status-manager'
+import { getJobQueueTimingTags } from './job-queue-timing'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 function convertParamsToBullMqOptions(
@@ -116,12 +117,16 @@ export function makeActionWorker(
           actionKey: currStep?.key,
           appKey: currStep?.appKey,
           jobId,
-          jobEnqueueTime: job.timestamp,
-          jobDelay: job.opts?.delay ?? 0,
-          attempts: job.attemptsStarted,
-          timeInJobQueue: Date.now() - job.timestamp - (job.opts?.delay ?? 0),
+          ...getJobQueueTimingTags(job),
           workerVersion: appConfig.version,
         })
+
+        const {
+          flowId: jobFlowId,
+          executionId: jobExecutionId,
+          stepId: jobStepId,
+          metadata: jobMetadata,
+        } = jobData
 
         const {
           flowId,
@@ -130,7 +135,13 @@ export function makeActionWorker(
           executionStep,
           nextStepMetadata,
           executionError,
-        } = await processAction({ ...jobData, jobId }).catch(async (err) => {
+        } = await processAction({
+          flowId: jobFlowId,
+          executionId: jobExecutionId,
+          stepId: jobStepId,
+          metadata: jobMetadata,
+          jobId,
+        }).catch(async (err) => {
           // This happens when the prerequisite steps for the action fails (e.g.
           // db error, missing execution, flow, step, etc...) in such cases, we
           // do not want to retry
