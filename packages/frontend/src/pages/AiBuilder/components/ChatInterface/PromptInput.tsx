@@ -18,11 +18,7 @@ import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicke
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
-import {
-  AI_CHAT_IDEAS,
-  type AiChatIdea,
-  EMPTY_STATE_FORM_HINT,
-} from '@/pages/AiBuilder/constants'
+import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -114,6 +110,22 @@ export default function PromptInput({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // The resize handler above only fires on typed input, but a long
+  // placeholder wraps onto multiple lines too — without this, the fixed
+  // single-row height overflows and shows a spurious scrollbar. Measure the
+  // placeholder's wrapped height the same way (swap it into the DOM value
+  // just for the measurement) whenever the box is empty.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el || input) {
+      return
+    }
+    const original = el.value
+    el.value = placeholder
+    handleResize({ currentTarget: el } as FormEvent<HTMLTextAreaElement>)
+    el.value = original
+  }, [placeholder, input])
 
   const handleAnswer = (answer: string) => {
     if (isStreaming || !clarification) {
@@ -328,12 +340,6 @@ export default function PromptInput({
           </Flex>
         )}
       </Flex>
-
-      {showIdeas && onConnectForm && (
-        <Text textStyle="caption-1" color="gray.500" mt={2} px={1}>
-          {EMPTY_STATE_FORM_HINT}
-        </Text>
-      )}
 
       {showIdeas && (
         <Box minH={{ base: '200px', md: '60px' }} mt={6}>
