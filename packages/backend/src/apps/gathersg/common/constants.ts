@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 /**
  * Loose regex to just accept only alphanumeric characters and dashes
  * since there is no proper public documentation with GatherSG.
@@ -11,6 +13,8 @@ export const UNSUPPORTED_FIELDS = [
   'table', // array of objects
   'attachment',
 ]
+
+export const fieldTypeEnum = z.enum(['string', 'number', 'null'])
 
 // Prefix for hex encoding field names that contain special characters
 export const HEX_ENCODED_FIELD_PREFIX = '__HEX_ENCODED__'
