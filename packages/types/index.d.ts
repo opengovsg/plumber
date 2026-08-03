@@ -487,6 +487,14 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
   addRowButtonText?: string
   subFields: IFieldMultiRowMultiColSubField[]
   maxRows?: number
+  /**
+   * Opt-in for the "Autofill" button, which bulk-replaces rows with one row
+   * per option from subFields[0]'s dynamic-data source. Only sensible when
+   * every option from that source should get its own row (e.g. "set a value
+   * for every field/column") — not for filter/lookup-style fields where a
+   * user picks a handful of specific conditions.
+   */
+  autofillable?: boolean
 }
 
 export interface IFieldMultiRow extends IBaseField {

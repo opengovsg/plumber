@@ -12,7 +12,9 @@ import { EditorContext } from '@/contexts/Editor'
 
 import MultiCol from '../MultiCol.tsx'
 
+import AutofillConfirmDialog from './AutofillConfirmDialog'
 import RowDivider from './RowDivider'
+import useAutofill from './useAutofill'
 
 export type MultiRowProps = {
   name: string
@@ -26,6 +28,8 @@ export type MultiRowProps = {
   type?: string
   maxRows?: number
   defaultValue?: string | IJSONValue
+  // See IFieldMultiRowMultiCol.autofillable.
+  autofillable?: boolean
   // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
   // own controls). Renders even when the add-row button is hidden at maxRows.
   addButtonSuffix?: ReactNode
@@ -49,6 +53,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     type,
     maxRows,
     defaultValue,
+    autofillable,
     addButtonSuffix,
     onRequestRemoveLastRow,
     ...forwardedInputCreatorProps
@@ -72,6 +77,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     fields: rows,
     append,
     remove,
+    replace,
   } = useFieldArray({
     name,
     rules: { required },
@@ -102,6 +108,23 @@ function MultiRow(props: MultiRowProps): JSX.Element {
       shouldValidate: true,
     })
   }, [append, newRowDefaultValue, subFields, setValue, getValues, name])
+
+  const {
+    canAutofill,
+    isLoading: isDynamicDataLoading,
+    onAutofillClick,
+    confirm,
+  } = useAutofill({
+    autofillable,
+    type,
+    subFields,
+    stepId: forwardedInputCreatorProps.stepId,
+    name,
+    newRowDefaultValue,
+    replace,
+    getValues,
+    setValue,
+  })
 
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
@@ -233,8 +256,21 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   {addRowButtonText ?? 'And'}
                 </Button>
               )}
+              {canAutofill && (
+                <Button
+                  variant="outline"
+                  maxW="fit-content"
+                  isDisabled={isEditorReadOnly}
+                  isLoading={isDynamicDataLoading}
+                  onClick={onAutofillClick}
+                >
+                  <BiPlus /> Autofill
+                </Button>
+              )}
               {addButtonSuffix}
             </Flex>
+
+            {canAutofill && <AutofillConfirmDialog confirm={confirm} />}
           </Flex>
         )
       }}

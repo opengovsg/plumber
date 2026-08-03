@@ -45,6 +45,7 @@ const action: IRawAction = {
       label: 'New row data',
       key: 'rowData',
       type: 'multirow-multicol' as const,
+      autofillable: true,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',
