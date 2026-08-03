@@ -124,7 +124,7 @@ describe('Backoff', () => {
   })
 
   describe('retryTimestamp stamping', () => {
-    it('stamps retryTimestamp on the job before returning the delay', async () => {
+    it('stamps retryTimestamp as the time the job actually becomes eligible (now + delay), not now', async () => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs: 1000,
@@ -146,7 +146,7 @@ describe('Backoff', () => {
         flowId: 'flow-id',
         executionId: 'exec-id',
         stepId: 'step-id',
-        retryTimestamp: 123456789,
+        retryTimestamp: 123456789 + 1000,
       })
     })
 

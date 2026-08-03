@@ -122,13 +122,6 @@ export function makeActionWorker(
         })
 
         const {
-          flowId: jobFlowId,
-          executionId: jobExecutionId,
-          stepId: jobStepId,
-          metadata: jobMetadata,
-        } = jobData
-
-        const {
           flowId,
           executionId,
           nextStep,
@@ -136,10 +129,7 @@ export function makeActionWorker(
           nextStepMetadata,
           executionError,
         } = await processAction({
-          flowId: jobFlowId,
-          executionId: jobExecutionId,
-          stepId: jobStepId,
-          metadata: jobMetadata,
+          ...jobData,
           jobId,
         }).catch(async (err) => {
           // This happens when the prerequisite steps for the action fails (e.g.
