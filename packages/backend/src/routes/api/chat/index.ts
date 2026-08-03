@@ -34,7 +34,9 @@ import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
+import Connection from '@/models/connection'
 import Flow from '@/models/flow'
+import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
 import { serializeMessagesForLangfuse } from './helpers'
@@ -262,20 +264,45 @@ const handleChatStream = observe(
                           .orderBy('position', 'asc')
                       : []
 
+                    // Resolve connection labels fresh each turn — a step's
+                    // connection can be repointed independently of the step row.
+                    const connectionIds = [
+                      ...new Set(
+                        steps
+                          .map((step) => step.connectionId)
+                          .filter((id): id is string => !!id),
+                      ),
+                    ]
+                    const connectionsById = connectionIds.length
+                      ? new Map(
+                          (
+                            await Connection.query().findByIds(connectionIds)
+                          ).map((connection) => [connection.id, connection]),
+                        )
+                      : new Map<string, Connection>()
+
                     writer.write({
                       type: 'data-pipeState',
                       data: {
                         pipeId: activePipeId,
-                        steps: steps.map((step) => ({
-                          id: step.id,
-                          appKey: step.appKey,
-                          key: step.key,
-                          type: step.type,
-                          position: step.position,
-                          status: step.status,
-                          parameters: step.parameters,
-                          connectionId: step.connectionId ?? null,
-                        })),
+                        steps: steps.map((step) => {
+                          const connection = step.connectionId
+                            ? connectionsById.get(step.connectionId)
+                            : undefined
+                          return {
+                            id: step.id,
+                            appKey: step.appKey,
+                            key: step.key,
+                            type: step.type,
+                            position: step.position,
+                            status: step.status,
+                            parameters: step.parameters,
+                            connectionId: step.connectionId ?? null,
+                            connectionLabel: connection
+                              ? connectionLabel(connection)
+                              : null,
+                          }
+                        }),
                       },
                     })
                   }

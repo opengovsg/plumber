@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const mocks = vi.hoisted(() => ({
+  writerWrite: vi.fn(),
+  // streamText's mock can't await onFinish itself (it must return
+  // { toUIMessageStream } synchronously, matching the real SDK's contract),
+  // so it stashes the promise here for tests to await before asserting on
+  // anything onFinish does asynchronously (Flow/Connection lookups, writes).
+  onFinishPromise: Promise.resolve() as Promise<unknown>,
+}))
+
 vi.mock('@ai-sdk/mcp', () => ({
   experimental_createMCPClient: vi.fn(),
 }))
@@ -17,7 +26,7 @@ vi.mock('ai', async (importOriginal) => {
           onFinish?: (event: { text: string }) => Promise<void>
         }) => {
           if (onFinish) {
-            void onFinish({ text: '' })
+            mocks.onFinishPromise = onFinish({ text: '' })
           }
           return { toUIMessageStream: vi.fn().mockReturnValue({}) }
         },
@@ -26,7 +35,9 @@ vi.mock('ai', async (importOriginal) => {
       .fn()
       .mockImplementation(
         ({ execute }: { execute: (arg: { writer: unknown }) => unknown }) => {
-          void execute({ writer: { merge: vi.fn(), write: vi.fn() } })
+          void execute({
+            writer: { merge: vi.fn(), write: mocks.writerWrite },
+          })
           return {}
         },
       ),
@@ -34,6 +45,14 @@ vi.mock('ai', async (importOriginal) => {
     convertToModelMessages: vi.fn((msgs) => msgs),
   }
 })
+
+vi.mock('@/models/flow', () => ({
+  default: { query: vi.fn() },
+}))
+
+vi.mock('@/models/connection', () => ({
+  default: { query: vi.fn() },
+}))
 
 vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: vi.fn().mockResolvedValue({
@@ -99,6 +118,10 @@ vi.mock('@opentelemetry/api', () => ({
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
 import { streamText } from 'ai'
+
+import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import Connection from '@/models/connection'
+import Flow from '@/models/flow'
 
 // @ts-expect-error top-level await is supported by Vitest's ESM runner
 const { default: router } = await import('./index')
@@ -177,5 +200,198 @@ describe('chat handler — GitBook MCP integration', () => {
         tools: { ...mockBridgeTools },
       }),
     )
+  })
+})
+
+describe('chat handler — data-pipeState connectionLabel resolution', () => {
+  function mockFlowSteps(steps: unknown[]) {
+    vi.mocked(Flow.query).mockReturnValue({
+      findById: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue({
+          $relatedQuery: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockResolvedValue(steps),
+          }),
+        }),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+  }
+
+  function mockConnections(connections: unknown[]) {
+    vi.mocked(Connection.query).mockReturnValue({
+      findByIds: vi.fn().mockResolvedValue(connections),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+  }
+
+  function getWrittenPipeState() {
+    const call = mocks.writerWrite.mock.calls.find(
+      ([part]) => part.type === 'data-pipeState',
+    )
+    return call?.[0].data
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // This describe block only exercises the mcpStepConfig (Phase 2b+) path.
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        generateStepsPromptName: 'generate-steps',
+        version: 'production',
+        mcpStepConfig: true,
+      },
+    })
+    // Simulate a create_pipe (or similar) tool call having already set the
+    // active pipe, the same way onPipeChange is invoked in real usage.
+    vi.mocked(createMcpBridgeTools).mockImplementation(
+      (_user, _traceId, onPipeChange) => {
+        onPipeChange?.('pipe-1')
+        return { plumber_tool: vi.fn() } as unknown as ReturnType<
+          typeof createMcpBridgeTools
+        >
+      },
+    )
+  })
+
+  it('includes connectionLabel resolved from the connection screenName', async () => {
+    mockFlowSteps([
+      {
+        id: 'step-1',
+        appKey: 'slack',
+        key: 'sendMessageToChannel',
+        type: 'action',
+        position: 1,
+        status: 'completed',
+        parameters: { channel: 'general' },
+        connectionId: 'conn-1',
+      },
+    ])
+    mockConnections([
+      { id: 'conn-1', formattedData: { screenName: 'My Workspace' } },
+    ])
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+
+    expect(getWrittenPipeState()).toEqual(
+      expect.objectContaining({
+        pipeId: 'pipe-1',
+        steps: [
+          expect.objectContaining({
+            id: 'step-1',
+            parameters: { channel: 'general' },
+            connectionId: 'conn-1',
+            connectionLabel: 'My Workspace',
+          }),
+        ],
+      }),
+    )
+  })
+
+  it('sets connectionLabel to null when the step has no connection assigned', async () => {
+    mockFlowSteps([
+      {
+        id: 'step-1',
+        appKey: 'formsg',
+        key: 'newSubmission',
+        type: 'trigger',
+        position: 1,
+        status: 'incomplete',
+        parameters: {},
+        connectionId: null,
+      },
+    ])
+    mockConnections([])
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+
+    expect(getWrittenPipeState().steps).toEqual([
+      expect.objectContaining({ connectionId: null, connectionLabel: null }),
+    ])
+    expect(vi.mocked(Connection.query)).not.toHaveBeenCalled()
+  })
+
+  it('sets connectionLabel to null when the referenced connection no longer exists', async () => {
+    mockFlowSteps([
+      {
+        id: 'step-1',
+        appKey: 'slack',
+        key: 'sendMessageToChannel',
+        type: 'action',
+        position: 1,
+        status: 'incomplete',
+        parameters: {},
+        connectionId: 'conn-deleted',
+      },
+    ])
+    // Dangling reference: the connection was deleted/inaccessible.
+    mockConnections([])
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+
+    expect(getWrittenPipeState().steps).toEqual([
+      expect.objectContaining({
+        connectionId: 'conn-deleted',
+        connectionLabel: null,
+      }),
+    ])
+  })
+
+  it('dedupes connection lookups when multiple steps share the same connectionId', async () => {
+    mockFlowSteps([
+      {
+        id: 'step-1',
+        appKey: 'slack',
+        key: 'sendMessageToChannel',
+        type: 'action',
+        position: 1,
+        status: 'completed',
+        parameters: {},
+        connectionId: 'conn-1',
+      },
+      {
+        id: 'step-2',
+        appKey: 'slack',
+        key: 'sendMessageToChannel',
+        type: 'action',
+        position: 2,
+        status: 'completed',
+        parameters: {},
+        connectionId: 'conn-1',
+      },
+    ])
+    const findByIds = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'conn-1', formattedData: { screenName: 'My Workspace' } },
+      ])
+    vi.mocked(Connection.query).mockReturnValue({
+      findByIds,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any)
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+
+    expect(findByIds).toHaveBeenCalledTimes(1)
+    expect(findByIds).toHaveBeenCalledWith(['conn-1'])
+    expect(
+      getWrittenPipeState().steps.map(
+        (s: { connectionLabel: string | null }) => s.connectionLabel,
+      ),
+    ).toEqual(['My Workspace', 'My Workspace'])
   })
 })
