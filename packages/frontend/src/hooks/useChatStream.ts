@@ -107,11 +107,17 @@ export function useChatStream(options: UseChatStreamOptions) {
   const toast = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const { ddSessionId, output } = useAiBuilderContext()
+  const { ddSessionId, output, refetchTestExecutionSteps } =
+    useAiBuilderContext()
 
   // Use ref to always access the latest pipe output in prepareSendMessagesRequest
   const outputRef = useRef(output)
   outputRef.current = output
+
+  // useChat captures onFinish on mount, so without a ref this would call a
+  // stale refetch function tied to whatever query instance existed at mount.
+  const refetchTestExecutionStepsRef = useRef(refetchTestExecutionSteps)
+  refetchTestExecutionStepsRef.current = refetchTestExecutionSteps
 
   // After a refresh, chatMessages (persisted, text-only) is all that's left of
   // the conversation — every tool result and data-pipeState part (the only
@@ -272,6 +278,24 @@ export function useChatStream(options: UseChatStreamOptions) {
 
       if (pipeStatePart || isChatReady) {
         setIsReady(true)
+      }
+
+      // A step may have just been test-executed via the execute_step tool
+      // this turn — refetch so newly-available dataOutMetadata labels show
+      // up in variable pills without needing a page refresh. Best-effort:
+      // a failed refetch just leaves labels/values on their naive fallback.
+      //
+      // NOTE: this fires unconditionally every finished turn (not just ones
+      // where a step was actually executed), since precisely detecting an
+      // execute_step tool call requires reading AI SDK tool-* parts, which
+      // is unprecedented and type-unsafe in this codebase today (no shared
+      // type for the tool's output, no compile-time check on the state
+      // string). Revisit if turn volume or this query's cost ever becomes
+      // a real concern — see execute-step tool part detection discussion.
+      if (outputRef.current?.pipeId) {
+        refetchTestExecutionStepsRef.current().catch(() => {
+          // no-op: naive label/value fallback is an acceptable outcome
+        })
       }
 
       // Get current output from the ref (ensures we see latest state from other navigates)
