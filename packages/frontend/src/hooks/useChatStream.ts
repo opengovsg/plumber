@@ -67,7 +67,7 @@ export function useChatStream(options: UseChatStreamOptions) {
   const toast = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const { ddSessionId } = useAiBuilderContext()
+  const { ddSessionId, chatId } = useAiBuilderContext()
 
   // Track step readiness from data-isChatReady annotation
   // Initialize based on whether initialMessages contains a ready message.
@@ -88,6 +88,12 @@ export function useChatStream(options: UseChatStreamOptions) {
   // (e.g. the old 50 messages after clicking "New Chat").
   const initialMessagesRef = useRef(options?.initialMessages)
   initialMessagesRef.current = options?.initialMessages
+
+  // chatId is minted after mount and changes on "New Chat" (without a remount), so the
+  // transport closure captured on mount would otherwise send a stale/empty id. Read the
+  // latest value through a ref at send time.
+  const chatIdRef = useRef(chatId)
+  chatIdRef.current = chatId
 
   const {
     messages: aiMessages,
@@ -130,7 +136,10 @@ export function useChatStream(options: UseChatStreamOptions) {
 
         const body = {
           messages: allMessages,
-          sessionId: ddSessionId,
+          // chatId drives the Langfuse session; the RUM session id is sent as plain
+          // metadata for cross-referencing (no longer the session driver).
+          chatId: chatIdRef.current,
+          ddRumSessionId: ddSessionId,
         }
         return { body }
       },
