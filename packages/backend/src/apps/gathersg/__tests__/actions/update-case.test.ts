@@ -282,6 +282,38 @@ describe('update case', () => {
     )
   })
 
+  it('builds the payload correctly with a valid email field', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'email', fieldType: 'email', value: 'peter@example.com' },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          email: 'peter@example.com',
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('should throw step error for invalid email field type', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'email', fieldType: 'email', value: 'not-an-email' },
+    ]
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'Invalid email for field: email',
+    )
+  })
+
   it('should handle mixed field types correctly', async () => {
     $.step.parameters.caseFields = [
       { field: 'name', fieldType: 'string', value: 'Bruce Wayne' },

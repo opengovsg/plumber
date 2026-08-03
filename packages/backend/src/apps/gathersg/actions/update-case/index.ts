@@ -94,6 +94,10 @@ const action: IRawAction = {
               value: ensureZodEnumValue(fieldTypeEnum, 'number'),
             },
             {
+              label: 'Email',
+              value: ensureZodEnumValue(fieldTypeEnum, 'email'),
+            },
+            {
               label: 'Null',
               value: ensureZodEnumValue(fieldTypeEnum, 'null'),
             },
