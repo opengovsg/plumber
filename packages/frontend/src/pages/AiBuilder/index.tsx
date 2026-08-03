@@ -30,6 +30,7 @@ function AiBuilderContent() {
     isMobile,
     isDrawerOpen,
     steps,
+    output,
   } = useAiBuilderContext()
 
   const {
@@ -91,6 +92,11 @@ function AiBuilderContent() {
   }, [steps, completedStepIds])
 
   const cancelRef = useRef(null)
+
+  // A connection can only be created once the pipe (Flow row) exists —
+  // populated from the streamed data-pipeState tool result once create_pipe
+  // has run.
+  const flowId: string | undefined = output?.pipeId
 
   // In-chat "Add new form" modal (FormSG). Holds the picker question that
   // opened it so the eventual answer is sent back in the same Q/A format as a
@@ -193,12 +199,13 @@ function AiBuilderContent() {
               cancelStream={cancelStream}
               resetChat={resetChat}
               hasReachedLimit={hasReachedLimit}
-              onAddConnection={setAddFormContext}
+              onAddConnection={flowId ? setAddFormContext : undefined}
             />
           </Container>
         </Flex>
         <AddFormsgConnectionModal
           isOpen={addFormContext !== null}
+          flowId={flowId}
           prefillFormUrl={prefillFormUrl}
           onClose={() => setAddFormContext(null)}
           onSuccess={handleAddFormSuccess}
