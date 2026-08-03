@@ -826,6 +826,7 @@ export interface DynamicDataOutput {
   data: {
     name: string
     value: string
+    type?: 'string' | 'number' | 'null' | 'email'
   }[]
   error?: IJSONObject
 }
