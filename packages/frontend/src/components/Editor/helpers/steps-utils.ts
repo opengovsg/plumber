@@ -352,3 +352,74 @@ export function hasIfThenV2Block(flowSteps: IStep[]): boolean {
 export function isBlankPlaceholderStep(step: IStep): boolean {
   return !step.appKey && !step.key
 }
+
+/**
+ * Ids of steps eligible as a "Use data from…" variable source for
+ * `targetStepId`, under the if-then V2 block model.
+ *
+ * An if-then's own condition output (e.g. `isConditionMet`) is never
+ * offered, by product decision. For-each flattening mirrors
+ * StepExecutions.tsx's existing groupStepsToInclude behaviour verbatim, kept
+ * for backward compatibility.
+ *
+ * IMPORTANT: `actionSteps` must already exclude the trigger, as
+ * buildStepsList expects. Callers add the trigger's id back themselves.
+ */
+export function getEligibleVariableStepIds(
+  actionSteps: IStep[],
+  groupingActions: Set<string>,
+  targetStepId: string,
+): string[] {
+  const items = buildStepsList(actionSteps, groupingActions)
+  const result: string[] = []
+
+  for (const item of items) {
+    if (item.type === 'step') {
+      if (item.step.id === targetStepId) {
+        break
+      }
+      result.push(item.step.id)
+      continue
+    }
+
+    if (item.type === 'ifThenBlock') {
+      if (item.ifThenStep.id === targetStepId) {
+        break
+      }
+      const childIndex = item.children.findIndex(
+        (child) => child.id === targetStepId,
+      )
+      if (childIndex !== -1) {
+        result.push(
+          ...item.children.slice(0, childIndex).map((child) => child.id),
+        )
+        break
+      }
+      continue
+    }
+
+    // A for-each is always buildStepsList's last top-level item, so nothing
+    // legitimate follows it here.
+    result.push(item.forEachStep.id, ...flattenStepIds(item.children))
+    break
+  }
+
+  return result
+}
+
+/**
+ * Flattens every step id in `items`, mirroring for-each's pre-existing
+ * behaviour of including its full contents unconditionally. Still drops each
+ * if-then block's own condition id, matching `getEligibleVariableStepIds`.
+ */
+function flattenStepIds(items: StepsListItem[]): string[] {
+  return items.flatMap((item) => {
+    if (item.type === 'step') {
+      return [item.step.id]
+    }
+    if (item.type === 'ifThenBlock') {
+      return item.children.map((child) => child.id)
+    }
+    return [item.forEachStep.id, ...flattenStepIds(item.children)]
+  })
+}
