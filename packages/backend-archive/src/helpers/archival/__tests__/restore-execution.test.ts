@@ -52,9 +52,19 @@ function makeMockKnex({ executionExists = false, stepExists = false } = {}) {
   const insertExecFn = vi.fn().mockReturnValue(execChain)
   const insertStepFn = vi.fn().mockReturnValue(stepChain)
 
-  const trx = (table: string) => ({
-    insert: table === 'executions' ? insertExecFn : insertStepFn,
-  })
+  const decrementFn = vi.fn().mockResolvedValue(1)
+  const flowsWhereChain = {
+    where: vi.fn().mockReturnThis(),
+    decrement: decrementFn,
+  }
+  const flowsWhereFn = vi.fn().mockReturnValue(flowsWhereChain)
+
+  const trx = (table: string) => {
+    if (table === 'flows') {
+      return { where: flowsWhereFn }
+    }
+    return { insert: table === 'executions' ? insertExecFn : insertStepFn }
+  }
   const trxWithRaw = Object.assign(trx, { raw: rawFn })
 
   const knexClient = {
@@ -64,10 +74,14 @@ function makeMockKnex({ executionExists = false, stepExists = false } = {}) {
     _insertExecFn: insertExecFn,
     _insertStepFn: insertStepFn,
     _rawFn: rawFn,
+    _flowsWhereFn: flowsWhereFn,
+    _decrementFn: decrementFn,
   } as unknown as Knex & {
     _insertExecFn: ReturnType<typeof vi.fn>
     _insertStepFn: ReturnType<typeof vi.fn>
     _rawFn: ReturnType<typeof vi.fn>
+    _flowsWhereFn: ReturnType<typeof vi.fn>
+    _decrementFn: ReturnType<typeof vi.fn>
   }
   return knexClient
 }
@@ -119,5 +133,22 @@ describe('restoreExecution', () => {
     const result = await restoreExecution({ ...mockPayload, steps: [] }, knex)
     expect(result.stepsInserted).toBe(0)
     expect((knex as any)._insertStepFn).not.toHaveBeenCalled()
+  })
+
+  it('decrements archived_execution_count when the execution is newly inserted', async () => {
+    const knex = makeMockKnex()
+    await restoreExecution(mockPayload, knex)
+    expect((knex as any)._flowsWhereFn).toHaveBeenCalledWith('id', 'flow-1')
+    expect((knex as any)._decrementFn).toHaveBeenCalledWith(
+      'archived_execution_count',
+      1,
+    )
+  })
+
+  it('does not decrement archived_execution_count when the execution already existed', async () => {
+    const knex = makeMockKnex({ executionExists: true })
+    await restoreExecution(mockPayload, knex)
+    expect((knex as any)._flowsWhereFn).not.toHaveBeenCalled()
+    expect((knex as any)._decrementFn).not.toHaveBeenCalled()
   })
 })

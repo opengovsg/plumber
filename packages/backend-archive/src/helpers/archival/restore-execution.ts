@@ -67,6 +67,17 @@ export async function restoreExecution(
         .returning('id')
       stepsInserted = insertedSteps.length
     }
+
+    // Only decrement when we actually inserted a new row: onConflict().ignore()
+    // above means a retried/idempotent restore of an already-restored execution
+    // must not decrement the counter a second time. Guard against going
+    // negative in case the counter is ever already at 0.
+    if (executionInserted) {
+      await trx('flows')
+        .where('id', execution.flowId)
+        .where('archived_execution_count', '>', 0)
+        .decrement('archived_execution_count', 1)
+    }
   })
 
   return { executionInserted, stepsInserted }
