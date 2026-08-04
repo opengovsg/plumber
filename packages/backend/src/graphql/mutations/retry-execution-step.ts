@@ -33,7 +33,21 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
     await executionStep.$query().patch({ jobId: null })
     throw new Error('Job not found or has expired')
   }
-  await job.retry()
+
+  const originalJobData = job.data
+  await job.updateData({ ...originalJobData, retryTimestamp: Date.now() })
+  try {
+    await job.retry()
+  } catch (err) {
+    // job.retry() throws if the job isn't actually in the terminal "failed"
+    // state (e.g. it's still sitting in BullMQ's own delayed/backoff state from
+    // an earlier attempt - ExecutionStep gets a status:'failure' row on every
+    // failed attempt, not just the terminal one, so a human can race this).
+    // Revert the stamp so we don't pollute telemetry for a retry that never
+    // took effect.
+    await job.updateData(originalJobData)
+    throw err
+  }
   // allow for status to change to null in case there are delay actions after
   await Execution.query()
     .patch({ status: null })

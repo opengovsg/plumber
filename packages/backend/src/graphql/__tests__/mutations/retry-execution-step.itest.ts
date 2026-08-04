@@ -29,8 +29,18 @@ describe('retryExecutionStep mutation', () => {
   let mockExecutionStep: ExecutionStep
   let mockStep: Step
   let getActionJobSpy: MockInstance
-  let mockJob: { retry: MockInstance }
+  let mockJob: {
+    retry: MockInstance
+    data: Record<string, unknown>
+    updateData: MockInstance
+  }
   let genericInputParams: { executionStepId: string }
+
+  const mockJobData = {
+    flowId: 'mock-flow-id',
+    executionId: 'mock-execution-id',
+    stepId: 'mock-step-id',
+  }
 
   beforeEach(async () => {
     vi.resetAllMocks()
@@ -38,6 +48,8 @@ describe('retryExecutionStep mutation', () => {
     // Initialize mock job
     mockJob = {
       retry: vi.fn().mockResolvedValue(undefined),
+      data: { ...mockJobData },
+      updateData: vi.fn().mockResolvedValue(undefined),
     }
 
     context = await generateMockContext()
@@ -214,6 +226,35 @@ describe('retryExecutionStep mutation', () => {
       expect(result).toBe(true)
       expect(getActionJobSpy).toHaveBeenCalledWith('test-job-id')
       expect(mockJob.retry).toHaveBeenCalled()
+    })
+
+    it('should stamp retryTimestamp on the job before calling retry', async () => {
+      vi.spyOn(Date, 'now').mockReturnValue(123456789)
+
+      await retryExecutionStep(null, { input: genericInputParams }, context)
+
+      expect(mockJob.updateData).toHaveBeenCalledWith({
+        ...mockJobData,
+        retryTimestamp: 123456789,
+      })
+      expect(mockJob.updateData.mock.invocationCallOrder[0]).toBeLessThan(
+        mockJob.retry.mock.invocationCallOrder[0],
+      )
+    })
+
+    it('should revert the retryTimestamp stamp if job.retry() throws', async () => {
+      const retryErr = new Error('job is not in the failed state')
+      mockJob.retry.mockRejectedValue(retryErr)
+
+      await expect(
+        retryExecutionStep(null, { input: genericInputParams }, context),
+      ).rejects.toThrow(retryErr)
+
+      expect(mockJob.updateData).toHaveBeenNthCalledWith(1, {
+        ...mockJobData,
+        retryTimestamp: expect.any(Number),
+      })
+      expect(mockJob.updateData).toHaveBeenNthCalledWith(2, mockJobData)
     })
   })
 
