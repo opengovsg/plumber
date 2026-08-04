@@ -1,3 +1,6 @@
+import type { IActionJobData } from '@plumber/types'
+
+import { type JobPro } from '@taskforcesh/bullmq-pro'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
@@ -29,7 +32,7 @@ describe('Backoff', () => {
     { delayInMs: 1, expectedBaseDelay: 1 },
   ])(
     'applies jitter (delayInMs = $delayInMs)',
-    ({ delayInMs, expectedBaseDelay }) => {
+    async ({ delayInMs, expectedBaseDelay }) => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs,
@@ -37,16 +40,16 @@ describe('Backoff', () => {
       })
       vi.spyOn(Math, 'random').mockReturnValue(0.5)
 
-      expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
         Math.round(expectedBaseDelay + expectedBaseDelay / 2),
       )
-      expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(2, null, err)).resolves.toEqual(
         Math.round(
           expectedBaseDelay * 2 /* Full delay for 1st retry */ +
             expectedBaseDelay /* 50% of full delay*/,
         ),
       )
-      expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(3, null, err)).resolves.toEqual(
         Math.round(
           expectedBaseDelay * 4 /* Full delay for 2nd retry */ +
             expectedBaseDelay * 2 /* 50% of full delay*/,
@@ -64,7 +67,7 @@ describe('Backoff', () => {
     { delayInMs: 1, expectedBaseDelay: 1 },
   ])(
     'will wait at least the full duration of the previous default delay',
-    ({ delayInMs, expectedBaseDelay }) => {
+    async ({ delayInMs, expectedBaseDelay }) => {
       const err = new RetriableError({
         error: 'test error',
         delayInMs,
@@ -72,33 +75,35 @@ describe('Backoff', () => {
       })
       vi.spyOn(Math, 'random').mockReturnValue(0)
 
-      expect(exponentialBackoffWithJitter(1, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
         expectedBaseDelay,
       )
-      expect(exponentialBackoffWithJitter(2, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(2, null, err)).resolves.toEqual(
         expectedBaseDelay * 2,
       )
-      expect(exponentialBackoffWithJitter(3, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(3, null, err)).resolves.toEqual(
         expectedBaseDelay * 4,
       )
-      expect(exponentialBackoffWithJitter(4, null, err)).toEqual(
+      await expect(exponentialBackoffWithJitter(4, null, err)).resolves.toEqual(
         expectedBaseDelay * 8,
       )
     },
   )
 
-  it("uses RetriableError's default delay and logs if error is not RetriableError", () => {
+  it("uses RetriableError's default delay and logs if error is not RetriableError", async () => {
     const err = new Error('test error')
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(DEFAULT_DELAY_MS)
+    await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
+      DEFAULT_DELAY_MS,
+    )
     expect(mocks.logError).toHaveBeenCalledWith(
       'Triggered BullMQ retry without RetriableError',
       { event: 'bullmq-retry-without-retriable-error' },
     )
   })
 
-  it('logs if error is RetriableError with non-step delayType', () => {
+  it('logs if error is RetriableError with non-step delayType', async () => {
     const err = new RetriableError({
       error: 'test error',
       delayInMs: 10,
@@ -106,7 +111,9 @@ describe('Backoff', () => {
     })
     vi.spyOn(Math, 'random').mockReturnValue(0)
 
-    expect(exponentialBackoffWithJitter(1, null, err)).toEqual(10)
+    await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
+      10,
+    )
     expect(mocks.logError).toHaveBeenCalledWith(
       'Triggered BullMQ retry with RetriableError of the wrong delay type',
       {
@@ -114,5 +121,73 @@ describe('Backoff', () => {
         delayType: 'queue',
       },
     )
+  })
+
+  describe('retryTimestamp stamping', () => {
+    it('stamps retryTimestamp as the time the job actually becomes eligible (now + delay), not now', async () => {
+      const err = new RetriableError({
+        error: 'test error',
+        delayInMs: 1000,
+        delayType: 'step',
+      })
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      vi.spyOn(Date, 'now').mockReturnValue(123456789)
+      const updateData = vi.fn().mockResolvedValue(undefined)
+      const job = {
+        data: { flowId: 'flow-id', executionId: 'exec-id', stepId: 'step-id' },
+        updateData,
+      } as unknown as JobPro<IActionJobData>
+
+      await expect(
+        exponentialBackoffWithJitter(1, null, err, job),
+      ).resolves.toEqual(1000)
+
+      expect(updateData).toHaveBeenCalledWith({
+        flowId: 'flow-id',
+        executionId: 'exec-id',
+        stepId: 'step-id',
+        retryTimestamp: 123456789 + 1000,
+      })
+    })
+
+    it('does not stamp anything when no job is provided', async () => {
+      const err = new RetriableError({
+        error: 'test error',
+        delayInMs: 1000,
+        delayType: 'step',
+      })
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+
+      await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
+        1000,
+      )
+    })
+
+    it('logs and still returns the delay if stamping retryTimestamp fails', async () => {
+      const err = new RetriableError({
+        error: 'test error',
+        delayInMs: 1000,
+        delayType: 'step',
+      })
+      vi.spyOn(Math, 'random').mockReturnValue(0)
+      const updateErr = new Error('redis down')
+      const updateData = vi.fn().mockRejectedValue(updateErr)
+      const job = {
+        data: { flowId: 'flow-id', executionId: 'exec-id', stepId: 'step-id' },
+        updateData,
+      } as unknown as JobPro<IActionJobData>
+
+      await expect(
+        exponentialBackoffWithJitter(1, null, err, job),
+      ).resolves.toEqual(1000)
+
+      expect(mocks.logError).toHaveBeenCalledWith(
+        'Failed to stamp retryTimestamp for automatic retry',
+        {
+          event: 'backoff-stamp-retry-timestamp-failed',
+          err: updateErr,
+        },
+      )
+    })
   })
 })

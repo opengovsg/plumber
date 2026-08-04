@@ -82,7 +82,7 @@
     "lodash.get": "4.4.2",
     "lottie-web": "5.12.2",
     "luxon": "2.5.2",
-    "morgan": "^1.10.0",
+    "morgan": "^1.11.0",
     "multer": "2.2.0",
     "nanoid": "3.3.8",
     "nodemailer": "9.0.3",
@@ -132,5 +132,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.75.3"
+  "version": "1.75.4"
 }

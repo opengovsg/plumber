@@ -71,7 +71,16 @@ const handleChatStream = observe(
         return
       }
 
-      const { messages: rawMessages, sessionId } = validationResult.data
+      const {
+        messages: rawMessages,
+        chatId,
+        ddRumSessionId,
+        sessionId,
+      } = validationResult.data
+
+      // The RUM session id, preferring the new field but accepting the legacy
+      // `sessionId` from clients deployed before the chatId change.
+      const rumSessionId = ddRumSessionId || sessionId
 
       // Convert UIMessages to ModelMessages
       const messages = convertToModelMessages(
@@ -100,7 +109,8 @@ const handleChatStream = observe(
 
       logger.info('Starting AI chat stream', {
         traceId,
-        sessionId,
+        chatId,
+        ddRumSessionId: rumSessionId,
         userId: context.currentUser.email,
         model: MODEL_TYPE,
       })
@@ -150,7 +160,13 @@ const handleChatStream = observe(
               functionId: 'ai-chat-stream',
               metadata: {
                 name: 'ai-chat-stream',
-                sessionId: sessionId || 'unknown',
+                // Langfuse session = the chat session. Falls back to the RUM id for
+                // old clients during rollout, then 'unknown'. The fallbacks are
+                // removed in the cleanup release once old clients have drained.
+                sessionId: chatId || rumSessionId || 'unknown',
+                // Plain metadata (non-special key) so RUM traces can still be
+                // correlated with Langfuse without driving session grouping.
+                ddRumSessionId: rumSessionId || undefined,
                 userId: context.currentUser.email,
                 environment: appConfig.appEnv,
                 promptName: chatPromptName,

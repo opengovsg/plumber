@@ -21,6 +21,7 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 
+import { getJobQueueTimingTags } from './job-queue-timing'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 interface MakeSubTriggerWorkerParams {
@@ -76,10 +77,7 @@ export function makeSubTriggerWorker(
         stepId: jobData.stepId,
         actionKey: step?.key,
         appKey: step?.appKey,
-        jobEnqueueTime: job.timestamp,
-        jobDelay: job.opts?.delay ?? 0,
-        attempts: job.attemptsStarted,
-        timeInJobQueue: Date.now() - job.timestamp - (job.opts?.delay ?? 0),
+        ...getJobQueueTimingTags(job),
         workerVersion: appConfig.version,
       })
 

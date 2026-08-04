@@ -14,6 +14,7 @@ import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
+import { createNewChatDraft } from './new-chat'
 
 function AiBuilderContent() {
   const navigate = useNavigate()
@@ -125,30 +126,34 @@ function AiBuilderContent() {
 export default function AiBuilder() {
   const locationState = useLocation()?.state
 
-  // Persist state to sessionStorage so it survives refresh
+  // Persist state to sessionStorage so it survives refresh.
+  //
+  // locationState-carried drafts already have a chatId from wherever they were created ("New Chat", or a
+  // prior render of this same draft);
+  // createNewChatDraft() (no argument, so no continuation prompt) mints one for a genuinely fresh session.
+  //
+  // NOTE: any new navigate() call that passes `state` into this page needs a chatId
   const [persistedState, setPersistedState, clearPersistedState] =
     usePersistedState(
       'ai-builder-draft',
-      locationState || {
-        flowName: 'Build with AI',
-        chatInput: '',
-        chatMessages: [],
-        output: {
-          trigger: '',
-          actions: '',
-          name: 'Build with AI',
-        },
-      },
+      () => locationState || createNewChatDraft(),
     )
 
   // Sync location state updates (from useChatStream navigate calls) to persisted state
   useEffect(() => {
     if (locationState) {
-      setPersistedState(locationState)
+      setPersistedState((prev: typeof persistedState) => ({
+        ...locationState,
+        // Preserve the existing chatId when the navigation state doesn't carry one.
+        // onFinish navigates after every message; without this the minted chatId would
+        // be wiped and regenerated each message. "New Chat" sets a fresh chatId in
+        // locationState, so it still correctly starts a new session.
+        chatId: locationState.chatId ?? prev.chatId,
+      }))
     }
   }, [locationState, setPersistedState])
 
-  const { flowName, output, chatInput, chatMessages } = persistedState
+  const { flowName, output, chatInput, chatMessages, chatId } = persistedState
 
   return (
     <AiBuilderContextProvider
@@ -156,6 +161,7 @@ export default function AiBuilder() {
       chatInput={chatInput}
       chatMessages={chatMessages}
       output={output}
+      chatId={chatId}
       clearPersistedState={clearPersistedState}
       setChatState={setPersistedState}
     >

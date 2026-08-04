@@ -17,6 +17,13 @@ export interface AIBuilderDraftState {
   // output can be populated (IStep values) or the initial empty state (empty strings)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   output: Record<string, any>
+  /**
+   * Unique id for this chat session, used as the Langfuse session id. Optional on the
+   * type because a draft persisted before this field existed may not have one; that
+   * case is left as-is rather than backfilled (see createNewChatDraft in new-chat.ts
+   * for where a fresh chatId is actually minted).
+   */
+  chatId?: string
 }
 
 interface AIBuilderSharedProps extends AIBuilderDraftState {
@@ -40,6 +47,8 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   stepGroupCaption: string | null
   // DataDog RUM Session ID so we can associate the trace with the RUM
   ddSessionId: string
+  // Unique id for this chat session, used as the Langfuse session id
+  chatId: string
   isDrawerOpen: boolean
   setIsDrawerOpen: (open: boolean) => void
 }
@@ -68,6 +77,7 @@ export const AiBuilderContextProvider = ({
   chatInput,
   chatMessages,
   output,
+  chatId,
   clearPersistedState,
   setChatState,
 }: AiBuilderContextProviderProps) => {
@@ -144,6 +154,7 @@ export const AiBuilderContextProvider = ({
         stepGroupType,
         stepGroupCaption,
         ddSessionId,
+        chatId: chatId ?? '',
         clearPersistedState,
         setChatState,
         isDrawerOpen,

@@ -5,6 +5,19 @@ import { flowStepsSchema } from '@/helpers/ai/types'
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+/**
+ * Lenient schema for the tracing id fields (chatId, ddRumSessionId, and the
+ * legacy sessionId). Optional and allows an empty string (e.g. in dev) so a
+ * missing or malformed telemetry value never fails the chat request — we already
+ * have the user's email for correlation.
+ */
+const optionalTracingId = z
+  .string()
+  .refine((val) => val === '' || UUID_REGEX.test(val), {
+    message: 'Must be a valid UUID',
+  })
+  .optional()
+
 // Limits to protect API and LLM costs
 const MAX_MESSAGES = 50
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
@@ -89,15 +102,21 @@ export const chatRequestSchema = z.object({
     .min(1, 'Messages array must contain at least one message')
     .max(MAX_MESSAGES, `Cannot send more than ${MAX_MESSAGES} messages`),
   /**
-   * Datadog RUM session UUID for debugging. Optional and allows empty string
-   * (e.g., in dev) to avoid failing the API since we already have the user's email.
+   * Unique id for one AI Builder chat session, minted on the frontend. Used as the
+   * Langfuse session id so all traces from one conversation group together.
    */
-  sessionId: z
-    .string()
-    .refine((val) => val === '' || UUID_REGEX.test(val), {
-      message: 'Session ID must be a valid UUID',
-    })
-    .optional(),
+  chatId: optionalTracingId,
+  /**
+   * Datadog RUM session UUID, carried into Langfuse traces as plain metadata for
+   * cross-referencing. Does NOT define the chat session.
+   */
+  ddRumSessionId: optionalTracingId,
+  /**
+   * @deprecated Legacy alias for the Datadog RUM session id sent by clients before
+   * the chatId change. Treated as ddRumSessionId when the newer field is absent.
+   * Remove one release after rollout, once old clients have drained.
+   */
+  sessionId: optionalTracingId,
 })
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>
