@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   buildStepsList,
   deriveIfThenV1EndStep,
+  getEligibleVariableStepIds,
   hasEmptyIfThenV2Block,
   hasIfThenV2Block,
   isBlankPlaceholderStep,
@@ -754,5 +755,176 @@ describe('isBlankPlaceholderStep', () => {
 
   it('is false for an if-then step', () => {
     expect(isBlankPlaceholderStep(ifThen('block'))).toBe(false)
+  })
+})
+
+describe('getEligibleVariableStepIds', () => {
+  it('mirrors the live repro: 3 sibling if-then blocks + plain steps, none of the blocks leak their children or their own condition id', () => {
+    const p1 = plain('p1')
+    const blockA = markedIfThen('blockA', 'a2')
+    const a1 = plain('a1')
+    const a2 = plain('a2')
+    const blockB = markedIfThen('blockB', 'b1')
+    const b1 = plain('b1')
+    const p2 = plain('p2')
+    const blockC = markedIfThen('blockC', 'c2')
+    const c1 = plain('c1')
+    const c2 = plain('c2')
+    const target = plain('target')
+    const steps = [p1, blockA, a1, a2, blockB, b1, p2, blockC, c1, c2, target]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'target'),
+    ).toEqual(['p1', 'p2'])
+  })
+
+  it('returns an empty list when the target is the very first action step', () => {
+    const target = plain('target')
+    const s2 = plain('s2')
+    const steps = [target, s2]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'target'),
+    ).toEqual([])
+  })
+
+  it('contributes nothing from a block when the target is its own condition step', () => {
+    const before = plain('before')
+    const block = markedIfThen('block', 's2')
+    const s2 = plain('s2')
+    const steps = [before, block, s2]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'block'),
+    ).toEqual(['before'])
+  })
+
+  it("contributes nothing (not even the condition id) when the target is a block's first child", () => {
+    const block = markedIfThen('block', 's3')
+    const s2 = plain('s2')
+    const s3 = plain('s3')
+    const steps = [block, s2, s3]
+
+    expect(getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 's2')).toEqual(
+      [],
+    )
+  })
+
+  it("includes only earlier same-block siblings (never the condition id) when the target is a block's later child", () => {
+    const block = markedIfThen('block', 's4')
+    const s2 = plain('s2')
+    const s3 = plain('s3')
+    const s4 = plain('s4')
+    const steps = [block, s2, s3, s4]
+
+    expect(getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 's3')).toEqual([
+      's2',
+    ])
+  })
+
+  it('contributes nothing for an empty (self-referencing) if-then block before the target', () => {
+    const block = markedIfThen('block', 'block')
+    const after = plain('after')
+    const steps = [block, after]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'after'),
+    ).toEqual([])
+  })
+
+  it('treats a dangling-marker if-then like any other block: never its condition id, isDangling/isExplicit are irrelevant', () => {
+    // The dangling marker falls back to the derived V1 extent bounded by
+    // `boundary`, not to unbounded inclusion.
+    const block = markedIfThen('block', 'ghost')
+    const s2 = plain('s2')
+    const boundary = ifThen('boundary')
+    const target = plain('target')
+    const steps = [block, s2, boundary, target]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'target'),
+    ).toEqual([])
+  })
+
+  it('applies uniformly to two consecutive marker-less if-then V1 branches: neither condition id, no children', () => {
+    const ifThenA = nullMarkerIfThen('ifThenA')
+    const sA = plain('sA')
+    const ifThenB = nullMarkerIfThen('ifThenB')
+    const target = plain('target')
+    const steps = [ifThenA, sA, ifThenB, target]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'target'),
+    ).toEqual([])
+  })
+
+  it('excludes a later for-each entirely when the target precedes it', () => {
+    const before = plain('before')
+    const target = plain('target')
+    const forEachStep = forEach('forEach')
+    const s1 = plain('s1')
+    const steps = [before, target, forEachStep, s1]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'target'),
+    ).toEqual(['before'])
+  })
+
+  it('fully includes a for-each (own id + its not-yet-run body) when the target is the for-each step itself', () => {
+    // Mirrors groupStepsToInclude's existing behaviour verbatim. Safe only
+    // because the caller (StepExecutions.tsx) applies a downstream position
+    // filter that excludes anything not-yet-executed.
+    const forEachStep = forEach('forEach')
+    const s1 = plain('s1')
+    const s2 = plain('s2')
+    const steps = [forEachStep, s1, s2]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'forEach'),
+    ).toEqual(['forEach', 's1', 's2'])
+  })
+
+  it('fully flattens a for-each body when the target is nested inside an if-then within it, siblings included but not the condition id', () => {
+    const forEachStep = forEach('forEach')
+    const before = plain('before')
+    const nestedIf = markedIfThen('nestedIf', 'n2')
+    const n1 = plain('n1')
+    const n2 = plain('n2')
+    const steps = [forEachStep, before, nestedIf, n1, n2]
+
+    expect(getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'n2')).toEqual([
+      'forEach',
+      'before',
+      'n1',
+      'n2',
+    ])
+  })
+
+  it('excludes a later for-each when the target is inside an earlier top-level if-then block (V2 sibling coexistence)', () => {
+    // V1 never allowed an if-then and a for-each to coexist in one flow at
+    // all; V2's getIfThenV2Selectability drops that restriction.
+    const block = markedIfThen('block', 'b2')
+    const b1 = plain('b1')
+    const b2 = plain('b2')
+    const forEachStep = forEach('forEach')
+    const f1 = plain('f1')
+    const steps = [block, b1, b2, forEachStep, f1]
+
+    expect(getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'b2')).toEqual([
+      'b1',
+    ])
+  })
+
+  it('returns the full walk with no breaks when the target id is not present at all (simulates the trigger)', () => {
+    // buildStepsList never sees the trigger; the caller's own downstream
+    // position filter means nothing can be "prior to" the trigger regardless,
+    // so returning everything here is safe.
+    const s1 = plain('s1')
+    const s2 = plain('s2')
+    const steps = [s1, s2]
+
+    expect(
+      getEligibleVariableStepIds(steps, GROUPING_ACTIONS, 'trigger'),
+    ).toEqual(['s1', 's2'])
   })
 })
