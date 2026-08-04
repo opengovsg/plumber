@@ -2,7 +2,9 @@ import type { IExecutionStep, IStep } from '@plumber/types'
 
 import { createContext, useContext, useMemo } from 'react'
 
+import { getEligibleVariableStepIds } from '@/components/Editor/helpers/steps-utils'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 import { EditorContext } from './Editor'
 import { StepsToDisplayContext } from './StepsToDisplay'
@@ -26,7 +28,12 @@ export const StepExecutionsProvider = ({
     triggerStep,
     actionStepsBeforeGroup: stepsBeforeGroup,
     groupedSteps,
+    actionStepsToDisplay,
+    groupingActions,
   } = useContext(StepsToDisplayContext)
+
+  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
+    useIfThenV2Enabled()
 
   //
   // Compute which steps are eligible for variable extraction.
@@ -37,6 +44,9 @@ export const StepExecutionsProvider = ({
   // - we include some grouped steps as there is no longer a nested editor
   // - we identify the group by checking if the current step id is in the group
   // - for-each steps are always included
+  //
+  // If-then V1 only. Left untouched because the if-then V2-aware fork below
+  // is additive.
   const groupStepsToInclude = useMemo(() => {
     return groupedSteps.flatMap((group) =>
       group.some(
@@ -48,15 +58,36 @@ export const StepExecutionsProvider = ({
     )
   }, [currentStep?.id, groupedSteps])
 
-  const stepExecutionsToInclude = useMemo(
+  const eligibleBlockStepIds = useMemo(
     () =>
-      new Set([
-        ...(triggerStep?.id ? [triggerStep.id] : []),
-        ...stepsBeforeGroup.map((step) => step.id),
-        ...groupStepsToInclude.map((s) => s.id),
-      ]),
-    [triggerStep, stepsBeforeGroup, groupStepsToInclude],
+      getEligibleVariableStepIds(
+        actionStepsToDisplay,
+        groupingActions ?? new Set<string>(),
+        currentStep.id,
+      ),
+    [actionStepsToDisplay, groupingActions, currentStep.id],
   )
+
+  const stepExecutionsToInclude = useMemo(() => {
+    if (isIfThenV2Enabled && !isIfThenV2Loading) {
+      return new Set([
+        ...(triggerStep?.id ? [triggerStep.id] : []),
+        ...eligibleBlockStepIds,
+      ])
+    }
+    return new Set([
+      ...(triggerStep?.id ? [triggerStep.id] : []),
+      ...stepsBeforeGroup.map((step) => step.id),
+      ...groupStepsToInclude.map((s) => s.id),
+    ])
+  }, [
+    isIfThenV2Enabled,
+    isIfThenV2Loading,
+    eligibleBlockStepIds,
+    triggerStep,
+    stepsBeforeGroup,
+    groupStepsToInclude,
+  ])
 
   const priorExecutionSteps = useMemo(
     () =>
