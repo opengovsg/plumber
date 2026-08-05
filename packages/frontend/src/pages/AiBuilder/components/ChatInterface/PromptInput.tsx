@@ -28,6 +28,7 @@ interface PromptInputProps {
   cancelStream: () => void
   clarification?: ClarificationQuestion[]
   dynamicPicker?: DynamicPickerPart['data']
+  onAddConnection?: (context: { question: string }) => void
 }
 
 export default function PromptInput({
@@ -39,6 +40,7 @@ export default function PromptInput({
   cancelStream,
   clarification,
   dynamicPicker,
+  onAddConnection,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -152,6 +154,11 @@ export default function PromptInput({
         onSkip={() => {
           sendMessage(`Q: ${dynamicPicker.question}\nA: skip`)
         }}
+        onAddConnection={
+          onAddConnection && isAppKeyMode
+            ? () => onAddConnection({ question: dynamicPicker.question })
+            : undefined
+        }
         cancelStream={cancelStream}
       />
     )
