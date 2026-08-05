@@ -27,6 +27,17 @@ vi.mock('@/services/mcp/get-dynamic-data', () => ({
     .fn()
     .mockResolvedValue([{ name: 'Channel', value: 'C123' }]),
 }))
+vi.mock('@/services/mcp/get-form-schema', () => ({
+  getFormSchemaService: vi.fn().mockResolvedValue({
+    formId: 'a'.repeat(24),
+    env: 'prod',
+    title: 'Test Form',
+    isStorageMode: true,
+    isMrf: false,
+    fields: [],
+    warnings: [],
+  }),
+}))
 vi.mock('@/services/mcp/register-connection', () => ({
   registerConnectionService: vi
     .fn()
@@ -38,6 +49,7 @@ import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-step
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
+import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { registerConnectionService } from '@/services/mcp/register-connection'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
@@ -58,6 +70,7 @@ describe('createMcpBridgeTools', () => {
       'delete_step',
       'get_dynamic_data',
       'execute_step',
+      'get_form_schema',
       'register_connection',
     ])
   })
@@ -143,6 +156,18 @@ describe('createMcpBridgeTools', () => {
       key: 'listChannels',
       parameters: { tableId: 'xyz' },
     })
+  })
+
+  it('get_form_schema calls getFormSchemaService with the form url', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    const result = await tools.get_form_schema.execute(
+      { form_url: 'https://form.gov.sg/' + 'a'.repeat(24) },
+      { toolCallId: 'get_form_schema', messages: [] },
+    )
+    expect(vi.mocked(getFormSchemaService)).toHaveBeenCalledWith(
+      'https://form.gov.sg/' + 'a'.repeat(24),
+    )
+    expect(result).toMatchObject({ title: 'Test Form' })
   })
 
   it('register_connection calls registerConnectionService with correct args', async () => {
