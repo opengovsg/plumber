@@ -24,6 +24,7 @@ interface ChatInterfaceProps {
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
+  onAddConnection?: (context: { question: string }) => void
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -36,6 +37,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     cancelStream,
     resetChat,
     hasReachedLimit,
+    onAddConnection,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -187,6 +189,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   cancelStream={cancelStream}
                   clarification={activeClarification}
                   dynamicPicker={activeDynamicPicker}
+                  onAddConnection={onAddConnection}
                 />
               )}
               {!isMobile && (
