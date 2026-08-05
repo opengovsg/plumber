@@ -2,7 +2,7 @@ import type { IField, IJSONValue } from '@plumber/types'
 
 import { ReactNode, useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
-import { BiPlus, BiTrash } from 'react-icons/bi'
+import { BiListPlus, BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
 import { Flex } from '@chakra-ui/react'
 import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
@@ -112,6 +112,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
   const {
     canAutofill,
     isLoading: isDynamicDataLoading,
+    optionCount,
     onAutofillClick,
     confirm,
   } = useAutofill({
@@ -253,18 +254,21 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   isDisabled={isEditorReadOnly}
                   maxW="fit-content"
                 >
-                  {addRowButtonText ?? 'And'}
+                  {addRowButtonText ?? 'Add'}
                 </Button>
               )}
               {canAutofill && (
                 <Button
-                  variant="outline"
+                  variant="clear"
+                  leftIcon={<BiListPlus />}
                   maxW="fit-content"
-                  isDisabled={isEditorReadOnly}
+                  isDisabled={
+                    isEditorReadOnly || optionCount == null || optionCount === 0
+                  }
                   isLoading={isDynamicDataLoading}
                   onClick={onAutofillClick}
                 >
-                  <BiPlus /> Autofill
+                  {optionCount != null ? `Add all ${optionCount} fields` : 'Add all'}
                 </Button>
               )}
               {addButtonSuffix}

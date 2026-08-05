@@ -16,6 +16,9 @@ export type UseAutofillResult = {
   // Whether the "Autofill" button should render at all for this field.
   canAutofill: boolean
   isLoading: boolean
+  // Count of options currently available from subFields[0]'s dynamic-data
+  // source 
+  optionCount: number | undefined
   // Click handler for the "Autofill" button itself: applies immediately if
   // every row is still empty, otherwise opens the confirm dialog.
   onAutofillClick: () => void
@@ -68,11 +71,13 @@ export default function useAutofill({
     subFields?.[0]?.type === 'dropdown' &&
     !!subFields[0].source
 
-  const { loading: isLoading, refetch } = useDynamicData(
-    stepId,
-    subFields?.[0],
-    name,
-  )
+  const {
+    data: dynamicDataOptions,
+    loading: isLoading,
+    refetch,
+  } = useDynamicData(stepId, subFields?.[0], name)
+
+  const optionCount = dynamicDataOptions?.length
 
   const buildAutofillRows = useCallback(
     (items: { value: string; type?: string }[]) =>
@@ -124,6 +129,7 @@ export default function useAutofill({
   return {
     canAutofill,
     isLoading,
+    optionCount,
     onAutofillClick,
     confirm: {
       isOpen: isConfirmOpen,
