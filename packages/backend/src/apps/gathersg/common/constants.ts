@@ -14,7 +14,7 @@ export const UNSUPPORTED_FIELDS = [
   'attachment',
 ]
 
-export const fieldTypeEnum = z.enum(['string', 'number', 'null'])
+export const fieldTypeEnum = z.enum(['string', 'number', 'null', 'email'])
 
 // Prefix for hex encoding field names that contain special characters
 export const HEX_ENCODED_FIELD_PREFIX = '__HEX_ENCODED__'
