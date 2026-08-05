@@ -12,19 +12,34 @@ export interface DynamicField {
   source: IFieldDropdownSource
 }
 
-// Fields backed by a `getDynamicData` source (e.g. Tile's column picker) have
-// no static `options` — their labels only exist behind a live query. Walk the
-// step schema (including subFields, since Tile's columnId lives inside
-// multirow-multicol subFields) to find every such field.
+// A field is a "dynamic dropdown" (e.g. Tile's columnId, Excel's columnName,
+// LetterSG's field) when it's backed by a `getDynamicData` source — its
+// options only exist behind a live query, not in the static app schema.
+// Shared by collectDynamicFields (which fields need fetching) and the
+// Column/Value table's shape detection (which subField is "the column").
+export function getDynamicDropdownSource(
+  field: IField,
+): IFieldDropdownSource | null {
+  if (
+    field.type !== 'dropdown' ||
+    field.source?.type !== 'query' ||
+    field.source.name !== 'getDynamicData'
+  ) {
+    return null
+  }
+  return field.source
+}
+
+// Fields backed by a `getDynamicData` source have no static `options` — their
+// labels only exist behind a live query. Walk the step schema (including
+// subFields, since Tile's columnId lives inside multirow-multicol subFields)
+// to find every such field.
 export function collectDynamicFields(fields: IField[]): DynamicField[] {
   const result: DynamicField[] = []
   for (const field of fields) {
-    if (
-      field.type === 'dropdown' &&
-      field.source?.type === 'query' &&
-      field.source.name === 'getDynamicData'
-    ) {
-      result.push({ fieldKey: field.key, source: field.source })
+    const source = getDynamicDropdownSource(field)
+    if (source) {
+      result.push({ fieldKey: field.key, source })
     }
     const subFields = (field as { subFields?: IField[] }).subFields
     if (subFields) {
