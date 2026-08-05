@@ -9,14 +9,21 @@ import {
   useState,
 } from 'react'
 import { useQuery } from '@apollo/client'
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Table, Tbody, Td, Text, Tr } from '@chakra-ui/react'
 
 import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
-import { parseParameterValue } from '@/pages/AiBuilder/helpers/parseParameterValue'
+import {
+  parseParameterValue,
+  type Segment,
+} from '@/pages/AiBuilder/helpers/parseParameterValue'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
+import {
+  type ColumnValueRow,
+  resolveColumnValueRows,
+} from './helpers/columnValueTable'
 import {
   collectDynamicFields,
   resolveDynamicSourceVariables,
@@ -76,6 +83,109 @@ function DynamicFieldOptionsFetcher({
   }, [serializedOptions, fieldKey, onLoaded])
 
   return null
+}
+
+interface ParameterValueLineProps {
+  line: string
+  variableLabelsByPath: Map<string, string>
+  variableValuesByPath: Map<string, string>
+  stepNameById: Map<string, string>
+  // When true, keeps the line on a single row instead of wrapping — used in
+  // Column/Value table cells, which handle overflow via scroll instead.
+  noWrap?: boolean
+}
+
+// Renders one display line: plain text interleaved with VariablePills for
+// any `{{step.x.y}}` references. Shared between the plain per-line list and
+// each Column/Value table cell.
+function ParameterValueLine({
+  line,
+  variableLabelsByPath,
+  variableValuesByPath,
+  stepNameById,
+  noWrap,
+}: ParameterValueLineProps) {
+  const segments = parseParameterValue(line)
+
+  return (
+    <Box
+      as="span"
+      fontSize="sm"
+      color="base.content.default"
+      lineHeight="1.6"
+      display="flex"
+      flexWrap={noWrap ? 'nowrap' : 'wrap'}
+      whiteSpace={noWrap ? 'nowrap' : undefined}
+      alignItems="center"
+      gap={0.75}
+      w={noWrap ? 'max-content' : undefined}
+    >
+      {segments.map((seg: Segment, i) => {
+        if (seg.type === 'text') {
+          // eslint-disable-next-line react/no-array-index-key
+          return <Fragment key={i}>{seg.text}</Fragment>
+        }
+        const variableKey = `step.${seg.stepId}.${seg.path}`
+        return (
+          <VariablePill
+            // eslint-disable-next-line react/no-array-index-key
+            key={i}
+            label={variableLabelsByPath.get(variableKey) ?? seg.label}
+            value={variableValuesByPath.get(variableKey)}
+            stepName={stepNameById.get(seg.stepId)}
+          />
+        )
+      })}
+    </Box>
+  )
+}
+
+interface ColumnValueTableProps {
+  rows: ColumnValueRow[]
+  variableLabelsByPath: Map<string, string>
+  variableValuesByPath: Map<string, string>
+  stepNameById: Map<string, string>
+}
+
+// Renders a multirow/multirow-multicol value (e.g. Tile row data, Excel
+// column values) as a Column/Value table instead of a comma-joined line. No
+// header — the parameter's own label already reads as the table's caption.
+// The Column cell has a fixed width (via tableLayout="fixed") and the Value
+// cell scrolls horizontally on its own when its content overflows, instead
+// of the whole table scrolling.
+function ColumnValueTable({
+  rows,
+  variableLabelsByPath,
+  variableValuesByPath,
+  stepNameById,
+}: ColumnValueTableProps) {
+  return (
+    <Table size="sm" variant="simple" sx={{ tableLayout: 'fixed' }} w="full">
+      <Tbody>
+        {rows.map((row, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <Tr key={i}>
+            <Td w="35%">{row.column}</Td>
+            <Td
+              overflowX="auto"
+              // Forcefully hide the scrollbar, same as the multirow-multicol
+              // input's single-line editor (RichTextEditor.scss), so mouse
+              // users don't get a visible scrollbar misaligning row height.
+              sx={{ '&::-webkit-scrollbar': { display: 'none' } }}
+            >
+              <ParameterValueLine
+                line={row.value}
+                variableLabelsByPath={variableLabelsByPath}
+                variableValuesByPath={variableValuesByPath}
+                stepNameById={stepNameById}
+                noWrap
+              />
+            </Td>
+          </Tr>
+        ))}
+      </Tbody>
+    </Table>
+  )
 }
 
 interface ParameterRowProps {
@@ -179,20 +289,26 @@ export default function StepParameterRows({
     .filter(([, value]) => value !== '' && value != null)
     .map(([key, value]) => {
       const field = stepFields.find((f) => f.key === key)
+      const hasAiLabel = parameterLabels[key] != null
       return {
         key,
         label: resolveFieldLabel(stepFields, key),
         // AI-provided labels take priority over static option resolution
-        displayLines:
-          parameterLabels[key] != null
-            ? [parameterLabels[key]]
-            : resolveDisplayValue(stepFields, key, value),
+        // and skip the Column/Value table, since they're already a single
+        // human-readable summary of the whole value.
+        displayLines: hasAiLabel
+          ? [parameterLabels[key]]
+          : resolveDisplayValue(stepFields, key, value),
+        columnValueRows: hasAiLabel
+          ? null
+          : resolveColumnValueRows(field, value),
         hiddenIf: field?.hiddenIf,
       }
     })
     .filter(
-      ({ displayLines, hiddenIf }) =>
-        displayLines.length > 0 && !isFieldHidden(hiddenIf, parameters),
+      ({ displayLines, columnValueRows, hiddenIf }) =>
+        (displayLines.length > 0 || (columnValueRows?.length ?? 0) > 0) &&
+        !isFieldHidden(hiddenIf, parameters),
     )
     .sort((a, b) => {
       const posA = fieldIndexMap.get(a.key) ?? Infinity
@@ -231,44 +347,28 @@ export default function StepParameterRows({
             </Text>
           </ParameterRow>
         )}
-        {rows.map(({ key, label, displayLines }) => (
+        {rows.map(({ key, label, displayLines, columnValueRows }) => (
           <ParameterRow key={key} label={label}>
-            <Flex direction="column" gap={1}>
-              {displayLines.map((line, lineIndex) => {
-                const segments = parseParameterValue(line)
-
-                return (
-                  <Box
+            {columnValueRows && columnValueRows.length > 0 ? (
+              <ColumnValueTable
+                rows={columnValueRows}
+                variableLabelsByPath={variableLabelsByPath}
+                variableValuesByPath={variableValuesByPath}
+                stepNameById={stepNameById}
+              />
+            ) : (
+              <Flex direction="column" gap={1}>
+                {displayLines.map((line, lineIndex) => (
+                  <ParameterValueLine
                     key={lineIndex}
-                    as="span"
-                    fontSize="sm"
-                    color="base.content.default"
-                    lineHeight="1.6"
-                    display="flex"
-                    flexWrap="wrap"
-                    alignItems="center"
-                    gap={0.75}
-                  >
-                    {segments.map((seg, i) => {
-                      if (seg.type === 'text') {
-                        return <Fragment key={i}>{seg.text}</Fragment>
-                      }
-                      const variableKey = `step.${seg.stepId}.${seg.path}`
-                      return (
-                        <VariablePill
-                          key={i}
-                          label={
-                            variableLabelsByPath.get(variableKey) ?? seg.label
-                          }
-                          value={variableValuesByPath.get(variableKey)}
-                          stepName={stepNameById.get(seg.stepId)}
-                        />
-                      )
-                    })}
-                  </Box>
-                )
-              })}
-            </Flex>
+                    line={line}
+                    variableLabelsByPath={variableLabelsByPath}
+                    variableValuesByPath={variableValuesByPath}
+                    stepNameById={stepNameById}
+                  />
+                ))}
+              </Flex>
+            )}
           </ParameterRow>
         ))}
       </Box>
