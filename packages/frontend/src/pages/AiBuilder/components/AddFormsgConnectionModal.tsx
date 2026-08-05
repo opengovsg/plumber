@@ -54,9 +54,7 @@ export default function AddFormsgConnectionModal({
 }: AddFormsgConnectionModalProps) {
   const [formUrl, setFormUrl] = useState('')
   const [secretKey, setSecretKey] = useState('')
-  const [secretKeyFileError, setSecretKeyFileError] = useState<string | null>(
-    null,
-  )
+  const [secretKeyError, setSecretKeyError] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [inProgress, setInProgress] = useState(false)
@@ -69,7 +67,7 @@ export default function AddFormsgConnectionModal({
     if (isOpen) {
       setFormUrl(prefillFormUrl ?? '')
       setSecretKey('')
-      setSecretKeyFileError(null)
+      setSecretKeyError(null)
       setErrorMessage(null)
     }
   }, [isOpen, prefillFormUrl])
@@ -98,10 +96,10 @@ export default function AddFormsgConnectionModal({
     reader.onload = (e) => {
       const text = e.target?.result?.toString()
       if (!text || !SECRET_KEY_REGEX.test(text)) {
-        setSecretKeyFileError('Selected file seems to be invalid')
+        setSecretKeyError('Selected file seems to be invalid')
         return
       }
-      setSecretKeyFileError(null)
+      setSecretKeyError(null)
       setSecretKey(text)
     }
     reader.readAsText(file)
@@ -139,7 +137,16 @@ export default function AddFormsgConnectionModal({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!formUrl.trim() || !secretKey.trim() || !flowId || inProgress) {
+    const trimmedSecretKey = secretKey.trim()
+    if (!formUrl.trim() || !trimmedSecretKey || !flowId || inProgress) {
+      return
+    }
+
+    // Only the drag/drop file path validates the secret key's format today —
+    // typed/pasted input needs the same check, or malformed input reaches
+    // createConnection/verifyConnection unfiltered.
+    if (!SECRET_KEY_REGEX.test(trimmedSecretKey)) {
+      setSecretKeyError('Invalid secret key format')
       return
     }
 
@@ -155,7 +162,7 @@ export default function AddFormsgConnectionModal({
             key: 'formsg',
             formattedData: {
               formId: formUrl.trim(),
-              privateKey: secretKey.trim(),
+              privateKey: trimmedSecretKey,
             },
             flowId,
           },
@@ -189,7 +196,14 @@ export default function AddFormsgConnectionModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      isCentered
+      closeOnOverlayClick={!inProgress}
+      closeOnEsc={!inProgress}
+    >
       <ModalOverlay />
       <ModalContent borderRadius="lg">
         <form onSubmit={handleSubmit}>
@@ -219,7 +233,7 @@ export default function AddFormsgConnectionModal({
               />
             </FormControl>
 
-            <FormControl isInvalid={!!secretKeyFileError}>
+            <FormControl isInvalid={!!secretKeyError}>
               <RequiredFormLabel isRequired mb={1}>
                 Form Secret Key
               </RequiredFormLabel>
@@ -231,7 +245,7 @@ export default function AddFormsgConnectionModal({
                   type="password"
                   value={secretKey}
                   onChange={(e) => {
-                    setSecretKeyFileError(null)
+                    setSecretKeyError(null)
                     setSecretKey(e.target.value)
                   }}
                   {...(dragging
@@ -265,8 +279,8 @@ export default function AddFormsgConnectionModal({
                   disabled={inProgress}
                 />
               </Stack>
-              {secretKeyFileError && (
-                <FormErrorMessage>{secretKeyFileError}</FormErrorMessage>
+              {secretKeyError && (
+                <FormErrorMessage>{secretKeyError}</FormErrorMessage>
               )}
             </FormControl>
           </ModalBody>
