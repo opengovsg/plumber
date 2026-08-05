@@ -31,6 +31,7 @@ interface DynamicPickerProps {
   isStreaming: boolean
   onSelect: (name: string, value: string) => void
   onSkip: () => void
+  onAddConnection?: () => void
   cancelStream: () => void
 }
 
@@ -42,6 +43,7 @@ export default function DynamicPicker({
   isStreaming,
   onSelect,
   onSkip,
+  onAddConnection,
   cancelStream,
 }: DynamicPickerProps) {
   const [options, setOptions] = useState<DynamicPickerOption[]>([])
@@ -149,6 +151,10 @@ export default function DynamicPicker({
   const showEmptyState =
     isAppKeyMode && !isLoading && !isError && options.length === 0
 
+  // In-chat "Add new form" entry point — FormSG only, and only when the host
+  // page provided a handler for it.
+  const canAddConnection = appKey === 'formsg' && Boolean(onAddConnection)
+
   return (
     <Box w="full" maxW="4xl">
       <Box
@@ -178,10 +184,21 @@ export default function DynamicPicker({
               <Spinner size="sm" color="primary.500" />
             </Flex>
           ) : showEmptyState ? (
-            <Text color="gray.500" fontSize="sm" px={2}>
-              No connections found for this app — you can add one in
-              Plumber&apos;s connection settings.
-            </Text>
+            canAddConnection ? (
+              <Button
+                variant="outline"
+                alignSelf="flex-start"
+                isDisabled={isStreaming}
+                onClick={onAddConnection}
+              >
+                Add your form
+              </Button>
+            ) : (
+              <Text color="gray.500" fontSize="sm" px={2}>
+                No connections found for this app — you can add one in
+                Plumber&apos;s connection settings.
+              </Text>
+            )
           ) : hasOptions ? (
             filtered.length === 0 ? (
               <Text color="gray.400" fontSize="sm" px={2}>
@@ -295,16 +312,30 @@ export default function DynamicPicker({
         {isAppKeyMode && (
           <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
             <Flex justify="space-between" align="center">
-              <Button
-                variant="link"
-                size="sm"
-                color="gray.400"
-                isDisabled={isStreaming}
-                onClick={onSkip}
-                fontWeight="normal"
-              >
-                skip this step
-              </Button>
+              <Flex gap={4} align="center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  color="gray.400"
+                  isDisabled={isStreaming}
+                  onClick={onSkip}
+                  fontWeight="normal"
+                >
+                  skip this step
+                </Button>
+                {canAddConnection && hasOptions && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    color="primary.500"
+                    isDisabled={isStreaming}
+                    onClick={onAddConnection}
+                    fontWeight="normal"
+                  >
+                    Add a new form
+                  </Button>
+                )}
+              </Flex>
               <Flex align="center" h="24px">
                 {isStreaming ? (
                   <Icon
