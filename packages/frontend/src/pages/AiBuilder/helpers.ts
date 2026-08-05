@@ -24,6 +24,23 @@ export const normalizeMarkdownHeadings = (text: string): string =>
 export const prepareAiText = (text: string): string =>
   normalizeMarkdownHeadings(stripHtmlComments(text))
 
+// Matches FormSG share links across environments (form.gov.sg,
+// staging.form.gov.sg, …) ending in a 24-hex-char form ID.
+const FORM_URL_REGEX =
+  /https:\/\/(?:[a-z0-9-]+\.)?form\.gov\.sg\/(?:[a-zA-Z0-9/]*\/)?[a-f0-9]{24}/gi
+
+// Most recent FormSG URL mentioned anywhere in the conversation — used to
+// prefill the "Add new form" modal's Form URL field.
+export const extractLastFormUrl = (messages: Message[]): string | undefined => {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const matches = messages[i].text?.match(FORM_URL_REGEX)
+    if (matches?.length) {
+      return matches[matches.length - 1]
+    }
+  }
+  return undefined
+}
+
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
 export const deduplicateMessages = (messages: Message[]) => {
