@@ -10,6 +10,10 @@ import { computeForEachParameters } from '@/helpers/compute-for-each-parameters'
 import computeParameters from '@/helpers/compute-parameters'
 import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
+import {
+  GATHERSG_EMAIL_TYPES,
+  GATHERSG_NUMBER_TYPES,
+} from '../common/constants'
 import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
@@ -56,12 +60,21 @@ const getCaseUuidFromVariable = async (
   }
 }
 
-const processCaseFields = (caseFields: GatherSGCaseField[]) => {
+const processCaseFields = (
+  caseFields: GatherSGCaseField[],
+): DynamicDataOutput => {
   return {
     data: caseFields.map((field) => {
+      let type: 'string' | 'number' | 'email' = 'string'
+      if (GATHERSG_NUMBER_TYPES.includes(field.type)) {
+        type = 'number'
+      } else if (GATHERSG_EMAIL_TYPES.includes(field.type)) {
+        type = 'email'
+      }
       return {
         name: field.name,
         value: field.name,
+        type,
       }
     }),
   }

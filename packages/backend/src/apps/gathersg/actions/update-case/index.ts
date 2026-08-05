@@ -7,9 +7,10 @@ import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
+import { fieldTypeEnum } from '../../common/constants'
 import throwGatherSGStepError from '../../common/throw-errors'
 
-import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
+import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Update case',
@@ -91,6 +92,10 @@ const action: IRawAction = {
             {
               label: 'Number',
               value: ensureZodEnumValue(fieldTypeEnum, 'number'),
+            },
+            {
+              label: 'Email',
+              value: ensureZodEnumValue(fieldTypeEnum, 'email'),
             },
             {
               label: 'Null',

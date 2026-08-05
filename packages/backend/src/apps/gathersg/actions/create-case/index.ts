@@ -8,11 +8,12 @@ import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
+import { fieldTypeEnum } from '../../common/constants'
 import { fetchCaseFields } from '../../common/fetch-case-fields'
 import throwGatherSGStepError from '../../common/throw-errors'
 
 import getDataOutMetadata from './get-data-out-metadata'
-import { fieldTypeEnum, requestSchema, responseSchema } from './schema'
+import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {
   name: 'Create case',
@@ -108,6 +109,10 @@ const action: IRawAction = {
             {
               label: 'Number',
               value: ensureZodEnumValue(fieldTypeEnum, 'number'),
+            },
+            {
+              label: 'Email',
+              value: ensureZodEnumValue(fieldTypeEnum, 'email'),
             },
             {
               label: 'Null',

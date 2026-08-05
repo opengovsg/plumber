@@ -19,6 +19,10 @@ Run from [packages/frontend/](../../packages/frontend/) or via `npm run -w front
 
 - `npm run gen:theme-typings` — re-runs the Chakra CLI against [packages/frontend/src/theme/index.ts](../../packages/frontend/src/theme/index.ts). Also runs automatically via `postinstall`; re-run by hand after editing the theme tokens.
 
+## Browser debugging
+
+- When using chrome-devtools MCP for manual QA, default `list_console_messages` to `types: ["error"]`. Non-error messages (React warnings, HMR/Vite logs) carry large stack traces that get resent in full on every call. Widen the filter only when investigating the warnings themselves.
+
 ## GraphQL
 
 Schema lives in the backend at [packages/backend/src/graphql/schema.graphql](../../packages/backend/src/graphql/schema.graphql) plus colocated `*.graphql` files. Resolvers are split into [packages/backend/src/graphql/queries/](../../packages/backend/src/graphql/queries/) and [packages/backend/src/graphql/mutations/](../../packages/backend/src/graphql/mutations/), each a single named-export function wired up in [packages/backend/src/graphql/resolvers.ts](../../packages/backend/src/graphql/resolvers.ts).
