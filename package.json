@@ -26,7 +26,7 @@
     ]
   },
   "overrides": {
-    "axios": "1.17.0",
+    "axios": "1.18.1",
     "graphql-rate-limit": {
       "@graphql-tools/utils": {
         "graphql": "16.11.0"
