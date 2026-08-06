@@ -18,6 +18,8 @@ import {
   useAiBuilderContext,
 } from './AiBuilderContext'
 import {
+  buildFormConnectedMessage,
+  buildKickoffMessage,
   buildUrlSharedKickoffMessage,
   buildUrlSharedMessage,
   extractFormIdFromLabel,
@@ -167,6 +169,30 @@ function AiBuilderContent() {
     [],
   )
 
+  // Announces a connected form to the chat. The connection/form ids ride in
+  // the message's "(id: …)" parenthetical (stripped from display) so the LLM
+  // can assign the connection and fetch the schema in later setup. As the
+  // first message it kicks off the conversation with a request for workflow
+  // suggestions; mid-conversation it is a plain announcement so the LLM
+  // continues from wherever the conversation is.
+  const kickoffWithForm = useCallback(
+    (connectionLabel: string, connectionId: string) => {
+      const formTitle = stripFormIdPrefix(connectionLabel)
+      const formId = extractFormIdFromLabel(connectionLabel)
+      setAttachedForm({ label: formTitle })
+      sendMessage(
+        messages.length === 0
+          ? buildKickoffMessage(formTitle, connectionId, formId)
+          : buildFormConnectedMessage(formTitle, connectionId, formId),
+      )
+    },
+    [sendMessage, messages.length],
+  )
+
+  // Reusing an existing connection kicks off the chat exactly like a freshly
+  // added one — no new connection row is created.
+  const handleSelectExistingForm = kickoffWithForm
+
   // Full-variant (URL + key) success — only reachable from the 'picker' kind.
   const handleAddFormSuccess = useCallback(
     (connectionLabel: string, connectionId: string) => {
@@ -287,6 +313,9 @@ function AiBuilderContent() {
               knownFormUrl={prefillFormUrl}
               onConnectForm={pipeCreated ? undefined : handleConnectForm}
               onNewChat={handleNewChat}
+              onSelectExistingForm={
+                pipeCreated ? undefined : handleSelectExistingForm
+              }
               attachedForm={displayedForm}
             />
           </Container>
