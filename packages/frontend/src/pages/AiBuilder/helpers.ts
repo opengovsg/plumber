@@ -24,6 +24,39 @@ export const normalizeMarkdownHeadings = (text: string): string =>
 export const prepareAiText = (text: string): string =>
   normalizeMarkdownHeadings(stripHtmlComments(text))
 
+// Sent when the user shares their form URL (url-only modal) without
+// connecting it — the LLM's URL-first intake branch picks the URL up and
+// fetches the public schema.
+export const buildUrlSharedMessage = (formUrl: string): string =>
+  `Here's my form: ${formUrl}.`
+
+export const buildUrlSharedKickoffMessage = (formUrl: string): string =>
+  `${buildUrlSharedMessage(formUrl)} Suggest workflows I can build with it.`
+
+// Compact display label for a shared-but-not-connected form URL, e.g.
+// "form.gov.sg/654ab1…f1e0" — used for the composer chip before the real
+// form title is known (which requires a connection).
+export const formatFormUrlLabel = (formUrl: string): string =>
+  formUrl
+    .replace(/^https:\/\//i, '')
+    .replace(/([a-f0-9]{6})[a-f0-9]{14}([a-f0-9]{4})/i, '$1…$2')
+
+// Pull the 24-hex-char form ID out of a FormSG connection screenName.
+export const extractFormIdFromLabel = (label: string): string | null =>
+  label.match(/[a-f0-9]{24}/i)?.[0] ?? null
+
+// FormSG connection screenNames look like "[STAGING] [MRF] <24-hex-form-id> -
+// <form title>". Drop the form-id segment for display; keep any env/MRF
+// prefixes since they are informative.
+export const stripFormIdPrefix = (label: string): string =>
+  label.replace(/^((?:\[[A-Z]+\] )*)[a-f0-9]{24} - /i, '$1')
+
+// User messages are displayed verbatim except for machine detail: picker
+// answers carry "(id: …)" / "(id: …, form id: …)" suffixes that are
+// stripped from display.
+export const formatUserMessageForDisplay = (text: string): string =>
+  text.replace(/ \(id: [a-f0-9-]+(?:, form id: [a-f0-9]+)?\)/g, '').trim()
+
 // Matches FormSG share links across environments (form.gov.sg,
 // staging.form.gov.sg, …) ending in a 24-hex-char form ID.
 const FORM_URL_REGEX =
