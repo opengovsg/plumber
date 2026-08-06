@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -42,8 +42,24 @@ export default function ConnectFormPopover({
 }: ConnectFormPopoverProps) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [options, setOptions] = useState<FormConnectionOption[] | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+
+  // Closing (Escape, outside click, or picking an option) doesn't unmount
+  // this component — it stays mounted as a persistent composer chip — so a
+  // fetch already in flight keeps running and would otherwise force-open
+  // the Add-new-form modal via the fallback below well after the user
+  // dismissed the popover. Abort it so a closed or superseded request can't
+  // act on a stale result.
+  const handleClose = useCallback(() => {
+    abortRef.current?.abort()
+    onClose()
+  }, [onClose])
 
   const handleOpen = async () => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setOptions(null)
     onOpen()
 
@@ -51,6 +67,7 @@ export default function ConnectFormPopover({
       const res = await fetch('/api/connections?appKey=formsg', {
         method: 'GET',
         credentials: 'include',
+        signal: controller.signal,
       })
       if (!res.ok) {
         throw new Error(`Fetch failed: ${res.status}`)
@@ -59,20 +76,23 @@ export default function ConnectFormPopover({
       const data: FormConnectionOption[] = json.data ?? []
 
       if (data.length === 0) {
-        onClose()
+        handleClose()
         onAddNewForm()
         return
       }
       setOptions(data)
-    } catch {
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') {
+        return
+      }
       // Can't list existing connections — fall back to adding a new form.
-      onClose()
+      handleClose()
       onAddNewForm()
     }
   }
 
   return (
-    <Popover isOpen={isOpen} onClose={onClose} placement="top-start" isLazy>
+    <Popover isOpen={isOpen} onClose={handleClose} placement="top-start" isLazy>
       <Tooltip
         label="Most workflows start with a FormSG form. Connect yours and I'll guide you based on its actual fields."
         hasArrow
@@ -130,7 +150,7 @@ export default function ConnectFormPopover({
                     _hover={{ bg: 'primary.50' }}
                     _active={{ bg: 'primary.100' }}
                     onClick={() => {
-                      onClose()
+                      handleClose()
                       onSelectExisting(opt.name, opt.value)
                     }}
                   >
@@ -156,7 +176,7 @@ export default function ConnectFormPopover({
                 _hover={{ bg: 'primary.50' }}
                 _active={{ bg: 'primary.100' }}
                 onClick={() => {
-                  onClose()
+                  handleClose()
                   onAddNewForm()
                 }}
               >
