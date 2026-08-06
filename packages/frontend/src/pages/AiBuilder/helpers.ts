@@ -33,18 +33,6 @@ export const buildUrlSharedMessage = (formUrl: string): string =>
 export const buildUrlSharedKickoffMessage = (formUrl: string): string =>
   `${buildUrlSharedMessage(formUrl)} Suggest workflows I can build with it.`
 
-// Accepts a FormSG share/admin URL in any supported environment, or a bare
-// 24-hex-char form ID (both shapes work with get_form_schema).
-export const isValidFormUrlInput = (input: string): boolean => {
-  const trimmed = input.trim()
-  return (
-    /^[a-f0-9]{24}$/i.test(trimmed) ||
-    /^https:\/\/(?:[a-z0-9-]+\.)?form\.gov\.sg\/(?:[a-zA-Z0-9/]*\/)?[a-f0-9]{24}\/?$/i.test(
-      trimmed,
-    )
-  )
-}
-
 // Bare 24-hex form IDs become a full prod share URL so everything downstream
 // (extractLastFormUrl, the forced key card, modal prefill) sees one shape.
 export const normalizeFormUrlInput = (input: string): string => {

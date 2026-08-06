@@ -26,6 +26,8 @@ interface ChatInterfaceProps {
   onAddConnection?: (context: { question: string }) => void
   knownFormUrl?: string
   onConnectForm?: () => void
+  /** Resets any form-connection state that lives outside useChatStream's own reset. */
+  onNewChat?: () => void
   attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
@@ -42,6 +44,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     onAddConnection,
     knownFormUrl,
     onConnectForm,
+    onNewChat,
     attachedForm,
   } = props
   const navigate = useNavigate()
@@ -65,6 +68,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
+    onNewChat?.()
     setIsDrawerOpen(false)
 
     // Extract continuation prompt from the last assistant message (between <code> tags)
@@ -87,6 +91,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   }, [
     cancelStream,
     resetChat,
+    onNewChat,
     setIsDrawerOpen,
     setChatState,
     navigate,

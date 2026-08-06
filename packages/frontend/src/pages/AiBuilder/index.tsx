@@ -196,6 +196,14 @@ function AiBuilderContent() {
     [sendMessage, messages.length],
   )
 
+  // "New Chat" resets the conversation/pipe, but attachedForm/addFormContext
+  // live outside useChatStream's own reset — without this, the composer
+  // chip would keep showing the previous conversation's connected form.
+  const handleNewChat = useCallback(() => {
+    setAttachedForm(null)
+    setAddFormContext(null)
+  }, [])
+
   // Determine if we have unsaved work
   // Show warning if there's ANY state worth protecting:
   // - Existing persisted chat messages
@@ -278,6 +286,7 @@ function AiBuilderContent() {
               onAddConnection={flowId ? handleAddConnection : undefined}
               knownFormUrl={prefillFormUrl}
               onConnectForm={pipeCreated ? undefined : handleConnectForm}
+              onNewChat={handleNewChat}
               attachedForm={displayedForm}
             />
           </Container>

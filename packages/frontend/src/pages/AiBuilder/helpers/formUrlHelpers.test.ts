@@ -6,7 +6,6 @@ import {
   extractFormIdFromLabel,
   formatFormUrlLabel,
   formatUserMessageForDisplay,
-  isValidFormUrlInput,
   normalizeFormUrlInput,
   stripFormIdPrefix,
 } from '../helpers'
@@ -27,28 +26,6 @@ describe('buildUrlSharedMessage', () => {
       "Here's my form: https://form.gov.sg/654ab1234abc1a012345f1e0. " +
         'Suggest workflows I can build with it.',
     )
-  })
-})
-
-describe('isValidFormUrlInput', () => {
-  it.each([
-    'https://form.gov.sg/654ab1234abc1a012345f1e0',
-    'https://form.gov.sg/654ab1234abc1a012345f1e0/',
-    'https://staging.form.gov.sg/admin/form/654ab1234abc1a012345f1e0',
-    '654ab1234abc1a012345f1e0',
-    '  https://form.gov.sg/654ab1234abc1a012345f1e0  ',
-  ])('accepts %s', (input) => {
-    expect(isValidFormUrlInput(input)).toBe(true)
-  })
-
-  it.each([
-    'https://example.com/654ab1234abc1a012345f1e0',
-    'https://form.gov.sg/not-a-form-id',
-    'my form is https://form.gov.sg/654ab1234abc1a012345f1e0',
-    'abc123',
-    '',
-  ])('rejects %s', (input) => {
-    expect(isValidFormUrlInput(input)).toBe(false)
   })
 })
 

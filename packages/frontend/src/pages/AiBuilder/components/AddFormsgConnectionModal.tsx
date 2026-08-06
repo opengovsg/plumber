@@ -30,10 +30,7 @@ import {
 import FileUpload from '@/components/FileUpload'
 import { CREATE_CONNECTION } from '@/graphql/mutations/create-connection'
 import { VERIFY_CONNECTION } from '@/graphql/mutations/verify-connection'
-import {
-  isValidFormUrlInput,
-  normalizeFormUrlInput,
-} from '@/pages/AiBuilder/helpers'
+import { normalizeFormUrlInput } from '@/pages/AiBuilder/helpers'
 
 // Matches the format of a form's private key downloaded from FormSG, same
 // check the editor's DragDropInput uses for the same field.
@@ -158,8 +155,12 @@ export default function AddFormsgConnectionModal({
       return
     }
 
+    // No client-side format gate here — the backend (get_form_schema for
+    // url-only, verifyCredentials for full) is deliberately more lenient
+    // than any regex we could write (protocol-optional, any *.form.gov.sg
+    // path shape) and already surfaces a clear error either way.
     const trimmedUrl = formUrl.trim()
-    if (!isValidFormUrlInput(trimmedUrl)) {
+    if (!trimmedUrl) {
       return
     }
     const normalizedUrl = normalizeFormUrlInput(trimmedUrl)
@@ -241,8 +242,7 @@ export default function AddFormsgConnectionModal({
   const isFormUrlLocked = lockFormUrl && !errorMessage
 
   const isSubmitDisabled =
-    !isValidFormUrlInput(formUrl) ||
-    (variant === 'full' && (!secretKey.trim() || !flowId))
+    !formUrl.trim() || (variant === 'full' && (!secretKey.trim() || !flowId))
 
   return (
     <Modal
@@ -271,7 +271,7 @@ export default function AddFormsgConnectionModal({
               <FormLabel mb={1}>Form URL</FormLabel>
               <Text textStyle="body-2" color="base.content.medium" mb={2}>
                 Click share on your form and copy the link. It should be in the
-                format: https://form.gov.sg/654ab1234abc1a012345f1e0b
+                format: https://form.gov.sg/654ab1234abc1a012345f1e0
               </Text>
               <Input
                 value={formUrl}
