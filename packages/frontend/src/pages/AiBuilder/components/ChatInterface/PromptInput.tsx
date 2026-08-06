@@ -8,15 +8,7 @@ import {
 } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import {
-  Box,
-  Flex,
-  Icon,
-  Image,
-  Text,
-  Textarea,
-  Tooltip,
-} from '@chakra-ui/react'
+import { Box, Flex, Icon, Image, Text, Textarea } from '@chakra-ui/react'
 
 import {
   type ClarificationQuestion,
@@ -24,6 +16,7 @@ import {
 } from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
+import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
 
@@ -41,6 +34,8 @@ interface PromptInputProps {
   knownFormUrl?: string
   /** Opens the Add-new-form modal (empty-state "Connect your form" entry). */
   onConnectForm?: () => void
+  /** Kicks off the chat with an existing connection. */
+  onSelectExistingForm?: (label: string, connectionId: string) => void
   /**
    * Display-only chip anchoring the conversation's form to the composer —
    * the connected form's title, or the shared URL (isConnected: false)
@@ -99,6 +94,7 @@ export default function PromptInput({
   onAddConnection,
   knownFormUrl,
   onConnectForm,
+  onSelectExistingForm,
   attachedForm,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
@@ -257,7 +253,9 @@ export default function PromptInput({
     )
   }
 
-  const showChipsRow = Boolean(onConnectForm || attachedForm)
+  const showChipsRow = Boolean(
+    (onConnectForm && onSelectExistingForm) || attachedForm,
+  )
 
   return (
     <Box w="full" maxW="4xl">
@@ -345,40 +343,12 @@ export default function PromptInput({
           <Flex px={2} pb={1} pt={1} align="center" gap={2}>
             {attachedForm?.isConnected ? (
               <FormChip form={attachedForm} />
-            ) : onConnectForm ? (
-              <Tooltip
-                label="Most workflows start with a FormSG form. Connect yours and I'll guide you based on its actual fields."
-                hasArrow
-                placement="top-start"
-              >
-                <Flex display="inline-flex">
-                  <Box
-                    as="button"
-                    type="button"
-                    display="inline-flex"
-                    alignItems="center"
-                    gap={1.5}
-                    border="1px"
-                    borderColor="gray.200"
-                    borderRadius="full"
-                    color="gray.700"
-                    fontWeight="medium"
-                    fontSize="xs"
-                    px={2.5}
-                    py={1}
-                    opacity={isStreaming ? 0.5 : 1}
-                    cursor={isStreaming ? 'not-allowed' : 'pointer'}
-                    onClick={isStreaming ? undefined : onConnectForm}
-                  >
-                    <Image
-                      src="/apps/formsg/assets/favicon.svg"
-                      boxSize="14px"
-                      alt=""
-                    />
-                    Connect your form
-                  </Box>
-                </Flex>
-              </Tooltip>
+            ) : onConnectForm && onSelectExistingForm ? (
+              <ConnectFormPopover
+                isStreaming={isStreaming}
+                onSelectExisting={onSelectExistingForm}
+                onAddNewForm={onConnectForm}
+              />
             ) : attachedForm ? (
               // Dead-end fallback: a URL is known but not connected, and
               // there's no trigger left to retry through (e.g. post-pipe,

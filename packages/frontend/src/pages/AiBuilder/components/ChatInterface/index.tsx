@@ -29,6 +29,7 @@ interface ChatInterfaceProps {
   onConnectForm?: () => void
   /** Resets any form-connection state that lives outside useChatStream's own reset. */
   onNewChat?: () => void
+  onSelectExistingForm?: (label: string, connectionId: string) => void
   attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
@@ -46,6 +47,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     knownFormUrl,
     onConnectForm,
     onNewChat,
+    onSelectExistingForm,
     attachedForm,
   } = props
   const navigate = useNavigate()
@@ -141,6 +143,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
               PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
             }
             onConnectForm={onConnectForm}
+            onSelectExistingForm={onSelectExistingForm}
             attachedForm={attachedForm}
           />
         </Flex>
@@ -205,6 +208,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   onAddConnection={onAddConnection}
                   knownFormUrl={knownFormUrl}
                   onConnectForm={onConnectForm}
+                  onSelectExistingForm={onSelectExistingForm}
                   attachedForm={attachedForm}
                 />
               )}
