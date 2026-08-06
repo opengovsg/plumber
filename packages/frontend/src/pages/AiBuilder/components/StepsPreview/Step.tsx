@@ -114,24 +114,30 @@ export default function Step(props: StepProps) {
           flexDir="column"
           alignItems="stretch"
           justifyContent="flex-start"
-          cursor={isConfigured && !isActive ? 'pointer' : 'default'}
-          onClick={
-            isConfigured && !isActive
-              ? () => setIsExpanded((v) => !v)
-              : undefined
-          }
-          // Active: override border + suppress hover background
+          // The header, not this outer card, owns the expand/collapse click —
+          // suppress the container's own hover highlight so only the header
+          // reacts to hover.
+          _hover={{ bg: 'white', cursor: 'default' }}
+          // Active: override border
           {...(isActive && {
             borderColor: 'primary.500',
             boxShadow: '0 0 0 3px var(--chakra-colors-primary-100)',
-            _hover: { bg: 'white', cursor: 'default' },
-          })}
-          // Pending: suppress hover
-          {...(isPending && {
-            _hover: { bg: 'white', cursor: 'default' },
           })}
         >
-          <Flex {...flowStepStyles.topHeader} py={isNested ? 3 : 4}>
+          <Flex
+            {...flowStepStyles.topHeader}
+            py={isNested ? 3 : 4}
+            cursor={isConfigured && !isActive ? 'pointer' : 'default'}
+            onClick={
+              isConfigured && !isActive
+                ? () => setIsExpanded((v) => !v)
+                : undefined
+            }
+            {...(isConfigured &&
+              !isActive && {
+                _hover: { bg: 'interaction.muted.neutral.hover' },
+              })}
+          >
             <StepAppIcon
               isCompleted={isConfigured}
               isNested={isNested}
