@@ -17,6 +17,8 @@ const schema = z
       .object({
         email: z.string().min(1).optional(),
         name: z.string().min(1).optional(),
+        role: z.string().min(1).optional(),
+        uuid: z.string().min(1).optional(),
       })
       .nullish(),
     formsg: z
@@ -49,6 +51,17 @@ const schema = z
           createdBy?.name === 'FormSG' &&
           formsg?.formId &&
           formsg?.submissionId
+        ) {
+          return true
+        }
+
+        // when the case is auto-created from an inbound email, Gather sends a
+        // sentinel createdBy of exactly { name: 'Email', role: 'email', uuid: 'email' }
+        // instead of a real user's email.
+        if (
+          createdBy?.name === 'Email' &&
+          createdBy?.role === 'email' &&
+          createdBy?.uuid === 'email'
         ) {
           return true
         }

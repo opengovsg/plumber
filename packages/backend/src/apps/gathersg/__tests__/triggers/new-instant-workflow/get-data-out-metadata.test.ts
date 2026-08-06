@@ -114,6 +114,29 @@ describe('getDataOutMetadata', () => {
       expect(result?.data.createdBy).toEqual({
         email: { label: 'Created by (email)' },
         name: { label: 'Created by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
+      })
+    })
+
+    it('should show createdBy metadata for a case created via email', async () => {
+      const executionStep = createMockExecutionStep({
+        data: {
+          caseRef: 'CASE-001',
+          createdBy: {
+            name: 'Email',
+            role: 'email',
+            uuid: 'email',
+          },
+        },
+      })
+
+      const result = await getDataOutMetadata(executionStep)
+      expect(result?.data.createdBy).toEqual({
+        email: { label: 'Created by (email)' },
+        name: { label: 'Created by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
       })
     })
 
@@ -499,6 +522,8 @@ describe('getDataOutMetadata', () => {
       expect(result?.data.createdBy).toEqual({
         email: { label: 'Created by (email)' },
         name: { label: 'Created by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
       })
       expect(result?.data.fields.name).toEqual({ label: 'name' })
       expect(result?.data.fields[hexEncodedField]).toEqual({

@@ -35,10 +35,21 @@ async function getDataOutMetadata(
     submissionId: 'FormSG (submission ID)',
   })
 
-  const createdByMetadata = createOptionalNestedMetadata(dataOut?.createdBy, {
-    email: 'Created by (email)',
-    name: 'Created by (name)',
-  })
+  // Built inline rather than via createOptionalNestedMetadata: createdBy's
+  // role/uuid are only ever sentinel values (e.g. when a case is auto-created
+  // from an inbound email), so they must always stay hidden rather than
+  // getting a label. createOptionalNestedMetadata expects a single label per
+  // key, so forcing role/uuid through it would mean passing throwaway label
+  // strings that could accidentally leak into the UI if the hiding logic is
+  // ever refactored away.
+  const createdByMetadata = dataOut?.createdBy
+    ? {
+        email: { label: 'Created by (email)' },
+        name: { label: 'Created by (name)' },
+        role: { isHidden: true },
+        uuid: { isHidden: true },
+      }
+    : { isHidden: true }
 
   const updatedByMetadata = createOptionalNestedMetadata(dataOut?.updatedBy, {
     email: 'Updated by (email)',

@@ -64,6 +64,62 @@ describe('gathersg auth schema', () => {
       })
       expect(result.success).toBe(true)
     })
+
+    it('accepts the email-sourced createdBy sentinel (name/role/uuid all "Email"/"email") without a createdBy.email field', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'Email',
+          role: 'email',
+          uuid: 'email',
+        },
+      })
+      expect(result.success).toBe(true)
+    })
+  })
+
+  describe('email-sourced createdBy invalid cases', () => {
+    it('rejects when uuid is missing (not the exact sentinel shape)', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'Email',
+          role: 'email',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects when name does not match "Email"', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'Not Email',
+          role: 'email',
+          uuid: 'email',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects when role does not match "email"', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'Email',
+          role: 'user',
+          uuid: 'email',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('rejects when uuid does not match "email"', () => {
+      const result = schema.safeParse({
+        createdBy: {
+          name: 'Email',
+          role: 'email',
+          uuid: 'some-real-uuid',
+        },
+      })
+      expect(result.success).toBe(false)
+    })
   })
 
   describe('invalid cases - missing email', () => {
