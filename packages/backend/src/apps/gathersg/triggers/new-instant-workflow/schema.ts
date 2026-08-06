@@ -43,6 +43,8 @@ export const dataOutSchema = z.object({
         .object({
           email: z.string().min(1).nullish(),
           name: z.string().min(1),
+          role: z.string().min(1).nullish(),
+          uuid: z.string().min(1).nullish(),
         })
         .nullish(),
       finalisedBy: z
