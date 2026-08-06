@@ -456,13 +456,14 @@ export function useChatStream(options: UseChatStreamOptions) {
         }
         const toolPart = part as {
           type: string
-          toolName?: string
           output?: { title?: unknown; formId?: unknown; error?: unknown }
         }
-        const isFormSchemaResult =
-          toolPart.type === 'tool-get_form_schema' ||
-          (toolPart.type === 'dynamic-tool' &&
-            toolPart.toolName === 'get_form_schema')
+        // get_form_schema is registered via the static tool() helper (not
+        // dynamicTool()), so the AI SDK always streams its result as
+        // tool-get_form_schema — dynamic-tool is reserved for MCP-client
+        // tools (e.g. the GitBook MCP integration) that AI SDK can't type
+        // statically, and never applies to this tool.
+        const isFormSchemaResult = toolPart.type === 'tool-get_form_schema'
         if (
           isFormSchemaResult &&
           typeof toolPart.output?.title === 'string' &&

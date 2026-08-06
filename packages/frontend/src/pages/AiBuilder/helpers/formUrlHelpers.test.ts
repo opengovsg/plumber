@@ -6,7 +6,6 @@ import {
   extractFormIdFromLabel,
   formatFormUrlLabel,
   formatUserMessageForDisplay,
-  normalizeFormUrlInput,
   stripFormIdPrefix,
 } from '../helpers'
 
@@ -26,22 +25,6 @@ describe('buildUrlSharedMessage', () => {
       "Here's my form: https://form.gov.sg/654ab1234abc1a012345f1e0. " +
         'Suggest workflows I can build with it.',
     )
-  })
-})
-
-describe('normalizeFormUrlInput', () => {
-  it('expands a bare form id into a prod share URL', () => {
-    expect(normalizeFormUrlInput('  654ab1234abc1a012345f1e0 ')).toBe(
-      'https://form.gov.sg/654ab1234abc1a012345f1e0',
-    )
-  })
-
-  it('leaves full URLs untouched', () => {
-    expect(
-      normalizeFormUrlInput(
-        'https://staging.form.gov.sg/654ab1234abc1a012345f1e0',
-      ),
-    ).toBe('https://staging.form.gov.sg/654ab1234abc1a012345f1e0')
   })
 })
 

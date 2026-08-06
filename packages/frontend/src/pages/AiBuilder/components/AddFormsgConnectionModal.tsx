@@ -30,7 +30,6 @@ import {
 import FileUpload from '@/components/FileUpload'
 import { CREATE_CONNECTION } from '@/graphql/mutations/create-connection'
 import { VERIFY_CONNECTION } from '@/graphql/mutations/verify-connection'
-import { normalizeFormUrlInput } from '@/pages/AiBuilder/helpers'
 
 // Matches the format of a form's private key downloaded from FormSG, same
 // check the editor's DragDropInput uses for the same field.
@@ -163,10 +162,9 @@ export default function AddFormsgConnectionModal({
     if (!trimmedUrl) {
       return
     }
-    const normalizedUrl = normalizeFormUrlInput(trimmedUrl)
 
     if (variant === 'url-only') {
-      onSubmitUrl(normalizedUrl)
+      onSubmitUrl(trimmedUrl)
       onClose()
       return
     }
@@ -195,7 +193,7 @@ export default function AddFormsgConnectionModal({
           input: {
             key: 'formsg',
             formattedData: {
-              formId: normalizedUrl,
+              formId: trimmedUrl,
               privateKey: trimmedSecretKey,
             },
             flowId,
@@ -215,7 +213,7 @@ export default function AddFormsgConnectionModal({
       const label =
         (verifyData?.verifyConnection?.formattedData?.screenName as
           | string
-          | undefined) ?? normalizedUrl
+          | undefined) ?? trimmedUrl
 
       onSuccess(label, connectionId)
       onClose()

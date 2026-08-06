@@ -33,15 +33,6 @@ export const buildUrlSharedMessage = (formUrl: string): string =>
 export const buildUrlSharedKickoffMessage = (formUrl: string): string =>
   `${buildUrlSharedMessage(formUrl)} Suggest workflows I can build with it.`
 
-// Bare 24-hex form IDs become a full prod share URL so everything downstream
-// (extractLastFormUrl, the forced key card, modal prefill) sees one shape.
-export const normalizeFormUrlInput = (input: string): string => {
-  const trimmed = input.trim()
-  return /^[a-f0-9]{24}$/i.test(trimmed)
-    ? `https://form.gov.sg/${trimmed}`
-    : trimmed
-}
-
 // Compact display label for a shared-but-not-connected form URL, e.g.
 // "form.gov.sg/654ab1…f1e0" — used for the composer chip before the real
 // form title is known (which requires a connection).
