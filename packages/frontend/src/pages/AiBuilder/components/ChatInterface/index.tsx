@@ -25,6 +25,11 @@ interface ChatInterfaceProps {
   resetChat: () => void
   hasReachedLimit: boolean
   onAddConnection?: (context: { question: string }) => void
+  knownFormUrl?: string
+  onConnectForm?: () => void
+  /** Resets any form-connection state that lives outside useChatStream's own reset. */
+  onNewChat?: () => void
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
@@ -38,6 +43,10 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     resetChat,
     hasReachedLimit,
     onAddConnection,
+    knownFormUrl,
+    onConnectForm,
+    onNewChat,
+    attachedForm,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -60,6 +69,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
+    onNewChat?.()
     setIsDrawerOpen(false)
 
     // Build the new draft from the last assistant message's continuation prompt.
@@ -76,6 +86,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   }, [
     cancelStream,
     resetChat,
+    onNewChat,
     setIsDrawerOpen,
     setChatState,
     navigate,
@@ -129,6 +140,8 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             placeholder={
               PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
             }
+            onConnectForm={onConnectForm}
+            attachedForm={attachedForm}
           />
         </Flex>
       </Flex>
@@ -190,6 +203,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   clarification={activeClarification}
                   dynamicPicker={activeDynamicPicker}
                   onAddConnection={onAddConnection}
+                  knownFormUrl={knownFormUrl}
+                  onConnectForm={onConnectForm}
+                  attachedForm={attachedForm}
                 />
               )}
               {!isMobile && (

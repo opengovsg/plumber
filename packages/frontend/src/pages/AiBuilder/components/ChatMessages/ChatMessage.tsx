@@ -2,7 +2,10 @@ import { memo } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
-import { prepareAiText } from '@/pages/AiBuilder/helpers'
+import {
+  formatUserMessageForDisplay,
+  prepareAiText,
+} from '@/pages/AiBuilder/helpers'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
 
 import ChatMessageToolbar from './ChatMessageToolbar'
@@ -36,7 +39,7 @@ const AiMessage = memo(
 AiMessage.displayName = 'AiMessage'
 
 const UserMessage = memo(({ message }: ChatMessageProps) => {
-  const displayText = message.text.replace(/ \(id: [^)]+\)$/gm, '')
+  const displayText = formatUserMessageForDisplay(message.text)
   return (
     <Flex justify="flex-end">
       <Box
