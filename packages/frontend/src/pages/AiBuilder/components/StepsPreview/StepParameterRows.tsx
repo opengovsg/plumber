@@ -1,112 +1,81 @@
-import type { IApp, IJSONObject } from '@plumber/types'
+import type { IFieldDropdownOption, IJSONObject } from '@plumber/types'
 
-import { Fragment, type ReactNode } from 'react'
+import {
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
+import { useQuery } from '@apollo/client'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
+import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { parseParameterValue } from '@/pages/AiBuilder/helpers/parseParameterValue'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
+import {
+  collectDynamicFields,
+  resolveDynamicSourceVariables,
+  withDynamicOptions,
+} from './helpers/dynamicFieldOptions'
+import {
+  getStepFields,
+  resolveDisplayValue,
+  resolveFieldLabel,
+} from './helpers/resolveFieldDisplayValue'
 import VariablePill from './VariablePill'
 
-function camelToSentence(key: string): string {
-  const words = key.replace(/([A-Z])/g, ' $1').trim()
-  return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase()
+interface DynamicFieldOptionsFetcherProps {
+  stepId: string
+  fieldKey: string
+  dynamicDataKey: string
+  queryParameters: IJSONObject
+  onLoaded: (fieldKey: string, options: IFieldDropdownOption[]) => void
 }
 
-function getStepFields(allApps: IApp[], appKey: string, stepKey: string) {
-  const app = allApps.find((a) => a.key === appKey)
-  if (!app) {
-    return []
-  }
-  const trigger = app.triggers?.find((t) => t.key === stepKey)
-  const action = app.actions?.find((a) => a.key === stepKey)
-  return [
-    ...(trigger?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
-    ...(action?.substeps?.flatMap((s) => s.arguments ?? []) ?? []),
-  ]
-}
+// Invisible fetcher: one per dynamic field, so each can call useQuery at its
+// own component's top level regardless of how many dynamic fields a step has.
+function DynamicFieldOptionsFetcher({
+  stepId,
+  fieldKey,
+  dynamicDataKey,
+  queryParameters,
+  onLoaded,
+}: DynamicFieldOptionsFetcherProps) {
+  const { data } = useQuery(GET_DYNAMIC_DATA, {
+    variables: { stepId, key: dynamicDataKey, parameters: queryParameters },
+    skip: !stepId,
+    fetchPolicy: 'cache-first',
+  })
 
-function resolveFieldLabel(
-  fields: ReturnType<typeof getStepFields>,
-  paramKey: string,
-): string {
-  return (
-    fields.find((f) => f.key === paramKey)?.label ?? camelToSentence(paramKey)
-  )
-}
-
-type FieldWithOptions = {
-  key?: string
-  options?: Array<{ label: string; value: string | number }>
-  subFields?: FieldWithOptions[]
-}
-
-// Resolve a single scalar value against a field's option list.
-function resolveOptionLabel(
-  field: FieldWithOptions | undefined,
-  strValue: string,
-): string {
-  const option = field?.options?.find((o) => String(o.value) === strValue)
-  return option ? option.label : strValue
-}
-
-// Recursively flatten object/array values into a readable string,
-// resolving option labels from subField definitions where available.
-function flattenValue(
-  value: unknown,
-  subFields?: FieldWithOptions[],
-): string | null {
-  if (Array.isArray(value)) {
-    // Array of rows (e.g. multirow-multicol): join each row with ', '
-    const rows = value
-      .map((item) => flattenValue(item, subFields))
-      .filter(Boolean)
-    return rows.length > 0 ? rows.join(', ') : null
-  }
-
-  if (typeof value === 'object' && value !== null) {
-    const obj = value as Record<string, unknown>
-    // Follow subField definition order if available; otherwise use object key order
-    const keys = subFields
-      ? subFields
-          .map((f) => f.key)
-          .filter((k): k is string => k != null && k in obj)
-      : Object.keys(obj)
-    const parts = keys
-      .filter((k) => obj[k] !== '' && obj[k] != null)
-      .map((k) => {
-        const subField = subFields?.find((f) => f.key === k)
-        // obj[k] is assumed scalar here: no current app schema nests a
-        // multirow/multirow-multicol subField inside another one's subFields,
-        // even though IField's type allows it. If that ever changes, this
-        // needs a typeof-object branch that recurses into flattenValue
-        // instead of stringifying — see PR #1864 review discussion.
-        return resolveOptionLabel(subField, String(obj[k]))
-      })
-    return parts.length > 0 ? parts.join(' ') : null
-  }
-
-  return String(value)
-}
-
-function resolveDisplayValue(
-  fields: ReturnType<typeof getStepFields>,
-  paramKey: string,
-  value: unknown,
-): string | null {
-  const field = fields.find((f) => f.key === paramKey) as
-    | FieldWithOptions
+  const rawOptions = data?.getDynamicData as
+    | Array<{ name: string; value: string | number }>
     | undefined
+  // Compare by content, not array identity: the JSONObject scalar Apollo
+  // hands back on each render isn't guaranteed to be reference-stable even
+  // when the underlying cached data hasn't changed, so gate the effect on a
+  // content snapshot to avoid re-notifying (and re-rendering the parent) forever.
+  const serializedOptions = rawOptions ? JSON.stringify(rawOptions) : undefined
 
-  // For objects/arrays (e.g. multirow-multicol), recursively flatten with sub-field label resolution
-  if (typeof value === 'object' && value !== null) {
-    return flattenValue(value, field?.subFields)
-  }
+  useEffect(() => {
+    if (!serializedOptions) {
+      return
+    }
+    const parsed = JSON.parse(serializedOptions) as Array<{
+      name: string
+      value: string | number
+    }>
+    onLoaded(
+      fieldKey,
+      parsed.map(({ name, value }) => ({ label: name, value })),
+    )
+  }, [serializedOptions, fieldKey, onLoaded])
 
-  // For scalar values, resolve option label if the field has static options
-  return resolveOptionLabel(field, String(value))
+  return null
 }
 
 interface ParameterRowProps {
@@ -157,7 +126,54 @@ export default function StepParameterRows({
   const { parameterLabelsByStepId } = useStepConfigContext()
   const parameterLabels = parameterLabelsByStepId[stepId] ?? {}
 
-  const stepFields = getStepFields(allApps, appKey, stepKey)
+  const staticStepFields = getStepFields(allApps, appKey, stepKey)
+  const dynamicFields = useMemo(
+    () => collectDynamicFields(staticStepFields),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allApps, appKey, stepKey],
+  )
+
+  const [dynamicOptionsByKey, setDynamicOptionsByKey] = useState<
+    Map<string, IFieldDropdownOption[]>
+  >(new Map())
+  const handleDynamicOptionsLoaded = useCallback(
+    (fieldKey: string, options: IFieldDropdownOption[]) => {
+      setDynamicOptionsByKey((prev) => {
+        if (prev.get(fieldKey) === options) {
+          return prev
+        }
+        const next = new Map(prev)
+        next.set(fieldKey, options)
+        return next
+      })
+    },
+    [],
+  )
+
+  const stepFields = useMemo(
+    () => withDynamicOptions(staticStepFields, dynamicOptionsByKey),
+    [staticStepFields, dynamicOptionsByKey],
+  )
+
+  const dynamicFieldQueries = useMemo(
+    () =>
+      dynamicFields
+        .map(({ fieldKey, source }) => {
+          const resolved = resolveDynamicSourceVariables(source, parameters)
+          return resolved ? { fieldKey, ...resolved } : null
+        })
+        .filter(
+          (
+            query,
+          ): query is {
+            fieldKey: string
+            key: string
+            queryParameters: IJSONObject
+          } => query !== null,
+        ),
+    [dynamicFields, parameters],
+  )
+
   const fieldIndexMap = new Map(stepFields.map((f, i) => [f.key, i]))
   const rows = Object.entries(parameters)
     .filter(([, value]) => value !== '' && value != null)
@@ -167,16 +183,16 @@ export default function StepParameterRows({
         key,
         label: resolveFieldLabel(stepFields, key),
         // AI-provided labels take priority over static option resolution
-        displayValue:
-          parameterLabels[key] ?? resolveDisplayValue(stepFields, key, value),
+        displayLines:
+          parameterLabels[key] != null
+            ? [parameterLabels[key]]
+            : resolveDisplayValue(stepFields, key, value),
         hiddenIf: field?.hiddenIf,
       }
     })
     .filter(
-      ({ displayValue, hiddenIf }) =>
-        displayValue !== null &&
-        displayValue !== '' &&
-        !isFieldHidden(hiddenIf, parameters),
+      ({ displayLines, hiddenIf }) =>
+        displayLines.length > 0 && !isFieldHidden(hiddenIf, parameters),
     )
     .sort((a, b) => {
       const posA = fieldIndexMap.get(a.key) ?? Infinity
@@ -189,56 +205,73 @@ export default function StepParameterRows({
   }
 
   return (
-    <Box
-      pt={1}
-      pb={3}
-      pl="58px"
-      pr={4}
-      borderTop="1px solid"
-      borderColor="base.divider.medium"
-    >
-      {connectionLabel && (
-        <ParameterRow label="Connection">
-          <Text as="span" fontSize="sm" color="base.content.default">
-            {connectionLabel}
-          </Text>
-        </ParameterRow>
-      )}
-      {rows.map(({ key, label, displayValue }) => {
-        const segments = parseParameterValue(displayValue as string)
-
-        return (
+    <>
+      {dynamicFieldQueries.map(({ fieldKey, key, queryParameters }) => (
+        <DynamicFieldOptionsFetcher
+          key={fieldKey}
+          stepId={stepId}
+          fieldKey={fieldKey}
+          dynamicDataKey={key}
+          queryParameters={queryParameters}
+          onLoaded={handleDynamicOptionsLoaded}
+        />
+      ))}
+      <Box
+        pt={1}
+        pb={3}
+        pl="58px"
+        pr={4}
+        borderTop="1px solid"
+        borderColor="base.divider.medium"
+      >
+        {connectionLabel && (
+          <ParameterRow label="Connection">
+            <Text as="span" fontSize="sm" color="base.content.default">
+              {connectionLabel}
+            </Text>
+          </ParameterRow>
+        )}
+        {rows.map(({ key, label, displayLines }) => (
           <ParameterRow key={key} label={label}>
-            <Box
-              as="span"
-              fontSize="sm"
-              color="base.content.default"
-              lineHeight="1.6"
-              display="flex"
-              flexWrap="wrap"
-              alignItems="center"
-              gap={0.75}
-            >
-              {segments.map((seg, i) => {
-                if (seg.type === 'text') {
-                  // eslint-disable-next-line react/no-array-index-key
-                  return <Fragment key={i}>{seg.text}</Fragment>
-                }
-                const variableKey = `step.${seg.stepId}.${seg.path}`
+            <Flex direction="column" gap={1}>
+              {displayLines.map((line, lineIndex) => {
+                const segments = parseParameterValue(line)
+
                 return (
-                  // eslint-disable-next-line react/no-array-index-key
-                  <VariablePill
-                    key={i}
-                    label={variableLabelsByPath.get(variableKey) ?? seg.label}
-                    value={variableValuesByPath.get(variableKey)}
-                    stepName={stepNameById.get(seg.stepId)}
-                  />
+                  <Box
+                    key={lineIndex}
+                    as="span"
+                    fontSize="sm"
+                    color="base.content.default"
+                    lineHeight="1.6"
+                    display="flex"
+                    flexWrap="wrap"
+                    alignItems="center"
+                    gap={0.75}
+                  >
+                    {segments.map((seg, i) => {
+                      if (seg.type === 'text') {
+                        return <Fragment key={i}>{seg.text}</Fragment>
+                      }
+                      const variableKey = `step.${seg.stepId}.${seg.path}`
+                      return (
+                        <VariablePill
+                          key={i}
+                          label={
+                            variableLabelsByPath.get(variableKey) ?? seg.label
+                          }
+                          value={variableValuesByPath.get(variableKey)}
+                          stepName={stepNameById.get(seg.stepId)}
+                        />
+                      )
+                    })}
+                  </Box>
                 )
               })}
-            </Box>
+            </Flex>
           </ParameterRow>
-        )
-      })}
-    </Box>
+        ))}
+      </Box>
+    </>
   )
 }
