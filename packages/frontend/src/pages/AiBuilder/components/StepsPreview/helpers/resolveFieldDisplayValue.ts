@@ -31,14 +31,14 @@ export function resolveFieldLabel(
   )
 }
 
-type FieldWithOptions = {
+export type FieldWithOptions = {
   key?: string
-  options?: Array<{ label: string; value: string | number }>
+  options?: Array<{ label: string; value: string | number | boolean }>
   subFields?: FieldWithOptions[]
 }
 
 // Resolve a single scalar value against a field's option list.
-function resolveOptionLabel(
+export function resolveOptionLabel(
   field: FieldWithOptions | undefined,
   strValue: string,
 ): string {
