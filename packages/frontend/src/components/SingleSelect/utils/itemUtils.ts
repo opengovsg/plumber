@@ -22,6 +22,10 @@ export const isItemAddNew = <Item extends ComboboxItem>(
   return itemIsObject(item) && !!item.isAddNew
 }
 
+export const isItemHint = <Item extends ComboboxItem>(item: Item): boolean => {
+  return itemIsObject(item) && !!item.isHint
+}
+
 export const itemToLabelString = <Item extends ComboboxItem>(
   item?: Item,
 ): string | JSX.Element => {
