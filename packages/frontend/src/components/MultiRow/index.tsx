@@ -254,7 +254,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   isDisabled={isEditorReadOnly}
                   maxW="fit-content"
                 >
-                  {addRowButtonText ?? 'Add'}
+                  {addRowButtonText ?? 'And'}
                 </Button>
               )}
               {canAutofill && (
@@ -268,7 +268,9 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   isLoading={isDynamicDataLoading}
                   onClick={onAutofillClick}
                 >
-                  {optionCount != null ? `Add all ${optionCount} fields` : 'Add all'}
+                  {optionCount != null
+                    ? `Add all ${optionCount} fields`
+                    : 'Add all'}
                 </Button>
               )}
               {addButtonSuffix}
