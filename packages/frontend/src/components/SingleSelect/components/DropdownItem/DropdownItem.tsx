@@ -6,6 +6,7 @@ import { useSelectContext } from '../../SelectContext'
 import { ComboboxItem } from '../../types'
 import {
   isItemDisabled,
+  isItemHint,
   itemToBadge,
   itemToDescriptionString,
   itemToIcon,
@@ -26,17 +27,36 @@ export const DropdownItem = ({
   const { getItemProps, isItemSelected, inputValue, styles } =
     useSelectContext()
 
-  const { icon, label, description, isDisabled, isActive, badge } = useMemo(
-    () => ({
-      icon: itemToIcon(item),
-      label: itemToLabelString(item),
-      description: itemToDescriptionString(item),
-      isDisabled: isItemDisabled(item),
-      isActive: isItemSelected(item),
-      badge: itemToBadge(item),
-    }),
-    [isItemSelected, item],
-  )
+  const { icon, label, description, isDisabled, isActive, badge, isHint } =
+    useMemo(
+      () => ({
+        icon: itemToIcon(item),
+        label: itemToLabelString(item),
+        description: itemToDescriptionString(item),
+        isDisabled: isItemDisabled(item),
+        isActive: isItemSelected(item),
+        badge: itemToBadge(item),
+        isHint: isItemHint(item),
+      }),
+      [isItemSelected, item],
+    )
+
+  if (isHint) {
+    return (
+      <ListItem
+        {...getItemProps({
+          item,
+          index,
+          disabled: true,
+        })}
+        role="presentation"
+        pointerEvents="none"
+        sx={styles.emptyItem}
+      >
+        {label}
+      </ListItem>
+    )
+  }
 
   return (
     <ListItem
