@@ -47,6 +47,7 @@ const action: IRawAction = {
       label: 'Case fields',
       key: 'caseFields',
       type: 'multirow-multicol' as const,
+      autofillable: true,
       required: false,
       description:
         'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet.',

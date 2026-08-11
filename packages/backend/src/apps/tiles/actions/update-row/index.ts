@@ -59,6 +59,7 @@ const action: IRawAction = {
       label: 'Row data',
       key: 'rowData',
       type: 'multirow-multicol' as const,
+      autofillable: true,
       description:
         'Enter the data to update the row with. Columns not specified will not be updated.',
       required: true,

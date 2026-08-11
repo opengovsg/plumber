@@ -21,6 +21,8 @@ export type ComboboxItem<T = string> =
       badge?: JSX.Element
       /** Whether this is an option to add new */
       isAddNew?: boolean
+      /** Read-only hint row (e.g. "Type to create a new column.") */
+      isHint?: boolean
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [key: string]: any
     }

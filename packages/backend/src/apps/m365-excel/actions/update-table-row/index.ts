@@ -37,6 +37,7 @@ const action: IRawAction = {
       description:
         'Enter the data to update the row with. Columns not specified will not be updated',
       type: 'multirow-multicol' as const,
+      autofillable: true,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',

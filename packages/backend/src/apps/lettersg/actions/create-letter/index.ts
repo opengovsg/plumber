@@ -68,6 +68,7 @@ const action: IRawAction = {
       label: 'Personalised fields',
       key: 'letterParams',
       type: 'multirow-multicol' as const,
+      autofillable: true,
       required: true,
       description:
         'Specify values for each personalised field in your template.',

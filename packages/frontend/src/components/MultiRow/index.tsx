@@ -2,7 +2,7 @@ import type { IField, IJSONValue } from '@plumber/types'
 
 import { ReactNode, useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
-import { BiPlus, BiTrash } from 'react-icons/bi'
+import { BiListPlus, BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
 import { Flex } from '@chakra-ui/react'
 import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
@@ -12,7 +12,9 @@ import { EditorContext } from '@/contexts/Editor'
 
 import MultiCol from '../MultiCol.tsx'
 
+import AutofillConfirmDialog from './AutofillConfirmDialog'
 import RowDivider from './RowDivider'
+import useAutofill from './useAutofill'
 
 export type MultiRowProps = {
   name: string
@@ -26,6 +28,8 @@ export type MultiRowProps = {
   type?: string
   maxRows?: number
   defaultValue?: string | IJSONValue
+  // See IFieldMultiRowMultiCol.autofillable.
+  autofillable?: boolean
   // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
   // own controls). Renders even when the add-row button is hidden at maxRows.
   addButtonSuffix?: ReactNode
@@ -49,6 +53,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     type,
     maxRows,
     defaultValue,
+    autofillable,
     addButtonSuffix,
     onRequestRemoveLastRow,
     ...forwardedInputCreatorProps
@@ -72,6 +77,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     fields: rows,
     append,
     remove,
+    replace,
   } = useFieldArray({
     name,
     rules: { required },
@@ -102,6 +108,24 @@ function MultiRow(props: MultiRowProps): JSX.Element {
       shouldValidate: true,
     })
   }, [append, newRowDefaultValue, subFields, setValue, getValues, name])
+
+  const {
+    canAutofill,
+    isLoading: isDynamicDataLoading,
+    optionCount,
+    onAutofillClick,
+    confirm,
+  } = useAutofill({
+    autofillable,
+    type,
+    subFields,
+    stepId: forwardedInputCreatorProps.stepId,
+    name,
+    newRowDefaultValue,
+    replace,
+    getValues,
+    setValue,
+  })
 
   return (
     // Use Controller's defaultValue to introduce 1 blank row by default. We
@@ -233,8 +257,26 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   {addRowButtonText ?? 'And'}
                 </Button>
               )}
+              {canAutofill && (
+                <Button
+                  variant="clear"
+                  leftIcon={<BiListPlus />}
+                  maxW="fit-content"
+                  isDisabled={
+                    isEditorReadOnly || optionCount == null || optionCount === 0
+                  }
+                  isLoading={isDynamicDataLoading}
+                  onClick={onAutofillClick}
+                >
+                  {optionCount != null
+                    ? `Add all ${optionCount} fields`
+                    : 'Add all'}
+                </Button>
+              )}
               {addButtonSuffix}
             </Flex>
+
+            {canAutofill && <AutofillConfirmDialog confirm={confirm} />}
           </Flex>
         )
       }}

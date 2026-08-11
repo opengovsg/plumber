@@ -131,6 +131,19 @@ export const SingleSelectProvider = ({
       }
       return [addNewByModalItem, ...allItems]
     }
+    // Inline add-new: show a read-only hint at the bottom while the input is empty
+    if (addNew?.type === 'inline') {
+      const hintLabel = `Type to ${addNew.label.toLowerCase()}`
+      return [
+        ...allItems,
+        {
+          value: hintLabel,
+          label: hintLabel,
+          disabled: true,
+          isHint: true,
+        },
+      ]
+    }
     return allItems
   }, [addNew, allItems])
 

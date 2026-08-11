@@ -52,6 +52,7 @@ const createRowAction: IRawAction = {
       label: 'New row data',
       key: 'rowData',
       type: 'multirow-multicol' as const,
+      autofillable: true,
       required: true,
       hiddenIf: {
         fieldKey: 'tableName',
@@ -59,7 +60,7 @@ const createRowAction: IRawAction = {
       },
       subFields: [
         {
-          placeholder: 'Select or type to create a column',
+          placeholder: 'Select or type',
           key: 'columnName',
           type: 'dropdown' as const,
           required: true,
