@@ -1,4 +1,12 @@
-import type { IApp } from '@plumber/types'
+import type { IApp, IField, TFieldPreviewType } from '@plumber/types'
+
+// Only rich-text fields carry previewType. Narrows the IField union so
+// callers don't need to know which field type it lives on.
+export function getFieldPreviewType(
+  field?: IField,
+): TFieldPreviewType | undefined {
+  return field?.type === 'rich-text' ? field.previewType : undefined
+}
 
 function camelToSentence(key: string): string {
   const words = key.replace(/([A-Z])/g, ' $1').trim()
