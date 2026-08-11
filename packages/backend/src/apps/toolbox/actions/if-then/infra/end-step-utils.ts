@@ -159,3 +159,54 @@ export function expandIfThenBlockDeletions<T extends RepairStep>(
 
   return { expandedIds, danglingIfThenIds }
 }
+
+/**
+ * Computes marker reassignments after a reorder. A reorder never changes
+ * block membership, so a block moved as a whole unit produces no patch —
+ * only an endStep that's no longer the highest-positioned member does.
+ *
+ * IMPORTANT: `preSteps` must be ordered by position ascending.
+ */
+export function reassignIfThenEndStepsOnReorder<T extends RepairStep>(
+  preSteps: T[],
+  newPositions: { id: string; position: number }[],
+): EndStepPatch[] {
+  const newPositionById = new Map(
+    newPositions.map(({ id, position }) => [id, position]),
+  )
+  const positionOf = (step: T): number =>
+    newPositionById.get(step.id) ?? step.position
+
+  const patches: EndStepPatch[] = []
+
+  for (const step of preSteps) {
+    if (!isIfThenV2(step)) {
+      continue
+    }
+    const oldEndStepId = step.config?.[BLOCK_END_STEP_ID]
+    const oldEnd = preSteps.find((s) => s.id === oldEndStepId)
+    // A dangling marker is out of scope for reorder repair.
+    if (!oldEnd) {
+      continue
+    }
+    const members = preSteps.filter(
+      (s) => s.position > step.position && s.position <= oldEnd.position,
+    )
+    // An empty (self-referencing) block has nothing to reassign.
+    if (members.length === 0) {
+      continue
+    }
+
+    let newEnd = members[0]
+    for (const member of members) {
+      if (positionOf(member) > positionOf(newEnd)) {
+        newEnd = member
+      }
+    }
+    if (newEnd.id !== oldEndStepId) {
+      patches.push({ ifThenStepId: step.id, endStepId: newEnd.id })
+    }
+  }
+
+  return patches
+}
