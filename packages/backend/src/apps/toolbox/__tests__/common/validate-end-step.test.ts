@@ -1,14 +1,45 @@
 import type { IStepConfig } from '@plumber/types'
 
+import { raw, Transaction } from 'objection'
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import type Flow from '@/models/flow'
 
+import { BLOCK_END_STEP_ID } from '../../common/constants'
 import {
   extractSelfEndStepIntent,
+  upgradeIfThenV1BlocksIfEnabled,
   validateEndStepWrite,
   validateFlowBlocks,
 } from '../../common/validate-end-step'
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: vi.fn(),
+}))
+
+const stepPatchMocks = vi.hoisted(() => ({
+  patchCalls: [] as { id: string; patch: unknown }[],
+  deleteCalls: [] as string[],
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: () => ({
+      findById: (id: string) => ({
+        patch: (patch: unknown) => {
+          stepPatchMocks.patchCalls.push({ id, patch })
+          return Promise.resolve()
+        },
+        delete: () => {
+          stepPatchMocks.deleteCalls.push(id)
+          return Promise.resolve()
+        },
+      }),
+    }),
+  },
+}))
 
 type Fixture = {
   id: string
@@ -572,5 +603,258 @@ describe('validateFlowBlocks', () => {
         reason: 'overlapping-blocks',
       }),
     )
+  })
+})
+
+describe('upgradeIfThenV1BlocksIfEnabled', () => {
+  const getLdFlagValueMock = vi.mocked(getLdFlagValue)
+  const trx = {} as Transaction
+
+  const flowPositionPatchMocks = {
+    patchCalls: [] as { threshold: number; patch: unknown }[],
+  }
+
+  // `stepsAfterBlankRemoval` stands in for what a real DB re-fetch would
+  // return after the blank-cleanup deletes and compacts positions. Only
+  // consulted by tests that actually trigger a cleanup.
+  function fakeFlow(
+    ownerEmail: string,
+    stepsAfterBlankRemoval: Fixture[] = [],
+  ): Flow {
+    return {
+      id: FLOW_ID,
+      $relatedQuery: vi.fn((relation: string) => {
+        if (relation === 'user') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            throwIfNotFound: vi.fn().mockResolvedValue({ email: ownerEmail }),
+          }
+        }
+        return {
+          orderBy: vi.fn().mockResolvedValue(stepsAfterBlankRemoval),
+          where: vi.fn((_column: string, _operator: string, value: number) => ({
+            patch: vi.fn((patch: unknown) => {
+              flowPositionPatchMocks.patchCalls.push({
+                threshold: value,
+                patch,
+              })
+              return Promise.resolve()
+            }),
+          })),
+        }
+      }),
+    } as unknown as Flow
+  }
+
+  const pinPatch = (endStepId: string) => ({
+    config: raw(`jsonb_set(config, '{${BLOCK_END_STEP_ID}}', ?::jsonb)`, [
+      JSON.stringify(endStepId),
+    ]),
+  })
+
+  const shiftPatch = () => ({ position: raw('position - 1') })
+
+  // A leftover blank child from the V1 branch initializer.
+  const blank = (id: string, position: number): Fixture => ({
+    id,
+    position,
+    config: {},
+  })
+
+  beforeEach(() => {
+    getLdFlagValueMock.mockReset()
+    stepPatchMocks.patchCalls.length = 0
+    stepPatchMocks.deleteCalls.length = 0
+    flowPositionPatchMocks.patchCalls.length = 0
+  })
+
+  it('returns before checking the flag when there are no V1 if-thens', async () => {
+    const flowSteps = [trigger(1), plain('s2', 2)]
+
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      fakeFlow('owner@example.com'),
+      flowSteps,
+    )
+
+    expect(getLdFlagValueMock).not.toHaveBeenCalled()
+    expect(stepPatchMocks.patchCalls).toHaveLength(0)
+  })
+
+  it('does nothing when the flag is off for the pipe owner', async () => {
+    const block = ifThen('block', 2)
+    const flowSteps = [trigger(1), block, plain('s3', 3)]
+    getLdFlagValueMock.mockResolvedValue(false)
+
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      fakeFlow('owner@example.com'),
+      flowSteps,
+    )
+
+    expect(getLdFlagValueMock).toHaveBeenCalledWith(
+      'feature_if_then_then',
+      'owner@example.com',
+      false,
+    )
+    expect(stepPatchMocks.patchCalls).toHaveLength(0)
+  })
+
+  it('pins every V1 if-then block to its own independently-derived endStep', async () => {
+    const ifThenA = ifThen('ifThenA', 2)
+    const childA = plain('childA', 3)
+    const ifThenB = ifThen('ifThenB', 4)
+    const childB = plain('childB', 5)
+    const trailing = plain('trailing', 6)
+    const flowSteps = [trigger(1), ifThenA, childA, ifThenB, childB, trailing]
+    getLdFlagValueMock.mockResolvedValue(true)
+
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      fakeFlow('owner@example.com'),
+      flowSteps,
+    )
+
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'ifThenA', patch: pinPatch('childA') },
+      { id: 'ifThenB', patch: pinPatch('trailing') },
+    ])
+  })
+
+  it('excludes steps about to be deleted from consideration', async () => {
+    const block = ifThen('block', 2)
+    const flowSteps = [trigger(1), block, plain('s3', 3)]
+    getLdFlagValueMock.mockResolvedValue(true)
+
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      fakeFlow('owner@example.com'),
+      flowSteps,
+      new Set(['block']),
+    )
+
+    expect(stepPatchMocks.patchCalls).toHaveLength(0)
+  })
+
+  it('throws end-step-write-rejected when a derived extent violates region confinement', async () => {
+    const block = ifThen('block', 3, { approval: REJECTION_BRANCH })
+    const flowSteps = [
+      trigger(1),
+      mrfSubmission('mrf', 2),
+      block,
+      plain('topLevel', 4),
+    ]
+    getLdFlagValueMock.mockResolvedValue(true)
+
+    await expect(
+      upgradeIfThenV1BlocksIfEnabled(
+        trx,
+        fakeFlow('owner@example.com'),
+        flowSteps,
+      ),
+    ).rejects.toThrow()
+    expect(stepPatchMocks.patchCalls).toHaveLength(0)
+  })
+
+  it('deletes a lone blank member and self-references the emptied block', async () => {
+    const block = ifThen('block', 2)
+    const child = blank('child', 3)
+    const flowSteps = [trigger(1), block, child]
+    getLdFlagValueMock.mockResolvedValue(true)
+    const flow = fakeFlow('owner@example.com', [trigger(1), block])
+
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, flowSteps)
+
+    expect(stepPatchMocks.deleteCalls).toEqual(['child'])
+    expect(flowPositionPatchMocks.patchCalls).toEqual([
+      { threshold: 3, patch: shiftPatch() },
+    ])
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'block', patch: pinPatch('block') },
+    ])
+  })
+
+  it('deletes a blank member and pins to the surviving real step', async () => {
+    const block = ifThen('block', 2)
+    const real = plain('real', 3)
+    const child = blank('child', 4)
+    const flowSteps = [trigger(1), block, real, child]
+    getLdFlagValueMock.mockResolvedValue(true)
+    const flow = fakeFlow('owner@example.com', [trigger(1), block, real])
+
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, flowSteps)
+
+    expect(stepPatchMocks.deleteCalls).toEqual(['child'])
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'block', patch: pinPatch('real') },
+    ])
+  })
+
+  it('deletes multiple blank members in the same block, highest position first', async () => {
+    const block = ifThen('block', 2)
+    const firstBlank = blank('firstBlank', 3)
+    const real = plain('real', 4)
+    const secondBlank = blank('secondBlank', 5)
+    const flowSteps = [trigger(1), block, firstBlank, real, secondBlank]
+    getLdFlagValueMock.mockResolvedValue(true)
+    const flow = fakeFlow('owner@example.com', [
+      trigger(1),
+      block,
+      { ...real, position: 3 },
+    ])
+
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, flowSteps)
+
+    expect(stepPatchMocks.deleteCalls).toEqual(['secondBlank', 'firstBlank'])
+    expect(flowPositionPatchMocks.patchCalls).toEqual([
+      { threshold: 5, patch: shiftPatch() },
+      { threshold: 3, patch: shiftPatch() },
+    ])
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'block', patch: pinPatch('real') },
+    ])
+  })
+
+  it('does not delete a blank member the caller already excluded', async () => {
+    const block = ifThen('block', 2)
+    const child = blank('child', 3)
+    const flowSteps = [trigger(1), block, child]
+    getLdFlagValueMock.mockResolvedValue(true)
+    const flow = fakeFlow('owner@example.com')
+
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      flow,
+      flowSteps,
+      new Set(['child']),
+    )
+
+    expect(stepPatchMocks.deleteCalls).toEqual([])
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'block', patch: pinPatch('child') },
+    ])
+  })
+
+  it('re-derives a later block correctly after an earlier blank removal shifts positions', async () => {
+    const ifThenA = ifThen('ifThenA', 2)
+    const blankA = blank('blankA', 3)
+    const ifThenB = ifThen('ifThenB', 4)
+    const childB = plain('childB', 5)
+    const flowSteps = [trigger(1), ifThenA, blankA, ifThenB, childB]
+    getLdFlagValueMock.mockResolvedValue(true)
+    const flow = fakeFlow('owner@example.com', [
+      trigger(1),
+      ifThenA,
+      { ...ifThenB, position: 3 },
+      { ...childB, position: 4 },
+    ])
+
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, flowSteps)
+
+    expect(stepPatchMocks.deleteCalls).toEqual(['blankA'])
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'ifThenA', patch: pinPatch('ifThenA') },
+      { id: 'ifThenB', patch: pinPatch('childB') },
+    ])
   })
 })
