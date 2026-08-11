@@ -210,3 +210,71 @@ export function reassignIfThenEndStepsOnReorder<T extends RepairStep>(
 
   return patches
 }
+
+/**
+ * Remaps if-then markers after a whole-flow duplication. `endStepId` is a
+ * forward reference, so this must run as a post-pass once every step has a
+ * copy.
+ *
+ * IMPORTANT: returned patch ids are the NEW (copied) step ids, not the
+ * source ids.
+ */
+export function remapIfThenEndStepIdsOnDuplicate<T extends RepairStep>(
+  sourceSteps: T[],
+  oldToNewStepIds: Record<string, string>,
+): { patches: EndStepPatch[]; danglingSourceStepIds: string[] } {
+  const patches: EndStepPatch[] = []
+  const danglingSourceStepIds: string[] = []
+
+  for (const step of sourceSteps) {
+    if (!isIfThenV2(step)) {
+      continue
+    }
+    const newIfThenId = oldToNewStepIds[step.id]
+    const newEndStepId = oldToNewStepIds[step.config?.[BLOCK_END_STEP_ID] ?? '']
+    if (newIfThenId === undefined) {
+      continue
+    }
+    if (newEndStepId === undefined) {
+      danglingSourceStepIds.push(step.id)
+      continue
+    }
+    patches.push({ ifThenStepId: newIfThenId, endStepId: newEndStepId })
+  }
+
+  return { patches, danglingSourceStepIds }
+}
+
+/**
+ * Remaps if-then markers after a branch duplication. `sourceSelection[i]`
+ * was copied to `newStepIds[i]`.
+ *
+ * IMPORTANT: markers are read from the source rows, never from
+ * client-copied config values.
+ */
+export function remapIfThenEndStepIdsOnDuplicateBranch<T extends RepairStep>(
+  sourceSelection: T[],
+  newStepIds: string[],
+): { patches: EndStepPatch[]; strippedSourceStepIds: string[] } {
+  const patches: EndStepPatch[] = []
+  const strippedSourceStepIds: string[] = []
+
+  for (let i = 0; i < sourceSelection.length; i++) {
+    const sourceStep = sourceSelection[i]
+    if (!isIfThenV2(sourceStep)) {
+      continue
+    }
+    const oldEndStepId = sourceStep.config?.[BLOCK_END_STEP_ID]
+    const endIndex = sourceSelection.findIndex((s) => s.id === oldEndStepId)
+    if (endIndex === -1) {
+      strippedSourceStepIds.push(sourceStep.id)
+      continue
+    }
+    patches.push({
+      ifThenStepId: newStepIds[i],
+      endStepId: newStepIds[endIndex],
+    })
+  }
+
+  return { patches, strippedSourceStepIds }
+}
