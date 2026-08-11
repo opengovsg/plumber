@@ -2,8 +2,6 @@ import { IGlobalVariable } from '@plumber/types'
 
 import get from 'lodash.get'
 
-import { getLdFlagValue } from '@/helpers/launch-darkly'
-
 import { FORM_ID_LENGTH } from '../common/constants'
 import {
   FormEnv,
@@ -26,7 +24,6 @@ export const verifyFormCreds = async (
   const formSchema = await fetchFormSchema($, formId)
   const formTitle = get(formSchema, 'form.title')
   const publicKey = get(formSchema, 'form.publicKey')
-  const isMrf = get(formSchema, 'form.responseMode') === 'multirespondent'
 
   if (!formTitle) {
     throw new Error('Form does not exist')
@@ -36,27 +33,13 @@ export const verifyFormCreds = async (
     throw new Error('Form is not a storage mode form')
   }
 
-  if (isMrf) {
-    const canConnectMrf = await getLdFlagValue(
-      'allow-mrf-form',
-      $.user?.email ?? null,
-      false,
-    )
-    if (!canConnectMrf) {
-      throw new Error('MRF forms are not supported yet. Check back soon!')
-    }
-  }
-
   const formsgSdk = getSdk(env)
   if (!formsgSdk.crypto.valid(publicKey, secretKey)) {
     throw new Error('Invalid secret key')
   }
 
   // Prefix label with "[$env]" for non-prod environments
-  let prefix = env !== 'prod' ? `[${env.toUpperCase()}] ` : ''
-  if (isMrf) {
-    prefix += '[MRF] '
-  }
+  const prefix = env !== 'prod' ? `[${env.toUpperCase()}] ` : ''
   await $.auth.set({
     screenName: `${prefix}${formId} - ${formTitle}`,
     env,
