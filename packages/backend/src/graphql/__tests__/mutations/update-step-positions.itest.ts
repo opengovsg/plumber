@@ -1,8 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import updateStepPositions from '@/graphql/mutations/update-step-positions'
+import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
+import User from '@/models/user'
+import Context from '@/types/express/context'
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 
@@ -106,6 +110,8 @@ describe('updateStepPositions mutation', () => {
     })
     vi.spyOn(Step, 'query').mockReturnValue({
       findById: stepFindByIdSpy,
+      // Subquery builder used to scope the step load to the flow.
+      select: vi.fn().mockReturnValue({ whereIn: vi.fn() }),
     } as any)
 
     // Fake the chained query methods on context.currentUser.$relatedQuery('steps')
@@ -322,5 +328,153 @@ describe('updateStepPositions mutation', () => {
     await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
       'Failed to update: steps were not found',
     )
+  })
+})
+
+// Real-DB integration tests, kept separate from the mock-based suite above
+// so the repair runs against real flow steps.
+describe('updateStepPositions endStepId repair', () => {
+  let testFlow: Flow
+  let owner: User
+  let context: Context
+  let loggerInfoSpy: MockInstance
+
+  const flowInput = () => ({
+    updatedAt: new Date(testFlow.updatedAt).getTime().toString(),
+  })
+
+  async function seedSteps(
+    specs: Array<{
+      key: string | null
+      appKey: string | null
+      type: 'trigger' | 'action'
+      config?: Record<string, any>
+      parameters?: Record<string, any>
+    }>,
+  ): Promise<Step[]> {
+    return testFlow.$relatedQuery('steps').insertAndFetch(
+      specs.map((spec, index) => ({
+        key: spec.key,
+        appKey: spec.appKey,
+        type: spec.type,
+        position: index + 1,
+        parameters: spec.parameters ?? {},
+        config: spec.config ?? {},
+      })),
+    ) as unknown as Promise<Step[]>
+  }
+
+  const reload = async (id: string): Promise<Step> =>
+    Step.query().findById(id).throwIfNotFound()
+
+  const wasRepaired = () =>
+    loggerInfoSpy.mock.calls.some(
+      ([arg]) =>
+        arg?.event === 'end-step-repaired' &&
+        arg?.mutation === 'updateStepPositions',
+    )
+
+  beforeEach(async () => {
+    vi.restoreAllMocks()
+
+    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    context = {
+      req: null,
+      currentUser: owner,
+      res: null,
+      isAdminOperation: false,
+    } as unknown as Context
+
+    testFlow = await owner.$relatedQuery('flows').insertAndFetch({
+      name: 'Reorder Flow',
+      updatedBy: owner.id,
+    })
+
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => null)
+  })
+
+  it('moves the endStep marker to the new highest member after an interior reorder', async () => {
+    const [, ifThen, s3, s4, s5] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+    await ifThen.$query().patch({ config: { endStepId: s5.id } })
+
+    // Reorder the block interior [s3, s4, s5] -> [s5, s3, s4].
+    await updateStepPositions(
+      null,
+      {
+        input: {
+          stepPositions: [
+            { id: s5.id, position: 3, type: 'action' as const },
+            { id: s3.id, position: 4, type: 'action' as const },
+            { id: s4.id, position: 5, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect((await reload(ifThen.id)).config.endStepId).toBe(s4.id)
+    expect(wasRepaired()).toBe(true)
+  })
+
+  it('leaves the marker untouched when the reorder does not touch the block', async () => {
+    const [, ifThen, s3, a4, a5] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+    await ifThen.$query().patch({ config: { endStepId: s3.id } })
+
+    // Reorder two later steps that sit outside the block.
+    await updateStepPositions(
+      null,
+      {
+        input: {
+          stepPositions: [
+            { id: a5.id, position: 4, type: 'action' as const },
+            { id: a4.id, position: 5, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect((await reload(ifThen.id)).config.endStepId).toBe(s3.id)
+    expect(wasRepaired()).toBe(false)
+  })
+
+  it('reorders a legacy (marker-less) flow without writing any marker', async () => {
+    const [, legacy, s3, s4] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+
+    await updateStepPositions(
+      null,
+      {
+        input: {
+          stepPositions: [
+            { id: s4.id, position: 3, type: 'action' as const },
+            { id: s3.id, position: 4, type: 'action' as const },
+          ],
+          flow: flowInput(),
+        },
+      },
+      context,
+    )
+
+    expect((await reload(legacy.id)).config.endStepId).toBeUndefined()
+    expect(wasRepaired()).toBe(false)
   })
 })

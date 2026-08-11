@@ -6,6 +6,7 @@ import {
   deriveIfThenV1EndStep,
   findBlankPlaceholderMemberIds,
   reassignIfThenEndStepsOnDelete,
+  reassignIfThenEndStepsOnReorder,
 } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
@@ -308,6 +309,37 @@ export async function repairEndStepsOnDeleteStep({
     logger.info({
       event: 'end-step-repaired',
       mutation: 'deleteStep',
+      ifThenStepId,
+      endStepId,
+      flowId: flow.id,
+    })
+  }
+}
+
+/**
+ * Repairs if-then markers after an updateStepPositions, patching only the
+ * markers that actually changed.
+ *
+ * IMPORTANT: a repaired marker still points at a block member, so it stays
+ * valid by construction. Structural mutations repair here, never reject.
+ */
+export async function repairEndStepsOnReorder({
+  trx,
+  flow,
+  preSteps,
+  newPositions,
+}: {
+  trx: Transaction
+  flow: Flow
+  preSteps: Step[]
+  newPositions: { id: string; position: number }[]
+}): Promise<void> {
+  const patches = reassignIfThenEndStepsOnReorder(preSteps, newPositions)
+  for (const { ifThenStepId, endStepId } of patches) {
+    await pinEndStep(trx, ifThenStepId, endStepId)
+    logger.info({
+      event: 'end-step-repaired',
+      mutation: 'updateStepPositions',
       ifThenStepId,
       endStepId,
       flowId: flow.id,
