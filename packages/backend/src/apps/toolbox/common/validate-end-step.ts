@@ -5,6 +5,7 @@ import { raw, Transaction } from 'objection'
 import {
   deriveIfThenV1EndStep,
   findBlankPlaceholderMemberIds,
+  reassignIfThenEndStepsOnDelete,
 } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
@@ -275,5 +276,41 @@ export async function deriveV1EndStepDroppingBlankMembers(
       refetchedSteps.find((step) => step.id === ifThenStep.id),
     ),
     cleaned: true,
+  }
+}
+
+/**
+ * Repairs if-then markers after a deleteStep. Runs over the surviving step
+ * set (not the deleted ids), so it also covers steps removed indirectly via
+ * `removeMrfSteps`.
+ *
+ * IMPORTANT: a repaired marker only ever shrinks its block, so it stays
+ * valid by construction. Structural mutations repair here, never reject.
+ */
+export async function repairEndStepsOnDeleteStep({
+  trx,
+  flow,
+  stepsBeforeDelete,
+}: {
+  trx: Transaction
+  flow: Flow
+  stepsBeforeDelete: Step[]
+}): Promise<void> {
+  const survivingSteps = await flow.$relatedQuery('steps', trx)
+  const survivingIds = new Set(survivingSteps.map((step) => step.id))
+  const deletedIds = stepsBeforeDelete
+    .map((step) => step.id)
+    .filter((id) => !survivingIds.has(id))
+
+  const patches = reassignIfThenEndStepsOnDelete(stepsBeforeDelete, deletedIds)
+  for (const { ifThenStepId, endStepId } of patches) {
+    await pinEndStep(trx, ifThenStepId, endStepId)
+    logger.info({
+      event: 'end-step-repaired',
+      mutation: 'deleteStep',
+      ifThenStepId,
+      endStepId,
+      flowId: flow.id,
+    })
   }
 }

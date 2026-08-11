@@ -1,8 +1,10 @@
 import type { IStep } from '@plumber/types'
 
 import {
+  BLOCK_END_STEP_ID,
   isBlankPlaceholderStep,
   isIfThenStep,
+  isIfThenV2,
   type StepLike,
 } from '../../../common/constants'
 
@@ -11,6 +13,16 @@ import {
 type ExtentStep = StepLike &
   Pick<IStep, 'id' | 'position'> &
   Partial<Pick<IStep, 'parameters'>>
+
+// Loose enough that unit tests can pass partial plain objects instead of
+// full Step rows.
+// IMPORTANT: callers must pass steps ordered by position ascending.
+type RepairStep = StepLike & Pick<IStep, 'id' | 'position'>
+
+export interface EndStepPatch {
+  ifThenStepId: string
+  endStepId: string
+}
 
 // Mirrors getIfThenV1StepIdToSkipTo's depth defaulting; nesting never shipped,
 // so this is dead-code defense.
@@ -63,4 +75,87 @@ export function findBlankPlaceholderMemberIds<T extends ExtentStep>(
         isBlankPlaceholderStep(step),
     )
     .map((step) => step.id)
+}
+
+/**
+ * IMPORTANT: `stepsBeforeDelete` must be ordered by position ascending and
+ * reflect pre-delete positions. A block whose own if-then was deleted needs
+ * no repair here — block-expansion removes it whole instead.
+ */
+export function reassignIfThenEndStepsOnDelete<T extends RepairStep>(
+  stepsBeforeDelete: T[],
+  deletedIds: string[],
+): EndStepPatch[] {
+  const deleted = new Set(deletedIds)
+  const patches: EndStepPatch[] = []
+
+  for (const step of stepsBeforeDelete) {
+    if (!isIfThenV2(step) || deleted.has(step.id)) {
+      continue
+    }
+    const oldEndStepId = step.config?.[BLOCK_END_STEP_ID]
+    // endStep survived, or the marker was already dangling — nothing to repair.
+    if (oldEndStepId === undefined || !deleted.has(oldEndStepId)) {
+      continue
+    }
+    const oldEnd = stepsBeforeDelete.find((s) => s.id === oldEndStepId)
+    if (!oldEnd) {
+      continue
+    }
+
+    let endStepId = step.id
+    let endPosition = step.position
+    for (const candidate of stepsBeforeDelete) {
+      if (
+        !deleted.has(candidate.id) &&
+        candidate.position > step.position &&
+        candidate.position <= oldEnd.position &&
+        candidate.position > endPosition
+      ) {
+        endStepId = candidate.id
+        endPosition = candidate.position
+      }
+    }
+    patches.push({ ifThenStepId: step.id, endStepId })
+  }
+
+  return patches
+}
+
+/**
+ * Expands a requested delete set so deleting a new-style if-then also
+ * deletes its whole block range. A client that already sent the full range
+ * (e.g. an old-UI branch delete) is a no-op via the set union.
+ *
+ * IMPORTANT: `flowSteps` must be ordered by position ascending.
+ */
+export function expandIfThenBlockDeletions<T extends RepairStep>(
+  flowSteps: T[],
+  requestedIds: string[],
+): { expandedIds: Set<string>; danglingIfThenIds: string[] } {
+  const requested = new Set(requestedIds)
+  const expandedIds = new Set(requestedIds)
+  const danglingIfThenIds: string[] = []
+
+  for (const step of flowSteps) {
+    if (!requested.has(step.id) || !isIfThenV2(step)) {
+      continue
+    }
+    const endStepId = step.config?.[BLOCK_END_STEP_ID]
+    const endStep = flowSteps.find((s) => s.id === endStepId)
+    if (!endStep || endStep.position < step.position) {
+      danglingIfThenIds.push(step.id)
+      continue
+    }
+    for (const member of flowSteps) {
+      if (
+        member.position >= step.position &&
+        member.position <= endStep.position
+      ) {
+        expandedIds.add(member.id)
+      }
+    }
+  }
+
+  return { expandedIds, danglingIfThenIds }
 }
