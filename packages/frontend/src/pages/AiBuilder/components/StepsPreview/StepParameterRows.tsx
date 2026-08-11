@@ -11,6 +11,10 @@ import {
 import { useQuery } from '@apollo/client'
 import { Box, Flex, Table, Tbody, Td, Text, Tr } from '@chakra-ui/react'
 
+import {
+  buildVariableInfoMapFromPaths,
+  substituteForPreview,
+} from '@/components/RichTextEditor/utils'
 import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
@@ -30,10 +34,12 @@ import {
   withDynamicOptions,
 } from './helpers/dynamicFieldOptions'
 import {
+  getFieldPreviewType,
   getStepFields,
   resolveDisplayValue,
   resolveFieldLabel,
 } from './helpers/resolveFieldDisplayValue'
+import FieldPreviewButton from './FieldPreviewButton'
 import VariablePill from './VariablePill'
 
 interface DynamicFieldOptionsFetcherProps {
@@ -284,30 +290,51 @@ export default function StepParameterRows({
     [dynamicFields, parameters],
   )
 
+  const variableInfoMap = useMemo(
+    () =>
+      buildVariableInfoMapFromPaths(variableLabelsByPath, variableValuesByPath),
+    [variableLabelsByPath, variableValuesByPath],
+  )
+
   const fieldIndexMap = new Map(stepFields.map((f, i) => [f.key, i]))
   const rows = Object.entries(parameters)
     .filter(([, value]) => value !== '' && value != null)
     .map(([key, value]) => {
       const field = stepFields.find((f) => f.key === key)
       const hasAiLabel = parameterLabels[key] != null
+      // A field with a previewType is always shown via its preview button —
+      // rendering its raw value (e.g. rich-text HTML) as text would be
+      // unreadable, and this must reflect the real value regardless of any
+      // AI-provided summary label for the row.
+      const previewType = getFieldPreviewType(field)
       return {
         key,
         label: resolveFieldLabel(stepFields, key),
+        previewType,
+        previewHtml: previewType
+          ? substituteForPreview(String(value), variableInfoMap)
+          : undefined,
         // AI-provided labels take priority over static option resolution
         // and skip the Column/Value table, since they're already a single
-        // human-readable summary of the whole value.
+        // human-readable summary of the whole value. Preview fields skip
+        // both, since they're rendered via FieldPreviewButton instead.
         displayLines: hasAiLabel
           ? [parameterLabels[key]]
+          : previewType
+          ? []
           : resolveDisplayValue(stepFields, key, value),
-        columnValueRows: hasAiLabel
-          ? null
-          : resolveColumnValueRows(field, value),
+        columnValueRows:
+          hasAiLabel || previewType
+            ? null
+            : resolveColumnValueRows(field, value),
         hiddenIf: field?.hiddenIf,
       }
     })
     .filter(
-      ({ displayLines, columnValueRows, hiddenIf }) =>
-        (displayLines.length > 0 || (columnValueRows?.length ?? 0) > 0) &&
+      ({ displayLines, columnValueRows, hiddenIf, previewType }) =>
+        (previewType ||
+          displayLines.length > 0 ||
+          (columnValueRows?.length ?? 0) > 0) &&
         !isFieldHidden(hiddenIf, parameters),
     )
     .sort((a, b) => {
@@ -347,30 +374,44 @@ export default function StepParameterRows({
             </Text>
           </ParameterRow>
         )}
-        {rows.map(({ key, label, displayLines, columnValueRows }) => (
-          <ParameterRow key={key} label={label}>
-            {columnValueRows && columnValueRows.length > 0 ? (
-              <ColumnValueTable
-                rows={columnValueRows}
-                variableLabelsByPath={variableLabelsByPath}
-                variableValuesByPath={variableValuesByPath}
-                stepNameById={stepNameById}
-              />
-            ) : (
-              <Flex direction="column" gap={1}>
-                {displayLines.map((line, lineIndex) => (
-                  <ParameterValueLine
-                    key={lineIndex}
-                    line={line}
-                    variableLabelsByPath={variableLabelsByPath}
-                    variableValuesByPath={variableValuesByPath}
-                    stepNameById={stepNameById}
-                  />
-                ))}
-              </Flex>
-            )}
-          </ParameterRow>
-        ))}
+        {rows.map(
+          ({
+            key,
+            label,
+            displayLines,
+            columnValueRows,
+            previewType,
+            previewHtml,
+          }) => (
+            <ParameterRow key={key} label={label}>
+              {previewType ? (
+                <FieldPreviewButton
+                  previewType={previewType}
+                  html={previewHtml ?? ''}
+                />
+              ) : columnValueRows && columnValueRows.length > 0 ? (
+                <ColumnValueTable
+                  rows={columnValueRows}
+                  variableLabelsByPath={variableLabelsByPath}
+                  variableValuesByPath={variableValuesByPath}
+                  stepNameById={stepNameById}
+                />
+              ) : (
+                <Flex direction="column" gap={1}>
+                  {displayLines.map((line, lineIndex) => (
+                    <ParameterValueLine
+                      key={lineIndex}
+                      line={line}
+                      variableLabelsByPath={variableLabelsByPath}
+                      variableValuesByPath={variableValuesByPath}
+                      stepNameById={stepNameById}
+                    />
+                  ))}
+                </Flex>
+              )}
+            </ParameterRow>
+          ),
+        )}
       </Box>
     </>
   )
