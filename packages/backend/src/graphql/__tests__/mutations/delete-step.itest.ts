@@ -1,7 +1,8 @@
 import { NotFoundError } from 'objection'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import deleteStep from '@/graphql/mutations/delete-step'
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
@@ -281,5 +282,197 @@ describe('deleteStep mutation', () => {
         context,
       ),
     ).rejects.toThrow(NotFoundError)
+  })
+
+  describe('new-style if-then block expansion and marker repair', () => {
+    let blockFlow: Flow
+    let blockFlowInput: { flow: { updatedAt: string } }
+    let loggerErrorSpy: MockInstance
+
+    const addTrigger = (
+      key: 'catchRawWebhook' | 'newSubmission',
+      appKey: 'custom-api' | 'formsg',
+    ) =>
+      generateMockStep(context, key, appKey, 'trigger', blockFlow.id, 1, {}, {})
+
+    const addIfThen = (position: number, config: Record<string, any> = {}) =>
+      generateMockStep(
+        context,
+        'ifThen',
+        'toolbox',
+        'action',
+        blockFlow.id,
+        position,
+        { depth: '0' },
+        config,
+      )
+
+    const addPlain = (position: number, config: Record<string, any> = {}) =>
+      generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        blockFlow.id,
+        position,
+        { email: 'test@example.com' },
+        config,
+      )
+
+    const currentSteps = () =>
+      blockFlow.$relatedQuery('steps').orderBy('position', 'asc')
+
+    beforeEach(async () => {
+      loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+      blockFlow = await owner.$relatedQuery('flows').insertAndFetch({
+        name: 'Block Flow',
+      })
+      blockFlowInput = { flow: { updatedAt: blockFlow.updatedAt } }
+    })
+
+    it('deletes the whole block when only the marked if-then id is sent', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const s4 = await addPlain(4)
+      const ifThen = await addIfThen(2, { endStepId: s4.id })
+      await addPlain(3)
+      const after = await addPlain(5)
+
+      await deleteStep(
+        null,
+        { input: { ids: [ifThen.id], ...blockFlowInput } },
+        context,
+      )
+
+      const steps = await currentSteps()
+      expect(steps.map((s) => s.id)).toEqual([
+        steps[0].id, // trigger
+        after.id,
+      ])
+      expect(steps[1].position).toBe(2)
+    })
+
+    it('is a no-op double-delete when the full range is sent (old-UI branch delete)', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const s3 = await addPlain(3)
+      const s4 = await addPlain(4)
+      const ifThen = await addIfThen(2, { endStepId: s4.id })
+      const after = await addPlain(5)
+
+      await deleteStep(
+        null,
+        {
+          input: { ids: [ifThen.id, s3.id, s4.id], ...blockFlowInput },
+        },
+        context,
+      )
+
+      const steps = await currentSteps()
+      expect(steps.map((s) => s.id)).toEqual([steps[0].id, after.id])
+    })
+
+    it('never expands a legacy (marker-less) if-then', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const legacy = await addIfThen(2) // no endStepId marker
+      const s3 = await addPlain(3)
+      const s4 = await addPlain(4)
+
+      await deleteStep(
+        null,
+        { input: { ids: [legacy.id], ...blockFlowInput } },
+        context,
+      )
+
+      // Only the if-then is deleted. The following steps keep old-client
+      // single-id delete semantics.
+      const steps = await currentSteps()
+      expect(steps.map((s) => s.id)).toEqual([steps[0].id, s3.id, s4.id])
+    })
+
+    it('repoints a surviving block to its new highest member when the endStep is deleted', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const s3 = await addPlain(3)
+      const s4 = await addPlain(4)
+      const ifThen = await addIfThen(2, { endStepId: s4.id })
+
+      await deleteStep(
+        null,
+        { input: { ids: [s4.id], ...blockFlowInput } },
+        context,
+      )
+
+      const steps = await currentSteps()
+      const repaired = steps.find((s) => s.id === ifThen.id)
+      expect(repaired?.config.endStepId).toBe(s3.id)
+    })
+
+    it('empties a block to self-reference when its only member is deleted', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const s3 = await addPlain(3)
+      const ifThen = await addIfThen(2, { endStepId: s3.id })
+
+      await deleteStep(
+        null,
+        { input: { ids: [s3.id], ...blockFlowInput } },
+        context,
+      )
+
+      const steps = await currentSteps()
+      const repaired = steps.find((s) => s.id === ifThen.id)
+      expect(repaired?.config.endStepId).toBe(ifThen.id)
+    })
+
+    it('does not expand a dangling marker and logs it', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const s3 = await addPlain(3)
+      const ifThen = await addIfThen(2, { endStepId: 'does-not-exist' })
+
+      await deleteStep(
+        null,
+        { input: { ids: [ifThen.id], ...blockFlowInput } },
+        context,
+      )
+
+      // Only the if-then is deleted; its member survives.
+      const steps = await currentSteps()
+      expect(steps.map((s) => s.id)).toEqual([steps[0].id, s3.id])
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'if-then-dangling-end-step',
+          mutation: 'deleteStep',
+          ifThenStepId: ifThen.id,
+        }),
+      )
+    })
+
+    it('preserves an intact block marker when the trigger (MRF) branch is deleted', async () => {
+      const trigger = await addTrigger('newSubmission', 'formsg')
+      const s3 = await addPlain(3)
+      const ifThen = await addIfThen(2, { endStepId: s3.id })
+      // An MRF submission step outside the block, removed by removeMrfSteps.
+      await generateMockStep(
+        context,
+        'mrfSubmission',
+        'formsg',
+        'action',
+        blockFlow.id,
+        4,
+        {},
+        {},
+      )
+
+      await deleteStep(
+        null,
+        { input: { ids: [trigger.id], ...blockFlowInput } },
+        context,
+      )
+
+      // removeMrfSteps drops the mrfSubmission step. The block's marker is
+      // repaired over the survivor set and stays intact since its endStep
+      // survived.
+      const steps = await currentSteps()
+      const repaired = steps.find((s) => s.id === ifThen.id)
+      expect(repaired?.config.endStepId).toBe(s3.id)
+      expect(steps.some((s) => s.key === 'mrfSubmission')).toBe(false)
+    })
   })
 })
