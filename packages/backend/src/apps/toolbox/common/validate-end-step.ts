@@ -64,8 +64,30 @@ export function rejectEndStepWrite(
   throw new Error(`endStepId write rejected: ${reason}`)
 }
 
+/**
+ * Unlike a write rejection (a should-never-happen bug), publish is the one
+ * place a user can trip a bad marker, most notably an empty block. So the
+ * message here is actionable and the log level is warn, not error.
+ */
+function rejectPublishEndStep(
+  reason: string,
+  details: Record<string, unknown>,
+): never {
+  logger.warn({ event: 'publish-invalid-end-step', reason, ...details })
+  throw new Error(
+    reason === 'empty-block'
+      ? 'Cannot publish: an If-then block has no steps. Add a step inside it or remove the block.'
+      : 'Cannot publish: an If-then block is misconfigured. Contact Plumber support to resolve this.',
+  )
+}
+
 function isMrfSubmissionStep(step: ValidationStep): boolean {
   return step.appKey === 'formsg' && step.key === 'mrfSubmission'
+}
+
+interface EndStepViolation {
+  reason: string
+  details: Record<string, unknown>
 }
 
 /**
@@ -79,44 +101,47 @@ function getRejectionBranchId(step: ValidationStep): string | null {
 }
 
 /**
- * Enforces every endStepId write invariant; throws and logs
- * `end-step-write-rejected` on violation, rolling back the mutation.
+ * Pure invariant check for a single if-then V2 endStepId. Returns the first
+ * violation (reason + details) or null when valid.
  *
- * Exported for unit coverage — mutations should go through
- * `validateEndStepOn{Create,Update}Step` below instead.
+ * Shared by the write path (throws) and the publish validator (warns), so
+ * the invariant lives in one place. IMPORTANT: a self-referencing (empty)
+ * block passes here. Only publish rejects it.
  */
-export function validateEndStepWrite({
+function checkEndStepWrite({
   flowSteps,
   ifThenStepId,
   endStepId,
   flowId,
-}: EndStepWriteValidationArgs): void {
+}: EndStepWriteValidationArgs): EndStepViolation | null {
   const ifThenStep = flowSteps.find((step) => step.id === ifThenStepId)
 
   // Target must be a toolbox/ifThen present in this flow.
   if (!ifThenStep || !isIfThenStep(ifThenStep)) {
-    rejectEndStepWrite('target-not-if-then', { ifThenStepId, flowId })
+    return { reason: 'target-not-if-then', details: { ifThenStepId, flowId } }
   }
 
   // endStep must exist in the same flow.
   const endStep = flowSteps.find((step) => step.id === endStepId)
   if (!endStep) {
-    rejectEndStepWrite('end-step-not-in-flow', {
-      ifThenStepId,
-      endStepId,
-      flowId,
-    })
+    return {
+      reason: 'end-step-not-in-flow',
+      details: { ifThenStepId, endStepId, flowId },
+    }
   }
 
   // endStep must be at or after the if-then (self-ref is the empty block).
   if (endStep.position < ifThenStep.position) {
-    rejectEndStepWrite('end-step-before-self', {
-      ifThenStepId,
-      endStepId,
-      endStepPosition: endStep.position,
-      ifThenPosition: ifThenStep.position,
-      flowId,
-    })
+    return {
+      reason: 'end-step-before-self',
+      details: {
+        ifThenStepId,
+        endStepId,
+        endStepPosition: endStep.position,
+        ifThenPosition: ifThenStep.position,
+        flowId,
+      },
+    }
   }
 
   // IMPORTANT: a block that crosses this boundary would jump execution into
@@ -130,22 +155,23 @@ export function validateEndStepWrite({
       continue
     }
     if (isMrfSubmissionStep(step)) {
-      rejectEndStepWrite('mrf-step-in-region', {
-        ifThenStepId,
-        endStepId,
-        offendingStepId: step.id,
-        flowId,
-      })
+      return {
+        reason: 'mrf-step-in-region',
+        details: { ifThenStepId, endStepId, offendingStepId: step.id, flowId },
+      }
     }
     if (getRejectionBranchId(step) !== blockRejectionBranchId) {
-      rejectEndStepWrite('approval-branch-crossed', {
-        ifThenStepId,
-        endStepId,
-        offendingStepId: step.id,
-        blockRejectionBranchId,
-        offendingRejectionBranchId: getRejectionBranchId(step),
-        flowId,
-      })
+      return {
+        reason: 'approval-branch-crossed',
+        details: {
+          ifThenStepId,
+          endStepId,
+          offendingStepId: step.id,
+          blockRejectionBranchId,
+          offendingRejectionBranchId: getRejectionBranchId(step),
+          flowId,
+        },
+      }
     }
   }
 
@@ -165,12 +191,67 @@ export function validateEndStepWrite({
       ifThenStep.position <= otherEnd.position &&
       other.position <= endStep.position
     if (overlaps) {
-      rejectEndStepWrite('overlapping-blocks', {
-        ifThenStepId,
-        endStepId,
-        otherIfThenStepId: other.id,
-        flowId,
-      })
+      return {
+        reason: 'overlapping-blocks',
+        details: {
+          ifThenStepId,
+          endStepId,
+          otherIfThenStepId: other.id,
+          flowId,
+        },
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * Throws (rolling back the mutation) and logs `end-step-write-rejected` on
+ * any `checkEndStepWrite` violation.
+ *
+ * Exported for unit coverage — mutations should go through
+ * `validateEndStepOn{Create,Update}Step` below instead.
+ */
+export function validateEndStepWrite(args: EndStepWriteValidationArgs): void {
+  const violation = checkEndStepWrite(args)
+  if (violation) {
+    rejectEndStepWrite(violation.reason, violation.details)
+  }
+}
+
+/**
+ * Publish-time check over a whole flow's blocks, so the execution-time
+ * fail-loud path in `checkEndStepWrite` stays rare.
+ *
+ * IMPORTANT: an empty (self-referencing) block is valid mid-edit but
+ * rejected here. Unlike the old UI's auto-created empty step, it has no
+ * incomplete child of its own to block publish otherwise.
+ *
+ * `flowSteps` must be ordered by position ascending.
+ */
+export function validateFlowBlocks(
+  flowSteps: ValidationStep[],
+  flowId: string,
+): void {
+  for (const step of flowSteps) {
+    if (!isIfThenV2(step)) {
+      continue
+    }
+    const endStepId = step.config?.[BLOCK_END_STEP_ID] ?? ''
+
+    if (endStepId === step.id) {
+      rejectPublishEndStep('empty-block', { ifThenStepId: step.id, flowId })
+    }
+
+    const violation = checkEndStepWrite({
+      flowSteps,
+      ifThenStepId: step.id,
+      endStepId,
+      flowId,
+    })
+    if (violation) {
+      rejectPublishEndStep(violation.reason, violation.details)
     }
   }
 }
