@@ -8,6 +8,16 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
+// Defaults to false in beforeEach below so pre-existing tests here stay
+// byte-identical; the opportunistic-upgrade tests override it per case.
+const mocks = vi.hoisted(() => ({
+  getLdFlagValue: vi.fn(),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
+
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 
 const MOCK_STEPS = [
@@ -69,6 +79,7 @@ describe('updateStepPositions mutation', () => {
 
   beforeEach(() => {
     vi.resetAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Set up flow patch and fetch spy first
     flowPatchAndFetchSpy = vi.fn().mockReturnValue({
@@ -86,6 +97,11 @@ describe('updateStepPositions mutation', () => {
       active: false,
       $query: vi.fn().mockReturnValue({
         patchAndFetch: flowPatchAndFetchSpy,
+      }),
+      // Used by upgradeIfThenV1BlocksIfEnabled's re-fetch. MOCK_STEPS has no
+      // if-then steps, so it's a no-op regardless of what this returns.
+      $relatedQuery: vi.fn().mockReturnValue({
+        orderBy: vi.fn().mockResolvedValue(MOCK_STEPS),
       }),
       assertNotUpdatedSince: vi.fn(),
     }
@@ -376,6 +392,7 @@ describe('updateStepPositions endStepId repair', () => {
 
   beforeEach(async () => {
     vi.restoreAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
 
     owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
     context = {
@@ -476,5 +493,69 @@ describe('updateStepPositions endStepId repair', () => {
 
     expect((await reload(legacy.id)).config.endStepId).toBeUndefined()
     expect(wasRepaired()).toBe(false)
+  })
+
+  describe('opportunistic if-then V1 upgrade', () => {
+    // Both if-thens are legacy. Dragging ifThenB's block to before ifThenA's
+    // reproduces the original bug: without pinning ifThenA's extent before
+    // the drag, re-deriving it afterward (once it's the last if-then) would
+    // silently balloon to include `trailing`.
+    async function seedTwoBlockFlow() {
+      return seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      ])
+    }
+
+    const swapBlocksInput = (
+      ifThenB: Step,
+      childB: Step,
+      ifThenA: Step,
+      childA: Step,
+    ) => ({
+      stepPositions: [
+        { id: ifThenB.id, position: 2, type: 'action' as const },
+        { id: childB.id, position: 3, type: 'action' as const },
+        { id: ifThenA.id, position: 4, type: 'action' as const },
+        { id: childA.id, position: 5, type: 'action' as const },
+      ],
+      flow: flowInput(),
+    })
+
+    it('pins both legacy blocks to their pre-reorder extents so the drag does not absorb the trailing step', async () => {
+      const [, ifThenA, childA, ifThenB, childB, trailing] =
+        await seedTwoBlockFlow()
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      await updateStepPositions(
+        null,
+        { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
+        context,
+      )
+
+      // ifThenA's block stays pinned to just childA. `trailing` is not
+      // absorbed into it, even though ifThenA is now the last if-then.
+      expect((await reload(ifThenA.id)).config.endStepId).toBe(childA.id)
+      expect((await reload(ifThenB.id)).config.endStepId).toBeDefined()
+      expect((await reload(trailing.id)).config.endStepId).toBeUndefined()
+    })
+
+    it('does not pin any V1 if-then block when the flag is off', async () => {
+      const [, ifThenA, childA, ifThenB, childB] = await seedTwoBlockFlow()
+      mocks.getLdFlagValue.mockResolvedValue(false)
+
+      await updateStepPositions(
+        null,
+        { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
+        context,
+      )
+
+      expect((await reload(ifThenA.id)).config.endStepId).toBeUndefined()
+      expect((await reload(ifThenB.id)).config.endStepId).toBeUndefined()
+    })
   })
 })

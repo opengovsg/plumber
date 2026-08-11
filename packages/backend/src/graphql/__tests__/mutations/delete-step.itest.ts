@@ -15,6 +15,16 @@ import {
   generateMockUser,
 } from './flow.mock'
 
+// Defaults to false in beforeEach below so pre-existing tests here stay
+// byte-identical. The opportunistic-upgrade tests override it per case.
+const mocks = vi.hoisted(() => ({
+  getLdFlagValue: vi.fn(),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
+
 describe('deleteStep mutation', () => {
   let context: Context
   let testFlow: Flow
@@ -28,6 +38,7 @@ describe('deleteStep mutation', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Mock the patchLastUpdated method
     vi.spyOn(Flow.prototype, 'patchLastUpdated').mockImplementation(
@@ -473,6 +484,104 @@ describe('deleteStep mutation', () => {
       const repaired = steps.find((s) => s.id === ifThen.id)
       expect(repaired?.config.endStepId).toBe(s3.id)
       expect(steps.some((s) => s.key === 'mrfSubmission')).toBe(false)
+    })
+  })
+
+  describe('opportunistic if-then V1 upgrade', () => {
+    let blockFlow: Flow
+    let blockFlowInput: { flow: { updatedAt: string } }
+
+    const addTrigger = (
+      key: 'catchRawWebhook' | 'newSubmission',
+      appKey: 'custom-api' | 'formsg',
+    ) =>
+      generateMockStep(context, key, appKey, 'trigger', blockFlow.id, 1, {}, {})
+
+    const addIfThen = (position: number, config: Record<string, any> = {}) =>
+      generateMockStep(
+        context,
+        'ifThen',
+        'toolbox',
+        'action',
+        blockFlow.id,
+        position,
+        { depth: '0' },
+        config,
+      )
+
+    const addPlain = (position: number, config: Record<string, any> = {}) =>
+      generateMockStep(
+        context,
+        'sendTransactionalEmail',
+        'postman',
+        'action',
+        blockFlow.id,
+        position,
+        { email: 'test@example.com' },
+        config,
+      )
+
+    const currentSteps = () =>
+      blockFlow.$relatedQuery('steps').orderBy('position', 'asc')
+
+    beforeEach(async () => {
+      blockFlow = await owner.$relatedQuery('flows').insertAndFetch({
+        name: 'Upgrade Flow',
+      })
+      blockFlowInput = { flow: { updatedAt: blockFlow.updatedAt } }
+    })
+
+    it('pins other legacy if-then blocks when deleting an unrelated step, and composes with repair', async () => {
+      // Both if-thens are legacy. `unrelated` (the step being deleted) is
+      // the last step in the flow, so it's part of ifThenB's V1 extent until
+      // the delete removes it.
+      // IMPORTANT: the existing repair logic (unmodified by this pass) then
+      // re-points ifThenB back to childB once `unrelated` is gone.
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const ifThenA = await addIfThen(2)
+      const childA = await addPlain(3)
+      const ifThenB = await addIfThen(4)
+      const childB = await addPlain(5)
+      const unrelated = await addPlain(6)
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      await deleteStep(
+        null,
+        { input: { ids: [unrelated.id], ...blockFlowInput } },
+        context,
+      )
+
+      const steps = await currentSteps()
+      expect(steps.find((s) => s.id === ifThenA.id)?.config.endStepId).toBe(
+        childA.id,
+      )
+      expect(steps.find((s) => s.id === ifThenB.id)?.config.endStepId).toBe(
+        childB.id,
+      )
+    })
+
+    it('does not pin any V1 if-then block when the flag is off', async () => {
+      await addTrigger('catchRawWebhook', 'custom-api')
+      const ifThenA = await addIfThen(2)
+      await addPlain(3)
+      const ifThenB = await addIfThen(4)
+      await addPlain(5)
+      const unrelated = await addPlain(6)
+      mocks.getLdFlagValue.mockResolvedValue(false)
+
+      await deleteStep(
+        null,
+        { input: { ids: [unrelated.id], ...blockFlowInput } },
+        context,
+      )
+
+      const steps = await currentSteps()
+      expect(
+        steps.find((s) => s.id === ifThenA.id)?.config.endStepId,
+      ).toBeUndefined()
+      expect(
+        steps.find((s) => s.id === ifThenB.id)?.config.endStepId,
+      ).toBeUndefined()
     })
   })
 })

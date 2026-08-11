@@ -2,7 +2,10 @@ import { IStep } from '@plumber/types'
 
 import { PartialModelObject, raw } from 'objection'
 
-import { repairEndStepsOnReorder } from '@/apps/toolbox/common/validate-end-step'
+import {
+  repairEndStepsOnReorder,
+  upgradeIfThenV1BlocksIfEnabled,
+} from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
@@ -43,7 +46,7 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
     // Queries all steps of the impacted flow so block end steps can be
     // repaired after the reorder. The steps named in the request params
     // drive the position update itself.
-    const allSteps = await context.currentUser
+    let allSteps = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
       .whereIn(
@@ -99,6 +102,16 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
         'Failed to update: step positions are out of bounds.',
       )
     }
+
+    // Opportunistically pin any legacy if-then block in the flow to its
+    // current extent, if the if-then-then flag is on for the pipe owner, so
+    // its extent gets locked in before this reorder can silently change it.
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, allSteps)
+    // Re-reads (positions are still pre-patch) so any block just pinned
+    // above is reflected as V2 below.
+    // IMPORTANT: otherwise the repair pass wouldn't see its own
+    // freshly-written marker.
+    allSteps = await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
 
     // Patch each step individually with its new position
     for (const stepPosition of stepPositions) {
