@@ -10,6 +10,7 @@ import {
   remapIfThenEndStepIdsOnDuplicate,
   remapIfThenEndStepIdsOnDuplicateBranch,
 } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -300,6 +301,9 @@ export async function pinEndStep(
     })
 }
 
+// Mirrors packages/frontend/src/config/flags.ts's IF_THEN_THEN_FEATURE_FLAG.
+const IF_THEN_THEN_LD_FLAG_KEY = 'feature_if_then_then'
+
 /**
  * Deletes a V1 block's leftover blank placeholder members and closes the
  * position gaps they leave, highest position first so each target's own
@@ -378,6 +382,71 @@ export async function deriveV1EndStepDroppingBlankMembers(
       refetchedSteps.find((step) => step.id === ifThenStep.id),
     ),
     cleaned: true,
+  }
+}
+
+/**
+ * Opportunistically pins every legacy (V1) if-then block in a flow to its
+ * current derived extent, when the flag is on for the flow owner. Once
+ * pinned, the existing V2 repair logic protects the block forever after, so
+ * this only ever needs to run once per block.
+ *
+ * IMPORTANT: a region-confinement violation on a pre-existing block throws
+ * here too. This is an accepted risk on prod data, not a bug to soften.
+ */
+export async function upgradeIfThenV1BlocksIfEnabled(
+  trx: Transaction,
+  flow: Flow,
+  flowSteps: ValidationStep[],
+  excludeStepIds: Set<string> = new Set(),
+): Promise<void> {
+  const v1IfThens = flowSteps.filter(
+    (step) =>
+      isIfThenStep(step) && !isIfThenV2(step) && !excludeStepIds.has(step.id),
+  )
+  if (v1IfThens.length === 0) {
+    return
+  }
+
+  const owner = await flow
+    .$relatedQuery('user', trx)
+    .select('email')
+    .throwIfNotFound()
+  const isEnabled = await getLdFlagValue(
+    IF_THEN_THEN_LD_FLAG_KEY,
+    owner.email,
+    false,
+  )
+  if (!isEnabled) {
+    return
+  }
+
+  let currentSteps = flowSteps
+
+  for (const ifThenStep of v1IfThens) {
+    const liveIfThenStep = currentSteps.find(
+      (step) => step.id === ifThenStep.id,
+    )
+    const { endStep, cleaned } = await deriveV1EndStepDroppingBlankMembers(
+      trx,
+      flow,
+      currentSteps,
+      liveIfThenStep,
+      excludeStepIds,
+    )
+    if (cleaned) {
+      currentSteps = await flow
+        .$relatedQuery('steps', trx)
+        .orderBy('position', 'asc')
+    }
+
+    validateEndStepWrite({
+      flowSteps: currentSteps,
+      ifThenStepId: ifThenStep.id,
+      endStepId: endStep.id,
+      flowId: flow.id,
+    })
+    await pinEndStep(trx, ifThenStep.id, endStep.id)
   }
 }
 
