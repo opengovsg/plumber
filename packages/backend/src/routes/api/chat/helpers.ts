@@ -43,19 +43,19 @@ const CONNECTED_FORM_MESSAGE_REGEX =
 export function extractEstablishedFormConnection(
   messages: ChatRequest['messages'],
 ): EstablishedFormConnection | null {
-  let latest: EstablishedFormConnection | null = null
-
-  for (const message of messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i]
     if (message.role !== 'user') {
       continue
     }
-    for (const part of message.parts) {
+    for (let j = message.parts.length - 1; j >= 0; j--) {
+      const part = message.parts[j]
       if (part.type !== 'text') {
         continue
       }
       const match = part.text.match(CONNECTED_FORM_MESSAGE_REGEX)
       if (match) {
-        latest = {
+        return {
           formTitle: match[1],
           connectionId: match[2],
           formId: match[3],
@@ -64,7 +64,7 @@ export function extractEstablishedFormConnection(
     }
   }
 
-  return latest
+  return null
 }
 
 /**
