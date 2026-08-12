@@ -103,6 +103,73 @@ export const extractLastFormUrl = (messages: Message[]): string | undefined => {
   return undefined
 }
 
+// Same base64 charset check as the backend's parseSecretKeyFormat (see
+// formsg/auth/verify-credentials.ts) and AddFormsgConnectionModal's own
+// SECRET_KEY_REGEX.
+const FORMSG_SECRET_KEY_CHARSET_REGEX = /^[a-zA-Z0-9/+]+={0,2}$/
+
+// A FormSG secret key is the base64 encoding of a 32-byte NaCl key. Checking
+// the decoded byte length (not just the base64 charset) keeps ordinary
+// words/IDs from false-positiving, since they're extremely unlikely to
+// decode to exactly 32 bytes.
+const isFormsgSecretKey = (token: string): boolean => {
+  if (!FORMSG_SECRET_KEY_CHARSET_REGEX.test(token)) {
+    return false
+  }
+  try {
+    return atob(token).length === 32
+  } catch {
+    return false
+  }
+}
+
+// GatherSG's instant-workflow trigger has an `encryptionKey` field (see
+// encryptionKeySchema in gathersg/triggers/new-instant-workflow/schema.ts):
+// 12-20 non-whitespace characters, at least one digit, one uppercase letter,
+// and one special character.
+const GATHERSG_ENCRYPTION_KEY_REGEX =
+  /^(?=.*[0-9])(?=.*[A-Z])(?=.*[^A-Za-z0-9\s])\S{12,20}$/
+
+// LetterSG, Postman-SMS, and PaySG API keys are a literal env prefix followed
+// by a random token (see lettersg/common/api.ts's 'test_'/'live_' check,
+// postman-sms/common/constants.ts's 'key_test_'/'key_live_' prefixes, and
+// paysg/common/api.ts's 'paysg_live_'/'paysg_stag_' prefixes). None of these
+// apps enforce a minimum key length server-side, so this matches on the
+// prefix alone (plus at least one character after it) rather than guessing
+// at a suffix length — accepting that ordinary words sharing a prefix (e.g.
+// "test_case") will also match, since this is a soft warning, not a block.
+const PREFIXED_API_KEY_REGEX =
+  /^(?:key_test_|key_live_|paysg_live_|paysg_stag_|test_|live_)[A-Za-z0-9_-]+$/
+
+// Telegram bot tokens aren't validated by Plumber's own schema (it's treated
+// as free text), but the real tokens Telegram itself issues always follow
+// this shape: a numeric bot id, a colon, then a 35-character alphanumeric
+// string — e.g. "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ1234567890abc".
+const TELEGRAM_BOT_TOKEN_REGEX = /^\d{6,10}:[A-Za-z0-9_-]{35}$/
+
+const SECRET_KEY_DETECTORS = [
+  isFormsgSecretKey,
+  (token: string) => GATHERSG_ENCRYPTION_KEY_REGEX.test(token),
+  (token: string) => PREFIXED_API_KEY_REGEX.test(token),
+  (token: string) => TELEGRAM_BOT_TOKEN_REGEX.test(token),
+]
+
+// Scans the message token-by-token (splitting on whitespace) against known
+// secret/API key shapes from across the apps Plumber integrates with (FormSG,
+// GatherSG, LetterSG, Postman-SMS, PaySG, Telegram), rather than requiring
+// the whole message to be just the key — a user might paste it alongside
+// other text (e.g. "here's my key: <pasted value>" or a key on its own line
+// within a longer message). Used to warn before a user accidentally pastes a
+// secret/API key into the chat composer instead of the app's own connection
+// setup, since chat text is sent to the LLM.
+export const containsSecretKey = (text: string): boolean =>
+  text
+    .split(/\s+/)
+    .some(
+      (token) =>
+        token && SECRET_KEY_DETECTORS.some((isMatch) => isMatch(token)),
+    )
+
 // deduplicate messages by id
 // there may be duplicates when the messages are combined
 export const deduplicateMessages = (messages: Message[]) => {
