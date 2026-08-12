@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-export const dataOutSchema = z.object(
-  {
+export const dataOutSchema = z
+  .object({
     status: z.array(
       z.enum([
         'ACCEPTED',
@@ -18,11 +18,8 @@ export const dataOutSchema = z.object(
     subject: z.string().optional(),
     from: z.string().optional(),
     reply_to: z.string().email().optional(),
-  },
-  {
-    description: 'Data out object for send transactional email',
-  },
-)
+  })
+  .describe('Data out object for send transactional email')
 
 export type PostmanEmailDataOut = z.infer<typeof dataOutSchema>
 

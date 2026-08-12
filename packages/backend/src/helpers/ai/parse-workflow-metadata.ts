@@ -1,8 +1,8 @@
 import { IFlowSteps } from '@plumber/types'
 
 import { parse as parseYaml } from 'yaml'
-import z from 'zod/v3'
-import { fromZodError } from 'zod-validation-error/v3'
+import z from 'zod'
+import { fromZodError } from 'zod-validation-error'
 
 import {
   TOOLBOX_ACTIONS,

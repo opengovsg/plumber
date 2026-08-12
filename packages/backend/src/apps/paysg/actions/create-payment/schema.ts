@@ -74,7 +74,7 @@ export const requestSchema = z
       .min(1, { message: 'Empty payment amount' })
       .pipe(
         z.coerce
-          .number()
+          .number<string>()
           .int('Payment amount must be round number')
           .min(50, { message: 'Payment amount must be larger than 50 cents' })
           .max(99999999, {

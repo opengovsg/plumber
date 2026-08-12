@@ -1,4 +1,4 @@
-import { z } from 'zod/v3'
+import { z } from 'zod'
 
 import apps from '@/apps'
 import {
@@ -49,7 +49,7 @@ export function generateSchema(
         }
 
         if (isIfThenAction) {
-          extendedFields.parameters = ifThenParametersSchema.default({})
+          extendedFields.parameters = ifThenParametersSchema.prefault({})
         }
 
         return baseSchema.extend(extendedFields)

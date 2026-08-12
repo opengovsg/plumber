@@ -1,8 +1,8 @@
-import { IRawAction } from '@plumber/types'
+import { IJSONObject, IRawAction } from '@plumber/types'
 
 import { generateObject } from 'ai'
-import z from 'zod/v3'
-import { fromZodError } from 'zod-validation-error/v3'
+import z from 'zod'
+import { fromZodError } from 'zod-validation-error'
 
 import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
@@ -113,7 +113,7 @@ const action: IRawAction = {
       })
 
       $.setActionItem({
-        raw: { ...object },
+        raw: { ...object } as IJSONObject,
       })
     } catch (error) {
       logger.error('Failed to process image', {
