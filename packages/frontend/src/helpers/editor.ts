@@ -44,6 +44,40 @@ function isValidArgValue(value: IJSONValue): boolean {
   return value != null && value !== ''
 }
 
+// Field definitions can specify a static `value` to pre-select (e.g. a
+// boolean-radio defaulting to "No"). That default only reaches react-hook-form
+// via each input's own `defaultValue` prop, which registers asynchronously
+// after mount — too late for validation that runs on the form's initial
+// render (see FlowSubstep's initial `isValid` state). Backfilling here, into
+// the `defaultValues` passed to `useForm`, makes the default available
+// synchronously from the very first render.
+export function withDefaultParameters(
+  step: IStep,
+  substeps: ISubstep[],
+): IStep {
+  const defaultParameters: IJSONObject = {}
+
+  for (const substep of substeps ?? []) {
+    for (const arg of substep.arguments ?? []) {
+      if (arg.value !== undefined && step.parameters[arg.key] === undefined) {
+        defaultParameters[arg.key] = arg.value as IJSONValue
+      }
+    }
+  }
+
+  if (Object.keys(defaultParameters).length === 0) {
+    return step
+  }
+
+  return {
+    ...step,
+    parameters: {
+      ...defaultParameters,
+      ...step.parameters,
+    },
+  }
+}
+
 export function validateSubstep(substep: ISubstep, step: IStep): boolean {
   if (!substep) {
     return true
