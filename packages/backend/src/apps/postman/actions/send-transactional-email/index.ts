@@ -6,7 +6,7 @@ import {
 } from '@plumber/types'
 
 import { SafeParseError, z } from 'zod'
-import { fromZodError } from 'zod-validation-error'
+import { fromZodError } from 'zod-validation-error/v3'
 
 import StepError from '@/errors/step'
 import { TableVariableMarker } from '@/helpers/compute-parameters'
