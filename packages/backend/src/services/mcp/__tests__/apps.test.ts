@@ -24,6 +24,13 @@ vi.mock('@/apps', () => ({
               type: 'string',
               required: true,
             },
+            {
+              key: 'nricFilter',
+              label: 'NRIC Filter',
+              type: 'dropdown',
+              required: false,
+              hiddenFromAiIf: { op: 'always_true' },
+            },
           ],
         },
       ],
@@ -131,7 +138,21 @@ vi.mock('@/apps', () => ({
           key: 'ifThen',
           name: 'If/Then',
           description: 'Conditional branching',
-          arguments: [],
+          arguments: [
+            {
+              key: 'branchName',
+              label: 'Branch Name',
+              type: 'string',
+              required: true,
+            },
+            {
+              key: 'depth',
+              label: 'FILE A BUG IF YOU SEE THIS',
+              type: 'string',
+              required: false,
+              hiddenIf: { op: 'always_true' },
+            },
+          ],
         },
       ],
     },
@@ -247,6 +268,25 @@ describe('listAppsService', () => {
       )
       expect(field?.isDynamic).toBeUndefined()
       expect(field?.dynamicDataKey).toBeUndefined()
+    })
+  })
+
+  describe('hidden field filtering', () => {
+    it('omits fields with hiddenFromAiIf always_true', async () => {
+      const apps = await listAppsService(user)
+      const formsg = apps.find((a) => a.key === 'formsg')
+      const fieldKeys = formsg?.triggers[0].fields.map((f) => f.key)
+      expect(fieldKeys).toEqual(['formId'])
+      expect(fieldKeys).not.toContain('nricFilter')
+    })
+
+    it('omits fields with hiddenIf always_true', async () => {
+      mocks.getAllLdFlags.mockResolvedValue({ app_toolbox: true })
+      const apps = await listAppsService(user)
+      const toolbox = apps.find((a) => a.key === 'toolbox')
+      const fieldKeys = toolbox?.actions[0].fields.map((f) => f.key)
+      expect(fieldKeys).toEqual(['branchName'])
+      expect(fieldKeys).not.toContain('depth')
     })
   })
 
