@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import logger from '@/helpers/logger'
 
-import { validateEndStepWrite } from '../../common/validate-end-step'
+import {
+  extractSelfEndStepIntent,
+  validateEndStepWrite,
+} from '../../common/validate-end-step'
 
 type Fixture = {
   id: string
@@ -357,6 +360,53 @@ describe('validateEndStepWrite', () => {
       expect.objectContaining({
         event: 'end-step-write-rejected',
         reason: 'overlapping-blocks',
+      }),
+    )
+  })
+})
+
+describe('extractSelfEndStepIntent', () => {
+  let loggerErrorSpy: MockInstance
+
+  beforeEach(() => {
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+  })
+
+  it('passes an absent key through unchanged', () => {
+    expect(extractSelfEndStepIntent({ stepName: 'kept' })).toEqual({
+      config: { stepName: 'kept' },
+      wantsSelfEndStep: false,
+    })
+  })
+
+  it('treats a null/undefined config as absent', () => {
+    expect(extractSelfEndStepIntent(null)).toEqual({
+      config: {},
+      wantsSelfEndStep: false,
+    })
+    expect(extractSelfEndStepIntent(undefined)).toEqual({
+      config: {},
+      wantsSelfEndStep: false,
+    })
+  })
+
+  it('strips the sentinel and signals self-ref intent', () => {
+    expect(
+      extractSelfEndStepIntent({ stepName: 'kept', endStepId: 'self' }),
+    ).toEqual({
+      config: { stepName: 'kept' },
+      wantsSelfEndStep: true,
+    })
+  })
+
+  it('rejects a real step id — the id does not exist yet at create time', () => {
+    expect(() =>
+      extractSelfEndStepIntent({ endStepId: 'some-other-step-id' }),
+    ).toThrow()
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'end-step-write-rejected',
+        reason: 'invalid-end-step-sentinel',
       }),
     )
   })

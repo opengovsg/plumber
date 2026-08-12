@@ -691,6 +691,9 @@ input CreateStepInput {
   parameters: JSONObject
   previousStep: PreviousStepInput
   config: StepConfigInput
+  # The if-then block the new step is being added after.
+  # IMPORTANT: presence triggers a server-side lazy upgrade / marker pin.
+  previousBlockId: ID
 }
 
 input StepApprovalConfigInput {
