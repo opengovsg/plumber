@@ -858,3 +858,179 @@ describe('updateStep mutation', () => {
     })
   })
 })
+
+// Real-DB integration tests, kept separate from the mock-based suite above so
+// writes hit real flow steps and can actually roll back.
+describe('updateStep endStepId config merge', () => {
+  let testFlow: Flow
+  let owner: User
+  let context: Context
+  let flowTimestamp: string
+
+  const flowInput = () => ({ id: testFlow.id, updatedAt: flowTimestamp })
+
+  async function seedSteps(
+    specs: Array<{
+      key: string | null
+      appKey: string | null
+      type: 'trigger' | 'action'
+      config?: Record<string, any>
+      parameters?: Record<string, any>
+    }>,
+  ): Promise<Step[]> {
+    return testFlow.$relatedQuery('steps').insertAndFetch(
+      specs.map((spec, index) => ({
+        key: spec.key,
+        appKey: spec.appKey,
+        type: spec.type,
+        position: index + 1,
+        parameters: spec.parameters ?? {},
+        config: spec.config ?? {},
+      })),
+    ) as unknown as Promise<Step[]>
+  }
+
+  const reload = async (id: string): Promise<Step> =>
+    Step.query().findById(id).throwIfNotFound()
+
+  beforeEach(async () => {
+    vi.restoreAllMocks()
+
+    owner = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    context = {
+      req: null,
+      currentUser: owner,
+      res: null,
+      isAdminOperation: false,
+    } as unknown as Context
+
+    testFlow = await owner.$relatedQuery('flows').insertAndFetch({
+      name: 'endStep Update Flow',
+      updatedBy: owner.id,
+    })
+    flowTimestamp = String(new Date(testFlow.updatedAt).getTime())
+
+    vi.spyOn(Flow.prototype, 'patchLastUpdated').mockResolvedValue({
+      ...testFlow,
+      updatedAt: testFlow.updatedAt,
+    } as any)
+  })
+
+  it('writes a self-referencing endStepId onto a new-style if-then', async () => {
+    const [, ifThen] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+    ])
+
+    await updateStep(
+      null,
+      {
+        input: {
+          id: ifThen.id,
+          flow: flowInput(),
+          key: 'ifThen',
+          appKey: 'toolbox',
+          connection: {},
+          parameters: {},
+          config: { endStepId: ifThen.id },
+        },
+      },
+      context,
+    )
+
+    expect((await reload(ifThen.id)).config.endStepId).toBe(ifThen.id)
+  })
+
+  it('preserves an existing marker through a condition edit (merge)', async () => {
+    const [, ifThen, stepA] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+    await ifThen.$query().patch({
+      config: { endStepId: stepA.id, stepName: 'orig' },
+    })
+
+    await updateStep(
+      null,
+      {
+        input: {
+          id: ifThen.id,
+          flow: flowInput(),
+          key: 'ifThen',
+          appKey: 'toolbox',
+          connection: {},
+          parameters: { conditions: [{ rows: [] }] },
+        },
+      },
+      context,
+    )
+
+    expect((await reload(ifThen.id)).config.endStepId).toBe(stepA.id)
+  })
+
+  it('rolls back an endStepId write on a non-if-then step', async () => {
+    const [, postmanStep] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+
+    await expect(
+      updateStep(
+        null,
+        {
+          input: {
+            id: postmanStep.id,
+            flow: flowInput(),
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            connection: {},
+            parameters: {},
+            config: { endStepId: postmanStep.id },
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow()
+
+    expect((await reload(postmanStep.id)).config.endStepId).toBeUndefined()
+  })
+
+  it('rolls back an endStepId write on an approval-bearing if-then', async () => {
+    const [, ifThen, stepA] = await seedSteps([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      {
+        key: 'ifThen',
+        appKey: 'toolbox',
+        type: 'action',
+        config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+      },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+
+    await expect(
+      updateStep(
+        null,
+        {
+          input: {
+            id: ifThen.id,
+            flow: flowInput(),
+            key: 'ifThen',
+            appKey: 'toolbox',
+            connection: {},
+            parameters: {},
+            config: { endStepId: stepA.id },
+          },
+        },
+        context,
+      ),
+    ).rejects.toThrow()
+
+    const reloaded = await reload(ifThen.id)
+    expect(reloaded.config.endStepId).toBeUndefined()
+    expect(reloaded.config.approval).toEqual({
+      branch: 'reject',
+      stepId: 'someApprovalStep',
+    })
+  })
+})
