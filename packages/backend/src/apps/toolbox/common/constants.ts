@@ -24,7 +24,7 @@ export const BLOCK_END_STEP_ID = 'endStepId'
 
 // Not IStep itself: the execution context's $.step is trimmed (no config), and
 // unit-test fixtures pass partials — neither is a full IStep.
-type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
+export type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
 
 export function isIfThenStep(step: StepLike | null | undefined): boolean {
   return (
