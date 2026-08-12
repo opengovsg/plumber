@@ -22,6 +22,7 @@ const trigger: IRawTrigger = {
       type: 'boolean-radio' as const,
       description: 'Should this workflow start on Saturday and Sunday?',
       required: true,
+      value: false,
       // flip the order of the default options
       options: [
         {
