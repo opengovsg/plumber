@@ -11,6 +11,21 @@ import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 
 const TOOLBOX_APP_KEY = 'toolbox'
 
+function isHiddenFromAi(
+  field: NonNullable<IRawTrigger['arguments']>[number],
+): boolean {
+  return (
+    field.hiddenIf?.op === 'always_true' ||
+    field.hiddenFromAiIf?.op === 'always_true'
+  )
+}
+
+function serializeFields(
+  fields: NonNullable<IRawTrigger['arguments']>,
+): IMcpAppField[] {
+  return fields.filter((f) => !isHiddenFromAi(f)).map(serializeField)
+}
+
 function serializeField(
   field: NonNullable<IRawTrigger['arguments']>[number],
 ): IMcpAppField {
@@ -49,7 +64,7 @@ function serializeField(
     (field.type === 'multirow' || field.type === 'multirow-multicol') &&
     field.subFields.length
   ) {
-    base.subFields = field.subFields.map(serializeField)
+    base.subFields = serializeFields(field.subFields)
   }
 
   return base
@@ -82,7 +97,7 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
             key: t.key,
             name: t.name,
             description: t.description,
-            fields: (raw.arguments ?? []).map(serializeField),
+            fields: serializeFields(raw.arguments ?? []),
           }
         }),
       actions: (app.actions ?? [])
@@ -93,7 +108,7 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
             key: a.key,
             name: a.name,
             description: a.description,
-            fields: (raw.arguments ?? []).map(serializeField),
+            fields: serializeFields(raw.arguments ?? []),
           }
         }),
     }))
