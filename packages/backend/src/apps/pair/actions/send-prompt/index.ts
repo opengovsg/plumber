@@ -1,7 +1,7 @@
 import { IRawAction } from '@plumber/types'
 
 import TurndownService from 'turndown'
-import { fromZodError } from 'zod-validation-error'
+import { fromZodError } from 'zod-validation-error/v3'
 
 import StepError, { GenericSolution } from '@/errors/step'
 

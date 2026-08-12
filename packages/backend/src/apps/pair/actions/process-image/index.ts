@@ -2,7 +2,7 @@ import { IRawAction } from '@plumber/types'
 
 import { generateObject } from 'ai'
 import z from 'zod/v3'
-import { fromZodError } from 'zod-validation-error'
+import { fromZodError } from 'zod-validation-error/v3'
 
 import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
