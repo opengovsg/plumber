@@ -73,6 +73,7 @@ interface PublicFormResponse {
     _id: string
     title: string
     responseMode: string
+    workflow?: unknown[]
     publicKey?: string
     form_fields?: PublicFormField[]
   }
@@ -168,7 +169,12 @@ export async function getFormSchemaService(
   }
 
   const isStorageMode = Boolean(form.publicKey)
-  const isMrf = form.responseMode === 'multirespondent'
+  // A form can be left in 'multirespondent' responseMode without ever having
+  // its workflow set up — Plumber (and the FormSG trigger's own MRF check,
+  // see triggers/new-submission/index.ts) treats that as a single-respondent
+  // form, not an MRF.
+  const isMrf =
+    form.responseMode === 'multirespondent' && (form.workflow?.length ?? 0) > 0
 
   const warnings: string[] = []
   if (!isStorageMode) {

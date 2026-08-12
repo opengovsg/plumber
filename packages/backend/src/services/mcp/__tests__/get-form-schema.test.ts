@@ -232,7 +232,10 @@ describe('getFormSchemaService', () => {
 
     it('warns when the form is MRF', async () => {
       vi.mocked(axios.get).mockResolvedValue(
-        mockForm({ responseMode: 'multirespondent' }),
+        mockForm({
+          responseMode: 'multirespondent',
+          workflow: [{ _id: 'step1', edit: [], workflow_type: 'static' }],
+        }),
       )
 
       const result = await getFormSchemaService(FORM_ID)
@@ -240,6 +243,19 @@ describe('getFormSchemaService', () => {
       expect(result).toMatchObject({
         isMrf: true,
         warnings: [expect.stringContaining('multi-respondent')],
+      })
+    })
+
+    it('does not warn when responseMode is multirespondent but the workflow was never set up', async () => {
+      vi.mocked(axios.get).mockResolvedValue(
+        mockForm({ responseMode: 'multirespondent', workflow: [] }),
+      )
+
+      const result = await getFormSchemaService(FORM_ID)
+
+      expect(result).toMatchObject({
+        isMrf: false,
+        warnings: [],
       })
     })
   })
