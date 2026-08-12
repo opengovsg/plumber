@@ -39,7 +39,11 @@ import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
-import { serializeMessagesForLangfuse } from './helpers'
+import {
+  buildEstablishedConnectionReminder,
+  extractEstablishedFormConnection,
+  serializeMessagesForLangfuse,
+} from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { chatRequestSchema } from './schema'
@@ -143,9 +147,17 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
+      // Re-derived fresh every turn from the raw message text (not the LLM's
+      // own recall) — see extractEstablishedFormConnection for why relying on
+      // the model to remember this from many turns back isn't reliable.
+      const establishedFormConnection =
+        extractEstablishedFormConnection(rawMessages)
+
       const systemMessage = {
         role: 'system' as const,
-        content: buildSystemPrompt(prompt.prompt, restrictedApps),
+        content:
+          buildSystemPrompt(prompt.prompt, restrictedApps) +
+          buildEstablishedConnectionReminder(establishedFormConnection),
       }
       const allMessages = [systemMessage, ...messages]
 
