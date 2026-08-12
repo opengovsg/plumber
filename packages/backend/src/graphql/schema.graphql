@@ -706,6 +706,10 @@ input StepConfigInput {
   stepName: String
   approval: StepApprovalConfigInput
   templateConfig: StepTemplateConfigInput
+  # System-owned marker: id of the last step (inclusive) inside a block
+  # (if-then V2 today, possibly for-each later). Only the if-then initializer
+  # writes it, via updateStep.
+  endStepId: String
 }
 
 input UpdateStepInput {
@@ -826,6 +830,7 @@ type StepConfig {
   templateConfig: StepTemplateConfig
   stepName: String
   approval: StepApprovalConfig
+  endStepId: String
 }
 
 type StepTemplateConfig {
