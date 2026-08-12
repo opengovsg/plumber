@@ -349,6 +349,14 @@ export interface IBaseField {
    */
   hiddenIf?: IFieldVisibilityCondition
 
+  /**
+   * Allows hiding a field from the AI Builder chat only, while still showing
+   * it in the pipe editor. Shares the same condition shape as `hiddenIf`,
+   * but only `always_true` is currently evaluated by the MCP server (which
+   * has no runtime sibling-field values to check other conditions against).
+   */
+  hiddenFromAiIf?: IFieldVisibilityCondition
+
   // message to show when no variables are available
   noVariablesMessage?: string
 
