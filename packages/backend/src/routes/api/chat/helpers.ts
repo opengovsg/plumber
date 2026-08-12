@@ -1,3 +1,6 @@
+import type User from '@/models/user'
+import { listConnectionsService } from '@/services/mcp/list-connections'
+
 import type { ChatRequest } from './schema'
 
 /**
@@ -26,53 +29,94 @@ export interface EstablishedFormConnection {
   formTitle: string
 }
 
-// Matches the exact text sent by AiBuilder/helpers.ts's buildFormConnectedMessage/
-// buildKickoffMessage on the frontend (both the connect-first opening message and
-// the mid-conversation form-connected message use this same shape).
+interface CandidateFormConnectionRef {
+  connectionId: string
+  formId?: string
+}
+
+// Matches the shape sent by AiBuilder/helpers.ts's buildFormConnectedMessage/
+// buildKickoffMessage on the frontend (both the connect-first opening message
+// and the mid-conversation form-connected message use this same shape). The
+// quoted form title is matched but deliberately not captured — it's raw user
+// text and must never be trusted or echoed back into the system prompt as if
+// it were a verified fact (see resolveEstablishedFormConnection).
 const CONNECTED_FORM_MESSAGE_REGEX =
-  /I've connected my FormSG form "([^"]+)" \(id: ([^\s,)]+)(?:, form id: ([0-9a-f]{24}))?\)/i
+  /I've connected my FormSG form "[^"]+" \(id: ([^\s,)]+)(?:, form id: ([0-9a-f]{24}))?\)/i
 
 /**
- * Finds the most recently established FormSG connection referenced anywhere
- * in the conversation, by scanning for the `(id: …)` convention rather than
- * relying on the LLM to recall a fact from many turns back. Used to inject a
- * server-derived reminder into the system prompt every turn, since the LLM's
- * own recall of this fact degrades over a long conversation even though the
- * original message survives unmodified in every request.
+ * Finds the most recently referenced FormSG connection id in the
+ * conversation, by scanning for the `(id: …)` convention rather than relying
+ * on the LLM to recall a fact from many turns back. This is only a
+ * candidate: the id is entirely user-supplied text at this point and has not
+ * been checked against the database — a user could reference an arbitrary
+ * connectionId (their own or someone else's) here. Callers must verify
+ * ownership via resolveEstablishedFormConnection before treating this as a
+ * fact to hand to the LLM.
  */
-export function extractEstablishedFormConnection(
+export function extractCandidateFormConnection(
   messages: ChatRequest['messages'],
-): EstablishedFormConnection | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i]
+): CandidateFormConnectionRef | null {
+  let latest: CandidateFormConnectionRef | null = null
+
+  for (const message of messages) {
     if (message.role !== 'user') {
       continue
     }
-    for (let j = message.parts.length - 1; j >= 0; j--) {
-      const part = message.parts[j]
+    for (const part of message.parts) {
       if (part.type !== 'text') {
         continue
       }
       const match = part.text.match(CONNECTED_FORM_MESSAGE_REGEX)
       if (match) {
-        return {
-          formTitle: match[1],
-          connectionId: match[2],
-          formId: match[3],
-        }
+        latest = { connectionId: match[1], formId: match[2] }
       }
     }
   }
 
-  return null
+  return latest
+}
+
+/**
+ * Verifies a candidate FormSG connection id actually belongs to this user
+ * (and is a verified formsg connection) before it's ever surfaced to the LLM
+ * as an established fact. Re-derived fresh on every request from the raw
+ * message text — not from the LLM's own recall — so the fact stays visible
+ * near generation time regardless of how many turns have elapsed since it
+ * was first mentioned, without trusting anything the user hasn't actually
+ * verified access to. The connection's real label (from the database, set at
+ * connection-verification time) is used for the reminder rather than the
+ * user-supplied form title text, so a crafted title can't be echoed back
+ * into the system prompt as if it were server-verified.
+ */
+export async function resolveEstablishedFormConnection(
+  user: User,
+  messages: ChatRequest['messages'],
+): Promise<EstablishedFormConnection | null> {
+  const candidate = extractCandidateFormConnection(messages)
+  if (!candidate) {
+    return null
+  }
+
+  const connections = await listConnectionsService(user, 'formsg')
+  const verified = connections.find(
+    (c) => c.id === candidate.connectionId && c.verified,
+  )
+  if (!verified) {
+    return null
+  }
+
+  return {
+    connectionId: verified.id,
+    formId: candidate.formId,
+    formTitle: verified.label,
+  }
 }
 
 /**
  * Builds a short reminder appended to the system prompt when a FormSG
- * connection was already established earlier in the conversation. This is
- * re-derived fresh on every request (see extractEstablishedFormConnection),
- * so the fact stays visible near generation time regardless of how many
- * turns have elapsed since it was first mentioned.
+ * connection was already established earlier in the conversation. Only ever
+ * called with output from resolveEstablishedFormConnection, so the fields
+ * here are already verified as belonging to this user.
  */
 export function buildEstablishedConnectionReminder(
   connection: EstablishedFormConnection | null,
