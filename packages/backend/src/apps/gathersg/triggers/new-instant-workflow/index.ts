@@ -1,6 +1,6 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 
-import { type SafeParseError, type ZodIssue } from 'zod'
+import { type ZodIssue, type ZodSafeParseError } from 'zod'
 
 import StepError from '@/errors/step'
 
@@ -38,7 +38,7 @@ const trigger: IRawTrigger = {
       const validation = encryptionKeySchema.safeParse(encryptionKey)
 
       if (!validation.success) {
-        const { issues } = (validation as SafeParseError<string>).error
+        const { issues } = (validation as ZodSafeParseError<string>).error
         // combine all possible errors with the encryption key
         const error = issues
           .map((e: ZodIssue) => e.message)

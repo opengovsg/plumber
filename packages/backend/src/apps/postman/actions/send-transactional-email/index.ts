@@ -5,8 +5,8 @@ import {
   TestRunStepMetadata,
 } from '@plumber/types'
 
-import { SafeParseError, z } from 'zod'
-import { fromZodError } from 'zod-validation-error/v3'
+import { z, ZodSafeParseError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
 
 import StepError from '@/errors/step'
 import { TableVariableMarker } from '@/helpers/compute-parameters'
@@ -178,7 +178,7 @@ async function sendEmail(
 
   if (!result.success) {
     const validationError = fromZodError(
-      (result as SafeParseError<unknown>).error,
+      (result as ZodSafeParseError<unknown>).error,
     )
 
     const fieldName = validationError.details[0].path[0]

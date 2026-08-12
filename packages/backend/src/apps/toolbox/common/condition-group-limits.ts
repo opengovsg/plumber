@@ -27,7 +27,7 @@ const conditionGroupsSchema = z
               `An OR-group can have at most ${MAX_ROWS_PER_CONDITION_GROUP} conditions.`,
             ),
         }),
-        { invalid_type_error: 'Conditions must be an array of OR-groups.' },
+        { error: 'Conditions must be an array of OR-groups.' },
       )
       .max(
         MAX_CONDITION_GROUPS,
@@ -47,6 +47,6 @@ export function validateConditionGroupParameters(
 ): void {
   const result = conditionGroupsSchema.safeParse(parameters)
   if (!result.success) {
-    throw new BadUserInputError(result.error.errors[0].message)
+    throw new BadUserInputError(result.error.issues[0].message)
   }
 }

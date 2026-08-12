@@ -12,14 +12,14 @@ const opsSchema = z.object({
   timeUnit: timeUnitEnum,
   timeAmount: z
     .string({
-      required_error: 'No value found',
+      error: 'No value found',
     })
     .trim()
-    .min(1, { message: 'No value found' })
+    .min(1, { error: 'No value found' })
     .transform((amount) => Number(amount))
     .pipe(
       z
-        .number({ invalid_type_error: 'Enter a whole number' })
+        .number({ error: 'Enter a whole number' })
         .int('Enter whole numbers without decimals'),
     ),
 })
@@ -39,7 +39,7 @@ function sentenceCase(s: string): string {
 export const fields: TransformSpec['fields'] = [
   {
     label: 'How much time do you want to add or subtract?',
-    key: ensureZodObjectKey(fieldSchema.sourceType(), 'addSubtractDateTimeOps'),
+    key: ensureZodObjectKey(fieldSchema.in, 'addSubtractDateTimeOps'),
     type: 'multirow-multicol' as const,
     required: true,
     subFields: [

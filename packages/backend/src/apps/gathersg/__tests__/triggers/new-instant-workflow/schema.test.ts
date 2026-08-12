@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SafeParseError, ZodIssue } from 'zod'
+import type { ZodIssue, ZodSafeParseError } from 'zod'
 
 import { encryptionKeySchema } from '../../../triggers/new-instant-workflow/schema'
 
@@ -14,7 +14,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse('Abcdef1$A')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) => i.message.includes('be at least 12')),
       ).toBe(true)
@@ -25,7 +25,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse('Abcdefghijklmnopqr1$S')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) => i.message.includes('be at most 20')),
       ).toBe(true)
@@ -36,7 +36,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse('Abcdefghijk$')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) =>
           i.message.includes('contain at least 1 number'),
@@ -49,7 +49,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse('abcdefghi1$z')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) =>
           i.message.includes('contain at least 1 uppercase letter'),
@@ -62,7 +62,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse('Abcdefghij12')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) =>
           i.message.includes('contain at least 1 special character'),
@@ -75,7 +75,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse(' Abcdefghij1$')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) =>
           i.message.includes('not have leading or trailing whitespace'),
@@ -88,7 +88,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse('Abcdefghij1$ ')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) =>
           i.message.includes('not have leading or trailing whitespace'),
@@ -101,7 +101,7 @@ describe('encryptionKeySchema', () => {
     const result = encryptionKeySchema.safeParse(' Abcdefghij1$ ')
     expect(result.success).toBe(false)
     if (!result.success) {
-      const { issues } = (result as unknown as SafeParseError<string>).error
+      const { issues } = (result as unknown as ZodSafeParseError<string>).error
       expect(
         issues.some((i: ZodIssue) =>
           i.message.includes('not have leading or trailing whitespace'),

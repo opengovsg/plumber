@@ -142,8 +142,7 @@ const PARAMETER_ERROR_MESSAGE = 'For each input must be a variable'
 export const parameterSchema = z.object({
   items: z
     .string({
-      required_error: PARAMETER_ERROR_MESSAGE,
-      invalid_type_error: PARAMETER_ERROR_MESSAGE,
+      error: PARAMETER_ERROR_MESSAGE,
     })
     .refine((v) => VARIABLE_REGEX.test(v), {
       message: PARAMETER_ERROR_MESSAGE,

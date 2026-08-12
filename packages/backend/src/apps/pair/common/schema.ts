@@ -1,4 +1,4 @@
-import z from 'zod/v3'
+import z from 'zod'
 
 /**
  * Optional pipe id when linking a resource to a flow (must be a UUID when set).
