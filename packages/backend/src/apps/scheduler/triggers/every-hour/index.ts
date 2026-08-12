@@ -29,6 +29,7 @@ const trigger: IRawTrigger = {
           value: false,
         },
       ],
+      value: false,
     },
   ],
   getDataOutMetadata,
