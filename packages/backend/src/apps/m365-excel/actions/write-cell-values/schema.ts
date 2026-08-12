@@ -20,12 +20,10 @@ export const parametersSchema = z.object({
           .min(1, {
             message: 'Please make sure there are no empty cell addresses.',
           })
-          .refine(
-            (input) => CELL_A1_ADDRESS_REGEX.test(input),
-            (input) => ({
-              message: `Please input cell address '${input}' in A1 notation.`,
-            }),
-          ),
+          .refine((input) => CELL_A1_ADDRESS_REGEX.test(input), {
+            error: (issue) =>
+              `Please input cell address '${issue.input}' in A1 notation.`,
+          }),
         // Not trimming value; we should write user's input as-is.
         value: z.string().nullish(),
       }),

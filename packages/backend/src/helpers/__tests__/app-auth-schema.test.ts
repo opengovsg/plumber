@@ -23,7 +23,7 @@ describe('app-auth-schema', () => {
     const result = screenNameSchema.safeParse('a'.repeat(129))
     expect(result.success).toBe(false)
     if (result.success === false) {
-      expect(result.error.errors[0].message).toBe(
+      expect(result.error.issues[0].message).toBe(
         'Connection label is too long',
       )
     }
@@ -33,7 +33,7 @@ describe('app-auth-schema', () => {
     const result = screenNameSchema.safeParse('')
     expect(result.success).toBe(false)
     if (result.success === false) {
-      expect(result.error.errors[0].message).toBe('Empty connection label')
+      expect(result.error.issues[0].message).toBe('Empty connection label')
     }
   })
 })

@@ -1,6 +1,6 @@
 import { AttributeValue } from '@opentelemetry/api'
 import { generateObject as AiSdkGenerateObject } from 'ai'
-import z from 'zod/v3'
+import z from 'zod'
 
 import logger from '@/helpers/logger'
 import { model } from '@/helpers/pair'

@@ -4,7 +4,7 @@ import type {
   IFlowStepsTrigger,
 } from '@plumber/types'
 
-import { z } from 'zod/v4'
+import { z } from 'zod'
 
 const triggerStepSchema = z.object({
   type: z.literal('trigger'),

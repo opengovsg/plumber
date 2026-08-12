@@ -48,7 +48,7 @@ const action: IRawAction = {
     const parsedParameters = parameterSchema.safeParse(parameters)
     if (parsedParameters.success === false) {
       throw new BadUserInputError(
-        (parsedParameters.error as ZodError).errors[0].message,
+        (parsedParameters.error as ZodError).issues[0].message,
       )
     }
   },

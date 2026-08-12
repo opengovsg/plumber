@@ -1,4 +1,4 @@
-import z from 'zod/v3'
+import z from 'zod'
 
 import {
   validateActionParameters,
@@ -11,7 +11,7 @@ import { generateSchema } from './schema-generator'
 const baseActionStepSchema = z.object({
   type: z.literal('action'),
   description: z.string().optional(),
-  config: z.record(z.any()).optional(),
+  config: z.record(z.string(), z.any()).optional(),
 })
 
 export function getActionStepsSchema(restrictedAppKeys: string[] = []) {

@@ -1,7 +1,7 @@
 import type { IGlobalVariable } from '@plumber/types'
 
 import { ZodError } from 'zod'
-import { fromZodError } from 'zod-validation-error/v3'
+import { fromZodError } from 'zod-validation-error'
 
 import { validateAuthData } from './auth-data'
 import { verifyApiKey } from './verify-api-key'
