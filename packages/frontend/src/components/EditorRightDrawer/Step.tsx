@@ -8,7 +8,10 @@ import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
-import { generateValidationSchema } from '@/helpers/editor'
+import {
+  generateValidationSchema,
+  withDefaultParameters,
+} from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
@@ -45,13 +48,18 @@ export default function Step(props: StepProps): React.ReactElement | null {
     [substeps],
   )
 
+  const stepWithDefaultParameters = useMemo(
+    () => withDefaultParameters(step, substeps),
+    [step, substeps],
+  )
+
   return (
     <>
       <Flex w="100%" flexDir="column">
         <StepExecutionsProvider currentStep={step}>
           <Form
             key={`${step.id}-${resetTimestamp}`}
-            defaultValues={step}
+            defaultValues={stepWithDefaultParameters}
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >
