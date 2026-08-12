@@ -2,6 +2,8 @@ import { IStepConfig } from '@plumber/types'
 
 import { raw } from 'objection'
 
+import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
+import { extractSelfEndStepIntent } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
@@ -82,8 +84,11 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
+    const { config: newStepConfig, wantsSelfEndStep } =
+      extractSelfEndStepIntent(input.config as IStepConfig)
+
     const validationResult = await validateApprovalConfig(
-      input.config as IStepConfig,
+      newStepConfig,
       previousStep,
     )
     if (!validationResult.isApprovalConfigValid) {
@@ -106,8 +111,19 @@ const createStep: MutationResolvers['createStep'] = async (
       position: validationResult.newStepPosition,
       parameters: input.parameters,
       connectionId: input.connection?.id,
-      config: input.config as IStepConfig,
+      config: newStepConfig,
       version,
+    })
+
+    // IMPORTANT: throws (and rolls back the whole creation) on any marker
+    // violation.
+    await fixupEndStepOnCreateStep({
+      trx,
+      flow,
+      previousBlockId: input.previousBlockId,
+      previousStep,
+      newStep: step,
+      wantsSelfEndStep,
     })
 
     // NOTE: add flow connection to the flow_connections table
