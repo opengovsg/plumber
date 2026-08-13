@@ -82,9 +82,11 @@ export const stripFormIdPrefix = (label: string): string =>
 
 // User messages are displayed verbatim except for machine detail: picker
 // answers and the kickoff message carry "(id: …)" / "(id: …, form id: …)"
-// suffixes that are stripped from display.
+// suffixes that are stripped from display. The id itself isn't always a hex
+// UUID — e.g. Slack channel ids are mixed-case ("C0123456ABC") — so match on
+// the "(id: ...)" shape rather than a hex charset.
 export const formatUserMessageForDisplay = (text: string): string =>
-  text.replace(/ \(id: [a-f0-9-]+(?:, form id: [a-f0-9]+)?\)/g, '').trim()
+  text.replace(/ \(id: [^()]+?(?:, form id: [^()]+?)?\)/g, '').trim()
 
 // Matches FormSG share links across environments (form.gov.sg,
 // staging.form.gov.sg, …) ending in a 24-hex-char form ID.
