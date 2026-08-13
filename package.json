@@ -1,6 +1,9 @@
 {
   "name": "plumber",
   "license": "AGPL-3.0",
+  "engines": {
+    "npm": ">=11.10.0"
+  },
   "scripts": {
     "postinstall": "npm run gqlc",
     "all": "concurrently -c auto",
