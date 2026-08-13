@@ -16,9 +16,11 @@ import {
 } from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
+import SecretKeyWarningDialog from '@/pages/AiBuilder/components/ChatInterface/SecretKeyWarningDialog'
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
+import { containsSecretKey } from '@/pages/AiBuilder/helpers'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -104,6 +106,8 @@ export default function PromptInput({
   >({})
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
   const [reviewMode, setReviewMode] = useState(false)
+  const [showSecretKeyWarning, setShowSecretKeyWarning] = useState(false)
+  const secretKeyDialogCancelRef = useRef<HTMLButtonElement>(null)
 
   // Reset state whenever a new clarification arrives
   useEffect(() => {
@@ -112,16 +116,30 @@ export default function PromptInput({
     setReviewMode(false)
   }, [clarification])
 
+  const doSend = () => {
+    sendMessage(input)
+    setInput('')
+    setSelectedAnswers({})
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }
+
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault()
-    if (input?.trim() && !isStreaming) {
-      sendMessage(input)
-      setInput('')
-      setSelectedAnswers({})
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-      }
+    if (!input?.trim() || isStreaming) {
+      return
     }
+    if (containsSecretKey(input)) {
+      setShowSecretKeyWarning(true)
+      return
+    }
+    doSend()
+  }
+
+  const handleSendAnyway = () => {
+    setShowSecretKeyWarning(false)
+    doSend()
   }
 
   const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -373,6 +391,13 @@ export default function PromptInput({
           )}
         </Box>
       )}
+
+      <SecretKeyWarningDialog
+        cancelRef={secretKeyDialogCancelRef}
+        isOpen={showSecretKeyWarning}
+        onClose={() => setShowSecretKeyWarning(false)}
+        onSendAnyway={handleSendAnyway}
+      />
     </Box>
   )
 }
