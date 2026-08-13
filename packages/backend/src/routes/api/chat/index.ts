@@ -41,7 +41,7 @@ import { AuthenticatedRequest } from '@/types/express/context'
 
 import {
   buildEstablishedConnectionReminder,
-  extractEstablishedFormConnection,
+  resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
 } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
@@ -147,11 +147,14 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
-      // Re-derived fresh every turn from the raw message text (not the LLM's
-      // own recall) — see extractEstablishedFormConnection for why relying on
-      // the model to remember this from many turns back isn't reliable.
-      const establishedFormConnection =
-        extractEstablishedFormConnection(rawMessages)
+      // Re-derived fresh every turn from the raw message text and verified
+      // against this user's own connections — never trust the connectionId a
+      // user references in their own chat text without checking ownership
+      // first (see resolveEstablishedFormConnection).
+      const establishedFormConnection = await resolveEstablishedFormConnection(
+        context.currentUser,
+        rawMessages,
+      )
 
       const systemMessage = {
         role: 'system' as const,
