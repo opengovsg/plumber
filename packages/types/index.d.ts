@@ -1386,6 +1386,8 @@ export interface IMcpAppField {
   dynamicDataKey?: string
   dynamicDataParameters?: Record<string, string>
   subFields?: IMcpAppField[]
+  maxGroups?: number
+  maxRowsPerGroup?: number
 }
 
 export interface IMcpAppAction {

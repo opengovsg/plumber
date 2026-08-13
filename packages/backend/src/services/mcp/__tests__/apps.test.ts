@@ -152,6 +152,53 @@ vi.mock('@/apps', () => ({
               required: false,
               hiddenIf: { op: 'always_true' },
             },
+            {
+              key: 'conditions',
+              label: 'Conditions',
+              type: 'grouped-multirow',
+              required: true,
+              description: 'OR-groups of AND-ed conditions',
+              maxGroups: 10,
+              maxRowsPerGroup: 10,
+              subFields: [
+                {
+                  key: 'field',
+                  label: 'Field',
+                  type: 'string',
+                  required: true,
+                },
+                {
+                  key: 'text',
+                  label: 'Value',
+                  type: 'string',
+                  required: true,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    gathersg: {
+      key: 'gathersg',
+      name: 'GatherSG',
+      triggers: [],
+      actions: [
+        {
+          key: 'tagOrUntagCase',
+          name: 'Tag or Untag Case',
+          description: 'Tag or untag a case',
+          arguments: [
+            {
+              key: 'shouldTag',
+              label: 'Tag or Untag',
+              type: 'boolean-radio',
+              required: true,
+              options: [
+                { label: 'Tag', value: true },
+                { label: 'Untag', value: false },
+              ],
+            },
           ],
         },
       ],
@@ -179,8 +226,8 @@ describe('listAppsService', () => {
 
   it('returns visible apps with triggers and actions', async () => {
     const apps = await listAppsService(user)
-    // toolbox excluded by default; formsg + slack + tiles returned
-    expect(apps).toHaveLength(3)
+    // toolbox excluded by default; formsg + slack + tiles + gathersg returned
+    expect(apps).toHaveLength(4)
     const formsg = apps.find((a) => a.key === 'formsg')
     expect(formsg?.triggers).toHaveLength(1)
     expect(formsg?.actions).toHaveLength(0)
@@ -285,8 +332,40 @@ describe('listAppsService', () => {
       const apps = await listAppsService(user)
       const toolbox = apps.find((a) => a.key === 'toolbox')
       const fieldKeys = toolbox?.actions[0].fields.map((f) => f.key)
-      expect(fieldKeys).toEqual(['branchName'])
+      expect(fieldKeys).toEqual(['branchName', 'conditions'])
       expect(fieldKeys).not.toContain('depth')
+    })
+  })
+
+  describe('grouped-multirow fields', () => {
+    it('serializes subFields, maxGroups, and maxRowsPerGroup', async () => {
+      mocks.getAllLdFlags.mockResolvedValue({ app_toolbox: true })
+      const apps = await listAppsService(user)
+      const toolbox = apps.find((a) => a.key === 'toolbox')
+      const conditionsField = toolbox?.actions[0].fields.find(
+        (f) => f.key === 'conditions',
+      )
+      expect(conditionsField?.maxGroups).toBe(10)
+      expect(conditionsField?.maxRowsPerGroup).toBe(10)
+      expect(conditionsField?.subFields).toHaveLength(2)
+      expect(conditionsField?.subFields?.map((f) => f.key)).toEqual([
+        'field',
+        'text',
+      ])
+    })
+  })
+
+  describe('boolean-radio fields', () => {
+    it('serializes custom options with stringified values', async () => {
+      const apps = await listAppsService(user)
+      const gathersg = apps.find((a) => a.key === 'gathersg')
+      const shouldTagField = gathersg?.actions[0].fields.find(
+        (f) => f.key === 'shouldTag',
+      )
+      expect(shouldTagField?.options).toEqual([
+        { label: 'Tag', value: 'true' },
+        { label: 'Untag', value: 'false' },
+      ])
     })
   })
 

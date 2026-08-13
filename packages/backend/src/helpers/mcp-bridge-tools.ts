@@ -74,7 +74,7 @@ export function createMcpBridgeTools(
 
     create_pipe: tool({
       description:
-        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen steps, include parameters with branchName and conditions in the step.',
+        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.',
       inputSchema: z.object({
         name: z.string().describe('Human-readable name for the pipe'),
         steps: z
@@ -95,7 +95,7 @@ export function createMcpBridgeTools(
                 .record(z.string(), z.unknown())
                 .optional()
                 .describe(
-                  'Initial parameter values for this step. For toolbox/ifThen steps pass branchName and conditions here.',
+                  'Initial parameter values for this step. For toolbox/ifThen and toolbox/onlyContinueIf steps, conditions is an array of OR-groups, each { rows: [...] }, where each row is { field, is: "is"|"not", condition, text }, e.g. conditions: [{ rows: [{ field: "{{1.status}}", is: "is", condition: "equals", text: "done" }] }]. ifThen additionally requires branchName.',
                 ),
             }),
           )
