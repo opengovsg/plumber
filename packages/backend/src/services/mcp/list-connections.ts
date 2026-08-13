@@ -1,5 +1,8 @@
 import type { IJSONObject } from '@plumber/types'
 
+import { parseFormIdFromInput } from '@/apps/formsg/auth/verify-credentials'
+import { checkLiveMrfStatus } from '@/apps/formsg/common/check-live-mrf-status'
+import { parseFormEnvFromInput } from '@/apps/formsg/common/form-env'
 import App from '@/models/app'
 import type User from '@/models/user'
 
@@ -20,6 +23,47 @@ export function connectionLabel(c: {
     c.description ??
     c.key
   )
+}
+
+// Connections verified before PLU-866 (#1939) can still carry a stale
+// "[MRF] " tag baked into their stored screenName — that logic tagged any
+// form left in `multirespondent` responseMode even with no workflow
+// configured, and was removed without backfilling already-verified
+// connections. The tag only refreshes if the user re-verifies, so the AI
+// Builder's connection picker can still show a "fake MRF" label for an old
+// connection — and the model, told elsewhere that MRF is unsupported,
+// reasonably refuses to use it. Live-check and strip the tag (display-only,
+// no DB write) whenever we can positively confirm the form isn't MRF now.
+const STALE_MRF_TAG_REGEX = /^(\[[A-Z]+\] )?\[MRF\] /
+
+async function resolveMcpConnectionLabel(c: {
+  formattedData?: IJSONObject
+  description?: string
+  key: string
+}): Promise<string> {
+  const label = connectionLabel(c)
+
+  if (c.key !== 'formsg' || !STALE_MRF_TAG_REGEX.test(label)) {
+    return label
+  }
+
+  const rawFormId = c.formattedData?.formId as string | undefined
+  if (!rawFormId) {
+    return label
+  }
+
+  try {
+    const formId = parseFormIdFromInput(rawFormId)
+    const env = parseFormEnvFromInput(rawFormId)
+    const isCurrentlyMrf = await checkLiveMrfStatus(formId, env)
+    if (isCurrentlyMrf === false) {
+      return label.replace('[MRF] ', '')
+    }
+  } catch {
+    // Unparseable formId on this connection — leave the label as-is.
+  }
+
+  return label
 }
 
 export async function listConnectionsService(
@@ -45,12 +89,14 @@ export async function listConnectionsService(
       // tenants as a side effect — this mirrors the GraphQL resolver's behaviour
       // and is intentional.
       const connections = await app.auth.getSystemAddedConnections(user)
-      return connections.map((c) => ({
-        id: c.id,
-        appKey: c.key,
-        verified: c.verified,
-        label: connectionLabel(c),
-      }))
+      return Promise.all(
+        connections.map(async (c) => ({
+          id: c.id,
+          appKey: c.key,
+          verified: c.verified,
+          label: await resolveMcpConnectionLabel(c),
+        })),
+      )
     }
   }
 
@@ -62,10 +108,12 @@ export async function listConnectionsService(
   }
   const connections = await query
 
-  return connections.map((c) => ({
-    id: c.id,
-    appKey: c.key,
-    verified: c.verified,
-    label: connectionLabel(c),
-  }))
+  return Promise.all(
+    connections.map(async (c) => ({
+      id: c.id,
+      appKey: c.key,
+      verified: c.verified,
+      label: await resolveMcpConnectionLabel(c),
+    })),
+  )
 }
