@@ -17,6 +17,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Update to supported npm
+        # Latest version at PR time; we just need to support min-release-age
+        run: npm install -g npm@11.19.0
       - name: Cache node_modules
         id: cache-node-modules
         uses: actions/cache@v4
