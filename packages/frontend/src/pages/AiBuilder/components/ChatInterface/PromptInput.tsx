@@ -105,7 +105,6 @@ export default function PromptInput({
     Record<number, string>
   >({})
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
-  const [reviewMode, setReviewMode] = useState(false)
   const [showSecretKeyWarning, setShowSecretKeyWarning] = useState(false)
   const secretKeyDialogCancelRef = useRef<HTMLButtonElement>(null)
 
@@ -113,7 +112,6 @@ export default function PromptInput({
   useEffect(() => {
     setSelectedAnswers({})
     setCurrentQuestionIdx(0)
-    setReviewMode(false)
   }, [clarification])
 
   const doSend = () => {
@@ -183,39 +181,53 @@ export default function PromptInput({
     el.value = original
   }, [placeholder, input])
 
+  // Builds the combined Q:/A: message from an explicit answers map (rather
+  // than reading `selectedAnswers` state) since state from the same tick
+  // as the last answer isn't guaranteed to have landed yet.
+  const sendAnswers = (answers: Record<number, string>) => {
+    if (!clarification) {
+      return
+    }
+    const combined = clarification
+      .map((q, i) => `Q: ${q.question}\nA: ${answers[i]}`)
+      .join('\n\n')
+    sendMessage(combined)
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+  }
+
+  // Single-select: answering always advances immediately, or sends
+  // immediately if this was the last question — there's no separate
+  // confirm/send step, matching a plain single-select picker.
   const handleAnswer = (answer: string) => {
     if (isStreaming || !clarification) {
       return
     }
 
     const newAnswers = { ...selectedAnswers, [currentQuestionIdx]: answer }
-    setSelectedAnswers(newAnswers)
 
     const isLast = currentQuestionIdx === clarification.length - 1
     if (isLast) {
-      setReviewMode(true)
+      sendAnswers(newAnswers)
     } else {
+      setSelectedAnswers(newAnswers)
       setCurrentQuestionIdx((prev) => prev + 1)
     }
   }
 
-  const handleConfirm = () => {
+  // Back/next only move which already-answered question is in view, to
+  // review or change an earlier answer — they never trigger a send.
+  const handleBack = () => {
+    setCurrentQuestionIdx((prev) => Math.max(0, prev - 1))
+  }
+
+  const handleNext = () => {
     if (!clarification) {
       return
     }
-    const combined = clarification
-      .map((q, i) => `Q: ${q.question}\nA: ${selectedAnswers[i]}`)
-      .join('\n\n')
-    sendMessage(combined)
-    setSelectedAnswers({})
-    setCurrentQuestionIdx(0)
-    setReviewMode(false)
-  }
-
-  const handleReset = () => {
-    setSelectedAnswers({})
-    setCurrentQuestionIdx(0)
-    setReviewMode(false)
+    setCurrentQuestionIdx((prev) =>
+      Math.min(clarification.length - 1, prev + 1),
+    )
   }
 
   const handleOptionClick = (optionIdx: number) => {
@@ -260,12 +272,11 @@ export default function PromptInput({
         clarification={clarification}
         currentQuestionIdx={currentQuestionIdx}
         selectedAnswers={selectedAnswers}
-        reviewMode={reviewMode}
         isStreaming={isStreaming}
         onOptionClick={handleOptionClick}
         onFreeTextSubmit={handleAnswer}
-        onConfirm={handleConfirm}
-        onReset={handleReset}
+        onBack={handleBack}
+        onNext={handleNext}
         cancelStream={cancelStream}
       />
     )
