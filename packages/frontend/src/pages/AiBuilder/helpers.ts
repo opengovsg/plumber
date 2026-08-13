@@ -183,12 +183,14 @@ export const deduplicateMessages = (messages: Message[]) => {
   })
 }
 
-// Helper function to extract text content from UIMessage
+// Extract text content from a UIMessage. A tool call splits generation into
+// separate text parts (before/after), so join with a blank line rather than
+// '' — otherwise the two chunks glue together mid-sentence.
 export const extractTextContent = (msg: CustomUIMessage): string => {
   return msg.parts
     .filter((part) => part.type === 'text')
     .map((part: TextPart) => part.text)
-    .join('')
+    .join('\n\n')
 }
 
 export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
