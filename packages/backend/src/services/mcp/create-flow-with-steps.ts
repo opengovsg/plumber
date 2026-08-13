@@ -1,6 +1,6 @@
 import type { IJSONObject } from '@plumber/types'
 
-import z from 'zod/v3'
+import z from 'zod'
 
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
 import { generateSchema } from '@/graphql/mutations/ai/schemas/schema-generator'
@@ -63,7 +63,7 @@ export async function createFlowWithStepsService({
     if (!validatedTrigger.success) {
       logger.error(
         'Failed to create flow with steps: Pipe must always start with a trigger',
-        { error: validatedTrigger.error.errors },
+        { error: validatedTrigger.error.issues },
       )
       throw new Error('Pipe must always start with a trigger')
     }
@@ -75,7 +75,7 @@ export async function createFlowWithStepsService({
       if (!validatedActions.success) {
         logger.error(
           'Failed to create flow with steps: Pipe contains invalid action steps',
-          { error: validatedActions.error.errors },
+          { error: validatedActions.error.issues },
         )
         throw new Error('Pipe contains invalid action steps')
       }
