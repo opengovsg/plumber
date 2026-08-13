@@ -1,6 +1,7 @@
 import type {
   IMcpApp,
   IMcpAppField,
+  IMcpFieldOption,
   IRawAction,
   IRawTrigger,
   IUser,
@@ -26,6 +27,12 @@ function serializeFields(
   return fields.filter((f) => !isHiddenFromAi(f)).map(serializeField)
 }
 
+function mapOptions(
+  options: { label: string; value: unknown }[],
+): IMcpFieldOption[] {
+  return options.map((o) => ({ label: o.label, value: String(o.value) }))
+}
+
 function serializeField(
   field: NonNullable<IRawTrigger['arguments']>[number],
 ): IMcpAppField {
@@ -39,10 +46,7 @@ function serializeField(
 
   if (field.type === 'dropdown') {
     if (field.options?.length && !field.source) {
-      base.options = field.options.map((o) => ({
-        label: o.label,
-        value: String(o.value),
-      }))
+      base.options = mapOptions(field.options)
     } else if (field.source?.arguments?.length) {
       const keyArg = field.source.arguments.find((a) => a.name === 'key')
       if (keyArg) {
@@ -60,11 +64,26 @@ function serializeField(
     }
   }
 
+  if (field.type === 'boolean-radio' && field.options?.length) {
+    base.options = mapOptions(field.options)
+  }
+
   if (
-    (field.type === 'multirow' || field.type === 'multirow-multicol') &&
+    (field.type === 'multirow' ||
+      field.type === 'multirow-multicol' ||
+      field.type === 'grouped-multirow') &&
     field.subFields.length
   ) {
     base.subFields = serializeFields(field.subFields)
+  }
+
+  if (field.type === 'grouped-multirow') {
+    if (field.maxGroups !== undefined) {
+      base.maxGroups = field.maxGroups
+    }
+    if (field.maxRowsPerGroup !== undefined) {
+      base.maxRowsPerGroup = field.maxRowsPerGroup
+    }
   }
 
   return base
