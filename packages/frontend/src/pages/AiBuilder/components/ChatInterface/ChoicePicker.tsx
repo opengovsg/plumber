@@ -1,5 +1,5 @@
 import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react'
-import { FaArrowCircleUp } from 'react-icons/fa'
+import { FaArrowCircleUp, FaExclamationTriangle } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Button, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
@@ -38,12 +38,14 @@ export default function ChoicePicker({
   const isMulti = clarification.length > 1
 
   if (reviewMode) {
+    const hasWarning = clarification.some((q) => q.isWarning)
+
     return (
       <Box w="full" maxW="4xl">
         <Box
-          bg="white"
+          bg={hasWarning ? 'red.50' : 'white'}
           border="1px"
-          borderColor="gray.200"
+          borderColor={hasWarning ? 'red.300' : 'gray.200'}
           borderRadius="16px"
           boxShadow="0 2px 4px rgba(0,0,0,0.1)"
           p={4}
@@ -52,10 +54,25 @@ export default function ChoicePicker({
           <Flex direction="column" gap={3}>
             {clarification.map((q, i) => (
               <Box key={i}>
-                <Text fontSize="sm" color="gray.500">
-                  {q.question}
-                </Text>
-                <Text fontWeight="medium" color="gray.900">
+                <Flex align="flex-start" gap={1.5}>
+                  {q.isWarning && (
+                    <Icon
+                      as={FaExclamationTriangle}
+                      color="red.500"
+                      fontSize="12px"
+                      flexShrink={0}
+                      mt="2px"
+                    />
+                  )}
+                  <Text fontSize="sm" color="gray.500">
+                    {q.question}
+                  </Text>
+                </Flex>
+                <Text
+                  fontWeight={q.isWarning ? 'semibold' : 'medium'}
+                  color="gray.900"
+                  mt={1}
+                >
                   {selectedAnswers[i] ?? '—'}
                 </Text>
               </Box>
@@ -132,21 +149,36 @@ export default function ChoicePicker({
     }
   }
 
+  const isWarning = currentQ.isWarning
+
   return (
     <Box w="full" maxW="4xl">
       <Box
-        bg="white"
+        bg={isWarning ? 'red.50' : 'white'}
         border="1px"
-        borderColor="gray.200"
+        borderColor={isWarning ? 'red.300' : 'gray.200'}
         borderRadius="16px"
         boxShadow="0 2px 4px rgba(0,0,0,0.1)"
         p={4}
         w="full"
       >
-        <Flex justify="space-between" align="center" mb={2}>
-          <Text>{currentQ.question}</Text>
+        <Flex justify="space-between" align="flex-start" mb={2}>
+          <Flex align="flex-start" gap={2}>
+            {isWarning && (
+              <Icon
+                as={FaExclamationTriangle}
+                color="red.500"
+                fontSize="16px"
+                flexShrink={0}
+                mt="3px"
+              />
+            )}
+            <Text fontWeight={isWarning ? 'semibold' : 'normal'}>
+              {currentQ.question}
+            </Text>
+          </Flex>
           {isMulti && (
-            <Text fontSize="sm" color="gray.400" ml={3}>
+            <Text fontSize="sm" color="gray.400" ml={3} flexShrink={0}>
               {currentQuestionIdx + 1} / {clarification.length}
             </Text>
           )}
@@ -163,15 +195,18 @@ export default function ChoicePicker({
                 py={2}
                 isDisabled={isStreaming}
                 onClick={() => onOptionClick(optIdx)}
-                borderColor="gray.200"
+                borderColor={isWarning ? 'red.200' : 'gray.200'}
                 bg="white"
                 color="gray.800"
-                _hover={{ borderColor: 'primary.300', bg: 'primary.50' }}
-                _active={{ bg: 'primary.100' }}
+                _hover={{
+                  borderColor: isWarning ? 'red.400' : 'primary.300',
+                  bg: isWarning ? 'red.50' : 'primary.50',
+                }}
+                _active={{ bg: isWarning ? 'red.100' : 'primary.100' }}
                 gap={2}
               >
                 <Badge
-                  colorScheme="secondary"
+                  colorScheme={isWarning ? 'critical' : 'secondary'}
                   variant="subtle"
                   size="sm"
                   flexShrink={0}

@@ -80,6 +80,8 @@ export type PipeStatePart = {
 export interface ClarificationQuestion {
   question: string
   options: string[]
+  /** Renders the question as a visually urgent warning — reserved for choices with a real, hard-to-reverse consequence. */
+  isWarning?: boolean
 }
 
 // Type for clarification questions data annotation

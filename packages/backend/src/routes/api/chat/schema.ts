@@ -73,6 +73,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
           z.object({
             question: z.string(),
             options: z.array(z.string()),
+            isWarning: z.boolean().optional(),
           }),
         )
         .min(1),
