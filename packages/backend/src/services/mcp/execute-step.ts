@@ -31,7 +31,14 @@ export async function executeStepService(
 
   // TODO: MRF redirect when AI builder supports it
 
-  const { executionStep, executionId } = await testStep({ stepId: step.id })
+  // AI Builder testing happens inline in chat, with no real user action to
+  // wait on — always prefer mock data (e.g. FormSG's newSubmission trigger)
+  // instead of waiting on a real event. Apps that don't recognise
+  // `preferMock` in their testRunMetadata schema just ignore it.
+  const { executionStep, executionId } = await testStep({
+    stepId: step.id,
+    testRunMetadata: { preferMock: true },
+  })
 
   await Flow.query().patchAndFetchById(step.flowId, {
     testExecutionId: executionId,
