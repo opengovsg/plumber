@@ -116,6 +116,11 @@ describe('executeStepService', () => {
 
     const updatedFlow = await Flow.query().findById(flow.id)
     expect(updatedFlow.testExecutionId).toBe(execution.id)
+
+    expect(mocks.testStep).toHaveBeenCalledWith({
+      stepId: actionStep.id,
+      testRunMetadata: { preferMock: true },
+    })
   })
 
   it('does not mark step as completed and returns success:false when testStep fails', async () => {
