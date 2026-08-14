@@ -89,6 +89,17 @@ export const stripFormIdPrefix = (label: string): string =>
 export const formatUserMessageForDisplay = (text: string): string =>
   text.replace(/ \(id: [\s\S]+?\)(?=[.\s]|$)/g, '').trim()
 
+// System signal for the LLM when a picker fetch has zero options — see
+// DynamicPicker's onNoOptionsFound. Never shown to the user (isNoOptionsSignalMessage).
+export const buildNoOptionsFoundMessage = (
+  question: string,
+  reason?: string,
+): string =>
+  `Q: ${question}\nA: [no options available${reason ? `: ${reason}` : ''}]`
+
+export const isNoOptionsSignalMessage = (text: string): boolean =>
+  text.includes('\nA: [no options available')
+
 // Matches FormSG share links across environments (form.gov.sg,
 // staging.form.gov.sg, …) ending in a 24-hex-char form ID.
 const FORM_URL_REGEX =

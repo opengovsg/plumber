@@ -1,26 +1,18 @@
-import {
-  type FormEvent,
-  type KeyboardEvent,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import {
-  Box,
-  Button,
-  Flex,
-  Icon,
-  Input,
-  Spinner,
-  Text,
-  Textarea,
-} from '@chakra-ui/react'
+import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
 
 interface DynamicPickerOption {
   name: string
   value: string
+}
+
+// Carries the backend's `{ error, code }` body for the catch handler below.
+class DynamicDataFetchError extends Error {
+  constructor(public status: number, message: string, public code?: string) {
+    super(message)
+  }
 }
 
 interface DynamicPickerProps {
@@ -31,6 +23,13 @@ interface DynamicPickerProps {
   isStreaming: boolean
   onSelect: (name: string, value: string) => void
   onSkip: () => void
+  /**
+   * Step/key mode only: called once when a fetch returns zero options, or a
+   * "prerequisite not saved" error — signals the LLM to self-troubleshoot.
+   * `reason`, when present, is the backend's diagnostic (e.g. which
+   * parameter is missing).
+   */
+  onNoOptionsFound?: (reason?: string) => void
   onAddConnection?: () => void
   /**
    * FormSG only: a form URL already shared in the conversation. When set,
@@ -50,6 +49,7 @@ export default function DynamicPicker({
   isStreaming,
   onSelect,
   onSkip,
+  onNoOptionsFound,
   onAddConnection,
   knownFormUrl,
   cancelStream,
@@ -61,8 +61,6 @@ export default function DynamicPicker({
   const [query, setQuery] = useState('')
   const [selectedOption, setSelectedOption] =
     useState<DynamicPickerOption | null>(null)
-  const [inputValue, setInputValue] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   const isAppKeyMode = Boolean(appKey)
@@ -101,9 +99,14 @@ export default function DynamicPicker({
         })
 
     fetchPromise
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
-          throw new Error(`Fetch failed: ${res.status}`)
+          const body = await res.json().catch(() => null)
+          throw new DynamicDataFetchError(
+            res.status,
+            body?.error ?? '',
+            body?.code,
+          )
         }
         return res.json()
       })
@@ -116,12 +119,29 @@ export default function DynamicPicker({
         if (isAppKeyMode && data.length === 1 && appKey !== 'formsg') {
           onSelect(data[0].name, data[0].value)
         }
+
+        // Zero options is a real result — let the LLM self-troubleshoot.
+        if (!isAppKeyMode && data.length === 0) {
+          onNoOptionsFound?.()
+        }
       })
       .catch((err) => {
-        if ((err as Error).name !== 'AbortError') {
-          setOptions([])
-          setIsError(true)
+        if ((err as Error).name === 'AbortError') {
+          return
         }
+        setOptions([])
+
+        // Step isn't configured yet — forward the reason to the LLM.
+        if (
+          !isAppKeyMode &&
+          err instanceof DynamicDataFetchError &&
+          err.code === 'prerequisite_missing'
+        ) {
+          onNoOptionsFound?.(err.message || undefined)
+          return
+        }
+
+        setIsError(true)
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -138,37 +158,19 @@ export default function DynamicPicker({
 
   const hasOptions = !isLoading && options.length > 0
 
-  const handleResize = (e?: FormEvent<HTMLTextAreaElement>) => {
-    const target = e?.currentTarget || textareaRef.current
-    if (!target) {
-      return
-    }
-    target.style.height = 'auto'
-    target.style.height = Math.min(target.scrollHeight, 120) + 'px'
-  }
-
   const handleOptionClick = (opt: DynamicPickerOption) => {
     setSelectedOption(opt)
-    setInputValue(opt.name)
   }
 
   const handleSubmit = () => {
-    if (!inputValue.trim() || isStreaming) {
+    if (!selectedOption || isStreaming) {
       return
     }
-    onSelect(inputValue, selectedOption?.value ?? inputValue)
+    onSelect(selectedOption.name, selectedOption.value)
   }
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
-    }
-  }
-
-  // Zero-connections empty state (appKey mode only)
-  const showEmptyState =
-    isAppKeyMode && !isLoading && !isError && options.length === 0
+  // Zero options — distinct from a fetch error.
+  const showEmptyState = !isLoading && !isError && options.length === 0
 
   // In-chat "Add new form" entry point — FormSG only, and only when the host
   // page provided a handler for it.
@@ -223,19 +225,25 @@ export default function DynamicPicker({
               <Spinner size="sm" color="primary.500" />
             </Flex>
           ) : showEmptyState ? (
-            canAddConnection ? (
-              <Button
-                variant="outline"
-                alignSelf="flex-start"
-                isDisabled={isStreaming}
-                onClick={onAddConnection}
-              >
-                Add your form
-              </Button>
+            isAppKeyMode ? (
+              canAddConnection ? (
+                <Button
+                  variant="outline"
+                  alignSelf="flex-start"
+                  isDisabled={isStreaming}
+                  onClick={onAddConnection}
+                >
+                  Add your form
+                </Button>
+              ) : (
+                <Text color="gray.500" fontSize="sm" px={2}>
+                  No connections found for this app — you can add one in
+                  Plumber&apos;s connection settings.
+                </Text>
+              )
             ) : (
               <Text color="gray.500" fontSize="sm" px={2}>
-                No connections found for this app — you can add one in
-                Plumber&apos;s connection settings.
+                No matching options were found for this field.
               </Text>
             )
           ) : hasOptions ? (
@@ -275,7 +283,7 @@ export default function DynamicPicker({
             <Text color="red.400" fontSize="sm">
               {isAppKeyMode
                 ? "Couldn't load connections. "
-                : "Couldn't load options — enter a value manually below, or "}
+                : "Couldn't load options. "}
               <Text
                 as="button"
                 type="button"
@@ -291,119 +299,10 @@ export default function DynamicPicker({
           ) : null}
         </Flex>
 
-        {/* Freetext input — hidden in appKey mode (connection IDs must be exact) */}
-        {!isAppKeyMode && (
-          <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
-            <Flex gap={2} align="flex-end">
-              <Textarea
-                ref={textareaRef}
-                value={inputValue}
-                onChange={(e) => {
-                  setInputValue(e.target.value)
-                  setSelectedOption(null)
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  hasOptions
-                    ? 'Or describe your answer…'
-                    : 'Enter a value manually…'
-                }
-                resize="none"
-                border="none"
-                bg="transparent"
-                p={0}
-                color="gray.900"
-                _placeholder={{ color: 'gray.400' }}
-                _focus={{ outline: 'none', boxShadow: 'none' }}
-                fontSize="md"
-                rows={1}
-                maxH="120px"
-                overflowY="auto"
-                onInput={handleResize}
-                isDisabled={isStreaming}
-              />
-              <Flex align="flex-end" flexShrink={0} h="24px">
-                {isStreaming ? (
-                  <Icon
-                    as={FaCircleStop}
-                    fontSize="24px"
-                    color="red.500"
-                    cursor="pointer"
-                    onClick={cancelStream}
-                    _hover={{ color: 'red.600' }}
-                  />
-                ) : (
-                  inputValue.trim() && (
-                    <Icon
-                      as={FaArrowCircleUp}
-                      fontSize="24px"
-                      color="primary.500"
-                      onClick={handleSubmit}
-                      cursor="pointer"
-                    />
-                  )
-                )}
-              </Flex>
-            </Flex>
-          </Box>
-        )}
-
-        {isAppKeyMode && (
-          <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
-            <Flex justify="space-between" align="center">
-              <Flex gap={4} align="center">
-                <Button
-                  variant="link"
-                  size="sm"
-                  color="gray.400"
-                  isDisabled={isStreaming}
-                  onClick={onSkip}
-                  fontWeight="normal"
-                >
-                  skip this step
-                </Button>
-                {canAddConnection && hasOptions && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    color="primary.500"
-                    isDisabled={isStreaming}
-                    onClick={onAddConnection}
-                    fontWeight="normal"
-                  >
-                    Add a new form
-                  </Button>
-                )}
-              </Flex>
-              <Flex align="center" h="24px">
-                {isStreaming ? (
-                  <Icon
-                    as={FaCircleStop}
-                    fontSize="24px"
-                    color="red.500"
-                    cursor="pointer"
-                    onClick={cancelStream}
-                    _hover={{ color: 'red.600' }}
-                  />
-                ) : (
-                  selectedOption && (
-                    <Icon
-                      as={FaArrowCircleUp}
-                      fontSize="24px"
-                      color="primary.500"
-                      onClick={handleSubmit}
-                      cursor="pointer"
-                    />
-                  )
-                )}
-              </Flex>
-            </Flex>
-          </Box>
-        )}
-
-        {!isAppKeyMode && (
-          <Box mt={2}>
-            <Flex justify="flex-end">
+        {/* Skip, submit-once-selected, add-a-new-form. No free text. */}
+        <Box borderTop="1px" borderColor="gray.100" mt={4} pt={3}>
+          <Flex justify="space-between" align="center">
+            <Flex gap={4} align="center">
               <Button
                 variant="link"
                 size="sm"
@@ -414,9 +313,43 @@ export default function DynamicPicker({
               >
                 skip this step
               </Button>
+              {canAddConnection && hasOptions && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  color="primary.500"
+                  isDisabled={isStreaming}
+                  onClick={onAddConnection}
+                  fontWeight="normal"
+                >
+                  Add a new form
+                </Button>
+              )}
             </Flex>
-          </Box>
-        )}
+            <Flex align="center" h="24px">
+              {isStreaming ? (
+                <Icon
+                  as={FaCircleStop}
+                  fontSize="24px"
+                  color="red.500"
+                  cursor="pointer"
+                  onClick={cancelStream}
+                  _hover={{ color: 'red.600' }}
+                />
+              ) : (
+                selectedOption && (
+                  <Icon
+                    as={FaArrowCircleUp}
+                    fontSize="24px"
+                    color="primary.500"
+                    onClick={handleSubmit}
+                    cursor="pointer"
+                  />
+                )
+              )}
+            </Flex>
+          </Flex>
+        </Box>
       </Box>
     </Box>
   )
