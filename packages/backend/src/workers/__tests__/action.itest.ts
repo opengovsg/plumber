@@ -442,6 +442,7 @@ describe('Action worker', () => {
 
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',
