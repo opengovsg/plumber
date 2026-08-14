@@ -1,6 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import get from 'lodash.get'
+import { raw } from 'objection'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
@@ -71,12 +72,17 @@ export async function throwSendMessageError(
             throw err // uncaught error
           }
 
+          // `step.parameters` here is the resolved, per-run copy (see
+          // computeParameters in services/action.ts), not the persisted
+          // config. Merge chatId into the DB row's parameters directly via
+          // a jsonb `||` so we patch the actual stored value atomically,
+          // instead of spreading stale/resolved in-memory parameters back.
           await Step.query()
             .patchAndFetchById(step.id, {
-              parameters: {
-                ...step.parameters,
-                chatId: newChatId,
-              },
+              parameters: raw('?? || ?::jsonb', [
+                'parameters',
+                JSON.stringify({ chatId: newChatId }),
+              ]),
             })
             .context({
               shouldBypassBeforeUpdateHook: true,
