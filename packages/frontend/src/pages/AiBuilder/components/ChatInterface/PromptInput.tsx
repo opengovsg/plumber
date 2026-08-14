@@ -20,7 +20,10 @@ import SecretKeyWarningDialog from '@/pages/AiBuilder/components/ChatInterface/S
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
-import { containsSecretKey } from '@/pages/AiBuilder/helpers'
+import {
+  buildNoOptionsFoundMessage,
+  containsSecretKey,
+} from '@/pages/AiBuilder/helpers'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -255,6 +258,15 @@ export default function PromptInput({
         onSkip={() => {
           sendMessage(`Q: ${dynamicPicker.question}\nA: skip`)
         }}
+        onNoOptionsFound={
+          isAppKeyMode
+            ? undefined
+            : (reason) => {
+                sendMessage(
+                  buildNoOptionsFoundMessage(dynamicPicker.question, reason),
+                )
+              }
+        }
         onAddConnection={
           onAddConnection && isAppKeyMode
             ? () => onAddConnection({ question: dynamicPicker.question })
