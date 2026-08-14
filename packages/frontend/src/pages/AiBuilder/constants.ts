@@ -38,5 +38,6 @@ export const PLACEHOLDER_MESSAGES = [
   "Share what you're trying to do and we'll help you figure out the best way to automate it",
 ]
 
-// Maximum number of messages allowed in a conversation (hard limit)
-export const MAX_MESSAGES = 50
+// Maximum number of messages allowed in a conversation (hard limit).
+// Keep in sync with backend/src/routes/api/chat/{schema,index}.ts.
+export const MAX_MESSAGES = 150
