@@ -4,6 +4,7 @@ import { Box, Flex, Text } from '@chakra-ui/react'
 import { Message } from '@/hooks/useChatStream'
 import {
   formatUserMessageForDisplay,
+  isNoOptionsSignalMessage,
   prepareAiText,
 } from '@/pages/AiBuilder/helpers'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
@@ -69,6 +70,10 @@ const ChatMessage = memo(
     shouldShowToolbar: boolean
   }) => {
     if (message.isUser) {
+      // System cue for the LLM, not a real user reply — never rendered.
+      if (isNoOptionsSignalMessage(message.text)) {
+        return null
+      }
       return <UserMessage message={message} />
     }
     return (
