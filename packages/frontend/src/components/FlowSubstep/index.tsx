@@ -10,7 +10,9 @@ import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
+import { isIfThenStep } from '@/helpers/toolbox'
 import { validateStepParams } from '@/helpers/validateStepParams'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -38,6 +40,8 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = useDisclosure()
 
   const { arguments: args } = substep
+  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
+    useIfThenV2Enabled()
   const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
@@ -62,6 +66,16 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const argsToDisplay = useMemo(
     () =>
       args?.filter((arg) => {
+        // TODO: remove this branchName-specific check once if-then V2 is
+        // rolled out to 100% and if-then V1 is retired.
+        if (
+          arg.key === 'branchName' &&
+          isIfThenStep(step) &&
+          isIfThenV2Enabled &&
+          !isIfThenV2Loading
+        ) {
+          return false
+        }
         const inputFlag = getInputFlag(
           selectedActionOrTrigger?.key ?? '',
           arg.key,
@@ -69,7 +83,14 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         const flagValue = getFlagValue(inputFlag, false)
         return !flagValue || +step.createdAt <= flagValue
       }) || [],
-    [args, step.createdAt, selectedActionOrTrigger, getFlagValue],
+    [
+      args,
+      step,
+      isIfThenV2Enabled,
+      isIfThenV2Loading,
+      selectedActionOrTrigger,
+      getFlagValue,
+    ],
   )
 
   /**

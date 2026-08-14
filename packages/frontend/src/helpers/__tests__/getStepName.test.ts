@@ -54,15 +54,98 @@ describe('getStepName', () => {
       const result = getStepName([], step)
       expect(result).toEqual({
         stepName: 'My Condition',
-        defaultStepName: 'Condition',
+        defaultStepName: 'If-then',
       })
     })
 
-    it('returns "Condition" when no custom name', () => {
+    it('returns "If-then" when no custom name', () => {
       const result = getStepName([], ifThenStep)
       expect(result).toEqual({
-        stepName: 'Condition',
-        defaultStepName: 'Condition',
+        stepName: 'If-then',
+        defaultStepName: 'If-then',
+      })
+    })
+
+    it('ignores branchName when the flag param is omitted, even if set', () => {
+      const step = createMockStep({
+        ...ifThenStep,
+        parameters: { branchName: 'Branch 1' },
+      })
+      const result = getStepName([], step)
+      expect(result).toEqual({
+        stepName: 'If-then',
+        defaultStepName: 'If-then',
+      })
+    })
+
+    it('ignores branchName when the flag is explicitly off', () => {
+      const step = createMockStep({
+        ...ifThenStep,
+        parameters: { branchName: 'Branch 1' },
+        config: { stepName: 'My Condition' },
+      })
+      const result = getStepName([], step, false)
+      expect(result).toEqual({
+        stepName: 'My Condition',
+        defaultStepName: 'If-then',
+      })
+    })
+
+    it('ignores branchName for a V2 step even when the flag is on', () => {
+      const step = createMockStep({
+        ...ifThenStep,
+        parameters: { branchName: 'Branch 1' },
+        config: { endStepId: 'step-2' },
+      })
+      const result = getStepName([], step, true)
+      expect(result).toEqual({
+        stepName: 'If-then',
+        defaultStepName: 'If-then',
+      })
+    })
+
+    it('combines branchName and stepName for a leftover V1 step when the flag is on', () => {
+      const step = createMockStep({
+        ...ifThenStep,
+        parameters: { branchName: 'Branch 1' },
+        config: { stepName: 'My Condition' },
+      })
+      const result = getStepName([], step, true)
+      expect(result).toEqual({
+        stepName: 'Branch 1 (My Condition)',
+        defaultStepName: 'Branch 1',
+      })
+    })
+
+    it('falls back to branchName alone for a leftover V1 step with no stepName, flag on', () => {
+      const step = createMockStep({
+        ...ifThenStep,
+        parameters: { branchName: 'Branch 1' },
+      })
+      const result = getStepName([], step, true)
+      expect(result).toEqual({
+        stepName: 'Branch 1',
+        defaultStepName: 'Branch 1',
+      })
+    })
+
+    it('falls back to "If-then" for a leftover V1 step with no branchName, flag on', () => {
+      const result = getStepName([], ifThenStep, true)
+      expect(result).toEqual({
+        stepName: 'If-then',
+        defaultStepName: 'If-then',
+      })
+    })
+
+    it('falls back to "If-then" when config.stepName was explicitly cleared to an empty string', () => {
+      const step = createMockStep({
+        ...ifThenStep,
+        config: { stepName: '' },
+      })
+      const result = getStepName([], step)
+      expect(result).toEqual({
+        stepName: 'If-then',
+        defaultStepName: 'If-then',
       })
     })
   })
@@ -81,6 +164,18 @@ describe('getStepName', () => {
       const result = getStepName([], step)
       expect(result).toEqual({
         stepName: 'Loop Items',
+        defaultStepName: 'For each item',
+      })
+    })
+
+    it('falls back to "For each item" when config.stepName was explicitly cleared to an empty string', () => {
+      const step = createMockStep({
+        ...forEachStep,
+        config: { stepName: '' },
+      })
+      const result = getStepName([], step)
+      expect(result).toEqual({
+        stepName: 'For each item',
         defaultStepName: 'For each item',
       })
     })
