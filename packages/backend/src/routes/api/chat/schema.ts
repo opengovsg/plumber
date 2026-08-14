@@ -18,8 +18,14 @@ const optionalTracingId = z
   })
   .optional()
 
-// Limits to protect API and LLM costs
-const MAX_MESSAGES = 50
+// Limits to protect API and LLM costs.
+// Keep in sync with index.ts and frontend/src/pages/AiBuilder/constants.ts.
+const MAX_MESSAGES = 150
+// Hard reject ceiling, with headroom above MAX_MESSAGES so a legitimate request
+// at the boundary (e.g. one carrying the one-time pipe-context-resync message)
+// is never rejected before isAtLimit (index.ts) gets a chance to trigger the
+// chat-summary prompt.
+const MAX_RAW_MESSAGES = MAX_MESSAGES + 1
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
 // Tool-use turns can produce many parts (step-start + tool-invocation per call + text),
 // so allow enough headroom for up to ~10 tool calls per assistant turn.
@@ -171,7 +177,10 @@ export const chatRequestSchema = z.object({
   messages: z
     .array(messageSchema)
     .min(1, 'Messages array must contain at least one message')
-    .max(MAX_MESSAGES, `Cannot send more than ${MAX_MESSAGES} messages`),
+    .max(
+      MAX_RAW_MESSAGES,
+      `Cannot send more than ${MAX_RAW_MESSAGES} messages`,
+    ),
   /**
    * Unique id for one AI Builder chat session, minted on the frontend. Used as the
    * Langfuse session id so all traces from one conversation group together.

@@ -48,7 +48,8 @@ import { parseClarificationBlock } from './parse-clarification-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { chatRequestSchema } from './schema'
 
-const MAX_MESSAGES = 50
+// Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
+const MAX_MESSAGES = 150
 
 function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
   const questions = parseClarificationBlock(text)
@@ -129,8 +130,9 @@ const handleChatStream = observe(
       // ModelMessages array. convertToModelMessages inflates the count because each
       // tool call round-trip becomes separate assistant + tool_result model messages,
       // which would trigger summary mode far too early on tool-heavy conversations.
-      // +1 accounts for the system message added below.
-      const isAtLimit = rawMessages.length + 1 >= MAX_MESSAGES
+      // Mirrors the frontend's hasReachedLimit check exactly (same field, same
+      // threshold) so both sides agree on which turn is the last one.
+      const isAtLimit = rawMessages.length >= MAX_MESSAGES
 
       // Get the prompt from Langfuse
       const prompt = await getPrompt(
