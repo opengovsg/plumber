@@ -4,7 +4,10 @@ import { Router } from 'express'
 import { z } from 'zod/v4'
 
 import { UserFacingError } from '@/errors/user-facing-error'
-import { getDynamicDataService } from '@/services/mcp/get-dynamic-data'
+import {
+  DynamicDataPrerequisiteError,
+  getDynamicDataService,
+} from '@/services/mcp/get-dynamic-data'
 import type { AuthenticatedRequest } from '@/types/express/context'
 
 const router = Router()
@@ -44,7 +47,11 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     })
     res.json({ data })
   } catch (error) {
-    if (error instanceof UserFacingError) {
+    if (error instanceof DynamicDataPrerequisiteError) {
+      res
+        .status(400)
+        .json({ error: error.message, code: 'prerequisite_missing' })
+    } else if (error instanceof UserFacingError) {
       res.status(400).json({ error: error.message })
     } else {
       res.status(500).json({ error: 'Internal server error' })
