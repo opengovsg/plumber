@@ -5,7 +5,11 @@ import {
   isIfThenStep as checkIfThenStep,
 } from '@/helpers/toolbox'
 
-export default function getStepName(allApps: IApp[], step: IStep | undefined) {
+export default function getStepName(
+  allApps: IApp[],
+  step: IStep | undefined,
+  isIfThenV2Enabled = false,
+) {
   if (!step) {
     return {
       stepName: '',
@@ -17,15 +21,30 @@ export default function getStepName(allApps: IApp[], step: IStep | undefined) {
 
   // IfThen and ForEach are toolbox steps that don't need app lookup
   if (checkIfThenStep(step)) {
+    const isV2 = step.config?.endStepId != null
+    const branchName = step.parameters?.branchName as string | undefined
+
+    // Edge case: If-then V2 is enabled and viewer is looking at a V1 if-then.
+    // V1 if-thens may have both stepname and branch names - we combine them if
+    // thats the case.
+    if (!isV2 && isIfThenV2Enabled && branchName) {
+      return {
+        stepName: customStepName
+          ? `${branchName} (${customStepName})`
+          : branchName,
+        defaultStepName: branchName,
+      }
+    }
+
     return {
-      stepName: customStepName ?? 'Condition',
-      defaultStepName: 'Condition',
+      stepName: customStepName || 'If-then',
+      defaultStepName: 'If-then',
     }
   }
 
   if (checkForEachStep(step)) {
     return {
-      stepName: customStepName ?? 'For each item',
+      stepName: customStepName || 'For each item',
       defaultStepName: 'For each item',
     }
   }

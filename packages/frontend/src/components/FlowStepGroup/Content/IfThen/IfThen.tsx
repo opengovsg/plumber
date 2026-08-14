@@ -30,6 +30,7 @@ import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
+import getStepName from '@/helpers/getStepName'
 import useReorderSteps from '@/hooks/useReorderSteps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
@@ -71,6 +72,7 @@ export default function IfThen({
 }: IfThenProps): JSX.Element {
   const { ifThenStep, children } = block
   const {
+    allApps,
     currentStepId,
     flow,
     isDrawerOpen,
@@ -101,15 +103,11 @@ export default function IfThen({
     groupingActions ?? new Set<string>(),
   )
 
-  // The single-branch box merges what an if-then V1 group shows as two lines
-  // (its own caption, plus the branch name inside it) into one header. A
-  // user-renamed step takes priority, as it would for any step. Otherwise the
-  // branch name stands in, captioned as an if-then so it doesn't read as a
-  // name the user chose themselves.
-  const stepName = ifThenStep.config?.stepName
-  const branchName = ifThenStep.parameters?.branchName as string | undefined
-  const headerLabel =
-    stepName ?? (branchName ? `If-then: ${branchName}` : 'If-then')
+  // Reuses getStepName rather than re-deriving the same rule here, so a
+  // leftover V1 block's branchName keeps showing in the header exactly as it
+  // does in the drawer title below. isIfThenV2Enabled is hardcoded true: this
+  // component only ever mounts on the flag-ON render fork.
+  const headerLabel = getStepName(allApps, ifThenStep, true).stepName
 
   // IMPORTANT: assumes allowReorder already excludes read-only. The caller
   // (StepsList) folds that in before passing it down.

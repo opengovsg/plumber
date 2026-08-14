@@ -21,7 +21,7 @@ const action: IRawAction = {
       label: 'Branch Name',
       key: 'branchName',
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: false,
     },
     {
