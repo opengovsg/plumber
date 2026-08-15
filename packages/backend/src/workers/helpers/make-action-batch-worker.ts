@@ -181,6 +181,33 @@ async function recordFailure({
 }
 
 /**
+ * recordFailure with catch-log-continue, for the paths that patch MANY jobs'
+ * bookkeeping in sequence before a single batch-wide throw: one job's
+ * bookkeeping failure (e.g. a transient DB error) must not skip the remaining
+ * jobs' failure steps / iteration patches, or their for-each slots stay null
+ * and those executions hang.
+ */
+async function recordFailureSafely(
+  failedJob: FailedJob,
+): Promise<ExecutionStep | null> {
+  try {
+    return await recordFailure(failedJob)
+  } catch (err) {
+    const { executionId } = resolveIterationTarget(
+      failedJob.prepared,
+      failedJob.batchJob,
+    )
+    logger.error('Failed to record batched job failure; execution may stall', {
+      err,
+      jobId: failedJob.jobId,
+      flowId: failedJob.batchJob.data.flowId,
+      executionId,
+    })
+    return null
+  }
+}
+
+/**
  * Up-front span tags describing the batch shape, emitted before any work so a
  * batch stays observable even if it later throws.
  */
@@ -395,13 +422,15 @@ async function failBatch(
   // runBatchError, so any one is fine).
   let errorDetails: ExecutionStep['errorDetails'] = null
   for (const { batchJob, jobId, prepared } of preparedOk) {
-    const step = await recordFailure({
+    const step = await recordFailureSafely({
       batchJob,
       jobId,
       prepared,
       error: runBatchError,
     })
-    errorDetails = step!.errorDetails
+    if (step) {
+      errorDetails = step.errorDetails
+    }
   }
 
   // Prepare-failed for-each iterations also need their slot patched (a mixed
@@ -410,7 +439,7 @@ async function failBatch(
   // iteration - this is iteration bookkeeping, NOT a setAsFailed side-effect, so
   // it is safe to combine with the throw below.
   for (const failedJob of prepareFailed) {
-    await recordFailure(failedJob)
+    await recordFailureSafely(failedJob)
   }
 
   return handleFailedStepAndThrow({
@@ -454,11 +483,33 @@ async function finalizeBatch(
     runMs: number
   },
 ): Promise<void> {
+  // A runResults/preparedOk length mismatch is a runBatch implementation bug
+  // breaking the 1:1 alignment contract. We must NOT throw for it (the write
+  // committed - a throw re-runs runBatch and duplicates rows); instead treat
+  // each unaccounted-for job as failed below so it is isolated with full
+  // bookkeeping rather than crashing the batch on an undefined result.
+  if (runResults.length !== preparedOk.length) {
+    logger.error('runBatch result count does not match prepared job count', {
+      queueName: ctx.queueName,
+      resultCount: runResults.length,
+      preparedCount: preparedOk.length,
+    })
+  }
+
   const succeeded: PreparedJob[] = []
   const runFailed: FailedJob[] = []
   preparedOk.forEach((preparedJob, index) => {
     const result = runResults[index]
-    if (result.status === 'failed') {
+    if (!result) {
+      runFailed.push({
+        batchJob: preparedJob.batchJob,
+        jobId: preparedJob.jobId,
+        prepared: preparedJob.prepared,
+        error: new Error(
+          `runBatch returned no result for this job (${runResults.length} results for ${preparedOk.length} jobs)`,
+        ),
+      })
+    } else if (result.status === 'failed') {
       runFailed.push({
         batchJob: preparedJob.batchJob,
         jobId: preparedJob.jobId,
@@ -565,12 +616,28 @@ async function processBatch(ctx: BatchContext): Promise<void> {
 
   // The action (with runBatch) is resolved from a prepared job. A job reaching
   // the batch queue for an action without runBatch is a routing/config bug
-  // affecting the whole batch -> fail without retry.
+  // affecting the whole batch -> fail without retry. The throw fails every
+  // member via the worker's `failed` fan-out (status + email), but the fan-out
+  // does NOT record failure steps or patch for-each iteration slots - do that
+  // bookkeeping for every job (prepared AND prepare-failed) before throwing, or
+  // a for-each riding this batch hangs on its null slots.
   const action = preparedOk[0].prepared.actionCommand
   if (!action?.runBatch) {
-    throw new UnrecoverableError(
+    const routingError = new UnrecoverableError(
       `Action ${preparedOk[0].prepared.step.appKey}/${preparedOk[0].prepared.step.key} does not implement runBatch`,
     )
+    for (const { batchJob, jobId, prepared } of preparedOk) {
+      await recordFailureSafely({
+        batchJob,
+        jobId,
+        prepared,
+        error: routingError,
+      })
+    }
+    for (const failedJob of prepareFailed) {
+      await recordFailureSafely(failedJob)
+    }
+    throw routingError
   }
 
   // Every prepared job shares one `${fileId}::${tableId}::${connectionId}` group,
