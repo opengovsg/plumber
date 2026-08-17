@@ -6,10 +6,11 @@ ENV VITE_MODE=$APP_ENV
 
 WORKDIR /opt/plumber
 COPY . ./
+RUN npm install -g npm@11.19.0
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   (export NPM_TASKFORCESH_TOKEN=$(cat /run/secrets/NPM_TASKFORCESH_TOKEN); npm ci)
 RUN npm run build
-RUN npm prune --production
+RUN npm prune --omit=dev --ignore-scripts
 
 FROM node:22-alpine as main
 
