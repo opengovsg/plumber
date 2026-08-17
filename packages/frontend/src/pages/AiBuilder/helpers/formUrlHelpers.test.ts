@@ -94,4 +94,12 @@ describe('formatUserMessageForDisplay', () => {
       ),
     ).toBe('Q: Which column?\nA: Applicant Name')
   })
+
+  it('strips id suffixes even when the wrapped value itself contains parens', () => {
+    expect(
+      formatUserMessageForDisplay(
+        'Q: Which column?\nA: Score (out of 10) (id: Score (out of 10))',
+      ),
+    ).toBe('Q: Which column?\nA: Score (out of 10)')
+  })
 })

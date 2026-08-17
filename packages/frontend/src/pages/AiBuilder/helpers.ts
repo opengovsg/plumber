@@ -82,11 +82,12 @@ export const stripFormIdPrefix = (label: string): string =>
 
 // User messages are displayed verbatim except for machine detail: picker
 // answers and the kickoff message carry "(id: …)" / "(id: …, form id: …)"
-// suffixes that are stripped from display. The id itself isn't always a hex
-// UUID — e.g. Slack channel ids are mixed-case ("C0123456ABC") — so match on
-// the "(id: ...)" shape rather than a hex charset.
+// suffixes that are stripped from display. The wrapped value isn't always a
+// hex UUID and could contain parens (e.g. an M365 column named "Score
+// (out of 10)"), so match lazily up to whichever ")" is actually the
+// terminator (followed by "." / whitespace / end-of-string).
 export const formatUserMessageForDisplay = (text: string): string =>
-  text.replace(/ \(id: [^()]+?(?:, form id: [^()]+?)?\)/g, '').trim()
+  text.replace(/ \(id: [\s\S]+?\)(?=[.\s]|$)/g, '').trim()
 
 // Matches FormSG share links across environments (form.gov.sg,
 // staging.form.gov.sg, …) ending in a 24-hex-char form ID.
@@ -187,11 +188,15 @@ export const deduplicateMessages = (messages: Message[]) => {
 
 // Extract text content from a UIMessage. A tool call splits generation into
 // separate text parts (before/after), so join with a blank line rather than
-// '' — otherwise the two chunks glue together mid-sentence.
+// '' — otherwise the two chunks glue together mid-sentence. Empty parts are filtered
+// out first so they don't inject a stray blank line.
 export const extractTextContent = (msg: CustomUIMessage): string => {
   return msg.parts
-    .filter((part) => part.type === 'text')
-    .map((part: TextPart) => part.text)
+    .filter(
+      (part): part is TextPart =>
+        part.type === 'text' && part.text.trim().length > 0,
+    )
+    .map((part) => part.text)
     .join('\n\n')
 }
 
