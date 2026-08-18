@@ -13,6 +13,7 @@ import Step from '@/models/step'
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 
+import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
@@ -124,6 +125,13 @@ const action: IRawAction = {
         userId: $.user.email,
         s3Id: image[0],
       })
+
+      if (isBedrockImageTooLargeError(error)) {
+        throw new StepError(
+          'Image is too large',
+          'Please limit your images to 4MB or less and try again.',
+        )
+      }
 
       throw new StepError(
         error?.message
