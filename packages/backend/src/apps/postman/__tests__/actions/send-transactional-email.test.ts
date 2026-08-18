@@ -6,8 +6,49 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
+import StepError from '@/errors/step'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'
+
+/**
+ * The shape of a SendBulkEmailCommand as the mocked SES client sees it. Only the
+ * fields the tests assert on are modelled.
+ */
+interface SentBulkCommand {
+  input: {
+    FromEmailAddress?: string
+    ReplyToAddresses?: string[]
+    DefaultContent?: {
+      Template?: {
+        TemplateContent?: { Subject?: string; Html?: string }
+        TemplateData?: string
+        Headers?: { Name: string; Value: string }[]
+        Attachments?: {
+          FileName: string
+          RawContent: Uint8Array
+          ContentDisposition: string
+        }[]
+      }
+    }
+    BulkEmailEntries?: {
+      Destination: { ToAddresses?: string[]; CcAddresses?: string[] }
+    }[]
+  }
+}
+
+/** A per-entry outcome as SES reports it back in a SendBulkEmail response. */
+interface BulkEntryResultStub {
+  Status: string
+  Error?: string
+  MessageId?: string
+}
+
+/** Inputs of every SendBulkEmailCommand handed to the mocked SES client. */
+function sentBulkCommands(): SentBulkCommand['input'][] {
+  return mocks.sesSend.mock.calls.map(
+    ([command]) => (command as SentBulkCommand).input,
+  )
+}
 
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
@@ -23,7 +64,18 @@ const mocks = vi.hoisted(() => ({
   sendInvalidAttachmentsEmail: vi.fn(),
   createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
   getLdFlagValue: vi.fn(async (_flag: string, _email: string | null) => false),
-  sesSend: vi.fn(async () => ({})),
+  // SendBulkEmail returns one BulkEmailEntryResult per entry, in entry order.
+  // The default stub accepts every entry it is given.
+  sesSend: vi.fn(
+    async (
+      command: SentBulkCommand,
+    ): Promise<{ BulkEmailEntryResults?: BulkEntryResultStub[] }> => ({
+      BulkEmailEntryResults: (command.input.BulkEmailEntries ?? []).map(() => ({
+        Status: 'SUCCESS',
+        MessageId: 'test-message-id',
+      })),
+    }),
+  ),
   getSuppressedEmails: vi.fn(async () => [] as string[]),
 }))
 
@@ -852,13 +904,19 @@ describe('send transactional email', () => {
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
       expect($.http.post).not.toHaveBeenCalled()
-      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+      // Both recipients ride in a single bulk call, as one shared entry.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [input] = sentBulkCommands()
+      expect(input.BulkEmailEntries).toEqual([
+        {
+          Destination: {
+            ToAddresses: ['a@open.gov.sg', 'b@open.gov.sg'],
+          },
+        },
+      ])
 
       // Every SES-direct message carries the transport marker header.
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
-        { input: { Content: { Simple: { Headers?: unknown[] } } } },
-      ]
-      expect(sentCommand.input.Content.Simple.Headers).toContainEqual({
+      expect(input.DefaultContent?.Template?.Headers).toContainEqual({
         Name: 'X-Plumber-Transport',
         Value: 'ses',
       })
@@ -873,12 +931,8 @@ describe('send transactional email', () => {
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
       // SES gets the RFC 5322-quoted display name...
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
-        { input: { FromEmailAddress: string } },
-      ]
-      expect(sentCommand.input.FromEmailAddress).toBe(
-        '"Acme, Inc" <admin@example.gov.sg>',
-      )
+      const [input] = sentBulkCommands()
+      expect(input.FromEmailAddress).toBe('"Acme, Inc" <info@plumber.gov.sg>')
 
       // ...but dataOut shows the clean, unquoted form.
       expect($.setActionItem).toHaveBeenCalledWith({
@@ -940,7 +994,7 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
-    it('sends attachments via SES as a raw MIME message when ses_attachments_enabled is on', async () => {
+    it('hands attachments to SES on the template when ses_attachments_enabled is on', async () => {
       // Both ses_enabled and ses_attachments_enabled true for all recipients.
       mocks.getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
@@ -957,16 +1011,20 @@ describe('send transactional email', () => {
       expect($.http.post).not.toHaveBeenCalled()
       expect(mocks.sesSend).toHaveBeenCalledTimes(1)
 
-      // Attachments go out as a raw MIME message, not Content.Simple.
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
-        { input: { Content: { Raw: { Data: Uint8Array } } } },
-      ]
-      const mime = Buffer.from(sentCommand.input.Content.Raw.Data).toString(
-        'utf-8',
-      )
-      expect(mime).toContain('multipart/mixed')
-      expect(mime).toContain('report.pdf')
-      expect(mime).toContain('X-Plumber-Transport: ses')
+      // SES builds the MIME itself from Template.Attachments — we no longer
+      // construct a raw message.
+      const [input] = sentBulkCommands()
+      expect(input.DefaultContent?.Template?.Attachments).toEqual([
+        {
+          FileName: 'report.pdf',
+          RawContent: new Uint8Array([1, 2, 3]),
+          ContentDisposition: 'ATTACHMENT',
+        },
+      ])
+      expect(input.DefaultContent?.Template?.Headers).toContainEqual({
+        Name: 'X-Plumber-Transport',
+        Value: 'ses',
+      })
     })
 
     it('rejects with ATTACHMENT-SIZE-EXCEEDED when SES attachments exceed 20MB total', async () => {
@@ -1012,10 +1070,8 @@ describe('send transactional email', () => {
       // Sent once for the single (non-suppressed) To recipient, and the
       // suppressed CC is dropped from the actual SES API call.
       expect(mocks.sesSend).toHaveBeenCalledTimes(1)
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
-        { input: { Destination: { CcAddresses?: string[] } } },
-      ]
-      expect(sentCommand.input.Destination.CcAddresses).toEqual([
+      const [input] = sentBulkCommands()
+      expect(input.BulkEmailEntries?.[0].Destination.CcAddresses).toEqual([
         'cc-good@open.gov.sg',
       ])
 
@@ -1028,6 +1084,276 @@ describe('send transactional email', () => {
           cc: ['cc-good@open.gov.sg', 'cc-bad@open.gov.sg'],
         }),
       })
+    })
+
+    it('does not resend to CC recipients on a partial retry', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      const recipients = ['good@open.gov.sg', 'bad@open.gov.sg']
+      $.step.parameters.destinationEmail = recipients.join(',')
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      $.step.parameters.attachments = []
+      // Simulates a prior attempt where `good` succeeded and `bad` was
+      // blacklisted — the CC already got a copy on that earlier successful
+      // send, since CC has no status tracking of its own.
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+        status: 'success',
+        errorDetails: 'error error',
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: recipients,
+        },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // Only the previously-blacklisted recipient is retried, and the CC is
+      // not included in that retry — it isn't spammed a second time.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [input] = sentBulkCommands()
+      expect(input.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual([
+        'bad@open.gov.sg',
+      ])
+      expect(
+        input.BulkEmailEntries?.[0].Destination.CcAddresses,
+      ).toBeUndefined()
+    })
+  })
+
+  describe('SES bulk send', () => {
+    beforeEach(() => {
+      // Every test here routes via SES with no attachments.
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.attachments = []
+    })
+
+    it('chunks recipients into calls of at most 50 entries', async () => {
+      const recipients = Array.from(
+        { length: 51 },
+        (_, i) => `recipient${i}@open.gov.sg`,
+      )
+      $.step.parameters.destinationEmail = recipients.join(',')
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+      const [first, second] = sentBulkCommands()
+      // Each chunk is sent as a single shared entry — one email per chunk of
+      // up to 50 recipients, not one entry per recipient.
+      expect(first.BulkEmailEntries).toHaveLength(1)
+      expect(second.BulkEmailEntries).toHaveLength(1)
+      expect(first.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual(
+        recipients.slice(0, 50),
+      )
+      expect(second.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual(
+        recipients.slice(50),
+      )
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: recipients.map(() => 'ACCEPTED'),
+          recipient: recipients,
+        }),
+      })
+    })
+
+    it("sends To and CC as a single message when they fit within SES's 50-combined-recipient limit", async () => {
+      const recipients = Array.from(
+        { length: 5 },
+        (_, i) => `recipient${i}@open.gov.sg`,
+      )
+      const ccRecipients = Array.from(
+        { length: 45 },
+        (_, i) => `cc${i}@open.gov.sg`,
+      )
+      $.step.parameters.destinationEmail = recipients.join(',')
+      $.step.parameters.destinationEmailCc = ccRecipients.join(',')
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // 5 + 45 = 50, exactly at the limit — still just one message.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [input] = sentBulkCommands()
+      expect(input.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual(
+        recipients,
+      )
+      expect(input.BulkEmailEntries?.[0].Destination.CcAddresses).toEqual(
+        ccRecipients,
+      )
+    })
+
+    it("shrinks the first chunk to leave room for CC, keeping every message within SES's 50-combined-recipient limit", async () => {
+      const recipients = Array.from(
+        { length: 10 },
+        (_, i) => `recipient${i}@open.gov.sg`,
+      )
+      const ccRecipients = Array.from(
+        { length: 49 },
+        (_, i) => `cc${i}@open.gov.sg`,
+      )
+      $.step.parameters.destinationEmail = recipients.join(',')
+      $.step.parameters.destinationEmailCc = ccRecipients.join(',')
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // 10 recipients + 49 CC = 59 combined, over the 50-per-message limit, so
+      // only 1 recipient rides with the full CC list in the first message
+      // (1 + 49 = 50); the other 9 go out in a second, CC-free message rather
+      // than duplicating CC across both.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+      const [first, second] = sentBulkCommands()
+      expect(first.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual(
+        recipients.slice(0, 1),
+      )
+      expect(first.BulkEmailEntries?.[0].Destination.CcAddresses).toEqual(
+        ccRecipients,
+      )
+      expect(second.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual(
+        recipients.slice(1),
+      )
+      expect(
+        second.BulkEmailEntries?.[0].Destination.CcAddresses,
+      ).toBeUndefined()
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: recipients.map(() => 'ACCEPTED'),
+          recipient: recipients,
+        }),
+      })
+    })
+
+    it('shuttles user content through TemplateData so handlebars in the body is inert', async () => {
+      $.step.parameters.destinationEmail = 'a@open.gov.sg'
+      $.step.parameters.subject = 'Hello {{name}}'
+      $.step.parameters.body = '<p>Total is {{{amount}}} and {{ oops </p>'
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      const [input] = sentBulkCommands()
+      // The template itself is only our two placeholders — no user content, so
+      // SES's handlebars pass has nothing of the user's to misinterpret.
+      expect(input.DefaultContent?.Template?.TemplateContent).toEqual({
+        Subject: '{{subject}}',
+        Html: '{{body}}',
+      })
+
+      const templateData = JSON.parse(
+        input.DefaultContent?.Template?.TemplateData ?? '{}',
+      )
+      expect(templateData.subject).toBe('Hello {{name}}')
+      expect(templateData.body).toContain('{{{amount}}}')
+      expect(templateData.body).toContain('{{ oops')
+    })
+
+    it('broadcasts the single chunk-level result to every recipient in the chunk', async () => {
+      const recipients = [
+        'ok@open.gov.sg',
+        'throttled@open.gov.sg',
+        'other@open.gov.sg',
+      ]
+      $.step.parameters.destinationEmail = recipients.join(',')
+      // Only one recipient chunk (≤50), so SES returns exactly one entry
+      // result — shared across every recipient in that one email.
+      mocks.sesSend.mockImplementationOnce(async () => ({
+        BulkEmailEntryResults: [
+          { Status: 'ACCOUNT_THROTTLED', Error: 'Daily quota exceeded' },
+        ],
+      }))
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        RetriableError,
+      )
+      // Every recipient shares the one email's fate — none is individually
+      // ACCEPTED while others fail, since they were all in the same send.
+      expect($.setActionItem).not.toHaveBeenCalled()
+    })
+
+    it('treats a missing entry result as an error rather than a silent success', async () => {
+      const recipients = ['a@open.gov.sg', 'b@open.gov.sg']
+      $.step.parameters.destinationEmail = recipients.join(',')
+      mocks.sesSend.mockImplementationOnce(async () => ({
+        BulkEmailEntryResults: [],
+      }))
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+        'Something went wrong',
+      )
+      expect($.setActionItem).not.toHaveBeenCalled()
+    })
+
+    it('fails every recipient in a chunk when the whole call throws', async () => {
+      const recipients = ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg']
+      $.step.parameters.destinationEmail = recipients.join(',')
+      mocks.sesSend.mockImplementationOnce(async () => {
+        const error = new Error('Maximum sending rate exceeded')
+        error.name = 'TooManyRequestsException'
+        throw error
+      })
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        RetriableError,
+      )
+      // No success anywhere, so the step produces no dataOut.
+      expect($.setActionItem).not.toHaveBeenCalled()
+    })
+
+    it('keeps suppressed recipients out of the call but in input order in dataOut', async () => {
+      const recipients = [
+        'good@open.gov.sg',
+        'bad1@open.gov.sg',
+        'bad2@open.gov.sg',
+      ]
+      $.step.parameters.destinationEmail = recipients.join(',')
+      mocks.getSuppressedEmails.mockResolvedValueOnce([
+        'bad1@open.gov.sg',
+        'bad2@open.gov.sg',
+      ])
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        PartialStepError,
+      )
+
+      // Only the clean recipient is handed to SES — the suppressed pair is never
+      // re-sent to (which would re-bounce and inflate our bounce rate).
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [input] = sentBulkCommands()
+      expect(input.BulkEmailEntries).toEqual([
+        { Destination: { ToAddresses: ['good@open.gov.sg'] } },
+      ])
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'BLACKLISTED', 'BLACKLISTED'],
+          recipient: recipients,
+        }),
+      })
+      expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blacklistedRecipients: ['bad1@open.gov.sg', 'bad2@open.gov.sg'],
+        }),
+      )
+    })
+
+    it('fails the step outright when every recipient is suppressed', async () => {
+      const recipients = ['bad1@open.gov.sg', 'bad2@open.gov.sg']
+      $.step.parameters.destinationEmail = recipients.join(',')
+      mocks.getSuppressedEmails.mockResolvedValueOnce(recipients)
+
+      let thrown: unknown
+      try {
+        await sendTransactionalEmail.run($)
+      } catch (e) {
+        thrown = e
+      }
+
+      // No success => a plain StepError with no retry button, and the flow stops.
+      expect(thrown).toBeInstanceOf(StepError)
+      expect(thrown).not.toBeInstanceOf(PartialStepError)
+      expect((thrown as Error).message).toContain('Blacklisted recipient email')
+      // No retry affordance is offered when nothing was delivered.
+      expect((thrown as Error).message).not.toContain('partialRetry')
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.setActionItem).not.toHaveBeenCalled()
     })
   })
 })

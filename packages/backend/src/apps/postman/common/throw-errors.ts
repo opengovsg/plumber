@@ -1,5 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
 
+import { BulkEmailEntryResult } from '@aws-sdk/client-sesv2'
+
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
@@ -111,6 +113,47 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
   }
 
   return 'ERROR'
+}
+
+/**
+ * Maps a per-entry result from SESv2 `SendBulkEmail` to our internal status
+ * codes. Unlike `getSesErrorStatus` (which handles a thrown SDK error for the
+ * *whole* call), this handles the per-recipient outcomes SES reports inline in a
+ * 200 response — one `BulkEmailEntryResult` per `BulkEmailEntry`.
+ *
+ * Status reference:
+ * https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_BulkEmailEntryResult.html
+ */
+export function getSesBulkEntryStatus(
+  result: BulkEmailEntryResult,
+): PostmanEmailSendStatus {
+  switch (result.Status) {
+    // Throttling — the whole call succeeded but this entry was shed. Retriable.
+    case 'ACCOUNT_THROTTLED':
+    case 'ACCOUNT_DAILY_QUOTA_EXCEEDED':
+      return 'RATE-LIMITED'
+
+    // SES's own signal that the entry failed for a transient reason.
+    case 'TRANSIENT_FAILURE':
+      return 'INTERMITTENT-ERROR'
+
+    // Mirrors the MessageRejected handling in getSesErrorStatus: only the
+    // suppression-related sub-cases count as BLACKLISTED, everything else is a
+    // genuine content/address rejection.
+    case 'MESSAGE_REJECTED': {
+      const msg = result.Error?.toLowerCase() ?? ''
+      if (msg.includes('blacklisted') || msg.includes('suppression')) {
+        return 'BLACKLISTED'
+      }
+      return 'ERROR'
+    }
+
+    // FAILED, INVALID_PARAMETER, ACCOUNT_SUSPENDED, ACCOUNT_SENDING_PAUSED,
+    // CONFIGURATION_SET_*, TEMPLATE_NOT_FOUND, MAIL_FROM_DOMAIN_NOT_VERIFIED,
+    // INVALID_SENDING_POOL_NAME — all non-retriable on our side.
+    default:
+      return 'ERROR'
+  }
 }
 
 function getInvalidAttachmentSolution({
