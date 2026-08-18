@@ -182,6 +182,7 @@ export function throwPostmanStepError({
   error,
   isPartialSuccess,
   blacklistedRecipients,
+  blacklistedCcs,
   invalidAttachments,
   isRetryWithoutAttachments,
 }: {
@@ -190,6 +191,7 @@ export function throwPostmanStepError({
   error: HttpError
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
+  blacklistedCcs: string[]
   invalidAttachments: string[]
   isRetryWithoutAttachments: boolean
 }) {
@@ -202,14 +204,31 @@ export function throwPostmanStepError({
 
   switch (status) {
     case 'BLACKLISTED': {
-      let name = 'Blacklisted recipient email'
+      // The same address can be blacklisted as both a To-recipient and a CC
+      // (e.g. someone put it in both fields) — once it's already called out
+      // in the recipients section, repeating it verbatim in a second CC
+      // paragraph reads as a confusing duplicate, so the CC section only
+      // covers addresses not already shown above.
+      const ccOnlyBlacklisted = blacklistedCcs.filter(
+        (cc) => !blacklistedRecipients.includes(cc),
+      )
+      const hasBlacklistedRecipients = blacklistedRecipients.length > 0
+      const hasBlacklistedCcs = ccOnlyBlacklisted.length > 0
+
+      let name = hasBlacklistedRecipients
+        ? 'Blacklisted recipient email'
+        : 'Blacklisted CC email'
+      // The removal-request form covers both fields — recipients and CC are
+      // just addresses to it, no distinction needed.
       const formLink = createRequestBlacklistFormLink({
         userEmail: $.user.email,
         executionId: $.execution.id,
-        blacklistedRecipients,
+        blacklistedRecipients: [
+          ...new Set([...blacklistedRecipients, ...blacklistedCcs]),
+        ],
       })
 
-      // log individual blacklisted recipients
+      // log individual blacklisted recipients and CCs
       blacklistedRecipients.forEach((recipient) => {
         logger.info('Blacklisted recipient for postman email step', {
           event: 'postman-step-blacklisted-recipient',
@@ -218,21 +237,57 @@ export function throwPostmanStepError({
           executionId: $.execution.id,
         })
       })
+      blacklistedCcs.forEach((cc) => {
+        logger.info('Blacklisted CC for postman email step', {
+          event: 'postman-step-blacklisted-cc',
+          blacklistedEmail: cc,
+          stepId: $.step.id,
+          executionId: $.execution.id,
+        })
+      })
 
-      let solution = `The following email addresses have been blacklisted by Postman:
+      // Recipients and CC each get their own address list, but share a single
+      // closing "use this form" sentence rather than repeating it per list.
+      const addressSections: string[] = []
+      if (hasBlacklistedRecipients) {
+        addressSections.push(
+          `The following email addresses have been blacklisted by Postman:
          \n${blacklistedRecipients
            .map((recipient) => `**${recipient}**`)
-           .join('\n\n')}
+           .join('\n\n')}`,
+        )
+      }
+      if (hasBlacklistedCcs) {
+        name = hasBlacklistedRecipients
+          ? 'Blacklisted recipient and CC email'
+          : 'Blacklisted CC email'
+        addressSections.push(
+          `The following CC email addresses have been blacklisted by Postman:
+         \n${ccOnlyBlacklisted.map((cc) => `**${cc}**`).join('\n\n')}`,
+        )
+      }
+
+      const solutionSections: string[] = [
+        `${addressSections.join('\n\n&nbsp;\n\n')}
          \nIf you believe that they are valid and active, please [use this form](${formLink}) to request for removal from blacklist and try again.
-        `
+        `,
+      ]
 
       if (hasInvalidAttachments) {
         name += ` and invalid attachment(s)`
-        solution += `\n\n&nbsp;\n\n${invalidAttachmentsSolution}`
+        solutionSections.push(invalidAttachmentsSolution)
       }
 
-      let buttonMessage = 'Resend to blacklisted recipients'
-      if (isRetryWithoutAttachments) {
+      const solution = solutionSections.join('\n\n&nbsp;\n\n')
+
+      // CC-only retry isn't built yet — only offer the resend button when
+      // there's a blacklisted To-recipient the existing retry flow can
+      // actually act on (mirrors the invalid-attachments-only case above,
+      // which also withholds the button when there's nothing to retry).
+      let buttonMessage = hasBlacklistedRecipients
+        ? 'Resend to blacklisted recipients'
+        : ''
+      if (buttonMessage && isRetryWithoutAttachments) {
         buttonMessage += ' without attachments'
       }
 

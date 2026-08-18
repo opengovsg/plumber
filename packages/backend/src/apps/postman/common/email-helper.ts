@@ -470,8 +470,8 @@ export async function sendTransactionalEmails(
 }> {
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to
-  // (which would re-bounce and inflate the bounce rate). CC suppression is
-  // silent — the full ccList is still reported in dataOut.
+  // (which would re-bounce and inflate the bounce rate). The full ccList is
+  // still reported in dataOut, alongside its per-address ccStatus below.
   let suppressedSet = new Set<string>()
   if (useSes) {
     const suppressedEmails = await EmailSuppressionEntry.getSuppressedEmails([
@@ -491,7 +491,7 @@ export async function sendTransactionalEmails(
 
   const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
   // Suppressed CCs are removed from the API call only — dataOut keeps the full
-  // ccList (CC status is not tracked per the field's documented behaviour).
+  // ccList, with `ccStatus` (computed below) marking suppressed addresses.
   const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
   // SES sends the whole batch in ⌈N/50⌉ bulk calls and reports a per-recipient
@@ -551,6 +551,24 @@ export async function sendTransactionalEmails(
     }
   })
 
+  // CC has no per-recipient send of its own to fail — it rides along on the
+  // To send(s) — so a blacklisted CC can only be surfaced by pushing a
+  // synthetic error here. Without this, `errorStatus` below would stay
+  // undefined (and no PartialStepError would ever mention the CC) whenever
+  // every To recipient succeeded.
+  const blacklistedCcs = (email.ccList ?? []).filter((cc) =>
+    suppressedSet.has(cc),
+  )
+  if (blacklistedCcs.length > 0) {
+    errors.push({
+      status: 'BLACKLISTED',
+      recipient: blacklistedCcs.join(', '),
+      error: {
+        message: 'CC email address is in suppression list',
+      } as HttpError,
+    })
+  }
+
   /**
    * Since we can only return one error per postman step, we have to select in terms of priority:
    * 1. RATE-LIMITED (so we can auto-retry)
@@ -571,10 +589,31 @@ export async function sendTransactionalEmails(
     ].indexOf(error.status),
   )
 
+  // CC status is only meaningful on the SES path — the Postman path never
+  // checks suppression, so CC there stays untracked (folded into `params.cc`
+  // only, as before).
+  const ccStatus: PostmanEmailSendStatus[] | undefined =
+    useSes && email.ccList?.length
+      ? email.ccList.map((cc): PostmanEmailSendStatus => {
+          if (suppressedSet.has(cc)) {
+            return 'BLACKLISTED'
+          }
+          // CCs ride along on every To send in the batch, so they're
+          // delivered whenever any To recipient's send succeeded.
+          if (status.some((s) => s === 'ACCEPTED')) {
+            return 'ACCEPTED'
+          }
+          // Nothing was delivered at all — mirror the same top-priority
+          // error the step itself surfaces.
+          return sortedErrors.length ? sortedErrors[0].status : 'ERROR'
+        })
+      : undefined
+
   const dataOut = {
     status,
     recipient,
     ...params,
+    ...(ccStatus && { ccStatus }),
   } satisfies PostmanEmailDataOut
   return {
     dataOut,
