@@ -2,6 +2,10 @@ name: Test and build
 
 on: [push]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -9,6 +13,7 @@ jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
       - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
@@ -47,6 +52,7 @@ jobs:
     name: Lint and Build
     runs-on: ubuntu-latest
     needs: setup
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -70,6 +76,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: setup
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
