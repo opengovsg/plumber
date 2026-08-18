@@ -14,6 +14,8 @@ import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'
 
 import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
+import { getInputFlag } from '@/config/flags'
+import type { LaunchDarklyContextData } from '@/contexts/LaunchDarkly'
 import {
   areRowsComplete,
   isGroupedMultiRowComplete,
@@ -44,6 +46,19 @@ function isValidArgValue(value: IJSONValue): boolean {
   return value != null && value !== ''
 }
 
+// Input flags gate a field's rollout by the step's creation time: the field
+// only shows for steps created after the flag's configured timestamp.
+export function isInputVisibleForStep(
+  actionOrTriggerKey: string | undefined,
+  argKey: string,
+  stepCreatedAt: string | number,
+  getFlagValue: LaunchDarklyContextData['getFlagValue'],
+): boolean {
+  const inputFlag = getInputFlag(actionOrTriggerKey ?? '', argKey)
+  const flagValue = getFlagValue(inputFlag, false)
+  return !flagValue || +stepCreatedAt <= flagValue
+}
+
 // Field definitions can specify a static `value` to pre-select (e.g. a
 // boolean-radio defaulting to "No"). That default only reaches react-hook-form
 // via each input's own `defaultValue` prop, which registers asynchronously
@@ -54,14 +69,32 @@ function isValidArgValue(value: IJSONValue): boolean {
 export function withDefaultParameters(
   step: IStep,
   substeps: ISubstep[],
+  actionOrTriggerKey: string | undefined,
+  getFlagValue: LaunchDarklyContextData['getFlagValue'],
 ): IStep {
   const defaultParameters: IJSONObject = {}
 
   for (const substep of substeps ?? []) {
     for (const arg of substep.arguments ?? []) {
-      if (arg.value !== undefined && step.parameters[arg.key] === undefined) {
-        defaultParameters[arg.key] = arg.value as IJSONValue
+      if (arg.value === undefined || step.parameters[arg.key] !== undefined) {
+        continue
       }
+
+      // Skip fields hidden behind a not-yet-active input flag: seeding their
+      // default here would make the form report a value the user never saw
+      // and the backend never received, desyncing it from `dataIn`.
+      if (
+        !isInputVisibleForStep(
+          actionOrTriggerKey,
+          arg.key,
+          step.createdAt,
+          getFlagValue,
+        )
+      ) {
+        continue
+      }
+
+      defaultParameters[arg.key] = arg.value as IJSONValue
     }
   }
 

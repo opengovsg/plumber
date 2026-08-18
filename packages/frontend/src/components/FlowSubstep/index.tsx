@@ -6,10 +6,13 @@ import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
-import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
+import {
+  hasDirtyFields,
+  isInputVisibleForStep,
+  validateSubstep,
+} from '@/helpers/editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
 
 type FlowSubstepProps = {
@@ -61,14 +64,14 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   // filter inputs hidden behind feature flags based on timestamp
   const argsToDisplay = useMemo(
     () =>
-      args?.filter((arg) => {
-        const inputFlag = getInputFlag(
-          selectedActionOrTrigger?.key ?? '',
+      args?.filter((arg) =>
+        isInputVisibleForStep(
+          selectedActionOrTrigger?.key,
           arg.key,
-        )
-        const flagValue = getFlagValue(inputFlag, false)
-        return !flagValue || +step.createdAt <= flagValue
-      }) || [],
+          step.createdAt,
+          getFlagValue,
+        ),
+      ) || [],
     [args, step.createdAt, selectedActionOrTrigger, getFlagValue],
   )
 
