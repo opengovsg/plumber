@@ -78,4 +78,28 @@ describe('formatUserMessageForDisplay', () => {
       ),
     ).toBe('Q: Which form?\nA: My Form')
   })
+
+  it('strips non-hex picker id suffixes (e.g. Slack channel ids)', () => {
+    expect(
+      formatUserMessageForDisplay(
+        'Q: Which channel?\nA: general (id: C0123456ABC)',
+      ),
+    ).toBe('Q: Which channel?\nA: general')
+  })
+
+  it('strips id suffixes that equal the option name (e.g. M365 columns)', () => {
+    expect(
+      formatUserMessageForDisplay(
+        'Q: Which column?\nA: Applicant Name (id: Applicant Name)',
+      ),
+    ).toBe('Q: Which column?\nA: Applicant Name')
+  })
+
+  it('strips id suffixes even when the wrapped value itself contains parens', () => {
+    expect(
+      formatUserMessageForDisplay(
+        'Q: Which column?\nA: Score (out of 10) (id: Score (out of 10))',
+      ),
+    ).toBe('Q: Which column?\nA: Score (out of 10)')
+  })
 })
