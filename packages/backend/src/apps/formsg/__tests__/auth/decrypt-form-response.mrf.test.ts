@@ -218,6 +218,42 @@ describe('decrypt form response - MRF specific', () => {
       )
     })
 
+    it('should return verified: false without downloading when an attachment URL is untrusted', async () => {
+      $.flow.hasFileProcessingActions = true
+      $.request.body.data.attachmentDownloadUrls = {
+        attachField1:
+          'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/123',
+        attachField2: 'https://plumber.svc.cluster.local/a',
+      }
+
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        submissionSecretKey: 'mock-secret-key',
+        responses: {
+          attachField1: {
+            fieldType: 'attachment',
+            answer: { answer: 'myfile.pdf' },
+          },
+        },
+        verified: undefined,
+      })
+
+      const result = await decryptFormResponse($)
+
+      expect(result).toEqual({ verified: false, internalId: null })
+      expect(mocks.decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
+      expect(mocks.consoleError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'formsg-untrusted-attachment-url',
+          submissionId: 'submissionId',
+          attachmentDownloadUrls: {
+            attachField1:
+              'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/123',
+            attachField2: 'https://plumber.svc.cluster.local/a',
+          },
+        }),
+      )
+    })
+
     it('should return verified: false when decryption fails', async () => {
       mocks.cryptoV3Decrypt.mockReturnValueOnce(null)
 
@@ -245,7 +281,8 @@ describe('decrypt form response - MRF specific', () => {
     it('should not call v3 attachment decryption when hasFileProcessingActions is false', async () => {
       $.flow.hasFileProcessingActions = false
       $.request.body.data.attachmentDownloadUrls = {
-        attachField1: 'https://example.com/download/1',
+        attachField1:
+          'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/download/1',
       }
 
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
@@ -482,7 +519,8 @@ describe('decrypt form response - MRF specific', () => {
         const workflowContent = makeWorkflowContent(2)
         $.request.body.data.workflowContent = workflowContent
         $.request.body.data.attachmentDownloadUrls = {
-          attachmentField1: 'https://example.com/download/1',
+          attachmentField1:
+            'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/download/1',
         }
         $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
 
@@ -515,7 +553,8 @@ describe('decrypt form response - MRF specific', () => {
       it('should not suffix storageId for non-MRF attachments', async () => {
         $.flow.hasFileProcessingActions = true
         $.request.body.data.attachmentDownloadUrls = {
-          attachmentField1: 'https://example.com/download/1',
+          attachmentField1:
+            'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/download/1',
         }
         $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
 

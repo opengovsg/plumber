@@ -30,6 +30,8 @@ export type MultiRowProps = {
   defaultValue?: string | IJSONValue
   // See IFieldMultiRowMultiCol.autofillable.
   autofillable?: boolean
+  // See IFieldMultiRowMultiCol.maxAutofillOptions.
+  maxAutofillOptions?: number
   // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
   // own controls). Renders even when the add-row button is hidden at maxRows.
   addButtonSuffix?: ReactNode
@@ -54,6 +56,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     maxRows,
     defaultValue,
     autofillable,
+    maxAutofillOptions,
     addButtonSuffix,
     onRequestRemoveLastRow,
     ...forwardedInputCreatorProps
@@ -117,6 +120,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     confirm,
   } = useAutofill({
     autofillable,
+    maxAutofillOptions,
     type,
     subFields,
     stepId: forwardedInputCreatorProps.stepId,

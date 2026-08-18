@@ -495,6 +495,12 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
    * user picks a handful of specific conditions.
    */
   autofillable?: boolean
+  /**
+   * When `autofillable` is set, hides the "Autofill" button if subFields[0]'s
+   * dynamic-data source has more options than this. Use when autofilling a
+   * very large number of rows would be unwieldy for the user (or the app).
+   */
+  maxAutofillOptions?: number
 }
 
 export interface IFieldMultiRow extends IBaseField {

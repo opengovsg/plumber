@@ -2,6 +2,7 @@ import type { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
+import { TEST_STEP_MAX_COLUMNS } from '../../common/constants'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -86,6 +87,7 @@ const action: IRawAction = {
       key: 'columnValues',
       type: 'multirow-multicol' as const,
       autofillable: true,
+      maxAutofillOptions: TEST_STEP_MAX_COLUMNS,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',
