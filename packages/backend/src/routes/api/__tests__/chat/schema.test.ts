@@ -155,12 +155,12 @@ describe('chatRequestSchema', () => {
       )
     })
 
-    it('should reject more than 50 messages', () => {
-      const messages = Array(51).fill(validMessage)
+    it('should reject more than 151 messages', () => {
+      const messages = Array(152).fill(validMessage)
       const result = chatRequestSchema.safeParse({ messages })
       expect(result.success).toBe(false)
       expect(result.error?.issues[0].message).toBe(
-        'Cannot send more than 50 messages',
+        'Cannot send more than 151 messages',
       )
     })
   })
