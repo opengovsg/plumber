@@ -34,8 +34,9 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 - **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and fix remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root command.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.
+  - **Branch name prefixes**: `feat/<…>` for features, `fix/<…>` for bugfixes, `chore/<…>` for everything else.
   - **Before `gt submit`** (do both, in this order):
-    1. **Fix the branch name.** If the current branch doesn't match `feat/<…>` or `chore/<…>` (e.g. an auto-generated `claude/<slug>` worktree branch), rename it first: `git branch -m <name>` (works on untracked branches) or `gt rename <name>` (if already tracked). You **MUST** ask the user for the branch name whenever it is at all possible to ask — never auto-pick a name unless asking is genuinely impossible.
+    1. **Fix the branch name.** If the current branch doesn't use one of those prefixes (e.g. an auto-generated `claude/<slug>` worktree branch), rename it first: `git branch -m <name>` (works on untracked branches) or `gt rename <name>` (if already tracked). You **MUST** ask the user for the branch name whenever it is at all possible to ask — never auto-pick a name unless asking is genuinely impossible.
     2. **Track the branch.** Ensure it is tracked onto the branch directly below it in the stack: `gt track --parent <branch-below>`. The parent is the branch immediately beneath it, or the trunk if it sits at the bottom of the stack (note: the trunk is not necessarily named `main`).
 
 ## Skills

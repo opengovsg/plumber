@@ -1,10 +1,11 @@
 import { FormField } from '@opengovsg/formsg-sdk'
 import { DecryptedAttachments } from '@opengovsg/formsg-sdk/dist/types'
-import axios from 'axios'
 
 import logger from '@/helpers/logger'
 
 import { getSdk } from '../common/form-env'
+
+import { downloadEncryptedAttachment } from './download-encrypted-attachment'
 
 /**
  * Decrypts form attachments from presigned S3 download URLs.
@@ -12,6 +13,9 @@ import { getSdk } from '../common/form-env'
  * Works for both v3- and v4-shaped MRF submissions: attachments are
  * encrypted the same way in both, with only the decrypted response shape
  * differing (and that is handled upstream by processResponsesV3/V4).
+ *
+ * Callers must vet the URLs with areAttachmentUrlsTrusted first. That happens
+ * in decryptFormResponse, so a forged URL is rejected before we get here.
  *
  * @param formSgSdk - The FormSG SDK instance
  * @param submissionSecretKey - The decrypted submission secret key (base64)
@@ -40,11 +44,7 @@ export async function decryptFormAttachmentsV3OrV4(
   await Promise.all(
     Object.entries(attachmentDownloadUrls).map(async ([fieldId, url]) => {
       try {
-        const {
-          data: { encryptedFile },
-        } = await axios.get(url, {
-          responseType: 'json',
-        })
+        const { encryptedFile } = await downloadEncryptedAttachment(url)
 
         const decryptedBinary = await formSgSdk.cryptoV3.decryptFile(
           submissionSecretKey,
@@ -75,7 +75,7 @@ export async function decryptFormAttachmentsV3OrV4(
           fieldId,
           error: err,
         })
-        throw 'Error downloading or decrypting V3 attachment'
+        throw new Error('Error downloading or decrypting V3 attachment')
       }
     }),
   )
