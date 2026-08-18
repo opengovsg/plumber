@@ -28,6 +28,8 @@ export type UseAutofillResult = {
 type UseAutofillArgs = {
   // Whether the field schema opted into Autofill (see IFieldMultiRowMultiCol.autofillable).
   autofillable: boolean | undefined
+  // See IFieldMultiRowMultiCol.maxAutofillOptions.
+  maxAutofillOptions: number | undefined
   type: string | undefined
   subFields: IField[]
   stepId: string | undefined
@@ -56,6 +58,7 @@ const rowHasValue = (row: Record<string, unknown>) =>
  */
 export default function useAutofill({
   autofillable,
+  maxAutofillOptions,
   type,
   subFields,
   stepId,
@@ -65,7 +68,7 @@ export default function useAutofill({
   getValues,
   setValue,
 }: UseAutofillArgs): UseAutofillResult {
-  const canAutofill =
+  const isAutofillableField =
     !!autofillable &&
     type === 'multirow-multicol' &&
     subFields?.[0]?.type === 'dropdown' &&
@@ -78,6 +81,14 @@ export default function useAutofill({
   } = useDynamicData(stepId, subFields?.[0], name)
 
   const optionCount = dynamicDataOptions?.length
+
+  // Wait for the option count to resolve before rendering the button at all,
+  // instead of showing it mid-load (with a spinner) only to potentially hide
+  // it once we learn the count exceeds maxAutofillOptions.
+  const canAutofill =
+    isAutofillableField &&
+    optionCount != null &&
+    (maxAutofillOptions == null || optionCount <= maxAutofillOptions)
 
   const buildAutofillRows = useCallback(
     (items: { value: string; type?: string }[]) =>

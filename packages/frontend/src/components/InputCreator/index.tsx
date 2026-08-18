@@ -253,6 +253,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         showDivider={type !== 'multirow-multicol'}
         type={type}
         autofillable={'autofillable' in schema && schema.autofillable}
+        maxAutofillOptions={
+          'maxAutofillOptions' in schema ? schema.maxAutofillOptions : undefined
+        }
         // These are InputCreatorProps which MultiRow will forward.
         stepId={stepId}
         maxRows={schema.maxRows}

@@ -4,11 +4,13 @@ import z from 'zod'
 
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
+import logger from '@/helpers/logger'
 
 import {
   GET_TABLE_ROWS_LIMIT,
   LOOKUP_CONDITIONS_SUBFIELDS,
   MAX_LOOKUP_CONDITIONS,
+  TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
 import { lookupParametersSchema } from '../../common/schema'
@@ -110,6 +112,28 @@ const action: IRawAction = {
       tableId,
       MAX_ROWS,
     )
+
+    // Testing a step against a table with many columns can generate an
+    // unwieldy amount of data out, so block it instead of letting the step
+    // test choke on it. In production, we don't want to break existing
+    // flows over this, so just log it for visibility instead.
+    if (rawColumns.length > TEST_STEP_MAX_COLUMNS) {
+      if ($.execution.testRun) {
+        throw new StepError(
+          `Your Excel table has more than ${TEST_STEP_MAX_COLUMNS} columns.`,
+          'Reduce the number of columns in your table and try testing this step again.',
+        )
+      }
+
+      logger.error('Excel table exceeds test step column limit', {
+        event: 'm365-excel-table-column-limit-exceeded',
+        appKey: $.step?.appKey,
+        numColumns: rawColumns.length,
+        flowId: $.flow?.id,
+        stepId: $.step?.id,
+        executionId: $.execution?.id,
+      })
+    }
 
     const columnIndices = filters.map(({ lookupColumn }) => {
       const idx = rawColumns.indexOf(lookupColumn)
