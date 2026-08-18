@@ -1,11 +1,10 @@
-import type { IApp, IField, TFieldPreviewType } from '@plumber/types'
+import type { IApp, IField } from '@plumber/types'
 
-// Only rich-text fields carry previewType. Narrows the IField union so
-// callers don't need to know which field type it lives on.
-export function getFieldPreviewType(
-  field?: IField,
-): TFieldPreviewType | undefined {
-  return field?.type === 'rich-text' ? field.previewType : undefined
+// Rich-text values are stored as HTML — rendering them as a plain text line
+// would show raw markup, so the AI Builder step preview always renders them
+// via a read-only Tiptap editor instead (see RichTextPreview).
+export function isRichTextField(field?: IField): boolean {
+  return field?.type === 'rich-text'
 }
 
 function camelToSentence(key: string): string {
