@@ -247,7 +247,6 @@ describe('updateFlowStatus', () => {
     })
 
     expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith('repeat-key')
-    expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith(fakeFlow.id)
     expect(result).toEqual(fakeFlow)
   })
 
@@ -267,7 +266,7 @@ describe('updateFlowStatus', () => {
       config: {},
       updatedBy: owner.id,
     })
-    expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith(fakeFlow.id)
+    expect(flowQueue.removeRepeatableByKey).not.toHaveBeenCalled()
     expect(result).toEqual(fakeFlow)
   })
 

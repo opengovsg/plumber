@@ -1,9 +1,3 @@
-import type { QueuePro } from '@taskforcesh/bullmq-pro'
-
-import {
-  REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-  REMOVE_AFTER_30_DAYS,
-} from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import flowQueue from '@/queues/flow'
@@ -16,36 +10,19 @@ export type FlowRepeatableJobLike = {
   name?: string | null
 }
 
-type JobSchedulerQueue = {
-  removeJobScheduler: (schedulerId: string) => Promise<unknown>
-  getJobSchedulers: () => Promise<FlowRepeatableJobLike[]>
-}
-
 export function getFlowRepeatableJobName(flowId: string): string {
   return `${FLOW_REPEATABLE_JOB_NAME}-${flowId}`
 }
 
-function asJobSchedulerQueue(queue: QueuePro): JobSchedulerQueue | null {
-  const candidate = queue as QueuePro & Partial<JobSchedulerQueue>
-  if (typeof candidate.removeJobScheduler !== 'function') {
-    return null
-  }
-  return candidate as JobSchedulerQueue
-}
-
 /**
- * BullMQ 5.10+ (bullmq-pro 7.44) stopped putting the custom `jobId` on
- * listed jobs. Match every leftover key format so unpublish still works.
+ * BullMQ 5.10+ stopped putting the custom `jobId` on listed jobs.
+ * Match leftover 7.8.1 keys as well as post-upgrade keys.
  */
 export function isRepeatableJobForFlow(
   job: FlowRepeatableJobLike,
   flowId: string,
 ): boolean {
-  if (
-    job.id === flowId ||
-    job.name === getFlowRepeatableJobName(flowId) ||
-    job.key === flowId
-  ) {
+  if (job.id === flowId || job.name === getFlowRepeatableJobName(flowId)) {
     return true
   }
 
@@ -71,67 +48,18 @@ export function flowIdFromRepeatableJob(
   return null
 }
 
-async function listRepeatableJobs(
-  queue: QueuePro,
-): Promise<FlowRepeatableJobLike[]> {
-  const jobs = await queue.getRepeatableJobs()
-  const byKey = new Map<string, FlowRepeatableJobLike>(
-    jobs.map((job) => [job.key, job]),
-  )
-
-  const schedulerQueue = asJobSchedulerQueue(queue)
-  if (schedulerQueue) {
-    const schedulers = await schedulerQueue.getJobSchedulers()
-    for (const scheduler of schedulers) {
-      if (!byKey.has(scheduler.key)) {
-        byKey.set(scheduler.key, scheduler)
-      }
-    }
-  }
-
-  return [...byKey.values()]
-}
-
-export async function addFlowRepeatableJob(
-  flowId: string,
-  pattern: string,
-): Promise<void> {
-  await flowQueue.add(
-    getFlowRepeatableJobName(flowId),
-    { flowId },
-    {
-      // Custom repeat.key is a 5.10+ feature. Setting it on 7.8.1 changes
-      // delayed job ids without changing the zset member, so removal misses
-      // the already-scheduled job.
-      repeat: { pattern },
-      jobId: flowId,
-      removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-      removeOnFail: REMOVE_AFTER_30_DAYS,
-    },
-  )
-}
-
 export async function removeFlowRepeatableJobs(flowId: string): Promise<void> {
-  const jobs = await listRepeatableJobs(flowQueue)
+  const jobs = await flowQueue.getRepeatableJobs()
   const matching = jobs.filter((job) => isRepeatableJobForFlow(job, flowId))
-  const keys = new Set(matching.map((job) => job.key))
-  keys.add(flowId)
 
-  for (const key of keys) {
-    await flowQueue.removeRepeatableByKey(key)
-  }
-
-  const schedulerQueue = asJobSchedulerQueue(flowQueue)
-  if (schedulerQueue) {
-    for (const key of keys) {
-      await schedulerQueue.removeJobScheduler(key)
-    }
+  for (const job of matching) {
+    await flowQueue.removeRepeatableByKey(job.key)
   }
 }
 
 export async function reconcileInactiveFlowRepeatableJobs(): Promise<number> {
   await flowQueue.waitUntilReady()
-  const jobs = await listRepeatableJobs(flowQueue)
+  const jobs = await flowQueue.getRepeatableJobs()
   const flowIds = [
     ...new Set(
       jobs

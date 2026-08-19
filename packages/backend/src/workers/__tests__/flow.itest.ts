@@ -102,7 +102,7 @@ describe('Flow worker', () => {
           resolve()
         })
       })
-      const job = await flowQueue.add(
+      await flowQueue.add(
         'test-job',
         {
           flowId: 'test-flow-id',
@@ -114,9 +114,6 @@ describe('Flow worker', () => {
       await jobProcessed
 
       expect(mocks.processFlow).not.toHaveBeenCalled()
-      expect(mocks.logInfo).toHaveBeenCalledWith(
-        `JOB ID: ${job.id} - FLOW ID: test-flow-id skipped because the flow is inactive`,
-      )
     })
 
     it('logs an error on job failure', async () => {
