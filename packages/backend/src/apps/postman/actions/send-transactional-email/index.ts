@@ -193,6 +193,10 @@ async function sendEmail(
   }
 
   let recipientsToSend = result.data.destinationEmail
+  // Populated below on a partial retry — the still-blacklisted CC addresses
+  // to retry alongside recipientsToSend, as one unified send (see
+  // sendTransactionalEmails call below).
+  let ccsToRetry: string[] = []
   /**
    * Logic to handle retries here:
    * We dont want to send the email to the same recipient again if it has been sent before
@@ -215,17 +219,21 @@ async function sendEmail(
     !$.execution.testRun
 
   if (isPartialRetry) {
-    const { status, recipient } = prevDataOutParseResult.data
+    const { status, recipient, cc, ccStatus } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
+    ccsToRetry = cc?.filter((_, i) => ccStatus?.[i] === 'BLACKLISTED') ?? []
   }
 
-  // Resolve the transport once, on the configured attachments and the actual
-  // send recipients. This single decision drives both the file-type policy (SES
-  // accepts everything except its executable block-list; Postman keeps its
-  // narrower allow-list) and the send itself, so the transport can't flip if
-  // filtering later strips every attachment.
+  // Resolve the transport once, on the configured attachments and the full set
+  // of addresses this attempt will touch (recipients being retried, plus any
+  // CC being retried alongside them) — a CC-only retry has no To recipients
+  // at all, so checking recipientsToSend alone wouldn't reflect that CC's own
+  // ses_enabled flag. This single decision drives both the file-type policy
+  // (SES accepts everything except its executable block-list; Postman keeps
+  // its narrower allow-list) and the send itself, so the transport can't flip
+  // if filtering later strips every attachment.
   const useSes = await resolveSesRouting(
-    recipientsToSend,
+    [...recipientsToSend, ...ccsToRetry],
     result.data.attachments.length > 0,
   )
   const extensionPolicy: AttachmentExtensionPolicy = useSes
@@ -256,12 +264,19 @@ async function sendEmail(
         /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
         '<p style="margin: 0">&nbsp;</p>',
       ),
-      // A partial retry only exists because the prior attempt had ≥1
-      // ACCEPTED recipient (that's the isPartialSuccess gate for
-      // PartialStepError) — CC has no status tracking of its own, so it rode
-      // along on that earlier successful send. Re-sending it here would just
-      // spam every CC recipient again on every retry click.
-      ccList: isPartialRetry ? undefined : result.data.destinationEmailCc,
+      // On a fresh send, use the full configured CC list. On a partial retry,
+      // only the still-blacklisted CCs are resent — CC has no independent
+      // status until it's blacklisted, so anything not in ccsToRetry already
+      // rode along on the prior successful send and would just be spammed
+      // again. CC-only retry is an SES concept (blacklisting is only checked
+      // there), so if routing resolves away from SES this round, there's
+      // nothing to retry it with — leave it out rather than silently
+      // resending via Postman with no suppression check at all.
+      ccList: isPartialRetry
+        ? useSes
+          ? ccsToRetry
+          : undefined
+        : result.data.destinationEmailCc,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
@@ -284,12 +299,33 @@ async function sendEmail(
     dataOut.status = updatedStatus
     dataOut.recipient = prevDataOut.recipient
 
-    // CC isn't re-sent on a partial retry (see ccList above), so this attempt
-    // knows nothing new about it — carry the previous attempt's cc/ccStatus
-    // forward instead of letting them silently disappear from dataOut.
-    if (prevDataOut.cc) {
+    // Same idea for CC: only the addresses in ccsToRetry were actually
+    // resent this round (see ccList above) — anything else keeps its
+    // previous status rather than silently disappearing from dataOut. If
+    // this round didn't touch CC at all (e.g. routing resolved away from
+    // SES), dataOut.ccStatus is undefined and every address just keeps its
+    // old status, unchanged.
+    //
+    // Requires prevDataOut.ccStatus too, not just .cc: an execution from
+    // before ccStatus existed could have .cc with no .ccStatus at all, and
+    // mapping over .cc while indexing into a missing .ccStatus would produce
+    // `undefined` entries — which serialize to `null` in the stored dataOut
+    // and fail dataOutSchema's enum validation on the *next* retry, silently
+    // disabling partial-retry (falls back to resending everyone). Safer to
+    // drop the stale cc/ccStatus pair entirely than to carry forward a
+    // half-formed one.
+    if (prevDataOut.cc && prevDataOut.ccStatus) {
+      const updatedCcStatus = prevDataOut.cc.map((cc, i) => {
+        if (ccsToRetry.includes(cc)) {
+          return (
+            dataOut.ccStatus?.[ccsToRetry.indexOf(cc)] ??
+            prevDataOut.ccStatus[i]
+          )
+        }
+        return prevDataOut.ccStatus[i]
+      })
       dataOut.cc = prevDataOut.cc
-      dataOut.ccStatus = prevDataOut.ccStatus
+      dataOut.ccStatus = updatedCcStatus
     }
   }
 

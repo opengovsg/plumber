@@ -280,13 +280,15 @@ export function throwPostmanStepError({
 
       const solution = solutionSections.join('\n\n&nbsp;\n\n')
 
-      // CC-only retry isn't built yet — only offer the resend button when
-      // there's a blacklisted To-recipient the existing retry flow can
-      // actually act on (mirrors the invalid-attachments-only case above,
-      // which also withholds the button when there's nothing to retry).
-      let buttonMessage = hasBlacklistedRecipients
-        ? 'Resend to blacklisted recipients'
-        : ''
+      // Offer the resend button whenever there's a blacklisted To-recipient
+      // and/or a blacklisted CC — retry collects whichever of the two are
+      // still blacklisted and resends them together as one send. Only
+      // withheld when there's genuinely nothing to retry (mirrors the
+      // invalid-attachments-only case above).
+      let buttonMessage =
+        hasBlacklistedRecipients || blacklistedCcs.length > 0
+          ? 'Resend to blacklisted recipients'
+          : ''
       if (buttonMessage && isRetryWithoutAttachments) {
         buttonMessage += ' without attachments'
       }

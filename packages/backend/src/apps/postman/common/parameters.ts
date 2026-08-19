@@ -70,7 +70,7 @@ export const transactionalEmailFields: IField[] = [
     required: false,
     description: 'Enter the email addresses to CC, separated by commas.',
     tooltipText:
-      'CC recipient status is not tracked. Blacklisted CC recipients will be ignored, but the email will still be sent to other recipients.',
+      'Blacklisted CC recipients will not receive the email, but this will not block the email from being sent to other recipients. You can resend to blacklisted CC recipients the same way as blacklisted main recipients.',
     variables: true,
   },
   {
