@@ -1209,7 +1209,6 @@ export type IGlobalVariable = {
   flow?: {
     id: string
     name: string
-    active: boolean
     hasFileProcessingActions: boolean
     userId: string
     remoteWebhookId?: string
