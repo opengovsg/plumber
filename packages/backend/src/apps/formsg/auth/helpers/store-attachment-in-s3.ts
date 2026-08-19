@@ -48,7 +48,7 @@ async function storeAttachmentInS3(
       formId: $.auth.data.formId as string,
     },
     tagging: buildAttachmentTypeTagging(
-      $.flow.active ? ATTACHMENT_TYPE.TRANSITIVE : ATTACHMENT_TYPE.TEST,
+      $.flow.isActive ? ATTACHMENT_TYPE.TRANSITIVE : ATTACHMENT_TYPE.TEST,
     ),
   })
 }
