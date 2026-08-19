@@ -6,6 +6,7 @@ ENV VITE_MODE=$APP_ENV
 
 WORKDIR /opt/plumber
 COPY . ./
+RUN npm install -g npm@11.19.0
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   (export NPM_TASKFORCESH_TOKEN=$(cat /run/secrets/NPM_TASKFORCESH_TOKEN); npm ci)
 RUN npm run -w backend-archive build
