@@ -40,7 +40,15 @@ vi.mock('@/apps', () => ({
       key: 'slack',
       name: 'Slack',
       auth: {},
-      triggers: [],
+      triggers: [
+        {
+          key: 'noAuthTrigger',
+          name: 'No Auth Trigger',
+          description: 'A trigger that opts out of the app connection',
+          noAuthRequired: true,
+          arguments: [],
+        },
+      ],
       actions: [
         {
           key: 'sendMessage',
@@ -232,16 +240,25 @@ describe('listAppsService', () => {
     expect(formsg?.triggers).toHaveLength(1)
     expect(formsg?.actions).toHaveLength(0)
     const slack = apps.find((a) => a.key === 'slack')
-    expect(slack?.triggers).toHaveLength(0)
+    expect(slack?.triggers).toHaveLength(1)
     expect(slack?.actions).toHaveLength(1)
   })
 
-  it('sets requiresConnection based on whether app has auth', async () => {
+  it('sets requiresConnection on a trigger/action based on whether its app has auth', async () => {
     const apps = await listAppsService(user)
     const slack = apps.find((a) => a.key === 'slack')
     const formsg = apps.find((a) => a.key === 'formsg')
-    expect(slack?.requiresConnection).toBe(true)
-    expect(formsg?.requiresConnection).toBe(false)
+    expect(slack?.actions[0].requiresConnection).toBe(true)
+    expect(formsg?.triggers[0].requiresConnection).toBe(false)
+  })
+
+  it('sets requiresConnection to false for a trigger/action that opts out via noAuthRequired, even when its app has auth', async () => {
+    const apps = await listAppsService(user)
+    const slack = apps.find((a) => a.key === 'slack')
+    // slack has auth configured, but this trigger opts out individually —
+    // its sibling action (sendMessage) still requires a connection.
+    expect(slack?.triggers[0].requiresConnection).toBe(false)
+    expect(slack?.actions[0].requiresConnection).toBe(true)
   })
 
   it('serializes static dropdown options', async () => {
