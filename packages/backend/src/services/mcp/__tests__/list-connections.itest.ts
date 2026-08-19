@@ -323,5 +323,43 @@ describe('listConnectionsService', () => {
 
       expect(mocks.checkLiveMrfStatus).not.toHaveBeenCalled()
     })
+
+    // Connection labels are user-controlled (updateConnection lets a user
+    // patch formattedData.screenName/formId on any connection they own), so a
+    // user can cheaply create many formsg connections tagged with a stale
+    // "[MRF] " label. Without a concurrency cap, listing them would fan out
+    // one concurrent outbound request per connection to FormSG's public API
+    // (self-DoS / shared-egress-IP-ban risk) — see hacktron finding
+    // e7ce2d1f-ca60-4640-ad3a-724646a7bebc.
+    it('caps concurrent live MRF checks when many connections are stale-tagged', async () => {
+      let inFlight = 0
+      let maxInFlight = 0
+      mocks.checkLiveMrfStatus.mockImplementation(async () => {
+        inFlight++
+        maxInFlight = Math.max(maxInFlight, inFlight)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        inFlight--
+        return false
+      })
+
+      const user = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `mrf-concurrency-${randomUUID()}@example.com`,
+      })
+      const CONNECTION_COUNT = 12
+      await Promise.all(
+        Array.from({ length: CONNECTION_COUNT }, (_, i) =>
+          insertFormsgConn(user.id, `[MRF] form-${i} - Old Form ${i}`),
+        ),
+      )
+
+      await listConnectionsService(user, 'formsg')
+
+      expect(mocks.checkLiveMrfStatus).toHaveBeenCalledTimes(CONNECTION_COUNT)
+      // Sanity check that the test actually exercised overlapping calls,
+      // otherwise the upper-bound assertion below would pass trivially.
+      expect(maxInFlight).toBeGreaterThan(1)
+      expect(maxInFlight).toBeLessThanOrEqual(5)
+    })
   })
 })

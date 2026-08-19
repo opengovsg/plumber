@@ -1,5 +1,7 @@
 import type { IJSONObject } from '@plumber/types'
 
+import pLimit from 'p-limit'
+
 import { parseFormIdFromInput } from '@/apps/formsg/auth/verify-credentials'
 import { checkLiveMrfStatus } from '@/apps/formsg/common/check-live-mrf-status'
 import { parseFormEnvFromInput } from '@/apps/formsg/common/form-env'
@@ -36,6 +38,14 @@ export function connectionLabel(c: {
 // no DB write) whenever we can positively confirm the form isn't MRF now.
 const STALE_MRF_TAG_REGEX = /^(\[[A-Z]+\] )?\[MRF\] /
 
+// Caps how many of these live checks can be in flight at once — connection
+// labels are user-controlled (via updateConnection's formattedData), so an
+// unbounded Promise.all over every connection would let a user with many
+// stale-tagged connections fire an unbounded burst of concurrent outbound
+// requests at FormSG's API.
+const MRF_LIVE_CHECK_CONCURRENCY = 5
+const mrfLiveCheckLimit = pLimit(MRF_LIVE_CHECK_CONCURRENCY)
+
 async function resolveMcpConnectionLabel(c: {
   formattedData?: IJSONObject
   description?: string
@@ -55,7 +65,9 @@ async function resolveMcpConnectionLabel(c: {
   try {
     const formId = parseFormIdFromInput(rawFormId)
     const env = parseFormEnvFromInput(rawFormId)
-    const isCurrentlyMrf = await checkLiveMrfStatus(formId, env)
+    const isCurrentlyMrf = await mrfLiveCheckLimit(() =>
+      checkLiveMrfStatus(formId, env),
+    )
     if (isCurrentlyMrf === false) {
       return label.replace('[MRF] ', '')
     }
