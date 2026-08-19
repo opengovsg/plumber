@@ -107,7 +107,6 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
     .map((app) => ({
       key: app.key,
       name: app.name,
-      requiresConnection: !!app.auth,
       triggers: (app.triggers ?? [])
         .filter((t) => allLdFlags[`app_${app.key}_trigger_${t.key}`] !== false)
         .map((t) => {
@@ -116,6 +115,11 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
             key: t.key,
             name: t.name,
             description: t.description,
+            // Mirrors get-app.ts / ChooseAppAndEvent's own connection check —
+            // a trigger/action can opt out of its app's connection even when
+            // the app has auth configured for its other triggers/actions
+            // (e.g. GatherSG's webhook trigger vs. its API-key actions).
+            requiresConnection: !!app.auth && !raw.noAuthRequired,
             fields: serializeFields(raw.arguments ?? []),
           }
         }),
@@ -127,6 +131,7 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
             key: a.key,
             name: a.name,
             description: a.description,
+            requiresConnection: !!app.auth && !raw.noAuthRequired,
             fields: serializeFields(raw.arguments ?? []),
           }
         }),
