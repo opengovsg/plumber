@@ -5,7 +5,12 @@ import {
   useRef,
   useState,
 } from 'react'
-import { FaArrowCircleUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import {
+  FaArrowCircleUp,
+  FaChevronLeft,
+  FaChevronRight,
+  FaExclamationTriangle,
+} from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Button, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
@@ -86,19 +91,34 @@ export default function ChoicePicker({
     }
   }
 
+  const isWarning = currentQ.isWarning
+
   return (
     <Box w="full" maxW="4xl">
       <Box
-        bg="white"
+        bg={isWarning ? 'red.50' : 'white'}
         border="1px"
-        borderColor="gray.200"
+        borderColor={isWarning ? 'red.300' : 'gray.200'}
         borderRadius="16px"
         boxShadow="0 2px 4px rgba(0,0,0,0.1)"
         p={4}
         w="full"
       >
-        <Flex justify="space-between" align="center" mb={2}>
-          <Text>{currentQ.question}</Text>
+        <Flex justify="space-between" align="flex-start" mb={2}>
+          <Flex align="flex-start" gap={2}>
+            {isWarning && (
+              <Icon
+                as={FaExclamationTriangle}
+                color="red.500"
+                fontSize="16px"
+                flexShrink={0}
+                mt="3px"
+              />
+            )}
+            <Text fontWeight={isWarning ? 'semibold' : 'normal'}>
+              {currentQ.question}
+            </Text>
+          </Flex>
           {isMulti && (
             <Flex align="center" gap={2} ml={3} flexShrink={0}>
               <Icon
