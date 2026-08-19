@@ -1394,13 +1394,13 @@ export interface IMcpAppAction {
   key: string
   name: string
   description?: string
+  requiresConnection: boolean
   fields: IMcpAppField[]
 }
 
 export interface IMcpApp {
   key: string
   name: string
-  requiresConnection: boolean
   triggers: IMcpAppAction[]
   actions: IMcpAppAction[]
 }
