@@ -1,7 +1,9 @@
 import { IStep } from '@plumber/types'
 
-import { useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
+import { BiTrash } from 'react-icons/bi'
 import { Flex } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 
 import {
   buildStepsList,
@@ -17,8 +19,14 @@ import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
+import ConditionBlockHeader from '../../components/ConditionBlockHeader'
+import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog'
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
+import { getForEachBlockPreviewParts } from '../../helpers/getConditionBlockPreview'
+import useDeleteStepConfirmation from '../../hooks/useDeleteStepConfirmation'
+import { HoverAddStepButton } from '../IfThen/HoverAddStepButton'
 import IfThen from '../IfThen/IfThen'
+import { blockActionButtonStyles, conditionBlockStyles } from '../IfThen/styles'
 
 interface ForEachProps {
   groupedSteps: IStep[][]
@@ -27,7 +35,8 @@ interface ForEachProps {
 
 export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
-  const { flow, readOnly } = useContext(EditorContext)
+  const { currentStepId, flow, isDrawerOpen, onDrawerClose, readOnly } =
+    useContext(EditorContext)
   const { groupingActions } = useContext(StepsToDisplayContext)
   const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
     useIfThenV2Enabled()
@@ -134,20 +143,117 @@ export default function ForEach(props: ForEachProps) {
     }
   }
 
+  // V1 keeps the loop's own chrome — and its delete button — in FlowStepGroup,
+  // so only the V2 header below wires up a delete of its own. Both go away
+  // together when the flag retires and FlowStepGroup stops wrapping for-each.
+  const {
+    cancelRef,
+    isOpen: isDeleteConfirmationOpen,
+    onClose: closeDeleteConfirmation,
+    onDelete: deleteForEach,
+    openDeleteConfirmation,
+  } = useDeleteStepConfirmation(TOOLBOX_ACTIONS.ForEach, groupedSteps)
+
+  const handleForEachDelete = useCallback(async () => {
+    await deleteForEach()
+    onDrawerClose()
+  }, [deleteForEach, onDrawerClose])
+
+  // V1: the loop's condition renders as a card of its own, inside the
+  // app-icon-and-caption box FlowStepGroup draws around this component.
+  if (!isIfThenV2Enabled) {
+    return (
+      <Flex flexDir="column" alignItems="center" borderRadius="lg" w="100%">
+        <Flex flexDir="column" w="100%" px={4} py={3}>
+          <GroupStepWithAddButton
+            step={conditionStep}
+            canAddStep={true}
+            isLastStep={hasNoActionSteps}
+            allowReorder={false}
+            showEmptyAction={hasNoActionSteps}
+            // True when either sibling list has a reorderable item, so the
+            // header still reserves width for that item's drag handle.
+            canChildStepsReorder={actionSteps.length > 1 || canReorderBlocks}
+          />
+          <SortableList
+            items={actionSteps.map((step, index) => ({
+              id: step.id,
+              step,
+              index,
+            }))}
+            onChange={handleReorderSteps}
+            renderItem={(item, isOverlay) => {
+              const { step, index } = item
+              const isLastStep =
+                index === actionSteps.length - 1 && ifThenSteps.length === 0
+              return (
+                <SortableList.Item id={item.id}>
+                  <Flex w="100%" flexDir="column">
+                    <GroupStepWithAddButton
+                      step={step}
+                      canAddStep={true}
+                      isLastStep={isLastStep}
+                      isOverlay={isOverlay}
+                      allowReorder={actionSteps.length > 1}
+                    />
+                  </Flex>
+                </SortableList.Item>
+              )
+            }}
+          />
+
+          {ifThenSteps.length > 0 && !isIfThenV2Loading && (
+            <FlowStepGroup
+              stepsBeforeGroup={forEachSteps}
+              groupedSteps={ifThenSteps}
+            />
+          )}
+        </Flex>
+      </Flex>
+    )
+  }
+
+  // V2: a REPEAT badge plus the plain-language list preview stand in for the
+  // condition step, so the loop reads as one sentence rather than a captioned
+  // box wrapping a card. Matches how IfThen draws a V2 block.
+  const isSelected = currentStepId === conditionStep.id
+
   return (
-    <Flex flexDir="column" alignItems="center" borderRadius="lg" w="100%">
-      <Flex flexDir="column" w="100%" px={4} py={3}>
-        <GroupStepWithAddButton
-          step={conditionStep}
-          canAddStep={true}
-          isLastStep={hasNoActionSteps}
-          allowReorder={false}
-          showEmptyAction={hasNoActionSteps}
-          // True when either sibling list has a reorderable item, so the
-          // header still reserves width for that item's drag handle.
-          canChildStepsReorder={actionSteps.length > 1 || canReorderBlocks}
-        />
-        {isIfThenV2Enabled ? (
+    <Flex
+      {...conditionBlockStyles.container}
+      borderWidth="1px"
+      borderColor={isSelected ? 'base.content.brand' : 'base.divider.medium'}
+    >
+      <ConditionBlockHeader
+        badgeLabel="REPEAT"
+        previewParts={getForEachBlockPreviewParts(conditionStep.parameters)}
+        stepId={conditionStep.id}
+        isSelected={isSelected}
+        actions={
+          readOnly ? undefined : (
+            <IconButton
+              {...blockActionButtonStyles}
+              onClick={openDeleteConfirmation}
+              aria-label="Delete for each action"
+              icon={<BiTrash />}
+            />
+          )
+        }
+      />
+
+      <Flex {...conditionBlockStyles.body}>
+        {hasNoActionSteps ? (
+          <HoverAddStepButton
+            isDisabled={readOnly}
+            isDrawerOpen={isDrawerOpen}
+            isLastStep={true}
+            prevStep={conditionStep}
+            showEmptyAction={true}
+            hideLeadingConnector
+            step={conditionStep}
+            allowReorder={false}
+          />
+        ) : (
           <Flex
             flexDir="column"
             w="100%"
@@ -173,13 +279,14 @@ export default function ForEach(props: ForEachProps) {
                 }
 
                 // A plain step around if-then V2 blocks in the body — an
-                // explicit endStepId marker can end a block before the
-                // body's last step, unlike a derived if-then V1 extent.
+                // explicit endStepId marker can end a block before the body's
+                // last step, unlike a derived if-then V1 extent.
                 return (
                   <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
                     <Flex w="100%" flexDir="column">
                       <GroupStepWithAddButton
                         step={item.step}
+                        asConditionBlock
                         canAddStep={true}
                         isLastStep={isLastItem}
                         isOverlay={isOverlay}
@@ -191,44 +298,17 @@ export default function ForEach(props: ForEachProps) {
               }}
             />
           </Flex>
-        ) : (
-          <>
-            <SortableList
-              items={actionSteps.map((step, index) => ({
-                id: step.id,
-                step,
-                index,
-              }))}
-              onChange={handleReorderSteps}
-              renderItem={(item, isOverlay) => {
-                const { step, index } = item
-                const isLastStep =
-                  index === actionSteps.length - 1 && ifThenSteps.length === 0
-                return (
-                  <SortableList.Item id={item.id}>
-                    <Flex w="100%" flexDir="column">
-                      <GroupStepWithAddButton
-                        step={step}
-                        canAddStep={true}
-                        isLastStep={isLastStep}
-                        isOverlay={isOverlay}
-                        allowReorder={actionSteps.length > 1}
-                      />
-                    </Flex>
-                  </SortableList.Item>
-                )
-              }}
-            />
-
-            {ifThenSteps.length > 0 && !isIfThenV2Loading && (
-              <FlowStepGroup
-                stepsBeforeGroup={forEachSteps}
-                groupedSteps={ifThenSteps}
-              />
-            )}
-          </>
         )}
       </Flex>
+
+      <DeleteConfirmationDialog
+        name="For each"
+        cancelRef={cancelRef}
+        isOpen={isDeleteConfirmationOpen}
+        onClose={closeDeleteConfirmation}
+        onDelete={handleForEachDelete}
+        onCancel={closeDeleteConfirmation}
+      />
     </Flex>
   )
 }

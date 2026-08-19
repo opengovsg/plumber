@@ -230,6 +230,7 @@ export function StepsList({ isNested }: StepsListProps) {
                     allowReorder={canReorderBlocks}
                     stepsBeforeGroup={[]}
                     groupedSteps={[]}
+                    asConditionBlock
                     addButtonProps={{
                       isHidden: readOnly || !!isOverlay,
                       isDisabled: false,

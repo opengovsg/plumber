@@ -55,6 +55,41 @@ export const branchStyles = {
   },
 }
 
+/**
+ * The card a condition block (IF / CONTINUE IF / REPEAT) draws: a grey header
+ * strip flush to the top and side edges, over a white body holding the steps.
+ * Distinct from `branchStyles`, which an if-then V1 branch still uses.
+ */
+export const conditionBlockStyles = {
+  // No padding of its own, so the header can sit flush. Body padding lives on
+  // `body` instead.
+  container: {
+    alignItems: 'stretch',
+    bg: 'white',
+    borderRadius: 'lg',
+    direction: 'column' as FlexProps['direction'],
+    overflow: 'hidden',
+    w: '100%',
+  },
+  header: {
+    bg: 'base.divider.subtle',
+    borderRadius: 'none',
+    px: 4,
+    py: 3,
+    minH: 12,
+    w: '100%',
+  },
+  body: {
+    alignItems: 'stretch',
+    bg: 'white',
+    direction: 'column' as FlexProps['direction'],
+    px: 3,
+    pt: 4,
+    pb: 0,
+    w: '100%',
+  },
+}
+
 export const hoverAddStepButtonStyles = {
   container: {
     role: 'group',

@@ -9,6 +9,7 @@ import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/S
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 
@@ -28,6 +29,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
   const { groupedSteps, stepsBeforeGroup } = props
   const { isDrawerOpen, isMobile, onDrawerClose, readOnly } =
     useContext(EditorContext)
+  const { isEnabled: isIfThenV2Enabled } = useIfThenV2Enabled()
 
   const { stepGroupType, stepGroupCaption } = useMemo(() => {
     let stepGroupType: string | null = null
@@ -71,6 +73,9 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     (step) => step.key === TOOLBOX_ACTIONS.ForEach,
   )
 
+  const isForEachV2 =
+    stepGroupType === TOOLBOX_ACTIONS.ForEach && isIfThenV2Enabled
+
   return (
     <Flex
       w={
@@ -81,76 +86,94 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
       alignItems="center"
       justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
     >
-      <Flex
-        {...flowStepGroupStyles.container}
-        display={isMobile ? 'block' : 'flex'}
-        w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
-        minW={MIN_FLOW_STEP_WIDTH}
-      >
-        <Box {...flowStepGroupStyles.header} w="100%">
-          <Flex
-            px={4}
-            pt={4}
-            alignItems="center"
-            borderRadius="inherit"
-            w="full"
-            borderLeftWidth={0}
-            borderRightWidth={0}
-            role="group"
-          >
-            <Flex {...flowStepGroupStyles.iconWrapper}>
-              {/* App icon */}
-              <Icon
-                boxSize={8}
-                as={getToolboxIcon(stepGroupType)}
-                color="primary.500"
-              />
-            </Flex>
-            <Flex direction="column" align="start">
-              <Flex alignItems="center" gap={2}>
-                <Text textStyle="subhead-1" color="base.content.default">
-                  {stepGroupCaption}
-                </Text>
-              </Flex>
-            </Flex>
-            {stepGroupType === TOOLBOX_ACTIONS.ForEach && !readOnly && (
-              <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
-                <IconButton
-                  boxSize={8}
-                  variant="clear"
-                  aria-label="Delete for each action"
-                  icon={<BiTrash />}
-                  colorScheme="secondary"
-                  onClick={openDeleteConfirmation}
-                />
-              </Flex>
-            )}
-          </Flex>
-        </Box>
-        {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
-          <IfThenV1
+      {/*
+        A V2 for-each draws its own REPEAT-badge card, so it gets a bare
+        width slot instead of the app-icon-and-caption chrome below. Once the
+        flag retires, the chrome (and this fork) goes with it.
+      */}
+      {isForEachV2 ? (
+        <Flex
+          display={isMobile ? 'block' : 'flex'}
+          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
+          minW={MIN_FLOW_STEP_WIDTH}
+        >
+          <ForEach
             groupedSteps={groupedSteps}
             stepsBeforeGroup={stepsBeforeGroup}
           />
-        ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
-          <>
-            <ForEach
+        </Flex>
+      ) : (
+        <Flex
+          {...flowStepGroupStyles.container}
+          display={isMobile ? 'block' : 'flex'}
+          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
+          minW={MIN_FLOW_STEP_WIDTH}
+        >
+          <Box {...flowStepGroupStyles.header} w="100%">
+            <Flex
+              px={4}
+              pt={4}
+              alignItems="center"
+              borderRadius="inherit"
+              w="full"
+              borderLeftWidth={0}
+              borderRightWidth={0}
+              role="group"
+            >
+              <Flex {...flowStepGroupStyles.iconWrapper}>
+                {/* App icon */}
+                <Icon
+                  boxSize={8}
+                  as={getToolboxIcon(stepGroupType)}
+                  color="primary.500"
+                />
+              </Flex>
+              <Flex direction="column" align="start">
+                <Flex alignItems="center" gap={2}>
+                  <Text textStyle="subhead-1" color="base.content.default">
+                    {stepGroupCaption}
+                  </Text>
+                </Flex>
+              </Flex>
+              {stepGroupType === TOOLBOX_ACTIONS.ForEach && !readOnly && (
+                <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
+                  <IconButton
+                    boxSize={8}
+                    variant="clear"
+                    aria-label="Delete for each action"
+                    icon={<BiTrash />}
+                    colorScheme="secondary"
+                    onClick={openDeleteConfirmation}
+                  />
+                </Flex>
+              )}
+            </Flex>
+          </Box>
+          {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
+            <IfThenV1
               groupedSteps={groupedSteps}
               stepsBeforeGroup={stepsBeforeGroup}
             />
-            <DeleteConfirmationDialog
-              name="For each"
-              cancelRef={cancelRef}
-              isOpen={isDeleteConfirmationOpen}
-              onClose={closeDeleteConfirmation}
-              onDelete={handleForEachDelete}
-              onCancel={closeDeleteConfirmation}
-            />
-          </>
-        ) : (
-          <Error />
-        )}
-      </Flex>
+          ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
+            <>
+              <ForEach
+                groupedSteps={groupedSteps}
+                stepsBeforeGroup={stepsBeforeGroup}
+              />
+              <DeleteConfirmationDialog
+                name="For each"
+                cancelRef={cancelRef}
+                isOpen={isDeleteConfirmationOpen}
+                onClose={closeDeleteConfirmation}
+                onDelete={handleForEachDelete}
+                onCancel={closeDeleteConfirmation}
+              />
+            </>
+          ) : (
+            <Error />
+          )}
+        </Flex>
+      )}
     </Flex>
   )
 }

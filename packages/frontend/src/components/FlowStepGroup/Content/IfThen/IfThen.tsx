@@ -25,21 +25,20 @@ import { SortableList } from '@/components/SortableList'
 import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
 import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
-import { FlowStep } from '@/exports/components'
 import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'
-import getStepName from '@/helpers/getStepName'
 import useReorderSteps from '@/hooks/useReorderSteps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
+import ConditionBlockHeader from '../../components/ConditionBlockHeader'
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
-import { flowStepGroupStyles } from '../../styles'
+import { getConditionBlockPreviewParts } from '../../helpers/getConditionBlockPreview'
 
 import { AddAfterBlockButton } from './AddAfterBlockButton'
 import { HoverAddStepButton } from './HoverAddStepButton'
-import { blockActionButtonStyles, branchStyles } from './styles'
+import { blockActionButtonStyles, conditionBlockStyles } from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 
 interface IfThenProps {
@@ -59,11 +58,14 @@ interface ReorderItem {
 }
 
 /**
- * Drawn as the same grouped box as an if-then V1 group, despite having only
- * one branch, so the two variants read as the same thing in the editor.
+ * A single-branch if-then block: the condition step (the if-then action) plus
+ * the steps that run when it passes. An empty block shows the add-first-step
+ * placeholder.
  *
- * The interior reuses the shared display building blocks, so a step's own
- * add/reorder affordances behave exactly as they do elsewhere in the editor.
+ * Drawn as a grey well with an IF badge header. Clicking the header opens the
+ * condition drawer — there is no separate condition card or branch-name field.
+ * Block-level affordances live in the header (delete / duplicate), beside the
+ * box (drag to reorder) and below it (add a step after the block).
  */
 export default function IfThen({
   block,
@@ -72,7 +74,6 @@ export default function IfThen({
 }: IfThenProps): JSX.Element {
   const { ifThenStep, children } = block
   const {
-    allApps,
     currentStepId,
     flow,
     isDrawerOpen,
@@ -103,11 +104,10 @@ export default function IfThen({
     groupingActions ?? new Set<string>(),
   )
 
-  // Reuses getStepName rather than re-deriving the same rule here, so a
-  // leftover V1 block's branchName keeps showing in the header exactly as it
-  // does in the drawer title below. isIfThenV2Enabled is hardcoded true: this
-  // component only ever mounts on the flag-ON render fork.
-  const headerLabel = getStepName(allApps, ifThenStep, true).stepName
+  const conditionPreviewParts = getConditionBlockPreviewParts(
+    ifThenStep.parameters,
+  )
+  const isSelected = currentStepId === ifThenStep.id
 
   // IMPORTANT: assumes allowReorder already excludes read-only. The caller
   // (StepsList) folds that in before passing it down.
@@ -231,7 +231,7 @@ export default function IfThen({
           minW={MIN_FLOW_STEP_WIDTH}
         >
           <Flex
-            {...flowStepGroupStyles.container}
+            {...conditionBlockStyles.container}
             display={isMobile ? 'block' : 'flex'}
             // Lets the box give up room to the inline drag handle below
             // instead of overflowing the slot.
@@ -249,198 +249,88 @@ export default function IfThen({
             }
             ml={blockHandleOffset ? `${blockHandleOffset}px` : undefined}
             minW="0"
-            // The header and branch run edge to edge, so the box clips them to
-            // its own rounded corners.
             overflow="hidden"
-            // The box carries the selected-state border its flush header drops.
+            borderWidth="1px"
             borderColor={
-              currentStepId === ifThenStep.id
-                ? 'base.content.brand'
-                : 'base.divider.medium'
+              isSelected ? 'base.content.brand' : 'base.divider.medium'
             }
           >
-            {/*
-              The header stands in for the whole block, not a step of its own to
-              configure. So it takes the block's name and drops click-to-configure
-              and its own border, letting the box read as one step rather than a
-              card holding cards.
-
-              Delete/duplicate are overlaid on the header's trailing edge
-              instead of laid out beside it, since hidden-until-hover buttons
-              would otherwise reserve width and pull the header in. They're
-              siblings of the header rather than children, so a click on them
-              never bubbles into the condition card's open-the-drawer handler.
-
-              Being overlaid means they sit outside the header's own padding, so
-              they re-create a step's trailing inset and button metrics
-              themselves (see FlowStep's header) to line up with the delete icon
-              of the steps above and below the block.
-            */}
-            <Flex alignItems="center" w="100%" role="group" pos="relative">
-              <FlowStep
-                step={ifThenStep}
-                stepNameOverride={headerLabel}
-                isContainerHeader
-                isClickable={false}
-                isNested={true}
-                isLastStep={isEmptyBlock}
-                allowReorder={false}
-              />
-
-              {!readOnly && (
-                <Flex
-                  pos="absolute"
-                  top={0}
-                  bottom={0}
-                  // The inset and gap a step's header gives its own
-                  // duplicate/delete pair. Insetting the overlay rather than
-                  // padding it keeps the strip beside the buttons part of the
-                  // header, so clicking there still opens the drawer.
-                  right={4}
-                  gap={1}
-                  alignItems="center"
-                  opacity={{ base: 1, lg: 0 }}
-                  _groupHover={{ opacity: 1 }}
-                >
-                  {canDuplicateBranch && (
+            <ConditionBlockHeader
+              badgeLabel="IF"
+              previewParts={conditionPreviewParts}
+              stepId={ifThenStep.id}
+              isSelected={isSelected}
+              actions={
+                !readOnly ? (
+                  <>
+                    {canDuplicateBranch && (
+                      <IconButton
+                        {...blockActionButtonStyles}
+                        onClick={onDuplicate}
+                        aria-label="Duplicate if-then"
+                        icon={<BiDuplicate />}
+                        isLoading={isDuplicatingBranch}
+                        isDisabled={isDuplicatingBranch || isDeletingBlock}
+                      />
+                    )}
                     <IconButton
                       {...blockActionButtonStyles}
-                      onClick={onDuplicate}
-                      aria-label="Duplicate if-then"
-                      icon={<BiDuplicate />}
-                      isLoading={isDuplicatingBranch}
-                      isDisabled={isDuplicatingBranch || isDeletingBlock}
-                    />
-                  )}
-                  <IconButton
-                    {...blockActionButtonStyles}
-                    onClick={openDeleteConfirmation}
-                    aria-label="Delete if-then"
-                    icon={<BiTrash />}
-                    isLoading={isDeletingBlock}
-                    isDisabled={isDeletingBlock || isDuplicatingBranch}
-                  />
-                </Flex>
-              )}
-            </Flex>
-
-            {/*
-              The condition step renders again here as a normal card, matching
-              how an if-then V1 branch draws its condition card and steps in one
-              panel. An empty block keeps this panel and placeholder rather than
-              looking like a different component.
-
-              The panel is white, not branchStyles.container's usual grey, since
-              a single-branch box doesn't need to visually separate branches the
-              way an if-then V1 group's side-by-side branches do.
-            */}
-            <Flex
-              {...branchStyles.container}
-              bg="white"
-              borderRadius="none"
-              // pb drops by the placeholder's own 4px bottom margin so the
-              // empty-block panel stays evenly padded overall.
-              pb={isEmptyBlock ? 2 : 3}
-            >
-              <Flex w="100%" flexDir="column">
-                {/*
-                  This is the same condition step the header above renders, now
-                  as a normal, clickable card. It drops its own name and
-                  position number since the header already carries both.
-                */}
-                <FlowStep
-                  step={ifThenStep}
-                  stepNameOverride="Condition"
-                  hideDisplayPosition
-                  isNested={true}
-                  isLastStep={false}
-                  allowReorder={false}
-                  // Matches the width sibling cards give up for their own drag
-                  // handles, exactly as an if-then V1 branch's condition card
-                  // does, so the condition card isn't wider than the cards
-                  // below it.
-                  canChildStepsReorder={children.length > 1}
-                />
-
-                {isEmptyBlock ? (
-                  // The placeholder card is `w="100%"`, which only resolves to the
-                  // panel's width because this column stretches it; left to the
-                  // block box, whose items are centred, it would shrink to fit its
-                  // own text.
-                  <HoverAddStepButton
-                    isDisabled={readOnly}
-                    isDrawerOpen={isDrawerOpen}
-                    isLastStep={true}
-                    prevStep={ifThenStep}
-                    showEmptyAction={true}
-                    step={ifThenStep}
-                    allowReorder={false}
-                    // The if-then step, this card's anchor, sits outside its
-                    // own block. This step sits inside it.
-                    anchorPlacement="inside-if-then-block"
-                  />
-                ) : (
-                  <>
-                    {/*
-                      Every other card-to-card transition in this panel has a
-                      connector; the condition card is no exception, so a
-                      populated block can insert a step directly after it too.
-                    */}
-                    <HoverAddStepButton
-                      // Reuses isDisabled for the sole-blank-placeholder edge
-                      // case (see isSoleBlankPlaceholder). pointerEvents: none
-                      // keeps the connector but makes the hover-+ itself inert.
-                      isDisabled={readOnly || isSoleBlankPlaceholder}
-                      isDrawerOpen={isDrawerOpen}
-                      isLastStep={false}
-                      prevStep={ifThenStep}
-                      step={ifThenStep}
-                      allowReorder={false}
-                      canChildStepsReorder={children.length > 1}
-                      // Same reasoning as the empty-block placeholder above:
-                      // this step also lands inside the block.
-                      anchorPlacement="inside-if-then-block"
-                    />
-                    <SortableList
-                      items={children.map((step, index) => ({
-                        id: step.id,
-                        step,
-                        index,
-                      }))}
-                      onChange={handleReorderSteps}
-                      renderItem={(item, isOverlay) => {
-                        const { step, index } = item
-                        const isLastStep = index === children.length - 1
-
-                        // Every step, last one included, gets the same hover +
-                        // to append after it — matching how a for-each body
-                        // (and an if-then V1 branch) appends, rather than the
-                        // last step handing off to its own separate,
-                        // always-visible "Add step" card.
-                        return (
-                          <SortableList.Item id={item.id}>
-                            <Flex w="100%" flexDir="column">
-                              <GroupStepWithAddButton
-                                step={step}
-                                // Same sole-blank-placeholder edge case as
-                                // the leading HoverAddStepButton above: no
-                                // trailing hover-+ after it either, so the
-                                // card reads as an empty block's own
-                                // add-first-step placeholder rather than a
-                                // populated block's last member.
-                                canAddStep={!isSoleBlankPlaceholder}
-                                isLastStep={isLastStep}
-                                isOverlay={isOverlay}
-                                allowReorder={children.length > 1}
-                              />
-                            </Flex>
-                          </SortableList.Item>
-                        )
-                      }}
+                      onClick={openDeleteConfirmation}
+                      aria-label="Delete if-then"
+                      icon={<BiTrash />}
+                      isLoading={isDeletingBlock}
+                      isDisabled={isDeletingBlock || isDuplicatingBranch}
                     />
                   </>
-                )}
-              </Flex>
+                ) : undefined
+              }
+            />
+
+            {/*
+              White content band under the flush grey header. Steps (and the
+              empty-state placeholder) live here with their own padding.
+            */}
+            <Flex {...conditionBlockStyles.body} pb={isEmptyBlock ? 2 : 3}>
+              {isEmptyBlock ? (
+                <HoverAddStepButton
+                  isDisabled={readOnly}
+                  isDrawerOpen={isDrawerOpen}
+                  isLastStep={true}
+                  prevStep={ifThenStep}
+                  showEmptyAction={true}
+                  hideLeadingConnector
+                  step={ifThenStep}
+                  allowReorder={false}
+                />
+              ) : (
+                <SortableList
+                  items={children.map((step, index) => ({
+                    id: step.id,
+                    step,
+                    index,
+                  }))}
+                  onChange={handleReorderSteps}
+                  renderItem={(item, isOverlay) => {
+                    const { step, index } = item
+                    const isLastStep = index === children.length - 1
+
+                    return (
+                      <SortableList.Item id={item.id}>
+                        <Flex w="100%" flexDir="column">
+                          <GroupStepWithAddButton
+                            step={step}
+                            asConditionBlock
+                            canAddStep={!isSoleBlankPlaceholder}
+                            isLastStep={isLastStep}
+                            isOverlay={isOverlay}
+                            allowReorder={children.length > 1}
+                          />
+                        </Flex>
+                      </SortableList.Item>
+                    )
+                  }}
+                />
+              )}
             </Flex>
 
             <MenuAlertDialog
