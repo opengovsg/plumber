@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   logInfo: vi.fn(),
   logError: vi.fn(),
   flowQueryResult: vi.fn(() => ({
+    active: true,
     getTriggerStep: vi.fn(async () => ({})),
   })),
 }))
@@ -87,6 +88,34 @@ describe('Flow worker', () => {
 
       expect(mocks.logInfo).toHaveBeenCalledWith(
         `JOB ID: ${job.id} - FLOW ID: test-flow-id has started!`,
+      )
+    })
+
+    it('skips inactive flows and does not process them', async () => {
+      mocks.flowQueryResult.mockReturnValue({
+        active: false,
+        getTriggerStep: vi.fn(async () => ({})),
+      })
+
+      const jobProcessed = new Promise<void>((resolve) => {
+        flowWorker.on('completed', async (_) => {
+          resolve()
+        })
+      })
+      const job = await flowQueue.add(
+        'test-job',
+        {
+          flowId: 'test-flow-id',
+        },
+        {
+          jobId: 'test-inactive-job-id',
+        },
+      )
+      await jobProcessed
+
+      expect(mocks.processFlow).not.toHaveBeenCalled()
+      expect(mocks.logInfo).toHaveBeenCalledWith(
+        `JOB ID: ${job.id} - FLOW ID: test-flow-id skipped because the flow is inactive`,
       )
     })
 

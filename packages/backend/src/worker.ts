@@ -8,8 +8,15 @@ import '@/workers/action'
 
 import logger from '@/helpers/logger'
 import { startSesConsumer } from '@/helpers/ses-consumer'
+import { reconcileInactiveFlowRepeatableJobs } from '@/queues/helpers/flow-repeatable-jobs'
 
 startSesConsumer()
+
+void reconcileInactiveFlowRepeatableJobs().catch((err) => {
+  logger.error('Failed to reconcile leftover flow repeatable jobs', {
+    err: err instanceof Error ? err.stack : err,
+  })
+})
 
 process.on('uncaughtException', (err) => {
   try {

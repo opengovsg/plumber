@@ -3,14 +3,12 @@ import {
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 import {
-  REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-  REMOVE_AFTER_30_DAYS,
-} from '@/helpers/default-job-configuration'
-import flowQueue from '@/queues/flow'
+  addFlowRepeatableJob,
+  removeFlowRepeatableJobs,
+} from '@/queues/helpers/flow-repeatable-jobs'
 
 import type { MutationResolvers, Step } from '../__generated__/types.generated'
 
-const JOB_NAME = 'flow'
 const EVERY_15_MINUTES_CRON = '*/15 * * * *'
 
 const validateFlowSteps = (steps: Step[]) => {
@@ -76,23 +74,9 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
 
   if (trigger.type !== 'webhook') {
     if (params.input.active) {
-      const jobName = `${JOB_NAME}-${flow.id}`
-
-      await flowQueue.add(
-        jobName,
-        { flowId: flow.id },
-        {
-          repeat: repeatOptions,
-          jobId: flow.id,
-          removeOnComplete: REMOVE_AFTER_7_DAYS_OR_50_JOBS,
-          removeOnFail: REMOVE_AFTER_30_DAYS,
-        },
-      )
+      await addFlowRepeatableJob(flow.id, repeatOptions.pattern)
     } else {
-      const repeatableJobs = await flowQueue.getRepeatableJobs()
-      const job = repeatableJobs.find((job) => job.id === flow.id)
-
-      await flowQueue.removeRepeatableByKey(job.key)
+      await removeFlowRepeatableJobs(flow.id)
     }
   }
 

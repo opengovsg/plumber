@@ -247,6 +247,27 @@ describe('updateFlowStatus', () => {
     })
 
     expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith('repeat-key')
+    expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith(fakeFlow.id)
+    expect(result).toEqual(fakeFlow)
+  })
+
+  it('deactivates the flow even when no repeatable job is listed', async () => {
+    fakeFlow.active = true
+    flowQueue.getRepeatableJobs = vi.fn().mockResolvedValue([])
+
+    const result = await updateFlowStatus(
+      {},
+      { input: { ...defaultInput, active: false } },
+      context,
+    )
+
+    expect(patchSpy).toHaveBeenCalledWith({
+      active: false,
+      publishedAt: null,
+      config: {},
+      updatedBy: owner.id,
+    })
+    expect(flowQueue.removeRepeatableByKey).toHaveBeenCalledWith(fakeFlow.id)
     expect(result).toEqual(fakeFlow)
   })
 

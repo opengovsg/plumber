@@ -7,6 +7,7 @@ import {
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
+import { removeFlowRepeatableJobs } from '@/queues/helpers/flow-repeatable-jobs'
 import triggerQueue from '@/queues/trigger'
 import { processFlow } from '@/services/flow'
 
@@ -16,6 +17,15 @@ export const worker = new WorkerPro(
     const { flowId } = job.data
 
     const flow = await Flow.query().findById(flowId).throwIfNotFound()
+    if (!flow.active) {
+      // Leftover schedules from pre-5.10 keys keep firing after unpublish.
+      await removeFlowRepeatableJobs(flowId)
+      logger.info(
+        `JOB ID: ${job.id} - FLOW ID: ${flowId} skipped because the flow is inactive`,
+      )
+      return
+    }
+
     const triggerStep = await flow.getTriggerStep()
 
     const { data, error } = await processFlow({ flowId })
