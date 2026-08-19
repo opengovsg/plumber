@@ -58,6 +58,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Step 1',
         formWorkflowStepId: 'step-001',
         type: 'static',
+        fields: [],
       },
       actions: [
         {
@@ -108,6 +109,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Trigger',
         formWorkflowStepId: 'trigger-001',
         type: 'static',
+        fields: [],
       },
       actions: [
         {
@@ -135,6 +137,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Updated Trigger',
         formWorkflowStepId: 'trigger-001',
         type: 'conditional',
+        fields: [],
       },
       actions: [
         {
@@ -185,6 +188,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Trigger',
         formWorkflowStepId: 'trigger-001',
         type: 'static',
+        fields: [],
       },
       actions: [
         {
@@ -210,6 +214,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Updated Trigger',
         formWorkflowStepId: 'trigger-001',
         type: 'conditional',
+        fields: [],
       },
       actions: [
         {
@@ -298,6 +303,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Trigger',
         formWorkflowStepId: 'trigger-001',
         type: 'static',
+        fields: [],
       },
       actions: [
         {
@@ -355,6 +361,7 @@ describe('createMrfSteps', () => {
         defaultStepName: 'Trigger',
         formWorkflowStepId: 'trigger-001',
         type: 'static',
+        fields: [],
       },
       actions: [
         {
@@ -395,6 +402,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -441,6 +449,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [],
       }
@@ -463,6 +472,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -538,6 +548,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -576,6 +587,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -661,6 +673,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -709,6 +722,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -764,6 +778,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -795,6 +810,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -833,6 +849,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -882,6 +899,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {
@@ -936,6 +954,7 @@ describe('createMrfSteps', () => {
           defaultStepName: 'Trigger',
           formWorkflowStepId: 'trigger-001',
           type: 'static',
+          fields: [],
         },
         actions: [
           {

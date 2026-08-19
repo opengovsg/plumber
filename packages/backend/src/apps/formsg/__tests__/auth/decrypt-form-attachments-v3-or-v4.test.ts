@@ -33,6 +33,10 @@ vi.mock('@/helpers/logger', () => ({
 vi.mock('axios', () => ({
   default: {
     get: mocks.axiosGet,
+    isAxiosError: (error: unknown) =>
+      typeof error === 'object' &&
+      error !== null &&
+      (error as { isAxiosError?: boolean }).isAxiosError === true,
   },
 }))
 
@@ -136,6 +140,24 @@ describe('decrypt form attachments v3', () => {
           FORM_FIELDS,
         ),
       ).rejects.toThrow()
+    })
+
+    it('should retry a transient 503 and still return both attachments', async () => {
+      mocks.axiosGet.mockRejectedValueOnce({
+        isAxiosError: true,
+        message: 'Request failed with status code 503',
+        response: { status: 503 },
+      })
+
+      const result = await decryptFormAttachmentsV3OrV4(
+        formSgSdk,
+        SUBMISSION_SECRET_KEY,
+        $.request.body.data.attachmentDownloadUrls,
+        FORM_FIELDS,
+      )
+
+      expect(Object.keys(result)).toHaveLength(2)
+      expect(mocks.axiosGet).toHaveBeenCalledTimes(3)
     })
 
     it('should throw an error if downloading fails', async () => {

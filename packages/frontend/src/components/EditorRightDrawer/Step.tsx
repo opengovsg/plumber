@@ -7,8 +7,12 @@ import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
-import { generateValidationSchema } from '@/helpers/editor'
+import {
+  generateValidationSchema,
+  withDefaultParameters,
+} from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
@@ -29,6 +33,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
   } = useDisclosure()
 
   const { onUpdateStep, resetTimestamp } = useContext(EditorContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   const { app, hasConnection, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(step)
@@ -45,13 +50,24 @@ export default function Step(props: StepProps): React.ReactElement | null {
     [substeps],
   )
 
+  const stepWithDefaultParameters = useMemo(
+    () =>
+      withDefaultParameters(
+        step,
+        substeps,
+        selectedActionOrTrigger?.key,
+        getFlagValue,
+      ),
+    [step, substeps, selectedActionOrTrigger, getFlagValue],
+  )
+
   return (
     <>
       <Flex w="100%" flexDir="column">
         <StepExecutionsProvider currentStep={step}>
           <Form
             key={`${step.id}-${resetTimestamp}`}
-            defaultValues={step}
+            defaultValues={stepWithDefaultParameters}
             onSubmit={handleSubmit}
             resolver={stepValidationSchema}
           >

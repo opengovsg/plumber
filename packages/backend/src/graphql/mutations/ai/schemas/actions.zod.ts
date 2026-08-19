@@ -1,4 +1,4 @@
-import { z } from 'zod/v3' // NOTE: we use zod/v3 to avoid the "Type instantiation is excessively deep and possibly infinite" error
+import { z } from 'zod'
 
 import {
   TOOLBOX_ACTIONS,

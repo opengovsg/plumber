@@ -1,6 +1,6 @@
 import type { IStep } from '@plumber/types'
 
-import z from 'zod/v3'
+import z from 'zod'
 
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
@@ -58,7 +58,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
     logger.error(
       'Failed to create flow with steps: Pipe must always start with a trigger',
       {
-        error: validatedTrigger.error.errors,
+        error: validatedTrigger.error.issues,
       },
     )
     throw new Error('Pipe must always start with a trigger')
@@ -70,7 +70,7 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
     logger.error(
       'Failed to create flow with steps: Pipe contains invalid action steps',
       {
-        error: validatedActions.error.errors,
+        error: validatedActions.error.issues,
       },
     )
     throw new Error('Pipe contains invalid action steps')

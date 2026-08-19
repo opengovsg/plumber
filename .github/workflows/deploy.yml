@@ -54,6 +54,7 @@ jobs:
   build:
     name: Build and push image to ECR
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -115,6 +116,7 @@ jobs:
             ${{ steps.inspector.outputs.inspector_scan_results_csv }}
             ${{ steps.inspector.outputs.inspector_scan_results_markdown }}
             ${{ steps.inspector.outputs.artifact_sbom }}
+          retention-days: 7
 
       - name: Notify Slack if vulnerability threshold is exceeded
         if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
@@ -138,6 +140,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4

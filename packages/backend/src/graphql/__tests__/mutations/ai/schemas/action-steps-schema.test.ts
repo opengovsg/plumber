@@ -80,8 +80,8 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
-          'Array must contain at most 29 element(s)',
+        expect(result.error.issues[0].message).toContain(
+          'Too big: expected array to have <=29 items',
         )
       }
     })
@@ -193,6 +193,32 @@ describe('actionStepsSchema validation', () => {
       expect(result.data[0].parameters?.depth).toBe(0)
     })
 
+    it('fills in if-then parameter defaults when parameters is omitted', () => {
+      const steps = [
+        {
+          type: 'action' as StepEnumType,
+          appKey: 'toolbox',
+          key: 'ifThen',
+          position: 2,
+          config: {},
+        },
+        {
+          type: 'action' as StepEnumType,
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          position: 3,
+          config: {},
+        },
+      ]
+
+      const result = actionStepsSchema.safeParse(steps)
+      expect(result.success).toBe(true)
+      expect(result.data?.[0].parameters).toEqual({
+        depth: 0,
+        branchName: 'Branch',
+      })
+    })
+
     it('should reject if-then step as last action', () => {
       const steps = [
         {
@@ -218,7 +244,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'If-then actions must have another action immediately after them',
         )
       }
@@ -253,7 +279,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'If-then actions cannot be consecutive',
         )
       }
@@ -355,7 +381,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'There can only be 1 for-each action in each pipe',
         )
       }
@@ -386,7 +412,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'For-each action cannot be placed after an if-then action',
         )
       }
@@ -471,7 +497,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'For-each action cannot be placed after an if-then action',
         )
       }
@@ -529,7 +555,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'Delay action cannot be added after a for-each step',
         )
       }
@@ -570,7 +596,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'Delay action cannot be added after a for-each step',
         )
       }
@@ -636,7 +662,7 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(false)
       if (!result.success) {
         // Should have multiple errors
-        expect(result.error.errors.length).toBeGreaterThan(1)
+        expect(result.error.issues.length).toBeGreaterThan(1)
       }
     })
 
@@ -839,7 +865,7 @@ describe('actionStepsSchema validation', () => {
       const result = actionStepsSchema.safeParse(steps)
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.errors[0].message).toContain(
+        expect(result.error.issues[0].message).toContain(
           'For-each action cannot be placed after an if-then action',
         )
       }
@@ -878,7 +904,7 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(false)
       if (!result.success) {
         // Should have error about for-each after if-then
-        const hasForEachError = result.error.errors.some((err) =>
+        const hasForEachError = result.error.issues.some((err) =>
           err.message.includes('For-each action cannot be placed after'),
         )
         expect(hasForEachError).toBe(true)
@@ -925,7 +951,7 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(false)
       if (!result.success) {
         // Should have error about for-each after if-then
-        const hasForEachError = result.error.errors.some((err) =>
+        const hasForEachError = result.error.issues.some((err) =>
           err.message.includes('For-each action cannot be placed after'),
         )
         expect(hasForEachError).toBe(true)

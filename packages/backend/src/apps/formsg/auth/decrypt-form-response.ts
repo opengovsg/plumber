@@ -20,6 +20,7 @@ import { processResponsesV3 } from './helpers/process-v3-responses'
 import { processResponsesV4 } from './helpers/process-v4-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
+import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -149,6 +150,19 @@ export async function decryptFormResponse(
     // shouldStoreAttachments should only consider steps after the mrf step instead of the whole pipe
     // but leaving it as such for now to avoid complexity
     if (shouldStoreAttachments && data.attachmentDownloadUrls) {
+      // Checked before downloading anything, so a forged URL costs us no
+      // requests. Returning here keeps it on the same 401 path as every other
+      // untrusted payload, instead of surfacing a 500 and a stack trace.
+      if (!areAttachmentUrlsTrusted(data.attachmentDownloadUrls)) {
+        logger.error({
+          event: 'formsg-untrusted-attachment-url',
+          formId: data.formId,
+          submissionId: data.submissionId,
+          attachmentDownloadUrls: data.attachmentDownloadUrls,
+        })
+        return { verified: false, internalId: null }
+      }
+
       attachments = await decryptFormAttachmentsV3OrV4(
         formSgSdk,
         decryptedSubmission.submissionSecretKey,

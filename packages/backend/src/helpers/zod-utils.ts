@@ -31,8 +31,8 @@ export function firstZodParseError(error: ZodError): string {
   if (firstError.path.length === 0) {
     return firstError.message
   } else {
-    return `${firstError.message} in the ${
-      firstError.path[firstError.path.length - 1]
-    } field`
+    return `${firstError.message} in the ${String(
+      firstError.path[firstError.path.length - 1],
+    )} field`
   }
 }

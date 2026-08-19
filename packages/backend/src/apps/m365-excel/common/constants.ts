@@ -6,6 +6,11 @@ export const MS_GRAPH_OAUTH_BASE_URL = 'https://login.microsoftonline.com'
 
 export const GET_TABLE_ROWS_LIMIT = 500
 
+// Testing a step with a very wide table can generate a huge amount of data
+// out, which causes problems (e.g. slow/failed step test) downstream. Cap the
+// number of columns returned when the step is only being tested.
+export const TEST_STEP_MAX_COLUMNS = 100
+
 export const MAX_LOOKUP_CONDITIONS = 3
 
 export const LOOKUP_CONDITIONS_SUBFIELDS = [

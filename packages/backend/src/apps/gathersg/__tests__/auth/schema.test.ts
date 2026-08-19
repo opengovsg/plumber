@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SafeParseError } from 'zod'
+import type { ZodSafeParseError } from 'zod'
 
 import schema from '../../auth/schema'
 
@@ -140,7 +140,7 @@ describe('gathersg auth schema', () => {
       })
       expect(result.success).toBe(false)
       if (!result.success) {
-        const { issues } = (result as SafeParseError<unknown>).error
+        const { issues } = (result as ZodSafeParseError<unknown>).error
         expect(
           issues.some((i) => i.message.includes('createdBy.email is required')),
         ).toBe(true)

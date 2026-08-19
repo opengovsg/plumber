@@ -33,7 +33,7 @@ const FormSgTableFieldSchema = z.object({
 
 const FormSgFieldSchema = z.object({
   fieldType: z.string(),
-  answer: z.union([z.string(), z.record(z.any())]).nullish(),
+  answer: z.union([z.string(), z.record(z.string(), z.any())]).nullish(),
 })
 
 const createFormSgFieldsSchema = (variableId: string) => {
@@ -43,7 +43,7 @@ const createFormSgFieldsSchema = (variableId: string) => {
   const match = variableId.match(regex)
   const tableFieldId = match?.[1]
 
-  return z.record(FormSgFieldSchema).transform((fields) => {
+  return z.record(z.string(), FormSgFieldSchema).transform((fields) => {
     if (!tableFieldId) {
       return {
         fieldType: 'table',

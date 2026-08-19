@@ -8,6 +8,34 @@ This uses an npm workspaces monorepo:
 - [packages/frontend/](../packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](rules/frontend.md).
 - [packages/types/](../packages/types/) — shared `@plumber/types` (linked via `file:` deps).
 
+## Language and phrasing
+
+These rules apply to all output, including code comments and commit
+messages. Follow them to maintain maximum clarity and eliminate filler:
+
+- ONE CONCEPT PER SENTENCE: Write short, direct sentences.
+  - Max 20 words for instructions/procedures.
+  - Max 25 words for descriptions.
+  - Do NOT use semicolons or em-dashes (—). Split them into separate sentences.
+
+- ONE TERM PER ENTITY: Do not rotate synonyms. Pick one standard name for an object or concept and use it consistently (e.g., choose "user" and do not alternate with "client" or "customer").
+
+- NEVER REPEAT YOURSELF: State each fact or instruction once. Do not restate it in different words later in the same passage.
+  - WRONG: "Not an exhaustive list — apply this to any case, not just these."
+  - RIGHT: "Not an exhaustive list."
+
+- ACTIVE VERBS ONLY: Use direct action verbs instead of normalized nouns.
+  - WRONG: "Perform an analysis of the logs."
+  - RIGHT: "Analyze the logs."
+
+- NO HEDGING OR FILLER: State facts directly.
+  - WRONG: "It is important to note that this configuration may potentially help improve performance."
+  - RIGHT: "This configuration improves performance."
+
+- NO MARKETING SLOP OR PHRASAL VERBS
+  - Ban unprovable claims: "seamless", "robust", "powerful", "cutting-edge", "game-changing". Explain mechanics instead.
+  - Ban soft conversational verbs: "spin up", "dive into", "reach out", "slot into". Use precise verbs ("create", "examine", "contact", "integrate").
+
 ## Important top-level commands
 
 Do **not** run these yourself unless the user asks — the human runs the dev server in their own terminal.
@@ -33,10 +61,38 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
 - **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and fix remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root command.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
+- **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.
+  - **Branch name prefixes**: `feat/<…>` for features, `fix/<…>` for bugfixes, `chore/<…>` for everything else.
   - **Before `gt submit`** (do both, in this order):
-    1. **Fix the branch name.** If the current branch doesn't match `feat/<…>` or `chore/<…>` (e.g. an auto-generated `claude/<slug>` worktree branch), rename it first: `git branch -m <name>` (works on untracked branches) or `gt rename <name>` (if already tracked). You **MUST** ask the user for the branch name whenever it is at all possible to ask — never auto-pick a name unless asking is genuinely impossible.
+    1. **Fix the branch name.** If the current branch doesn't use one of those prefixes (e.g. an auto-generated `claude/<slug>` worktree branch), rename it first: `git branch -m <name>` (works on untracked branches) or `gt rename <name>` (if already tracked). You **MUST** ask the user for the branch name whenever it is at all possible to ask — never auto-pick a name unless asking is genuinely impossible.
     2. **Track the branch.** Ensure it is tracked onto the branch directly below it in the stack: `gt track --parent <branch-below>`. The parent is the branch immediately beneath it, or the trunk if it sits at the bottom of the stack (note: the trunk is not necessarily named `main`).
+
+## Code comments
+
+Comments state WHY, never WHAT.
+
+- DELETE IF SELF-EXPLANATORY: If a reader who can read the code would not be confused without the comment, delete the entire block.
+- ONE WHY PER COMMENT: State the single non-obvious reason the code exists or behaves this way. Do not also trace the code's internal branching or filtering logic in prose. That is still WHAT, even when framed as justification.
+- NO PLAN REFERENCES: Do not mention plan phases, task names, or step numbers from a plan in a comment.
+- OMIT OBVIOUS WHY: Within a comment, cut any reason that follows trivially from the type signature, the function name, or an already-established fact. This trims one reason, not the whole comment, unless no non-obvious reason remains.
+- SHORT AND FLAT: One or two sentences, not a multi-paragraph doc comment. Use "IMPORTANT:" to flag a genuine gotcha instead of weaving it into prose.
+
+Example:
+
+WRONG (traces the mechanism):
+    /**
+     * Whether execution has reached this MRF step. Normally the previous step
+     * ran, but it may sit inside an if-then V2 block that a FALSE condition
+     * skipped, so absence of an execution step proves nothing on its own...
+     */
+
+RIGHT (states only the motivating problem):
+    /**
+     * Checks whether execution reached this sub-trigger.
+     *
+     * Handles MRF submissions arriving before earlier steps finish running.
+     */
 
 ## Skills
 

@@ -74,36 +74,38 @@ describe('postman transactional email schema zod validation', () => {
     validPayload.destinationEmail = 'recipient,,recipient3@example.com'
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual('Invalid recipient emails')
+    expect(result.error?.issues[0].message).toEqual('Invalid recipient emails')
   })
 
   it('should fail if email string is not defined', () => {
     validPayload.destinationEmail = undefined
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual('Required')
+    expect(result.error?.issues[0].message).toEqual(
+      'Invalid input: expected string, received undefined',
+    )
   })
 
   it('should fail if empty subject', () => {
     validPayload.subject = ''
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual('Empty subject')
+    expect(result.error?.issues[0].message).toEqual('Empty subject')
   })
 
   it('should fail if empty body', () => {
     validPayload.body = ''
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual('Empty body')
+    expect(result.error?.issues[0].message).toEqual('Empty body')
   })
 
   it('should fail if reply to string is invalid type', () => {
     validPayload.replyTo = 123
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual(
-      'Expected string, received number',
+    expect(result.error?.issues[0].message).toEqual(
+      'Invalid input: expected string, received number',
     )
   })
 
@@ -117,14 +119,14 @@ describe('postman transactional email schema zod validation', () => {
     validPayload.replyTo = 'xyz'
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual('Invalid reply to email')
+    expect(result.error?.issues[0].message).toEqual('Invalid reply to email')
   })
 
   it('should fail if empty sender name', () => {
     validPayload.senderName = ''
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
-    expect(result.error?.errors[0].message).toEqual('Empty sender name')
+    expect(result.error?.issues[0].message).toEqual('Empty sender name')
   })
 
   it('preserves display-name specials in the sender name', () => {
@@ -194,7 +196,7 @@ describe('postman transactional email schema zod validation', () => {
       validPayload.destinationEmailCc = ccRecipients.join(',')
       const result = transactionalEmailSchema.safeParse(validPayload)
       assert(result.success === false)
-      expect(result.error?.errors[0].message).toEqual('Invalid CC emails')
+      expect(result.error?.issues[0].message).toEqual('Invalid CC emails')
     },
   )
 
@@ -210,7 +212,7 @@ describe('postman transactional email schema zod validation', () => {
       validPayload.destinationEmailCc = generateEmails(cc)
       const result = transactionalEmailSchema.safeParse(validPayload)
       assert(result.success === false)
-      expect(result.error?.errors[0].message).toEqual(
+      expect(result.error?.issues[0].message).toEqual(
         'The total number of CC recipient emails must not exceed 49',
       )
     },

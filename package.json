@@ -1,6 +1,9 @@
 {
   "name": "plumber",
   "license": "AGPL-3.0",
+  "engines": {
+    "npm": ">=11.10.0"
+  },
   "scripts": {
     "postinstall": "npm run gqlc",
     "all": "concurrently -c auto",
@@ -72,5 +75,5 @@
     "vitest": "^3.2.6",
     "wait-on": "^7.2.0"
   },
-  "version": "1.76.1"
+  "version": "1.77.0"
 }

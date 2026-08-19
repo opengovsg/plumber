@@ -7,8 +7,7 @@ export const requestSchema = z.object({
         // key cannot be null or empty
         key: z
           .string({
-            required_error: 'Key empty',
-            invalid_type_error: 'Key empty',
+            error: 'Key empty',
           })
           .trim()
           .min(1, 'Key empty'),

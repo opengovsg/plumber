@@ -1,5 +1,5 @@
 import { assert, describe, expect, it } from 'vitest'
-import z from 'zod/v3'
+import z from 'zod'
 
 import { generateSchemaFromFields } from '../../common/generate-schema'
 
@@ -43,7 +43,7 @@ describe('generateSchemaFromFields', () => {
       ]
 
       const schema = generateSchemaFromFields(fields)
-      const schemaShape = schema._def.shape()
+      const schemaShape = schema.shape
 
       expect(schemaShape.summary.description).toBe('Text field: summary')
     })
@@ -120,7 +120,7 @@ describe('generateSchemaFromFields', () => {
       ]
 
       const schema = generateSchemaFromFields(fields)
-      const schemaShape = schema._def.shape()
+      const schemaShape = schema.shape
 
       expect(schemaShape.amount.description).toBe('Number field: amount')
     })
@@ -256,7 +256,7 @@ describe('generateSchemaFromFields', () => {
       ]
 
       const schema = generateSchemaFromFields(fields)
-      const schemaShape = schema._def.shape()
+      const schemaShape = schema.shape
 
       expect(schemaShape.color.description).toBe(
         'Category field: color. Must be one of: red, blue, green',

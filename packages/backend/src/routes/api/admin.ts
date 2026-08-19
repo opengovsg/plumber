@@ -10,8 +10,10 @@ const router = Router()
 const whitelistRequestSchema = z.object({
   emails: z
     .array(z.string(), {
-      required_error: 'emails is required',
-      invalid_type_error: 'emails must be an array of strings',
+      error: (issue) =>
+        issue.input === undefined
+          ? 'emails is required'
+          : 'emails must be an array of strings',
     })
     .transform((emails) => emails.map((e) => e.trim()).filter(Boolean))
     .superRefine((emails, ctx) => {
