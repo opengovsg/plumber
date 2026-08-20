@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import appConfig from '@/config/app'
 import getExecutions from '@/graphql/queries/get-executions'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -531,6 +532,14 @@ describe('getExecutions', () => {
 
   describe('execution history window', () => {
     const OLD_DATE = '2020-01-01T00:00:00.000Z'
+
+    beforeEach(() => {
+      appConfig.archiveEnabled = true
+    })
+
+    afterEach(() => {
+      appConfig.archiveEnabled = false
+    })
 
     const createExecutionAt = async (flow: Flow, createdAt: string) => {
       const execution = await flow
