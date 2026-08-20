@@ -1384,6 +1384,12 @@ export interface IMcpAppField {
   subFields?: IMcpAppField[]
   maxGroups?: number
   maxRowsPerGroup?: number
+  /**
+   * If set, this field only accepts a variable reference whose upstream
+   * output is tagged with one of these types (see `IDataOutMetadatum.type`,
+   * surfaced per-step via `execute_step`'s `dataOutMetadata`).
+   */
+  variableTypes?: TDataOutMetadatumType[]
 }
 
 export interface IMcpAppAction {

@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -110,6 +111,13 @@ describe('executeStepService', () => {
       dataOut: { output: 'data' },
       errorDetails: null,
     })
+    // postman's sendTransactionalEmail declares a getDataOutMetadata that
+    // tags `recipient`/`status`/`cc` as 'array' typed outputs.
+    expect(result.dataOutMetadata).toMatchObject({
+      recipient: { type: 'array' },
+      status: { type: 'array' },
+      cc: { type: 'array' },
+    })
 
     const updated = await Step.query().findById(actionStep.id)
     expect(updated.status).toBe('completed')
@@ -146,9 +154,39 @@ describe('executeStepService', () => {
     expect(result.errorDetails).toMatchObject({
       message: 'Invalid credentials',
     })
+    // dataOut is null, so getDataOutMetadata has nothing to tag types for.
+    expect(result.dataOutMetadata).toBeNull()
 
     const unchanged = await Step.query().findById(actionStep.id)
     expect(unchanged.status).not.toBe('completed')
+  })
+
+  it('returns dataOutMetadata:null (instead of throwing) when getDataOutMetadata fails', async () => {
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+
+    const execution = await Execution.query().insertAndFetch({
+      id: randomUUID(),
+      flowId: flow.id,
+    })
+    const execStep = makeExecutionStep({ dataOut: { output: 'data' } })
+    mocks.testStep.mockResolvedValueOnce({
+      executionStep: execStep,
+      executionId: execution.id,
+    })
+
+    const sendEmailAction = apps.postman.actions.find(
+      (a) => a.key === 'sendTransactionalEmail',
+    )
+    const getDataOutMetadataSpy = vi
+      .spyOn(sendEmailAction, 'getDataOutMetadata')
+      .mockRejectedValueOnce(new Error('schema mismatch'))
+
+    const result = await executeStepService(user, actionStep.id)
+
+    expect(result.success).toBe(true)
+    expect(result.dataOutMetadata).toBeNull()
+
+    getDataOutMetadataSpy.mockRestore()
   })
 
   it('throws if the pipe is active', async () => {
