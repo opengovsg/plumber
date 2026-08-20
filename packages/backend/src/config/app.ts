@@ -93,6 +93,7 @@ type AppConfig = {
     configurationSet?: string
     sqsQueueUrl?: string
   }
+  archiveEnabled: boolean
 }
 
 const port = process.env.PORT || '3000'
@@ -204,6 +205,7 @@ const appConfig: AppConfig = {
     }),
     sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
   },
+  archiveEnabled: process.env.ARCHIVE_ENABLED === 'true',
 }
 
 if (!appConfig.encryptionKey) {
