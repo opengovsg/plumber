@@ -25,7 +25,9 @@ const mocks = vi.hoisted(() => ({
   })),
   logInfo: vi.fn(),
   logError: vi.fn(),
+  logWarn: vi.fn(),
   flowQueryResult: vi.fn(() => ({
+    active: true,
     getTriggerStep: vi.fn(async () => ({})),
   })),
 }))
@@ -40,6 +42,7 @@ vi.mock('@/helpers/logger', () => ({
   default: {
     info: mocks.logInfo,
     error: mocks.logError,
+    warn: mocks.logWarn,
   },
 }))
 
