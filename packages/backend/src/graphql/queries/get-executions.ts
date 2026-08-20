@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 
+import appConfig from '@/config/app'
 import paginate from '@/helpers/pagination'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
@@ -49,7 +50,7 @@ const getExecutions: QueryResolvers['getExecutions'] = async (
     .withSoftDeleted()
     .orderBy('created_at', 'desc')
 
-  if (!context.isAdminOperation) {
+  if (appConfig.archiveEnabled && !context.isAdminOperation) {
     const flow = await Flow.query().findById(params.flowId).select('config')
 
     if (!flow?.config?.archiveDisabled) {
