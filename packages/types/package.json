@@ -2,5 +2,5 @@
   "name": "@plumber/types",
   "description": "Shared types for plumber",
   "types": "./index.d.ts",
-  "version": "1.77.0"
+  "version": "1.78.0"
 }
