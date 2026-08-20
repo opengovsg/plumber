@@ -111,5 +111,40 @@ describe('Postman SMS request error handler', () => {
         delayInMs: 3000,
       })
     })
+
+    it('should retry on connection ETIMEDOUT', async () => {
+      const axiosError = {
+        isAxiosError: true,
+        name: 'AxiosError',
+        message: 'connect ETIMEDOUT 1.2.3.4:443',
+        code: 'ETIMEDOUT',
+      } as unknown as AxiosError
+
+      const error = new HttpError(axiosError)
+
+      await expect(requestErrorHandler($, error)).rejects.toThrow(
+        RetriableError,
+      )
+      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        delayType: 'step',
+        delayInMs: 3000,
+      })
+    })
+
+    it('should not crash when HTTP error response data is missing', async () => {
+      const axiosError = {
+        isAxiosError: true,
+        name: 'AxiosError',
+        message: 'Request failed with status code 400',
+        response: {
+          status: 400,
+        },
+      } as unknown as AxiosError
+
+      const error = new HttpError(axiosError)
+
+      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler($, error)).rejects.not.toThrow(TypeError)
+    })
   })
 })
