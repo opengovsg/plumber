@@ -44,6 +44,10 @@ function serializeField(
     required: field.required ?? false,
   }
 
+  if ('variableTypes' in field && field.variableTypes?.length) {
+    base.variableTypes = field.variableTypes
+  }
+
   if (field.type === 'dropdown') {
     if (field.options?.length && !field.source) {
       base.options = mapOptions(field.options)

@@ -1,7 +1,8 @@
-import type { IJSONObject } from '@plumber/types'
+import type { IDataOutMetadata, IJSONObject } from '@plumber/types'
 
 import { raw } from 'objection'
 
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
 import testStep from '@/services/test-step'
@@ -12,6 +13,7 @@ export interface McpExecuteStepResult {
   stepId: string
   executionStepId: string
   dataOut: IJSONObject | null
+  dataOutMetadata: IDataOutMetadata | null
   errorDetails: IJSONObject | null
 }
 
@@ -51,12 +53,28 @@ export async function executeStepService(
     })
   }
 
+  const command = step.isAction
+    ? await step.getActionCommand()
+    : await step.getTriggerCommand()
+  const dataOutMetadata: IDataOutMetadata | null = await (
+    command?.getDataOutMetadata?.(executionStep) ?? Promise.resolve(null)
+  ).catch((error: Error): IDataOutMetadata | null => {
+    logger.warn('executeStepService: failed to get dataOut metadata', {
+      stepId: step.id,
+      appKey: step.appKey,
+      key: step.key,
+      error: error.message,
+    })
+    return null
+  })
+
   return {
     success: !executionStep.isFailed,
     pipeId: step.flowId,
     stepId: step.id,
     executionStepId: executionStep.id,
     dataOut: executionStep.dataOut ?? null,
+    dataOutMetadata,
     errorDetails: executionStep.errorDetails ?? null,
   }
 }
