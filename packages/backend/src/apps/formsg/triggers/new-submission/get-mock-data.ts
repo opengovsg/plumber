@@ -204,7 +204,10 @@ function patchMockData(
 ) {
   const formFields = formDetails.form.form_fields as Array<FormField>
 
-  const isMrf = formDetails.form.responseMode === 'multirespondent'
+  const isMrf =
+    formDetails.form.responseMode === 'multirespondent' &&
+    // if the workflow is not set up, we treat it as a single respondent form
+    formDetails.form.workflow?.length > 0
 
   // for myinfo children fields
   const newChildrenSubfieldResponses = Object.create(null)
