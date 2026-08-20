@@ -7,6 +7,7 @@ import {
   REMOVE_AFTER_30_DAYS,
 } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
+import { getRepeatDelayedJobIds } from '@/helpers/repeatable-jobs'
 import Flow from '@/models/flow'
 import flowQueue from '@/queues/flow'
 
@@ -132,41 +133,57 @@ const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
           })
         } else {
           /**
-           * Removing a repeatable job takes three calls, not one, to fully
-           * clean it up after a flow was published under bullmq 5.70.2 and
-           * is being unpublished after a rollback to 5.7.8 (the version
-           * installed here):
+           * Removing a repeatable job takes three steps, not one, because
+           * neither bullmq version cleans up everything the other one wrote:
            *
            * 1. removeRepeatableByKey(job.key) removes the `repeat` zset
            *    entry, so no further occurrences get scheduled.
-           * 2. remove(`repeat:${jobName}`) deletes a metadata hash that
-           *    5.70.2 writes at Redis key `repeat:<key>` whenever the job
-           *    is (re)added (it backs 5.70.2's getRepeatableJobs()
-           *    name/pattern/tz enrichment). 5.70.2's own removeRepeatable
-           *    script deletes this hash, but 5.7.8 has no notion of it and
-           *    never cleans it up, so it's orphaned in Redis after a
-           *    rollback unless removed explicitly. There's no dedicated
-           *    helper for this — a job id happens to map to the same Redis
-           *    key, so we (ab)use remove() here even though no job with
-           *    this id was ever enqueued.
-           * 3. remove(`repeat:${jobName}:${job.next}`) deletes the
-           *    already-scheduled next-run delayed job. On 5.7.8,
-           *    removeRepeatableByKey() recomputes this job's id by hashing
-           *    job.key instead of using it directly, so it computes the
-           *    wrong id and the real delayed job lingers. Both bullmq
-           *    versions build the real id as `repeat:<our custom
-           *    key>:<next-run millis>` when a custom repeat.key is
-           *    supplied, so this id is stable across the upgrade.
+           * 2. remove(`repeat:${job.key}`) deletes a metadata hash that
+           *    5.70.2 writes at Redis key `repeat:<member>` whenever the
+           *    job is (re)added (it backs 5.70.2's getRepeatableJobs()
+           *    name/pattern/tz enrichment). Nothing else deletes it: 5.7.8
+           *    has no notion of it, and 5.70.2's own removeRepeatable Lua
+           *    returns early from its legacy branch whenever the member is
+           *    a concat, skipping its own DEL. There's no dedicated helper
+           *    either — a job id happens to map to the same Redis key, so
+           *    we (ab)use remove() here even though no job with this id
+           *    was ever enqueued.
+           * 3. Removing the already-scheduled next-run delayed job. Neither
+           *    version's removeRepeatableByKey() derives that job's id
+           *    correctly for an entry the *other* version wrote, so we
+           *    derive every possible id ourselves.
            *
            * Verified against both versions' shipped Lua scripts and against
-           * a real Redis instance: without calls 2 and 3, a flow published
-           * under 5.70.2 and unpublished after rolling back to 5.7.8 leaves
-           * both of these hashes behind in Redis forever.
+           * a real Redis instance: without steps 2 and 3, unpublishing after
+           * an upgrade or a rollback leaves these keys behind forever.
            */
           await flowQueue.removeRepeatableByKey(job.key)
-          await flowQueue.remove(`repeat:${jobName}`)
-          if (job.next) {
-            await flowQueue.remove(`repeat:${jobName}:${job.next}`)
+          // Steps 2 and 3 are leftover-key cleanup. If they throw after
+          // removeRepeatableByKey succeeded, rolling back the DB patch
+          // would leave a published pipe with no cron. Swallow and log
+          // so the unpublish commits; the flow worker already no-ops
+          // leftover delayed jobs when the pipe is inactive.
+          try {
+            await flowQueue.remove(`repeat:${job.key}`)
+            if (job.next) {
+              const delayedJobIds = getRepeatDelayedJobIds({
+                name: jobName,
+                key: job.key,
+                next: job.next,
+                jobId: flow.id,
+              })
+              for (const delayedJobId of delayedJobIds) {
+                await flowQueue.remove(delayedJobId)
+              }
+            }
+          } catch (error) {
+            logger.warn({
+              message:
+                'Failed to clean leftover repeatable Redis keys after unpublish',
+              flowId: flow.id,
+              jobKey: job.key,
+              error,
+            })
           }
         }
       }
