@@ -33,8 +33,16 @@ The npm scripts invoke `docker-compose`, so keep this shim available.
 9001 console), and DynamoDB Local (8000). The `tunnel` service needs `CLOUDFLARE_TOKEN` and is
 optional. Local webhooks can POST directly to `http://localhost:3000/webhooks/<flow-id>`.
 
-Run `npm run migrate` once to apply main Postgres migrations. The backend `postsetup` hook
-creates the local DynamoDB tile table.
+Run `npm run migrate` once to apply main Postgres migrations. Run
+`npm run -w backend dynamodb:setup` once to create the local DynamoDB tile table (the backend
+`postsetup` hook does this only when you run `npm run setup`, not `docker compose` directly).
+
+### Fix one `.env` placeholder before starting the backend
+
+`packages/backend/.env-example` sets `PAIR_ROME_BASE_URL=...`. That placeholder is not a valid
+URL. The backend builds a Langfuse OTLP trace exporter from it at startup and crashes with
+`Could not parse user-provided export URL`. Set `PAIR_ROME_BASE_URL` to any valid URL in your
+local `.env` (for example `https://rome.example.invalid`). Tracing does not export in dev.
 
 ### Run the app
 
