@@ -32,17 +32,9 @@ Start the dev stack (Postgres + MinIO) from the repo root if it isn't already ru
 npm run setup
 ```
 
-### 2. Create the archive bucket in MinIO
+This also creates the `plumber-development-archive-bucket` MinIO bucket used below.
 
-```bash
-# Install mc (MinIO client) if not present
-brew install minio/stable/mc
-
-mc alias set local http://localhost:9000 minio-username minio-password
-mc mb local/plumber-archive-dev --ignore-existing
-```
-
-### 3. Create `.env.archival`
+### 2. Create `.env.archival`
 
 Create a `.env.archival` file at the repo root (do **not** commit it):
 
@@ -61,7 +53,7 @@ ARCHIVE_POSTGRES_READER_HOST=localhost
 S3_ENDPOINT=http://localhost:9000
 S3_ACCESS_KEY=minio-username
 S3_SECRET_KEY=minio-password
-ARCHIVE_BUCKET=plumber-archive-dev
+ARCHIVE_BUCKET=plumber-development-archive-bucket
 
 # Job settings
 ARCHIVE_ENABLED=true
@@ -75,7 +67,7 @@ ARCHIVE_DELETED_FLOWS_ONLY=true # restrict to soft-deleted flows only
 ARCHIVE_TEST_RUNS=false         # also archive test executions on active flows
 ```
 
-### 4. Run the archival script
+### 3. Run the archival script
 
 ```bash
 # Load env vars, then run
@@ -92,17 +84,17 @@ The script logs structured JSON to stdout. Key events to look for:
 | `archival.flow.archived` | All executions for a flow have been processed — lists IDs. |
 | `archival.run.complete` | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
 
-### 5. Verify S3 contents
+### 4. Verify S3 contents
 
 ```bash
 # List all archived executions for a flow
-mc ls --recursive local/plumber-archive-dev/executions/flow_id=<your-flow-id>/
+mc ls --recursive local/plumber-development-archive-bucket/executions/flow_id=<your-flow-id>/
 
 # Inspect one object's metadata
-mc stat "local/plumber-archive-dev/executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz"
+mc stat "local/plumber-development-archive-bucket/executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz"
 
 # Inspect the payload
-mc cat "local/plumber-archive-dev/executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz" \
+mc cat "local/plumber-development-archive-bucket/executions/flow_id=<uuid>/year=YYYY/month=MM/execution_id=<uuid>.json.gz" \
   | gunzip | jq .
 ```
 
@@ -173,7 +165,7 @@ Each archival run writes a summary object to `_meta/runs/{runAt}.json` in the bu
 
 ```bash
 # Find the runAt timestamp in the startup log (archival.run.start → "runAt" field), then:
-mc cat "local/plumber-archive-dev/_meta/runs/<runAt>.json" | jq '.stepCounts'
+mc cat "local/plumber-development-archive-bucket/_meta/runs/<runAt>.json" | jq '.stepCounts'
 ```
 
 Output shape:
@@ -199,10 +191,10 @@ Dates are keyed by the step's `created_at`, converted to SGT (not the archival r
 To get cumulative counts by date across every run stored in the bucket, download all meta files and sum them. Because the same date can appear in multiple run files (old backlog dates get touched across several runs), group by date + app + action rather than assuming one date lives in one file:
 
 ```bash
-mc ls local/plumber-archive-dev/_meta/runs/ \
+mc ls local/plumber-development-archive-bucket/_meta/runs/ \
   | awk '{print $NF}' \
   | while read -r f; do
-      mc cat "local/plumber-archive-dev/_meta/runs/$f"
+      mc cat "local/plumber-development-archive-bucket/_meta/runs/$f"
     done \
   | jq -s '
       [ .[] | select(.dryRun == false) | .stepCounts | to_entries[] |
