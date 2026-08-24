@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 import { archivalConfig } from '@/helpers/archival/config'
 import { archivalDb } from '@/helpers/archival/db'
 import { fetchArchivedExecution } from '@/helpers/archival/fetch-archived-execution'

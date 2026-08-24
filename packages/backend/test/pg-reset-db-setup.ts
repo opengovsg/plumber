@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 import '../src/config/orm'
 
 import { readdirSync } from 'fs'

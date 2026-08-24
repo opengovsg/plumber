@@ -22,7 +22,7 @@ process.on('uncaughtException', (err) => {
       err: err.stack,
     })
   } catch (e) {
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log('Error happened to logger')
     console.error(e)
   }

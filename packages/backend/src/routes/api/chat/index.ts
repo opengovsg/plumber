@@ -201,7 +201,7 @@ const handleChatStream = observe(
           },
         })
         gitbookTools =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // oxlint-disable-next-line typescript/no-explicit-any
           (await mcpClient.tools()) as Parameters<typeof streamText>[0]['tools']
       } catch (error) {
         await mcpClient?.close()
