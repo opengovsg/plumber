@@ -6,6 +6,12 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "scripts": {
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write ."
+  },
   "dependencies": {
     "dotenv": "catalog:",
     "knex": "catalog:",

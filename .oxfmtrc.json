@@ -1,0 +1,17 @@
+{
+  "trailingComma": "all",
+  "tabWidth": 2,
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "sortImports": true,
+  "ignorePatterns": [
+    "**/.build",
+    "**/build",
+    "**/dist",
+    "**/coverage",
+    "**/graphql/__generated__",
+    "**/assets/**/*.json"
+  ]
+}
