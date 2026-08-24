@@ -141,7 +141,7 @@ pnpm --filter backend-archive run archive:rehydrate -- --flow-id <uuid>
 pnpm --filter backend-archive run archive:backfill
 ```
 
-Both call `ts-node`, a devDependency, so the host needs a full checkout and an install that kept devDependencies. The `Dockerfile.archival` image has neither. Inside that image, call the compiled entrypoint from `/opt/plumber`:
+Both call `tsx`, a devDependency, so the host needs a full checkout and an install that kept devDependencies. The `Dockerfile.archival` image has neither. Inside that image, call the compiled entrypoint from `/opt/plumber`:
 
 ```bash
 node packages/backend-archive/dist/scripts/rehydrate-execution.js --flow-id <uuid>
