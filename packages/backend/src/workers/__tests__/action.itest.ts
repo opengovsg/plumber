@@ -88,6 +88,15 @@ describe('Action worker', () => {
     await mainActionWorker.waitUntilReady()
   })
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.processAction.mockReset()
+    mocks.processAction.mockResolvedValue({})
+    mocks.handleFailedStepAndThrow.mockReset()
+    mocks.exponentialBackoffWithJitter.mockReset()
+    mocks.exponentialBackoffWithJitter.mockReturnValue(1)
+  })
+
   afterEach(async () => {
     await flushQueue(mainActionQueue, mainActionWorker)
 
@@ -95,6 +104,7 @@ describe('Action worker', () => {
     // original state after each test
     await restoreWorker(mainActionWorker, originalWorkerState)
 
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
