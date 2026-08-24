@@ -49,7 +49,7 @@ export function createMcpBridgeTools(
   return {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
       description:
-        'List all available Plumber apps, triggers, and actions with their field schemas.',
+        "List all available Plumber apps, triggers, and actions with their field schemas. A field's variableTypes, when present, restricts it to upstream variables whose execute_step dataOutMetadata type matches one of the listed values.",
       inputSchema: z.object({}),
       execute: async (): Promise<IMcpApp[]> => {
         return listAppsService(user)
@@ -221,7 +221,7 @@ export function createMcpBridgeTools(
 
     execute_step: tool({
       description:
-        'Test a configured step in a pipe. Runs the step, marks it as completed on success, and returns its output data. Call after update_step_parameters to verify the step works. The returned dataOut will be used to wire variables into downstream steps. Warning: for steps that send a real message (SMS by Postman sendSms, Telegram sendMessage, Slack sendMessageToChannel, PaySG sendEmail), this actually sends it to the configured recipient/channel/number — confirm the details with the user before calling this for those steps.',
+        "Test a configured step in a pipe. Runs the step, marks it as completed on success, and returns its output data. Call after update_step_parameters to verify the step works. The returned dataOut will be used to wire variables into downstream steps; dataOutMetadata tags each dataOut key with a type (e.g. 'array', 'table') — cross-check this against a downstream field's variableTypes (from list_apps) before templating a {{step.X.path}} reference into that field. Warning: for steps that send a real message (SMS by Postman sendSms, Telegram sendMessage, Slack sendMessageToChannel, PaySG sendEmail), this actually sends it to the configured recipient/channel/number — confirm the details with the user before calling this for those steps.",
       inputSchema: z.object({
         step_id: z.uuid().describe('ID of the step to test'),
       }),

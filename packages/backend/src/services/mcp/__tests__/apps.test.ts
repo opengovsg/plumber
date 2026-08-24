@@ -103,6 +103,13 @@ vi.mock('@/apps', () => ({
               },
             },
             {
+              key: 'rowId',
+              label: 'Row',
+              type: 'string',
+              required: true,
+              variableTypes: ['tile_row_id'],
+            },
+            {
               key: 'rowData',
               label: 'Row data',
               type: 'multirow-multicol',
@@ -369,6 +376,24 @@ describe('listAppsService', () => {
         'field',
         'text',
       ])
+    })
+  })
+
+  describe('variableTypes', () => {
+    it('exposes variableTypes when the field declares them', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const rowIdField = tiles?.actions[0].fields.find((f) => f.key === 'rowId')
+      expect(rowIdField?.variableTypes).toEqual(['tile_row_id'])
+    })
+
+    it('omits variableTypes when the field does not declare them', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const tableIdField = tiles?.actions[0].fields.find(
+        (f) => f.key === 'tableId',
+      )
+      expect(tableIdField?.variableTypes).toBeUndefined()
     })
   })
 
