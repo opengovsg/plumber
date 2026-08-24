@@ -7,7 +7,7 @@
   },
   "packageManager": "pnpm@11.23.0",
   "scripts": {
-    "preinstall": "npx --yes only-allow pnpm",
+    "preinstall": "pnpm exec only-allow pnpm",
     "postinstall": "pnpm run gqlc",
     "setup": "pnpm --filter backend run setup",
     "dev": "turbo watch dev worker --continue",
