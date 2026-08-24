@@ -1,10 +1,11 @@
-import type { IJSONObject } from '@plumber/types'
+import type { IApp, IJSONObject } from '@plumber/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 
+import AddAppConnection from '@/components/AddAppConnection'
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
@@ -20,8 +21,10 @@ import {
 import {
   buildFormConnectedMessage,
   buildKickoffMessage,
+  buildPickerAnswerMessage,
   buildUrlSharedKickoffMessage,
   buildUrlSharedMessage,
+  extractConnectionResult,
   extractFormIdFromLabel,
   extractLastFormUrl,
   formatFormUrlLabel,
@@ -41,6 +44,7 @@ function AiBuilderContent() {
     isDrawerOpen,
     steps,
     output,
+    allApps,
   } = useAiBuilderContext()
 
   const {
@@ -129,6 +133,16 @@ function AiBuilderContent() {
     { kind: 'picker'; question: string } | { kind: 'kickoff' } | null
   >(null)
 
+  // In-chat "add connection" modal for every non-FormSG app in
+  // AI_BUILDER_INLINE_CONNECT_APP_KEYS — a thin wrapper around
+  // AddAppConnection's generic authenticationSteps engine. Kept separate
+  // from addFormContext above since FormSG's flow has its own two-kind
+  // (picker/kickoff) state machine that doesn't apply here.
+  const [addConnectionContext, setAddConnectionContext] = useState<{
+    appKey: string
+    question: string
+  } | null>(null)
+
   // Display-only composer chip anchoring the connected form (S3).
   const [attachedForm, setAttachedForm] = useState<{ label: string } | null>(
     null,
@@ -160,8 +174,13 @@ function AiBuilderContent() {
   }, [attachedForm, prefillFormUrl, knownFormSchema])
 
   const handleAddConnection = useCallback(
-    (context: { question: string }) =>
-      setAddFormContext({ kind: 'picker', ...context }),
+    (context: { question: string; appKey: string }) => {
+      if (context.appKey === 'formsg') {
+        setAddFormContext({ kind: 'picker', question: context.question })
+        return
+      }
+      setAddConnectionContext(context)
+    },
     [],
   )
 
@@ -208,6 +227,31 @@ function AiBuilderContent() {
     [addFormContext, sendMessage],
   )
 
+  // AddAppConnection's onClose hands back the raw accumulated response from
+  // walking auth.authenticationSteps, not a clean (label, id) pair — pull
+  // out what the chat answer needs. If the step sequence never reached
+  // createConnection (e.g. the user closed the modal, or a step failed and
+  // the user hasn't retried), there's nothing to tell the chat.
+  const handleGenericAddConnectionSuccess = useCallback(
+    (response: Record<string, unknown>, fallbackLabel: string) => {
+      if (!addConnectionContext) {
+        return
+      }
+      const result = extractConnectionResult(response, fallbackLabel)
+      if (result) {
+        sendMessage(
+          buildPickerAnswerMessage(
+            addConnectionContext.question,
+            result.label,
+            result.connectionId,
+          ),
+        )
+      }
+      setAddConnectionContext(null)
+    },
+    [addConnectionContext, sendMessage],
+  )
+
   // Url-only-variant submit — the user shared their form without a key. As
   // the first message it asks for suggestions; mid-conversation it is a
   // plain share the LLM picks up from where it is.
@@ -229,6 +273,7 @@ function AiBuilderContent() {
   const handleNewChat = useCallback(() => {
     setAttachedForm(null)
     setAddFormContext(null)
+    setAddConnectionContext(null)
   }, [])
 
   // Determine if we have unsaved work
@@ -255,6 +300,10 @@ function AiBuilderContent() {
   const handleClose = useCallback(() => {
     guardedNavigate(() => navigate(URLS.FLOWS, { replace: true }))
   }, [guardedNavigate, navigate])
+
+  const addConnectionApp: IApp | undefined = addConnectionContext
+    ? allApps.find((app) => app.key === addConnectionContext.appKey)
+    : undefined
 
   return (
     <StepConfigContext.Provider
@@ -333,6 +382,15 @@ function AiBuilderContent() {
           onSuccess={handleAddFormSuccess}
           onSubmitUrl={handleSubmitUrl}
         />
+        {addConnectionContext && addConnectionApp && flowId && (
+          <AddAppConnection
+            application={addConnectionApp}
+            flowId={flowId}
+            onClose={(response) =>
+              handleGenericAddConnectionSuccess(response, addConnectionApp.name)
+            }
+          />
+        )}
         <ExitAlert
           cancelRef={cancelRef}
           isOpen={showWarning}
