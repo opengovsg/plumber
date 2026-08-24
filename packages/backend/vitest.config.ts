@@ -26,6 +26,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // graphql-shield's ESM build imports `isUndefined` from `util`, which
+      // Vite's SSR module resolution fails to resolve. Aliasing straight to
+      // the CJS build sidesteps the broken `exports` condition entirely.
+      'graphql-shield': require.resolve('graphql-shield'),
     },
   },
 })

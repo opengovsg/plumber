@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
+import type { LanguageModelV2 } from '@ai-sdk/provider'
 
 import appConfig from '@/config/app'
 
@@ -8,6 +9,6 @@ const engineProvider = createOpenAI({
   baseURL: 'https://engine.pair.gov.sg',
   apiKey: appConfig.pair.foundry.apiKey,
 })
-const model = engineProvider.chat(MODEL_TYPE)
+const model: LanguageModelV2 = engineProvider.chat(MODEL_TYPE)
 
 export { engineProvider, model, MODEL_TYPE }

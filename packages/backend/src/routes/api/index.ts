@@ -9,7 +9,7 @@ import adminRouter from './admin'
 import appsRouter from './apps'
 import chatRouter from './chat'
 
-const router = Router()
+const router: Router = Router()
 
 // Apply authentication middleware to ALL API routes
 // This mirrors how GraphQL handles authentication via context
