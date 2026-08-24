@@ -56,6 +56,7 @@ describe('FormSG app', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

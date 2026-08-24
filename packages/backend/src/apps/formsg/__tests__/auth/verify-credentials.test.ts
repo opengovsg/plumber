@@ -55,6 +55,7 @@ describe('verify credentials', () => {
 
   // Reset each mock after tests
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

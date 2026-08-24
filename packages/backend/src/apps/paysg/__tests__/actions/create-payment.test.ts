@@ -49,6 +49,7 @@ describe('create payment', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

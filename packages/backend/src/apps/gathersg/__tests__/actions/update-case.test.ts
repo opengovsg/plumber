@@ -58,6 +58,7 @@ describe('update case', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

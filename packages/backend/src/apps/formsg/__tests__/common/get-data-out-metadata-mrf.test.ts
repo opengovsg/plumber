@@ -57,6 +57,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

@@ -5,6 +5,13 @@ export default defineConfig({
     reporters: ['default', 'html'],
     coverage: {
       enabled: true,
+      include: ['packages/{backend,frontend}/src/**/*.{ts,tsx}'],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/*.itest.{ts,tsx}',
+        '**/__tests__/**',
+        '**/node_modules/**',
+      ],
     },
     projects: [
       'packages/frontend/vite.config.ts',

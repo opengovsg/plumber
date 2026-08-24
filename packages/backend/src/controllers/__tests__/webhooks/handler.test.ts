@@ -94,6 +94,7 @@ describe('webhook handler', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

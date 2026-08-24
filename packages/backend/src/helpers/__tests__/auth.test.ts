@@ -61,6 +61,7 @@ vi.mock('../launch-darkly', () => ({
 
 describe('Auth helpers', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -273,8 +274,9 @@ describe('Auth helpers', () => {
     })
 
     afterEach(() => {
+      vi.clearAllMocks()
       vi.restoreAllMocks()
-    })
+  })
     it('does not send email if user has logged in before', async () => {
       const mockUser = {
         id: 'test-id',
