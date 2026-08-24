@@ -27,6 +27,7 @@ describe('convert date time', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

@@ -46,6 +46,7 @@ describe('Login with selected SGID', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
