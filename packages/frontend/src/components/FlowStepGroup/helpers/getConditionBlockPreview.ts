@@ -1,8 +1,29 @@
 import type { IConditionRow, IJSONObject, IMultiRowGroup } from '@plumber/types'
 
+/**
+ * Where a part sits in the sentence, which is what decides whether it may
+ * spill. Only `leading` parts — the ones with the operator and the value still
+ * to come after them — are length-capped. A `trailing` part is last, so it is
+ * left to run on and the block's own width clips it: no character budget can
+ * know how much room a given card has.
+ */
+export type ConditionSentencePosition = 'leading' | 'trailing'
+
 export type ConditionPreviewPart =
+  /**
+   * Our own sentence connective — the operator phrase, joining spaces, the
+   * "Specify condition" placeholder. Never truncated: cutting "is greater than
+   * or equal to" loses the meaning of the condition itself.
+   */
   | { type: 'text'; text: string }
-  | { type: 'variable'; id: string; label: string }
+  /** A value the user typed, on either end of the sentence. */
+  | { type: 'literal'; text: string; position: ConditionSentencePosition }
+  | {
+      type: 'variable'
+      id: string
+      label: string
+      position: ConditionSentencePosition
+    }
   /** Bold non-variable word (e.g. "item" in "For every item in …"). */
   | { type: 'emphasis'; text: string }
 
@@ -80,7 +101,7 @@ export function getForEachBlockPreviewParts(
     return EMPTY_FOR_EACH_PREVIEW
   }
 
-  const itemParts = valueToParts(items.trim())
+  const itemParts = valueToParts(items.trim(), 'trailing')
   if (itemParts.length === 0) {
     return EMPTY_FOR_EACH_PREVIEW
   }
@@ -97,14 +118,16 @@ export function getForEachBlockPreviewParts(
 function formatConditionRow(
   row: Partial<IConditionRow>,
 ): ConditionPreviewPart[] {
-  const fieldParts = valueToParts(stringifyValue(row.field))
+  const fieldParts = valueToParts(stringifyValue(row.field), 'leading')
   const isNegated = row.is === 'not'
   const operatorKey = row.condition
   const operatorPhrase = getOperatorPhrase(operatorKey, isNegated)
   // "empty" is the one operator with nothing to compare against, so any value
   // left over in the row from a previous operator choice is not shown.
   const valueParts =
-    operatorKey === 'empty' ? [] : valueToParts(stringifyValue(row.text))
+    operatorKey === 'empty'
+      ? []
+      : valueToParts(stringifyValue(row.text), 'trailing')
 
   if (fieldParts.length === 0 && !operatorPhrase && valueParts.length === 0) {
     return []
@@ -113,7 +136,7 @@ function formatConditionRow(
   const parts: ConditionPreviewPart[] = [...fieldParts]
 
   if (operatorPhrase) {
-    // Leading space when a field pill/text precedes the phrase.
+    // Space before the phrase when a field pill/text precedes it.
     parts.push({
       type: 'text',
       text: fieldParts.length > 0 ? ` ${operatorPhrase}` : operatorPhrase,
@@ -132,10 +155,14 @@ function formatConditionRow(
 }
 
 /**
- * Splits raw parameter text into plain text and variable parts. Step UUIDs
- * are dropped from the label (last path segment only).
+ * Splits raw parameter text into literal and variable parts. Step UUIDs are
+ * dropped from the label (last path segment only). Everything this emits came
+ * from the user, so plain runs are `literal`, not `text`.
  */
-function valueToParts(raw: string): ConditionPreviewPart[] {
+function valueToParts(
+  raw: string,
+  position: ConditionSentencePosition,
+): ConditionPreviewPart[] {
   if (!raw) {
     return []
   }
@@ -149,7 +176,11 @@ function valueToParts(raw: string): ConditionPreviewPart[] {
     const index = match.index ?? 0
 
     if (index > lastIndex) {
-      parts.push({ type: 'text', text: raw.slice(lastIndex, index) })
+      parts.push({
+        type: 'literal',
+        text: raw.slice(lastIndex, index),
+        position,
+      })
     }
 
     const segments = path.split('.').filter(Boolean)
@@ -157,17 +188,17 @@ function valueToParts(raw: string): ConditionPreviewPart[] {
     // Strip surrounding {{ }} for the lookup id used by stepsWithVars.
     const id = full.slice(2, -2).split('|')[0]
 
-    parts.push({ type: 'variable', id, label })
+    parts.push({ type: 'variable', id, label, position })
     lastIndex = index + full.length
   }
 
   if (lastIndex < raw.length) {
-    parts.push({ type: 'text', text: raw.slice(lastIndex) })
+    parts.push({ type: 'literal', text: raw.slice(lastIndex), position })
   }
 
-  // Plain (non-variable) values still show as text.
+  // A value with no variables in it at all.
   if (parts.length === 0 && raw.trim()) {
-    parts.push({ type: 'text', text: raw.trim() })
+    parts.push({ type: 'literal', text: raw.trim(), position })
   }
 
   return parts

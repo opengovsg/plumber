@@ -16,6 +16,7 @@ import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import Error from './Content/Error'
 import ForEach from './Content/ForEach'
+import ForEachV1 from './Content/ForEach/ForEachV1'
 import IfThenV1 from './Content/IfThen/IfThenV1'
 import useDeleteStepConfirmation from './hooks/useDeleteStepConfirmation'
 import { flowStepGroupStyles } from './styles'
@@ -73,107 +74,111 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
     (step) => step.key === TOOLBOX_ACTIONS.ForEach,
   )
 
-  const isForEachV2 =
-    stepGroupType === TOOLBOX_ACTIONS.ForEach && isIfThenV2Enabled
+  const outerWidth =
+    isInsideForEach && stepsBeforeGroup.length > 2 && !isDrawerOpen
+      ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
+      : '100%'
 
-  return (
-    <Flex
-      w={
-        isInsideForEach && stepsBeforeGroup.length > 2 && !isDrawerOpen
-          ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
-          : '100%'
-      }
-      alignItems="center"
-      justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
-    >
-      {/*
-        A V2 for-each draws its own REPEAT-badge card, so it gets a bare
-        width slot instead of the app-icon-and-caption chrome below. Once the
-        flag retires, the chrome (and this fork) goes with it.
-      */}
-      {isForEachV2 ? (
-        <Flex
-          display={isMobile ? 'block' : 'flex'}
-          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
-          minW={MIN_FLOW_STEP_WIDTH}
-        >
+  const widthSlot = {
+    display: isMobile ? 'block' : 'flex',
+    w: getFlowStepHeaderWidth(isDrawerOpen, isMobile),
+    minW: MIN_FLOW_STEP_WIDTH,
+  }
+
+  /**
+   * A V2 for-each draws its own REPEAT-badge card — including its own delete
+   * button — so it takes a bare width slot instead of the app-icon-and-caption
+   * chrome below. Once the flag retires, that chrome, ForEachV1 and this fork
+   * all go together.
+   */
+  if (stepGroupType === TOOLBOX_ACTIONS.ForEach && isIfThenV2Enabled) {
+    return (
+      <Flex
+        w={outerWidth}
+        alignItems="center"
+        justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
+      >
+        <Flex {...widthSlot}>
           <ForEach
             groupedSteps={groupedSteps}
             stepsBeforeGroup={stepsBeforeGroup}
           />
         </Flex>
-      ) : (
-        <Flex
-          {...flowStepGroupStyles.container}
-          display={isMobile ? 'block' : 'flex'}
-          w={getFlowStepHeaderWidth(isDrawerOpen, isMobile)}
-          minW={MIN_FLOW_STEP_WIDTH}
-        >
-          <Box {...flowStepGroupStyles.header} w="100%">
-            <Flex
-              px={4}
-              pt={4}
-              alignItems="center"
-              borderRadius="inherit"
-              w="full"
-              borderLeftWidth={0}
-              borderRightWidth={0}
-              role="group"
-            >
-              <Flex {...flowStepGroupStyles.iconWrapper}>
-                {/* App icon */}
-                <Icon
+      </Flex>
+    )
+  }
+
+  return (
+    <Flex
+      w={outerWidth}
+      alignItems="center"
+      justifyContent={isDrawerOpen ? 'flex-start' : 'center'}
+    >
+      <Flex {...flowStepGroupStyles.container} {...widthSlot}>
+        <Box {...flowStepGroupStyles.header} w="100%">
+          <Flex
+            px={4}
+            pt={4}
+            alignItems="center"
+            borderRadius="inherit"
+            w="full"
+            borderLeftWidth={0}
+            borderRightWidth={0}
+            role="group"
+          >
+            <Flex {...flowStepGroupStyles.iconWrapper}>
+              {/* App icon */}
+              <Icon
+                boxSize={8}
+                as={getToolboxIcon(stepGroupType)}
+                color="primary.500"
+              />
+            </Flex>
+            <Flex direction="column" align="start">
+              <Flex alignItems="center" gap={2}>
+                <Text textStyle="subhead-1" color="base.content.default">
+                  {stepGroupCaption}
+                </Text>
+              </Flex>
+            </Flex>
+            {stepGroupType === TOOLBOX_ACTIONS.ForEach && !readOnly && (
+              <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
+                <IconButton
                   boxSize={8}
-                  as={getToolboxIcon(stepGroupType)}
-                  color="primary.500"
+                  variant="clear"
+                  aria-label="Delete for each action"
+                  icon={<BiTrash />}
+                  colorScheme="secondary"
+                  onClick={openDeleteConfirmation}
                 />
               </Flex>
-              <Flex direction="column" align="start">
-                <Flex alignItems="center" gap={2}>
-                  <Text textStyle="subhead-1" color="base.content.default">
-                    {stepGroupCaption}
-                  </Text>
-                </Flex>
-              </Flex>
-              {stepGroupType === TOOLBOX_ACTIONS.ForEach && !readOnly && (
-                <Flex ml="auto" opacity={0} _groupHover={{ opacity: 1 }}>
-                  <IconButton
-                    boxSize={8}
-                    variant="clear"
-                    aria-label="Delete for each action"
-                    icon={<BiTrash />}
-                    colorScheme="secondary"
-                    onClick={openDeleteConfirmation}
-                  />
-                </Flex>
-              )}
-            </Flex>
-          </Box>
-          {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
-            <IfThenV1
+            )}
+          </Flex>
+        </Box>
+        {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
+          <IfThenV1
+            groupedSteps={groupedSteps}
+            stepsBeforeGroup={stepsBeforeGroup}
+          />
+        ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
+          <>
+            <ForEachV1
               groupedSteps={groupedSteps}
               stepsBeforeGroup={stepsBeforeGroup}
             />
-          ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
-            <>
-              <ForEach
-                groupedSteps={groupedSteps}
-                stepsBeforeGroup={stepsBeforeGroup}
-              />
-              <DeleteConfirmationDialog
-                name="For each"
-                cancelRef={cancelRef}
-                isOpen={isDeleteConfirmationOpen}
-                onClose={closeDeleteConfirmation}
-                onDelete={handleForEachDelete}
-                onCancel={closeDeleteConfirmation}
-              />
-            </>
-          ) : (
-            <Error />
-          )}
-        </Flex>
-      )}
+            <DeleteConfirmationDialog
+              name="For each"
+              cancelRef={cancelRef}
+              isOpen={isDeleteConfirmationOpen}
+              onClose={closeDeleteConfirmation}
+              onDelete={handleForEachDelete}
+              onCancel={closeDeleteConfirmation}
+            />
+          </>
+        ) : (
+          <Error />
+        )}
+      </Flex>
     </Flex>
   )
 }

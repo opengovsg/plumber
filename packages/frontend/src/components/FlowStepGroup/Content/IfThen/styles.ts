@@ -42,6 +42,25 @@ export const blockActionButtonStyles = {
   colorScheme: 'secondary',
 }
 
+/**
+ * The strip a condition block's actions are overlaid in, and the width that
+ * strip occupies. The two live together because the header reserves `widthPx`
+ * of text padding to keep the sentence out from under the buttons — change the
+ * padding, the gap or `blockActionButtonStyles.boxSize` without changing the
+ * total and the text silently slides back under them.
+ *
+ * Sized for the widest case (a duplicate and a delete), so a single-button
+ * block over-reserves by one button rather than losing text.
+ */
+export const blockActionsOverlayStyles = {
+  pl: 2, // 8px
+  pr: 4, // 16px
+  gap: 1, // 4px
+}
+
+/** 8 + 32 + 4 + 32 + 16, from the values directly above. */
+export const BLOCK_ACTIONS_OVERLAY_WIDTH_PX = 92
+
 export const branchStyles = {
   container: {
     alignItems: 'center',

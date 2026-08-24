@@ -24,6 +24,9 @@ const asText = (parts: ConditionPreviewPart[]): string =>
     .map((part) => (part.type === 'variable' ? part.label : part.text))
     .join('')
 
+const typesOf = (parts: ConditionPreviewPart[]): string[] =>
+  parts.map((part) => part.type)
+
 describe('getConditionBlockPreviewParts', () => {
   it('falls back to a prompt when there are no conditions', () => {
     expect(getConditionBlockPreviewParts(undefined)).toEqual([
@@ -163,6 +166,7 @@ describe('getConditionBlockPreviewParts', () => {
       type: 'variable',
       id: `step.${STEP_ID}.Responses.Email address`,
       label: 'Email address',
+      position: 'leading',
     })
   })
 
@@ -183,6 +187,7 @@ describe('getConditionBlockPreviewParts', () => {
       type: 'variable',
       id: `step.${STEP_ID}.Amount`,
       label: 'Amount',
+      position: 'leading',
     })
   })
 
@@ -272,6 +277,96 @@ describe('getConditionBlockPreviewParts', () => {
       ),
     ).toBe('Specify condition')
   })
+
+  it('marks typed values as literals and the operator as a connective', () => {
+    const parts = getConditionBlockPreviewParts(
+      conditions([
+        [
+          {
+            field: variable('Amount'),
+            condition: 'gte',
+            text: 'Finance & Corporate Services Division',
+          },
+        ],
+      ]),
+    )
+
+    expect(typesOf(parts)).toEqual(['variable', 'text', 'text', 'literal'])
+    // The operator phrase is a `text` part so the header leaves it intact; the
+    // typed value is a `literal` so the header may truncate it.
+    expect(parts.find((part) => part.type === 'text')).toEqual({
+      type: 'text',
+      text: ' is greater than or equal to',
+    })
+  })
+
+  it('keeps literal runs around a variable as literals', () => {
+    const parts = getConditionBlockPreviewParts(
+      conditions([
+        [
+          {
+            field: 'Name',
+            condition: 'contains',
+            text: `Hi ${variable('Nickname')} !`,
+          },
+        ],
+      ]),
+    )
+
+    expect(typesOf(parts)).toEqual([
+      'literal',
+      'text',
+      'text',
+      'literal',
+      'variable',
+      'literal',
+    ])
+  })
+
+  it('marks the placeholder as a connective so it is never truncated', () => {
+    expect(typesOf(getConditionBlockPreviewParts(undefined))).toEqual(['text'])
+  })
+
+  it('marks where in the sentence each part sits', () => {
+    const parts = getConditionBlockPreviewParts(
+      conditions([
+        [
+          {
+            field: variable('Name'),
+            condition: 'equals',
+            text: `Hi ${variable('Nickname')}`,
+          },
+        ],
+      ]),
+    )
+
+    const positions = parts
+      .filter(
+        (
+          part,
+        ): part is Extract<
+          ConditionPreviewPart,
+          { type: 'variable' | 'literal' }
+        > => part.type === 'variable' || part.type === 'literal',
+      )
+      .map((part) => part.position)
+
+    // field variable, then the value's literal prefix and its variable
+    expect(positions).toEqual(['leading', 'trailing', 'trailing'])
+  })
+
+  it('marks a typed field leading and a typed value trailing', () => {
+    const parts = getConditionBlockPreviewParts(
+      conditions([[{ field: 'Age', condition: 'lt', text: '18' }]]),
+    )
+
+    expect(parts).toEqual([
+      { type: 'literal', text: 'Age', position: 'leading' },
+      { type: 'text', text: ' is less than' },
+      { type: 'text', text: ' ' },
+      { type: 'literal', text: '18', position: 'trailing' },
+    ])
+  })
 })
 
 describe('getForEachBlockPreviewParts', () => {
@@ -298,7 +393,12 @@ describe('getForEachBlockPreviewParts', () => {
       { type: 'text', text: 'For every ' },
       { type: 'emphasis', text: 'item' },
       { type: 'text', text: ' in ' },
-      { type: 'variable', id: `step.${STEP_ID}.Rows`, label: 'Rows' },
+      {
+        type: 'variable',
+        id: `step.${STEP_ID}.Rows`,
+        label: 'Rows',
+        position: 'trailing',
+      },
     ])
   })
 
