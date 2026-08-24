@@ -251,7 +251,7 @@ describe('If-then', () => {
       const result = await ifThenAction.run($)
 
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: true },
       })
     })
@@ -264,7 +264,7 @@ describe('If-then', () => {
       const result = await ifThenAction.run($)
 
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: true },
       })
     })
@@ -283,7 +283,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -300,7 +300,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -321,7 +321,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'stop-execution' },
       })
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -336,7 +336,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -351,7 +351,7 @@ describe('If-then', () => {
       })
 
       // throw partial step error message
-      await expect(ifThenAction.run($)).rejects.toThrowError(
+      await expect(ifThenAction.run($)).rejects.toThrow(
         `Conditional logic block contains an unknown operator: ${invalidCondition}`,
       )
     })
@@ -389,7 +389,7 @@ describe('If-then', () => {
         const result = await ifThenAction.run($)
 
         expect(result).toBeFalsy()
-        expect(mocks.setActionItem).toBeCalledWith({
+        expect(mocks.setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: true },
         })
       },
@@ -418,7 +418,7 @@ describe('If-then', () => {
         expect(result).toEqual({
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
-        expect(mocks.setActionItem).toBeCalledWith({
+        expect(mocks.setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: false },
         })
       },
@@ -446,7 +446,7 @@ describe('If-then', () => {
         expect(result).toEqual({
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
-        expect(mocks.setActionItem).toBeCalledWith({
+        expect(mocks.setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: false },
         })
       },
@@ -475,7 +475,7 @@ describe('If-then', () => {
         expect(result).toEqual({
           nextStep: { command: 'stop-execution' },
         })
-        expect(mocks.setActionItem).toBeCalledWith({
+        expect(mocks.setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: false },
         })
       },
@@ -497,7 +497,7 @@ describe('If-then', () => {
         })
 
         await ifThenAction.run($)
-        expect(mocks.setActionItem).toBeCalledWith({
+        expect(mocks.setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: expectedResult },
         })
       },

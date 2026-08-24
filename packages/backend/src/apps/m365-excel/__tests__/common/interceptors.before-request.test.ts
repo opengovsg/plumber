@@ -112,7 +112,7 @@ describe('M365 before request interceptors', () => {
   it('adds auth token for non-OAuth requests', async () => {
     await http.get('/test-url')
 
-    expect(mocks.axiosRequestConfigSpy).toBeCalledWith(
+    expect(mocks.axiosRequestConfigSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer test-access-token',
@@ -123,6 +123,6 @@ describe('M365 before request interceptors', () => {
 
   it('does not add auth token for non-OAuth requests', async () => {
     await http.get('/re-auth', { baseURL: MS_GRAPH_OAUTH_BASE_URL })
-    expect(mocks.getAccessToken).not.toBeCalled()
+    expect(mocks.getAccessToken).not.toHaveBeenCalled()
   })
 })

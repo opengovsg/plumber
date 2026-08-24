@@ -75,7 +75,7 @@ describe('s3', () => {
     it('should throw an error if path traversal is detected', () => {
       expect(() =>
         parseS3Id(`s3:${COMMON_S3_BUCKET}:abcd/../my file.txt`),
-      ).toThrowError(
+      ).toThrow(
         'Invalid S3 ID: path traversal detected in abcd/../my file.txt',
       )
     })
@@ -138,7 +138,7 @@ describe('s3', () => {
         getObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`, {
           flowId: 'wrong',
         }),
-      ).rejects.toThrowError(
+      ).rejects.toThrow(
         `S3 metadata mismatch for abcd/my file.txt: expected flowId=wrong, got flow-id`,
       )
     })

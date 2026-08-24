@@ -69,7 +69,7 @@ describe('send message', () => {
     mocks.httpPost.mockResolvedValueOnce(mockHttpResponse)
     const result = await sendMessageAction.run($)
     expect(result).toBeUndefined()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: mockHttpResponse.data,
     })
   })
@@ -79,7 +79,7 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run($)).rejects.toThrowError(
+    await expect(sendMessageAction.run($)).rejects.toThrow(
       'Empty message text',
     )
   })
@@ -89,7 +89,7 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run($)).rejects.toThrowError(
+    await expect(sendMessageAction.run($)).rejects.toThrow(
       'Empty message text',
     )
   })
@@ -114,7 +114,7 @@ describe('send message', () => {
       const httpError = new HttpError(error)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrowError(
+      await expect(sendMessageAction.run($)).rejects.toThrow(
         RetriableError,
       )
     },
@@ -158,7 +158,7 @@ describe('send message', () => {
       const httpError = new HttpError(error400)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrowError(stepErrorName)
+      await expect(sendMessageAction.run($)).rejects.toThrow(stepErrorName)
     },
   )
 
@@ -211,7 +211,7 @@ describe('send message', () => {
       const httpError = new HttpError(error)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrowError(stepErrorName)
+      await expect(sendMessageAction.run($)).rejects.toThrow(stepErrorName)
     },
   )
 
@@ -239,7 +239,7 @@ describe('send message', () => {
       const httpError = new HttpError(error)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw uncaught error
-      await expect(sendMessageAction.run($)).rejects.toThrowError()
+      await expect(sendMessageAction.run($)).rejects.toThrow()
     },
   )
 })

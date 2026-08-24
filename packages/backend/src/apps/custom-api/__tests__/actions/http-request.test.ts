@@ -213,7 +213,7 @@ describe('make http request', () => {
     mocks.httpRequest.mockRejectedValueOnce(httpError)
 
     // throw partial step error message
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
+    await expect(makeRequestAction.run($)).rejects.toThrow(
       'Status code: 403',
     )
   })
@@ -222,7 +222,7 @@ describe('make http request', () => {
     'should throw error for invalid custom headers (no field)',
     async () => {
       $.step.parameters.customHeaders = [{ value: 'test' }]
-      await expect(makeRequestAction.run($)).rejects.toThrowError()
+      await expect(makeRequestAction.run($)).rejects.toThrow()
     },
   )
 
@@ -231,7 +231,7 @@ describe('make http request', () => {
       { key: 'test', value: 'value1' },
       { key: 'test', value: 'value2' },
     ]
-    await expect(makeRequestAction.run($)).rejects.toThrowError()
+    await expect(makeRequestAction.run($)).rejects.toThrow()
   })
 
   it('should follow redirect once', async () => {
@@ -339,7 +339,7 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://beta.plumber.gov.sg'
     const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR)
     mocks.httpRequest.mockRejectedValueOnce(recursiveWebhookError)
-    await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
+    await expect(makeRequestAction.run($)).rejects.toThrow(StepError)
   })
 
   it('should throw step error if url resolves to blacklisted ip', async () => {
@@ -348,7 +348,7 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://1.2.3.4'
     const disallowedIpError = new Error(DISALLOWED_IP_RESOLVED_ERROR)
     mocks.httpRequest.mockRejectedValueOnce(disallowedIpError)
-    await expect(makeRequestAction.run($)).rejects.toThrowError(StepError)
+    await expect(makeRequestAction.run($)).rejects.toThrow(StepError)
   })
 
   it('should include timeout in the request config', async () => {
@@ -513,7 +513,7 @@ describe('make http request', () => {
         $.step.parameters.url = 'http://test.local/endpoint?1234'
 
         mocks.httpRequest.mockReturnValue('mock response')
-        await expect(makeRequestAction.run($)).rejects.toThrowError(
+        await expect(makeRequestAction.run($)).rejects.toThrow(
           'Invalid JSON data',
         )
       },

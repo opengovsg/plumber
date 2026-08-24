@@ -125,7 +125,7 @@ describe('Only continue if', () => {
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: true },
     })
   })
@@ -140,7 +140,7 @@ describe('Only continue if', () => {
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: true },
     })
   })
@@ -163,7 +163,7 @@ describe('Only continue if', () => {
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -182,7 +182,7 @@ describe('Only continue if', () => {
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -208,7 +208,7 @@ describe('Only continue if', () => {
     expect(result).toEqual({
       nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
     })
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -234,7 +234,7 @@ describe('Only continue if', () => {
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -249,7 +249,7 @@ describe('Only continue if', () => {
     })
 
     // throw partial step error message
-    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(
+    await expect(onlyContinueIfAction.run($)).rejects.toThrow(
       `Conditional logic block contains an unknown operator: ${invalidCondition}`,
     )
   })
@@ -263,7 +263,7 @@ describe('Only continue if', () => {
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: true },
     })
   })
@@ -286,7 +286,7 @@ describe('Only continue if', () => {
 
       const result = await onlyContinueIfAction.run($)
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { result: true },
       })
     },
@@ -300,6 +300,6 @@ describe('Only continue if', () => {
       text: '19 Nov 2021',
     })
 
-    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
+    await expect(onlyContinueIfAction.run($)).rejects.toThrow(StepError)
   })
 })

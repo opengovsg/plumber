@@ -116,13 +116,13 @@ describe.each([['ddb'], ['pg']])(
 
     it('should allow owners to find multiple rows', async () => {
       await expect(findMultipleRowsAction.run($)).resolves.toBeUndefined()
-      expect($.setActionItem).toBeCalled()
+      expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should allow editors to find multiple rows', async () => {
       $.user = editor
       await expect(findMultipleRowsAction.run($)).resolves.toBeUndefined()
-      expect($.setActionItem).toBeCalled()
+      expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should not allow viewers to find multiple rows', async () => {

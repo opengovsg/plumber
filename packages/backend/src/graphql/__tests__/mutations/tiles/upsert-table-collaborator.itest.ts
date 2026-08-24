@@ -188,7 +188,7 @@ describe.each([['ddb'], ['pg']])(
             },
             context,
           ),
-        ).rejects.toThrowError(ForbiddenError)
+        ).rejects.toThrow(ForbiddenError)
       })
 
       it('should allow transfer of owner role if you are owner, old owner will become editor', async () => {
@@ -229,7 +229,7 @@ describe.each([['ddb'], ['pg']])(
             },
             context,
           ),
-        ).rejects.toThrowError(BadUserInputError)
+        ).rejects.toThrow(BadUserInputError)
       })
     })
   },
