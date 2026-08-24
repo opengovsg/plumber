@@ -12,8 +12,8 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
-    "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:rehydrate": "DOTENV_CONFIG_PATH=\"${DOTENV_CONFIG_PATH:-.env}\" ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:backfill": "tsx src/scripts/archive-executions.ts",
+    "archive:rehydrate": "DOTENV_CONFIG_PATH=\"${DOTENV_CONFIG_PATH:-.env}\" tsx src/scripts/rehydrate-execution.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:aws-sdk",
@@ -27,14 +27,12 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@swc/core": "catalog:",
     "@types/luxon": "catalog:luxon",
     "@types/node": "catalog:",
     "@types/pg": "catalog:pg",
     "nodemon": "catalog:",
     "rimraf": "catalog:",
-    "ts-node": "catalog:",
-    "tsconfig-paths": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:vitest"
   }

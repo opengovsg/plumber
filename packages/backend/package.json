@@ -4,8 +4,8 @@
   "scripts": {
     "setup": "docker-compose -f docker-compose.dev.yml up -d",
     "teardown": "docker-compose -f docker-compose.dev.yml down",
-    "dev": "pnpm run build:watch -- --exec \"ts-node --swc src/server.ts\"",
-    "worker": "pnpm run build:watch -- --exec \"ts-node --swc src/worker.ts\"",
+    "dev": "pnpm run build:watch -- --exec \"tsx src/server.ts\"",
+    "worker": "pnpm run build:watch -- --exec \"tsx src/worker.ts\"",
     "prebuild": "rimraf ./dist",
     "build": "tsc && pnpm run copy-statics && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
@@ -25,11 +25,11 @@
     "readme:db:rollback": "This command rolls back the last migration BATCH, which might include more than one migration.",
     "db:rollback": "pnpm run db -- migrate:rollback",
     "db:migrate": "pnpm run db -- migrate:latest",
-    "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "postsetup": "tsx src/db/dynamodb_seeds/create_table.ts",
     "readme:dynamodb:seed": "echo 'Seeds the specified table with 10k rows, use with -- <YOUR_TABLE_ID>'",
-    "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
+    "dynamodb:seed": "tsx src/db/dynamodb_seeds/seed_rows.ts",
     "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
-    "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "dynamodb:setup": "tsx src/db/dynamodb_seeds/create_table.ts",
     "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
@@ -116,7 +116,6 @@
   },
   "devDependencies": {
     "@ai-sdk/provider": "catalog:ai-sdk",
-    "@swc/core": "catalog:",
     "@testcontainers/postgresql": "catalog:testcontainers",
     "@types/bcrypt": "catalog:",
     "@types/big.js": "catalog:big.js",
@@ -140,8 +139,7 @@
     "cpy-cli": "catalog:",
     "nodemon": "catalog:",
     "testcontainers": "catalog:testcontainers",
-    "ts-node": "catalog:",
-    "tsconfig-paths": "catalog:",
+    "tsx": "catalog:",
     "type-fest": "catalog:"
   },
   "version": "1.79.2"
