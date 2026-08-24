@@ -48,47 +48,53 @@ jobs:
           done
           echo "✅ All packages are hoisted to root"
 
-  lint-and-build:
-    name: Lint and Build
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     needs: setup
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Restore node_modules cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node_modules-
+      - uses: ./.github/actions/setup
       - name: Generate graphql artifacts
         run: npm run postinstall
       - run: npm run lint
       - run: echo "✅ Lint check passed."
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Generate graphql artifacts
+        run: npm run postinstall
+      - run: npm run typecheck
+      - run: echo "✅ Typecheck passed."
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Generate graphql artifacts
+        run: npm run postinstall
       - run: VITE_MODE=test npm run build
       - run: echo "✅ Build check passed."
 
-  test:
-    name: Test
+  test-backend-unit:
+    name: Test (backend unit)
     runs-on: ubuntu-latest
     needs: setup
     timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Restore node_modules cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node_modules-
+      - uses: ./.github/actions/setup
       - name: Generate graphql artifacts
         run: npm run postinstall
       - name: Configure Datadog Test Visibility
@@ -102,8 +108,62 @@ jobs:
           api_key: ${{ secrets.DD_API_KEY }}
           # we need to pin this for now since 5.68.0 breaks the ci
           js-tracer-version: 5.67.0
-      - run: npm run test
+      - run: npx turbo run test:unit --filter=backend
         env:
           # Required to allow Datadog to trace Vitest tests
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
-      - run: echo "✅ All tests passed."
+      - run: echo "✅ Backend unit tests passed."
+
+  test-backend-integration:
+    name: Test (backend integration)
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Generate graphql artifacts
+        run: npm run postinstall
+      - name: Configure Datadog Test Visibility
+        env:
+          DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+        uses: datadog/test-visibility-github-action@v2
+        with:
+          languages: js
+          service: ${{ secrets.DD_SERVICE_NAME }}
+          api_key: ${{ secrets.DD_API_KEY }}
+          # we need to pin this for now since 5.68.0 breaks the ci
+          js-tracer-version: 5.67.0
+      - run: npx turbo run test:integration --filter=backend
+        env:
+          # Required to allow Datadog to trace Vitest tests
+          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
+      - run: echo "✅ Backend integration tests passed."
+
+  test-frontend:
+    name: Test (frontend)
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Generate graphql artifacts
+        run: npm run postinstall
+      - name: Configure Datadog Test Visibility
+        env:
+          DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+        uses: datadog/test-visibility-github-action@v2
+        with:
+          languages: js
+          service: ${{ secrets.DD_SERVICE_NAME }}
+          api_key: ${{ secrets.DD_API_KEY }}
+          # we need to pin this for now since 5.68.0 breaks the ci
+          js-tracer-version: 5.67.0
+      - run: npx turbo run test --filter=frontend
+        env:
+          # Required to allow Datadog to trace Vitest tests
+          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
+      - run: echo "✅ Frontend tests passed."
