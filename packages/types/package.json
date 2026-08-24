@@ -1,5 +1,6 @@
 {
   "name": "@plumber/types",
+  "private": true,
   "description": "Shared types for plumber",
   "types": "./index.d.ts",
   "version": "1.79.2"
