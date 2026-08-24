@@ -9,6 +9,12 @@
     "lint:fix": {
       "outputs": []
     },
+    "format": {
+      "outputs": []
+    },
+    "format:fix": {
+      "outputs": []
+    },
     "typecheck": {
       "outputs": []
     },
