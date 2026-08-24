@@ -17,6 +17,8 @@
     "resolvePackageJsonExports": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "types": [],
+    "noUncheckedSideEffectImports": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
