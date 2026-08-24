@@ -1,5 +1,4 @@
 import { IDynamicAction, IGlobalVariable, IJSONObject } from '@plumber/types'
-
 import { z } from 'zod'
 
 import { BadUserInputError } from '@/errors/graphql-errors'

@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -43,9 +42,8 @@ vi.mock('@/helpers/ses-email-helper', async () => {
 
 vi.mock('@/helpers/s3', async () => {
   // No reason to mock other things like parseS3Id
-  const actual = await vi.importActual<typeof import('@/helpers/s3')>(
-    '@/helpers/s3',
-  )
+  const actual =
+    await vi.importActual<typeof import('@/helpers/s3')>('@/helpers/s3')
   return {
     ...actual,
     getObjectFromS3Id: mocks.getObjectFromS3Id,

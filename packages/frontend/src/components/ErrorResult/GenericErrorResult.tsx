@@ -1,7 +1,6 @@
-import { IJSONObject } from '@plumber/types'
-
 import { Box, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import { IJSONObject } from '@plumber/types'
 
 import ErrorDetailsCollapse from './ErrorDetailsCollapse'
 import SupportContactMessage from './SupportContactMessage'

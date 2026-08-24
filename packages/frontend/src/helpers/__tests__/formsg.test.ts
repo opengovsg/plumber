@@ -1,5 +1,4 @@
 import { IStep } from '@plumber/types'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -54,7 +53,7 @@ describe('shouldWarnMrfOnlyContinueIf', () => {
       appKey: 'formsg',
       key: 'mrfSubmission',
       position,
-    } as IStep)
+    }) as IStep
 
   it('is false when the step is not "Only continue if"', () => {
     const step = { ...onlyContinueIfStep, key: 'ifThen' } as IStep

@@ -1,5 +1,4 @@
 import type { ITemplate } from '@plumber/types'
-
 import { describe, expect, it, vi } from 'vitest'
 
 import { searchTemplates } from '../template-search'

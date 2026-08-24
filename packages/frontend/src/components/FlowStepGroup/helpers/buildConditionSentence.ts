@@ -35,7 +35,7 @@ export function buildConditionSentence(
 
     const full =
       part.type === 'variable'
-        ? resolveVariableLabel(part.id) ?? part.label
+        ? (resolveVariableLabel(part.id) ?? part.label)
         : part.text
 
     plain.push(full)

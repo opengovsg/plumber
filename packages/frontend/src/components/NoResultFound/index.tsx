@@ -1,5 +1,5 @@
-import { ReactElement } from 'react'
 import { Stack, Text } from '@chakra-ui/react'
+import { ReactElement } from 'react'
 
 type NoResultFoundProps = {
   description: string

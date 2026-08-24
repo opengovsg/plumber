@@ -12,9 +12,8 @@ vi.mock('@/config/app', () => ({
 
 describe('sso login cookie', () => {
   it('clears the cookie with the same SameSite and Secure flags used to set it', async () => {
-    const { setSsoLoginCookie, consumeSsoLoginCookie } = await import(
-      '../sso-login'
-    )
+    const { setSsoLoginCookie, consumeSsoLoginCookie } =
+      await import('../sso-login')
 
     const res = {
       cookie: vi.fn(),

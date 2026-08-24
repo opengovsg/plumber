@@ -2,7 +2,11 @@
   "version": 1,
   "hooks": {
     "beforeShellExecution": [
-      { "command": "./.cursor/hooks/require-nvm.sh", "timeout": 10, "loop_limit": 3 }
+      {
+        "command": "./.cursor/hooks/require-nvm.sh",
+        "timeout": 10,
+        "loop_limit": 3
+      }
     ]
   }
 }

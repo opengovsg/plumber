@@ -1,5 +1,4 @@
 import type { TransformSpec } from '../../../../common/transform-spec'
-
 import { fields } from './fields'
 import { transformData } from './transform-data'
 

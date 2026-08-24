@@ -121,10 +121,13 @@ const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
       .orderBy('created_at', 'desc')
 
     const mergedConnections = Object.values(
-      [...sharedConnections, ...connections].reduce((acc, obj) => {
-        acc[obj.id] = obj // last one wins
-        return acc
-      }, {} as Record<string, Connection>),
+      [...sharedConnections, ...connections].reduce(
+        (acc, obj) => {
+          acc[obj.id] = obj // last one wins
+          return acc
+        },
+        {} as Record<string, Connection>,
+      ),
     )
 
     return {

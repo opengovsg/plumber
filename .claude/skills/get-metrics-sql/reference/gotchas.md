@@ -97,7 +97,7 @@ is **wrong** for a `timestamptz` column — it double-shifts the value by the SG
 form above truncates the same instant correctly to `2026-04-01 00:00` (Q2).
 
 **If a column is genuinely naive** (verified against the live schema, not assumed) — e.g. it was
-declared with an explicit `useTz: false` — then *that* column needs the round-trip instead:
+declared with an explicit `useTz: false` — then _that_ column needs the round-trip instead:
 
 ```sql
 date_trunc('quarter', (naive_created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Singapore')
@@ -129,7 +129,7 @@ See [grafana.md](grafana.md) for the full Grafana-specific ruleset.
 
 ## 4. `connections.key` is actually the app key — naming diverges from `steps.app_key`
 
-On `steps`, the app is identified by the `app_key` column. On `connections`, the *same concept* (which
+On `steps`, the app is identified by the `app_key` column. On `connections`, the _same concept_ (which
 app this connection/credential belongs to, e.g. `'slack'`) is stored in a column just called `key` —
 there is no separate `app_key` column on `connections`. Confirmed by usage across the codebase, e.g.
 `packages/backend/src/graphql/mutations/update-step.ts:64`: `connection.key !== input.appKey`

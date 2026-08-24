@@ -1,3 +1,4 @@
+import { Box, Flex, Icon, Image, Text, Textarea } from '@chakra-ui/react'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -8,7 +9,6 @@ import {
 } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Flex, Icon, Image, Text, Textarea } from '@chakra-ui/react'
 
 import {
   type ClarificationQuestion,

@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { InternalAxiosRequestConfig } from 'axios'
 import { describe, expect, it, vi } from 'vitest'
 

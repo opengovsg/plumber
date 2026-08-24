@@ -64,12 +64,12 @@ guess a key from the display name (see the FormSG example below for why that's u
 
 ## Starter table (confirm via grep — don't treat as exhaustive or stale-proof)
 
-| App display name | `app_key` | Trigger/action display name | `key` | `type` |
-|---|---|---|---|---|
-| FormSG | `formsg` | New form response | `newSubmission` | trigger |
-| FormSG | `formsg` | New form response (hidden MRF continuation) | `mrfSubmission` | action |
-| Ownself Gather | `gathersg` | New instant workflow | `newInstantWorkflow` | trigger |
-| Ownself Gather | `gathersg` | Create case | `createCase` | action |
+| App display name | `app_key`  | Trigger/action display name                 | `key`                | `type`  |
+| ---------------- | ---------- | ------------------------------------------- | -------------------- | ------- |
+| FormSG           | `formsg`   | New form response                           | `newSubmission`      | trigger |
+| FormSG           | `formsg`   | New form response (hidden MRF continuation) | `mrfSubmission`      | action  |
+| Ownself Gather   | `gathersg` | New instant workflow                        | `newInstantWorkflow` | trigger |
+| Ownself Gather   | `gathersg` | Create case                                 | `createCase`         | action  |
 
 This table is a starting point for the most commonly-referenced apps, not a substitute for grepping —
 apps get added/renamed over time, so always confirm against the current source in

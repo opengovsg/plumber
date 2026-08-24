@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import updateFlowTransferStatus from '@/graphql/mutations/update-flow-transfer-status'
@@ -8,8 +9,8 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import { generateMockFlow, generateMockUser } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 /**
  * BUSINESS-CRITICAL TESTS. This file pins down the rule

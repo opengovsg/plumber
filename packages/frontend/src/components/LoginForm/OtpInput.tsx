@@ -1,6 +1,6 @@
-import { Dispatch, SetStateAction } from 'react'
 import { FormControl, FormLabel, Input } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { Dispatch, SetStateAction } from 'react'
 
 interface Props {
   isLoading: boolean

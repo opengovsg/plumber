@@ -1,5 +1,4 @@
 import type { IExecutionStep } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 import { describe, expect, it } from 'vitest'
 
@@ -114,7 +113,7 @@ describe('compare-calculate prototype', () => {
 
   describe('getDataOutMetadata (variable picker labels)', () => {
     const fakeStep = (dataOut: Record<string, unknown>) =>
-      ({ dataOut } as unknown as IExecutionStep)
+      ({ dataOut }) as unknown as IExecutionStep
 
     it('labels the boolean output for compare / gap', async () => {
       const meta = await getDataOutMetadata(fakeStep({ result: 'true' }))

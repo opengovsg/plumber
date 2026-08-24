@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react'
-import { createContext, useEffect, useState } from 'react'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import type { LDContext, LDEvaluationDetail } from 'launchdarkly-js-client-sdk'
 import { basicLogger as LDLogger } from 'launchdarkly-js-client-sdk'
 import type { ProviderConfig as LDProviderConfig } from 'launchdarkly-react-client-sdk'
 import { useLDClient, withLDProvider } from 'launchdarkly-react-client-sdk'
+import type { ReactNode } from 'react'
+import { createContext, useEffect, useState } from 'react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import appConfig from '@/config/app'

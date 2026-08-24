@@ -1,6 +1,3 @@
-import { useMemo, useState } from 'react'
-import { ErrorBoundary } from 'react-error-boundary'
-import { RiArrowDownSLine } from 'react-icons/ri'
 import {
   Box,
   Flex,
@@ -22,6 +19,9 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
+import { useMemo, useState } from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
+import { RiArrowDownSLine } from 'react-icons/ri'
 
 import { BrokenPipeIcon } from '@/components/Icons'
 

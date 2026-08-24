@@ -63,7 +63,7 @@ Before proposing monitors:
 
 - `search_datadog_monitors` — look for existing monitors on the same
   metric/query or with a `[Plumber]`-prefixed name / `service:plumber` tag
-  covering the same failure mode. Propose *changes to* an existing monitor
+  covering the same failure mode. Propose _changes to_ an existing monitor
   rather than a duplicate where one exists.
 - `get_monitor_coverage` (alerting toolset, if enabled) — check for stated
   coverage gaps on the service.

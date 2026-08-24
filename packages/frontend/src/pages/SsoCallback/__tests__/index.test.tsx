@@ -1,8 +1,8 @@
+import type { MockedResponse } from '@apollo/client/testing'
+import { MockedProvider } from '@apollo/client/testing'
 // @vitest-environment jsdom
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import type { MockedResponse } from '@apollo/client/testing'
-import { MockedProvider } from '@apollo/client/testing'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import PublicLayout from '@/components/PublicLayout'

@@ -2,7 +2,6 @@ import type { IGlobalVariable, IUserAddedConnectionAuth } from '@plumber/types'
 
 import { POSTMAN_TEST_LABEL_PREFIX, PostmanEnv } from '../common/constants'
 import getPostmanEnv from '../common/get-postman-env'
-
 import isStillVerified from './is-still-verified'
 import { authDataSchema } from './schema'
 

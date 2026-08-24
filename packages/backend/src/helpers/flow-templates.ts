@@ -1,5 +1,4 @@
 import type { IApp, IJSONObject, ITemplateStep } from '@plumber/types'
-
 import get from 'lodash.get'
 
 import apps from '@/apps'

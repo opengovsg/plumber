@@ -1,5 +1,5 @@
-import { memo, useState } from 'react'
 import { Collapse, Text } from '@chakra-ui/react'
+import { memo, useState } from 'react'
 
 import VariablesList from '@/components/VariablesList'
 import { StepWithVariables, Variable } from '@/helpers/variables'

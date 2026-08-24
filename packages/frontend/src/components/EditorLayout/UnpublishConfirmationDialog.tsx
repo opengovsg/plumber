@@ -1,7 +1,3 @@
-import type { IStep } from '@plumber/types'
-
-import { RefObject } from 'react'
-import { BiCheck, BiX } from 'react-icons/bi'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -15,6 +11,9 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import type { IStep } from '@plumber/types'
+import { RefObject } from 'react'
+import { BiCheck, BiX } from 'react-icons/bi'
 
 import { FORMSG_APP_KEY } from '@/helpers/formsg'
 

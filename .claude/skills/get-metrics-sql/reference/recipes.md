@@ -42,6 +42,7 @@ COMMIT;
 ```
 
 Notes:
+
 - "gathersg trigger" / "slack action" resolved via [resolving-app-keys.md](resolving-app-keys.md) to
   `app_key='gathersg' AND type='trigger'` and `app_key='slack' AND type='action'`.
 - The app comes from `execution_steps.app_key`, which records what actually ran. `steps.app_key`
@@ -49,8 +50,7 @@ Notes:
 - `steps` is joined only for `type`, with no `deleted_at` guard. Deleted steps keep their rows.
 - A pipe counts only if both steps ran in the quarter. A slack action that every execution skipped,
   e.g. behind an if-then branch, does not count.
-- `execution_steps.app_key` exists only from Mar 2023. `execution_steps.key` exists only from Jun
-  2025. Filter on `es.key` only for periods after that.
+- `execution_steps.app_key` exists only from Mar 2023. `execution_steps.key` exists only from Jun 2025. Filter on `es.key` only for periods after that.
 - `GROUP BY e.flow_id` with `bool_or` checks both conditions in one pass over `execution_steps`.
   Separate `EXISTS` subqueries would scan it twice.
 - The OOM guard wraps the query because it reads `execution_steps`. See [gotchas.md](gotchas.md) §5.
@@ -91,6 +91,7 @@ ORDER BY pipe_count DESC;
 ```
 
 Notes:
+
 - "Published" = `flows.active = true` (see [glossary.md](glossary.md)'s published-vs-active-pipe
   disambiguation) — not the computed "active pipe" definition.
 - "Owner" = `flows.user_id` joined to `users`, not a collaborator.
@@ -206,6 +207,7 @@ ORDER BY bar.curr_quarter;
 ```
 
 Notes:
+
 - `executions.created_at` is `timestamptz` (confirmed against the live schema — see
   [gotchas.md](gotchas.md)'s timezone gotcha), so bucketing uses a **single**
   `e.created_at AT TIME ZONE 'Asia/Singapore'` conversion (not a round-trip through UTC), and the
@@ -271,6 +273,7 @@ FROM counts;
 ```
 
 Notes:
+
 - `curr_start` / `curr_end` are the cast macros with no `AT TIME ZONE`. Only `prev_start` converts to
   SGT, because it needs month arithmetic. See [grafana.md](grafana.md)'s macro-casting rules.
 - No `deleted_at` guard on `executions` or `flows`. See [gotchas.md](gotchas.md)'s activity-metrics

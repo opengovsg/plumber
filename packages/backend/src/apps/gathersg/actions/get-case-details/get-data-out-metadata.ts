@@ -5,7 +5,6 @@ import {
   createEmailMetadata,
 } from '../../common/data-out-metadata-helpers'
 import { decodeFieldName } from '../../common/utils'
-
 import { dataOutSchema } from './schema'
 
 type Attachment = {

@@ -1,5 +1,5 @@
+import { Flex, Icon, Text, Tooltip } from '@chakra-ui/react'
 import type { IStep } from '@plumber/types'
-
 import type { ReactNode } from 'react'
 import {
   useCallback,
@@ -10,7 +10,6 @@ import {
   useState,
 } from 'react'
 import { BiSolidCheckCircle } from 'react-icons/bi'
-import { Flex, Icon, Text, Tooltip } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'

@@ -1,5 +1,5 @@
-import { memo } from 'react'
 import { Flex, Grid, GridItem, Text } from '@chakra-ui/react'
+import { memo } from 'react'
 
 interface PageTitleProps {
   title: string

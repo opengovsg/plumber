@@ -67,7 +67,7 @@ function getForwardedPeer(req: Request): ipaddr.IPv4 | ipaddr.IPv6 | null {
   const forwardedFor = req.headers['x-forwarded-for']
   const chain = Array.isArray(forwardedFor)
     ? forwardedFor.join(',')
-    : forwardedFor ?? ''
+    : (forwardedFor ?? '')
   const entries = chain
     .split(',')
     .map((entry) => entry.trim())

@@ -1,3 +1,7 @@
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 /**
  * Fetches a prompt from Langfuse and saves it to docs/plans/prompts/<name>_v<version>.md
  *
@@ -12,9 +16,6 @@
  *   pnpm run get-prompt chat --version=154
  */
 import { LangfuseClient } from '@langfuse/client'
-import { mkdirSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 

@@ -1,5 +1,4 @@
 import type { IApp, IJSONObject } from '@plumber/types'
-
 import { describe, expect, it, vi } from 'vitest'
 
 import globalVariable from '@/helpers/global-variable'

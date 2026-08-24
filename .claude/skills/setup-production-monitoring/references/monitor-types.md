@@ -11,14 +11,14 @@ and fix this doc.
 
 ## Signal → monitor type cheat-sheet
 
-| To detect… | Use | `type` | Depends on |
-| --- | --- | --- | --- |
-| Errors / throughput / latency of an instrumented operation | **Auto-generated trace metrics** `trace.<op>.errors` / `.hits` / latency | `query alert` | A span with that op-name flowing (e.g. `tracer.wrap('workers.action', …)`). **No retention dependency — prefer this.** |
-| A log line or log-field threshold | Log monitor over indexed logs | `log alert` | The `logger.error/warn/info` call existing; logs being indexed (standard tier; max evaluation window 2 days) |
-| A condition on **span tags** (`flowId`, `appKey`, …) | Trace-analytics (indexed spans) | `trace-analytics alert` | Span tags exist **and** a custom retention filter indexes those spans — **code cannot confirm this; always flag it** |
-| Frontend errors / user impact | RUM monitor | `rum alert` | RUM auto-collection (already on in prod, 100% sampling, post-consent) |
-| Deviation from a seasonal/trending baseline | `anomalies()` wrapper on any metric query | `query alert` | Same as the underlying metric |
-| "It stopped happening" (heartbeat) | Low-threshold `below` condition or `notify_no_data` on the relevant metric/log count | (same as base type) | Expected baseline volume — confirm with the author |
+| To detect…                                                 | Use                                                                                  | `type`                  | Depends on                                                                                                             |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Errors / throughput / latency of an instrumented operation | **Auto-generated trace metrics** `trace.<op>.errors` / `.hits` / latency             | `query alert`           | A span with that op-name flowing (e.g. `tracer.wrap('workers.action', …)`). **No retention dependency — prefer this.** |
+| A log line or log-field threshold                          | Log monitor over indexed logs                                                        | `log alert`             | The `logger.error/warn/info` call existing; logs being indexed (standard tier; max evaluation window 2 days)           |
+| A condition on **span tags** (`flowId`, `appKey`, …)       | Trace-analytics (indexed spans)                                                      | `trace-analytics alert` | Span tags exist **and** a custom retention filter indexes those spans — **code cannot confirm this; always flag it**   |
+| Frontend errors / user impact                              | RUM monitor                                                                          | `rum alert`             | RUM auto-collection (already on in prod, 100% sampling, post-consent)                                                  |
+| Deviation from a seasonal/trending baseline                | `anomalies()` wrapper on any metric query                                            | `query alert`           | Same as the underlying metric                                                                                          |
+| "It stopped happening" (heartbeat)                         | Low-threshold `below` condition or `notify_no_data` on the relevant metric/log count | (same as base type)     | Expected baseline volume — confirm with the author                                                                     |
 
 **Preference order: trace metrics → log monitor → trace-analytics.**
 Auto-generated trace metrics always exist for spans that flow and survive any
@@ -42,11 +42,11 @@ default to thresholds unless the author confirmed seasonality.
 
 ## Severity rubric (from the grilled urgency)
 
-| Agreed urgency | `priority` | `renotify_interval` | Other options |
-| --- | --- | --- | --- |
-| **Page** — act within minutes | 1–2 | 10–30 (min; aggressive) | Consider `escalation_message`; `notify_no_data: true` *only if* absence of data is itself the failure |
-| **Ticket** — act within a day | 3 | omit (no renotify) | Sustained evaluation window (10–15m+) |
-| **Dashboard-only** | — | — | **No monitor.** Suggest a dashboard widget instead (or a muted monitor if the author insists) |
+| Agreed urgency                | `priority` | `renotify_interval`     | Other options                                                                                         |
+| ----------------------------- | ---------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Page** — act within minutes | 1–2        | 10–30 (min; aggressive) | Consider `escalation_message`; `notify_no_data: true` _only if_ absence of data is itself the failure |
+| **Ticket** — act within a day | 3          | omit (no renotify)      | Sustained evaluation window (10–15m+)                                                                 |
+| **Dashboard-only**            | —          | —                       | **No monitor.** Suggest a dashboard widget instead (or a muted monitor if the author insists)         |
 
 Noise avoidance defaults:
 
@@ -221,17 +221,17 @@ auto-tuning) and exporting JSON — say so in the plan when proposing one.
 
 ## Common `options` fields (verified meanings)
 
-| Field | Meaning |
-| --- | --- |
-| `thresholds.critical` / `.warning` | Alert / warn values; `critical` must match the threshold in the query string |
-| `notify_no_data` (default false) | Alert when data stops reporting — only where absence is itself the failure |
-| `no_data_timeframe` | Minutes before a no-data alert (default ~10; use ≥ 2× evaluation window) |
-| `renotify_interval` | Minutes between re-notifications while unresolved; omit/0 = no renotify |
-| `evaluation_delay` | Metric alerts only; seconds to delay evaluation for late-arriving data |
-| `new_group_delay` | Seconds to skip evaluation for newly-appearing groups (multi-alert) |
-| `require_full_window` (default true) | Set false for sparse metrics |
-| `include_tags` (default true) | Put triggering tags in the alert title |
-| `timeout_h` | Hours until a triggered state auto-resolves |
+| Field                                | Meaning                                                                      |
+| ------------------------------------ | ---------------------------------------------------------------------------- |
+| `thresholds.critical` / `.warning`   | Alert / warn values; `critical` must match the threshold in the query string |
+| `notify_no_data` (default false)     | Alert when data stops reporting — only where absence is itself the failure   |
+| `no_data_timeframe`                  | Minutes before a no-data alert (default ~10; use ≥ 2× evaluation window)     |
+| `renotify_interval`                  | Minutes between re-notifications while unresolved; omit/0 = no renotify      |
+| `evaluation_delay`                   | Metric alerts only; seconds to delay evaluation for late-arriving data       |
+| `new_group_delay`                    | Seconds to skip evaluation for newly-appearing groups (multi-alert)          |
+| `require_full_window` (default true) | Set false for sparse metrics                                                 |
+| `include_tags` (default true)        | Put triggering tags in the alert title                                       |
+| `timeout_h`                          | Hours until a triggered state auto-resolves                                  |
 
 ## Monitor `type` values (verified enum, for reference)
 

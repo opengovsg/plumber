@@ -1,10 +1,9 @@
-import type { IExecution } from '@plumber/types'
-
-import { useEffect } from 'react'
-import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
+import type { IExecution } from '@plumber/types'
+import { useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 
 import Container from '@/components/Container'
 import ExecutionRow from '@/components/ExecutionRow'

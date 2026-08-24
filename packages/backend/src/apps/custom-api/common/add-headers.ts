@@ -1,5 +1,4 @@
 import { IGlobalVariable, TBeforeRequest } from '@plumber/types'
-
 import { InternalAxiosRequestConfig } from 'axios'
 
 /**

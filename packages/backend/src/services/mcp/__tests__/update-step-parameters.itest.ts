@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
@@ -40,9 +41,10 @@ vi.mock('@/apps/formsg/triggers/new-submission/fetch-form-schema', () => ({
 }))
 
 vi.mock('@/apps/formsg/auth/verify-credentials', async (importOriginal) => {
-  const actual = await importOriginal<
-    typeof import('@/apps/formsg/auth/verify-credentials')
-  >()
+  const actual =
+    await importOriginal<
+      typeof import('@/apps/formsg/auth/verify-credentials')
+    >()
   return {
     ...actual,
     parseFormIdFormat: mocks.parseFormIdFormat,

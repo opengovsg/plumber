@@ -1,8 +1,7 @@
-import { IAction, ITrigger } from '@plumber/types'
-
-import { MdLightbulbOutline, MdOpenInNew } from 'react-icons/md'
 import { Flex, HStack, Icon, Link, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import { IAction, ITrigger } from '@plumber/types'
+import { MdLightbulbOutline, MdOpenInNew } from 'react-icons/md'
 
 interface LearnFromGuideInfoboxProps {
   selectedActionOrTrigger: IAction | ITrigger | undefined

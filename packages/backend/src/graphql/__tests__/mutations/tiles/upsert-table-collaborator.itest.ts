@@ -7,7 +7,6 @@ import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import upsertTableCollaborator from '../../../mutations/tiles/upsert-table-collaborator'
-
 import { generateMockContext, generateMockTable } from './table.mock'
 
 const mocks = vi.hoisted(() => ({

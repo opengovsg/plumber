@@ -1,12 +1,11 @@
-import { IGlobalVariable } from '@plumber/types'
-
 import crypto from 'crypto'
+
+import { IGlobalVariable } from '@plumber/types'
 
 import appConfig from '@/config/app'
 import logger from '@/helpers/logger'
 
 import { HEX_ENCODED_FIELD_PREFIX } from '../common/constants'
-
 import schema from './schema'
 
 function getInternalId(data: any) {

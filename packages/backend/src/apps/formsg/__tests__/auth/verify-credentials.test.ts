@@ -1,5 +1,4 @@
 import { IGlobalVariable, IHttpClient } from '@plumber/types'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'

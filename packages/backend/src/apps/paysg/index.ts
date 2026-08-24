@@ -1,8 +1,8 @@
 import type { IApp } from '@plumber/types'
 
-import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
+import addAuthHeader from './common/add-auth-header'
 
 const app: IApp = {
   name: 'PaySG',

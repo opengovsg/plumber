@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import { FaArrowCircleUp } from 'react-icons/fa'
-import { FaCircleStop } from 'react-icons/fa6'
 import {
   Box,
   Checkbox,
@@ -15,6 +12,9 @@ import {
   Thead,
   Tr,
 } from '@chakra-ui/react'
+import { useState } from 'react'
+import { FaArrowCircleUp } from 'react-icons/fa'
+import { FaCircleStop } from 'react-icons/fa6'
 
 import type { ColumnTableData } from '@/hooks/useChatStream'
 

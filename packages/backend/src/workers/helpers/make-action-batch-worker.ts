@@ -3,7 +3,6 @@ import type {
   IActionJobData,
   RunBatchJobResult,
 } from '@plumber/types'
-
 import {
   type JobPro,
   UnrecoverableError,

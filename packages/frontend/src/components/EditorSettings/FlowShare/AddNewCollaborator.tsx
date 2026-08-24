@@ -1,7 +1,3 @@
-import { IFlow, IFlowCollabRole } from '@plumber/types'
-
-import { BaseSyntheticEvent, useCallback, useRef, useState } from 'react'
-import { FieldValues, useForm } from 'react-hook-form'
 import {
   Flex,
   FormControl,
@@ -12,6 +8,9 @@ import {
 } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Button, Input } from '@opengovsg/design-system-react'
+import { IFlow, IFlowCollabRole } from '@plumber/types'
+import { BaseSyntheticEvent, useCallback, useRef, useState } from 'react'
+import { FieldValues, useForm } from 'react-hook-form'
 import * as yup from 'yup'
 
 import CollaboratorRoleSelect from '@/components/CollaboratorRoleSelect'

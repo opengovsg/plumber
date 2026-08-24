@@ -50,26 +50,32 @@ export const setCurrentUserContext = async ({
   return context
 }
 
-const isAuthenticated = rule()(
-  async (_parent, _args, ctx: UnauthenticatedContext) => {
-    if (ctx.currentUser == null) {
-      throw new UnauthorisedError()
-    }
-    return ctx.currentUser != null
-  },
-)
+const isAuthenticated = rule()(async (
+  _parent,
+  _args,
+  ctx: UnauthenticatedContext,
+) => {
+  if (ctx.currentUser == null) {
+    throw new UnauthorisedError()
+  }
+  return ctx.currentUser != null
+})
 
-const isViewKey = rule()(
-  async (_parent, _args, ctx: UnauthenticatedContext) => {
-    return ctx.tilesViewKey != null
-  },
-)
+const isViewKey = rule()(async (
+  _parent,
+  _args,
+  ctx: UnauthenticatedContext,
+) => {
+  return ctx.tilesViewKey != null
+})
 
-const isAdminOperation = rule()(
-  async (_parent, _args, ctx: UnauthenticatedContext) => {
-    return ctx.isAdminOperation
-  },
-)
+const isAdminOperation = rule()(async (
+  _parent,
+  _args,
+  ctx: UnauthenticatedContext,
+) => {
+  return ctx.isAdminOperation
+})
 
 const rateLimitRule = createRateLimitRule({
   identifyContext: (ctx: UnauthenticatedContext) => {

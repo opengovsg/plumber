@@ -1,11 +1,10 @@
-import { IFlowTransfer } from '@plumber/types'
-
-import { useCallback, useState } from 'react'
-import { type IconType } from 'react-icons'
-import { BiCheck, BiX } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton, useToast } from '@opengovsg/design-system-react'
+import { IFlowTransfer } from '@plumber/types'
+import { useCallback, useState } from 'react'
+import { type IconType } from 'react-icons'
+import { BiCheck, BiX } from 'react-icons/bi'
 
 import client from '@/graphql/client'
 import { UPDATE_FLOW_TRANSFER_STATUS } from '@/graphql/mutations/update-flow-transfer-status'

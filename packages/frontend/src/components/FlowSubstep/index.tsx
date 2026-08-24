@@ -1,8 +1,7 @@
+import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 import type { IAction, IStep, ISubstep, ITrigger } from '@plumber/types'
-
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
-import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
