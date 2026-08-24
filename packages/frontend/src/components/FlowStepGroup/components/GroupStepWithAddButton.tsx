@@ -4,8 +4,10 @@ import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { FlowStep } from '@/exports/components'
+import { isOnlyContinueIfStep } from '@/helpers/toolbox'
 
 import { HoverAddStepButton } from '../Content/IfThen/HoverAddStepButton'
+import OnlyContinueIf from '../Content/OnlyContinueIf'
 
 interface GroupStepWithAddButtonProps {
   step: IStep
@@ -15,6 +17,12 @@ interface GroupStepWithAddButtonProps {
   allowReorder?: boolean
   showEmptyAction?: boolean
   canChildStepsReorder?: boolean
+  /**
+   * Draw an only-continue-if step as a CONTINUE IF condition block instead of
+   * an ordinary step card. Set by the if-then V2 render paths only, so the flag
+   * is read once by the parent rather than by every step in the list.
+   */
+  asConditionBlock?: boolean
 }
 
 export default function GroupStepWithAddButton(
@@ -28,19 +36,30 @@ export default function GroupStepWithAddButton(
     allowReorder,
     showEmptyAction,
     canChildStepsReorder,
+    asConditionBlock = false,
   } = props
   const { isDrawerOpen, readOnly } = useContext(EditorContext)
 
   return (
     <>
-      <FlowStep
-        step={step}
-        // branch steps are always nested
-        isNested={true}
-        isLastStep={isLastStep}
-        allowReorder={allowReorder}
-        canChildStepsReorder={canChildStepsReorder}
-      />
+      {asConditionBlock && isOnlyContinueIfStep(step) ? (
+        <OnlyContinueIf
+          step={step}
+          isLastStep={isLastStep}
+          isNested={true}
+          allowReorder={allowReorder}
+          canChildStepsReorder={canChildStepsReorder}
+        />
+      ) : (
+        <FlowStep
+          step={step}
+          // branch steps are always nested
+          isNested={true}
+          isLastStep={isLastStep}
+          allowReorder={allowReorder}
+          canChildStepsReorder={canChildStepsReorder}
+        />
+      )}
       {!isOverlay && (
         <HoverAddStepButton
           isDisabled={readOnly || !canAddStep}
