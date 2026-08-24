@@ -1,5 +1,4 @@
 import type { ISystemAddedConnectionAuth } from '@plumber/types'
-
 import { type PartialModelObject } from 'objection'
 
 import { getM365TenantInfo, M365TenantKey } from '@/config/app-env-vars/m365'

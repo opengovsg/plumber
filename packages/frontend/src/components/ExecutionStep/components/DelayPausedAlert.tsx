@@ -1,8 +1,7 @@
-import type { IExecution } from '@plumber/types'
-
-import { Link } from 'react-router-dom'
 import { Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import type { IExecution } from '@plumber/types'
+import { Link } from 'react-router-dom'
 
 import { FLOW_EDITOR } from '@/config/urls'
 

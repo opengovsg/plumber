@@ -1,5 +1,5 @@
-import { useCallback, useContext, useEffect, useState } from 'react'
 import { Box, CloseButton } from '@chakra-ui/react'
+import { useCallback, useContext, useEffect, useState } from 'react'
 
 import { BANNER_TEXT_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'

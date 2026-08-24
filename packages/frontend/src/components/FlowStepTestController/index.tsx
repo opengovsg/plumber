@@ -1,15 +1,3 @@
-import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
-
-import {
-  forwardRef,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-import { useFormContext } from 'react-hook-form'
-import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 import {
   Box,
   Flex,
@@ -27,6 +15,17 @@ import {
   BxsInfoCircle,
   Infobox,
 } from '@opengovsg/design-system-react'
+import { IBaseTrigger, IStep, ITriggerInstructions } from '@plumber/types'
+import {
+  forwardRef,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { useFormContext } from 'react-hook-form'
+import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 
 import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
 import { EditorContext } from '@/contexts/Editor'
@@ -36,7 +35,6 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
-
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
 import { useTestDetails } from './useTestDetails'
@@ -81,8 +79,8 @@ const CheckStepTooltip = forwardRef<HTMLDivElement, CheckStepTooltipProps>(
           isReadOnly
             ? 'Unpublish your pipe to check step'
             : hasDeletedVars
-            ? 'Remove variables from deleted steps to check step'
-            : 'Complete required fields to check step'
+              ? 'Remove variables from deleted steps to check step'
+              : 'Complete required fields to check step'
         }
         aria-label="check step tooltip"
         isDisabled={isDisabled}

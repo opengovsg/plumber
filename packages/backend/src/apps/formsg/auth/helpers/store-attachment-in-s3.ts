@@ -1,9 +1,8 @@
-import { IGlobalVariable } from '@plumber/types'
-
 import {
   DecryptedAttachments,
   FormField,
 } from '@opengovsg/formsg-sdk/dist/types'
+import { IGlobalVariable } from '@plumber/types'
 
 import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
 

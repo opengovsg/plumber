@@ -1,5 +1,4 @@
 import type { MutationResolvers } from '../../__generated__/types.generated'
-
 import createRow from './create-row'
 import createRows from './create-rows'
 import createTable from './create-table'

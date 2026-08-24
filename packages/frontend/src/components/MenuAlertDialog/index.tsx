@@ -1,4 +1,3 @@
-import { type MouseEventHandler } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -8,6 +7,7 @@ import {
   AlertDialogOverlay,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { type MouseEventHandler } from 'react'
 
 import MarkdownRenderer from '../MarkdownRenderer'
 

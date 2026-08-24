@@ -1,5 +1,7 @@
+import { useMutation } from '@apollo/client'
+import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 import { IStep } from '@plumber/types'
-
 import {
   MouseEventHandler,
   useCallback,
@@ -8,9 +10,6 @@ import {
   useRef,
 } from 'react'
 import { BiDuplicate, BiTrash } from 'react-icons/bi'
-import { useMutation } from '@apollo/client'
-import { Box, Flex, Text, useDisclosure } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import MenuAlertDialog from '@/components/MenuAlertDialog'
@@ -23,7 +22,6 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 import { allowAddStep } from '../utils'
-
 import { branchStyles } from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 

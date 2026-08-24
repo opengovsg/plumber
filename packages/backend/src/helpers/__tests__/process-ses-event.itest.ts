@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
+
 import { describe, expect, it } from 'vitest'
 
 import { parseSqsMessage } from '@/helpers/ses-event-parser'

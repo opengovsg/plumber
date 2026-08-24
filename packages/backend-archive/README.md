@@ -65,12 +65,12 @@ S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
 
 The script logs structured JSON to stdout. Key events to look for:
 
-| Event | Meaning |
-|---|---|
-| `archival.run.start` | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc. |
-| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`. |
-| `archival.flow.archived` | All executions for a flow have been processed — lists IDs. |
-| `archival.run.complete` | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
+| Event                     | Meaning                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `archival.run.start`      | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                  |
+| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.           |
+| `archival.flow.archived`  | All executions for a flow have been processed — lists IDs.                       |
+| `archival.run.complete`   | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
 
 ### 4. Verify S3 contents
 
@@ -149,12 +149,12 @@ node packages/backend-archive/dist/scripts/rehydrate-execution.js --flow-id <uui
 
 ### Rehydration subcommands
 
-| Goal | Command |
-|---|---|
-| List all archived execution IDs for a flow | `-- --flow-id <uuid>` |
-| Inspect a single archived execution (JSON to stdout) | `-- --flow-id <uuid> --execution-id <uuid>` |
-| Restore all executions for a flow to Postgres | `-- --flow-id <uuid> --restore` |
-| Restore a single execution to Postgres | `-- --flow-id <uuid> --execution-id <uuid> --restore` |
+| Goal                                                 | Command                                               |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| List all archived execution IDs for a flow           | `-- --flow-id <uuid>`                                 |
+| Inspect a single archived execution (JSON to stdout) | `-- --flow-id <uuid> --execution-id <uuid>`           |
+| Restore all executions for a flow to Postgres        | `-- --flow-id <uuid> --restore`                       |
+| Restore a single execution to Postgres               | `-- --flow-id <uuid> --execution-id <uuid> --restore` |
 
 ### What `--restore` does
 

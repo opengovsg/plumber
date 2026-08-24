@@ -1,5 +1,4 @@
 import { IJSONObject } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { stepTransformer } from '../../common/transform-step-parameters'

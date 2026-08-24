@@ -1,10 +1,9 @@
-import { IStep } from '@plumber/types'
-
-import { useCallback, useContext } from 'react'
-import { BiPlus } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { useCallback, useContext } from 'react'
+import { BiPlus } from 'react-icons/bi'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'

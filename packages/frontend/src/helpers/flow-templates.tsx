@@ -1,5 +1,4 @@
 import { IFlowTemplateConfig } from '@plumber/types'
-
 import { ComponentType } from 'react'
 import * as Icons from 'react-icons/bi'
 

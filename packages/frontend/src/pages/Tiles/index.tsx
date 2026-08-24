@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center, Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
+import { useEffect } from 'react'
 
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'

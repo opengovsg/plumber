@@ -1,4 +1,3 @@
-import { BiShareAlt } from 'react-icons/bi'
 import {
   Modal,
   ModalBody,
@@ -10,6 +9,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button, ButtonProps } from '@opengovsg/design-system-react'
+import { BiShareAlt } from 'react-icons/bi'
 
 import ShareLink from './ShareLink'
 import {

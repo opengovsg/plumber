@@ -1,7 +1,7 @@
-import { Fragment } from 'react'
-import { Link, useMatch } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
 import { SidebarContainer, SidebarItem } from '@opengovsg/design-system-react'
+import { Fragment } from 'react'
+import { Link, useMatch } from 'react-router-dom'
 
 import { DrawerLink, GroupedDrawerLinks } from '.'
 

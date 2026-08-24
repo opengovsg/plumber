@@ -1,6 +1,5 @@
-import { IStep } from '@plumber/types'
-
 import { Flex } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
 
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 

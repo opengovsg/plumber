@@ -1,4 +1,3 @@
-import { BiMenuAltLeft } from 'react-icons/bi'
 import {
   Drawer,
   DrawerBody,
@@ -9,9 +8,10 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { BiMenuAltLeft } from 'react-icons/bi'
 
-import EditorSidebar from './EditorSidebar'
 import { GroupedDrawerLinks } from '.'
+import EditorSidebar from './EditorSidebar'
 
 interface EditorDrawerProps {
   groupedLinks: GroupedDrawerLinks[]

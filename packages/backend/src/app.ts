@@ -1,8 +1,6 @@
 import '@/config/orm'
 import '@/config/dynamodb'
-
 import { IRequest } from '@plumber/types'
-
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { Express } from 'express'

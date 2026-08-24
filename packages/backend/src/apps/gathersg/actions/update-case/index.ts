@@ -1,5 +1,4 @@
 import type { IRawAction } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -9,7 +8,6 @@ import { ensureZodEnumValue } from '@/helpers/zod-utils'
 
 import { fieldTypeEnum } from '../../common/constants'
 import throwGatherSGStepError from '../../common/throw-errors'
-
 import { requestSchema, responseSchema } from './schema'
 
 const action: IRawAction = {

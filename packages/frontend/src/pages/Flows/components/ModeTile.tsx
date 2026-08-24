@@ -1,6 +1,6 @@
-import { BiBookOpen, BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 import { Box, Text } from '@chakra-ui/react'
 import { Tile, TileProps } from '@opengovsg/design-system-react'
+import { BiBookOpen, BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 
 import NewBadge from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/NewBadge'
 

@@ -1,7 +1,8 @@
 /// <reference types="vitest" />
 
-import { config } from 'dotenv'
 import path from 'path'
+
+import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
 config({

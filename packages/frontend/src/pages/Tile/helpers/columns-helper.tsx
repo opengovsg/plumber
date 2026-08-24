@@ -1,5 +1,4 @@
 import { ITableColumnMetadata } from '@plumber/types'
-
 import { ColumnDef, createColumnHelper } from '@tanstack/react-table'
 
 import CheckboxHeaderCell from '../components/TableHeader/CheckboxHeaderCell'

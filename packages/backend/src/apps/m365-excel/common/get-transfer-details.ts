@@ -1,5 +1,4 @@
 import { IGlobalVariable, ITransferDetails } from '@plumber/types'
-
 import get from 'lodash.get'
 
 import { getM365TenantInfo } from '@/config/app-env-vars/m365'

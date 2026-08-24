@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { Flex, Image, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
+import { useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import singpassLogo from '@/assets/singpass-logo.svg'
 import { SGID_CHECK_ELIGIBILITY_URL } from '@/config/urls'

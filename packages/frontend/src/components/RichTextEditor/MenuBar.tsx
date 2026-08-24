@@ -1,7 +1,19 @@
 import './MenuBar.scss'
-
+import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogCloseButton,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  Box,
+  useDisclosure,
+} from '@chakra-ui/react'
+import { Button, Link } from '@opengovsg/design-system-react'
 import type { TFieldPreviewType, TRteMenuOption } from '@plumber/types'
-
+import { Editor } from '@tiptap/react'
+import { parse } from 'node-html-parser'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { LuHeading1, LuHeading2, LuHeading3, LuHeading4 } from 'react-icons/lu'
 import {
@@ -22,28 +34,14 @@ import {
   RiTableLine,
   RiUnderline,
 } from 'react-icons/ri'
-import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogCloseButton,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogOverlay,
-  Box,
-  useDisclosure,
-} from '@chakra-ui/react'
-import { Button, Link } from '@opengovsg/design-system-react'
-import { Editor } from '@tiptap/react'
-import { parse } from 'node-html-parser'
 
 import Form from '@/components/Form'
 import { RteMenuOption } from '@/graphql/__generated__/graphql'
 import { makeExternalLink } from '@/helpers/urls'
 
+import { BareEditor } from '.'
 import { PreviewButton } from './PreviewButton'
 import { simpleSubstitute, type VariableInfoMap } from './utils'
-import { BareEditor } from '.'
 
 const DEFAULT_MENU_BUTTONS = [
   {

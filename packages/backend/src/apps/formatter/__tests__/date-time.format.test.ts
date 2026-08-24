@@ -1,7 +1,5 @@
 import '@/types/luxon-extensions'
-
 import { IGlobalVariable } from '@plumber/types'
-
 import { Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

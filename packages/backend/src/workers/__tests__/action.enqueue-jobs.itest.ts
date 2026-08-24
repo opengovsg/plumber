@@ -66,10 +66,10 @@ describe('Action worker job enqueueing', () => {
   let originalWorkerState: WorkerState | null = null
   // This is needed as we need to mock enqueueActionJob to test.
   let unmockedEnqueueActionJob:
-    | typeof import('@/queues/action')['enqueueActionJob']
+    | (typeof import('@/queues/action'))['enqueueActionJob']
     | null = null
   let mainActionQueue:
-    | typeof import('@/queues/action')['mainActionQueue']
+    | (typeof import('@/queues/action'))['mainActionQueue']
     | null = null
 
   beforeAll(async () => {

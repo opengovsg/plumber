@@ -1,5 +1,6 @@
-import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
+
+import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 
 import { DYNAMODB_DEFAULT_PAGINATION_CURSOR } from '@/apps/tiles/common/constants'
 import logger from '@/helpers/logger'
@@ -17,7 +18,6 @@ import {
   UpdateRowInput,
 } from '../../types'
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
-
 import { TableRow } from './model'
 
 const MAX_RETRIES = 8

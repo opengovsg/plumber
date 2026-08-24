@@ -1,10 +1,9 @@
-import { IStep } from '@plumber/types'
-
-import { useCallback, useContext } from 'react'
-import { BiDuplicate } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Tooltip } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { useCallback, useContext } from 'react'
+import { BiDuplicate } from 'react-icons/bi'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import { EditorContext } from '@/contexts/Editor'

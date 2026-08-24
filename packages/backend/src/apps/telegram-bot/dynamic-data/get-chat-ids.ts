@@ -51,9 +51,8 @@ const dynamicData: IDynamicData = {
     const chatIdsMap: { name: string; value: string }[] = []
     const chatIdsSet = new Set<number>()
     try {
-      const { data, request } = await $.http.get<TelegramGetUpdatesResponse>(
-        getUpdatesApi,
-      )
+      const { data, request } =
+        await $.http.get<TelegramGetUpdatesResponse>(getUpdatesApi)
       // logging for debugging
       logger.info(`Telegram ip success: ${request?.socket?.remoteAddress}`)
 

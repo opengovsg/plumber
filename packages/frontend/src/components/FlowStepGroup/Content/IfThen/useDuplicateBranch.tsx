@@ -1,8 +1,7 @@
-import { IStep } from '@plumber/types'
-
-import { useCallback, useContext, useMemo, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { useDisclosure } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
+import { useCallback, useContext, useMemo, useState } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { DUPLICATE_BRANCH } from '@/graphql/mutations/duplicate-branch'

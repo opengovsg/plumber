@@ -6,7 +6,6 @@ import { UPSERT_TABLE_COLLABORATOR } from '@/graphql/mutations/tiles/upsert-tabl
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
-
 import { useShareModalContext } from './ShareModalContext'
 
 const TransferOwnership = () => {

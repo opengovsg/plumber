@@ -1,7 +1,3 @@
-import type { DropdownAddNewType } from '@plumber/types'
-
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { VirtuosoHandle } from 'react-virtuoso'
 import {
   FormControlOptions,
   ThemingProps,
@@ -10,16 +6,24 @@ import {
   useTheme,
 } from '@chakra-ui/react'
 import { BxPlus } from '@opengovsg/design-system-react'
+import type { DropdownAddNewType } from '@plumber/types'
 import {
   useCombobox,
   type UseComboboxProps,
   type UseComboboxState,
   type UseComboboxStateChangeOptions,
 } from 'downshift'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { VirtuosoHandle } from 'react-virtuoso'
 
 import { removeProblematicWhitespace } from '../RichTextEditor/utils'
-
+import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
 import { useLookupItems } from './hooks/useLookupItems'
+import {
+  SelectContext,
+  type SharedSelectContextReturnProps,
+} from './SelectContext'
+import { ADD_NEW_PLACEHOLDER_VALUE, type ComboboxItem } from './types'
 import { defaultFilter } from './utils/defaultFilter'
 import {
   isItemAddNew,
@@ -27,17 +31,11 @@ import {
   itemToDescriptionString,
   itemToValue,
 } from './utils/itemUtils'
-import { VIRTUAL_LIST_ITEM_HEIGHT } from './constants'
-import {
-  SelectContext,
-  type SharedSelectContextReturnProps,
-} from './SelectContext'
-import { ADD_NEW_PLACEHOLDER_VALUE, type ComboboxItem } from './types'
 
 export interface SingleSelectProviderProps<
   Item extends ComboboxItem = ComboboxItem,
-> extends SharedSelectContextReturnProps<Item>,
-    FormControlOptions {
+>
+  extends SharedSelectContextReturnProps<Item>, FormControlOptions {
   /** Controlled selected value */
   value: string
   /** Controlled selected item onChange handler */

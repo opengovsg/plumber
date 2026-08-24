@@ -1,9 +1,8 @@
-import type { IExecution, IExecutionStep } from '@plumber/types'
-
-import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Card, CardBody, Flex, Grid, HStack, Text } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
+import type { IExecution, IExecutionStep } from '@plumber/types'
+import { useEffect, useMemo, useState } from 'react'
 
 import ExecutionStep from '@/components/ExecutionStep'
 import AppIconWithStatus from '@/components/ExecutionStep/components/AppIconWithStatus'
@@ -101,8 +100,8 @@ export default function ExecutionGroup(props: ExecutionGroupProps) {
     status: !execution?.status
       ? GroupStatusType.Waiting
       : allIterationsSuccessful
-      ? GroupStatusType.Success
-      : GroupStatusType.Failure,
+        ? GroupStatusType.Success
+        : GroupStatusType.Failure,
     errorDetails: hasError ? {} : null,
     execution,
     jobId: groupingStep?.jobId,

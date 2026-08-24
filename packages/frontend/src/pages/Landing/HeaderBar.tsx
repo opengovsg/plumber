@@ -1,13 +1,3 @@
-import { useEffect } from 'react'
-import {
-  BiChevronDown,
-  BiCog,
-  BiFlag,
-  BiGroup,
-  BiHeadphone,
-  BiMenu,
-  BiX,
-} from 'react-icons/bi'
 import {
   Box,
   Collapse,
@@ -26,6 +16,16 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, IconButton } from '@opengovsg/design-system-react'
+import { useEffect } from 'react'
+import {
+  BiChevronDown,
+  BiCog,
+  BiFlag,
+  BiGroup,
+  BiHeadphone,
+  BiMenu,
+  BiX,
+} from 'react-icons/bi'
 
 import textlogo from '@/assets/landing/textlogo.svg'
 import * as URLS from '@/config/urls'

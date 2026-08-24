@@ -1,4 +1,3 @@
-import { useCallback, useContext } from 'react'
 import { useMutation } from '@apollo/client'
 import {
   Modal,
@@ -11,6 +10,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button, useToast } from '@opengovsg/design-system-react'
+import { useCallback, useContext } from 'react'
 
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { CREATE_FLOW_TRANSFER } from '@/graphql/mutations/create-flow-transfer'

@@ -1,5 +1,4 @@
 import { TableOperations } from '../types'
-
 import * as tableColumnFunctions from './table-column-functions'
 import * as tableFunctions from './table-functions'
 import * as tableRowFunctions from './table-row-functions'

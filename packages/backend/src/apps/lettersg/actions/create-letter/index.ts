@@ -1,5 +1,4 @@
 import type { IRawAction } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -7,7 +6,6 @@ import StepError, { GenericSolution } from '@/errors/step'
 
 import { getTemplateData } from '../../common/get-template-data'
 import { downloadAndStoreAttachmentInS3 } from '../../helpers/attachment'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
 

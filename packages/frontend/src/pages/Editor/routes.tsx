@@ -8,7 +8,6 @@ import FlowTransfer from '@/components/EditorSettings/FlowTransfer'
 import Notifications from '@/components/EditorSettings/Notifications'
 
 import AiBuilder from '../AiBuilder'
-
 import EditorPage from './index'
 
 export default function EditorRoutes(): React.ReactElement {

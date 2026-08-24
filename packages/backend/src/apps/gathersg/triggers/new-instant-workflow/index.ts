@@ -1,5 +1,4 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
-
 import { type ZodIssue, type ZodSafeParseError } from 'zod'
 
 import StepError from '@/errors/step'

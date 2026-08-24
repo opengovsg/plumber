@@ -1,3 +1,7 @@
+import { Input, InputGroup, InputRightElement } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
+import { Table, TableMeta } from '@tanstack/react-table'
+import { Virtualizer } from '@tanstack/react-virtual'
 import {
   FormEvent,
   startTransition,
@@ -6,10 +10,6 @@ import {
   useState,
 } from 'react'
 import { MdArrowDownward, MdArrowUpward, MdOutlineClear } from 'react-icons/md'
-import { Input, InputGroup, InputRightElement } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
-import { Table, TableMeta } from '@tanstack/react-table'
-import { Virtualizer } from '@tanstack/react-virtual'
 
 import { ROW_HEIGHT } from '../../constants'
 import { CellType, GenericRowData } from '../../types'

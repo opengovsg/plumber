@@ -1,5 +1,5 @@
-import { ReactElement } from 'react'
 import { Box, Flex, Image } from '@chakra-ui/react'
+import { ReactElement } from 'react'
 
 import textlogo from '@/assets/landing/textlogo.svg'
 import LoginForm from '@/components/LoginForm'

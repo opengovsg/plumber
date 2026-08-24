@@ -1,6 +1,7 @@
-import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { promisify } from 'node:util'
 import { gzip } from 'node:zlib'
+
+import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { describe, expect, it, vi } from 'vitest'
 
 import { S3_PREFIX_EXECUTIONS } from '../build-s3-key'

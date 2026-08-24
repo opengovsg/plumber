@@ -1,8 +1,8 @@
+import { Box, Flex } from '@chakra-ui/react'
+import { Badge, Button, IconButton } from '@opengovsg/design-system-react'
 import { useContext, useState } from 'react'
 import { BiSolidMagicWand } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
-import { Box, Flex } from '@chakra-ui/react'
-import { Badge, Button, IconButton } from '@opengovsg/design-system-react'
 
 import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
 import * as URLS from '@/config/urls'

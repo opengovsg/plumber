@@ -1,7 +1,7 @@
-import { type ReactNode, useContext } from 'react'
-import { useFormContext, useWatch } from 'react-hook-form'
 import { Box, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
 import { Button, Menu } from '@opengovsg/design-system-react'
+import { type ReactNode, useContext } from 'react'
+import { useFormContext, useWatch } from 'react-hook-form'
 
 import type { CheckStepButtonExtensionProps } from '@/app-extensions/types'
 import { simpleSubstitute } from '@/components/RichTextEditor/utils'

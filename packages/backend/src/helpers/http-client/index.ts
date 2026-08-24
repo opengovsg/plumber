@@ -1,9 +1,9 @@
 import axios, { InternalAxiosRequestConfig } from 'axios'
 
 export { AxiosInstance as IHttpClient } from 'axios'
-import { IHttpClientParams } from '@plumber/types'
-
 import { URL } from 'url'
+
+import { IHttpClientParams } from '@plumber/types'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'

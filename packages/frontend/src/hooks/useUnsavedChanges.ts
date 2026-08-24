@@ -1,5 +1,5 @@
-import { useContext, useRef } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
+import { useContext, useRef } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 

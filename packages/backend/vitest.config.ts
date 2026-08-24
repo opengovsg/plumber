@@ -2,8 +2,9 @@
 
 // Configure Vitest (https://vitest.dev/config/)
 
-import { config } from 'dotenv'
 import path from 'path'
+
+import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
 config({

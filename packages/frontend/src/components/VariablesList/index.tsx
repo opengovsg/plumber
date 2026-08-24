@@ -1,6 +1,3 @@
-import { TDataOutMetadatumType } from '@plumber/types'
-
-import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -15,7 +12,9 @@ import {
   Tooltip,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { TDataOutMetadatumType } from '@plumber/types'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { type Variable } from '@/helpers/variables'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
@@ -135,15 +134,15 @@ export function VariableItem({
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
           : shouldShowToggle
-          ? 'auto'
-          : VARIABLE_ITEM_HEIGHT
+            ? 'auto'
+            : VARIABLE_ITEM_HEIGHT
       }
       maxH={
         isSuggestionVariable
           ? SUGGESTION_VARIABLE_ITEM_HEIGHT
           : shouldShowToggle
-          ? undefined
-          : VARIABLE_ITEM_HEIGHT
+            ? undefined
+            : VARIABLE_ITEM_HEIGHT
       }
       overflowY={shouldShowToggle && isExpanded ? 'visible' : 'hidden'}
       padding={isSuggestionVariable ? '0.5rem 1rem' : '1rem'}

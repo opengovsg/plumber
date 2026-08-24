@@ -1,7 +1,3 @@
-import { memo, useState } from 'react'
-import { BiTrash } from 'react-icons/bi'
-import { GoChevronDown, GoFilter } from 'react-icons/go'
-import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 import {
   Flex,
   Icon,
@@ -19,13 +15,16 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@opengovsg/design-system-react'
 import { Header } from '@tanstack/react-table'
+import { memo, useState } from 'react'
+import { BiTrash } from 'react-icons/bi'
+import { GoChevronDown, GoFilter } from 'react-icons/go'
+import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { BORDER_COLOR, HEADER_COLOR } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'
 import { GenericRowData } from '../../types'
-
 import { ColumnFilter } from './ColumnFilter'
 import ColumnResizer from './ColumnResizer'
 import ColumnSort from './ColumnSort'

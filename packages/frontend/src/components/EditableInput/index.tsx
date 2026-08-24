@@ -1,8 +1,8 @@
+import { Flex, Text } from '@chakra-ui/react'
+import { IconButton, Input, useIsMobile } from '@opengovsg/design-system-react'
 import { KeyboardEvent, useState } from 'react'
 import { FaCheck, FaTimes } from 'react-icons/fa'
 import { MdOutlineModeEdit } from 'react-icons/md'
-import { Flex, Text } from '@chakra-ui/react'
-import { IconButton, Input, useIsMobile } from '@opengovsg/design-system-react'
 
 interface EditableInputProps {
   value: string
@@ -149,8 +149,8 @@ export default function EditableInput({
         isEditing ? wrappedEditModeContent : wrappedReadOnlyContent,
       )
     : isEditing
-    ? wrappedEditModeContent
-    : wrappedReadOnlyContent
+      ? wrappedEditModeContent
+      : wrappedReadOnlyContent
 
   return (
     <Flex

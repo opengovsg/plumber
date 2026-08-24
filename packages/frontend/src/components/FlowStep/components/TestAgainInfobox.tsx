@@ -1,6 +1,6 @@
+import { Flex, Icon, Text } from '@chakra-ui/react'
 import { useContext } from 'react'
 import { BiSolidErrorCircle } from 'react-icons/bi'
-import { Flex, Icon, Text } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { getFlowStepHeaderWidth } from '@/helpers/editor'

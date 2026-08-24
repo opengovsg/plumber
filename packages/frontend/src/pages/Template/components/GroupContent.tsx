@@ -1,7 +1,6 @@
-import type { IApp, ITemplateStep } from '@plumber/types'
-
-import { Fragment } from 'react'
 import { Flex, Text } from '@chakra-ui/react'
+import type { IApp, ITemplateStep } from '@plumber/types'
+import { Fragment } from 'react'
 
 import { BetweenStepsGraphic } from './TemplateBody'
 import TemplateStepContent from './TemplateStepContent'

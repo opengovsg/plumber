@@ -1,9 +1,8 @@
-import { IUser } from '@plumber/types'
-
-import { createContext, useEffect } from 'react'
 import { FetchResult, useMutation, useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
+import { IUser } from '@plumber/types'
+import { createContext, useEffect } from 'react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { LOGOUT } from '@/graphql/mutations/logout'

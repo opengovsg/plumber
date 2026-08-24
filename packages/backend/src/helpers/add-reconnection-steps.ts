@@ -3,7 +3,6 @@ import {
   IAuthenticationStep,
   IAuthenticationStepField,
 } from '@plumber/types'
-
 import cloneDeep from 'lodash/cloneDeep'
 
 const connectionIdArgument = {

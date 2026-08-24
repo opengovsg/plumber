@@ -1,6 +1,6 @@
-import { Helmet } from 'react-helmet'
 import { Image, Stack, Text, VStack } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
+import { Helmet } from 'react-helmet'
 
 import spreadsheetImg from '@/assets/spreadsheet.png'
 import * as URLS from '@/config/urls'

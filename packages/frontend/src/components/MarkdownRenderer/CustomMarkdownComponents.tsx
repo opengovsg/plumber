@@ -1,6 +1,6 @@
-import type { Components } from 'react-markdown'
 import { chakra } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
+import type { Components } from 'react-markdown'
 
 export const infoboxMdComponents: Components = {
   // Force all links in our message to be opened in a new tab.

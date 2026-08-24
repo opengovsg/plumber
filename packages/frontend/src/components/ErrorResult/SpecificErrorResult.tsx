@@ -1,15 +1,13 @@
-import { IStepError } from '@plumber/types'
-
-import Markdown from 'react-markdown'
 import { useMutation } from '@apollo/client'
 import { Box, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
+import { IStepError } from '@plumber/types'
+import Markdown from 'react-markdown'
 
 import { RETRY_PARTIAL_STEP } from '@/graphql/mutations/retry-partial-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
 
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
-
 import ErrorDetailsCollapse from './ErrorDetailsCollapse'
 import SupportContactMessage from './SupportContactMessage'
 

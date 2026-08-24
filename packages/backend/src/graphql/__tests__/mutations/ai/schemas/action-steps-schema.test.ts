@@ -1,5 +1,4 @@
 import type { IStep } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { StepEnumType } from '@/graphql/__generated__/types.generated'

@@ -1,4 +1,3 @@
-import { useCallback, useContext, useState } from 'react'
 import {
   Box,
   Flex,
@@ -14,6 +13,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { useCallback, useContext, useState } from 'react'
 
 import { MrfContext } from '@/contexts/MrfContext'
 import {

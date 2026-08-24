@@ -1,7 +1,7 @@
-import { createContext, MutableRefObject, RefObject, useContext } from 'react'
-import type { VirtuosoHandle } from 'react-virtuoso'
 import type { FormControlOptions, SystemStyleObject } from '@chakra-ui/react'
 import type { UseComboboxPropGetters, UseComboboxState } from 'downshift'
+import { createContext, MutableRefObject, RefObject, useContext } from 'react'
+import type { VirtuosoHandle } from 'react-virtuoso'
 
 import { ComboboxItem } from './types'
 
@@ -40,7 +40,8 @@ export interface SharedSelectContextReturnProps<
 }
 
 interface SelectContextReturn<Item extends ComboboxItem = ComboboxItem>
-  extends UseComboboxPropGetters<Item>,
+  extends
+    UseComboboxPropGetters<Item>,
     UseComboboxState<Item>,
     Required<SharedSelectContextReturnProps<Item>>,
     FormControlOptions {

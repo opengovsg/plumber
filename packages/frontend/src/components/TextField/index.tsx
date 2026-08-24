@@ -1,7 +1,3 @@
-import { useContext } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
-import { BiCopy } from 'react-icons/bi'
-import Markdown from 'react-markdown'
 import { FormControl, InputGroup, InputRightElement } from '@chakra-ui/react'
 import {
   FormLabel,
@@ -10,6 +6,10 @@ import {
   Textarea,
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
+import { useContext } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import { BiCopy } from 'react-icons/bi'
+import Markdown from 'react-markdown'
 
 import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
 import { EditorContext } from '@/contexts/Editor'

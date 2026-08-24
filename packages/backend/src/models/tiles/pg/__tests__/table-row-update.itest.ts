@@ -9,7 +9,6 @@ import {
   patchTableRow,
   updateTableRow,
 } from '../table-row-functions'
-
 import {
   cleanRowForComparison,
   createMultipleTestRows,

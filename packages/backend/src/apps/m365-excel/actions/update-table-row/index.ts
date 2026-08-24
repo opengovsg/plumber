@@ -1,5 +1,4 @@
 import type { IRawAction } from '@plumber/types'
-
 import z from 'zod'
 
 import StepError from '@/errors/step'
@@ -14,7 +13,6 @@ import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
 import getTableRowAction from '../get-table-row'
 import getTableRowImpl from '../get-table-row/implementation'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import {
   dataOutSchema,

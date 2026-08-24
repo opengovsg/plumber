@@ -1,8 +1,3 @@
-import { MouseEvent, useCallback, useRef } from 'react'
-import { BiTrash } from 'react-icons/bi'
-import { BsDot } from 'react-icons/bs'
-import { MdOutlineRemoveRedEye } from 'react-icons/md'
-import { Link } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   AlertDialog,
@@ -29,6 +24,11 @@ import {
   useIsMobile,
   useToast,
 } from '@opengovsg/design-system-react'
+import { MouseEvent, useCallback, useRef } from 'react'
+import { BiTrash } from 'react-icons/bi'
+import { BsDot } from 'react-icons/bs'
+import { MdOutlineRemoveRedEye } from 'react-icons/md'
+import { Link } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import type { TableMetadata } from '@/graphql/__generated__/graphql'
@@ -37,7 +37,6 @@ import { GET_TABLES } from '@/graphql/queries/tiles/get-tables'
 import { toPrettyDateString } from '@/helpers/dateTime'
 
 import { TileConnections } from '..'
-
 import {
   flexStyles,
   linkStyles,

@@ -1,5 +1,4 @@
 import { IExecutionStep } from '@plumber/types'
-
 import { describe, expect, it, vi } from 'vitest'
 
 import getDataOutMetadata from '../../actions/create-letter/get-data-out-metadata'

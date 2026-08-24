@@ -1,8 +1,7 @@
-import { IFlowCollabRole, ITableCollabRole } from '@plumber/types'
-
-import { BiChevronDown } from 'react-icons/bi'
 import { Menu, MenuButton, MenuItem, MenuList } from '@chakra-ui/react'
 import { Button, ButtonProps } from '@opengovsg/design-system-react'
+import { IFlowCollabRole, ITableCollabRole } from '@plumber/types'
+import { BiChevronDown } from 'react-icons/bi'
 
 const CollaboratorRoleSelect = ({
   userRole,

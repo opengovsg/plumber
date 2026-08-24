@@ -1,4 +1,3 @@
-import { PropsWithChildren, useLayoutEffect, useMemo, useRef } from 'react'
 import { Box, useMergeRefs, useOutsideClick } from '@chakra-ui/react'
 import {
   autoUpdate,
@@ -8,9 +7,9 @@ import {
   size,
   useFloating,
 } from '@floating-ui/react'
+import { PropsWithChildren, useLayoutEffect, useMemo, useRef } from 'react'
 
 import { useSelectContext } from '../../SelectContext'
-
 import { SelectPopoverContext } from './SelectPopoverContext'
 
 export const SelectPopoverProvider = ({

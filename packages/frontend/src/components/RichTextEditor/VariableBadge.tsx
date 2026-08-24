@@ -1,8 +1,8 @@
-import { useContext } from 'react'
 import { Badge, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 import { Node } from '@tiptap/pm/model'
 import { NodeViewWrapper } from '@tiptap/react'
+import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { POPOVER_OPACITY_MOTION_PROPS } from '@/theme/constants'

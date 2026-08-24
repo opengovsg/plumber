@@ -1,8 +1,7 @@
-import type { ITemplate } from '@plumber/types'
-
-import { useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Badge, Tile } from '@opengovsg/design-system-react'
+import type { ITemplate } from '@plumber/types'
+import { useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import { TemplateIcon } from '@/helpers/flow-templates'

@@ -1,8 +1,7 @@
-import type { IAction, IStep, ITrigger } from '@plumber/types'
-
-import { useContext } from 'react'
 import { Box, Collapse, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import type { IAction, IStep, ITrigger } from '@plumber/types'
+import { useContext } from 'react'
 
 import VariablesList from '@/components/VariablesList'
 import { EditorContext } from '@/contexts/Editor'
@@ -52,8 +51,8 @@ export default function TestResult(props: TestResultsProps): JSX.Element {
   const testResultMessage = isForEachStep
     ? getForEachDataMessage(testExecutionSteps, step)
     : isMock
-    ? 'The mock responses below are based on your form fields.'
-    : null
+      ? 'The mock responses below are based on your form fields.'
+      : null
 
   const Content = () => {
     // No data only happens if user hasn't executed yet, or step returned null.

@@ -1,10 +1,9 @@
-import { NotificationRecipients } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
 import { useMutation } from '@apollo/client'
 import { Flex, FormControl, Skeleton, Stack, Text } from '@chakra-ui/react'
 import { Button, Checkbox, useToast } from '@opengovsg/design-system-react'
+import { NotificationRecipients } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
 
 import Form from '@/components/Form'
 import { SingleSelect } from '@/components/SingleSelect'

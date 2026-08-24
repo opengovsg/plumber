@@ -1,10 +1,9 @@
-import { memo } from 'react'
 import { Flex, Kbd } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { memo } from 'react'
 
 import { ROW_HEIGHT, Z_INDEX } from '../../constants'
 import { scrollToBottom, scrollToTop } from '../../helpers/scroll-helper'
-
 import DeleteRowsButton from './DeleteRowsButton'
 import RowCount from './RowCount'
 

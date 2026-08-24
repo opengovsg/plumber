@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import { describe, expect, it, vi } from 'vitest'
 
 import getCaseFields from '../../dynamic-data/get-case-fields'

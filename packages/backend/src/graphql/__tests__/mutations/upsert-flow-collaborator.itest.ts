@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'

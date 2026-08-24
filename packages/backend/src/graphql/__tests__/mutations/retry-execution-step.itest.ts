@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import retryExecutionStep from '@/graphql/mutations/retry-execution-step'
@@ -10,8 +11,8 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import { generateMockUser } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 // Mock the action queue
 vi.mock('@/queues/action', () => ({

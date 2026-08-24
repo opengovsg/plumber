@@ -1,7 +1,6 @@
-import { ITableColumnMetadata } from '@plumber/types'
-
-import { useCallback, useState } from 'react'
 import { useMutation } from '@apollo/client'
+import { ITableColumnMetadata } from '@plumber/types'
+import { useCallback, useState } from 'react'
 import { type SetOptional } from 'type-fest'
 
 import { UpdateTableMutation } from '@/graphql/__generated__/graphql'

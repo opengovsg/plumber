@@ -1,8 +1,8 @@
+import { Menu, MenuButton, MenuItem, MenuList, Portal } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 import * as React from 'react'
 import { BiDotsHorizontalRounded } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
-import { Menu, MenuButton, MenuItem, MenuList, Portal } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
 

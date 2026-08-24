@@ -1,6 +1,5 @@
-import { IHttpClient } from '@plumber/types'
-
 import { SendEmailCommand } from '@aws-sdk/client-sesv2'
+import { IHttpClient } from '@plumber/types'
 import FormData from 'form-data'
 import { sortBy } from 'lodash'
 

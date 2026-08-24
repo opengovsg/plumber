@@ -1,3 +1,5 @@
+import { Textarea } from '@chakra-ui/react'
+import { CellContext, Row, TableMeta } from '@tanstack/react-table'
 import {
   ChangeEvent,
   FocusEvent,
@@ -8,8 +10,6 @@ import {
   useEffect,
   useRef,
 } from 'react'
-import { Textarea } from '@chakra-ui/react'
-import { CellContext, Row, TableMeta } from '@tanstack/react-table'
 
 import {
   BORDER_COLOR,
@@ -314,8 +314,8 @@ function TableCell({
             backgroundColor: isHighlightingCell
               ? 'var(--chakra-colors-orange-200)'
               : hasMatchingSearch
-              ? 'var(--chakra-colors-orange-100'
-              : undefined,
+                ? 'var(--chakra-colors-orange-100'
+                : undefined,
           }}
           className={className}
         >

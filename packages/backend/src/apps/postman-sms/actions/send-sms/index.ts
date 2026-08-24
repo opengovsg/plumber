@@ -1,5 +1,4 @@
 import type { IRawAction } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 
 import StepError, { GenericSolution } from '@/errors/step'
@@ -7,7 +6,6 @@ import logger from '@/helpers/logger'
 import { ensureZodObjectKey, firstZodParseError } from '@/helpers/zod-utils'
 
 import { authDataSchema } from '../../auth/schema'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import { fieldSchema, MAX_SMS_CHARS, postmanMessageSchema } from './schema'
 

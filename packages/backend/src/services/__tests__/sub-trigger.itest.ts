@@ -1,5 +1,4 @@
 import type { ITriggerItem, SubtriggerData } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {

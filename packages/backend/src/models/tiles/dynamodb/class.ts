@@ -1,5 +1,4 @@
 import { TableOperations } from '../types'
-
 import * as tableRowFunctions from './table-row/functions'
 
 function noOp(): Promise<void> {

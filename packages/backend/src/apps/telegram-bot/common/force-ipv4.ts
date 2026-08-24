@@ -1,6 +1,6 @@
-import { TBeforeRequest } from '@plumber/types'
-
 import https from 'https'
+
+import { TBeforeRequest } from '@plumber/types'
 
 // Singleton HTTPS agent configured for IPv4 only
 // This helps avoid DNS timeout issues with Telegram's API

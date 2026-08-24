@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import z from 'zod'
 
 import { isM365TenantKey } from '@/config/app-env-vars/m365'

@@ -6,7 +6,6 @@ import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 
 import { CreateRowOutput } from '../../types'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {
@@ -114,10 +113,13 @@ const action: IRawAction = {
      * convert array to object
      * [{columnId: 'abc', cellValue: 'test'}] => {abc: 'test'}
      */
-    const rowDataObject = rowData.reduce((acc, { columnId, cellValue }) => {
-      acc[columnId] = cellValue
-      return acc
-    }, {} as Record<string, string>)
+    const rowDataObject = rowData.reduce(
+      (acc, { columnId, cellValue }) => {
+        acc[columnId] = cellValue
+        return acc
+      },
+      {} as Record<string, string>,
+    )
 
     if (!(await table.validateRows([rowDataObject]))) {
       throw new StepError(

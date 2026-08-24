@@ -1,8 +1,3 @@
-import type { IFlow } from '@plumber/types'
-
-import { ReactElement } from 'react'
-import { BiChevronRight, BiGroup } from 'react-icons/bi'
-import { Link } from 'react-router-dom'
 import {
   Box,
   Card,
@@ -15,7 +10,11 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Badge, IconButton } from '@opengovsg/design-system-react'
+import type { IFlow } from '@plumber/types'
 import { DateTime } from 'luxon'
+import { ReactElement } from 'react'
+import { BiChevronRight, BiGroup } from 'react-icons/bi'
+import { Link } from 'react-router-dom'
 
 import FlowAppIcons from '@/components/FlowAppIcons'
 import * as URLS from '@/config/urls'

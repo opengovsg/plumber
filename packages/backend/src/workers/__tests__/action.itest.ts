@@ -1,5 +1,4 @@
 import type { IActionJobData } from '@plumber/types'
-
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import {
   afterAll,

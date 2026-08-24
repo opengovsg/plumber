@@ -11,7 +11,6 @@ import { TableRowFilter } from '@/models/tiles/types'
 import { LOOKUP_CONDITIONS_SUBFIELDS } from '../../common/constants'
 import { validateFilters } from '../../common/validate-filters'
 import { FindSingleRowOutput } from '../../types'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {
@@ -132,10 +131,13 @@ const action: IRawAction = {
     })
 
     if (!rows || !rows.length) {
-      const emptyRow = table.columns.reduce((acc, c) => {
-        acc[c.id] = ''
-        return acc
-      }, {} as Record<string, string>)
+      const emptyRow = table.columns.reduce(
+        (acc, c) => {
+          acc[c.id] = ''
+          return acc
+        },
+        {} as Record<string, string>,
+      )
 
       $.setActionItem({
         raw: {
