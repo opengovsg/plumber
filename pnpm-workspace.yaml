@@ -142,7 +142,7 @@ catalog:
   "tsx": "^4.23.12"
   "turbo": "2.10.11"
   "type-fest": "4.10.3"
-  "typescript": "^5.5.4"
+  "typescript": "^7.0.2"
   "ulid": "3.0.0"
   "urlcat": "3.1.0"
   "use-stick-to-bottom": "^1.1.3"
