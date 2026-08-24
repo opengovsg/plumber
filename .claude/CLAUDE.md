@@ -2,11 +2,11 @@
 
 Plumber is a no-code workflow automation tool. Users build "flows" out of triggers and actions provided by integrated "apps" (FormSG, Postman, M365 Excel, Slack, etc.). Flow executions are queued and run by background workers (some flow triggers run on the server).
 
-This uses an npm workspaces monorepo:
+This uses a pnpm workspaces monorepo:
 
 - [packages/backend/](../packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](rules/backend.md).
 - [packages/frontend/](../packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](rules/frontend.md).
-- [packages/types/](../packages/types/) — shared `@plumber/types` (linked via `file:` deps).
+- [packages/types/](../packages/types/) — shared `@plumber/types` (linked via `workspace:*` deps).
 
 ## Language and phrasing
 
@@ -42,24 +42,24 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
-- `npm run setup` — one-time per session; brings up Postgres, Redis, DynamoDB, MinIO, etc. via Docker.
-- `npm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
-- `npm run teardown` — tears the Docker services back down when the human is done.
+- `pnpm run setup` — one-time per session; brings up Postgres, Redis, DynamoDB, MinIO, etc. via Docker.
+- `pnpm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
+- `pnpm run teardown` — tears the Docker services back down when the human is done.
 
 **Testing:**
 
-- `npm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
-- `npm run -w backend test:unit` — runs backend unit tests only.
-- `npx vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
+- `pnpm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
+- `pnpm --filter backend run test:unit` — runs backend unit tests only.
+- `pnpm exec vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
 - Backend integration tests use the `.itest.ts` suffix and require Docker/testcontainers — see [.claude/rules/backend.md](rules/backend.md).
 
 ## Conventions
 
 - **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, single-threaded). Don't mix.
-- **Package manager**: only use `npm`. Never use `yarn`, `pnpm`, or other package managers.
-- **Installing packages**: always pass the `-E` (exact version) flag.
+- **Package manager**: only use `pnpm`. Never use `npm`, `yarn`, or other package managers.
+- **Installing packages**: always pass the `-E` (exact version) flag. Dependency versions live in the `catalog:` section of [pnpm-workspace.yaml](../pnpm-workspace.yaml); every `package.json` references them via `"catalog:"` instead of a version string.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
-- **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and `npm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root commands.
+- **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend run lint:fix`; frontend-only → `pnpm --filter frontend run lint:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.

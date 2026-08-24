@@ -10,11 +10,11 @@
 
 ### 1. Install dependencies
 
-Set the BullMQ Pro token **before** running `npm install`. Get a free trial token from [taskforce.sh](https://taskforce.sh/):
+Get a free trial BullMQ Pro token from [taskforce.sh](https://taskforce.sh/), then configure it before running `pnpm install` — pnpm won't expand `${NPM_TASKFORCESH_TOKEN}` from the committed `.npmrc` for security reasons, so it must be set via `pnpm config set` instead:
 
 ```powershell
-$env:NPM_TASKFORCESH_TOKEN = "<your-token>"
-npm install
+pnpm config set "//npm.taskforce.sh/:_authToken" "<your-token>"
+pnpm install
 ```
 
 ### 2. Configure environment
@@ -45,18 +45,18 @@ docker compose -f packages/backend/docker-compose.dev.yml up -d
 
 ### 4. Run DB migrations (first time only)
 
-`npm run migrate` does not work on Windows because it uses Unix-style env var syntax. Run directly:
+`pnpm run migrate` does not work on Windows because it uses Unix-style env var syntax. Run directly:
 
 ```powershell
 cd packages/backend
-$env:DOTENV_CONFIG_PATH=".env"; npx knex migrate:latest
+$env:DOTENV_CONFIG_PATH=".env"; pnpm exec knex migrate:latest
 cd ../..
 ```
 
 ### 5. Start the app
 
 ```powershell
-npm run dev
+pnpm run dev
 ```
 
 - Frontend: http://localhost:3001
@@ -75,17 +75,17 @@ The app uses OTP email login, but in local dev the OTP is printed to the termina
 
 ## Daily dev loop
 
-After every computer restart, Docker containers stop and must be restarted before `npm run dev`.
+After every computer restart, Docker containers stop and must be restarted before `pnpm run dev`.
 
 ```powershell
 # Start Docker services (run this after every computer restart)
-npm run setup
+pnpm run setup
 
 # Start the app
-npm run dev
+pnpm run dev
 ```
 
-`npm run setup` is equivalent to `docker compose -f packages/backend/docker-compose.dev.yml up -d` but works from the project root.
+`pnpm run setup` is equivalent to `docker compose -f packages/backend/docker-compose.dev.yml up -d` but works from the project root.
 
 Frontend hot-reloads on changes. Backend requires a terminal restart (or press `rs` + Enter in the dev terminal) after server-side changes.
 
@@ -93,10 +93,10 @@ Frontend hot-reloads on changes. Backend requires a terminal restart (or press `
 
 ```powershell
 # Single unit test file
-npx vitest packages/backend/src/helpers/__tests__/<file>.test.ts
+pnpm exec vitest packages/backend/src/helpers/__tests__/<file>.test.ts
 
 # All backend unit tests
-npm run -w backend test:unit
+pnpm --filter backend run test:unit
 ```
 
 ## Hello World: smoke-test your setup
@@ -164,8 +164,8 @@ A `200 OK` response means the flow was accepted and is now running.
 
 | Issue                                    | Fix                                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------------------- |
-| `'DOTENV_CONFIG_PATH' is not recognized` | Use `$env:VAR=value; command` syntax in PowerShell instead of `npm run migrate` |
-| `401 Unauthorized` from taskforce.sh     | Set `NPM_TASKFORCESH_TOKEN` env var before `npm install`                        |
+| `'DOTENV_CONFIG_PATH' is not recognized` | Use `$env:VAR=value; command` syntax in PowerShell instead of `pnpm run migrate` |
+| `401 Unauthorized` from taskforce.sh     | Run `pnpm config set "//npm.taskforce.sh/:_authToken" "<token>"` before `pnpm install` |
 | Port 6379 bind error                     | Enable WSL2 backend in Docker Desktop settings                                  |
 | `docker-compose` not found               | Use `docker compose` (space, no hyphen)                                         |
 | LaunchDarkly 401 warnings in logs        | Harmless in local dev — feature flags just won't work                           |

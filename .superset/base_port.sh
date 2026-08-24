@@ -10,7 +10,7 @@
 # Allocating also prunes entries whose worktree directory is gone, so bases
 # from worktrees deleted outside Superset (which never ran --release) are reused.
 #
-# Only runs under Superset (needs SUPERSET_ROOT_PATH). A plain `npm run dev`
+# Only runs under Superset (needs SUPERSET_ROOT_PATH). A plain `pnpm run dev`
 # never calls this and falls back to 3000/3001 in vite.config.ts / package.json.
 set -euo pipefail
 

@@ -9,13 +9,13 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 ## Local dev
 
 1. Install Docker and make sure it's running
-2. Install code dependencies by running `npm i`
+2. Install code dependencies by running `pnpm install`
 3. Install global dependencies:
    1. [Codegraph](https://github.com/colbymchenry/codegraph)
 4. Create a `.env` in `packages/backend` based on `.env-example`
-5. Setup services `npm run setup`
-6. Run DB migrations `npm run migrate` (only for first time setup)
-7. Start the server `npm run dev`
+5. Setup services `pnpm run setup`
+6. Run DB migrations `pnpm run migrate` (only for first time setup)
+7. Start the server `pnpm run dev`
 
 ### On Windows?
 
