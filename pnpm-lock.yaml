@@ -222,6 +222,7 @@ overrides:
   es-module-lexer: 1.7.0
   '@smithy/core': 3.24.1
   '@types/node': 22.18.0
+  '@types/express-serve-static-core': ^4.17.33
 
 importers:
 
@@ -512,7 +513,7 @@ importers:
         version: 6.2.2
       '@types/cookie-parser':
         specifier: ^1.4.10
-        version: 1.4.10(@types/express@5.0.5)
+        version: 1.4.10(@types/express@4.17.25)
       '@types/cors':
         specifier: ^2.8.12
         version: 2.8.19
@@ -520,8 +521,8 @@ importers:
         specifier: ^4.0.2
         version: 4.2.2
       '@types/express':
-        specifier: ^5.0.5
-        version: 5.0.5
+        specifier: ^4.17.21
+        version: 4.17.25
       '@types/http-errors':
         specifier: ^1.8.1
         version: 1.8.2
@@ -4835,8 +4836,11 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
-  '@types/express-serve-static-core@5.1.0':
-    resolution: {integrity: sha512-jnHMsrd0Mwa9Cf4IdOzbz543y4XJepXrbia2T4b6+spXC2We3t1y6K44D3mR8XMFSXMCf3/l7rCgddfx7UNVBA==}
+  '@types/express-serve-static-core@4.19.9':
+    resolution: {integrity: sha512-QP2ESEe/ImWY0HDwNAnK9PvEffUyhLTnWkk7KXzHfyeWAnlrDe1fN77bXl6ia8KT3wPlmA7t9/VPRpnf4Ex9sg==}
+
+  '@types/express@4.17.25':
+    resolution: {integrity: sha512-dVd04UKsfpINUnK0yBoYHDF3xu7xVH4BuDotC/xGuycx4CgbP48X/KF/586bcObxT0HENHXEU8Nqtu6NR+eKhw==}
 
   '@types/express@5.0.5':
     resolution: {integrity: sha512-LuIQOcb6UmnF7C1PCFmEU1u2hmiHL43fgFQX67sN3H4Z+0Yk0Neo++mFsBjhOAuLzvlQeqAAkeDOZrJs9rzumQ==}
@@ -15031,9 +15035,9 @@ snapshots:
     dependencies:
       '@types/node': 22.18.0
 
-  '@types/cookie-parser@1.4.10(@types/express@5.0.5)':
+  '@types/cookie-parser@1.4.10(@types/express@4.17.25)':
     dependencies:
-      '@types/express': 5.0.5
+      '@types/express': 4.17.25
 
   '@types/cors@2.8.19':
     dependencies:
@@ -15185,17 +15189,24 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
-  '@types/express-serve-static-core@5.1.0':
+  '@types/express-serve-static-core@4.19.9':
     dependencies:
       '@types/node': 22.18.0
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.5
 
+  '@types/express@4.17.25':
+    dependencies:
+      '@types/body-parser': 1.19.6
+      '@types/express-serve-static-core': 4.19.9
+      '@types/qs': 6.14.0
+      '@types/serve-static': 1.15.8
+
   '@types/express@5.0.5':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 4.19.9
       '@types/serve-static': 1.15.8
 
   '@types/file-saver@2.0.7': {}
