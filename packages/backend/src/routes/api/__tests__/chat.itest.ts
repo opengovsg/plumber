@@ -72,7 +72,7 @@ async function executeChatPostHandler(
   req: Partial<Request>,
   res: Partial<Response>,
 ) {
-  const chatModule = await import('../chat')
+  const chatModule = await import('../chat/index.js')
   const router = chatModule.default
 
   // Extract the POST handler

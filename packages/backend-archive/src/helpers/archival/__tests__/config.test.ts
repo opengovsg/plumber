@@ -36,20 +36,20 @@ describe('archival/config', () => {
 
   describe('requireIntStrict fields', () => {
     it('reads archiveMaxRuntimeMs from ARCHIVE_MAX_RUNTIME_MS', async () => {
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.archiveMaxRuntimeMs).toBe(14400000)
     })
 
     it('throws when ARCHIVE_MAX_RUNTIME_MS is not set', async () => {
       delete process.env.ARCHIVE_MAX_RUNTIME_MS
-      await expect(import('../config')).rejects.toThrow(
+      await expect(import('../config.js')).rejects.toThrow(
         'ARCHIVE_MAX_RUNTIME_MS',
       )
     })
 
     it('throws when ARCHIVE_MAX_RUNTIME_MS is not a valid integer', async () => {
       process.env.ARCHIVE_MAX_RUNTIME_MS = 'not-a-number'
-      await expect(import('../config')).rejects.toThrow(
+      await expect(import('../config.js')).rejects.toThrow(
         'ARCHIVE_MAX_RUNTIME_MS',
       )
     })
@@ -57,13 +57,13 @@ describe('archival/config', () => {
 
   describe('requireString fields', () => {
     it('reads postgresReaderHost from ARCHIVE_POSTGRES_READER_HOST', async () => {
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.postgresReaderHost).toBe('test-reader.internal')
     })
 
     it('throws when ARCHIVE_POSTGRES_READER_HOST is not set', async () => {
       delete process.env.ARCHIVE_POSTGRES_READER_HOST
-      await expect(import('../config')).rejects.toThrow(
+      await expect(import('../config.js')).rejects.toThrow(
         'ARCHIVE_POSTGRES_READER_HOST',
       )
     })
@@ -71,29 +71,29 @@ describe('archival/config', () => {
 
   describe('devString fields in non-dev', () => {
     it('uses POSTGRES_HOST when set', async () => {
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.postgresHost).toBe('prod-host.internal')
     })
 
     it('prefers RDS_PROXY_HOST over POSTGRES_HOST', async () => {
       process.env.RDS_PROXY_HOST = 'rds-proxy.internal'
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.postgresHost).toBe('rds-proxy.internal')
     })
 
     it('throws when POSTGRES_HOST is absent in non-dev', async () => {
       delete process.env.POSTGRES_HOST
-      await expect(import('../config')).rejects.toThrow('POSTGRES_HOST')
+      await expect(import('../config.js')).rejects.toThrow('POSTGRES_HOST')
     })
 
     it('throws when POSTGRES_DATABASE is absent in non-dev', async () => {
       delete process.env.POSTGRES_DATABASE
-      await expect(import('../config')).rejects.toThrow('POSTGRES_DATABASE')
+      await expect(import('../config.js')).rejects.toThrow('POSTGRES_DATABASE')
     })
 
     it('throws when POSTGRES_USERNAME is absent in non-dev', async () => {
       delete process.env.POSTGRES_USERNAME
-      await expect(import('../config')).rejects.toThrow('POSTGRES_USERNAME')
+      await expect(import('../config.js')).rejects.toThrow('POSTGRES_USERNAME')
     })
   })
 
@@ -106,17 +106,17 @@ describe('archival/config', () => {
     })
 
     it('falls back to localhost for postgresHost', async () => {
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.postgresHost).toBe('localhost')
     })
 
     it('falls back to plumber_dev for postgresDatabase', async () => {
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.postgresDatabase).toBe('plumber_dev')
     })
 
     it('falls back to postgres for postgresUsername', async () => {
-      const { archivalConfig } = await import('../config')
+      const { archivalConfig } = await import('../config.js')
       expect(archivalConfig.postgresUsername).toBe('postgres')
     })
   })
