@@ -40,7 +40,18 @@ describe('Create plumber folder', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    mocks.httpPost.mockReset()
+    mocks.httpGet.mockReset()
+    mocks.getM365TenantInfo.mockReset()
+    mocks.getM365TenantInfo.mockImplementation(() => ({
+      label: 'test-tenant',
+      id: 'test-tenant-id',
+      sharePointSiteId: 'test-sharepoint-site-id',
+      clientId: 'abcd',
+      clientThumbprint: 'abcd',
+      clientPrivateKey: 'abcd',
+      allowedSensitivityLabelGuids: new Set(),
+    }))
   })
 
   it('calls the appropriate Graph API endpoints to create a folder and grants user access', async () => {

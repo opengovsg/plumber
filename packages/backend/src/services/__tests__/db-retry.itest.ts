@@ -67,6 +67,7 @@ describe('transient DB retry idempotency (real DB)', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

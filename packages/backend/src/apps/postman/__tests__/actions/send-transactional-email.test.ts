@@ -136,6 +136,7 @@ describe('send transactional email', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

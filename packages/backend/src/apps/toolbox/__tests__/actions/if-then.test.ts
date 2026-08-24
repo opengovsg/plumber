@@ -219,6 +219,7 @@ describe('If-then', () => {
   let $: IGlobalVariable
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

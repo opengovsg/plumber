@@ -115,6 +115,7 @@ describe('For each action', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

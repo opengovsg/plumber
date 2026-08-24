@@ -38,6 +38,6 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "catalog:",
-    "vitest": "^3.2.6"
+    "vitest": "^4.1.11"
   }
 }

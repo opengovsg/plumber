@@ -21,6 +21,7 @@ vi.mock('@/helpers/auth', () => ({
 
 describe('GraphQL Authentication', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

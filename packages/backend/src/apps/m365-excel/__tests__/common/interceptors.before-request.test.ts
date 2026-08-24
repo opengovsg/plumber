@@ -85,6 +85,7 @@ describe('M365 before request interceptors', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

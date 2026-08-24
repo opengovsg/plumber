@@ -374,6 +374,7 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

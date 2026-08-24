@@ -70,6 +70,7 @@ describe('make http request', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
