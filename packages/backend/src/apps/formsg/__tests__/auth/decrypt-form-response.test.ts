@@ -128,6 +128,7 @@ describe('decrypt form response', () => {
 
   // restore mocks after each test
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

@@ -19,6 +19,7 @@ vi.mock('@/helpers/logger', () => ({
 
 describe('Backoff', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

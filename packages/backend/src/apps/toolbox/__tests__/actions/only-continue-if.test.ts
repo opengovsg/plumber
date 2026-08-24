@@ -111,6 +111,7 @@ describe('Only continue if', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

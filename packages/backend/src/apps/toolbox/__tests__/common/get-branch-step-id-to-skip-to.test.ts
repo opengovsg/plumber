@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 
-const mocks = vi.hoisted(() => ({
-  stepQueryResult: vi.fn().mockResolvedValue([
+const mocks = vi.hoisted(() => {
+  const defaultSteps = [
     {
       id: 'step1',
       appKey: 'formsg',
@@ -37,8 +37,13 @@ const mocks = vi.hoisted(() => ({
       key: 'sendTransactionalEmail',
       position: 5,
     },
-  ]),
-}))
+  ]
+
+  return {
+    defaultSteps,
+    stepQueryResult: vi.fn().mockResolvedValue(defaultSteps),
+  }
+})
 
 vi.mock('@/models/step', () => ({
   default: {
@@ -52,6 +57,9 @@ vi.mock('@/models/step', () => ({
 describe('getBranchStepIdToSkipTo', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
+    vi.restoreAllMocks()
+    mocks.stepQueryResult.mockReset()
+    mocks.stepQueryResult.mockResolvedValue(mocks.defaultSteps)
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
   })
 
@@ -84,7 +92,7 @@ describe('getBranchStepIdToSkipTo', () => {
   })
 
   it('defaults currDepth to 0 and returns null if the current branch step has an invalid depth', async () => {
-    mocks.stepQueryResult.mockResolvedValue([
+    mocks.stepQueryResult.mockResolvedValueOnce([
       {
         id: 'step1',
         appKey: 'formsg',
