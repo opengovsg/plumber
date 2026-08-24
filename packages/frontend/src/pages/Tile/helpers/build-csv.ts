@@ -1,5 +1,4 @@
 import type { ITableColumnMetadata } from '@plumber/types'
-
 import { unparse } from 'papaparse'
 
 import type { GenericRowData } from '../types'

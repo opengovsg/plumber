@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
 import { VisuallyHidden } from '@chakra-ui/react'
 import { BxX, IconButton } from '@opengovsg/design-system-react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useSelectContext } from '../../SelectContext'
 

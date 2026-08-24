@@ -1,5 +1,4 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
-
 import { RelatedQueryBuilder } from 'objection'
 import { z } from 'zod'
 
@@ -9,7 +8,6 @@ import ExecutionStep from '@/models/execution-step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
-
 import { createMrfSteps } from './create-mrf-steps'
 import { fetchFormSchema } from './fetch-form-schema'
 import getMockData from './get-mock-data'

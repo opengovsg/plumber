@@ -1,5 +1,5 @@
-import { memo } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
+import { memo } from 'react'
 
 import { Message } from '@/hooks/useChatStream'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'

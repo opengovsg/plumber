@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import MockAdapter from 'axios-mock-adapter'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

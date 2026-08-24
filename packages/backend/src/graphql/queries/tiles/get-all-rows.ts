@@ -14,7 +14,6 @@ import { DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE } from '@/models/tiles/dynam
 import { getTableOperations } from '@/models/tiles/factory'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
-
 import { fetchTableWithViewOnlyCheck } from './view-only.helper'
 
 const getAllRows: QueryResolvers['getAllRows'] = async (

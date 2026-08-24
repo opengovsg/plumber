@@ -1,5 +1,4 @@
 import { ITableRow } from '@plumber/types'
-
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
@@ -17,7 +16,6 @@ import {
   generateMockTableColumns,
   generateMockTableRowData,
 } from '../../mutations/tiles/table.mock'
-
 import { insertMockTableRows } from './table-row.mock'
 
 describe.each([['ddb'], ['pg']])(

@@ -1,12 +1,3 @@
-import type { IAction, IApp, ITrigger } from '@plumber/types'
-
-import { useCallback, useContext, useMemo, useState } from 'react'
-import {
-  BiArrowFromRight,
-  BiChevronRight,
-  BiSearch,
-  BiSolidXCircle,
-} from 'react-icons/bi'
 import {
   Box,
   Flex,
@@ -20,8 +11,16 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Input, ModalCloseButton } from '@opengovsg/design-system-react'
+import type { IAction, IApp, ITrigger } from '@plumber/types'
 import fuzzysort from 'fuzzysort'
 import { groupBy } from 'lodash'
+import { useCallback, useContext, useMemo, useState } from 'react'
+import {
+  BiArrowFromRight,
+  BiChevronRight,
+  BiSearch,
+  BiSolidXCircle,
+} from 'react-icons/bi'
 
 import { getAppActionFlag, getAppFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
@@ -29,7 +28,6 @@ import { TOOLBOX_APP_KEY, useIfThenInitializer } from '@/helpers/toolbox'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useIsAppSelectable } from '../hooks/useIsAppSelectable'
-
 import FeedbackFooter from './FeedbackFooter'
 import { HighlightedText } from './HighlightedText'
 import NewBadge from './NewBadge'

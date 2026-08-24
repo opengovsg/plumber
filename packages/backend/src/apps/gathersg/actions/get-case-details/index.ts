@@ -5,7 +5,6 @@ import logger from '@/helpers/logger'
 
 import { processAttachments } from '../../common/attachment'
 import { processFields } from '../../common/utils'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {

@@ -1,13 +1,13 @@
 import { Router } from 'express'
 
+import adminRouter from './admin'
+import appsRouter from './apps'
+import chatRouter from './chat'
 import {
   blockAdminOperations,
   requireAuthentication,
   setCurrentUserContext,
 } from './middleware/authentication'
-import adminRouter from './admin'
-import appsRouter from './apps'
-import chatRouter from './chat'
 
 const router: Router = Router()
 

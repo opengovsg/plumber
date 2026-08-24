@@ -1,5 +1,5 @@
-import { MutableRefObject } from 'react'
 import { Cell, RowData } from '@tanstack/react-table'
+import { MutableRefObject } from 'react'
 
 declare module '@tanstack/react-table' {
   // oxlint-disable-next-line no-unused-vars

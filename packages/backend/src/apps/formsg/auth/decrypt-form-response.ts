@@ -1,10 +1,9 @@
-import type { IAuth, IGlobalVariable } from '@plumber/types'
-
 import { isFieldResponsesV4 } from '@opengovsg/formsg-sdk/adapters'
 import {
   DecryptedAttachments,
   DecryptedContent,
 } from '@opengovsg/formsg-sdk/dist/types'
+import type { IAuth, IGlobalVariable } from '@plumber/types'
 
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
@@ -14,12 +13,11 @@ import { getSdk, parseFormEnv } from '../common/form-env'
 import convertTableAnswerArrayToTableObject from '../common/process-table-field'
 import type { FormsgPayloadWorkflowContent } from '../common/types'
 import { NricFilter } from '../triggers/new-submission/index'
-
+import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 import { computeSubmissionTime } from './helpers/compute-submission-time'
 import { processResponsesV3 } from './helpers/process-v3-responses'
 import { processResponsesV4 } from './helpers/process-v4-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
-import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
 import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
@@ -274,9 +272,8 @@ export async function decryptFormResponse(
 
     if (verifiedEmails.length > 0) {
       try {
-        const whitelisted = await EmailSuppressionEntry.whitelistEmails(
-          verifiedEmails,
-        )
+        const whitelisted =
+          await EmailSuppressionEntry.whitelistEmails(verifiedEmails)
         if (whitelisted.length > 0) {
           logger.info(
             'Removed verified FormSG email(s) from suppression list',

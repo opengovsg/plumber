@@ -4,7 +4,6 @@ import {
   IRawAction,
   TestRunStepMetadata,
 } from '@plumber/types'
-
 import { z, ZodSafeParseError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -33,7 +32,6 @@ import {
 import { sendBlacklistEmail } from '../../common/send-blacklist-email'
 import { sendInvalidAttachmentsEmail } from '../../common/send-invalid-attachments-email'
 import { throwPostmanStepError } from '../../common/throw-errors'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const sendEmailTestRunMetadataSchema = z
@@ -138,7 +136,7 @@ function getSendEmailParams(
 
   const parsed = sendEmailTestRunMetadataSchema.safeParse(testRunMetadata)
   const useConfiguredEmails = parsed.success
-    ? parsed.data.useConfiguredEmails ?? false
+    ? (parsed.data.useConfiguredEmails ?? false)
     : false
 
   return {

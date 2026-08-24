@@ -1,5 +1,3 @@
-import { memo, useMemo } from 'react'
-import { BiFilter } from 'react-icons/bi'
 import {
   Button,
   Flex,
@@ -12,6 +10,8 @@ import {
   Portal,
   Text,
 } from '@chakra-ui/react'
+import { memo, useMemo } from 'react'
+import { BiFilter } from 'react-icons/bi'
 
 export enum StatusType {
   Empty = '',

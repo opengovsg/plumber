@@ -1,5 +1,4 @@
 import { IFlowConfig } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { processAction } from '../action'

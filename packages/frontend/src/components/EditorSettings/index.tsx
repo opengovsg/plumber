@@ -1,10 +1,9 @@
+import { ApolloError, useQuery } from '@apollo/client'
+import { Box, Center, Divider, Flex, Show } from '@chakra-ui/react'
 import { IFlow } from '@plumber/types'
-
 import { ElementType, ReactNode, useContext, useMemo, useState } from 'react'
 import { BiLink, BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
-import { ApolloError, useQuery } from '@apollo/client'
-import { Box, Center, Divider, Flex, Show } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'

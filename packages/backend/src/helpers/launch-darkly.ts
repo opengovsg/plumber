@@ -1,6 +1,5 @@
-import { IJSONValue } from '@plumber/types'
-
 import { init } from '@launchdarkly/node-server-sdk'
+import { IJSONValue } from '@plumber/types'
 import { memoize } from 'lodash'
 
 import apps from '@/apps'

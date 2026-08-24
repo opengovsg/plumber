@@ -1,7 +1,6 @@
-import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
-
 import { Text } from '@chakra-ui/react'
 import { InfoboxProps } from '@opengovsg/design-system-react'
+import { IExecutionStep, IJSONObject, IStep } from '@plumber/types'
 
 import { Variable } from '@/helpers/variables'
 

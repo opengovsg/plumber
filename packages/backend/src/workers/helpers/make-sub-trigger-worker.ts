@@ -1,5 +1,4 @@
 import type { IActionJobData, IActionRunResult } from '@plumber/types'
-
 import {
   UnrecoverableError,
   WorkerPro,

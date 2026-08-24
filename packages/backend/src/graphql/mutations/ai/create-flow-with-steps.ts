@@ -1,5 +1,4 @@
 import type { IStep } from '@plumber/types'
-
 import z from 'zod'
 
 import { getStepVersion } from '@/helpers/get-step-version'
@@ -8,7 +7,6 @@ import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
-
 import { getActionStepsSchema } from './schemas/action-steps-schema'
 import { generateSchema } from './schemas/schema-generator'
 

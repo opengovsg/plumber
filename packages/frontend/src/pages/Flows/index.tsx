@@ -1,9 +1,8 @@
-import type { IFlow } from '@plumber/types'
-
-import { ReactElement, useEffect, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
+import type { IFlow } from '@plumber/types'
+import { ReactElement, useEffect, useState } from 'react'
 
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'

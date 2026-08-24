@@ -1,9 +1,9 @@
 import dedent from 'dedent'
 
+import { AnnouncementItemProps } from './AnnouncementItem'
 import GraphicAnimation from './assets/Graphic.json'
 import RedesignPipe from './assets/redesign-pipe.svg'
 import WorkflowVisualisation from './assets/workflow-visualisation.svg'
-import { AnnouncementItemProps } from './AnnouncementItem'
 
 export const ANNOUNCEMENT_ITEM_LIST: AnnouncementItemProps[] = [
   {

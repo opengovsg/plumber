@@ -1,4 +1,3 @@
-import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Flex,
   Icon,
@@ -8,12 +7,12 @@ import {
   useMergeRefs,
 } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
 
 import { useSelectContext } from '../../SelectContext'
 import { itemToIcon, itemToLabelString } from '../../utils/itemUtils'
-
 import { ComboboxClearButton } from './ComboboxClearButton'
 import { ToggleChevron } from './ToggleChevron'
 

@@ -1,6 +1,5 @@
 // Avoid cyclic imports when importing gathersgApp
 import '@/apps'
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import gathersgApp from '..'

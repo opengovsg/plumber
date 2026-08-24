@@ -1,11 +1,10 @@
-import type { IFlowSteps } from '@plumber/types'
-
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
+import type { IFlowSteps } from '@plumber/types'
 import { DefaultChatTransport } from 'ai'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
@@ -196,8 +195,8 @@ export function useChatStream(options: UseChatStreamOptions) {
                 ...(flowSteps?.name ? { flowName: flowSteps.name } : {}),
               }
             : currentOutput
-            ? { output: currentOutput }
-            : {}),
+              ? { output: currentOutput }
+              : {}),
         },
         replace: true,
       })

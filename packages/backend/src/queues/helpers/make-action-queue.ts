@@ -1,7 +1,7 @@
-import { IActionJobData } from '@plumber/types'
-
-import { QueuePro, type QueueProOptions } from '@taskforcesh/bullmq-pro'
 import process from 'process'
+
+import { IActionJobData } from '@plumber/types'
+import { QueuePro, type QueueProOptions } from '@taskforcesh/bullmq-pro'
 
 import { createRedisClient } from '@/config/redis'
 import logger from '@/helpers/logger'

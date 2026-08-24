@@ -1,10 +1,9 @@
+import { ApolloError, useQuery } from '@apollo/client'
+import { Center, Flex } from '@chakra-ui/react'
 import { ITableMetadata } from '@plumber/types'
-
 import { useEffect } from 'react'
 import { Helmet } from 'react-helmet'
 import { useParams } from 'react-router-dom'
-import { ApolloError, useQuery } from '@apollo/client'
-import { Center, Flex } from '@chakra-ui/react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import {
@@ -17,7 +16,6 @@ import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 
 import { MissingTile } from '../UnauthorizedTile'
-
 import Table from './components/Table'
 import TableBanner from './components/TableBanner'
 import TilePasswordPrompt from './components/TilePasswordPrompt'

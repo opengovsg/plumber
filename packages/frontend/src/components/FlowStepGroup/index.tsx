@@ -1,9 +1,8 @@
-import { IStep } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
-import { BiTrash } from 'react-icons/bi'
 import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
+import { BiTrash } from 'react-icons/bi'
 
 import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
@@ -11,7 +10,6 @@ import { getFlowStepHeaderWidth, getToolboxIcon } from '@/helpers/editor'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 
 import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
-
 import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import Error from './Content/Error'
 import ForEach from './Content/ForEach'

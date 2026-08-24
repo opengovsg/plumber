@@ -1,8 +1,3 @@
-import type { IApp } from '@plumber/types'
-
-import { ReactElement } from 'react'
-import { BiChevronRight } from 'react-icons/bi'
-import { Link } from 'react-router-dom'
 import {
   Card,
   CardBody,
@@ -12,6 +7,10 @@ import {
   Spacer,
   Text,
 } from '@chakra-ui/react'
+import type { IApp } from '@plumber/types'
+import { ReactElement } from 'react'
+import { BiChevronRight } from 'react-icons/bi'
+import { Link } from 'react-router-dom'
 
 import AppIcon from '@/components/AppIcon'
 import * as URLS from '@/config/urls'

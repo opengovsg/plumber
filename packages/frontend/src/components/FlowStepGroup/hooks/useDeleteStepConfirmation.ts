@@ -1,8 +1,7 @@
-import { IStep } from '@plumber/types'
-
-import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
 import { useMutation } from '@apollo/client'
 import { useDisclosure } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
+import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { DELETE_STEP } from '@/graphql/mutations/delete-step'

@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { BsArrowRight } from 'react-icons/bs'
-import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
+import { useEffect, useRef, useState } from 'react'
+import { BsArrowRight } from 'react-icons/bs'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import mainLogo from '@/assets/logo.svg'
 import sgidLogo from '@/assets/sgid-logo.svg'

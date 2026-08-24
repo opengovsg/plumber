@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react'
 import { Flex, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
+import { useCallback, useState } from 'react'
 
 import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { generateSsoAuthUrl } from '@/helpers/oidc'

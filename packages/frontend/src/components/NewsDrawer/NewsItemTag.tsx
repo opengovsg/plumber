@@ -1,6 +1,6 @@
+import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 import React from 'react'
 import { BiSolidRocket, BiSolidSmile } from 'react-icons/bi'
-import { Badge, BadgeLeftIcon } from '@opengovsg/design-system-react'
 
 export const NEW_FEATURE_TAG = 'feature'
 export const NEW_ENHANCEMENT_TAG = 'enhancement'

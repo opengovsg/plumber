@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
@@ -114,10 +113,13 @@ describe.each([['ddb'], ['pg']])(
       const filters = $.step.parameters.filters as TableRowFilter[]
       filters[0].value = 'not a valid value'
       await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
-      const emptyRow = dummyColumnIds.reduce((acc, c) => {
-        acc[c] = ''
-        return acc
-      }, {} as Record<string, string>)
+      const emptyRow = dummyColumnIds.reduce(
+        (acc, c) => {
+          acc[c] = ''
+          return acc
+        },
+        {} as Record<string, string>,
+      )
       expect($.setActionItem).toBeCalledWith({
         raw: {
           rowsFound: 0,

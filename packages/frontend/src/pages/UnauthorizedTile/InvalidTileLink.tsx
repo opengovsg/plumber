@@ -1,5 +1,5 @@
-import { Helmet } from 'react-helmet'
 import { Image, Stack, Text, VStack } from '@chakra-ui/react'
+import { Helmet } from 'react-helmet'
 
 import spreadsheetImg from '@/assets/spreadsheet.png'
 

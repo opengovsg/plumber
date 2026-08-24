@@ -1,9 +1,8 @@
-import type { IStep } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
-import { BiInfoCircle, BiSolidErrorCircle } from 'react-icons/bi'
 import { Box, CircularProgress, Flex, useDisclosure } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import type { IStep } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
+import { BiInfoCircle, BiSolidErrorCircle } from 'react-icons/bi'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MarkdownRenderer } from '@/exports/components'
@@ -19,7 +18,6 @@ import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 import { DragHandle } from '../SortableList/components'
-
 import { ApproveReject } from './components/ApproveReject'
 import DeleteStepButton from './components/DeleteStepButton'
 import DuplicateStepButton from './components/DuplicateStepButton'

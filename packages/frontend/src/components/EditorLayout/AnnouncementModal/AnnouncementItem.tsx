@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
-import { Components } from 'react-markdown'
 import { Box, Image, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import { AnimationConfigWithData } from 'lottie-web'
+import { useMemo } from 'react'
+import { Components } from 'react-markdown'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'

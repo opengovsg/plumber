@@ -1,13 +1,11 @@
-import { IExecution, IExecutionStep } from '@plumber/types'
-
-import { useMemo } from 'react'
 import { Flex, Tag } from '@chakra-ui/react'
+import { IExecution, IExecutionStep } from '@plumber/types'
+import { useMemo } from 'react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
 import { RetryAllIterationsButton } from '../ExecutionStep/components/RetryAllIterationsButton'
 import RetryButton from '../ExecutionStep/components/RetryButton'
-
 import { GroupStatusType } from './GroupStatusFilter'
 
 interface IterationSelectorProps {
@@ -38,8 +36,8 @@ export default function IterationSelector({
               status === GroupStatusType.PartialSuccess
                 ? 'warning'
                 : status === GroupStatusType.Success
-                ? 'success'
-                : 'critical'
+                  ? 'success'
+                  : 'critical'
             }
             size="xs"
             borderRadius="md"
@@ -47,10 +45,10 @@ export default function IterationSelector({
             {status === GroupStatusType.Waiting
               ? 'Waiting'
               : status === GroupStatusType.Success
-              ? 'Success'
-              : status === GroupStatusType.PartialSuccess
-              ? 'Partial Success'
-              : 'Failure'}
+                ? 'Success'
+                : status === GroupStatusType.PartialSuccess
+                  ? 'Partial Success'
+                  : 'Failure'}
           </Tag>
         </Flex>
       ),

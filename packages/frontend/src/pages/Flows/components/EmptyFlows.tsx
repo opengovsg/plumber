@@ -1,10 +1,9 @@
-import { BiRightArrowAlt } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { BiRightArrowAlt } from 'react-icons/bi'
 
 import { useCreateFlowContext } from '../contexts/CreateFlowContext'
 import { useFlowCreation } from '../hooks/useFlowCreation'
-
 import FlowNameInput from './FlowNameInput'
 import ModeSelector from './ModeSelector'
 

@@ -1,8 +1,3 @@
-import type { IConnection } from '@plumber/types'
-
-import * as React from 'react'
-import { useCallback, useRef, useState } from 'react'
-import { MdCheckCircle, MdError } from 'react-icons/md'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import {
   Box,
@@ -14,7 +9,11 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
+import type { IConnection } from '@plumber/types'
 import { DateTime } from 'luxon'
+import * as React from 'react'
+import { useCallback, useRef, useState } from 'react'
+import { MdCheckCircle, MdError } from 'react-icons/md'
 
 import ConnectionContextMenu from '@/components/AppConnectionContextMenu'
 import MenuAlertDialog from '@/components/MenuAlertDialog'

@@ -1,5 +1,4 @@
 import { IStep } from '@plumber/types'
-
 import { PartialModelObject, raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'

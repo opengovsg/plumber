@@ -1,6 +1,3 @@
-import type { IApp } from '@plumber/types'
-
-import { useContext, useEffect } from 'react'
 import { useQuery } from '@apollo/client'
 import {
   Flex,
@@ -17,6 +14,8 @@ import {
   Infobox,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
+import type { IApp } from '@plumber/types'
+import { useContext, useEffect } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
@@ -25,7 +24,6 @@ import BackButton from '../BackButton'
 import { DATABRICKS_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'
-
 import ConnectionHeader from './ConnectionHeader'
 
 function NotOnboardedContent({

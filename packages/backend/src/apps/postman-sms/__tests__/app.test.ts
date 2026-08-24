@@ -1,13 +1,12 @@
 import type { IActionJobData, IGlobalVariable } from '@plumber/types'
-
 import type { AxiosPromise } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
 import globalVariable from '@/helpers/global-variable'
 
-import { PostmanEnv } from '../common/constants'
 import postmanSmsApp from '../'
+import { PostmanEnv } from '../common/constants'
 
 const MOCK_STEP = {
   id: 'test-flow-id',
@@ -15,18 +14,16 @@ const MOCK_STEP = {
 }
 
 const mocks = vi.hoisted(() => ({
-  axiosRequestAdapter: vi.fn(
-    async (requestConfig): AxiosPromise => ({
-      data: {
-        createdAt: '2024-01-29T17:39:35.574+08:00',
-        id: 'test-message-id',
-      },
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: requestConfig,
-    }),
-  ),
+  axiosRequestAdapter: vi.fn(async (requestConfig): AxiosPromise => ({
+    data: {
+      createdAt: '2024-01-29T17:39:35.574+08:00',
+      id: 'test-message-id',
+    },
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: requestConfig,
+  })),
   getPostmanEnv: vi.fn(() => PostmanEnv.Test),
   authDataParseResult: vi.fn(() => ({
     apiKey: 'test-api-key',

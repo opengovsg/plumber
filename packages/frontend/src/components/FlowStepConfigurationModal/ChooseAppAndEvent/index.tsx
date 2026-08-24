@@ -1,7 +1,6 @@
-import { type IAction, IApp, ITrigger } from '@plumber/types'
-
-import { useCallback, useContext } from 'react'
 import { useLazyQuery } from '@apollo/client'
+import { type IAction, IApp, ITrigger } from '@plumber/types'
+import { useCallback, useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
@@ -25,7 +24,6 @@ import {
   ModalScreen,
 } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
-
 import ChooseApp from './ChooseApp'
 import ChooseEvent from './ChooseEvent'
 

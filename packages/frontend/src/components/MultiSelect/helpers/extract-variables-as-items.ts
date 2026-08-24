@@ -1,10 +1,9 @@
+import { ComboboxItem } from '@opengovsg/design-system-react'
 import type {
   IApp,
   IExecutionStep,
   TDataOutMetadatumType,
 } from '@plumber/types'
-
-import { ComboboxItem } from '@opengovsg/design-system-react'
 
 import { extractVariables } from '@/helpers/variables'
 

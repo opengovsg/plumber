@@ -1,7 +1,6 @@
-import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
-
-import { useContext } from 'react'
 import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
+import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
+import { useContext } from 'react'
 
 import ChooseAndAddConnection from './ChooseAndAddConnection'
 import ChooseAppAndEvent from './ChooseAppAndEvent'

@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import {
   afterEach,
   beforeEach,
@@ -19,8 +20,8 @@ import User from '@/models/user'
 import { TestStepOptions, TestStepResult } from '@/services/test-step'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import { generateMockUser } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 const mockStepId = '8c2a70d1-e78b-431e-9069-a4d8f97883f7'

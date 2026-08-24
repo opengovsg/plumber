@@ -1,5 +1,5 @@
-import { memo, useCallback } from 'react'
 import { CellContext } from '@tanstack/react-table'
+import { memo, useCallback } from 'react'
 
 import { GenericRowData } from '../../types'
 

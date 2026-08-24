@@ -1,15 +1,13 @@
+import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
 import type {
   AxiosInstance,
   AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from 'axios'
-
+import type { RelatedQueryBuilder } from 'objection'
 // FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
 // types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
-
-import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
-import type { RelatedQueryBuilder } from 'objection'
 
 import HttpError from '@/errors/http'
 
@@ -1213,8 +1211,7 @@ export interface IVerifyConnectionRegistrationOutput {
   message: string
 }
 
-export interface ITestConnectionOutput
-  extends Partial<IVerifyConnectionRegistrationOutput> {
+export interface ITestConnectionOutput extends Partial<IVerifyConnectionRegistrationOutput> {
   connectionVerified: boolean
 }
 export interface IStepError {

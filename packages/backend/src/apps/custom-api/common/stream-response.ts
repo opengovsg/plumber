@@ -1,5 +1,6 @@
-import { AxiosError, AxiosResponse } from 'axios'
 import { PassThrough } from 'stream'
+
+import { AxiosError, AxiosResponse } from 'axios'
 
 import HttpError from '@/errors/http'
 

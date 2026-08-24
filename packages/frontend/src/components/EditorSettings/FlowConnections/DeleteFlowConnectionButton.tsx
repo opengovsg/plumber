@@ -1,10 +1,9 @@
-import { IFlow } from '@plumber/types'
-
-import { useCallback, useRef } from 'react'
-import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
+import { IFlow } from '@plumber/types'
+import { useCallback, useRef } from 'react'
+import { BiTrash } from 'react-icons/bi'
 
 import MenuAlertDialog from '@/components/MenuAlertDialog'
 import { DELETE_FLOW_CONNECTION } from '@/graphql/mutations/delete-flow-connection'

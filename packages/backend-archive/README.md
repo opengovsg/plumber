@@ -77,12 +77,12 @@ pnpm --filter backend-archive run archive:backfill
 
 The script logs structured JSON to stdout. Key events to look for:
 
-| Event | Meaning |
-|---|---|
-| `archival.run.start` | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc. |
-| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`. |
-| `archival.flow.archived` | All executions for a flow have been processed — lists IDs. |
-| `archival.run.complete` | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
+| Event                     | Meaning                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `archival.run.start`      | Startup — confirms `dryRun`, `retentionDays`, `batchSize`, etc.                  |
+| `archival.batch.complete` | One batch processed — shows `batchArchived`, `batchSkipped`, `cursor`.           |
+| `archival.flow.archived`  | All executions for a flow have been processed — lists IDs.                       |
+| `archival.run.complete`   | Final summary — total `executions_archived`, `executions_skipped`, `durationMs`. |
 
 ### 4. Verify S3 contents
 
@@ -135,12 +135,12 @@ DOTENV_CONFIG_PATH=.env.staging pnpm --filter backend-archive run archive:rehydr
 
 #### Subcommands
 
-| Goal | Command |
-|---|---|
-| List all archived execution IDs for a flow | `-- --flow-id <uuid>` |
-| Inspect a single archived execution (JSON to stdout) | `-- --flow-id <uuid> --execution-id <uuid>` |
-| Restore all executions for a flow to Postgres | `-- --flow-id <uuid> --restore` |
-| Restore a single execution to Postgres | `-- --flow-id <uuid> --execution-id <uuid> --restore` |
+| Goal                                                 | Command                                               |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| List all archived execution IDs for a flow           | `-- --flow-id <uuid>`                                 |
+| Inspect a single archived execution (JSON to stdout) | `-- --flow-id <uuid> --execution-id <uuid>`           |
+| Restore all executions for a flow to Postgres        | `-- --flow-id <uuid> --restore`                       |
+| Restore a single execution to Postgres               | `-- --flow-id <uuid> --execution-id <uuid> --restore` |
 
 #### What `--restore` does
 
@@ -232,28 +232,28 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 
 ## Configuration reference
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `POSTGRES_HOST` / `RDS_PROXY_HOST` | yes (dev/prod) | — | Postgres writer host. `RDS_PROXY_HOST` takes precedence. |
-| `POSTGRES_PORT` | no | `5432` | Postgres port. |
-| `POSTGRES_DATABASE` | yes | `plumber_dev` (dev only) | Database name. |
-| `POSTGRES_USERNAME` | yes | `postgres` (dev only) | Database user. |
-| `POSTGRES_PASSWORD` | no | — | Database password. |
-| `POSTGRES_ENABLE_SSL` | no | `false` | Set to `true` for SSL connections (required in prod). |
-| `ARCHIVE_POSTGRES_READER_HOST` | **yes** | — | Postgres reader host for eligibility scans. Use `localhost` for local dev. |
-| `S3_ENDPOINT` | yes (dev) | — | S3-compatible endpoint URL (MinIO in dev). Not required in AWS — uses IAM. |
-| `S3_ACCESS_KEY` | yes (dev) | — | S3 access key (MinIO in dev). |
-| `S3_SECRET_KEY` | yes (dev) | — | S3 secret key (MinIO in dev). |
-| `ARCHIVE_BUCKET` | **yes** | — | S3 bucket name for archived objects. |
-| `ARCHIVE_ENABLED` | no | `false` | Must be `true` for the archival script to do anything. |
-| `ARCHIVE_DRY_RUN` | no | `false` | When `true`, writes to S3 but skips Postgres deletes. |
-| `ARCHIVE_RETENTION_DAYS` | no | `365` | Executions older than this are eligible for archival. |
-| `ARCHIVE_BATCH_SIZE` | no | `500` | Executions fetched per batch. |
-| `ARCHIVE_BATCH_SLEEP_MS` | no | `2000` | Sleep between batches to reduce DB load. |
-| `ARCHIVE_INTRA_BATCH_CONCURRENCY` | no | `10` | Concurrent S3 uploads within a batch. |
-| `ARCHIVE_MAX_RUNTIME_MS` | **yes** | — | Wall-clock limit for a single run (ms). Set to `0` to disable. |
-| `ARCHIVE_DELETED_FLOWS_ONLY` | no | `false` | Restrict archival to executions belonging to soft-deleted flows. |
-| `ARCHIVE_TEST_RUNS` | no | `false` | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
+| Variable                           | Required       | Default                  | Description                                                                                                                                  |
+| ---------------------------------- | -------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_HOST` / `RDS_PROXY_HOST` | yes (dev/prod) | —                        | Postgres writer host. `RDS_PROXY_HOST` takes precedence.                                                                                     |
+| `POSTGRES_PORT`                    | no             | `5432`                   | Postgres port.                                                                                                                               |
+| `POSTGRES_DATABASE`                | yes            | `plumber_dev` (dev only) | Database name.                                                                                                                               |
+| `POSTGRES_USERNAME`                | yes            | `postgres` (dev only)    | Database user.                                                                                                                               |
+| `POSTGRES_PASSWORD`                | no             | —                        | Database password.                                                                                                                           |
+| `POSTGRES_ENABLE_SSL`              | no             | `false`                  | Set to `true` for SSL connections (required in prod).                                                                                        |
+| `ARCHIVE_POSTGRES_READER_HOST`     | **yes**        | —                        | Postgres reader host for eligibility scans. Use `localhost` for local dev.                                                                   |
+| `S3_ENDPOINT`                      | yes (dev)      | —                        | S3-compatible endpoint URL (MinIO in dev). Not required in AWS — uses IAM.                                                                   |
+| `S3_ACCESS_KEY`                    | yes (dev)      | —                        | S3 access key (MinIO in dev).                                                                                                                |
+| `S3_SECRET_KEY`                    | yes (dev)      | —                        | S3 secret key (MinIO in dev).                                                                                                                |
+| `ARCHIVE_BUCKET`                   | **yes**        | —                        | S3 bucket name for archived objects.                                                                                                         |
+| `ARCHIVE_ENABLED`                  | no             | `false`                  | Must be `true` for the archival script to do anything.                                                                                       |
+| `ARCHIVE_DRY_RUN`                  | no             | `false`                  | When `true`, writes to S3 but skips Postgres deletes.                                                                                        |
+| `ARCHIVE_RETENTION_DAYS`           | no             | `365`                    | Executions older than this are eligible for archival.                                                                                        |
+| `ARCHIVE_BATCH_SIZE`               | no             | `500`                    | Executions fetched per batch.                                                                                                                |
+| `ARCHIVE_BATCH_SLEEP_MS`           | no             | `2000`                   | Sleep between batches to reduce DB load.                                                                                                     |
+| `ARCHIVE_INTRA_BATCH_CONCURRENCY`  | no             | `10`                     | Concurrent S3 uploads within a batch.                                                                                                        |
+| `ARCHIVE_MAX_RUNTIME_MS`           | **yes**        | —                        | Wall-clock limit for a single run (ms). Set to `0` to disable.                                                                               |
+| `ARCHIVE_DELETED_FLOWS_ONLY`       | no             | `false`                  | Restrict archival to executions belonging to soft-deleted flows.                                                                             |
+| `ARCHIVE_TEST_RUNS`                | no             | `false`                  | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
 
 ---
 
