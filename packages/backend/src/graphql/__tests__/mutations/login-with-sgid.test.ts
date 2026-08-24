@@ -68,6 +68,7 @@ vi.mock('jsonwebtoken', () => ({
 
 describe('Login with SGID', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

@@ -156,6 +156,7 @@ describe('decrypt form response - MRF specific', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
