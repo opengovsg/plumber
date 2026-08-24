@@ -6,8 +6,9 @@
     "build": "tsc && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "test:unit": "vitest --config ./vitest.config.ts",
-    "lint": "eslint . --ignore-path ../../.eslintignore && tsc --noEmit",
-    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore && tsc --noEmit",
+    "lint": "eslint . --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
+    "typecheck": "tsc --noEmit",
     "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
     "archive:rehydrate": "DOTENV_CONFIG_PATH=\"${DOTENV_CONFIG_PATH:-.env}\" ts-node --swc src/scripts/rehydrate-execution.ts"
   },

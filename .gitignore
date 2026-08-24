@@ -132,6 +132,9 @@ dump.rdb
 # mac stuff
 .DS_Store
 
+# turborepo cache
+.turbo
+
 # vs code config
 .vscode
 tmp/
