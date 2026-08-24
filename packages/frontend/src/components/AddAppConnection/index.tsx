@@ -26,6 +26,7 @@ type AddAppConnectionProps = {
   onClose: (response: Record<string, unknown>) => void
   application: IApp
   connectionId?: string
+  flowId?: string
 }
 
 type Response = {
@@ -39,7 +40,7 @@ type Response = {
 export default function AddAppConnection(
   props: AddAppConnectionProps,
 ): React.ReactElement {
-  const { application, connectionId, onClose } = props
+  const { application, connectionId, onClose, flowId } = props
   const { name, authDocUrl, key, auth } = application
   const [error, setError] = React.useState<IJSONObject | null>(null)
   const [inProgress, setInProgress] = React.useState(false)
@@ -79,6 +80,7 @@ export default function AddAppConnection(
           id: connectionId,
         },
         fields: data,
+        flowId,
       }
 
       let stepIndex = 0
@@ -107,7 +109,7 @@ export default function AddAppConnection(
 
       setInProgress(false)
     },
-    [connectionId, key, steps, onClose],
+    [connectionId, key, steps, onClose, flowId],
   )
 
   if (auth?.connectionType !== 'user-added') {
