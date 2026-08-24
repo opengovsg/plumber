@@ -4,6 +4,59 @@ packages:
 
 engineStrict: true
 minimumReleaseAge: 2880
+minimumReleaseAgeIgnoreMissingTime: false
+
+# @taskforcesh/bullmq-pro is served from the private npm.taskforce.sh registry. Unauthenticated
+# access 401s locally, and even with CI's NPM_TASKFORCESH_TOKEN the manifest has no "time" field
+# at all (confirmed via ERR_PNPM_TRUST_DOWNGRADE, not just the release-age check) — this looks
+# like a structural gap in that registry's metadata rather than something a token fixes. Excluded
+# from both checks below; revisit if taskforce.sh ever starts serving publish timestamps.
+minimumReleaseAgeExclude:
+  - "@taskforcesh/bullmq-pro@7.44.0"
+
+registries:
+  default: "https://registry.npmjs.org/"
+
+blockExoticSubdeps: true
+
+strictDepBuilds: true
+
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 525600
+# Investigated 2026-08-24: both are legitimate maintainer-published patch releases that simply
+# didn't go through the project's usual npm Trusted Publisher (OIDC) CI pipeline for this one
+# version, not signs of account/package takeover.
+trustPolicyExclude:
+  # See minimumReleaseAgeExclude above — same private registry, same missing "time" metadata.
+  - "@taskforcesh/bullmq-pro@7.44.0"
+  # cytoscape.js 3.34.0 published via GitHub Actions OIDC; 3.34.1 published manually by the same
+  # longtime maintainer (maxkfranz) as a normal 9-commit patch (verified via GitHub compare diff,
+  # no script/dependency changes).
+  - "cytoscape@3.34.1"
+  # tiptap's 2.27.2 wave was published by _bdbch, a currently-listed @tiptap org maintainer,
+  # across ~20 packages simultaneously — the signature of a routine monorepo release, not an
+  # isolated account compromise.
+  - "@tiptap/core@2.27.2"
+  - "@tiptap/extension-blockquote@2.27.2"
+  - "@tiptap/extension-bold@2.27.2"
+  - "@tiptap/extension-bubble-menu@2.27.2"
+  - "@tiptap/extension-bullet-list@2.27.2"
+  - "@tiptap/extension-code-block@2.27.2"
+  - "@tiptap/extension-code@2.27.2"
+  - "@tiptap/extension-document@2.27.2"
+  - "@tiptap/extension-dropcursor@2.27.2"
+  - "@tiptap/extension-floating-menu@2.27.2"
+  - "@tiptap/extension-gapcursor@2.27.2"
+  - "@tiptap/extension-heading@2.27.2"
+  - "@tiptap/extension-history@2.27.2"
+  - "@tiptap/extension-horizontal-rule@2.27.2"
+  - "@tiptap/extension-italic@2.27.2"
+  - "@tiptap/extension-list-item@2.27.2"
+  - "@tiptap/extension-ordered-list@2.27.2"
+  - "@tiptap/extension-paragraph@2.27.2"
+  - "@tiptap/extension-strike@2.27.2"
+  - "@tiptap/extension-text@2.27.2"
+  - "@tiptap/pm@2.27.2"
 
 publicHoistPattern:
   - "graphql"
