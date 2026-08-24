@@ -4,9 +4,13 @@ import { buildPickerAnswerMessage, extractConnectionResult } from '../helpers'
 
 describe('buildPickerAnswerMessage', () => {
   it('formats the question, label, and id into the picker answer contract', () => {
-    expect(buildPickerAnswerMessage('Which Slack workspace?', 'My Workspace', 'conn-123')).toBe(
-      'Q: Which Slack workspace?\nA: My Workspace (id: conn-123)',
-    )
+    expect(
+      buildPickerAnswerMessage(
+        'Which Slack workspace?',
+        'My Workspace',
+        'conn-123',
+      ),
+    ).toBe('Q: Which Slack workspace?\nA: My Workspace (id: conn-123)')
   })
 })
 

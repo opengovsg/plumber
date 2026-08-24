@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
+
 import { AI_BUILDER_INLINE_CONNECT_APP_KEYS } from '@/pages/AiBuilder/constants'
 
 interface DynamicPickerOption {
@@ -330,7 +331,9 @@ export default function DynamicPicker({
                   onClick={onAddConnection}
                   fontWeight="normal"
                 >
-                  {appKey === 'formsg' ? 'Add a new form' : 'Add a new connection'}
+                  {appKey === 'formsg'
+                    ? 'Add a new form'
+                    : 'Add a new connection'}
                 </Button>
               )}
             </Flex>
