@@ -1,3 +1,4 @@
+import { Box, Divider, Show } from '@chakra-ui/react'
 import { useMemo, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import {
@@ -7,7 +8,6 @@ import {
   BiSolidGrid,
   BiTable,
 } from 'react-icons/bi'
-import { Box, Divider, Show } from '@chakra-ui/react'
 
 import AppBar from '@/components/AppBar'
 import { PipeIcon } from '@/components/Icons'

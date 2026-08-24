@@ -1,5 +1,5 @@
-import { Helmet } from 'react-helmet'
 import { Box } from '@chakra-ui/react'
+import { Helmet } from 'react-helmet'
 
 import AppBar from '@/components/AppBar'
 import RedirectToLogin from '@/components/RedirectToLogin'

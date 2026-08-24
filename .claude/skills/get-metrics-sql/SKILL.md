@@ -32,7 +32,7 @@ Read [reference/glossary.md](reference/glossary.md) and [reference/gotchas.md](r
 Restate the question in terms of concrete tables/columns, reading the relevant
 [model file(s)](../../../packages/backend/src/models/) directly for schema details. Pin down every
 ambiguous business term against the glossary — in particular, decide whether "active" means
-*published* (`flows.active`) or *active pipe/user* (flowed within a period); ask the user if the
+_published_ (`flows.active`) or _active pipe/user_ (flowed within a period); ask the user if the
 question doesn't make this clear.
 
 ### 2. Resolve any named app/trigger/action

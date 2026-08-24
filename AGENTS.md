@@ -98,18 +98,12 @@ Comments state WHY, never WHAT.
 Example:
 
 WRONG (traces the mechanism):
-    /**
-     * Whether execution has reached this MRF step. Normally the previous step
-     * ran, but it may sit inside an if-then V2 block that a FALSE condition
-     * skipped, so absence of an execution step proves nothing on its own...
-     */
+/** * Whether execution has reached this MRF step. Normally the previous step * ran, but it may sit inside an if-then V2 block that a FALSE condition * skipped, so absence of an execution step proves nothing on its own...
+*/
 
 RIGHT (states only the motivating problem):
-    /**
-     * Checks whether execution reached this sub-trigger.
-     *
-     * Handles MRF submissions arriving before earlier steps finish running.
-     */
+/** * Checks whether execution reached this sub-trigger. * * Handles MRF submissions arriving before earlier steps finish running.
+*/
 
 ## Skills
 

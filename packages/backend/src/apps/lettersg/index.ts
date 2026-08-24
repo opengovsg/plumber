@@ -1,9 +1,9 @@
 import type { IApp } from '@plumber/types'
 
-import addAuthHeader from './common/add-auth-header'
-import requestErrorHandler from './common/request-error-handler'
 import actions from './actions'
 import auth from './auth'
+import addAuthHeader from './common/add-auth-header'
+import requestErrorHandler from './common/request-error-handler'
 import dynamicData from './dynamic-data'
 
 const app: IApp = {

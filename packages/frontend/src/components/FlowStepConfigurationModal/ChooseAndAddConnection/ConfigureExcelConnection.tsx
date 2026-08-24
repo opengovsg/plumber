@@ -1,7 +1,3 @@
-import type { IApp } from '@plumber/types'
-
-import { useContext, useMemo } from 'react'
-import { BiQuestionMark, BiRightArrowAlt } from 'react-icons/bi'
 import {
   Flex,
   Icon,
@@ -11,6 +7,9 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button, ModalCloseButton } from '@opengovsg/design-system-react'
+import type { IApp } from '@plumber/types'
+import { useContext, useMemo } from 'react'
+import { BiQuestionMark, BiRightArrowAlt } from 'react-icons/bi'
 
 import microsoftFolder from '@/assets/microsoft-folder.svg'
 import { EditorContext } from '@/contexts/Editor'
@@ -19,7 +18,6 @@ import useAuthentication from '@/hooks/useAuthentication'
 import BackButton from '../BackButton'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'
-
 import ConnectionHeader from './ConnectionHeader'
 
 export function ImageBox({

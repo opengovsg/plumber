@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import type { VariableInfoMap } from '../RichTextEditor/utils'
-
 import { matchParamsToDataIn } from './utils'
 
 const CHECKBOX_VAR =

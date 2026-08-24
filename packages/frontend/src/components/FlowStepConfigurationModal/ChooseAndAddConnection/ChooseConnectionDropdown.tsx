@@ -1,14 +1,12 @@
-import { type IApp } from '@plumber/types'
-
-import { useCallback } from 'react'
 import { FormControl } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
+import { type IApp } from '@plumber/types'
+import { useCallback } from 'react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
-import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
-
 import { ConnectionDropdownOption } from '.'
+import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
 
 interface ChooseConnectionDropdownProps {
   isDisabled: boolean

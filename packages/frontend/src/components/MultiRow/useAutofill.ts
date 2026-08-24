@@ -1,7 +1,6 @@
-import type { IField } from '@plumber/types'
-
-import { RefObject, useCallback, useRef } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
+import type { IField } from '@plumber/types'
+import { RefObject, useCallback, useRef } from 'react'
 
 import useDynamicData from '@/hooks/useDynamicData.js'
 

@@ -18,7 +18,6 @@ import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-he
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
 import batchQueueConfig from '../../queue/batch'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import { parametersSchema } from './schemas'
 

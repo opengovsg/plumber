@@ -1,8 +1,7 @@
+import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 import { IStep } from '@plumber/types'
-
 import { useContext, useState } from 'react'
 import { BiPlus } from 'react-icons/bi'
-import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'

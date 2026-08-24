@@ -1,6 +1,5 @@
-import type { IApp, ITemplateStep } from '@plumber/types'
-
 import { Flex, Icon, Text } from '@chakra-ui/react'
+import type { IApp, ITemplateStep } from '@plumber/types'
 
 import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'

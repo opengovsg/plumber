@@ -1,5 +1,5 @@
-
 ---
+
 name: adversarial-review
 description: Perform a read-only, adversarial review of local Git changes that challenges the implementation direction, design choices, assumptions, tradeoffs, failure modes, and ship readiness. Use only when the user explicitly invokes `$adversarial-review` or explicitly requests an adversarial or challenge review. Support working-tree review, branch review, a named base ref, explicit scope selection, and optional focus text. Never modify files while using this skill.
 ---

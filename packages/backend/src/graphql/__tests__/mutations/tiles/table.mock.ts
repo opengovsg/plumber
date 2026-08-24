@@ -148,8 +148,11 @@ export function generateMockTableRowData({
 }: {
   columnIds: string[]
 }): Record<string, string> {
-  return columnIds.reduce((acc, id) => {
-    acc[id] = `test_${randomUUID()}`
-    return acc
-  }, {} as Record<string, string>)
+  return columnIds.reduce(
+    (acc, id) => {
+      acc[id] = `test_${randomUUID()}`
+      return acc
+    },
+    {} as Record<string, string>,
+  )
 }

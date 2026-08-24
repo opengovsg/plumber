@@ -1,5 +1,3 @@
-import { BaseSyntheticEvent, useCallback, useContext, useState } from 'react'
-import { FieldValues, useForm } from 'react-hook-form'
 import { Flex, FormControl, Text, useDisclosure } from '@chakra-ui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import {
@@ -9,6 +7,8 @@ import {
   Input,
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
+import { BaseSyntheticEvent, useCallback, useContext, useState } from 'react'
+import { FieldValues, useForm } from 'react-hook-form'
 import * as yup from 'yup'
 
 import { EditorSettingsContext } from '@/contexts/EditorSettings'

@@ -70,7 +70,7 @@ Run the discovery recipe in
 the instrumentation idiom patterns (`tracer.wrap(`, `.addTags(`,
 `setOperationName(`, `logger.error(`/`logger.warn(`, `datadogRum.`) starting
 from the feature diff's files, widening to areas relevant to the agreed
-failure modes. Read the hits to enumerate the *current* span op-names, span
+failure modes. Read the hits to enumerate the _current_ span op-names, span
 tags, and log fields — never trust a remembered or hardcoded catalog. Note the
 file path where each signal is emitted so a human can confirm it is flowing in
 Datadog.
@@ -91,7 +91,7 @@ agreed failure mode:
    (`trace.<operation>.hits/errors/duration`) from spans that already flow,
    RUM auto-collected errors/resources/actions, and logs already emitted.
 1. **Reuse an existing custom metric/trace/log as-is.**
-2. **Add an attribute/tag to an *existing* span, or a field to an *existing*
+2. **Add an attribute/tag to an _existing_ span, or a field to an _existing_
    log line.**
 3. **Last resort: a new span/metric/log.**
 
@@ -99,7 +99,7 @@ Output a short **"Instrumentation changes"** list: only what is strictly
 needed, each item ranked by minimality, tied to a failure mode, and pointing
 at the exact file + idiom (e.g. "add a tag to the existing `addTags({...})`
 call in make-action-worker.ts", not "add a new span"). This skill only
-*recommends* these changes — it does not apply them.
+_recommends_ these changes — it does not apply them.
 
 ### 5. Produce monitors
 

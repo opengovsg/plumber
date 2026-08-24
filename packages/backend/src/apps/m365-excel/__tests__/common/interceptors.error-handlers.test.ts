@@ -1,8 +1,6 @@
 // Avoid cyclic imports when importing m365ExcelApp
 import '@/apps'
-
 import type { IGlobalVariable } from '@plumber/types'
-
 import {
   AxiosError,
   type AxiosPromise,

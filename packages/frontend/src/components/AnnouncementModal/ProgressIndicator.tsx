@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
 import { Box } from '@chakra-ui/react'
+import { useMemo } from 'react'
 
 import { MotionBox } from './MotionBox'
 

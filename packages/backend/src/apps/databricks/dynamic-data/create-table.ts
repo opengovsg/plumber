@@ -1,5 +1,4 @@
 import { IDynamicAction, IGlobalVariable, IJSONObject } from '@plumber/types'
-
 import validator from 'email-validator'
 import { z } from 'zod'
 

@@ -1,7 +1,3 @@
-import type { IApp, IField, IJSONObject } from '@plumber/types'
-
-import * as React from 'react'
-import { FieldValues, SubmitHandler } from 'react-hook-form'
 import { useMutation, useQuery } from '@apollo/client'
 import {
   Alert,
@@ -17,6 +13,9 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
+import type { IApp, IField, IJSONObject } from '@plumber/types'
+import * as React from 'react'
+import { FieldValues, SubmitHandler } from 'react-hook-form'
 
 import ConnectionHeader from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConnectionHeader'
 import { DEFAULT_ADD_CONNECTION_LABEL } from '@/components/FlowStepConfigurationModal/constants'
@@ -237,8 +236,8 @@ export default function AddAppConnection(
             headerText={
               hasConnection
                 ? `Edit ${name} connection`
-                : auth?.connectionModalLabel?.addConnectionLabel ??
-                  DEFAULT_ADD_CONNECTION_LABEL
+                : (auth?.connectionModalLabel?.addConnectionLabel ??
+                  DEFAULT_ADD_CONNECTION_LABEL)
             }
           />
           <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />

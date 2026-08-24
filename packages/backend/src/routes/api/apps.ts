@@ -1,5 +1,4 @@
 import type { IApp } from '@plumber/types'
-
 import { Router } from 'express'
 import { pick } from 'lodash'
 

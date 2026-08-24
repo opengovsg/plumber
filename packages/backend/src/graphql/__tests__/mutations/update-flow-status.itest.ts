@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { NotFoundError } from 'objection'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,8 +20,8 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import flowQueue from '@/queues/flow'
 
-import { generateMockContext } from './tiles/table.mock'
 import { generateMockCollaborator, generateMockUser } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 // Captured at module load before the outer `beforeEach` reassigns these to
 // vi.fn(); used by the real-BullMQ describe block to bypass the mocks.

@@ -1,6 +1,3 @@
-import { IFlow } from '@plumber/types'
-
-import { useContext, useRef, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import {
   Box,
@@ -16,6 +13,8 @@ import {
   Tr,
 } from '@chakra-ui/react'
 import { Tag } from '@opengovsg/design-system-react'
+import { IFlow } from '@plumber/types'
+import { useContext, useRef, useState } from 'react'
 
 import AppIcon from '@/components/AppIcon'
 import PrimarySpinner from '@/components/PrimarySpinner'

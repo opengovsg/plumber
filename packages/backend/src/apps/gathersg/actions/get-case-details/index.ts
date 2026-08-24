@@ -1,5 +1,4 @@
 import { IRawAction } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -14,7 +13,6 @@ import {
 } from '../../common/case-identifier'
 import throwGatherSGStepError from '../../common/throw-errors'
 import { processFields } from '../../common/utils'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {

@@ -1,18 +1,17 @@
-import { useContext } from 'react'
 import { Flex, ModalBody, ModalHeader } from '@chakra-ui/react'
 import { ModalCloseButton } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 
+import { ConnectionDropdownOption } from '.'
 import BackButton from '../BackButton'
 import { DEFAULT_CHOOSE_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
-
 import ChooseConnectionDropdown from './ChooseConnectionDropdown'
 import ConnectionHeader from './ConnectionHeader'
 import SetConnectionButton from './SetConnectionButton'
-import { ConnectionDropdownOption } from '.'
 
 interface ChooseConnectionProps {
   appConnectionsLoading: boolean

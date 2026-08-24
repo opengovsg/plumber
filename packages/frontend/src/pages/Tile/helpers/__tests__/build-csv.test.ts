@@ -1,5 +1,4 @@
 import type { ITableColumnMetadata } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import type { GenericRowData } from '../../types'

@@ -1,7 +1,6 @@
 import { IGlobalVariable } from '@plumber/types'
 
 import { authDataSchema } from '../auth/schema'
-
 import {
   PostmanEnv,
   PROD_ENV_KEY_PREFIX,

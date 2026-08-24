@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
 import { Flex, Icon, ListItem, Text } from '@chakra-ui/react'
 import { dataAttr } from '@chakra-ui/utils'
+import { useMemo } from 'react'
 
 import { useSelectContext } from '../../SelectContext'
 import { ComboboxItem } from '../../types'
@@ -12,7 +12,6 @@ import {
   itemToIcon,
   itemToLabelString,
 } from '../../utils/itemUtils'
-
 import { DropdownItemTextHighlighter } from './DropdownItemTextHighlighter'
 
 export interface DropdownItemProps {

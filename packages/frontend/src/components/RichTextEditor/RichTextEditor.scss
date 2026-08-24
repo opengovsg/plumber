@@ -225,7 +225,8 @@
   }
 
   .node-variable.ProseMirror-selectednode .chakra-badge[data-content='empty'],
-  .node-tableVariable.ProseMirror-selectednode .chakra-badge[data-content='empty'] {
+  .node-tableVariable.ProseMirror-selectednode
+    .chakra-badge[data-content='empty'] {
     box-shadow: none;
     background-color: var(--chakra-colors-primary-100);
   }

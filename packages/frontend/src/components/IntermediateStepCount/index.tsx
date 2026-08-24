@@ -1,5 +1,5 @@
-import * as React from 'react'
 import { Box, Text } from '@chakra-ui/react'
+import * as React from 'react'
 
 type IntermediateStepCountProps = {
   count: number

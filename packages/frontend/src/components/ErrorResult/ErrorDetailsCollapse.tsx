@@ -1,8 +1,7 @@
-import { IJSONObject } from '@plumber/types'
-
-import { useCallback, useState } from 'react'
 import { Box, Collapse } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { IJSONObject } from '@plumber/types'
+import { useCallback, useState } from 'react'
 
 import JSONViewer from '@/components/JSONViewer'
 

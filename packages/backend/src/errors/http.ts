@@ -1,5 +1,4 @@
 import { IJSONObject } from '@plumber/types'
-
 import type { AxiosError, AxiosResponse } from 'axios'
 
 import BaseError from './base'

@@ -204,7 +204,9 @@ export default defineWorkflow({
               ['-p', '--no-session', '--tools', 'read,grep,find,ls', prompt],
               { signal, timeout: 5 * 60_000, maxBuffer: 10_000_000 },
             )
-            const block = [...stdout.matchAll(/```json\s*([\s\S]*?)```/g)].at(-1)?.[1]
+            const block = [...stdout.matchAll(/```json\s*([\s\S]*?)```/g)].at(
+              -1,
+            )?.[1]
             if (!block) throw new Error('judge output has no ```json block')
             const { verdict, reason } = verdictSchema.parse(JSON.parse(block))
             if (verdict === 'human') {
@@ -219,7 +221,11 @@ export default defineWorkflow({
           } catch (error) {
             if (signal.aborted) throw error
             // An unjudged task stays open but unworked, because a failed judgement says nothing about whether it needs a human.
-            result.unjudgedTasks.push({ ...task, id, reason: String(error).slice(-500) })
+            result.unjudgedTasks.push({
+              ...task,
+              id,
+              reason: String(error).slice(-500),
+            })
           }
         }
         return result

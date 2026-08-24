@@ -1,5 +1,4 @@
 import type { IField, IFieldDropdownOption } from '@plumber/types'
-
 import { useContext } from 'react'
 import { useFormContext } from 'react-hook-form'
 
@@ -22,7 +21,6 @@ import {
 import useDynamicData from '@/hooks/useDynamicData'
 
 import { COLLABORATOR_RESTRICTED_ADDNEW_IDS } from '../Editor/constants'
-
 import BooleanRadio from './BooleanRadio'
 
 export type InputCreatorProps = {

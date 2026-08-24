@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -8,7 +7,6 @@ import {
   LETTERSG_STAGING_LABEL_SUFFIX,
   LetterSgEnvironment,
 } from '../common/api'
-
 import { AuthData, validateAuthData } from './auth-data'
 import { verifyApiKey } from './verify-api-key'
 

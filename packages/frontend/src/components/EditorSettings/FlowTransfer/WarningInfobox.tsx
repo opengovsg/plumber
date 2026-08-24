@@ -1,7 +1,7 @@
-import { useContext } from 'react'
-import { Link } from 'react-router-dom'
 import { Box, Flex, List, ListItem, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
+import { Link } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'

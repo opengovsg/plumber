@@ -1,6 +1,6 @@
-import { MouseEvent, useCallback, useMemo } from 'react'
 import { Box } from '@chakra-ui/react'
 import { Header } from '@tanstack/react-table'
+import { MouseEvent, useCallback, useMemo } from 'react'
 
 import { HEADER_COLOR } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'

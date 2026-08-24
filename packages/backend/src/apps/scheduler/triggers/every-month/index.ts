@@ -1,5 +1,4 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 
 import {

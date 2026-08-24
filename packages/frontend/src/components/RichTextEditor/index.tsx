@@ -1,14 +1,4 @@
 import './RichTextEditor.scss'
-
-import type {
-  TDataOutMetadatumType,
-  TFieldPreviewType,
-  TRteMenuOption,
-} from '@plumber/types'
-import { IJSONValue } from '@plumber/types'
-
-import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
 import {
   Box,
   FormControl,
@@ -19,6 +9,12 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { FormLabel, useIsMobile } from '@opengovsg/design-system-react'
+import type {
+  TDataOutMetadatumType,
+  TFieldPreviewType,
+  TRteMenuOption,
+} from '@plumber/types'
+import { IJSONValue } from '@plumber/types'
 import Document from '@tiptap/extension-document'
 import Hardbreak from '@tiptap/extension-hard-break'
 import Link from '@tiptap/extension-link'
@@ -34,6 +30,8 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import clsx from 'clsx'
 import escapeHtml from 'escape-html'
+import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
 
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'

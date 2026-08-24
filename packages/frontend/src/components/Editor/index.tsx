@@ -1,5 +1,5 @@
-import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
+import { useContext, useMemo } from 'react'
 
 import EditorRightDrawer from '@/components/EditorRightDrawer'
 import { EditorContext } from '@/contexts/Editor'

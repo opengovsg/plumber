@@ -1,7 +1,7 @@
 # Plumber observability stack — discovery recipe
 
 How to enumerate the signals (spans, span tags, log lines/fields, RUM events)
-that *currently* exist in the code. This file deliberately contains **no
+that _currently_ exist in the code. This file deliberately contains **no
 catalog of individual spans/tags/log-fields and no list of entry-point
 files** — both drift as code is added. The only stable anchor is the
 instrumentation **idiom/API surface**; everything else is discovered live at
@@ -12,14 +12,14 @@ planning time by grepping for the idioms and reading the hits.
 Grepping for these finds all current call sites in any file, including files
 that didn't exist when this doc was written:
 
-| Idiom | What it produces in Datadog |
-| --- | --- |
-| `tracer.wrap('<op.name>', …)` | A span named `<op.name>` → Datadog auto-generates trace metrics `trace.<op.name>.hits` / `.errors` and a latency distribution, with zero extra code and no retention dependency |
-| `tracer.scope().active()` + `span?.addTags({…})` | Tags on the active span → only queryable in monitors via indexed spans (trace-analytics), which needs a custom retention filter |
-| `span?.setOperationName('<op.name>')` | Renames the active span's operation (same effect as `tracer.wrap` for metric naming) |
-| `tracer.setUser({…})` | User attribution on the trace |
-| `logger.error('msg', {…})` / `logger.warn(…)` / `logger.info(…)` / `logger.http(…)` | A winston log line; in prod it is JSON, the metadata object's keys become log attributes, the level becomes the `status` facet |
-| `datadogRum.<anything>` | Frontend RUM usage beyond the auto-collected events |
+| Idiom                                                                               | What it produces in Datadog                                                                                                                                                     |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tracer.wrap('<op.name>', …)`                                                       | A span named `<op.name>` → Datadog auto-generates trace metrics `trace.<op.name>.hits` / `.errors` and a latency distribution, with zero extra code and no retention dependency |
+| `tracer.scope().active()` + `span?.addTags({…})`                                    | Tags on the active span → only queryable in monitors via indexed spans (trace-analytics), which needs a custom retention filter                                                 |
+| `span?.setOperationName('<op.name>')`                                               | Renames the active span's operation (same effect as `tracer.wrap` for metric naming)                                                                                            |
+| `tracer.setUser({…})`                                                               | User attribution on the trace                                                                                                                                                   |
+| `logger.error('msg', {…})` / `logger.warn(…)` / `logger.info(…)` / `logger.http(…)` | A winston log line; in prod it is JSON, the metadata object's keys become log attributes, the level becomes the `status` facet                                                  |
+| `datadogRum.<anything>`                                                             | Frontend RUM usage beyond the auto-collected events                                                                                                                             |
 
 ## Discovery procedure
 
@@ -50,8 +50,8 @@ that didn't exist when this doc was written:
    span op-names, the exact keys passed to `.addTags({…})`, the message +
    metadata fields of relevant `logger.*` calls, and any custom RUM calls.
    Record **where each signal is emitted (file path)** so a human can confirm
-   it is actually flowing in Datadog — code proves the signal is *emitted*,
-   not that it is *retained or indexed*.
+   it is actually flowing in Datadog — code proves the signal is _emitted_,
+   not that it is _retained or indexed_.
 
 3. Optional accelerator: `codegraph` MCP tools can speed up "who calls X"
    questions, with two caveats — it indexes `.claude/worktrees/*` copies

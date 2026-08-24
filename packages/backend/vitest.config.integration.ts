@@ -3,8 +3,9 @@
 // Configure Vitest (https://vitest.dev/config/)
 // This is for tests that require a database connection.
 
-import { config } from 'dotenv'
 import { resolve } from 'path'
+
+import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
 
 function getPath(relativePath: string): string {

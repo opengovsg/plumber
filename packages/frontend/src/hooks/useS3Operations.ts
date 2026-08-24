@@ -1,11 +1,11 @@
-import { useContext, useState } from 'react'
-import { FieldValues, UseFormGetValues } from 'react-hook-form'
 import {
   ApolloQueryResult,
   OperationVariables,
   useMutation,
 } from '@apollo/client'
 import { useToast } from '@opengovsg/design-system-react'
+import { useContext, useState } from 'react'
+import { FieldValues, UseFormGetValues } from 'react-hook-form'
 
 import { type CheckboxVariable } from '@/components/AttachmentSuggestions/components/Checkbox'
 import {

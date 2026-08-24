@@ -174,10 +174,10 @@ A `200 OK` response means the flow was accepted and is now running.
 
 ## Known Windows issues
 
-| Issue                                    | Fix                                                                             |
-| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| Issue                                    | Fix                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
 | `'DOTENV_CONFIG_PATH' is not recognized` | Use `$env:VAR=value; command` syntax in PowerShell instead of `pnpm run migrate` |
-| `401 Unauthorized` from taskforce.sh     | Set `NPM_TASKFORCESH_TOKEN` as in step 1, then open a new terminal              |
-| Port 6379 bind error                     | Enable WSL2 backend in Docker Desktop settings                                  |
-| `docker-compose` not found               | Use `docker compose` (space, no hyphen)                                         |
-| LaunchDarkly 401 warnings in logs        | Harmless in local dev — feature flags just won't work                           |
+| `401 Unauthorized` from taskforce.sh     | Set `NPM_TASKFORCESH_TOKEN` as in step 1, then open a new terminal               |
+| Port 6379 bind error                     | Enable WSL2 backend in Docker Desktop settings                                   |
+| `docker-compose` not found               | Use `docker compose` (space, no hyphen)                                          |
+| LaunchDarkly 401 warnings in logs        | Harmless in local dev — feature flags just won't work                            |

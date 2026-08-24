@@ -1,11 +1,10 @@
 import '@fontsource/space-grotesk'
 import '@opengovsg/confetti/confetti.css'
 import './posthog'
-
-import { createRoot } from 'react-dom/client'
-import { RouterProvider } from 'react-router-dom'
 import { datadogRum } from '@datadog/browser-rum'
 import { MotionConfig } from 'framer-motion'
+import { createRoot } from 'react-dom/client'
+import { RouterProvider } from 'react-router-dom'
 
 import ApolloProvider from '@/components/ApolloProvider'
 import router from '@/components/Router'

@@ -1,7 +1,7 @@
-import { Helmet } from 'react-helmet'
-import { Navigate } from 'react-router-dom'
 import { Box, Flex } from '@chakra-ui/react'
 import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
+import { Helmet } from 'react-helmet'
+import { Navigate } from 'react-router-dom'
 
 import SiteWideBanner from '@/components/SiteWideBanner'
 import * as URLS from '@/config/urls'

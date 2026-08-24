@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
 import { Flex, Tag } from '@chakra-ui/react'
 import startCase from 'lodash/startCase'
+import { useMemo } from 'react'
 
 import { GroupStats } from '@/helpers/processExecutionSteps'
 
