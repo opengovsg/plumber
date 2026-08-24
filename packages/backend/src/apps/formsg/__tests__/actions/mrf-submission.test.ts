@@ -39,7 +39,6 @@ vi.mock('@/helpers/logger', () => ({
   },
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import action from '../../actions/mrf-submission/index'
 
 function createMockGlobalVariable(
