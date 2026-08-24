@@ -272,7 +272,7 @@ export const MenuBar = ({
       }
     })
     return found
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [editor, editor?.state.selection])
 
   const onClickOverrides: Partial<Record<RteMenuOption, () => void>> = useMemo(

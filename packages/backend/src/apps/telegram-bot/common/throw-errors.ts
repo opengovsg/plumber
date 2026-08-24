@@ -54,7 +54,7 @@ export async function throwSendMessageError(
   switch (err.response.status) {
     case 400:
       // many sub errors caught by telegram for this status
-      // eslint-disable-next-line no-case-declarations
+      // oxlint-disable-next-line no-case-declarations
       const errorString = JSON.stringify(get(err, 'details.description', ''))
       if (errorString.includes('not enough rights')) {
         throw new StepError(

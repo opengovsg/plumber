@@ -54,7 +54,7 @@ export default function DeleteRowsModal({
     setIsDeletingRows(false)
     setNumDeletedRows(0)
     setNumRowsToDelete(rowIdsToDelete.length)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
   if (isViewMode) {
