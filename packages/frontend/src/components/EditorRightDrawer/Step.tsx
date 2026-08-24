@@ -1,6 +1,6 @@
 import type { IStep } from '@plumber/types'
 
-import { Fragment, useCallback, useContext, useMemo } from 'react'
+import { useCallback, useContext, useMemo } from 'react'
 import { Flex, useDisclosure } from '@chakra-ui/react'
 
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
