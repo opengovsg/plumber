@@ -4,7 +4,11 @@ packages:
 
 engineStrict: true
 minimumReleaseAge: 2880
-minimumReleaseAgeIgnoreMissingTime: false
+# npm.taskforce.sh (bullmq-pro) omits the "time" field in packument metadata. false hard-fails
+# ERR_PNPM_MISSING_TIME for any such registry, including with minimumReleaseAgeExclude /
+# trustPolicyExclude. true skips age and trust-downgrade checks only when timestamps are absent;
+# packages on registries that publish "time" still get the full 48h minimumReleaseAge + trustPolicy.
+minimumReleaseAgeIgnoreMissingTime: true
 
 # @taskforcesh/bullmq-pro is served from the private npm.taskforce.sh registry. Unauthenticated
 # access 401s locally, and even with CI's NPM_TASKFORCESH_TOKEN the manifest has no "time" field
