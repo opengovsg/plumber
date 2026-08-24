@@ -1,4 +1,5 @@
 import type { IGlobalVariable, IHttpClient } from '@plumber/types'
+import type { CreateAxiosDefaults, InternalAxiosRequestConfig } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createHttpClient from '../http-client'
@@ -9,10 +10,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
-    actualAxios.default.create({
+  const mockCreate: typeof actualAxios.create = (
+    createConfig?: CreateAxiosDefaults,
+  ) =>
+    actualAxios.create({
       ...createConfig,
-      adapter: async (requestConfig) => {
+      adapter: async (requestConfig: InternalAxiosRequestConfig) => {
         mocks.axiosRequestUrlSpy(requestConfig.url)
 
         return {
@@ -27,7 +30,7 @@ vi.mock('axios', async (importOriginal) => {
 
   return {
     default: {
-      ...actualAxios.default,
+      ...actualAxios,
       create: mockCreate,
     },
   }
