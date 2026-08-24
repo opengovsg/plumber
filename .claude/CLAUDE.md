@@ -48,7 +48,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 
 **Testing:**
 
-- `npm test` — runs the configured Vitest projects for frontend, backend unit, and backend integration tests.
+- `npm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
 - `npm run -w backend test:unit` — runs backend unit tests only.
 - `npx vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
 - Backend integration tests use the `.itest.ts` suffix and require Docker/testcontainers — see [.claude/rules/backend.md](rules/backend.md).
@@ -59,7 +59,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 - **Package manager**: only use `npm`. Never use `yarn`, `pnpm`, or other package managers.
 - **Installing packages**: always pass the `-E` (exact version) flag.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
-- **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and fix remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root command.
+- **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and `npm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.
