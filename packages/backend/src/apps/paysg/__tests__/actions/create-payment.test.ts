@@ -116,7 +116,7 @@ describe('create payment', () => {
     ]
 
     await createPaymentAction.run($)
-    expect($.setActionItem).toBeCalledWith({
+    expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         id: MOCK_PAYMENT.id,
         paymentUrl: MOCK_PAYMENT.payment_url,
@@ -145,7 +145,7 @@ describe('create payment', () => {
     })
 
     await createPaymentAction.run($)
-    expect($.setActionItem).toBeCalledWith({
+    expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         id: MOCK_PAYMENT.id,
         paymentUrl: MOCK_PAYMENT.payment_url,
@@ -199,7 +199,7 @@ describe('create payment', () => {
       $.step.parameters.payerAddress = payerAddress
       await createPaymentAction.run($)
 
-      expect(mocks.httpPost).toBeCalledWith(
+      expect(mocks.httpPost).toHaveBeenCalledWith(
         '/v1/payment-services/:paymentServiceId/payments',
         expect.objectContaining({
           payer_name: expectedPayerName,
