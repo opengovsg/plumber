@@ -57,10 +57,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2.2.0
         with:
           role-to-assume: ${{ inputs.cicd-role }}
           role-session-name: github-action-application-deploy
@@ -68,7 +68,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1.7.1
         with:
           mask-password: 'true'
 
@@ -89,7 +89,7 @@ jobs:
           docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
 
       - name: Scan built image with Inspector
-        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@v1
+        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@baab69e77b34f244adef1f702d0fd69f2b3bc545 # v1.6.0
         id: inspector
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -109,7 +109,7 @@ jobs:
 
       - name: Upload Scan Results
         id: upload-scan-results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           path: |
             ${{ steps.inspector.outputs.inspector_scan_results }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Notify Slack if vulnerability threshold is exceeded
         if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
-        uses: slackapi/slack-github-action@v2
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -159,10 +159,10 @@ jobs:
     timeout-minutes: 8
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2.2.0
         with:
           role-to-assume: ${{ inputs.cicd-role }}
           role-session-name: github-action-application-deploy
@@ -170,7 +170,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1.7.1
         with:
           mask-password: 'true'
 
@@ -201,7 +201,7 @@ jobs:
 
       - name: (Server) Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ecs-task-definition.json
           container-name: server
@@ -209,14 +209,14 @@ jobs:
 
       - name: (Worker) Fill in the new image ID in the Amazon ECS task definition
         id: full-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           container-name: worker
           image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Deploy Amazon ECS task definition to server
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@69e7aed9b8acdd75a6c585ac669c33831ab1b9a3 # v1.5.0
         with:
           task-definition: ${{ steps.full-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
@@ -242,7 +242,7 @@ jobs:
 
       - name: (Archival) Fill in the new image ID in the Amazon ECS task definition
         id: archival-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ecs-archival-task-definition.json
           container-name: archival
