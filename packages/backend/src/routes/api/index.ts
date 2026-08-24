@@ -11,7 +11,7 @@ import chatRouter from './chat'
 import connectionsRouter from './connections'
 import dynamicDataRouter from './dynamic-data'
 
-const router = Router()
+const router: Router = Router()
 
 // Apply authentication middleware to ALL API routes
 // This mirrors how GraphQL handles authentication via context

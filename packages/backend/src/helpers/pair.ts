@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
+import type { LanguageModelV2 } from '@ai-sdk/provider'
 
 import appConfig from '@/config/app'
 
@@ -13,7 +14,7 @@ const pairOpenAISettings = {
 } as const
 
 const engineProvider = createOpenAI(pairOpenAISettings)
-const model = engineProvider.chat(MODEL_TYPE)
+const model: LanguageModelV2 = engineProvider.chat(MODEL_TYPE)
 
 /**
  * AI Builder sends a large stable system prompt and tool list across turns.
