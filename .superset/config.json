@@ -1,7 +1,7 @@
 {
   "_note": "Frontend/backend ports for Superset worktrees are allocated from PLUMBER_SUPERSET_PORT_BASE (default 13000) by .superset/base_port.sh. To use a different base on your machine (e.g. another Superset project already uses the 13000 range), create a git-ignored .superset/config.local.json containing: { \"run\": { \"before\": [\"export PLUMBER_SUPERSET_PORT_BASE=20000\"] } }",
   "setup": [
-    "npm install",
+    "pnpm install",
     "cp \"$SUPERSET_ROOT_PATH/packages/backend/.env\" packages/backend/.env",
     "codegraph init -i"
   ],
