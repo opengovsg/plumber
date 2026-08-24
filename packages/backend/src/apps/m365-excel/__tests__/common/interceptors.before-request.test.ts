@@ -1,7 +1,11 @@
 // Avoid cyclic imports when importing m365ExcelApp
 import '@/apps'
 import type { IGlobalVariable } from '@plumber/types'
-import { type AxiosPromise, type InternalAxiosRequestConfig } from 'axios'
+import {
+  type AxiosPromise,
+  type CreateAxiosDefaults,
+  type InternalAxiosRequestConfig,
+} from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
@@ -17,8 +21,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
-    actualAxios.default.create({
+  const mockCreate: typeof actualAxios.create = (
+    createConfig?: CreateAxiosDefaults,
+  ) =>
+    actualAxios.create({
       ...createConfig,
       adapter: async (config: InternalAxiosRequestConfig): AxiosPromise => {
         mocks.axiosRequestConfigSpy(config)
@@ -35,7 +41,7 @@ vi.mock('axios', async (importOriginal) => {
   return {
     ...actualAxios,
     default: {
-      ...actualAxios.default,
+      ...actualAxios,
       create: mockCreate,
     },
   }

@@ -5,6 +5,7 @@ import {
   AxiosError,
   type AxiosPromise,
   type AxiosResponse,
+  type CreateAxiosDefaults,
   type InternalAxiosRequestConfig,
 } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -60,8 +61,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
-    actualAxios.default.create({
+  const mockCreate: typeof actualAxios.create = (
+    createConfig?: CreateAxiosDefaults,
+  ) =>
+    actualAxios.create({
       ...createConfig,
       adapter: mocks.axiosAdapter,
     })
@@ -69,7 +72,7 @@ vi.mock('axios', async (importOriginal) => {
   return {
     ...actualAxios,
     default: {
-      ...actualAxios.default,
+      ...actualAxios,
       create: mockCreate,
     },
   }
