@@ -1,9 +1,9 @@
 import { createMultiStyleConfigHelpers, defineStyle } from '@chakra-ui/react'
 import { anatomy } from '@chakra-ui/theme-tools'
 
-export const comboboxParts = anatomy('combobox').parts('item')
+const comboboxParts = anatomy('combobox').parts('item')
 
-export const parts = anatomy('singleselect')
+const parts = anatomy('singleselect')
   .parts(...comboboxParts.keys)
   .extend('field', 'selected')
 
