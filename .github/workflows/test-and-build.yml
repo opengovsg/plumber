@@ -51,6 +51,20 @@ jobs:
       - run: pnpm run lint
       - run: echo "✅ Lint check passed."
 
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - run: pnpm run format
+      - run: echo "✅ Format check passed."
+
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest

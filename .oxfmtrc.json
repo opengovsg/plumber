@@ -5,5 +5,13 @@
   "singleQuote": true,
   "printWidth": 80,
   "sortPackageJson": false,
-  "ignorePatterns": []
+  "sortImports": true,
+  "ignorePatterns": [
+    "**/.build",
+    "**/build",
+    "**/dist",
+    "**/coverage",
+    "**/graphql/__generated__",
+    "**/assets/**/*.json"
+  ]
 }
