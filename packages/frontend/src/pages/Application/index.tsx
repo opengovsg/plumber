@@ -1,3 +1,5 @@
+import { useQuery } from '@apollo/client'
+import { Box, Flex, Tab, TabList, Tabs, Text } from '@chakra-ui/react'
 import * as React from 'react'
 import {
   Link,
@@ -8,8 +10,6 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom'
-import { useQuery } from '@apollo/client'
-import { Box, Flex, Tab, TabList, Tabs, Text } from '@chakra-ui/react'
 
 import AddAppConnection from '@/components/AddAppConnection'
 import AppConnections from '@/components/AppConnections'

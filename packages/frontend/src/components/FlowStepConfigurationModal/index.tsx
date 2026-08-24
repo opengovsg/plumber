@@ -1,7 +1,6 @@
-import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
-
-import { useContext } from 'react'
 import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
+import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
+import { useContext } from 'react'
 
 import type { AnchorPlacement } from './helpers/anchor-placement'
 import ChooseAndAddConnection from './ChooseAndAddConnection'

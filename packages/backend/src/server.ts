@@ -1,7 +1,6 @@
 import '@/instrumentation'
 import '@/helpers/tracer'
 import '@/config/app-env-vars'
-
 import type { Server } from 'http'
 
 import app from '@/app'

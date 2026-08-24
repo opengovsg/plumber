@@ -1,11 +1,10 @@
+import { Flex, Icon, Image } from '@chakra-ui/react'
 import { IApp, IStep } from '@plumber/types'
-
 import {
   BiArrowFromRight,
   BiSolidCheckCircle,
   BiSolidErrorCircle,
 } from 'react-icons/bi'
-import { Flex, Icon, Image } from '@chakra-ui/react'
 
 import { getToolboxIcon } from '@/helpers/editor'
 import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'

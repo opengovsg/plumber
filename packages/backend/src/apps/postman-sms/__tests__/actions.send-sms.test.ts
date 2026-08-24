@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import type { AxiosPromise } from 'axios'
 import { Settings as LuxonSettings } from 'luxon'
 import {
@@ -22,18 +21,16 @@ LuxonSettings.defaultZone = 'Asia/Singapore'
 LuxonSettings.defaultLocale = 'en-SG'
 
 const mocks = vi.hoisted(() => ({
-  axiosRequestAdapter: vi.fn(
-    async (requestConfig): AxiosPromise => ({
-      data: {
-        createdAt: '2024-01-29T17:39:35.574+08:00',
-        id: 'test-message-id',
-      },
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: requestConfig,
-    }),
-  ),
+  axiosRequestAdapter: vi.fn(async (requestConfig): AxiosPromise => ({
+    data: {
+      createdAt: '2024-01-29T17:39:35.574+08:00',
+      id: 'test-message-id',
+    },
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: requestConfig,
+  })),
   setActionItem: vi.fn(),
   logError: vi.fn(),
   authDataParseResult: vi.fn(() => ({

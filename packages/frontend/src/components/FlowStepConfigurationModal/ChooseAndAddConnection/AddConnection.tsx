@@ -1,13 +1,12 @@
-import type { IField, IJSONObject } from '@plumber/types'
-
-import { useCallback, useContext, useEffect, useState } from 'react'
-import { FieldValues, SubmitHandler } from 'react-hook-form'
 import { Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import {
   Button,
   Infobox,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
+import type { IField, IJSONObject } from '@plumber/types'
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { FieldValues, SubmitHandler } from 'react-hook-form'
 
 import InputCreator from '@/components/InputCreator'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
@@ -23,7 +22,6 @@ import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'
 import InvalidModalScreen from '../InvalidModalScreen'
-
 import ConnectionHeader from './ConnectionHeader'
 
 type AddConnectionProps = {

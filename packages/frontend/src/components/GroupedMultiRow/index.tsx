@@ -1,17 +1,15 @@
+import { Flex } from '@chakra-ui/react'
+import { Button, FormLabel } from '@opengovsg/design-system-react'
 import type { IField } from '@plumber/types'
-
 import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiPlus } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { Flex } from '@chakra-ui/react'
-import { Button, FormLabel } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 
 import { InputCreatorProps } from '../InputCreator'
 import MultiRow from '../MultiRow'
-
 import { canAddGroup } from './helpers'
 import OrDivider from './OrDivider'
 

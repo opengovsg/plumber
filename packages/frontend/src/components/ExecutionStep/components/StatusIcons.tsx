@@ -1,9 +1,9 @@
+import { Icon, Image } from '@chakra-ui/react'
 import {
   BiSolidCheckCircle,
   BiSolidErrorCircle,
   BiSolidInfoCircle,
 } from 'react-icons/bi'
-import { Icon, Image } from '@chakra-ui/react'
 
 import executionWaitingIcon from '@/assets/execution-waiting.svg'
 

@@ -1,5 +1,3 @@
-import { IExecutionStep } from '@plumber/types'
-
 import {
   Flex,
   Modal,
@@ -17,6 +15,7 @@ import {
   Thead,
   Tr,
 } from '@chakra-ui/react'
+import { IExecutionStep } from '@plumber/types'
 
 import { BORDER_COLOR, FONT_SIZE, ROW_COLOR } from '@/pages/Tile/constants'
 

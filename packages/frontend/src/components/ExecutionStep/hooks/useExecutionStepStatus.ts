@@ -1,7 +1,6 @@
-import type { IApp, IExecution } from '@plumber/types'
-
-import { useMemo } from 'react'
 import { useQuery } from '@apollo/client'
+import type { IApp, IExecution } from '@plumber/types'
+import { useMemo } from 'react'
 
 import { GroupStatusType } from '@/components/ExecutionGroup/GroupStatusFilter'
 import { GET_APP } from '@/graphql/queries/get-app'

@@ -1,5 +1,4 @@
 import { IRawAction } from '@plumber/types'
-
 import { ZodError } from 'zod'
 
 import {
@@ -16,7 +15,6 @@ import {
   FOR_EACH_ITERATION_KEY,
   FOR_EACH_TABLE_SOURCES,
 } from '../../common/constants'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import { inputSchema, parameterSchema } from './schema'
 

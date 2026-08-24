@@ -1,9 +1,8 @@
-import { CustomGraphQLFormattedError } from '@plumber/types'
-
 import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
 import { removeTypenameFromVariables } from '@apollo/client/link/remove-typename'
+import { CustomGraphQLFormattedError } from '@plumber/types'
 
 import {
   INVALID_TILE_VIEW_KEY,

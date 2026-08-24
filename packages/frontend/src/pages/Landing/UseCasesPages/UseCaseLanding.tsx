@@ -1,5 +1,5 @@
-import { ReactNode } from 'react'
 import { Box, Container, LightMode } from '@chakra-ui/react'
+import { ReactNode } from 'react'
 
 import { Footer } from '../Footer'
 import HeaderBar from '../HeaderBar'

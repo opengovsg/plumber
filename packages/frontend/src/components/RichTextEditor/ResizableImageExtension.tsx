@@ -1,11 +1,11 @@
-import { type CSSProperties, useCallback, useRef, useState } from 'react'
-import { RiSendToBack } from 'react-icons/ri'
 import TipTapImage, { type ImageOptions } from '@tiptap/extension-image'
 import {
   type NodeViewProps,
   NodeViewWrapper,
   ReactNodeViewRenderer,
 } from '@tiptap/react'
+import { type CSSProperties, useCallback, useRef, useState } from 'react'
+import { RiSendToBack } from 'react-icons/ri'
 
 const MIN_WIDTH = 60
 const MAX_WIDTH = 750

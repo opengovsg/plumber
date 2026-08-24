@@ -1,6 +1,6 @@
-import type { ITriggerItem, SubtriggerData } from '@plumber/types'
-
 import { randomUUID } from 'crypto'
+
+import type { ITriggerItem, SubtriggerData } from '@plumber/types'
 import get from 'lodash.get'
 
 import logger from '@/helpers/logger'

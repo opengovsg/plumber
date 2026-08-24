@@ -1,5 +1,4 @@
 import { IGlobalVariable, IRawAction } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 
 import StepError from '@/errors/step'

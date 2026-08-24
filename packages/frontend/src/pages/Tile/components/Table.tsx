@@ -1,11 +1,3 @@
-import {
-  MouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
 import { Box, Flex, useOutsideClick } from '@chakra-ui/react'
 import {
   ColumnOrderState,
@@ -18,6 +10,14 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import {
+  MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import {
   BORDER_COLOR,
@@ -35,12 +35,12 @@ import { shallowCompare } from '../helpers/shallow-compare'
 import { useCreateRow } from '../hooks/useCreateRow'
 import { useUpdateRow } from '../hooks/useUpdateRow'
 import { CellType, GenericRowData } from '../types'
-
-import SearchBar from './TableHeader/SearchBar'
-import styles from './Table.module.css'
 import TableFooter from './TableFooter'
 import TableHeader from './TableHeader'
+import SearchBar from './TableHeader/SearchBar'
 import TableRow from './TableRow'
+
+import styles from './Table.module.css'
 
 export default function Table(): JSX.Element {
   const { tableColumns, flattenedData, allDataRef, filteredDataRef, mode } =

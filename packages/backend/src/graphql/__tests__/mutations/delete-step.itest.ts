@@ -8,12 +8,12 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import {
   generateMockCollaborator,
   generateMockStep,
   generateMockUser,
 } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 // Defaults to false in beforeEach below so pre-existing tests here stay
 // byte-identical. The opportunistic-upgrade tests override it per case.

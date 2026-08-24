@@ -1,5 +1,4 @@
 import { IFlowCollabRole, IGlobalVariable } from '@plumber/types'
-
 import { Transaction } from 'objection'
 
 import { ForbiddenError } from '@/errors/graphql-errors'

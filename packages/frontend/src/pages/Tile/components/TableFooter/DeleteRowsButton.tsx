@@ -1,5 +1,5 @@
-import { BiTrash } from 'react-icons/bi'
 import { Button } from '@chakra-ui/react'
+import { BiTrash } from 'react-icons/bi'
 
 import { ROW_HEIGHT } from '@/pages/Tile/constants'
 

@@ -1,5 +1,4 @@
 import { IExecutionStep } from '@plumber/types'
-
 import { assert, describe, expect, it } from 'vitest'
 
 import getDataOutMetadata from '@/apps/pair/common/get-data-out-metadata'

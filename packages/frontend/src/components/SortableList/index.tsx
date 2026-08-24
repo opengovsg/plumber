@@ -1,7 +1,4 @@
 import './SortableList.css'
-
-import type { ReactNode } from 'react'
-import React, { useMemo, useState } from 'react'
 import type { Active, UniqueIdentifier } from '@dnd-kit/core'
 import {
   DndContext,
@@ -21,6 +18,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
+import type { ReactNode } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { DragHandle, SortableItem, SortableOverlay } from './components'
 

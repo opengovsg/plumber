@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import { ZodError } from 'zod'
 
 import StepError, { GenericSolution } from '@/errors/step'
@@ -10,7 +9,6 @@ import {
   fieldSchema as dateTimeFormatSchema,
   parseDateTime,
 } from '../../common/date-time-format'
-
 import { field, fieldSchema } from './fields'
 
 // Helper function to provide a nice StepError

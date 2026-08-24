@@ -1,6 +1,6 @@
-import { useContext } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 

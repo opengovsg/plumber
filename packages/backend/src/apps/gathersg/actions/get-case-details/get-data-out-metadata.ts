@@ -2,7 +2,6 @@ import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 
 import { buildAttachmentMetadata } from '../../common/data-out-metadata-helpers'
 import { decodeFieldName } from '../../common/utils'
-
 import { dataOutSchema } from './schema'
 
 type Attachment = {

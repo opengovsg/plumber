@@ -1,8 +1,5 @@
 // you need to import this to make the toPlumberFormat method available
 import '@/types/luxon-extensions'
-
-import type { IGlobalVariable } from '@plumber/types'
-
 import type {
   AnswerV4,
   FieldResponseV4,
@@ -12,11 +9,11 @@ import type {
 // value imports from the SDK must use the adapters subpath — the package
 // root's CJS entry only exposes the default factory at runtime
 import { adaptV3ToV4 } from '@opengovsg/formsg-sdk/adapters'
+import type { IGlobalVariable } from '@plumber/types'
 import { describe, expect, it, vi } from 'vitest'
 
 import { processResponsesV3 } from '../../auth/helpers/process-v3-responses'
 import { processResponsesV4 } from '../../auth/helpers/process-v4-responses'
-
 import {
   exampleV4Submission,
   makeExampleV4FormSchema,

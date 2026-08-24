@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 import { customAlphabet } from 'nanoid/async'
 

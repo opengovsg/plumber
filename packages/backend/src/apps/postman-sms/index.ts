@@ -1,9 +1,9 @@
 import { IApp } from '@plumber/types'
 
-import beforeRequest from './common/before-request'
-import requestErrorHandler from './common/request-error-handler'
 import actions from './actions'
 import auth from './auth'
+import beforeRequest from './common/before-request'
+import requestErrorHandler from './common/request-error-handler'
 import queue from './queue'
 
 const app: IApp = {

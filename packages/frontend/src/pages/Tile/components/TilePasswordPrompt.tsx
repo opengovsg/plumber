@@ -1,5 +1,3 @@
-import { type FormEvent, useState } from 'react'
-import { BiHide, BiShow } from 'react-icons/bi'
 import { ApolloError, useMutation } from '@apollo/client'
 import {
   Center,
@@ -10,6 +8,8 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, IconButton, Input } from '@opengovsg/design-system-react'
+import { type FormEvent, useState } from 'react'
+import { BiHide, BiShow } from 'react-icons/bi'
 
 import { FORBIDDEN, RATE_LIMITED } from '@/config/errors'
 import { VERIFY_TABLE_VIEW_PASSWORD } from '@/graphql/mutations/tiles/verify-table-view-password'

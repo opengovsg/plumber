@@ -1,6 +1,6 @@
-import { useRef } from 'react'
 import { Box } from '@chakra-ui/react'
 import { ThemeProvider as ChakraThemeProvider } from '@opengovsg/design-system-react'
+import { useRef } from 'react'
 
 import { useDefaultZoom } from '@/hooks/useGovtBrowser'
 import { useHandleDynamicLoadError } from '@/hooks/useHandleDynamicLoadError'

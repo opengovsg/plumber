@@ -40,8 +40,8 @@ export default function () {
     INSERT INTO "public"."load_test_table_${
       exec.vu.idInInstance
     }" ("rowId", "column0", "column1", "column2", "column3", "column4", "column5", "column6", "column7", "column8", "column9") VALUES ${generatedRows
-    .map((row) => `('${crypto.randomUUID()}', ${row})`)
-    .join(',\n')};
+      .map((row) => `('${crypto.randomUUID()}', ${row})`)
+      .join(',\n')};
   `)
   // const result = db.exec(`
   //   SELECT 1 FROM "public"."load_test_table_${exec.vu.idInInstance}";

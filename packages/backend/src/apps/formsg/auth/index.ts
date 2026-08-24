@@ -4,7 +4,6 @@ import {
   registerWebhookUrl,
   verifyWebhookUrl,
 } from '../common/webhook-settings'
-
 import { decryptFormResponse } from './decrypt-form-response'
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'

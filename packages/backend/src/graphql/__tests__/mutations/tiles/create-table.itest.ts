@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createTable from '@/graphql/mutations/tiles/create-table'
@@ -13,7 +14,6 @@ import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import { generateMockCollaborator, generateMockUser } from '../flow.mock'
-
 import { generateMockContext } from './table.mock'
 import { checkIfTableExists } from './tiles-pg-helper'
 

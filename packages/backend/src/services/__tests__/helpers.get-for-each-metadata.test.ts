@@ -1,5 +1,4 @@
 import { IActionRunResult, IJSONObject, NextStepMetadata } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { ForEachContext } from '@/helpers/compute-for-each-parameters'
