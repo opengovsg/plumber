@@ -23,7 +23,7 @@ export type ComboboxItem<T = string> =
       isAddNew?: boolean
       /** Read-only hint row (e.g. "Type to create a new column.") */
       isHint?: boolean
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line typescript/no-explicit-any
       [key: string]: any
     }
   | string
