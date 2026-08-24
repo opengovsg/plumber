@@ -57,7 +57,7 @@ export default function SsoCallback(): JSX.Element {
     }
 
     callMutation()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
   if (hasFailed) {

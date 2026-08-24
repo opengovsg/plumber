@@ -130,7 +130,7 @@ describe('chat handler — GitBook MCP integration', () => {
     } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
 
     const handler = router.stack[0].route.stack[0].handle
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
     expect(streamText).toHaveBeenCalledWith(
@@ -148,7 +148,7 @@ describe('chat handler — GitBook MCP integration', () => {
     )
 
     const handler = router.stack[0].route.stack[0].handle
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
     expect(streamText).toHaveBeenCalledWith(

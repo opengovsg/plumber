@@ -81,7 +81,7 @@ export default function PromptInput({
     if (initialValue) {
       handleResize()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
   const handleAnswer = (answer: string) => {
