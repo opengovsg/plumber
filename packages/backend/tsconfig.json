@@ -20,8 +20,5 @@
       "./src/types"
     ]
   },
-  "include": ["src/**/*"],
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  }
+  "include": ["src/**/*"]
 }
