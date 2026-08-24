@@ -42,7 +42,7 @@ export const _batchDelete = async (
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     logger.warn(
       `Retrying batchDelete, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
@@ -67,7 +67,7 @@ export const _batchCreate = async (
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     logger.warn(
       `Retrying batchCreate, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
