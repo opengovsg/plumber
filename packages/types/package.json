@@ -3,5 +3,11 @@
   "private": true,
   "description": "Shared types for plumber",
   "types": "./index.d.ts",
-  "version": "1.79.0"
+  "version": "1.79.0",
+  "scripts": {
+    "lint": "oxlint . --no-error-on-unmatched-pattern",
+    "lint:fix": "oxlint . --fix --no-error-on-unmatched-pattern",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write ."
+  }
 }
