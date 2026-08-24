@@ -67,7 +67,7 @@ describe('get payment', () => {
 
   it('parses the response correctly', async () => {
     await getPaymentAction.run($)
-    expect($.setActionItem).toBeCalledWith({
+    expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         id: MOCK_PAYMENT.id,
         paymentUrl: MOCK_PAYMENT.payment_url,
