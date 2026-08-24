@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wait-on tcp:${DEV_BACKEND_PORT:-3000} && vite --host --force",
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
-    "build:lib": "vite build -c vite.config.lib.ts --mode=${VITE_MODE:-prod} && tsc-alias -p tsconfig.lib.json",
+    "build:lib": "vite build -c vite.config.lib.ts --mode=${VITE_MODE:-prod} && tsc -p tsconfig.lib.json && tsc-alias -p tsconfig.lib.json",
     "prebuild": "rimraf ./build",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
@@ -86,6 +86,7 @@
   },
   "devDependencies": {
     "@chakra-ui/cli": "catalog:chakra-ui",
+    "@remix-run/router": "catalog:",
     "@plumber/types": "workspace:*",
     "@types/escape-html": "catalog:escape-html",
     "@types/file-saver": "catalog:file-saver",
@@ -99,7 +100,6 @@
     "@vitejs/plugin-react-swc": "catalog:",
     "type-fest": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-dts": "catalog:",
     "vite-plugin-package-version": "catalog:",
     "vite-tsconfig-paths": "catalog:"
   },
