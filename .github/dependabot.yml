@@ -1,0 +1,150 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      # Mirrors the catalogs in pnpm-workspace.yaml — one PR per related
+      # package family (or package + its @types/*) instead of one per package.
+      ai-sdk:
+        patterns:
+          - "@ai-sdk/*"
+          - "ai"
+      apollo:
+        patterns:
+          - "@apollo/*"
+          - "@as-integrations/express4"
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
+      big.js:
+        patterns:
+          - "big.js"
+          - "@types/big.js"
+      bull-board:
+        patterns:
+          - "@bull-board/*"
+      chakra-ui:
+        patterns:
+          - "@chakra-ui/*"
+      cookie-parser:
+        patterns:
+          - "cookie-parser"
+          - "@types/cookie-parser"
+      cors:
+        patterns:
+          - "cors"
+          - "@types/cors"
+      crypto-js:
+        patterns:
+          - "crypto-js"
+          - "@types/crypto-js"
+      dnd-kit:
+        patterns:
+          - "@dnd-kit/*"
+      emotion:
+        patterns:
+          - "@emotion/*"
+      escape-html:
+        patterns:
+          - "escape-html"
+          - "@types/escape-html"
+      express:
+        patterns:
+          - "express"
+          - "@types/express"
+      file-saver:
+        patterns:
+          - "file-saver"
+          - "@types/file-saver"
+      graphql-tools:
+        patterns:
+          - "@graphql-tools/*"
+      http-errors:
+        patterns:
+          - "http-errors"
+          - "@types/http-errors"
+      jsonwebtoken:
+        patterns:
+          - "jsonwebtoken"
+          - "@types/jsonwebtoken"
+      langfuse:
+        patterns:
+          - "@langfuse/*"
+      launchdarkly:
+        patterns:
+          - "@launchdarkly/*"
+          - "launchdarkly-*"
+      lodash:
+        patterns:
+          - "lodash"
+          - "@types/lodash"
+      lodash.get:
+        patterns:
+          - "lodash.get"
+          - "@types/lodash.get"
+      luxon:
+        patterns:
+          - "luxon"
+          - "@types/luxon"
+      morgan:
+        patterns:
+          - "morgan"
+          - "@types/morgan"
+      multer:
+        patterns:
+          - "multer"
+          - "@types/multer"
+      nodemailer:
+        patterns:
+          - "nodemailer"
+          - "@types/nodemailer"
+      opengovsg:
+        patterns:
+          - "@opengovsg/*"
+      papaparse:
+        patterns:
+          - "papaparse"
+          - "@types/papaparse"
+      pg:
+        patterns:
+          - "pg"
+          - "@types/pg"
+      qs:
+        patterns:
+          - "qs"
+          - "@types/qs"
+      react:
+        patterns:
+          - "react"
+          - "@types/react"
+      react-dom:
+        patterns:
+          - "react-dom"
+          - "@types/react-dom"
+      react-helmet:
+        patterns:
+          - "react-helmet"
+          - "@types/react-helmet"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      testcontainers:
+        patterns:
+          - "testcontainers"
+          - "@testcontainers/*"
+      tiptap:
+        patterns:
+          - "@tiptap/*"
+      turndown:
+        patterns:
+          - "turndown"
+          - "@types/turndown"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
