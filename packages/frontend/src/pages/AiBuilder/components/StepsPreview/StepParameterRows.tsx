@@ -34,12 +34,12 @@ import {
   withDynamicOptions,
 } from './helpers/dynamicFieldOptions'
 import {
-  getFieldPreviewType,
   getStepFields,
+  isRichTextField,
   resolveDisplayValue,
   resolveFieldLabel,
 } from './helpers/resolveFieldDisplayValue'
-import FieldPreviewButton from './FieldPreviewButton'
+import RichTextPreview from './RichTextPreview'
 import VariablePill from './VariablePill'
 
 interface DynamicFieldOptionsFetcherProps {
@@ -128,13 +128,11 @@ function ParameterValueLine({
     >
       {segments.map((seg: Segment, i) => {
         if (seg.type === 'text') {
-          // eslint-disable-next-line react/no-array-index-key
           return <Fragment key={i}>{seg.text}</Fragment>
         }
         const variableKey = `step.${seg.stepId}.${seg.path}`
         return (
           <VariablePill
-            // eslint-disable-next-line react/no-array-index-key
             key={i}
             label={variableLabelsByPath.get(variableKey) ?? seg.label}
             value={variableValuesByPath.get(variableKey)}
@@ -169,7 +167,6 @@ function ColumnValueTable({
     <Table size="sm" variant="simple" sx={{ tableLayout: 'fixed' }} w="full">
       <Tbody>
         {rows.map((row, i) => (
-          // eslint-disable-next-line react/no-array-index-key
           <Tr key={i}>
             <Td w="35%">{row.column}</Td>
             <Td
@@ -302,37 +299,32 @@ export default function StepParameterRows({
     .map(([key, value]) => {
       const field = stepFields.find((f) => f.key === key)
       const hasAiLabel = parameterLabels[key] != null
-      // A field with a previewType is always shown via its preview button —
-      // rendering its raw value (e.g. rich-text HTML) as text would be
-      // unreadable, and this must reflect the real value regardless of any
-      // AI-provided summary label for the row.
-      const previewType = getFieldPreviewType(field)
+      // Rich-text fields always show the read-only preview, even over an
+      // AI-provided label — raw HTML rendered as text would be unreadable.
+      const isPreview = isRichTextField(field)
       return {
         key,
         label: resolveFieldLabel(stepFields, key),
-        previewType,
-        previewHtml: previewType
+        isPreview,
+        previewHtml: isPreview
           ? substituteForPreview(String(value), variableInfoMap)
           : undefined,
-        // AI-provided labels take priority over static option resolution
-        // and skip the Column/Value table, since they're already a single
-        // human-readable summary of the whole value. Preview fields skip
-        // both, since they're rendered via FieldPreviewButton instead.
+        // AI-provided labels are already a human-readable summary, so they
+        // skip the Column/Value table too. Preview fields skip both, since
+        // they render via RichTextPreview instead.
         displayLines: hasAiLabel
           ? [parameterLabels[key]]
-          : previewType
+          : isPreview
           ? []
           : resolveDisplayValue(stepFields, key, value),
         columnValueRows:
-          hasAiLabel || previewType
-            ? null
-            : resolveColumnValueRows(field, value),
+          hasAiLabel || isPreview ? null : resolveColumnValueRows(field, value),
         hiddenIf: field?.hiddenIf,
       }
     })
     .filter(
-      ({ displayLines, columnValueRows, hiddenIf, previewType }) =>
-        (previewType ||
+      ({ displayLines, columnValueRows, hiddenIf, isPreview }) =>
+        (isPreview ||
           displayLines.length > 0 ||
           (columnValueRows?.length ?? 0) > 0) &&
         !isFieldHidden(hiddenIf, parameters),
@@ -380,15 +372,12 @@ export default function StepParameterRows({
             label,
             displayLines,
             columnValueRows,
-            previewType,
+            isPreview,
             previewHtml,
           }) => (
             <ParameterRow key={key} label={label}>
-              {previewType ? (
-                <FieldPreviewButton
-                  previewType={previewType}
-                  html={previewHtml ?? ''}
-                />
+              {isPreview ? (
+                <RichTextPreview html={previewHtml ?? ''} />
               ) : columnValueRows && columnValueRows.length > 0 ? (
                 <ColumnValueTable
                   rows={columnValueRows}

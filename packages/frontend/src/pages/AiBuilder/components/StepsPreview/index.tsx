@@ -294,7 +294,6 @@ export default function StepsPreview() {
           </GroupedStepContainer>
         )}
         <VStack mt={10} gap={2}>
-          {!isMcpPipeMode && <Text textStyle="body-1">Looks good?</Text>}
           <HStack alignItems="center" justifyContent="center" gap={2}>
             {isMcpPipeMode ? (
               <Button
@@ -311,11 +310,7 @@ export default function StepsPreview() {
               >
                 Open in editor
               </Button>
-            ) : isMcpProposalMode ? (
-              <Text textStyle="body-2" color="base.content.medium">
-                Reply in chat to confirm and build this pipe
-              </Text>
-            ) : (
+            ) : isMcpProposalMode ? null : (
               <Button variant="solid" onClick={onCreateFlowWithSteps} size="sm">
                 Create this workflow
               </Button>
