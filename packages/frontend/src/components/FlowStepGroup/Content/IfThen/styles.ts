@@ -42,6 +42,25 @@ export const blockActionButtonStyles = {
   colorScheme: 'secondary',
 }
 
+/**
+ * The strip a condition block's actions are overlaid in, and the width that
+ * strip occupies. The two live together because the header reserves `widthPx`
+ * of text padding to keep the sentence out from under the buttons — change the
+ * padding, the gap or `blockActionButtonStyles.boxSize` without changing the
+ * total and the text silently slides back under them.
+ *
+ * Sized for the widest case (a duplicate and a delete), so a single-button
+ * block over-reserves by one button rather than losing text.
+ */
+export const blockActionsOverlayStyles = {
+  pl: 2, // 8px
+  pr: 4, // 16px
+  gap: 1, // 4px
+}
+
+/** 8 + 32 + 4 + 32 + 16, from the values directly above. */
+export const BLOCK_ACTIONS_OVERLAY_WIDTH_PX = 92
+
 export const branchStyles = {
   container: {
     alignItems: 'center',
@@ -51,6 +70,41 @@ export const branchStyles = {
     overflow: 'hidden',
     px: 3,
     py: 3,
+    w: '100%',
+  },
+}
+
+/**
+ * The card a condition block (IF / CONTINUE IF / REPEAT) draws: a grey header
+ * strip flush to the top and side edges, over a white body holding the steps.
+ * Distinct from `branchStyles`, which an if-then V1 branch still uses.
+ */
+export const conditionBlockStyles = {
+  // No padding of its own, so the header can sit flush. Body padding lives on
+  // `body` instead.
+  container: {
+    alignItems: 'stretch',
+    bg: 'white',
+    borderRadius: 'lg',
+    direction: 'column' as FlexProps['direction'],
+    overflow: 'hidden',
+    w: '100%',
+  },
+  header: {
+    bg: 'base.divider.subtle',
+    borderRadius: 'none',
+    px: 4,
+    py: 3,
+    minH: 12,
+    w: '100%',
+  },
+  body: {
+    alignItems: 'stretch',
+    bg: 'white',
+    direction: 'column' as FlexProps['direction'],
+    px: 3,
+    pt: 4,
+    pb: 0,
     w: '100%',
   },
 }
