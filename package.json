@@ -1,5 +1,6 @@
 {
   "name": "plumber",
+  "private": true,
   "license": "AGPL-3.0",
   "engines": {
     "pnpm": ">=11.23.0"

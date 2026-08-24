@@ -1,6 +1,7 @@
 {
   "name": "frontend",
   "version": "1.79.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "wait-on tcp:${DEV_BACKEND_PORT:-3000} && vite --host --force",
