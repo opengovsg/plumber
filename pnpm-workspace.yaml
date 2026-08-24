@@ -109,6 +109,10 @@ overrides:
   '@smithy/core': '3.24.1'
   # Match the Node 22 runtime. Packages declaring "*" otherwise get the newest major.
   '@types/node': '22.18.0'
+  # @types/multer depends on "@types/express": "*", which otherwise resolves its own
+  # @types/express-serve-static-core@5 alongside our pinned @types/express@4 line and
+  # breaks type identity for Express Request/Router across the two copies.
+  '@types/express-serve-static-core': '^4.17.33'
 allowBuilds:
   '@apollo/protobufjs': true
   '@datadog/native-appsec': true
