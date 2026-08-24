@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "envMode": "loose",
   "tasks": {
     "lint": {
       "outputs": []
@@ -12,26 +13,21 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "env": ["VITE_MODE"],
       "outputs": ["dist/**"]
     },
     "test:unit": {
-      "outputs": [],
-      "passThroughEnv": ["DD_*", "NODE_OPTIONS"]
+      "outputs": []
     },
     "test:integration": {
       "cache": false,
-      "outputs": [],
-      "passThroughEnv": ["DD_*", "NODE_OPTIONS"]
+      "outputs": []
     },
     "test": {
-      "outputs": [],
-      "passThroughEnv": ["DD_*", "NODE_OPTIONS"]
+      "outputs": []
     },
     "dev": {
       "cache": false,
-      "persistent": true,
-      "env": ["DEV_BACKEND_PORT"]
+      "persistent": true
     },
     "worker": {
       "cache": false,
