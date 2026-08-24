@@ -15,7 +15,7 @@ export interface AIBuilderDraftState {
   chatInput: string
   chatMessages: Message[]
   // output can be populated (IStep values) or the initial empty state (empty strings)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line typescript/no-explicit-any
   output: Record<string, any>
   /**
    * Unique id for this chat session, used as the Langfuse session id. Optional on the
@@ -96,7 +96,7 @@ export const AiBuilderContextProvider = ({
     }
 
     // NOTE: re-trigger based on changes to isMobile
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [isMobile])
 
   const { data: allApps, loading: isLoadingAllApps } = useApps()

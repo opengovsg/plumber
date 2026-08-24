@@ -484,7 +484,7 @@ export function removeProblematicWhitespace(text: string): string {
       // Replace non-breaking space with regular space
       .replace(/\u00A0/g, ' ')
       // Remove null character that breaks DB/JSON
-      // eslint-disable-next-line no-control-regex
+      // oxlint-disable-next-line no-control-regex
       .replace(/\x00/g, '')
   )
 }
