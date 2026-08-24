@@ -36,7 +36,7 @@ services:
     volumes:
       - plumber-redis:/var/lib/redis/
   tunnel:
-    image: cloudflare/cloudflared
+    image: cloudflare/cloudflared:2026.8.2
     restart: unless-stopped
     command: tunnel run --protocol http2
     environment:
@@ -78,7 +78,7 @@ services:
       echo 'logo uploaded to bucket'
       "
   dynamodb:
-    image: amazon/dynamodb-local
+    image: amazon/dynamodb-local:3.3.1
     ports:
       - '8000:8000'
     user: root
