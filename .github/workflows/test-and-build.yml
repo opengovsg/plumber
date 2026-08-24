@@ -97,11 +97,38 @@ jobs:
           api_key: ${{ secrets.DD_API_KEY }}
           # we need to pin this for now since 5.68.0 breaks the ci
           js-tracer-version: 5.67.0
-      - run: pnpm exec turbo run test:unit --filter=backend --filter=backend-archive
+      - run: pnpm exec turbo run test:unit --filter=backend
         env:
           # Required to allow Datadog to trace Vitest tests
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
       - run: echo "✅ Backend unit tests passed."
+
+  test-backend-archive-unit:
+    name: Test (backend-archive unit)
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: ./.github/actions/setup
+        with:
+          npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - name: Configure Datadog Test Visibility
+        env:
+          DD_SERVICE_NAME: ${{ secrets.DD_SERVICE_NAME }}
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+        uses: datadog/test-visibility-github-action@4e7afb05b464fd349275e41e65a7f4de83e7f46b # v2.10.0
+        with:
+          languages: js
+          service: ${{ secrets.DD_SERVICE_NAME }}
+          api_key: ${{ secrets.DD_API_KEY }}
+          # we need to pin this for now since 5.68.0 breaks the ci
+          js-tracer-version: 5.67.0
+      - run: pnpm exec turbo run test:unit --filter=backend-archive
+        env:
+          # Required to allow Datadog to trace Vitest tests
+          NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
+      - run: echo "✅ Backend-archive unit tests passed."
 
   test-backend-integration:
     name: Test (backend integration)
