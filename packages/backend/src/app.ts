@@ -34,8 +34,7 @@ app.use(cookieParser())
 app.use(
   express.json({
     verify(req, _res, buf) {
-      // eslint-disable-next-line prettier/prettier
-      (req as IRequest).rawBody = buf
+      ;(req as IRequest).rawBody = buf
     },
     limit: appConfig.requestBodySizeLimit,
   }),
@@ -45,8 +44,7 @@ app.use(
     extended: false,
     limit: appConfig.requestBodySizeLimit,
     verify(req, _res, buf) {
-      // eslint-disable-next-line prettier/prettier
-      (req as IRequest).rawBody = buf
+      ;(req as IRequest).rawBody = buf
     },
   }),
 )

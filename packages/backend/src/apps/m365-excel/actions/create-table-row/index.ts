@@ -18,7 +18,7 @@ import { parametersSchema } from './schemas'
 // constructMsGraphValuesArrayForRowWrite is a generic helper function and
 // should not be restricted to codepaths with $.
 function buildRowUpdateArgs(
-  $: IGlobalVariable,
+  _$: IGlobalVariable,
   ...args: Parameters<typeof constructMsGraphValuesArrayForRowWrite>
 ): ReturnType<typeof constructMsGraphValuesArrayForRowWrite> {
   try {
