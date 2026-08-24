@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
+import { AI_BUILDER_INLINE_CONNECT_APP_KEYS } from '@/pages/AiBuilder/constants'
 
 interface DynamicPickerOption {
   name: string
@@ -172,9 +173,16 @@ export default function DynamicPicker({
   // Zero options — distinct from a fetch error.
   const showEmptyState = !isLoading && !isError && options.length === 0
 
-  // In-chat "Add new form" entry point — FormSG only, and only when the host
-  // page provided a handler for it.
-  const canAddConnection = appKey === 'formsg' && Boolean(onAddConnection)
+  // In-chat "add connection" entry point — FormSG (its own bespoke modal) or
+  // any app key in AI_BUILDER_INLINE_CONNECT_APP_KEYS (the generic
+  // AddAppConnection-based modal) — and only when the host page provided a
+  // handler for it.
+  const canAddConnection =
+    Boolean(onAddConnection) &&
+    (appKey === 'formsg' ||
+      AI_BUILDER_INLINE_CONNECT_APP_KEYS.includes(
+        appKey as (typeof AI_BUILDER_INLINE_CONNECT_APP_KEYS)[number],
+      ))
 
   return (
     <Box w="full" maxW="4xl">
@@ -233,7 +241,7 @@ export default function DynamicPicker({
                   isDisabled={isStreaming}
                   onClick={onAddConnection}
                 >
-                  Add your form
+                  {appKey === 'formsg' ? 'Add your form' : 'Add connection'}
                 </Button>
               ) : (
                 <Text color="gray.500" fontSize="sm" px={2}>
@@ -322,7 +330,7 @@ export default function DynamicPicker({
                   onClick={onAddConnection}
                   fontWeight="normal"
                 >
-                  Add a new form
+                  {appKey === 'formsg' ? 'Add a new form' : 'Add a new connection'}
                 </Button>
               )}
             </Flex>
