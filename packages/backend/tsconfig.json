@@ -5,7 +5,10 @@
     "lib": ["es2021", "ES2022.Error", "ES2022.Object"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "noUncheckedSideEffectImports": true,
     "outDir": "dist",
+    "rootDir": "src",
+    "types": [],
     "paths": {
       "@/*": ["./src/*"]
     },
