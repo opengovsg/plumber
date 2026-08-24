@@ -6,8 +6,14 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noImplicitAny": true,
+    "noUncheckedSideEffectImports": true,
     "outDir": "dist",
     "rootDir": "src",
+    // TS7 defaults strict to true; this repo was never written against full
+    // strict mode. Pinned off so the version bump doesn't silently change
+    // what's enforced.
+    "strict": false,
+    "types": [],
     "paths": {
       "@/*": ["./src/*"]
     },
