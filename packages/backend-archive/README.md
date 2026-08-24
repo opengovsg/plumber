@@ -29,7 +29,7 @@ Rehydration (`rehydrate-execution`) runs on demand (not scheduled). It reads arc
 Start the dev stack (Postgres + MinIO) from the repo root if it isn't already running:
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 This also creates the `plumber-development-archive-bucket` MinIO bucket used below.
@@ -72,7 +72,7 @@ ARCHIVE_TEST_RUNS=false         # also archive test executions on active flows
 ```bash
 # Load env vars, then run
 set -a && source .env.archival && set +a
-npm run -w backend-archive archive:backfill
+pnpm --filter backend-archive run archive:backfill
 ```
 
 The script logs structured JSON to stdout. Key events to look for:
@@ -130,7 +130,7 @@ ARCHIVE_BUCKET=<prod-or-staging-bucket-name>
 ### 2. Run the rehydration CLI
 
 ```bash
-DOTENV_CONFIG_PATH=.env.staging npm run -w backend-archive archive:rehydrate -- --flow-id <uuid>
+DOTENV_CONFIG_PATH=.env.staging pnpm --filter backend-archive run archive:rehydrate -- --flow-id <uuid>
 ```
 
 #### Subcommands
@@ -260,7 +260,7 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 ## Running tests
 
 ```bash
-npm run -w backend-archive test:unit
+pnpm --filter backend-archive run test:unit
 ```
 
 ---
