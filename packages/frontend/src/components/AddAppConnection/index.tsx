@@ -5,6 +5,7 @@ import { FieldValues, SubmitHandler } from 'react-hook-form'
 import {
   Alert,
   AlertIcon,
+  Box,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -15,6 +16,8 @@ import {
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 
+import ConnectionHeader from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConnectionHeader'
+import { DEFAULT_ADD_CONNECTION_LABEL } from '@/components/FlowStepConfigurationModal/constants'
 import InputCreator from '@/components/InputCreator'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
@@ -137,10 +140,18 @@ export default function AddAppConnection(
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          {hasConnection ? 'Edit connection' : 'Add connection'}
-        </ModalHeader>
-        <ModalCloseButton />
+        <Box my={8}>
+          <ConnectionHeader
+            selectedApp={application}
+            headerText={
+              hasConnection
+                ? `Edit ${name} connection`
+                : auth?.connectionModalLabel?.addConnectionLabel ??
+                  DEFAULT_ADD_CONNECTION_LABEL
+            }
+          />
+          <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
+        </Box>
 
         {authDocUrl && (
           <Alert status="info" fontWeight="300" px={8}>
