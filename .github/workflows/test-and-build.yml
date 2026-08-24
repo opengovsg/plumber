@@ -97,7 +97,7 @@ jobs:
           api_key: ${{ secrets.DD_API_KEY }}
           # we need to pin this for now since 5.68.0 breaks the ci
           js-tracer-version: 5.67.0
-      - run: pnpm exec turbo run test:unit --filter=backend
+      - run: pnpm exec turbo run test:unit --filter=backend --filter=backend-archive
         env:
           # Required to allow Datadog to trace Vitest tests
           NODE_OPTIONS: -r ${{ env.DD_TRACE_PACKAGE }} --import ${{ env.DD_TRACE_ESM_IMPORT }}
