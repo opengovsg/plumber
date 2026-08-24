@@ -6,6 +6,12 @@
   "main": "index.js",
   "author": "",
   "license": "ISC",
+  "scripts": {
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt --write ."
+  },
   "devDependencies": {
     "@types/k6": "catalog:"
   }

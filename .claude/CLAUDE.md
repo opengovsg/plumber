@@ -60,6 +60,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 - **Installing packages**: always pass the `-E` (exact version) flag. Dependency versions live in the `catalog:` section of [pnpm-workspace.yaml](../pnpm-workspace.yaml); every `package.json` references them via `"catalog:"` instead of a version string.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
 - **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend run lint:fix`; frontend-only → `pnpm --filter frontend run lint:fix`; otherwise run the root commands.
+- **Formatting**: run `pnpm run format:fix` (auto-fixes), then `pnpm run format` to confirm. Scope to the workspace you touched, same as linting: `pnpm --filter backend run format:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.
@@ -81,18 +82,24 @@ Comments state WHY, never WHAT.
 Example:
 
 WRONG (traces the mechanism):
-    /**
-     * Whether execution has reached this MRF step. Normally the previous step
-     * ran, but it may sit inside an if-then V2 block that a FALSE condition
-     * skipped, so absence of an execution step proves nothing on its own...
-     */
+
+```ts
+/**
+ * Whether execution has reached this MRF step. Normally the previous step
+ * ran, but it may sit inside an if-then V2 block that a FALSE condition
+ * skipped, so absence of an execution step proves nothing on its own...
+ */
+```
 
 RIGHT (states only the motivating problem):
-    /**
-     * Checks whether execution reached this sub-trigger.
-     *
-     * Handles MRF submissions arriving before earlier steps finish running.
-     */
+
+```ts
+/**
+ * Checks whether execution reached this sub-trigger.
+ *
+ * Handles MRF submissions arriving before earlier steps finish running.
+ */
+```
 
 ## Skills
 
