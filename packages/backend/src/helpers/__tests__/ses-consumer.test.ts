@@ -56,7 +56,7 @@ function loadFixture(name: string): string {
 
 async function importFresh() {
   vi.resetModules()
-  return import('../ses-consumer')
+  return import('../ses-consumer.js')
 }
 
 describe('SES consumer wiring', () => {
