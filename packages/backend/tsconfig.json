@@ -1,15 +1,14 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
     "declaration": true,
     "esModuleInterop": true,
     "lib": ["es2021", "ES2022.Error", "ES2022.Object"],
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "noImplicitAny": true,
     "outDir": "dist",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"]
     },
     "skipLibCheck": true,
     "sourceMap": true,
