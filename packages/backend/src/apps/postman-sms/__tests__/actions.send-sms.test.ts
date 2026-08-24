@@ -1,5 +1,5 @@
 import type { IGlobalVariable } from '@plumber/types'
-import type { AxiosPromise } from 'axios'
+import type { AxiosPromise, CreateAxiosDefaults } from 'axios'
 import { Settings as LuxonSettings } from 'luxon'
 import {
   afterEach,
@@ -58,8 +58,10 @@ vi.mock('@/helpers/logger', () => ({
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) => {
-    const instance = actualAxios.default.create({
+  const mockCreate: typeof actualAxios.create = (
+    createConfig?: CreateAxiosDefaults,
+  ) => {
+    const instance = actualAxios.create({
       ...createConfig,
       adapter: mocks.axiosRequestAdapter,
     })
@@ -69,7 +71,7 @@ vi.mock('axios', async (importOriginal) => {
 
   return {
     default: {
-      ...actualAxios.default,
+      ...actualAxios,
       create: mockCreate,
     },
   }
