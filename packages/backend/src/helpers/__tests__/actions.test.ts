@@ -62,6 +62,7 @@ vi.mock('@/models/execution', () => ({
 
 describe('action helper functions', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

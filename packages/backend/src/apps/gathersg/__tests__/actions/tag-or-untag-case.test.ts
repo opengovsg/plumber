@@ -56,6 +56,7 @@ describe('tag or untag case', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

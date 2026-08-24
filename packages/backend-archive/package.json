@@ -36,6 +36,6 @@
     "rimraf": "^4.4.1",
     "tsx": "^4.23.12",
     "typescript": "catalog:",
-    "vitest": "^3.2.6"
+    "vitest": "^4.1.11"
   }
 }

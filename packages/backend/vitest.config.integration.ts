@@ -33,11 +33,7 @@ export default defineConfig({
       getPath('./test/redis-global-setup.ts'),
     ],
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
+    maxWorkers: 1,
     include: ['src/**/*.itest.{js,ts}'],
     onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
       if (log.startsWith('vite:')) {
