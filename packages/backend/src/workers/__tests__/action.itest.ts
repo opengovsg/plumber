@@ -136,8 +136,8 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.handleFailedStepAndThrow).not.toBeCalled()
-      expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
+      expect(mocks.handleFailedStepAndThrow).not.toHaveBeenCalled()
+      expect(mocks.exponentialBackoffWithJitter).not.toHaveBeenCalled()
     })
 
     it('retries retriable executions using our custom backoff strategy', async () => {
@@ -177,7 +177,7 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.exponentialBackoffWithJitter).toBeCalled()
+      expect(mocks.exponentialBackoffWithJitter).toHaveBeenCalled()
     }, 20000)
 
     it('does not retry non-executable executions', async () => {
@@ -208,7 +208,7 @@ describe('Action worker', () => {
       await jobProcessed
 
       // Should not be called, since it was not retried.
-      expect(mocks.exponentialBackoffWithJitter).not.toBeCalled()
+      expect(mocks.exponentialBackoffWithJitter).not.toHaveBeenCalled()
     })
   })
 
@@ -348,7 +348,7 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.addSpanTags).toBeCalledWith(
+      expect(mocks.addSpanTags).toHaveBeenCalledWith(
         expect.objectContaining({
           jobEnqueueTime: startTime,
           jobDelay: 0,
@@ -398,7 +398,7 @@ describe('Action worker', () => {
         await vi.advanceTimersByTimeAsync(delay)
         await jobProcessed
 
-        expect(mocks.addSpanTags).toBeCalledWith(
+        expect(mocks.addSpanTags).toHaveBeenCalledWith(
           expect.objectContaining({
             jobEnqueueTime: startTime,
             jobDelay: delay,
@@ -471,7 +471,7 @@ describe('Action worker', () => {
       await failedJob.retry()
       await jobProcessed
 
-      expect(mocks.addSpanTags).toBeCalledWith(
+      expect(mocks.addSpanTags).toHaveBeenCalledWith(
         expect.objectContaining({
           jobEnqueueTime: startTime,
           jobDelay: 0,

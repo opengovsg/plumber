@@ -102,7 +102,7 @@ describe('Create plumber folder', () => {
 
   it("errors out if user's email is not set", async () => {
     $.user.email = null
-    await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
+    await expect(createPlumberFolder('local-dev', $)).rejects.toThrow(
       'User email unavailable',
     )
   })
@@ -195,7 +195,7 @@ describe('Create plumber folder', () => {
         data: { id: null },
       }))
 
-    await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
+    await expect(createPlumberFolder('local-dev', $)).rejects.toThrow(
       /a problem creating your folder/,
     )
   })
@@ -223,7 +223,7 @@ describe('Create plumber folder', () => {
         },
       })
 
-    await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
+    await expect(createPlumberFolder('local-dev', $)).rejects.toThrow(
       /a problem creating your folder/,
     )
   })

@@ -173,7 +173,7 @@ describe('Trigger worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.enqueueActionJob).toBeCalledWith(
+      expect(mocks.enqueueActionJob).toHaveBeenCalledWith(
         expect.objectContaining({
           appKey: 'next-step-app',
         }),

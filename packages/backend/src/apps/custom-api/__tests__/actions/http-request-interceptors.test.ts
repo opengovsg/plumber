@@ -69,7 +69,7 @@ describe('http request interceptors', () => {
   ])('should prevent recursive URLS', async (url: string) => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = url
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
+    await expect(makeRequestAction.run($)).rejects.toThrow(
       RECURSIVE_WEBHOOK_ERROR,
     )
   })
@@ -89,7 +89,7 @@ describe('http request interceptors', () => {
   ])('should prevent internal IPs', async (url: string) => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = url
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
+    await expect(makeRequestAction.run($)).rejects.toThrow(
       DISALLOWED_IP_RESOLVED_ERROR,
     )
   })
@@ -120,7 +120,7 @@ describe('http request interceptors', () => {
         statusCode: 301,
         redirectTo: url,
       })
-      await expect(makeRequestAction.run($)).rejects.toThrowError(
+      await expect(makeRequestAction.run($)).rejects.toThrow(
         RECURSIVE_WEBHOOK_ERROR,
       )
     })
@@ -137,7 +137,7 @@ describe('http request interceptors', () => {
         statusCode: 307,
         redirectTo: url,
       })
-      await expect(makeRequestAction.run($)).rejects.toThrowError(
+      await expect(makeRequestAction.run($)).rejects.toThrow(
         DISALLOWED_IP_RESOLVED_ERROR,
       )
     })

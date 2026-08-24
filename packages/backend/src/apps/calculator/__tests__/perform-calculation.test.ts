@@ -52,7 +52,7 @@ describe('perform calculation', () => {
     async ({ params, expectedResult }) => {
       $.step.parameters = params
       await performCalculationAction.run($)
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { result: expectedResult },
       })
     },

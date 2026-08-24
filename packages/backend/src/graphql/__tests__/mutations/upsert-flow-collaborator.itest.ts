@@ -143,7 +143,7 @@ describe('upsert flow collaborator', () => {
         },
         context,
       ),
-    ).rejects.toThrowError(
+    ).rejects.toThrow(
       'You do not have sufficient permissions for this pipe',
     )
   })
