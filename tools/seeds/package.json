@@ -6,8 +6,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "dotenv": "^16.0.3",
-    "knex": "^2.4.2",
-    "uuid": "^9.0.0"
+    "dotenv": "catalog:",
+    "knex": "catalog:",
+    "uuid": "catalog:"
   }
 }

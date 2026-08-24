@@ -26,7 +26,7 @@ const APP_RESPONSE_FIELDS = [
 ] as const satisfies ReadonlyArray<keyof IApp>
 type AppResponse = Pick<IApp, (typeof APP_RESPONSE_FIELDS)[number]>
 
-const router = Router()
+const router: Router = Router()
 
 function sortApps(apps: IApp[]): IApp[] {
   return apps.sort((a, b) => {

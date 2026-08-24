@@ -5,7 +5,7 @@ import { IRequest } from '@plumber/types'
 
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
-import express from 'express'
+import express, { Express } from 'express'
 import createError from 'http-errors'
 
 import appConfig from '@/config/app'
@@ -25,7 +25,7 @@ import router from '@/routes'
 
 createBullBoardHandler(serverAdapter)
 
-const app = express()
+const app: Express = express()
 
 app.disable('x-powered-by')
 app.use(csp)
