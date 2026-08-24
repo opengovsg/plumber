@@ -9,7 +9,6 @@ import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
 import { parseFormIdFormat } from '../auth/verify-credentials'
-
 import { parseFormEnv } from './form-env'
 
 export const FORMSG_WEBHOOK_VERIFICATION_MESSAGE = {

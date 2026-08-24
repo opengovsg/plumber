@@ -1,7 +1,3 @@
-import { useCallback, useMemo } from 'react'
-import { IconType } from 'react-icons'
-import { BiChevronDown } from 'react-icons/bi'
-import { PiRobot, PiUser } from 'react-icons/pi'
 import {
   ButtonGroup,
   Flex,
@@ -12,6 +8,10 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button, IconButton, Menu } from '@opengovsg/design-system-react'
+import { useCallback, useMemo } from 'react'
+import { IconType } from 'react-icons'
+import { BiChevronDown } from 'react-icons/bi'
+import { PiRobot, PiUser } from 'react-icons/pi'
 
 import type { CheckStepButtonExtensionProps } from '@/app-extensions/types'
 

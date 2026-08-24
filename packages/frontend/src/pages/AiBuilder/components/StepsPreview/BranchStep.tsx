@@ -1,6 +1,5 @@
-import { IStep } from '@plumber/types'
-
 import { Box, Flex, Text } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
 
 import { branchStyles } from '@/components/FlowStepGroup/Content/IfThen/styles'
 

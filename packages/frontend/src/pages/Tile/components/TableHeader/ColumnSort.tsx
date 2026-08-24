@@ -1,8 +1,8 @@
-import { startTransition, useCallback } from 'react'
-import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 import { Box, ButtonGroup, Flex, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import { Column } from '@tanstack/react-table'
+import { startTransition, useCallback } from 'react'
+import { ImSortAlphaAsc, ImSortAlphaDesc } from 'react-icons/im'
 
 import { GenericRowData } from '../../types'
 

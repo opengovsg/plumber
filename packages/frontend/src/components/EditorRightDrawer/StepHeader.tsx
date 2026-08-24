@@ -1,14 +1,12 @@
-import { IStep } from '@plumber/types'
-
-import { useContext, useRef } from 'react'
 import { CloseButton, Flex, Text, useDisclosure } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
+import { useContext, useRef } from 'react'
 
 import EditableInput from '@/components/EditableInput'
 import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
-
 import { editorRightDrawerStyles as styles } from './styles'
 
 interface StepHeaderProps {

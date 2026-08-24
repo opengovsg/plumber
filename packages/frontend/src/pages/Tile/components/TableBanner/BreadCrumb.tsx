@@ -1,13 +1,13 @@
-import { useCallback } from 'react'
-import { BiTable } from 'react-icons/bi'
-import { FaChevronRight } from 'react-icons/fa'
-import { Link } from 'react-router-dom'
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
   Icon,
 } from '@chakra-ui/react'
+import { useCallback } from 'react'
+import { BiTable } from 'react-icons/bi'
+import { FaChevronRight } from 'react-icons/fa'
+import { Link } from 'react-router-dom'
 
 import EditableInput from '@/components/EditableInput'
 import * as URLS from '@/config/urls'

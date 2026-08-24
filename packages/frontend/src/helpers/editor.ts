@@ -1,3 +1,4 @@
+import { yupResolver } from '@hookform/resolvers/yup'
 import {
   IField,
   IJSONObject,
@@ -5,10 +6,8 @@ import {
   IStep,
   ISubstep,
 } from '@plumber/types'
-
 import { FieldValues, UseFormReturn } from 'react-hook-form'
 import { BiQuestionMark } from 'react-icons/bi'
-import { yupResolver } from '@hookform/resolvers/yup'
 import type { BaseSchema } from 'yup'
 import * as yup from 'yup'
 import type { ObjectShape } from 'yup/lib/object'

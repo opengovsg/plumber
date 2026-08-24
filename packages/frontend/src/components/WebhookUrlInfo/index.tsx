@@ -1,8 +1,7 @@
+import { Alert, AlertProps, Box } from '@chakra-ui/react'
 import { ITriggerInstructions } from '@plumber/types'
-
 import * as React from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Alert, AlertProps, Box } from '@chakra-ui/react'
 
 import TextField from '../TextField'
 

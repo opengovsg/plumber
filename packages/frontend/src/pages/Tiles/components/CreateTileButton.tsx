@@ -1,8 +1,3 @@
-import { ITableMetadata } from '@plumber/types'
-
-import { useCallback, useState } from 'react'
-import { BiSpreadsheet, BiTable } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Flex,
@@ -23,6 +18,10 @@ import {
   ModalCloseButton,
   Tile,
 } from '@opengovsg/design-system-react'
+import { ITableMetadata } from '@plumber/types'
+import { useCallback, useState } from 'react'
+import { BiSpreadsheet, BiTable } from 'react-icons/bi'
+import { useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import { DatabaseType } from '@/graphql/__generated__/graphql'

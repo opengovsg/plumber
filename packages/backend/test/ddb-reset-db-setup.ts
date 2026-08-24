@@ -1,6 +1,5 @@
 /* oxlint-disable no-console */
 import '../src/config/dynamodb'
-
 import { afterEach } from 'vitest'
 
 afterEach(async () => {

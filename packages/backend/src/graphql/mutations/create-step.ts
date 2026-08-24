@@ -1,5 +1,4 @@
 import { IStepConfig } from '@plumber/types'
-
 import { raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'

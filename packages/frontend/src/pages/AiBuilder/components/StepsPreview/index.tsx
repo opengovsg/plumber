@@ -1,7 +1,3 @@
-import { IStepConfig } from '@plumber/types'
-
-import { Fragment, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Box,
@@ -13,6 +9,9 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, useIsMobile } from '@opengovsg/design-system-react'
+import { IStepConfig } from '@plumber/types'
+import { Fragment, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import Error from '@/components/FlowStepGroup/Content/Error'
 import PrimarySpinner from '@/components/PrimarySpinner'

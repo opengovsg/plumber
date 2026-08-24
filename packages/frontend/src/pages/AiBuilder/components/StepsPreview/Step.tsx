@@ -1,7 +1,6 @@
-import { IApp, IStep } from '@plumber/types'
-
-import { BiInfoCircle } from 'react-icons/bi'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
+import { IApp, IStep } from '@plumber/types'
+import { BiInfoCircle } from 'react-icons/bi'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
 import StepNameAndDemo from '@/components/FlowStep/components/StepNameAndDemo'

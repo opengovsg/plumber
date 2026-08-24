@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -13,10 +14,9 @@ import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import { generateMockFlow, generateMockStep } from '../mutations/flow.mock'
-
-import { generateMockContext } from './tiles/table.mock'
 import { generateMockUser } from './flow.mock'
 import { mockConnectionsRelatedQuery } from './related-query-mock'
+import { generateMockContext } from './tiles/table.mock'
 import {
   createMockWithAccessibleSteps,
   setAssertNotUpdatedSinceSpy,
@@ -608,9 +608,8 @@ describe('updateStep mutation', () => {
     let addSpy: any
 
     beforeEach(async () => {
-      const { default: FlowConnections } = await import(
-        '@/models/flow-connections'
-      )
+      const { default: FlowConnections } =
+        await import('@/models/flow-connections')
       patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
@@ -709,9 +708,8 @@ describe('updateStep mutation', () => {
     })
 
     it('should not call FlowConnections methods when step role is not owner', async () => {
-      const { default: FlowConnections } = await import(
-        '@/models/flow-connections'
-      )
+      const { default: FlowConnections } =
+        await import('@/models/flow-connections')
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
@@ -753,9 +751,8 @@ describe('updateStep mutation', () => {
     })
 
     it('should not call FlowConnections methods when app does not have connection fields', async () => {
-      const { default: FlowConnections } = await import(
-        '@/models/flow-connections'
-      )
+      const { default: FlowConnections } =
+        await import('@/models/flow-connections')
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
@@ -784,9 +781,8 @@ describe('updateStep mutation', () => {
 
     it('should call add to flow_connections and add table collaborator for tiles app with tableId parameter', async () => {
       const mockTableId = randomUUID()
-      const { default: FlowConnections } = await import(
-        '@/models/flow-connections'
-      )
+      const { default: FlowConnections } =
+        await import('@/models/flow-connections')
       // mock the check that the user has access to the tile
       vi.spyOn(TableCollaborator, 'hasAccess').mockResolvedValue(undefined)
       const addCollaboratorSpy = vi

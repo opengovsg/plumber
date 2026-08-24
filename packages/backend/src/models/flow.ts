@@ -1,5 +1,4 @@
 import { IFlowCollabRole, IFlowConfig } from '@plumber/types'
-
 import type { ModelOptions, QueryContext, Transaction } from 'objection'
 import { ValidationError } from 'objection'
 

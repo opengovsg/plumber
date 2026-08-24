@@ -1,9 +1,8 @@
-import type { IFlow } from '@plumber/types'
-
-import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Flex } from '@chakra-ui/react'
 import { Pagination } from '@opengovsg/design-system-react'
+import type { IFlow } from '@plumber/types'
+import { useSearchParams } from 'react-router-dom'
 
 import AppFlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'

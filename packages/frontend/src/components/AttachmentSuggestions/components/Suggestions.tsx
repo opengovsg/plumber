@@ -1,4 +1,3 @@
-import { useContext, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   Box,
   Collapse,
@@ -7,6 +6,7 @@ import {
   PopoverTrigger,
   Text,
 } from '@chakra-ui/react'
+import { useContext, useLayoutEffect, useMemo, useRef } from 'react'
 
 import FileUpload from '@/components/FileUpload'
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -17,7 +17,6 @@ import { POPOVER_MOTION_PROPS } from '@/theme/constants'
 
 import { boxStyles, divWrapperStyles, noVariablesTextStyles } from '../style'
 import { AttachmentConfigInput } from '../utils'
-
 import Checkbox, { type CheckboxVariable } from './Checkbox'
 import TagList from './TagList'
 

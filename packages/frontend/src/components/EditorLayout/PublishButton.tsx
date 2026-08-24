@@ -1,6 +1,6 @@
-import { useContext, useMemo } from 'react'
 import { Skeleton, Spinner, Text } from '@chakra-ui/react'
 import { Button, TouchableTooltip } from '@opengovsg/design-system-react'
+import { useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { TOOLBOX_APP_KEY } from '@/helpers/toolbox'
@@ -42,10 +42,10 @@ export default function PublishButton({
         flow.role === 'viewer'
           ? 'You do not have permission to edit this pipe'
           : hasFlowTransfer
-          ? 'You cannot publish a pipe with a pending transfer'
-          : isFlowIncomplete
-          ? 'Set up for all steps must be completed before you can publish your pipe'
-          : ''
+            ? 'You cannot publish a pipe with a pending transfer'
+            : isFlowIncomplete
+              ? 'Set up for all steps must be completed before you can publish your pipe'
+              : ''
       }
       wrapperStyles={{ width: '100%' }}
     >

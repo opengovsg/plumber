@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import type { z } from 'zod'
 
 import { filtersSchema } from '@/apps/m365-excel/common/schema'

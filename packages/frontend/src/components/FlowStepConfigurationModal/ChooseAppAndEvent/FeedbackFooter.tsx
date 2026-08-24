@@ -1,5 +1,5 @@
-import { BiLinkExternal } from 'react-icons/bi'
 import { Icon, Link, ModalFooter, Text } from '@chakra-ui/react'
+import { BiLinkExternal } from 'react-icons/bi'
 
 import * as URLS from '@/config/urls'
 

@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import deleteFlowConnection from '@/graphql/mutations/delete-flow-connection'
@@ -10,13 +11,13 @@ import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import {
   generateMockCollaborator,
   generateMockFlow,
   generateMockStep,
   generateMockUser,
 } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 const createTilesStep = async (
   context: Context,

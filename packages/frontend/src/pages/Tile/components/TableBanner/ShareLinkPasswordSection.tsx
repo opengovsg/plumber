@@ -1,5 +1,3 @@
-import { useCallback, useState } from 'react'
-import { BiCheck, BiHide, BiShow, BiX } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   Flex,
@@ -15,6 +13,8 @@ import {
   IconButton,
   Input,
 } from '@opengovsg/design-system-react'
+import { useCallback, useState } from 'react'
+import { BiCheck, BiHide, BiShow, BiX } from 'react-icons/bi'
 
 import { DELETE_TABLE_VIEW_PASSWORD } from '@/graphql/mutations/tiles/delete-table-view-password'
 import { SET_TABLE_VIEW_PASSWORD } from '@/graphql/mutations/tiles/set-table-view-password'

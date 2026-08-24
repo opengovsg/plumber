@@ -1,8 +1,3 @@
-import { useContext } from 'react'
-import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
-import { HiOutlineDotsVertical } from 'react-icons/hi'
-import { MdOutlineRemoveRedEye } from 'react-icons/md'
-import { Link } from 'react-router-dom'
 import { Hide, HStack, MenuButton, MenuList, Show } from '@chakra-ui/react'
 import {
   Button,
@@ -13,6 +8,11 @@ import {
   TagLeftIcon,
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
+import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
+import { HiOutlineDotsVertical } from 'react-icons/hi'
+import { MdOutlineRemoveRedEye } from 'react-icons/md'
+import { Link } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import { EditorContext } from '@/contexts/Editor'

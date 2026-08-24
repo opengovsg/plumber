@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
 import { Flex } from '@chakra-ui/react'
 import { HeaderContext } from '@tanstack/react-table'
+import { useEffect, useRef } from 'react'
 
 import { BORDER_COLOR, HEADER_COLOR, Z_INDEX_CELL } from '../../constants'
 import { GenericRowData } from '../../types'

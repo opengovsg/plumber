@@ -1,6 +1,3 @@
-import { useMemo } from 'react'
-import { BiLinkExternal } from 'react-icons/bi'
-import ReactMarkdown, { Components } from 'react-markdown'
 import {
   Box,
   forwardRef,
@@ -12,6 +9,9 @@ import {
   Text,
   UnorderedList,
 } from '@chakra-ui/react'
+import { useMemo } from 'react'
+import { BiLinkExternal } from 'react-icons/bi'
+import ReactMarkdown, { Components } from 'react-markdown'
 import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 

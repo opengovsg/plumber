@@ -1,8 +1,7 @@
 import { IStep, IStepApprovalBranch } from '@plumber/types'
-
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { isEqual } from 'lodash'
 import get from 'lodash/get'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
 
@@ -33,10 +32,13 @@ interface MrfContextProviderProps {
 function generateDefaultApprovalBranches(
   mrfApprovalSteps: IStep[],
 ): Record<string, IStepApprovalBranch> {
-  return mrfApprovalSteps.reduce((acc, step) => {
-    acc[step.id] = 'approve'
-    return acc
-  }, {} as Record<string, IStepApprovalBranch>)
+  return mrfApprovalSteps.reduce(
+    (acc, step) => {
+      acc[step.id] = 'approve'
+      return acc
+    },
+    {} as Record<string, IStepApprovalBranch>,
+  )
 }
 
 export const MrfContextProvider = ({ children }: MrfContextProviderProps) => {

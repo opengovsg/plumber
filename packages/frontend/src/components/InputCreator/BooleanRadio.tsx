@@ -1,14 +1,13 @@
-import type { IFieldBooleanRadioOptions } from '@plumber/types'
-
-import { useContext } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
-import Markdown from 'react-markdown'
 import { Box, FormControl, RadioGroup, Stack, Text } from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
   Radio,
 } from '@opengovsg/design-system-react'
+import type { IFieldBooleanRadioOptions } from '@plumber/types'
+import { useContext } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import Markdown from 'react-markdown'
 
 import { EditorContext } from '@/contexts/Editor'
 

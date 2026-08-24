@@ -1,17 +1,15 @@
+import { Flex } from '@chakra-ui/react'
+import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 import type { IField, IJSONValue } from '@plumber/types'
-
 import { ReactNode, useCallback, useContext, useEffect, useMemo } from 'react'
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
 import { BiListPlus, BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { Flex } from '@chakra-ui/react'
-import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator, { InputCreatorProps } from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
 
 import MultiCol from '../MultiCol.tsx'
-
 import AutofillConfirmDialog from './AutofillConfirmDialog'
 import RowDivider from './RowDivider'
 import useAutofill from './useAutofill'

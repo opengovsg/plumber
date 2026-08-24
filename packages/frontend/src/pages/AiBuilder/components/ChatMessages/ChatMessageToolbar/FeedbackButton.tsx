@@ -1,4 +1,3 @@
-import { FaRegThumbsDown, FaRegThumbsUp } from 'react-icons/fa'
 import { useMutation } from '@apollo/client'
 import {
   Button,
@@ -16,6 +15,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
+import { FaRegThumbsDown, FaRegThumbsUp } from 'react-icons/fa'
 
 import Form from '@/components/Form'
 import { UPDATE_CHAT_FEEDBACK } from '@/graphql/mutations/ai/update-chat-feedback'

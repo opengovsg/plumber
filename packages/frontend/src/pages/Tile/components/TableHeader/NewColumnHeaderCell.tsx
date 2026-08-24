@@ -1,5 +1,3 @@
-import { FormEvent, useCallback, useRef, useState } from 'react'
-import { FiPlus } from 'react-icons/fi'
 import {
   Flex,
   Icon,
@@ -19,6 +17,8 @@ import {
   PopoverCloseButton,
 } from '@opengovsg/design-system-react'
 import { HeaderContext } from '@tanstack/react-table'
+import { FormEvent, useCallback, useRef, useState } from 'react'
+import { FiPlus } from 'react-icons/fi'
 
 import { GenericRowData } from '@/pages/Tile/types'
 import { POPOVER_MOTION_PROPS } from '@/theme/constants'

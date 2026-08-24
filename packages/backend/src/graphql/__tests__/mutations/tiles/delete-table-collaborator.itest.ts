@@ -7,7 +7,6 @@ import User from '@/models/user'
 import Context from '@/types/express/context'
 
 import deleteTableCollaborator from '../../../mutations/tiles/delete-table-collaborator'
-
 import { generateMockContext, generateMockTable } from './table.mock'
 
 describe('delete table collaborators', () => {

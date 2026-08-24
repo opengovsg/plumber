@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import get from 'lodash.get'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

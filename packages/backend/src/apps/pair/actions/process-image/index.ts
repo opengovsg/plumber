@@ -1,5 +1,4 @@
 import { IJSONObject, IRawAction } from '@plumber/types'
-
 import { generateObject } from 'ai'
 import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
@@ -12,7 +11,6 @@ import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
-
 import { schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)

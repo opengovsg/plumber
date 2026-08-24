@@ -1,19 +1,19 @@
+import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Helmet } from 'react-helmet'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 
 import * as URLS from '@/config/urls'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
 
-import ChatInterface from './components/ChatInterface'
-import ExitAlert from './components/ExitAlert'
 import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
+import ChatInterface from './components/ChatInterface'
+import ExitAlert from './components/ExitAlert'
 import { createNewChatDraft } from './new-chat'
 
 function AiBuilderContent() {

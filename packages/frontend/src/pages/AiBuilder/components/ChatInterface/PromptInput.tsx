@@ -1,3 +1,4 @@
+import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -8,7 +9,6 @@ import {
 } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
 
 import { type ClarificationQuestion } from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'

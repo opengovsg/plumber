@@ -2,9 +2,9 @@ import { IApp } from '@plumber/types'
 
 import { getGenericAppQueue } from '@/queues/helpers/get-generic-app-queue'
 
-import addAuthHeader from './common/add-auth-header'
 import actions from './actions'
 import auth from './auth'
+import addAuthHeader from './common/add-auth-header'
 import dynamicData from './dynamic-data'
 
 const app: IApp = {

@@ -1,7 +1,6 @@
 /* oxlint-disable no-console */
 import '@/config/orm'
 import '@/config/dynamodb'
-
 import { argv } from 'process'
 
 import TableColumnMetadata from '@/models/table-column-metadata'

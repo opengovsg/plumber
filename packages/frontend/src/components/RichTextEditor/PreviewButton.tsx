@@ -1,5 +1,6 @@
+import { Box, Spinner, Tooltip, useDisclosure } from '@chakra-ui/react'
 import type { TFieldPreviewType } from '@plumber/types'
-
+import { Editor } from '@tiptap/react'
 import {
   lazy,
   type MouseEvent,
@@ -10,8 +11,6 @@ import {
   useTransition,
 } from 'react'
 import { RiEyeLine } from 'react-icons/ri'
-import { Box, Spinner, Tooltip, useDisclosure } from '@chakra-ui/react'
-import { Editor } from '@tiptap/react'
 
 import { substituteForPreview, type VariableInfoMap } from './utils'
 

@@ -1,9 +1,8 @@
-import { IApp, IStep } from '@plumber/types'
-
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { useIsMobile } from '@opengovsg/design-system-react'
+import { IApp, IStep } from '@plumber/types'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'

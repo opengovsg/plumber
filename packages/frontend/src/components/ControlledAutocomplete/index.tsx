@@ -1,25 +1,23 @@
-import type {
-  IFieldDropdown,
-  IFieldDropdownOption,
-  TDataOutMetadatumType,
-} from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
-import { useController, useFormContext } from 'react-hook-form'
-import Markdown from 'react-markdown'
 import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
   Link,
 } from '@opengovsg/design-system-react'
+import type {
+  IFieldDropdown,
+  IFieldDropdownOption,
+  TDataOutMetadatumType,
+} from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
+import { useController, useFormContext } from 'react-hook-form'
+import Markdown from 'react-markdown'
 
 import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
 
 import extractVariablesAsItems from '../MultiSelect/helpers/extract-variables-as-items'
-
 import AddNewOptionModal, {
   INLINE_ADD_NEW_VALIDATE,
   useCreateNewOption,

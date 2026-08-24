@@ -1,5 +1,4 @@
 import { IExecutionStepMetadata, IJSONObject } from '@plumber/types'
-
 import { raw } from 'objection'
 
 import appConfig from '@/config/app'

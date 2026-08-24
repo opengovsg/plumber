@@ -7,12 +7,12 @@ import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import {
   generateMockCollaborator,
   generateMockStep,
   generateMockUser,
 } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 describe('deleteStep mutation', () => {
   let context: Context

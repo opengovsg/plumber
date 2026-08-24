@@ -1,6 +1,6 @@
-import { TBeforeRequest } from '@plumber/types'
-
 import { URL } from 'node:url'
+
+import { TBeforeRequest } from '@plumber/types'
 
 const addAuthHeader: TBeforeRequest = async ($, requestConfig) => {
   if ($.auth.data?.token) {

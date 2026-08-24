@@ -1,10 +1,9 @@
+import { Divider, Flex } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
-
 import React, { useContext } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { BiTrash } from 'react-icons/bi'
-import { Divider, Flex } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'

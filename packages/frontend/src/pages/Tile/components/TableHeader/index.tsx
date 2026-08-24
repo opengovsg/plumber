@@ -1,4 +1,3 @@
-import { Fragment, memo, useCallback } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -14,6 +13,7 @@ import {
   SortableContext,
 } from '@dnd-kit/sortable'
 import { flexRender, Header, TableState } from '@tanstack/react-table'
+import { Fragment, memo, useCallback } from 'react'
 
 import { NEW_COLUMN_ID, SELECT_COLUMN_ID } from '../../constants'
 import { useUpdateTable } from '../../hooks/useUpdateTable'

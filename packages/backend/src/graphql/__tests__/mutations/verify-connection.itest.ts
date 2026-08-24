@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import verifyConnection from '@/graphql/mutations/verify-connection'
@@ -8,12 +9,12 @@ import FlowConnections from '@/models/flow-connections'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import {
   generateMockCollaborator,
   generateMockFlow,
   generateMockUser,
 } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 const mocks = vi.hoisted(() => ({
   verifyCredentials: vi.fn().mockResolvedValue(undefined),

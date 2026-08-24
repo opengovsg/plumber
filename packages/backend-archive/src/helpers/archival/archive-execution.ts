@@ -1,8 +1,9 @@
+import { promisify } from 'node:util'
+import { gzip } from 'node:zlib'
+
 import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import type { Knex } from 'knex'
 import { DateTime } from 'luxon'
-import { promisify } from 'node:util'
-import { gzip } from 'node:zlib'
 
 import { buildS3Key } from './build-s3-key'
 import logger from './logger'

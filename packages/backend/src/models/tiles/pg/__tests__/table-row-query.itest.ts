@@ -8,7 +8,6 @@ import {
   getRawRowById,
   getTableRowCount,
 } from '../table-row-functions'
-
 import {
   BULK_INSERT_COUNT,
   createMultipleTestRows,

@@ -1,8 +1,7 @@
-import { IStep } from '@plumber/types'
-
-import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { BiPlus } from 'react-icons/bi'
 
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'

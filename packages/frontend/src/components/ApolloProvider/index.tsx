@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from 'react'
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client'
 import { Flex, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
+import { useCallback, useMemo } from 'react'
 
 import { NOT_AUTHORISED } from '@/config/errors'
 import * as URLS from '@/config/urls'

@@ -1,8 +1,8 @@
+import { Flex, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
+import { Badge, Menu } from '@opengovsg/design-system-react'
 import { useMemo } from 'react'
 import { BiChevronDown } from 'react-icons/bi'
 import { MdOutlineModeEdit, MdOutlineRemoveRedEye } from 'react-icons/md'
-import { Flex, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
-import { Badge, Menu } from '@opengovsg/design-system-react'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { type EditMode } from '../../types'

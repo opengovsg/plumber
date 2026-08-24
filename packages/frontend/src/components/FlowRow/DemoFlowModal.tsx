@@ -1,7 +1,6 @@
-import { DemoVideoDetails } from '@plumber/types'
-
-import { ReactElement } from 'react'
 import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
+import { DemoVideoDetails } from '@plumber/types'
+import { ReactElement } from 'react'
 
 import DemoVideoModalContent from './DemoVideoModalContent'
 

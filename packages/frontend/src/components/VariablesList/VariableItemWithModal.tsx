@@ -1,13 +1,13 @@
-import { lazy, Suspense, useCallback, useContext, useTransition } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
+import { lazy, Suspense, useCallback, useContext, useTransition } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { hexEncode } from '@/helpers/hex-encoding'
 import { TableVariable, Variable } from '@/helpers/variables'
 
+import { VariableItem } from '.'
 import HtmlVariableModal from './HtmlVariableModal'
 import TableVariableModal from './TableVariableModal'
-import { VariableItem } from '.'
 
 const LazyViewAsEmailModal = lazy(() => import('../ViewAsEmailModal'))
 

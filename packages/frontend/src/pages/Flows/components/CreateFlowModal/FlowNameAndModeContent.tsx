@@ -1,6 +1,3 @@
-import { FormEvent } from 'react'
-import { BiRightArrowAlt } from 'react-icons/bi'
-import { Form } from 'react-router-dom'
 import {
   Flex,
   Icon,
@@ -10,6 +7,9 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { FormEvent } from 'react'
+import { BiRightArrowAlt } from 'react-icons/bi'
+import { Form } from 'react-router-dom'
 
 import { useCreateFlowContext } from '@/pages/Flows/contexts/CreateFlowContext'
 

@@ -1,5 +1,5 @@
-import type { Components } from 'react-markdown'
 import { Flex, Heading, ListItem, Text, UnorderedList } from '@chakra-ui/react'
+import type { Components } from 'react-markdown'
 
 interface ContentBoxProps {
   headerText: string

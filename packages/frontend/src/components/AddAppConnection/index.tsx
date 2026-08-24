@@ -1,7 +1,3 @@
-import type { IApp, IField, IJSONObject } from '@plumber/types'
-
-import * as React from 'react'
-import { FieldValues, SubmitHandler } from 'react-hook-form'
 import {
   Alert,
   AlertIcon,
@@ -14,6 +10,9 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
+import type { IApp, IField, IJSONObject } from '@plumber/types'
+import * as React from 'react'
+import { FieldValues, SubmitHandler } from 'react-hook-form'
 
 import InputCreator from '@/components/InputCreator'
 import { processStep } from '@/helpers/authenticationSteps'

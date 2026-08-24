@@ -1,5 +1,3 @@
-import { useCallback, useMemo, useState } from 'react'
-import { BiSearch, BiSolidXCircle } from 'react-icons/bi'
 import {
   Icon,
   InputGroup,
@@ -8,6 +6,8 @@ import {
 } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
 import debounce from 'lodash/debounce'
+import { useCallback, useMemo, useState } from 'react'
+import { BiSearch, BiSolidXCircle } from 'react-icons/bi'
 
 type DebouncedSearchInputProps = {
   onChange: (val: string) => void

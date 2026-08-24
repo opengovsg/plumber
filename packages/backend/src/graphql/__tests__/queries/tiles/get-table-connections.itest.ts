@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import getTableConnections from '@/graphql/queries/tiles/get-table-connections'

@@ -1,9 +1,8 @@
-import type { IAction } from '@plumber/types'
-
-import { BiFilterAlt, BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
-import { SlLoop } from 'react-icons/sl'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
+import type { IAction } from '@plumber/types'
+import { BiFilterAlt, BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
+import { SlLoop } from 'react-icons/sl'
 
 import { HighlightedText } from './HighlightedText'
 import NewBadge from './NewBadge'

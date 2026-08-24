@@ -1,6 +1,5 @@
-import type { IGlobalVariable } from '@plumber/types'
-
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
+import type { IGlobalVariable } from '@plumber/types'
 import { DateTime } from 'luxon'
 
 import logger from '@/helpers/logger'
