@@ -97,6 +97,42 @@ export const buildNoOptionsFoundMessage = (
 ): string =>
   `Q: ${question}\nA: [no options available${reason ? `: ${reason}` : ''}]`
 
+// Shared answer format for a connection-picker turn — used both when the
+// user picks an existing connection (see PromptInput's onSelect) and when
+// they create one inline via AddAppConnection. Keep this in sync with the
+// system prompt's picker-answer contract if the format ever changes.
+export const buildPickerAnswerMessage = (
+  question: string,
+  label: string,
+  connectionId: string,
+): string => `Q: ${question}\nA: ${label} (id: ${connectionId})`
+
+// AddAppConnection's onClose hands back the raw accumulated response object
+// from walking auth.authenticationSteps (createConnection's result, the
+// submitted field values, etc.) rather than a clean (label, id) pair. Pull
+// out what the chat answer needs: the new connection's id, and a display
+// label — the user-entered "screenName" field when the app has one (every
+// secret-key app in AI_BUILDER_INLINE_CONNECT_APP_KEYS except Telegram and
+// Slack declares one), otherwise the caller-supplied fallback (the app's
+// display name).
+export const extractConnectionResult = (
+  response: Record<string, unknown>,
+  fallbackLabel: string,
+): { label: string; connectionId: string } | null => {
+  const createConnectionResult = response.createConnection as
+    | { id?: string }
+    | undefined
+  const connectionId = createConnectionResult?.id
+  if (!connectionId) {
+    return null
+  }
+
+  const fields = response.fields as Record<string, unknown> | undefined
+  const label = (fields?.screenName as string | undefined) ?? fallbackLabel
+
+  return { label, connectionId }
+}
+
 export const isNoOptionsSignalMessage = (text: string): boolean =>
   text.includes('\nA: [no options available')
 
