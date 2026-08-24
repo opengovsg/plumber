@@ -122,7 +122,6 @@ async function sendViaPostman(
       },
     },
   )
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { body, subject, from, reply_to } = response.data.params
   return {
     status: 'ACCEPTED',
