@@ -5,7 +5,7 @@ export default defineConfig({
     reporters: ['default', 'html'],
     coverage: {
       enabled: true,
-      include: ['packages/{backend,frontend}/src/**/*.{ts,tsx}'],
+      include: ['packages/{backend,backend-archive,frontend}/src/**/*.{ts,tsx}'],
       exclude: [
         '**/*.test.{ts,tsx}',
         '**/*.itest.{ts,tsx}',
@@ -16,6 +16,7 @@ export default defineConfig({
     projects: [
       'packages/frontend/vite.config.ts',
       'packages/backend/vitest.config.ts',
+      'packages/backend-archive/vitest.config.ts',
       {
         extends: 'packages/backend/vitest.config.integration.ts',
         test: {
