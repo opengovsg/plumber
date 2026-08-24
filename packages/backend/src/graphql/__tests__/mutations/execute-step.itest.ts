@@ -18,7 +18,7 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import { TestStepOptions, TestStepResult } from '@/services/test-step'
-import * as testStepModule from '@/services/test-step'
+import * as testStepModule from '@/services/test-step.js'
 import Context from '@/types/express/context'
 
 import { generateMockUser } from './flow.mock'
@@ -380,8 +380,8 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
 
   it("forwards testRunMetadata to the action's testRun handler", async () => {
     const { default: realTestStep } = await vi.importActual<
-      typeof import('@/services/test-step')
-    >('@/services/test-step')
+      typeof import('@/services/test-step.js')
+    >('@/services/test-step.js')
 
     const testRunMetadata = { 'fake:key': { hello: 'world' } }
 
