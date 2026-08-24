@@ -104,7 +104,7 @@ describe('Auth helpers', () => {
         userEmail: 'coffee@plumber.local',
       })
 
-      expect(mocks.whereUser).toBeCalledWith('email', 'coffee@plumber.local')
+      expect(mocks.whereUser).toHaveBeenCalledWith('email', 'coffee@plumber.local')
       expect(result.id).toEqual('test-user-id')
     })
   })
@@ -174,7 +174,7 @@ describe('Auth helpers', () => {
 
       mocks.findOne.mockRejectedValueOnce(new Error('Database error'))
 
-      await expect(getOrCreateUser(email)).rejects.toThrowError(
+      await expect(getOrCreateUser(email)).rejects.toThrow(
         'Database error',
       )
 
@@ -190,7 +190,7 @@ describe('Auth helpers', () => {
       mocks.findOne.mockResolvedValueOnce(null) // Simulate no user found
       mocks.insertAndFetch.mockRejectedValueOnce(new Error('Insert error'))
 
-      await expect(getOrCreateUser(email)).rejects.toThrowError('Insert error')
+      await expect(getOrCreateUser(email)).rejects.toThrow('Insert error')
 
       expect(mocks.findOne).toHaveBeenCalledOnce()
       expect(mocks.findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
@@ -257,12 +257,12 @@ describe('Auth helpers', () => {
     })
 
     it('throws error with no user id', async () => {
-      await expect(updateLastLogin('')).rejects.toThrowError('User id required')
+      await expect(updateLastLogin('')).rejects.toThrow('User id required')
     })
 
     it('throws error with non-existent user id', async () => {
       mocks.patch().where.mockReturnValueOnce(Promise.resolve(0))
-      await expect(updateLastLogin('non-existent-id')).rejects.toThrowError(
+      await expect(updateLastLogin('non-existent-id')).rejects.toThrow(
         'No user found',
       )
     })
