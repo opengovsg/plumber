@@ -1,5 +1,6 @@
 {
   "name": "backend",
+  "private": true,
   "scripts": {
     "setup": "docker-compose -f docker-compose.dev.yml up -d",
     "teardown": "docker-compose -f docker-compose.dev.yml down",
