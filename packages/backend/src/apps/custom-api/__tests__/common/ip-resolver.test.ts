@@ -15,7 +15,7 @@ describe('IP resolvers', () => {
     })
 
     it('should not be able to get ip address from ip', async () => {
-      await expect(getIpFromHostname(' 127.0.0.1')).rejects.toThrowError(
+      await expect(getIpFromHostname(' 127.0.0.1')).rejects.toThrow(
         'Unable to resolve IP address for  127.0.0.1',
       )
     })
