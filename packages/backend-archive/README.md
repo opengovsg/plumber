@@ -29,7 +29,7 @@ Rehydration (`rehydrate-execution`) runs on demand (not scheduled). It reads arc
 Start the dev stack (Postgres + MinIO) from the repo root if it isn't already running:
 
 ```bash
-npm run setup
+pnpm run setup
 ```
 
 This also creates the `plumber-development-archive-bucket` MinIO bucket used below.
@@ -58,7 +58,7 @@ Keep them in the `archival` 1Password environment, or pass them inline as below.
 
 ```bash
 S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
-  npm run -w backend-archive archive:backfill-local
+  pnpm --filter backend-archive run archive:backfill-local
 ```
 
 1Password asks for biometric approval before the script starts. `ARCHIVE_DRY_RUN` defaults to `true`, so the run writes to S3 and deletes nothing. Set `ARCHIVE_DRY_RUN=false` for a live, destructive run.
@@ -137,8 +137,8 @@ export ARCHIVE_DRY_RUN=true
 Then run:
 
 ```bash
-npm run -w backend-archive archive:rehydrate -- --flow-id <uuid>
-npm run -w backend-archive archive:backfill
+pnpm --filter backend-archive run archive:rehydrate -- --flow-id <uuid>
+pnpm --filter backend-archive run archive:backfill
 ```
 
 Both call `ts-node`, a devDependency, so the host needs a full checkout and an install that kept devDependencies. The `Dockerfile.archival` image has neither. Inside that image, call the compiled entrypoint from `/opt/plumber`:
@@ -275,7 +275,7 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 ## Running tests
 
 ```bash
-npm run -w backend-archive test:unit
+pnpm --filter backend-archive run test:unit
 ```
 
 ---

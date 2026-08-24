@@ -9,15 +9,15 @@ React + Vite + Apollo client + Chakra UI / OGP design system. Path alias `@/*` �
 
 ## Important commands
 
-Run from [packages/frontend/](../../packages/frontend/) or via `npm run -w frontend …`.
+Run from [packages/frontend/](../../packages/frontend/) or via `pnpm --filter frontend …`.
 
 **Testing:**
 
-- `npm test` — runs the frontend vitest suite.
+- `pnpm test` — runs the frontend vitest suite.
 
 **Regenerate Chakra theme typings:**
 
-- `npm run gen:theme-typings` — re-runs the Chakra CLI against [packages/frontend/src/theme/index.ts](../../packages/frontend/src/theme/index.ts). Also runs automatically via `postinstall`; re-run by hand after editing the theme tokens.
+- `pnpm run gen:theme-typings` — re-runs the Chakra CLI against [packages/frontend/src/theme/index.ts](../../packages/frontend/src/theme/index.ts). Also runs automatically via `postinstall`; re-run by hand after editing the theme tokens.
 
 ## Browser debugging
 
@@ -32,7 +32,7 @@ Codegen config: [gql-codegen.ts](../../gql-codegen.ts). It writes:
 - [packages/backend/src/graphql/**generated**/](../../packages/backend/src/graphql/__generated__/) — server resolver types. Default context is `AuthenticatedGraphQLContext`, overridden per-field (e.g. `Query.getCurrentUser` uses `UnauthenticatedGraphQLContext`).
 - [packages/frontend/src/graphql/**generated**/](../../packages/frontend/src/graphql/__generated__/) — client preset, immutable types.
 
-Run `npm run gqlc` (root) after editing `.graphql` files or any `*.gql-to-typescript.ts` mapper. Codegen runs automatically via `postinstall`.
+Run `pnpm run gqlc` (root) after editing `.graphql` files or any `*.gql-to-typescript.ts` mapper. Codegen runs automatically via `postinstall`.
 
 ## App entry & providers
 
