@@ -27,6 +27,7 @@ describe('add / subtract date time', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

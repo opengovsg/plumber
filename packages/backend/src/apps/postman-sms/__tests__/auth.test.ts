@@ -34,6 +34,7 @@ describe('Postman SMS auth', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

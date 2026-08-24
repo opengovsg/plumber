@@ -37,6 +37,7 @@ describe('Delay for action', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

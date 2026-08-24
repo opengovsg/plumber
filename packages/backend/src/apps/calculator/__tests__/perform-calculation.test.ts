@@ -26,6 +26,7 @@ describe('perform calculation', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

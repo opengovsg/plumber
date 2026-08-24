@@ -40,6 +40,7 @@ describe('send payment email', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
