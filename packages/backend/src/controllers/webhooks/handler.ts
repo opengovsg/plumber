@@ -47,12 +47,11 @@ export default async (request: IRequest, response: Response) => {
   const span = tracer.scope().active()
   span?.setOperationName('webhooks.handler')
 
-  const flowId = request.params.flowId
-
+  let flowId: string
   try {
-    z.string().uuid().parse(flowId)
+    flowId = z.string().uuid().parse(request.params.flowId)
   } catch {
-    logger.info(`Invalid webhook flow id ${flowId}, not uuid`)
+    logger.info(`Invalid webhook flow id ${request.params.flowId}, not uuid`)
     return response.sendStatus(404)
   }
 

@@ -51,6 +51,7 @@
     "@launchdarkly/node-server-sdk": "catalog:launchdarkly",
     "@opengovsg/formsg-sdk": "catalog:opengovsg",
     "@opengovsg/sgid-client": "catalog:opengovsg",
+    "@opentelemetry/api": "catalog:",
     "@opentelemetry/sdk-node": "catalog:",
     "@plumber/types": "workspace:*",
     "@taskforcesh/bullmq-pro": "catalog:",
