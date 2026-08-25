@@ -17,6 +17,7 @@ catalog:
   "@graphql-codegen/cli": "^5.0.7"
   "@graphql-typed-document-node/core": "3.2.0"
   "@hookform/resolvers": "^2.8.8"
+  "@opentelemetry/api": "1.9.0"
   "@opentelemetry/sdk-node": "0.219.0"
   "@swc/core": "^1.13.5"
   "@taskforcesh/bullmq-pro": "7.44.0"

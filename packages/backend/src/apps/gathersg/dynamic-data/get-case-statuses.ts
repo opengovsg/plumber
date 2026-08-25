@@ -25,7 +25,7 @@ const dynamicData: IDynamicData = {
       )
 
       return {
-        data: caseStatuses.data.map((status) => ({
+        data: caseStatuses.data.map((status: GatherSGCaseStatus['data'][number]) => ({
           name: status.name,
           value: status.name,
         })),
