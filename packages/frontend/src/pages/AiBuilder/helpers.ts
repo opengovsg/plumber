@@ -2,6 +2,7 @@ import { TextPart } from 'ai'
 
 import {
   ClarificationPart,
+  ColumnTablePart,
   CustomUIMessage,
   DynamicPickerPart,
   IsChatReadyPart,
@@ -85,9 +86,11 @@ export const stripFormIdPrefix = (label: string): string =>
 // suffixes that are stripped from display. The wrapped value isn't always a
 // hex UUID and could contain parens (e.g. an M365 column named "Score
 // (out of 10)"), so match lazily up to whichever ")" is actually the
-// terminator (followed by "." / whitespace / end-of-string).
+// terminator (followed by "." / whitespace / ":" / end-of-string — ":"
+// covers the column-table reply format, which has "(id: …): <value>"
+// immediately after the id, with multiple occurrences per message).
 export const formatUserMessageForDisplay = (text: string): string =>
-  text.replace(/ \(id: [\s\S]+?\)(?=[.\s]|$)/g, '').trim()
+  text.replace(/ \(id: [\s\S]+?\)(?=[.\s:]|$)/g, '').trim()
 
 // System signal for the LLM when a picker fetch has zero options — see
 // DynamicPicker's onNoOptionsFound. Never shown to the user (isNoOptionsSignalMessage).
@@ -289,6 +292,10 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       (part): part is DynamicPickerPart => part.type === 'data-dynamicPicker',
     )
 
+    const columnTablePart = msg.parts.find(
+      (part): part is ColumnTablePart => part.type === 'data-columnTable',
+    )
+
     return {
       id: msg.id,
       text: extractTextContent(msg),
@@ -297,6 +304,7 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       isChatReady: false,
       clarification: clarificationPart?.data.questions,
       dynamicPicker: dynamicPickerPart?.data,
+      columnTable: columnTablePart?.data,
     }
   })
 
