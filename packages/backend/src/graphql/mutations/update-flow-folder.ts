@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import {
   countFlowsByFolder,
   validateFlowFolderColor,
@@ -13,6 +15,11 @@ const updateFlowFolder: MutationResolvers['updateFlowFolder'] = async (
   context,
 ) => {
   const { id, name, color } = params.input
+
+  // To avoid the gibberish error code if a caller sends a malformed id
+  if (!z.string().uuid().safeParse(id).success) {
+    throw new Error('Please provide a valid folder ID.')
+  }
 
   // Scoped by user_id: a folder that belongs to someone else looks
   // not-found, never a silent no-op success.

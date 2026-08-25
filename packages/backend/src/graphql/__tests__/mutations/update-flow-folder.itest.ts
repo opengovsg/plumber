@@ -55,6 +55,16 @@ describe('updateFlowFolder', () => {
     ).rejects.toThrow(BadUserInputError)
   })
 
+  it('rejects an empty name', async () => {
+    await expect(
+      updateFlowFolder(
+        null,
+        { input: { id: folder.id, name: '   ' } },
+        context,
+      ),
+    ).rejects.toThrow(BadUserInputError)
+  })
+
   it("never updates another user's folder", async () => {
     const stranger = await User.query().insert({
       id: randomUUID(),
