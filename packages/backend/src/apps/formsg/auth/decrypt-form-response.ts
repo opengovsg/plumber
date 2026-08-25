@@ -103,7 +103,8 @@ export async function decryptFormResponse(
     return { verified: false, internalId: null }
   }
 
-  const formSgSdk = getSdk(parseFormEnv($))
+  const formEnv = parseFormEnv($)
+  const formSgSdk = getSdk(formEnv)
 
   const {
     headers,
@@ -153,7 +154,7 @@ export async function decryptFormResponse(
       // Checked before downloading anything, so a forged URL costs us no
       // requests. Returning here keeps it on the same 401 path as every other
       // untrusted payload, instead of surfacing a 500 and a stack trace.
-      if (!areAttachmentUrlsTrusted(data.attachmentDownloadUrls)) {
+      if (!areAttachmentUrlsTrusted(data.attachmentDownloadUrls, formEnv)) {
         logger.error({
           event: 'formsg-untrusted-attachment-url',
           formId: data.formId,
