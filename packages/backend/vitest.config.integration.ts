@@ -4,10 +4,13 @@
 // This is for tests that require a database connection.
 
 import { globSync, readFileSync } from 'fs'
+import { cpus } from 'os'
 import { join, resolve } from 'path'
 
 import { config } from 'dotenv'
 import { defineConfig } from 'vitest/config'
+
+import { MAX_WORKER_SLOTS } from './test/helpers/integration-constants'
 
 function getPath(relativePath: string): string {
   return resolve(__dirname, relativePath)
@@ -58,10 +61,16 @@ const sharedTest = {
   // Each project runs its own globalSetup. The setup file shares one set of
   // containers between them.
   globalSetup: [getPath('./test/global-setup.ts')],
-  setupFiles: ['dotenv/config', getPath('./test/pg-reset-db-setup.ts')],
+  setupFiles: [
+    'dotenv/config',
+    getPath('./test/pg-reset-db-setup.ts'),
+    getPath('./test/redis-reset-setup.ts'),
+  ],
   pool: 'threads' as const,
-  maxWorkers: 1,
-  fileParallelism: false,
+  maxWorkers: Math.min(cpus().length, MAX_WORKER_SLOTS),
+  sequence: {
+    concurrent: false,
+  },
   onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
     if (log.startsWith('vite:')) {
       return false
@@ -82,7 +91,10 @@ export const integrationProjects = [
       include: [ITEST_INCLUDE],
       exclude: isolatedItests,
       isolate: false,
-      sequence: { groupOrder: 1 },
+      env: {
+        PLUMBER_ITEST_PROJECT: 'shared',
+      },
+      sequence: { ...sharedTest.sequence, groupOrder: 1 },
     },
   },
   {
@@ -92,15 +104,17 @@ export const integrationProjects = [
       name: 'backend-integration-isolated',
       include: isolatedItests,
       isolate: true,
-      sequence: { groupOrder: 2 },
+      env: {
+        PLUMBER_ITEST_PROJECT: 'isolated',
+      },
+      sequence: { ...sharedTest.sequence, groupOrder: 2 },
     },
   },
 ]
 
 export default defineConfig({
   test: {
-    maxWorkers: 1,
-    fileParallelism: false,
+    maxWorkers: Math.min(cpus().length, MAX_WORKER_SLOTS),
     projects: integrationProjects,
   },
   resolve: sharedResolve,
