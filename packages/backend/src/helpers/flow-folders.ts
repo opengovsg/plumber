@@ -202,3 +202,21 @@ export async function countFlowsByFolder(
     ]),
   )
 }
+
+/**
+ * Counts `currentUser`'s accessible, non-deleted flows that are not filed
+ * into any folder. A single `COUNT(*)` reusing the exact accessible-flows +
+ * `whereNotExists` shape as `applyFolderFilter`'s `unfiled` branch, so the
+ * rail's "Unfiled" number doesn't require re-running the whole `getFlows`
+ * resolver just to read `pageInfo.totalCount`.
+ */
+export async function countUnfiledFlows(currentUser: User): Promise<number> {
+  const result = await currentUser
+    .withAccessibleFlows({ requiredRole: 'viewer' })
+    .where((builder) => {
+      applyFolderFilter(builder, { unfiled: true, userId: currentUser.id })
+    })
+    .resultSize()
+
+  return result
+}

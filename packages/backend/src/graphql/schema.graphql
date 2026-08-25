@@ -18,6 +18,7 @@ type Query {
     unfiled: Boolean
   ): PaginatedFlows
   getFlowFolders: [FlowFolder!]!
+  getUnfiledFlowCount: Int!
   getTestExecutionSteps(
     flowId: String!
     ignoreTestExecutionId: Boolean

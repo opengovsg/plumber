@@ -69,7 +69,10 @@ export default function FolderFormModal(props: FolderFormModalProps) {
       <ModalContent>
         <form onSubmit={handleSubmit}>
           <ModalHeader>
-            {isRenameMode ? 'Rename folder' : 'New folder'}
+            {/* Neutral label: this same dialog is opened from both the
+                "Rename" and "Change colour" menu items, so it shouldn't
+                claim to be renaming when the user only wants a new colour. */}
+            {isRenameMode ? 'Edit folder' : 'New folder'}
           </ModalHeader>
           <ModalBody>
             <Flex flexDir="column" rowGap={4}>

@@ -17,6 +17,7 @@ import { DELETE_FLOW_FOLDER } from '@/graphql/mutations/delete-flow-folder'
 import { UPDATE_FLOW_FOLDER } from '@/graphql/mutations/update-flow-folder'
 import { GET_FLOW_FOLDERS } from '@/graphql/queries/get-flow-folders'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
+import { GET_UNFILED_FLOW_COUNT } from '@/graphql/queries/get-unfiled-flow-count'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
 import ApproveTransfersInfobox from './components/ApproveTransfersInfobox'
@@ -24,7 +25,11 @@ import CreateFlowModal from './components/CreateFlowModal'
 import CreatePipeButton from './components/CreatePipeButton'
 import EmptyFlows from './components/EmptyFlows'
 import FolderSidebar from './components/FolderSidebar'
-import { FolderColor } from './components/FolderSidebar/constants'
+import {
+  FolderColor,
+  toFolderColor,
+} from './components/FolderSidebar/constants'
+import CreateFirstFolderPrompt from './components/FolderSidebar/CreateFirstFolderPrompt'
 import DeleteFolderDialog from './components/FolderSidebar/DeleteFolderDialog'
 import FolderFormModal from './components/FolderSidebar/FolderFormModal'
 import {
@@ -32,6 +37,7 @@ import {
   FolderSummary,
 } from './components/FolderSidebar/FolderRow'
 import MobileFolderChips from './components/FolderSidebar/MobileFolderChips'
+import FolderSubheader from './components/FolderSubheader'
 import {
   CreateFlowContextProvider,
   FLOW_CREATE_MODE,
@@ -43,6 +49,8 @@ const FLOWS_TITLE = 'Pipes'
 interface FlowsInternalProps {
   isLoading: boolean
   isSearching: boolean
+  isFolderFiltered: boolean
+  selection: FolderSelection
   flows: IFlow[]
   showFolderChip: boolean
   onCreateModalOpen: () => void
@@ -72,12 +80,18 @@ function getFolderSelectionFromSearchParams(
 function FlowsList({
   isLoading,
   isSearching,
+  isFolderFiltered,
+  selection,
   flows,
   showFolderChip,
 }: FlowsInternalProps) {
   const hasFlows = flows.length > 0
-  const hasNoUserFlows = !hasFlows && !isSearching
+  const hasNoUserFlows = !hasFlows && !isSearching && !isFolderFiltered
   const isEmptySearchResults = !hasFlows && isSearching
+  // Independent of `isSearching` - an empty folder/unfiled bucket is not a
+  // search miss, so it gets its own copy rather than the generic "we
+  // couldn't find anything" text.
+  const isEmptyFolderResults = !hasFlows && !isSearching && isFolderFiltered
 
   if (isLoading) {
     return (
@@ -96,6 +110,19 @@ function FlowsList({
       <NoResultFound
         description="We couldn't find anything"
         action="Try using different keywords or checking for typos."
+      />
+    )
+  }
+
+  if (isEmptyFolderResults) {
+    return (
+      <NoResultFound
+        description="Nothing here yet"
+        action={
+          selection.type === 'unfiled'
+            ? 'Every visible pipe already has a folder.'
+            : 'This folder is empty.'
+        }
       />
     )
   }
@@ -152,21 +179,23 @@ export default function Flows(): ReactElement {
   })
 
   // Independent of the current folder selection/search, so the rail's
-  // counts stay stable no matter what's currently being viewed.
-  const { data: unfiledCountData } = useQuery(GET_FLOWS, {
-    variables: { limit: 1, offset: 0, unfiled: true },
-  })
+  // counts stay stable no matter what's currently being viewed. A single
+  // dedicated field rather than a full `getFlows(unfiled: true, limit: 1)`
+  // query, so reading one integer doesn't re-run the whole resolver.
+  const { data: unfiledCountData } = useQuery(GET_UNFILED_FLOW_COUNT)
 
-  const { data: foldersData } = useQuery(GET_FLOW_FOLDERS)
+  const { data: foldersData, loading: foldersLoading } =
+    useQuery(GET_FLOW_FOLDERS)
   const folders: FolderSummary[] = (foldersData?.getFlowFolders ?? []).map(
     (folder) => ({
       id: folder.id,
       name: folder.name,
-      color: folder.color as FolderColor,
+      color: toFolderColor(folder.color),
       flowCount: folder.flowCount,
     }),
   )
-  const unfiledFlowCount = unfiledCountData?.getFlows?.pageInfo.totalCount ?? 0
+  const hasFolders = folders.length > 0
+  const unfiledFlowCount = unfiledCountData?.getUnfiledFlowCount ?? 0
   const totalFlowCount =
     unfiledFlowCount +
     folders.reduce((sum, folder) => sum + folder.flowCount, 0)
@@ -175,10 +204,11 @@ export default function Flows(): ReactElement {
     CREATE_FLOW_FOLDER,
     { refetchQueries: ['GetFlowFolders'] },
   )
-  const [updateFlowFolder, { loading: isUpdatingFolder }] = useMutation(
-    UPDATE_FLOW_FOLDER,
-    { refetchQueries: ['GetFlowFolders'] },
-  )
+  // No `refetchQueries` here: `updateFlowFolder` already returns the
+  // updated folder (id/name/color/flowCount), and `FlowFolder` has no
+  // custom cache typePolicies, so Apollo's normalized cache merges it in.
+  const [updateFlowFolder, { loading: isUpdatingFolder }] =
+    useMutation(UPDATE_FLOW_FOLDER)
   const [deleteFlowFolder, { loading: isDeletingFolder }] = useMutation(
     DELETE_FLOW_FOLDER,
     { refetchQueries: ['GetFlowFolders', 'GetFlows'] },
@@ -318,6 +348,28 @@ export default function Flows(): ReactElement {
     }
   }, [lastPage, page, setSearchParams])
 
+  // A `?folderId=` that's been deleted, or belongs to someone else, would
+  // otherwise silently render an empty list with no explanation. Once we
+  // know for sure (folders have loaded) that the id isn't one of this
+  // user's folders, fall back to "All pipes" rather than showing that as a
+  // search miss.
+  useEffect(() => {
+    if (foldersLoading || selection.type !== 'folder') {
+      return
+    }
+    if (folders.some((folder) => folder.id === selection.folderId)) {
+      return
+    }
+    handleFolderSelect({ type: 'all' })
+    toast({
+      title: "That folder couldn't be found. Showing all pipes.",
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+      position: 'top',
+    })
+  }, [foldersLoading, folders, selection, handleFolderSelect, toast])
+
   return (
     <CreateFlowContextProvider
       createMode={createMode}
@@ -339,30 +391,57 @@ export default function Flows(): ReactElement {
 
         <ApproveTransfersInfobox />
 
-        <Flex align="flex-start" gap={{ base: 0, md: 6 }}>
-          <FolderSidebar
-            folders={folders}
-            totalFlowCount={totalFlowCount}
-            unfiledFlowCount={unfiledFlowCount}
-            selection={selection}
-            onSelect={handleFolderSelect}
-            onCreate={handleCreateFolder}
-            onRename={handleRenameFolder}
-            onDelete={handleDeleteFolder}
-          />
+        {/*
+          A user with no folders must see today's Pipes page, byte-for-byte
+          unchanged - no rail, no mobile chip row, no layout shift. So the
+          rail/chips/subheader only render once we know (folders have
+          loaded) that the user actually has at least one folder; while
+          that's still loading they render as before, to avoid a flash of
+          "empty" for users who do have folders. Folder creation stays
+          discoverable via the prompt below instead of a permanent rail.
+        */}
+        {!foldersLoading && !hasFolders ? (
+          <CreateFirstFolderPrompt onCreate={handleCreateFolder} />
+        ) : null}
 
-          <Box flex={1} minW={0}>
-            <MobileFolderChips
+        <Flex align="flex-start" gap={{ base: 0, md: 6 }}>
+          {(foldersLoading || hasFolders) && (
+            <FolderSidebar
               folders={folders}
               totalFlowCount={totalFlowCount}
+              unfiledFlowCount={unfiledFlowCount}
               selection={selection}
               onSelect={handleFolderSelect}
+              onCreate={handleCreateFolder}
+              onRename={handleRenameFolder}
+              onDelete={handleDeleteFolder}
             />
+          )}
+
+          <Box flex={1} minW={0}>
+            {(foldersLoading || hasFolders) && (
+              <>
+                <MobileFolderChips
+                  folders={folders}
+                  totalFlowCount={totalFlowCount}
+                  unfiledFlowCount={unfiledFlowCount}
+                  selection={selection}
+                  onSelect={handleFolderSelect}
+                />
+                <FolderSubheader
+                  selection={selection}
+                  folders={folders}
+                  count={totalCount}
+                />
+              </>
+            )}
 
             <FlowsList
               flows={flows}
               isLoading={loading}
-              isSearching={isSearching || isFolderFiltered}
+              isSearching={isSearching}
+              isFolderFiltered={isFolderFiltered}
+              selection={selection}
               showFolderChip={!isFolderFiltered}
               onCreateModalOpen={onOpen}
             />

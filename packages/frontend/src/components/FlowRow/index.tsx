@@ -19,10 +19,7 @@ import { DateTime } from 'luxon'
 
 import FlowAppIcons from '@/components/FlowAppIcons'
 import * as URLS from '@/config/urls'
-import {
-  FOLDER_COLORS,
-  FolderColor,
-} from '@/pages/Flows/components/FolderSidebar/constants'
+import { getFolderColorToken } from '@/pages/Flows/components/FolderSidebar/constants'
 
 import FlowContextMenu from './FlowContextMenu'
 
@@ -45,7 +42,7 @@ type FlowRowProps = {
 }
 
 function FolderChip({ folder }: { folder: { name: string; color: string } }) {
-  const colorToken = FOLDER_COLORS[folder.color as FolderColor]
+  const colorToken = getFolderColorToken(folder.color)
   return (
     <Flex
       align="center"
