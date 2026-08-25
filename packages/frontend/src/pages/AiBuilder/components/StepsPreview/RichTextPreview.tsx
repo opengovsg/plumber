@@ -4,6 +4,7 @@ import { BareEditor } from '@/components/RichTextEditor'
 
 interface RichTextPreviewProps {
   html: string
+  stepNameById: Map<string, string>
 }
 
 const ALLOWED_HREF_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:']
@@ -24,10 +25,24 @@ function sanitizeRichTextHtml(html: string): string {
   )
 }
 
+// A variable's `id` is `step.<stepId>.<path>`; look up by the bare step id.
+function getVariableStepName(
+  variableId: string,
+  stepNameById: Map<string, string>,
+): string | undefined {
+  if (!variableId.startsWith('step.')) {
+    return undefined
+  }
+  return stepNameById.get(variableId.split('.')[1])
+}
+
 // Renders resolved rich-text HTML (e.g. a Pair prompt or an email body)
 // inline and read-only via the same Tiptap renderer the editor uses, so tags
 // like tables render as they would when the flow runs.
-export default function RichTextPreview({ html }: RichTextPreviewProps) {
+export default function RichTextPreview({
+  html,
+  stepNameById,
+}: RichTextPreviewProps) {
   return (
     <Box
       w="full"
@@ -56,7 +71,8 @@ export default function RichTextPreview({ html }: RichTextPreviewProps) {
           minHeight: 'auto',
           maxHeight: 'none',
           fontSize: 'sm',
-          lineHeight: '1.6',
+          // Extra room so the padded variable badges don't overlap lines.
+          lineHeight: '2',
           color: 'base.content.default',
         },
       }}
@@ -67,8 +83,12 @@ export default function RichTextPreview({ html }: RichTextPreviewProps) {
         }}
         initialValue={sanitizeRichTextHtml(html)}
         editable={false}
+        variablesEnabled={false}
         isRich
         isDisplayOnly
+        getVariableStepName={(variableId) =>
+          getVariableStepName(variableId, stepNameById)
+        }
       />
     </Box>
   )
