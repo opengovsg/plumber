@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
@@ -76,29 +76,35 @@ vi.mock('@/helpers/mcp-bridge-tools', () => ({
   createMcpBridgeTools: mocks.createMcpBridgeTools,
 }))
 
-// Helper function to get and execute the POST handler from the chat router
-async function executeChatPostHandler(
-  req: Partial<Request>,
-  res: Partial<Response>,
-) {
-  const chatModule = await import('../chat/index.js')
-  const router = chatModule.default
-
-  // Extract the POST handler
-  const postHandler = (router as any).stack.find(
-    (layer: any) => layer.route?.methods?.post,
-  )?.route?.stack[0]?.handle
-
-  if (!postHandler) {
-    throw new Error('POST handler not found in chat router')
-  }
-
-  return postHandler(req, res)
-}
-
-describe('Chat Route Handler', () => {
+describe('Chat Route Handler', { hookTimeout: 30_000 }, () => {
   let mockReq: Partial<Request>
   let mockRes: Partial<Response>
+  let postHandler: (
+    req: Partial<Request>,
+    res: Partial<Response>,
+  ) => Promise<unknown>
+
+  // Load the router outside the 5s test timeout. Parallel workers make the
+  // first import of this graph slow enough to flake in CI.
+  beforeAll(async () => {
+    const chatModule = await import('../chat/index.js')
+    const handler = (chatModule.default as any).stack.find(
+      (layer: any) => layer.route?.methods?.post,
+    )?.route?.stack[0]?.handle
+
+    if (!handler) {
+      throw new Error('POST handler not found in chat router')
+    }
+
+    postHandler = handler
+  })
+
+  async function executeChatPostHandler(
+    req: Partial<Request>,
+    res: Partial<Response>,
+  ) {
+    return postHandler(req, res)
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()
