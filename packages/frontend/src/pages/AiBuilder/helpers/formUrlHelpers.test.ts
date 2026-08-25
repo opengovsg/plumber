@@ -102,4 +102,14 @@ describe('formatUserMessageForDisplay', () => {
       ),
     ).toBe('Q: Which column?\nA: Score (out of 10)')
   })
+
+  it('strips multiple id suffixes each followed by a colon (column-table reply)', () => {
+    expect(
+      formatUserMessageForDisplay(
+        'Q: Review the columns\nA:\n- Name (id: col-a): the submission name\n- Status (id: col-b): urgent',
+      ),
+    ).toBe(
+      'Q: Review the columns\nA:\n- Name: the submission name\n- Status: urgent',
+    )
+  })
 })

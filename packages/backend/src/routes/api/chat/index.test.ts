@@ -203,6 +203,61 @@ describe('chat handler — GitBook MCP integration', () => {
   })
 })
 
+describe('chat handler — data-columnTable emission', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Explicitly reset the flag mock's return value in case block order
+    // changes in the future — vi.clearAllMocks() does not reset it.
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        generateStepsPromptName: 'generate-steps',
+        version: 'production',
+        mcpStepConfig: true,
+      },
+    })
+  })
+
+  it('emits data-columnTable when the response contains a COLUMN_TABLE_DATA block', async () => {
+    const columnTableText = `Some intro text
+<!-- COLUMN_TABLE_DATA
+Q: Which columns should be included?
+STEP_ID: 123e4567-e89b-12d3-a456-426614174000
+FIELD: columns
+- ID: col1, NAME: Name, DRAFT: John, INCLUDE: true
+-->`
+
+    vi.mocked(streamText).mockImplementationOnce((({
+      onFinish,
+    }: {
+      onFinish?: (event: { text: string }) => Promise<void>
+    }) => {
+      if (onFinish) {
+        mocks.onFinishPromise = onFinish({ text: columnTableText })
+      }
+      return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }) as unknown as typeof streamText)
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+    await mocks.onFinishPromise
+
+    expect(mocks.writerWrite).toHaveBeenCalledWith({
+      type: 'data-columnTable',
+      data: {
+        question: 'Which columns should be included?',
+        stepId: '123e4567-e89b-12d3-a456-426614174000',
+        field: 'columns',
+        rows: [{ id: 'col1', name: 'Name', draft: 'John', include: true }],
+      },
+    })
+  })
+})
+
 describe('chat handler — data-pipeState connectionLabel resolution', () => {
   function mockFlowSteps(steps: unknown[]) {
     vi.mocked(Flow.query).mockReturnValue({

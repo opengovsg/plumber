@@ -22,6 +22,10 @@ import {
   type McpFormSchemaResult,
 } from '@/services/mcp/get-form-schema'
 import {
+  type ListColumnsResult,
+  listColumnsService,
+} from '@/services/mcp/list-columns'
+import {
   listConnectionsService,
   type McpConnection,
 } from '@/services/mcp/list-connections'
@@ -69,6 +73,21 @@ export function createMcpBridgeTools(
       }),
       execute: async ({ app_key }): Promise<McpConnection[]> => {
         return listConnectionsService(user, app_key)
+      },
+    }),
+
+    list_columns: tool<{ step_id: string }, ListColumnsResult>({
+      description:
+        'List the columns of a step\'s multirow-multicol field (e.g. Tiles "Create row" rowData, M365 Excel "Create table row" columnValues) that are not yet configured. Returns at most 50 not-yet-configured columns; if truncated is true, tell the user this table has more columns than can be proposed at once and that they can add the rest manually in the pipe editor after the step is created. Use the returned column id and name exactly as given — never guess or recall column names from memory, and never call this for a field that isn\'t multirow-multicol.',
+      inputSchema: z.object({
+        step_id: z
+          .uuid()
+          .describe(
+            "ID of the step whose multirow-multicol field's columns to list",
+          ),
+      }),
+      execute: async ({ step_id }): Promise<ListColumnsResult> => {
+        return listColumnsService({ user, stepId: step_id })
       },
     }),
 
