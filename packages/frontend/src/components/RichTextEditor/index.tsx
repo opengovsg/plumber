@@ -113,6 +113,7 @@ interface EditorProps {
   previewType?: TFieldPreviewType
   containerClassName?: string
   triggerContainerClassName?: string
+  getVariableStepName?: (variableId: string) => string | undefined
 }
 const Editor = ({
   onChange,
@@ -134,6 +135,7 @@ const Editor = ({
   previewType,
   containerClassName,
   triggerContainerClassName,
+  getVariableStepName,
 }: EditorProps) => {
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
   const { stepIdToOrder } = useContext(StepsToDisplayContext)
@@ -168,7 +170,9 @@ const Editor = ({
     Placeholder.configure({
       placeholder,
     }),
-    ...(isDisplayOnly ? [] : [StepVariable, TableVariable]),
+    // Registered even display-only, so variable spans render as chips.
+    StepVariable,
+    TableVariable,
     ImageResize.configure({
       inline: true,
       resizable: !isDisplayOnly,
@@ -243,6 +247,11 @@ const Editor = ({
       transformPastedHTML: (html) => {
         return substituteOldTemplates(html, varInfo)
       },
+      // Variable nodes are selectable atoms for editing; suppress that
+      // click-to-select in display-only mode so chips aren't "clickable".
+      handleClickOn: (_view, _pos, node) =>
+        isDisplayOnly &&
+        (node.type.name === 'variable' || node.type.name === 'tableVariable'),
     },
   })
   useEffect(() => {
@@ -317,8 +326,18 @@ const Editor = ({
   } = useDisclosure()
 
   const suggestionsContextValue = useMemo(
-    () => ({ closeSuggestions, openSuggestions, supportTableDisplay }),
-    [closeSuggestions, openSuggestions, supportTableDisplay],
+    () => ({
+      closeSuggestions,
+      openSuggestions,
+      supportTableDisplay,
+      getVariableStepName,
+    }),
+    [
+      closeSuggestions,
+      openSuggestions,
+      supportTableDisplay,
+      getVariableStepName,
+    ],
   )
 
   return (
@@ -336,6 +355,9 @@ const Editor = ({
         <div
           className={clsx('editor', containerClassName)}
           onClick={(e) => {
+            if (!editable) {
+              return
+            }
             e.stopPropagation()
             openSuggestions()
           }}

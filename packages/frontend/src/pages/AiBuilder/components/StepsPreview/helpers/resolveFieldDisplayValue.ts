@@ -40,6 +40,7 @@ export function resolveFieldLabel(
 
 export type FieldWithOptions = {
   key?: string
+  type?: string
   options?: Array<{ label: string; value: string | number | boolean }>
   subFields?: FieldWithOptions[]
 }
@@ -98,7 +99,18 @@ export function resolveDisplayValue(
     | undefined
 
   if (Array.isArray(value)) {
-    return value
+    // `grouped-multirow` (e.g. if-then) persists as `[{ rows: [...] }, ...]`
+    // — groups of rows, not a flat row array — so unwrap groups first.
+    const rows =
+      field?.type === 'grouped-multirow'
+        ? value.flatMap((group) =>
+            Array.isArray((group as { rows?: unknown[] })?.rows)
+              ? (group as { rows: unknown[] }).rows
+              : [],
+          )
+        : value
+
+    return rows
       .map((item) => flattenRow(item, field?.subFields))
       .filter((line): line is string => line !== null && line !== '')
   }
