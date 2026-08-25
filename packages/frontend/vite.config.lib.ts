@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react-swc'
 import { defineConfig } from 'vite'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
-import { failOnLeakedNodeBuiltins } from './vite-config-utils'
+import { failOnLeakedNodeBuiltins } from './vite-config-utils.ts'
 
 export default defineConfig({
   plugins: [react(), viteTsconfigPaths()],
@@ -26,7 +26,7 @@ export default defineConfig({
       },
       formats: ['es'],
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         '@apollo/client',
         '@chakra-ui/react',
@@ -40,7 +40,7 @@ export default defineConfig({
         'react-router-dom',
         'zod',
       ],
-      onwarn: failOnLeakedNodeBuiltins,
+      onLog: failOnLeakedNodeBuiltins,
     },
   },
 })
