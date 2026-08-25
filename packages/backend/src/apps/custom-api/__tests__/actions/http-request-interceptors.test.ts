@@ -106,7 +106,7 @@ describe('http request interceptors', () => {
     afterEach(() => {
       vi.clearAllMocks()
       vi.restoreAllMocks()
-  })
+    })
     it.each([
       'http://staging.plumber.gov.sg/webhooks/abc-def-123',
       'https://www.plumber.gov.sg/webhooks/abc-def-123',

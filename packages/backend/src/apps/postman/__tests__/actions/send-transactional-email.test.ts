@@ -157,9 +157,7 @@ describe('send transactional email', () => {
   it('should throw step error for invalid parameters', async () => {
     $.step.parameters.body = ''
     // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-      'Empty body',
-    )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow('Empty body')
   })
 
   it.each([
@@ -200,9 +198,7 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(error)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-        stepErrorName,
-      )
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(stepErrorName)
     },
   )
 
@@ -370,9 +366,7 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
-      RetriableError,
-    )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'BLACKLISTED', 'RATE-LIMITED'],

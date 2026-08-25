@@ -79,9 +79,7 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run($)).rejects.toThrow(
-      'Empty message text',
-    )
+    await expect(sendMessageAction.run($)).rejects.toThrow('Empty message text')
   })
 
   it('should throw step error if message text is filled with new lines only', async () => {
@@ -89,9 +87,7 @@ describe('send message', () => {
     $.step.parameters.chatId = '123'
     $.step.parameters.disableNotification = null
 
-    await expect(sendMessageAction.run($)).rejects.toThrow(
-      'Empty message text',
-    )
+    await expect(sendMessageAction.run($)).rejects.toThrow('Empty message text')
   })
 
   it.each([
@@ -114,9 +110,7 @@ describe('send message', () => {
       const httpError = new HttpError(error)
       mocks.httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
-      await expect(sendMessageAction.run($)).rejects.toThrow(
-        RetriableError,
-      )
+      await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
     },
   )
 

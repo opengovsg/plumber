@@ -143,9 +143,7 @@ describe('upsert flow collaborator', () => {
         },
         context,
       ),
-    ).rejects.toThrow(
-      'You do not have sufficient permissions for this pipe',
-    )
+    ).rejects.toThrow('You do not have sufficient permissions for this pipe')
   })
 
   describe('automatic connection sharing', () => {

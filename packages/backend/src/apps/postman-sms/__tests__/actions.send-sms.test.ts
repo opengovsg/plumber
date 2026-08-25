@@ -167,9 +167,7 @@ describe('Send SMS Action', () => {
   it('errors out if recipient phone number is empty', async () => {
     $.step.parameters.recipient = '  '
     $.step.parameters.message = '12345'
-    await expect(sendSmsAction.run($)).rejects.toThrow(
-      /Enter a phone number/,
-    )
+    await expect(sendSmsAction.run($)).rejects.toThrow(/Enter a phone number/)
   })
 
   it('errors out if recipient phone number is invalid', async () => {
