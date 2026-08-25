@@ -13,7 +13,7 @@ import Step from '@/models/step'
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 
-import { schema } from './schema'
+import { hasProvidedImage, schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
@@ -60,6 +60,29 @@ const action: IRawAction = {
         },
       ],
     },
+    {
+      label: 'How should we handle a missing image/file?',
+      key: 'continueIfNoFile',
+      type: 'boolean-radio' as const,
+      required: true,
+      description:
+        'This can happen when the file comes from an optional FormSG field that is left blank.',
+      value: false,
+      options: [
+        {
+          label: 'Continue without it',
+          description:
+            "This step's outputs will be blank, and the rest of your pipe still runs. Choose this if your later steps work with a blank value.",
+          value: true,
+        },
+        {
+          label: 'Stop and fail this execution',
+          description:
+            'This execution stops here and is marked as failed. Other executions are not affected. Choose this if your later steps need the file.',
+          value: false,
+        },
+      ],
+    },
   ],
 
   doesFileProcessing: (step: Step) => {
@@ -79,7 +102,16 @@ const action: IRawAction = {
         GenericSolution.ReconfigureInvalidField,
       )
     }
-    const { image, responseFields } = validatedParameters.data
+    const { image, responseFields, continueIfNoFile } = validatedParameters.data
+
+    if (!hasProvidedImage(image) && continueIfNoFile) {
+      $.setActionItem({
+        raw: Object.fromEntries(
+          responseFields.map((field) => [field.fieldName, '']),
+        ) as IJSONObject,
+      })
+      return
+    }
 
     try {
       const schemaShape: Record<string, z.ZodTypeAny> = {}
