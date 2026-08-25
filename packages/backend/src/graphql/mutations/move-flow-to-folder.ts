@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import Flow from '@/models/flow'
 import FlowFolder from '@/models/flow-folder'
 import FlowFolderItem from '@/models/flow-folder-item'
@@ -15,12 +16,12 @@ const moveFlowToFolder: MutationResolvers['moveFlowToFolder'] = async (
 
   // To avoid the gibberish error code if a caller sends a malformed id
   if (!z.string().uuid().safeParse(flowId).success) {
-    throw new Error('Please provide a valid pipe ID.')
+    throw new BadUserInputError('Please provide a valid pipe ID.')
   }
   // folderId is deliberately nullable (null/omitted = unfile) - only a
   // non-null value must be a valid UUID.
   if (folderId != null && !z.string().uuid().safeParse(folderId).success) {
-    throw new Error('Please provide a valid folder ID.')
+    throw new BadUserInputError('Please provide a valid folder ID.')
   }
 
   return await Flow.transaction(async (trx) => {

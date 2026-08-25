@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import {
   countFlowsByFolder,
   validateFlowFolderColor,
@@ -18,7 +19,7 @@ const updateFlowFolder: MutationResolvers['updateFlowFolder'] = async (
 
   // To avoid the gibberish error code if a caller sends a malformed id
   if (!z.string().uuid().safeParse(id).success) {
-    throw new Error('Please provide a valid folder ID.')
+    throw new BadUserInputError('Please provide a valid folder ID.')
   }
 
   // Scoped by user_id: a folder that belongs to someone else looks
