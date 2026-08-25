@@ -45,6 +45,7 @@ import {
   serializeMessagesForLangfuse,
 } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
+import { parseColumnTableBlock } from './parse-column-table-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { chatRequestSchema } from './schema'
 
@@ -65,6 +66,14 @@ function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
     writer.write({
       type: 'data-dynamicPicker',
       data: dynamicPicker,
+    })
+  }
+
+  const columnTable = parseColumnTableBlock(text)
+  if (columnTable) {
+    writer.write({
+      type: 'data-columnTable',
+      data: columnTable,
     })
   }
 }
