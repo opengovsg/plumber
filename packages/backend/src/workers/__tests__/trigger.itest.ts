@@ -3,6 +3,7 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
@@ -65,6 +66,14 @@ describe('Trigger worker', () => {
     await triggerWorker.waitUntilReady()
   })
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.processTrigger.mockReset()
+    mocks.processTrigger.mockResolvedValue({})
+    mocks.enqueueActionJob.mockReset()
+    mocks.getNextStep.mockReset()
+  })
+
   afterEach(async () => {
     await flushQueue(triggerQueue, triggerWorker)
 
@@ -72,6 +81,7 @@ describe('Trigger worker', () => {
     // state after each test
     await restoreWorker(triggerWorker, originalWorkerState)
 
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
