@@ -334,7 +334,11 @@ const Editor = ({
         placement={getPopoverPlacement(editor)}
       >
         <div
-          className={clsx('editor', containerClassName)}
+          className={clsx(
+            'editor',
+            isMulticol && 'editor--single-line',
+            containerClassName,
+          )}
           onClick={(e) => {
             e.stopPropagation()
             openSuggestions()

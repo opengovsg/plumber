@@ -113,26 +113,26 @@ export const DEFAULT_PROMPT_VALUES = {
 
 export const DEFAULT_RESPONSE_FIELDS_VALUES = {
   analyse: [
-    { fieldType: 'text', fieldNameHint: 'key patterns or trends' },
-    { fieldType: 'text', fieldNameHint: 'strength' },
-    { fieldType: 'text', fieldNameHint: 'weakness' },
-    { fieldType: 'text', fieldNameHint: 'implications or recommendations' },
+    { fieldType: 'text', fieldName: 'Key patterns or trends' },
+    { fieldType: 'text', fieldName: 'Strength' },
+    { fieldType: 'text', fieldName: 'Weakness' },
+    { fieldType: 'text', fieldName: 'Implications or recommendations' },
     {
       fieldType: 'text',
-      fieldNameHint: 'supporting evidence for your conclusions',
+      fieldName: 'Supporting evidence for your conclusions',
     },
   ],
   categorise: [
     {
       fieldType: 'category',
-      fieldNameHint: 'sentiment',
-      fieldCategoriesHint: 'Positive, Negative, Neutral',
+      fieldName: 'Sentiment',
+      fieldCategories: 'Positive, Negative, Neutral',
     },
   ],
-  summarise: [{ fieldType: 'text', fieldNameHint: 'summary' }],
+  summarise: [{ fieldType: 'text', fieldName: 'Summary' }],
   write: [
-    { fieldType: 'text', fieldNameHint: 'title' },
-    { fieldType: 'text', fieldNameHint: 'content' },
+    { fieldType: 'text', fieldName: 'Title' },
+    { fieldType: 'text', fieldName: 'Content' },
   ],
-  custom: [{ fieldType: 'text', fieldNameHint: 'response' }],
+  custom: [{ fieldType: 'text', fieldName: 'Response' }],
 }

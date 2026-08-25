@@ -18,9 +18,9 @@ import { schema } from './schema'
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
-  name: 'Process an image',
+  name: 'Process image',
   key: 'processImage',
-  description: 'Extract information from an image or PDF',
+  description: 'Extract data or synthesise content from an image or PDF',
   linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [
     {
@@ -35,17 +35,17 @@ const action: IRawAction = {
       disableUpload: true,
     },
     {
-      label: 'What do you want to extract?',
-      description: 'Use these as variables in later steps',
+      label: 'What should Pair give you back? (use in later steps)',
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
-      addRowButtonText: 'Add another',
+      addRowButtonText: 'Add output',
       subFields: [
         {
           key: 'description',
           label: 'What to look for',
-          placeholder: 'Whether the image contains a handwritten signature',
+          placeholder:
+            'e.g. Whether the image contains a handwritten signature',
           type: 'string',
           required: true,
           customStyle: { flex: 3, minWidth: 0, maxWidth: '75%' },
@@ -53,7 +53,7 @@ const action: IRawAction = {
         {
           key: 'fieldName',
           label: 'Output name',
-          placeholder: 'Signature present',
+          placeholder: 'e.g. Signature present',
           type: 'string',
           required: true,
           customStyle: { flex: 1 },

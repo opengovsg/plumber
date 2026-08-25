@@ -423,6 +423,12 @@ export interface IFieldDropdownSource {
   }[]
 }
 
+/**
+ * Referenced by name rather than by component because the field schema is
+ * serialised to JSON over /api/apps; the frontend maps each name back.
+ */
+export type TFieldDropdownOptionIcon = 'text' | 'hash' | 'list-ol'
+
 export interface IFieldDropdownOption {
   label: string
 
@@ -439,6 +445,8 @@ export interface IFieldDropdownOption {
    * false.
    */
   description?: string
+
+  icon?: TFieldDropdownOptionIcon
 }
 
 export interface IFieldText extends IBaseField {
