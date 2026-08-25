@@ -7,6 +7,7 @@ import { FolderSelection, FolderSummary } from './FolderRow'
 export interface MobileFolderChipsProps {
   folders: FolderSummary[]
   totalFlowCount: number
+  unfiledFlowCount: number
   selection: FolderSelection
   onSelect: (selection: FolderSelection) => void
 }
@@ -46,8 +47,10 @@ function Chip(props: ChipProps) {
 }
 
 export default function MobileFolderChips(props: MobileFolderChipsProps) {
-  const { folders, totalFlowCount, selection, onSelect } = props
+  const { folders, totalFlowCount, unfiledFlowCount, selection, onSelect } =
+    props
   const isAllSelected = selection.type === 'all'
+  const isUnfiledSelected = selection.type === 'unfiled'
 
   return (
     <HStack
@@ -74,6 +77,22 @@ export default function MobileFolderChips(props: MobileFolderChipsProps) {
           color="inherit"
         >
           All pipes
+        </Text>
+      </Chip>
+
+      <Chip
+        isSelected={isUnfiledSelected}
+        onClick={() => onSelect({ type: 'unfiled' })}
+        ariaLabel={`Unfiled, ${unfiledFlowCount} ${
+          unfiledFlowCount === 1 ? 'pipe' : 'pipes'
+        }`}
+      >
+        <Text
+          textStyle="body-2"
+          fontWeight={isUnfiledSelected ? 500 : 400}
+          color="inherit"
+        >
+          Unfiled
         </Text>
       </Chip>
 

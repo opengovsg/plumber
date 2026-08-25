@@ -14,6 +14,7 @@ import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
 import getTemplates from './queries/get-templates'
 import getTestExecutionSteps from './queries/get-test-execution-steps'
+import getUnfiledFlowCount from './queries/get-unfiled-flow-count'
 import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
 import tilesQueryResolvers from './queries/tiles'
@@ -36,6 +37,7 @@ export default {
   getFlow,
   getFlows,
   getFlowFolders,
+  getUnfiledFlowCount,
   getTestExecutionSteps,
   getExecution,
   getExecutions,

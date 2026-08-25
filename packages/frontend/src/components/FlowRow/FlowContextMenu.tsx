@@ -3,6 +3,7 @@ import {
   BiDotsHorizontalRounded,
   BiDuplicate,
   BiFolder,
+  BiPlus,
   BiShow,
   BiTrash,
 } from 'react-icons/bi'
@@ -35,14 +36,16 @@ import {
 import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
+import { CREATE_FLOW_FOLDER } from '@/graphql/mutations/create-flow-folder'
 import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
 import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
 import { MOVE_FLOW_TO_FOLDER } from '@/graphql/mutations/move-flow-to-folder'
 import { GET_FLOW_FOLDERS } from '@/graphql/queries/get-flow-folders'
 import {
-  FOLDER_COLORS,
   FolderColor,
+  getFolderColorToken,
 } from '@/pages/Flows/components/FolderSidebar/constants'
+import FolderFormModal from '@/pages/Flows/components/FolderSidebar/FolderFormModal'
 
 import type { FlowWithFolder } from './index'
 
@@ -55,11 +58,13 @@ interface FolderPickerModalProps {
   onClose: () => void
   currentFolderId?: string | null
   onSelect: (folderId: string | null) => void
+  onCreateNew: () => void
   isMoving: boolean
 }
 
 function FolderPickerModal(props: FolderPickerModalProps) {
-  const { isOpen, onClose, currentFolderId, onSelect, isMoving } = props
+  const { isOpen, onClose, currentFolderId, onSelect, onCreateNew, isMoving } =
+    props
   const { data, loading } = useQuery(GET_FLOW_FOLDERS, { skip: !isOpen })
   const folders = data?.getFlowFolders ?? []
 
@@ -107,7 +112,7 @@ function FolderPickerModal(props: FolderPickerModalProps) {
               </Box>
               {folders.map((folder) => {
                 const isSelected = currentFolderId === folder.id
-                const colorToken = FOLDER_COLORS[folder.color as FolderColor]
+                const colorToken = getFolderColorToken(folder.color)
                 return (
                   <Box as="li" key={folder.id}>
                     <Flex
@@ -148,6 +153,34 @@ function FolderPickerModal(props: FolderPickerModalProps) {
                   </Box>
                 )
               })}
+              <Box
+                as="li"
+                role="separator"
+                h="1px"
+                bg="base.divider.medium"
+                my={1}
+              />
+              <Box as="li">
+                <Flex
+                  as="button"
+                  type="button"
+                  disabled={isMoving}
+                  onClick={onCreateNew}
+                  align="center"
+                  gap={2}
+                  w="100%"
+                  borderRadius={4}
+                  _hover={{ bg: 'interaction.muted.neutral.hover' }}
+                  py={2}
+                  px={2}
+                  textAlign="left"
+                >
+                  <Icon as={BiPlus} boxSize={4} color="primary.500" />
+                  <Text textStyle="body-2" fontWeight={500} color="primary.500">
+                    New folder…
+                  </Text>
+                </Flex>
+              </Box>
             </Flex>
           )}
         </ModalBody>
@@ -182,6 +215,14 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     onClose: onFolderPickerClose,
   } = useDisclosure()
 
+  // "New folder…" control, opened from within the folder picker so filing
+  // into a brand-new folder doesn't require cancelling out to the sidebar.
+  const {
+    isOpen: isNewFolderModalOpen,
+    onOpen: onNewFolderModalOpen,
+    onClose: onNewFolderModalClose,
+  } = useDisclosure()
+
   const cancelRef = useRef<HTMLButtonElement>(null)
   const toast = useToast()
   const [deleteFlow, { loading: isDeletingFlow }] = useMutation(DELETE_FLOW)
@@ -198,6 +239,13 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     MOVE_FLOW_TO_FOLDER,
     {
       refetchQueries: ['GetFlowFolders', 'GetFlows'],
+    },
+  )
+
+  const [createFlowFolder, { loading: isCreatingFolder }] = useMutation(
+    CREATE_FLOW_FOLDER,
+    {
+      refetchQueries: ['GetFlowFolders'],
     },
   )
 
@@ -292,6 +340,25 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     [moveFlowToFolder, flow.id, onFolderPickerClose, toast],
   )
 
+  const onNewFolderButtonClick = useCallback(() => {
+    onNewFolderModalOpen()
+  }, [onNewFolderModalOpen])
+
+  // Creates the folder, then immediately files the current pipe into it -
+  // the whole point of offering "New folder…" from inside the move dialog.
+  const onCreateFolderSubmit = useCallback(
+    async (values: { name: string; color: FolderColor }) => {
+      await createFlowFolder({
+        variables: { input: { name: values.name, color: values.color } },
+        onCompleted: async (createData) => {
+          onNewFolderModalClose()
+          await onFolderSelect(createData.createFlowFolder.id)
+        },
+      })
+    },
+    [createFlowFolder, onNewFolderModalClose, onFolderSelect],
+  )
+
   return (
     <>
       <Menu
@@ -367,7 +434,14 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
         onClose={onFolderPickerClose}
         currentFolderId={flow.folder?.id ?? null}
         onSelect={onFolderSelect}
+        onCreateNew={onNewFolderButtonClick}
         isMoving={isMovingFlow}
+      />
+      <FolderFormModal
+        isOpen={isNewFolderModalOpen}
+        isSubmitting={isCreatingFolder || isMovingFlow}
+        onClose={onNewFolderModalClose}
+        onSubmit={onCreateFolderSubmit}
       />
     </>
   )

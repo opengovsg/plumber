@@ -55,3 +55,23 @@ export const FOLDER_COLORS: Record<FolderColor, FolderColorToken> = {
 }
 
 export const DEFAULT_FOLDER_COLOR: FolderColor = 'magenta'
+
+function isFolderColor(color: string): color is FolderColor {
+  return (FOLDER_COLOR_KEYS as readonly string[]).includes(color)
+}
+
+// Server data crosses the API boundary as a plain `String!`, so it isn't
+// guaranteed to be one of the 6 known tokens (e.g. a future colour added
+// server-side before the frontend knows about it). Validate through this
+// guard instead of casting - it falls back to `DEFAULT_FOLDER_COLOR` for
+// anything unrecognised, rather than indexing `FOLDER_COLORS` with an
+// invalid key and crashing on `.dot`/`.subtle`.
+export function toFolderColor(color: string): FolderColor {
+  return isFolderColor(color) ? color : DEFAULT_FOLDER_COLOR
+}
+
+// Convenience wrapper around `toFolderColor` for call sites that just want
+// the theme tokens straight away.
+export function getFolderColorToken(color: string): FolderColorToken {
+  return FOLDER_COLORS[toFolderColor(color)]
+}
