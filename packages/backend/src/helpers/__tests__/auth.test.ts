@@ -126,7 +126,10 @@ describe('Auth helpers', () => {
         userEmail: 'coffee@plumber.local',
       })
 
-      expect(mocks.whereUser).toHaveBeenCalledWith('email', 'coffee@plumber.local')
+      expect(mocks.whereUser).toHaveBeenCalledWith(
+        'email',
+        'coffee@plumber.local',
+      )
       expect(result.id).toEqual('test-user-id')
     })
   })
@@ -196,9 +199,7 @@ describe('Auth helpers', () => {
 
       mocks.findOne.mockRejectedValueOnce(new Error('Database error'))
 
-      await expect(getOrCreateUser(email)).rejects.toThrow(
-        'Database error',
-      )
+      await expect(getOrCreateUser(email)).rejects.toThrow('Database error')
 
       expect(mocks.findOne).toHaveBeenCalledOnce()
       expect(mocks.findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
@@ -298,7 +299,7 @@ describe('Auth helpers', () => {
     afterEach(() => {
       vi.clearAllMocks()
       vi.restoreAllMocks()
-  })
+    })
     it('does not send email if user has logged in before', async () => {
       const mockUser = {
         id: 'test-id',

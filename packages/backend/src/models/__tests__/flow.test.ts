@@ -30,9 +30,9 @@ describe('flow model', () => {
 
       const mismatched = String(updatedAt.getTime() + 1)
 
-      expect(() =>
-        flow.assertNotUpdatedSince(mismatched, updatedBy),
-      ).toThrow(BadUserInputError)
+      expect(() => flow.assertNotUpdatedSince(mismatched, updatedBy)).toThrow(
+        BadUserInputError,
+      )
       expect(() => flow.assertNotUpdatedSince(mismatched, updatedBy)).toThrow(
         'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.',
       )
