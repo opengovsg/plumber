@@ -2,6 +2,8 @@
 
 // Configure Vitest (https://vitest.dev/config/)
 
+import { globSync, readFileSync } from 'fs'
+import { cpus } from 'os'
 import path from 'path'
 
 import { config } from 'dotenv'
@@ -12,37 +14,82 @@ config({
   path: path.resolve(__dirname, './.env-example'),
 })
 
+const UNIT_INCLUDE = 'src/**/*.test.{js,ts}'
+
+// vi.mock() replaces a module in the worker cache. With isolate: false that
+// replacement leaks into later files, so those tests get their own graph.
+function testsWithModuleMocks(): string[] {
+  return globSync(UNIT_INCLUDE, { cwd: __dirname }).filter((file) =>
+    /\bvi\.mock\s*\(/.test(readFileSync(path.join(__dirname, file), 'utf8')),
+  )
+}
+
+const isolatedTests = testsWithModuleMocks()
+
+const srcAlias = path.resolve(__dirname, './src')
+const graphqlShieldAlias = require.resolve('graphql-shield')
+
+const resolveAliases = {
+  '@': srcAlias,
+  // graphql-shield's ESM build imports `isUndefined` from `util`, which
+  // Vite's SSR module resolution fails to resolve. Aliasing straight to
+  // the CJS build sidesteps the broken `exports` condition entirely.
+  'graphql-shield': graphqlShieldAlias,
+}
+
+const sharedTest = {
+  // Read by @/config/unit-test-mode. Set here so it is live before any test
+  // file imports a module that would otherwise connect to Redis or Postgres.
+  env: {
+    PLUMBER_UNIT_TESTS: '1',
+  },
+  setupFiles: [
+    'dotenv/config',
+    path.resolve(__dirname, './test/mock-redis-setup.ts'),
+    path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
+  ],
+  pool: 'threads' as const,
+  // Vitest 4 can fail the run with EnvironmentTeardownError if a worker
+  // shuts down while a console log is still in the reporter RPC channel.
+  disableConsoleIntercept: true,
+  onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
+    if (log.startsWith('vite:')) {
+      return false
+    }
+  },
+}
+
 export default defineConfig({
   test: {
-    name: 'backend',
-    // Read by @/config/unit-test-mode. Set here so it is live before any test
-    // file imports a module that would otherwise connect to Redis or Postgres.
-    env: {
-      PLUMBER_UNIT_TESTS: '1',
-    },
-    // load env variables
-    setupFiles: [
-      'dotenv/config',
-      path.resolve(__dirname, './test/mock-redis-setup.ts'),
-      path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
-    ],
-    include: ['src/**/*.test.{js,ts}'],
-    // Vitest 4 can fail the run with EnvironmentTeardownError if a worker
-    // shuts down while a console log is still in the reporter RPC channel.
+    maxWorkers: cpus().length,
     disableConsoleIntercept: true,
-    onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
-      if (log.startsWith('vite:')) {
-        return false
-      }
-    },
+    projects: [
+      {
+        resolve: {
+          alias: resolveAliases,
+        },
+        test: {
+          ...sharedTest,
+          name: 'backend',
+          include: [UNIT_INCLUDE],
+          exclude: isolatedTests,
+          isolate: false,
+        },
+      },
+      {
+        resolve: {
+          alias: resolveAliases,
+        },
+        test: {
+          ...sharedTest,
+          name: 'backend-isolated',
+          include: isolatedTests,
+          isolate: true,
+        },
+      },
+    ],
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      // graphql-shield's ESM build imports `isUndefined` from `util`, which
-      // Vite's SSR module resolution fails to resolve. Aliasing straight to
-      // the CJS build sidesteps the broken `exports` condition entirely.
-      'graphql-shield': require.resolve('graphql-shield'),
-    },
+    alias: resolveAliases,
   },
 })
