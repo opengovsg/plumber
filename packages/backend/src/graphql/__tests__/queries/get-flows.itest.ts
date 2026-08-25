@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import flowResolvers from '@/graphql/custom-resolvers/flow'
 import getFlows from '@/graphql/queries/get-flows'
@@ -165,10 +165,16 @@ describe('getFlows folder filtering', () => {
       result.edges.map((e) => [e.node.id, e.node]),
     )
 
+    const querySpy = vi.spyOn(FlowFolderItem, 'query')
     const [filedFolder, unfiledFolder] = await Promise.all([
       flowResolvers.folder(nodesById[filedFlow.id], {}, context),
       flowResolvers.folder(nodesById[unfiledFlow.id], {}, context),
     ])
+    querySpy.mockRestore()
+
+    // Both Flow.folder resolutions above must have been coalesced into a
+    // single FlowFolderItem query, not one query per flow.
+    expect(querySpy).toHaveBeenCalledTimes(1)
 
     expect(filedFolder).toMatchObject({
       id: folder.id,

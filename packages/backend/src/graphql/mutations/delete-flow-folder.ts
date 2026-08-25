@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import FlowFolder from '@/models/flow-folder'
 import FlowFolderItem from '@/models/flow-folder-item'
 
@@ -9,6 +11,11 @@ const deleteFlowFolder: MutationResolvers['deleteFlowFolder'] = async (
   context,
 ) => {
   const { id } = params.input
+
+  // To avoid the gibberish error code if a caller sends a malformed id
+  if (!z.string().uuid().safeParse(id).success) {
+    throw new Error('Please provide a valid folder ID.')
+  }
 
   await FlowFolder.transaction(async (trx) => {
     // Scoped by user_id: a folder that belongs to someone else looks
