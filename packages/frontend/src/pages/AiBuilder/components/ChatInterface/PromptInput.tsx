@@ -12,9 +12,11 @@ import { Box, Flex, Icon, Image, Text, Textarea } from '@chakra-ui/react'
 
 import {
   type ClarificationQuestion,
+  type ColumnTablePart,
   type DynamicPickerPart,
 } from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
+import ColumnTablePicker from '@/pages/AiBuilder/components/ChatInterface/ColumnTablePicker'
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
 import SecretKeyWarningDialog from '@/pages/AiBuilder/components/ChatInterface/SecretKeyWarningDialog'
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
@@ -25,6 +27,8 @@ import {
   containsSecretKey,
 } from '@/pages/AiBuilder/helpers'
 
+import { buildColumnTableReply } from './helpers/columnTableReply'
+
 interface PromptInputProps {
   isStreaming: boolean
   showIdeas?: boolean
@@ -34,6 +38,7 @@ interface PromptInputProps {
   cancelStream: () => void
   clarification?: ClarificationQuestion[]
   dynamicPicker?: DynamicPickerPart['data']
+  columnTable?: ColumnTablePart['data']
   onAddConnection?: (context: { question: string; appKey: string }) => void
   /** Form URL already shared in the conversation (drives the picker's forced key-completion card). */
   knownFormUrl?: string
@@ -96,6 +101,7 @@ export default function PromptInput({
   cancelStream,
   clarification,
   dynamicPicker,
+  columnTable,
   onAddConnection,
   knownFormUrl,
   onConnectForm,
@@ -242,6 +248,19 @@ export default function PromptInput({
 
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()
+
+  if (columnTable) {
+    return (
+      <ColumnTablePicker
+        data={columnTable}
+        isStreaming={isStreaming}
+        onSave={(rows) => {
+          sendMessage(buildColumnTableReply(columnTable.question, rows))
+        }}
+        cancelStream={cancelStream}
+      />
+    )
+  }
 
   if (dynamicPicker) {
     const isAppKeyMode = 'appKey' in dynamicPicker
