@@ -56,7 +56,8 @@ vi.mock('@/services/action', () => ({
 }))
 
 vi.mock('@/queues/action', async (importOriginal) => {
-  const actualModule = await importOriginal<typeof import('@/queues/action.js')>()
+  const actualModule =
+    await importOriginal<typeof import('@/queues/action.js')>()
   return {
     ...actualModule,
     enqueueActionJob: mocks.enqueueActionJob,

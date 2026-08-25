@@ -75,9 +75,7 @@ describe('s3', () => {
     it('should throw an error if path traversal is detected', () => {
       expect(() =>
         parseS3Id(`s3:${COMMON_S3_BUCKET}:abcd/../my file.txt`),
-      ).toThrow(
-        'Invalid S3 ID: path traversal detected in abcd/../my file.txt',
-      )
+      ).toThrow('Invalid S3 ID: path traversal detected in abcd/../my file.txt')
     })
   })
 

@@ -62,9 +62,7 @@ describe('verify credentials', () => {
   describe('verify secret key format', () => {
     it('should throw error if secret key is of invalid format', () => {
       $.auth.data.privateKey = 'invalid string'
-      expect(() => parseSecretKeyFormat($)).toThrow(
-        'Invalid secret key format',
-      )
+      expect(() => parseSecretKeyFormat($)).toThrow('Invalid secret key format')
     })
 
     it('should not throw error if secret key is of valid format', () => {
