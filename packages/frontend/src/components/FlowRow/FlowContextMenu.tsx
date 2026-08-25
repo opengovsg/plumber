@@ -231,14 +231,14 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
   const [duplicateFlow, { loading: isDuplicatingFlow }] = useMutation(
     DUPLICATE_FLOW,
     {
-      refetchQueries: ['GetFlows'],
+      refetchQueries: ['GetFlows', 'GetUnfiledFlowCount'],
     },
   )
 
   const [moveFlowToFolder, { loading: isMovingFlow }] = useMutation(
     MOVE_FLOW_TO_FOLDER,
     {
-      refetchQueries: ['GetFlowFolders', 'GetFlows'],
+      refetchQueries: ['GetFlowFolders', 'GetFlows', 'GetUnfiledFlowCount'],
     },
   )
 
@@ -253,6 +253,9 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
   const onFlowDelete = useCallback(async () => {
     await deleteFlow({
       variables: { input: { id: flow.id } },
+      // The row leaves the list via the cache eviction below, but the folder
+      // and unfiled counts are computed server-side, so they need a refetch.
+      refetchQueries: ['GetFlowFolders', 'GetUnfiledFlowCount'],
       update: (cache) => {
         const flowCacheId = cache.identify({
           __typename: 'Flow',
