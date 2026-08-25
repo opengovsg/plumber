@@ -32,7 +32,7 @@ export const fetchCaseFields = async ({
   )
 
   const filteredFields = data.data.fields.filter(
-    ({ type }) => !UNSUPPORTED_FIELDS.includes(type),
+    ({ type }: GatherSGCaseField) => !UNSUPPORTED_FIELDS.includes(type),
   )
 
   return {
