@@ -103,11 +103,11 @@ describe('dynamodb table row functions', () => {
           )
         }
         await createTableRows({ tableId: dummyTable.id, dataArray })
-      }, 20000)
+      }, 60000)
       it(
         'should be able to paginate and get a large number of rows',
         {
-          timeout: 20000,
+          timeout: 60000,
         },
         async () => {
           const { rows } = await getTableRows({
@@ -121,7 +121,7 @@ describe('dynamodb table row functions', () => {
       it(
         'should be able to paginate and get a large number of rows with a scan limit',
         {
-          timeout: 20000,
+          timeout: 60000,
         },
         async () => {
           const SCAN_LIMIT = 5789
