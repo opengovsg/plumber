@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
