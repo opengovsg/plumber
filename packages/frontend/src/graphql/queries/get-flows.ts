@@ -8,6 +8,8 @@ export const GET_FLOWS = gql`
     $connectionId: String
     $name: String
     $active: Boolean
+    $folderId: String
+    $unfiled: Boolean
   ) {
     getFlows(
       limit: $limit
@@ -16,6 +18,8 @@ export const GET_FLOWS = gql`
       connectionId: $connectionId
       name: $name
       active: $active
+      folderId: $folderId
+      unfiled: $unfiled
     ) {
       pageInfo {
         currentPage
@@ -39,6 +43,11 @@ export const GET_FLOWS = gql`
             id
           }
           role
+          folder {
+            id
+            name
+            color
+          }
         }
       }
     }
