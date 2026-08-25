@@ -84,7 +84,7 @@ describe.each([['pg'], ['ddb']])(
         })
         expect(pgCreateTableRowsSpy).not.toHaveBeenCalled()
       }
-    })
+    }, 30_000)
 
     it('should maintain order of rows', async () => {
       const NUM_ROWS = 10

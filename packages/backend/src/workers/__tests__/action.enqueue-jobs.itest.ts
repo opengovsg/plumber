@@ -3,6 +3,7 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
@@ -83,6 +84,14 @@ describe('Action worker job enqueueing', () => {
     await mainActionWorker.waitUntilReady()
   })
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.processAction.mockReset()
+    mocks.processAction.mockResolvedValue({})
+    mocks.enqueueActionJob.mockReset()
+    mocks.enqueueActionJob.mockResolvedValue({})
+  })
+
   afterEach(async () => {
     await flushQueue(mainActionQueue, mainActionWorker)
 
@@ -90,6 +99,7 @@ describe('Action worker job enqueueing', () => {
     // original state after each test
     await restoreWorker(mainActionWorker, originalWorkerState)
 
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
