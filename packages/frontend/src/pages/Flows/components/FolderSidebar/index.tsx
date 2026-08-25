@@ -142,8 +142,7 @@ export default function FolderSidebar(props: FolderSidebarProps) {
             <FolderRow
               folder={folder}
               isSelected={
-                selection.type === 'folder' &&
-                selection.folderId === folder.id
+                selection.type === 'folder' && selection.folderId === folder.id
               }
               onSelect={(folderId) => onSelect({ type: 'folder', folderId })}
               onRename={onRename}
