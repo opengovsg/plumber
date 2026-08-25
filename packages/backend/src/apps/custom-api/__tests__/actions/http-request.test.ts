@@ -129,9 +129,7 @@ describe('make http request', () => {
     mocks.httpRequest.mockRejectedValueOnce(httpError)
 
     // throw partial step error message
-    await expect(makeRequestAction.run($)).rejects.toThrow(
-      'Status code: 403',
-    )
+    await expect(makeRequestAction.run($)).rejects.toThrow('Status code: 403')
   })
 
   it.each([[{ value: 'test' }], [{ key: 'test' }]])(
