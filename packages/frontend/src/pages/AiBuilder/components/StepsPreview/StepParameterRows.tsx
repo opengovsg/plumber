@@ -13,7 +13,7 @@ import { Box, Flex, Table, Tbody, Td, Text, Tr } from '@chakra-ui/react'
 
 import {
   buildVariableInfoMapFromPaths,
-  substituteForPreview,
+  substituteOldTemplates,
 } from '@/components/RichTextEditor/utils'
 import { GET_DYNAMIC_DATA } from '@/graphql/queries/get-dynamic-data'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
@@ -307,7 +307,7 @@ export default function StepParameterRows({
         label: resolveFieldLabel(stepFields, key),
         isPreview,
         previewHtml: isPreview
-          ? substituteForPreview(String(value), variableInfoMap)
+          ? substituteOldTemplates(String(value), variableInfoMap)
           : undefined,
         // AI-provided labels are already a human-readable summary, so they
         // skip the Column/Value table too. Preview fields skip both, since
@@ -377,7 +377,10 @@ export default function StepParameterRows({
           }) => (
             <ParameterRow key={key} label={label}>
               {isPreview ? (
-                <RichTextPreview html={previewHtml ?? ''} />
+                <RichTextPreview
+                  html={previewHtml ?? ''}
+                  stepNameById={stepNameById}
+                />
               ) : columnValueRows && columnValueRows.length > 0 ? (
                 <ColumnValueTable
                   rows={columnValueRows}
