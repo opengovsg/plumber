@@ -42,8 +42,11 @@ export function buildVariableInfoMapFromPaths(
 ): VariableInfoMap {
   const map: VariableInfoMap = new Map()
   for (const [path, value] of valuesByPath) {
+    // Fall back to the last path segment, not the full `step.<id>.<path>`
+    // string, which is what a variable chip would otherwise display.
+    const lastSegment = path.split('.').pop() ?? path
     map.set(`{{${path}}}`, {
-      label: labelsByPath.get(path) ?? path,
+      label: labelsByPath.get(path) ?? lastSegment,
       testRunValue: value,
     })
   }
