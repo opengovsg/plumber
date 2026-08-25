@@ -16,6 +16,7 @@ describe('process-image schema', () => {
       })
       assert(result.success === true)
       assert(result.data.image[0] === 's3-id-123')
+      assert(result.data.continueIfNoFile === false)
     })
 
     it('should reject empty image array', () => {
@@ -32,6 +33,81 @@ describe('process-image schema', () => {
       if (!result.success) {
         expect(result.error.issues[0].message).toBe('An image must be selected')
       }
+    })
+
+    it('should reject a blank image value by default', () => {
+      const result = schema.safeParse({
+        image: [''],
+        responseFields: [
+          {
+            fieldName: 'signature',
+            description: 'Check for signature',
+          },
+        ],
+      })
+      assert(result.success === false)
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('An image must be selected')
+      }
+    })
+
+    it('should reject empty image array when continueIfNoFile is false', () => {
+      const result = schema.safeParse({
+        image: [],
+        continueIfNoFile: false,
+        responseFields: [
+          {
+            fieldName: 'signature',
+            description: 'Check for signature',
+          },
+        ],
+      })
+      assert(result.success === false)
+    })
+
+    it('should accept empty image array when continueIfNoFile is true', () => {
+      const result = schema.safeParse({
+        image: [],
+        continueIfNoFile: true,
+        responseFields: [
+          {
+            fieldName: 'signature',
+            description: 'Check for signature',
+          },
+        ],
+      })
+      assert(result.success === true)
+      assert(result.data.continueIfNoFile === true)
+      assert(result.data.image.length === 0)
+    })
+
+    it('should accept a blank image value when continueIfNoFile is true', () => {
+      const result = schema.safeParse({
+        image: [''],
+        continueIfNoFile: true,
+        responseFields: [
+          {
+            fieldName: 'signature',
+            description: 'Check for signature',
+          },
+        ],
+      })
+      assert(result.success === true)
+    })
+
+    it('should still accept a real image when continueIfNoFile is true', () => {
+      const result = schema.safeParse({
+        image: ['s3-id-123'],
+        continueIfNoFile: true,
+        responseFields: [
+          {
+            fieldName: 'signature',
+            description: 'Check for signature',
+          },
+        ],
+      })
+      assert(result.success === true)
+      assert(result.data.image[0] === 's3-id-123')
     })
 
     it('should reject multiple images', () => {

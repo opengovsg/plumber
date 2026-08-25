@@ -13,14 +13,14 @@ import Step from '@/models/step'
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 
-import { schema } from './schema'
+import { hasProvidedImage, schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
-  name: 'Process an image',
+  name: 'Process image',
   key: 'processImage',
-  description: 'Extract information from an image or PDF',
+  description: 'Extract data or synthesise content from an image or PDF',
   linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [
     {
@@ -35,17 +35,17 @@ const action: IRawAction = {
       disableUpload: true,
     },
     {
-      label: 'What do you want to extract?',
-      description: 'Use these as variables in later steps',
+      label: 'What should Pair give you back? (use in later steps)',
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
-      addRowButtonText: 'Add another',
+      addRowButtonText: 'Add output',
       subFields: [
         {
           key: 'description',
           label: 'What to look for',
-          placeholder: 'Whether the image contains a handwritten signature',
+          placeholder:
+            'e.g. Whether the image contains a handwritten signature',
           type: 'string',
           required: true,
           customStyle: { flex: 3, minWidth: 0, maxWidth: '75%' },
@@ -53,10 +53,33 @@ const action: IRawAction = {
         {
           key: 'fieldName',
           label: 'Output name',
-          placeholder: 'Signature present',
+          placeholder: 'e.g. Signature present',
           type: 'string',
           required: true,
           customStyle: { flex: 1 },
+        },
+      ],
+    },
+    {
+      label: 'How should we handle a missing image/file?',
+      key: 'continueIfNoFile',
+      type: 'boolean-radio' as const,
+      required: true,
+      description:
+        'This can happen when the file comes from an optional FormSG field that is left blank.',
+      value: false,
+      options: [
+        {
+          label: 'Continue without it',
+          description:
+            "This step's outputs will be blank, and the rest of your pipe still runs. Choose this if your later steps work with a blank value.",
+          value: true,
+        },
+        {
+          label: 'Stop and fail this execution',
+          description:
+            'This execution stops here and is marked as failed. Other executions are not affected. Choose this if your later steps need the file.',
+          value: false,
         },
       ],
     },
@@ -79,7 +102,16 @@ const action: IRawAction = {
         GenericSolution.ReconfigureInvalidField,
       )
     }
-    const { image, responseFields } = validatedParameters.data
+    const { image, responseFields, continueIfNoFile } = validatedParameters.data
+
+    if (!hasProvidedImage(image) && continueIfNoFile) {
+      $.setActionItem({
+        raw: Object.fromEntries(
+          responseFields.map((field) => [field.fieldName, '']),
+        ) as IJSONObject,
+      })
+      return
+    }
 
     try {
       const schemaShape: Record<string, z.ZodTypeAny> = {}

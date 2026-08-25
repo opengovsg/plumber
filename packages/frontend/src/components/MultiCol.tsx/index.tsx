@@ -3,7 +3,7 @@ import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 import React, { useContext } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { BiTrash } from 'react-icons/bi'
-import { Divider, Flex } from '@chakra-ui/react'
+import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
@@ -14,6 +14,7 @@ import { applyDynamicPlaceholder } from './utils'
 type MultiColProps = {
   name: string
   subFields: IFieldMultiRowMultiColSubField[]
+  visibleColumnKeys?: Set<string>
   canRemoveRow?: boolean
   isEditorReadOnly?: boolean
   remove?: (index?: number | number[]) => void
@@ -24,6 +25,7 @@ export default function MultiCol(props: MultiColProps) {
   const {
     name,
     subFields,
+    visibleColumnKeys,
     canRemoveRow,
     isEditorReadOnly,
     remove,
@@ -33,6 +35,10 @@ export default function MultiCol(props: MultiColProps) {
 
   const { isMobile } = useContext(EditorContext)
   const { getValues } = useFormContext()
+
+  // Desktop table headers sit above the first row only. Mobile stacks columns,
+  // so labels are shown per input instead.
+  const hasColumnHeaders = !isMobile && subFields.some((subF) => subF.label)
 
   const DeleteButton = () => {
     return (
@@ -53,16 +59,18 @@ export default function MultiCol(props: MultiColProps) {
   ) => {
     const { type, variables } = subF
 
-    // Only show labels, descriptions, and tooltips on the first row
-    let schemaWithConditionalLabel =
-      index === 0
-        ? subF
-        : {
-            ...subF,
-            label: undefined,
-            description: undefined,
-            tooltipText: undefined,
-          }
+    // Desktop: labels/descriptions/tooltips only on the first row, and never
+    // once they are rendered as column headers. Mobile: every stacked row
+    // needs its own labels.
+    const shouldShowFieldLabel = isMobile || (index === 0 && !hasColumnHeaders)
+    let schemaWithConditionalLabel = shouldShowFieldLabel
+      ? subF
+      : {
+          ...subF,
+          label: undefined,
+          description: undefined,
+          tooltipText: undefined,
+        }
 
     schemaWithConditionalLabel = applyDynamicPlaceholder(
       schemaWithConditionalLabel,
@@ -95,6 +103,23 @@ export default function MultiCol(props: MultiColProps) {
               {showDeleteButton && <DeleteButton />}
             </Flex>
           </React.Fragment>
+        ) : hasColumnHeaders && index === 0 ? (
+          // Stretching keeps the header pinned to the top and the input to the
+          // bottom, so a hidden input or a wrapped header can't knock the row
+          // out of line.
+          <Flex
+            key={`${name}.${subF.key}`}
+            flexDir="column"
+            alignSelf="stretch"
+            style={subF.customStyle}
+          >
+            {(visibleColumnKeys?.has(subF.key) ?? true) && (
+              <Text textStyle="caption-3" color="base.content.medium" mb={2}>
+                {subF.label}
+              </Text>
+            )}
+            <Box mt="auto">{renderSubFieldInput(subF, subFIndex)}</Box>
+          </Flex>
         ) : (
           <div key={`${name}.${subF.key}`} style={subF.customStyle}>
             {renderSubFieldInput(subF, subFIndex)}

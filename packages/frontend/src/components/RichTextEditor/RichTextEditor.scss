@@ -358,6 +358,13 @@
   height: 100%;
 }
 
+// Single-line inputs (e.g. multirow-multicol) must not fill the FormControl.
+// `height: 100%` would grow the field to include the label on mobile.
+.editor.editor--single-line {
+  height: auto;
+  flex: none;
+}
+
 .single-line-editor {
   white-space: nowrap;
   overflow-x: auto;

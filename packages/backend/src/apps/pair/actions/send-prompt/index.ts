@@ -19,14 +19,13 @@ import { schema } from './schema'
 const turndownService = new TurndownService()
 
 const action: IRawAction = {
-  name: 'Use Pair',
+  name: 'Process text',
   key: 'sendPrompt',
-  description:
-    'Enter a custom prompt to summarise, categorise or analyse data with Pair',
+  description: 'Summarise, categorise, write or analyse textual data with AI',
   linkToGuide: 'https://guide.plumber.gov.sg/user-guides/actions/pair',
   arguments: [
     {
-      label: 'Describe what you want Pair to do',
+      label: 'What should Pair do? (prompt)',
       key: 'prompt',
       type: 'rich-text' as const,
       required: true,
@@ -57,8 +56,7 @@ const action: IRawAction = {
       })),
     },
     {
-      label: 'Define how you want Pair to structure what it extracts',
-      description: 'Use these as variables in later steps',
+      label: 'What should Pair give you back? (use in later steps)',
       key: 'responseFields',
       type: 'multirow-multicol' as const,
       required: true,
@@ -69,24 +67,24 @@ const action: IRawAction = {
       addRowButtonText: 'Add output',
       subFields: [
         {
+          label: 'Output name',
+          placeholder: 'e.g. Priority level',
+          key: 'fieldName',
+          type: 'string' as const,
+          required: true,
+          variables: false,
+        },
+        {
           label: 'Type',
           key: 'fieldType',
           type: 'dropdown' as const,
           required: true,
           showOptionValue: false,
           options: [
-            { label: 'Text', value: 'text' },
-            { label: 'Number', value: 'number' },
-            { label: 'Category', value: 'category' },
+            { label: 'Text', value: 'text', icon: 'text' },
+            { label: 'Number', value: 'number', icon: 'hash' },
+            { label: 'Category', value: 'category', icon: 'list-ol' },
           ],
-        },
-        {
-          label: 'Output name',
-          placeholder: 'E.g., Priority level',
-          key: 'fieldName',
-          type: 'string' as const,
-          required: true,
-          variables: false,
         },
         {
           label: 'Categories',
