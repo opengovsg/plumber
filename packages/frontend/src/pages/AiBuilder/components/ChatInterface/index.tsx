@@ -24,7 +24,7 @@ interface ChatInterfaceProps {
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
-  onAddConnection?: (context: { question: string }) => void
+  onAddConnection?: (context: { question: string; appKey: string }) => void
   knownFormUrl?: string
   onConnectForm?: () => void
   /** Resets any form-connection state that lives outside useChatStream's own reset. */

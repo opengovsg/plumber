@@ -97,6 +97,64 @@ export const buildNoOptionsFoundMessage = (
 ): string =>
   `Q: ${question}\nA: [no options available${reason ? `: ${reason}` : ''}]`
 
+// Shared answer format for a connection-picker turn — used both when the
+// user picks an existing connection (see PromptInput's onSelect) and when
+// they create one inline via AddAppConnection. Keep this in sync with the
+// system prompt's picker-answer contract if the format ever changes.
+export const buildPickerAnswerMessage = (
+  question: string,
+  label: string,
+  connectionId: string,
+): string => `Q: ${question}\nA: ${label} (id: ${connectionId})`
+
+interface ConnectionMutationResult {
+  id?: string
+  formattedData?: Record<string, unknown>
+}
+
+// AddAppConnection's onClose hands back the raw accumulated response object
+// from walking auth.authenticationSteps (createConnection's/verifyConnection's
+// results, the submitted field values, etc.) rather than a clean (label, id)
+// pair. Pull out what the chat answer needs: the new connection's id, and a
+// display label.
+//
+// The label preference order matters: several apps' verifyCredentials
+// derives or rewrites screenName from a live API call during verification —
+// Slack/Telegram have no user-facing "Label" field at all (screenName comes
+// entirely from the OAuth team name / bot's own name), and PaySG appends an
+// env suffix ([LIVE]/[STAGING]) server-side. So the raw submitted
+// fields.screenName is stale/wrong for those apps — the canonical label only
+// exists on verifyConnection's returned formattedData once verification has
+// run. createConnection's formattedData is checked as a fallback in case a
+// future app's step sequence doesn't end in verifyConnection; fields.screenName
+// and the caller-supplied app-name fallback cover apps with no auth-derived
+// label at all.
+export const extractConnectionResult = (
+  response: Record<string, unknown>,
+  fallbackLabel: string,
+): { label: string; connectionId: string } | null => {
+  const createConnectionResult = response.createConnection as
+    | ConnectionMutationResult
+    | undefined
+  const connectionId = createConnectionResult?.id
+  if (!connectionId) {
+    return null
+  }
+
+  const verifyConnectionResult = response.verifyConnection as
+    | ConnectionMutationResult
+    | undefined
+  const fields = response.fields as Record<string, unknown> | undefined
+
+  const label =
+    (verifyConnectionResult?.formattedData?.screenName as string | undefined) ??
+    (createConnectionResult?.formattedData?.screenName as string | undefined) ??
+    (fields?.screenName as string | undefined) ??
+    fallbackLabel
+
+  return { label, connectionId }
+}
+
 export const isNoOptionsSignalMessage = (text: string): boolean =>
   text.includes('\nA: [no options available')
 
