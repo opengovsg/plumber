@@ -211,7 +211,7 @@ export default function Flows(): ReactElement {
     useMutation(UPDATE_FLOW_FOLDER)
   const [deleteFlowFolder, { loading: isDeletingFolder }] = useMutation(
     DELETE_FLOW_FOLDER,
-    { refetchQueries: ['GetFlowFolders', 'GetFlows'] },
+    { refetchQueries: ['GetFlowFolders', 'GetFlows', 'GetUnfiledFlowCount'] },
   )
 
   const {
