@@ -8,6 +8,7 @@ import bulkRetryExecutions from './mutations/bulk-retry-executions'
 import bulkRetryIterations from './mutations/bulk-retry-iterations'
 import createConnection from './mutations/create-connection'
 import createFlow from './mutations/create-flow'
+import createFlowFolder from './mutations/create-flow-folder'
 import createFlowTransfer from './mutations/create-flow-transfer'
 import createStep from './mutations/create-step'
 import createTemplatedFlow from './mutations/create-templated-flow'
@@ -15,6 +16,7 @@ import deleteConnection from './mutations/delete-connection'
 import deleteFlow from './mutations/delete-flow'
 import deleteFlowCollaborator from './mutations/delete-flow-collaborator'
 import deleteFlowConnection from './mutations/delete-flow-connection'
+import deleteFlowFolder from './mutations/delete-flow-folder'
 import deleteStep from './mutations/delete-step'
 import deleteUploadedFile from './mutations/delete-uploaded-file'
 import duplicateBranch from './mutations/duplicate-branch'
@@ -27,6 +29,7 @@ import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
 import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
+import moveFlowToFolder from './mutations/move-flow-to-folder'
 import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
@@ -36,6 +39,7 @@ import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
 import updateFlowConfig from './mutations/update-flow-config'
+import updateFlowFolder from './mutations/update-flow-folder'
 import updateFlowStatus from './mutations/update-flow-status'
 import updateFlowTransferStatus from './mutations/update-flow-transfer-status'
 import updateStep from './mutations/update-step'
@@ -79,6 +83,10 @@ export default {
   upsertFlowCollaborator,
   deleteFlowCollaborator,
   deleteFlowConnection,
+  createFlowFolder,
+  updateFlowFolder,
+  deleteFlowFolder,
+  moveFlowToFolder,
   executeStep,
   deleteFlow,
   createStep,

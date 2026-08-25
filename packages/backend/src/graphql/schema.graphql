@@ -14,7 +14,10 @@ type Query {
     connectionId: String
     name: String
     active: Boolean
+    folderId: String
+    unfiled: Boolean
   ): PaginatedFlows
+  getFlowFolders: [FlowFolder!]!
   getTestExecutionSteps(
     flowId: String!
     ignoreTestExecutionId: Boolean
@@ -108,6 +111,11 @@ type Mutation {
   upsertFlowCollaborator(input: FlowCollaboratorInput!): Boolean!
   deleteFlowCollaborator(input: DeleteFlowCollaboratorInput!): Boolean!
   deleteFlowConnection(input: DeleteFlowConnectionInput!): Boolean!
+  # Flow folders
+  createFlowFolder(input: CreateFlowFolderInput!): FlowFolder!
+  updateFlowFolder(input: UpdateFlowFolderInput!): FlowFolder!
+  deleteFlowFolder(input: DeleteFlowFolderInput!): Boolean!
+  moveFlowToFolder(input: MoveFlowToFolderInput!): Flow!
   # S3 operations
   generatePresignedPost(input: GeneratePresignedPostInput): PresignedPostObject
   deleteUploadedFile(id: String!, flowUpdatedAt: String!): Boolean
@@ -484,11 +492,19 @@ type Flow {
   template: Template
   collaborators: [FlowCollaborator!]
   role: String
+  folder: FlowFolder
 }
 
 type FlowCollaborator {
   role: String!
   email: String!
+}
+
+type FlowFolder {
+  id: String!
+  name: String!
+  color: String!
+  flowCount: Int!
 }
 
 input FlowCollaboratorInput {
@@ -506,6 +522,26 @@ input DeleteFlowConnectionInput {
   flowId: String!
   connectionId: String!
   connectionType: String!
+}
+
+input CreateFlowFolderInput {
+  name: String!
+  color: String!
+}
+
+input UpdateFlowFolderInput {
+  id: String!
+  name: String
+  color: String
+}
+
+input DeleteFlowFolderInput {
+  id: String!
+}
+
+input MoveFlowToFolderInput {
+  flowId: String!
+  folderId: String
 }
 
 # Rate limiting config is omitted here e.g. maxQps

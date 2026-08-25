@@ -1,6 +1,6 @@
 import Base from './base'
-import ExtendedQueryBuilder from './query-builder'
 import FlowFolderItem from './flow-folder-item'
+import ExtendedQueryBuilder from './query-builder'
 import User from './user'
 
 // The 6 colour tokens the frontend swatches map to. Kept here as the single
@@ -24,6 +24,11 @@ class FlowFolder extends Base {
   user!: User
   items?: FlowFolderItem[]
 
+  // Virtual field for GraphQL compatibility - not a DB column. Populated by
+  // resolvers that already know the count (e.g. getFlowFolders), so the
+  // FlowFolder.flowCount custom resolver can skip a fallback query.
+  flowCount?: number
+
   static tableName = 'flow_folders'
 
   static jsonSchema = {
@@ -34,7 +39,7 @@ class FlowFolder extends Base {
       id: { type: 'string', format: 'uuid' },
       userId: { type: 'string', format: 'uuid' },
       name: { type: 'string', minLength: 1, maxLength: 60 },
-      color: { type: 'string', enum: FLOW_FOLDER_COLORS },
+      color: { type: 'string', enum: [...FLOW_FOLDER_COLORS] },
     },
   }
 
