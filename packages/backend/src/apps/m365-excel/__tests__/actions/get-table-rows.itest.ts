@@ -55,7 +55,7 @@ describe('getTableRowsAction', () => {
   let $: IGlobalVariable
 
   beforeEach(async () => {
-    vi.resetAllMocks()
+    vi.clearAllMocks()
     context = await generateMockContext()
 
     // Setup mock global variable
