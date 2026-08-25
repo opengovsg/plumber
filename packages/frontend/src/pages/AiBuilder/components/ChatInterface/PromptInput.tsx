@@ -34,7 +34,7 @@ interface PromptInputProps {
   cancelStream: () => void
   clarification?: ClarificationQuestion[]
   dynamicPicker?: DynamicPickerPart['data']
-  onAddConnection?: (context: { question: string }) => void
+  onAddConnection?: (context: { question: string; appKey: string }) => void
   /** Form URL already shared in the conversation (drives the picker's forced key-completion card). */
   knownFormUrl?: string
   /** Opens the Add-new-form modal (empty-state "Connect your form" entry). */
@@ -269,7 +269,11 @@ export default function PromptInput({
         }
         onAddConnection={
           onAddConnection && isAppKeyMode
-            ? () => onAddConnection({ question: dynamicPicker.question })
+            ? () =>
+                onAddConnection({
+                  question: dynamicPicker.question,
+                  appKey: dynamicPicker.appKey,
+                })
             : undefined
         }
         knownFormUrl={knownFormUrl}
