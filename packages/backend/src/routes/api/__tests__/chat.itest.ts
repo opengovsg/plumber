@@ -82,7 +82,7 @@ vi.mock('@/helpers/mcp-bridge-tools', () => ({
   createMcpBridgeTools: mocks.createMcpBridgeTools,
 }))
 
-describe('Chat Route Handler', { hookTimeout: 30_000 }, () => {
+describe('Chat Route Handler', () => {
   let mockReq: Partial<Request>
   let mockRes: Partial<Response>
   let postHandler: (
@@ -103,7 +103,7 @@ describe('Chat Route Handler', { hookTimeout: 30_000 }, () => {
     }
 
     postHandler = handler
-  })
+  }, 30_000)
 
   async function executeChatPostHandler(
     req: Partial<Request>,
