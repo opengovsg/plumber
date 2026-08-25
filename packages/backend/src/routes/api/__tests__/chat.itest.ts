@@ -106,6 +106,14 @@ describe('Chat Route Handler', () => {
   let mockRes: Partial<Response>
 
   beforeEach(() => {
+    vi.clearAllMocks()
+    for (const mock of Object.values(mocks)) {
+      if (typeof mock === 'function' && 'mockReset' in mock) {
+        mock.mockReset()
+      }
+    }
+    mocks.observe.mockImplementation((fn) => fn)
+
     mockReq = {
       body: {
         messages: [
@@ -132,9 +140,6 @@ describe('Chat Route Handler', () => {
       setHeader: vi.fn(),
       write: vi.fn(),
     } as Partial<Response>
-
-    // Reset mocks
-    vi.clearAllMocks()
 
     mocks.createMcpBridgeTools.mockReturnValue({})
 
@@ -181,11 +186,6 @@ describe('Chat Route Handler', () => {
       },
     })
   }
-
-  afterEach(() => {
-    vi.clearAllMocks()
-    vi.restoreAllMocks()
-  })
 
   describe('Handler Behavior', () => {
     it('should process authenticated requests', async () => {
