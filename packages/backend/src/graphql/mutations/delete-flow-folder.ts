@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import FlowFolder from '@/models/flow-folder'
 import FlowFolderItem from '@/models/flow-folder-item'
 
@@ -14,7 +15,7 @@ const deleteFlowFolder: MutationResolvers['deleteFlowFolder'] = async (
 
   // To avoid the gibberish error code if a caller sends a malformed id
   if (!z.string().uuid().safeParse(id).success) {
-    throw new Error('Please provide a valid folder ID.')
+    throw new BadUserInputError('Please provide a valid folder ID.')
   }
 
   await FlowFolder.transaction(async (trx) => {
