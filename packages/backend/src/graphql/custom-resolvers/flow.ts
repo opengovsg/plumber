@@ -1,6 +1,7 @@
 import sortBy from 'lodash/sortBy'
 
 import { TEMPLATES } from '@/db/storage'
+import { loadFlowFolder } from '@/helpers/flow-folders'
 import FlowCollaborator from '@/models/flow-collaborators'
 
 import type {
@@ -49,6 +50,15 @@ const role: FlowResolver['role'] = async (parent) => {
   return (parent as any)?.role || 'viewer'
 }
 
+// Batched per-request (see loadFlowFolder) so listing many flows never N+1s.
+const folder: FlowResolver['folder'] = async (parent, _args, context) => {
+  return loadFlowFolder({
+    requestKey: context,
+    userId: context.currentUser.id,
+    flowId: parent.id,
+  })
+}
+
 // in collaborators, we introduced the concept of notificationRecipients,
 // which is an array that may contain 'editor' and/or 'viewer'.
 // however, there may be existing flows that already have errorConfig.notificationFrequency
@@ -67,4 +77,5 @@ export default {
   template,
   collaborators,
   role,
+  folder,
 } satisfies FlowResolver

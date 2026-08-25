@@ -4,12 +4,14 @@ import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
+import FlowFolder from '@/models/flow-folder'
 import FlowTransfer from '@/models/flow-transfers'
 import TableMetadata from '@/models/table-metadata'
 
 export type AppGraphQLType = App
 export type ExecutionStepGraphQLType = ExecutionStep
 export type FlowCollaboratorGraphQLType = FlowCollaborator
+export type FlowFolderGraphQLType = FlowFolder
 export type TableMetadataGraphQLType = TableMetadata
 export type FlowTransferGraphQLType = FlowTransfer
 

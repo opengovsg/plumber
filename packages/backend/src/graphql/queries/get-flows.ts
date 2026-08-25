@@ -1,3 +1,4 @@
+import { applyFolderFilter } from '@/helpers/flow-folders'
 import paginate from '@/helpers/pagination'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
@@ -24,6 +25,11 @@ const getFlows: QueryResolvers['getFlows'] = async (
         if (params.active !== undefined && params.active !== null) {
           builder.where('active', params.active)
         }
+        applyFolderFilter(builder, {
+          folderId: params.folderId,
+          unfiled: params.unfiled,
+          userId: context.currentUser.id,
+        })
       })
   ).map((f) => f.id)
 
