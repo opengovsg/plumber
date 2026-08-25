@@ -50,7 +50,7 @@ const dynamicData: IDynamicData = {
             cursor,
           },
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           logger.error(error)
           throw new Error('Failed to list channels')
         })
@@ -62,7 +62,7 @@ const dynamicData: IDynamicData = {
 
       cursor = data.response_metadata?.next_cursor
 
-      const channels = data.channels.map((channel) => {
+      const channels = data.channels.map((channel: SlackConversation) => {
         return {
           value: channel.id,
           name: channel.name,

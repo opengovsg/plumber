@@ -62,7 +62,7 @@ const dynamicData: IDynamicData = {
           data: [],
         }
       }
-      data.result.reverse().forEach((update) => {
+      data.result.reverse().forEach((update: TelegramUpdate) => {
         const chat = extractChatFromUpdate(update)
         if (!chat) {
           return

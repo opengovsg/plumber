@@ -94,7 +94,7 @@ function buildAnswerArrayForSignature(
 ): IDataOutMetadata {
   const { order, question } = fieldData
   const answerArray = fieldData.answerArray as IJSONArray
-  return answerArray.map((_, index) => ({
+  return answerArray.map((_: IJSONValue, index: number) => ({
     type: 'text',
     label: `${order}.${index + 1}. ${question}`,
     order: order ? `${order}.${index + 1}` : null,
@@ -345,9 +345,9 @@ async function getDataOutMetadata(
 
   const fieldMetadata: IDataOutMetadata = Object.create(null)
 
-  const fields = Object.entries(data.fields).sort((a, b) => {
-    const orderA = a[1].order
-    const orderB = b[1].order
+  const fields = Object.entries(data.fields as IJSONObject).sort((a, b) => {
+    const orderA = (a[1] as IJSONObject).order as number | null
+    const orderB = (b[1] as IJSONObject).order as number | null
     if (orderA === null) {
       return 1
     }
@@ -376,7 +376,8 @@ async function getDataOutMetadata(
    */
   let questionOrder = 0
   let headerOrderBetweenQuestions = 0
-  for (const [fieldId, fieldData] of fields) {
+  for (const [fieldId, fieldValue] of fields) {
+    const fieldData = fieldValue as IJSONObject
     // ignore image fields, dont even increment question order
     if (fieldData.fieldType === 'image') {
       fieldMetadata[fieldId] = { isHidden: true }
