@@ -148,7 +148,7 @@ updates:
       testcontainers:
         patterns:
           - "testcontainers"
-          - "@testcontainers/*"
+          - "@opengovsg/testcontainers"
       tiptap:
         patterns:
           - "@tiptap/*"
