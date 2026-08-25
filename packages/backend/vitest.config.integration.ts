@@ -57,12 +57,8 @@ const sharedTest = {
   root: __dirname,
   // Each project runs its own globalSetup. The setup file shares one set of
   // containers between them.
-  globalSetup: [getPath('./test/containers-global-setup.ts')],
-  setupFiles: [
-    'dotenv/config',
-    getPath('./test/pg-reset-db-setup.ts'),
-    getPath('./test/ddb-reset-db-setup.ts'),
-  ],
+  globalSetup: [getPath('./test/global-setup.ts')],
+  setupFiles: ['dotenv/config', getPath('./test/pg-reset-db-setup.ts')],
   pool: 'threads' as const,
   maxWorkers: 1,
   fileParallelism: false,
