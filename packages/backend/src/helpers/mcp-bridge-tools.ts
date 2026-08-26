@@ -26,10 +26,6 @@ import {
   listColumnsService,
 } from '@/services/mcp/list-columns'
 import {
-  listConnectionsService,
-  type McpConnection,
-} from '@/services/mcp/list-connections'
-import {
   type RegisterConnectionResult,
   registerConnectionService,
 } from '@/services/mcp/register-connection'
@@ -57,22 +53,6 @@ export function createMcpBridgeTools(
       inputSchema: z.object({}),
       execute: async (): Promise<IMcpApp[]> => {
         return listAppsService(user)
-      },
-    }),
-
-    list_connections: tool<{ app_key?: string }, McpConnection[]>({
-      description:
-        "List connections the user has set up, optionally filtered to a specific app. Returns each connection's ID, app key, verified status, and label. Use the returned id as connection_id when calling update_step_parameters.",
-      inputSchema: z.object({
-        app_key: z
-          .string()
-          .optional()
-          .describe(
-            'App key to filter by (e.g. "slack"). Omit to list all connections.',
-          ),
-      }),
-      execute: async ({ app_key }): Promise<McpConnection[]> => {
-        return listConnectionsService(user, app_key)
       },
     }),
 
@@ -145,7 +125,7 @@ export function createMcpBridgeTools(
 
     update_step_parameters: tool({
       description:
-        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Optionally assign a connection by passing connection_id (obtain from list_connections; must match the step's app). Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.\n\nWhen connection_id is provided for a step whose app uses per-step or global connection registration, registration runs automatically. Inspect the result before proceeding:\n- connectionRegistered: true — registration succeeded; step is fully connected.\n- connectionConflict: true + connectionConflictMessage — webhook already claimed; relay connectionConflictMessage to the user verbatim and call register_connection with the same step_id and connection_id only after explicit confirmation.\n- connectionError — permission or technical error; surface to user. Do not retry.\n- formFields (FormSG only, present on conflict or error) — trimmed field list for wiring downstream steps even when trigger is unconnected.",
+        "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Optionally assign a connection by passing connection_id from the user's picker reply (A: Name (id: …)) or an established conversation connection id; the connection's app must match the step's app. Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.\n\nWhen connection_id is provided for a step whose app uses per-step or global connection registration, registration runs automatically. Inspect the result before proceeding:\n- connectionRegistered: true — registration succeeded; step is fully connected.\n- connectionConflict: true + connectionConflictMessage — webhook already claimed; relay connectionConflictMessage to the user verbatim and call register_connection with the same step_id and connection_id only after explicit confirmation.\n- connectionError — permission or technical error; surface to user. Do not retry.\n- formFields (FormSG only, present on conflict or error) — trimmed field list for wiring downstream steps even when trigger is unconnected.",
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
         step_id: z.uuid().describe('ID of the step to update'),
@@ -158,7 +138,7 @@ export function createMcpBridgeTools(
           .uuid()
           .optional()
           .describe(
-            "Connection ID to assign to this step. Obtain from list_connections. The connection's app must match the step's app.",
+            "Connection ID to assign to this step. From the user's connection picker reply (A: Name (id: …)) or an established conversation connection id. The connection's app must match the step's app.",
           ),
         parameter_labels: z
           .record(z.string(), z.string())
