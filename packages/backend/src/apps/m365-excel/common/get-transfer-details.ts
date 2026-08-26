@@ -58,7 +58,6 @@ async function getTransferDetails(
     logger.warn('Error with M365 excel before pipe transfer', {
       event: 'm365-excel-pipe-transfer',
       errorCode,
-      error,
       flowId: $.flow.id,
       stepId: $.step.id,
     })
