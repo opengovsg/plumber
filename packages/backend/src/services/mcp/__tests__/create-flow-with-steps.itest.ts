@@ -84,6 +84,17 @@ describe('createFlowWithStepsService', () => {
     expect(secondActionStep.appKey).toBe('slack')
     expect(secondActionStep.key).toBe('sendMessageToChannel')
     expect(secondActionStep.position).toBe(3)
+
+    expect(result.config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-id-123',
+        suggested: [
+          { position: 1, appKey: 'formsg', key: 'newSubmission' },
+          { position: 2, appKey: 'postman', key: 'sendTransactionalEmail' },
+          { position: 3, appKey: 'slack', key: 'sendMessageToChannel' },
+        ],
+      },
+    })
   })
 
   it('auto-initialises branchName and depth for toolbox/ifThen steps', async () => {
@@ -200,5 +211,52 @@ describe('createFlowWithStepsService', () => {
     expect(result.steps).toHaveLength(2)
     expect(result.steps[0].key).toBeNull()
     expect(result.steps[1].key).toBeNull()
+    expect(result.config?.aiBuilderConfig?.suggested).toEqual([
+      { position: 1, appKey: 'webhook', key: null },
+      { position: 2, appKey: 'slack', key: null },
+    ])
+  })
+
+  it('snapshots topology without storing step parameters', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-snapshot-params-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'Params Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+          parameters: { branchName: 'High Priority', depth: 0 },
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 3,
+        },
+      ],
+      traceId: 'trace-snapshot-params',
+    })
+
+    expect(result.config?.aiBuilderConfig).toEqual({
+      traceId: 'trace-snapshot-params',
+      suggested: [
+        { position: 1, appKey: 'formsg', key: 'newSubmission' },
+        { position: 2, appKey: 'toolbox', key: 'ifThen' },
+        { position: 3, appKey: 'postman', key: 'sendTransactionalEmail' },
+      ],
+    })
   })
 })

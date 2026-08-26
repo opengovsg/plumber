@@ -87,7 +87,16 @@ export async function createFlowWithStepsService({
       userId: user.id,
       name: trimmedName,
       active: false,
-      config: { aiBuilderConfig: { traceId } },
+      config: {
+        aiBuilderConfig: {
+          traceId,
+          suggested: steps.map((step) => ({
+            position: step.position,
+            appKey: step.appKey,
+            key: step.key ?? null,
+          })),
+        },
+      },
     })
 
     let ifThenCount = 0
