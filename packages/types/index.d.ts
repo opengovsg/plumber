@@ -224,6 +224,11 @@ export interface IFlowConfig {
   // AI Builder config
   aiBuilderConfig?: {
     traceId: string // trace id on Rome (Langfuse)
+    suggested?: Array<{
+      position: number
+      appKey: string | null
+      key: string | null
+    }>
   }
   isForceClogged?: boolean
 }
