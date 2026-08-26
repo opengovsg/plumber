@@ -142,36 +142,32 @@ describe('listColumnsService', () => {
     expect(result.truncated).toBe(true)
   })
 
-  it('throws if the step has no multirow-multicol field', async () => {
-    // Delay's `delayFor` action has no multirow-multicol argument at all.
+  it('throws if the step is not a supported app/action', async () => {
+    // Delay's `delayFor` action isn't in the list_columns allowlist, and has
+    // no multirow-multicol argument at all either.
     const { step } = await setupFlowAndStep(user.id, 'delay', 'delayFor', {
       delayForUnit: 'minutes',
       delayForValue: 5,
     })
 
     await expect(listColumnsService({ user, stepId: step.id })).rejects.toThrow(
-      'Step has no multirow-multicol field',
+      'list_columns only supports',
     )
   })
 
-  it("throws if the field's first subField has no dynamic-data source", async () => {
-    // Custom API's `httpRequest` action has a multirow-multicol field
-    // (`customHeaders`) whose first subField is a plain string (`key`), not
-    // a dropdown backed by dynamic data — see
-    // packages/backend/src/apps/custom-api/actions/http-request/index.ts.
-    const { step } = await setupFlowAndStep(
-      user.id,
-      'custom-api',
-      'httpRequest',
-      {
-        method: 'GET',
-        url: 'https://example.com',
-        customHeaders: [],
-      },
-    )
+  it('throws if the step is not a supported app/action, even with a matching field shape', async () => {
+    // GatherSG's `updateCase` has a `caseFields` multirow-multicol field
+    // whose first subField (`field`) is a dropdown backed by dynamic data
+    // too — same structural shape as Tiles/Excel, but semantically case
+    // fields, not spreadsheet columns. It must be rejected by the allowlist
+    // rather than slipping through on shape alone.
+    const { step } = await setupFlowAndStep(user.id, 'gathersg', 'updateCase', {
+      caseUuid: 'some-case-uuid',
+      caseFields: [],
+    })
 
     await expect(listColumnsService({ user, stepId: step.id })).rejects.toThrow(
-      "Field's first subField has no dynamic-data source to list columns from",
+      'list_columns only supports',
     )
   })
 
