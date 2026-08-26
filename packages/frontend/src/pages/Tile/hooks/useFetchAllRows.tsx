@@ -138,15 +138,14 @@ export function useFetchAllRows({
           setIsThroughputError(false)
         }
       } finally {
-        if (generation !== fetchGenerationRef.current) {
-          return
+        if (generation === fetchGenerationRef.current) {
+          datadogRum.setGlobalContextProperty(
+            'tile_load_time',
+            performance.now() - startTime.current,
+          )
+          datadogRum.setGlobalContextProperty('tile_row_count', rowCount)
+          setIsFetching(false)
         }
-        datadogRum.setGlobalContextProperty(
-          'tile_load_time',
-          performance.now() - startTime.current,
-        )
-        datadogRum.setGlobalContextProperty('tile_row_count', rowCount)
-        setIsFetching(false)
       }
     },
     [fetchAllRowsQuery, tableId, urlViewOnlyKey, viewToken],
