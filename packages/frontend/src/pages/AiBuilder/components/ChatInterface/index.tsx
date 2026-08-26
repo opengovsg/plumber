@@ -68,6 +68,11 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       ? lastMessage.dynamicPicker
       : undefined
 
+  const activeColumnTable =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.columnTable
+      : undefined
+
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
@@ -205,6 +210,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   cancelStream={cancelStream}
                   clarification={activeClarification}
                   dynamicPicker={activeDynamicPicker}
+                  columnTable={activeColumnTable}
                   onAddConnection={onAddConnection}
                   knownFormUrl={knownFormUrl}
                   onConnectForm={onConnectForm}

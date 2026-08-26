@@ -106,6 +106,24 @@ const messagePartSchema = z.discriminatedUnion('type', [
         },
       ),
   }),
+  z.object({
+    type: z.literal('data-columnTable'),
+    data: z.object({
+      question: z.string(),
+      stepId: z.uuid(),
+      field: z.string(),
+      rows: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            draft: z.string(),
+            include: z.boolean(),
+          }),
+        )
+        .min(1),
+    }),
+  }),
   // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
   // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
   z.object({
@@ -146,6 +164,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
   // One entry per MCP bridge tool — keeps discriminatedUnion error quality intact.
   toolPart('tool-list_apps'),
   toolPart('tool-list_connections'),
+  toolPart('tool-list_columns'),
   toolPart('tool-create_pipe'),
   toolPart('tool-update_step_parameters'),
   toolPart('tool-create_step'),

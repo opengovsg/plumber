@@ -6,6 +6,13 @@ vi.mock('@/services/mcp/apps', () => ({
 vi.mock('@/services/mcp/list-connections', () => ({
   listConnectionsService: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('@/services/mcp/list-columns', () => ({
+  listColumnsService: vi.fn().mockResolvedValue({
+    columns: [],
+    alreadyConfigured: [],
+    truncated: false,
+  }),
+}))
 vi.mock('@/services/mcp/create-flow-with-steps', () => ({
   createFlowWithStepsService: vi
     .fn()
@@ -44,6 +51,7 @@ import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-step
 import { createStepService } from '@/services/mcp/create-step'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
+import { listColumnsService } from '@/services/mcp/list-columns'
 import { registerConnectionService } from '@/services/mcp/register-connection'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
@@ -58,6 +66,7 @@ describe('createMcpBridgeTools', () => {
     expect(Object.keys(tools)).toEqual([
       'list_apps',
       'list_connections',
+      'list_columns',
       'create_pipe',
       'update_step_parameters',
       'create_step',
@@ -80,6 +89,18 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.list_apps.execute({}, { toolCallId: 'list_apps', messages: [] })
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
+  })
+
+  it('list_columns calls listColumnsService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.list_columns.execute(
+      { step_id: '123e4567-e89b-12d3-a456-426614174000' },
+      { toolCallId: 'list_columns', messages: [] },
+    )
+    expect(vi.mocked(listColumnsService)).toHaveBeenCalledWith({
+      user: mockUser,
+      stepId: '123e4567-e89b-12d3-a456-426614174000',
+    })
   })
 
   it('update_step_parameters calls updateStepParametersService with camelCase args', async () => {
