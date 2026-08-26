@@ -9,7 +9,6 @@ import {
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import HttpError from '@/errors/http'
-import StepError from '@/errors/step'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
@@ -181,22 +180,25 @@ export function makeSubTriggerWorker(
           await executionStep.$query(trx).patch({ status: 'success' })
         })
       } catch (error) {
-        logger.error('[sub-trigger] error', { error })
-        // log raw http error from StepError
-        if (error instanceof StepError && error.cause) {
-          logger.error(error.cause)
-        }
         if (error instanceof HttpError) {
           $.actionOutput.error = {
             details: error.details,
             status: error.response.status,
             statusText: error.response.statusText,
           }
+          logger.error('[sub-trigger] error', {
+            details: error.details,
+            status: error.response.status,
+            statusText: error.response.statusText,
+          })
         } else {
           try {
-            $.actionOutput.error = JSON.parse(error.message)
+            const parsedError = JSON.parse(error.message)
+            $.actionOutput.error = parsedError
+            logger.error('[sub-trigger] error', parsedError)
           } catch {
             $.actionOutput.error = { error: error.message }
+            logger.error('[sub-trigger] error', { error: error.message })
           }
         }
         throw new UnrecoverableError(error.message)
