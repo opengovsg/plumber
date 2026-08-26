@@ -20,6 +20,7 @@ export interface ListColumnsResult {
   columns: Array<{ id: string; name: string }>
   alreadyConfigured: string[]
   truncated: boolean
+  valueRequired: boolean
 }
 
 const MAX_COLUMNS = 50
@@ -27,6 +28,8 @@ const MAX_COLUMNS = 50
 const SUPPORTED_STEPS: ReadonlyArray<{ appKey: string; key: string }> = [
   { appKey: 'tiles', key: 'createTileRow' },
   { appKey: 'm365-excel', key: 'createTableRow' },
+  { appKey: 'lettersg', key: 'createLetter' },
+  { appKey: 'databricks', key: 'createDatabricksTableRow' },
 ]
 
 function findMultiRowMultiColField(
@@ -55,7 +58,7 @@ export async function listColumnsService({
   )
   if (!isSupportedStep) {
     throw new UserFacingError(
-      'list_columns only supports Tiles "Create row" and M365 Excel "Create table row" steps',
+      'list_columns only supports Tiles "Create row", M365 Excel "Create table row", LetterSG "Create letter", and Databricks "Create row" steps',
     )
   }
 
@@ -70,6 +73,16 @@ export async function listColumnsService({
   if (!field) {
     throw new UserFacingError(
       'Step has no multirow-multicol field to list columns for',
+    )
+  }
+
+  // Guards against a future edit to one of the SUPPORTED_STEPS actions
+  // changing its shape (e.g. a third subField, like GatherSG's caseFields)
+  // without this service being updated to match — fail loudly rather than
+  // silently dropping a subField's value.
+  if (field.subFields.length !== 2) {
+    throw new UserFacingError(
+      'Step has an unsupported multirow-multicol shape (expected exactly a column selector and a value field)',
     )
   }
 
@@ -111,5 +124,9 @@ export async function listColumnsService({
       .map((column) => ({ id: column.value, name: column.name })),
     alreadyConfigured,
     truncated: notYetConfigured.length > MAX_COLUMNS,
+    // Derived from the schema, not hardcoded per app. LetterSG and M365 Excel
+    // both declare their value subField required, so the caller must fill
+    // every column it proposes. Tiles and Databricks leave it optional.
+    valueRequired: field.subFields[1].required === true,
   }
 }

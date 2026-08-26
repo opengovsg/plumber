@@ -78,7 +78,7 @@ export function createMcpBridgeTools(
 
     list_columns: tool<{ step_id: string }, ListColumnsResult>({
       description:
-        'List the columns of a step\'s multirow-multicol field (e.g. Tiles "Create row" rowData, M365 Excel "Create table row" columnValues) that are not yet configured. Returns at most 50 not-yet-configured columns; if truncated is true, tell the user this table has more columns than can be proposed at once and that they can add the rest manually in the pipe editor after the step is created. Use the returned column id and name exactly as given — never guess or recall column names from memory, and never call this for a field that isn\'t multirow-multicol.',
+        'List the columns/fields of a step\'s multirow-multicol field (Tiles "Create row" rowData, M365 Excel "Create table row" columnValues, LetterSG "Create letter" letterParams, Databricks "Create row" rowData) that are not yet configured. Returns at most 50 not-yet-configured columns; if truncated is true, tell the user this table has more columns than can be proposed at once and that they can add the rest manually in the pipe editor after the step is created. If valueRequired is true, every returned column must end up with a real value in the eventual update_step_parameters call — never leave one unset or let the user skip it. Use the returned column id and name exactly as given — never guess or recall column names from memory, and never call this for a field that isn\'t multirow-multicol on one of the four supported steps.',
       inputSchema: z.object({
         step_id: z
           .uuid()
