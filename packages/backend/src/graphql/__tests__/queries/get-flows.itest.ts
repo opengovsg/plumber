@@ -170,11 +170,11 @@ describe('getFlows folder filtering', () => {
       flowResolvers.folder(nodesById[filedFlow.id], {}, context),
       flowResolvers.folder(nodesById[unfiledFlow.id], {}, context),
     ])
-    querySpy.mockRestore()
-
     // Both Flow.folder resolutions above must have been coalesced into a
-    // single FlowFolderItem query, not one query per flow.
+    // single FlowFolderItem query, not one query per flow. Assert before
+    // restoring: mockRestore() also clears the recorded calls.
     expect(querySpy).toHaveBeenCalledTimes(1)
+    querySpy.mockRestore()
 
     expect(filedFolder).toMatchObject({
       id: folder.id,
