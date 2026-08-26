@@ -24,6 +24,11 @@ export interface ListColumnsResult {
 
 const MAX_COLUMNS = 50
 
+const SUPPORTED_STEPS: ReadonlyArray<{ appKey: string; key: string }> = [
+  { appKey: 'tiles', key: 'createTileRow' },
+  { appKey: 'm365-excel', key: 'createTableRow' },
+]
+
 function findMultiRowMultiColField(
   rawTriggerOrAction: IRawAction | IRawTrigger | undefined,
 ): IFieldMultiRowMultiCol | undefined {
@@ -43,6 +48,15 @@ export async function listColumnsService({
 
   if (!step || !step.appKey) {
     throw new UserFacingError('Step not found')
+  }
+
+  const isSupportedStep = SUPPORTED_STEPS.some(
+    (s) => s.appKey === step.appKey && s.key === step.key,
+  )
+  if (!isSupportedStep) {
+    throw new UserFacingError(
+      'list_columns only supports Tiles "Create row" and M365 Excel "Create table row" steps',
+    )
   }
 
   const app = apps[step.appKey]
