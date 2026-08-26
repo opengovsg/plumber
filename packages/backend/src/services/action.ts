@@ -9,7 +9,6 @@ import {
 } from '@/apps/toolbox/common/constants'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
-import StepError from '@/errors/step'
 import {
   ForEachContext,
   getStepContext,
@@ -177,22 +176,25 @@ export const processAction = async (options: ProcessActionOptions) => {
   } catch (error) {
     executionError = error
 
-    logger.error(error)
-    // log raw http error from StepError
-    if (error instanceof StepError && error.cause) {
-      logger.error(error.cause)
-    }
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,
         status: error.response.status,
         statusText: error.response.statusText,
       }
+      logger.error('Action error', {
+        details: error.details,
+        status: error.response.status,
+        statusText: error.response.statusText,
+      })
     } else {
       try {
-        $.actionOutput.error = JSON.parse(error.message)
+        const parsedError = JSON.parse(error.message)
+        $.actionOutput.error = parsedError
+        logger.error('Action error', parsedError)
       } catch {
         $.actionOutput.error = { error: error.message }
+        logger.error('Action error', { error: error.message })
       }
     }
   }
