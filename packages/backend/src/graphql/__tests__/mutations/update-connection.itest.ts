@@ -59,6 +59,42 @@ describe('updateConnection', () => {
     })
   })
 
+  describe('without a flow', () => {
+    it('should allow a user to update their own personal connection', async () => {
+      const result = await updateConnection(
+        null,
+        {
+          input: {
+            id: ownerConnection.id,
+            formattedData: { screenName: 'Updated from connections page' },
+          },
+        },
+        context,
+      )
+
+      expect(result.formattedData.screenName).toBe(
+        'Updated from connections page',
+      )
+    })
+
+    it('should not allow a user to update another user personal connection', async () => {
+      context.currentUser = editor
+
+      await expect(
+        updateConnection(
+          null,
+          {
+            input: {
+              id: ownerConnection.id,
+              formattedData: { screenName: 'Unauthorized update' },
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrow('Connection not found')
+    })
+  })
+
   describe('ownership guard', () => {
     it('should not allow editor to update owner personal connection shared to flow', async () => {
       // Setup: Owner's personal connection (userId = owner.id)
