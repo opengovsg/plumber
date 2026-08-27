@@ -29,6 +29,10 @@ export const APP_FLOWS_FOR_CONNECTION = (
   appKey: string,
   connectionId: string,
 ): string => `/app/${appKey}/flows?connectionId=${connectionId}`
+export const APP_EDIT_CONNECTION = (
+  appKey: string,
+  connectionId: string,
+): string => `/app/${appKey}/connections/${connectionId}/edit`
 export const APP_FLOWS_PATTERN = '/app/:appKey/flows'
 
 export const EDITOR = '/editor'

@@ -19,6 +19,9 @@ export default function AppConnections(
     variables: { key: appKey },
   })
   const appConnections: IConnection[] = data?.getApp?.connections || []
+  const supportsConnectionEdit: boolean = Boolean(
+    data?.getApp?.auth?.supportsConnectionEdit,
+  )
 
   const hasConnections = appConnections?.length
 
@@ -34,7 +37,11 @@ export default function AppConnections(
   return (
     <>
       {appConnections.map((appConnection: IConnection) => (
-        <AppConnectionRow key={appConnection.id} connection={appConnection} />
+        <AppConnectionRow
+          key={appConnection.id}
+          connection={appConnection}
+          supportsConnectionEdit={supportsConnectionEdit}
+        />
       ))}
     </>
   )
