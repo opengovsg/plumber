@@ -22,7 +22,8 @@ type ContextMenuProps = {
 export default function ContextMenu(
   props: ContextMenuProps,
 ): React.ReactElement {
-  const { appKey, connectionId, supportsConnectionEdit, onMenuItemClick } = props
+  const { appKey, connectionId, supportsConnectionEdit, onMenuItemClick } =
+    props
 
   const createActionHandler = React.useCallback(
     (action: Action) => {

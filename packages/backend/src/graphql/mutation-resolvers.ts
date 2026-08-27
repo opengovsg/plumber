@@ -108,5 +108,5 @@ export default {
   // This is a special stub that enables us to group all our admin-related
   // mutations into a special AdminMutation object; each "mutation" is handled by field
   // resolvers defined in @/graphql/admin/mutations.
-  admin: () => ({} as AdminMutation),
+  admin: () => ({}) as AdminMutation,
 } satisfies MutationResolvers
