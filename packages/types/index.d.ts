@@ -370,6 +370,10 @@ export interface IFieldDropdown extends IBaseField {
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
+  // For source-backed dropdowns: when true, the field is hidden entirely if its
+  // dynamic-data source resolves to zero options (e.g. a case type with no
+  // attachment fields). Distinct from `hiddenIf`, which keys off sibling values.
+  hideWhenNoOptions?: boolean
   variableTypes?: TDataOutMetadatumType[]
 }
 
