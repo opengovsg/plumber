@@ -20,3 +20,25 @@ export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
     version: 'production',
   },
 }
+
+/**
+ * Input flags: use both action/trigger key and input key (e.g.
+ * input_newSubmission_nricFilter). Keep in sync with frontend flags.ts.
+ */
+export const getInputFlag = (actionOrTriggerKey: string, inputKey: string) =>
+  `input_${actionOrTriggerKey}_${inputKey}`
+
+/**
+ * Whether an input flag permits using a gated input at runtime. Mirrors
+ * {@link evaluateInputFlagValue} on the frontend.
+ */
+export function isInputFlagEnabled(
+  flagValue: unknown,
+  stepCreatedAt: number,
+): boolean {
+  if (typeof flagValue === 'boolean') {
+    return flagValue
+  }
+
+  return !flagValue || stepCreatedAt <= Number(flagValue)
+}

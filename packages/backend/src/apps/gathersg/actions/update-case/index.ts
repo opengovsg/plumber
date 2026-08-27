@@ -5,6 +5,8 @@ import { fromZodError } from 'zod-validation-error'
 
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
+import { getInputFlag, isInputFlagEnabled } from '@/config/flags'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
 import Step from '@/models/step'
 
@@ -222,6 +224,20 @@ const action: IRawAction = {
       )
 
       if (attachmentUpdates.length > 0) {
+        const attachmentFlagValue = await getLdFlagValue(
+          getInputFlag('updateCase', 'attachmentUpdates'),
+          $.user?.email ?? null,
+          null,
+        )
+        if (
+          !isInputFlagEnabled(attachmentFlagValue, +$.step.createdAt)
+        ) {
+          throw new StepError(
+            'Attachment updates are not enabled for your account yet.',
+            'Please contact your administrator if you need access to this beta feature.',
+          )
+        }
+
         for (const {
           field,
           replaceExisting,
