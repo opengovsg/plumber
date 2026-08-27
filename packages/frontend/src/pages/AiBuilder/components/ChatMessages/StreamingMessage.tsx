@@ -7,9 +7,21 @@ import Loader from './Loader'
 
 interface StreamingMessageProps {
   currentResponse: string
+  /** Stream is open but no text is arriving, e.g. a tool is running server-side. */
+  showWorkingIndicator: boolean
 }
 
-const StreamingMessage = ({ currentResponse }: StreamingMessageProps) => {
+const WorkingIndicator = ({ label }: { label: string }) => (
+  <Flex gap={3} w="full" alignItems="center">
+    {label}
+    <Loader />
+  </Flex>
+)
+
+const StreamingMessage = ({
+  currentResponse,
+  showWorkingIndicator,
+}: StreamingMessageProps) => {
   if (currentResponse) {
     return (
       <Flex gap={3} w="full" align="start">
@@ -17,17 +29,17 @@ const StreamingMessage = ({ currentResponse }: StreamingMessageProps) => {
           <ChakraStreamdown isAnimating={true}>
             {prepareAiText(currentResponse)}
           </ChakraStreamdown>
+          {showWorkingIndicator && (
+            <Box mt={2}>
+              <WorkingIndicator label="Working" />
+            </Box>
+          )}
         </Box>
       </Flex>
     )
   }
 
-  return (
-    <Flex gap={3} w="full" alignItems="center">
-      Thinking
-      <Loader />
-    </Flex>
-  )
+  return <WorkingIndicator label="Thinking" />
 }
 
 export default StreamingMessage

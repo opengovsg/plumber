@@ -18,6 +18,7 @@ import SideDrawer from './SideDrawer'
 interface ChatInterfaceProps {
   messages: Message[]
   currentResponse: string
+  isWorking: boolean
   isStreaming: boolean
   isReadyForPreview: boolean
   sendMessage: (message: string) => void
@@ -37,6 +38,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   const {
     messages,
     currentResponse,
+    isWorking,
     isStreaming,
     isReadyForPreview,
     sendMessage,
@@ -180,6 +182,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
           <ChatMessages
             messages={messages}
             currentResponse={currentResponse}
+            isWorking={isWorking}
             isStreaming={isStreaming}
           />
 
