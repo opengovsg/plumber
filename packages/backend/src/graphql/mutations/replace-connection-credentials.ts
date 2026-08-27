@@ -1,31 +1,42 @@
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { z, ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
+
+import { BadUserInputError } from '@/errors/graphql-errors'
 import buildConnectionEditCandidate from '@/helpers/build-connection-edit-candidate'
 import globalVariable from '@/helpers/global-variable'
-import App from '@/models/app'
 import { getOwnEditableConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
+const replaceConnectionCredentialsInputSchema = z.object({
+  id: z.string().trim().min(1, 'Connection id is required'),
+  formattedData: z.record(z.string(), z.unknown()),
+})
+
 const replaceConnectionCredentials: MutationResolvers['replaceConnectionCredentials'] =
   async (_parent, params, context) => {
-    const connection = await getOwnEditableConnection({
-      context,
-      connectionId: params.input.id,
-    })
-    const app = await App.findOneByKey(connection.key)
-
-    if (
-      app.auth?.connectionType !== 'user-added' ||
-      !app.auth.supportsConnectionEdit
-    ) {
-      throw new ForbiddenError('This connection cannot be edited')
+    let input: z.infer<typeof replaceConnectionCredentialsInputSchema>
+    try {
+      input = replaceConnectionCredentialsInputSchema.parse(params.input)
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new BadUserInputError(
+          fromZodError(error).details[0]?.message ?? 'Invalid connection data',
+        )
+      }
+      throw error
     }
+
+    const { connection, app } = await getOwnEditableConnection({
+      context,
+      connectionId: input.id,
+    })
 
     const candidate = buildConnectionEditCandidate({
       appKey: app.key,
       auth: app.auth,
       storedData: connection.formattedData,
-      submittedData: params.input.formattedData,
+      submittedData: input.formattedData,
     })
     const $ = await globalVariable({
       connection,

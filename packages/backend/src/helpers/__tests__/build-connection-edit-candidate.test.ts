@@ -38,6 +38,25 @@ describe('buildConnectionEditCandidate', () => {
     ).toEqual({ token: 'new-token' })
   })
 
+  it('rejects a non-string required field', () => {
+    const auth = createAuth([
+      {
+        key: 'apiKey',
+        label: 'API key',
+        type: 'string',
+        required: true,
+      },
+    ])
+
+    expect(() =>
+      buildConnectionEditCandidate({
+        appKey: 'gathersg',
+        auth,
+        submittedData: { apiKey: 123 },
+      }),
+    ).toThrow('API key is required')
+  })
+
   it('rejects a blank required field', () => {
     const auth = createAuth([
       {
