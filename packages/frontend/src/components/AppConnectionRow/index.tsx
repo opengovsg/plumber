@@ -23,6 +23,7 @@ import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
 type AppConnectionRowProps = {
   connection: IConnection
+  supportsConnectionEdit?: boolean
 }
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
@@ -177,6 +178,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
             <ConnectionContextMenu
               appKey={key}
               connectionId={id}
+              supportsConnectionEdit={props.supportsConnectionEdit}
               onMenuItemClick={onContextMenuAction}
             />
           </Box>

@@ -12,6 +12,7 @@ export const GET_APP = gql`
       auth {
         connectionType
         connectionRegistrationType
+        supportsConnectionEdit
         fields {
           key
           label
