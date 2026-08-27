@@ -559,9 +559,9 @@ describe('update case', () => {
       'Attachment updates are not enabled for your account yet',
     )
     expect(getLdFlagValue).toHaveBeenCalledWith(
-      'gathersg-attachment-updates-beta',
+      'input_updateCase_attachmentUpdates',
       null,
-      false,
+      null,
     )
   })
 

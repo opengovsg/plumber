@@ -6,7 +6,7 @@ import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
-import { getInputFlag, isBooleanGatedInputVisible } from '@/config/flags'
+import { isInputFlagVisible } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
@@ -58,27 +58,17 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     setShouldWarnOnLeave(isDirty)
   }, [isDirty, onTestResultClose, setShouldWarnOnLeave])
 
-  // filter inputs hidden behind feature flags based on timestamp
+  // filter inputs hidden behind feature flags (boolean beta or timestamp grandfathering)
   const argsToDisplay = useMemo(
     () =>
-      args?.filter((arg) => {
-        if (
-          !isBooleanGatedInputVisible(
-            selectedActionOrTrigger?.key ?? '',
-            arg.key,
-            getFlagValue,
-          )
-        ) {
-          return false
-        }
-
-        const inputFlag = getInputFlag(
+      args?.filter((arg) =>
+        isInputFlagVisible(
           selectedActionOrTrigger?.key ?? '',
           arg.key,
-        )
-        const flagValue = getFlagValue(inputFlag, false)
-        return !flagValue || +step.createdAt <= flagValue
-      }) || [],
+          +step.createdAt,
+          getFlagValue,
+        ),
+      ) || [],
     [args, step.createdAt, selectedActionOrTrigger, getFlagValue],
   )
 
