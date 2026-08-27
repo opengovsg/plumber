@@ -13,6 +13,7 @@ import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
   deduplicateMessages,
   extractTextContent,
+  isSilentStreamPhase,
   transformMessages,
 } from '@/pages/AiBuilder/helpers'
 
@@ -444,6 +445,21 @@ export function useChatStream(options: UseChatStreamOptions) {
     return ''
   }, [aiMessages, status])
 
+  // True while the turn is still running but no text is coming through, so the
+  // UI can keep a loading indicator up. Tool calls run server-side inside the
+  // same open stream, so without this any text streamed before the tool just
+  // freezes on screen and the chat looks stalled.
+  const isWorking = useMemo(() => {
+    if (status !== 'streaming' && status !== 'submitted') {
+      return false
+    }
+
+    const lastMessage = aiMessages[aiMessages.length - 1]
+    return isSilentStreamPhase(
+      lastMessage?.role === 'assistant' ? lastMessage : undefined,
+    )
+  }, [aiMessages, status])
+
   const {
     stepParametersByStepId,
     parameterLabelsByStepId,
@@ -540,6 +556,7 @@ export function useChatStream(options: UseChatStreamOptions) {
   return {
     messages,
     currentResponse,
+    isWorking,
     isStreaming: status === 'submitted' || status === 'streaming',
     isReady,
     error: aiError?.message || null,

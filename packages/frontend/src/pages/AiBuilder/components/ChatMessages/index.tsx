@@ -11,12 +11,14 @@ import StreamingMessage from './StreamingMessage'
 interface ChatMessagesProps {
   messages: Message[]
   currentResponse: string
+  isWorking: boolean
   isStreaming: boolean
 }
 
 export default function ChatMessages({
   messages,
   currentResponse,
+  isWorking,
   isStreaming,
 }: ChatMessagesProps) {
   const isMobile = useIsMobile()
@@ -49,7 +51,10 @@ export default function ChatMessages({
 
           {/* Streaming response */}
           {isStreaming && (
-            <StreamingMessage currentResponse={currentResponse} />
+            <StreamingMessage
+              currentResponse={currentResponse}
+              showWorkingIndicator={isWorking}
+            />
           )}
         </VStack>
       </Box>
