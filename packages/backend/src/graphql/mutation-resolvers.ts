@@ -28,6 +28,7 @@ import loginWithSgid from './mutations/login-with-sgid'
 import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
 import registerConnection from './mutations/register-connection'
+import replaceConnectionCredentials from './mutations/replace-connection-credentials'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
@@ -66,6 +67,7 @@ export default {
   createConnection,
   generateAuthUrl,
   updateConnection,
+  replaceConnectionCredentials,
   resetConnection,
   verifyConnection,
   deleteConnection,
@@ -106,5 +108,5 @@ export default {
   // This is a special stub that enables us to group all our admin-related
   // mutations into a special AdminMutation object; each "mutation" is handled by field
   // resolvers defined in @/graphql/admin/mutations.
-  admin: () => ({} as AdminMutation),
+  admin: () => ({}) as AdminMutation,
 } satisfies MutationResolvers
