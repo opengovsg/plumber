@@ -8,7 +8,7 @@ import type {
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import { GATHERSG_ATTACHMENT_UPDATES_FLAG } from '@/config/flags'
+import { getInputFlag, isInputFlagEnabled } from '@/config/flags'
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
@@ -271,12 +271,14 @@ const action: IRawAction = {
       )
 
       if (attachmentFields.length > 0) {
-        const canUseAttachmentUpdates = await getLdFlagValue(
-          GATHERSG_ATTACHMENT_UPDATES_FLAG,
+        const attachmentFlagValue = await getLdFlagValue(
+          getInputFlag('updateCase', 'attachmentFields'),
           $.user?.email ?? null,
-          false,
+          null,
         )
-        if (!canUseAttachmentUpdates) {
+        if (
+          !isInputFlagEnabled(attachmentFlagValue, +$.step.createdAt)
+        ) {
           throw new StepError(
             'Attachment updates are not enabled for your account yet.',
             'Please contact your administrator if you need access to this beta feature.',

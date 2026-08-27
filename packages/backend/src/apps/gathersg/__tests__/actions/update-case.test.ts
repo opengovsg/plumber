@@ -51,6 +51,7 @@ describe('update case', () => {
         id: '123',
         appKey: 'gathersg',
         position: 2,
+        createdAt: '1000',
         parameters: {
           caseUuid: MOCK_CASE_UUID,
           caseStatus: MOCK_CASE_STATUS,
@@ -673,6 +674,26 @@ describe('update case', () => {
     ]
     await expect(updateCaseAction.run($)).rejects.toThrow(
       'photos attachment field is repeated',
+    )
+  })
+
+  it('throws when attachment updates are used without the feature flag', async () => {
+    vi.mocked(getLdFlagValue).mockResolvedValue(false)
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+    ]
+
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'Attachment updates are not enabled for your account yet',
+    )
+    expect(getLdFlagValue).toHaveBeenCalledWith(
+      'input_updateCase_attachmentFields',
+      null,
+      null,
     )
   })
 

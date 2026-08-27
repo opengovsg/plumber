@@ -6,14 +6,11 @@ import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
-import { isBooleanGatedInputVisible } from '@/config/flags'
+import { isInputFlagVisible } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import {
-  hasDirtyFields,
-  isInputVisibleForStep,
-  validateSubstep,
-} from '@/helpers/editor'
+import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
+import { isIfThenStep } from '@/helpers/toolbox'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
@@ -65,26 +62,25 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     setShouldWarnOnLeave(isDirty)
   }, [isDirty, onTestResultClose, setShouldWarnOnLeave])
 
-  // filter inputs hidden behind feature flags based on timestamp
+  // filter inputs hidden behind feature flags (boolean beta or timestamp grandfathering)
   const argsToDisplay = useMemo(
     () =>
       args?.filter((arg) => {
+        // TODO (if-then-then): remove once if-then V2 is 100% rolled out.
         if (
-          !isBooleanGatedInputVisible(
-            selectedActionOrTrigger?.key ?? '',
-            arg.key,
-            getFlagValue,
-          )
+          arg.key === 'branchName' &&
+          isIfThenStep(step) &&
+          isIfThenV2Enabled &&
+          !isIfThenV2Loading
         ) {
           return false
         }
 
-        return isInputVisibleForStep(
-          selectedActionOrTrigger?.key,
+        return isInputFlagVisible(
+          selectedActionOrTrigger?.key ?? '',
           arg.key,
-          step,
+          +step.createdAt,
           getFlagValue,
-          { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading },
         )
       }) || [],
     [
@@ -92,7 +88,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
       step,
       isIfThenV2Enabled,
       isIfThenV2Loading,
-      selectedActionOrTrigger?.key,
+      selectedActionOrTrigger,
       getFlagValue,
     ],
   )

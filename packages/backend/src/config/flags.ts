@@ -2,7 +2,6 @@
  * Feature flags
  */
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
-export const GATHERSG_ATTACHMENT_UPDATES_FLAG = 'gathersg-attachment-updates-beta'
 
 /**
  * Gates first-time logins for domains we need to temporarily turn away. The
@@ -28,4 +27,43 @@ export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
     version: 'production',
     mcpStepConfig: false,
   },
+}
+
+/**
+ * Input flags: use both action/trigger key and input key (e.g.
+ * input_updateCase_attachmentFields). Keep in sync with frontend flags.ts.
+ */
+export const getInputFlag = (actionOrTriggerKey: string, inputKey: string) =>
+  `input_${actionOrTriggerKey}_${inputKey}`
+
+/**
+ * Whether an input flag permits using a gated input at runtime. Mirrors
+ * {@link isInputFlagVisible} on the frontend.
+ */
+export function isInputFlagEnabled(
+  flagValue: unknown,
+  stepCreatedAt: number,
+): boolean {
+  if (flagValue === null || flagValue === undefined) {
+    return true
+  }
+
+  if (typeof flagValue === 'boolean') {
+    return flagValue
+  }
+
+  if (typeof flagValue === 'number') {
+    return stepCreatedAt <= flagValue
+  }
+
+  const numericValue = Number(flagValue)
+  if (!Number.isNaN(numericValue) && flagValue !== '') {
+    return stepCreatedAt <= numericValue
+  }
+
+  if (!flagValue) {
+    return true
+  }
+
+  return stepCreatedAt <= numericValue
 }
