@@ -24,7 +24,7 @@ vi.mock('@/helpers/global-variable', () => ({
       const $ = {
         auth: {
           data: authData,
-          set: async (updates: IJSONObject) => {
+          set: async (updates: IJSONObject): Promise<null> => {
             $.auth.data = {
               ...$.auth.data,
               ...updates,
