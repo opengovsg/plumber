@@ -4,8 +4,8 @@ import { Flex, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
 
 import { NOT_AUTHORISED } from '@/config/errors'
-import * as URLS from '@/config/urls'
 import { createClient } from '@/graphql/client'
+import { redirectToLogin } from '@/helpers/redirectToLogin'
 
 type ApolloProviderProps = {
   children: React.ReactNode
@@ -32,13 +32,7 @@ const SessionExpiredToast = () => {
           colorScheme="yellow"
           variant="outline"
           size="sm"
-          onClick={() => {
-            const redirectQueryParam =
-              window.location.pathname + window.location.search
-            window.location.href = URLS.ADD_REDIRECT_TO_LOGIN(
-              encodeURIComponent(redirectQueryParam),
-            )
-          }}
+          onClick={redirectToLogin}
         >
           Login
         </Button>

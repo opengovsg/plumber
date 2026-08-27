@@ -7,11 +7,9 @@ import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
 import { DefaultChatTransport } from 'ai'
 
+import { NOT_AUTHORISED } from '@/config/errors'
 import * as URLS from '@/config/urls'
-import {
-  isNotAuthorisedError,
-  redirectToLogin,
-} from '@/helpers/redirectToLogin'
+import { redirectToLogin } from '@/helpers/redirectToLogin'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
@@ -197,6 +195,7 @@ export function useChatStream(options: UseChatStreamOptions) {
         // the raw 401 body instead of sending the user back to login.
         if (response.status === 401) {
           redirectToLogin()
+          throw new Error(NOT_AUTHORISED)
         }
         return response
       },
@@ -282,8 +281,7 @@ export function useChatStream(options: UseChatStreamOptions) {
       },
     }),
     onError: (error: Error) => {
-      if (isNotAuthorisedError(error)) {
-        redirectToLogin()
+      if (error.message === NOT_AUTHORISED) {
         return
       }
       toast({
