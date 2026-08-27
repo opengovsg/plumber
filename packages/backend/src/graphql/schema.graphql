@@ -98,7 +98,8 @@ type Mutation {
   dynamicAction(input: DynamicActionInput!): JSONObject!
   logout: LogoutResult
   loginWithSgid(input: OidcLoginInput!): LoginWithSgidResult!
-  loginWithSso(input: OidcLoginInput!): Boolean!
+  startSsoLogin(input: StartSsoLoginInput): StartSsoLoginResult!
+  loginWithSso(input: SsoLoginInput!): Boolean!
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
@@ -1133,6 +1134,20 @@ input OidcLoginInput {
   authCode: String!
   nonce: String!
   verifier: String!
+}
+
+input StartSsoLoginInput {
+  redirect: String
+}
+
+type StartSsoLoginResult {
+  authorizationUrl: String!
+}
+
+input SsoLoginInput {
+  authCode: String!
+  state: String!
+  iss: String!
 }
 
 type LoginWithSgidResult {

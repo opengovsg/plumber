@@ -2,14 +2,11 @@ import { type FormEvent, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 
-import appConfig from '@/config/app'
 import { SGID_FEATURE_FLAG, SSO_FEATURE_FLAG } from '@/config/flags'
-import { RESPONSE_HEADERS } from '@/config/headers'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { REQUEST_OTP } from '@/graphql/mutations/request-otp'
 import { VERIFY_OTP } from '@/graphql/mutations/verify-otp'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
-import { useResponseHeaders } from '@/hooks/useResponseHeaders'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
@@ -18,8 +15,6 @@ import SsoLoginSection from './SsoLoginSection'
 
 export const LoginForm = (): JSX.Element => {
   const { getFlagValue } = useContext(LaunchDarklyContext)
-
-  const headers = useResponseHeaders()
 
   const [requestOtp, { loading: isRequestingOtp }] = useMutation(REQUEST_OTP)
   const [verifyOtp, { loading: isVerifyingOtp }] = useMutation(VERIFY_OTP, {
@@ -56,11 +51,7 @@ export const LoginForm = (): JSX.Element => {
   }
 
   const shouldShowSgidLogin = getFlagValue(SGID_FEATURE_FLAG, false)
-  // show sso login if request is from OGP office wifi or in dev
-  const shouldShowSsoLogin =
-    (headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true' ||
-      appConfig.isDev) &&
-    getFlagValue(SSO_FEATURE_FLAG, false)
+  const shouldShowSsoLogin = getFlagValue(SSO_FEATURE_FLAG, false)
 
   return (
     <form onSubmit={handleSubmit}>

@@ -1,7 +1,7 @@
 import { graphql } from '@/graphql/__generated__'
 
 export const LOGIN_WITH_SSO = graphql(`
-  mutation LoginWithSso($input: OidcLoginInput!) {
+  mutation LoginWithSso($input: SsoLoginInput!) {
     loginWithSso(input: $input)
   }
 `)
