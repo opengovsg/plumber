@@ -124,6 +124,14 @@ const messagePartSchema = z.discriminatedUnion('type', [
         .min(1),
     }),
   }),
+  z.object({
+    type: z.literal('data-tileSetup'),
+    data: z.object({
+      question: z.string(),
+      name: z.string().nullable(),
+      columns: z.array(z.string()).min(1),
+    }),
+  }),
   // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
   // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
   z.object({
