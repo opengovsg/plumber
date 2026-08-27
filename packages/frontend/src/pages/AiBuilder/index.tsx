@@ -50,6 +50,7 @@ function AiBuilderContent() {
   const {
     messages,
     currentResponse,
+    isWorking,
     isStreaming,
     isReady: isReadyForPreview,
     sendMessage,
@@ -353,6 +354,7 @@ function AiBuilderContent() {
             <ChatInterface
               messages={messages}
               currentResponse={currentResponse}
+              isWorking={isWorking}
               isStreaming={isStreaming}
               isReadyForPreview={isReadyForPreview}
               sendMessage={sendMessage}

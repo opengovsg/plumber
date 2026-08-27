@@ -272,6 +272,21 @@ export const extractTextContent = (msg: CustomUIMessage): string => {
     .join('\n\n')
 }
 
+// Whether the assistant is mid-turn without producing visible text right now:
+// the stream is still open but the newest part is a tool call, a step boundary,
+// a data annotation, or the empty text part the AI SDK opens each generation
+// step with. Callers use this to keep a loading indicator on screen during
+// silent stretches — otherwise already-streamed markdown just freezes while a
+// tool runs server-side.
+export const isSilentStreamPhase = (msg: CustomUIMessage | undefined) => {
+  const parts = msg?.parts
+  if (!parts?.length) {
+    return true
+  }
+  const lastPart = parts[parts.length - 1]
+  return lastPart.type !== 'text' || lastPart.text.trim().length === 0
+}
+
 export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
   let lastReadyIndex = -1
 
