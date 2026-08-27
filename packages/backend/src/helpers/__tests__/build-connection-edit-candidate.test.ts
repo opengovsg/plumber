@@ -1,4 +1,9 @@
-import type { IApp, IField, IJSONObject } from '@plumber/types'
+import type {
+  IApp,
+  IField,
+  IJSONObject,
+  IUserAddedConnectionAuth,
+} from '@plumber/types'
 
 import { describe, expect, it } from 'vitest'
 
@@ -7,14 +12,14 @@ import buildConnectionEditCandidate from '@/helpers/build-connection-edit-candid
 function createApp(
   key: string,
   fields: IField[],
-): IApp {
+): IApp & { auth: IUserAddedConnectionAuth } {
   return {
     key,
     auth: {
       connectionType: 'user-added',
       fields,
     },
-  } as IApp
+  } as IApp & { auth: IUserAddedConnectionAuth }
 }
 
 describe('buildConnectionEditCandidate', () => {
