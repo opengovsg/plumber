@@ -72,7 +72,7 @@ describe('replaceConnectionCredentials', () => {
 
     context = await generateMockContext()
     owner = context.currentUser
-    otherUser = await generateMockUser('connection-editor')
+    otherUser = await generateMockUser('editor')
     connection = await Connection.query().insertAndFetch({
       userId: owner.id,
       key: 'telegram-bot',
