@@ -56,9 +56,7 @@ async function run($: IGlobalVariable) {
   const step = await Step.query().findById($.step.id).throwIfNotFound()
   const customTimeoutRaw = step.config?.adminOverride?.customApiTimeout
   const timeout =
-    typeof customTimeoutRaw === 'number'
-      ? customTimeoutRaw
-      : CUSTOM_API_TIMEOUT
+    typeof customTimeoutRaw === 'number' ? customTimeoutRaw : CUSTOM_API_TIMEOUT
 
   try {
     const parsedS = requestSchema.parse($.step.parameters)

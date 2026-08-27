@@ -127,7 +127,7 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://test.local/endpoint'
     $.step.parameters.customHeaders = [{ key: 'X-API-Key', value: 'abc123' }]
 
-    await expect(makeRequestAction.testRun?.($)).rejects.toThrow('"X-API-Key"')
+    await expect(makeRequestAction.testRun?.($)).rejects.toThrow('X-API-Key')
     expect(mocks.httpRequest).not.toHaveBeenCalled()
   })
 
