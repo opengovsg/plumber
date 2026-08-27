@@ -3,9 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('@/services/mcp/apps', () => ({
   listAppsService: vi.fn().mockReturnValue([]),
 }))
-vi.mock('@/services/mcp/list-connections', () => ({
-  listConnectionsService: vi.fn().mockResolvedValue([]),
-}))
 vi.mock('@/services/mcp/list-columns', () => ({
   listColumnsService: vi.fn().mockResolvedValue({
     columns: [],
@@ -65,7 +62,6 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     expect(Object.keys(tools)).toEqual([
       'list_apps',
-      'list_connections',
       'list_columns',
       'create_pipe',
       'update_step_parameters',
