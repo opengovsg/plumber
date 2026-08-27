@@ -24,6 +24,24 @@ type ApplicationParams = {
   connectionId?: string
 }
 
+function EditConnection({
+  application,
+  onClose,
+}: {
+  application: Parameters<typeof AddAppConnection>[0]['application']
+  onClose: () => void
+}): React.ReactElement {
+  const { connectionId } = useParams() as ApplicationParams
+
+  return (
+    <AddAppConnection
+      onClose={onClose}
+      application={application}
+      connectionId={connectionId}
+    />
+  )
+}
+
 export default function Application(): React.ReactElement | null {
   const connectionsPathMatch = useMatch({
     path: URLS.APP_CONNECTIONS_PATTERN,
@@ -34,7 +52,7 @@ export default function Application(): React.ReactElement | null {
   const navigate = useNavigate()
   const { data, loading } = useQuery(GET_APP, { variables: { key: appKey } })
 
-  const goToApplicationPage = () => navigate('connections')
+  const goToApplicationPage = () => navigate(URLS.APP_CONNECTIONS(appKey))
   const app = data?.getApp || {}
 
   if (loading) {
@@ -126,6 +144,14 @@ export default function Application(): React.ReactElement | null {
             <AddAppConnection onClose={goToApplicationPage} application={app} />
           }
         />
+        {app.auth?.supportsConnectionEdit ? (
+          <Route
+            path="/connections/:connectionId/edit"
+            element={
+              <EditConnection application={app} onClose={goToApplicationPage} />
+            }
+          />
+        ) : null}
       </Routes>
     </>
   )
