@@ -371,6 +371,7 @@ type AppAuth {
   reconnectionSteps: [ReconnectionStep]
   connectionModalLabel: ConnectionModalLabel
   autoCheckStep: Boolean
+  supportsConnectionEdit: Boolean
 }
 
 enum ArgumentEnumType {
