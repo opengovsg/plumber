@@ -85,6 +85,32 @@ describe('verifyConnection', () => {
     })
   })
 
+  describe('without a flow', () => {
+    it('should allow a user to verify their own personal connection', async () => {
+      const result = await verifyConnection(
+        null,
+        { input: { id: ownerConnection.id } },
+        context,
+      )
+
+      expect(result.id).toBe(ownerConnection.id)
+      expect(mocks.verifyCredentials).toHaveBeenCalledOnce()
+    })
+
+    it('should not allow a user to verify another user personal connection', async () => {
+      context.currentUser = editor
+
+      await expect(
+        verifyConnection(
+          null,
+          { input: { id: ownerConnection.id } },
+          context,
+        ),
+      ).rejects.toThrow('Connection not found')
+      expect(mocks.verifyCredentials).not.toHaveBeenCalled()
+    })
+  })
+
   describe('access control', () => {
     it('should allow owner to verify their personal connection', async () => {
       const result = await verifyConnection(

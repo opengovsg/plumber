@@ -11,17 +11,26 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
   params,
   context,
 ) => {
-  const flow = await context.currentUser
-    .withAccessibleFlows({ requiredRole: 'editor' })
-    .findById(params.input.flowId)
-    .throwIfNotFound({ message: 'You do not have access to this flow' })
+  let connection
 
-  let connection = await getConnection({
-    context,
-    connectionId: params.input.id,
-    flowId: params.input.flowId,
-    includeOwnConnections: flow.role === 'owner',
-  })
+  if (params.input.flowId) {
+    const flow = await context.currentUser
+      .withAccessibleFlows({ requiredRole: 'editor' })
+      .findById(params.input.flowId)
+      .throwIfNotFound({ message: 'You do not have access to this flow' })
+
+    connection = await getConnection({
+      context,
+      connectionId: params.input.id,
+      flowId: params.input.flowId,
+      includeOwnConnections: flow.role === 'owner',
+    })
+  } else {
+    connection = await context.currentUser
+      .$relatedQuery('connections')
+      .findById(params.input.id)
+      .throwIfNotFound({ message: 'Connection not found' })
+  }
 
   // GUARD: Prevent updating personal connections owned by others
   if (

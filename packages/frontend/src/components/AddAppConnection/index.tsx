@@ -186,7 +186,7 @@ export default function AddAppConnection(
                 data-test="create-connection-button"
                 isFullWidth
               >
-                Connect
+                {hasConnection ? 'Update connection' : 'Connect'}
               </Button>
             </VStack>
           </Form>

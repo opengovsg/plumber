@@ -7,8 +7,16 @@ import { IconButton } from '@opengovsg/design-system-react'
 import * as URLS from '@/config/urls'
 
 type Action = {
-  type: 'test' | 'delete' | 'viewFlows'
+  type: 'test' | 'edit' | 'delete' | 'viewFlows'
 }
+
+const EDITABLE_CONNECTION_APP_KEYS = new Set([
+  'custom-api',
+  'gathersg',
+  'lettersg',
+  'postman-sms',
+  'telegram-bot',
+])
 
 type ContextMenuProps = {
   appKey: string
@@ -56,6 +64,16 @@ export default function ContextMenu(
           <MenuItem onClick={createActionHandler({ type: 'test' })}>
             Test connection
           </MenuItem>
+
+          {EDITABLE_CONNECTION_APP_KEYS.has(appKey) ? (
+            <MenuItem
+              as={Link}
+              to={URLS.APP_EDIT_CONNECTION(appKey, connectionId)}
+              onClick={createActionHandler({ type: 'edit' })}
+            >
+              Edit connection
+            </MenuItem>
+          ) : null}
 
           <MenuItem
             onClick={createActionHandler({ type: 'delete' })}
