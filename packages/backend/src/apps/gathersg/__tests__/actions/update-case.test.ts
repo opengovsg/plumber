@@ -9,6 +9,12 @@ import app from '../../..'
 import updateCaseAction from '../../actions/update-case'
 import * as attachment from '../../common/attachment'
 
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: vi.fn().mockResolvedValue(true),
+}))
+
+import { getLdFlagValue } from '@/helpers/launch-darkly'
+
 const MOCK_RESPONSE = {
   traceId: 'trace-123456789',
 }
@@ -65,6 +71,7 @@ describe('update case', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.mocked(getLdFlagValue).mockResolvedValue(true)
   })
 
   it('builds the payload correctly with all parameters', async () => {
@@ -535,6 +542,26 @@ describe('update case', () => {
     ]
     await expect(updateCaseAction.run($)).rejects.toThrow(
       'photos attachment field is repeated',
+    )
+  })
+
+  it('throws when attachment updates are used without the feature flag', async () => {
+    vi.mocked(getLdFlagValue).mockResolvedValue(false)
+    $.step.parameters.attachmentUpdates = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+    ]
+
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'Attachment updates are not enabled for your account yet',
+    )
+    expect(getLdFlagValue).toHaveBeenCalledWith(
+      'gathersg-attachment-updates-beta',
+      null,
+      false,
     )
   })
 

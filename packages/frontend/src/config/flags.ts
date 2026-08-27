@@ -14,6 +14,34 @@ export const SGID_FEATURE_FLAG = 'sgid-login'
 export const SSO_FEATURE_FLAG = 'ogp-sso-enabled'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
+export const GATHERSG_ATTACHMENT_UPDATES_FLAG = 'gathersg-attachment-updates-beta'
+
+/**
+ * Boolean-gated action inputs: visible only when the LaunchDarkly flag is true.
+ * Keys are action/trigger keys (e.g. updateCase), not app keys.
+ */
+export const BOOLEAN_GATED_INPUTS: Readonly<
+  Record<string, Readonly<Record<string, string>>>
+> = {
+  updateCase: {
+    attachmentUpdates: GATHERSG_ATTACHMENT_UPDATES_FLAG,
+  },
+}
+
+export function isBooleanGatedInputVisible(
+  actionOrTriggerKey: string,
+  inputKey: string,
+  getFlagValue: (
+    flagKey: string,
+    defaultValue?: boolean | string,
+  ) => boolean | string | undefined,
+): boolean {
+  const flagKey = BOOLEAN_GATED_INPUTS[actionOrTriggerKey]?.[inputKey]
+  if (!flagKey) {
+    return true
+  }
+  return getFlagValue(flagKey, false) === true
+}
 
 /**
  * App/events flags

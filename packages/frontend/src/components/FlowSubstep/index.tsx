@@ -6,7 +6,7 @@ import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
-import { getInputFlag } from '@/config/flags'
+import { getInputFlag, isBooleanGatedInputVisible } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
@@ -62,6 +62,16 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   const argsToDisplay = useMemo(
     () =>
       args?.filter((arg) => {
+        if (
+          !isBooleanGatedInputVisible(
+            selectedActionOrTrigger?.key ?? '',
+            arg.key,
+            getFlagValue,
+          )
+        ) {
+          return false
+        }
+
         const inputFlag = getInputFlag(
           selectedActionOrTrigger?.key ?? '',
           arg.key,
