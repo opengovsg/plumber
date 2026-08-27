@@ -2,6 +2,7 @@
  * Feature flags
  */
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
+export const GATHERSG_ATTACHMENT_UPDATES_FLAG = 'gathersg-attachment-updates-beta'
 
 /**
  * Gates first-time logins for domains we need to temporarily turn away. The

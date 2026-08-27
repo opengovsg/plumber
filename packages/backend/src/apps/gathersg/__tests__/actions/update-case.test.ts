@@ -9,6 +9,12 @@ import app from '../../..'
 import updateCaseAction from '../../actions/update-case'
 import * as attachment from '../../common/attachment'
 
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: vi.fn().mockResolvedValue(true),
+}))
+
+import { getLdFlagValue } from '@/helpers/launch-darkly'
+
 const MOCK_RESPONSE = {
   traceId: 'trace-123456789',
 }
@@ -65,6 +71,7 @@ describe('update case', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.mocked(getLdFlagValue).mockResolvedValue(true)
   })
 
   it('builds the payload correctly with all parameters', async () => {

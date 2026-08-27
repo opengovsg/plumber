@@ -6,6 +6,7 @@ import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
+import { isBooleanGatedInputVisible } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import {
@@ -67,15 +68,25 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   // filter inputs hidden behind feature flags based on timestamp
   const argsToDisplay = useMemo(
     () =>
-      args?.filter((arg) =>
-        isInputVisibleForStep(
+      args?.filter((arg) => {
+        if (
+          !isBooleanGatedInputVisible(
+            selectedActionOrTrigger?.key ?? '',
+            arg.key,
+            getFlagValue,
+          )
+        ) {
+          return false
+        }
+
+        return isInputVisibleForStep(
           selectedActionOrTrigger?.key,
           arg.key,
           step,
           getFlagValue,
           { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading },
-        ),
-      ) || [],
+        )
+      }) || [],
     [
       args,
       step,
