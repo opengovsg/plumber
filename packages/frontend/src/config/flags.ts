@@ -26,26 +26,37 @@ export const getAppActionFlag = (appKey: string, actionKey: string) =>
 
 /**
  * Input flags: use both action/trigger key and input key in case of duplicate
- * keys between app events (e.g. input_updateCase_attachmentUpdates).
+ * keys between app events (e.g. input_newSubmission_nricFilter).
  */
 export const getInputFlag = (actionOrTriggerKey: string, inputKey: string) =>
   `input_${actionOrTriggerKey}_${inputKey}`
 
-type InputFlagGetter = (
-  flagKey: string,
-  defaultValue?: unknown,
-) => unknown
+type InputFlagGetter = (flagKey: string, defaultValue?: unknown) => unknown
+
+/**
+ * Evaluate an `input_*` LaunchDarkly variation.
+ *
+ * - Boolean: beta gating. `true` shows the input, `false` hides it.
+ * - Anything else: original grandfathering —
+ *   `!flagValue || stepCreatedAt <= flagValue`
+ *   (unset / 0 / falsey → show; timestamp → show only for older steps).
+ *
+ * NRIC filter (`input_newSubmission_nricFilter`) is a timestamp flag and must
+ * keep using the second rule. Attachment updates is a boolean flag.
+ */
+export function evaluateInputFlagValue(
+  flagValue: unknown,
+  stepCreatedAt: number,
+): boolean {
+  if (typeof flagValue === 'boolean') {
+    return flagValue
+  }
+
+  return !flagValue || stepCreatedAt <= Number(flagValue)
+}
 
 /**
  * Whether an action/trigger input should be shown for a step.
- *
- * LaunchDarkly `input_*` flag semantics:
- * - Unset (variation default null): show — preserves inputs with no flag configured.
- * - Boolean: show when true, hide when false (beta gating).
- * - Number / numeric string: show when step.createdAt <= flag value (grandfathering
- *   by step creation time).
- * - Other falsy values: show — legacy fallback when a flag resolves to false because
- *   it is not configured and the caller previously defaulted to false.
  */
 export function isInputFlagVisible(
   actionOrTriggerKey: string,
@@ -54,28 +65,7 @@ export function isInputFlagVisible(
   getFlagValue: InputFlagGetter,
 ): boolean {
   const inputFlag = getInputFlag(actionOrTriggerKey, inputKey)
+  // Default null so unconfigured flags are visible (not treated as boolean false).
   const flagValue = getFlagValue(inputFlag, null)
-
-  if (flagValue === null || flagValue === undefined) {
-    return true
-  }
-
-  if (typeof flagValue === 'boolean') {
-    return flagValue
-  }
-
-  if (typeof flagValue === 'number') {
-    return stepCreatedAt <= flagValue
-  }
-
-  const numericValue = Number(flagValue)
-  if (!Number.isNaN(numericValue) && flagValue !== '') {
-    return stepCreatedAt <= numericValue
-  }
-
-  if (!flagValue) {
-    return true
-  }
-
-  return stepCreatedAt <= numericValue
+  return evaluateInputFlagValue(flagValue, stepCreatedAt)
 }
