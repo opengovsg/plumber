@@ -11,16 +11,6 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
-    date: '2026-08-27',
-    tag: NEW_ENHANCEMENT_TAG,
-    title: 'Store Custom API keys in a connection',
-    details: dedent`
-      API keys and Authorization headers in Custom API should be added via a **connection**, not Custom Headers — Custom Headers are stored in plaintext.
-
-      Check step will fail if those secrets are still in Custom Headers. Existing published pipes will keep running; move the headers when you next edit the step. Tokens from previous steps can still be used in Custom Headers.
-    `,
-  },
-  {
     date: '2026-07-21',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'OR conditions for If-then and Only continue if',

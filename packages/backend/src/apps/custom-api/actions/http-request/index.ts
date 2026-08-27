@@ -33,9 +33,7 @@ async function throwIfStaticSensitiveHeaders($: IGlobalVariable) {
   const step = await Step.query().findById($.step.id).throwIfNotFound()
   const rawHeaders =
     step.parameters?.customHeaders ?? $.step.parameters?.customHeaders
-  const sensitiveKeys = getStaticSensitiveHeaderKeys(
-    rawHeaders as Parameters<typeof getStaticSensitiveHeaderKeys>[0],
-  )
+  const sensitiveKeys = getStaticSensitiveHeaderKeys(rawHeaders)
 
   if (sensitiveKeys.length === 0) {
     return
@@ -136,10 +134,6 @@ async function run($: IGlobalVariable) {
 
     $.setActionItem({ raw: { data: responseData } })
   } catch (err) {
-    if (err instanceof StepError) {
-      throw err
-    }
-
     if (err instanceof ZodError) {
       const firstError = fromZodError(err).details[0]
       throw new StepError(
@@ -224,8 +218,7 @@ const action: IRawAction = {
       key: 'customHeaders',
       type: 'multirow-multicol' as const,
       required: false,
-      description:
-        'Add non-secret headers here (for example Accept). Do not put API keys or Authorization values here — create a Custom API connection instead. Tokens from previous steps are allowed.',
+      description: 'Add custom headers here.',
       variables: true,
       addRowButtonText: 'Add',
       subFields: [

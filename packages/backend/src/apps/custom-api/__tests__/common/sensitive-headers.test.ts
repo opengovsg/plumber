@@ -53,12 +53,7 @@ describe('sensitive custom API headers', () => {
     ).toEqual([])
   })
 
-  it('returns static sensitive keys from header objects', () => {
-    expect(
-      getStaticSensitiveHeaderKeys({
-        Authorization: 'Bearer secret',
-        Accept: 'application/json',
-      }),
-    ).toEqual(['Authorization'])
+  it.each([undefined, null, []])('returns nothing for %s', (headers) => {
+    expect(getStaticSensitiveHeaderKeys(headers)).toEqual([])
   })
 })
