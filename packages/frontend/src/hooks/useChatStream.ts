@@ -8,6 +8,10 @@ import { useToast } from '@opengovsg/design-system-react'
 import { DefaultChatTransport } from 'ai'
 
 import * as URLS from '@/config/urls'
+import {
+  isNotAuthorisedError,
+  redirectToLogin,
+} from '@/helpers/redirectToLogin'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
@@ -187,6 +191,15 @@ export function useChatStream(options: UseChatStreamOptions) {
     transport: new DefaultChatTransport({
       api: '/api/chat',
       credentials: 'include',
+      fetch: async (input, init) => {
+        const response = await fetch(input, init)
+        // REST chat bypasses Apollo, so expired sessions would otherwise toast
+        // the raw 401 body instead of sending the user back to login.
+        if (response.status === 401) {
+          redirectToLogin()
+        }
+        return response
+      },
       prepareSendMessagesRequest: ({ messages }) => {
         // Filter out any initialMessages already tracked by the AI SDK to avoid
         // duplicates (the SDK accumulates messages across exchanges in its own state)
@@ -269,6 +282,10 @@ export function useChatStream(options: UseChatStreamOptions) {
       },
     }),
     onError: (error: Error) => {
+      if (isNotAuthorisedError(error)) {
+        redirectToLogin()
+        return
+      }
       toast({
         title: 'Error: ' + error.message,
         status: 'error',
