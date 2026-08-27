@@ -10,24 +10,19 @@ type Action = {
   type: 'test' | 'edit' | 'delete' | 'viewFlows'
 }
 
-const EDITABLE_CONNECTION_APP_KEYS = new Set([
-  'custom-api',
-  'gathersg',
-  'lettersg',
-  'postman-sms',
-  'telegram-bot',
-])
-
 type ContextMenuProps = {
   appKey: string
   connectionId: string
+  // Whether the app's auth opted into credential editing; comes from the backend
+  // via GetAppConnections.
+  supportsConnectionEdit?: boolean
   onMenuItemClick: (event: React.MouseEvent, action: Action) => void
 }
 
 export default function ContextMenu(
   props: ContextMenuProps,
 ): React.ReactElement {
-  const { appKey, connectionId, onMenuItemClick } = props
+  const { appKey, connectionId, supportsConnectionEdit, onMenuItemClick } = props
 
   const createActionHandler = React.useCallback(
     (action: Action) => {
@@ -65,7 +60,7 @@ export default function ContextMenu(
             Test connection
           </MenuItem>
 
-          {EDITABLE_CONNECTION_APP_KEYS.has(appKey) ? (
+          {supportsConnectionEdit ? (
             <MenuItem
               as={Link}
               to={URLS.APP_EDIT_CONNECTION(appKey, connectionId)}

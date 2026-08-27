@@ -60,21 +60,47 @@ describe('updateConnection', () => {
   })
 
   describe('without a flow', () => {
-    it('should allow a user to update their own personal connection', async () => {
+    // telegram-bot opts into credential editing; slack does not.
+    let editableConnection: Connection
+
+    beforeEach(async () => {
+      editableConnection = await Connection.query().insertAndFetch({
+        userId: owner.id,
+        key: 'telegram-bot',
+        formattedData: { screenName: 'Owner Telegram' },
+        verified: false,
+      })
+    })
+
+    it('should allow a user to update their own editable connection', async () => {
       const result = await updateConnection(
         null,
         {
           input: {
-            id: ownerConnection.id,
-            formattedData: { screenName: 'Updated from connections page' },
+            id: editableConnection.id,
+            formattedData: { token: 'new-token' },
           },
         },
         context,
       )
 
-      expect(result.formattedData.screenName).toBe(
-        'Updated from connections page',
-      )
+      expect(result.formattedData.token).toBe('new-token')
+      expect(result.formattedData.screenName).toBe('Owner Telegram')
+    })
+
+    it('should not allow updating a connection whose app does not support editing', async () => {
+      await expect(
+        updateConnection(
+          null,
+          {
+            input: {
+              id: ownerConnection.id,
+              formattedData: { token: 'new-token' },
+            },
+          },
+          context,
+        ),
+      ).rejects.toThrow('This connection cannot be edited')
     })
 
     it('should not allow a user to update another user personal connection', async () => {
@@ -85,8 +111,8 @@ describe('updateConnection', () => {
           null,
           {
             input: {
-              id: ownerConnection.id,
-              formattedData: { screenName: 'Unauthorized update' },
+              id: editableConnection.id,
+              formattedData: { token: 'new-token' },
             },
           },
           context,

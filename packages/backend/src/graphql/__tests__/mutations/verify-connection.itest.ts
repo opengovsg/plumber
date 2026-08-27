@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import verifyConnection from '@/graphql/mutations/verify-connection'
+import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
@@ -28,6 +29,8 @@ vi.mock('@/models/app', () => ({
     findOneByKey: vi.fn().mockResolvedValue({
       key: 'slack',
       auth: {
+        connectionType: 'user-added',
+        supportsConnectionEdit: true,
         verifyCredentials: mocks.verifyCredentials,
       },
     }),
@@ -101,12 +104,23 @@ describe('verifyConnection', () => {
       context.currentUser = editor
 
       await expect(
-        verifyConnection(
-          null,
-          { input: { id: ownerConnection.id } },
-          context,
-        ),
+        verifyConnection(null, { input: { id: ownerConnection.id } }, context),
       ).rejects.toThrow('Connection not found')
+      expect(mocks.verifyCredentials).not.toHaveBeenCalled()
+    })
+
+    it('should not allow verifying a connection whose app does not support editing', async () => {
+      vi.mocked(App.findOneByKey).mockResolvedValueOnce({
+        key: 'slack',
+        auth: {
+          connectionType: 'user-added',
+          verifyCredentials: mocks.verifyCredentials,
+        },
+      } as unknown as Awaited<ReturnType<typeof App.findOneByKey>>)
+
+      await expect(
+        verifyConnection(null, { input: { id: ownerConnection.id } }, context),
+      ).rejects.toThrow('This connection cannot be edited')
       expect(mocks.verifyCredentials).not.toHaveBeenCalled()
     })
   })

@@ -1,5 +1,5 @@
 import { ForbiddenError } from '@/errors/graphql-errors'
-import { getConnection } from '@/services/connection'
+import { getConnection, getOwnEditableConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -26,10 +26,10 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
       includeOwnConnections: flow.role === 'owner',
     })
   } else {
-    connection = await context.currentUser
-      .$relatedQuery('connections')
-      .findById(params.input.id)
-      .throwIfNotFound({ message: 'Connection not found' })
+    connection = await getOwnEditableConnection({
+      context,
+      connectionId: params.input.id,
+    })
   }
 
   // GUARD: Prevent updating personal connections owned by others

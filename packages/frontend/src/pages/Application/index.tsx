@@ -144,15 +144,14 @@ export default function Application(): React.ReactElement | null {
             <AddAppConnection onClose={goToApplicationPage} application={app} />
           }
         />
-        <Route
-          path="/connections/:connectionId/edit"
-          element={
-            <EditConnection
-              application={app}
-              onClose={goToApplicationPage}
-            />
-          }
-        />
+        {app.auth?.supportsConnectionEdit ? (
+          <Route
+            path="/connections/:connectionId/edit"
+            element={
+              <EditConnection application={app} onClose={goToApplicationPage} />
+            }
+          />
+        ) : null}
       </Routes>
     </>
   )
