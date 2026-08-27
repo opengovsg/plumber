@@ -24,3 +24,9 @@ export const INVALID_CHAR_REGEX = /[^a-zA-Z0-9-_ ]/
  */
 export const GATHER_FILE_API_UPLOAD_URL =
   'https://gather.gov.sg/file/api/upload'
+
+/**
+ * Ownself Gather case-field type for attachment fields. Sent as the `type` in
+ * the upload-token request body.
+ */
+export const GATHER_ATTACHMENT_FIELD_TYPE = 'attachment'
