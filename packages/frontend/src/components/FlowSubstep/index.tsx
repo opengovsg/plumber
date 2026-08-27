@@ -4,6 +4,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
+import { CUSTOM_API_APP_KEY } from '@/components/FlowStepConfigurationModal/constants'
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
@@ -14,6 +15,8 @@ import {
   validateSubstep,
 } from '@/helpers/editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
+
+import CustomApiSensitiveHeadersWarning from './CustomApiSensitiveHeadersWarning'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -145,12 +148,17 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
         <Box flex="1" p={0} pb={4}>
           <Stack w="100%" spacing={7}>
             {argsToDisplay.map((argument) => (
-              <InputCreator
-                key={argument.key}
-                schema={argument}
-                namePrefix="parameters"
-                stepId={step.id}
-              />
+              <Box key={argument.key}>
+                <InputCreator
+                  schema={argument}
+                  namePrefix="parameters"
+                  stepId={step.id}
+                />
+                {step.appKey === CUSTOM_API_APP_KEY &&
+                  argument.key === 'customHeaders' && (
+                    <CustomApiSensitiveHeadersWarning />
+                  )}
+              </Box>
             ))}
           </Stack>
         </Box>

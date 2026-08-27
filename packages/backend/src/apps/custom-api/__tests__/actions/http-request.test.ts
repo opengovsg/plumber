@@ -90,6 +90,90 @@ describe('make http request', () => {
     )
   })
 
+  it('allows Authorization headers on live runs for existing steps', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    $.step.parameters.customHeaders = [
+      { key: 'Authorization', value: 'Bearer sk-live-secret' },
+    ]
+    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+    await makeRequestAction.run($)
+
+    expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          Authorization: 'Bearer sk-live-secret',
+        },
+      }),
+    )
+  })
+
+  it('fails check step when Authorization is a static secret', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    $.step.parameters.customHeaders = [
+      { key: 'Authorization', value: 'Bearer sk-live-secret' },
+    ]
+
+    await expect(makeRequestAction.testRun?.($)).rejects.toThrow(
+      /Do not store secrets in Custom Headers/,
+    )
+    expect(mocks.httpRequest).not.toHaveBeenCalled()
+  })
+
+  it('fails check step for other static credential headers', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    $.step.parameters.customHeaders = [{ key: 'X-API-Key', value: 'abc123' }]
+
+    await expect(makeRequestAction.testRun?.($)).rejects.toThrow('"X-API-Key"')
+    expect(mocks.httpRequest).not.toHaveBeenCalled()
+  })
+
+  it('allows check step when Authorization uses a previous-step variable', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    $.step.parameters.customHeaders = [
+      {
+        key: 'Authorization',
+        value:
+          'Bearer {{step.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.data.token}}',
+      },
+    ]
+    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+    await makeRequestAction.testRun?.($)
+
+    expect(mocks.httpRequest).toHaveBeenCalled()
+  })
+
+  it('prefers stored (unsubstituted) headers when checking secrets', async () => {
+    $.step.parameters.method = 'GET'
+    $.step.parameters.url = 'http://test.local/endpoint'
+    // Computed value after variable substitution — looks like a static secret
+    $.step.parameters.customHeaders = [
+      { key: 'Authorization', value: 'Bearer resolved-token' },
+    ]
+    mocks.stepQueryResult.mockReturnValue({
+      config: {},
+      parameters: {
+        customHeaders: [
+          {
+            key: 'Authorization',
+            value:
+              'Bearer {{step.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.data.token}}',
+          },
+        ],
+      },
+    })
+    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+
+    await makeRequestAction.testRun?.($)
+
+    expect(mocks.httpRequest).toHaveBeenCalled()
+  })
+
   it('invokes the webhook with custom headers', async () => {
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'

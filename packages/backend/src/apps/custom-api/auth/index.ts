@@ -23,7 +23,7 @@ const auth: IUserAddedConnectionAuth = {
       readOnly: false,
       value: null,
       description:
-        'Enter your headers in this format: KEY=VALUE (one per line)',
+        'Enter your headers in this format: KEY=VALUE (one per line). Store API keys and Authorization headers here rather than in Custom Headers on the step.',
       clickToCopy: false,
     },
   ],
