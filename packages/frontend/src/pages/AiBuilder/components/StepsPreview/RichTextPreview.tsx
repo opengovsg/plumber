@@ -46,8 +46,10 @@ export default function RichTextPreview({
   return (
     <Box
       w="full"
-      maxH="300px"
-      overflowY="auto"
+      // No height cap: the body renders in full and the preview panel scrolls.
+      // A capped box clipped long bodies with no cue that they scrolled.
+      // overflowX still scrolls, so a wide line can't spill out of the step card.
+      overflowX="auto"
       // Strip the editable-textarea chrome (border, focus ring, min-height)
       // and match the plain-text rows' font so this reads as display text.
       sx={{
@@ -60,8 +62,8 @@ export default function RichTextPreview({
           border: 'none',
           boxShadow: 'none',
         },
-        // isDisplayOnly forces a fixed 60vh height + its own scrollbar
-        // inline — override both so only our maxH Box scrolls.
+        // isDisplayOnly forces a fixed 60vh height + its own scrollbar inline.
+        // Override both so the body grows to its full height instead.
         '.editor__content': {
           height: 'auto !important',
           overflow: 'visible !important',
