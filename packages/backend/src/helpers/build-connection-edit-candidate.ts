@@ -1,8 +1,4 @@
-import type {
-  IApp,
-  IJSONObject,
-  IUserAddedConnectionAuth,
-} from '@plumber/types'
+import type { IJSONObject, IUserAddedConnectionAuth } from '@plumber/types'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 
@@ -32,17 +28,19 @@ function serializeHeaders(value: unknown): string {
 }
 
 export default function buildConnectionEditCandidate({
-  app,
+  appKey,
+  auth,
   storedData,
   submittedData,
 }: {
-  app: IApp & { auth: IUserAddedConnectionAuth }
+  appKey: string
+  auth: IUserAddedConnectionAuth
   storedData?: IJSONObject
   submittedData: IJSONObject
 }): IJSONObject {
   const candidate: IJSONObject = {}
 
-  for (const field of app.auth.fields ?? []) {
+  for (const field of auth.fields ?? []) {
     const submittedValue = submittedData[field.key]
 
     if (field.required && isBlank(submittedValue)) {
@@ -50,7 +48,7 @@ export default function buildConnectionEditCandidate({
     }
 
     if (
-      app.key === CUSTOM_API_KEY &&
+      appKey === CUSTOM_API_KEY &&
       field.key === CUSTOM_API_HEADERS_KEY &&
       isBlank(submittedValue)
     ) {

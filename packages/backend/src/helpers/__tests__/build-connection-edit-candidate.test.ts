@@ -1,5 +1,4 @@
 import type {
-  IApp,
   IField,
   IJSONObject,
   IUserAddedConnectionAuth,
@@ -9,22 +8,16 @@ import { describe, expect, it } from 'vitest'
 
 import buildConnectionEditCandidate from '@/helpers/build-connection-edit-candidate'
 
-function createApp(
-  key: string,
-  fields: IField[],
-): IApp & { auth: IUserAddedConnectionAuth } {
+function createAuth(fields: IField[]): IUserAddedConnectionAuth {
   return {
-    key,
-    auth: {
-      connectionType: 'user-added',
-      fields,
-    },
-  } as IApp & { auth: IUserAddedConnectionAuth }
+    connectionType: 'user-added',
+    fields,
+  }
 }
 
 describe('buildConnectionEditCandidate', () => {
   it('only includes declared auth fields', () => {
-    const app = createApp('telegram-bot', [
+    const auth = createAuth([
       {
         key: 'token',
         label: 'Bot token',
@@ -35,7 +28,8 @@ describe('buildConnectionEditCandidate', () => {
 
     expect(
       buildConnectionEditCandidate({
-        app,
+        appKey: 'telegram-bot',
+        auth,
         submittedData: {
           token: 'new-token',
           unexpected: 'value',
@@ -45,7 +39,7 @@ describe('buildConnectionEditCandidate', () => {
   })
 
   it('rejects a blank required field', () => {
-    const app = createApp('gathersg', [
+    const auth = createAuth([
       {
         key: 'apiKey',
         label: 'API key',
@@ -56,14 +50,15 @@ describe('buildConnectionEditCandidate', () => {
 
     expect(() =>
       buildConnectionEditCandidate({
-        app,
+        appKey: 'gathersg',
+        auth,
         submittedData: { apiKey: ' ' },
       }),
     ).toThrow('API key is required')
   })
 
   it('keeps stored Custom API headers when submitted headers are blank', () => {
-    const app = createApp('custom-api', [
+    const auth = createAuth([
       {
         key: 'label',
         label: 'Label',
@@ -87,7 +82,8 @@ describe('buildConnectionEditCandidate', () => {
 
     expect(
       buildConnectionEditCandidate({
-        app,
+        appKey: 'custom-api',
+        auth,
         storedData,
         submittedData: {
           label: 'Updated API',
@@ -101,7 +97,7 @@ describe('buildConnectionEditCandidate', () => {
   })
 
   it('uses new Custom API headers when provided', () => {
-    const app = createApp('custom-api', [
+    const auth = createAuth([
       {
         key: 'headers',
         label: 'Headers',
@@ -112,7 +108,8 @@ describe('buildConnectionEditCandidate', () => {
 
     expect(
       buildConnectionEditCandidate({
-        app,
+        appKey: 'custom-api',
+        auth,
         storedData: {
           headers: { Authorization: 'Bearer old-token' },
         },
