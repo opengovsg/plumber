@@ -4,8 +4,6 @@ interface AppConfig {
   isDev: boolean
   env: string
   version: string
-  ssoClientId: string
-  ssoHostname: string
   confettiSurveyPublishableKey: string
   confettiSurveyId: string
 }
@@ -29,8 +27,6 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ae',
         sgidClientId: 'PLUMBER-c24255a5',
         isDev: false,
-        ssoClientId: 'plumber-prod',
-        ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'n1yv6rl15ynq6wazr3x1pdjc',
         ...commonEnv,
       }
@@ -39,8 +35,6 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-        ssoClientId: 'plumber-uat',
-        ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
         ...commonEnv,
       }
@@ -49,8 +43,6 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-        ssoClientId: 'plumber-staging',
-        ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
         ...commonEnv,
       }
@@ -59,8 +51,6 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ad',
         sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         isDev: true,
-        ssoClientId: 'plumber-local',
-        ssoHostname: 'http://localhost:5354',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
         ...commonEnv,
       }

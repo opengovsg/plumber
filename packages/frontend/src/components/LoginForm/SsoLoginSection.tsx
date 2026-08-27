@@ -1,52 +1,64 @@
 import { useCallback, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useMutation } from '@apollo/client'
 import { Flex, Link, Text } from '@chakra-ui/react'
 import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import { SUPPORT_FORM_LINK } from '@/config/urls'
-import { generateSsoAuthUrl } from '@/helpers/oidc'
+import { START_SSO_LOGIN } from '@/graphql/mutations/start-sso-login'
 
 export default function SsoLoginSection(): JSX.Element {
+  const [searchParams] = useSearchParams()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [startSsoLogin] = useMutation(START_SSO_LOGIN)
 
-  const handleSsoLogin = useCallback(
-    async () => {
-      setIsRedirecting(true)
-      try {
-        const { url, verifier, nonce } = await generateSsoAuthUrl()
-        sessionStorage.setItem('sso-verifier', verifier)
-        sessionStorage.setItem('sso-nonce', nonce)
-        location.assign(url)
-      } catch {
-        setHasError(true)
+  const handleSsoLogin = useCallback(async () => {
+    setIsRedirecting(true)
+    try {
+      const redirect = searchParams.get('redirect')
+      const { data } = await startSsoLogin({
+        variables: {
+          input: {
+            redirect,
+          },
+        },
+      })
+      const authorizationUrl = data?.startSsoLogin?.authorizationUrl
+      if (!authorizationUrl) {
+        throw new Error('Missing authorization URL')
       }
-    },
-    // Empty dep list as this is expected to be one-shot.
-    [],
-  )
+      if (redirect?.startsWith('/') && !redirect.startsWith('//')) {
+        sessionStorage.setItem('sso-post-login-redirect', redirect)
+      }
+      location.assign(authorizationUrl)
+    } catch {
+      setHasError(true)
+      setIsRedirecting(false)
+    }
+  }, [searchParams, startSsoLogin])
 
   return (
     <Flex flexDir="column" alignItems="center">
       <Button
-        // isFullWidth a bit ugly
         width="full"
         variant="outline"
         mb={2}
         onClick={handleSsoLogin}
         isLoading={isRedirecting}
       >
-        Log in with OGP SSO
+        Log in with one.gov.sg
       </Button>
       {hasError && (
         <Infobox variant="error" mb={2}>
-          There was a problem generating encryption parameters; please visit our{' '}
+          There was a problem starting SSO; please visit our{' '}
           <Link href={SUPPORT_FORM_LINK} isExternal>
             support form
           </Link>{' '}
           for help.
         </Infobox>
       )}
-      <Text textStyle="body-2">For OGP officers only</Text>
+      <Text textStyle="body-2">For government officers</Text>
     </Flex>
   )
 }

@@ -1,12 +1,15 @@
+import { ForbiddenError } from '@/errors/graphql-errors'
 import {
   getOrCreateUser,
   sendOnboardingEmail,
   setAuthCookie,
   updateLastLogin,
 } from '@/helpers/auth'
+import { validateAndParseEmail } from '@/helpers/email-validator'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { ssoClient } from '@/helpers/sso-client'
+import { consumeSsoLoginCookie } from '@/helpers/sso-login'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -15,7 +18,7 @@ const loginWithSso: MutationResolvers['loginWithSso'] = async (
   params,
   context,
 ) => {
-  const { authCode, nonce, verifier } = params.input
+  const { authCode, state, iss } = params.input
 
   const ssoEnabled = await getLdFlagValue<boolean>(
     'ogp-sso-enabled',
@@ -27,26 +30,23 @@ const loginWithSso: MutationResolvers['loginWithSso'] = async (
     throw new Error('SSO is not enabled')
   }
 
+  const transaction = consumeSsoLoginCookie(context.req, context.res)
+  if (!transaction || transaction.state !== state) {
+    throw new Error('SSO login session is invalid or expired')
+  }
+
   try {
-    const { accessToken, sub } = await ssoClient.callback({
+    const identity = await ssoClient.callback({
       code: authCode,
-      nonce,
-      codeVerifier: verifier,
-    })
-    const userInfo = await ssoClient.userinfo({
-      accessToken,
-      sub,
+      state,
+      iss,
+      nonce: transaction.nonce,
+      codeVerifier: transaction.codeVerifier,
     })
 
-    if (!userInfo) {
-      throw new Error('Received nullish user info')
-    }
-
-    const userEmail = userInfo.email.toLowerCase().trim()
-
-    // TODO: Remove this once it's public release
-    if (!userEmail.endsWith('@open.gov.sg')) {
-      throw new Error('Only OGP officers are allowed to login with SSO')
+    const userEmail = await validateAndParseEmail(identity.email)
+    if (!userEmail) {
+      throw new ForbiddenError('You do not have access to Plumber')
     }
 
     const user = await getOrCreateUser(userEmail)
@@ -54,8 +54,11 @@ const loginWithSso: MutationResolvers['loginWithSso'] = async (
     await updateLastLogin(user.id)
     setAuthCookie(context.res, { userId: user.id, isSso: true })
   } catch (error) {
-    // Small log event to make it easier to get pulse on sgid error rate.
-    logger.error('SSO: Unable to query user info', {
+    if (error instanceof ForbiddenError) {
+      throw error
+    }
+
+    logger.error('SSO: Unable to complete login', {
       event: 'sso-login-failed-user-info',
     })
 

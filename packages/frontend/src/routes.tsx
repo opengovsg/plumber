@@ -158,6 +158,7 @@ export default createRoutesFromElements(
       }
     />
 
+    <Route path={URLS.LOGIN_UNAUTHORIZED} element={<ErrorPage is403 />} />
     <Route
       path={URLS.LOGIN}
       element={

@@ -65,14 +65,6 @@ export async function generateAuthUrl({
   }
 }
 
-export const generateSsoAuthUrl = () =>
-  generateAuthUrl({
-    authorizeUrl: `${appConfig.ssoHostname}/api/oidc/authorize`,
-    clientId: appConfig.ssoClientId,
-    redirectUri: `${window.location.origin}${URLS.LOGIN_SSO_REDIRECT}`,
-    scopes: 'openid email',
-  })
-
 export const generateSgidAuthUrl = () =>
   generateAuthUrl({
     authorizeUrl: 'https://api.id.gov.sg/v2/oauth/authorize',
