@@ -1,9 +1,10 @@
 // packages/backend/src/services/mcp/__tests__/list-columns.itest.ts
-import type { IJSONObject } from '@plumber/types'
+import type { IApp, IJSONObject } from '@plumber/types'
 
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import TableColumnMetadata from '@/models/table-column-metadata'
@@ -12,6 +13,40 @@ import { createTable } from '@/models/tiles/pg/table-functions'
 import User from '@/models/user'
 
 import { listColumnsService } from '../list-columns'
+
+// LetterSG's getTemplateFields and Databricks' databricks-list-table-columns
+// both call live external APIs — stub just their `run` functions so the test
+// still exercises the real, unmodified action/field schemas (subFields,
+// required flags, dependency params) for createLetter/createDatabricksTableRow.
+const mocks = vi.hoisted(() => ({
+  getTemplateFieldsRun: vi.fn(),
+  listTableColumnsRun: vi.fn(),
+}))
+
+vi.mock('@/apps', async (importOriginal) => {
+  const real = await importOriginal<{ default: Record<string, IApp> }>()
+  const replaceRun = (app: IApp, key: string, run: typeof vi.fn) => ({
+    ...app,
+    dynamicData: app.dynamicData?.map((d) =>
+      d.key === key ? { ...d, run } : d,
+    ),
+  })
+  return {
+    default: {
+      ...real.default,
+      lettersg: replaceRun(
+        real.default.lettersg,
+        'getTemplateFields',
+        mocks.getTemplateFieldsRun,
+      ),
+      databricks: replaceRun(
+        real.default.databricks,
+        'databricks-list-table-columns',
+        mocks.listTableColumnsRun,
+      ),
+    },
+  }
+})
 
 // Exercises the real Tiles app: `createTileRow`'s `rowData` multirow-multicol
 // field has `columnId` (dropdown, sourced from the `listColumns` dynamic-data
@@ -48,6 +83,7 @@ async function setupFlowAndStep(
   appKey: string,
   key: string,
   parameters: IJSONObject = {},
+  connectionId?: string,
 ) {
   const flow = await Flow.query().insertAndFetch({
     id: randomUUID(),
@@ -70,6 +106,7 @@ async function setupFlowAndStep(
     flowId: flow.id,
     appKey,
     key,
+    connectionId,
     type: 'action',
     position: 2,
     parameters,
@@ -82,6 +119,7 @@ describe('listColumnsService', () => {
   let user: User
 
   beforeEach(async () => {
+    vi.clearAllMocks()
     user = await User.query().insertAndFetch({
       id: randomUUID(),
       email: `list-columns-${randomUUID()}@example.com`,
@@ -105,7 +143,76 @@ describe('listColumnsService', () => {
       columns: columns.map((c) => ({ id: c.id, name: c.name })),
       alreadyConfigured: [],
       truncated: false,
+      valueRequired: false,
     })
+  })
+
+  it("supports LetterSG's createLetter action, and flags its value as required", async () => {
+    mocks.getTemplateFieldsRun.mockResolvedValue({
+      data: [
+        { name: 'Recipient Name', value: 'Recipient Name' },
+        { name: 'Amount', value: 'Amount' },
+      ],
+    })
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'lettersg',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: {},
+    })
+    const { step } = await setupFlowAndStep(
+      user.id,
+      'lettersg',
+      'createLetter',
+      { templateId: 'template-1', letterParams: [] },
+      connection.id,
+    )
+
+    const result = await listColumnsService({ user, stepId: step.id })
+
+    expect(result).toEqual({
+      columns: [
+        { id: 'Recipient Name', name: 'Recipient Name' },
+        { id: 'Amount', name: 'Amount' },
+      ],
+      alreadyConfigured: [],
+      truncated: false,
+      valueRequired: true,
+    })
+    expect(mocks.getTemplateFieldsRun).toHaveBeenCalledOnce()
+  })
+
+  it("supports Databricks' createDatabricksTableRow action, and its value is not required", async () => {
+    mocks.listTableColumnsRun.mockResolvedValue({
+      data: [{ name: 'col1', value: 'col1' }],
+    })
+    const connection = await Connection.query().insertAndFetch({
+      id: randomUUID(),
+      key: 'databricks',
+      userId: user.id,
+      verified: true,
+      draft: false,
+      formattedData: {},
+    })
+    const { step } = await setupFlowAndStep(
+      user.id,
+      'databricks',
+      'createDatabricksTableRow',
+      { tableName: 'my_table', rowData: [] },
+      connection.id,
+    )
+
+    const result = await listColumnsService({ user, stepId: step.id })
+
+    expect(result).toEqual({
+      columns: [{ id: 'col1', name: 'col1' }],
+      alreadyConfigured: [],
+      truncated: false,
+      valueRequired: false,
+    })
+    expect(mocks.listTableColumnsRun).toHaveBeenCalledOnce()
   })
 
   it('excludes columns already present in the saved rowData array', async () => {
