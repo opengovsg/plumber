@@ -22,7 +22,8 @@ const replaceConnectionCredentials: MutationResolvers['replaceConnectionCredenti
     }
 
     const candidate = buildConnectionEditCandidate({
-      app,
+      appKey: app.key,
+      auth: app.auth,
       storedData: connection.formattedData,
       submittedData: params.input.formattedData,
     })
