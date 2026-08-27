@@ -376,8 +376,26 @@ export default function PromptInput({
               e.currentTarget.style.fontSize = '16px'
             }}
           />
+        </Flex>
 
-          <Flex justify="end" align="flex-end" p={3}>
+        <Flex px={2} pb={1} pt={1} align="center" gap={2}>
+          {showChipsRow &&
+            (attachedForm?.isConnected ? (
+              <FormChip form={attachedForm} />
+            ) : onConnectForm && onSelectExistingForm ? (
+              <ConnectFormPopover
+                isStreaming={isStreaming}
+                onSelectExisting={onSelectExistingForm}
+                onAddNewForm={onConnectForm}
+              />
+            ) : attachedForm ? (
+              // Dead-end fallback: a URL is known but not connected, and
+              // there's no trigger left to retry through (e.g. post-pipe,
+              // before the LLM's connection picker has fired).
+              <FormChip form={attachedForm} />
+            ) : null)}
+
+          <Flex ml="auto" pr={1} align="center" flexShrink={0}>
             {isStreaming ? (
               <Icon
                 as={FaCircleStop}
@@ -402,25 +420,6 @@ export default function PromptInput({
             )}
           </Flex>
         </Flex>
-
-        {showChipsRow && (
-          <Flex px={2} pb={1} pt={1} align="center" gap={2}>
-            {attachedForm?.isConnected ? (
-              <FormChip form={attachedForm} />
-            ) : onConnectForm && onSelectExistingForm ? (
-              <ConnectFormPopover
-                isStreaming={isStreaming}
-                onSelectExisting={onSelectExistingForm}
-                onAddNewForm={onConnectForm}
-              />
-            ) : attachedForm ? (
-              // Dead-end fallback: a URL is known but not connected, and
-              // there's no trigger left to retry through (e.g. post-pipe,
-              // before the LLM's connection picker has fired).
-              <FormChip form={attachedForm} />
-            ) : null}
-          </Flex>
-        )}
       </Flex>
 
       {showIdeas && (
