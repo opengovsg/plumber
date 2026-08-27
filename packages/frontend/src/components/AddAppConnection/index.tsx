@@ -42,6 +42,18 @@ type Response = {
 
 const LABEL_FIELD_KEYS = new Set(['screenName', 'label'])
 
+function withLabelPrefill(field: IField, labelDefault: string): IField {
+  if (!LABEL_FIELD_KEYS.has(field.key) || !labelDefault) {
+    return field
+  }
+
+  if (field.type === 'string' || field.type === 'multiline') {
+    return { ...field, value: labelDefault }
+  }
+
+  return field
+}
+
 /**
  * TODO: deprecate this component, we only need to support the callback route
  * /app/:appKey/connections/add
@@ -270,11 +282,7 @@ export default function AddAppConnection(
                 {auth?.fields?.map((field: IField) => (
                   <InputCreator
                     key={field.key}
-                    schema={
-                      LABEL_FIELD_KEYS.has(field.key) && labelDefault
-                        ? { ...field, value: labelDefault }
-                        : field
-                    }
+                    schema={withLabelPrefill(field, labelDefault)}
                   />
                 ))}
 
