@@ -163,7 +163,6 @@ const messagePartSchema = z.discriminatedUnion('type', [
   }),
   // One entry per MCP bridge tool — keeps discriminatedUnion error quality intact.
   toolPart('tool-list_apps'),
-  toolPart('tool-list_connections'),
   toolPart('tool-list_columns'),
   toolPart('tool-create_pipe'),
   toolPart('tool-update_step_parameters'),
