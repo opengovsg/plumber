@@ -6,12 +6,20 @@ import { z } from 'zod/v4'
 import type Flow from '@/models/flow'
 import type Step from '@/models/step'
 import type User from '@/models/user'
+import {
+  type AddTileColumnsResult,
+  addTileColumnsService,
+} from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
 import {
   createFlowWithStepsService,
   type McpStepInput,
 } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
+import {
+  type CreateTileResult,
+  createTileService,
+} from '@/services/mcp/create-tile'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import {
   executeStepService,
@@ -68,6 +76,57 @@ export function createMcpBridgeTools(
       }),
       execute: async ({ step_id }): Promise<ListColumnsResult> => {
         return listColumnsService({ user, stepId: step_id })
+      },
+    }),
+
+    create_tile: tool({
+      description:
+        'Create a new Tiles spreadsheet owned by the current user, with the given named columns (no placeholder Column 1/2/3). Returns the tile id and each column id/name/position — use those ids later, never invent UUIDs. Pass pipe_id from create_pipe so pipe collaborators can access the tile. Tiles-only; do not use for Excel, Databricks, or LetterSG.',
+      inputSchema: z.object({
+        name: z.string().describe('Tile name (1–64 characters)'),
+        columns: z
+          .array(z.string())
+          .min(1)
+          .max(50)
+          .describe('Column names to create (1–50 unique names)'),
+        pipe_id: z
+          .uuid()
+          .optional()
+          .describe(
+            'ID of the current pipe from create_pipe. When set, pipe collaborators are granted access to the tile.',
+          ),
+      }),
+      execute: async ({
+        name,
+        columns,
+        pipe_id,
+      }): Promise<CreateTileResult> => {
+        return createTileService({
+          user,
+          name,
+          columns,
+          pipeId: pipe_id,
+        })
+      },
+    }),
+
+    add_tile_columns: tool({
+      description:
+        'Add named columns to an existing Tile the user can edit. Names that already exist (case-insensitive) are skipped and returned in skipped rather than erroring. Returns the full column list with ids. Tiles-only; do not rename or delete columns.',
+      inputSchema: z.object({
+        table_id: z.uuid().describe('ID of the Tile to add columns to'),
+        columns: z
+          .array(z.string())
+          .min(1)
+          .max(50)
+          .describe('Column names to add (1–50 unique names)'),
+      }),
+      execute: async ({ table_id, columns }): Promise<AddTileColumnsResult> => {
+        return addTileColumnsService({
+          user,
+          tableId: table_id,
+          columns,
+        })
       },
     }),
 
