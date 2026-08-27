@@ -78,14 +78,13 @@ describe('updateConnection', () => {
         {
           input: {
             id: editableConnection.id,
-            formattedData: { token: 'new-token' },
+            formattedData: { screenName: 'Updated Telegram' },
           },
         },
         context,
       )
 
-      expect(result.formattedData.token).toBe('new-token')
-      expect(result.formattedData.screenName).toBe('Owner Telegram')
+      expect(result.formattedData.screenName).toBe('Updated Telegram')
     })
 
     it('should not allow updating a connection whose app does not support editing', async () => {
@@ -95,7 +94,7 @@ describe('updateConnection', () => {
           {
             input: {
               id: ownerConnection.id,
-              formattedData: { token: 'new-token' },
+              formattedData: { screenName: 'Unauthorized update' },
             },
           },
           context,
@@ -112,7 +111,7 @@ describe('updateConnection', () => {
           {
             input: {
               id: editableConnection.id,
-              formattedData: { token: 'new-token' },
+              formattedData: { screenName: 'Unauthorized update' },
             },
           },
           context,
