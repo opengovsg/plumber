@@ -7,19 +7,23 @@ import { IconButton } from '@opengovsg/design-system-react'
 import * as URLS from '@/config/urls'
 
 type Action = {
-  type: 'test' | 'delete' | 'viewFlows'
+  type: 'test' | 'edit' | 'delete' | 'viewFlows'
 }
 
 type ContextMenuProps = {
   appKey: string
   connectionId: string
+  // Whether the app's auth opted into credential editing; comes from the backend
+  // via GetAppConnections.
+  supportsConnectionEdit?: boolean
   onMenuItemClick: (event: React.MouseEvent, action: Action) => void
 }
 
 export default function ContextMenu(
   props: ContextMenuProps,
 ): React.ReactElement {
-  const { appKey, connectionId, onMenuItemClick } = props
+  const { appKey, connectionId, supportsConnectionEdit, onMenuItemClick } =
+    props
 
   const createActionHandler = React.useCallback(
     (action: Action) => {
@@ -56,6 +60,16 @@ export default function ContextMenu(
           <MenuItem onClick={createActionHandler({ type: 'test' })}>
             Test connection
           </MenuItem>
+
+          {supportsConnectionEdit ? (
+            <MenuItem
+              as={Link}
+              to={URLS.APP_EDIT_CONNECTION(appKey, connectionId)}
+              onClick={createActionHandler({ type: 'edit' })}
+            >
+              Edit connection
+            </MenuItem>
+          ) : null}
 
           <MenuItem
             onClick={createActionHandler({ type: 'delete' })}

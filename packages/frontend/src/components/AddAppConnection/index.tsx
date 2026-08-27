@@ -2,6 +2,7 @@ import type { IApp, IField, IJSONObject } from '@plumber/types'
 
 import * as React from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
+import { useMutation } from '@apollo/client'
 import {
   Alert,
   AlertIcon,
@@ -16,6 +17,7 @@ import {
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
+import { REPLACE_CONNECTION_CREDENTIALS } from '@/graphql/mutations/replace-connection-credentials'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
@@ -43,10 +45,11 @@ export default function AddAppConnection(
   const { name, authDocUrl, key, auth } = application
   const [error, setError] = React.useState<IJSONObject | null>(null)
   const [inProgress, setInProgress] = React.useState(false)
+  const [replaceConnectionCredentials] = useMutation(
+    REPLACE_CONNECTION_CREDENTIALS,
+  )
   const hasConnection = Boolean(connectionId)
-  const steps = hasConnection
-    ? auth?.reconnectionSteps
-    : auth?.authenticationSteps
+  const steps = auth?.authenticationSteps
 
   React.useEffect(() => {
     if (
@@ -66,6 +69,37 @@ export default function AddAppConnection(
 
   const submitHandler: SubmitHandler<FieldValues> = React.useCallback(
     async (data) => {
+      if (hasConnection && connectionId) {
+        setInProgress(true)
+        setError(null)
+
+        try {
+          const result = await replaceConnectionCredentials({
+            variables: {
+              input: {
+                id: connectionId,
+                formattedData: data,
+              },
+            },
+            context: {
+              autoSnackbar: false,
+            },
+          })
+
+          onClose({
+            replaceConnectionCredentials:
+              result.data?.replaceConnectionCredentials,
+          })
+        } catch (err) {
+          const mutationError = err as IJSONObject
+          setError((mutationError.graphQLErrors as IJSONObject[])?.[0])
+        } finally {
+          setInProgress(false)
+        }
+
+        return
+      }
+
       if (!steps) {
         return
       }
@@ -107,7 +141,14 @@ export default function AddAppConnection(
 
       setInProgress(false)
     },
-    [connectionId, key, steps, onClose],
+    [
+      connectionId,
+      hasConnection,
+      key,
+      onClose,
+      replaceConnectionCredentials,
+      steps,
+    ],
   )
 
   if (auth?.connectionType !== 'user-added') {
@@ -186,7 +227,7 @@ export default function AddAppConnection(
                 data-test="create-connection-button"
                 isFullWidth
               >
-                Connect
+                {hasConnection ? 'Update connection' : 'Connect'}
               </Button>
             </VStack>
           </Form>
