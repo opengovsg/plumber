@@ -53,7 +53,9 @@ describe('sensitive custom API headers', () => {
     ).toEqual([])
   })
 
-  it.each([undefined, null, []])('returns nothing for %s', (headers) => {
-    expect(getStaticSensitiveHeaderKeys(headers)).toEqual([])
+  it('returns nothing when there are no headers', () => {
+    expect(getStaticSensitiveHeaderKeys(undefined)).toEqual([])
+    expect(getStaticSensitiveHeaderKeys(null)).toEqual([])
+    expect(getStaticSensitiveHeaderKeys([])).toEqual([])
   })
 })

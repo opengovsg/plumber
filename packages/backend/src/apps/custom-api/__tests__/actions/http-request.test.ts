@@ -17,7 +17,7 @@ import {
 const mocks = vi.hoisted(() => ({
   httpRequest: vi.fn(),
   isUrlAllowed: vi.fn(() => true),
-  stepQueryResult: vi.fn(() => ({
+  stepQueryResult: vi.fn<() => any>(() => ({
     config: {},
   })),
   addInterceptors: vi.fn(),
