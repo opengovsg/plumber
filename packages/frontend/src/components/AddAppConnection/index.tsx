@@ -2,6 +2,7 @@ import type { IApp, IField, IJSONObject } from '@plumber/types'
 
 import * as React from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
+import { useQuery } from '@apollo/client'
 import {
   Alert,
   AlertIcon,
@@ -11,13 +12,19 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Text,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
+import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
+import {
+  getConnectionEnvLabel,
+  getEditableConnectionLabel,
+} from '@/helpers/connection-label'
 import { getOpenerOrigin } from '@/helpers/window'
 
 import Form from '../Form'
@@ -31,6 +38,8 @@ type AddAppConnectionProps = {
 type Response = {
   [key: string]: any
 }
+
+const LABEL_FIELD_KEYS = new Set(['screenName', 'label'])
 
 /**
  * TODO: deprecate this component, we only need to support the callback route
@@ -47,6 +56,37 @@ export default function AddAppConnection(
   const steps = hasConnection
     ? auth?.reconnectionSteps
     : auth?.authenticationSteps
+
+  const { data: connectionsData, loading: connectionLoading } = useQuery(
+    GET_APP_CONNECTIONS,
+    {
+      variables: { key },
+      skip: !connectionId,
+    },
+  )
+
+  const editingConnection = connectionsData?.getApp?.connections?.find(
+    (connection: { id?: string }) => connection.id === connectionId,
+  )
+  const storedScreenName = editingConnection?.formattedData?.screenName
+  const labelDefault = getEditableConnectionLabel(
+    key,
+    storedScreenName?.toString(),
+  )
+  const envLabel = getConnectionEnvLabel(
+    editingConnection?.formattedData?.env?.toString(),
+  )
+
+  const defaultValues = React.useMemo(() => {
+    if (!hasConnection || !labelDefault) {
+      return undefined
+    }
+
+    return {
+      screenName: labelDefault,
+      label: labelDefault,
+    }
+  }, [hasConnection, labelDefault])
 
   React.useEffect(() => {
     if (
@@ -172,24 +212,45 @@ export default function AddAppConnection(
         )}
 
         <ModalBody>
-          <Form onSubmit={submitHandler}>
-            <VStack gap={4} pt={4} pb={8} alignItems="stretch">
-              {auth?.fields?.map((field: IField) => (
-                <InputCreator key={field.key} schema={field} />
-              ))}
+          {hasConnection && connectionLoading ? null : (
+            <Form defaultValues={defaultValues} onSubmit={submitHandler}>
+              <VStack gap={4} pt={4} pb={8} alignItems="stretch">
+                {hasConnection && key === 'telegram-bot' ? (
+                  <Infobox>
+                    The connection name is taken from the bot after you save.
+                  </Infobox>
+                ) : null}
 
-              <Button
-                type="submit"
-                variant="solid"
-                colorScheme="primary"
-                isLoading={inProgress}
-                data-test="create-connection-button"
-                isFullWidth
-              >
-                {hasConnection ? 'Update connection' : 'Connect'}
-              </Button>
-            </VStack>
-          </Form>
+                {hasConnection && envLabel ? (
+                  <Text textStyle="body-2" color="base.content.medium">
+                    Environment: {envLabel}
+                  </Text>
+                ) : null}
+
+                {auth?.fields?.map((field: IField) => (
+                  <InputCreator
+                    key={field.key}
+                    schema={
+                      LABEL_FIELD_KEYS.has(field.key) && labelDefault
+                        ? { ...field, value: labelDefault }
+                        : field
+                    }
+                  />
+                ))}
+
+                <Button
+                  type="submit"
+                  variant="solid"
+                  colorScheme="primary"
+                  isLoading={inProgress}
+                  data-test="create-connection-button"
+                  isFullWidth
+                >
+                  {hasConnection ? 'Update connection' : 'Connect'}
+                </Button>
+              </VStack>
+            </Form>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>
