@@ -1,16 +1,15 @@
 import type { IJSONObject, IUserAddedConnectionAuth } from '@plumber/types'
 
+import { z, ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
+
 import { BadUserInputError } from '@/errors/graphql-errors'
 
 const CUSTOM_API_KEY = 'custom-api'
 const CUSTOM_API_HEADERS_KEY = 'headers'
 
-function isBlank(value: unknown): boolean {
-  return (
-    value === null ||
-    value === undefined ||
-    (typeof value === 'string' && value.trim() === '')
-  )
+function isBlankString(value: string | undefined): boolean {
+  return value === undefined || value.trim() === ''
 }
 
 function serializeHeaders(value: unknown): string {
@@ -27,6 +26,18 @@ function serializeHeaders(value: unknown): string {
     .join('\n')
 }
 
+function submittedDataSchema(auth: IUserAddedConnectionAuth) {
+  const shape: Record<string, z.ZodTypeAny> = {}
+
+  for (const field of auth.fields ?? []) {
+    const message = `${field.label} is required`
+    const value = z.string({ error: message }).trim()
+    shape[field.key] = field.required ? value.min(1, message) : value.optional()
+  }
+
+  return z.object(shape).strip()
+}
+
 export default function buildConnectionEditCandidate({
   appKey,
   auth,
@@ -36,30 +47,39 @@ export default function buildConnectionEditCandidate({
   appKey: string
   auth: IUserAddedConnectionAuth
   storedData?: IJSONObject
-  submittedData: IJSONObject
+  submittedData: Record<string, unknown>
 }): IJSONObject {
-  const candidate: IJSONObject = {}
+  try {
+    const parsed = submittedDataSchema(auth).parse(submittedData) as Record<
+      string,
+      string | undefined
+    >
+    const candidate: IJSONObject = {}
 
-  for (const field of auth.fields ?? []) {
-    const submittedValue = submittedData[field.key]
+    for (const field of auth.fields ?? []) {
+      const submittedValue = parsed[field.key]
 
-    if (field.required && isBlank(submittedValue)) {
-      throw new BadUserInputError(`${field.label} is required`)
+      if (
+        appKey === CUSTOM_API_KEY &&
+        field.key === CUSTOM_API_HEADERS_KEY &&
+        isBlankString(submittedValue)
+      ) {
+        candidate[field.key] = serializeHeaders(storedData?.[field.key])
+        continue
+      }
+
+      if (submittedValue !== undefined) {
+        candidate[field.key] = submittedValue
+      }
     }
 
-    if (
-      appKey === CUSTOM_API_KEY &&
-      field.key === CUSTOM_API_HEADERS_KEY &&
-      isBlank(submittedValue)
-    ) {
-      candidate[field.key] = serializeHeaders(storedData?.[field.key])
-      continue
+    return candidate
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new BadUserInputError(
+        fromZodError(error).details[0]?.message ?? 'Invalid connection data',
+      )
     }
-
-    if (submittedValue !== undefined) {
-      candidate[field.key] = submittedValue
-    }
+    throw error
   }
-
-  return candidate
 }
