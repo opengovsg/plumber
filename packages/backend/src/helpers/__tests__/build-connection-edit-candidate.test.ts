@@ -4,10 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import buildConnectionEditCandidate from '@/helpers/build-connection-edit-candidate'
 
-function createApp(
-  key: string,
-  fields: IField[],
-): IApp {
+function createApp(key: string, fields: IField[]): IApp {
   return {
     key,
     auth: {

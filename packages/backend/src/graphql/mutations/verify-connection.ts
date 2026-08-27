@@ -5,7 +5,7 @@
 import { ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
-import { getConnection, getOwnEditableConnection } from '@/services/connection'
+import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -14,26 +14,17 @@ const verifyConnection: MutationResolvers['verifyConnection'] = async (
   params,
   context,
 ) => {
-  let connection
+  const flow = await context.currentUser
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findById(params.input.flowId)
+    .throwIfNotFound()
 
-  if (params.input.flowId) {
-    const flow = await context.currentUser
-      .withAccessibleFlows({ requiredRole: 'editor' })
-      .findById(params.input.flowId)
-      .throwIfNotFound()
-
-    connection = await getConnection({
-      context,
-      connectionId: params.input.id,
-      flowId: params.input.flowId,
-      includeOwnConnections: flow.role === 'owner',
-    })
-  } else {
-    connection = await getOwnEditableConnection({
-      context,
-      connectionId: params.input.id,
-    })
-  }
+  let connection = await getConnection({
+    context,
+    connectionId: params.input.id,
+    flowId: params.input.flowId,
+    includeOwnConnections: flow.role === 'owner',
+  })
 
   // GUARD: Prevent updating personal connections owned by others
   if (

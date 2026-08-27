@@ -1,5 +1,5 @@
 import { ForbiddenError } from '@/errors/graphql-errors'
-import { getConnection, getOwnEditableConnection } from '@/services/connection'
+import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -11,26 +11,17 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
   params,
   context,
 ) => {
-  let connection
+  const flow = await context.currentUser
+    .withAccessibleFlows({ requiredRole: 'editor' })
+    .findById(params.input.flowId)
+    .throwIfNotFound({ message: 'You do not have access to this flow' })
 
-  if (params.input.flowId) {
-    const flow = await context.currentUser
-      .withAccessibleFlows({ requiredRole: 'editor' })
-      .findById(params.input.flowId)
-      .throwIfNotFound({ message: 'You do not have access to this flow' })
-
-    connection = await getConnection({
-      context,
-      connectionId: params.input.id,
-      flowId: params.input.flowId,
-      includeOwnConnections: flow.role === 'owner',
-    })
-  } else {
-    connection = await getOwnEditableConnection({
-      context,
-      connectionId: params.input.id,
-    })
-  }
+  let connection = await getConnection({
+    context,
+    connectionId: params.input.id,
+    flowId: params.input.flowId,
+    includeOwnConnections: flow.role === 'owner',
+  })
 
   // GUARD: Prevent updating personal connections owned by others
   if (

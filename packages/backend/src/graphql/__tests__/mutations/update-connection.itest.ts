@@ -59,67 +59,6 @@ describe('updateConnection', () => {
     })
   })
 
-  describe('without a flow', () => {
-    // telegram-bot opts into credential editing; slack does not.
-    let editableConnection: Connection
-
-    beforeEach(async () => {
-      editableConnection = await Connection.query().insertAndFetch({
-        userId: owner.id,
-        key: 'telegram-bot',
-        formattedData: { screenName: 'Owner Telegram' },
-        verified: false,
-      })
-    })
-
-    it('should allow a user to update their own editable connection', async () => {
-      const result = await updateConnection(
-        null,
-        {
-          input: {
-            id: editableConnection.id,
-            formattedData: { screenName: 'Updated Telegram' },
-          },
-        },
-        context,
-      )
-
-      expect(result.formattedData.screenName).toBe('Updated Telegram')
-    })
-
-    it('should not allow updating a connection whose app does not support editing', async () => {
-      await expect(
-        updateConnection(
-          null,
-          {
-            input: {
-              id: ownerConnection.id,
-              formattedData: { screenName: 'Unauthorized update' },
-            },
-          },
-          context,
-        ),
-      ).rejects.toThrow('This connection cannot be edited')
-    })
-
-    it('should not allow a user to update another user personal connection', async () => {
-      context.currentUser = editor
-
-      await expect(
-        updateConnection(
-          null,
-          {
-            input: {
-              id: editableConnection.id,
-              formattedData: { screenName: 'Unauthorized update' },
-            },
-          },
-          context,
-        ),
-      ).rejects.toThrow('Connection not found')
-    })
-  })
-
   describe('ownership guard', () => {
     it('should not allow editor to update owner personal connection shared to flow', async () => {
       // Setup: Owner's personal connection (userId = owner.id)

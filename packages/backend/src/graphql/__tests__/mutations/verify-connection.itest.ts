@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import verifyConnection from '@/graphql/mutations/verify-connection'
-import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
@@ -29,8 +28,6 @@ vi.mock('@/models/app', () => ({
     findOneByKey: vi.fn().mockResolvedValue({
       key: 'slack',
       auth: {
-        connectionType: 'user-added',
-        supportsConnectionEdit: true,
         verifyCredentials: mocks.verifyCredentials,
       },
     }),
@@ -85,43 +82,6 @@ describe('verifyConnection', () => {
       connectionId: collaboratorConnection.id,
       connectionType: 'connection',
       addedBy: editor.id,
-    })
-  })
-
-  describe('without a flow', () => {
-    it('should allow a user to verify their own personal connection', async () => {
-      const result = await verifyConnection(
-        null,
-        { input: { id: ownerConnection.id } },
-        context,
-      )
-
-      expect(result.id).toBe(ownerConnection.id)
-      expect(mocks.verifyCredentials).toHaveBeenCalledOnce()
-    })
-
-    it('should not allow a user to verify another user personal connection', async () => {
-      context.currentUser = editor
-
-      await expect(
-        verifyConnection(null, { input: { id: ownerConnection.id } }, context),
-      ).rejects.toThrow('Connection not found')
-      expect(mocks.verifyCredentials).not.toHaveBeenCalled()
-    })
-
-    it('should not allow verifying a connection whose app does not support editing', async () => {
-      vi.mocked(App.findOneByKey).mockResolvedValueOnce({
-        key: 'slack',
-        auth: {
-          connectionType: 'user-added',
-          verifyCredentials: mocks.verifyCredentials,
-        },
-      } as unknown as Awaited<ReturnType<typeof App.findOneByKey>>)
-
-      await expect(
-        verifyConnection(null, { input: { id: ownerConnection.id } }, context),
-      ).rejects.toThrow('This connection cannot be edited')
-      expect(mocks.verifyCredentials).not.toHaveBeenCalled()
     })
   })
 
