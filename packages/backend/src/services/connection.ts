@@ -1,5 +1,7 @@
 import { Transaction } from 'objection'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
+import App from '@/models/app'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Context from '@/types/express/context'
@@ -53,4 +55,37 @@ export const getConnection = async (params: GetConnectionParams) => {
     .throwIfNotFound({ message: 'Connection not found' })
 
   return flowConnection?.connection
+}
+
+type GetOwnEditableConnectionParams = {
+  context: Context
+  connectionId: string
+  trx?: Transaction
+}
+
+/**
+ * Fetches a connection outside of any pipe, for the connections page's credential
+ * editing. Only the user's own connections are reachable, and only for apps that
+ * opted into editing via their auth's supportsConnectionEdit.
+ */
+export const getOwnEditableConnection = async (
+  params: GetOwnEditableConnectionParams,
+) => {
+  const { context, connectionId, trx } = params
+
+  const connection = await context.currentUser
+    .$relatedQuery('connections', trx)
+    .findById(connectionId)
+    .throwIfNotFound({ message: 'Connection not found' })
+
+  const app = await App.findOneByKey(connection.key)
+
+  if (
+    app.auth?.connectionType !== 'user-added' ||
+    !app.auth.supportsConnectionEdit
+  ) {
+    throw new ForbiddenError('This connection cannot be edited')
+  }
+
+  return connection
 }
