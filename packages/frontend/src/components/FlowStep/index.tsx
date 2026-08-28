@@ -28,7 +28,7 @@ import StepAppIcon from './components/StepAppIcon'
 import StepNameAndDemo from './components/StepNameAndDemo'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
-import { flowStepStyles } from './styles'
+import { flowStepStyles, NESTED_FLOW_STEP_HEIGHT } from './styles'
 
 type FlowStepProps = {
   step: IStep
@@ -357,7 +357,13 @@ export default function FlowStep(
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={isNested ? '56px' : isApprovalStep ? undefined : '64px'}
+              h={
+                isNested
+                  ? NESTED_FLOW_STEP_HEIGHT
+                  : isApprovalStep
+                  ? undefined
+                  : '64px'
+              }
               minH={isApprovalStep && !isNested ? '124px' : undefined}
               w={headerWidth}
               onClick={isClickable ? handleClick : undefined}

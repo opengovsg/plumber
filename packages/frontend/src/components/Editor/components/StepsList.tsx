@@ -3,7 +3,12 @@ import { IStep } from '@plumber/types'
 import { useCallback, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
 
-import { buildStepsList } from '@/components/Editor/helpers/steps-utils'
+import {
+  buildStepsList,
+  type ForEachBlock,
+  type IfThenBlock,
+  type SingleStep,
+} from '@/components/Editor/helpers/steps-utils'
 import IfThen from '@/components/FlowStepGroup/Content/IfThen/IfThen'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { SortableList } from '@/components/SortableList'
@@ -74,6 +79,22 @@ export function StepsList({ isNested }: StepsListProps) {
     ],
   )
 
+  // The backend re-pins each block's endStepId marker after a reorder, so
+  // moving it as one contiguous range needs no marker handling here.
+  const handleReorderBlockItems = useCallback(
+    async (
+      reordered: Array<{ id: string; item: IfThenBlock | SingleStep }>,
+    ) => {
+      const reorderedSteps = reordered.flatMap(({ item }) =>
+        item.type === 'ifThenBlock'
+          ? [item.ifThenStep, ...item.children]
+          : [item.step],
+      )
+      await handleReorderSteps(reorderedSteps)
+    },
+    [handleReorderSteps],
+  )
+
   // groupingActions is null until the apps load. Guard before building the
   // list.
   const blockItems = useMemo(
@@ -125,6 +146,27 @@ export function StepsList({ isNested }: StepsListProps) {
     const shouldDisableTriggerAddButton =
       hasExactlyOneEmptyActionStep || hasNoActionSteps
 
+    // A for-each swallows every later step, so it stays outside the
+    // reorderable set and is always last.
+    const forEachItem = blockItems.find(
+      (item): item is ForEachBlock => item.type === 'forEachBlock',
+    )
+    const reorderableItems = blockItems.filter(
+      (item): item is IfThenBlock | SingleStep => item.type !== 'forEachBlock',
+    )
+    const sortableBlockItems = reorderableItems.map((item) => ({
+      id: item.type === 'ifThenBlock' ? item.ifThenStep.id : item.step.id,
+      item,
+    }))
+    const canReorderBlocks = !readOnly && reorderableItems.length > 1
+    const lastReorderableId =
+      sortableBlockItems[sortableBlockItems.length - 1]?.id
+    const forEachIndex = forEachItem
+      ? actionStepsToDisplay.findIndex(
+          (step) => step.id === forEachItem.forEachStep.id,
+        )
+      : -1
+
     return (
       <Flex
         {...editorStyles.stepHeaderContainer}
@@ -153,56 +195,64 @@ export function StepsList({ isNested }: StepsListProps) {
           />
         )}
 
-        {blockItems.map((item, index) => {
-          const isLast = index === blockItems.length - 1
+        <SortableList
+          items={sortableBlockItems}
+          onChange={handleReorderBlockItems}
+          renderItem={(sortableItem, isOverlay) => {
+            const { id, item } = sortableItem
+            // A trailing for-each, not a reorderable item, claims the "last
+            // step" slot when present.
+            const isLast = !forEachItem && id === lastReorderableId
 
-          if (item.type === 'ifThenBlock') {
+            if (item.type === 'ifThenBlock') {
+              return (
+                <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
+                  <IfThen
+                    block={item}
+                    isLastBlock={isLast}
+                    allowReorder={canReorderBlocks}
+                  />
+                </SortableList.Item>
+              )
+            }
+
             return (
-              <IfThen
-                key={item.ifThenStep.id}
-                block={item}
-                isLastBlock={isLast}
-              />
+              <SortableList.Item id={id} isOverlay={isOverlay ?? false}>
+                <Flex
+                  width={isDrawerOpen || isMobile ? '100%' : 'auto'}
+                  flexDir="column"
+                  position="relative"
+                >
+                  <FlowStepWithAddButton
+                    step={item.step}
+                    isLastStep={isLast}
+                    isNested={isNested}
+                    allowReorder={canReorderBlocks}
+                    stepsBeforeGroup={[]}
+                    groupedSteps={[]}
+                    addButtonProps={{
+                      isHidden: readOnly || !!isOverlay,
+                      isDisabled: false,
+                      showEmptyAction: false,
+                    }}
+                  />
+                </Flex>
+              </SortableList.Item>
             )
-          }
+          }}
+        />
 
-          if (item.type === 'forEachBlock') {
-            // The for-each still renders through the existing grouped box, which
-            // wants the branch-shaped grouping. Rebuild it from the for-each's
-            // own steps — it swallows every later step, so they are contiguous
-            // from its position onwards.
-            const forEachIndex = actionStepsToDisplay.findIndex(
-              (step) => step.id === item.forEachStep.id,
-            )
-            return (
-              <FlowStepGroup
-                key={item.forEachStep.id}
-                stepsBeforeGroup={actionStepsToDisplay.slice(0, forEachIndex)}
-                groupedSteps={extractBranchesWithSteps(
-                  actionStepsToDisplay.slice(forEachIndex),
-                  0,
-                )}
-              />
-            )
-          }
-
-          return (
-            <FlowStepWithAddButton
-              key={item.step.id}
-              step={item.step}
-              isLastStep={isLast}
-              isNested={isNested}
-              allowReorder={false}
-              stepsBeforeGroup={[]}
-              groupedSteps={[]}
-              addButtonProps={{
-                isHidden: readOnly,
-                isDisabled: false,
-                showEmptyAction: false,
-              }}
-            />
-          )
-        })}
+        {forEachItem && (
+          // FlowStepGroup expects branch-shaped grouping, so the for-each's
+          // steps get rebuilt into that shape instead of rendered directly.
+          <FlowStepGroup
+            stepsBeforeGroup={actionStepsToDisplay.slice(0, forEachIndex)}
+            groupedSteps={extractBranchesWithSteps(
+              actionStepsToDisplay.slice(forEachIndex),
+              0,
+            )}
+          />
+        )}
       </Flex>
     )
   }
