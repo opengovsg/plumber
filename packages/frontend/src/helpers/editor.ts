@@ -21,6 +21,8 @@ import {
   isGroupedMultiRowComplete,
 } from '@/helpers/grouped-multirow-validation'
 import { isFieldHidden } from '@/helpers/isFieldHidden'
+import { isIfThenStep } from '@/helpers/toolbox'
+import type { IfThenV2State } from '@/hooks/useIfThenV2Enabled'
 
 export const getFlowStepHeaderWidth = (
   isDrawerOpen: boolean,
@@ -51,12 +53,23 @@ function isValidArgValue(value: IJSONValue): boolean {
 export function isInputVisibleForStep(
   actionOrTriggerKey: string | undefined,
   argKey: string,
-  stepCreatedAt: string | number,
+  step: IStep,
   getFlagValue: LaunchDarklyContextData['getFlagValue'],
+  ifThenV2State?: IfThenV2State,
 ): boolean {
+  // TODO (if-then-then): remove once if-then V2 is 100% rolled out.
+  if (
+    argKey === 'branchName' &&
+    isIfThenStep(step) &&
+    ifThenV2State?.isEnabled &&
+    !ifThenV2State.isLoading
+  ) {
+    return false
+  }
+
   const inputFlag = getInputFlag(actionOrTriggerKey ?? '', argKey)
   const flagValue = getFlagValue(inputFlag, false)
-  return !flagValue || +stepCreatedAt <= flagValue
+  return !flagValue || +step.createdAt <= flagValue
 }
 
 // Field definitions can specify a static `value` to pre-select (e.g. a
@@ -84,12 +97,7 @@ export function withDefaultParameters(
       // default here would make the form report a value the user never saw
       // and the backend never received, desyncing it from `dataIn`.
       if (
-        !isInputVisibleForStep(
-          actionOrTriggerKey,
-          arg.key,
-          step.createdAt,
-          getFlagValue,
-        )
+        !isInputVisibleForStep(actionOrTriggerKey, arg.key, step, getFlagValue)
       ) {
         continue
       }
