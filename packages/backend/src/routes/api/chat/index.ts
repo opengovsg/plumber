@@ -22,6 +22,10 @@ import { Router } from 'express'
 
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
+import {
+  buildSupportFormUrl,
+  SUPPORT_FORM_URL_PLACEHOLDER,
+} from '@/helpers/ai/build-support-form-url'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import { getPrompt } from '@/helpers/ai/get-prompt'
 import {
@@ -170,8 +174,10 @@ const handleChatStream = observe(
       const systemMessage = {
         role: 'system' as const,
         content:
-          buildSystemPrompt(prompt.prompt, restrictedApps) +
-          buildEstablishedConnectionReminder(establishedFormConnection),
+          buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
+            SUPPORT_FORM_URL_PLACEHOLDER,
+            buildSupportFormUrl(chatId),
+          ) + buildEstablishedConnectionReminder(establishedFormConnection),
       }
       const allMessages = [systemMessage, ...messages]
 
