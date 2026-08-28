@@ -8,6 +8,8 @@ import {
   findBlankPlaceholderMemberIds,
   reassignIfThenEndStepsOnDelete,
   reassignIfThenEndStepsOnReorder,
+  remapIfThenEndStepIdsOnDuplicate,
+  remapIfThenEndStepIdsOnDuplicateBranch,
 } from '../../../../actions/if-then/infra/end-step-utils'
 
 type Fixture = {
@@ -468,5 +470,142 @@ describe('reassignIfThenEndStepsOnReorder', () => {
     expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([
       { ifThenStepId: 'B', endStepId: 'b6' },
     ])
+  })
+})
+
+describe('remapIfThenEndStepIdsOnDuplicate', () => {
+  it('remaps a marker to the copied endStep id', () => {
+    const sourceSteps = [trigger(1), markedIfThen('A', 2, 's3'), plain('s3', 3)]
+    const map = { trigger1: 'newTrigger', A: 'newA', s3: 'newS3' }
+
+    expect(remapIfThenEndStepIdsOnDuplicate(sourceSteps, map)).toEqual({
+      patches: [{ ifThenStepId: 'newA', endStepId: 'newS3' }],
+      danglingSourceStepIds: [],
+    })
+  })
+
+  it('remaps a self-referencing (empty) block to the new self id', () => {
+    const sourceSteps = [trigger(1), markedIfThen('A', 2, 'A')]
+    const map = { trigger1: 'newTrigger', A: 'newA' }
+
+    expect(remapIfThenEndStepIdsOnDuplicate(sourceSteps, map)).toEqual({
+      patches: [{ ifThenStepId: 'newA', endStepId: 'newA' }],
+      danglingSourceStepIds: [],
+    })
+  })
+
+  it('reports a source marker that does not resolve to a copied step', () => {
+    const sourceSteps = [trigger(1), markedIfThen('A', 2, 'ghost')]
+    const map = { trigger1: 'newTrigger', A: 'newA' }
+
+    expect(remapIfThenEndStepIdsOnDuplicate(sourceSteps, map)).toEqual({
+      patches: [],
+      danglingSourceStepIds: ['A'],
+    })
+  })
+
+  it('ignores legacy (marker-less) if-thens', () => {
+    const sourceSteps = [trigger(1), ifThen('L', 2), plain('s3', 3)]
+    const map = { trigger1: 'newTrigger', L: 'newL', s3: 'newS3' }
+
+    expect(remapIfThenEndStepIdsOnDuplicate(sourceSteps, map)).toEqual({
+      patches: [],
+      danglingSourceStepIds: [],
+    })
+  })
+
+  it('remaps multiple blocks', () => {
+    const sourceSteps = [
+      trigger(1),
+      markedIfThen('A', 2, 'a3'),
+      plain('a3', 3),
+      markedIfThen('B', 4, 'b5'),
+      plain('b5', 5),
+    ]
+    const map = {
+      trigger1: 'nt',
+      A: 'nA',
+      a3: 'na3',
+      B: 'nB',
+      b5: 'nb5',
+    }
+
+    expect(remapIfThenEndStepIdsOnDuplicate(sourceSteps, map)).toEqual({
+      patches: [
+        { ifThenStepId: 'nA', endStepId: 'na3' },
+        { ifThenStepId: 'nB', endStepId: 'nb5' },
+      ],
+      danglingSourceStepIds: [],
+    })
+  })
+})
+
+describe('remapIfThenEndStepIdsOnDuplicateBranch', () => {
+  it('remaps an intra-selection marker to the ordinal counterpart copy', () => {
+    const sourceSelection = [markedIfThen('A', 2, 's2'), plain('s2', 3)]
+    const newStepIds = ['nA', 'ns2']
+
+    expect(
+      remapIfThenEndStepIdsOnDuplicateBranch(sourceSelection, newStepIds),
+    ).toEqual({
+      patches: [{ ifThenStepId: 'nA', endStepId: 'ns2' }],
+      strippedSourceStepIds: [],
+    })
+  })
+
+  it('remaps a self-referencing (empty) block to its own copy', () => {
+    const sourceSelection = [markedIfThen('A', 2, 'A')]
+    const newStepIds = ['nA']
+
+    expect(
+      remapIfThenEndStepIdsOnDuplicateBranch(sourceSelection, newStepIds),
+    ).toEqual({
+      patches: [{ ifThenStepId: 'nA', endStepId: 'nA' }],
+      strippedSourceStepIds: [],
+    })
+  })
+
+  it('leaves the copy marker-less and reports when the marker points outside the selection', () => {
+    const sourceSelection = [markedIfThen('A', 2, 'outsider'), plain('s3', 3)]
+    const newStepIds = ['nA', 'ns3']
+
+    expect(
+      remapIfThenEndStepIdsOnDuplicateBranch(sourceSelection, newStepIds),
+    ).toEqual({
+      patches: [],
+      strippedSourceStepIds: ['A'],
+    })
+  })
+
+  it('ignores legacy (marker-less) if-thens in the selection', () => {
+    const sourceSelection = [ifThen('L', 2), plain('s3', 3)]
+    const newStepIds = ['nL', 'ns3']
+
+    expect(
+      remapIfThenEndStepIdsOnDuplicateBranch(sourceSelection, newStepIds),
+    ).toEqual({
+      patches: [],
+      strippedSourceStepIds: [],
+    })
+  })
+
+  it('remaps multiple intra-selection blocks by ordinal position', () => {
+    const sourceSelection = [
+      markedIfThen('A', 2, 'a2'),
+      plain('a2', 3),
+      markedIfThen('B', 4, 'b2'),
+      plain('b2', 5),
+    ]
+    const newStepIds = ['nA', 'na2', 'nB', 'nb2']
+
+    expect(
+      remapIfThenEndStepIdsOnDuplicateBranch(sourceSelection, newStepIds),
+    ).toEqual({
+      patches: [
+        { ifThenStepId: 'nA', endStepId: 'na2' },
+        { ifThenStepId: 'nB', endStepId: 'nb2' },
+      ],
+      strippedSourceStepIds: [],
+    })
   })
 })

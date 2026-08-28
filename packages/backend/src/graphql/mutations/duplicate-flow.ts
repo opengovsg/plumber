@@ -1,5 +1,6 @@
 import { isEmpty } from 'lodash'
 
+import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
@@ -88,6 +89,15 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
         })
       oldToNewStepIdsMap[oldStep.id] = duplicatedStep.id // update map after duplicating step
     }
+
+    // endStepId is a forward reference, so remap it once every step has a copy.
+    await remapEndStepIdsOnDuplicateFlow({
+      trx,
+      originalFlowId: oldFlowId,
+      duplicatedFlowId: duplicatedFlow.id,
+      sourceSteps: flow.steps,
+      oldToNewStepIds: oldToNewStepIdsMap,
+    })
 
     logger.info('Duplicate flow details', {
       event: 'duplicate-flow-request',

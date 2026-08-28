@@ -7,6 +7,8 @@ import {
   findBlankPlaceholderMemberIds,
   reassignIfThenEndStepsOnDelete,
   reassignIfThenEndStepsOnReorder,
+  remapIfThenEndStepIdsOnDuplicate,
+  remapIfThenEndStepIdsOnDuplicateBranch,
 } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
@@ -30,6 +32,24 @@ interface EndStepWriteValidationArgs {
   ifThenStepId: string
   endStepId: string
   flowId: string
+}
+
+// endStepId is maintained by the endStep write rules and the duplication
+// remaps, never accepted directly from the client.
+const SERVER_OWNED_CONFIG_KEYS = [BLOCK_END_STEP_ID] as const
+
+/**
+ * Strips server-owned keys from a client-supplied config so a mutation only
+ * persists the marker via its own server-side rules.
+ */
+export function sanitizeServerSideConfig(
+  config: IStepConfig | null | undefined,
+): IStepConfig {
+  const sanitized = { ...(config ?? {}) }
+  for (const key of SERVER_OWNED_CONFIG_KEYS) {
+    delete sanitized[key]
+  }
+  return sanitized
 }
 
 /**
@@ -344,5 +364,109 @@ export async function repairEndStepsOnReorder({
       endStepId,
       flowId: flow.id,
     })
+  }
+}
+
+/**
+ * Remaps if-then markers after a whole-flow duplication.
+ *
+ * IMPORTANT: a source marker that fails to resolve means the SOURCE flow
+ * itself was corrupt, not this code. Logs and throws so the whole
+ * duplication rolls back.
+ */
+export async function remapEndStepIdsOnDuplicateFlow({
+  trx,
+  originalFlowId,
+  duplicatedFlowId,
+  sourceSteps,
+  oldToNewStepIds,
+}: {
+  trx: Transaction
+  originalFlowId: string
+  duplicatedFlowId: string
+  sourceSteps: Step[]
+  oldToNewStepIds: Record<string, string>
+}): Promise<void> {
+  const { patches, danglingSourceStepIds } = remapIfThenEndStepIdsOnDuplicate(
+    sourceSteps,
+    oldToNewStepIds,
+  )
+
+  if (danglingSourceStepIds.length > 0) {
+    logger.error({
+      event: 'duplicate-flow-dangling-end-step',
+      originalFlowId,
+      duplicatedFlowId,
+      danglingSourceStepIds,
+    })
+    throw new Error('duplicateFlow: dangling endStepId marker in source flow')
+  }
+
+  for (const { ifThenStepId, endStepId } of patches) {
+    await pinEndStep(trx, ifThenStepId, endStepId)
+  }
+}
+
+/**
+ * Remaps if-then markers after a branch duplication, deriving the source
+ * selection from the DB rather than the client-copied config: a copied
+ * marker still references the SOURCE step ids, and older editor bundles
+ * don't even send `config.endStepId`.
+ *
+ * IMPORTANT: called after the insertion loop. The copies land after
+ * `previousStep` and only shift later positions, so the source rows'
+ * positions are still valid to re-derive from here.
+ */
+export async function remapEndStepIdsOnDuplicateBranch({
+  trx,
+  flow,
+  previousStepId,
+  newSteps,
+}: {
+  trx: Transaction
+  flow: Flow
+  previousStepId: string
+  newSteps: Step[]
+}): Promise<void> {
+  const previousStep = await flow
+    .$relatedQuery('steps', trx)
+    .findOne({ id: previousStepId })
+    .throwIfNotFound()
+  const sourceSelection = await flow
+    .$relatedQuery('steps', trx)
+    .where('position', '>=', previousStep.position - newSteps.length + 1)
+    .andWhere('position', '<=', previousStep.position)
+    .orderBy('position', 'asc')
+
+  // A mismatch means the derivation invariant (previousStep is the
+  // selection's last step) didn't hold. Degrade to marker-less copies rather
+  // than risk a wrong remap.
+  if (sourceSelection.length !== newSteps.length) {
+    logger.warn({
+      event: 'duplicate-branch-stripped-end-step',
+      reason: 'source-selection-size-mismatch',
+      flowId: flow.id,
+      sourceCount: sourceSelection.length,
+      copyCount: newSteps.length,
+    })
+    return
+  }
+
+  const { patches, strippedSourceStepIds } =
+    remapIfThenEndStepIdsOnDuplicateBranch(
+      sourceSelection,
+      newSteps.map((step) => step.id),
+    )
+
+  for (const sourceStepId of strippedSourceStepIds) {
+    logger.info({
+      event: 'duplicate-branch-stripped-end-step',
+      flowId: flow.id,
+      sourceStepId,
+    })
+  }
+
+  for (const { ifThenStepId, endStepId } of patches) {
+    await pinEndStep(trx, ifThenStepId, endStepId)
   }
 }
