@@ -1,10 +1,4 @@
-import {
-  Client,
-  custom,
-  generators,
-  Issuer,
-  type TokenSet,
-} from 'openid-client'
+import { Client, generators, Issuer, type TokenSet } from 'openid-client'
 
 import appConfig from '@/config/app'
 
@@ -52,41 +46,6 @@ function assertVerifiedIdentity(
   }
 }
 
-/**
- * openid-client's client_secret_basic form-urlencodes client_id/client_secret
- * before Base64 (RFC 6749 §2.3.1). one.gov.sg expects raw
- * base64(client_id:client_secret) with no form-encoding. Override the Basic
- * header via custom.http_options so token requests match the IdP.
- */
-function applyRawBasicAuth(client: Client): void {
-  client[custom.http_options] = (_url, options) => {
-    const headers = options.headers as
-      | Record<string, string | string[] | undefined>
-      | undefined
-    if (!headers) {
-      return options
-    }
-
-    const authorization = headers.Authorization ?? headers.authorization
-    if (
-      typeof authorization !== 'string' ||
-      !authorization.startsWith('Basic ')
-    ) {
-      return options
-    }
-
-    return {
-      ...options,
-      headers: {
-        ...headers,
-        Authorization: `Basic ${Buffer.from(
-          `${appConfig.sso.clientId}:${appConfig.sso.clientSecret}`,
-        ).toString('base64')}`,
-      },
-    }
-  }
-}
-
 export class SsoClient {
   private client: Client | null = null
   private issuer: Issuer<Client> | null = null
@@ -102,7 +61,6 @@ export class SsoClient {
         id_token_signed_response_alg: 'RS256',
         token_endpoint_auth_method: 'client_secret_basic',
       })
-      applyRawBasicAuth(this.client)
     }
     return this.client
   }

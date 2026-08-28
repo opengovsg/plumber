@@ -9,8 +9,6 @@ const mocks = vi.hoisted(() => ({
   nonce: vi.fn(() => 'generated-nonce'),
   codeVerifier: vi.fn(() => 'generated-verifier'),
   codeChallenge: vi.fn(() => 'generated-challenge'),
-  httpOptions: vi.fn((_url: unknown, options: unknown) => options),
-  httpOptionsKey: Symbol('http_options'),
 }))
 
 vi.mock('openid-client', () => {
@@ -27,9 +25,6 @@ vi.mock('openid-client', () => {
 
   return {
     Issuer,
-    custom: {
-      http_options: mocks.httpOptionsKey,
-    },
     generators: {
       state: mocks.state,
       nonce: mocks.nonce,
@@ -59,12 +54,10 @@ describe('SsoClient', () => {
       Client: function Client(): {
         authorizationUrl: typeof mocks.authorizationUrl
         callback: typeof mocks.callback
-        [key: symbol]: unknown
       } {
         return {
           authorizationUrl: mocks.authorizationUrl,
           callback: mocks.callback,
-          [mocks.httpOptionsKey]: undefined,
         }
       },
     })
