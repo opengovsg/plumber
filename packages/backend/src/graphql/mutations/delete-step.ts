@@ -2,7 +2,10 @@ import { raw } from 'objection'
 
 import { removeMrfSteps } from '@/apps/formsg/triggers/new-submission/remove-mrf-steps'
 import { expandIfThenBlockDeletions } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
-import { repairEndStepsOnDeleteStep } from '@/apps/toolbox/common/validate-end-step'
+import {
+  repairEndStepsOnDeleteStep,
+  upgradeIfThenV1BlocksIfEnabled,
+} from '@/apps/toolbox/common/validate-end-step'
 import { hasStepReference } from '@/helpers/check-step-parameters'
 import logger from '@/helpers/logger'
 import Step from '@/models/step'
@@ -35,7 +38,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     // Loads the whole flow's steps (not just the requested ids), since the
     // integrity logic below needs the full set to expand a marked if-then to
     // its block range and repair surviving blocks after the delete.
-    const stepsBeforeDelete = await context.currentUser
+    let stepsBeforeDelete = await context.currentUser
       .withAccessibleSteps({ requiredRole: 'editor', trx })
       .withGraphFetched('flow')
       .whereIn(
@@ -60,6 +63,22 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
 
     const flow = steps[0].flow
     flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+
+    // Opportunistically pins any other legacy if-then block, if the flag is
+    // on for the pipe owner. Runs before the delete so derivation reflects
+    // the true pre-delete state, excluding steps about to be deleted.
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      flow,
+      stepsBeforeDelete,
+      new Set(input.ids),
+    )
+    // Re-reads so any block just pinned above is reflected as V2 below.
+    // IMPORTANT: otherwise the repair pass wouldn't see its own
+    // freshly-written marker.
+    stepsBeforeDelete = await flow
+      .$relatedQuery('steps', trx)
+      .orderBy('position', 'asc')
 
     const { expandedIds, danglingIfThenIds } = expandIfThenBlockDeletions(
       stepsBeforeDelete,
@@ -106,7 +125,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
       })
 
       // we delete and add a new trigger upon deletion to preserve past execution steps' context
-      await stepsToDelete[0].$query(trx).delete()
+      await steps[0].$query(trx).delete()
       await flow.$relatedQuery('steps', trx).insert({
         key: null,
         appKey: null,

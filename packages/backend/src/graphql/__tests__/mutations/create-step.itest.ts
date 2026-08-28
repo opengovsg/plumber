@@ -16,6 +16,16 @@ import { generateMockCollaborator, generateMockUser } from './flow.mock'
 const REFRESH_PIPE_MESSAGE =
   'This Pipe has been edited by another user. Please refresh the page to see the latest changes and try again.'
 
+// Defaults to false in every beforeEach below so pre-existing tests here
+// stay byte-identical. The opportunistic-upgrade tests override it per case.
+const mocks = vi.hoisted(() => ({
+  getLdFlagValue: vi.fn(),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
+
 describe('createStep mutation integration tests', async () => {
   let testFlow: Flow
   let existingSteps: Step[]
@@ -39,6 +49,7 @@ describe('createStep mutation integration tests', async () => {
   // Clean up (and seed) database before each test.
   beforeEach(async () => {
     vi.resetAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
 
     // Clear out all rows. Adjust deletion order if using foreign keys.
     await FlowConnections.query().delete()
@@ -673,6 +684,7 @@ describe('createStep endStepId write rules', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks()
+    mocks.getLdFlagValue.mockResolvedValue(false)
     await FlowConnections.query().delete()
     await Step.query().delete()
     await Flow.query().delete()
@@ -1228,5 +1240,207 @@ describe('createStep endStepId write rules', () => {
 
     expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
     expect((await reload(newIfThen.id)).config.endStepId).toBe(newIfThen.id)
+  })
+
+  describe('opportunistic if-then V1 upgrade', () => {
+    it('pins unrelated V1 if-then blocks elsewhere in the flow when the flag is on', async () => {
+      // Both if-thens are legacy. The new step lands before either block, so
+      // neither rule 1 nor rule 2 touches them. Any pin here comes only from
+      // the general opportunistic pass.
+      const [trigger, ifThenA, childA, ifThenB, childB] = await seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      ])
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      await createStep(
+        null,
+        {
+          input: {
+            flow: flowInput(),
+            previousStep: { id: trigger.id },
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      expect((await reload(ifThenA.id)).config.endStepId).toBe(childA.id)
+      expect((await reload(ifThenB.id)).config.endStepId).toBe(childB.id)
+    })
+
+    it('composes with rule 1: upgrades other blocks in the same pass as the adjacent pin', async () => {
+      // Same fixture as the "rule 1: pins a legacy block when adding after
+      // it" test above, but with the flag on. Rule 1 still pins ifThenA as
+      // before. This pass separately pins the unrelated ifThenB, which
+      // rule 1 never touches.
+      const [, ifThenA, stepA, ifThenB, stepB] = await seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      ])
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      await createStep(
+        null,
+        {
+          input: {
+            flow: flowInput(),
+            previousStep: { id: stepA.id },
+            previousBlockId: ifThenA.id,
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      // rule 1's own adjacent pin, unchanged.
+      expect((await reload(ifThenA.id)).config.endStepId).toBe(stepA.id)
+      // the opportunistic pass pins the other, unrelated block too.
+      expect((await reload(ifThenB.id)).config.endStepId).toBe(stepB.id)
+    })
+
+    it('composes with rule 2: extends a still-legacy block on a plain tail-add', async () => {
+      // Same shape as "rule 2: extends an explicit block on a plain
+      // tail-add" above, but ifThenA starts marker-less (V1).
+      // IMPORTANT: the opportunistic pin must land before rule 2's
+      // tail-extend check, or rule 2 sees an unmarked block, skips, and the
+      // later pin locks onto the pre-insert extent, stranding the new step
+      // outside.
+      const [, ifThenA, stepA, ifThenB, stepB] = await seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      ])
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      const newStep = await createStep(
+        null,
+        {
+          input: {
+            flow: flowInput(),
+            previousStep: { id: stepA.id },
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      // ifThenA extends to include the new step rather than staying pinned
+      // to its pre-insert extent (stepA).
+      expect((await reload(ifThenA.id)).config.endStepId).toBe(
+        (newStep as any).id,
+      )
+      // The unrelated block still gets pinned by the same opportunistic pass.
+      expect((await reload(ifThenB.id)).config.endStepId).toBe(stepB.id)
+    })
+
+    it('does not pin any V1 if-then block when the flag is off', async () => {
+      const [, ifThenA, , ifThenB, , trailing] = await seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+        { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      ])
+      mocks.getLdFlagValue.mockResolvedValue(false)
+
+      await createStep(
+        null,
+        {
+          input: {
+            flow: flowInput(),
+            previousStep: { id: trailing.id },
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      expect((await reload(ifThenA.id)).config.endStepId).toBeUndefined()
+      expect((await reload(ifThenB.id)).config.endStepId).toBeUndefined()
+    })
+
+    it('deletes a leftover V1 blank placeholder member when a real step is added ahead of it', async () => {
+      // The V1 branch initializer leaves a blank child (no appKey/key) as
+      // the block's only member. Inserting a real step between the if-then
+      // and that blank reproduces the original bug shape.
+      const [, ifThenStep, blankChild] = await seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: null, appKey: null, type: 'action' },
+      ])
+      mocks.getLdFlagValue.mockResolvedValue(true)
+
+      const newStep = await createStep(
+        null,
+        {
+          input: {
+            flow: flowInput(),
+            previousStep: { id: ifThenStep.id },
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      // The blank placeholder is gone, and the block is pinned to the real
+      // step instead of surviving as a second (phantom) member.
+      await expect(reload(blankChild.id)).rejects.toThrow()
+      expect((await reload(ifThenStep.id)).config.endStepId).toBe(
+        (newStep as any).id,
+      )
+
+      const steps = await testFlow
+        .$relatedQuery('steps')
+        .orderBy('position', 'asc')
+      expect(steps.map((step) => step.position)).toEqual(
+        steps.map((_step, index) => index + 1),
+      )
+    })
+
+    it('keeps a leftover V1 blank placeholder member when the flag is off', async () => {
+      const [, ifThenStep, blankChild] = await seedSteps([
+        { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+        { key: 'ifThen', appKey: 'toolbox', type: 'action' },
+        { key: null, appKey: null, type: 'action' },
+      ])
+      mocks.getLdFlagValue.mockResolvedValue(false)
+
+      await createStep(
+        null,
+        {
+          input: {
+            flow: flowInput(),
+            previousStep: { id: ifThenStep.id },
+            key: 'sendTransactionalEmail',
+            appKey: 'postman',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      expect((await reload(blankChild.id)).id).toBe(blankChild.id)
+      expect((await reload(ifThenStep.id)).config.endStepId).toBeUndefined()
+    })
   })
 })
