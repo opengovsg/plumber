@@ -406,7 +406,7 @@ function AiBuilderContent() {
   )
 }
 
-function AiBuilderDraft() {
+function AiBuilderDraftProvider() {
   const locationState = useLocation()?.state
 
   // Persist state to sessionStorage so it survives refresh.
@@ -467,5 +467,5 @@ export default function AiBuilder(): React.ReactElement {
   if (!currentUser) {
     return <RedirectToLogin />
   }
-  return <AiBuilderDraft />
+  return <AiBuilderDraftProvider />
 }
