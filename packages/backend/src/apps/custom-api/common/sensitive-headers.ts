@@ -34,7 +34,7 @@ type CustomHeaderRow = {
 export const SENSITIVE_HEADERS_ERROR = 'Do not store secrets in Custom Headers'
 
 export const SENSITIVE_HEADERS_SOLUTION =
-  'Create a Custom API connection and move these headers there. Connections keep credentials encrypted, while Custom Headers are stored as plain text. Custom Headers can still hold values from previous steps.'
+  'Create a Custom API connection and move these headers there. Connections keep credentials encrypted, while Custom Headers are stored as plain text.'
 
 export function isSensitiveHeaderName(key: string): boolean {
   return SENSITIVE_HEADER_NAMES.has(key.trim().toLowerCase())

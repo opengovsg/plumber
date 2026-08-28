@@ -151,7 +151,7 @@ describe('make http request', () => {
   it('prefers stored (unsubstituted) headers when checking secrets', async () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = 'http://test.local/endpoint'
-    // Computed value after variable substitution — looks like a static secret
+    // Computed value after variable substitution. Looks like a static secret.
     $.step.parameters.customHeaders = [
       { key: 'Authorization', value: 'Bearer resolved-token' },
     ]
