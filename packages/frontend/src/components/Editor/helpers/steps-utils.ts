@@ -1,5 +1,6 @@
 import type { IStep } from '@plumber/types'
 
+import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
 import { isIfThenStep } from '@/helpers/toolbox'
 
 /**
@@ -84,6 +85,72 @@ export function deriveIfThenV1EndStep(
     return actionSteps[actionSteps.length - 1]
   }
   return actionSteps[nextBoundaryIndex - 1]
+}
+
+function isMrfSubmissionStep(step: IStep): boolean {
+  return step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
+}
+
+/**
+ * Resolves the if-then's endStep exactly as `buildIfThenBlock` would, so the
+ * confinement check reasons about the same extent the block renders.
+ */
+function resolveBlockEndStep(
+  flowSteps: IStep[],
+  ifThenStep: IStep,
+  startIndex: number,
+): IStep {
+  const markerId = ifThenStep.config?.endStepId
+  if (markerId != null) {
+    const markerIndex = flowSteps.findIndex((step) => step.id === markerId)
+    if (markerIndex !== -1 && markerIndex >= startIndex) {
+      return flowSteps[markerIndex]
+    }
+  }
+  return deriveIfThenV1EndStep(flowSteps, ifThenStep)
+}
+
+/**
+ * Mirrors the backend's `getRejectionBranchId`. `config.approval` is only
+ * ever written for rejection branches, so its `stepId` (the approval step
+ * the branch hangs off) identifies the branch on its own.
+ */
+function getRejectionBranchId(step: IStep): string | null {
+  return step.config?.approval?.stepId ?? null
+}
+
+/**
+ * Whether the if-then's block extent is confined to a single MRF region, so
+ * an `endStepId` write over it would pass the backend's region check.
+ * Mirrors `checkEndStepWrite`'s region rule (validate-end-step.ts).
+ *
+ * IMPORTANT: pass the full `flow.steps`, not the MRF-filtered display list.
+ * That list can hide a boundary step that still sits inside the block's
+ * full-flow range.
+ */
+export function isIfThenBlockRegionConfined(
+  flowSteps: IStep[],
+  ifThenStep: IStep,
+): boolean {
+  const startIndex = flowSteps.findIndex((step) => step.id === ifThenStep.id)
+  if (startIndex === -1) {
+    return false
+  }
+
+  const endStep = resolveBlockEndStep(flowSteps, ifThenStep, startIndex)
+  const endIndex = flowSteps.findIndex((step) => step.id === endStep.id)
+  const blockRejectionBranchId = getRejectionBranchId(ifThenStep)
+
+  for (let index = startIndex + 1; index <= endIndex; index++) {
+    const step = flowSteps[index]
+    if (
+      isMrfSubmissionStep(step) ||
+      getRejectionBranchId(step) !== blockRejectionBranchId
+    ) {
+      return false
+    }
+  }
+  return true
 }
 
 /**

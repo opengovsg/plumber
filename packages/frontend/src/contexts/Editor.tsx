@@ -42,6 +42,7 @@ import { extractVariables, StepWithVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
 
 interface OnCreateStepOptions {
+  previousBlockId?: string
   // The caller resolves the owner-scoped flag and passes it here; the
   // provider component can't read it itself.
   isIfThenV2Enabled?: boolean
@@ -229,6 +230,10 @@ export const EditorProvider = ({
         previousStep: {
           id: previousStepId,
         },
+        // Set only from an if-then block's add-after affordance, so the
+        // backend can place the step after the block and pin an if-then V1
+        // block's extent.
+        previousBlockId: options?.previousBlockId,
         flow: {
           id: flowId,
           updatedAt: flow.updatedAt,

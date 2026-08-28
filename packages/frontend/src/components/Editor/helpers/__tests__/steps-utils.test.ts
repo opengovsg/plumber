@@ -8,6 +8,7 @@ import {
   hasEmptyIfThenV2Block,
   hasIfThenV2Block,
   isBlankPlaceholderStep,
+  isIfThenBlockRegionConfined,
   isStepInsideForEachBody,
   isStepInsideIfThenBlock,
 } from '../steps-utils'
@@ -45,6 +46,12 @@ const forEach = (id: string): IStep =>
 
 const mrfSubmission = (id: string): IStep =>
   ({ id, appKey: 'formsg', key: 'mrfSubmission' } as IStep)
+
+const approvalStep = (id: string): IStep =>
+  ({
+    ...plain(id),
+    config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+  } as IStep)
 
 // A leftover blank child from the if-then V1 branch initializer: neither
 // appKey nor key ever set.
@@ -446,6 +453,147 @@ describe('buildStepsList', () => {
         ],
       },
     ])
+  })
+})
+
+describe('isIfThenBlockRegionConfined', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('is true for a marker-less block wholly within a single region', () => {
+    const ifThenA = ifThen('ifThenA')
+    const steps = [ifThenA, plain('a1'), plain('a2')]
+
+    expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(true)
+  })
+
+  it('is true for a flow with no MRF or approval steps', () => {
+    const ifThenA = ifThen('ifThenA')
+    const ifThenB = ifThen('ifThenB')
+    const steps = [ifThenA, plain('a1'), ifThenB, plain('b1'), plain('b2')]
+
+    expect(isIfThenBlockRegionConfined(steps, ifThenB)).toBe(true)
+  })
+
+  it('reads a null marker (the GraphQL shape) as marker-less, over the derived extent', () => {
+    // The extent must come from the derived scan, so the MRF submission that
+    // follows the next if-then stays outside this block.
+    const ifThenA = nullMarkerIfThen('ifThenA')
+    const ifThenB = nullMarkerIfThen('ifThenB')
+    const steps = [
+      ifThenA,
+      plain('a1'),
+      ifThenB,
+      mrfSubmission('mrf'),
+      plain('after'),
+    ]
+
+    expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(true)
+    expect(isIfThenBlockRegionConfined(steps, ifThenB)).toBe(false)
+  })
+
+  it('is true for an explicit if-then V2 block confined to one region', () => {
+    const block = markedIfThen('block', 'a2')
+    const steps = [block, plain('a1'), plain('a2'), plain('after')]
+
+    expect(isIfThenBlockRegionConfined(steps, block)).toBe(true)
+  })
+
+  it('is true for an empty self-referencing block', () => {
+    const block = markedIfThen('block', 'block')
+    const steps = [block, plain('after')]
+
+    expect(isIfThenBlockRegionConfined(steps, block)).toBe(true)
+  })
+
+  it('is false when an MRF submission step sits inside the derived extent', () => {
+    // ifThenA's derived extent runs up to the step before the reject-branch
+    // if-then, i.e. it includes the MRF submission — a straddling block.
+    const ifThenA = ifThen('ifThenA')
+    const rejectIfThen = ifThen('rejectIfThen', {
+      config: { approval: { branch: 'reject', stepId: 'ifThenA' } },
+    })
+    const steps = [
+      ifThenA,
+      plain('a1'),
+      mrfSubmission('mrf'),
+      rejectIfThen,
+      plain('after'),
+    ]
+
+    expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(false)
+  })
+
+  it('is false when a top-level block reaches into a rejection branch', () => {
+    const ifThenA = ifThen('ifThenA')
+    const steps = [
+      ifThenA,
+      plain('a1'),
+      approvalStep('approvalMid'),
+      plain('a3'),
+    ]
+
+    expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(false)
+  })
+
+  it('is true for a block confined to one rejection branch', () => {
+    // Bounded by the next if-then in the same branch, so the extent stays in it.
+    const approvalIfThen = ifThen('approvalIf', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const nextApprovalIfThen = ifThen('nextApprovalIf', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const steps = [
+      approvalIfThen,
+      approvalStep('a1'),
+      nextApprovalIfThen,
+      approvalStep('b1'),
+    ]
+
+    expect(isIfThenBlockRegionConfined(steps, approvalIfThen)).toBe(true)
+  })
+
+  it('is false when a rejection-branch block reaches back out to the main flow', () => {
+    const approvalIfThen = ifThen('approvalIf', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const steps = [approvalIfThen, approvalStep('a1'), plain('topLevel')]
+
+    expect(isIfThenBlockRegionConfined(steps, approvalIfThen)).toBe(false)
+  })
+
+  it('is false for a block spanning two different rejection branches', () => {
+    const approvalIfThen = ifThen('approvalIf', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const otherBranchStep = {
+      ...plain('otherBranch'),
+      config: { approval: { branch: 'reject', stepId: 'otherApprovalStep' } },
+    } as IStep
+    const steps = [approvalIfThen, otherBranchStep]
+
+    expect(isIfThenBlockRegionConfined(steps, approvalIfThen)).toBe(false)
+  })
+
+  it('is true for an empty self-referencing block in a rejection branch', () => {
+    const approvalIfThen = ifThen('approvalIf', {
+      config: {
+        approval: { branch: 'reject', stepId: 'someApprovalStep' },
+        endStepId: 'approvalIf',
+      },
+    })
+    const steps = [approvalIfThen, approvalStep('a1')]
+
+    expect(isIfThenBlockRegionConfined(steps, approvalIfThen)).toBe(true)
+  })
+
+  it('is false for an explicit marker whose extent spans an MRF submission', () => {
+    const block = markedIfThen('block', 'end')
+    const steps = [block, plain('a1'), mrfSubmission('mrf'), plain('end')]
+
+    expect(isIfThenBlockRegionConfined(steps, block)).toBe(false)
   })
 })
 
