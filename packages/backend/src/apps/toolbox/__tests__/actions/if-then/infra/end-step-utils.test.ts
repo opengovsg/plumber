@@ -7,6 +7,7 @@ import {
   expandIfThenBlockDeletions,
   findBlankPlaceholderMemberIds,
   reassignIfThenEndStepsOnDelete,
+  reassignIfThenEndStepsOnReorder,
 } from '../../../../actions/if-then/infra/end-step-utils'
 
 type Fixture = {
@@ -369,5 +370,103 @@ describe('expandIfThenBlockDeletions', () => {
     // Deleting an interior member (not the if-then) does not expand.
     const { expandedIds } = expandIfThenBlockDeletions(steps, ['s3'])
     expect(ids(expandedIds)).toEqual(['s3'])
+  })
+})
+
+describe('reassignIfThenEndStepsOnReorder', () => {
+  it('moves the endStep to the member that now sits at the highest position', () => {
+    const block = markedIfThen('A', 2, 's5')
+    const preSteps = [
+      trigger(1),
+      block,
+      plain('s3', 3),
+      plain('s4', 4),
+      plain('s5', 5),
+    ]
+    const newPositions = [
+      { id: 's5', position: 3 },
+      { id: 's3', position: 4 },
+      { id: 's4', position: 5 },
+    ]
+
+    expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([
+      { ifThenStepId: 'A', endStepId: 's4' },
+    ])
+  })
+
+  it('is a no-op when the reorder does not touch a block', () => {
+    const block = markedIfThen('A', 2, 's3')
+    const preSteps = [
+      trigger(1),
+      block,
+      plain('s3', 3),
+      plain('a4', 4),
+      plain('a5', 5),
+    ]
+    const newPositions = [
+      { id: 'a5', position: 4 },
+      { id: 'a4', position: 5 },
+    ]
+
+    expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([])
+  })
+
+  it('preserves membership when a whole block moves as a unit', () => {
+    const before = plain('before', 2)
+    const block = markedIfThen('A', 3, 's5')
+    const preSteps = [trigger(1), before, block, plain('s4', 4), plain('s5', 5)]
+    const newPositions = [
+      { id: 'A', position: 2 },
+      { id: 's4', position: 3 },
+      { id: 's5', position: 4 },
+      { id: 'before', position: 5 },
+    ]
+
+    // s5 is still the highest-positioned member, so nothing changes.
+    expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([])
+  })
+
+  it('leaves an empty (self-referencing) block untouched', () => {
+    const block = markedIfThen('A', 2, 'A')
+    const preSteps = [trigger(1), block, plain('a3', 3), plain('a4', 4)]
+    const newPositions = [
+      { id: 'a3', position: 4 },
+      { id: 'a4', position: 3 },
+    ]
+
+    expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([])
+  })
+
+  it('leaves a block with a dangling marker untouched', () => {
+    const block = markedIfThen('A', 2, 'ghost')
+    const preSteps = [trigger(1), block, plain('s3', 3), plain('s4', 4)]
+    const newPositions = [
+      { id: 's3', position: 4 },
+      { id: 's4', position: 3 },
+    ]
+
+    expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([])
+  })
+
+  it('repairs only the block whose interior was reordered', () => {
+    const blockA = markedIfThen('A', 2, 'a4')
+    const blockB = markedIfThen('B', 5, 'b7')
+    const preSteps = [
+      trigger(1),
+      blockA,
+      plain('a3', 3),
+      plain('a4', 4),
+      blockB,
+      plain('b6', 6),
+      plain('b7', 7),
+    ]
+    const newPositions = [
+      { id: 'b7', position: 6 },
+      { id: 'b6', position: 7 },
+    ]
+
+    expect(reassignIfThenEndStepsOnReorder(preSteps, newPositions)).toEqual([
+      { ifThenStepId: 'B', endStepId: 'b6' },
+    ])
   })
 })
