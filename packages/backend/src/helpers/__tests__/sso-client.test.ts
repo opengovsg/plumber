@@ -56,7 +56,11 @@ describe('SsoClient', () => {
   beforeEach(() => {
     mocks.discover.mockResolvedValue({
       metadata: { issuer: 'https://one.gov.sg/api/auth' },
-      Client: function Client() {
+      Client: function Client(): {
+        authorizationUrl: typeof mocks.authorizationUrl
+        callback: typeof mocks.callback
+        [key: symbol]: unknown
+      } {
         return {
           authorizationUrl: mocks.authorizationUrl,
           callback: mocks.callback,

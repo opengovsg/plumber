@@ -60,7 +60,14 @@ function assertVerifiedIdentity(
  */
 function applyRawBasicAuth(client: Client): void {
   client[custom.http_options] = (_url, options) => {
-    const authorization = options.headers?.Authorization
+    const headers = options.headers as
+      | Record<string, string | string[] | undefined>
+      | undefined
+    if (!headers) {
+      return options
+    }
+
+    const authorization = headers.Authorization ?? headers.authorization
     if (
       typeof authorization !== 'string' ||
       !authorization.startsWith('Basic ')
@@ -71,7 +78,7 @@ function applyRawBasicAuth(client: Client): void {
     return {
       ...options,
       headers: {
-        ...options.headers,
+        ...headers,
         Authorization: `Basic ${Buffer.from(
           `${appConfig.sso.clientId}:${appConfig.sso.clientSecret}`,
         ).toString('base64')}`,
