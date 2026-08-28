@@ -6,7 +6,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 
 import AddAppConnection from '@/components/AddAppConnection'
+import RedirectToLogin from '@/components/RedirectToLogin'
 import * as URLS from '@/config/urls'
+import useAuthentication from '@/hooks/useAuthentication'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
@@ -404,7 +406,7 @@ function AiBuilderContent() {
   )
 }
 
-export default function AiBuilder() {
+function AiBuilderDraft() {
   const locationState = useLocation()?.state
 
   // Persist state to sessionStorage so it survives refresh.
@@ -457,4 +459,13 @@ export default function AiBuilder() {
       <AiBuilderContent />
     </AiBuilderContextProvider>
   )
+}
+
+export default function AiBuilder(): React.ReactElement {
+  const { currentUser } = useAuthentication()
+
+  if (!currentUser) {
+    return <RedirectToLogin />
+  }
+  return <AiBuilderDraft />
 }
