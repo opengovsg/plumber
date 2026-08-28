@@ -3,13 +3,17 @@ import { IStep } from '@plumber/types'
 import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
 
+import { buildStepsList } from '@/components/Editor/helpers/steps-utils'
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'
+import { StepsToDisplayContext } from '@/contexts/StepsToDisplay'
 import { FlowStepGroup } from '@/exports/components'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
+import IfThen from '../IfThen/IfThen'
 
 interface ForEachProps {
   groupedSteps: IStep[][]
@@ -19,6 +23,9 @@ interface ForEachProps {
 export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
   const { flow } = useContext(EditorContext)
+  const { groupingActions } = useContext(StepsToDisplayContext)
+  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
+    useIfThenV2Enabled()
   const { handleReorderUpdate } = useReorderSteps(flow.id)
 
   const forEachSteps = groupedSteps[0]
@@ -101,12 +108,50 @@ export default function ForEach(props: ForEachProps) {
           }}
         />
 
-        {ifThenSteps.length > 0 && (
-          <FlowStepGroup
-            stepsBeforeGroup={forEachSteps}
-            groupedSteps={ifThenSteps}
-          />
-        )}
+        {ifThenSteps.length > 0 &&
+          !isIfThenV2Loading &&
+          (isIfThenV2Enabled ? (
+            <Flex flexDir="column" w="100%" gap={2}>
+              {buildStepsList(
+                ifThenSteps.flat(),
+                groupingActions ?? new Set<string>(),
+              ).map((item, index, items) => {
+                const isLastItem = index === items.length - 1
+
+                if (item.type === 'ifThenBlock') {
+                  return (
+                    <IfThen
+                      key={item.ifThenStep.id}
+                      block={item}
+                      isLastBlock={isLastItem}
+                    />
+                  )
+                }
+
+                if (item.type === 'step') {
+                  // A plain step between/after if-then V2 blocks in the body —
+                  // an explicit endStepId marker can end a block before the
+                  // body's last step, unlike a derived if-then V1 extent.
+                  return (
+                    <GroupStepWithAddButton
+                      key={item.step.id}
+                      step={item.step}
+                      canAddStep={true}
+                      isLastStep={isLastItem}
+                      allowReorder={false}
+                    />
+                  )
+                }
+
+                return null
+              })}
+            </Flex>
+          ) : (
+            <FlowStepGroup
+              stepsBeforeGroup={forEachSteps}
+              groupedSteps={ifThenSteps}
+            />
+          ))}
       </Flex>
     </Flex>
   )

@@ -17,6 +17,7 @@ export const CREATE_STEP = gql`
       }
       config {
         stepName
+        endStepId
         templateConfig {
           appEventKey
         }
