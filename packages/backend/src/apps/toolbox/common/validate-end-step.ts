@@ -1,6 +1,14 @@
-import type { IStep } from '@plumber/types'
+import type { IStep, IStepConfig } from '@plumber/types'
 
+import { raw, Transaction } from 'objection'
+
+import {
+  deriveIfThenV1EndStep,
+  findBlankPlaceholderMemberIds,
+} from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
 import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
+import Step from '@/models/step'
 
 import {
   BLOCK_END_STEP_ID,
@@ -26,7 +34,7 @@ interface EndStepWriteValidationArgs {
  * IMPORTANT: throws a plain Error, not BadUserInputError — these violations
  * are prevented by the frontend, so hitting one means a bug, not bad input.
  */
-function rejectEndStepWrite(
+export function rejectEndStepWrite(
   reason: string,
   details: Record<string, unknown>,
 ): never {
@@ -142,5 +150,130 @@ export function validateEndStepWrite({
         flowId,
       })
     }
+  }
+}
+
+// The real id doesn't exist until after insert, so this is the only value a
+// create-step config.endStepId may carry; anything else is a bug, not a
+// legitimate write (it would let a client redefine another block's boundary
+// at create time).
+export const SELF_END_STEP_SENTINEL = 'self'
+
+/**
+ * Splits a create-step config into the config to insert and whether the
+ * client asked to self-reference the new step's own marker.
+ */
+export function extractSelfEndStepIntent(
+  config: IStepConfig | null | undefined,
+): {
+  config: IStepConfig
+  wantsSelfEndStep: boolean
+} {
+  const sanitized = { ...(config ?? {}) }
+  if (!Object.hasOwn(sanitized, BLOCK_END_STEP_ID)) {
+    return { config: sanitized, wantsSelfEndStep: false }
+  }
+
+  const value = sanitized[BLOCK_END_STEP_ID]
+  delete sanitized[BLOCK_END_STEP_ID]
+  if (value !== SELF_END_STEP_SENTINEL) {
+    rejectEndStepWrite('invalid-end-step-sentinel', { value })
+  }
+  return { config: sanitized, wantsSelfEndStep: true }
+}
+
+// Uses jsonb_set so this only touches endStepId, not the rest of config.
+export async function pinEndStep(
+  trx: Transaction,
+  ifThenStepId: string,
+  endStepId: string,
+): Promise<void> {
+  await Step.query(trx)
+    .findById(ifThenStepId)
+    .patch({
+      config: raw(`jsonb_set(config, '{${BLOCK_END_STEP_ID}}', ?::jsonb)`, [
+        JSON.stringify(endStepId),
+      ]),
+    })
+}
+
+/**
+ * Deletes a V1 block's leftover blank placeholder members and closes the
+ * position gaps they leave, highest position first so each target's own
+ * recorded position stays valid for the ones still to come.
+ *
+ * DB-only. The caller re-derives its own view of the flow afterward.
+ */
+async function deleteBlankPlaceholderMembers(
+  trx: Transaction,
+  flow: Flow,
+  currentSteps: ValidationStep[],
+  blankMemberIds: string[],
+): Promise<void> {
+  const targets = currentSteps
+    .filter((step) => blankMemberIds.includes(step.id))
+    .sort((a, b) => b.position - a.position)
+
+  for (const target of targets) {
+    await Step.query(trx).findById(target.id).delete()
+    await flow
+      .$relatedQuery('steps', trx)
+      .where('position', '>', target.position)
+      .patch({ position: raw('position - 1') })
+  }
+}
+
+/**
+ * Derives `ifThenStep`'s current V1 extent after dropping any leftover
+ * blank placeholder members (see `isBlankPlaceholderStep`) instead of
+ * pinning them into the block's initial V2 membership. A V2 block starts
+ * empty and has no equivalent concept, so a survivor here would break its
+ * empty/populated conventions.
+ *
+ * IMPORTANT: `excludeStepIds` (e.g. create-step's own just-inserted step) is
+ * excluded from both the derivation and the blank-member scan, so a plain
+ * add-after isn't absorbed into a block whose end just shifted from a
+ * deletion here.
+ *
+ * IMPORTANT: deleting a member shifts every later step's position, so
+ * `cleaned` signals the caller's own step list is now stale and must be
+ * re-fetched.
+ */
+export async function deriveV1EndStepDroppingBlankMembers(
+  trx: Transaction,
+  flow: Flow,
+  currentSteps: ValidationStep[],
+  ifThenStep: ValidationStep,
+  excludeStepIds: Set<string>,
+): Promise<{ endStep: ValidationStep; cleaned: boolean }> {
+  const endStep = deriveIfThenV1EndStep(currentSteps, ifThenStep)
+
+  const blankMemberIds = findBlankPlaceholderMemberIds(
+    currentSteps,
+    ifThenStep,
+    endStep,
+  ).filter((id) => !excludeStepIds.has(id))
+
+  if (blankMemberIds.length === 0) {
+    return { endStep, cleaned: false }
+  }
+
+  await deleteBlankPlaceholderMembers(trx, flow, currentSteps, blankMemberIds)
+  logger.info({
+    event: 'if-then-v1-blank-members-removed',
+    ifThenStepId: ifThenStep.id,
+    removedStepIds: blankMemberIds,
+    flowId: flow.id,
+  })
+
+  const refetchedSteps = (
+    await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
+  ).filter((step) => !excludeStepIds.has(step.id))
+  return {
+    endStep: deriveIfThenV1EndStep(
+      refetchedSteps,
+      refetchedSteps.find((step) => step.id === ifThenStep.id),
+    ),
+    cleaned: true,
   }
 }
