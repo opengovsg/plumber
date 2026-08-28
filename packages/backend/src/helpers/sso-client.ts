@@ -1,4 +1,10 @@
-import { Client, generators, Issuer, type TokenSet } from 'openid-client'
+import {
+  Client,
+  custom,
+  generators,
+  Issuer,
+  type TokenSet,
+} from 'openid-client'
 
 import appConfig from '@/config/app'
 
@@ -12,7 +18,6 @@ export interface SsoLoginTransaction {
   state: string
   nonce: string
   codeVerifier: string
-  redirect?: string
 }
 
 export interface SsoIdentity {
@@ -47,6 +52,34 @@ function assertVerifiedIdentity(
   }
 }
 
+/**
+ * openid-client's client_secret_basic form-urlencodes client_id/client_secret
+ * before Base64 (RFC 6749 §2.3.1). one.gov.sg expects raw
+ * base64(client_id:client_secret) with no form-encoding. Override the Basic
+ * header via custom.http_options so token requests match the IdP.
+ */
+function applyRawBasicAuth(client: Client): void {
+  client[custom.http_options] = (_url, options) => {
+    const authorization = options.headers?.Authorization
+    if (
+      typeof authorization !== 'string' ||
+      !authorization.startsWith('Basic ')
+    ) {
+      return options
+    }
+
+    return {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Basic ${Buffer.from(
+          `${appConfig.sso.clientId}:${appConfig.sso.clientSecret}`,
+        ).toString('base64')}`,
+      },
+    }
+  }
+}
+
 export class SsoClient {
   private client: Client | null = null
   private issuer: Issuer<Client> | null = null
@@ -54,9 +87,6 @@ export class SsoClient {
   private async getClient(): Promise<Client> {
     if (!this.client) {
       this.issuer = await Issuer.discover(appConfig.sso.discoveryUrl)
-      // client_secret_basic encodes `client_id:client_secret` as raw base64.
-      // Do not form-urlencode the credentials first: this IdP compares the
-      // decoded secret without applying RFC 6749 §2.3.1 encoding.
       this.client = new this.issuer.Client({
         client_id: appConfig.sso.clientId,
         client_secret: appConfig.sso.clientSecret,
@@ -65,11 +95,12 @@ export class SsoClient {
         id_token_signed_response_alg: 'RS256',
         token_endpoint_auth_method: 'client_secret_basic',
       })
+      applyRawBasicAuth(this.client)
     }
     return this.client
   }
 
-  async createAuthorizationRequest(redirect?: string): Promise<{
+  async createAuthorizationRequest(): Promise<{
     url: string
     transaction: SsoLoginTransaction
   }> {
@@ -95,7 +126,6 @@ export class SsoClient {
         state,
         nonce,
         codeVerifier,
-        ...(redirect && { redirect }),
       },
     }
   }

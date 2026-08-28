@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   nonce: vi.fn(() => 'generated-nonce'),
   codeVerifier: vi.fn(() => 'generated-verifier'),
   codeChallenge: vi.fn(() => 'generated-challenge'),
+  httpOptions: vi.fn((_url: unknown, options: unknown) => options),
+  httpOptionsKey: Symbol('http_options'),
 }))
 
 vi.mock('openid-client', () => {
@@ -25,6 +27,9 @@ vi.mock('openid-client', () => {
 
   return {
     Issuer,
+    custom: {
+      http_options: mocks.httpOptionsKey,
+    },
     generators: {
       state: mocks.state,
       nonce: mocks.nonce,
@@ -55,6 +60,7 @@ describe('SsoClient', () => {
         return {
           authorizationUrl: mocks.authorizationUrl,
           callback: mocks.callback,
+          [mocks.httpOptionsKey]: undefined,
         }
       },
     })
@@ -82,7 +88,7 @@ describe('SsoClient', () => {
 
   it('builds the authorize URL from discovery with PKCE S256 and openid email', async () => {
     const { ssoClient } = await import('../sso-client')
-    const result = await ssoClient.createAuthorizationRequest('/flows')
+    const result = await ssoClient.createAuthorizationRequest()
 
     expect(mocks.authorizationUrl).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -97,11 +103,38 @@ describe('SsoClient', () => {
       state: 'generated-state',
       nonce: 'generated-nonce',
       codeVerifier: 'generated-verifier',
-      redirect: '/flows',
     })
   })
 
-  it('takes identity from the verified id_token and rejects issuer mismatches', async () => {
+  it('passes nonce, state, and code_verifier checks to client.callback', async () => {
+    const { ssoClient } = await import('../sso-client')
+    await ssoClient.createAuthorizationRequest()
+
+    await ssoClient.callback({
+      code: 'code',
+      state: 'generated-state',
+      iss: 'https://one.gov.sg/api/auth',
+      nonce: 'generated-nonce',
+      codeVerifier: 'generated-verifier',
+    })
+
+    expect(mocks.callback).toHaveBeenCalledWith(
+      'http://localhost:3001/login/sso/redirect',
+      {
+        code: 'code',
+        state: 'generated-state',
+        iss: 'https://one.gov.sg/api/auth',
+      },
+      {
+        nonce: 'generated-nonce',
+        state: 'generated-state',
+        code_verifier: 'generated-verifier',
+        response_type: 'code',
+      },
+    )
+  })
+
+  it('takes identity from the verified id_token and rejects query iss mismatches', async () => {
     const { ssoClient } = await import('../sso-client')
     await ssoClient.createAuthorizationRequest()
 
@@ -127,5 +160,80 @@ describe('SsoClient', () => {
         codeVerifier: 'generated-verifier',
       }),
     ).rejects.toThrow('SSO issuer mismatch')
+  })
+
+  it('rejects when id_token claims.iss does not match the discovered issuer', async () => {
+    mocks.claims.mockReturnValue({
+      iss: 'https://evil.example/auth',
+      sub: 'officer@agency.gov.sg',
+      aud: 'plumber-test',
+      exp: 1,
+      iat: 1,
+      nonce: 'generated-nonce',
+      email: 'officer@agency.gov.sg',
+    })
+
+    const { ssoClient } = await import('../sso-client')
+    await ssoClient.createAuthorizationRequest()
+
+    await expect(
+      ssoClient.callback({
+        code: 'code',
+        state: 'generated-state',
+        iss: 'https://one.gov.sg/api/auth',
+        nonce: 'generated-nonce',
+        codeVerifier: 'generated-verifier',
+      }),
+    ).rejects.toThrow('SSO issuer mismatch')
+  })
+
+  it('rejects multi-audience id_tokens', async () => {
+    mocks.claims.mockReturnValue({
+      iss: 'https://one.gov.sg/api/auth',
+      sub: 'officer@agency.gov.sg',
+      aud: ['plumber-test', 'another-client'],
+      exp: 1,
+      iat: 1,
+      nonce: 'generated-nonce',
+      email: 'officer@agency.gov.sg',
+    })
+
+    const { ssoClient } = await import('../sso-client')
+    await ssoClient.createAuthorizationRequest()
+
+    await expect(
+      ssoClient.callback({
+        code: 'code',
+        state: 'generated-state',
+        iss: 'https://one.gov.sg/api/auth',
+        nonce: 'generated-nonce',
+        codeVerifier: 'generated-verifier',
+      }),
+    ).rejects.toThrow('SSO audience mismatch')
+  })
+
+  it('rejects blank email claims', async () => {
+    mocks.claims.mockReturnValue({
+      iss: 'https://one.gov.sg/api/auth',
+      sub: 'officer@agency.gov.sg',
+      aud: 'plumber-test',
+      exp: 1,
+      iat: 1,
+      nonce: 'generated-nonce',
+      email: '   ',
+    })
+
+    const { ssoClient } = await import('../sso-client')
+    await ssoClient.createAuthorizationRequest()
+
+    await expect(
+      ssoClient.callback({
+        code: 'code',
+        state: 'generated-state',
+        iss: 'https://one.gov.sg/api/auth',
+        nonce: 'generated-nonce',
+        codeVerifier: 'generated-verifier',
+      }),
+    ).rejects.toThrow('SSO id_token missing email')
   })
 })

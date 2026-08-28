@@ -9,16 +9,6 @@ import {
   type SsoLoginTransaction,
 } from './sso-client'
 
-export function sanitizeInternalPath(path: unknown): string | undefined {
-  if (typeof path !== 'string') {
-    return undefined
-  }
-  if (!path.startsWith('/') || path.startsWith('//') || path.includes('\\')) {
-    return undefined
-  }
-  return path
-}
-
 export function setSsoLoginCookie(
   res: Response,
   transaction: SsoLoginTransaction,

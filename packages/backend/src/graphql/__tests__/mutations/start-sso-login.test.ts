@@ -7,11 +7,6 @@ const mocks = vi.hoisted(() => ({
   getLdFlagValue: vi.fn(),
   createAuthorizationRequest: vi.fn(),
   setSsoLoginCookie: vi.fn(),
-  sanitizeInternalPath: vi.fn((path: unknown) =>
-    typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')
-      ? path
-      : undefined,
-  ),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -26,7 +21,6 @@ vi.mock('@/helpers/sso-client', () => ({
 
 vi.mock('@/helpers/sso-login', () => ({
   setSsoLoginCookie: mocks.setSsoLoginCookie,
-  sanitizeInternalPath: mocks.sanitizeInternalPath,
 }))
 
 const STUB_CONTEXT = {
@@ -49,22 +43,16 @@ describe('Start SSO login', () => {
         state: 'state',
         nonce: 'nonce',
         codeVerifier: 'verifier',
-        redirect: '/flows',
       },
     })
 
-    const result = await startSsoLogin(
-      null,
-      { input: { redirect: '/flows' } },
-      STUB_CONTEXT,
-    )
+    const result = await startSsoLogin(null, {}, STUB_CONTEXT)
 
-    expect(mocks.createAuthorizationRequest).toHaveBeenCalledWith('/flows')
+    expect(mocks.createAuthorizationRequest).toHaveBeenCalledWith()
     expect(mocks.setSsoLoginCookie).toHaveBeenCalledWith(STUB_CONTEXT.res, {
       state: 'state',
       nonce: 'nonce',
       codeVerifier: 'verifier',
-      redirect: '/flows',
     })
     expect(result).toEqual({
       authorizationUrl:
@@ -75,9 +63,9 @@ describe('Start SSO login', () => {
   it('does not start SSO when the feature flag is off', async () => {
     mocks.getLdFlagValue.mockResolvedValueOnce(false)
 
-    await expect(
-      startSsoLogin(null, { input: {} }, STUB_CONTEXT),
-    ).rejects.toThrow('SSO is not enabled')
+    await expect(startSsoLogin(null, {}, STUB_CONTEXT)).rejects.toThrow(
+      'SSO is not enabled',
+    )
     expect(mocks.createAuthorizationRequest).not.toHaveBeenCalled()
   })
 })

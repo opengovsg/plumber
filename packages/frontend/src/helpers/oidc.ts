@@ -40,12 +40,8 @@ export async function generateAuthUrl({
   verifier: string
   nonce: string
 }> {
-  const redirectQueryParam = new URLSearchParams(window.location.search).get(
-    'redirect',
-  )
-  const stateQueryParamString = redirectQueryParam
-    ? `&state=${encodeURIComponent(redirectQueryParam)}`
-    : ''
+  // OIDC `state` is CSRF-only. App post-login redirects use sessionStorage
+  // (`post-login-redirect`), not the authorize `state` parameter.
   const { challenge, verifier, nonce } = await generatePkceAndNonce()
   const authUrl =
     authorizeUrl +
@@ -55,8 +51,7 @@ export async function generateAuthUrl({
     `&nonce=${nonce}` +
     `&client_id=${clientId}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&scope=${encodeURIComponent(scopes)}` +
-    stateQueryParamString
+    `&scope=${encodeURIComponent(scopes)}`
 
   return {
     url: authUrl,

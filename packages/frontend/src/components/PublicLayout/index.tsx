@@ -5,6 +5,10 @@ import { RestrictedGovtMasthead } from '@opengovsg/design-system-react'
 
 import SiteWideBanner from '@/components/SiteWideBanner'
 import * as URLS from '@/config/urls'
+import {
+  consumePostLoginRedirect,
+  isSafeInternalPath,
+} from '@/helpers/post-login-redirect'
 import useAuthentication from '@/hooks/useAuthentication'
 
 type LayoutProps = {
@@ -16,18 +20,11 @@ export default function Layout({ children }: LayoutProps): React.ReactElement {
   if (currentUser) {
     const urlParams = new URLSearchParams(window.location.search)
     const queryRedirect = urlParams.get('redirect')
-    const state = urlParams.get('state')
-    const stateRedirect = state?.startsWith('/') ? state : null
-    const storedRedirect = sessionStorage.getItem('sso-post-login-redirect')
-    if (storedRedirect) {
-      sessionStorage.removeItem('sso-post-login-redirect')
-    }
-    const redirectUrl = queryRedirect ?? stateRedirect ?? storedRedirect
-    const isSafeRedirect =
-      typeof redirectUrl === 'string' &&
-      redirectUrl.startsWith('/') &&
-      !redirectUrl.startsWith('//')
-    return <Navigate to={isSafeRedirect ? redirectUrl : URLS.DASHBOARD} />
+    const storedRedirect = consumePostLoginRedirect()
+    const redirectUrl = isSafeInternalPath(queryRedirect)
+      ? queryRedirect
+      : storedRedirect
+    return <Navigate to={redirectUrl ?? URLS.DASHBOARD} replace />
   }
 
   return (

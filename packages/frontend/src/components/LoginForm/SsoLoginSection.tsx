@@ -6,30 +6,24 @@ import { Button, Infobox } from '@opengovsg/design-system-react'
 
 import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { START_SSO_LOGIN } from '@/graphql/mutations/start-sso-login'
+import { storePostLoginRedirect } from '@/helpers/post-login-redirect'
 
 export default function SsoLoginSection(): JSX.Element {
   const [searchParams] = useSearchParams()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [hasError, setHasError] = useState(false)
-  const [startSsoLogin] = useMutation(START_SSO_LOGIN)
+  const [startSsoLogin] = useMutation(START_SSO_LOGIN, {
+    context: { autoSnackbar: false },
+  })
 
   const handleSsoLogin = useCallback(async () => {
     setIsRedirecting(true)
     try {
-      const redirect = searchParams.get('redirect')
-      const { data } = await startSsoLogin({
-        variables: {
-          input: {
-            redirect,
-          },
-        },
-      })
+      storePostLoginRedirect(searchParams.get('redirect'))
+      const { data } = await startSsoLogin()
       const authorizationUrl = data?.startSsoLogin?.authorizationUrl
       if (!authorizationUrl) {
         throw new Error('Missing authorization URL')
-      }
-      if (redirect?.startsWith('/') && !redirect.startsWith('//')) {
-        sessionStorage.setItem('sso-post-login-redirect', redirect)
       }
       location.assign(authorizationUrl)
     } catch {

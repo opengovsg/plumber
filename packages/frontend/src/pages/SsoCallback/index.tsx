@@ -12,6 +12,25 @@ import * as URLS from '@/config/urls'
 import { LOGIN_WITH_SSO } from '@/graphql/mutations/login-with-sso'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
+import {
+  consumePostLoginRedirect,
+  storePostLoginRedirect,
+} from '@/helpers/post-login-redirect'
+
+function safeIdpErrorDescription(description: string | null): string | null {
+  if (!description) {
+    return null
+  }
+  // Keep user-facing IdP text short and avoid echoing anything that looks like
+  // a secret or token.
+  if (
+    description.length > 200 ||
+    /token|secret|code|bearer|password/i.test(description)
+  ) {
+    return null
+  }
+  return description
+}
 
 export default function SsoCallback(): JSX.Element {
   const [searchParams] = useSearchParams()
@@ -19,9 +38,11 @@ export default function SsoCallback(): JSX.Element {
 
   const [hasFailed, setFailed] = useState<boolean>(false)
   const [isForbidden, setForbidden] = useState<boolean>(false)
+  const [failureMessage, setFailureMessage] = useState<string | null>(null)
   const [loginWithSso] = useMutation(LOGIN_WITH_SSO, {
     refetchQueries: [GET_CURRENT_USER],
     awaitRefetchQueries: true,
+    context: { autoSnackbar: false },
   })
 
   // Account for React strict mode.
@@ -33,6 +54,28 @@ export default function SsoCallback(): JSX.Element {
     }
 
     alreadyProcessed.current = true
+    // Clear unconditionally on mount so a failed SSO cannot poison a later OTP
+    // login. Restore only after a successful token exchange for PublicLayout.
+    const pendingRedirect = consumePostLoginRedirect()
+
+    const idpError = searchParams.get('error')
+    const idpErrorDescription = searchParams.get('error_description')
+
+    if (idpError) {
+      if (idpError === 'access_denied') {
+        setForbidden(true)
+        return
+      }
+
+      const description = safeIdpErrorDescription(idpErrorDescription)
+      setFailureMessage(
+        description
+          ? `There was an error logging you in (${description}). Please try again.`
+          : null,
+      )
+      setFailed(true)
+      return
+    }
 
     const authCode = searchParams.get('code')
     const state = searchParams.get('state')
@@ -44,7 +87,7 @@ export default function SsoCallback(): JSX.Element {
     }
 
     const callMutation = async () => {
-      await loginWithSso({
+      const result = await loginWithSso({
         variables: {
           input: {
             authCode,
@@ -60,6 +103,10 @@ export default function SsoCallback(): JSX.Element {
           setFailed(true)
         },
       })
+
+      if (result.data?.loginWithSso) {
+        storePostLoginRedirect(pendingRedirect)
+      }
     }
 
     callMutation()
@@ -72,7 +119,9 @@ export default function SsoCallback(): JSX.Element {
 
   if (hasFailed) {
     toast({
-      title: 'There was an error logging you in. Please try again.',
+      title:
+        failureMessage ??
+        'There was an error logging you in. Please try again.',
       status: 'error',
       duration: 3000,
       isClosable: true,
