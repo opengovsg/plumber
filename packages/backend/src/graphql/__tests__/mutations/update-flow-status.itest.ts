@@ -228,6 +228,63 @@ describe('updateFlowStatus', () => {
     ).resolves.not.toThrow()
   })
 
+  it('throws when publishing a flow with an empty (self-referencing) if-then block', async () => {
+    fakeFlow.active = false
+    fakeFlow.steps = [
+      { id: 't', position: 1, config: {} },
+      {
+        id: 'block',
+        position: 2,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.IF_THEN,
+        config: { endStepId: 'block' },
+      },
+      { id: 's3', position: 3, config: {} },
+    ]
+
+    await expect(
+      updateFlowStatus({}, { input: defaultInput }, context),
+    ).rejects.toThrow('If-then block has no steps')
+  })
+
+  it('throws when publishing a flow with a dangling if-then marker', async () => {
+    fakeFlow.active = false
+    fakeFlow.steps = [
+      { id: 't', position: 1, config: {} },
+      {
+        id: 'block',
+        position: 2,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.IF_THEN,
+        config: { endStepId: 'ghost' },
+      },
+      { id: 's3', position: 3, config: {} },
+    ]
+
+    await expect(
+      updateFlowStatus({}, { input: defaultInput }, context),
+    ).rejects.toThrow('If-then block is misconfigured')
+  })
+
+  it('publishes a flow with a valid non-empty if-then block', async () => {
+    fakeFlow.active = false
+    fakeFlow.steps = [
+      { id: 't', position: 1, config: {} },
+      {
+        id: 'block',
+        position: 2,
+        appKey: TOOLBOX_APP_KEY,
+        key: TOOLBOX_ACTIONS.IF_THEN,
+        config: { endStepId: 's3' },
+      },
+      { id: 's3', position: 3, config: {} },
+    ]
+
+    await expect(
+      updateFlowStatus({}, { input: defaultInput }, context),
+    ).resolves.not.toThrow()
+  })
+
   it('activates the flow and enqueues a job for non-webhook triggers', async () => {
     // Starting state where the flow is inactive and input sets it to active.
     fakeFlow.active = false

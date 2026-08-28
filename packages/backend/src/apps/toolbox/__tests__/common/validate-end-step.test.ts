@@ -7,6 +7,7 @@ import logger from '@/helpers/logger'
 import {
   extractSelfEndStepIntent,
   validateEndStepWrite,
+  validateFlowBlocks,
 } from '../../common/validate-end-step'
 
 type Fixture = {
@@ -407,6 +408,168 @@ describe('extractSelfEndStepIntent', () => {
       expect.objectContaining({
         event: 'end-step-write-rejected',
         reason: 'invalid-end-step-sentinel',
+      }),
+    )
+  })
+})
+
+describe('validateFlowBlocks', () => {
+  let loggerWarnSpy: MockInstance
+
+  beforeEach(() => {
+    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => null)
+  })
+
+  it('passes a flow whose blocks are all valid and non-empty', () => {
+    const blockB = ifThen('blockB', 2, { endStepId: 's3' })
+    const blockC = ifThen('blockC', 4, { endStepId: 's5' })
+    const flowSteps = [
+      trigger(1),
+      blockB,
+      plain('s3', 3),
+      blockC,
+      plain('s5', 5),
+    ]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).not.toThrow()
+    expect(loggerWarnSpy).not.toHaveBeenCalled()
+  })
+
+  it('ignores legacy (marker-less) if-thens', () => {
+    const flowSteps = [trigger(1), ifThen('legacy', 2), plain('s3', 3)]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).not.toThrow()
+    expect(loggerWarnSpy).not.toHaveBeenCalled()
+  })
+
+  it('rejects an empty (self-referencing) block', () => {
+    const block = ifThen('block', 2, { endStepId: 'block' })
+    const flowSteps = [trigger(1), block, plain('s3', 3)]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'empty-block',
+      }),
+    )
+  })
+
+  it('rejects a dangling marker', () => {
+    const block = ifThen('block', 2, { endStepId: 'ghost' })
+    const flowSteps = [trigger(1), block, plain('s3', 3)]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'end-step-not-in-flow',
+      }),
+    )
+  })
+
+  it('rejects a marker pointing before the if-then', () => {
+    const block = ifThen('block', 3, { endStepId: 's2' })
+    const flowSteps = [trigger(1), plain('s2', 2), block]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'end-step-before-self',
+      }),
+    )
+  })
+
+  it('accepts a block confined to one MRF rejection branch', () => {
+    const rejection = { approval: REJECTION_BRANCH }
+    const block = ifThen('block', 3, { ...rejection, endStepId: 's4' })
+    const flowSteps = [
+      trigger(1),
+      mrfSubmission('mrf', 2),
+      block,
+      plain('s4', 4, rejection),
+    ]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).not.toThrow()
+    expect(loggerWarnSpy).not.toHaveBeenCalled()
+  })
+
+  it('rejects a marked if-then whose block leaves its rejection branch', () => {
+    const block = ifThen('block', 3, {
+      approval: REJECTION_BRANCH,
+      endStepId: 's4',
+    })
+    const flowSteps = [
+      trigger(1),
+      mrfSubmission('mrf', 2),
+      block,
+      plain('s4', 4),
+    ]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'approval-branch-crossed',
+      }),
+    )
+  })
+
+  it('rejects a block whose region contains an mrfSubmission step', () => {
+    const block = ifThen('block', 2, { endStepId: 's4' })
+    const flowSteps = [
+      trigger(1),
+      block,
+      mrfSubmission('mrf', 3),
+      plain('s4', 4),
+    ]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'mrf-step-in-region',
+      }),
+    )
+  })
+
+  it('rejects a top-level block whose region reaches into a rejection branch', () => {
+    const block = ifThen('block', 2, { endStepId: 's4' })
+    const flowSteps = [
+      trigger(1),
+      block,
+      plain('approvalChild', 3, {
+        approval: { branch: 'reject', stepId: 'x' },
+      }),
+      plain('s4', 4),
+    ]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'approval-branch-crossed',
+      }),
+    )
+  })
+
+  it('rejects overlapping (nested) new-style blocks', () => {
+    const blockB = ifThen('blockB', 2, { endStepId: 's4' })
+    const blockC = ifThen('blockC', 3, { endStepId: 's5' })
+    const flowSteps = [
+      trigger(1),
+      blockB,
+      blockC,
+      plain('s4', 4),
+      plain('s5', 5),
+    ]
+
+    expect(() => validateFlowBlocks(flowSteps, FLOW_ID)).toThrow()
+    expect(loggerWarnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'publish-invalid-end-step',
+        reason: 'overlapping-blocks',
       }),
     )
   })
