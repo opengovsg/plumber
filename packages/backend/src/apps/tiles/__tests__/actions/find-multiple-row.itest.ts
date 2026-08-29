@@ -1,5 +1,5 @@
 import { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
@@ -16,32 +16,21 @@ import { getTableOperations } from '@/models/tiles/factory'
 import * as pgTableRowFunctions from '@/models/tiles/pg/table-row-functions'
 import { DatabaseType, TableRowFilter } from '@/models/tiles/types'
 import User from '@/models/user'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 import Context from '@/types/express/context'
 
 import tiles from '../..'
 import findMultipleRowsAction from '../../actions/find-multiple-rows'
 
-const mocks = vi.hoisted(() => {
-  const TILE_SCAN_LIMIT = 3
-  return {
-    TILE_SCAN_LIMIT,
-    stepQueryResult: vi.fn().mockResolvedValue({
-      config: {
-        adminOverride: {
-          tileScanLimit: TILE_SCAN_LIMIT,
-        },
-      },
-    }),
-  }
-})
+const TILE_SCAN_LIMIT = 3
 
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn().mockReturnThis(),
-    findById: vi.fn().mockReturnThis(),
-    throwIfNotFound: mocks.stepQueryResult,
+const stepQueryResult = vi.fn().mockResolvedValue({
+  config: {
+    adminOverride: {
+      tileScanLimit: TILE_SCAN_LIMIT,
+    },
   },
-}))
+})
 
 describe.each([['ddb'], ['pg']])(
   'findMultipleRowsAction: %s',
@@ -54,6 +43,14 @@ describe.each([['ddb'], ['pg']])(
     let $: IGlobalVariable
 
     beforeEach(async () => {
+      spyOnStepQuery(
+        createStepQueryChain({
+          findById: vi.fn(() => ({
+            throwIfNotFound: stepQueryResult,
+          })),
+        }),
+      )
+
       context = await generateMockContext()
 
       const mockTable = await generateMockTable({
@@ -114,6 +111,11 @@ describe.each([['ddb'], ['pg']])(
       } as unknown as IGlobalVariable
     })
 
+    afterEach(() => {
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
+    })
+
     it('should allow owners to find multiple rows', async () => {
       await expect(findMultipleRowsAction.run($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
@@ -160,7 +162,7 @@ describe.each([['ddb'], ['pg']])(
         columnIds: dummyColumnIds,
         tableId: $.step.parameters.tableId,
         filters: $.step.parameters.filters,
-        scanLimit: mocks.TILE_SCAN_LIMIT,
+        scanLimit: TILE_SCAN_LIMIT,
         order: 'asc',
       })
     })
