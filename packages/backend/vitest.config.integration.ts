@@ -40,6 +40,8 @@ const sharedTest = {
     getPath('./test/redis-reset-setup.ts'),
     getPath('./test/dynamodb-reset-setup.ts'),
   ],
+  // Wiping DynamoDB after large tile row tests (e.g. 10k rows) can exceed 10s.
+  hookTimeout: 120_000,
   pool: 'threads' as const,
   sequence: {
     concurrent: false,

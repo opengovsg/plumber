@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import createRow from '@/graphql/mutations/tiles/create-row'
+import * as launchDarkly from '@/helpers/launch-darkly'
 import TableMetadata from '@/models/table-metadata'
 import * as ddbTableRowFunctions from '@/models/tiles/dynamodb/table-row/functions'
 import * as pgTableRowFunctions from '@/models/tiles/pg/table-row-functions'
@@ -16,13 +17,7 @@ import {
   generateMockTableRowData,
 } from './table.mock'
 
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn().mockResolvedValue('pg'),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
+const getLdFlagValue = vi.fn()
 
 const pgCreateTableRowSpy = vi.spyOn(pgTableRowFunctions, 'createTableRow')
 const ddbCreateTableRowSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRow')
@@ -38,6 +33,10 @@ describe.each([['ddb'], ['pg']])(
 
     // cant use before all here since the data is re-seeded each time
     beforeEach(async () => {
+      vi.spyOn(launchDarkly, 'getLdFlagValue').mockImplementation(
+        getLdFlagValue as never,
+      )
+
       context = await generateMockContext()
 
       const mockTable = await generateMockTable({
@@ -58,8 +57,10 @@ describe.each([['ddb'], ['pg']])(
       ddbCreateTableRowSpy.mockClear()
     })
 
+    afterEach(() => vi.clearAllMocks())
+
     it('should create an empty row in a given table', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+      getLdFlagValue.mockResolvedValueOnce(databaseType)
 
       const row = await createRow(
         null,
@@ -89,7 +90,7 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should create a row with valid keys in a given table', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+      getLdFlagValue.mockResolvedValueOnce(databaseType)
 
       const validData = generateMockTableRowData({
         columnIds: dummyColumnIds,
