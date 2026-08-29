@@ -17,15 +17,18 @@ import * as backoffHelper from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
-import {
-  actionQueuesByName,
-  enqueueActionJob,
-  mainActionQueue,
+import type {
+  actionQueuesByName as ActionQueuesByName,
+  enqueueActionJob as EnqueueActionJob,
+  mainActionQueue as MainActionQueue,
 } from '@/queues/action'
 import * as actionService from '@/services/action'
 import { spyOnLogger } from '@/test/spy-on-logger'
 import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
-import { appActionWorkers, mainActionWorker } from '@/workers/action'
+import type {
+  appActionWorkers as AppActionWorkers,
+  mainActionWorker as MainActionWorker,
+} from '@/workers/action'
 
 import {
   backupWorker,
@@ -43,8 +46,15 @@ const addSpanTags = vi.fn()
 
 describe('Action worker', () => {
   let originalWorkerState: WorkerState | null = null
+  let mainActionWorker: typeof MainActionWorker
+  let appActionWorkers: typeof AppActionWorkers
+  let mainActionQueue: typeof MainActionQueue
+  let actionQueuesByName: typeof ActionQueuesByName
+  let enqueueActionJob: typeof EnqueueActionJob
 
   beforeAll(async () => {
+    vi.resetModules()
+
     vi.spyOn(tracer, 'scope').mockImplementation(
       () =>
         ({
@@ -67,6 +77,15 @@ describe('Action worker', () => {
     vi.spyOn(backoffHelper, 'exponentialBackoffWithJitter').mockImplementation(
       exponentialBackoffWithJitter as never,
     )
+
+    const actionQueueModule = await import('@/queues/action.js')
+    enqueueActionJob = actionQueueModule.enqueueActionJob
+    mainActionQueue = actionQueueModule.mainActionQueue
+    actionQueuesByName = actionQueueModule.actionQueuesByName
+
+    const actionWorkersModule = await import('@/workers/action.js')
+    mainActionWorker = actionWorkersModule.mainActionWorker
+    appActionWorkers = actionWorkersModule.appActionWorkers
 
     originalWorkerState = await backupWorker(mainActionWorker)
     await mainActionWorker.waitUntilReady()
