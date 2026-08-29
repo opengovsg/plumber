@@ -44,13 +44,13 @@ describe('Postman SMS app', () => {
     vi.spyOn(authSchema.authDataSchema, 'parse').mockImplementation(
       authDataParseResult as never,
     )
-    vi.spyOn(axios, 'create').mockImplementation(
-      ((createConfig?: CreateAxiosDefaults) =>
-        actualAxiosCreate({
-          ...createConfig,
-          adapter: axiosRequestAdapter,
-        })) as never,
-    )
+    vi.spyOn(axios, 'create').mockImplementation(((
+      createConfig?: CreateAxiosDefaults,
+    ) =>
+      actualAxiosCreate({
+        ...createConfig,
+        adapter: axiosRequestAdapter,
+      })) as never)
     spyOnStepQuery(
       createStepQueryChain({
         findById: vi.fn(() => ({

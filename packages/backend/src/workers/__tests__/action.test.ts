@@ -43,23 +43,22 @@ describe('action workers', () => {
     vi.resetModules()
 
     const makeActionQueueModule =
-      await import('@/queues/helpers/make-action-queue')
+      await import('../../queues/helpers/make-action-queue')
     vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
       ({ queueName }) => createMockQueue(queueName) as never,
     )
 
-    const appsModule = await import('@/apps')
+    const appsModule = await import('../../apps')
     restoreAppsRegistry = stubAppsRegistry(appsModule.default, TEST_APPS)
 
-    const makeActionWorkerModule =
-      await import('@/workers/helpers/make-action-worker')
+    const makeActionWorkerModule = await import('../helpers/make-action-worker')
     vi.spyOn(makeActionWorkerModule, 'makeActionWorker').mockImplementation(
       makeActionWorker as never,
     )
 
-    await import('@/workers/action')
+    await import('../action')
 
-    const actionQueueModule = await import('@/queues/action')
+    const actionQueueModule = await import('../../queues/action')
     MAIN_ACTION_QUEUE_NAME = actionQueueModule.MAIN_ACTION_QUEUE_NAME
     MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX =
       actionQueueModule.MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX

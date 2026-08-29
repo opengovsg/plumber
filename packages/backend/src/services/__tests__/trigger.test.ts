@@ -64,10 +64,9 @@ describe('processTrigger', () => {
           })),
         }) as never,
     )
-    vi.spyOn(Execution, 'transaction').mockImplementation(
-      ((callback) =>
-        (callback as (trx: string) => unknown)('mock-trx')) as never,
-    )
+    vi.spyOn(Execution, 'transaction').mockImplementation(((
+      callback: (trx: string) => unknown,
+    ) => callback('mock-trx')) as never)
   })
 
   afterEach(() => {

@@ -58,7 +58,7 @@ describe('processForEachStatus', () => {
       getForEachExecutionState,
     )
     vi.spyOn(ExecutionStep, 'getIterationSteps').mockImplementation(
-      getIterationSteps,
+      getIterationSteps as never,
     )
     vi.spyOn(Execution, 'setStatus').mockImplementation(setStatus)
   })

@@ -2,14 +2,7 @@ import type { IGlobalVariable } from '@plumber/types'
 import type { AxiosPromise, CreateAxiosDefaults } from 'axios'
 import axios from 'axios'
 import { Settings as LuxonSettings } from 'luxon'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createHttpClient from '@/helpers/http-client'
 import logger from '@/helpers/logger'
@@ -52,13 +45,13 @@ describe('Send SMS Action', () => {
       authDataParseResult as never,
     )
     vi.spyOn(logger, 'error').mockImplementation(logError as never)
-    vi.spyOn(axios, 'create').mockImplementation(
-      ((createConfig?: CreateAxiosDefaults) =>
-        actualAxiosCreate({
-          ...createConfig,
-          adapter: axiosRequestAdapter,
-        })) as never,
-    )
+    vi.spyOn(axios, 'create').mockImplementation(((
+      createConfig?: CreateAxiosDefaults,
+    ) =>
+      actualAxiosCreate({
+        ...createConfig,
+        adapter: axiosRequestAdapter,
+      })) as never)
 
     const http = createHttpClient({
       $,

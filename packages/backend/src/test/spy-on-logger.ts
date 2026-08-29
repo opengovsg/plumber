@@ -17,9 +17,9 @@ export function spyOnLogger(options?: {
     info: options?.info ?? vi.fn(),
   }
 
-  vi.spyOn(logger, 'error').mockImplementation(spies.error)
-  vi.spyOn(logger, 'warn').mockImplementation(spies.warn)
-  vi.spyOn(logger, 'info').mockImplementation(spies.info)
+  vi.spyOn(logger, 'error').mockImplementation(spies.error as never)
+  vi.spyOn(logger, 'warn').mockImplementation(spies.warn as never)
+  vi.spyOn(logger, 'info').mockImplementation(spies.info as never)
 
   return spies
 }

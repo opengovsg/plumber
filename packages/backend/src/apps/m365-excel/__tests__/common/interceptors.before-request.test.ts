@@ -26,22 +26,22 @@ describe('M365 before request interceptors', () => {
   let http: IHttpClient
 
   beforeEach(() => {
-    vi.spyOn(axios, 'create').mockImplementation(
-      ((createConfig?: CreateAxiosDefaults) =>
-        actualAxiosCreate({
-          ...createConfig,
-          adapter: async (config: InternalAxiosRequestConfig): AxiosPromise => {
-            axiosRequestConfigSpy(config)
-            return {
-              data: 'test-data',
-              status: 200,
-              statusText: 'OK',
-              headers: {},
-              config,
-            }
-          },
-        })) as never,
-    )
+    vi.spyOn(axios, 'create').mockImplementation(((
+      createConfig?: CreateAxiosDefaults,
+    ) =>
+      actualAxiosCreate({
+        ...createConfig,
+        adapter: async (config: InternalAxiosRequestConfig): AxiosPromise => {
+          axiosRequestConfigSpy(config)
+          return {
+            data: 'test-data',
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config,
+          }
+        },
+      })) as never)
     vi.spyOn(logger, 'info').mockImplementation(logInfo as never)
     vi.spyOn(
       m365Config,
