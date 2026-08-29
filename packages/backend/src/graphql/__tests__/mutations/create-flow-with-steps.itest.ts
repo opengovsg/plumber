@@ -1,32 +1,33 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { StepEnumType } from '@/graphql/__generated__/types.generated'
 import createFlowWithSteps from '@/graphql/mutations/ai/create-flow-with-steps'
+import * as launchDarkly from '@/helpers/launch-darkly'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-const mocks = vi.hoisted(() => ({
-  getAllLdFlags: vi.fn(),
-  getRestrictedAppKeys: vi.fn(),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getAllLdFlags: mocks.getAllLdFlags,
-  getRestrictedAppKeys: mocks.getRestrictedAppKeys,
-}))
+const getAllLdFlags = vi.fn()
+const getRestrictedAppKeys = vi.fn()
 
 describe('createFlowWithSteps mutation integration tests', () => {
   let testUser: User
   let context: Context
 
   beforeEach(async () => {
+    vi.spyOn(launchDarkly, 'getAllLdFlags').mockImplementation(
+      getAllLdFlags as never,
+    )
+    vi.spyOn(launchDarkly, 'getRestrictedAppKeys').mockImplementation(
+      getRestrictedAppKeys as never,
+    )
+
     // Clean up database before each test
     await Step.query().delete()
     await Flow.query().delete()
 
-    mocks.getAllLdFlags.mockResolvedValue({
+    getAllLdFlags.mockResolvedValue({
       'ai-builder': {
         enabled: true,
         config: {
@@ -44,6 +45,8 @@ describe('createFlowWithSteps mutation integration tests', () => {
       isAdminOperation: false,
     }
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   describe('happy flow', () => {
     it('should create a flow with steps successfully', async () => {
@@ -880,7 +883,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
 
   describe('restricted app keys validation', () => {
     it('should throw error when using a restricted action app key', async () => {
-      mocks.getRestrictedAppKeys.mockReturnValueOnce(['aisay'])
+      getRestrictedAppKeys.mockReturnValueOnce(['aisay'])
 
       const params = {
         input: {
@@ -914,7 +917,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
     })
 
     it('should throw error when using a restricted trigger app key', async () => {
-      mocks.getRestrictedAppKeys.mockReturnValueOnce(['gathersg'])
+      getRestrictedAppKeys.mockReturnValueOnce(['gathersg'])
 
       const params = {
         input: {

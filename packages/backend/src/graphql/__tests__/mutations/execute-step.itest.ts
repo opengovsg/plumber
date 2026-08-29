@@ -18,6 +18,7 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 import { TestStepOptions, TestStepResult } from '@/services/test-step'
+import * as testStepModule from '@/services/test-step.js'
 import Context from '@/types/express/context'
 
 import { generateMockUser } from './flow.mock'
@@ -56,19 +57,6 @@ const getMockResolvedValue = (userId: string) => {
   }
 }
 
-vi.mock('@/services/test-step.js', () => ({
-  default: vi.fn(() => {
-    return {
-      executionStep: {
-        id: 'execution-step-1',
-        stepId: '8c2a70d1-e78b-431e-9069-a4d8f97883f7',
-        isFailed: false,
-      },
-      executionId: '8c2a70d1-e78b-431e-9069-a4d8f97883f8',
-    }
-  }),
-}))
-
 describe('executeStep mutation - access control', () => {
   let context: Context
   let owner: User
@@ -79,7 +67,16 @@ describe('executeStep mutation - access control', () => {
     (options: TestStepOptions) => Promise<TestStepResult>
   >
   beforeEach(async () => {
-    vi.resetAllMocks()
+    testStepSpy = vi
+      .spyOn(testStepModule, 'default')
+      .mockImplementation((() => ({
+        executionStep: {
+          id: 'execution-step-1',
+          stepId: '8c2a70d1-e78b-431e-9069-a4d8f97883f7',
+          isFailed: false,
+        },
+        executionId: '8c2a70d1-e78b-431e-9069-a4d8f97883f8',
+      })) as never)
 
     context = await generateMockContext()
     owner = context.currentUser
@@ -88,14 +85,9 @@ describe('executeStep mutation - access control', () => {
     editor = await generateMockUser('editor')
     viewer = await generateMockUser('viewer')
     nonCollaborator = await generateMockUser('nonCollaborator')
-
-    // esModuleInterop double-wraps .default on a value-level dynamic import of a
-    // nodenext CJS module; typeof import(...) models it correctly, so cast through it.
-    testStepSpy = vi.spyOn(
-      (await import('@/services/test-step.js')) as unknown as typeof import('@/services/test-step.js'),
-      'default',
-    )
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   describe('access control', () => {
     it('should allow owner to execute step successfully', async () => {

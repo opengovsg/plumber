@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import upsertFlowCollaborator from '@/graphql/mutations/upsert-flow-collaborator'
+import * as launchDarkly from '@/helpers/launch-darkly'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
@@ -16,13 +17,7 @@ import Context from '@/types/express/context'
 
 import { generateMockContext } from './tiles/table.mock'
 
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn().mockResolvedValue(true),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
+const getLdFlagValue = vi.fn()
 
 describe('upsert flow collaborator', () => {
   let context: Context
@@ -31,6 +26,11 @@ describe('upsert flow collaborator', () => {
   let viewer: User
 
   beforeEach(async () => {
+    vi.spyOn(launchDarkly, 'getLdFlagValue').mockImplementation(
+      getLdFlagValue as never,
+    )
+    getLdFlagValue.mockResolvedValue(true)
+
     context = await generateMockContext()
 
     dummyFlow = await Flow.query().insert({
@@ -49,6 +49,8 @@ describe('upsert flow collaborator', () => {
       email: 'viewer@plumber.gov.sg',
     })
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   it('owner should be able to add new editor', async () => {
     await upsertFlowCollaborator(
@@ -1026,7 +1028,7 @@ describe('upsert flow collaborator', () => {
   })
 
   it('should not allow adding collaborators if collaborators flag is false', async () => {
-    mocks.getLdFlagValue.mockResolvedValue(false)
+    getLdFlagValue.mockResolvedValue(false)
     await expect(
       upsertFlowCollaborator(
         null,
