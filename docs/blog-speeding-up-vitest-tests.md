@@ -10,6 +10,8 @@ Three changes, applied across both suites where they apply:
 
 Integration gains come mostly from worker isolation + mock split; spyOn widens the shared pool. Unit gains come mostly from mock split + spyOn.
 
+We upgraded from Vitest 3 to 4 as part of the same effort. v4 rewrites the runner pool (replacing tinypool), avoids spawning idle workers, and trims import/startup overhead — but we did not benchmark that bump on its own. The numbers below come from the three config changes, not the major version alone.
+
 ---
 
 **Summary**
