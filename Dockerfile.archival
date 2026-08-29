@@ -6,7 +6,7 @@ ENV VITE_MODE=$APP_ENV
 
 WORKDIR /opt/plumber
 COPY . ./
-RUN npm install -g pnpm@11.23.0
+RUN npm install -g pnpm@12.1.0
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm config set "//npm.taskforce.sh/:_authToken" "$(cat /run/secrets/NPM_TASKFORCESH_TOKEN)" && \
   pnpm install --frozen-lockfile
