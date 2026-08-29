@@ -4,8 +4,8 @@ We cut backend integration Vitest time from **266s to 104s** (−61%) and unit V
 
 Three changes, applied across both suites where they apply:
 
-1. **Mock split** — grep for `vi.mock`, run non-mock files with `isolate: false`
-2. **Worker isolation** — per-worker Postgres, Redis, and DynamoDB for integration tests
+1. **Worker isolation** — per-worker Postgres, Redis, and DynamoDB for integration tests
+2. **Mock split** — grep for `vi.mock`, run non-mock files with `isolate: false`
 3. **SpyOn migration** — replace `vi.mock('@/…')` on our own modules with `vi.spyOn()` (same pattern for unit and integration)
 
 Integration gains come mostly from worker isolation + mock split; spyOn widens the shared pool. Unit gains come mostly from mock split + spyOn.
@@ -95,27 +95,7 @@ One `vi.mock()` anywhere in a file sends the whole file to the isolated project.
 
 ---
 
-## 1. Mock split: stop paying for isolation you do not need
-
-**Applies to:** unit and integration.
-
-Before (develop-v2): one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
-
-After: at config load, grep for `vi.mock` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
-
-| Suite | Shared | Isolated |
-|-------|--------|----------|
-| Unit (split only) | 82 | 65 |
-| Unit (+ spyOn) | 133 | 14 |
-| Integration (+ spyOn) | 64 | 7 |
-
-Also on unit: `maxWorkers: cpus().length`.
-
-Mock split alone moved 82 unit files to shared workers (−43% on unit time).
-
----
-
-## 2. Worker isolation: parallel integration without flakiness
+## 1. Worker isolation: parallel integration without flakiness
 
 **Applies to:** integration only.
 
@@ -207,6 +187,26 @@ flowchart TB
 Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
 
 This is most of the integration win. Integration was the wall-clock long pole before and after (**266s → 104s**, −61%).
+
+---
+
+## 2. Mock split: stop paying for isolation you do not need
+
+**Applies to:** unit and integration.
+
+Before (develop-v2): one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
+
+After: at config load, grep for `vi.mock` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
+
+| Suite | Shared | Isolated |
+|-------|--------|----------|
+| Unit (split only) | 82 | 65 |
+| Unit (+ spyOn) | 133 | 14 |
+| Integration (+ spyOn) | 64 | 7 |
+
+Also on unit: `maxWorkers: cpus().length`.
+
+Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
 ---
 
