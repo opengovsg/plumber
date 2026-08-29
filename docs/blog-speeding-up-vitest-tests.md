@@ -20,7 +20,7 @@ Integration gains come mostly from worker isolation + mock split; spyOn widens t
 | Backend integration (71 files / 814 tests) | **266s** | **104s** | **−61%** |
 | Wall clock (slowest suite) | **266s** | **104s** | **−61%** |
 
-Benchmark Vitest `Duration` from each suite's test run — not the full CI job (checkout and setup add ~70–110s on top). CI already ran unit and integration as separate jobs on develop-v2; **that layout did not change**. Turbo is just how each suite is invoked and timed.
+Benchmark Vitest `Duration` per suite. To compare unit and integration separately, each suite runs in its own CI job via `turbo run test:unit` or `test:integration`. On develop-v2, both ran in **one CI job** (`npm run test`) — the table below uses the split-job timing with develop-v2's Vitest config as the baseline.
 
 Unit speedup comes in two steps:
 
@@ -36,7 +36,7 @@ Integration at full stack: **104s** (−61%).
 
 ## How backend tests run
 
-pnpm + Turbo monorepo, Vitest 4. Each suite runs via `turbo run test:unit` or `test:integration` in its own CI job — same entrypoint before and after. What changed is the Vitest config inside each job.
+pnpm + Turbo monorepo, Vitest 4.
 
 | Suite | Pattern | Infra |
 |-------|---------|-------|
@@ -45,63 +45,59 @@ pnpm + Turbo monorepo, Vitest 4. Each suite runs via `turbo run test:unit` or `t
 
 ### Before (develop-v2)
 
-One Vitest project per suite. No mock split, no per-worker databases.
+**One CI job** runs `npm run test` — a single root Vitest invocation that includes backend unit and integration (plus frontend) back-to-back. Backend used one Vitest project per suite, with no mock split and no per-worker databases.
 
 ```mermaid
 flowchart TB
-  subgraph before ["develop-v2"]
-    direction LR
+  subgraph ci ["1 CI job"]
+    direction TB
+    RUN["npm run test"]
+    ROOT["root vitest · all projects"]
 
-    subgraph unit ["Unit · 147 files"]
-      direction TB
-      U1["1 Vitest project"]
-      U2["isolate true"]
-      U3["fresh module graph per file"]
-      U1 --> U2 --> U3
+    subgraph backend ["backend · same job"]
+      direction LR
+      U["Unit · 147 files\n1 project · isolate true"]
+      I["Integration · 71 files\nsingleThread · 1 Postgres"]
     end
 
-    subgraph int ["Integration · 71 files"]
-      direction TB
-      I1["singleThread: true"]
-      I2["4 sequential globalSetup"]
-      I3["1 shared Postgres"]
-      I1 --> I2 --> I3
-    end
+    RUN --> ROOT --> backend
   end
 ```
 
 ### After (full stack)
 
-grep-split into shared and isolated projects. Integration runs parallel workers, each with its own Postgres, Redis, and DynamoDB slice.
+**Two CI jobs in parallel**, each via turbo — so unit and integration are timed independently and wall clock is the slower job (integration).
 
 ```mermaid
 flowchart TB
-  subgraph after ["Optimised"]
+  subgraph ci ["2 CI jobs · run in parallel"]
     direction LR
 
-    subgraph unit ["Unit · 147 files"]
+    subgraph job_unit ["CI job: backend unit"]
       direction TB
+      T1["turbo run test:unit"]
       GU["grep vi.mock"]
       U1["133 files · isolate false"]
       U2["14 files · isolated"]
-      GU --> U1
+      T1 --> GU --> U1
       GU --> U2
     end
 
-    subgraph int ["Integration · 71 files"]
+    subgraph job_int ["CI job: backend integration"]
       direction TB
+      T2["turbo run test:integration"]
       GI["grep vi.mock"]
       I1["64 files · isolate false"]
       I2["7 files · isolated"]
       W["parallel workers · DB slice each"]
-      GI --> I1
+      T2 --> GI --> I1
       GI --> I2
       W --- I1
     end
   end
 ```
 
-Mock split alone shares 82 unit files before spyOn shrinks the isolated bucket to 14.
+Inside each job: grep-split into shared and isolated Vitest projects. Mock split alone shares 82 unit files before spyOn shrinks the isolated bucket to 14.
 
 One `vi.mock()` anywhere in a file sends the whole file to the isolated project. Migrating three of four mocks in a file does nothing for routing.
 
@@ -131,7 +127,7 @@ Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
 **Applies to:** integration only.
 
-Before: `singleThread: true`, four sequential `globalSetup` files, one shared Postgres, table-by-table truncate on every test.
+Before (develop-v2): `singleThread: true`, four sequential `globalSetup` files, one shared Postgres, table-by-table truncate on every test.
 
 After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 
