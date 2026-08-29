@@ -1,9 +1,35 @@
 import { IFlowConfig } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { processAction } from '../action'
+import * as computeForEachParameters from '@/helpers/compute-for-each-parameters'
+import * as computeParametersModule from '@/helpers/compute-parameters'
+import * as globalVariableModule from '@/helpers/global-variable'
+import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
+import Flow from '@/models/flow'
+import * as getForEachMetadataModule from '@/services/helpers/get-for-each-metadata'
+import { spyOnLogger } from '@/test/spy-on-logger'
+import { spyOnStepQuery } from '@/test/spy-on-step-query'
 
-const mocks = vi.hoisted(() => {
+const OPTIONS = {
+  flowId: 'flow-id',
+  stepId: 'step-id',
+  executionId: 'execution-id',
+}
+
+function createMockQueue(name: string) {
+  return {
+    name,
+    close: vi.fn(),
+    add: vi.fn(),
+    getJob: vi.fn(),
+  }
+}
+
+describe('processAction', () => {
+  let processAction: typeof import('../action').processAction
+  let actionQueueModule: typeof import('@/queues/action')
+
   const executionStep = {
     id: 'exec-step-id',
     isFailed: false,
@@ -40,111 +66,100 @@ const mocks = vi.hoisted(() => {
     steps: [] as unknown[],
   }
 
-  return {
-    step,
-    flow,
-    execution,
-    executionStep,
-    globalVariable: vi.fn(() => ({
-      step: { parameters: {} },
-      actionOutput: { data: null, error: null },
-      execution: { id: 'execution-id' },
-      app: { key: 'webhook' },
-    })),
-  }
-})
+  beforeAll(async () => {
+    vi.resetModules()
 
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({
-        throwIfNotFound: vi.fn(() => mocks.step),
-      })),
-    })),
-  },
-}))
+    const makeActionQueueModule = await import(
+      '@/queues/helpers/make-action-queue'
+    )
+    vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
+      ({ queueName }) => createMockQueue(queueName) as never,
+    )
 
-vi.mock('@/models/flow', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({
-        withGraphJoined: vi.fn(() => ({
-          withGraphFetched: vi.fn(() => ({
-            throwIfNotFound: vi.fn(() => mocks.flow),
-          })),
-        })),
-      })),
-    })),
-  },
-}))
+    actionQueueModule = await import('@/queues/action')
 
-vi.mock('@/models/execution', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({
-        throwIfNotFound: vi.fn(() => mocks.execution),
-      })),
-    })),
-  },
-}))
+    const actionModule = await import('../action')
+    processAction = actionModule.processAction
+  })
 
-vi.mock('@/models/execution-step', () => {
-  const chainable: Record<string, unknown> = {}
-  chainable.where = vi.fn(() => chainable)
-  chainable.then = (onFulfilled: (value: unknown[]) => unknown) =>
-    onFulfilled([])
-  return {
-    default: {
-      query: vi.fn(() => chainable),
-    },
-  }
-})
-
-vi.mock('@/helpers/compute-for-each-parameters', () => ({
-  getStepContext: vi.fn(() => ({
-    forEachStepPosition: -1,
-    stepPositions: [],
-    isForEachStep: false,
-    isLastStep: false,
-  })),
-}))
-
-vi.mock('@/helpers/compute-parameters', () => ({
-  default: vi.fn(() => ({})),
-}))
-
-vi.mock('@/helpers/global-variable', () => ({
-  default: mocks.globalVariable,
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
-}))
-
-vi.mock('@/services/helpers/get-for-each-metadata', () => ({
-  default: vi.fn(),
-}))
-
-vi.mock('@/queues/action', () => ({
-  enqueueActionJob: vi.fn(),
-}))
-
-const OPTIONS = {
-  flowId: 'flow-id',
-  stepId: 'step-id',
-  executionId: 'execution-id',
-}
-
-describe('processAction', () => {
   beforeEach(() => {
-    mocks.flow.config = null
-    mocks.executionStep.isFailed = false
-    mocks.executionStep.status = 'success'
+    flow.config = null
+    executionStep.isFailed = false
+    executionStep.status = 'success'
+
+    spyOnLogger()
+
+    spyOnStepQuery(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: vi.fn(() => step),
+      })),
+    }))
+
+    vi.spyOn(Flow, 'query').mockImplementation(
+      () =>
+        ({
+          findById: vi.fn(() => ({
+            withGraphJoined: vi.fn(() => ({
+              withGraphFetched: vi.fn(() => ({
+                throwIfNotFound: vi.fn(() => flow),
+              })),
+            })),
+          })),
+        }) as never,
+    )
+
+    vi.spyOn(Execution, 'query').mockImplementation(
+      () =>
+        ({
+          findById: vi.fn(() => ({
+            throwIfNotFound: vi.fn(() => execution),
+          })),
+        }) as never,
+    )
+
+    const chainable: Record<string, unknown> = {}
+    chainable.where = vi.fn(() => chainable)
+    chainable.then = (onFulfilled: (value: unknown[]) => unknown) =>
+      onFulfilled([])
+    vi.spyOn(ExecutionStep, 'query').mockImplementation(() => chainable as never)
+
+    vi.spyOn(computeForEachParameters, 'getStepContext').mockReturnValue({
+      forEachStepPosition: -1,
+      stepPositions: [],
+      isForEachStep: false,
+      isLastStep: false,
+    })
+
+    vi.spyOn(computeParametersModule, 'default').mockImplementation(
+      () => ({}),
+    )
+    vi.spyOn(globalVariableModule, 'default').mockImplementation(
+      () =>
+        ({
+          step: { parameters: {} },
+          actionOutput: { data: null, error: null },
+          execution: { id: 'execution-id' },
+          app: { key: 'webhook' },
+        }) as never,
+    )
+    vi.spyOn(getForEachMetadataModule, 'default').mockImplementation(vi.fn())
+    vi.spyOn(actionQueueModule, 'enqueueActionJob').mockResolvedValue(
+      {} as never,
+    )
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  afterAll(() => {
+    vi.restoreAllMocks()
+    process.removeAllListeners('SIGTERM')
   })
 
   describe('Force clogging', () => {
     it('throws an UnrecoverableError when flow.config.isForceClogged is true', async () => {
-      mocks.flow.config = { isForceClogged: true }
+      flow.config = { isForceClogged: true }
 
       await expect(processAction(OPTIONS)).rejects.toThrow(
         'Pipe flow-id has been force clogged',
@@ -152,14 +167,14 @@ describe('processAction', () => {
     })
 
     it('does not throw UnrecoverableError when flow.config.isForceClogged is false', async () => {
-      mocks.flow.config = { isForceClogged: false }
+      flow.config = { isForceClogged: false }
 
       const result = await processAction(OPTIONS)
       expect(result.executionError).toBeNull()
     })
 
     it('does not throw error when flow has no config', async () => {
-      mocks.flow.config = null
+      flow.config = null
 
       const result = await processAction(OPTIONS)
       expect(result.executionError).toBeNull()

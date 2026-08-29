@@ -1,40 +1,33 @@
+import jwt from 'jsonwebtoken'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import loginWithSelectedSgid from '@/graphql/mutations/login-with-selected-sgid'
+import * as auth from '@/helpers/auth'
 import { SGID_MULTI_HAT_COOKIE_NAME } from '@/helpers/sgid'
 import type User from '@/models/user'
+import { spyOnLogger } from '@/test/spy-on-logger'
 import type Context from '@/types/express/context'
 
-const mocks = vi.hoisted(() => ({
-  setAuthCookie: vi.fn(),
-  getOrCreateUser: vi.fn(),
-  sendOnboardingEmail: vi.fn(),
-  updateLastLogin: vi.fn(),
-  logError: vi.fn(),
-  verifyJwt: vi.fn(),
-}))
-
-vi.mock('@/helpers/auth', () => ({
-  setAuthCookie: mocks.setAuthCookie,
-  getOrCreateUser: mocks.getOrCreateUser,
-  sendOnboardingEmail: mocks.sendOnboardingEmail,
-  updateLastLogin: mocks.updateLastLogin,
-}))
-
-vi.mock('jsonwebtoken', () => ({
-  verify: mocks.verifyJwt,
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.logError,
-  },
-}))
+const setAuthCookie = vi.fn()
+const getOrCreateUser = vi.fn()
+const sendOnboardingEmail = vi.fn()
+const updateLastLogin = vi.fn()
+const verifyJwt = vi.fn()
+let logError: ReturnType<typeof vi.fn>
 
 describe('Login with selected SGID', () => {
   let context: Context
 
   beforeEach(() => {
+    const loggerSpies = spyOnLogger({ error: vi.fn() })
+    logError = loggerSpies.error
+
+    vi.spyOn(auth, 'setAuthCookie').mockImplementation(setAuthCookie)
+    vi.spyOn(auth, 'getOrCreateUser').mockImplementation(getOrCreateUser)
+    vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(sendOnboardingEmail)
+    vi.spyOn(auth, 'updateLastLogin').mockImplementation(updateLastLogin)
+    vi.spyOn(jwt, 'verify').mockImplementation(verifyJwt)
+
     context = {
       res: {
         clearCookie: vi.fn(),
@@ -51,7 +44,7 @@ describe('Login with selected SGID', () => {
   })
 
   it('should log user in if multi-hat user provided a valid work email', async () => {
-    mocks.verifyJwt.mockReturnValueOnce({
+    verifyJwt.mockReturnValueOnce({
       publicOfficerEmployments: [
         {
           workEmail: 'loong_loong@coffee.gov.sg',
@@ -69,7 +62,7 @@ describe('Login with selected SGID', () => {
         },
       ],
     })
-    mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
+    getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
     const result = await loginWithSelectedSgid(
       null,
@@ -81,19 +74,17 @@ describe('Login with selected SGID', () => {
       context,
     )
 
-    expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
-      'loong_loong@coffee.gov.sg',
-    )
-    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith({ id: 'abc-def' })
-    expect(mocks.updateLastLogin).toHaveBeenCalledWith('abc-def')
-    expect(mocks.setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
+    expect(getOrCreateUser).toHaveBeenCalledWith('loong_loong@coffee.gov.sg')
+    expect(sendOnboardingEmail).toHaveBeenCalledWith({ id: 'abc-def' })
+    expect(updateLastLogin).toHaveBeenCalledWith('abc-def')
+    expect(setAuthCookie).toHaveBeenCalledWith(expect.anything(), {
       userId: 'abc-def',
     })
     expect(result.success).toEqual(true)
   })
 
   it('should throw error if multi-hat user provided an invalid work email', async () => {
-    mocks.verifyJwt.mockReturnValueOnce({
+    verifyJwt.mockReturnValueOnce({
       publicOfficerEmployments: [
         {
           workEmail: 'loong_loong@coffee.gov.sg',
@@ -124,15 +115,15 @@ describe('Login with selected SGID', () => {
       ),
     ).rejects.toThrow('Invalid work email')
 
-    expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
-    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled()
-    expect(mocks.updateLastLogin).not.toHaveBeenCalled()
-    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
+    expect(getOrCreateUser).not.toHaveBeenCalled()
+    expect(sendOnboardingEmail).not.toHaveBeenCalled()
+    expect(updateLastLogin).not.toHaveBeenCalled()
+    expect(setAuthCookie).not.toHaveBeenCalled()
   })
 
   it('should log error if JWT validation failed', async () => {
     context.req.cookies[SGID_MULTI_HAT_COOKIE_NAME] = 'test cookie data'
-    mocks.verifyJwt.mockImplementationOnce(() => {
+    verifyJwt.mockImplementationOnce(() => {
       throw new Error('test')
     })
 
@@ -148,7 +139,7 @@ describe('Login with selected SGID', () => {
       ),
     ).rejects.toThrow('test')
 
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       'Could not validate sgid multi-hat cookie',
       {
         event: 'sgid-login-failed-cookie-validation',

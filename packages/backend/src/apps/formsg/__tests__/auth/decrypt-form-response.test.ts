@@ -4,8 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
+import EmailSuppressionEntry from '@/models/email-suppression-entry'
+import logger from '@/helpers/logger'
 
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
+import * as formEnv from '../../common/form-env'
 import { NricFilter } from '../../triggers/new-submission'
 
 // TZ formatting replicated here (see appConfig) as tests don't load the app
@@ -23,57 +26,39 @@ const FAILED_DECRYPT_RESPONSE = {
   internalId: null as string | null,
 }
 
-// mocks hoisted here so that they can be used in import mocks
-const mocks = vi.hoisted(() => {
-  const webhooksAuthenticate = vi.fn()
-  const cryptoDecrypt = vi.fn()
-  const cryptoDecryptWithAttachments = vi.fn()
-  const mockSdk = {
-    webhooks: {
-      authenticate: webhooksAuthenticate,
-    },
-    crypto: {
-      decrypt: cryptoDecrypt,
-      decryptWithAttachments: cryptoDecryptWithAttachments,
-    },
-  }
-
-  return {
-    webhooksAuthenticate,
-    cryptoDecrypt,
-    cryptoDecryptWithAttachments,
-    consoleError: vi.fn(),
-    consoleWarn: vi.fn(),
-    consoleInfo: vi.fn(),
-    getSdk: vi.fn(() => mockSdk),
-    parseFormEnv: vi.fn(),
-    whitelistEmails: vi.fn().mockResolvedValue([]),
-  }
-})
-
-// mock logger
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.consoleError,
-    warn: mocks.consoleWarn,
-    info: mocks.consoleInfo,
+const webhooksAuthenticate = vi.fn()
+const cryptoDecrypt = vi.fn()
+const cryptoDecryptWithAttachments = vi.fn()
+const mockSdk = {
+  webhooks: {
+    authenticate: webhooksAuthenticate,
   },
-}))
-
-// mock email suppression model
-vi.mock('@/models/email-suppression-entry', () => ({
-  default: {
-    whitelistEmails: mocks.whitelistEmails,
+  crypto: {
+    decrypt: cryptoDecrypt,
+    decryptWithAttachments: cryptoDecryptWithAttachments,
   },
-}))
+}
 
-vi.mock('../../common/form-env', () => ({
-  getSdk: mocks.getSdk,
-  parseFormEnv: mocks.parseFormEnv,
-}))
+const consoleError = vi.fn()
+const consoleWarn = vi.fn()
+const consoleInfo = vi.fn()
+const getSdk = vi.fn(() => mockSdk)
+const parseFormEnv = vi.fn()
+const whitelistEmails = vi.fn().mockResolvedValue([])
 
 describe('decrypt form response', () => {
   let $: IGlobalVariable
+
+  beforeEach(() => {
+    vi.spyOn(logger, 'error').mockImplementation(consoleError)
+    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn)
+    vi.spyOn(logger, 'info').mockImplementation(consoleInfo)
+    vi.spyOn(EmailSuppressionEntry, 'whitelistEmails').mockImplementation(
+      whitelistEmails,
+    )
+    vi.spyOn(formEnv, 'getSdk').mockImplementation(getSdk)
+    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv)
+  })
 
   // reset global variable before each test
   beforeEach(() => {
@@ -137,15 +122,15 @@ describe('decrypt form response', () => {
     { hasFileProcessingActions: false },
   ])('common functions', ({ hasFileProcessingActions }) => {
     const decryptMock = hasFileProcessingActions
-      ? mocks.cryptoDecryptWithAttachments
-      : mocks.cryptoDecrypt
+      ? cryptoDecryptWithAttachments
+      : cryptoDecrypt
     const mockDecryptedSubmission = (submission: any) =>
       hasFileProcessingActions
-        ? mocks.cryptoDecryptWithAttachments.mockResolvedValueOnce({
+        ? cryptoDecryptWithAttachments.mockResolvedValueOnce({
             attachments: {},
             content: submission,
           })
-        : mocks.cryptoDecrypt.mockReturnValueOnce(submission)
+        : cryptoDecrypt.mockReturnValueOnce(submission)
 
     beforeEach(() => {
       $.flow.hasFileProcessingActions = hasFileProcessingActions
@@ -156,20 +141,20 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         FAILED_DECRYPT_RESPONSE,
       )
-      expect(mocks.consoleError).toHaveBeenCalledWith(
+      expect(consoleError).toHaveBeenCalledWith(
         'No trigger item provided',
       )
     })
 
     it('should fail if unable to verify form signature', async () => {
-      mocks.webhooksAuthenticate.mockImplementationOnce(() => {
+      webhooksAuthenticate.mockImplementationOnce(() => {
         throw new Error('error')
       })
       await expect(decryptFormResponse($)).resolves.toEqual(
         FAILED_DECRYPT_RESPONSE,
       )
-      expect(mocks.webhooksAuthenticate).toHaveBeenCalledTimes(1)
-      expect(mocks.consoleError).toHaveBeenCalledWith(
+      expect(webhooksAuthenticate).toHaveBeenCalledTimes(1)
+      expect(consoleError).toHaveBeenCalledWith(
         'Unable to verify formsg signature',
       )
     })
@@ -179,7 +164,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         FAILED_DECRYPT_RESPONSE,
       )
-      expect(mocks.consoleWarn).toHaveBeenCalledWith(
+      expect(consoleWarn).toHaveBeenCalledWith(
         'Form is not connected to any pipe after pipe is transferred',
         {
           event: 'formsg-missing-connection',
@@ -196,7 +181,7 @@ describe('decrypt form response', () => {
         FAILED_DECRYPT_RESPONSE,
       )
       expect(decryptMock).toHaveBeenCalledTimes(1)
-      expect(mocks.consoleWarn).toHaveBeenCalledWith(
+      expect(consoleWarn).toHaveBeenCalledWith(
         'Unable to decrypt formsg response',
       )
     })
@@ -558,45 +543,45 @@ describe('decrypt form response', () => {
   describe('attachments', () => {
     it('attachment decryption function not called if pipe does not process files', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
+      cryptoDecrypt.mockReturnValueOnce({ responses: [] })
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.cryptoDecryptWithAttachments).not.toHaveBeenCalled()
+      expect(cryptoDecryptWithAttachments).not.toHaveBeenCalled()
     })
 
     it('attachment decryption function called if pipe processes files', async () => {
       $.flow.hasFileProcessingActions = true
-      mocks.cryptoDecryptWithAttachments.mockResolvedValueOnce({
+      cryptoDecryptWithAttachments.mockResolvedValueOnce({
         attachments: {},
         content: { responses: [] },
       })
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.cryptoDecrypt).not.toHaveBeenCalled()
+      expect(cryptoDecrypt).not.toHaveBeenCalled()
     })
   })
 
   describe('form environments', () => {
     it('should grab the sdk corresponding to the form environment', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
-      mocks.parseFormEnv.mockReturnValue('staging')
+      cryptoDecrypt.mockReturnValueOnce({ responses: [] })
+      parseFormEnv.mockReturnValue('staging')
 
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
 
-      expect(mocks.parseFormEnv).toHaveBeenCalled()
-      expect(mocks.getSdk).toHaveBeenCalledWith('staging')
+      expect(parseFormEnv).toHaveBeenCalled()
+      expect(getSdk).toHaveBeenCalledWith('staging')
     })
   })
 
   describe('local address field', () => {
     it('should handle local address fields', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'addressFieldComplete',
@@ -653,7 +638,7 @@ describe('decrypt form response', () => {
   describe('null character sanitisation', () => {
     it('should handle normal answer field with null characters', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'textField',
@@ -683,7 +668,7 @@ describe('decrypt form response', () => {
 
     it('should handle 1D array field answerArray', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'checkboxField',
@@ -713,7 +698,7 @@ describe('decrypt form response', () => {
 
     it('should handle 2D array field answerArray', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'tableField',
@@ -792,7 +777,7 @@ describe('decrypt form response', () => {
 
     it('should handle answerArray with null characters', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'checkboxField',
@@ -879,7 +864,7 @@ describe('decrypt form response', () => {
 
     it('should handle empty answerArray', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'checkboxField',
@@ -911,7 +896,7 @@ describe('decrypt form response', () => {
   describe('signature field', () => {
     it('should handle signature field with signature captured', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'signatureField',
@@ -941,7 +926,7 @@ describe('decrypt form response', () => {
 
     it('should handle signature field without signature', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'signatureField',
@@ -973,7 +958,7 @@ describe('decrypt form response', () => {
   describe('verified email suppression removal', () => {
     it('whitelists the email when isUserVerified is true (v1 shape)', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'emailField',
@@ -989,12 +974,12 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.whitelistEmails).toHaveBeenCalledWith(['jack@open.gov.sg'])
+      expect(whitelistEmails).toHaveBeenCalledWith(['jack@open.gov.sg'])
     })
 
     it('whitelists the email via signature presence when isUserVerified is absent (v3/v4 shape)', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'emailField',
@@ -1009,12 +994,12 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.whitelistEmails).toHaveBeenCalledWith(['jane@open.gov.sg'])
+      expect(whitelistEmails).toHaveBeenCalledWith(['jane@open.gov.sg'])
     })
 
     it('does not whitelist when isUserVerified is false', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'emailField',
@@ -1029,12 +1014,12 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.whitelistEmails).not.toHaveBeenCalled()
+      expect(whitelistEmails).not.toHaveBeenCalled()
     })
 
     it('does not whitelist when there is no email field at all', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'textField',
@@ -1048,12 +1033,12 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.whitelistEmails).not.toHaveBeenCalled()
+      expect(whitelistEmails).not.toHaveBeenCalled()
     })
 
     it('batches multiple verified email fields into a single whitelistEmails call', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'emailField1',
@@ -1075,8 +1060,8 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.whitelistEmails).toHaveBeenCalledTimes(1)
-      expect(mocks.whitelistEmails).toHaveBeenCalledWith([
+      expect(whitelistEmails).toHaveBeenCalledTimes(1)
+      expect(whitelistEmails).toHaveBeenCalledWith([
         'personal@open.gov.sg',
         'work@open.gov.sg',
       ])
@@ -1084,7 +1069,7 @@ describe('decrypt form response', () => {
 
     it('does not affect the decrypt result when whitelistEmails throws', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'emailField',
@@ -1095,12 +1080,12 @@ describe('decrypt form response', () => {
           },
         ],
       })
-      mocks.whitelistEmails.mockRejectedValueOnce(new Error('db error'))
+      whitelistEmails.mockRejectedValueOnce(new Error('db error'))
 
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.consoleError).toHaveBeenCalledWith(
+      expect(consoleError).toHaveBeenCalledWith(
         'Failed to whitelist verified FormSG email(s) from suppression list',
         expect.objectContaining({
           event: 'formsg-verified-email-whitelist-failed',
@@ -1110,7 +1095,7 @@ describe('decrypt form response', () => {
 
     it('logs which emails were actually whitelisted', async () => {
       $.flow.hasFileProcessingActions = false
-      mocks.cryptoDecrypt.mockReturnValueOnce({
+      cryptoDecrypt.mockReturnValueOnce({
         responses: [
           {
             _id: 'emailField',
@@ -1121,12 +1106,12 @@ describe('decrypt form response', () => {
           },
         ],
       })
-      mocks.whitelistEmails.mockResolvedValueOnce(['jack@open.gov.sg'])
+      whitelistEmails.mockResolvedValueOnce(['jack@open.gov.sg'])
 
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.consoleInfo).toHaveBeenCalledWith(
+      expect(consoleInfo).toHaveBeenCalledWith(
         'Removed verified FormSG email(s) from suppression list',
         expect.objectContaining({
           event: 'formsg-verified-email-whitelist',

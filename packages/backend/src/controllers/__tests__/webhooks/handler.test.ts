@@ -1,74 +1,48 @@
 import { IRequest } from '@plumber/types'
 import { Response } from 'express'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as rateLimiterFlexible from 'rate-limiter-flexible'
+import { RateLimiterRes } from 'rate-limiter-flexible'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import webhookHandler from '../../webhooks/handler'
+import * as redisConfig from '@/config/redis'
+import tracer from '@/helpers/tracer'
+import Flow from '@/models/flow'
+import * as actionQueue from '@/queues/action'
+import * as triggerService from '@/services/trigger'
+import { spyOnLogger } from '@/test/spy-on-logger'
 
-const mocks = vi.hoisted(() => {
-  return {
-    rateLimiterRes: class {},
-    rateLimiterRedis: {
-      consume: vi.fn(),
-    },
-    response: {
-      sendStatus: vi.fn((code) => code),
-    } as unknown as Response,
-    flow: {
-      active: false,
-      config: {},
-      getTriggerStep: vi.fn(() => ({
-        getNextStep: vi.fn(() => ({
-          id: 'next-step-id',
-        })),
-        getTriggerCommand: vi.fn(() => ({
-          type: 'webhook',
-        })),
-        getApp: vi.fn(() => ({
-          key: 'webhook',
-        })),
-      })),
-    },
-    processTrigger: vi.fn(() => ({
-      executionId: 'execution-id',
-      shouldExecute: true,
-    })),
-    enqueueActionJob: vi.fn(),
-  }
-})
+const rateLimiterRedis = {
+  consume: vi.fn(),
+}
 
-vi.mock('@/helpers/tracer', () => ({
-  default: {
-    scope: vi.fn(() => ({
-      active: vi.fn(),
+const response = {
+  sendStatus: vi.fn((code) => code),
+} as unknown as Response
+
+const flow = {
+  active: false,
+  config: {},
+  getTriggerStep: vi.fn(() => ({
+    getNextStep: vi.fn(() => ({
+      id: 'next-step-id',
     })),
-  },
-}))
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    info: vi.fn(),
-    warn: vi.fn(),
-  },
-}))
-vi.mock('@/models/flow', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({ withGraphJoined: () => mocks.flow })),
+    getTriggerCommand: vi.fn(() => ({
+      type: 'webhook',
     })),
-  },
+    getApp: vi.fn(() => ({
+      key: 'webhook',
+    })),
+  })),
+}
+
+const processTrigger = vi.fn(() => ({
+  executionId: 'execution-id',
+  shouldExecute: true,
 }))
-vi.mock('@/services/trigger', () => ({
-  processTrigger: mocks.processTrigger,
-}))
-vi.mock('@/queues/action', () => ({
-  enqueueActionJob: mocks.enqueueActionJob,
-}))
-vi.mock('rate-limiter-flexible', async () => ({
-  RateLimiterRes: mocks.rateLimiterRes,
-  // Mocking constructor; cannot use arrow functions
-  RateLimiterRedis: function () {
-    return mocks.rateLimiterRedis
-  },
-}))
+
+const enqueueActionJob = vi.fn()
+
+let webhookHandler: typeof import('../../webhooks/handler').default
 
 const FLOW_ID = 'fad50966-f810-43d0-a2c2-20759c611a82'
 const QUERY_PARAMS = {
@@ -83,6 +57,35 @@ const BODY = {
 describe('webhook handler', () => {
   let request: IRequest
 
+  beforeAll(async () => {
+    vi.spyOn(redisConfig, 'createRedisClient').mockReturnValue({} as never)
+    vi.spyOn(rateLimiterFlexible, 'RateLimiterRedis').mockImplementation(
+      function RateLimiterRedisMock() {
+        return rateLimiterRedis as never
+      },
+    )
+    vi.spyOn(tracer, 'scope').mockReturnValue({
+      active: vi.fn(),
+    } as never)
+
+    spyOnLogger({ info: vi.fn(), warn: vi.fn() })
+
+    const findById = vi.fn(() => ({ withGraphJoined: () => flow }))
+    vi.spyOn(Flow, 'query').mockReturnValue({
+      findById,
+    } as never)
+
+    vi.spyOn(triggerService, 'processTrigger').mockImplementation(
+      processTrigger,
+    )
+    vi.spyOn(actionQueue, 'enqueueActionJob').mockImplementation(
+      enqueueActionJob,
+    )
+
+    vi.resetModules()
+    webhookHandler = (await import('../../webhooks/handler')).default
+  })
+
   beforeEach(() => {
     request = {
       params: {
@@ -91,17 +94,31 @@ describe('webhook handler', () => {
       body: BODY,
       rawBody: Buffer.from('abc'),
     } as unknown as IRequest
+
+    flow.active = false
+    flow.config = {}
+    rateLimiterRedis.consume.mockReset()
+    processTrigger.mockReset()
+    processTrigger.mockReturnValue({
+      executionId: 'execution-id',
+      shouldExecute: true,
+    })
+    enqueueActionJob.mockReset()
+    response.sendStatus = vi.fn((code) => code) as never
   })
 
   afterEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterAll(() => {
     vi.restoreAllMocks()
   })
 
   describe('webhook body and query param variables', () => {
     it('should support body variables', async () => {
-      await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toHaveBeenCalledWith(
+      await webhookHandler(request, response)
+      expect(processTrigger).toHaveBeenCalledWith(
         // PSA from weeloong, expect.objectContaining does not work for nested objects
         expect.objectContaining({
           triggerItem: expect.objectContaining({ raw: BODY }),
@@ -112,8 +129,8 @@ describe('webhook handler', () => {
       request.query = QUERY_PARAMS
       delete request.body
 
-      await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toHaveBeenCalledWith(
+      await webhookHandler(request, response)
+      expect(processTrigger).toHaveBeenCalledWith(
         expect.objectContaining({
           triggerItem: expect.objectContaining({
             raw: {
@@ -126,8 +143,8 @@ describe('webhook handler', () => {
 
     it('should support both query and body param variables', async () => {
       request.query = QUERY_PARAMS
-      await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toHaveBeenCalledWith(
+      await webhookHandler(request, response)
+      expect(processTrigger).toHaveBeenCalledWith(
         expect.objectContaining({
           triggerItem: expect.objectContaining({
             raw: {
@@ -146,8 +163,8 @@ describe('webhook handler', () => {
           hello: 'this will override query params',
         },
       }
-      await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toHaveBeenCalledWith(
+      await webhookHandler(request, response)
+      expect(processTrigger).toHaveBeenCalledWith(
         expect.objectContaining({
           triggerItem: expect.objectContaining({
             raw: {
@@ -163,75 +180,75 @@ describe('webhook handler', () => {
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(
       'allows pipes to execute if they are not rate limited',
       async ({ isActiveFlow }) => {
-        mocks.flow.active = isActiveFlow
-        await webhookHandler(request, mocks.response)
-        expect(mocks.processTrigger).toHaveBeenCalledOnce()
+        flow.active = isActiveFlow
+        await webhookHandler(request, response)
+        expect(processTrigger).toHaveBeenCalledOnce()
         if (isActiveFlow) {
-          expect(mocks.enqueueActionJob).toHaveBeenCalledOnce()
+          expect(enqueueActionJob).toHaveBeenCalledOnce()
         }
-        expect(mocks.response.sendStatus).toHaveReturnedWith(200)
+        expect(response.sendStatus).toHaveReturnedWith(200)
       },
     )
 
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(
       'does not execute pipes if they are rate limited',
       async ({ isActiveFlow }) => {
-        mocks.flow.active = isActiveFlow
-        mocks.rateLimiterRedis.consume.mockImplementation(() => {
-          throw new mocks.rateLimiterRes()
+        flow.active = isActiveFlow
+        rateLimiterRedis.consume.mockImplementation(() => {
+          throw new RateLimiterRes()
         })
-        await webhookHandler(request, mocks.response)
-        expect(mocks.processTrigger).not.toHaveBeenCalled()
-        expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
-        expect(mocks.response.sendStatus).toHaveReturnedWith(429)
+        await webhookHandler(request, response)
+        expect(processTrigger).not.toHaveBeenCalled()
+        expect(enqueueActionJob).not.toHaveBeenCalled()
+        expect(response.sendStatus).toHaveReturnedWith(429)
       },
     )
 
     it.each([{ isActiveFlow: true }, { isActiveFlow: false }])(
       'still executes rate-limited pipes if rejectIfOverMaxQps is false',
       async ({ isActiveFlow }) => {
-        mocks.flow.active = isActiveFlow
-        mocks.flow.config = { rejectIfOverMaxQps: false }
-        mocks.rateLimiterRedis.consume.mockImplementation(() => {
-          throw new mocks.rateLimiterRes()
+        flow.active = isActiveFlow
+        flow.config = { rejectIfOverMaxQps: false }
+        rateLimiterRedis.consume.mockImplementation(() => {
+          throw new RateLimiterRes()
         })
-        await webhookHandler(request, mocks.response)
-        expect(mocks.processTrigger).toHaveBeenCalledOnce()
+        await webhookHandler(request, response)
+        expect(processTrigger).toHaveBeenCalledOnce()
         if (isActiveFlow) {
-          expect(mocks.enqueueActionJob).toHaveBeenCalledOnce()
+          expect(enqueueActionJob).toHaveBeenCalledOnce()
         }
-        expect(mocks.response.sendStatus).toHaveReturnedWith(200)
+        expect(response.sendStatus).toHaveReturnedWith(200)
       },
     )
 
     it('should not enqueue job when processTrigger returns shouldExecute: false', async () => {
-      mocks.flow.active = true
-      mocks.processTrigger.mockResolvedValueOnce({
+      flow.active = true
+      processTrigger.mockResolvedValueOnce({
         executionId: 'execution-id',
         shouldExecute: false,
       })
 
-      await webhookHandler(request, mocks.response)
+      await webhookHandler(request, response)
 
-      expect(mocks.processTrigger).toHaveBeenCalledOnce()
-      expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
-      expect(mocks.response.sendStatus).toHaveReturnedWith(200)
+      expect(processTrigger).toHaveBeenCalledOnce()
+      expect(enqueueActionJob).not.toHaveBeenCalled()
+      expect(response.sendStatus).toHaveReturnedWith(200)
     })
   })
 
   describe('pipe force clog', () => {
     beforeEach(() => {
-      mocks.flow.config = {}
+      flow.config = {}
     })
 
     it('returns 423 and does not process the trigger or enqueue a job', async () => {
-      mocks.flow.config = { isForceClogged: true }
+      flow.config = { isForceClogged: true }
 
-      await webhookHandler(request, mocks.response)
+      await webhookHandler(request, response)
 
-      expect(mocks.response.sendStatus).toHaveReturnedWith(423)
-      expect(mocks.processTrigger).not.toHaveBeenCalled()
-      expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
+      expect(response.sendStatus).toHaveReturnedWith(423)
+      expect(processTrigger).not.toHaveBeenCalled()
+      expect(enqueueActionJob).not.toHaveBeenCalled()
     })
   })
 })

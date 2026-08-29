@@ -2,36 +2,35 @@ import { IGlobalVariable } from '@plumber/types'
 import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as m365Config from '@/config/app-env-vars/m365'
 import HttpError from '@/errors/http'
 
 import { createPlumberFolder } from '../../common/create-plumber-folder'
 
-const mocks = vi.hoisted(() => ({
-  httpPost: vi.fn(),
-  httpGet: vi.fn(),
-  getM365TenantInfo: vi.fn(() => ({
-    label: 'test-tenant',
-    id: 'test-tenant-id',
-    sharePointSiteId: 'test-sharepoint-site-id',
-    clientId: 'abcd',
-    clientThumbprint: 'abcd',
-    clientPrivateKey: 'abcd',
-    allowedSensitivityLabelGuids: new Set(),
-  })),
-}))
-
-vi.mock('@/config/app-env-vars/m365', () => ({
-  getM365TenantInfo: mocks.getM365TenantInfo,
+const httpPost = vi.fn()
+const httpGet = vi.fn()
+const getM365TenantInfo = vi.fn(() => ({
+  label: 'test-tenant',
+  id: 'test-tenant-id',
+  sharePointSiteId: 'test-sharepoint-site-id',
+  clientId: 'abcd',
+  clientThumbprint: 'abcd',
+  clientPrivateKey: 'abcd',
+  allowedSensitivityLabelGuids: new Set(),
 }))
 
 describe('Create plumber folder', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    vi.spyOn(m365Config, 'getM365TenantInfo').mockImplementation(
+      getM365TenantInfo,
+    )
+
     $ = {
       http: {
-        post: mocks.httpPost,
-        get: mocks.httpGet,
+        post: httpPost,
+        get: httpGet,
       },
       user: {
         email: 'test@open.gov.sg',
@@ -40,10 +39,10 @@ describe('Create plumber folder', () => {
   })
 
   afterEach(() => {
-    mocks.httpPost.mockReset()
-    mocks.httpGet.mockReset()
-    mocks.getM365TenantInfo.mockReset()
-    mocks.getM365TenantInfo.mockImplementation(() => ({
+    httpPost.mockReset()
+    httpGet.mockReset()
+    getM365TenantInfo.mockReset()
+    getM365TenantInfo.mockImplementation(() => ({
       label: 'test-tenant',
       id: 'test-tenant-id',
       sharePointSiteId: 'test-sharepoint-site-id',
@@ -52,10 +51,11 @@ describe('Create plumber folder', () => {
       clientPrivateKey: 'abcd',
       allowedSensitivityLabelGuids: new Set(),
     }))
+    vi.restoreAllMocks()
   })
 
   it('calls the appropriate Graph API endpoints to create a folder and grants user access', async () => {
-    mocks.httpPost
+    httpPost
       // First call to create folder
       .mockImplementationOnce(() => ({
         data: { id: 'test-folder-id' },
@@ -68,7 +68,7 @@ describe('Create plumber folder', () => {
       })
 
     await createPlumberFolder('local-dev', $)
-    expect(mocks.httpPost).toHaveBeenNthCalledWith(
+    expect(httpPost).toHaveBeenNthCalledWith(
       1,
       '/v1.0/sites/:sharePointSiteId/drive/root/children',
       {
@@ -81,7 +81,7 @@ describe('Create plumber folder', () => {
         },
       },
     )
-    expect(mocks.httpPost).toHaveBeenNthCalledWith(
+    expect(httpPost).toHaveBeenNthCalledWith(
       2,
       '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/invite',
       {
@@ -108,7 +108,7 @@ describe('Create plumber folder', () => {
   })
 
   it('proceeds with permission granting if folder already exists', async () => {
-    mocks.httpPost
+    httpPost
       // First call to error out with "folder already exists"
       .mockRejectedValueOnce(
         new HttpError({
@@ -128,7 +128,7 @@ describe('Create plumber folder', () => {
         // intentionally empty
         return
       })
-    mocks.httpGet
+    httpGet
       // Mock get folder API to return null ID
       .mockResolvedValueOnce({
         data: {
@@ -138,7 +138,7 @@ describe('Create plumber folder', () => {
 
     await createPlumberFolder('local-dev', $)
 
-    expect(mocks.httpPost).toHaveBeenNthCalledWith(
+    expect(httpPost).toHaveBeenNthCalledWith(
       2,
       '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/invite',
       {
@@ -158,7 +158,7 @@ describe('Create plumber folder', () => {
   })
 
   it('errors out if create folder failed and reason was not due to folder existing', async () => {
-    mocks.httpPost
+    httpPost
       // First call to error out some random error message
       .mockRejectedValueOnce(
         new HttpError({
@@ -189,7 +189,7 @@ describe('Create plumber folder', () => {
   })
 
   it('errors out if folder ID is null after creating folder', async () => {
-    mocks.httpPost
+    httpPost
       // Make create folder API return null
       .mockImplementationOnce(() => ({
         data: { id: null },
@@ -201,7 +201,7 @@ describe('Create plumber folder', () => {
   })
 
   it("errors out if folder ID is null after trying to grab existing folder's ID", async () => {
-    mocks.httpPost
+    httpPost
       // Mock create folder API to error out with "folder already exists"
       .mockRejectedValueOnce(
         new HttpError({
@@ -215,7 +215,7 @@ describe('Create plumber folder', () => {
           },
         } as unknown as AxiosError),
       )
-    mocks.httpGet
+    httpGet
       // Mock get folder API to return null ID
       .mockResolvedValueOnce({
         data: {

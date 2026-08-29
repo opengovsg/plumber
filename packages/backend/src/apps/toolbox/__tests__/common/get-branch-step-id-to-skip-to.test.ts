@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
+import Step from '@/models/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
+
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 
-const mocks = vi.hoisted(() => {
-  const defaultSteps = [
+const defaultSteps = [
     {
       id: 'step1',
       appKey: 'formsg',
@@ -37,30 +39,27 @@ const mocks = vi.hoisted(() => {
       key: 'sendTransactionalEmail',
       position: 5,
     },
-  ]
+]
 
-  return {
-    defaultSteps,
-    stepQueryResult: vi.fn().mockResolvedValue(defaultSteps),
-  }
-})
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockReturnThis(),
-    throwIfNotFound: mocks.stepQueryResult,
-  },
-}))
+const stepQueryResult = vi.fn().mockResolvedValue(defaultSteps)
 
 describe('getBranchStepIdToSkipTo', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
-    vi.restoreAllMocks()
-    mocks.stepQueryResult.mockReset()
-    mocks.stepQueryResult.mockResolvedValue(mocks.defaultSteps)
+    stepQueryResult.mockReset()
+    stepQueryResult.mockResolvedValue(defaultSteps)
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
+    spyOnStepQuery(
+      createStepQueryChain({
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        throwIfNotFound: stepQueryResult,
+      }),
+    )
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('should return the next branch step if found', async () => {
@@ -92,7 +91,7 @@ describe('getBranchStepIdToSkipTo', () => {
   })
 
   it('defaults currDepth to 0 and returns null if the current branch step has an invalid depth', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce([
+    stepQueryResult.mockResolvedValueOnce([
       {
         id: 'step1',
         appKey: 'formsg',
@@ -143,7 +142,7 @@ describe('getBranchStepIdToSkipTo', () => {
   })
 
   it('defaults to 0 if the next branch step has an invalid depth', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce([
+    stepQueryResult.mockResolvedValueOnce([
       {
         id: 'step1',
         appKey: 'formsg',
@@ -192,7 +191,7 @@ describe('getBranchStepIdToSkipTo', () => {
   })
 
   it('should return the next branch step even if there are multiple steps with the same position', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce([
+    stepQueryResult.mockResolvedValueOnce([
       {
         id: 'step1',
         appKey: 'formsg',
@@ -255,7 +254,7 @@ describe('getBranchStepIdToSkipTo', () => {
   })
 
   it('should not return the next branch step if it has a greater depth', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce([
+    stepQueryResult.mockResolvedValueOnce([
       {
         id: 'step1',
         appKey: 'formsg',
@@ -306,7 +305,7 @@ describe('getBranchStepIdToSkipTo', () => {
 
   describe('only continue if', () => {
     it('should not skip to the next branch step if the current step is "only continue if" step', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce([
+      stepQueryResult.mockResolvedValueOnce([
         {
           id: 'step1',
           appKey: 'formsg',
@@ -362,7 +361,7 @@ describe('getBranchStepIdToSkipTo', () => {
       expect(consoleErrorSpy).not.toHaveBeenCalled()
     })
     it('should return undefined if only continue if step is not in an if-then branch', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce([
+      stepQueryResult.mockResolvedValueOnce([
         {
           id: 'step1',
           appKey: 'formsg',
@@ -464,13 +463,13 @@ describe('getBranchStepIdToSkipTo', () => {
     const $ = { flow: { id: 'flow-mrf' }, step: { id: 'step2', position: 2 } }
 
     it('approval-branch if-then skips to next approval-branch if-then', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce(makeSteps({}, {}))
+      stepQueryResult.mockResolvedValueOnce(makeSteps({}, {}))
       const result = await getBranchStepIdToSkipTo($ as any)
       expect(result).toBe('step4')
     })
 
     it('approval-branch if-then does not skip to rejection-branch if-then', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce(
+      stepQueryResult.mockResolvedValueOnce(
         makeSteps({}, { approval: { branch: 'reject', stepId: 'mrf1' } }),
       )
       const result = await getBranchStepIdToSkipTo($ as any)
@@ -478,7 +477,7 @@ describe('getBranchStepIdToSkipTo', () => {
     })
 
     it('rejection-branch if-then skips to next rejection-branch if-then with same stepId', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce(
+      stepQueryResult.mockResolvedValueOnce(
         makeSteps(
           { approval: { branch: 'reject', stepId: 'mrf1' } },
           { approval: { branch: 'reject', stepId: 'mrf1' } },
@@ -489,7 +488,7 @@ describe('getBranchStepIdToSkipTo', () => {
     })
 
     it('rejection-branch if-then does not skip to rejection-branch if-then with different stepId', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce(
+      stepQueryResult.mockResolvedValueOnce(
         makeSteps(
           { approval: { branch: 'reject', stepId: 'mrf1' } },
           { approval: { branch: 'reject', stepId: 'mrf2' } },
@@ -500,7 +499,7 @@ describe('getBranchStepIdToSkipTo', () => {
     })
 
     it('rejection-branch if-then does not skip to approval-branch if-then', async () => {
-      mocks.stepQueryResult.mockResolvedValueOnce(
+      stepQueryResult.mockResolvedValueOnce(
         makeSteps({ approval: { branch: 'reject', stepId: 'mrf1' } }, {}),
       )
       const result = await getBranchStepIdToSkipTo($ as any)

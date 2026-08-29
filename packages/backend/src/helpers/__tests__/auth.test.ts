@@ -14,48 +14,36 @@ import {
 } from '../auth'
 
 const mockPatchWhere = vi.fn()
-
-const mocks = vi.hoisted(() => ({
-  whereUser: vi.fn(() => ({
-    first: vi.fn(() => ({
-      throwIfNotFound: vi.fn(() => ({ id: 'test-user-id' })),
-    })),
+const whereUser = vi.fn(() => ({
+  first: vi.fn(() => ({
+    throwIfNotFound: vi.fn(() => ({ id: 'test-user-id' })),
   })),
-  findOne: vi.fn(),
-  insertAndFetch: vi.fn(),
-  patch: vi.fn(() => ({
-    where: mockPatchWhere,
-  })),
-  findById: vi.fn(),
 }))
-
-vi.mock('@/models/user', () => ({
-  default: {
-    query: vi.fn(() => ({
-      where: mocks.whereUser,
-      findOne: mocks.findOne,
-      insertAndFetch: mocks.insertAndFetch,
-      patch: mocks.patch,
-      findById: mocks.findById,
-    })),
-  },
+const findOne = vi.fn()
+const insertAndFetch = vi.fn()
+const patch = vi.fn(() => ({
+  where: mockPatchWhere,
 }))
-
-vi.mock('axios', () => ({
-  default: {
-    post: vi.fn(),
-  },
-}))
-vi.mock('@/config/app', () => ({
-  default: {
-    isProd: false,
-    onboardingEmailWebhookUrl: 'https://test-webhook.com',
-    adminJwtSecretKey: 'test-secret-key',
-  },
-}))
+const findById = vi.fn()
 
 describe('Auth helpers', () => {
+  const originalIsProd = appConfig.isProd
+  const originalOnboardingEmailWebhookUrl = appConfig.onboardingEmailWebhookUrl
+
+  beforeEach(() => {
+    vi.spyOn(User, 'query').mockReturnValue({
+      where: whereUser,
+      findOne,
+      insertAndFetch,
+      patch,
+      findById,
+    } as never)
+    vi.spyOn(axios, 'post').mockResolvedValue({ data: {} })
+  })
+
   afterEach(() => {
+    appConfig.isProd = originalIsProd
+    appConfig.onboardingEmailWebhookUrl = originalOnboardingEmailWebhookUrl
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
@@ -99,10 +87,7 @@ describe('Auth helpers', () => {
         userEmail: 'coffee@plumber.local',
       })
 
-      expect(mocks.whereUser).toHaveBeenCalledWith(
-        'email',
-        'coffee@plumber.local',
-      )
+      expect(whereUser).toHaveBeenCalledWith('email', 'coffee@plumber.local')
       expect(result.id).toEqual('test-user-id')
     })
   })
@@ -116,14 +101,14 @@ describe('Auth helpers', () => {
       const email = 'barista@coffee.com'
       const existingUser = { id: 'test-user-id', email }
 
-      mocks.findOne.mockResolvedValueOnce(existingUser)
+      findOne.mockResolvedValueOnce(existingUser)
 
       const result = await getOrCreateUser(email)
 
-      expect(mocks.findOne).toHaveBeenCalledOnce()
-      expect(mocks.findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
+      expect(findOne).toHaveBeenCalledOnce()
+      expect(findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
 
-      expect(mocks.insertAndFetch).not.toHaveBeenCalled() // Ensure no new user was created
+      expect(insertAndFetch).not.toHaveBeenCalled() // Ensure no new user was created
 
       expect(result).toEqual(existingUser)
     })
@@ -132,16 +117,16 @@ describe('Auth helpers', () => {
       const email = 'chef@kitchen.com'
       const newUser = { id: 'new-user-id', email }
 
-      mocks.findOne.mockResolvedValueOnce(null) // Simulate no user found
-      mocks.insertAndFetch.mockResolvedValueOnce(newUser) // Simulate new user creation
+      findOne.mockResolvedValueOnce(null) // Simulate no user found
+      insertAndFetch.mockResolvedValueOnce(newUser) // Simulate new user creation
 
       const user = await getOrCreateUser(email)
 
-      expect(mocks.findOne).toHaveBeenCalledOnce()
-      expect(mocks.findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
+      expect(findOne).toHaveBeenCalledOnce()
+      expect(findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
 
-      expect(mocks.insertAndFetch).toHaveBeenCalledOnce()
-      expect(mocks.insertAndFetch).toHaveBeenCalledWith({
+      expect(insertAndFetch).toHaveBeenCalledOnce()
+      expect(insertAndFetch).toHaveBeenCalledWith({
         email: email.toLowerCase(),
       })
 
@@ -153,12 +138,12 @@ describe('Auth helpers', () => {
       const formattedEmail = 'barista@coffee.com'
       const user = { id: 'test-user-id', email: formattedEmail }
 
-      mocks.findOne.mockResolvedValueOnce(user)
+      findOne.mockResolvedValueOnce(user)
 
       const result = await getOrCreateUser(email)
 
-      expect(mocks.findOne).toHaveBeenCalledOnce()
-      expect(mocks.findOne).toHaveBeenCalledWith({ email: formattedEmail })
+      expect(findOne).toHaveBeenCalledOnce()
+      expect(findOne).toHaveBeenCalledWith({ email: formattedEmail })
 
       expect(result).toEqual(user)
     })
@@ -166,29 +151,29 @@ describe('Auth helpers', () => {
     it('should handle errors from User.query().findOne', async () => {
       const email = 'barista@coffee.com'
 
-      mocks.findOne.mockRejectedValueOnce(new Error('Database error'))
+      findOne.mockRejectedValueOnce(new Error('Database error'))
 
       await expect(getOrCreateUser(email)).rejects.toThrow('Database error')
 
-      expect(mocks.findOne).toHaveBeenCalledOnce()
-      expect(mocks.findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
+      expect(findOne).toHaveBeenCalledOnce()
+      expect(findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
 
-      expect(mocks.insertAndFetch).not.toHaveBeenCalled() // Ensure no insert attempt was made
+      expect(insertAndFetch).not.toHaveBeenCalled() // Ensure no insert attempt was made
     })
 
     it('should handle errors from User.query().insertAndFetch', async () => {
       const email = 'example@domain.com'
 
-      mocks.findOne.mockResolvedValueOnce(null) // Simulate no user found
-      mocks.insertAndFetch.mockRejectedValueOnce(new Error('Insert error'))
+      findOne.mockResolvedValueOnce(null) // Simulate no user found
+      insertAndFetch.mockRejectedValueOnce(new Error('Insert error'))
 
       await expect(getOrCreateUser(email)).rejects.toThrow('Insert error')
 
-      expect(mocks.findOne).toHaveBeenCalledOnce()
-      expect(mocks.findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
+      expect(findOne).toHaveBeenCalledOnce()
+      expect(findOne).toHaveBeenCalledWith({ email: email.toLowerCase() })
 
-      expect(mocks.insertAndFetch).toHaveBeenCalledOnce()
-      expect(mocks.insertAndFetch).toHaveBeenCalledWith({
+      expect(insertAndFetch).toHaveBeenCalledOnce()
+      expect(insertAndFetch).toHaveBeenCalledWith({
         email: email.toLowerCase(),
       })
     })
@@ -201,14 +186,14 @@ describe('Auth helpers', () => {
 
     it('patch with correct id and date', async () => {
       const userId = 'test-user-id'
-      mocks.patch().where.mockResolvedValueOnce(1)
+      patch().where.mockResolvedValueOnce(1)
 
       await updateLastLogin(userId)
 
-      expect(mocks.patch).toHaveBeenCalledWith({
+      expect(patch).toHaveBeenCalledWith({
         lastLoginAt: expect.any(Date),
       })
-      expect(mocks.patch().where).toHaveBeenCalledWith({ id: userId })
+      expect(patch().where).toHaveBeenCalledWith({ id: userId })
     })
 
     it('throws error with no user id', async () => {
@@ -216,7 +201,7 @@ describe('Auth helpers', () => {
     })
 
     it('throws error with non-existent user id', async () => {
-      mocks.patch().where.mockReturnValueOnce(Promise.resolve(0))
+      patch().where.mockReturnValueOnce(Promise.resolve(0))
       await expect(updateLastLogin('non-existent-id')).rejects.toThrow(
         'No user found',
       )
@@ -240,7 +225,7 @@ describe('Auth helpers', () => {
         createdAt: new Date(),
       } as unknown as User
 
-      mocks.findById.mockResolvedValueOnce(mockUser)
+      findById.mockResolvedValueOnce(mockUser)
 
       await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
@@ -253,7 +238,7 @@ describe('Auth helpers', () => {
         createdAt: new Date('2024-01-01'), // Before release date
       } as unknown as User
 
-      mocks.findById.mockResolvedValueOnce(mockUser)
+      findById.mockResolvedValueOnce(mockUser)
 
       await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
@@ -266,7 +251,7 @@ describe('Auth helpers', () => {
         createdAt: new Date('2025-03-11'), // After release date
       } as unknown as User
 
-      mocks.findById.mockResolvedValueOnce(mockUser)
+      findById.mockResolvedValueOnce(mockUser)
 
       await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
@@ -282,7 +267,7 @@ describe('Auth helpers', () => {
         createdAt: new Date('2025-03-11'), // After release date
       } as unknown as User
 
-      mocks.findById.mockResolvedValueOnce(mockUser)
+      findById.mockResolvedValueOnce(mockUser)
       vi.mocked(axios.post).mockResolvedValueOnce({ data: {} })
 
       await sendOnboardingEmail(mockUser)
@@ -296,8 +281,8 @@ describe('Auth helpers', () => {
     })
 
     it('does not send email if webhook URL is not configured', async () => {
-      vi.mocked(appConfig).isProd = true
-      vi.mocked(appConfig).onboardingEmailWebhookUrl = ''
+      appConfig.isProd = true
+      appConfig.onboardingEmailWebhookUrl = ''
 
       const mockUser = {
         id: 'test-id',
@@ -306,7 +291,7 @@ describe('Auth helpers', () => {
         createdAt: new Date('2025-03-11'), // After release date
       } as unknown as User
 
-      mocks.findById.mockResolvedValueOnce(mockUser)
+      findById.mockResolvedValueOnce(mockUser)
 
       await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()

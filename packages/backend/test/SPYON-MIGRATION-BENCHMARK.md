@@ -1,70 +1,67 @@
 # vi.spyOn migration benchmark
 
-Measure whether replacing `vi.mock('@/helpers/logger')` with `vi.spyOn(logger, …)` lets more unit test files run in the shared `isolate: false` project.
+Full migration of backend unit tests from `vi.mock()` to `vi.spyOn()` so every file runs in one shared Vitest project (`isolate: false`).
 
 ## Baseline
 
 Branch: `perf/speed-up-backend-unit-tests` at `82e185e5`
 
-```bash
-cd packages/backend
-pnpm exec vitest run --config ./vitest.config.ts --reporter=verbose 2>&1 | rg "backend-isolated|backend "
-```
+- 2 Vitest projects: `backend` (~81 files) + `backend-isolated` (~64 files with `vi.mock`)
+- Cold CI: **96.79s** Vitest duration, **1m42s** turbo step
 
-Note project file counts from Vitest startup, then benchmark:
+## After full spyOn migration
 
-```bash
-/usr/bin/time -p pnpm exec vitest run --config ./vitest.config.ts
-```
+Branch: `cursor/bench-spyon-migration-89df`
 
-Or CI:
+- 1 Vitest project: `backend` (145 files, all `isolate: false`)
+- Same CI command:
 
 ```bash
 pnpm exec turbo run test:unit --filter=backend --force
 ```
 
-## After spyOn migration (pilot)
+## What changed
 
-Branch: `cursor/bench-spyon-migration-89df`
+- Removed all `vi.mock()` from `src/**/*.test.ts` (64 files)
+- Replaced with `vi.spyOn()` on real module exports, plus `vi.resetModules()` + dynamic import where modules run setup at load time (queues, workers, webhooks, chat router)
+- Added `@/test/spy-on-logger` and `@/test/spy-on-step-query` helpers for common patterns
+- Dropped the `backend-isolated` Vitest project entirely
 
-Same commands.
+## Patterns
 
-## What changed in this pilot
-
-Converted **5 files** that previously had `vi.mock()` only for `@/helpers/logger`:
-
-| File | Mock target |
-|------|-------------|
-| `helpers/__tests__/backoff.test.ts` | `logger.error` |
-| `helpers/__tests__/retry-on-transient-db-error.test.ts` | `logger.warn` |
-| `apps/custom-api/__tests__/common/size-monitor.test.ts` | `logger.warn` |
-| `apps/custom-api/__tests__/common/stream-response.test.ts` | `logger.warn` |
-| `apps/gathersg/__tests__/auth/decrypt-response.test.ts` | `logger.error` |
-
-Those files should move from `backend-isolated` → `backend` (shared module graph).
-
-**Scope limit:** 59 other mocked files still use `vi.mock()` for modules that cannot be spied this easily (full module replacement, hoisted factories, multiple mocks per file). A full migration is a separate effort.
-
-## Expected outcome
-
-- **Best case:** small unit step improvement (~few %) from 5 more files sharing one module graph per worker.
-- **If flat:** the isolate split already captured most gains; spyOn migration only pays off at scale (dozens of files moved).
-- **Verify:** tests pass and Vitest lists 5 fewer files under `backend-isolated`.
-
-## Pattern used
+**Logger**
 
 ```typescript
-import logger from '@/helpers/logger'
-
-const logError = vi.fn()
+import { spyOnLogger } from '@/test/spy-on-logger'
 
 beforeEach(() => {
-  vi.spyOn(logger, 'error').mockImplementation(logError)
-})
-
-afterEach(() => {
-  vi.restoreAllMocks()
+  const loggerSpies = spyOnLogger({ error: logError })
 })
 ```
 
-Works when production code imports the same logger singleton. Does **not** replace `vi.mock()` for entire module graphs (axios clients, objection models, etc.).
+**Step.query chains**
+
+```typescript
+import Step from '@/models/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
+
+beforeEach(() => {
+  spyOnStepQuery(
+    createStepQueryChain({
+      findById: vi.fn(() => ({ throwIfNotFound: stepQueryResult })),
+    }),
+  )
+})
+```
+
+**Module init (queues/action.ts)**
+
+```typescript
+beforeAll(async () => {
+  vi.resetModules()
+  vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(fn)
+  await import('@/queues/action')
+})
+```
+
+Always call `vi.restoreAllMocks()` in `afterEach` / `afterAll`.

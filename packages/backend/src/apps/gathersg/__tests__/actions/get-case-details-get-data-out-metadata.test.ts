@@ -1,20 +1,15 @@
 import { IExecutionStep } from '@plumber/types'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import * as s3Helpers from '@/helpers/s3'
 
 import getDataOutMetadata from '../../actions/get-case-details/get-data-out-metadata'
 
 const mockObjectName = 'invoice.pdf'
-
-const mocks = vi.hoisted(() => ({
-  parseS3Id: vi.fn(() => ({
-    bucket: 'common-bucket',
-    objectKey: `exec/gathersg/case/attach-1/${mockObjectName}`,
-    objectName: mockObjectName,
-  })),
-}))
-
-vi.mock('@/helpers/s3', () => ({
-  parseS3Id: mocks.parseS3Id,
+const parseS3Id = vi.fn(() => ({
+  bucket: 'common-bucket',
+  objectKey: `exec/gathersg/case/attach-1/${mockObjectName}`,
+  objectName: mockObjectName,
 }))
 
 const minimalValidDataOut = {
@@ -35,6 +30,14 @@ const minimalValidDataOut = {
 }
 
 describe('get-case-details getDataOutMetadata', () => {
+  beforeEach(() => {
+    vi.spyOn(s3Helpers, 'parseS3Id').mockImplementation(parseS3Id)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('returns null when dataOut is missing', async () => {
     expect(await getDataOutMetadata({} as IExecutionStep)).toBeNull()
   })
@@ -57,7 +60,7 @@ describe('get-case-details getDataOutMetadata', () => {
         displayedValue: mockObjectName,
       },
     })
-    expect(mocks.parseS3Id).toHaveBeenCalledWith(
+    expect(parseS3Id).toHaveBeenCalledWith(
       's3:common-bucket:exec/gathersg/case/attach-1/invoice.pdf',
     )
   })
@@ -136,7 +139,7 @@ describe('get-case-details getDataOutMetadata', () => {
   })
 
   it('skips a malformed attachment and processes the rest', async () => {
-    mocks.parseS3Id.mockImplementationOnce(() => {
+    parseS3Id.mockImplementationOnce(() => {
       throw new Error('invalid s3Id')
     })
 

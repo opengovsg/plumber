@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import getTestExecutionSteps from '@/graphql/queries/get-test-execution-steps'
+import * as getTestExecutionStepsHelperModule from '@/helpers/get-test-execution-steps'
 import type Context from '@/types/express/context'
 
 const context = {
@@ -43,9 +44,12 @@ const context = {
   },
 } as unknown as Context
 
-vi.mock('@/helpers/get-test-execution-steps', () => ({
-  getTestExecutionSteps: vi.fn(() => {
-    return [
+describe('Get test execution steps mutation', () => {
+  beforeEach(() => {
+    vi.spyOn(
+      getTestExecutionStepsHelperModule,
+      'getTestExecutionSteps',
+    ).mockResolvedValue([
       {
         isFailed: false,
         stepId: 'step-id-1',
@@ -62,11 +66,13 @@ vi.mock('@/helpers/get-test-execution-steps', () => ({
         isFailed: true,
         stepId: 'step-id-4',
       },
-    ]
-  }),
-}))
+    ])
+  })
 
-describe('Get test execution steps mutation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('should return all execution steps', async () => {
     const result = await getTestExecutionSteps(
       {},

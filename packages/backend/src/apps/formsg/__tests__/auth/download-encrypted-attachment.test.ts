@@ -1,31 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import axios from 'axios'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import { downloadEncryptedAttachment } from '../../auth/download-encrypted-attachment'
 
-const mocks = vi.hoisted(() => {
-  return {
-    axiosGet: vi.fn(),
-    consoleError: vi.fn(),
-    consoleWarn: vi.fn(),
-  }
-})
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.consoleError,
-    warn: mocks.consoleWarn,
-  },
-}))
-
-vi.mock('axios', () => ({
-  default: {
-    get: mocks.axiosGet,
-    isAxiosError: (error: unknown) =>
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { isAxiosError?: boolean }).isAxiosError === true,
-  },
-}))
+const axiosGet = vi.fn()
+const consoleError = vi.fn()
+const consoleWarn = vi.fn()
 
 function axiosErrorWithStatus(status: number) {
   return {
@@ -50,6 +32,18 @@ function useSimulatedClock() {
 }
 
 describe('downloadEncryptedAttachment', () => {
+  beforeEach(() => {
+    vi.spyOn(axios, 'get').mockImplementation(axiosGet)
+    vi.spyOn(axios, 'isAxiosError').mockImplementation(
+      (error: unknown) =>
+        typeof error === 'object' &&
+        error !== null &&
+        (error as { isAxiosError?: boolean }).isAxiosError === true,
+    )
+    vi.spyOn(logger, 'error').mockImplementation(consoleError)
+    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn)
+  })
+
   afterEach(() => {
     vi.resetAllMocks()
     vi.restoreAllMocks()
@@ -58,49 +52,49 @@ describe('downloadEncryptedAttachment', () => {
   it.each([429, 500, 502, 503, 504])(
     'retries a %i and returns the payload from the successful attempt',
     async (status) => {
-      mocks.axiosGet
+      axiosGet
         .mockRejectedValueOnce(axiosErrorWithStatus(status))
         .mockResolvedValueOnce({ data: { encryptedFile: 'payload' } })
 
       const result = await downloadEncryptedAttachment(URL)
 
       expect(result).toEqual({ encryptedFile: 'payload' })
-      expect(mocks.axiosGet).toHaveBeenCalledTimes(2)
+      expect(axiosGet).toHaveBeenCalledTimes(2)
     },
   )
 
   it.each([404, 409, 501, 505])('does not retry a %i', async (status) => {
-    mocks.axiosGet.mockRejectedValue(axiosErrorWithStatus(status))
+    axiosGet.mockRejectedValue(axiosErrorWithStatus(status))
 
     await expect(downloadEncryptedAttachment(URL)).rejects.toThrow(
       `Attachment download failed with status ${status}`,
     )
 
-    expect(mocks.axiosGet).toHaveBeenCalledTimes(1)
+    expect(axiosGet).toHaveBeenCalledTimes(1)
   })
 
   it('does not retry an error that did not come from axios', async () => {
-    mocks.axiosGet.mockRejectedValue(new TypeError('Download failed'))
+    axiosGet.mockRejectedValue(new TypeError('Download failed'))
 
     await expect(downloadEncryptedAttachment(URL)).rejects.toThrow(
       'Attachment download failed with TypeError: Download failed',
     )
 
-    expect(mocks.axiosGet).toHaveBeenCalledTimes(1)
+    expect(axiosGet).toHaveBeenCalledTimes(1)
   })
 
   it('gives up after 3 attempts when the 503 persists', async () => {
-    mocks.axiosGet.mockRejectedValue(axiosErrorWithStatus(503))
+    axiosGet.mockRejectedValue(axiosErrorWithStatus(503))
 
     await expect(downloadEncryptedAttachment(URL)).rejects.toThrow(
       'Attachment download failed with status 503',
     )
 
-    expect(mocks.axiosGet).toHaveBeenCalledTimes(3)
+    expect(axiosGet).toHaveBeenCalledTimes(3)
   })
 
   it('throws a fresh error, so axios never carries the presigned URL or request headers into the logs', async () => {
-    mocks.axiosGet.mockRejectedValue({
+    axiosGet.mockRejectedValue({
       isAxiosError: true,
       message: 'Request failed with status code 404',
       config: {
@@ -122,7 +116,7 @@ describe('downloadEncryptedAttachment', () => {
   })
 
   it('says so when the request never got a response', async () => {
-    mocks.axiosGet.mockRejectedValue({
+    axiosGet.mockRejectedValue({
       isAxiosError: true,
       message: 'timeout of 2000ms exceeded',
       code: 'ECONNABORTED',
@@ -134,7 +128,7 @@ describe('downloadEncryptedAttachment', () => {
   })
 
   it('names the type when what was thrown is not an error', async () => {
-    mocks.axiosGet.mockRejectedValue('a string holding who knows what')
+    axiosGet.mockRejectedValue('a string holding who knows what')
 
     await expect(downloadEncryptedAttachment(URL)).rejects.toThrow(
       'Attachment download failed with a thrown string',
@@ -142,11 +136,11 @@ describe('downloadEncryptedAttachment', () => {
   })
 
   it('bounds each attempt with a per-attempt timeout', async () => {
-    mocks.axiosGet.mockResolvedValue({ data: {} })
+    axiosGet.mockResolvedValue({ data: {} })
 
     await downloadEncryptedAttachment(URL)
 
-    expect(mocks.axiosGet).toHaveBeenCalledWith(
+    expect(axiosGet).toHaveBeenCalledWith(
       URL,
       expect.objectContaining({ timeout: 2000 }),
     )
@@ -154,7 +148,7 @@ describe('downloadEncryptedAttachment', () => {
 
   it('clamps the last attempt to the budget left before the deadline', async () => {
     const advanceClock = useSimulatedClock()
-    mocks.axiosGet.mockImplementation(async () => {
+    axiosGet.mockImplementation(async () => {
       advanceClock(2000) // Each attempt burns its full per-attempt timeout.
       throw axiosErrorWithStatus(503)
     })
@@ -163,7 +157,7 @@ describe('downloadEncryptedAttachment', () => {
       'Attachment download failed with status 503',
     )
 
-    const timeouts = mocks.axiosGet.mock.calls.map(
+    const timeouts = axiosGet.mock.calls.map(
       ([, config]) => config.timeout,
     )
     expect(timeouts).toEqual([2000, 2000, 1000])
@@ -171,7 +165,7 @@ describe('downloadEncryptedAttachment', () => {
 
   it('stops retrying once the budget is spent, before hitting the attempt cap', async () => {
     const advanceClock = useSimulatedClock()
-    mocks.axiosGet.mockImplementation(async () => {
+    axiosGet.mockImplementation(async () => {
       advanceClock(2600) // Timeout plus connection overhead.
       throw axiosErrorWithStatus(503)
     })
@@ -180,17 +174,17 @@ describe('downloadEncryptedAttachment', () => {
       'Attachment download failed with status 503',
     )
 
-    expect(mocks.axiosGet).toHaveBeenCalledTimes(2)
+    expect(axiosGet).toHaveBeenCalledTimes(2)
   })
 
   it('logs each retry so the retries are visible in Datadog', async () => {
-    mocks.axiosGet
+    axiosGet
       .mockRejectedValueOnce(axiosErrorWithStatus(503))
       .mockResolvedValueOnce({ data: {} })
 
     await downloadEncryptedAttachment(URL)
 
-    expect(mocks.consoleWarn).toHaveBeenCalledWith(
+    expect(consoleWarn).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'formsg-attachment-download-retry',
         attempt: 1,

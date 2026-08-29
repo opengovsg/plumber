@@ -4,29 +4,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
+import Step from '@/models/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import sendMessageAction from '../../actions/send-message'
 
-const mocks = vi.hoisted(() => ({
-  httpPost: vi.fn(),
-  setActionItem: vi.fn(),
-  updateStepParams: vi.fn(),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      patchAndFetchById: vi.fn(() => ({
-        context: mocks.updateStepParams,
-      })),
-    })),
-  },
-}))
+const httpPost = vi.fn()
+const setActionItem = vi.fn()
 
 describe('send message', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    spyOnStepQuery(
+      createStepQueryChain({
+        patchAndFetchById: vi.fn(() => ({
+          context: vi.fn(),
+        })),
+      }),
+    )
+
     $ = {
       auth: {
         set: vi.fn(),
@@ -39,9 +36,9 @@ describe('send message', () => {
         parameters: {},
       },
       http: {
-        post: mocks.httpPost,
+        post: httpPost,
       } as unknown as IGlobalVariable['http'],
-      setActionItem: mocks.setActionItem,
+      setActionItem,
       app: {
         key: 'telegram-bot',
       },
@@ -66,12 +63,13 @@ describe('send message', () => {
         ok: true,
       },
     }
-    mocks.httpPost.mockResolvedValueOnce(mockHttpResponse)
+    httpPost.mockResolvedValueOnce(mockHttpResponse)
     const result = await sendMessageAction.run($)
     expect(result).toBeUndefined()
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: mockHttpResponse.data,
     })
+    expect(Step.query).toHaveBeenCalled()
   })
 
   it('should throw step error if message text is empty', async () => {
@@ -108,7 +106,7 @@ describe('send message', () => {
         },
       } as unknown as AxiosError
       const httpError = new HttpError(error)
-      mocks.httpPost.mockRejectedValueOnce(httpError)
+      httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
       await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
     },
@@ -150,7 +148,7 @@ describe('send message', () => {
         },
       } as AxiosError
       const httpError = new HttpError(error400)
-      mocks.httpPost.mockRejectedValueOnce(httpError)
+      httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
       await expect(sendMessageAction.run($)).rejects.toThrow(stepErrorName)
     },
@@ -182,7 +180,7 @@ describe('send message', () => {
       },
     } as AxiosError
     const httpError = new HttpError(error400)
-    mocks.httpPost.mockRejectedValueOnce(httpError)
+    httpPost.mockRejectedValueOnce(httpError)
 
     await expect(sendMessageAction.run($)).rejects.toThrow(RetriableError)
   })
@@ -203,7 +201,7 @@ describe('send message', () => {
         },
       } as AxiosError
       const httpError = new HttpError(error)
-      mocks.httpPost.mockRejectedValueOnce(httpError)
+      httpPost.mockRejectedValueOnce(httpError)
       // throw partial step error message
       await expect(sendMessageAction.run($)).rejects.toThrow(stepErrorName)
     },
@@ -231,7 +229,7 @@ describe('send message', () => {
         },
       } as AxiosError
       const httpError = new HttpError(error)
-      mocks.httpPost.mockRejectedValueOnce(httpError)
+      httpPost.mockRejectedValueOnce(httpError)
       // throw uncaught error
       await expect(sendMessageAction.run($)).rejects.toThrow()
     },

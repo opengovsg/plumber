@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 
-import { ObjectIdentifier } from '@aws-sdk/client-s3'
+import { ObjectIdentifier, S3Client } from '@aws-sdk/client-s3'
+import * as s3PresignedPost from '@aws-sdk/s3-presigned-post'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -17,34 +18,20 @@ import {
   validateObjectKey,
 } from '../s3'
 
-const mocks = vi.hoisted(() => ({
-  s3Client: {
-    send: vi.fn(),
-  },
-  createPresignedPost: vi.fn(),
-  PutObjectCommand: vi.fn().mockImplementation((input) => ({ input })),
-  GetObjectTaggingCommand: vi.fn(),
-}))
-
-vi.mock('@aws-sdk/client-s3', () => ({
-  // Mocking constructor; cannot use arrow functions
-  S3Client: function () {
-    return mocks.s3Client
-  },
-  PutObjectCommand: mocks.PutObjectCommand,
-  GetObjectCommand: vi.fn(),
-  DeleteObjectCommand: vi.fn(),
-  DeleteObjectsCommand: vi.fn(),
-  GetObjectTaggingCommand: mocks.GetObjectTaggingCommand,
-}))
-
-vi.mock('@aws-sdk/s3-presigned-post', () => ({
-  createPresignedPost: mocks.createPresignedPost,
-}))
+const s3ClientSend = vi.fn()
 
 describe('s3', () => {
+  beforeEach(() => {
+    vi.spyOn(S3Client.prototype, 'send').mockImplementation(s3ClientSend)
+    vi.spyOn(s3PresignedPost, 'createPresignedPost').mockResolvedValue({
+      url: 'https://example.com',
+      fields: {},
+    })
+  })
+
   afterEach(() => {
     vi.resetAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('parseS3Id', () => {
@@ -86,7 +73,7 @@ describe('s3', () => {
         objectKey: 'abcd/my file.txt',
         body: 'file data bytes',
       })
-      expect(mocks.s3Client.send).toHaveBeenCalledOnce()
+      expect(s3ClientSend).toHaveBeenCalledOnce()
     })
 
     it('returns a valid S3 ID', async () => {
@@ -101,7 +88,7 @@ describe('s3', () => {
 
   describe('getObjectFromS3Id', () => {
     beforeEach(() => {
-      mocks.s3Client.send.mockResolvedValueOnce({
+      s3ClientSend.mockResolvedValueOnce({
         Body: {
           transformToByteArray: vi.fn(() => 'file data bytes'),
         },
@@ -115,7 +102,7 @@ describe('s3', () => {
 
     it('should fetch object from S3 successfully when no metadata is provided', async () => {
       await getObjectFromS3Id(`s3:${COMMON_S3_BUCKET}:abcd/my file.txt`)
-      expect(mocks.s3Client.send).toHaveBeenCalledOnce()
+      expect(s3ClientSend).toHaveBeenCalledOnce()
     })
 
     it('should return object body if provided metadata matches subset of stored metadata', async () => {
@@ -159,19 +146,6 @@ describe('s3', () => {
     })
 
     it('should generate a presignedPost successfully', async () => {
-      // mocks.createPresignedPost.mockResolvedValueOnce({
-      //   url: expectedUrl,
-      //   fields: {
-      //     key: 'test/file.txt',
-      //     acl: 'private',
-      //     'x-amz-meta-manualupload': 'true',
-      //     'x-amz-meta-flowId': 'flow-id',
-      //     'x-amz-meta-filename': 'file.txt',
-      //     'x-amz-meta-size': '100',
-      //     'x-amz-meta-updatedAt': '2021-01-01',
-      //   },
-      // })
-
       await expect(
         getPresignedPost(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', {
           flowId: 'flow-id',
@@ -201,7 +175,7 @@ describe('s3', () => {
     })
 
     it('should return true when deletion is successful', async () => {
-      mocks.s3Client.send.mockResolvedValueOnce({
+      s3ClientSend.mockResolvedValueOnce({
         $metadata: { httpStatusCode: 200 },
       })
 
@@ -212,7 +186,7 @@ describe('s3', () => {
     })
 
     it('should throw error when deletion returns non-200 status', async () => {
-      mocks.s3Client.send.mockResolvedValueOnce({
+      s3ClientSend.mockResolvedValueOnce({
         $metadata: { httpStatusCode: 500 },
       })
       await expect(
@@ -221,7 +195,7 @@ describe('s3', () => {
     })
 
     it('should throw error when bucket does not exist', async () => {
-      mocks.s3Client.send.mockRejectedValueOnce(
+      s3ClientSend.mockRejectedValueOnce(
         new Error('NoSuchBucket: The specified bucket does not exist'),
       )
       await expect(
@@ -240,7 +214,7 @@ describe('s3', () => {
     })
 
     it('should throw error when access is denied', async () => {
-      mocks.s3Client.send.mockRejectedValueOnce(
+      s3ClientSend.mockRejectedValueOnce(
         new Error('AccessDenied: Access Denied'),
       )
       await expect(
@@ -251,7 +225,7 @@ describe('s3', () => {
 
   describe('checkObjectScanStatus', () => {
     it('should return true when attachment scan result is NO_THREATS_FOUND', async () => {
-      mocks.s3Client.send.mockResolvedValueOnce({
+      s3ClientSend.mockResolvedValueOnce({
         TagSet: [
           {
             Key: 'GuardDutyMalwareScanStatus',
@@ -265,12 +239,12 @@ describe('s3', () => {
         'abcd/my file.txt',
       )
 
-      expect(mocks.s3Client.send).toHaveBeenCalledOnce()
+      expect(s3ClientSend).toHaveBeenCalledOnce()
       expect(result).toEqual({ isValid: true })
     })
 
     it('should return error when attachment scan result is in progress', async () => {
-      mocks.s3Client.send.mockResolvedValueOnce({
+      s3ClientSend.mockResolvedValueOnce({
         TagSet: [],
       })
 
@@ -279,7 +253,7 @@ describe('s3', () => {
         'abcd/my file.txt',
       )
 
-      expect(mocks.s3Client.send).toHaveBeenCalledOnce()
+      expect(s3ClientSend).toHaveBeenCalledOnce()
       expect(result).toEqual({
         isValid: false,
         scanStatus: MALWARE_SCAN_STATUS.PENDING,
@@ -294,7 +268,7 @@ describe('s3', () => {
     ]
     testTagValues.forEach((status) => {
       it(`should return false and throw error when attachment scan result is ${status}`, async () => {
-        mocks.s3Client.send.mockResolvedValueOnce({
+        s3ClientSend.mockResolvedValueOnce({
           TagSet: [
             {
               Key: 'GuardDutyMalwareScanStatus',
@@ -308,7 +282,7 @@ describe('s3', () => {
           'abcd/my file.txt',
         )
 
-        expect(mocks.s3Client.send).toHaveBeenCalledOnce()
+        expect(s3ClientSend).toHaveBeenCalledOnce()
         expect(result).toEqual({
           isValid: false,
           scanStatus: status,
@@ -353,7 +327,7 @@ describe('s3', () => {
         'key|with|pipe',
         'key~with~tilde',
         'key`with`backtick',
-        'key[with[square',
+        'key[key[square',
         'key]with]square',
       ]
       invalidKeys.forEach((key) => {

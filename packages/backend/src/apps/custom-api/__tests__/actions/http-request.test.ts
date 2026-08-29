@@ -4,50 +4,42 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
+import Step from '@/models/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import app from '../..'
 import makeRequestAction from '../../actions/http-request'
+import * as addInterceptorsModule from '../../common/add-interceptors'
 import {
   CUSTOM_API_TIMEOUT,
   DISALLOWED_IP_RESOLVED_ERROR,
   RECURSIVE_WEBHOOK_ERROR,
 } from '../../common/constants'
+import * as ipResolver from '../../common/ip-resolver'
 
-const mocks = vi.hoisted(() => ({
-  httpRequest: vi.fn(),
-  isUrlAllowed: vi.fn(() => true),
-  stepQueryResult: vi.fn(() => ({
-    config: {},
-  })),
-  addInterceptors: vi.fn(),
+const httpRequest = vi.fn()
+const isUrlAllowed = vi.fn(() => true)
+const stepQueryResult = vi.fn(() => ({
+  config: {},
 }))
-
-vi.mock('../../common/ip-resolver', () => {
-  const originalModule = vi.importActual('../../common/ip-resolver')
-  return {
-    ...originalModule,
-    safeAxiosLookup: mocks.isUrlAllowed,
-  }
-})
-
-vi.mock('../../common/add-interceptors', () => ({
-  default: mocks.addInterceptors,
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: () => ({
-      findById: () => ({
-        throwIfNotFound: mocks.stepQueryResult,
-      }),
-    }),
-  },
-}))
+const addInterceptors = vi.fn()
 
 describe('make http request', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    vi.spyOn(ipResolver, 'safeAxiosLookup').mockImplementation(isUrlAllowed)
+    vi.spyOn(addInterceptorsModule, 'default').mockImplementation(
+      addInterceptors,
+    )
+    spyOnStepQuery(
+      createStepQueryChain({
+        findById: vi.fn(() => ({
+          throwIfNotFound: stepQueryResult,
+        })),
+      }),
+    )
+
     $ = {
       auth: {
         set: vi.fn(),
@@ -62,7 +54,7 @@ describe('make http request', () => {
         version: 1,
       },
       http: {
-        request: mocks.httpRequest,
+        request: httpRequest,
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
@@ -78,9 +70,9 @@ describe('make http request', () => {
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = 'http://test.local/endpoint?1234'
-    mocks.httpRequest.mockReturnValue('mock response')
+    httpRequest.mockReturnValue('mock response')
     await makeRequestAction.run($).catch((): void => null)
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
         method: $.step.parameters.method,
@@ -98,10 +90,10 @@ describe('make http request', () => {
       { key: 'Key1', value: 'Value1' },
       { key: 'Key2', value: 'Value2' },
     ]
-    mocks.httpRequest.mockReturnValue('mock response')
+    httpRequest.mockReturnValue('mock response')
 
     await makeRequestAction.run($).catch((): void => null)
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: $.step.parameters.url,
         method: $.step.parameters.method,
@@ -126,7 +118,7 @@ describe('make http request', () => {
       },
     } as AxiosError
     const httpError = new HttpError(error403)
-    mocks.httpRequest.mockRejectedValueOnce(httpError)
+    httpRequest.mockRejectedValueOnce(httpError)
 
     // throw partial step error message
     await expect(makeRequestAction.run($)).rejects.toThrow('Status code: 403')
@@ -149,22 +141,22 @@ describe('make http request', () => {
   })
 
   it('should follow redirect once', async () => {
-    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    isUrlAllowed.mockResolvedValueOnce(false)
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = 'http://test.local/endpoint?1234'
-    mocks.httpRequest.mockResolvedValue({
+    httpRequest.mockResolvedValue({
       status: 302,
       headers: {
         location: 'https://redirect.com',
       },
     })
     await makeRequestAction.run($)
-    expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
+    expect(httpRequest).toHaveBeenCalledTimes(2)
   })
 
   it('should follow redirect with GET if 301 or 302 without body and content-type header', async () => {
-    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    isUrlAllowed.mockResolvedValueOnce(false)
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.customHeaders = [
@@ -172,15 +164,15 @@ describe('make http request', () => {
       { key: 'Key2', value: 'Value2' },
     ]
     $.step.parameters.url = 'http://test.local/endpoint?1234'
-    mocks.httpRequest.mockResolvedValue({
+    httpRequest.mockResolvedValue({
       status: 301,
       headers: {
         location: 'https://redirect.com',
       },
     })
     await makeRequestAction.run($)
-    expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledTimes(2)
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
@@ -192,7 +184,7 @@ describe('make http request', () => {
         responseType: 'stream',
       }),
     )
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'https://redirect.com',
         method: 'GET',
@@ -205,19 +197,19 @@ describe('make http request', () => {
   })
 
   it('should follow redirect with same method if 307 or 308', async () => {
-    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    isUrlAllowed.mockResolvedValueOnce(false)
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = 'http://test.local/endpoint?1234'
-    mocks.httpRequest.mockResolvedValue({
+    httpRequest.mockResolvedValue({
       status: 307,
       headers: {
         location: 'https://redirect.com',
       },
     })
     await makeRequestAction.run($)
-    expect(mocks.httpRequest).toHaveBeenCalledTimes(2)
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledTimes(2)
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'http://test.local/endpoint?1234',
         method: 'POST',
@@ -225,7 +217,7 @@ describe('make http request', () => {
         responseType: 'stream',
       }),
     )
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         url: 'https://redirect.com',
         method: 'POST',
@@ -236,15 +228,15 @@ describe('make http request', () => {
   })
 
   it('should not redirect if no header location', async () => {
-    mocks.isUrlAllowed.mockResolvedValueOnce(false)
+    isUrlAllowed.mockResolvedValueOnce(false)
     $.step.parameters.method = 'POST'
     $.step.parameters.data = 'meep meep'
     $.step.parameters.url = 'http://test.local/endpoint?1234'
-    mocks.httpRequest.mockResolvedValue({
+    httpRequest.mockResolvedValue({
       status: 307,
     })
     await expect(makeRequestAction.run($)).rejects.toThrow('No location header')
-    expect(mocks.httpRequest).toHaveBeenCalledTimes(1)
+    expect(httpRequest).toHaveBeenCalledTimes(1)
   })
 
   it('should throw step error if user redirects to plumber', async () => {
@@ -252,7 +244,7 @@ describe('make http request', () => {
     $.step.parameters.data = 'go crazy'
     $.step.parameters.url = 'http://beta.plumber.gov.sg'
     const recursiveWebhookError = new Error(RECURSIVE_WEBHOOK_ERROR)
-    mocks.httpRequest.mockRejectedValueOnce(recursiveWebhookError)
+    httpRequest.mockRejectedValueOnce(recursiveWebhookError)
     await expect(makeRequestAction.run($)).rejects.toThrow(StepError)
   })
 
@@ -261,18 +253,18 @@ describe('make http request', () => {
     $.step.parameters.data = 'go crazy'
     $.step.parameters.url = 'http://1.2.3.4'
     const disallowedIpError = new Error(DISALLOWED_IP_RESOLVED_ERROR)
-    mocks.httpRequest.mockRejectedValueOnce(disallowedIpError)
+    httpRequest.mockRejectedValueOnce(disallowedIpError)
     await expect(makeRequestAction.run($)).rejects.toThrow(StepError)
   })
 
   it('should include timeout in the request config', async () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = 'http://test.local/endpoint'
-    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+    httpRequest.mockResolvedValueOnce({ data: 'response' })
 
     await makeRequestAction.run($)
 
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: CUSTOM_API_TIMEOUT,
         responseType: 'stream',
@@ -285,18 +277,18 @@ describe('make http request', () => {
     $.step.parameters.url = 'http://test.local/endpoint'
 
     // Set up the mock for this specific test
-    mocks.stepQueryResult.mockResolvedValueOnce({
+    stepQueryResult.mockResolvedValueOnce({
       config: {
         adminOverride: {
           customApiTimeout: 360000,
         },
       },
     })
-    mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+    httpRequest.mockResolvedValueOnce({ data: 'response' })
 
     await makeRequestAction.run($)
 
-    expect(mocks.httpRequest).toHaveBeenCalledWith(
+    expect(httpRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         timeout: 360000,
         responseType: 'stream',
@@ -310,18 +302,18 @@ describe('make http request', () => {
       $.step.parameters.method = 'GET'
       $.step.parameters.url = 'http://test.local/endpoint'
 
-      mocks.stepQueryResult.mockResolvedValueOnce({
+      stepQueryResult.mockResolvedValueOnce({
         config: {
           adminOverride: {
             customApiTimeout: testOverride,
           },
         },
       })
-      mocks.httpRequest.mockResolvedValueOnce({ data: 'response' })
+      httpRequest.mockResolvedValueOnce({ data: 'response' })
 
       await makeRequestAction.run($)
 
-      expect(mocks.httpRequest).toHaveBeenCalledWith(
+      expect(httpRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           timeout: CUSTOM_API_TIMEOUT,
           responseType: 'stream',
@@ -334,7 +326,7 @@ describe('make http request', () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = 'http://test.local/endpoint'
     const testTimeout = 1000
-    mocks.stepQueryResult.mockResolvedValueOnce({
+    stepQueryResult.mockResolvedValueOnce({
       config: {
         adminOverride: {
           customApiTimeout: testTimeout,
@@ -343,7 +335,7 @@ describe('make http request', () => {
     })
 
     // Simulate a long-running request by delaying the response
-    mocks.httpRequest.mockImplementationOnce(
+    httpRequest.mockImplementationOnce(
       () =>
         new Promise((_, reject) => {
           const timeoutError = new Error(
@@ -369,10 +361,10 @@ describe('make http request', () => {
         $.step.parameters.data = testData
         $.step.parameters.url = 'http://test.local/endpoint?1234'
 
-        mocks.httpRequest.mockReturnValue('mock response')
+        httpRequest.mockReturnValue('mock response')
 
         await makeRequestAction.run($).catch((): void => null)
-        expect(mocks.httpRequest).toHaveBeenCalledWith(
+        expect(httpRequest).toHaveBeenCalledWith(
           expect.objectContaining({
             url: $.step.parameters.url,
             method: $.step.parameters.method,
@@ -398,10 +390,10 @@ describe('make http request', () => {
         $.step.parameters.data = testJSON
 
         $.step.parameters.url = 'http://test.local/endpoint?1234'
-        mocks.httpRequest.mockReturnValue('mock response')
+        httpRequest.mockReturnValue('mock response')
 
         await makeRequestAction.run($).catch((): void => null)
-        expect(mocks.httpRequest).toHaveBeenCalledWith(
+        expect(httpRequest).toHaveBeenCalledWith(
           expect.objectContaining({
             url: $.step.parameters.url,
             method: $.step.parameters.method,
@@ -426,7 +418,7 @@ describe('make http request', () => {
         $.step.parameters.data = testJSON
         $.step.parameters.url = 'http://test.local/endpoint?1234'
 
-        mocks.httpRequest.mockReturnValue('mock response')
+        httpRequest.mockReturnValue('mock response')
         await expect(makeRequestAction.run($)).rejects.toThrow(
           'Invalid JSON data',
         )

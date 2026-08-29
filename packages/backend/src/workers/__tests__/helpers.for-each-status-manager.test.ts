@@ -1,46 +1,17 @@
 import { IExecutionStepMetadata } from '@plumber/types'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 import logger from '@/helpers/logger'
+import Execution from '@/models/execution'
+import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
+import { spyOnLogger } from '@/test/spy-on-logger'
 
 import processForEachStatus from '../helpers/for-each-status-manager'
-
-const mocks = vi.hoisted(() => ({
-  patchIterationStatus: vi.fn(),
-  getForEachExecutionState: vi.fn(),
-  getIterationSteps: vi.fn(() => [
-    {
-      status: 'success',
-      errorDetails: null,
-    },
-  ]),
-  setStatus: vi.fn(),
-}))
-
-vi.mock('@/models/execution-step', () => ({
-  default: {
-    patchIterationStatus: mocks.patchIterationStatus,
-    getForEachExecutionState: mocks.getForEachExecutionState,
-    getIterationSteps: mocks.getIterationSteps,
-  },
-}))
-
-vi.mock('@/models/execution', () => ({
-  default: {
-    setStatus: mocks.setStatus,
-  },
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: vi.fn(),
-  },
-}))
 
 describe('processForEachStatus', () => {
   const mockExecutionId = 'execution-123'
@@ -56,14 +27,50 @@ describe('processForEachStatus', () => {
     key: 'sendEmail',
   } as Step
 
+  const patchIterationStatus = vi.fn()
+  const getForEachExecutionState = vi.fn()
+  const getIterationSteps = vi.fn(() => [
+    {
+      status: 'success',
+      errorDetails: null,
+    },
+  ])
+  const setStatus = vi.fn()
+
+  beforeEach(() => {
+    patchIterationStatus.mockReset()
+    getForEachExecutionState.mockReset()
+    getIterationSteps.mockReset()
+    getIterationSteps.mockReturnValue([
+      {
+        status: 'success',
+        errorDetails: null,
+      },
+    ])
+    setStatus.mockReset()
+
+    spyOnLogger()
+
+    vi.spyOn(ExecutionStep, 'patchIterationStatus').mockImplementation(
+      patchIterationStatus,
+    )
+    vi.spyOn(ExecutionStep, 'getForEachExecutionState').mockImplementation(
+      getForEachExecutionState,
+    )
+    vi.spyOn(ExecutionStep, 'getIterationSteps').mockImplementation(
+      getIterationSteps,
+    )
+    vi.spyOn(Execution, 'setStatus').mockImplementation(setStatus)
+  })
+
   afterEach(() => {
-    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('when step is a for-each step', () => {
     it('should return false if isLastStep is undefined', async () => {
       const metadata: IExecutionStepMetadata = {}
-      mocks.getIterationSteps.mockResolvedValueOnce([])
+      getIterationSteps.mockResolvedValueOnce([])
 
       const result = await processForEachStatus({
         executionId: mockExecutionId,
@@ -72,9 +79,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false if iteration is not provided', async () => {
@@ -87,9 +94,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false even with iterations and iterationStatus', async () => {
@@ -111,9 +118,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false for null nextStepMetadata', async () => {
@@ -124,9 +131,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false for undefined nextStepMetadata', async () => {
@@ -137,9 +144,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
   })
 
@@ -154,9 +161,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(true)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false if isLastStep is not provided', async () => {
@@ -171,9 +178,9 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).not.toHaveBeenCalled()
-      expect(mocks.getForEachExecutionState).not.toHaveBeenCalled()
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(patchIterationStatus).not.toHaveBeenCalled()
+      expect(getForEachExecutionState).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
   })
 
@@ -184,7 +191,7 @@ describe('processForEachStatus', () => {
         isLastStep: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: true,
       })
@@ -196,7 +203,7 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(true)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         1,
         'success',
@@ -209,7 +216,7 @@ describe('processForEachStatus', () => {
         isLastStep: true,
       }
 
-      mocks.getIterationSteps.mockResolvedValueOnce([
+      getIterationSteps.mockResolvedValueOnce([
         {
           status: 'success',
           errorDetails: {
@@ -225,7 +232,7 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(true)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         1,
         'partial-success',
@@ -239,8 +246,8 @@ describe('processForEachStatus', () => {
       }
 
       const error = new Error('Database error')
-      mocks.patchIterationStatus.mockRejectedValue(error)
-      mocks.getForEachExecutionState.mockResolvedValue({
+      patchIterationStatus.mockRejectedValue(error)
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: true,
       })
@@ -268,8 +275,8 @@ describe('processForEachStatus', () => {
         isLastStep: true,
       }
 
-      mocks.patchIterationStatus.mockRejectedValue(new Error('Database error'))
-      mocks.getForEachExecutionState.mockResolvedValue({
+      patchIterationStatus.mockRejectedValue(new Error('Database error'))
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: true,
       })
@@ -281,9 +288,7 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(true)
-      expect(mocks.getForEachExecutionState).toHaveBeenCalledWith(
-        mockExecutionId,
-      )
+      expect(getForEachExecutionState).toHaveBeenCalledWith(mockExecutionId)
     })
   })
 
@@ -295,7 +300,7 @@ describe('processForEachStatus', () => {
         isLastIteration: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: false,
       })
@@ -307,12 +312,12 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         3,
         'success',
       )
-      expect(mocks.setStatus).toHaveBeenCalledWith(mockExecutionId, 'failure')
+      expect(setStatus).toHaveBeenCalledWith(mockExecutionId, 'failure')
     })
 
     it('should return true if all steps are successful', async () => {
@@ -322,7 +327,7 @@ describe('processForEachStatus', () => {
         isLastIteration: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: true,
       })
@@ -336,7 +341,7 @@ describe('processForEachStatus', () => {
       expect(result).toBe(true)
       // NOTE: we don't call setStatus to set 'success' in the manager
       // we let the action worker set to success
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
   })
 
@@ -347,7 +352,7 @@ describe('processForEachStatus', () => {
         isLastStep: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: false,
         areAllStepsSuccessful: true,
       })
@@ -359,13 +364,13 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         2,
         'success',
       )
       // NOTE: we do not prematurely set to success
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false and set execution status to failure if not all steps are successful', async () => {
@@ -374,7 +379,7 @@ describe('processForEachStatus', () => {
         isLastStep: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: false,
       })
@@ -386,7 +391,7 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.setStatus).toHaveBeenCalledWith(mockExecutionId, 'failure')
+      expect(setStatus).toHaveBeenCalledWith(mockExecutionId, 'failure')
     })
 
     it('should handle successful for-each completion', async () => {
@@ -396,7 +401,7 @@ describe('processForEachStatus', () => {
         isLastIteration: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: true,
       })
@@ -408,12 +413,12 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(true)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         3,
         'success',
       )
-      expect(mocks.setStatus).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
     it('should return false for failed for-each completion', async () => {
@@ -423,7 +428,7 @@ describe('processForEachStatus', () => {
         isLastIteration: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: false,
       })
@@ -435,12 +440,12 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(false)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         3,
         'success',
       )
-      expect(mocks.setStatus).toHaveBeenCalledWith(mockExecutionId, 'failure')
+      expect(setStatus).toHaveBeenCalledWith(mockExecutionId, 'failure')
     })
   })
 
@@ -451,7 +456,7 @@ describe('processForEachStatus', () => {
         isLastStep: true,
       }
 
-      mocks.getForEachExecutionState.mockResolvedValue({
+      getForEachExecutionState.mockResolvedValue({
         hasLastIterationRun: true,
         areAllStepsSuccessful: true,
       })
@@ -463,7 +468,7 @@ describe('processForEachStatus', () => {
       })
 
       expect(result).toBe(true)
-      expect(mocks.patchIterationStatus).toHaveBeenCalledWith(
+      expect(patchIterationStatus).toHaveBeenCalledWith(
         mockExecutionId,
         1,
         'success',

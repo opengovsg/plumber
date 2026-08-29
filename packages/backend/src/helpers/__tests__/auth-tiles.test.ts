@@ -1,11 +1,7 @@
 import jwt from 'jsonwebtoken'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/config/app', () => ({
-  default: {
-    sessionSecretKey: 'test-secret-key',
-  },
-}))
+import appConfig from '@/config/app'
 
 import {
   generateViewToken,
@@ -15,6 +11,17 @@ import {
 } from '../auth-tiles'
 
 describe('auth-tiles', () => {
+  const originalSessionSecretKey = appConfig.sessionSecretKey
+
+  beforeEach(() => {
+    appConfig.sessionSecretKey = 'test-secret-key'
+  })
+
+  afterEach(() => {
+    appConfig.sessionSecretKey = originalSessionSecretKey
+    vi.restoreAllMocks()
+  })
+
   describe('verifyTilePassword', () => {
     it('returns true for the correct password', () => {
       const viewOnlyKey = 'view-only-key'
@@ -107,7 +114,6 @@ describe('auth-tiles', () => {
       expect(() =>
         verifyViewToken('token', tileId, viewOnlyKey, tokenNonce),
       ).toThrow('unexpected error')
-      vi.restoreAllMocks()
     })
   })
 })

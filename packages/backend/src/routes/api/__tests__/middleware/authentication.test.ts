@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { UnauthenticatedContext } from '@/types/express/context'
+import * as authenticationHelper from '@/helpers/authentication'
 
 import {
   blockAdminOperations,
@@ -10,13 +11,7 @@ import {
   setCurrentUserContext,
 } from '../../middleware/authentication'
 
-const mocks = vi.hoisted(() => ({
-  setGraphQLContext: vi.fn(),
-}))
-
-vi.mock('@/helpers/authentication', () => ({
-  setCurrentUserContext: mocks.setGraphQLContext,
-}))
+const setGraphQLContext = vi.fn()
 
 describe('API Authentication Middleware', () => {
   let mockReq: Partial<Request>
@@ -24,6 +19,10 @@ describe('API Authentication Middleware', () => {
   let mockNext: NextFunction
 
   beforeEach(() => {
+    vi.spyOn(authenticationHelper, 'setCurrentUserContext').mockImplementation(
+      setGraphQLContext,
+    )
+
     mockReq = {
       headers: {},
       context: undefined,
@@ -54,7 +53,7 @@ describe('API Authentication Middleware', () => {
         isAdminOperation: false,
       }
 
-      mocks.setGraphQLContext.mockResolvedValueOnce(mockContext)
+      setGraphQLContext.mockResolvedValueOnce(mockContext)
 
       await setCurrentUserContext(
         mockReq as Request,
@@ -62,7 +61,7 @@ describe('API Authentication Middleware', () => {
         mockNext,
       )
 
-      expect(mocks.setGraphQLContext).toHaveBeenCalledWith({
+      expect(setGraphQLContext).toHaveBeenCalledWith({
         req: mockReq,
         res: mockRes,
       })
@@ -81,7 +80,7 @@ describe('API Authentication Middleware', () => {
         isAdminOperation: true,
       }
 
-      mocks.setGraphQLContext.mockResolvedValueOnce(mockContext)
+      setGraphQLContext.mockResolvedValueOnce(mockContext)
 
       await setCurrentUserContext(
         mockReq as Request,
@@ -101,7 +100,7 @@ describe('API Authentication Middleware', () => {
         isAdminOperation: false,
       }
 
-      mocks.setGraphQLContext.mockResolvedValueOnce(mockContext)
+      setGraphQLContext.mockResolvedValueOnce(mockContext)
 
       await setCurrentUserContext(
         mockReq as Request,

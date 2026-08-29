@@ -1,33 +1,13 @@
 import type { IExecutionStep } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  stepParameters: {} as Record<string, unknown>,
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({
-        throwIfNotFound: vi.fn(() => ({ parameters: mocks.stepParameters })),
-      })),
-    })),
-  },
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-  },
-}))
-
-vi.mock('@/helpers/s3', () => ({
-  parseS3Id: vi.fn(() => null),
-}))
+import logger from '@/helpers/logger'
+import * as s3Helpers from '@/helpers/s3'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
+
+const stepParameters = {} as Record<string, unknown>
 
 function createExecutionStep(
   fields: Record<
@@ -53,6 +33,17 @@ function createExecutionStep(
 
 describe('getDataOutMetadata - MRF field filtering', () => {
   beforeEach(() => {
+    spyOnStepQuery(
+      createStepQueryChain({
+        findById: vi.fn(() => ({
+          throwIfNotFound: vi.fn(() => ({ parameters: stepParameters })),
+        })),
+      }),
+    )
+    vi.spyOn(logger, 'warn').mockImplementation(vi.fn())
+    vi.spyOn(logger, 'error').mockImplementation(vi.fn())
+    vi.spyOn(logger, 'info').mockImplementation(vi.fn())
+    vi.spyOn(s3Helpers, 'parseS3Id').mockReturnValue(null as never)
     vi.resetAllMocks()
   })
 
@@ -63,7 +54,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
 
   describe('when parameters.mrf is set', () => {
     beforeEach(() => {
-      mocks.stepParameters = {
+      stepParameters = {
         mrf: {
           defaultStepName: 'Step 2',
           formWorkflowStepId: 'wf-step-002',
@@ -137,7 +128,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
     })
 
     it('should mark approval field answer type as approval', async () => {
-      mocks.stepParameters = {
+      stepParameters = {
         mrf: {
           defaultStepName: 'Step 2',
           formWorkflowStepId: 'wf-step-002',
@@ -168,7 +159,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
     })
 
     it('should not mark non-approval fields as approval', async () => {
-      mocks.stepParameters = {
+      stepParameters = {
         mrf: {
           defaultStepName: 'Step 2',
           formWorkflowStepId: 'wf-step-002',
@@ -255,7 +246,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
     })
 
     it('should hide all fields when mrf.fields is empty', async () => {
-      mocks.stepParameters = {
+      stepParameters = {
         mrf: {
           defaultStepName: 'Step 2',
           formWorkflowStepId: 'wf-step-002',
@@ -294,7 +285,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
 
   describe('when parameters.mrf is absent', () => {
     beforeEach(() => {
-      mocks.stepParameters = {}
+      stepParameters = {}
     })
 
     it('should not apply MRF filtering', async () => {

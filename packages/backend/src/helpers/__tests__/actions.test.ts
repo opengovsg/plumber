@@ -8,6 +8,7 @@ import type { AxiosError } from 'axios'
 import { type Span } from 'dd-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
@@ -15,21 +16,18 @@ import Step from '@/models/step'
 
 import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
 
-const mocks = vi.hoisted(() => ({
-  workerRateLimit: vi.fn(),
-  workerRateLimitGroup: vi.fn(),
-  setExecutionStatus: vi.fn(),
-  addSpanTags: vi.fn(),
-}))
+const workerRateLimit = vi.fn()
+const workerRateLimitGroup = vi.fn()
+const addSpanTags = vi.fn()
 
 const MOCK_CONTEXT = {
   isQueueDelayable: false,
   span: {
-    addTags: mocks.addSpanTags,
+    addTags: addSpanTags,
   } as unknown as Span,
   worker: {
-    rateLimit: mocks.workerRateLimit,
-    rateLimitGroup: mocks.workerRateLimitGroup,
+    rateLimit: workerRateLimit,
+    rateLimitGroup: workerRateLimitGroup,
   } as unknown as WorkerPro<IActionJobData>,
   job: {
     attemptsMade: 1,
@@ -38,30 +36,24 @@ const MOCK_CONTEXT = {
 
 const BULLMQ_RATE_LIMIT_ERROR = WorkerPro.RateLimitError()
 
-vi.mock('@/apps', () => ({
-  default: {
-    'test-app': {
+describe('action helper functions', () => {
+  beforeEach(() => {
+    apps['test-app'] = {
       key: 'test-app',
       actions: [
         { key: 'action1', doesFileProcessing: (_s: Step) => true },
         { key: 'action2', doesFileProcessing: (_s: Step) => false },
       ],
-    } as IApp,
-    'legacy-app': {
+    } as IApp
+    apps['legacy-app'] = {
       key: 'legacy-app',
       actions: [{ key: 'action1' }],
-    } as IApp,
-  },
-}))
+    } as IApp
+  })
 
-vi.mock('@/models/execution', () => ({
-  default: {
-    setStatus: mocks.setExecutionStatus,
-  },
-}))
-
-describe('action helper functions', () => {
   afterEach(() => {
+    delete apps['test-app']
+    delete apps['legacy-app']
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
@@ -258,8 +250,8 @@ describe('action helper functions', () => {
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
-          expect(mocks.workerRateLimit).toHaveBeenCalledWith(100)
-          expect(mocks.workerRateLimitGroup).not.toHaveBeenCalled()
+          expect(workerRateLimit).toHaveBeenCalledWith(100)
+          expect(workerRateLimitGroup).not.toHaveBeenCalled()
         }
       })
 
@@ -276,8 +268,8 @@ describe('action helper functions', () => {
           }),
         ).toThrow(RetriableError)
 
-        expect(mocks.workerRateLimit).not.toHaveBeenCalled()
-        expect(mocks.workerRateLimitGroup).not.toHaveBeenCalled()
+        expect(workerRateLimit).not.toHaveBeenCalled()
+        expect(workerRateLimitGroup).not.toHaveBeenCalled()
       })
 
       it("delays the job's group if delayType is group", () => {
@@ -306,8 +298,8 @@ describe('action helper functions', () => {
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
-          expect(mocks.workerRateLimitGroup).toHaveBeenCalledWith(job, 100)
-          expect(mocks.workerRateLimit).not.toHaveBeenCalled()
+          expect(workerRateLimitGroup).toHaveBeenCalledWith(job, 100)
+          expect(workerRateLimit).not.toHaveBeenCalled()
         }
       })
 
@@ -324,8 +316,8 @@ describe('action helper functions', () => {
           }),
         ).toThrow(RetriableError)
 
-        expect(mocks.workerRateLimit).not.toHaveBeenCalled()
-        expect(mocks.workerRateLimitGroup).not.toHaveBeenCalled()
+        expect(workerRateLimit).not.toHaveBeenCalled()
+        expect(workerRateLimitGroup).not.toHaveBeenCalled()
       })
 
       it('throws the original RetriableError if delayType is step', () => {
@@ -462,7 +454,7 @@ describe('action helper functions', () => {
               context: MOCK_CONTEXT,
             }),
           ).toThrow()
-          expect(mocks.addSpanTags).toHaveBeenCalledWith({
+          expect(addSpanTags).toHaveBeenCalledWith({
             willRetry: expectedTagValue,
           })
         },

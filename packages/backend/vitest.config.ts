@@ -2,7 +2,6 @@
 
 // Configure Vitest (https://vitest.dev/config/)
 
-import { globSync, readFileSync } from 'fs'
 import { cpus } from 'os'
 import path from 'path'
 
@@ -15,16 +14,6 @@ config({
 })
 
 const UNIT_INCLUDE = 'src/**/*.test.{js,ts}'
-
-// vi.mock() replaces a module in the worker cache. With isolate: false that
-// replacement leaks into later files, so those tests get their own graph.
-function testsWithModuleMocks(): string[] {
-  return globSync(UNIT_INCLUDE, { cwd: __dirname }).filter((file) =>
-    /\bvi\.mock\s*\(/.test(readFileSync(path.join(__dirname, file), 'utf8')),
-  )
-}
-
-const isolatedTests = testsWithModuleMocks()
 
 const srcAlias = path.resolve(__dirname, './src')
 const graphqlShieldAlias = require.resolve('graphql-shield')
@@ -63,19 +52,7 @@ export default defineConfig({
           ...sharedTest,
           name: 'backend',
           include: [UNIT_INCLUDE],
-          exclude: isolatedTests,
           isolate: false,
-        },
-      },
-      {
-        resolve: {
-          alias: resolveAliases,
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend-isolated',
-          include: isolatedTests,
-          isolate: true,
         },
       },
     ],

@@ -8,12 +8,14 @@ import {
   type CreateAxiosDefaults,
   type InternalAxiosRequestConfig,
 } from 'axios'
+import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
+import logger from '@/helpers/logger'
 
 import m365ExcelApp from '../..'
 import { EXCEL_504_MAX_ATTEMPTS } from '../../common/interceptors/request-error-handler'
@@ -23,7 +25,7 @@ function mockAxiosAdapterToThrowOnce(
   headers?: AxiosResponse['headers'],
   data?: AxiosResponse['data'],
 ): void {
-  mocks.axiosAdapter.mockImplementationOnce((config) => {
+  axiosAdapter.mockImplementationOnce((config) => {
     throw new AxiosError(
       'Request failed',
       AxiosError.ERR_BAD_RESPONSE,
@@ -40,55 +42,38 @@ function mockAxiosAdapterToThrowOnce(
 }
 
 function mockAxiosAdapterToThrowNetworkErrorOnce(code: string): void {
-  mocks.axiosAdapter.mockImplementationOnce((config) => {
+  axiosAdapter.mockImplementationOnce((config) => {
     throw new AxiosError('Network error', code, config, null, undefined)
   })
 }
 
-const mocks = vi.hoisted(() => ({
-  axiosAdapter: vi.fn(
-    async (config: InternalAxiosRequestConfig): AxiosPromise => ({
-      data: 'test-data',
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config,
-    }),
-  ),
-  logWarning: vi.fn(),
-  logError: vi.fn(),
-}))
-
-vi.mock('axios', async (importOriginal) => {
-  const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.create = (
-    createConfig?: CreateAxiosDefaults,
-  ) =>
-    actualAxios.create({
-      ...createConfig,
-      adapter: mocks.axiosAdapter,
-    })
-
-  return {
-    ...actualAxios,
-    default: {
-      ...actualAxios,
-      create: mockCreate,
-    },
-  }
-})
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    warn: mocks.logWarning,
-    error: mocks.logError,
-  },
-}))
+const axiosAdapter = vi.fn(
+  async (config: InternalAxiosRequestConfig): AxiosPromise => ({
+    data: 'test-data',
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config,
+  }),
+)
+const logWarning = vi.fn()
+const logError = vi.fn()
+const actualAxiosCreate = axios.create.bind(axios)
 
 describe('M365 request error handlers', () => {
   let http: IHttpClient
 
   beforeEach(() => {
+    vi.spyOn(axios, 'create').mockImplementation(
+      (createConfig?: CreateAxiosDefaults) =>
+        actualAxiosCreate({
+          ...createConfig,
+          adapter: axiosAdapter,
+        }),
+    )
+    vi.spyOn(logger, 'warn').mockImplementation(logWarning)
+    vi.spyOn(logger, 'error').mockImplementation(logError)
+
     const $ = {
       auth: {
         data: {
@@ -130,7 +115,7 @@ describe('M365 request error handlers', () => {
         expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
         expect(error.message).toEqual('Retrying HTTP 404 from M365 Excel')
       })
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 404'),
       expect.objectContaining({ event: 'm365-http-404-invalid-version' }),
     )
@@ -158,7 +143,7 @@ describe('M365 request error handlers', () => {
     async ({ data }) => {
       mockAxiosAdapterToThrowOnce(404, undefined, data)
       await expect(http.get('/test-url')).rejects.toThrow(HttpError)
-      expect(mocks.logError).not.toHaveBeenCalledWith(
+      expect(logError).not.toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ event: 'm365-http-404-invalid-version' }),
       )
@@ -179,7 +164,7 @@ describe('M365 request error handlers', () => {
           expect(error.delayType).toEqual('step')
           expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
         })
-      expect(mocks.logWarning).toHaveBeenCalledWith(
+      expect(logWarning).toHaveBeenCalledWith(
         expect.stringContaining(`HTTP ${status}`),
         expect.objectContaining({ event: `m365-http-${status}` }),
       )
@@ -198,7 +183,7 @@ describe('M365 request error handlers', () => {
         expect(error.delayType).toEqual('step')
         expect(error.delayInMs).toEqual(123000)
       })
-    expect(mocks.logWarning).toHaveBeenCalledWith(
+    expect(logWarning).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 503'),
       expect.objectContaining({ event: 'm365-http-503' }),
     )
@@ -216,7 +201,7 @@ describe('M365 request error handlers', () => {
         expect(error.delayType).toEqual('step')
         expect(error.delayInMs).toEqual(DEFAULT_DELAY_MS)
       })
-    expect(mocks.logWarning).toHaveBeenCalledWith(
+    expect(logWarning).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 503'),
       expect.objectContaining({ event: 'm365-http-503' }),
     )
@@ -234,7 +219,7 @@ describe('M365 request error handlers', () => {
         expect(error.delayType).toEqual('queue')
         expect(error.message).toEqual('Rate limited by Microsoft Graph.')
       })
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 429'),
       expect.objectContaining({ event: 'm365-http-429' }),
     )
@@ -267,7 +252,7 @@ describe('M365 request error handlers', () => {
         expect(error.delayType).toEqual('queue')
         expect(error.message).toEqual('Bandwidth limited by Microsoft Graph.')
       })
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 509'),
       expect.objectContaining({ event: 'm365-http-509' }),
     )
@@ -289,7 +274,7 @@ describe('M365 request error handlers', () => {
         // Message contains the user-friendly error (will be saved as errorDetails)
         expect(error.message).toContain('Excel request timed out')
       })
-    expect(mocks.logWarning).toHaveBeenCalledWith(
+    expect(logWarning).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 504'),
       expect.objectContaining({ event: 'm365-http-504' }),
     )
@@ -330,7 +315,7 @@ describe('M365 request error handlers', () => {
         expect(error).toBeInstanceOf(StepError)
         expect(error.message).toContain('Excel request timed out')
       })
-    expect(mocks.logWarning).toHaveBeenCalledWith(
+    expect(logWarning).toHaveBeenCalledWith(
       expect.stringContaining('HTTP 504'),
       expect.objectContaining({ event: 'm365-http-504' }),
     )

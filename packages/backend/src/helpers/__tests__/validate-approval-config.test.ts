@@ -1,24 +1,7 @@
 import { IStep, IStepConfig } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  stepQueryWhere: vi.fn(),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: () => ({
-      where: mocks.stepQueryWhere,
-    }),
-  },
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: vi.fn(),
-    info: vi.fn(),
-  },
-}))
+import { spyOnLogger } from '@/test/spy-on-logger'
 
 import { validateApprovalConfig } from '../validate-approval-config'
 
@@ -38,7 +21,12 @@ function createMockStep(overrides: Partial<IStep> = {}): IStep {
 
 describe('validateApprovalConfig', () => {
   beforeEach(() => {
-    vi.resetAllMocks()
+    spyOnLogger()
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Case 1: trigger step (no prevStep)', () => {

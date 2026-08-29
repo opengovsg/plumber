@@ -1,12 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
 
 import getTableRowImpl from '../../actions/get-table-row/implementation'
-import getTopNTableRows from '../../common/get-top-n-table-rows'
+import * as getTopNTableRowsModule from '../../common/get-top-n-table-rows'
 
-// Mock the getTopNTableRows function
-vi.mock('../../common/get-top-n-table-rows')
+const getTopNTableRows = vi.fn()
 
 describe('getTableRowImpl', () => {
   const mockSession = {} as any
@@ -14,9 +13,12 @@ describe('getTableRowImpl', () => {
   const tableId = '{test-table-id}'
 
   beforeEach(() => {
+    vi.spyOn(getTopNTableRowsModule, 'default').mockImplementation(
+      getTopNTableRows,
+    )
     vi.clearAllMocks()
 
-    vi.mocked(getTopNTableRows).mockResolvedValue({
+    getTopNTableRows.mockResolvedValue({
       columns: ['Name', 'Email', 'Age', 'Group', 'RSVP-ed'],
       rows: [
         ['Alice', 'alice@example.com', '25', 'A', 'Yes'],
@@ -177,7 +179,7 @@ describe('getTableRowImpl', () => {
 
   describe('edge cases', () => {
     it('should handle empty table rows', async () => {
-      vi.mocked(getTopNTableRows).mockResolvedValue({
+      getTopNTableRows.mockResolvedValue({
         columns: ['Name', 'Email'],
         rows: [],
         headerSheetRowIndex: 0,
@@ -194,7 +196,7 @@ describe('getTableRowImpl', () => {
     })
 
     it('should handle empty string lookup values', async () => {
-      vi.mocked(getTopNTableRows).mockResolvedValue({
+      getTopNTableRows.mockResolvedValue({
         columns: ['Name', 'Email'],
         rows: [
           ['Alice', ''],
@@ -222,7 +224,7 @@ describe('getTableRowImpl', () => {
     })
 
     it('should calculate correct sheetRowNumber with non-zero headerSheetRowIndex', async () => {
-      vi.mocked(getTopNTableRows).mockResolvedValue({
+      getTopNTableRows.mockResolvedValue({
         columns: ['Name', 'Email'],
         rows: [
           ['Alice', 'alice@example.com'],
@@ -247,7 +249,7 @@ describe('getTableRowImpl', () => {
     })
 
     it('should find last row when it matches', async () => {
-      vi.mocked(getTopNTableRows).mockResolvedValue({
+      getTopNTableRows.mockResolvedValue({
         columns: ['Name', 'Status'],
         rows: [
           ['Alice', 'Inactive'],
@@ -273,7 +275,7 @@ describe('getTableRowImpl', () => {
     })
 
     it('should match exact values (case sensitive)', async () => {
-      vi.mocked(getTopNTableRows).mockResolvedValue({
+      getTopNTableRows.mockResolvedValue({
         columns: ['Name', 'Email'],
         rows: [
           ['alice', 'alice@example.com'],
@@ -296,5 +298,9 @@ describe('getTableRowImpl', () => {
         columns: ['Name', 'Email'],
       })
     })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 })

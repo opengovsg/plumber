@@ -9,6 +9,7 @@ import createHttpClient from '@/helpers/http-client'
 import app from '../..'
 import createLetterAction from '../../actions/create-letter'
 import requestErrorHandler from '../../common/request-error-handler'
+import * as attachmentHelpers from '../../helpers/attachment'
 
 const MOCK_RESPONSE = {
   publicId: '123',
@@ -25,19 +26,18 @@ const MOCK_TEMPLATE_DATA = {
 
 const MOCK_S3_ATTACHMENT_KEY = `s3:plumber-development-common-bucket:123/${MOCK_TEMPLATE_NAME}.pdf`
 
-const mocks = vi.hoisted(() => ({
-  downloadAndStoreAttachmentInS3: vi.fn(() => MOCK_S3_ATTACHMENT_KEY),
-}))
-
-vi.mock('../../helpers/attachment', () => ({
-  downloadAndStoreAttachmentInS3: mocks.downloadAndStoreAttachmentInS3,
-}))
+const downloadAndStoreAttachmentInS3 = vi.fn(() => MOCK_S3_ATTACHMENT_KEY)
 
 describe('create letter from template', () => {
   let $: IGlobalVariable
   let mockAdapter: MockAdapter
 
   beforeEach(() => {
+    vi.spyOn(
+      attachmentHelpers,
+      'downloadAndStoreAttachmentInS3',
+    ).mockImplementation(downloadAndStoreAttachmentInS3)
+
     $ = {
       auth: {
         set: vi.fn(),
@@ -162,7 +162,7 @@ describe('create letter from template', () => {
       delayType: 'step',
       delayInMs: 'default',
     })
-    mocks.downloadAndStoreAttachmentInS3.mockRejectedValueOnce(retriableError)
+    downloadAndStoreAttachmentInS3.mockRejectedValueOnce(retriableError)
 
     $.auth.data.apiKey = 'test_v1_123456'
     $.step.parameters.shouldGeneratePdf = true
