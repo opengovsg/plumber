@@ -218,14 +218,16 @@ Pointers into the shipped setup — details live in the sections linked, not rep
 
 ---
 
-## Takeaways
+## In short
 
-1. Benchmark Vitest **Duration**, not the full CI job. Use cold runs when comparing changes — a Turbo cache hit can make a suite look like it ran in seconds.
-2. Baseline against develop-v2, not an intermediate optimisation state.
-3. **Mock split** both suites: grep at config load, `isolate: false` for files that do not mock.
-4. **Worker isolation** for integration: per-worker DB/Redis/Dynamo slices, not one shared Postgres.
-5. **SpyOn** both suites: replace `vi.mock('@/…')` on internal modules where you can.
-6. Boot containers once; truncate, flush, and wipe per test.
-7. Plan mock migrations file-by-file. One remaining `vi.mock()` keeps the file isolated.
+Three config changes moved Duration — [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket):
 
-Unit drops **170s → 34s** (−80%) when mock split and spyOn both land. Integration drops **266s → 104s** (−61%) when all three changes land.
+1. **Mock split** — grep for `vi.mock` at config load; `isolate: false` for everything else.
+2. **Worker isolation** — per-worker Postgres, Redis, and DynamoDB before turning parallelism up.
+3. **SpyOn** — replace `vi.mock('@/…')` on internal modules where you can; migrate whole files, not individual mocks.
+
+**How to measure:** Vitest **Duration** per suite, cold runs, stable baseline — not full CI wall clock and not a Turbo cache hit.
+
+**Do not skip:** boot containers once, wipe between tests ([§2](#2-worker-isolation-parallel-integration-without-flakiness)). Parallel workers on shared Postgres flakes — we ruled that out [above](#parallel-infra-what-we-ruled-out).
+
+Most of the win is config, not rewriting test logic.
