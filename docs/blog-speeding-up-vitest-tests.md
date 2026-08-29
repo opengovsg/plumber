@@ -14,13 +14,13 @@ Integration gains come mostly from worker isolation + mock split; spyOn widens t
 
 **Summary**
 
-| Suite | Before | After (full stack) | Change |
+| Suite | Before (develop-v2) | After (full stack) | Change |
 |-------|--------|-------------------|--------|
 | Backend unit (147 files) | **170s** | **34s** | **−80%** |
 | Backend integration (71 files / 814 tests) | **266s** | **104s** | **−61%** |
 | Wall clock (slowest suite) | **266s** | **104s** | **−61%** |
 
-Benchmark Vitest `Duration`, not the full CI job. Checkout and setup add ~70–110s on top of the test run itself.
+Benchmark Vitest `Duration` from each suite's test run — not the full CI job (checkout and setup add ~70–110s on top). CI already ran unit and integration as separate jobs on develop-v2; **that layout did not change**. Turbo is just how each suite is invoked and timed.
 
 Unit speedup comes in two steps:
 
@@ -36,59 +36,59 @@ Integration at full stack: **104s** (−61%).
 
 ## How backend tests run
 
-pnpm + Turbo monorepo, Vitest 4, one CI job per suite.
+pnpm + Turbo monorepo, Vitest 4. Each suite runs via `turbo run test:unit` or `test:integration` in its own CI job — same entrypoint before and after. What changed is the Vitest config inside each job.
 
 | Suite | Pattern | Infra |
 |-------|---------|-------|
 | Unit | `src/**/*.test.ts` | mocks only |
 | Integration | `src/**/*.itest.ts` | Testcontainers: Postgres ×2, Redis, DynamoDB Local |
 
-### Before
+### Before (develop-v2)
 
-CI already runs unit and integration as **separate jobs in parallel** — wall clock is whichever job finishes last (integration). The bottleneck was *inside* each job: unit rebuilt a fresh module graph for every file, and integration ran **single-threaded** on one shared Postgres.
+One Vitest project per suite. No mock split, no per-worker databases.
 
 ```mermaid
 flowchart TB
-  subgraph ci ["CI — jobs run in parallel, wall clock = slowest job"]
+  subgraph before ["develop-v2"]
     direction LR
 
-    subgraph unit ["Unit job"]
+    subgraph unit ["Unit · 147 files"]
       direction TB
       U1["1 Vitest project"]
-      U2["isolate true · 147 files"]
+      U2["isolate true"]
       U3["fresh module graph per file"]
       U1 --> U2 --> U3
     end
 
-    subgraph int ["Integration job"]
+    subgraph int ["Integration · 71 files"]
       direction TB
       I1["singleThread: true"]
-      I2["1 shared Postgres"]
-      I3["71 files · serial"]
+      I2["4 sequential globalSetup"]
+      I3["1 shared Postgres"]
       I1 --> I2 --> I3
     end
   end
 ```
 
-### After
+### After (full stack)
 
-Same parallel CI layout. Inside each job: grep-split into shared and isolated Vitest projects. Integration also runs **parallel workers**, each with its own Postgres, Redis, and DynamoDB slice.
+grep-split into shared and isolated projects. Integration runs parallel workers, each with its own Postgres, Redis, and DynamoDB slice.
 
 ```mermaid
 flowchart TB
-  subgraph ci ["CI — jobs run in parallel, wall clock = slowest job"]
+  subgraph after ["Optimised"]
     direction LR
 
-    subgraph unit ["Unit job"]
+    subgraph unit ["Unit · 147 files"]
       direction TB
       GU["grep vi.mock"]
-      U1["133 files · isolate false · shared graph"]
+      U1["133 files · isolate false"]
       U2["14 files · isolated"]
       GU --> U1
       GU --> U2
     end
 
-    subgraph int ["Integration job"]
+    subgraph int ["Integration · 71 files"]
       direction TB
       GI["grep vi.mock"]
       I1["64 files · isolate false"]
@@ -101,7 +101,7 @@ flowchart TB
   end
 ```
 
-File counts above are at **full stack** (mock split + spyOn). Mock split alone shares 82 unit files before spyOn shrinks the isolated bucket to 14.
+Mock split alone shares 82 unit files before spyOn shrinks the isolated bucket to 14.
 
 One `vi.mock()` anywhere in a file sends the whole file to the isolated project. Migrating three of four mocks in a file does nothing for routing.
 
@@ -111,7 +111,7 @@ One `vi.mock()` anywhere in a file sends the whole file to the isolated project.
 
 **Applies to:** unit and integration.
 
-Before: one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
+Before (develop-v2): one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
 
 After: at config load, grep for `vi.mock` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
 
@@ -218,7 +218,7 @@ Dead ends are things we attempted and reverted. Gotchas are things that *work* b
 ## Takeaways
 
 1. Benchmark Vitest **Duration**, not the full CI job.
-2. Baseline against the pre-change setup, not an intermediate optimisation state.
+2. Baseline against develop-v2, not an intermediate optimisation state.
 3. **Mock split** both suites: grep at config load, `isolate: false` for files that do not mock.
 4. **Worker isolation** for integration: per-worker DB/Redis/Dynamo slices, not one shared Postgres.
 5. **SpyOn** both suites: replace `vi.mock('@/…')` on internal modules where you can.
