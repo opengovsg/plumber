@@ -288,11 +288,23 @@ We tried these while parallelizing integration tests. None worked. Worker isolat
 
 Rules the shipped config assumes — break them and tests leak mock state or hit the wrong database slice.
 
-- **`isolate: false` leaks mock state** — files in the mock-split shared pool run in one Node worker that loads each module once and reuses it across tests. A spy or mock left set up in test A (e.g. `mockReturnValue`, `mockImplementation`) is still in place when test B runs. Always call `vi.clearAllMocks()` or `mockReset()` in `afterEach`. Put heavy `import`s in `beforeAll` where you can so you are not paying to re-resolve the graph on every test.
+#### `isolate: false` leaks mock state
 
-- **Worker env before config loads** — app config reads `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` on first import and keeps those values for the life of the process. `test/helpers/worker-isolation.ts` sets env for each Vitest worker *before* app code loads. Pull in config or app modules too early — or skip the isolation hook — and every worker hits the same Postgres, Redis block, and DynamoDB suffix.
+- **What breaks:** a spy or mock set up in test A (e.g. `mockReturnValue`, `mockImplementation`) is still active when test B runs.
+- **Why:** mock-split files share one Node worker that loads each module once and reuses the graph across tests.
+- **What to do:** call `vi.clearAllMocks()` or `mockReset()` in `afterEach`; put heavy `import`s in `beforeAll` where you can.
 
-- **Redis caps at 32 workers** — each worker owns four Redis logical DB indices (see worker isolation above). Mock split runs two integration Vitest projects (shared + isolated), each needing its own worker slots: 256 ÷ 4 ÷ 2 = **32**. Keep `maxWorkers = min(cpus, 32)` unless you change Redis logical DB count or drop back to one integration project.
+#### Worker env before config loads
+
+- **What breaks:** every Vitest worker reads and writes the same Postgres, Redis block, and DynamoDB suffix — wrong rows, cross-test pollution.
+- **Why:** app config reads `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` on first import and keeps those values for the process lifetime.
+- **What to do:** let `test/helpers/worker-isolation.ts` set env per worker before any app or config module imports; do not pull app code in early or skip the isolation hook.
+
+#### Redis caps at 32 workers
+
+- **What breaks:** workers share Redis logical DB indices — queue and cache keys collide across parallel itests.
+- **Why:** each worker needs four contiguous indices; mock split runs two integration Vitest projects (shared + isolated): 256 ÷ 4 ÷ 2 = **32** slots (see worker isolation above).
+- **What to do:** keep `maxWorkers = min(cpus, 32)` unless you change Redis logical DB count or drop back to one integration project.
 
 ---
 
