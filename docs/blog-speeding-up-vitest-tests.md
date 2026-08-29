@@ -117,7 +117,7 @@ After: at config load, grep for `vi.mock` and split into two projects. Files wit
 | Unit (+ spyOn) | 133 | 14 |
 | Integration (+ spyOn) | 64 | 7 |
 
-Also on unit: `disableConsoleIntercept: true` (Vitest 4 teardown workaround), `maxWorkers: cpus().length`.
+Also on unit: `maxWorkers: cpus().length`.
 
 Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
