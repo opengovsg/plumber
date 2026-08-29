@@ -36,12 +36,7 @@ Integration at full stack: **104s** (−61%).
 
 ## How backend tests run
 
-pnpm + Turbo monorepo, Vitest.
-
-| Suite | Pattern | Infra |
-|-------|---------|-------|
-| Unit | `src/**/*.test.ts` | mocks only |
-| Integration | `src/**/*.itest.ts` | Testcontainers: Postgres ×2, Redis, DynamoDB Local |
+Unit tests mock dependencies; integration tests hit Postgres (×2), Redis, and DynamoDB Local via Testcontainers. The diagrams below show how CI ran them before and after.
 
 ### Before (develop-v2)
 
