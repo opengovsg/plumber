@@ -121,6 +121,28 @@ Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
 Before (develop-v2): `singleThread: true`, four sequential `globalSetup` files, one shared Postgres, table-by-table truncate on every test.
 
+```mermaid
+flowchart TB
+  GS["global-setup.ts · Testcontainers boot once"]
+
+  W["1 Vitest worker · singleThread · all itests"]
+
+  PG["Postgres · plumber_test"]
+  TP["Tiles Postgres · tiles_test"]
+  R["Redis"]
+  D["DynamoDB"]
+
+  GS --> PG
+  GS --> TP
+  GS --> R
+  GS --> D
+
+  W --> PG
+  W --> TP
+  W --> R
+  W --> D
+```
+
 After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 
 | Resource | Per worker |
@@ -134,23 +156,58 @@ After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 flowchart TB
   GS["global-setup.ts · Testcontainers boot once"]
 
-  subgraph before ["Before · singleThread"]
-    B_W["1 Vitest worker · all itests"]
-    B_DB["1 shared Postgres · Redis · Dynamo"]
-    B_W --> B_DB
+  subgraph workers ["Vitest workers · maxWorkers min(cpus, 32)"]
+    W0["Worker 0"]
+    W1["Worker 1"]
+    WN["Worker N"]
   end
 
-  subgraph after ["After · worker N"]
-    W["Vitest worker N"]
-    SLICE["Postgres plumber_test_wN + tiles_test_wN\nRedis DBs N×4 … N×4+3\nDynamo tables suffix wN"]
-    W --> SLICE
+  subgraph pg ["Postgres"]
+    PG0["plumber_test_w0"]
+    PG1["plumber_test_w1"]
+    PGN["plumber_test_wN"]
   end
 
-  GS --> before
-  GS --> after
+  subgraph tiles ["Tiles Postgres"]
+    T0["tiles_test_w0"]
+    T1["tiles_test_w1"]
+    TN["tiles_test_wN"]
+  end
+
+  subgraph redis ["Redis"]
+    R0["DB 0–3"]
+    R1["DB 4–7"]
+    RN["DB N×4 … N×4+3"]
+  end
+
+  subgraph dynamo ["DynamoDB"]
+    D0["suffix w0"]
+    D1["suffix w1"]
+    DN["suffix wN"]
+  end
+
+  GS --> pg
+  GS --> tiles
+  GS --> redis
+  GS --> dynamo
+
+  W0 --> PG0
+  W0 --> T0
+  W0 --> R0
+  W0 --> D0
+
+  W1 --> PG1
+  W1 --> T1
+  W1 --> R1
+  W1 --> D1
+
+  WN --> PGN
+  WN --> TN
+  WN --> RN
+  WN --> DN
 
   HOOK["beforeEach: seed Postgres · flush Redis\nafterEach: TRUNCATE · Dynamo wipe"]
-  SLICE --> HOOK
+  workers --> HOOK
 ```
 
 Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
