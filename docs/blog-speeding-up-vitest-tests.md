@@ -10,8 +10,6 @@ Three changes, applied across both suites where they apply:
 
 Integration gains come mostly from worker isolation + mock split; spyOn widens the shared pool. Unit gains come mostly from mock split + spyOn.
 
-We upgraded from Vitest 3 to 4 as part of the same effort. v4 rewrites the runner pool (replacing tinypool), avoids spawning idle workers, and trims import/startup overhead — but we did not benchmark that bump on its own. The numbers below come from the three config changes, not the major version alone.
-
 ---
 
 **Summary**
@@ -38,7 +36,7 @@ Integration at full stack: **104s** (−61%).
 
 ## How backend tests run
 
-pnpm + Turbo monorepo, Vitest 4.
+pnpm + Turbo monorepo, Vitest.
 
 | Suite | Pattern | Infra |
 |-------|---------|-------|
@@ -51,12 +49,12 @@ pnpm + Turbo monorepo, Vitest 4.
 
 ```mermaid
 flowchart TB
-  subgraph ci ["1 CI job"]
+  subgraph ci ["1 CI job · wall clock 266s"]
     direction TB
-    RUN["npm run test"]
+    RUN["npm run test · sequential"]
     ROOT["root vitest · all projects"]
     U["Unit · 147 files\n1 project · isolate true\n170s"]
-    I["Integration · 71 files\nsingleThread · 1 Postgres\n266s"]
+    I["Integration · 71 files\nsingleThread · 1 Postgres\n266s · long pole"]
     RUN --> ROOT
     ROOT --> U
     ROOT --> I
@@ -72,20 +70,20 @@ flowchart TB
   subgraph ci ["2 CI jobs in parallel · wall clock 104s (−61%)"]
     direction LR
 
-    subgraph job_unit ["backend unit · 34s (−80%)"]
+    subgraph job_unit ["backend unit"]
       direction TB
-      T1["turbo run test:unit"]
-      GU["grep vi.mock"]
+      T1["turbo run test:unit · 34s (−80%)"]
+      GU["grep vi.mock · config load"]
       U1["133 files · isolate false"]
       U2["14 files · isolated"]
       T1 --> GU --> U1
       GU --> U2
     end
 
-    subgraph job_int ["backend integration · 104s (−61%)"]
+    subgraph job_int ["backend integration · long pole"]
       direction TB
-      T2["turbo run test:integration"]
-      GI["grep vi.mock"]
+      T2["turbo run test:integration · 104s (−61%)"]
+      GI["grep vi.mock · config load"]
       I1["64 files · isolate false"]
       I2["7 files · isolated"]
       W["parallel workers · DB slice each"]
