@@ -2,9 +2,9 @@
   "name": "plumber",
   "license": "AGPL-3.0",
   "engines": {
-    "pnpm": ">=11.23.0"
+    "pnpm": ">=12.1.0"
   },
-  "packageManager": "pnpm@11.23.0",
+  "packageManager": "pnpm@12.1.0",
   "scripts": {
     "preinstall": "npx --yes only-allow pnpm",
     "postinstall": "pnpm run gqlc",
