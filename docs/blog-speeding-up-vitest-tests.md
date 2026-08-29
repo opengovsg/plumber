@@ -4,7 +4,7 @@ We cut backend integration Vitest time from **266s to 104s** (−61%) and unit V
 
 Three changes, applied across both suites where they apply:
 
-1. **Mock split** — grep for `vi.mock(`, run non-mock files with `isolate: false`
+1. **Mock split** — grep for `vi.mock`, run non-mock files with `isolate: false`
 2. **Worker isolation** — per-worker Postgres, Redis, and DynamoDB for integration tests
 3. **SpyOn migration** — replace `vi.mock('@/…')` on our own modules with `vi.spyOn()` (same pattern for unit and integration)
 
@@ -16,21 +16,21 @@ Integration gains come mostly from worker isolation + mock split; spyOn widens t
 
 | Suite | Before | After (full stack) | Change |
 |-------|--------|-------------------|--------|
-| Backend unit (147 files) | **170s** Vitest · **176s** turbo | **34s** · **39s** | **−80% / −78%** |
-| Backend integration (71 files / 814 tests) | **266s** · **276s** | **104s** · **110s** | **−61% / −60%** |
-| Wall clock (slowest backend job) | **276s** | **110s** | **−60%** |
+| Backend unit (147 files) | **170s** | **34s** | **−80%** |
+| Backend integration (71 files / 814 tests) | **266s** | **104s** | **−61%** |
+| Wall clock (slowest suite) | **266s** | **104s** | **−61%** |
 
-Benchmark the **turbo test step** (`pnpm exec turbo run test:* --filter=backend`), not the full CI job. Checkout and Datadog setup add ~70–110s per job on top. Vitest `Duration` is the line inside the turbo step.
+Benchmark Vitest `Duration`, not the full CI job. Checkout and setup add ~70–110s on top of the test run itself.
 
 Unit speedup comes in two steps:
 
-| Stage | Vitest · turbo | Isolated files |
-|-------|----------------|----------------|
-| Baseline | 170s · 176s | 147 (all isolated) |
-| Mock split only | 96s · 101s (−43%) | 65 |
-| Mock split + spyOn | 34s · 39s (−80%) | 14 |
+| Stage | Duration | Isolated files |
+|-------|----------|----------------|
+| Baseline | 170s | 147 (all isolated) |
+| Mock split only | 96s (−43%) | 65 |
+| Mock split + spyOn | 34s (−80%) | 14 |
 
-Integration at full stack: **104s · 110s** turbo (−61%).
+Integration at full stack: **104s** (−61%).
 
 ---
 
@@ -60,12 +60,12 @@ flowchart LR
 
 ### After
 
-Both configs grep for `vi.mock(` at load time and split into two Vitest projects. Non-mock files share a module graph per worker (`isolate: false`). Integration workers each get their own DB slice.
+Both configs grep for `vi.mock` at load time and split into two Vitest projects. Non-mock files share a module graph per worker (`isolate: false`). Integration workers each get their own DB slice.
 
 ```mermaid
 flowchart LR
   subgraph detect ["Config load"]
-    grep["grep vi.mock("]
+    grep["grep vi.mock"]
   end
 
   subgraph unit ["Unit"]
@@ -92,7 +92,7 @@ One `vi.mock()` anywhere in a file sends the whole file to the isolated project.
 
 Before: one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
 
-After: at config load, grep for `vi.mock(` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
+After: at config load, grep for `vi.mock` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
 
 | Suite | Shared | Isolated |
 |-------|--------|----------|
@@ -125,7 +125,7 @@ Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `b
 
 `maxWorkers = min(cpus, 32)` (Redis slot cap).
 
-This is most of the integration win. Integration was the wall-clock long pole before and after (**276s → 110s**, −60%).
+This is most of the integration win. Integration was the wall-clock long pole before and after (**266s → 104s**, −61%).
 
 ---
 
@@ -174,7 +174,7 @@ Dead ends are things we attempted and reverted. Gotchas are things that *work* b
 | **Migrate every file off `vi.mock()`** | ~14 unit + 7 integration files need hoisted mocks. ESM packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, `sqs-consumer`, `@opengovsg/formsg-sdk`) and import-time graphs (FormSG triggers, queue/worker init) cannot be spied reliably. |
 | **`vi.spyOn()` on worker itests** | Workers capture `exponentialBackoffWithJitter` and `tracer.wrap` at module load. Spies in `beforeEach` run too late — 10 failures in `action.itest.ts`. Reverted to `vi.mock()`. |
 | **Dynamic-import workers after spy setup** | Same import-time capture; did not help. |
-| **Partial spyOn inside a file** | Config grep routes on any `vi.mock(`. One remaining mock keeps the whole file isolated — no partial win. |
+| **Partial spyOn inside a file** | Config grep routes on any `vi.mock`. One remaining mock keeps the whole file isolated — no partial win. |
 | **Replace `@/apps` barrel with direct `formsg` import** | Circular init during module load (`Cannot read properties of undefined (reading 'key')`). |
 | **Default 10s `hookTimeout` on DynamoDB wipe** | Post–10k-row tile test, wipe hook timed out. Raised to 120s. |
 | **One shared Postgres under parallel workers** | Cross-worker races. Per-worker DB names fixed it. |
@@ -190,13 +190,13 @@ Dead ends are things we attempted and reverted. Gotchas are things that *work* b
 | **Flaky data is often the wrong worker slice** | Debug "wrong row count" by checking whether the test hit another worker's Postgres, Redis, or DynamoDB suffix. |
 | **Redis caps parallelism at 32 workers** | Each worker uses 4 logical Redis DBs. `maxWorkers = min(cpus, 32)`. |
 | **Large itests need a longer hook timeout** | DynamoDB wipe after big tile tests can exceed 10s. Keep `hookTimeout: 120_000` on integration setup. |
-| **Turbo cache skews benchmarks** | A cache hit can make a suite look like it ran in seconds. Benchmark cold turbo steps when comparing changes. |
+| **Cache skews benchmarks** | A cache hit can make a suite look like it ran in seconds. Benchmark cold runs when comparing changes. |
 
 ---
 
 ## Takeaways
 
-1. Benchmark the turbo **test step**, not the job total.
+1. Benchmark Vitest **Duration**, not the full CI job.
 2. Baseline against the pre-change setup, not an intermediate optimisation state.
 3. **Mock split** both suites: grep at config load, `isolate: false` for files that do not mock.
 4. **Worker isolation** for integration: per-worker DB/Redis/Dynamo slices, not one shared Postgres.
@@ -204,4 +204,4 @@ Dead ends are things we attempted and reverted. Gotchas are things that *work* b
 6. Boot containers once; truncate, flush, and wipe per test.
 7. Plan mock migrations file-by-file. One remaining `vi.mock()` keeps the file isolated.
 
-Unit drops **176s → 39s** (−78% turbo) when mock split and spyOn both land. Integration drops **276s → 110s** (−60%) when all three changes land.
+Unit drops **170s → 34s** (−80%) when mock split and spyOn both land. Integration drops **266s → 104s** (−61%) when all three changes land.
