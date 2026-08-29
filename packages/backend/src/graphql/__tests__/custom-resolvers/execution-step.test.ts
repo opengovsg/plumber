@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import resolver from '@/graphql/custom-resolvers/execution-step'
-import ExecutionStep from '@/models/execution-step'
 import App from '@/models/app'
+import ExecutionStep from '@/models/execution-step'
 
 const $relatedQuery = vi.fn()
 let triggers = [

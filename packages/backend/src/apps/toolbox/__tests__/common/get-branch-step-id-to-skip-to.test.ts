@@ -1,43 +1,51 @@
-import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 
 const defaultSteps = [
-    {
-      id: 'step1',
-      appKey: 'formsg',
-      key: 'newSubmission',
-      parameters: {},
-      position: 1,
-    },
-    {
-      id: 'step2',
-      appKey: 'toolbox',
-      key: 'ifThen',
-      parameters: { depth: '1' },
-      position: 2,
-    },
-    {
-      id: 'step3',
-      appKey: 'postman',
-      key: 'sendTransactionalEmail',
-      position: 3,
-    },
-    {
-      id: 'step4',
-      appKey: 'toolbox',
-      key: 'ifThen',
-      parameters: { depth: '1' },
-      position: 4,
-    },
-    {
-      id: 'step5',
-      appKey: 'postman',
-      key: 'sendTransactionalEmail',
-      position: 5,
-    },
+  {
+    id: 'step1',
+    appKey: 'formsg',
+    key: 'newSubmission',
+    parameters: {},
+    position: 1,
+  },
+  {
+    id: 'step2',
+    appKey: 'toolbox',
+    key: 'ifThen',
+    parameters: { depth: '1' },
+    position: 2,
+  },
+  {
+    id: 'step3',
+    appKey: 'postman',
+    key: 'sendTransactionalEmail',
+    position: 3,
+  },
+  {
+    id: 'step4',
+    appKey: 'toolbox',
+    key: 'ifThen',
+    parameters: { depth: '1' },
+    position: 4,
+  },
+  {
+    id: 'step5',
+    appKey: 'postman',
+    key: 'sendTransactionalEmail',
+    position: 5,
+  },
 ]
 
 const stepQueryResult = vi.fn().mockResolvedValue(defaultSteps)

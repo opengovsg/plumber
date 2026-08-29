@@ -30,7 +30,9 @@ const sendInvalidAttachmentsEmail = vi.fn()
 const createInvalidAttachmentsMessage = vi.fn(
   () => 'test invalid attachment body',
 )
-const getLdFlagValue = vi.fn(async (_flag: string, _email: string | null) => false)
+const getLdFlagValue = vi.fn(
+  async (_flag: string, _email: string | null) => false,
+)
 const sesSend = vi.fn(async () => ({}))
 const getSuppressedEmails = vi.fn(async () => [] as string[])
 

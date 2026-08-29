@@ -4,7 +4,6 @@ import axios from 'axios'
 import { Settings as LuxonSettings } from 'luxon'
 import {
   afterEach,
-  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -48,7 +47,7 @@ const actualAxiosCreate = axios.create.bind(axios)
 describe('Send SMS Action', () => {
   let $: IGlobalVariable
 
-  beforeAll(() => {
+  beforeEach(() => {
     vi.spyOn(authSchema.authDataSchema, 'safeParse').mockImplementation(
       authDataParseResult,
     )
@@ -84,16 +83,14 @@ describe('Send SMS Action', () => {
       http,
       setActionItem: setActionItem,
     } as unknown as IGlobalVariable
-  })
 
-  beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('01 June 2024 00:00:00 GMT+8'))
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('uses the campaign ID in auth data', async () => {

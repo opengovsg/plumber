@@ -157,9 +157,7 @@ describe('downloadEncryptedAttachment', () => {
       'Attachment download failed with status 503',
     )
 
-    const timeouts = axiosGet.mock.calls.map(
-      ([, config]) => config.timeout,
-    )
+    const timeouts = axiosGet.mock.calls.map(([, config]) => config.timeout)
     expect(timeouts).toEqual([2000, 2000, 1000])
   })
 

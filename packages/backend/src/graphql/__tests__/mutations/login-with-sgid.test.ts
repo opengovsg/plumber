@@ -44,7 +44,9 @@ describe('Login with SGID', () => {
     vi.spyOn(sgidClient, 'userinfo').mockImplementation(sgidUserInfo)
     vi.spyOn(auth, 'setAuthCookie').mockImplementation(setAuthCookie)
     vi.spyOn(auth, 'getOrCreateUser').mockImplementation(getOrCreateUser)
-    vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(sendOnboardingEmail)
+    vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(
+      sendOnboardingEmail,
+    )
     vi.spyOn(auth, 'updateLastLogin').mockImplementation(updateLastLogin)
     vi.spyOn(LoginWhitelistEntry, 'isWhitelisted').mockImplementation(
       isWhitelistedEmail,

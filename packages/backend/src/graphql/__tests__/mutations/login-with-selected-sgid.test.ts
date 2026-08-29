@@ -24,7 +24,9 @@ describe('Login with selected SGID', () => {
 
     vi.spyOn(auth, 'setAuthCookie').mockImplementation(setAuthCookie)
     vi.spyOn(auth, 'getOrCreateUser').mockImplementation(getOrCreateUser)
-    vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(sendOnboardingEmail)
+    vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(
+      sendOnboardingEmail,
+    )
     vi.spyOn(auth, 'updateLastLogin').mockImplementation(updateLastLogin)
     vi.spyOn(jwt, 'verify').mockImplementation(verifyJwt)
 

@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { stubAppsRegistry } from '@/test/stub-apps-registry'
+
 const TEST_APPS = {
   'app-without-queue-1': {},
   'app-without-queue-2': {},
@@ -16,13 +18,6 @@ const TEST_APPS = {
     },
   },
 } as const
-
-function stubAppsRegistry(apps: Record<string, unknown>): void {
-  for (const key of Object.keys(apps)) {
-    delete apps[key]
-  }
-  Object.assign(apps, TEST_APPS)
-}
 
 function createMockQueue(name: string) {
   return {
@@ -42,23 +37,22 @@ describe('action workers', () => {
   const makeActionWorker = vi.fn()
   let MAIN_ACTION_QUEUE_NAME: string
   let MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX: string
+  let restoreAppsRegistry: () => void
 
   beforeAll(async () => {
     vi.resetModules()
 
-    const makeActionQueueModule = await import(
-      '@/queues/helpers/make-action-queue'
-    )
+    const makeActionQueueModule =
+      await import('@/queues/helpers/make-action-queue')
     vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
       ({ queueName }) => createMockQueue(queueName) as never,
     )
 
     const appsModule = await import('@/apps')
-    stubAppsRegistry(appsModule.default)
+    restoreAppsRegistry = stubAppsRegistry(appsModule.default, TEST_APPS)
 
-    const makeActionWorkerModule = await import(
-      '@/workers/helpers/make-action-worker'
-    )
+    const makeActionWorkerModule =
+      await import('@/workers/helpers/make-action-worker')
     vi.spyOn(makeActionWorkerModule, 'makeActionWorker').mockImplementation(
       makeActionWorker,
     )
@@ -72,6 +66,7 @@ describe('action workers', () => {
   })
 
   afterAll(() => {
+    restoreAppsRegistry()
     vi.restoreAllMocks()
     process.removeAllListeners('SIGTERM')
   })

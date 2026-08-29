@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { UnauthenticatedContext } from '@/types/express/context'
 import * as authenticationHelper from '@/helpers/authentication'
+import type { UnauthenticatedContext } from '@/types/express/context'
 
 import {
   blockAdminOperations,

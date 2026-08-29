@@ -2,7 +2,6 @@ import { IGlobalVariable, IHttpClient } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
-import * as formsgSdkModule from '@opengovsg/formsg-sdk'
 
 import {
   parseFormIdFormat,
@@ -10,20 +9,23 @@ import {
   verifyFormCreds,
 } from '../../auth/verify-credentials'
 
-const cryptoValid = vi.fn()
+const mocks = vi.hoisted(() => ({
+  cryptoValid: vi.fn(),
+}))
+
+vi.mock('@opengovsg/formsg-sdk', () => ({
+  default: () => ({
+    crypto: {
+      valid: mocks.cryptoValid,
+    },
+  }),
+}))
 
 describe('verify credentials', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
-    vi.spyOn(formsgSdkModule, 'default').mockImplementation(
-      () =>
-        ({
-          crypto: {
-            valid: cryptoValid,
-          },
-        }) as ReturnType<typeof formsgSdkModule.default>,
-    )
+    mocks.cryptoValid.mockReset()
 
     $ = {
       auth: {
@@ -49,7 +51,6 @@ describe('verify credentials', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
-    vi.restoreAllMocks()
   })
 
   describe('verify secret key format', () => {
@@ -96,7 +97,7 @@ describe('verify credentials', () => {
 
   describe('verify form creds', () => {
     it('should accept valid form creds', async () => {
-      cryptoValid.mockReturnValueOnce(true)
+      mocks.cryptoValid.mockReturnValueOnce(true)
       await expect(
         verifyFormCreds(
           $,
@@ -165,7 +166,7 @@ describe('verify credentials', () => {
     })
 
     it('should throw an error if form secret key does not match public key', async () => {
-      cryptoValid.mockReturnValueOnce(false)
+      mocks.cryptoValid.mockReturnValueOnce(false)
       await expect(
         verifyFormCreds(
           $,

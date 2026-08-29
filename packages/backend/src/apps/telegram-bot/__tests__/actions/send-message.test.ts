@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import Step from '@/models/step'
 import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import sendMessageAction from '../../actions/send-message'
@@ -14,9 +13,10 @@ const setActionItem = vi.fn()
 
 describe('send message', () => {
   let $: IGlobalVariable
+  let stepQuery: ReturnType<typeof spyOnStepQuery>
 
   beforeEach(() => {
-    spyOnStepQuery(
+    stepQuery = spyOnStepQuery(
       createStepQueryChain({
         patchAndFetchById: vi.fn(() => ({
           context: vi.fn(),
@@ -50,7 +50,6 @@ describe('send message', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
-    vi.restoreAllMocks()
   })
 
   it('returns void if message is sent successfully', async () => {
@@ -69,7 +68,7 @@ describe('send message', () => {
     expect(setActionItem).toHaveBeenCalledWith({
       raw: mockHttpResponse.data,
     })
-    expect(Step.query).toHaveBeenCalled()
+    expect(stepQuery).toHaveBeenCalled()
   })
 
   it('should throw step error if message text is empty', async () => {

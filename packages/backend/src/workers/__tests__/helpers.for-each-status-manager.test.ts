@@ -64,7 +64,7 @@ describe('processForEachStatus', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('when step is a for-each step', () => {
@@ -224,6 +224,10 @@ describe('processForEachStatus', () => {
           },
         },
       ])
+      getForEachExecutionState.mockResolvedValue({
+        hasLastIterationRun: true,
+        areAllStepsSuccessful: true,
+      })
 
       const result = await processForEachStatus({
         executionId: mockExecutionId,

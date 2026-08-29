@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import { stubAppsRegistry } from '@/test/stub-apps-registry'
+
 const makeActionQueue = vi.fn()
 
 const TEST_APPS = {
@@ -17,31 +19,24 @@ const TEST_APPS = {
   },
 } as const
 
-function stubAppsRegistry(apps: Record<string, unknown>): void {
-  for (const key of Object.keys(apps)) {
-    delete apps[key]
-  }
-  Object.assign(apps, TEST_APPS)
-}
-
 describe('action queues', () => {
   let actionQueuesByName: Record<string, unknown>
   let appActionQueues: Record<string, unknown>
   let MAIN_ACTION_QUEUE_NAME: string
   let MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX: string
+  let restoreAppsRegistry: () => void
 
   beforeAll(async () => {
     vi.resetModules()
 
-    const makeActionQueueModule = await import(
-      '@/queues/helpers/make-action-queue'
-    )
+    const makeActionQueueModule =
+      await import('@/queues/helpers/make-action-queue')
     vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
       makeActionQueue,
     )
 
     const appsModule = await import('@/apps')
-    stubAppsRegistry(appsModule.default)
+    restoreAppsRegistry = stubAppsRegistry(appsModule.default, TEST_APPS)
 
     const actionModule = await import('@/queues/action')
     actionQueuesByName = actionModule.actionQueuesByName
@@ -52,6 +47,7 @@ describe('action queues', () => {
   })
 
   afterAll(() => {
+    restoreAppsRegistry()
     vi.restoreAllMocks()
     process.removeAllListeners('SIGTERM')
   })

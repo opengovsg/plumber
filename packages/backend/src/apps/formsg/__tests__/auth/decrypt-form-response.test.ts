@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
-import EmailSuppressionEntry from '@/models/email-suppression-entry'
 import logger from '@/helpers/logger'
+import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import * as formEnv from '../../common/form-env'
@@ -141,9 +141,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         FAILED_DECRYPT_RESPONSE,
       )
-      expect(consoleError).toHaveBeenCalledWith(
-        'No trigger item provided',
-      )
+      expect(consoleError).toHaveBeenCalledWith('No trigger item provided')
     })
 
     it('should fail if unable to verify form signature', async () => {

@@ -43,9 +43,11 @@ describe('M365 before request interceptors', () => {
         }),
     )
     vi.spyOn(logger, 'info').mockImplementation(logInfo)
-    vi.spyOn(m365Config, 'M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS', 'get').mockReturnValue(
-      1000,
-    )
+    vi.spyOn(
+      m365Config,
+      'M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS',
+      'get',
+    ).mockReturnValue(1000)
     vi.spyOn(m365Config, 'isM365TenantKey').mockReturnValue(true)
     vi.spyOn(tokenCache, 'getAccessToken').mockImplementation(getAccessToken)
 

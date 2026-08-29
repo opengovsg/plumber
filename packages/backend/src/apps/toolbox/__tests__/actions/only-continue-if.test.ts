@@ -1,8 +1,8 @@
 import { type IGlobalVariable, type IJSONObject } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 import StepError from '@/errors/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import onlyContinueIfAction from '../../actions/only-continue-if'
 

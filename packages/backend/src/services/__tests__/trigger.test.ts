@@ -49,9 +49,10 @@ describe('processTrigger', () => {
       })),
     }))
 
-    vi.spyOn(shouldTriggerProceedModule, 'shouldTriggerProceed').mockImplementation(
-      shouldTriggerProceed,
-    )
+    vi.spyOn(
+      shouldTriggerProceedModule,
+      'shouldTriggerProceed',
+    ).mockImplementation(shouldTriggerProceed)
 
     vi.spyOn(Execution, 'query').mockImplementation(
       () =>
