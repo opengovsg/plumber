@@ -179,33 +179,33 @@ SpyOn moved another 51 unit files to shared workers (−80% total vs baseline). 
 
 ## What we tried — and what to watch for
 
-Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Below: what we tried and reverted, integration approaches that failed before [§2](#2-worker-isolation-parallel-integration-without-flakiness), and constraints to follow when adding or debugging tests.
+Most of the win came from the three config changes above, not from eliminating every mock or parallelizing naively. Below: what we tried and reverted, integration approaches that failed before worker isolation shipped, and constraints to follow when adding or debugging tests.
 
 ### Mock and spyOn dead ends
 
 - **Migrate every file off `vi.mock()`**
-  - Tried shrinking the isolated bucket to zero via [§3](#3-spyon-shrink-the-isolated-bucket) — **14 unit + 7 integration** files still need hoisted mocks (Summary table + [§3](#3-spyon-shrink-the-isolated-bucket)).
+  - Tried shrinking the isolated bucket to zero — **14 unit + 7 integration** files still need hoisted mocks (Summary table above).
   - Blockers: ESM npm packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, `sqs-consumer`, `@opengovsg/formsg-sdk`) and import-time graphs (queues, workers, FormSG triggers).
   - `vi.spyOn()` runs after the module graph is built — cannot replace pre-import mocks.
-  - Lesson: migrate [file-by-file](#1-mock-split-stop-paying-for-isolation-you-do-not-need); accept a small isolated tail.
+  - Lesson: migrate file-by-file; accept a small isolated tail.
 
 - **`vi.spyOn()` on worker itests**
   - Workers bind `exponentialBackoffWithJitter` and `tracer.wrap` at import time; spies in `beforeEach` are too late.
   - **`action.itest.ts` failed 10 tests**; dynamic-import-after-setup failed the same way.
-  - Those files stay on `vi.mock()` → isolated project ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need)). See [§3](#3-spyon-shrink-the-isolated-bucket) for what we could migrate instead.
+  - Those files stay on `vi.mock()` and in the isolated project.
 
 - **Partial spyOn cleanup in one file**
-  - [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) greps the whole file for `vi.mock` ([After diagram](#how-backend-tests-run)).
+  - Mock split greps the whole file for `vi.mock` (see After diagram above).
   - Three of four mocks migrated → still isolated; no Duration win until the last mock is gone.
 
 - **Replace `@/apps` barrel with direct `formsg` import**
-  - Tried during [§3](#3-spyon-shrink-the-isolated-bucket) migrations.
+  - Tried during spyOn migrations.
   - Circular init at load: `Cannot read properties of undefined (reading 'key')`.
   - Kept barrel + `vi.mock()` for those graphs.
 
 ### Integration infra dead ends
 
-We tried these while parallelizing integration tests. None worked. What we shipped instead is all in [§2](#2-worker-isolation-parallel-integration-without-flakiness).
+We tried these while parallelizing integration tests. None worked. Worker isolation (above) is what shipped instead.
 
 - **One shared Postgres under parallel workers** — cross-worker races on truncate and inserts.
 - **Per-test DynamoDB table clone** — correct isolation, too slow at our test volume.
@@ -213,23 +213,23 @@ We tried these while parallelizing integration tests. None worked. What we shipp
 
 ### When you add or change tests
 
-Not reverted experiments — rules the shipped config assumes. Break them and tests flake, leak mock state, or land in the wrong isolated bucket. Details in [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket).
+Rules the shipped config assumes — break them and tests flake, leak mock state, or land in the wrong isolated bucket.
 
-- **`isolate: false` leaks mock state** — [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) shared pool reuses one module graph; use `vi.clearAllMocks()` / `mockReset()` in `afterEach` ([§3](#3-spyon-shrink-the-isolated-bucket)) and heavy imports in `beforeAll`.
-- **Worker env before config loads** — set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` before app config first imports ([§2](#2-worker-isolation-parallel-integration-without-flakiness) / `test/helpers/worker-isolation.ts`; env is snapshotted once).
-- **Flaky data → wrong worker slice** — check worker id when row counts or keys look wrong; another worker’s Postgres, Redis DB range, or DynamoDB suffix is the usual cause ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
-- **Redis caps at 32 workers** — 4 logical Redis DBs per worker → `maxWorkers = min(cpus, 32)` ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
+- **`isolate: false` leaks mock state** — shared pool reuses one module graph; use `vi.clearAllMocks()` / `mockReset()` in `afterEach` and heavy imports in `beforeAll`.
+- **Worker env before config loads** — set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` before app config first imports (`test/helpers/worker-isolation.ts`; env is snapshotted once).
+- **Flaky data → wrong worker slice** — check worker id when row counts or keys look wrong; another worker’s Postgres, Redis DB range, or DynamoDB suffix is the usual cause.
+- **Redis caps at 32 workers** — 4 logical Redis DBs per worker → `maxWorkers = min(cpus, 32)`.
 
 ---
 
 ## In short
 
-**Start with mock split** ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need)) — config-only, no test rewrites. On our unit suite that alone was **170s → 96s** (−43%).
+**Start with mock split** — config-only, no test rewrites. On our unit suite that alone was **170s → 96s** (−43%).
 
-**Integration next:** per-worker data slices ([§2](#2-worker-isolation-parallel-integration-without-flakiness)) *before* raising `maxWorkers`. Parallel threads on one Postgres was the main flake source — not slow tests.
+**Integration next:** per-worker data slices *before* raising `maxWorkers`. Parallel threads on one Postgres was the main flake source — not slow tests.
 
-**SpyOn last** ([§3](#3-spyon-shrink-the-isolated-bucket)) — file-by-file, after split is live. Diminishing returns once ~20 files still need hoisted mocks; do not chase 100%.
+**SpyOn last** — file-by-file, after split is live. Diminishing returns once ~20 files still need hoisted mocks; do not chase 100%.
 
-**Do not start with:** mock migration, eliminating `vi.mock()` everywhere, or tuning worker count — see [what we tried](#what-we-tried--and-what-to-watch-for).
+**Do not start with:** mock migration, eliminating `vi.mock()` everywhere, or tuning worker count — see [what we tried](#what-we-tried--and-what-to-watch-for) above.
 
 When you benchmark your own changes: Vitest **Duration** per suite, cold run, stable baseline — not CI wall clock, not a cached turbo run.
