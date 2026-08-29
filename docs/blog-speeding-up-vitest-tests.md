@@ -1,8 +1,8 @@
 # Vitest at scale: up to 80% faster backend tests
 
-We cut backend integration Vitest time from **266s to 104s** and unit Vitest time from **170s to 34s** at full stack (GitHub Actions, Aug 2026). Baseline: `chore/pnpm-migration` (run `32823139009`). The tests were not wrong — we kept rebuilding module graphs and sharing databases that could not safely be shared.
+We cut backend integration Vitest time from **266s to 104s** (−61%) and unit Vitest time from **170s to 34s** (−80%) at full stack. The tests were not wrong — we kept rebuilding module graphs and sharing databases that could not safely be shared.
 
-The work ships in two stacked PRs: **#2045** (parallel integration + integration spyOn) and **#2046** (unit mock split + unit spyOn). Integration is fully on `perf/parallel-integration-test-isolation`. Unit mock split is on `perf/speed-up-backend-unit-tests` today; unit spyOn is validated in CI and completes #2046.
+The work stacks in two parts: parallel integration (worker isolation + integration spyOn) and unit tests (mock split + unit spyOn).
 
 ---
 
@@ -21,10 +21,10 @@ Unit speedup comes in two steps:
 | Stage | Vitest · turbo | Isolated files |
 |-------|----------------|----------------|
 | Baseline | 170s · 176s | 147 (all isolated) |
-| Mock split only (run `33273433513`) | 96s · 101s | 65 |
-| Mock split + spyOn (run `33272287453`) | 34s · 39s | 14 |
+| Mock split only | 96s · 101s (−43%) | 65 |
+| Mock split + spyOn | 34s · 39s (−80%) | 14 |
 
-Integration after #2045 (run `33272283305`): 104s · 110s turbo.
+Integration at full stack: **104s · 110s** turbo (−61%).
 
 ---
 
@@ -98,7 +98,7 @@ Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `b
 
 **Integration:** 16 itest files migrated; isolated bucket 23 → 7.
 
-**Unit:** ~51 files migrated in the validated run; isolated bucket 65 → 14. The remaining ~14 unit files and 7 integration files keep `vi.mock()` for ESM npm packages or import-time dependency graphs.
+**Unit:** ~51 files migrated; isolated bucket 65 → 14. The remaining ~14 unit files and 7 integration files keep `vi.mock()` for ESM npm packages or import-time dependency graphs.
 
 Helpers in `packages/backend/src/test/`:
 
@@ -150,29 +150,11 @@ Mock split alone moved 82 files to shared workers (−43%). SpyOn moved another 
 ## Takeaways
 
 1. Benchmark the turbo **test step**, not the job total.
-2. Baseline against a known-good branch (`chore/pnpm-migration` here), not an intermediate perf branch.
+2. Baseline against the pre-change setup, not an intermediate optimisation state.
 3. Grep-split at config load: turn off isolation for files that do not mock.
 4. Replace `vi.mock('@/…')` with `vi.spyOn()` where you can — that shrinks the isolated bucket more than worker tuning.
 5. Parallel integration needs per-worker DB/Redis/Dynamo slices, not one shared Postgres.
 6. Boot containers once; truncate, flush, and wipe per test.
 7. Plan mock migrations file-by-file. One remaining `vi.mock()` keeps the file isolated.
 
-Integration is the wall-clock long pole (**276s → 110s**). Unit drops **176s → 39s** when both layers land.
-
----
-
-## File map
-
-| Path | Role |
-|------|------|
-| `.github/workflows/test-and-build.yml` | parallel backend test jobs |
-| `packages/backend/vitest.config.ts` | unit mock split + `isolate: false` |
-| `packages/backend/vitest.config.integration.ts` | worker parallelism + mock split + `hookTimeout` |
-| `packages/backend/test/global-setup.ts` | Testcontainers boot |
-| `packages/backend/test/helpers/worker-isolation.ts` | per-worker DB / Redis / Dynamo |
-| `packages/backend/test/pg-reset-db-setup.ts` | seed + batched truncate |
-| `packages/backend/test/redis-reset-setup.ts` | per-worker Redis flush |
-| `packages/backend/test/dynamodb-reset-setup.ts` | per-test DynamoDB wipe |
-| `packages/backend/src/test/spy-on-logger.ts` | logger spy helper |
-| `packages/backend/src/test/spy-on-step-query.ts` | Step.query spy helper |
-| `packages/backend/src/test/stub-apps-registry.ts` | apps registry stub helper |
+Integration is the wall-clock long pole (**276s → 110s**, −60%). Unit drops **176s → 39s** (−78% turbo) when both layers land.
