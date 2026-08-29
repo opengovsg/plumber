@@ -21,13 +21,13 @@ Branch: `cursor/bench-spyon-migration-89df`
 
 ## Results (CI run `33269675235`, commit `27dd415b`)
 
-| Metric | Baseline | This branch | Delta |
-|--------|----------|-------------|-------|
-| Vitest duration | **96.79s** | **34.84s** | **−64%** |
-| Turbo `test:unit` step | ~102s | **39.7s** | **−61%** |
-| Shared project files | ~81 | ~133 | +52 |
-| Isolated project files | ~64 | ~12 | −52 |
-| Test files / tests | 145 / 2024 | 145 / 2024 | same |
+| Metric                 | Baseline   | This branch | Delta    |
+| ---------------------- | ---------- | ----------- | -------- |
+| Vitest duration        | **96.79s** | **34.84s**  | **−64%** |
+| Turbo `test:unit` step | ~102s      | **39.7s**   | **−61%** |
+| Shared project files   | ~81        | ~133        | +52      |
+| Isolated project files | ~64        | ~12         | −52      |
+| Test files / tests     | 145 / 2024 | 145 / 2024  | same     |
 
 All CI checks pass (unit, integration, typecheck, format, build, lint).
 
