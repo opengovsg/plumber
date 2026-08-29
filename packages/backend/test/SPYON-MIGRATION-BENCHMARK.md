@@ -19,11 +19,17 @@ Branch: `cursor/bench-spyon-migration-89df`
   - Modules imported at load time by the unit under test (FormSG trigger subgraph)
 - Shared `src/test/unit-setup.ts` mocks `createRedisClient` so queue modules can load safely in the shared graph
 
-Same CI command:
+## Results (CI run `33269675235`, commit `27dd415b`)
 
-```bash
-pnpm exec turbo run test:unit --filter=backend --force
-```
+| Metric | Baseline | This branch | Delta |
+|--------|----------|-------------|-------|
+| Vitest duration | **96.79s** | **34.84s** | **−64%** |
+| Turbo `test:unit` step | ~102s | **39.7s** | **−61%** |
+| Shared project files | ~81 | ~133 | +52 |
+| Isolated project files | ~64 | ~12 | −52 |
+| Test files / tests | 145 / 2024 | 145 / 2024 | same |
+
+All CI checks pass (unit, integration, typecheck, format, build, lint).
 
 ## What changed
 
@@ -64,7 +70,7 @@ beforeEach(() => {
 beforeAll(async () => {
   vi.resetModules()
   vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(fn)
-  await import('@/queues/action')
+  await import('@/queues/action.js')
 })
 ```
 
