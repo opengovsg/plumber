@@ -1,64 +1,64 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { makeActionWorker as MakeActionWorkerFn } from '../helpers/make-action-worker'
+import { makeActionWorker } from '../helpers/make-action-worker'
+
+const mocks = vi.hoisted(() => {
+  const workerOn = vi.fn()
+
+  return {
+    // BullMQ worker mocks
+    workerConstructor: vi.fn(function () {
+      return { on: workerOn, close: vi.fn() }
+    }),
+    workerOn,
+
+    // Misc mocks
+    processOn: vi.fn(),
+  }
+})
+
+vi.mock('@/queues/action', () => ({
+  enqueueActionJob: vi.fn(),
+  makeActionJobId: vi.fn(),
+}))
+
+vi.mock('@taskforcesh/bullmq-pro', () => ({
+  WorkerPro: mocks.workerConstructor,
+}))
+
+vi.mock('process', async () => {
+  const process = await vi.importActual<typeof import('process')>('process')
+  return {
+    default: {
+      ...process,
+      on: mocks.processOn,
+    },
+  }
+})
+
+vi.mock('@/config/redis', () => ({
+  createRedisClient: vi.fn(() => 'mock redis client'),
+}))
+
+vi.mock('@/helpers/tracer', () => ({
+  default: {
+    wrap: vi.fn(() => ({})),
+  },
+}))
+
+vi.mock('@/apps', () => ({
+  default: {},
+}))
+
+vi.mock('@/helpers/generate-error-email', () => ({
+  isErrorEmailAlreadySent: vi.fn(),
+  sendErrorEmail: vi.fn(),
+}))
 
 describe('makeActionWorker', () => {
-  const workerOn = vi.fn()
-  const workerConstructor = vi.fn(function () {
-    return { on: workerOn, close: vi.fn() }
-  })
-
-  let makeActionWorker: typeof MakeActionWorkerFn
-
-  function createMockQueue(name: string) {
-    return {
-      name,
-      close: vi.fn(),
-      add: vi.fn(),
-      getJob: vi.fn(),
-    }
-  }
-
-  beforeAll(async () => {
-    vi.resetModules()
-
-    const bullmq = await import('@taskforcesh/bullmq-pro')
-    vi.spyOn(bullmq, 'WorkerPro').mockImplementation(workerConstructor as never)
-
-    const redisConfig = await import('@/config/redis')
-    vi.spyOn(redisConfig, 'createRedisClient').mockReturnValue(
-      'mock redis client' as never,
-    )
-
-    const tracerModule = await import('@/helpers/tracer')
-    vi.spyOn(tracerModule.default, 'wrap').mockImplementation(
-      ((_name, fn) => fn) as never,
-    )
-
-    const makeActionQueueModule = await import(
-      '@/queues/helpers/make-action-queue'
-    )
-    vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
-      ({ queueName }) => createMockQueue(queueName) as never,
-    )
-
-    const actionQueueModule = await import('@/queues/action')
-    vi.spyOn(actionQueueModule, 'enqueueActionJob').mockResolvedValue(
-      {} as never,
-    )
-    vi.spyOn(actionQueueModule, 'makeActionJobId').mockReturnValue('job-id')
-
-    const workerModule = await import('../helpers/make-action-worker')
-    makeActionWorker = workerModule.makeActionWorker
-  })
-
   afterEach(() => {
     vi.clearAllMocks()
-  })
-
-  afterAll(() => {
     vi.restoreAllMocks()
-    process.removeAllListeners('SIGTERM')
   })
 
   it('creates a worker for the specified queue name', () => {
@@ -67,7 +67,7 @@ describe('makeActionWorker', () => {
       queueName: '{test-app-queue}',
       queueConfig: { isQueueDelayable: false, workerType: 'action' },
     })
-    expect(workerConstructor).toHaveBeenCalledWith(
+    expect(mocks.workerConstructor).toHaveBeenCalledWith(
       '{test-app-queue}',
       expect.anything(),
       // Must not have redis connection prefix
@@ -84,7 +84,7 @@ describe('makeActionWorker', () => {
       redisConnectionPrefix: '{test}',
       queueConfig: { isQueueDelayable: false, workerType: 'action' },
     })
-    expect(workerConstructor).toHaveBeenCalledWith(
+    expect(mocks.workerConstructor).toHaveBeenCalledWith(
       'some-queue',
       expect.anything(),
       expect.objectContaining({
@@ -180,7 +180,7 @@ describe('makeActionWorker', () => {
         queueName: '{test-app-queue}',
         queueConfig: appQueueConfig,
       })
-      expect(workerConstructor).toHaveBeenCalledWith(
+      expect(mocks.workerConstructor).toHaveBeenCalledWith(
         '{test-app-queue}',
         expect.anything(),
         expectedWorkerOptions,

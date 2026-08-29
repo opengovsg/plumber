@@ -1,14 +1,13 @@
 // Avoid cyclic imports when importing m365ExcelApp
 import '@/apps'
 import type { IGlobalVariable } from '@plumber/types'
-import {
+import axios, {
   AxiosError,
   type AxiosPromise,
   type AxiosResponse,
   type CreateAxiosDefaults,
   type InternalAxiosRequestConfig,
 } from 'axios'
-import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'

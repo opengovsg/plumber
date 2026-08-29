@@ -1,18 +1,44 @@
 import { IGlobalVariable } from '@plumber/types'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import logger from '@/helpers/logger'
-import ExecutionStep from '@/models/execution-step'
-import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
+const mocks = vi.hoisted(() => ({
+  stepQueryFindOne: vi.fn(),
+  stepQueryWhere: vi.fn(),
+  executionStepQueryFindOne: vi.fn(),
+  executionStepQueryWhere: vi.fn(),
+  getDataOutMetadata: vi.fn(),
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: () => ({
+      findOne: mocks.stepQueryFindOne,
+      where: mocks.stepQueryWhere,
+    }),
+  },
+}))
+
+vi.mock('@/models/execution-step', () => ({
+  default: {
+    query: () => ({
+      findOne: mocks.executionStepQueryFindOne,
+      where: mocks.executionStepQueryWhere,
+    }),
+  },
+}))
+
+vi.mock('../../common/get-data-out-metadata', () => ({
+  default: mocks.getDataOutMetadata,
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    info: vi.fn(),
+    error: vi.fn(),
+  },
+}))
 
 import action from '../../actions/mrf-submission/index'
-import * as getDataOutMetadataModule from '../../common/get-data-out-metadata'
-
-const stepQueryFindOne = vi.fn()
-const stepQueryWhere = vi.fn()
-const executionStepQueryFindOne = vi.fn()
-const executionStepQueryWhere = vi.fn()
-const getDataOutMetadata = vi.fn()
 
 function createMockGlobalVariable(
   overrides: Partial<Record<string, unknown>> = {},
@@ -42,28 +68,7 @@ function createMockGlobalVariable(
 
 describe('mrf-submission action', () => {
   beforeEach(() => {
-    vi.spyOn(logger, 'info').mockImplementation(vi.fn())
-    vi.spyOn(logger, 'error').mockImplementation(vi.fn())
-    vi.spyOn(getDataOutMetadataModule, 'default').mockImplementation(
-      getDataOutMetadata,
-    )
-    spyOnStepQuery(
-      createStepQueryChain({
-        findOne: stepQueryFindOne,
-        where: stepQueryWhere,
-      }),
-    )
-    vi.spyOn(ExecutionStep, 'query').mockImplementation(
-      createStepQueryChain({
-        findOne: executionStepQueryFindOne,
-        where: executionStepQueryWhere,
-      }) as never,
-    )
     vi.resetAllMocks()
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
   })
 
   // Sanity check here
@@ -105,10 +110,10 @@ describe('mrf-submission action', () => {
   describe('testRun', () => {
     it('should set null action item (i.e. no dataOut) when trigger execution step is not found', async () => {
       const $ = createMockGlobalVariable()
-      stepQueryFindOne.mockReturnValue({
+      mocks.stepQueryFindOne.mockReturnValue({
         throwIfNotFound: () => ({ id: 'trigger-step-id' }),
       })
-      executionStepQueryFindOne.mockResolvedValue(null)
+      mocks.executionStepQueryFindOne.mockResolvedValue(null)
 
       await action.testRun($)
 
@@ -123,10 +128,10 @@ describe('mrf-submission action', () => {
         lastTestSubmissionDate: '2024-01-01',
       }
 
-      stepQueryFindOne.mockReturnValue({
+      mocks.stepQueryFindOne.mockReturnValue({
         throwIfNotFound: () => ({ id: 'trigger-step-id' }),
       })
-      executionStepQueryFindOne.mockResolvedValue({
+      mocks.executionStepQueryFindOne.mockResolvedValue({
         dataOut: mockDataOut,
         metadata: mockMetadata,
       })
@@ -141,10 +146,10 @@ describe('mrf-submission action', () => {
 
     it('should set null action item when workflowContent is missing for non-mock submission', async () => {
       const $ = createMockGlobalVariable()
-      stepQueryFindOne.mockReturnValue({
+      mocks.stepQueryFindOne.mockReturnValue({
         throwIfNotFound: () => ({ id: 'trigger-step-id' }),
       })
-      executionStepQueryFindOne.mockResolvedValue({
+      mocks.executionStepQueryFindOne.mockResolvedValue({
         dataOut: { someField: 'value' },
         metadata: {},
       })
@@ -156,10 +161,10 @@ describe('mrf-submission action', () => {
 
     it('should set null action item when current workflow step is not yet completed', async () => {
       const $ = createMockGlobalVariable()
-      stepQueryFindOne.mockReturnValue({
+      mocks.stepQueryFindOne.mockReturnValue({
         throwIfNotFound: () => ({ id: 'trigger-step-id' }),
       })
-      executionStepQueryFindOne.mockResolvedValue({
+      mocks.executionStepQueryFindOne.mockResolvedValue({
         dataOut: {
           workflowContent: {
             workflow: [
@@ -192,10 +197,10 @@ describe('mrf-submission action', () => {
         },
       }
 
-      stepQueryFindOne.mockReturnValue({
+      mocks.stepQueryFindOne.mockReturnValue({
         throwIfNotFound: () => ({ id: 'trigger-step-id' }),
       })
-      executionStepQueryFindOne.mockResolvedValue({
+      mocks.executionStepQueryFindOne.mockResolvedValue({
         dataOut: mockDataOut,
         metadata: { someKey: 'value' },
       })
@@ -218,7 +223,7 @@ describe('mrf-submission action', () => {
         orderBy: vi.fn().mockReturnThis(),
         first: vi.fn(),
       }
-      stepQueryWhere.mockReturnValue(stepChain)
+      mocks.stepQueryWhere.mockReturnValue(stepChain)
 
       // Chain mocks for ExecutionStep.query().where().andWhere()...
       const executionStepChain = {
@@ -226,7 +231,7 @@ describe('mrf-submission action', () => {
         orderBy: vi.fn().mockReturnThis(),
         first: vi.fn(),
       }
-      executionStepQueryWhere.mockReturnValue(executionStepChain)
+      mocks.executionStepQueryWhere.mockReturnValue(executionStepChain)
 
       return { stepChain, executionStepChain }
     }
@@ -394,7 +399,7 @@ describe('mrf-submission action', () => {
         orderBy: vi.fn().mockReturnThis(),
         first: vi.fn().mockResolvedValue({ id: 'reject-step-id' }),
       }
-      stepQueryWhere
+      mocks.stepQueryWhere
         .mockReturnValueOnce(stepChain)
         .mockReturnValueOnce(rejectStepChain)
 
@@ -435,7 +440,7 @@ describe('mrf-submission action', () => {
         orderBy: vi.fn().mockReturnThis(),
         first: vi.fn().mockResolvedValue(null),
       }
-      stepQueryWhere
+      mocks.stepQueryWhere
         .mockReturnValueOnce(stepChain)
         .mockReturnValueOnce(rejectStepChain)
 

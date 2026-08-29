@@ -8,18 +8,10 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
-import Step from '@/models/step'
-import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import { ADDRESS_LABELS } from '../../common/constants'
 import { FormSchema, ParsedMrfWorkflowStep } from '../../common/types'
-import * as webhookSettings from '../../common/webhook-settings'
 import trigger from '../../triggers/new-submission'
-import * as createMrfStepsModule from '../../triggers/new-submission/create-mrf-steps'
-import * as fetchFormSchemaModule from '../../triggers/new-submission/fetch-form-schema'
-import * as getMockDataModule from '../../triggers/new-submission/get-mock-data'
-import * as parseWorkflowDataModule from '../../triggers/new-submission/get-workflow-data'
-import * as removeMrfStepsModule from '../../triggers/new-submission/remove-mrf-steps'
 
 const pushTriggerItemMock = vi.fn()
 const getLastExecutionStepMock = vi.fn()
@@ -38,46 +30,57 @@ const mockFormSchema: FormSchema = {
   },
 }
 
-const getMockData = vi.fn()
-const getFormDetailsFromGlobalVariable = vi.fn()
-const fetchFormSchema = vi.fn((): FormSchema => {
-  return mockFormSchema
-})
-const removeMrfSteps = vi.fn()
-const createMrfSteps = vi.fn()
-const parseWorkflowData = vi.fn()
+const mocks = vi.hoisted(() => ({
+  getMockData: vi.fn(),
+  getFormDetailsFromGlobalVariable: vi.fn(),
+  fetchFormSchema: vi.fn((): FormSchema => {
+    return mockFormSchema
+  }),
+  removeMrfSteps: vi.fn(),
+  createMrfSteps: vi.fn(),
+  parseWorkflowData: vi.fn(),
+}))
+
+vi.mock('../../triggers/new-submission/get-mock-data', () => ({
+  default: mocks.getMockData,
+}))
+
+vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
+  fetchFormSchema: mocks.fetchFormSchema,
+}))
+
+vi.mock('../../triggers/new-submission/remove-mrf-steps', () => ({
+  removeMrfSteps: mocks.removeMrfSteps,
+}))
+
+vi.mock('../../triggers/new-submission/create-mrf-steps', () => ({
+  createMrfSteps: mocks.createMrfSteps,
+}))
+
+vi.mock('../../triggers/new-submission/get-workflow-data', () => ({
+  parseWorkflowData: mocks.parseWorkflowData,
+}))
+
+vi.mock('../../common/webhook-settings', () => ({
+  registerWebhookUrl: vi.fn(),
+  verifyWebhookUrl: vi.fn(),
+  getFormDetailsFromGlobalVariable: mocks.getFormDetailsFromGlobalVariable,
+}))
+
+vi.mock('../../../../models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: vi.fn(() => ({ parameters: {} })),
+      })),
+    })),
+  },
+}))
 
 describe('new submission trigger', () => {
   let executionStep: IExecutionStep
 
   beforeEach(() => {
-    vi.spyOn(getMockDataModule, 'default').mockImplementation(getMockData)
-    vi.spyOn(fetchFormSchemaModule, 'fetchFormSchema').mockImplementation(
-      fetchFormSchema,
-    )
-    vi.spyOn(removeMrfStepsModule, 'removeMrfSteps').mockImplementation(
-      removeMrfSteps,
-    )
-    vi.spyOn(createMrfStepsModule, 'createMrfSteps').mockImplementation(
-      createMrfSteps,
-    )
-    vi.spyOn(parseWorkflowDataModule, 'parseWorkflowData').mockImplementation(
-      parseWorkflowData,
-    )
-    vi.spyOn(webhookSettings, 'registerWebhookUrl').mockImplementation(vi.fn())
-    vi.spyOn(webhookSettings, 'verifyWebhookUrl').mockImplementation(vi.fn())
-    vi.spyOn(
-      webhookSettings,
-      'getFormDetailsFromGlobalVariable',
-    ).mockImplementation(getFormDetailsFromGlobalVariable)
-    spyOnStepQuery(
-      createStepQueryChain({
-        findById: vi.fn(() => ({
-          throwIfNotFound: vi.fn(() => ({ parameters: {} })),
-        })),
-      }),
-    )
-
     executionStep = {
       dataOut: {
         fields: {
@@ -108,7 +111,6 @@ describe('new submission trigger', () => {
 
   afterEach(() => {
     vi.clearAllMocks()
-    vi.restoreAllMocks()
   })
 
   describe('testRun', () => {
@@ -149,8 +151,8 @@ describe('new submission trigger', () => {
     }
 
     beforeEach(() => {
-      getMockData.mockResolvedValue(mockData)
-      getFormDetailsFromGlobalVariable.mockReturnValue({
+      mocks.getMockData.mockResolvedValue(mockData)
+      mocks.getFormDetailsFromGlobalVariable.mockReturnValue({
         formId: '123',
       })
     })
@@ -270,7 +272,7 @@ describe('new submission trigger', () => {
     it('should call remove MRF steps function if the form is storage mode', async () => {
       getLastExecutionStepMock.mockResolvedValue(null)
       await trigger.testRun($, { preferMock: false })
-      expect(removeMrfSteps).toHaveBeenCalledOnce()
+      expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
     })
 
     describe('MRF multirespondent flow', () => {
@@ -286,7 +288,7 @@ describe('new submission trigger', () => {
 
       it('should call createMrfSteps for multirespondent forms with workflow', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
-        fetchFormSchema.mockResolvedValueOnce({
+        mocks.fetchFormSchema.mockResolvedValueOnce({
           form: {
             ...mockFormSchema.form,
             workflow: [
@@ -299,18 +301,18 @@ describe('new submission trigger', () => {
             responseMode: 'multirespondent',
           },
         })
-        parseWorkflowData.mockReturnValue(mrfWorkflowData)
+        mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
 
         await trigger.testRun($, { preferMock: true })
 
-        expect(parseWorkflowData).toHaveBeenCalledOnce()
-        expect(createMrfSteps).toHaveBeenCalledOnce()
-        expect(removeMrfSteps).not.toHaveBeenCalled()
+        expect(mocks.parseWorkflowData).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.removeMrfSteps).not.toHaveBeenCalled()
       })
 
       it('should throw StepError when createMrfSteps fails', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
-        fetchFormSchema.mockResolvedValueOnce({
+        mocks.fetchFormSchema.mockResolvedValueOnce({
           form: {
             responseMode: 'multirespondent',
             publicKey: 'public_key',
@@ -330,8 +332,8 @@ describe('new submission trigger', () => {
             ],
           },
         })
-        parseWorkflowData.mockReturnValue(mrfWorkflowData)
-        createMrfSteps.mockRejectedValueOnce(new Error('db error'))
+        mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
+        mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
         await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
           'Error syncing MRF steps',
@@ -340,7 +342,7 @@ describe('new submission trigger', () => {
 
       it('should throw StepError when removeMrfSteps fails', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
-        removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
+        mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
         await expect(trigger.testRun($, { preferMock: true })).rejects.toThrow(
           'Error removing MRF steps',
@@ -349,7 +351,7 @@ describe('new submission trigger', () => {
 
       it('should call removeMrfSteps for multirespondent forms with empty workflow', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
-        fetchFormSchema.mockResolvedValueOnce({
+        mocks.fetchFormSchema.mockResolvedValueOnce({
           form: {
             ...mockFormSchema.form,
             workflow: [],
@@ -359,13 +361,13 @@ describe('new submission trigger', () => {
 
         await trigger.testRun($, { preferMock: true })
 
-        expect(removeMrfSteps).toHaveBeenCalledOnce()
-        expect(createMrfSteps).not.toHaveBeenCalled()
+        expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).not.toHaveBeenCalled()
       })
 
       it('should call removeMrfSteps for multirespondent forms with undefined workflow', async () => {
         getLastExecutionStepMock.mockResolvedValue(null)
-        fetchFormSchema.mockResolvedValueOnce({
+        mocks.fetchFormSchema.mockResolvedValueOnce({
           form: {
             ...mockFormSchema.form,
             responseMode: 'multirespondent',
@@ -375,8 +377,8 @@ describe('new submission trigger', () => {
 
         await trigger.testRun($, { preferMock: true })
 
-        expect(removeMrfSteps).toHaveBeenCalledOnce()
-        expect(createMrfSteps).not.toHaveBeenCalled()
+        expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
+        expect(mocks.createMrfSteps).not.toHaveBeenCalled()
       })
     })
   })

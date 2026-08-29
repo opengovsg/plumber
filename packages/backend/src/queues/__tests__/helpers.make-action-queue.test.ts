@@ -1,35 +1,64 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-import * as redisConfig from '@/config/redis'
-import * as bullmq from '@taskforcesh/bullmq-pro'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { makeActionQueue } from '../helpers/make-action-queue'
 
-describe('makeActionQueue', () => {
+const mocks = vi.hoisted(() => {
   const queueOn = vi.fn()
-  const queueConstructor = vi.fn(function () {
-    return { on: queueOn }
-  })
 
-  beforeEach(() => {
-    queueConstructor.mockClear()
-    queueOn.mockClear()
+  return {
+    // BullMQ queue mocks
+    queueConstructor: vi.fn(function () {
+      return { on: queueOn }
+    }),
+    queueOn,
 
-    vi.spyOn(bullmq, 'QueuePro').mockImplementation(
-      queueConstructor as never,
-    )
-    vi.spyOn(redisConfig, 'createRedisClient').mockReturnValue(
-      'mock redis client' as never,
-    )
-  })
+    // Misc mocks
+    processOn: vi.fn(),
+  }
+})
 
+vi.mock('@taskforcesh/bullmq-pro', () => ({
+  QueuePro: mocks.queueConstructor,
+}))
+
+vi.mock('process', async () => {
+  const process = await vi.importActual<typeof import('process')>('process')
+  return {
+    default: {
+      ...process,
+      on: mocks.processOn,
+    },
+  }
+})
+
+vi.mock('@/config/redis', () => ({
+  createRedisClient: vi.fn(() => 'mock redis client'),
+}))
+
+vi.mock('@/helpers/tracer', () => ({
+  default: {
+    wrap: vi.fn(() => ({})),
+  },
+}))
+
+vi.mock('@/apps', () => ({
+  default: {},
+}))
+
+vi.mock('@/helpers/generate-error-email', () => ({
+  isErrorEmailAlreadySent: vi.fn(),
+  sendErrorEmail: vi.fn(),
+}))
+
+describe('makeActionQueue', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
   it('creates a queue with an configured queue name', () => {
     makeActionQueue({ queueName: '{test-app-queue}' })
-    expect(queueConstructor).toHaveBeenCalledWith('{test-app-queue}', {
+    expect(mocks.queueConstructor).toHaveBeenCalledWith('{test-app-queue}', {
       connection: 'mock redis client',
     })
   })
@@ -39,7 +68,7 @@ describe('makeActionQueue', () => {
       queueName: 'some-queue',
       redisConnectionPrefix: '{test}',
     })
-    expect(queueConstructor).toHaveBeenCalledWith('some-queue', {
+    expect(mocks.queueConstructor).toHaveBeenCalledWith('some-queue', {
       connection: 'mock redis client',
       prefix: `{test}`,
     })

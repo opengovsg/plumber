@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
-import Step from '@/models/step'
 import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'

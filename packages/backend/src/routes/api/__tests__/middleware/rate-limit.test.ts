@@ -1,44 +1,47 @@
 import type { NextFunction, Request, Response } from 'express'
-import * as rateLimiterFlexible from 'rate-limiter-flexible'
 import { RateLimiterRes } from 'rate-limiter-flexible'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import * as redisConfig from '@/config/redis'
-import { spyOnLogger } from '@/test/spy-on-logger'
+import { rateLimitApi } from '../../middleware/rate-limit'
 
-const rateLimiterRedis = {
-  consume: vi.fn(),
-}
+const mocks = vi.hoisted(() => ({
+  rateLimiterRedis: {
+    consume: vi.fn(),
+  },
+  logger: {
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+  createRedisClient: vi.fn(),
+}))
 
-let rateLimitApi: typeof import('../../middleware/rate-limit').rateLimitApi
-let logWarn: ReturnType<typeof vi.fn>
-let logError: ReturnType<typeof vi.fn>
+vi.mock('rate-limiter-flexible', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('rate-limiter-flexible')>()
+  return {
+    ...actual,
+    RateLimiterRedis: vi.fn(function () {
+      return mocks.rateLimiterRedis
+    }),
+  }
+})
+
+vi.mock('@/helpers/logger', () => ({
+  default: mocks.logger,
+}))
+
+vi.mock('@/config/redis', () => ({
+  createRedisClient: mocks.createRedisClient,
+  REDIS_DB_INDEX: {
+    RATE_LIMIT: 'rate-limit',
+  },
+}))
 
 describe('Rate Limiting Middleware', () => {
   let mockReq: Partial<Request>
   let mockRes: Partial<Response>
   let mockNext: NextFunction
 
-  beforeAll(async () => {
-    vi.spyOn(redisConfig, 'createRedisClient').mockReturnValue({} as never)
-    vi.spyOn(rateLimiterFlexible, 'RateLimiterRedis').mockImplementation(
-      function RateLimiterRedisMock() {
-        return rateLimiterRedis as never
-      },
-    )
-
-    vi.resetModules()
-    rateLimitApi = (await import('../../middleware/rate-limit')).rateLimitApi
-  })
-
   beforeEach(() => {
-    const loggerSpies = spyOnLogger({
-      warn: vi.fn(),
-      error: vi.fn(),
-    })
-    logWarn = loggerSpies.warn
-    logError = loggerSpies.error
-
     mockReq = {
       headers: {},
       socket: {
@@ -68,27 +71,27 @@ describe('Rate Limiting Middleware', () => {
     vi.restoreAllMocks()
   })
 
-  afterAll(() => {
-    vi.restoreAllMocks()
-  })
-
   describe('rateLimitApi', () => {
     it('should allow request when under rate limit', async () => {
-      rateLimiterRedis.consume.mockResolvedValueOnce({})
+      mocks.rateLimiterRedis.consume.mockResolvedValueOnce({})
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(rateLimiterRedis.consume).toHaveBeenCalledWith('test-user-id')
+      expect(mocks.rateLimiterRedis.consume).toHaveBeenCalledWith(
+        'test-user-id',
+      )
       expect(mockNext).toHaveBeenCalledOnce()
       expect(mockRes.status).not.toHaveBeenCalled()
     })
 
     it('should use user ID for rate limiting when user is authenticated', async () => {
-      rateLimiterRedis.consume.mockResolvedValueOnce({})
+      mocks.rateLimiterRedis.consume.mockResolvedValueOnce({})
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(rateLimiterRedis.consume).toHaveBeenCalledWith('test-user-id')
+      expect(mocks.rateLimiterRedis.consume).toHaveBeenCalledWith(
+        'test-user-id',
+      )
       expect(mockNext).toHaveBeenCalledOnce()
     })
 
@@ -101,11 +104,11 @@ describe('Rate Limiting Middleware', () => {
         remoteAddress: '192.168.1.1',
       } as any
 
-      rateLimiterRedis.consume.mockResolvedValueOnce({})
+      mocks.rateLimiterRedis.consume.mockResolvedValueOnce({})
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(rateLimiterRedis.consume).toHaveBeenCalledWith('192.168.1.1')
+      expect(mocks.rateLimiterRedis.consume).toHaveBeenCalledWith('192.168.1.1')
       expect(mockNext).toHaveBeenCalledOnce()
     })
 
@@ -121,11 +124,13 @@ describe('Rate Limiting Middleware', () => {
         'x-forwarded-for': '198.51.100.99, 173.245.48.1',
       }
 
-      rateLimiterRedis.consume.mockResolvedValueOnce({})
+      mocks.rateLimiterRedis.consume.mockResolvedValueOnce({})
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(rateLimiterRedis.consume).toHaveBeenCalledWith('203.0.113.42')
+      expect(mocks.rateLimiterRedis.consume).toHaveBeenCalledWith(
+        '203.0.113.42',
+      )
       expect(mockNext).toHaveBeenCalledOnce()
     })
 
@@ -134,7 +139,7 @@ describe('Rate Limiting Middleware', () => {
         msBeforeNext: 5000,
       })
 
-      rateLimiterRedis.consume.mockRejectedValueOnce(rateLimitError)
+      mocks.rateLimiterRedis.consume.mockRejectedValueOnce(rateLimitError)
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
@@ -151,11 +156,11 @@ describe('Rate Limiting Middleware', () => {
         msBeforeNext: 3000,
       })
 
-      rateLimiterRedis.consume.mockRejectedValueOnce(rateLimitError)
+      mocks.rateLimiterRedis.consume.mockRejectedValueOnce(rateLimitError)
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(logWarn).toHaveBeenCalledWith(
+      expect(mocks.logger.warn).toHaveBeenCalledWith(
         'API endpoint rate limited',
         expect.objectContaining({
           event: 'api-rate-limited',
@@ -167,11 +172,11 @@ describe('Rate Limiting Middleware', () => {
 
     it('should handle errors gracefully and continue', async () => {
       const genericError = new Error('Redis connection failed')
-      rateLimiterRedis.consume.mockRejectedValueOnce(genericError)
+      mocks.rateLimiterRedis.consume.mockRejectedValueOnce(genericError)
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(logError).toHaveBeenCalledWith(
+      expect(mocks.logger.error).toHaveBeenCalledWith(
         'Error in rate limiting middleware',
         { error: genericError },
       )
@@ -189,11 +194,11 @@ describe('Rate Limiting Middleware', () => {
       } as any
       mockReq.headers = {}
 
-      rateLimiterRedis.consume.mockResolvedValueOnce({})
+      mocks.rateLimiterRedis.consume.mockResolvedValueOnce({})
 
       await rateLimitApi(mockReq as Request, mockRes as Response, mockNext)
 
-      expect(rateLimiterRedis.consume).toHaveBeenCalledWith('10.0.0.1')
+      expect(mocks.rateLimiterRedis.consume).toHaveBeenCalledWith('10.0.0.1')
       expect(mockNext).toHaveBeenCalledOnce()
     })
   })

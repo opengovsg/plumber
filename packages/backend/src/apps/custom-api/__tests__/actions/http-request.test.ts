@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
-import Step from '@/models/step'
 import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import app from '../..'

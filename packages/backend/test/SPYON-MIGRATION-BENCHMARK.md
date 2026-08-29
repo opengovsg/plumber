@@ -1,6 +1,6 @@
 # vi.spyOn migration benchmark
 
-Full migration of backend unit tests from `vi.mock()` to `vi.spyOn()` so every file runs in one shared Vitest project (`isolate: false`).
+Migrate backend unit tests from `vi.mock()` to `vi.spyOn()` for **internal** modules (`@/…`) so most files run in one shared Vitest project (`isolate: false`).
 
 ## Baseline
 
@@ -9,12 +9,17 @@ Branch: `perf/speed-up-backend-unit-tests` at `82e185e5`
 - 2 Vitest projects: `backend` (~81 files) + `backend-isolated` (~64 files with `vi.mock`)
 - Cold CI: **96.79s** Vitest duration, **1m42s** turbo step
 
-## After full spyOn migration
+## Target
 
 Branch: `cursor/bench-spyon-migration-89df`
 
-- 1 Vitest project: `backend` (145 files, all `isolate: false`)
-- Same CI command:
+- **~133 files** in shared `backend` project (`isolate: false`) using `vi.spyOn()` on real exports
+- **~12 files** remain in `backend-isolated` (`isolate: true`) where `vi.mock()` is still required:
+  - ESM npm packages that cannot be spied (`@aws-sdk/*`, `@taskforcesh/bullmq-pro`, `rate-limiter-flexible`, `sqs-consumer`, `ai`, …)
+  - Modules imported at load time by the unit under test (FormSG trigger subgraph)
+- Shared `src/test/unit-setup.ts` mocks `createRedisClient` so queue modules can load safely in the shared graph
+
+Same CI command:
 
 ```bash
 pnpm exec turbo run test:unit --filter=backend --force
@@ -22,10 +27,10 @@ pnpm exec turbo run test:unit --filter=backend --force
 
 ## What changed
 
-- Removed all `vi.mock()` from `src/**/*.test.ts` (64 files)
-- Replaced with `vi.spyOn()` on real module exports, plus `vi.resetModules()` + dynamic import where modules run setup at load time (queues, workers, webhooks, chat router)
-- Added `@/test/spy-on-logger` and `@/test/spy-on-step-query` helpers for common patterns
-- Dropped the `backend-isolated` Vitest project entirely
+- Replaced `vi.mock('@/…')` with `vi.spyOn()` in ~50 test files
+- Added `@/test/spy-on-logger` and `@/test/spy-on-step-query` helpers
+- Kept `vi.mock()` only where Vitest/ESM cannot spy (external packages + import-time deps)
+- Restored auto-detected `backend-isolated` project for any file that still contains `vi.mock()`
 
 ## Patterns
 
@@ -42,7 +47,6 @@ beforeEach(() => {
 **Step.query chains**
 
 ```typescript
-import Step from '@/models/step'
 import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 beforeEach(() => {
@@ -64,4 +68,4 @@ beforeAll(async () => {
 })
 ```
 
-Always call `vi.restoreAllMocks()` in `afterEach` / `afterAll`.
+Call `vi.restoreAllMocks()` in `afterEach` / `afterAll`. `unit-setup.ts` re-applies the Redis client mock after each test.

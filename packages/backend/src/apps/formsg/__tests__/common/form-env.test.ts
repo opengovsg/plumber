@@ -1,21 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { IGlobalVariable } from '@/../../types'
 
 import { getSdk, parseFormEnv, parseFormIdAsUrl } from '../../common/form-env'
-import * as formsgSdkModule from '@opengovsg/formsg-sdk'
+
+vi.mock('@opengovsg/formsg-sdk', () => ({
+  default: vi.fn((opts) => opts.mode),
+}))
 
 describe('Form environment handling', () => {
-  beforeEach(() => {
-    vi.spyOn(formsgSdkModule, 'default').mockImplementation(
-      (opts) => opts.mode as never,
-    )
-  })
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
   describe('parseFormIdAsUrl', () => {
     it.each([
       'https://form.gov.sg/topkek',
@@ -88,6 +81,7 @@ describe('Form environment handling', () => {
       {
         formId: 'httpsform.gov.sg/95967305e41b75001293e70c',
         expectedError: /FormSG URL is invalid/,
+      },
       // Unsupported envs
       {
         formId: 'https://some-new-env.form.gov.sg/95967305e41b75001293e70c',

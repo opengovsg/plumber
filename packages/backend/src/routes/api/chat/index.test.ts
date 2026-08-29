@@ -1,22 +1,99 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@ai-sdk/mcp', () => ({
+  experimental_createMCPClient: vi.fn(),
+}))
+
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ai')>()
+  return {
+    ...actual,
+    streamText: vi
+      .fn()
+      .mockImplementation(
+        ({
+          onFinish,
+        }: {
+          onFinish?: (event: { text: string }) => Promise<void>
+        }) => {
+          if (onFinish) {
+            void onFinish({ text: '' })
+          }
+          return { toUIMessageStream: vi.fn().mockReturnValue({}) }
+        },
+      ),
+    createUIMessageStream: vi
+      .fn()
+      .mockImplementation(
+        ({ execute }: { execute: (arg: { writer: unknown }) => unknown }) => {
+          void execute({ writer: { merge: vi.fn(), write: vi.fn() } })
+          return {}
+        },
+      ),
+    createUIMessageStreamResponse: vi.fn().mockReturnValue(new Response()),
+    convertToModelMessages: vi.fn((msgs) => msgs),
+  }
+})
+
+vi.mock('@/helpers/ai/get-prompt', () => ({
+  getPrompt: vi.fn().mockResolvedValue({
+    prompt: 'You are a helpful assistant.',
+    toJSON: () => ({}),
+  }),
+}))
+
+vi.mock('@/helpers/build-system-prompt', () => ({
+  buildSystemPrompt: vi.fn((prompt: string) => prompt),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getAllLdFlags: vi.fn().mockResolvedValue({}),
+  getRestrictedAppKeys: vi.fn().mockReturnValue([]),
+}))
+
+vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
+  getAiBuilderFlag: vi.fn().mockReturnValue({
+    enabled: true,
+    config: {
+      chatPromptName: 'chat',
+      chatSummaryPromptName: 'chat-summary',
+      version: 'production',
+    },
+  }),
+}))
+
+vi.mock('@/helpers/pair', () => ({
+  model: 'mock-model',
+  MODEL_TYPE: 'mock-model-type',
+  engineProvider: {
+    chat: vi.fn().mockReturnValue('mock-model'),
+  },
+}))
+
+vi.mock('@/helpers/stream', () => ({
+  pipeWebResponseToExpress: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@langfuse/tracing', () => ({
+  observe: vi.fn(
+    (fn: (...args: unknown[]) => unknown) =>
+      (...args: unknown[]) =>
+        fn(...args),
+  ),
+  getActiveTraceId: vi.fn().mockReturnValue('trace-123'),
+  updateActiveObservation: vi.fn(),
+  updateActiveTrace: vi.fn(),
+}))
+
+vi.mock('@opentelemetry/api', () => ({
+  trace: { getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }) },
+}))
+
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import * as langfuseTracing from '@langfuse/tracing'
-import * as opentelemetryApi from '@opentelemetry/api'
-import * as ai from 'ai'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { streamText } from 'ai'
 
-import * as getAiBuilderFlagModule from '@/helpers/ai/get-ai-builder-flag'
-import * as getPromptModule from '@/helpers/ai/get-prompt'
-import * as buildSystemPromptModule from '@/helpers/build-system-prompt'
-import * as launchDarklyModule from '@/helpers/launch-darkly'
-import { engineProvider } from '@/helpers/pair'
-import * as streamModule from '@/helpers/stream'
-
-const streamText = vi.fn()
-const createUIMessageStream = vi.fn()
-const createUIMessageStreamResponse = vi.fn()
-const convertToModelMessages = vi.fn((msgs) => msgs)
-
-let router: Awaited<typeof import('./index')>['default']
+// @ts-expect-error top-level await is supported by Vitest's ESM runner
+const { default: router } = await import('./index')
 
 function makeReq(body = {}) {
   return {
@@ -40,90 +117,8 @@ function makeRes() {
 }
 
 describe('chat handler — GitBook MCP integration', () => {
-  beforeAll(async () => {
-    vi.spyOn(getPromptModule, 'getPrompt').mockResolvedValue({
-      prompt: 'You are a helpful assistant.',
-      toJSON: () => ({}),
-    } as never)
-    vi.spyOn(buildSystemPromptModule, 'buildSystemPrompt').mockImplementation(
-      (prompt: string) => prompt,
-    )
-    vi.spyOn(launchDarklyModule, 'getAllLdFlags').mockResolvedValue({})
-    vi.spyOn(launchDarklyModule, 'getRestrictedAppKeys').mockReturnValue([])
-    vi.spyOn(getAiBuilderFlagModule, 'getAiBuilderFlag').mockReturnValue({
-      enabled: true,
-      config: {
-        chatPromptName: 'chat',
-        chatSummaryPromptName: 'chat-summary',
-        version: 'production',
-      },
-    })
-    vi.spyOn(engineProvider, 'chat').mockReturnValue('mock-model' as never)
-    vi.spyOn(streamModule, 'pipeWebResponseToExpress').mockResolvedValue(
-      undefined,
-    )
-    vi.spyOn(langfuseTracing, 'observe').mockImplementation(
-      (fn: (...args: unknown[]) => unknown) =>
-        (...args: unknown[]) =>
-          fn(...args),
-    )
-    vi.spyOn(langfuseTracing, 'getActiveTraceId').mockReturnValue('trace-123')
-    vi.spyOn(langfuseTracing, 'updateActiveObservation').mockImplementation(
-      vi.fn(),
-    )
-    vi.spyOn(langfuseTracing, 'updateActiveTrace').mockImplementation(vi.fn())
-    vi.spyOn(opentelemetryApi.trace, 'getActiveSpan').mockReturnValue({
-      end: vi.fn(),
-    } as never)
-
-    streamText.mockImplementation(
-      ({
-        onFinish,
-      }: {
-        onFinish?: (event: { text: string }) => Promise<void>
-      }) => {
-        if (onFinish) {
-          void onFinish({ text: '' })
-        }
-        return { toUIMessageStream: vi.fn().mockReturnValue({}) }
-      },
-    )
-    createUIMessageStream.mockImplementation(
-      ({ execute }: { execute: (arg: { writer: unknown }) => unknown }) => {
-        void execute({ writer: { merge: vi.fn(), write: vi.fn() } })
-        return {}
-      },
-    )
-    createUIMessageStreamResponse.mockReturnValue(new Response())
-
-    vi.spyOn(ai, 'streamText').mockImplementation(streamText as never)
-    vi.spyOn(ai, 'createUIMessageStream').mockImplementation(
-      createUIMessageStream as never,
-    )
-    vi.spyOn(ai, 'createUIMessageStreamResponse').mockImplementation(
-      createUIMessageStreamResponse as never,
-    )
-    vi.spyOn(ai, 'convertToModelMessages').mockImplementation(
-      convertToModelMessages as never,
-    )
-    vi.spyOn(
-      await import('@ai-sdk/mcp'),
-      'experimental_createMCPClient',
-    ).mockResolvedValue({
-      tools: vi.fn().mockResolvedValue({}),
-      close: vi.fn(),
-    } as never)
-
-    vi.resetModules()
-    router = (await import('./index')).default
-  })
-
   beforeEach(() => {
     vi.clearAllMocks()
-  })
-
-  afterAll(() => {
-    vi.restoreAllMocks()
   })
 
   it('passes tools and stopWhen to streamText when MCP client connects', async () => {
