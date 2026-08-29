@@ -228,6 +228,12 @@ Shared helpers in `packages/backend/src/test/`:
 | `spy-on-step-query.ts` | Objection `Step.query` chains |
 | `stub-apps-registry.ts` | apps registry stubs |
 
+Each helper encodes a pattern that removes `vi.mock('@/…')` from the file so mock split routes it to the shared pool — without needing hoisted mocks.
+
+- **`spyOnLogger`** — spies on `logger.error` / `warn` / `info` in `beforeEach`. The logger module is already loaded; nothing captured those methods at import time, so runtime spies work and you get typed mock handles back for assertions.
+- **`spyOnStepQuery`** + **`createStepQueryChain`** — Objection tests need fluent `Step.query().where()…` chains. Spying on `Step.query` at test time replaces the entry point; the helper builds a fake chain object instead of a brittle `vi.mock('@/models/step')`.
+- **`stubAppsRegistry`** — the apps barrel exports a mutable registry object, not a function you can spy on cleanly. The helper snapshots it, swaps in stubs in `beforeEach`, and restores on teardown — same effect as mocking `@/apps`, but no `vi.mock` line in the test file.
+
 ```typescript
 import * as auth from '@/helpers/auth'
 import { spyOnLogger } from '@/test/spy-on-logger'
