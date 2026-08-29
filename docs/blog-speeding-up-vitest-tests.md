@@ -286,12 +286,13 @@ We tried these while parallelizing integration tests. None worked. Worker isolat
 
 ### When you add or change tests
 
-Rules the shipped config assumes — break them and tests flake, leak mock state, or land in the wrong isolated bucket.
+Rules the shipped config assumes — break them and tests leak mock state or hit the wrong database slice.
 
-- **`isolate: false` leaks mock state** — shared pool reuses one module graph; use `vi.clearAllMocks()` / `mockReset()` in `afterEach` and heavy imports in `beforeAll`.
-- **Worker env before config loads** — set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` before app config first imports (`test/helpers/worker-isolation.ts`; env is snapshotted once).
-- **Flaky data → wrong worker slice** — check worker id when row counts or keys look wrong; another worker’s Postgres, Redis DB range, or DynamoDB suffix is the usual cause.
-- **Redis caps at 32 workers** — 4 logical Redis DBs per worker → `maxWorkers = min(cpus, 32)`.
+- **`isolate: false` leaks mock state** — files in the mock-split shared pool run in one Node worker that loads each module once and reuses it across tests. A spy or mock left set up in test A (e.g. `mockReturnValue`, `mockImplementation`) is still in place when test B runs. Always call `vi.clearAllMocks()` or `mockReset()` in `afterEach`. Put heavy `import`s in `beforeAll` where you can so you are not paying to re-resolve the graph on every test.
+
+- **Worker env before config loads** — app config reads `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` on first import and keeps those values for the life of the process. `test/helpers/worker-isolation.ts` sets env for each Vitest worker *before* app code loads. Pull in config or app modules too early — or skip the isolation hook — and every worker hits the same Postgres, Redis block, and DynamoDB suffix.
+
+- **Redis caps at 32 workers** — each worker owns four Redis logical DB indices (see worker isolation above). Mock split runs two integration Vitest projects (shared + isolated), each needing its own worker slots: 256 ÷ 4 ÷ 2 = **32**. Keep `maxWorkers = min(cpus, 32)` unless you change Redis logical DB count or drop back to one integration project.
 
 ---
 
