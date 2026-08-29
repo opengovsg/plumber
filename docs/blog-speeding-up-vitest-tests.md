@@ -259,17 +259,12 @@ Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
 `vi.mock('@/…')` on our code forces a file into the isolated project. Where `vi.spyOn()` works, replacing the mock moves the file into the shared pool.
 
-| | Migrated | Isolated bucket |
-|--|----------|-----------------|
-| Unit | ~51 files | 65 → 14 |
-| Integration | 16 itest files | 23 → 7 |
+| Suite | Migrated | Shared | Isolated bucket |
+|-------|----------|--------|-----------------|
+| Unit | ~51 files | 133 | 65 → 14 |
+| Integration | 16 itest files | 64 | 23 → 7 |
 
-After spyOn — same **Shared** / **Isolated** columns as §2:
-
-| Suite | Shared | Isolated |
-|-------|--------|----------|
-| Unit | 133 | 14 |
-| Integration | 64 | 7 |
+**Shared** = files in the shared project after spyOn (same meaning as §2). **Isolated bucket** = isolated files before → after migration.
 
 ~14 unit and 7 integration files still need `vi.mock()` (ESM packages, import-time graphs — see dead ends below).
 
