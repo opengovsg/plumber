@@ -182,9 +182,15 @@ flowchart TB
   GS --> tiles
   GS --> redis
   GS --> dynamo
+
+  HOOK["each test · beforeEach: seed Postgres · flush Redis\nafterEach: TRUNCATE · Dynamo wipe · hookTimeout 120s"]
+  pg --> HOOK
+  tiles --> HOOK
+  redis --> HOOK
+  dynamo --> HOOK
 ```
 
-Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
+Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). Each test resets its worker slice (see After diagram above). `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
 
 This is most of the integration win. Integration was the wall-clock long pole before and after (**266s → 104s**, −61%).
 
