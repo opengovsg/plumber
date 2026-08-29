@@ -1,23 +1,20 @@
 import type { IActionJobData } from '@plumber/types'
 import { type JobPro } from '@taskforcesh/bullmq-pro'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
+import logger from '@/helpers/logger'
 
 import { exponentialBackoffWithJitter } from '../backoff'
 
-const mocks = vi.hoisted(() => ({
-  logError: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.logError,
-    info: vi.fn(),
-  },
-}))
+const logError = vi.fn()
 
 describe('Backoff', () => {
+  beforeEach(() => {
+    vi.spyOn(logger, 'error').mockImplementation(logError)
+    vi.spyOn(logger, 'info').mockImplementation(vi.fn())
+  })
+
   afterEach(() => {
     vi.clearAllMocks()
     vi.restoreAllMocks()
@@ -97,7 +94,7 @@ describe('Backoff', () => {
     await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
       DEFAULT_DELAY_MS,
     )
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       'Triggered BullMQ retry without RetriableError',
       { event: 'bullmq-retry-without-retriable-error' },
     )
@@ -114,7 +111,7 @@ describe('Backoff', () => {
     await expect(exponentialBackoffWithJitter(1, null, err)).resolves.toEqual(
       10,
     )
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       'Triggered BullMQ retry with RetriableError of the wrong delay type',
       {
         event: 'bullmq-retry-wrong-delay-type',
@@ -181,7 +178,7 @@ describe('Backoff', () => {
         exponentialBackoffWithJitter(1, null, err, job),
       ).resolves.toEqual(1000)
 
-      expect(mocks.logError).toHaveBeenCalledWith(
+      expect(logError).toHaveBeenCalledWith(
         'Failed to stamp retryTimestamp for automatic retry',
         {
           event: 'backoff-stamp-retry-timestamp-failed',

@@ -3,16 +3,9 @@ import { Readable, Transform, Writable } from 'stream'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSizeMonitor } from '@/apps/custom-api/common/size-monitor'
+import logger from '@/helpers/logger'
 
-const mocks = vi.hoisted(() => ({
-  warn: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    warn: mocks.warn,
-  },
-}))
+const logWarn = vi.fn()
 
 // Helper to stream buffers through a Transform and collect output
 const writeBuffers = (monitor: Transform, buffers: Buffer[]) =>
@@ -37,6 +30,7 @@ const writeBuffers = (monitor: Transform, buffers: Buffer[]) =>
 
 describe('createSizeMonitor', () => {
   beforeEach(() => {
+    vi.spyOn(logger, 'warn').mockImplementation(logWarn)
     vi.clearAllMocks()
   })
   afterEach(() => {
@@ -49,7 +43,7 @@ describe('createSizeMonitor', () => {
     const input = [Buffer.alloc(1024), Buffer.from('hello')]
     const output = await writeBuffers(monitor, input)
     expect(output.length).toBe(input[0].length + input[1].length)
-    expect(mocks.warn).not.toHaveBeenCalled()
+    expect(logWarn).not.toHaveBeenCalled()
   })
 
   it('errors when total size exceeds 2 MB', async () => {
@@ -75,6 +69,6 @@ describe('createSizeMonitor', () => {
       isAxiosError: true,
       response: expect.objectContaining({ status: 413 }),
     })
-    expect(mocks.warn).toHaveBeenCalled()
+    expect(logWarn).toHaveBeenCalled()
   })
 })

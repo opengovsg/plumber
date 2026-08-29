@@ -5,16 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { streamResponse } from '@/apps/custom-api/common/stream-response'
 import HttpError from '@/errors/http'
+import logger from '@/helpers/logger'
 
-const mocks = vi.hoisted(() => ({
-  warn: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    warn: mocks.warn,
-  },
-}))
+const logWarn = vi.fn()
 
 const createMockResponse = (
   data: any,
@@ -36,6 +29,7 @@ const createStreamFromData = (data: string | Buffer): Readable => {
 
 describe('streamResponse', () => {
   beforeEach(() => {
+    vi.spyOn(logger, 'warn').mockImplementation(logWarn)
     vi.clearAllMocks()
   })
 
@@ -136,7 +130,7 @@ describe('streamResponse', () => {
       const response = createMockResponse(stream, { 'content-length': '1' }) // 1 byte compressed
 
       await expect(streamResponse(response)).rejects.toThrow(HttpError)
-      expect(mocks.warn).toHaveBeenCalled()
+      expect(logWarn).toHaveBeenCalled()
     })
 
     it('handles content-length header parsing', async () => {

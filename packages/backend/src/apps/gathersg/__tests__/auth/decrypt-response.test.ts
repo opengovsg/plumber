@@ -1,18 +1,12 @@
 import type { IGlobalVariable } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  error: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.error,
-  },
-}))
+import logger from '@/helpers/logger'
 
 import { processFields, validateData } from '../../auth/decrypt-response'
 import { HEX_ENCODED_FIELD_PREFIX } from '../../common/constants'
+
+const logError = vi.fn()
 
 const MOCK_FLOW: NonNullable<IGlobalVariable['flow']> = {
   id: 'flow-1',
@@ -63,7 +57,8 @@ describe('processFields', () => {
 
 describe('validateData', () => {
   beforeEach(() => {
-    mocks.error.mockClear()
+    vi.spyOn(logger, 'error').mockImplementation(logError)
+    logError.mockClear()
   })
 
   it('returns the parsed data when it passes schema validation', () => {
@@ -75,7 +70,7 @@ describe('validateData', () => {
     const result = validateData(data, MOCK_FLOW, 'gathersg')
 
     expect(result).toEqual(data)
-    expect(mocks.error).not.toHaveBeenCalled()
+    expect(logError).not.toHaveBeenCalled()
   })
 
   it('throws and logs a potential infinite loop when data fails schema validation', () => {
@@ -85,7 +80,7 @@ describe('validateData', () => {
       'GatherSG: potential infinite loop! Webhook not triggered by user!',
     )
 
-    expect(mocks.error).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       'GatherSG: potential infinite loop! Webhook not triggered by user! flowId: flow-1. app: gathersg. case type: case. case uuid: case-uuid-1',
       {
         event: 'ownself-gather-potential-infinite-loop',
@@ -100,7 +95,7 @@ describe('validateData', () => {
       'GatherSG: potential infinite loop! Webhook not triggered by user!',
     )
 
-    expect(mocks.error).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       'GatherSG: potential infinite loop! Webhook not triggered by user! flowId: flow-1. app: gathersg. case type: undefined. case uuid: undefined',
       expect.objectContaining({
         event: 'ownself-gather-potential-infinite-loop',
