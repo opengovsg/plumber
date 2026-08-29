@@ -11,12 +11,7 @@ import {
 } from 'vitest'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import tracer from '@/helpers/tracer'
-import Execution from '@/models/execution'
-import * as actionQueueModule from '@/queues/action'
 import { actionQueuesByName } from '@/queues/action'
-import * as actionService from '@/services/action'
-import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 import { appActionWorkers, mainActionWorker } from '@/workers/action'
 
 import {
@@ -26,8 +21,48 @@ import {
   type WorkerState,
 } from './test-helpers'
 
-const processAction = vi.fn(async () => ({}))
-const enqueueActionJob = vi.fn(async () => ({}))
+const mocks = vi.hoisted(() => ({
+  processAction: vi.fn(async () => ({})),
+  enqueueActionJob: vi.fn(async () => ({})),
+}))
+
+vi.mock('@/helpers/tracer', () => ({
+  default: {
+    scope: vi.fn(() => ({
+      active: vi.fn(),
+    })),
+    wrap: vi.fn((_, callback) => callback),
+  },
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        appKey: 'some-app',
+      })),
+    })),
+  },
+}))
+
+vi.mock('@/models/execution', () => ({
+  default: {
+    setStatus: vi.fn(),
+  },
+}))
+
+vi.mock('@/services/action', () => ({
+  processAction: mocks.processAction,
+}))
+
+vi.mock('@/queues/action', async (importOriginal) => {
+  const actualModule =
+    await importOriginal<typeof import('@/queues/action.js')>()
+  return {
+    ...actualModule,
+    enqueueActionJob: mocks.enqueueActionJob,
+  }
+})
 
 describe('Action worker job enqueueing', () => {
   let originalWorkerState: WorkerState | null = null
@@ -40,29 +75,9 @@ describe('Action worker job enqueueing', () => {
     | null = null
 
   beforeAll(async () => {
-    vi.spyOn(tracer, 'scope').mockImplementation(
-      () =>
-        ({
-          active: vi.fn(),
-        }) as never,
-    )
-    vi.spyOn(tracer, 'wrap').mockImplementation(
-      ((_, callback) => callback) as never,
-    )
-    spyOnStepQuery(
-      createStepQueryChain({
-        findById: vi.fn(() => ({
-          appKey: 'some-app',
-        })),
-      }),
-    )
-    vi.spyOn(Execution, 'setStatus').mockImplementation(vi.fn() as never)
-    vi.spyOn(actionService, 'processAction').mockImplementation(
-      processAction as never,
-    )
-
     originalWorkerState = await backupWorker(mainActionWorker)
 
+    vi.doUnmock('@/queues/action')
     const actionQueues = await import('@/queues/action.js')
     unmockedEnqueueActionJob = actionQueues.enqueueActionJob
     mainActionQueue = actionQueues.mainActionQueue
@@ -72,13 +87,10 @@ describe('Action worker job enqueueing', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.spyOn(actionQueueModule, 'enqueueActionJob').mockImplementation(
-      enqueueActionJob as never,
-    )
-    processAction.mockReset()
-    processAction.mockResolvedValue({})
-    enqueueActionJob.mockReset()
-    enqueueActionJob.mockResolvedValue({})
+    mocks.processAction.mockReset()
+    mocks.processAction.mockResolvedValue({})
+    mocks.enqueueActionJob.mockReset()
+    mocks.enqueueActionJob.mockResolvedValue({})
   })
 
   afterEach(async () => {
@@ -89,6 +101,7 @@ describe('Action worker job enqueueing', () => {
     await restoreWorker(mainActionWorker, originalWorkerState)
 
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   // Close workers and queues so they don't linger in the shared test process
@@ -103,7 +116,7 @@ describe('Action worker job enqueueing', () => {
   })
 
   it('enqueues the next step to the correct app queue', async () => {
-    processAction.mockResolvedValueOnce({
+    mocks.processAction.mockResolvedValueOnce({
       executionStep: { isFailed: false, nextStep: null },
       nextStep: {
         id: 'next-step-id',
@@ -128,7 +141,7 @@ describe('Action worker job enqueueing', () => {
     })
     await jobProcessed
 
-    expect(enqueueActionJob).toHaveBeenCalledWith(
+    expect(mocks.enqueueActionJob).toHaveBeenCalledWith(
       expect.objectContaining({
         appKey: 'next-step-app',
       }),
@@ -136,14 +149,14 @@ describe('Action worker job enqueueing', () => {
   })
 
   it('throws an unrecoverable error if job enqueue failed', async () => {
-    processAction.mockResolvedValueOnce({
+    mocks.processAction.mockResolvedValueOnce({
       executionStep: { isFailed: false, nextStep: null },
       nextStep: {
         id: 'next-step-id',
         appKey: 'next-step-app',
       },
     })
-    enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
+    mocks.enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
 
     const jobProcessed = new Promise<void>((resolve) => {
       mainActionWorker.once('failed', async (_job, err) => {
@@ -164,7 +177,7 @@ describe('Action worker job enqueueing', () => {
     })
     await jobProcessed
 
-    expect(enqueueActionJob).toHaveBeenCalledWith(
+    expect(mocks.enqueueActionJob).toHaveBeenCalledWith(
       expect.objectContaining({
         appKey: 'next-step-app',
       }),

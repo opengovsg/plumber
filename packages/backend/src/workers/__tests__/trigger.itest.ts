@@ -10,11 +10,7 @@ import {
   vi,
 } from 'vitest'
 
-import * as actionQueue from '@/queues/action'
 import triggerQueue from '@/queues/trigger'
-import * as triggerService from '@/services/trigger'
-import { spyOnLogger } from '@/test/spy-on-logger'
-import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 import { worker as triggerWorker } from '@/workers/trigger'
 
 import {
@@ -24,43 +20,58 @@ import {
   type WorkerState,
 } from './test-helpers'
 
-const processTrigger = vi.fn(async () => ({}))
-const logInfo = vi.fn()
-const logError = vi.fn()
-const enqueueActionJob = vi.fn()
-const getNextStep = vi.fn()
+const mocks = vi.hoisted(() => ({
+  processTrigger: vi.fn(async () => ({})),
+  logInfo: vi.fn(),
+  logError: vi.fn(),
+  flowQueryResult: vi.fn(() => ({
+    getTriggerStep: vi.fn(async () => ({})),
+  })),
+  enqueueActionJob: vi.fn(),
+  getNextStep: vi.fn(),
+}))
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: vi.fn(() => ({
+          getNextStep: mocks.getNextStep,
+        })),
+      })),
+    })),
+  },
+}))
+
+vi.mock('@/queues/action', () => ({
+  enqueueActionJob: mocks.enqueueActionJob,
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    info: mocks.logInfo,
+    error: mocks.logError,
+  },
+}))
+
+vi.mock('@/services/trigger', () => ({
+  processTrigger: mocks.processTrigger,
+}))
 
 describe('Trigger worker', () => {
   let originalWorkerState: WorkerState | null = null
 
   beforeAll(async () => {
-    spyOnStepQuery(
-      createStepQueryChain({
-        findById: vi.fn(() => ({
-          throwIfNotFound: vi.fn(() => ({
-            getNextStep,
-          })),
-        })),
-      }),
-    )
-    vi.spyOn(actionQueue, 'enqueueActionJob').mockImplementation(
-      enqueueActionJob as never,
-    )
-    vi.spyOn(triggerService, 'processTrigger').mockImplementation(
-      processTrigger as never,
-    )
-
     originalWorkerState = await backupWorker(triggerWorker)
     await triggerWorker.waitUntilReady()
   })
 
   beforeEach(() => {
     vi.clearAllMocks()
-    spyOnLogger({ info: logInfo, error: logError })
-    processTrigger.mockReset()
-    processTrigger.mockResolvedValue({})
-    enqueueActionJob.mockReset()
-    getNextStep.mockReset()
+    mocks.processTrigger.mockReset()
+    mocks.processTrigger.mockResolvedValue({})
+    mocks.enqueueActionJob.mockReset()
+    mocks.getNextStep.mockReset()
   })
 
   afterEach(async () => {
@@ -71,6 +82,7 @@ describe('Trigger worker', () => {
     await restoreWorker(triggerWorker, originalWorkerState)
 
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   // Close worker and queue so they don't linger in the shared test process
@@ -82,7 +94,7 @@ describe('Trigger worker', () => {
 
   describe('Event listeners', () => {
     it('logs jobs as started on completion', async () => {
-      processTrigger.mockResolvedValue({
+      mocks.processTrigger.mockResolvedValue({
         executionStep: {
           // Mock to true so that we return immediately.
           isFailed: true,
@@ -98,13 +110,13 @@ describe('Trigger worker', () => {
       })
       await jobProcessed
 
-      expect(logInfo).toHaveBeenCalledWith(
+      expect(mocks.logInfo).toHaveBeenCalledWith(
         `JOB ID: ${job.id} - FLOW ID: test-flow-id has started!`,
       )
     })
 
     it('logs an error on job failure', async () => {
-      processTrigger.mockImplementation(() => {
+      mocks.processTrigger.mockImplementation(() => {
         throw new Error('some error')
       })
 
@@ -118,7 +130,7 @@ describe('Trigger worker', () => {
       })
       await jobProcessed
 
-      expect(logError).toHaveBeenCalledWith(
+      expect(mocks.logError).toHaveBeenCalledWith(
         `JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
       )
     })
@@ -128,7 +140,7 @@ describe('Trigger worker', () => {
         throw new Error('callback error')
       })
 
-      processTrigger.mockResolvedValue({
+      mocks.processTrigger.mockResolvedValue({
         executionStep: {
           // Mock to true so that we return immediately.
           isFailed: true,
@@ -144,7 +156,7 @@ describe('Trigger worker', () => {
       })
       await jobProcessed
 
-      expect(logError).toHaveBeenCalledWith(
+      expect(mocks.logError).toHaveBeenCalledWith(
         'Worker errored with callback error',
         expect.any(Object),
       )
@@ -153,10 +165,10 @@ describe('Trigger worker', () => {
 
   describe('Job enqueing', () => {
     it('enqueues the next step to the correct app queue', async () => {
-      processTrigger.mockResolvedValue({
+      mocks.processTrigger.mockResolvedValue({
         executionStep: { isFailed: false, stepId: 'curr-step-id' },
       })
-      getNextStep.mockResolvedValueOnce({
+      mocks.getNextStep.mockResolvedValueOnce({
         id: 'next-step-id',
         appKey: 'next-step-app',
       })
@@ -171,7 +183,7 @@ describe('Trigger worker', () => {
       })
       await jobProcessed
 
-      expect(enqueueActionJob).toHaveBeenCalledWith(
+      expect(mocks.enqueueActionJob).toHaveBeenCalledWith(
         expect.objectContaining({
           appKey: 'next-step-app',
         }),
@@ -179,14 +191,14 @@ describe('Trigger worker', () => {
     })
 
     it('throws an unrecoverable error if job enqueue failed', async () => {
-      processTrigger.mockResolvedValueOnce({
+      mocks.processTrigger.mockResolvedValueOnce({
         executionStep: { isFailed: false, stepId: 'curr-step-id' },
       })
-      getNextStep.mockResolvedValueOnce({
+      mocks.getNextStep.mockResolvedValueOnce({
         id: 'next-step-id',
         appKey: 'next-step-app',
       })
-      enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
+      mocks.enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
 
       const jobProcessed = new Promise<void>((resolve) => {
         triggerWorker.on('failed', async (_job, err) => {

@@ -44,13 +44,7 @@ const processTrigger = vi.fn(
 )
 
 const processAction = vi.fn(
-  async ({
-    stepId,
-    executionId,
-  }: {
-    stepId: string
-    executionId: string
-  }) => {
+  async ({ stepId, executionId }: { stepId: string; executionId: string }) => {
     await ExecutionStep.query().insert({
       id: NEW_ACTION_EXECUTION_STEP_ID,
       executionId,
@@ -73,7 +67,9 @@ describe('test single step', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
 
-    vi.spyOn(flowService, 'processFlow').mockImplementation(processFlow as never)
+    vi.spyOn(flowService, 'processFlow').mockImplementation(
+      processFlow as never,
+    )
     vi.spyOn(triggerService, 'processTrigger').mockImplementation(
       processTrigger as never,
     )

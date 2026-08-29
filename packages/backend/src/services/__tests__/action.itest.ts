@@ -141,8 +141,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       stepId: actionBeforeStep.id,
     })
 
-    const capturedSteps: ExecutionStep[] =
-      computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     expect(capturedIds).toEqual(
@@ -169,8 +168,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       metadata: { iteration: 2 },
     })
 
-    const capturedSteps: ExecutionStep[] =
-      computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     // action-before and for-each (no iteration) + action1 iteration 2 only
@@ -197,8 +195,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       metadata: { iteration: 2 },
     })
 
-    const capturedSteps: ExecutionStep[] =
-      computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     // action2 should see: action-before, for-each, and action1 iter 2 only
@@ -227,8 +224,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
 
     expect(computeParameters).toHaveBeenCalledTimes(1)
 
-    const capturedSteps: ExecutionStep[] =
-      computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     // without an iteration to scope to, the filter should be skipped and all

@@ -67,14 +67,16 @@ describe('executeStep mutation - access control', () => {
     (options: TestStepOptions) => Promise<TestStepResult>
   >
   beforeEach(async () => {
-    testStepSpy = vi.spyOn(testStepModule, 'default').mockImplementation((() => ({
-      executionStep: {
-        id: 'execution-step-1',
-        stepId: '8c2a70d1-e78b-431e-9069-a4d8f97883f7',
-        isFailed: false,
-      },
-      executionId: '8c2a70d1-e78b-431e-9069-a4d8f97883f8',
-    })) as never)
+    testStepSpy = vi
+      .spyOn(testStepModule, 'default')
+      .mockImplementation((() => ({
+        executionStep: {
+          id: 'execution-step-1',
+          stepId: '8c2a70d1-e78b-431e-9069-a4d8f97883f7',
+          isFailed: false,
+        },
+        executionId: '8c2a70d1-e78b-431e-9069-a4d8f97883f8',
+      })) as never)
 
     context = await generateMockContext()
     owner = context.currentUser

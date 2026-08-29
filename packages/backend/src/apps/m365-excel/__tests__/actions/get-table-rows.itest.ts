@@ -8,8 +8,8 @@ import Context from '@/types/express/context'
 
 import m365Excel from '../..'
 import getTableRowsAction from '../../actions/get-table-rows'
-import { stepTransformer } from '../../common/transform-step-parameters'
 import * as getTopNTableRowsModule from '../../common/get-top-n-table-rows'
+import { stepTransformer } from '../../common/transform-step-parameters'
 import WorkbookSession from '../../common/workbook-session'
 
 const DEFAULT_PARAMETERS = {
@@ -43,7 +43,9 @@ describe('getTableRowsAction', () => {
     vi.spyOn(getTopNTableRowsModule, 'default').mockImplementation(
       getTopNTableRows as never,
     )
-    vi.spyOn(WorkbookSession, 'acquire').mockResolvedValue({} as WorkbookSession)
+    vi.spyOn(WorkbookSession, 'acquire').mockResolvedValue(
+      {} as WorkbookSession,
+    )
 
     context = await generateMockContext()
 

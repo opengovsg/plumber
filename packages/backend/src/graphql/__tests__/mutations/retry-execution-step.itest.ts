@@ -1,15 +1,23 @@
 import { randomUUID } from 'crypto'
 
-import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import retryExecutionStep from '@/graphql/mutations/retry-execution-step'
-import * as actionQueue from '@/queues/action'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
+import * as actionQueue from '@/queues/action'
 import Context from '@/types/express/context'
 
 import { generateMockUser } from './flow.mock'
@@ -48,7 +56,7 @@ describe('retryExecutionStep mutation', () => {
 
     getActionJobSpy = vi
       .spyOn(actionQueue, 'getActionJob')
-      .mockResolvedValue(mockJob)
+      .mockResolvedValue(mockJob as never)
 
     context = await generateMockContext()
     owner = context.currentUser

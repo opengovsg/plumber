@@ -9,11 +9,7 @@ import {
   vi,
 } from 'vitest'
 
-import Flow from '@/models/flow'
 import flowQueue from '@/queues/flow'
-import triggerQueue from '@/queues/trigger'
-import * as flowService from '@/services/flow'
-import { spyOnLogger } from '@/test/spy-on-logger'
 import { worker as flowWorker } from '@/workers/flow'
 
 import {
@@ -23,44 +19,60 @@ import {
   type WorkerState,
 } from './test-helpers'
 
-const processFlow = vi.fn(async () => ({
-  data: [],
-  error: null,
+const mocks = vi.hoisted(() => ({
+  processFlow: vi.fn(async () => ({
+    data: [],
+    error: null,
+  })),
+  logInfo: vi.fn(),
+  logError: vi.fn(),
+  logWarn: vi.fn(),
+  flowQueryResult: vi.fn(() => ({
+    active: true,
+    getTriggerStep: vi.fn(async () => ({})),
+  })),
 }))
-const logInfo = vi.fn()
-const logError = vi.fn()
-const logWarn = vi.fn()
-const flowQueryResult = vi.fn(() => ({
-  active: true,
-  getTriggerStep: vi.fn(async () => ({})),
+
+vi.mock('@/queues/trigger', () => ({
+  default: {
+    add: vi.fn(),
+  },
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    info: mocks.logInfo,
+    error: mocks.logError,
+    warn: mocks.logWarn,
+  },
+}))
+
+vi.mock('@/models/flow', () => ({
+  default: {
+    query: vi.fn(() => ({
+      findById: vi.fn(() => ({
+        throwIfNotFound: mocks.flowQueryResult,
+      })),
+    })),
+  },
+}))
+
+vi.mock('@/services/flow', () => ({
+  processFlow: mocks.processFlow,
 }))
 
 describe('Flow worker', () => {
   let originalWorkerState: WorkerState | null = null
 
   beforeAll(async () => {
-    vi.spyOn(triggerQueue, 'add').mockImplementation(vi.fn() as never)
-    vi.spyOn(Flow, 'query').mockImplementation(
-      () =>
-        ({
-          findById: vi.fn(() => ({
-            throwIfNotFound: flowQueryResult,
-          })),
-        }) as never,
-    )
-    vi.spyOn(flowService, 'processFlow').mockImplementation(
-      processFlow as never,
-    )
-
     originalWorkerState = await backupWorker(flowWorker)
     await flowWorker.waitUntilReady()
   })
 
   beforeEach(() => {
     vi.clearAllMocks()
-    spyOnLogger({ info: logInfo, error: logError, warn: logWarn })
-    processFlow.mockReset()
-    processFlow.mockResolvedValue({
+    mocks.processFlow.mockReset()
+    mocks.processFlow.mockResolvedValue({
       data: [],
       error: null,
     })
@@ -74,6 +86,7 @@ describe('Flow worker', () => {
     await restoreWorker(flowWorker, originalWorkerState)
 
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   // Close worker and queue so they don't linger in the shared test process
@@ -101,13 +114,13 @@ describe('Flow worker', () => {
       )
       await jobProcessed
 
-      expect(logInfo).toHaveBeenCalledWith(
+      expect(mocks.logInfo).toHaveBeenCalledWith(
         `JOB ID: ${job.id} - FLOW ID: test-flow-id has started!`,
       )
     })
 
     it('logs an error on job failure', async () => {
-      processFlow.mockImplementation(() => {
+      mocks.processFlow.mockImplementation(() => {
         throw new Error('some error')
       })
 
@@ -127,7 +140,7 @@ describe('Flow worker', () => {
       )
       await jobProcessed
 
-      expect(logError).toHaveBeenCalledWith(
+      expect(mocks.logError).toHaveBeenCalledWith(
         `JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
       )
     })
@@ -153,7 +166,7 @@ describe('Flow worker', () => {
       )
       await jobProcessed
 
-      expect(logError).toHaveBeenCalledWith(
+      expect(mocks.logError).toHaveBeenCalledWith(
         'Worker errored with callback error',
         expect.any(Object),
       )
