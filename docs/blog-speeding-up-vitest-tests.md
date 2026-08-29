@@ -2,7 +2,13 @@
 
 We cut backend integration Vitest time from **266s to 104s** (−61%) and unit Vitest time from **170s to 34s** (−80%) at full stack. The tests were not wrong — we kept rebuilding module graphs and sharing databases that could not safely be shared.
 
-The work stacks in two parts: parallel integration (worker isolation + integration spyOn) and unit tests (mock split + unit spyOn).
+Three changes, applied across both suites where they apply:
+
+1. **Mock split** — grep for `vi.mock(`, run non-mock files with `isolate: false`
+2. **Worker isolation** — per-worker Postgres, Redis, and DynamoDB for integration tests
+3. **SpyOn migration** — replace `vi.mock('@/…')` on our own modules with `vi.spyOn()` (same pattern for unit and integration)
+
+Integration gains come mostly from worker isolation + mock split; spyOn widens the shared pool. Unit gains come mostly from mock split + spyOn.
 
 ---
 
@@ -37,7 +43,24 @@ pnpm + Turbo monorepo, Vitest 4, one CI job per suite.
 | Unit | `src/**/*.test.ts` | mocks only |
 | Integration | `src/**/*.itest.ts` | Testcontainers: Postgres ×2, Redis, DynamoDB Local |
 
-Both configs grep for `vi.mock(` at load time and split into two Vitest projects. Files without mocks run with `isolate: false`; anything that still calls `vi.mock()` stays isolated.
+### Before
+
+Every file paid for full isolation. Integration ran on one thread against one shared database.
+
+```mermaid
+flowchart LR
+  subgraph unit_before ["Unit"]
+    U["one project · isolate true · 147 files"]
+  end
+
+  subgraph int_before ["Integration"]
+    I["singleThread · one Postgres · 71 files"]
+  end
+```
+
+### After
+
+Both configs grep for `vi.mock(` at load time and split into two Vitest projects. Non-mock files share a module graph per worker (`isolate: false`). Integration workers each get their own DB slice.
 
 ```mermaid
 flowchart LR
@@ -63,17 +86,29 @@ One `vi.mock()` anywhere in a file sends the whole file to the isolated project.
 
 ---
 
-## Layer 1: turn off isolation where mocks do not force it
+## 1. Mock split: stop paying for isolation you do not need
 
-### Unit
+**Applies to:** unit and integration.
 
-Before: one Vitest project, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 files each import most of the backend tree.
+Before: one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
 
-After: two projects in `vitest.config.ts`. Non-mock files share one graph per worker (`pool: threads`, `isolate: false`). Mock files stay isolated so replacements do not leak across tests.
+After: at config load, grep for `vi.mock(` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
 
-Also: `disableConsoleIntercept: true` (Vitest 4 teardown workaround), `maxWorkers: cpus().length`.
+| Suite | Shared | Isolated |
+|-------|--------|----------|
+| Unit (split only) | 82 | 65 |
+| Unit (+ spyOn) | 133 | 14 |
+| Integration (+ spyOn) | 64 | 7 |
 
-### Integration
+Also on unit: `disableConsoleIntercept: true` (Vitest 4 teardown workaround), `maxWorkers: cpus().length`.
+
+Mock split alone moved 82 unit files to shared workers (−43% on unit time).
+
+---
+
+## 2. Worker isolation: parallel integration without flakiness
+
+**Applies to:** integration only.
 
 Before: `singleThread: true`, four sequential `globalSetup` files, one shared Postgres, table-by-table truncate on every test.
 
@@ -88,19 +123,23 @@ After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 
 Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
 
-`maxWorkers = min(cpus, 32)` (Redis slot cap). Same mock split: **64 shared / 7 isolated** itests (was 48 / 23).
+`maxWorkers = min(cpus, 32)` (Redis slot cap).
+
+This is most of the integration win. Integration was the wall-clock long pole before and after (**276s → 110s**, −60%).
 
 ---
 
-## Layer 2: `vi.spyOn()` for our own modules
+## 3. SpyOn: shrink the isolated bucket
 
-`vi.mock('@/…')` on internal code still forces isolation even though `vi.spyOn()` would work. Replacing those mocks moves files into the shared pool.
+**Applies to:** unit and integration.
+
+`vi.mock('@/…')` on internal code forces a file into the isolated project even when `vi.spyOn()` would work. Replacing those mocks moves the file into the shared pool — same pattern in both suites.
 
 **Integration:** 16 itest files migrated; isolated bucket 23 → 7.
 
 **Unit:** ~51 files migrated; isolated bucket 65 → 14. The remaining ~14 unit files and 7 integration files keep `vi.mock()` for ESM npm packages or import-time dependency graphs.
 
-Helpers in `packages/backend/src/test/`:
+Shared helpers in `packages/backend/src/test/`:
 
 | Helper | Role |
 |--------|------|
@@ -120,7 +159,7 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks())
 ```
 
-Mock split alone moved 82 files to shared workers (−43%). SpyOn moved another 51 (−80% total vs baseline). Integration gains are mostly parallelism + infra; spyOn widened the shared integration pool from 48 to 64 files.
+SpyOn moved another 51 unit files to shared workers (−80% total vs baseline). On integration it widened the shared pool from 48 to 64 files — smaller relative gain because worker isolation already did the heavy lifting.
 
 ---
 
@@ -159,10 +198,10 @@ Dead ends are things we attempted and reverted. Gotchas are things that *work* b
 
 1. Benchmark the turbo **test step**, not the job total.
 2. Baseline against the pre-change setup, not an intermediate optimisation state.
-3. Grep-split at config load: turn off isolation for files that do not mock.
-4. Replace `vi.mock('@/…')` with `vi.spyOn()` where you can — that shrinks the isolated bucket more than worker tuning.
-5. Parallel integration needs per-worker DB/Redis/Dynamo slices, not one shared Postgres.
+3. **Mock split** both suites: grep at config load, `isolate: false` for files that do not mock.
+4. **Worker isolation** for integration: per-worker DB/Redis/Dynamo slices, not one shared Postgres.
+5. **SpyOn** both suites: replace `vi.mock('@/…')` on internal modules where you can.
 6. Boot containers once; truncate, flush, and wipe per test.
 7. Plan mock migrations file-by-file. One remaining `vi.mock()` keeps the file isolated.
 
-Integration is the wall-clock long pole (**276s → 110s**, −60%). Unit drops **176s → 39s** (−78% turbo) when both layers land.
+Unit drops **176s → 39s** (−78% turbo) when mock split and spyOn both land. Integration drops **276s → 110s** (−60%) when all three changes land.
