@@ -240,6 +240,8 @@ export default defineConfig({
 })
 ```
 
+File counts per Vitest project after mock split — **Shared** = no `vi.mock` (`isolate: false`); **Isolated** = has `vi.mock` (`isolate: true`):
+
 | Suite | Shared | Isolated |
 |-------|--------|----------|
 | Unit (split only) | 82 | 65 |
