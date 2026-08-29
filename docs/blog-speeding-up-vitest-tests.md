@@ -240,13 +240,12 @@ export default defineConfig({
 })
 ```
 
-File counts per Vitest project after mock split — **Shared** = no `vi.mock` (`isolate: false`); **Isolated** = has `vi.mock` (`isolate: true`):
+File counts per Vitest project after mock split only — **Shared** = no `vi.mock` (`isolate: false`); **Isolated** = has `vi.mock` (`isolate: true`):
 
 | Suite | Shared | Isolated |
 |-------|--------|----------|
-| Unit (split only) | 82 | 65 |
-| Unit (+ spyOn) | 133 | 14 |
-| Integration (+ spyOn) | 64 | 7 |
+| Unit | 82 | 65 |
+| Integration | 48 | 23 |
 
 Also on unit: `maxWorkers: cpus().length`.
 
@@ -264,6 +263,13 @@ Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 |--|----------|-----------------|
 | Unit | ~51 files | 65 → 14 |
 | Integration | 16 itest files | 23 → 7 |
+
+After spyOn — same **Shared** / **Isolated** columns as §2:
+
+| Suite | Shared | Isolated |
+|-------|--------|----------|
+| Unit | 133 | 14 |
+| Integration | 64 | 7 |
 
 ~14 unit and 7 integration files still need `vi.mock()` (ESM packages, import-time graphs — see dead ends below).
 
