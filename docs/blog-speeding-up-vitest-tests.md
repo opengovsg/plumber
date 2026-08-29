@@ -130,6 +130,8 @@ After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 | Redis | 4 logical DBs from `REDIS_DB_OFFSET = N × 4` |
 | DynamoDB | table suffix `w{N}` |
 
+**Why Redis is different:** Postgres, Tiles Postgres, and DynamoDB each get a per-worker *name* — a new database or table suffix. Redis is one shared container; isolation is by **logical DB index**, not by spinning up another Redis. The app uses four Redis DBs per process (jobs, rate limit, pipe errors, app data), so worker `N` gets indices `N×4` through `N×4+3` via `REDIS_DB_OFFSET`. Testcontainers starts Redis with 256 logical DBs. With four indices per worker and two integration Vitest projects (shared + isolated from mock split), that caps parallelism at **32 workers** — hence `maxWorkers = min(cpus, 32)`.
+
 ### Before
 
 ```mermaid
@@ -203,8 +205,6 @@ flowchart TB
 ```
 
 Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
-
-`maxWorkers = min(cpus, 32)` (Redis slot cap).
 
 This is most of the integration win. Integration was the wall-clock long pole before and after (**266s → 104s**, −61%).
 
