@@ -214,25 +214,22 @@ Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
 **Applies to:** unit and integration.
 
-`vi.mock('@/…')` on internal code forces a file into the isolated project even when `vi.spyOn()` would work. Replacing those mocks moves the file into the shared pool — same pattern in both suites.
+`vi.mock('@/…')` on our code forces a file into the isolated project. Where `vi.spyOn()` works, replacing the mock moves the file into the shared pool.
 
-**Integration:** 16 itest files migrated; isolated bucket 23 → 7.
+| | Migrated | Isolated bucket |
+|--|----------|-----------------|
+| Unit | ~51 files | 65 → 14 |
+| Integration | 16 itest files | 23 → 7 |
 
-**Unit:** ~51 files migrated; isolated bucket 65 → 14. The remaining ~14 unit files and 7 integration files keep `vi.mock()` for ESM npm packages or import-time dependency graphs.
+~14 unit and 7 integration files still need `vi.mock()` (ESM packages, import-time graphs — see dead ends below).
 
-Shared helpers in `packages/backend/src/test/`:
+Shared helpers in `packages/backend/src/test/` — each removes `vi.mock` from the file so mock split can route it shared:
 
-| Helper | Role |
-|--------|------|
-| `spy-on-logger.ts` | typed `vi.spyOn(logger, …)` |
-| `spy-on-step-query.ts` | Objection `Step.query` chains |
-| `stub-apps-registry.ts` | apps registry stubs |
-
-Each helper encodes a pattern that removes `vi.mock('@/…')` from the file so mock split routes it to the shared pool — without needing hoisted mocks.
-
-- **`spyOnLogger`** — spies on `logger.error` / `warn` / `info` in `beforeEach`. The logger module is already loaded; nothing captured those methods at import time, so runtime spies work and you get typed mock handles back for assertions.
-- **`spyOnStepQuery`** + **`createStepQueryChain`** — Objection tests need fluent `Step.query().where()…` chains. Spying on `Step.query` at test time replaces the entry point; the helper builds a fake chain object instead of a brittle `vi.mock('@/models/step')`.
-- **`stubAppsRegistry`** — the apps barrel exports a mutable registry object, not a function you can spy on cleanly. The helper snapshots it, swaps in stubs in `beforeEach`, and restores on teardown — same effect as mocking `@/apps`, but no `vi.mock` line in the test file.
+| Helper | Use when |
+|--------|----------|
+| `spy-on-logger.ts` | spying on logger methods |
+| `spy-on-step-query.ts` | faking Objection `Step.query()` chains |
+| `stub-apps-registry.ts` | stubbing `@/apps` without a barrel mock |
 
 ```typescript
 import * as auth from '@/helpers/auth'
@@ -246,7 +243,7 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks())
 ```
 
-SpyOn moved another 51 unit files to shared workers (−80% total vs baseline). On integration it widened the shared pool from 48 to 64 files — smaller relative gain because worker isolation already did the heavy lifting.
+Unit: **−80%** total vs baseline with mock split + spyOn. Integration: shared pool 48 → 64 files — smaller gain after worker isolation.
 
 ---
 
