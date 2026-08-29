@@ -1,6 +1,6 @@
 # Vitest at scale: up to 80% faster backend tests
 
-We cut backend integration Vitest time from **266s to 104s** (−61%) and unit Vitest time from **170s to 34s** (−80%) at full stack. The tests were not wrong — we kept rebuilding module graphs and sharing databases that could not safely be shared.
+We cut backend integration Vitest time from **266s to 104s** (−61%) and unit Vitest time from **170s to 34s** (−80%). The tests were not wrong — we kept rebuilding module graphs and sharing databases that could not safely be shared.
 
 Three changes, applied across both suites where they apply:
 
@@ -30,7 +30,7 @@ Unit speedup comes in two steps:
 | Mock split only | 96s (−43%) | 65 |
 | Mock split + spyOn | 34s (−80%) | 14 |
 
-Integration at full stack: **104s** (−61%).
+Integration at: **104s** (−61%).
 
 ---
 
@@ -56,7 +56,7 @@ flowchart TB
   end
 ```
 
-### After (full stack)
+### After
 
 **Two CI jobs in parallel**, each via turbo — so unit and integration are timed independently and wall clock is the slower job (integration).
 
@@ -222,8 +222,19 @@ const isolatedTests = testsWithModuleMocks()
 export default defineConfig({
   test: {
     projects: [
-      { test: { include: ['src/**/*.test.{js,ts}'], exclude: isolatedTests, isolate: false } },
-      { test: { include: isolatedTests, isolate: true } },
+      {
+        test: {
+          include: ['src/**/*.test.{js,ts}'],
+          exclude: isolatedTests,
+          isolate: false,
+        },
+      },
+      {
+        test: {
+          include: isolatedTests,
+          isolate: true,
+        },
+      },
     ],
   },
 })
