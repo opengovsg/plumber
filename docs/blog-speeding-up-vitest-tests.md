@@ -134,24 +134,32 @@ After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 
 ```mermaid
 flowchart TB
-  GS["global-setup.ts · Testcontainers boot once"]
+  GS["global-setup.ts · Testcontainers boot once · singleThread"]
 
-  W["1 Vitest worker · singleThread · all itests"]
+  subgraph pg ["Postgres"]
+    direction LR
+    W0p["Worker 0"] --> PG["plumber_test · shared"]
+  end
 
-  PG["Postgres · plumber_test"]
-  TP["Tiles Postgres · tiles_test"]
-  R["Redis"]
-  D["DynamoDB"]
+  subgraph tiles ["Tiles Postgres"]
+    direction LR
+    W0t["Worker 0"] --> T["tiles_test · shared"]
+  end
 
-  GS --> PG
-  GS --> TP
-  GS --> R
-  GS --> D
+  subgraph redis ["Redis"]
+    direction LR
+    W0r["Worker 0"] --> R["shared"]
+  end
 
-  W --> PG
-  W --> TP
-  W --> R
-  W --> D
+  subgraph dynamo ["DynamoDB"]
+    direction LR
+    W0d["Worker 0"] --> D["shared"]
+  end
+
+  GS --> pg
+  GS --> tiles
+  GS --> redis
+  GS --> dynamo
 ```
 
 ### After
