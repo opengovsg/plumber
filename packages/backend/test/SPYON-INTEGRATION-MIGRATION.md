@@ -16,15 +16,15 @@ Branch: `cursor/integration-spyon-migration-89df`
 - **64 files** in shared `backend-integration` project (`isolate: false`) using `vi.spyOn()` on real exports
 - **7 files** remain in `backend-integration-isolated` (`isolate: true`):
 
-| File | Reason |
-| --- | --- |
-| `src/routes/api/__tests__/chat.itest.ts` | ESM: `ai`, `@langfuse/tracing`, `@ai-sdk/mcp` |
-| `src/graphql/__tests__/mutations/delete-uploaded-file.itest.ts` | ESM: `@aws-sdk/client-s3` |
-| `src/helpers/__tests__/generate-error-email.itest.ts` | ESM: `luxon` (+ `@/helpers/send-email`) |
-| `src/workers/__tests__/action.itest.ts` | Import-time capture of `exponentialBackoffWithJitter` / `tracer.wrap` |
-| `src/workers/__tests__/trigger.itest.ts` | Same worker import-time deps |
-| `src/workers/__tests__/flow.itest.ts` | Same worker import-time deps |
-| `src/workers/__tests__/action.enqueue-jobs.itest.ts` | Same worker import-time deps |
+| File                                                            | Reason                                                                |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/routes/api/__tests__/chat.itest.ts`                        | ESM: `ai`, `@langfuse/tracing`, `@ai-sdk/mcp`                         |
+| `src/graphql/__tests__/mutations/delete-uploaded-file.itest.ts` | ESM: `@aws-sdk/client-s3`                                             |
+| `src/helpers/__tests__/generate-error-email.itest.ts`           | ESM: `luxon` (+ `@/helpers/send-email`)                               |
+| `src/workers/__tests__/action.itest.ts`                         | Import-time capture of `exponentialBackoffWithJitter` / `tracer.wrap` |
+| `src/workers/__tests__/trigger.itest.ts`                        | Same worker import-time deps                                          |
+| `src/workers/__tests__/flow.itest.ts`                           | Same worker import-time deps                                          |
+| `src/workers/__tests__/action.enqueue-jobs.itest.ts`            | Same worker import-time deps                                          |
 
 ## What changed
 
@@ -39,13 +39,14 @@ Same as unit tests — see `test/SPYON-MIGRATION-BENCHMARK.md`.
 
 **Critical rule:** A file with **any** remaining `vi.mock()` stays in `backend-integration-isolated`. Partial migration within a file gives zero perf win.
 
-## Results
+## Results (CI run `33271546864`, commit `4a811fc8`)
 
-Fill in after green CI run on latest commit.
+| Metric                        | Baseline  | This branch | Delta    |
+| ----------------------------- | --------- | ----------- | -------- |
+| Vitest duration               | **~116s** | **100.36s** | **−13%** |
+| Turbo `test:integration` step | ~116s     | **1m46s**   | similar  |
+| Shared project files          | 48        | 64          | +16      |
+| Isolated project files        | 23        | 7           | −16      |
+| Test files / tests            | 71 / 814  | 71 / 814    | same     |
 
-| Metric | Baseline | This branch | Delta |
-| --- | --- | --- | --- |
-| Vitest duration | ~116s | TBD | TBD |
-| Shared project files | 48 | 64 | +16 |
-| Isolated project files | 23 | 7 | −16 |
-| Test files / tests | 71 / 814 | 71 / 814 | same |
+All CI checks pass after formatting fix (814 integration tests green).
