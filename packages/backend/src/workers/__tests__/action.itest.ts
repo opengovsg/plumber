@@ -12,12 +12,19 @@ import {
 } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
+import * as actionsHelper from '@/helpers/actions'
+import * as backoffHelper from '@/helpers/backoff'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import tracer from '@/helpers/tracer'
+import Execution from '@/models/execution'
 import {
   actionQueuesByName,
   enqueueActionJob,
   mainActionQueue,
 } from '@/queues/action'
+import * as actionService from '@/services/action'
+import { spyOnLogger } from '@/test/spy-on-logger'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 import { appActionWorkers, mainActionWorker } from '@/workers/action'
 
 import {
@@ -27,74 +34,52 @@ import {
   type WorkerState,
 } from './test-helpers'
 
-const mocks = vi.hoisted(() => ({
-  processAction: vi.fn(async () => ({})),
-  exponentialBackoffWithJitter: vi.fn(() => 1),
-  handleFailedStepAndThrow: vi.fn(),
-  logInfo: vi.fn(),
-  logError: vi.fn(),
-  addSpanTags: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    info: mocks.logInfo,
-    error: mocks.logError,
-  },
-}))
-
-vi.mock('@/helpers/tracer', () => ({
-  default: {
-    scope: vi.fn(() => ({
-      active: vi.fn(() => ({
-        addTags: mocks.addSpanTags,
-      })),
-    })),
-    wrap: vi.fn((_, callback) => callback),
-  },
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(),
-    })),
-  },
-}))
-
-vi.mock('@/models/execution', () => ({
-  default: {
-    setStatus: vi.fn(),
-  },
-}))
-
-vi.mock('@/services/action', () => ({
-  processAction: mocks.processAction,
-}))
-
-vi.mock('@/helpers/actions', () => ({
-  handleFailedStepAndThrow: mocks.handleFailedStepAndThrow,
-}))
-
-vi.mock('@/helpers/backoff', () => ({
-  exponentialBackoffWithJitter: mocks.exponentialBackoffWithJitter,
-}))
+const processAction = vi.fn(async () => ({}))
+const exponentialBackoffWithJitter = vi.fn(() => 1)
+const handleFailedStepAndThrow = vi.fn()
+const logInfo = vi.fn()
+const logError = vi.fn()
+const addSpanTags = vi.fn()
 
 describe('Action worker', () => {
   let originalWorkerState: WorkerState | null = null
 
   beforeAll(async () => {
+    vi.spyOn(tracer, 'scope').mockImplementation(
+      () =>
+        ({
+          active: vi.fn(() => ({
+            addTags: addSpanTags,
+          })),
+        }) as never,
+    )
+    vi.spyOn(tracer, 'wrap').mockImplementation(
+      ((_, callback) => callback) as never,
+    )
+    spyOnStepQuery(createStepQueryChain({ findById: vi.fn() }))
+    vi.spyOn(Execution, 'setStatus').mockImplementation(vi.fn() as never)
+    vi.spyOn(actionService, 'processAction').mockImplementation(
+      processAction as never,
+    )
+    vi.spyOn(actionsHelper, 'handleFailedStepAndThrow').mockImplementation(
+      handleFailedStepAndThrow as never,
+    )
+    vi.spyOn(backoffHelper, 'exponentialBackoffWithJitter').mockImplementation(
+      exponentialBackoffWithJitter as never,
+    )
+
     originalWorkerState = await backupWorker(mainActionWorker)
     await mainActionWorker.waitUntilReady()
   })
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mocks.processAction.mockReset()
-    mocks.processAction.mockResolvedValue({})
-    mocks.handleFailedStepAndThrow.mockReset()
-    mocks.exponentialBackoffWithJitter.mockReset()
-    mocks.exponentialBackoffWithJitter.mockReturnValue(1)
+    spyOnLogger({ info: logInfo, error: logError })
+    processAction.mockReset()
+    processAction.mockResolvedValue({})
+    handleFailedStepAndThrow.mockReset()
+    exponentialBackoffWithJitter.mockReset()
+    exponentialBackoffWithJitter.mockReturnValue(1)
   })
 
   afterEach(async () => {
@@ -105,7 +90,6 @@ describe('Action worker', () => {
     await restoreWorker(mainActionWorker, originalWorkerState)
 
     vi.clearAllMocks()
-    vi.restoreAllMocks()
   })
 
   // Close workers and queues so they don't linger in the shared test process
@@ -125,7 +109,7 @@ describe('Action worker', () => {
     })
 
     it('does not retry successful executions', async () => {
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: false, nextStep: null },
       })
 
@@ -146,18 +130,18 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.handleFailedStepAndThrow).not.toHaveBeenCalled()
-      expect(mocks.exponentialBackoffWithJitter).not.toHaveBeenCalled()
+      expect(handleFailedStepAndThrow).not.toHaveBeenCalled()
+      expect(exponentialBackoffWithJitter).not.toHaveBeenCalled()
     })
 
     it('retries retriable executions using our custom backoff strategy', async () => {
       // Override max attempts to reduce test running time.
       const maxAttempts = 3
 
-      mocks.processAction.mockResolvedValue({
+      processAction.mockResolvedValue({
         executionStep: { isFailed: true },
       })
-      mocks.handleFailedStepAndThrow.mockRejectedValue(
+      handleFailedStepAndThrow.mockRejectedValue(
         new RetriableError({
           error: 'test retriable error',
           delayInMs: 10,
@@ -187,14 +171,14 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.exponentialBackoffWithJitter).toHaveBeenCalled()
+      expect(exponentialBackoffWithJitter).toHaveBeenCalled()
     }, 20000)
 
     it('does not retry non-executable executions', async () => {
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: true },
       })
-      mocks.handleFailedStepAndThrow.mockRejectedValue(
+      handleFailedStepAndThrow.mockRejectedValue(
         new UnrecoverableError('not retriable error'),
       )
 
@@ -218,13 +202,13 @@ describe('Action worker', () => {
       await jobProcessed
 
       // Should not be called, since it was not retried.
-      expect(mocks.exponentialBackoffWithJitter).not.toHaveBeenCalled()
+      expect(exponentialBackoffWithJitter).not.toHaveBeenCalled()
     })
   })
 
   describe('Event listeners', () => {
     it('logs job starts and completions', async () => {
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: false, nextStep: null },
       })
 
@@ -244,21 +228,21 @@ describe('Action worker', () => {
       )
       await jobProcessed
 
-      expect(mocks.logInfo).toHaveBeenCalledWith(
+      expect(logInfo).toHaveBeenCalledWith(
         `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has started!`,
         expect.anything(),
       )
-      expect(mocks.logInfo).toHaveBeenCalledWith(
+      expect(logInfo).toHaveBeenCalledWith(
         `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has completed!`,
         expect.anything(),
       )
     })
 
     it('logs an error on job failure', async () => {
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: true },
       })
-      mocks.handleFailedStepAndThrow.mockRejectedValue(
+      handleFailedStepAndThrow.mockRejectedValue(
         new UnrecoverableError('some error'),
       )
 
@@ -278,7 +262,7 @@ describe('Action worker', () => {
       )
       await jobProcessed
 
-      expect(mocks.logError).toHaveBeenCalledWith(
+      expect(logError).toHaveBeenCalledWith(
         `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
         expect.anything(),
       )
@@ -289,7 +273,7 @@ describe('Action worker', () => {
         throw new Error('callback error')
       })
 
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: false, nextStep: null },
       })
       const jobProcessed = new Promise<void>((resolve) => {
@@ -309,7 +293,7 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.logError).toHaveBeenCalledWith(
+      expect(logError).toHaveBeenCalledWith(
         '[action] Worker errored with callback error',
         expect.any(Object),
       )
@@ -331,7 +315,7 @@ describe('Action worker', () => {
     })
 
     it('correctly records job enqueue time, delay and time in job queue for non-delayed jobs', async () => {
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: false, nextStep: null },
       })
 
@@ -358,7 +342,7 @@ describe('Action worker', () => {
       })
       await jobProcessed
 
-      expect(mocks.addSpanTags).toHaveBeenCalledWith(
+      expect(addSpanTags).toHaveBeenCalledWith(
         expect.objectContaining({
           jobEnqueueTime: startTime,
           jobDelay: 0,
@@ -377,7 +361,7 @@ describe('Action worker', () => {
     ])(
       'correctly records job enqueue time, delay and time in job queue for delayed jobs',
       async ({ delay }) => {
-        mocks.processAction.mockResolvedValueOnce({
+        processAction.mockResolvedValueOnce({
           executionStep: { isFailed: false, nextStep: null },
         })
 
@@ -408,7 +392,7 @@ describe('Action worker', () => {
         await vi.advanceTimersByTimeAsync(delay)
         await jobProcessed
 
-        expect(mocks.addSpanTags).toHaveBeenCalledWith(
+        expect(addSpanTags).toHaveBeenCalledWith(
           expect.objectContaining({
             jobEnqueueTime: startTime,
             jobDelay: delay,
@@ -425,10 +409,10 @@ describe('Action worker', () => {
       // Job originally created 3 days before it's manually retried.
       vi.setSystemTime(startTime - DAYS_STALE_MS)
 
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: true },
       })
-      mocks.handleFailedStepAndThrow.mockRejectedValueOnce(
+      handleFailedStepAndThrow.mockRejectedValueOnce(
         new UnrecoverableError('not retriable error'),
       )
 
@@ -463,7 +447,7 @@ describe('Action worker', () => {
         retryTimestamp: Date.now(),
       })
 
-      mocks.processAction.mockResolvedValueOnce({
+      processAction.mockResolvedValueOnce({
         executionStep: { isFailed: false, nextStep: null },
       })
 
@@ -481,7 +465,7 @@ describe('Action worker', () => {
       await failedJob.retry()
       await jobProcessed
 
-      expect(mocks.addSpanTags).toHaveBeenCalledWith(
+      expect(addSpanTags).toHaveBeenCalledWith(
         expect.objectContaining({
           jobEnqueueTime: startTime,
           jobDelay: 0,
