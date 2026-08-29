@@ -29,15 +29,16 @@ describe('action queues', () => {
   beforeAll(async () => {
     vi.resetModules()
 
-    const makeActionQueueModule = await import('../helpers/make-action-queue')
+    const makeActionQueueModule =
+      await import('@/queues/helpers/make-action-queue.js')
     vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
       makeActionQueue as never,
     )
 
-    const appsModule = await import('../../apps')
+    const appsModule = await import('@/apps/index.js')
     restoreAppsRegistry = stubAppsRegistry(appsModule.default, TEST_APPS)
 
-    const actionModule = await import('../action')
+    const actionModule = await import('@/queues/action.js')
     actionQueuesByName = actionModule.actionQueuesByName
     appActionQueues = actionModule.appActionQueues
     MAIN_ACTION_QUEUE_NAME = actionModule.MAIN_ACTION_QUEUE_NAME
