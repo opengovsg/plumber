@@ -179,7 +179,7 @@ SpyOn moved another 51 unit files to shared workers (−80% total vs baseline). 
 
 ## What we tried — and what to watch for
 
-Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Dead ends we reverted, infra we ruled out on the way to [§2](#2-worker-isolation-parallel-integration-without-flakiness), and maintainer traps to remember.
+Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Below: what we tried and reverted, infra we ruled out on the way to [§2](#2-worker-isolation-parallel-integration-without-flakiness), and constraints to follow when adding or debugging tests on the shipped setup.
 
 ### Mock and spyOn dead ends
 
@@ -219,9 +219,9 @@ Alternatives before [§2 — Worker isolation](#2-worker-isolation-parallel-inte
   - Problem: DynamoDB wipe after ~10k-row tile itest timed out.
   - Shipped: `hookTimeout: 120_000` in [§2](#2-worker-isolation-parallel-integration-without-flakiness) — do not lower.
 
-### Gotchas for maintainers
+### When you add or change tests
 
-Details in linked sections — not repeated here.
+Not reverted experiments — rules the shipped config assumes. Break them and tests flake, leak mock state, or land in the wrong isolated bucket. Details in [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket).
 
 - **`isolate: false` leaks mock state**
   - [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) shared pool reuses one module graph.
@@ -243,14 +243,12 @@ Details in linked sections — not repeated here.
 
 ## In short
 
-Three config changes moved Duration — [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket):
+**Start with mock split** ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need)) — config-only, no test rewrites. On our unit suite that alone was **170s → 96s** (−43%).
 
-1. **Mock split** — grep for `vi.mock` at config load; `isolate: false` for everything else.
-2. **Worker isolation** — per-worker Postgres, Redis, and DynamoDB before turning parallelism up.
-3. **SpyOn** — replace `vi.mock('@/…')` on internal modules where you can; migrate whole files, not individual mocks.
+**Integration next:** per-worker data slices ([§2](#2-worker-isolation-parallel-integration-without-flakiness)) *before* raising `maxWorkers`. Parallel threads on one Postgres was the main flake source — not slow tests.
 
-**How to measure:** Vitest **Duration** per suite, cold runs, stable baseline — not full CI wall clock and not a Turbo cache hit.
+**SpyOn last** ([§3](#3-spyon-shrink-the-isolated-bucket)) — file-by-file, after split is live. Diminishing returns once ~20 files still need hoisted mocks; do not chase 100%.
 
-**Do not skip:** boot containers once, wipe between tests ([§2](#2-worker-isolation-parallel-integration-without-flakiness)). Parallel workers on shared Postgres flakes — we ruled that out [above](#parallel-infra-what-we-ruled-out).
+**Do not start with:** mock migration, eliminating `vi.mock()` everywhere, or tuning worker count — see [what we tried](#what-we-tried--and-what-to-watch-for).
 
-Most of the win is config, not rewriting test logic.
+When you benchmark your own changes: Vitest **Duration** per suite, cold run, stable baseline — not CI wall clock, not a cached turbo run.
