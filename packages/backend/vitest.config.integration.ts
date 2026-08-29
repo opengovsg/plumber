@@ -65,6 +65,7 @@ const sharedTest = {
     'dotenv/config',
     getPath('./test/pg-reset-db-setup.ts'),
     getPath('./test/redis-reset-setup.ts'),
+    getPath('./test/dynamodb-reset-setup.ts'),
   ],
   pool: 'threads' as const,
   maxWorkers: Math.min(cpus().length, MAX_WORKER_SLOTS),
