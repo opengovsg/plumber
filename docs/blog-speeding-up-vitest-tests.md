@@ -55,8 +55,8 @@ flowchart TB
     direction TB
     RUN["npm run test"]
     ROOT["root vitest · all projects"]
-    U["Unit · 147 files\n1 project · isolate true"]
-    I["Integration · 71 files\nsingleThread · 1 Postgres"]
+    U["Unit · 147 files\n1 project · isolate true\n170s"]
+    I["Integration · 71 files\nsingleThread · 1 Postgres\n266s"]
     RUN --> ROOT
     ROOT --> U
     ROOT --> I
@@ -69,10 +69,10 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  subgraph ci ["2 CI jobs · run in parallel"]
+  subgraph ci ["2 CI jobs in parallel · wall clock 104s (−61%)"]
     direction LR
 
-    subgraph job_unit ["CI job: backend unit"]
+    subgraph job_unit ["backend unit · 34s (−80%)"]
       direction TB
       T1["turbo run test:unit"]
       GU["grep vi.mock"]
@@ -82,7 +82,7 @@ flowchart TB
       GU --> U2
     end
 
-    subgraph job_int ["CI job: backend integration"]
+    subgraph job_int ["backend integration · 104s (−61%)"]
       direction TB
       T2["turbo run test:integration"]
       GI["grep vi.mock"]
