@@ -7,28 +7,25 @@ import HttpError from '@/errors/http'
 import isStillVerified from '../auth/is-still-verified'
 import verifyCredentials from '../auth/verify-credentials'
 import { PostmanEnv } from '../common/constants'
+import * as getPostmanEnvModule from '../common/get-postman-env'
 
-const mocks = vi.hoisted(() => ({
-  authSet: vi.fn(),
-  httpGet: vi.fn(),
-  getPostmanEnv: vi.fn(() => PostmanEnv.Test),
-}))
-
-vi.mock('../common/get-postman-env', () => ({
-  default: mocks.getPostmanEnv,
-}))
+const authSet = vi.fn()
+const httpGet = vi.fn()
+const getPostmanEnv = vi.fn(() => PostmanEnv.Test)
 
 describe('Postman SMS auth', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    vi.spyOn(getPostmanEnvModule, 'default').mockImplementation(getPostmanEnv)
+
     $ = {
       auth: {
         data: {},
-        set: mocks.authSet,
+        set: authSet,
       },
       http: {
-        get: mocks.httpGet,
+        get: httpGet,
       },
     } as unknown as IGlobalVariable
   })
@@ -46,7 +43,7 @@ describe('Postman SMS auth', () => {
         apiKey: 'test-api-key',
       }
 
-      mocks.authSet.mockImplementation((obj) => {
+      authSet.mockImplementation((obj) => {
         $.auth.data = {
           ...$.auth.data,
           ...obj,
@@ -56,10 +53,10 @@ describe('Postman SMS auth', () => {
 
     it('adds a [TEST] prefix to the label if user is adding a test env campaign, unless user added that prefix themselves already', async () => {
       $.auth.data.screenName = 'My Campaign'
-      mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Test)
+      getPostmanEnv.mockReturnValue(PostmanEnv.Test)
 
       await verifyCredentials($)
-      expect(mocks.authSet).toHaveBeenCalledWith(
+      expect(authSet).toHaveBeenCalledWith(
         expect.objectContaining({
           screenName: '[TEST] My Campaign',
         }),
@@ -68,17 +65,17 @@ describe('Postman SMS auth', () => {
 
     it('Does not modify the label for test env campaigns which already have a [TEST] prefix', async () => {
       $.auth.data.screenName = '[TEST] My Campaign'
-      mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Test)
+      getPostmanEnv.mockReturnValue(PostmanEnv.Test)
 
       await verifyCredentials($)
-      expect(mocks.authSet).not.toHaveBeenCalled()
+      expect(authSet).not.toHaveBeenCalled()
     })
 
     it('Does not modify the label for campaigns in prod', async () => {
-      mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Prod)
+      getPostmanEnv.mockReturnValue(PostmanEnv.Prod)
 
       await verifyCredentials($)
-      expect(mocks.authSet).not.toHaveBeenCalled()
+      expect(authSet).not.toHaveBeenCalled()
     })
   })
 
@@ -97,7 +94,7 @@ describe('Postman SMS auth', () => {
     })
 
     it("throws descriptive error message if user did not whitelist Plumber's IPs", async () => {
-      mocks.httpGet.mockRejectedValue(
+      httpGet.mockRejectedValue(
         new HttpError({
           response: {
             status: 400,
@@ -116,7 +113,7 @@ describe('Postman SMS auth', () => {
     })
 
     it('throws descriptive error message if user provided wrong campaign ID or API key', async () => {
-      mocks.httpGet.mockRejectedValue(
+      httpGet.mockRejectedValue(
         new HttpError({
           response: {
             status: 401,
@@ -157,7 +154,7 @@ describe('Postman SMS auth', () => {
     ])(
       'throws the underlying error if request failed due to another reason',
       async (error) => {
-        mocks.httpGet.mockRejectedValue(error)
+        httpGet.mockRejectedValue(error)
         await expect(isStillVerified($)).rejects.toThrow(error)
       },
     )

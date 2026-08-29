@@ -1,6 +1,8 @@
 import { type IGlobalVariable, type IJSONObject } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
+
 import toolboxApp from '../..'
 import ifThenAction from '../../actions/if-then'
 
@@ -198,25 +200,23 @@ const NESTED_BRANCH_PIPE_STEPS = [
   },
 ]
 
-const mocks = vi.hoisted(() => ({
-  stepQueryResult: vi.fn(),
-  setActionItem: vi.fn(),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      where: vi.fn(() => ({
-        orderBy: vi.fn(() => ({
-          throwIfNotFound: mocks.stepQueryResult,
-        })),
-      })),
-    })),
-  },
-}))
+const stepQueryResult = vi.fn()
+const setActionItem = vi.fn()
 
 describe('If-then', () => {
   let $: IGlobalVariable
+
+  beforeEach(() => {
+    spyOnStepQuery(
+      createStepQueryChain({
+        where: vi.fn(() => ({
+          orderBy: vi.fn(() => ({
+            throwIfNotFound: stepQueryResult,
+          })),
+        })),
+      }),
+    )
+  })
 
   afterEach(() => {
     vi.clearAllMocks()
@@ -225,7 +225,7 @@ describe('If-then', () => {
 
   describe('pipes without nested branches', () => {
     beforeEach(() => {
-      mocks.stepQueryResult.mockResolvedValue(FLAT_PIPE_STEPS)
+      stepQueryResult.mockResolvedValue(FLAT_PIPE_STEPS)
 
       $ = {
         flow: {
@@ -237,7 +237,7 @@ describe('If-then', () => {
         app: {
           name: 'Toolbox',
         },
-        setActionItem: mocks.setActionItem,
+        setActionItem: setActionItem,
       } as unknown as IGlobalVariable
     })
 
@@ -251,7 +251,7 @@ describe('If-then', () => {
       const result = await ifThenAction.run($)
 
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: true },
       })
     })
@@ -264,7 +264,7 @@ describe('If-then', () => {
       const result = await ifThenAction.run($)
 
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: true },
       })
     })
@@ -283,7 +283,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -300,7 +300,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -313,13 +313,13 @@ describe('If-then', () => {
         text: 9999,
       })
       // Exclude all of branch-2 from pipe for this test.
-      mocks.stepQueryResult.mockResolvedValueOnce(FLAT_PIPE_STEPS.slice(0, 3))
+      stepQueryResult.mockResolvedValueOnce(FLAT_PIPE_STEPS.slice(0, 3))
       const result = await ifThenAction.run($)
 
       expect(result).toEqual({
         nextStep: { command: 'stop-execution' },
       })
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -334,7 +334,7 @@ describe('If-then', () => {
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
       })
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { isConditionMet: false },
       })
     })
@@ -357,7 +357,7 @@ describe('If-then', () => {
 
   describe('pipes with nested branches', () => {
     beforeEach(() => {
-      mocks.stepQueryResult.mockResolvedValue(NESTED_BRANCH_PIPE_STEPS)
+      stepQueryResult.mockResolvedValue(NESTED_BRANCH_PIPE_STEPS)
 
       $ = {
         flow: {
@@ -366,7 +366,7 @@ describe('If-then', () => {
         step: {
           ...NESTED_BRANCH_PIPE_STEPS[1],
         },
-        setActionItem: mocks.setActionItem,
+        setActionItem: setActionItem,
       } as unknown as IGlobalVariable
     })
 
@@ -387,7 +387,7 @@ describe('If-then', () => {
         const result = await ifThenAction.run($)
 
         expect(result).toBeFalsy()
-        expect(mocks.setActionItem).toHaveBeenCalledWith({
+        expect(setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: true },
         })
       },
@@ -416,7 +416,7 @@ describe('If-then', () => {
         expect(result).toEqual({
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
-        expect(mocks.setActionItem).toHaveBeenCalledWith({
+        expect(setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: false },
         })
       },
@@ -444,7 +444,7 @@ describe('If-then', () => {
         expect(result).toEqual({
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
         })
-        expect(mocks.setActionItem).toHaveBeenCalledWith({
+        expect(setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: false },
         })
       },
@@ -473,7 +473,7 @@ describe('If-then', () => {
         expect(result).toEqual({
           nextStep: { command: 'stop-execution' },
         })
-        expect(mocks.setActionItem).toHaveBeenCalledWith({
+        expect(setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: false },
         })
       },
@@ -495,7 +495,7 @@ describe('If-then', () => {
         })
 
         await ifThenAction.run($)
-        expect(mocks.setActionItem).toHaveBeenCalledWith({
+        expect(setActionItem).toHaveBeenCalledWith({
           raw: { isConditionMet: expectedResult },
         })
       },

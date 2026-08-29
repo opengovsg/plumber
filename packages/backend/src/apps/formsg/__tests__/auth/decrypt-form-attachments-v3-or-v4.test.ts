@@ -1,41 +1,23 @@
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
 import { IGlobalVariable, IRequest } from '@plumber/types'
+import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import { decryptFormAttachmentsV3OrV4 } from '../../auth/decrypt-form-attachments-v3-or-v4'
 import { getSdk } from '../../common/form-env'
 
-const mocks = vi.hoisted(() => {
-  return {
-    consoleError: vi.fn(),
-    consoleWarn: vi.fn(),
-    axiosGet: vi.fn(async () => ({
-      data: {
-        encryptedFile: {
-          submissionPublicKey: 'Xva5B9ruxzidbHpucRGizb6iRnWLnoypkOdBn3scWDY=',
-          nonce: '0hOPZZ8gpM+beUk/X/PjbFTThYyOffyv',
-          binary:
-            'I50wqO1h6fc2zQszCys7/nFmHUKvxEXtTAB7Wrc3XmjkTOWUc854EaEZzSS2gzuIG6h3YSz48cGtX4t9u1IVjs5G3zJZqjXex0N538WME52oIAIk7J8c9Q==',
-        },
-      },
-    })),
-  }
-})
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.consoleError,
-    warn: mocks.consoleWarn,
-  },
-}))
-
-vi.mock('axios', () => ({
-  default: {
-    get: mocks.axiosGet,
-    isAxiosError: (error: unknown) =>
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { isAxiosError?: boolean }).isAxiosError === true,
+const consoleError = vi.fn()
+const consoleWarn = vi.fn()
+const axiosGet = vi.fn(async () => ({
+  data: {
+    encryptedFile: {
+      submissionPublicKey: 'Xva5B9ruxzidbHpucRGizb6iRnWLnoypkOdBn3scWDY=',
+      nonce: '0hOPZZ8gpM+beUk/X/PjbFTThYyOffyv',
+      binary:
+        'I50wqO1h6fc2zQszCys7/nFmHUKvxEXtTAB7Wrc3XmjkTOWUc854EaEZzSS2gzuIG6h3YSz48cGtX4t9u1IVjs5G3zJZqjXex0N538WME52oIAIk7J8c9Q==',
+    },
   },
 }))
 
@@ -67,6 +49,16 @@ const FORM_FIELDS: FormField[] = [
 describe('decrypt form attachments v3', () => {
   let $: IGlobalVariable
   beforeEach(() => {
+    vi.spyOn(axios, 'get').mockImplementation(axiosGet)
+    vi.spyOn(axios, 'isAxiosError').mockImplementation(
+      (error: unknown) =>
+        typeof error === 'object' &&
+        error !== null &&
+        (error as { isAxiosError?: boolean }).isAxiosError === true,
+    )
+    vi.spyOn(logger, 'error').mockImplementation(consoleError)
+    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn)
+
     $ = {
       request: {
         body: {
@@ -142,7 +134,7 @@ describe('decrypt form attachments v3', () => {
     })
 
     it('should retry a transient 503 and still return both attachments', async () => {
-      mocks.axiosGet.mockRejectedValueOnce({
+      axiosGet.mockRejectedValueOnce({
         isAxiosError: true,
         message: 'Request failed with status code 503',
         response: { status: 503 },
@@ -156,11 +148,11 @@ describe('decrypt form attachments v3', () => {
       )
 
       expect(Object.keys(result)).toHaveLength(2)
-      expect(mocks.axiosGet).toHaveBeenCalledTimes(3)
+      expect(axiosGet).toHaveBeenCalledTimes(3)
     })
 
     it('should throw an error if downloading fails', async () => {
-      mocks.axiosGet.mockRejectedValueOnce(new Error('Download failed'))
+      axiosGet.mockRejectedValueOnce(new Error('Download failed'))
       await expect(
         decryptFormAttachmentsV3OrV4(
           formSgSdk,

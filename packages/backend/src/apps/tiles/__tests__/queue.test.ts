@@ -1,31 +1,32 @@
 // Avoid cyclic imports when importing m365ExcelApp
 import '@/apps'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import Step from '@/models/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import tilesApp from '..'
 
-const mocks = vi.hoisted(() => ({
-  stepQueryResult: vi.fn(),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({
-        throwIfNotFound: mocks.stepQueryResult,
-      })),
-    })),
-  },
-}))
+const stepQueryResult = vi.fn()
 
 describe('Queue config', () => {
+  beforeEach(() => {
+    spyOnStepQuery(
+      createStepQueryChain({
+        findById: vi.fn(() => ({
+          throwIfNotFound: stepQueryResult,
+        })),
+      }),
+    )
+  })
+
   afterEach(() => {
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
   it('sets group ID to the file ID', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce({
+    stepQueryResult.mockResolvedValueOnce({
       parameters: {
         tableId: 'mock-table-id',
       },
@@ -40,10 +41,11 @@ describe('Queue config', () => {
     expect(groupConfig).toEqual({
       id: 'mock-table-id-findSingleRow',
     })
+    expect(Step.query).toHaveBeenCalled()
   })
 
   it('sets group ID to null', async () => {
-    mocks.stepQueryResult.mockResolvedValueOnce({
+    stepQueryResult.mockResolvedValueOnce({
       parameters: {
         tableId: 'mock-table-id',
       },

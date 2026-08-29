@@ -1,67 +1,90 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import resolver from '@/graphql/custom-resolvers/execution-step'
+import App from '@/models/app'
 import ExecutionStep from '@/models/execution-step'
 
-const mocks = vi.hoisted(() => ({
-  $relatedQuery: vi.fn(),
-  triggers: [
-    {
-      key: 'trigger1',
-      getDataOutMetadata: (_: any) => ({
-        stringField: 'trigger1-metadata',
-      }),
-    },
-    {
-      key: 'trigger2',
-      getDataOutMetadata: (_: any) => ({
-        stringField: 'trigger2-metadata',
-      }),
-    },
-  ],
-  actions: [
-    {
-      key: 'action1',
-      getDataOutMetadata: (_: any) => ({
-        stringField: 'action1-metadata',
-      }),
-    },
-    {
-      key: 'action2',
-      getDataOutMetadata: (_: any) => ({
-        stringField: 'action2-metadata',
-      }),
-    },
-  ],
-}))
-
-vi.mock('@/models/app', () => ({
-  default: {
-    findOneByKey: () => ({
-      triggers: mocks.triggers,
-      actions: mocks.actions,
+const $relatedQuery = vi.fn()
+let triggers = [
+  {
+    key: 'trigger1',
+    getDataOutMetadata: (_: any) => ({
+      stringField: 'trigger1-metadata',
     }),
   },
-}))
+  {
+    key: 'trigger2',
+    getDataOutMetadata: (_: any) => ({
+      stringField: 'trigger2-metadata',
+    }),
+  },
+]
+let actions = [
+  {
+    key: 'action1',
+    getDataOutMetadata: (_: any) => ({
+      stringField: 'action1-metadata',
+    }),
+  },
+  {
+    key: 'action2',
+    getDataOutMetadata: (_: any) => ({
+      stringField: 'action2-metadata',
+    }),
+  },
+]
 
 describe('execution step', () => {
   let executionStep: ExecutionStep
 
   beforeEach(() => {
     executionStep = {
-      $relatedQuery: mocks.$relatedQuery,
+      $relatedQuery,
       appKey: 'testApp',
     } as unknown as ExecutionStep
+
+    vi.spyOn(App, 'findOneByKey').mockImplementation((async () => ({
+      triggers,
+      actions,
+    })) as never)
   })
 
   afterEach(() => {
+    triggers = [
+      {
+        key: 'trigger1',
+        getDataOutMetadata: (_: any) => ({
+          stringField: 'trigger1-metadata',
+        }),
+      },
+      {
+        key: 'trigger2',
+        getDataOutMetadata: (_: any) => ({
+          stringField: 'trigger2-metadata',
+        }),
+      },
+    ]
+    actions = [
+      {
+        key: 'action1',
+        getDataOutMetadata: (_: any) => ({
+          stringField: 'action1-metadata',
+        }),
+      },
+      {
+        key: 'action2',
+        getDataOutMetadata: (_: any) => ({
+          stringField: 'action2-metadata',
+        }),
+      },
+    ]
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
   describe('dataOut metadata', () => {
     it('gets metadata from the appropriate trigger', async () => {
-      mocks.$relatedQuery.mockReturnValueOnce({
+      $relatedQuery.mockReturnValueOnce({
         appKey: 'testApp',
         key: 'trigger1',
         isTrigger: true,
@@ -72,7 +95,7 @@ describe('execution step', () => {
     })
 
     it('gets metadata from the appropriate action', async () => {
-      mocks.$relatedQuery.mockReturnValueOnce({
+      $relatedQuery.mockReturnValueOnce({
         appKey: 'testApp',
         key: 'action1',
         isTrigger: false,
@@ -85,7 +108,7 @@ describe('execution step', () => {
     it.each([true, false])(
       'does not get confused between actions and triggers with the same key',
       async (isTrigger) => {
-        mocks.triggers = [
+        triggers = [
           {
             key: 'same-key',
             getDataOutMetadata: (_: any) => ({
@@ -93,7 +116,7 @@ describe('execution step', () => {
             }),
           },
         ]
-        mocks.actions = [
+        actions = [
           {
             key: 'same-key',
             getDataOutMetadata: (_: any) => ({
@@ -101,7 +124,7 @@ describe('execution step', () => {
             }),
           },
         ]
-        mocks.$relatedQuery.mockReturnValueOnce({
+        $relatedQuery.mockReturnValueOnce({
           appKey: 'testApp',
           key: 'same-key',
           isTrigger: isTrigger,
@@ -117,7 +140,7 @@ describe('execution step', () => {
     it.each([true, false])(
       'returns null if there is no matching action or trigger',
       async (isTrigger) => {
-        mocks.$relatedQuery.mockReturnValueOnce({
+        $relatedQuery.mockReturnValueOnce({
           appKey: 'testApp',
           key: 'does-not-exist',
           isTrigger: isTrigger,
@@ -129,7 +152,7 @@ describe('execution step', () => {
     )
 
     it('should return null if appKey is different', async () => {
-      mocks.$relatedQuery.mockReturnValueOnce({
+      $relatedQuery.mockReturnValueOnce({
         appKey: 'differentApp',
         key: 'trigger1',
         isTrigger: true,

@@ -1,18 +1,11 @@
 import { IExecutionStep } from '@plumber/types'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import * as s3Helpers from '@/helpers/s3'
 
 import getDataOutMetadata from '../../actions/create-letter/get-data-out-metadata'
 
 const mockS3ObjectName = 'letter.pdf'
-const mocks = vi.hoisted(() => ({
-  parseS3Id: vi.fn(() => ({
-    objectName: mockS3ObjectName,
-  })),
-}))
-
-vi.mock('@/helpers/s3', () => ({
-  parseS3Id: mocks.parseS3Id,
-}))
 
 const mockDataOut = {
   publicId: '123',
@@ -22,6 +15,16 @@ const mockDataOut = {
 }
 
 describe('Test getDataOutMetadata', () => {
+  beforeEach(() => {
+    vi.spyOn(s3Helpers, 'parseS3Id').mockReturnValue({
+      objectName: mockS3ObjectName,
+    } as ReturnType<typeof s3Helpers.parseS3Id>)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('empty data test', async () => {
     const testExecutionStep = {} as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)

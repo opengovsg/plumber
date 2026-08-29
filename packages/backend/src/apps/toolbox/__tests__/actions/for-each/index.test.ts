@@ -1,11 +1,8 @@
 import { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  isCheckboxItems,
-  ProcessedColumn,
-  processItems,
-} from '@/apps/toolbox/common/get-for-each-variables'
+import * as forEachVariables from '@/apps/toolbox/common/get-for-each-variables'
+import type { ProcessedColumn } from '@/apps/toolbox/common/get-for-each-variables'
 import StepError from '@/errors/step'
 
 import action from '../../../actions/for-each'
@@ -14,17 +11,9 @@ import {
   FOR_EACH_ITERATION_KEY,
 } from '../../../common/constants'
 
-const mocks = vi.hoisted(() => ({
-  setActionItem: vi.fn(),
-}))
-
-vi.mock('@/apps/toolbox/common/get-for-each-variables', () => ({
-  isCheckboxItems: vi.fn(),
-  processItems: vi.fn(),
-}))
-
-const mockedIsCheckboxItems = vi.mocked(isCheckboxItems)
-const mockedProcessItems = vi.mocked(processItems)
+const setActionItem = vi.fn()
+const isCheckboxItems = vi.fn()
+const processItems = vi.fn()
 
 const MOCK_FLOW = [
   {
@@ -89,6 +78,10 @@ describe('For each action', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    vi.spyOn(forEachVariables, 'isCheckboxItems').mockImplementation(
+      isCheckboxItems,
+    )
+    vi.spyOn(forEachVariables, 'processItems').mockImplementation(processItems)
     vi.clearAllMocks()
 
     $ = {
@@ -110,7 +103,7 @@ describe('For each action', () => {
         testRun: false,
       },
       getLastExecutionStep: vi.fn(),
-      setActionItem: mocks.setActionItem,
+      setActionItem: setActionItem,
     } as unknown as IGlobalVariable
   })
 
@@ -124,11 +117,11 @@ describe('For each action', () => {
       const checkboxItems = ['item1', 'item2', 'item3']
       $.step.parameters.items = ['item1', 'item2', 'item3']
 
-      mockedIsCheckboxItems.mockReturnValue(true)
+      isCheckboxItems.mockReturnValue(true)
 
       const result = await action.run($)
 
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 3,
@@ -150,11 +143,11 @@ describe('For each action', () => {
       const checkboxItems = ['   item1', 'item2', 'item3']
       $.step.parameters.items = ['   item1', 'item2', 'item3']
 
-      mockedIsCheckboxItems.mockReturnValue(true)
+      isCheckboxItems.mockReturnValue(true)
 
       await action.run($)
 
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 3,
@@ -169,11 +162,11 @@ describe('For each action', () => {
       const checkboxItems = ['single-item']
       $.step.parameters.items = ['single-item']
 
-      mockedIsCheckboxItems.mockReturnValue(true)
+      isCheckboxItems.mockReturnValue(true)
 
       const result = await action.run($)
 
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 1,
@@ -248,12 +241,12 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
 
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(validTableData)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
@@ -285,12 +278,12 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
 
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(excelData)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
@@ -318,11 +311,11 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
@@ -356,11 +349,11 @@ describe('For each action', () => {
         columns: VALID_TABLE_DATA.columns,
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(mockTableFieldData)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 0,
@@ -392,11 +385,11 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
 
       const result = await action.run($)
 
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 0,
@@ -443,12 +436,12 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
 
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
@@ -480,12 +473,12 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.M365_EXCEL,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
 
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(excelData)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
@@ -517,11 +510,11 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.TILES,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
 
       const result = await action.run($)
 
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 0,
@@ -549,11 +542,11 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
 
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 2,
@@ -583,11 +576,11 @@ describe('For each action', () => {
         columns: newColumns,
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
-      mockedProcessItems.mockReturnValue(processedResult)
+      processItems.mockReturnValue(processedResult)
       const result = await action.run($)
 
-      expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(processItems).toHaveBeenCalledWith(mockTableFieldData)
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: {
           iteration: FOR_EACH_ITERATION_KEY,
           iterations: 0,

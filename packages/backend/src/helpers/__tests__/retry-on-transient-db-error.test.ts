@@ -1,21 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import {
   isTransientDbError,
   retryOnTransientDbError,
 } from '../retry-on-transient-db-error'
 
-const mocks = vi.hoisted(() => ({
-  logWarn: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    warn: mocks.logWarn,
-    error: vi.fn(),
-    info: vi.fn(),
-  },
-}))
+const logWarn = vi.fn()
 
 function makePgError(code: string): Error & { code: string } {
   const err = new Error(`pg error ${code}`) as Error & { code: string }
@@ -102,10 +94,16 @@ describe('isTransientDbError', () => {
 })
 
 describe('retryOnTransientDbError', () => {
+  beforeEach(() => {
+    vi.spyOn(logger, 'warn').mockImplementation(logWarn)
+    vi.spyOn(logger, 'error').mockImplementation(vi.fn())
+    vi.spyOn(logger, 'info').mockImplementation(vi.fn())
+  })
+
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
-    mocks.logWarn.mockReset()
+    logWarn.mockReset()
   })
 
   it('returns the value on first try without retrying', async () => {
@@ -114,7 +112,7 @@ describe('retryOnTransientDbError', () => {
     await expect(retryOnTransientDbError(fn)).resolves.toBe('ok')
 
     expect(fn).toHaveBeenCalledTimes(1)
-    expect(mocks.logWarn).not.toHaveBeenCalled()
+    expect(logWarn).not.toHaveBeenCalled()
   })
 
   it('retries after a transient failure and succeeds', async () => {
@@ -139,8 +137,8 @@ describe('retryOnTransientDbError', () => {
 
     await expect(promise).resolves.toBe('ok')
     expect(fn).toHaveBeenCalledTimes(2)
-    expect(mocks.logWarn).toHaveBeenCalledTimes(1)
-    expect(mocks.logWarn).toHaveBeenCalledWith(
+    expect(logWarn).toHaveBeenCalledTimes(1)
+    expect(logWarn).toHaveBeenCalledWith(
       'Retrying DB operation after transient error',
       expect.objectContaining({
         event: 'db-retry',
@@ -174,7 +172,7 @@ describe('retryOnTransientDbError', () => {
 
     await expect(promise).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(3)
-    expect(mocks.logWarn).toHaveBeenCalledTimes(2)
+    expect(logWarn).toHaveBeenCalledTimes(2)
   })
 
   it('does not retry non-transient errors', async () => {
@@ -183,7 +181,7 @@ describe('retryOnTransientDbError', () => {
 
     await expect(retryOnTransientDbError(fn)).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(1)
-    expect(mocks.logWarn).not.toHaveBeenCalled()
+    expect(logWarn).not.toHaveBeenCalled()
   })
 
   it('respects a custom maxAttempts', async () => {
@@ -204,7 +202,7 @@ describe('retryOnTransientDbError', () => {
 
     await expect(promise).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(2)
-    expect(mocks.logWarn).toHaveBeenCalledTimes(1)
+    expect(logWarn).toHaveBeenCalledTimes(1)
   })
 
   it('caps the actual sleep delay at maxDelayMs even with maximum jitter', async () => {
@@ -233,7 +231,7 @@ describe('retryOnTransientDbError', () => {
     await expect(promise).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(4)
 
-    const loggedDelays = mocks.logWarn.mock.calls.map(
+    const loggedDelays = logWarn.mock.calls.map(
       ([, payload]) => (payload as { delayMs: number }).delayMs,
     )
     expect(loggedDelays).toEqual([200, 300, 300])

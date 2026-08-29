@@ -5,80 +5,76 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
+import * as launchDarkly from '@/helpers/launch-darkly'
+import * as metrics from '@/helpers/metrics'
+import * as s3Helpers from '@/helpers/s3'
+import * as sesEmailHelper from '@/helpers/ses-email-helper'
+import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'
+import * as parametersHelper from '../../common/parameters-helper'
+import * as sendBlacklistEmailModule from '../../common/send-blacklist-email'
+import * as sendInvalidAttachmentsEmailModule from '../../common/send-invalid-attachments-email'
 
-const mocks = vi.hoisted(() => ({
-  getObjectFromS3Id: vi.fn(),
-  getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
-  filterAttachments: vi.fn(() => {
-    return {
-      attachmentFiles: [],
-      invalidAttachments: [],
-      submissionId: null,
-    }
-  }),
-  sendBlacklistEmail: vi.fn(),
-  sendInvalidAttachmentsEmail: vi.fn(),
-  createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
-  getLdFlagValue: vi.fn(async (_flag: string, _email: string | null) => false),
-  sesSend: vi.fn(async () => ({})),
-  getSuppressedEmails: vi.fn(async () => [] as string[]),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
-
-vi.mock('@/helpers/ses-email-helper', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/helpers/ses-email-helper')
-  >('@/helpers/ses-email-helper')
+const getObjectFromS3Id = vi.fn()
+const getDefaultReplyTo = vi.fn(() => 'replyTo@open.gov.sg')
+const filterAttachments = vi.fn(() => {
   return {
-    ...actual,
-    getSesClient: () => ({ send: mocks.sesSend }),
+    attachmentFiles: [],
+    invalidAttachments: [],
+    submissionId: null,
   }
 })
-
-vi.mock('@/helpers/s3', async () => {
-  // No reason to mock other things like parseS3Id
-  const actual =
-    await vi.importActual<typeof import('@/helpers/s3')>('@/helpers/s3')
-  return {
-    ...actual,
-    getObjectFromS3Id: mocks.getObjectFromS3Id,
-  }
-})
-
-vi.mock('../../common/parameters-helper', () => ({
-  getDefaultReplyTo: mocks.getDefaultReplyTo,
-  filterAttachments: mocks.filterAttachments,
-}))
-
-vi.mock('../../common/send-blacklist-email', () => ({
-  sendBlacklistEmail: mocks.sendBlacklistEmail,
-  createRequestBlacklistFormLink: vi.fn(),
-}))
-
-vi.mock('../../common/send-invalid-attachments-email', () => ({
-  sendInvalidAttachmentsEmail: mocks.sendInvalidAttachmentsEmail,
-  createInvalidAttachmentsMessage: mocks.createInvalidAttachmentsMessage,
-}))
-
-vi.mock('@/models/email-suppression-entry', () => ({
-  default: {
-    getSuppressedEmails: mocks.getSuppressedEmails,
-  },
-}))
-
-vi.mock('@/helpers/metrics', () => ({
-  incrementMetric: vi.fn(),
-}))
+const sendBlacklistEmail = vi.fn()
+const sendInvalidAttachmentsEmail = vi.fn()
+const createInvalidAttachmentsMessage = vi.fn(
+  () => 'test invalid attachment body',
+)
+const getLdFlagValue = vi.fn(
+  async (_flag: string, _email: string | null) => false,
+)
+const sesSend = vi.fn(async () => ({}))
+const getSuppressedEmails = vi.fn(async () => [] as string[])
 
 describe('send transactional email', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    vi.spyOn(launchDarkly, 'getLdFlagValue').mockImplementation(
+      getLdFlagValue as never,
+    )
+    vi.spyOn(sesEmailHelper, 'getSesClient').mockReturnValue({
+      send: sesSend,
+    } as never)
+    vi.spyOn(s3Helpers, 'getObjectFromS3Id').mockImplementation(
+      getObjectFromS3Id as never,
+    )
+    vi.spyOn(parametersHelper, 'getDefaultReplyTo').mockImplementation(
+      getDefaultReplyTo as never,
+    )
+    vi.spyOn(parametersHelper, 'filterAttachments').mockImplementation(
+      filterAttachments as never,
+    )
+    vi.spyOn(sendBlacklistEmailModule, 'sendBlacklistEmail').mockImplementation(
+      sendBlacklistEmail as never,
+    )
+    vi.spyOn(
+      sendBlacklistEmailModule,
+      'createRequestBlacklistFormLink',
+    ).mockImplementation(vi.fn() as never)
+    vi.spyOn(
+      sendInvalidAttachmentsEmailModule,
+      'sendInvalidAttachmentsEmail',
+    ).mockImplementation(sendInvalidAttachmentsEmail as never)
+    vi.spyOn(
+      sendInvalidAttachmentsEmailModule,
+      'createInvalidAttachmentsMessage',
+    ).mockImplementation(createInvalidAttachmentsMessage as never)
+    vi.spyOn(EmailSuppressionEntry, 'getSuppressedEmails').mockImplementation(
+      getSuppressedEmails as never,
+    )
+    vi.spyOn(metrics, 'incrementMetric').mockImplementation(vi.fn() as never)
+
     $ = {
       setActionItem: vi.fn(),
       http: {
@@ -122,7 +118,7 @@ describe('send transactional email', () => {
       getLastExecutionStep: vi.fn(),
     } as unknown as IGlobalVariable
 
-    mocks.getObjectFromS3Id
+    getObjectFromS3Id
       .mockResolvedValueOnce({
         name: 'file 1.txt',
         data: '0000',
@@ -132,7 +128,7 @@ describe('send transactional email', () => {
         data: '1111',
       })
 
-    mocks.getLdFlagValue.mockResolvedValue(false)
+    getLdFlagValue.mockResolvedValue(false)
   })
 
   afterEach(() => {
@@ -313,7 +309,7 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
-    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+    expect(sendBlacklistEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
       userEmail: $.user.email,
@@ -378,7 +374,7 @@ describe('send transactional email', () => {
       },
     })
 
-    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+    expect(sendBlacklistEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
       userEmail: $.user.email,
@@ -529,7 +525,7 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
-    expect(mocks.sendBlacklistEmail).not.toHaveBeenCalled()
+    expect(sendBlacklistEmail).not.toHaveBeenCalled()
   })
 
   it('should only retry to non-accepted emails', async () => {
@@ -615,7 +611,7 @@ describe('send transactional email', () => {
       's3:my-bucket:abcd/file 1.txt',
       's3:my-bucket:wxyz/file-2.svg',
     ]
-    mocks.filterAttachments.mockResolvedValueOnce({
+    filterAttachments.mockResolvedValueOnce({
       attachmentFiles: [],
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
@@ -624,7 +620,7 @@ describe('send transactional email', () => {
       PartialStepError,
     )
     expect($.http.post).toHaveBeenCalledTimes(2)
-    expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
+    expect(sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
       userEmail: $.user.email,
@@ -773,7 +769,7 @@ describe('send transactional email', () => {
       's3:my-bucket:wxyz/file-2.svg',
     ]
 
-    mocks.filterAttachments.mockResolvedValueOnce({
+    filterAttachments.mockResolvedValueOnce({
       attachmentFiles: [],
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
@@ -818,14 +814,14 @@ describe('send transactional email', () => {
         reply_to: 'replyTo@open.gov.sg',
       },
     })
-    expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
+    expect(sendBlacklistEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
       userEmail: $.user.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
     })
-    expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
+    expect(sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
       userEmail: $.user.email,
@@ -838,17 +834,17 @@ describe('send transactional email', () => {
 
   describe('SES routing via ses_enabled flag', () => {
     it('routes to SES when ses_enabled is true for all recipients', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(true)
+      getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
       $.step.parameters.attachments = []
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
       expect($.http.post).not.toHaveBeenCalled()
-      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+      expect(sesSend).toHaveBeenCalledTimes(2)
 
       // Every SES-direct message carries the transport marker header.
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+      const [sentCommand] = sesSend.mock.calls[0] as unknown as [
         { input: { Content: { Simple: { Headers?: unknown[] } } } },
       ]
       expect(sentCommand.input.Content.Simple.Headers).toContainEqual({
@@ -858,7 +854,7 @@ describe('send transactional email', () => {
     })
 
     it('quotes a comma sender name for SES but keeps dataOut unquoted', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(true)
+      getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       $.step.parameters.senderName = 'Acme, Inc'
       $.step.parameters.attachments = []
@@ -866,7 +862,7 @@ describe('send transactional email', () => {
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
       // SES gets the RFC 5322-quoted display name...
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+      const [sentCommand] = sesSend.mock.calls[0] as unknown as [
         { input: { FromEmailAddress: string } },
       ]
       expect(sentCommand.input.FromEmailAddress).toBe(
@@ -882,7 +878,7 @@ describe('send transactional email', () => {
     })
 
     it('falls back to Postman when ses_enabled is false for any recipient', async () => {
-      mocks.getLdFlagValue.mockImplementation(
+      getLdFlagValue.mockImplementation(
         async (_flag: string, email: string | null) =>
           !!email?.endsWith('@open.gov.sg'),
       )
@@ -891,17 +887,17 @@ describe('send transactional email', () => {
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(2)
     })
 
     it('falls back to Postman when attachments are present but ses_attachments_enabled is off', async () => {
       // ses_enabled is on for everyone, but the attachment kill-switch is off.
-      mocks.getLdFlagValue.mockImplementation(
+      getLdFlagValue.mockImplementation(
         async (flag: string) => flag === 'ses_enabled',
       )
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
-      mocks.filterAttachments.mockReturnValueOnce({
+      filterAttachments.mockReturnValueOnce({
         attachmentFiles: [{ fileName: 'f.txt', data: new Uint8Array([0]) }],
         invalidAttachments: [],
         submissionId: null,
@@ -909,7 +905,7 @@ describe('send transactional email', () => {
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
@@ -917,11 +913,11 @@ describe('send transactional email', () => {
       // ses_enabled on, ses_attachments_enabled off. Attachments are configured
       // (raw list non-empty) but filtering strips them all — the transport must
       // stay on Postman rather than flip to SES on the now-empty attachment list.
-      mocks.getLdFlagValue.mockImplementation(
+      getLdFlagValue.mockImplementation(
         async (flag: string) => flag === 'ses_enabled',
       )
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
-      mocks.filterAttachments.mockReturnValueOnce({
+      filterAttachments.mockReturnValueOnce({
         attachmentFiles: [],
         invalidAttachments: [],
         submissionId: null,
@@ -929,15 +925,15 @@ describe('send transactional email', () => {
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
     it('sends attachments via SES as a raw MIME message when ses_attachments_enabled is on', async () => {
       // Both ses_enabled and ses_attachments_enabled true for all recipients.
-      mocks.getLdFlagValue.mockResolvedValue(true)
+      getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
-      mocks.filterAttachments.mockReturnValueOnce({
+      filterAttachments.mockReturnValueOnce({
         attachmentFiles: [
           { fileName: 'report.pdf', data: new Uint8Array([1, 2, 3]) },
         ],
@@ -948,10 +944,10 @@ describe('send transactional email', () => {
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
       expect($.http.post).not.toHaveBeenCalled()
-      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sesSend).toHaveBeenCalledTimes(1)
 
       // Attachments go out as a raw MIME message, not Content.Simple.
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+      const [sentCommand] = sesSend.mock.calls[0] as unknown as [
         { input: { Content: { Raw: { Data: Uint8Array } } } },
       ]
       const mime = Buffer.from(sentCommand.input.Content.Raw.Data).toString(
@@ -963,9 +959,9 @@ describe('send transactional email', () => {
     })
 
     it('rejects with ATTACHMENT-SIZE-EXCEEDED when SES attachments exceed 20MB total', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(true)
+      getLdFlagValue.mockResolvedValue(true)
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
-      mocks.filterAttachments.mockReturnValueOnce({
+      filterAttachments.mockReturnValueOnce({
         attachmentFiles: [
           { fileName: 'big.pdf', data: new Uint8Array(20 * 1024 * 1024 + 1) },
         ],
@@ -977,7 +973,7 @@ describe('send transactional email', () => {
         'Total attachment size exceeded',
       )
       // The size guard runs before the SES API call.
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(sesSend).not.toHaveBeenCalled()
     })
 
     it('uses Postman when ses_enabled is false (default kill switch)', async () => {
@@ -986,14 +982,14 @@ describe('send transactional email', () => {
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
 
-      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
     it('drops a suppressed CC from the SES call but keeps it in dataOut', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(true)
+      getLdFlagValue.mockResolvedValue(true)
       // Only the CC is suppressed — the To recipient still sends.
-      mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
+      getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
 
       $.step.parameters.destinationEmail = 'recipient@open.gov.sg'
       $.step.parameters.destinationEmailCc =
@@ -1004,8 +1000,8 @@ describe('send transactional email', () => {
 
       // Sent once for the single (non-suppressed) To recipient, and the
       // suppressed CC is dropped from the actual SES API call.
-      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
-      const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
+      expect(sesSend).toHaveBeenCalledTimes(1)
+      const [sentCommand] = sesSend.mock.calls[0] as unknown as [
         { input: { Destination: { CcAddresses?: string[] } } },
       ]
       expect(sentCommand.input.Destination.CcAddresses).toEqual([

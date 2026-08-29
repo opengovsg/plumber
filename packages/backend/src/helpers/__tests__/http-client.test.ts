@@ -1,50 +1,42 @@
 import type { IGlobalVariable, IHttpClient } from '@plumber/types'
 import type { CreateAxiosDefaults, InternalAxiosRequestConfig } from 'axios'
+import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createHttpClient from '../http-client'
 
-const mocks = vi.hoisted(() => ({
-  axiosRequestUrlSpy: vi.fn(),
-}))
-
-vi.mock('axios', async (importOriginal) => {
-  const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.create = (
-    createConfig?: CreateAxiosDefaults,
-  ) =>
-    actualAxios.create({
-      ...createConfig,
-      adapter: async (requestConfig: InternalAxiosRequestConfig) => {
-        mocks.axiosRequestUrlSpy(requestConfig.url)
-
-        return {
-          data: '',
-          status: 200,
-          statusText: 'OK',
-          headers: new actualAxios.AxiosHeaders(),
-          config: requestConfig,
-        }
-      },
-    })
-
-  return {
-    default: {
-      ...actualAxios,
-      create: mockCreate,
-    },
-  }
-})
+const axiosRequestUrlSpy = vi.fn()
+const realAxiosCreate = axios.create.bind(axios)
 
 describe('Http client', () => {
   let $: IGlobalVariable
+
   beforeEach(() => {
+    vi.spyOn(axios, 'create').mockImplementation(
+      (createConfig?: CreateAxiosDefaults) =>
+        realAxiosCreate({
+          ...createConfig,
+          adapter: async (requestConfig: InternalAxiosRequestConfig) => {
+            axiosRequestUrlSpy(requestConfig.url)
+
+            return {
+              data: '',
+              status: 200,
+              statusText: 'OK',
+              headers: new axios.AxiosHeaders(),
+              config: requestConfig,
+            }
+          },
+        }),
+    )
+
     $ = {
       app: {
         auth: {},
       },
     } as unknown as IGlobalVariable
   })
+
   afterEach(() => {
     vi.clearAllMocks()
     vi.restoreAllMocks()
@@ -69,7 +61,7 @@ describe('Http client', () => {
         },
       })
 
-      expect(mocks.axiosRequestUrlSpy).toHaveBeenCalledWith(
+      expect(axiosRequestUrlSpy).toHaveBeenCalledWith(
         '/drive/1234/test%20folder%20name',
       )
     })
@@ -77,7 +69,7 @@ describe('Http client', () => {
     it('is no-op if urlPathParams is not in request config', async () => {
       await http.get('/drive/:userId/:folderName')
 
-      expect(mocks.axiosRequestUrlSpy).toHaveBeenCalledWith(
+      expect(axiosRequestUrlSpy).toHaveBeenCalledWith(
         '/drive/:userId/:folderName',
       )
     })
@@ -91,7 +83,7 @@ describe('Http client', () => {
         },
       })
 
-      expect(mocks.axiosRequestUrlSpy).toHaveBeenCalledWith(
+      expect(axiosRequestUrlSpy).toHaveBeenCalledWith(
         '/drive/1234-test%20folder%20name/',
       )
     })

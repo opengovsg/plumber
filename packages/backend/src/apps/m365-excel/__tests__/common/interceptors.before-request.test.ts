@@ -6,66 +6,53 @@ import {
   type CreateAxiosDefaults,
   type InternalAxiosRequestConfig,
 } from 'axios'
+import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import * as m365Config from '@/config/app-env-vars/m365'
 import createHttpClient, { type IHttpClient } from '@/helpers/http-client'
+import logger from '@/helpers/logger'
 
 import m365ExcelApp from '../..'
 import { MS_GRAPH_OAUTH_BASE_URL } from '../../common/constants'
+import * as tokenCache from '../../common/oauth/token-cache'
 
-const mocks = vi.hoisted(() => ({
-  axiosRequestConfigSpy: vi.fn(),
-  getAccessToken: vi.fn(() => 'test-access-token'),
-  logInfo: vi.fn(),
-}))
-
-vi.mock('axios', async (importOriginal) => {
-  const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.create = (
-    createConfig?: CreateAxiosDefaults,
-  ) =>
-    actualAxios.create({
-      ...createConfig,
-      adapter: async (config: InternalAxiosRequestConfig): AxiosPromise => {
-        mocks.axiosRequestConfigSpy(config)
-        return {
-          data: 'test-data',
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config,
-        }
-      },
-    })
-
-  return {
-    ...actualAxios,
-    default: {
-      ...actualAxios,
-      create: mockCreate,
-    },
-  }
-})
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    info: mocks.logInfo,
-  },
-}))
-
-vi.mock('@/config/app-env-vars/m365', () => ({
-  M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS: 1000,
-  isM365TenantKey: vi.fn(() => true),
-}))
-
-vi.mock('../../common/oauth/token-cache', () => ({
-  getAccessToken: mocks.getAccessToken,
-}))
+const axiosRequestConfigSpy = vi.fn()
+const getAccessToken = vi.fn(() => 'test-access-token')
+const logInfo = vi.fn()
+const actualAxiosCreate = axios.create.bind(axios)
 
 describe('M365 before request interceptors', () => {
   let http: IHttpClient
 
   beforeEach(() => {
+    vi.spyOn(axios, 'create').mockImplementation(((
+      createConfig?: CreateAxiosDefaults,
+    ) =>
+      actualAxiosCreate({
+        ...createConfig,
+        adapter: async (config: InternalAxiosRequestConfig): AxiosPromise => {
+          axiosRequestConfigSpy(config)
+          return {
+            data: 'test-data',
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config,
+          }
+        },
+      })) as never)
+    vi.spyOn(logger, 'info').mockImplementation(logInfo as never)
+    vi.spyOn(
+      m365Config,
+      'M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS',
+      'get',
+    ).mockReturnValue(1000 as never)
+    vi.spyOn(m365Config, 'isM365TenantKey').mockReturnValue(true as never)
+    vi.spyOn(tokenCache, 'getAccessToken').mockImplementation(
+      getAccessToken as never,
+    )
+
     const $ = {
       auth: {
         data: {
@@ -98,7 +85,7 @@ describe('M365 before request interceptors', () => {
   it('logs Graph API usage', async () => {
     await http.get('/test-url')
 
-    expect(mocks.logInfo).toHaveBeenCalledWith('Making request to MS Graph', {
+    expect(logInfo).toHaveBeenCalledWith('Making request to MS Graph', {
       event: 'm365-ms-graph-request',
       tenant: 'test-tenant',
       baseUrl: 'http://localhost/mock-m365-graph-api',
@@ -112,7 +99,7 @@ describe('M365 before request interceptors', () => {
   it('adds auth token for non-OAuth requests', async () => {
     await http.get('/test-url')
 
-    expect(mocks.axiosRequestConfigSpy).toHaveBeenCalledWith(
+    expect(axiosRequestConfigSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer test-access-token',
@@ -123,6 +110,6 @@ describe('M365 before request interceptors', () => {
 
   it('does not add auth token for non-OAuth requests', async () => {
     await http.get('/re-auth', { baseURL: MS_GRAPH_OAUTH_BASE_URL })
-    expect(mocks.getAccessToken).not.toHaveBeenCalled()
+    expect(getAccessToken).not.toHaveBeenCalled()
   })
 })

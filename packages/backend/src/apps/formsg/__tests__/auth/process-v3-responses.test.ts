@@ -1,24 +1,15 @@
 // you need to import this to make the toPlumberFormat method available
 import '@/types/luxon-extensions'
 import type { IGlobalVariable } from '@plumber/types'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import logger from '@/helpers/logger'
 
 import { processResponsesV3 } from '../../auth/helpers/process-v3-responses'
+import * as fetchFormSchemaModule from '../../triggers/new-submission/fetch-form-schema'
 
-const mocks = vi.hoisted(() => ({
-  fetchFormSchema: vi.fn(),
-  loggerError: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.loggerError,
-  },
-}))
-
-vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
-  fetchFormSchema: mocks.fetchFormSchema,
-}))
+const fetchFormSchema = vi.fn()
+const loggerError = vi.fn()
 
 function makeFormSchema(
   fields: Array<{
@@ -38,9 +29,20 @@ function makeFormSchema(
 describe('processResponsesV3', () => {
   const $ = {} as IGlobalVariable
 
+  beforeEach(() => {
+    vi.spyOn(fetchFormSchemaModule, 'fetchFormSchema').mockImplementation(
+      fetchFormSchema,
+    )
+    vi.spyOn(logger, 'error').mockImplementation(loggerError)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   describe('field type mapping', () => {
     it('maps a simple text field using catch-all', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'field1', title: 'Your name', fieldType: 'textfield' },
         ]),
@@ -61,7 +63,7 @@ describe('processResponsesV3', () => {
     })
 
     it('maps checkbox fields with answerArray from answer.value', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'cb1', title: 'Hobbies', fieldType: 'checkbox' },
         ]),
@@ -85,7 +87,7 @@ describe('processResponsesV3', () => {
     })
 
     it('replaces the internal others marker with "Others: <othersInput>"', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'cb1', title: 'Hobbies', fieldType: 'checkbox' },
         ]),
@@ -112,7 +114,7 @@ describe('processResponsesV3', () => {
     })
 
     it('maps radiobutton field with answer from answer.value', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'f1', title: 'Choice', fieldType: 'radiobutton' },
         ]),
@@ -133,7 +135,7 @@ describe('processResponsesV3', () => {
     })
 
     it('maps radiobutton Others selection to "Others: <othersInput>"', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'f1', title: 'Choice', fieldType: 'radiobutton' },
         ]),
@@ -159,7 +161,7 @@ describe('processResponsesV3', () => {
     it.each(['email', 'mobile'])(
       'maps %s fields with answer from answer.value',
       async (fieldType) => {
-        mocks.fetchFormSchema.mockResolvedValueOnce(
+        fetchFormSchema.mockResolvedValueOnce(
           makeFormSchema([{ _id: 'f1', title: 'Field', fieldType }]),
         )
 
@@ -179,7 +181,7 @@ describe('processResponsesV3', () => {
     )
 
     it('includes signature for a verified email field', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([{ _id: 'f1', title: 'Email', fieldType: 'email' }]),
       )
 
@@ -202,7 +204,7 @@ describe('processResponsesV3', () => {
     })
 
     it('does not include signature for a mobile field even if present', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([{ _id: 'f1', title: 'Mobile', fieldType: 'mobile' }]),
       )
 
@@ -224,7 +226,7 @@ describe('processResponsesV3', () => {
     })
 
     it('maps signature fields with answerArray from answer.value', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'sig1', title: 'Sign here', fieldType: 'signature' },
         ]),
@@ -248,7 +250,7 @@ describe('processResponsesV3', () => {
     })
 
     it('maps address fields into ordered answerArray', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'addr1', title: 'Address', fieldType: 'address' },
         ]),
@@ -288,7 +290,7 @@ describe('processResponsesV3', () => {
     })
 
     it('handles address with missing addressSubFields gracefully', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'addr1', title: 'Address', fieldType: 'address' },
         ]),
@@ -319,7 +321,7 @@ describe('processResponsesV3', () => {
     })
 
     it('maps attachment fields with answer from answer.answer', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'att1', title: 'Upload file', fieldType: 'attachment' },
         ]),
@@ -349,7 +351,7 @@ describe('processResponsesV3', () => {
 
   describe('table fields', () => {
     it('maps table rows from objects to arrays using Object.values', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           {
             _id: 'tbl1',
@@ -387,7 +389,7 @@ describe('processResponsesV3', () => {
     })
 
     it('escapes commas in column titles', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           {
             _id: 'tbl1',
@@ -412,7 +414,7 @@ describe('processResponsesV3', () => {
     })
 
     it('does not append columns to question if schema has no columns', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([{ _id: 'tbl1', title: 'Items', fieldType: 'table' }]),
       )
 
@@ -429,7 +431,7 @@ describe('processResponsesV3', () => {
 
   describe('question fallback', () => {
     it('falls back to "Question N" when form schema has no matching field', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(makeFormSchema([]))
+      fetchFormSchema.mockResolvedValueOnce(makeFormSchema([]))
 
       const result = await processResponsesV3($, 'formId', {
         unknown1: { fieldType: 'textfield', answer: 'hello' },
@@ -443,13 +445,13 @@ describe('processResponsesV3', () => {
 
   describe('form schema fetch failure', () => {
     it('logs error and falls back to question numbers when schema fetch fails', async () => {
-      mocks.fetchFormSchema.mockRejectedValueOnce(new Error('Network error'))
+      fetchFormSchema.mockRejectedValueOnce(new Error('Network error'))
 
       const result = await processResponsesV3($, 'formId', {
         field1: { fieldType: 'textfield', answer: 'test' },
       })
 
-      expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect(loggerError).toHaveBeenCalledWith(
         'Unable to fetch form schema',
         expect.objectContaining({
           event: 'formsg-unable-to-fetch-form-schema',
@@ -469,7 +471,7 @@ describe('processResponsesV3', () => {
 
   describe('date fields', () => {
     it('converts DD/MM/YYYY to DD MMM YYYY format', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
         ]),
@@ -488,7 +490,7 @@ describe('processResponsesV3', () => {
     })
 
     it('should pad single digit dates with 0 in front', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
         ]),
@@ -507,7 +509,7 @@ describe('processResponsesV3', () => {
     })
 
     it('should use Sep not Sept for September', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
         ]),
@@ -526,7 +528,7 @@ describe('processResponsesV3', () => {
     })
 
     it('uses Question N fallback when field not in schema', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(makeFormSchema([]))
+      fetchFormSchema.mockResolvedValueOnce(makeFormSchema([]))
 
       const result = await processResponsesV3($, 'formId', {
         dt1: { fieldType: 'date', answer: '01/01/2025' },
@@ -539,7 +541,7 @@ describe('processResponsesV3', () => {
 
   describe('multiple fields', () => {
     it('processes mixed field types in order', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
+      fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'f1', title: 'Name', fieldType: 'textfield' },
           { _id: 'f2', title: 'Email', fieldType: 'email' },

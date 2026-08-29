@@ -1,10 +1,14 @@
 import { IFlowConfig } from '@plumber/types'
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import Execution from '@/models/execution'
+import * as shouldTriggerProceedModule from '@/services/helpers/should-trigger-proceed'
+import { spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import { processTrigger } from '../trigger'
 
-const mocks = vi.hoisted(() => {
+describe('processTrigger', () => {
   const executionStep = { id: 'exec-step-id', isFailed: false }
   const execution = {
     id: 'execution-id',
@@ -22,58 +26,56 @@ const mocks = vi.hoisted(() => {
     config: null as IFlowConfig | null,
   }
 
-  return {
-    step: {
-      id: 'step-id',
-      appKey: 'webhook',
-      parameters: {},
-      key: 'new-submission',
-      config: {},
-      flow,
-    },
+  const step = {
+    id: 'step-id',
+    appKey: 'webhook',
+    parameters: {},
+    key: 'new-submission',
+    config: {},
     flow,
-    execution,
-    shouldTriggerProceed: vi.fn(() => ({ shouldExecute: true })),
   }
-})
 
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
+  const shouldTriggerProceed = vi.fn(() => ({ shouldExecute: true }))
+
+  beforeEach(() => {
+    flow.config = null
+    shouldTriggerProceed.mockReturnValue({ shouldExecute: true })
+
+    spyOnStepQuery(() => ({
       findById: vi.fn(() => ({
         withGraphFetched: vi.fn(() => ({
-          throwIfNotFound: vi.fn(() => mocks.step),
+          throwIfNotFound: vi.fn(() => step),
         })),
       })),
-    })),
-  },
-}))
+    }))
 
-vi.mock('@/services/helpers/should-trigger-proceed', () => ({
-  shouldTriggerProceed: mocks.shouldTriggerProceed,
-}))
+    vi.spyOn(
+      shouldTriggerProceedModule,
+      'shouldTriggerProceed',
+    ).mockImplementation(shouldTriggerProceed as never)
 
-vi.mock('@/models/execution', () => ({
-  default: {
-    query: vi.fn(() => ({
-      insert: vi.fn(() => ({
-        onConflict: vi.fn(() => ({
-          ignore: vi.fn(() => mocks.execution),
-        })),
-      })),
-    })),
-    transaction: vi.fn((callback) => callback('mock-trx')),
-  },
-}))
+    vi.spyOn(Execution, 'query').mockImplementation(
+      () =>
+        ({
+          insert: vi.fn(() => ({
+            onConflict: vi.fn(() => ({
+              ignore: vi.fn(() => execution),
+            })),
+          })),
+        }) as never,
+    )
+    vi.spyOn(Execution, 'transaction').mockImplementation(((
+      callback: (trx: string) => unknown,
+    ) => callback('mock-trx')) as never)
+  })
 
-describe('processTrigger', () => {
-  beforeEach(() => {
-    mocks.flow.config = null
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('Force clogging', () => {
     it('throws UnrecoverableError when flow.config.isForceClogged is true', async () => {
-      mocks.flow.config = { isForceClogged: true }
+      flow.config = { isForceClogged: true }
 
       await expect(
         processTrigger({ flowId: 'flow-id', stepId: 'step-id' }),
@@ -81,7 +83,7 @@ describe('processTrigger', () => {
     })
 
     it('does not throw when flow.config.isForceClogged is false', async () => {
-      mocks.flow.config = { isForceClogged: false }
+      flow.config = { isForceClogged: false }
 
       await expect(
         processTrigger({ flowId: 'flow-id', stepId: 'step-id' }),
@@ -89,7 +91,7 @@ describe('processTrigger', () => {
     })
 
     it('does not throw when flow has no config', async () => {
-      mocks.flow.config = null
+      flow.config = null
 
       await expect(
         processTrigger({ flowId: 'flow-id', stepId: 'step-id' }),

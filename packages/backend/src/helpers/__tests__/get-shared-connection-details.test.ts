@@ -1,5 +1,5 @@
 import { IStep } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '@/models/app'
 import Connection from '@/models/connection'
@@ -7,16 +7,12 @@ import TableMetadata from '@/models/table-metadata'
 
 import { getConnectionDetails } from '../get-shared-connection-details'
 
-vi.mock('@/models/app')
-vi.mock('@/models/connection')
-vi.mock('@/models/table-metadata')
-
 describe('getConnectionDetails', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
     // Default mock: all apps have connections (matches pre-existing behavior)
-    vi.mocked(App.getAllAppsWithConnections).mockResolvedValue([
+    vi.spyOn(App, 'getAllAppsWithConnections').mockResolvedValue([
       { key: 'aisay', auth: {} },
       { key: 'custom-api', auth: {} },
       { key: 'formsg', auth: {} },
@@ -30,7 +26,7 @@ describe('getConnectionDetails', () => {
     ] as any)
 
     // Default mock: all connections exist (optimistic path)
-    vi.mocked(Connection.query).mockReturnValue({
+    vi.spyOn(Connection, 'query').mockReturnValue({
       select: vi.fn().mockReturnThis(),
       whereIn: vi.fn().mockImplementation((_, ids) => {
         // Return all requested IDs as existing
@@ -39,13 +35,17 @@ describe('getConnectionDetails', () => {
     } as any)
 
     // Default mock: all tables exist (optimistic path)
-    vi.mocked(TableMetadata.query).mockReturnValue({
+    vi.spyOn(TableMetadata, 'query').mockReturnValue({
       select: vi.fn().mockReturnThis(),
       whereIn: vi.fn().mockImplementation((_, ids) => {
         // Return all requested IDs as existing
         return Promise.resolve(ids.map((id: string) => ({ id })))
       }),
     } as any)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   const createMockStep = (overrides: Partial<IStep> = {}): IStep => ({
@@ -367,7 +367,7 @@ describe('getConnectionDetails', () => {
       ]
 
       // Mock Connection.query to return only the existing connection
-      vi.mocked(Connection.query).mockReturnValue({
+      vi.spyOn(Connection, 'query').mockReturnValue({
         select: vi.fn().mockReturnThis(),
         whereIn: vi.fn().mockResolvedValue([
           { id: 'existing-connection-id' },
@@ -407,7 +407,7 @@ describe('getConnectionDetails', () => {
       ]
 
       // Mock TableMetadata.query to return only the existing table
-      vi.mocked(TableMetadata.query).mockReturnValue({
+      vi.spyOn(TableMetadata, 'query').mockReturnValue({
         select: vi.fn().mockReturnThis(),
         whereIn: vi.fn().mockResolvedValue([
           { id: 'existing-table-id' },
@@ -451,13 +451,13 @@ describe('getConnectionDetails', () => {
       ]
 
       // Mock Connection.query to return only the existing connection
-      vi.mocked(Connection.query).mockReturnValue({
+      vi.spyOn(Connection, 'query').mockReturnValue({
         select: vi.fn().mockReturnThis(),
         whereIn: vi.fn().mockResolvedValue([{ id: 'existing-connection-id' }]),
       } as any)
 
       // Mock TableMetadata.query to return only the existing table
-      vi.mocked(TableMetadata.query).mockReturnValue({
+      vi.spyOn(TableMetadata, 'query').mockReturnValue({
         select: vi.fn().mockReturnThis(),
         whereIn: vi.fn().mockResolvedValue([{ id: 'existing-table-id' }]),
       } as any)

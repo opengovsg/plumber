@@ -2,63 +2,37 @@ import { IGlobalVariable, IRequest } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
+import logger from '@/helpers/logger'
 
+import * as decryptFormAttachmentsModule from '../../auth/decrypt-form-attachments-v3-or-v4'
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
+import * as storeAttachmentInS3Module from '../../auth/helpers/store-attachment-in-s3'
+import * as formEnv from '../../common/form-env'
 import type { FormsgPayloadWorkflowContent } from '../../common/types'
+import * as fetchFormSchemaModule from '../../triggers/new-submission/fetch-form-schema'
 import {
   exampleV4Submission,
   makeExampleV4FormSchema,
 } from './v4-submission.mock'
 
-// mocks hoisted here so that they can be used in import mocks
-const mocks = vi.hoisted(() => {
-  const webhooksAuthenticate = vi.fn()
-  const cryptoV3Decrypt = vi.fn()
-  const mockSdk = {
-    webhooks: {
-      authenticate: webhooksAuthenticate,
-    },
-    cryptoV3: {
-      decrypt: cryptoV3Decrypt,
-    },
-  }
-
-  return {
-    webhooksAuthenticate,
-    cryptoV3Decrypt,
-    consoleError: vi.fn(),
-    consoleWarn: vi.fn(),
-    getSdk: vi.fn(() => mockSdk),
-    parseFormEnv: vi.fn(),
-    storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
-    fetchFormSchema: vi.fn(() => null),
-    decryptFormAttachmentsV3OrV4: vi.fn(() => ({})),
-  }
-})
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.consoleError,
-    warn: mocks.consoleWarn,
+const webhooksAuthenticate = vi.fn()
+const cryptoV3Decrypt = vi.fn()
+const mockSdk = {
+  webhooks: {
+    authenticate: webhooksAuthenticate,
   },
-}))
+  cryptoV3: {
+    decrypt: cryptoV3Decrypt,
+  },
+}
 
-vi.mock('../../common/form-env', () => ({
-  getSdk: mocks.getSdk,
-  parseFormEnv: mocks.parseFormEnv,
-}))
-
-vi.mock('../../auth/helpers/store-attachment-in-s3', () => ({
-  default: mocks.storeAttachmentInS3,
-}))
-
-vi.mock('../../triggers/new-submission/fetch-form-schema', () => ({
-  fetchFormSchema: mocks.fetchFormSchema,
-}))
-
-vi.mock('../../auth/decrypt-form-attachments-v3-or-v4', () => ({
-  decryptFormAttachmentsV3OrV4: mocks.decryptFormAttachmentsV3OrV4,
-}))
+const consoleError = vi.fn()
+const consoleWarn = vi.fn()
+const getSdk = vi.fn(() => mockSdk)
+const parseFormEnv = vi.fn()
+const storeAttachmentInS3 = vi.fn(() => 'mock-s3-id')
+const fetchFormSchema = vi.fn(() => null)
+const decryptFormAttachmentsV3OrV4 = vi.fn(() => ({}))
 
 const MOCK_WORKFLOW: FormsgPayloadWorkflowContent['workflow'] = [
   {
@@ -152,6 +126,21 @@ describe('decrypt form response - MRF specific', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    vi.spyOn(logger, 'error').mockImplementation(consoleError as never)
+    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn as never)
+    vi.spyOn(formEnv, 'getSdk').mockImplementation(getSdk as never)
+    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv as never)
+    vi.spyOn(storeAttachmentInS3Module, 'default').mockImplementation(
+      storeAttachmentInS3 as never,
+    )
+    vi.spyOn(fetchFormSchemaModule, 'fetchFormSchema').mockImplementation(
+      fetchFormSchema as never,
+    )
+    vi.spyOn(
+      decryptFormAttachmentsModule,
+      'decryptFormAttachmentsV3OrV4',
+    ).mockImplementation(decryptFormAttachmentsV3OrV4 as never)
+
     $ = makeGlobalVariable()
   })
 
@@ -168,16 +157,16 @@ describe('decrypt form response - MRF specific', () => {
           answer: 'hello',
         },
       }
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: v3Responses,
         verified: undefined,
       })
       const bodyData = $.request.body.data
       await decryptFormResponse($)
 
-      expect(mocks.cryptoV3Decrypt).toHaveBeenCalledWith('secretkey', bodyData)
+      expect(cryptoV3Decrypt).toHaveBeenCalledWith('secretkey', bodyData)
       // processResponsesV3 calls fetchFormSchema internally
-      expect(mocks.fetchFormSchema).toHaveBeenCalledWith($, 'formId123')
+      expect(fetchFormSchema).toHaveBeenCalledWith($, 'formId123')
     })
 
     it('should pass the decrypted submissionSecretKey to decryptFormAttachmentsV3OrV4 for v3 attachments', async () => {
@@ -187,7 +176,7 @@ describe('decrypt form response - MRF specific', () => {
           'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/123',
       }
 
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         submissionSecretKey: 'mock-secret-key',
         responses: {
           attachField1: {
@@ -197,7 +186,7 @@ describe('decrypt form response - MRF specific', () => {
         },
         verified: undefined,
       })
-      mocks.decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
+      decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
         attachField1: {
           filename: 'myfile.pdf',
           content: Buffer.from('file content'),
@@ -206,8 +195,8 @@ describe('decrypt form response - MRF specific', () => {
 
       await decryptFormResponse($)
 
-      expect(mocks.decryptFormAttachmentsV3OrV4).toHaveBeenCalledWith(
-        mocks.getSdk(),
+      expect(decryptFormAttachmentsV3OrV4).toHaveBeenCalledWith(
+        getSdk(),
         'mock-secret-key',
         {
           attachField1:
@@ -225,7 +214,7 @@ describe('decrypt form response - MRF specific', () => {
         attachField2: 'https://plumber.svc.cluster.local/a',
       }
 
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         submissionSecretKey: 'mock-secret-key',
         responses: {
           attachField1: {
@@ -239,8 +228,8 @@ describe('decrypt form response - MRF specific', () => {
       const result = await decryptFormResponse($)
 
       expect(result).toEqual({ verified: false, internalId: null })
-      expect(mocks.decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
-      expect(mocks.consoleError).toHaveBeenCalledWith(
+      expect(decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
+      expect(consoleError).toHaveBeenCalledWith(
         expect.objectContaining({
           event: 'formsg-untrusted-attachment-url',
           submissionId: 'submissionId',
@@ -254,18 +243,18 @@ describe('decrypt form response - MRF specific', () => {
     })
 
     it('should return verified: false when decryption fails', async () => {
-      mocks.cryptoV3Decrypt.mockReturnValueOnce(null)
+      cryptoV3Decrypt.mockReturnValueOnce(null)
 
       const result = await decryptFormResponse($)
 
       expect(result).toEqual({ verified: false, internalId: null })
-      expect(mocks.consoleWarn).toHaveBeenCalled()
+      expect(consoleWarn).toHaveBeenCalled()
     })
 
     it('should not call v3 attachment decryption when no attachmentDownloadUrls', async () => {
       $.flow.hasFileProcessingActions = true
 
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {
           field1: { fieldType: 'textfield', answer: 'hello' },
         },
@@ -274,7 +263,7 @@ describe('decrypt form response - MRF specific', () => {
 
       await decryptFormResponse($)
 
-      expect(mocks.decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
+      expect(decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
     })
 
     it('should not call v3 attachment decryption when hasFileProcessingActions is false', async () => {
@@ -284,7 +273,7 @@ describe('decrypt form response - MRF specific', () => {
           'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/download/1',
       }
 
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {
           field1: { fieldType: 'textfield', answer: 'hello' },
         },
@@ -293,7 +282,7 @@ describe('decrypt form response - MRF specific', () => {
 
       await decryptFormResponse($)
 
-      expect(mocks.decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
+      expect(decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
     })
   })
 
@@ -304,8 +293,8 @@ describe('decrypt form response - MRF specific', () => {
     it('should route a real v4 submission through processResponsesV4', async () => {
       // schema titles come from the shared fixture's schema, not the
       // responses' inline "[Myinfo] "-prefixed questions
-      mocks.fetchFormSchema.mockResolvedValueOnce(makeExampleV4FormSchema())
-      mocks.cryptoV3Decrypt.mockReturnValueOnce(exampleV4Submission)
+      fetchFormSchema.mockResolvedValueOnce(makeExampleV4FormSchema())
+      cryptoV3Decrypt.mockReturnValueOnce(exampleV4Submission)
 
       const result = await decryptFormResponse($)
 
@@ -379,7 +368,7 @@ describe('decrypt form response - MRF specific', () => {
 
     it('should produce a request body identical to the v3 path for equivalent content', async () => {
       const $v3 = makeGlobalVariable()
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {
           field1: { fieldType: 'textfield', answer: 'hello' },
           field2: { fieldType: 'checkbox', answer: { value: ['a', 'b'] } },
@@ -390,7 +379,7 @@ describe('decrypt form response - MRF specific', () => {
 
       // the same submission content, v4-shaped
       const $v4 = makeGlobalVariable()
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         submissionSecretKey: 'mock-secret-key',
         responses: {
           field1: {
@@ -419,7 +408,7 @@ describe('decrypt form response - MRF specific', () => {
     it('should return isSubtrigger: false and set workflowContent when workflowStep is 0', async () => {
       const workflowContent = makeWorkflowContent(0)
       $.request.body.data.workflowContent = workflowContent
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {},
         verified: undefined,
       })
@@ -441,7 +430,7 @@ describe('decrypt form response - MRF specific', () => {
     it('should return isSubtrigger: true and set workflowContent when workflowStep is 1', async () => {
       const workflowContent = makeWorkflowContent(1)
       $.request.body.data.workflowContent = workflowContent
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {},
         verified: undefined,
       })
@@ -463,7 +452,7 @@ describe('decrypt form response - MRF specific', () => {
     it('should return correct mrfStepId from workflow array for workflowStep 2', async () => {
       const workflowContent = makeWorkflowContent(2)
       $.request.body.data.workflowContent = workflowContent
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {},
         verified: undefined,
       })
@@ -485,7 +474,7 @@ describe('decrypt form response - MRF specific', () => {
   describe('verifiedSubmitterInfo for MRF submissions', () => {
     it('should map "uinFin (Step 1)" to uinFin and sgidUinFin', async () => {
       $.request.body.data.workflowContent = makeWorkflowContent(1)
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {},
         verified: { 'uinFin (Step 1)': 'S1234567A' },
       })
@@ -500,7 +489,7 @@ describe('decrypt form response - MRF specific', () => {
 
     it('should still map plain uinFin key correctly', async () => {
       $.request.body.data.workflowContent = makeWorkflowContent(0)
-      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+      cryptoV3Decrypt.mockReturnValueOnce({
         responses: {},
         verified: { uinFin: 'S1234567A' },
       })
@@ -523,7 +512,7 @@ describe('decrypt form response - MRF specific', () => {
         }
         $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
 
-        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        cryptoV3Decrypt.mockReturnValueOnce({
           responses: {
             attachmentField1: {
               fieldType: 'attachment',
@@ -532,7 +521,7 @@ describe('decrypt form response - MRF specific', () => {
           },
           verified: undefined,
         })
-        mocks.decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
+        decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
           attachmentField1: {
             filename: 'myfile.pdf',
             content: Buffer.from('file content'),
@@ -541,7 +530,7 @@ describe('decrypt form response - MRF specific', () => {
 
         await decryptFormResponse($)
 
-        expect(mocks.storeAttachmentInS3).toHaveBeenCalledWith(
+        expect(storeAttachmentInS3).toHaveBeenCalledWith(
           $,
           'submissionId-2',
           expect.anything(),
@@ -557,7 +546,7 @@ describe('decrypt form response - MRF specific', () => {
         }
         $.request.body.data.encryptedSubmissionSecretKey = 'encrypted-key'
 
-        mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        cryptoV3Decrypt.mockReturnValueOnce({
           responses: {
             attachmentField1: {
               fieldType: 'attachment',
@@ -566,7 +555,7 @@ describe('decrypt form response - MRF specific', () => {
           },
           verified: undefined,
         })
-        mocks.decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
+        decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
           attachmentField1: {
             filename: 'myfile.pdf',
             content: Buffer.from('file content'),
@@ -575,7 +564,7 @@ describe('decrypt form response - MRF specific', () => {
 
         await decryptFormResponse($)
 
-        expect(mocks.storeAttachmentInS3).toHaveBeenCalledWith(
+        expect(storeAttachmentInS3).toHaveBeenCalledWith(
           $,
           'submissionId',
           expect.anything(),

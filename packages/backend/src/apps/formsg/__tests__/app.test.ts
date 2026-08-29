@@ -1,52 +1,41 @@
 import type { IGlobalVariable } from '@plumber/types'
 import type { AxiosPromise, CreateAxiosDefaults } from 'axios'
+import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import type Connection from '@/models/connection'
 
-const mocks = vi.hoisted(() => ({
-  axiosRequestAdapter: vi.fn(async (requestConfig): AxiosPromise => ({
-    data: {
-      submission: {},
-    },
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config: requestConfig,
-  })),
-  parseFormEnv: vi.fn(),
-  getApiBaseUrl: vi.fn(),
+import * as formEnv from '../common/form-env'
+
+const axiosRequestAdapter = vi.fn(async (requestConfig): AxiosPromise => ({
+  data: {
+    submission: {},
+  },
+  status: 200,
+  statusText: 'OK',
+  headers: {},
+  config: requestConfig,
 }))
-
-vi.mock('../common/form-env', () => ({
-  parseFormEnv: mocks.parseFormEnv,
-  getApiBaseUrl: mocks.getApiBaseUrl,
-}))
-
-vi.mock('axios', async (importOriginal) => {
-  const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.create = (
-    createConfig?: CreateAxiosDefaults,
-  ) =>
-    actualAxios.create({
-      ...createConfig,
-      adapter: mocks.axiosRequestAdapter,
-    })
-
-  return {
-    default: {
-      ...actualAxios,
-      create: mockCreate,
-    },
-  }
-})
+const parseFormEnv = vi.fn()
+const getApiBaseUrl = vi.fn()
+const actualAxiosCreate = axios.create.bind(axios)
 
 describe('FormSG app', () => {
   let $: IGlobalVariable
 
   beforeEach(async () => {
+    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv)
+    vi.spyOn(formEnv, 'getApiBaseUrl').mockImplementation(getApiBaseUrl)
+    vi.spyOn(axios, 'create').mockImplementation(
+      (createConfig?: CreateAxiosDefaults) =>
+        actualAxiosCreate({
+          ...createConfig,
+          adapter: axiosRequestAdapter,
+        }),
+    )
+
     $ = await globalVariable({
       connection: {
         formattedData: {},
@@ -61,14 +50,14 @@ describe('FormSG app', () => {
   })
 
   it('on each outgoing connection, sets the appropriate base API url for the form environment', async () => {
-    mocks.parseFormEnv.mockReturnValue('staging')
-    mocks.getApiBaseUrl.mockReturnValue('sample-mock-url')
+    parseFormEnv.mockReturnValue('staging')
+    getApiBaseUrl.mockReturnValue('sample-mock-url')
 
     await $.http.get('localhost')
 
-    expect(mocks.parseFormEnv).toHaveBeenCalled()
-    expect(mocks.getApiBaseUrl).toHaveBeenCalledWith('staging')
-    expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
+    expect(parseFormEnv).toHaveBeenCalled()
+    expect(getApiBaseUrl).toHaveBeenCalledWith('staging')
+    expect(axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         baseURL: 'sample-mock-url',
       }),

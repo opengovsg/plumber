@@ -1,63 +1,78 @@
-import { afterAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import {
-  actionQueuesByName,
-  appActionQueues,
-  MAIN_ACTION_QUEUE_NAME,
-  MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
-} from '@/queues/action'
+import { stubAppsRegistry } from '@/test/stub-apps-registry'
 
-const mocks = vi.hoisted(() => ({
-  makeActionQueue: vi.fn(),
-}))
+const makeActionQueue = vi.fn()
 
-vi.mock('@/queues/helpers/make-action-queue', () => ({
-  makeActionQueue: mocks.makeActionQueue,
-}))
-
-vi.mock('@/apps', () => ({
-  default: {
-    'app-without-queue-1': {},
-    'app-without-queue-2': {},
-    'app-with-queue-1': {
-      queue: {
-        stubQueueConfig: 1,
-      },
-    },
-    'app-with-queue-2': {
-      queue: {
-        stubQueueConfig: 2,
-      },
+const TEST_APPS = {
+  'app-without-queue-1': {},
+  'app-without-queue-2': {},
+  'app-with-queue-1': {
+    queue: {
+      stubQueueConfig: 1,
     },
   },
-}))
+  'app-with-queue-2': {
+    queue: {
+      stubQueueConfig: 2,
+    },
+  },
+} as const
 
 describe('action queues', () => {
+  let actionQueuesByName: Record<string, unknown>
+  let appActionQueues: Record<string, unknown>
+  let MAIN_ACTION_QUEUE_NAME: string
+  let MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX: string
+  let restoreAppsRegistry: () => void
+
+  beforeAll(async () => {
+    vi.resetModules()
+
+    const makeActionQueueModule =
+      await import('@/queues/helpers/make-action-queue.js')
+    vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
+      makeActionQueue as never,
+    )
+
+    const appsModule = await import('@/apps/index.js')
+    restoreAppsRegistry = stubAppsRegistry(appsModule.default, TEST_APPS)
+
+    const actionModule = await import('@/queues/action.js')
+    actionQueuesByName = actionModule.actionQueuesByName
+    appActionQueues = actionModule.appActionQueues
+    MAIN_ACTION_QUEUE_NAME = actionModule.MAIN_ACTION_QUEUE_NAME
+    MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX =
+      actionModule.MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX
+  })
+
   afterAll(() => {
+    restoreAppsRegistry()
     vi.restoreAllMocks()
+    process.removeAllListeners('SIGTERM')
   })
 
   it('creates the main action queue', () => {
-    expect(mocks.makeActionQueue).toHaveBeenCalledWith({
+    expect(makeActionQueue).toHaveBeenCalledWith({
       queueName: MAIN_ACTION_QUEUE_NAME,
       redisConnectionPrefix: MAIN_ACTION_QUEUE_REDIS_CONNECTION_PREFIX,
     })
   })
 
   it('creates a queue for each app that has a queue config', () => {
-    expect(mocks.makeActionQueue).toHaveBeenCalledWith({
+    expect(makeActionQueue).toHaveBeenCalledWith({
       queueName: '{app-actions-app-with-queue-1}',
     })
-    expect(mocks.makeActionQueue).toHaveBeenCalledWith({
+    expect(makeActionQueue).toHaveBeenCalledWith({
       queueName: '{app-actions-app-with-queue-2}',
     })
   })
 
   it('does not create action queues for apps that do not have a queue config', () => {
-    expect(mocks.makeActionQueue).not.toHaveBeenCalledWith({
+    expect(makeActionQueue).not.toHaveBeenCalledWith({
       queueName: '{app-actions-app-without-queue-1}',
     })
-    expect(mocks.makeActionQueue).not.toHaveBeenCalledWith({
+    expect(makeActionQueue).not.toHaveBeenCalledWith({
       queueName: '{app-actions-app-without-queue-2}',
     })
   })

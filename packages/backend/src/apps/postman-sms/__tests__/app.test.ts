@@ -1,77 +1,64 @@
 import type { IActionJobData, IGlobalVariable } from '@plumber/types'
 import type { AxiosPromise, CreateAxiosDefaults } from 'axios'
+import axios from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
 import globalVariable from '@/helpers/global-variable'
+import Step from '@/models/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import postmanSmsApp from '../'
+import * as authSchema from '../auth/schema'
 import { PostmanEnv } from '../common/constants'
+import * as getPostmanEnvModule from '../common/get-postman-env'
 
 const MOCK_STEP = {
   id: 'test-flow-id',
   connectionId: 'test-connection-id',
 }
 
-const mocks = vi.hoisted(() => ({
-  axiosRequestAdapter: vi.fn(async (requestConfig): AxiosPromise => ({
-    data: {
-      createdAt: '2024-01-29T17:39:35.574+08:00',
-      id: 'test-message-id',
-    },
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config: requestConfig,
-  })),
-  getPostmanEnv: vi.fn(() => PostmanEnv.Test),
-  authDataParseResult: vi.fn(() => ({
-    apiKey: 'test-api-key',
-  })),
-}))
-
-vi.mock('../auth/schema', () => ({
-  authDataSchema: {
-    parse: mocks.authDataParseResult,
+const axiosRequestAdapter = vi.fn(async (requestConfig): AxiosPromise => ({
+  data: {
+    createdAt: '2024-01-29T17:39:35.574+08:00',
+    id: 'test-message-id',
   },
+  status: 200,
+  statusText: 'OK',
+  headers: {},
+  config: requestConfig,
 }))
-
-vi.mock('../common/get-postman-env', () => ({
-  default: mocks.getPostmanEnv,
+const getPostmanEnv = vi.fn(() => PostmanEnv.Test)
+const authDataParseResult = vi.fn(() => ({
+  apiKey: 'test-api-key',
 }))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      findById: vi.fn(() => ({
-        throwIfNotFound: vi.fn(() => MOCK_STEP),
-      })),
-    })),
-  },
-}))
-
-vi.mock('axios', async (importOriginal) => {
-  const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.create = (
-    createConfig?: CreateAxiosDefaults,
-  ) =>
-    actualAxios.create({
-      ...createConfig,
-      adapter: mocks.axiosRequestAdapter,
-    })
-
-  return {
-    default: {
-      ...actualAxios,
-      create: mockCreate,
-    },
-  }
-})
+const actualAxiosCreate = axios.create.bind(axios)
 
 describe('Postman SMS app', () => {
   let $: IGlobalVariable
 
   beforeEach(async () => {
+    vi.spyOn(getPostmanEnvModule, 'default').mockImplementation(
+      getPostmanEnv as never,
+    )
+    vi.spyOn(authSchema.authDataSchema, 'parse').mockImplementation(
+      authDataParseResult as never,
+    )
+    vi.spyOn(axios, 'create').mockImplementation(((
+      createConfig?: CreateAxiosDefaults,
+    ) =>
+      actualAxiosCreate({
+        ...createConfig,
+        adapter: axiosRequestAdapter,
+      })) as never)
+    spyOnStepQuery(
+      createStepQueryChain({
+        findById: vi.fn(() => ({
+          throwIfNotFound: vi.fn(() => MOCK_STEP),
+        })),
+      }),
+    )
+
     $ = await globalVariable({
       connection: null,
       app: postmanSmsApp,
@@ -93,11 +80,11 @@ describe('Postman SMS app', () => {
       expectedBaseUrl: 'https://postman.gov.sg/api/v2',
     },
   ])('uses the correct API URL', async ({ env, expectedBaseUrl }) => {
-    mocks.getPostmanEnv.mockReturnValue(env)
+    getPostmanEnv.mockReturnValue(env)
 
     await $.http.get('localhost')
 
-    expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
+    expect(axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         baseURL: expectedBaseUrl,
       }),
@@ -105,13 +92,13 @@ describe('Postman SMS app', () => {
   })
 
   it('adds the API key within the connection for outgoing requests', async () => {
-    mocks.authDataParseResult.mockReturnValue({
+    authDataParseResult.mockReturnValue({
       apiKey: 'my-api-key',
     })
 
     await $.http.get('localhost')
 
-    expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
+    expect(axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer my-api-key',
@@ -126,10 +113,11 @@ describe('Postman SMS app', () => {
     } as unknown as IActionJobData)
 
     expect(groupId).toEqual(MOCK_STEP.connectionId)
+    expect(Step.query).toHaveBeenCalled()
   })
 
   it('Throws a group delayed RetriableError if any Postman call responds with a HTTP 429', async () => {
-    mocks.axiosRequestAdapter.mockImplementation(async (requestConfig) => ({
+    axiosRequestAdapter.mockImplementation(async (requestConfig) => ({
       data: {},
       status: 429,
       statusText: 'Too Many Requests',
@@ -151,7 +139,7 @@ describe('Postman SMS app', () => {
   })
 
   it('Throws a group delayed RetriableError with default delay if any Postman call responds with a HTTP 429 without retry-after', async () => {
-    mocks.axiosRequestAdapter.mockResolvedValue({
+    axiosRequestAdapter.mockResolvedValue({
       data: {},
       status: 429,
       statusText: 'Too Many Requests',

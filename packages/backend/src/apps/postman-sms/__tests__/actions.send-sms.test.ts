@@ -1,85 +1,58 @@
 import type { IGlobalVariable } from '@plumber/types'
 import type { AxiosPromise, CreateAxiosDefaults } from 'axios'
+import axios from 'axios'
 import { Settings as LuxonSettings } from 'luxon'
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createHttpClient from '@/helpers/http-client'
+import logger from '@/helpers/logger'
 
 import sendSmsAction from '../actions/send-sms'
+import * as authSchema from '../auth/schema'
 
 // TZ formatting replicated here (see appConfig) as tests don't load the app
 // config module.
 LuxonSettings.defaultZone = 'Asia/Singapore'
 LuxonSettings.defaultLocale = 'en-SG'
 
-const mocks = vi.hoisted(() => ({
-  axiosRequestAdapter: vi.fn(async (requestConfig): AxiosPromise => ({
-    data: {
-      createdAt: '2024-01-29T17:39:35.574+08:00',
-      id: 'test-message-id',
-    },
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config: requestConfig,
-  })),
-  setActionItem: vi.fn(),
-  logError: vi.fn(),
-  authDataParseResult: vi.fn(() => ({
-    success: true,
-    data: {
-      env: 'test',
-      campaignId: 'test-campaign',
-      apiKey: 'test-api-key',
-    },
-  })),
+const axiosRequestAdapter = vi.fn(async (requestConfig): AxiosPromise => ({
+  data: {
+    createdAt: '2024-01-29T17:39:35.574+08:00',
+    id: 'test-message-id',
+  },
+  status: 200,
+  statusText: 'OK',
+  headers: {},
+  config: requestConfig,
 }))
-
-vi.mock('../auth/schema', () => ({
-  authDataSchema: {
-    safeParse: mocks.authDataParseResult,
+const setActionItem = vi.fn()
+const logError = vi.fn()
+const authDataParseResult = vi.fn(() => ({
+  success: true,
+  data: {
+    env: 'test',
+    campaignId: 'test-campaign',
+    apiKey: 'test-api-key',
   },
 }))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.logError,
-  },
-}))
-
-vi.mock('axios', async (importOriginal) => {
-  const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.create = (
-    createConfig?: CreateAxiosDefaults,
-  ) => {
-    const instance = actualAxios.create({
-      ...createConfig,
-      adapter: mocks.axiosRequestAdapter,
-    })
-
-    return instance
-  }
-
-  return {
-    default: {
-      ...actualAxios,
-      create: mockCreate,
-    },
-  }
-})
+const actualAxiosCreate = axios.create.bind(axios)
 
 describe('Send SMS Action', () => {
   let $: IGlobalVariable
 
-  beforeAll(() => {
+  beforeEach(() => {
+    vi.spyOn(authSchema.authDataSchema, 'safeParse').mockImplementation(
+      authDataParseResult as never,
+    )
+    vi.spyOn(logger, 'error').mockImplementation(logError as never)
+    vi.spyOn(axios, 'create').mockImplementation(((
+      createConfig?: CreateAxiosDefaults,
+    ) =>
+      actualAxiosCreate({
+        ...createConfig,
+        adapter: axiosRequestAdapter,
+      })) as never)
+
     const http = createHttpClient({
       $,
       baseURL: '',
@@ -101,22 +74,20 @@ describe('Send SMS Action', () => {
         data: {},
       },
       http,
-      setActionItem: mocks.setActionItem,
+      setActionItem: setActionItem,
     } as unknown as IGlobalVariable
-  })
 
-  beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('01 June 2024 00:00:00 GMT+8'))
   })
 
   afterEach(() => {
     vi.useRealTimers()
-    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('uses the campaign ID in auth data', async () => {
-    mocks.authDataParseResult.mockReturnValue({
+    authDataParseResult.mockReturnValue({
       success: true,
       data: {
         env: 'test',
@@ -126,7 +97,7 @@ describe('Send SMS Action', () => {
     })
     await sendSmsAction.run($)
 
-    expect(mocks.axiosRequestAdapter).toHaveBeenCalledWith(
+    expect(axiosRequestAdapter).toHaveBeenCalledWith(
       expect.objectContaining({
         url: '/campaigns/my-campaign-id/messages',
       }),
@@ -154,7 +125,7 @@ describe('Send SMS Action', () => {
       await sendSmsAction.run($)
 
       const requestToPostman = JSON.parse(
-        mocks.axiosRequestAdapter.mock.lastCall[0].data,
+        axiosRequestAdapter.mock.lastCall[0].data,
       )
       expect(requestToPostman).toEqual(
         expect.objectContaining({
@@ -200,7 +171,7 @@ describe('Send SMS Action', () => {
 
     await sendSmsAction.run($)
 
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: {
         message: {
           createdAt: '2024-01-29T17:39:35.574+08:00',
@@ -214,7 +185,7 @@ describe('Send SMS Action', () => {
     $.step.parameters.recipient = '+6512345678'
     $.step.parameters.message = 'test message'
 
-    mocks.axiosRequestAdapter.mockResolvedValue({
+    axiosRequestAdapter.mockResolvedValue({
       data: {
         topkek: true,
       },
@@ -225,12 +196,12 @@ describe('Send SMS Action', () => {
     })
     await sendSmsAction.run($)
 
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: {
         createdAt: '2024-06-01T00:00:00.000+08:00',
       },
     })
-    expect(mocks.logError).toHaveBeenCalledWith(
+    expect(logError).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         event: 'api-response-change',

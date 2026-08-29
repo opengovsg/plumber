@@ -1,25 +1,27 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { IApp } from '@plumber/types'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  getLatestStepVersion: vi.fn(),
-}))
-
-vi.mock('@/apps', () => ({
-  default: {
-    appWithTransformer: {
-      stepTransformer: {
-        getLatestStepVersion: mocks.getLatestStepVersion,
-      },
-    },
-    appWithoutTransformer: {},
-  },
-}))
+import apps from '@/apps'
 
 import { getStepVersion } from '../get-step-version'
 
+const getLatestStepVersion = vi.fn()
+
 describe('getStepVersion', () => {
   beforeEach(() => {
-    vi.resetAllMocks()
+    getLatestStepVersion.mockReset()
+    apps.appWithTransformer = {
+      stepTransformer: {
+        getLatestStepVersion,
+      },
+    } as unknown as IApp
+    apps.appWithoutTransformer = {} as unknown as IApp
+  })
+
+  afterEach(() => {
+    delete apps.appWithTransformer
+    delete apps.appWithoutTransformer
+    vi.restoreAllMocks()
   })
 
   it('returns 1 when appKey is undefined', () => {
@@ -43,14 +45,14 @@ describe('getStepVersion', () => {
   })
 
   it('returns the version from stepTransformer.getLatestStepVersion', () => {
-    mocks.getLatestStepVersion.mockReturnValue(3)
+    getLatestStepVersion.mockReturnValue(3)
 
     expect(getStepVersion('appWithTransformer', 'someKey')).toBe(3)
-    expect(mocks.getLatestStepVersion).toHaveBeenCalledWith('someKey')
+    expect(getLatestStepVersion).toHaveBeenCalledWith('someKey')
   })
 
   it('returns 1 when stepTransformer.getLatestStepVersion returns nullish', () => {
-    mocks.getLatestStepVersion.mockReturnValue(null)
+    getLatestStepVersion.mockReturnValue(null)
 
     expect(getStepVersion('appWithTransformer', 'someKey')).toBe(1)
   })

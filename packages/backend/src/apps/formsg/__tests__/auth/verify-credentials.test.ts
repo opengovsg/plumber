@@ -9,28 +9,24 @@ import {
   verifyFormCreds,
 } from '../../auth/verify-credentials'
 
-const mocks = vi.hoisted(() => {
-  return {
-    // note: do not mock implementation here as it does not reset for each test
-    cryptoValid: vi.fn(),
-  }
-})
+const mocks = vi.hoisted(() => ({
+  cryptoValid: vi.fn(),
+}))
 
-vi.mock('@opengovsg/formsg-sdk', () => {
-  return {
-    default: () => ({
-      crypto: {
-        valid: mocks.cryptoValid,
-      },
-    }),
-  }
-})
+vi.mock('@opengovsg/formsg-sdk', () => ({
+  default: () => ({
+    crypto: {
+      valid: mocks.cryptoValid,
+    },
+  }),
+}))
 
 describe('verify credentials', () => {
   let $: IGlobalVariable
 
-  // Reset global variable
   beforeEach(() => {
+    mocks.cryptoValid.mockReset()
+
     $ = {
       auth: {
         set: vi.fn(),
@@ -53,10 +49,8 @@ describe('verify credentials', () => {
     }
   })
 
-  // Reset each mock after tests
   afterEach(() => {
     vi.clearAllMocks()
-    vi.restoreAllMocks()
   })
 
   describe('verify secret key format', () => {

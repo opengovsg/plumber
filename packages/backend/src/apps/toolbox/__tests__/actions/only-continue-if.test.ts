@@ -2,25 +2,12 @@ import { type IGlobalVariable, type IJSONObject } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 
 import onlyContinueIfAction from '../../actions/only-continue-if'
 
-const mocks = vi.hoisted(() => ({
-  setActionItem: vi.fn(),
-  stepQueryResult: vi.fn(),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn(() => ({
-      where: vi.fn(() => ({
-        orderBy: vi.fn(() => ({
-          throwIfNotFound: mocks.stepQueryResult,
-        })),
-      })),
-    })),
-  },
-}))
+const setActionItem = vi.fn()
+const stepQueryResult = vi.fn()
 
 // Wraps a single condition row into the v2 grouped shape (one OR-group).
 function singleGroup(row: IJSONObject) {
@@ -92,6 +79,16 @@ describe('Only continue if', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    spyOnStepQuery(
+      createStepQueryChain({
+        where: vi.fn(() => ({
+          orderBy: vi.fn(() => ({
+            throwIfNotFound: stepQueryResult,
+          })),
+        })),
+      }),
+    )
+
     $ = {
       flow: {
         id: 'fake-pipe',
@@ -106,7 +103,7 @@ describe('Only continue if', () => {
       app: {
         name: 'Toolbox',
       },
-      setActionItem: mocks.setActionItem,
+      setActionItem: setActionItem,
     } as unknown as IGlobalVariable
   })
 
@@ -125,7 +122,7 @@ describe('Only continue if', () => {
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: true },
     })
   })
@@ -140,7 +137,7 @@ describe('Only continue if', () => {
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: true },
     })
   })
@@ -157,13 +154,13 @@ describe('Only continue if', () => {
       ],
     }
 
-    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+    stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -176,13 +173,13 @@ describe('Only continue if', () => {
       text: 0,
     })
 
-    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+    stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -200,13 +197,13 @@ describe('Only continue if', () => {
       version: 2,
     }
 
-    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+    stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toEqual({
       nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
     })
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -224,13 +221,13 @@ describe('Only continue if', () => {
       version: 2,
     }
 
-    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+    stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: false },
     })
   })
@@ -259,7 +256,7 @@ describe('Only continue if', () => {
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toHaveBeenCalledWith({
+    expect(setActionItem).toHaveBeenCalledWith({
       raw: { result: true },
     })
   })
@@ -282,7 +279,7 @@ describe('Only continue if', () => {
 
       const result = await onlyContinueIfAction.run($)
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toHaveBeenCalledWith({
+      expect(setActionItem).toHaveBeenCalledWith({
         raw: { result: true },
       })
     },

@@ -1,22 +1,12 @@
 import type { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import * as s3Helpers from '@/helpers/s3'
 
 import app from '../../..'
 import getCaseDetailsAction from '../../actions/get-case-details'
 
-const mocks = vi.hoisted(() => ({
-  putObject: vi.fn(),
-}))
-
-vi.mock('@/helpers/s3', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/helpers/s3')>()
-  return {
-    ...actual,
-    COMMON_S3_BUCKET: 'common-bucket',
-    MAX_FILE_SIZE: 1024 * 1024, // 1MB, small enough to test the size guard
-    putObject: mocks.putObject,
-  }
-})
+const putObject = vi.fn()
 
 const MOCK_CASE_UUID = 'case-uuid-123'
 const MOCK_EXECUTION_ID = 'execution-id-123'
@@ -28,7 +18,12 @@ describe('get case details', () => {
   let httpGet: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    mocks.putObject.mockReset()
+    vi.spyOn(s3Helpers, 'COMMON_S3_BUCKET', 'get').mockReturnValue(
+      'common-bucket',
+    )
+    vi.spyOn(s3Helpers, 'MAX_FILE_SIZE', 'get').mockReturnValue(1024 * 1024)
+    vi.spyOn(s3Helpers, 'putObject').mockImplementation(putObject)
+    putObject.mockReset()
 
     httpGet = vi.fn(async (path: string) => {
       if (path === '/cases/:caseUuid') {
@@ -60,7 +55,7 @@ describe('get case details', () => {
       throw new Error(`Unexpected path: ${path}`)
     })
 
-    mocks.putObject.mockResolvedValue(
+    putObject.mockResolvedValue(
       `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID}/${MOCK_ATTACHMENT_NAME}`,
     )
 
@@ -91,6 +86,10 @@ describe('get case details', () => {
     } as unknown as IGlobalVariable
   })
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('downloads attachment, uploads to s3, and stores s3Id', async () => {
     await getCaseDetailsAction.run($)
 
@@ -108,7 +107,7 @@ describe('get case details', () => {
       },
     )
 
-    expect(mocks.putObject).toHaveBeenCalledWith({
+    expect(putObject).toHaveBeenCalledWith({
       bucket: 'common-bucket',
       objectKey: `${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID}/${MOCK_ATTACHMENT_NAME}`,
       body: Buffer.from('file-content'),
@@ -154,7 +153,7 @@ describe('get case details', () => {
 
     await getCaseDetailsAction.run($)
 
-    expect(mocks.putObject).not.toHaveBeenCalled()
+    expect(putObject).not.toHaveBeenCalled()
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         traceId: 'trace-1',
@@ -214,7 +213,7 @@ describe('get case details', () => {
     await expect(getCaseDetailsAction.run($)).rejects.toThrow(
       'exceeds maximum size',
     )
-    expect(mocks.putObject).not.toHaveBeenCalled()
+    expect(putObject).not.toHaveBeenCalled()
   })
 
   it('routes each attachment uuid to the correct download call and stores both', async () => {
@@ -253,7 +252,7 @@ describe('get case details', () => {
       throw new Error(`Unexpected path: ${path}`)
     })
 
-    mocks.putObject
+    putObject
       .mockResolvedValueOnce(
         `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID}/${MOCK_ATTACHMENT_NAME}`,
       )
