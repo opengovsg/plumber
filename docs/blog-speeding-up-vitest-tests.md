@@ -1,4 +1,4 @@
-# Vitest at scale: ~60% faster backend tests
+# Vitest at scale: up to 80% faster backend tests
 
 We cut backend integration Vitest time from **266s to 104s** and unit Vitest time from **170s to 34s** at full stack (GitHub Actions, Aug 2026). Baseline: `chore/pnpm-migration` (run `32823139009`). The tests were not wrong — we kept rebuilding module graphs and sharing databases that could not safely be shared.
 
