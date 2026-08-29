@@ -179,42 +179,65 @@ SpyOn moved another 51 unit files to shared workers (−80% total vs baseline). 
 
 ## What we tried — and what to watch for
 
-Most of the win came from config ([§1 — Mock split](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2 — Worker isolation](#2-worker-isolation-parallel-integration-without-flakiness), [§3 — SpyOn](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Below: dead ends we reverted, infra we ruled out on the way to §2, and maintainer traps the shipped setup still needs you to remember.
+Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Dead ends we reverted, infra we ruled out on the way to [§2](#2-worker-isolation-parallel-integration-without-flakiness), and maintainer traps to remember.
 
 ### Mock and spyOn dead ends
 
-**Migrate every file off `vi.mock()`**
+- **Migrate every file off `vi.mock()`**
+  - Tried shrinking the isolated bucket to zero via [§3](#3-spyon-shrink-the-isolated-bucket) — **14 unit + 7 integration** files still need hoisted mocks (Summary table + [§3](#3-spyon-shrink-the-isolated-bucket)).
+  - Blockers: ESM npm packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, `sqs-consumer`, `@opengovsg/formsg-sdk`) and import-time graphs (queues, workers, FormSG triggers).
+  - `vi.spyOn()` runs after the module graph is built — cannot replace pre-import mocks.
+  - Lesson: migrate [file-by-file](#1-mock-split-stop-paying-for-isolation-you-do-not-need); accept a small isolated tail.
 
-We assumed the isolated bucket would hit zero if we kept migrating to `vi.spyOn()` ([§3](#3-spyon-shrink-the-isolated-bucket)). It did not — see the **14 / 7** isolated files in [§3](#3-spyon-shrink-the-isolated-bucket) and the incremental unit table in the Summary above. The remainder needs hoisted mocks: ESM npm packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, `sqs-consumer`, `@opengovsg/formsg-sdk`) and import-time graphs (queues, workers, FormSG triggers). `vi.spyOn()` runs after the module graph is built, so it cannot replace mocks that must exist before the first `import`. Chasing 100% spyOn would not move Duration further; accept a small isolated tail and migrate [file-by-file](#1-mock-split-stop-paying-for-isolation-you-do-not-need).
+- **`vi.spyOn()` on worker itests**
+  - Workers bind `exponentialBackoffWithJitter` and `tracer.wrap` at import time; spies in `beforeEach` are too late.
+  - **`action.itest.ts` failed 10 tests**; dynamic-import-after-setup failed the same way.
+  - Those files stay on `vi.mock()` → isolated project ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need)). See [§3](#3-spyon-shrink-the-isolated-bucket) for what we could migrate instead.
 
-**`vi.spyOn()` on worker itests**
+- **Partial spyOn cleanup in one file**
+  - [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) greps the whole file for `vi.mock` ([After diagram](#how-backend-tests-run)).
+  - Three of four mocks migrated → still isolated; no Duration win until the last mock is gone.
 
-Worker modules bind `exponentialBackoffWithJitter` and `tracer.wrap` at import time. Spies in `beforeEach` run too late — **`action.itest.ts` failed 10 tests**. Dynamic-import-after-setup did not help (same capture). Those files stay on `vi.mock()` and stay in the isolated project per [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need); see [§3](#3-spyon-shrink-the-isolated-bucket) for what we could migrate instead.
-
-**Partial spyOn cleanup in one file**
-
-Routing is file-level: [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) greps the whole file for `vi.mock` (also called out under [How backend tests run — After](#how-backend-tests-run)). Three of four mocks migrated → still isolated, no Duration win until the last mock is gone.
-
-**Replace `@/apps` barrel with a direct `formsg` import**
-
-Tried during [§3](#3-spyon-shrink-the-isolated-bucket) migrations to simplify mocking. Circular init at load: `Cannot read properties of undefined (reading 'key')`. Kept the barrel and `vi.mock()` for those graphs.
+- **Replace `@/apps` barrel with direct `formsg` import**
+  - Tried during [§3](#3-spyon-shrink-the-isolated-bucket) migrations.
+  - Circular init at load: `Cannot read properties of undefined (reading 'key')`.
+  - Kept barrel + `vi.mock()` for those graphs.
 
 ### Parallel infra: what we ruled out
 
-Alternatives we considered before landing on [§2 — Worker isolation](#2-worker-isolation-parallel-integration-without-flakiness):
+Alternatives before [§2 — Worker isolation](#2-worker-isolation-parallel-integration-without-flakiness):
 
-- **One shared Postgres under parallel workers** — cross-worker races. Shipped per-worker DB names in [§2](#2-worker-isolation-parallel-integration-without-flakiness) (`plumber_test_w{N}`, `tiles_test_w{N}`).
-- **Per-test DynamoDB table clone** — correct isolation, too slow. Shipped worker suffix `w{N}` + wipe in `afterEach` ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
-- **Default 10s `hookTimeout`** — DynamoDB wipe after a ~10k-row tile itest timed out. Shipped `hookTimeout: 120_000` in [§2](#2-worker-isolation-parallel-integration-without-flakiness); do not lower it.
+- **One shared Postgres under parallel workers**
+  - Problem: cross-worker races on truncate and inserts.
+  - Shipped: per-worker DB names in [§2](#2-worker-isolation-parallel-integration-without-flakiness) (`plumber_test_w{N}`, `tiles_test_w{N}`).
+
+- **Per-test DynamoDB table clone**
+  - Problem: correct isolation, too slow at our volume.
+  - Shipped: worker suffix `w{N}` + wipe in `afterEach` ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
+
+- **Default 10s `hookTimeout`**
+  - Problem: DynamoDB wipe after ~10k-row tile itest timed out.
+  - Shipped: `hookTimeout: 120_000` in [§2](#2-worker-isolation-parallel-integration-without-flakiness) — do not lower.
 
 ### Gotchas for maintainers
 
-Pointers into the shipped setup — details live in the sections linked, not repeated here.
+Details in linked sections — not repeated here.
 
-- **`isolate: false` leaks mock state** — [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) shared pool + [§3](#3-spyon-shrink-the-isolated-bucket) `afterEach` pattern: `vi.clearAllMocks()` / `mockReset()`; heavy imports in `beforeAll`.
-- **Worker env before config loads** — [§2](#2-worker-isolation-parallel-integration-without-flakiness) / `test/helpers/worker-isolation.ts`: set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, `DYNAMODB_TABLE_SUFFIX` before app config first imports (env is snapshotted once).
-- **Flaky data → wrong worker slice** — [§2](#2-worker-isolation-parallel-integration-without-flakiness) per-worker Postgres, Redis DB range, DynamoDB suffix; check worker id when row counts or keys look wrong.
-- **Redis caps at 32 workers** — [§2](#2-worker-isolation-parallel-integration-without-flakiness): 4 logical Redis DBs per worker → `maxWorkers = min(cpus, 32)`.
+- **`isolate: false` leaks mock state**
+  - [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) shared pool reuses one module graph.
+  - Fix: `vi.clearAllMocks()` / `mockReset()` in `afterEach` ([§3](#3-spyon-shrink-the-isolated-bucket)); heavy imports in `beforeAll`.
+
+- **Worker env before config loads**
+  - [§2](#2-worker-isolation-parallel-integration-without-flakiness) / `test/helpers/worker-isolation.ts`.
+  - Set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, `DYNAMODB_TABLE_SUFFIX` before app config first imports (env snapshotted once).
+
+- **Flaky data → wrong worker slice**
+  - [§2](#2-worker-isolation-parallel-integration-without-flakiness): per-worker Postgres, Redis DB range, DynamoDB suffix.
+  - Check worker id when row counts or keys look wrong.
+
+- **Redis caps at 32 workers**
+  - [§2](#2-worker-isolation-parallel-integration-without-flakiness): 4 logical Redis DBs per worker.
+  - `maxWorkers = min(cpus, 32)`.
 
 ---
 
