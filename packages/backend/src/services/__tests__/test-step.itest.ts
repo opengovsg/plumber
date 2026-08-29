@@ -1,11 +1,14 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import User from '@/models/user'
+import * as actionService from '@/services/action'
+import * as flowService from '@/services/flow'
+import * as triggerService from '@/services/trigger'
 
 import testStep from '../test-step'
 
@@ -13,66 +16,71 @@ const NEW_TRIGGER_EXECUTION_STEP_ID = randomUUID()
 const NEW_ACTION_EXECUTION_STEP_ID = randomUUID()
 const NEW_EXECUTION_ID = randomUUID()
 
-vi.mock('@/services/flow', () => ({
-  processFlow: vi.fn(() => ({
-    data: { someData: 'data' },
-    error: undefined,
-  })),
+const processFlow = vi.fn(() => ({
+  data: { someData: 'data' },
+  error: undefined,
 }))
 
-vi.mock('@/services/trigger', () => ({
-  processTrigger: vi.fn(
-    async ({ flowId, testRun }: { flowId: string; testRun: boolean }) => {
-      const newExecution = await Execution.query().insertAndFetch({
-        id: NEW_EXECUTION_ID,
-        flowId,
-        testRun,
-      })
-      const newExecutionStep = await ExecutionStep.query().insertAndFetch({
-        executionId: NEW_EXECUTION_ID,
-        id: NEW_TRIGGER_EXECUTION_STEP_ID,
-        status: 'success',
-        dataOut: { someData: 'data' },
-      })
-      return {
-        executionId: newExecution.id,
-        executionStep: {
-          id: newExecutionStep.id,
-        },
-      }
-    },
-  ),
-}))
+const processTrigger = vi.fn(
+  async ({ flowId, testRun }: { flowId: string; testRun: boolean }) => {
+    const newExecution = await Execution.query().insertAndFetch({
+      id: NEW_EXECUTION_ID,
+      flowId,
+      testRun,
+    })
+    const newExecutionStep = await ExecutionStep.query().insertAndFetch({
+      executionId: NEW_EXECUTION_ID,
+      id: NEW_TRIGGER_EXECUTION_STEP_ID,
+      status: 'success',
+      dataOut: { someData: 'data' },
+    })
+    return {
+      executionId: newExecution.id,
+      executionStep: {
+        id: newExecutionStep.id,
+      },
+    }
+  },
+)
 
-vi.mock('@/services/action', () => ({
-  processAction: vi.fn(
-    async ({
-      stepId,
+const processAction = vi.fn(
+  async ({
+    stepId,
+    executionId,
+  }: {
+    stepId: string
+    executionId: string
+  }) => {
+    await ExecutionStep.query().insert({
+      id: NEW_ACTION_EXECUTION_STEP_ID,
       executionId,
-    }: {
-      stepId: string
-      executionId: string
-    }) => {
-      await ExecutionStep.query().insert({
+      stepId,
+      status: 'success',
+      dataOut: { someData: 'data' },
+    })
+    return {
+      executionStep: {
         id: NEW_ACTION_EXECUTION_STEP_ID,
-        executionId,
-        stepId,
-        status: 'success',
-        dataOut: { someData: 'data' },
-      })
-      return {
-        executionStep: {
-          id: NEW_ACTION_EXECUTION_STEP_ID,
-        },
-      }
-    },
-  ),
-}))
+      },
+    }
+  },
+)
 
 describe('test single step', () => {
   let flow: Flow
   let testExecution1: Execution
+
   beforeEach(async () => {
+    vi.clearAllMocks()
+
+    vi.spyOn(flowService, 'processFlow').mockImplementation(processFlow as never)
+    vi.spyOn(triggerService, 'processTrigger').mockImplementation(
+      processTrigger as never,
+    )
+    vi.spyOn(actionService, 'processAction').mockImplementation(
+      processAction as never,
+    )
+
     const user = await User.query().findOne({ email: 'tester@open.gov.sg' })
     flow = await Flow.query().insertGraphAndFetch({
       userId: user.id,
@@ -122,6 +130,11 @@ describe('test single step', () => {
         },
       ],
     })
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('when test execution id is assigned', () => {

@@ -1,5 +1,5 @@
 import { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { FOR_EACH_INPUT_SOURCE } from '@/apps/toolbox/common/constants'
 import StepError from '@/errors/step'
@@ -9,7 +9,8 @@ import Context from '@/types/express/context'
 import m365Excel from '../..'
 import getTableRowsAction from '../../actions/get-table-rows'
 import { stepTransformer } from '../../common/transform-step-parameters'
-import { HexEncodedRowObject } from '../../common/workbook-helpers/tables/convert-row-to-hex-encoded-row-record'
+import * as getTopNTableRowsModule from '../../common/get-top-n-table-rows'
+import WorkbookSession from '../../common/workbook-session'
 
 const DEFAULT_PARAMETERS = {
   fileId: 'test-file-id',
@@ -29,25 +30,7 @@ const getColumnObject = (columnName: string) => ({
   value: `data.rows.*.data.${getHexEncodedColumnName(columnName)}`,
 })
 
-// Mock dependencies
-const mocks = vi.hoisted(() => ({
-  WorkbookSession: {
-    acquire: vi.fn(),
-    request: vi.fn(),
-  },
-  getTopNTableRows: vi.fn(),
-  convertRowToHexKeyedObject: vi.fn(),
-}))
-
-vi.mock('../../common/workbook-session', () => ({
-  default: {
-    acquire: mocks.WorkbookSession.acquire,
-  },
-}))
-
-vi.mock('../../common/get-top-n-table-rows', () => ({
-  default: mocks.getTopNTableRows,
-}))
+const getTopNTableRows = vi.fn()
 
 describe('getTableRowsAction', () => {
   // Test globals
@@ -56,6 +39,12 @@ describe('getTableRowsAction', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
+
+    vi.spyOn(getTopNTableRowsModule, 'default').mockImplementation(
+      getTopNTableRows as never,
+    )
+    vi.spyOn(WorkbookSession, 'acquire').mockResolvedValue({} as WorkbookSession)
+
     context = await generateMockContext()
 
     // Setup mock global variable
@@ -91,7 +80,7 @@ describe('getTableRowsAction', () => {
     )
 
     // Setup default mock implementations
-    mocks.getTopNTableRows.mockResolvedValue({
+    getTopNTableRows.mockResolvedValue({
       columns: ['Column1', 'Column2', 'Column3', 'Column4'],
       rows: [
         ['non-matching', 'data1', 'a', '1'],
@@ -103,28 +92,15 @@ describe('getTableRowsAction', () => {
       ],
       headerSheetRowIndex: 0,
     })
+  })
 
-    // Setup hex-encoded row record mock
-    mocks.convertRowToHexKeyedObject.mockImplementation(
-      ({ row, columns }: { row: string[]; columns: string[] }) => {
-        // Create a simple mock implementation that converts the row to a record
-        const result: HexEncodedRowObject = Object.create(null)
-
-        for (const [cellIndex, cell] of row.entries()) {
-          const cellColumnName = columns[cellIndex]
-          const hexEncodedColumnName =
-            Buffer.from(cellColumnName).toString('hex')
-
-          result[hexEncodedColumnName] = cell
-        }
-
-        return result
-      },
-    )
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should throw an error if the lookup column does not exist', async () => {
-    mocks.getTopNTableRows.mockResolvedValue({
+    getTopNTableRows.mockResolvedValue({
       columns: ['OtherColumn', 'Column2'],
       rows: [['value1', 'data1']],
       headerSheetRowIndex: 0,
@@ -134,7 +110,7 @@ describe('getTableRowsAction', () => {
   })
 
   it('should return foundRows: 0 when no matching rows are found', async () => {
-    mocks.getTopNTableRows.mockResolvedValue({
+    getTopNTableRows.mockResolvedValue({
       columns: ['Column1', 'Column2'],
       rows: [['non-matching', 'data1']],
       headerSheetRowIndex: 0,
@@ -297,7 +273,7 @@ describe('getTableRowsAction', () => {
   })
 
   it('should find case-sensitive matches correctly', async () => {
-    mocks.getTopNTableRows.mockResolvedValue({
+    getTopNTableRows.mockResolvedValue({
       columns: ['Column1', 'Column2'],
       rows: [
         ['non-matching', 'data1'],
@@ -342,7 +318,7 @@ describe('getTableRowsAction', () => {
       `test-value`,
       `data${i + 1}`,
     ])
-    mocks.getTopNTableRows.mockResolvedValue({
+    getTopNTableRows.mockResolvedValue({
       columns: ['Column1', 'Column2'],
       rows: matchingRows,
       headerSheetRowIndex: 0,
