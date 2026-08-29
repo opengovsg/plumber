@@ -207,34 +207,18 @@ Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-
 
 We tried these while parallelizing integration tests. None worked. What we shipped instead is all in [§2](#2-worker-isolation-parallel-integration-without-flakiness).
 
-- **One shared Postgres under parallel workers**
-  - Cross-worker races on truncate and inserts.
-
-- **Per-test DynamoDB table clone**
-  - Correct isolation, too slow at our test volume.
-
-- **Default 10s `hookTimeout` on DynamoDB wipe**
-  - Timed out after a ~10k-row tile itest.
+- **One shared Postgres under parallel workers** — cross-worker races on truncate and inserts.
+- **Per-test DynamoDB table clone** — correct isolation, too slow at our test volume.
+- **Default 10s `hookTimeout` on DynamoDB wipe** — timed out after a ~10k-row tile itest.
 
 ### When you add or change tests
 
 Not reverted experiments — rules the shipped config assumes. Break them and tests flake, leak mock state, or land in the wrong isolated bucket. Details in [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket).
 
-- **`isolate: false` leaks mock state**
-  - [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) shared pool reuses one module graph.
-  - Fix: `vi.clearAllMocks()` / `mockReset()` in `afterEach` ([§3](#3-spyon-shrink-the-isolated-bucket)); heavy imports in `beforeAll`.
-
-- **Worker env before config loads**
-  - [§2](#2-worker-isolation-parallel-integration-without-flakiness) / `test/helpers/worker-isolation.ts`.
-  - Set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, `DYNAMODB_TABLE_SUFFIX` before app config first imports (env snapshotted once).
-
-- **Flaky data → wrong worker slice**
-  - [§2](#2-worker-isolation-parallel-integration-without-flakiness): per-worker Postgres, Redis DB range, DynamoDB suffix.
-  - Check worker id when row counts or keys look wrong.
-
-- **Redis caps at 32 workers**
-  - [§2](#2-worker-isolation-parallel-integration-without-flakiness): 4 logical Redis DBs per worker.
-  - `maxWorkers = min(cpus, 32)`.
+- **`isolate: false` leaks mock state** — [§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need) shared pool reuses one module graph; use `vi.clearAllMocks()` / `mockReset()` in `afterEach` ([§3](#3-spyon-shrink-the-isolated-bucket)) and heavy imports in `beforeAll`.
+- **Worker env before config loads** — set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` before app config first imports ([§2](#2-worker-isolation-parallel-integration-without-flakiness) / `test/helpers/worker-isolation.ts`; env is snapshotted once).
+- **Flaky data → wrong worker slice** — check worker id when row counts or keys look wrong; another worker’s Postgres, Redis DB range, or DynamoDB suffix is the usual cause ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
+- **Redis caps at 32 workers** — 4 logical Redis DBs per worker → `maxWorkers = min(cpus, 32)` ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
 
 ---
 
