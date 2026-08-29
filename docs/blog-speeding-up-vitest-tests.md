@@ -121,6 +121,17 @@ Mock split alone moved 82 unit files to shared workers (−43% on unit time).
 
 Before (develop-v2): `singleThread: true`, four sequential `globalSetup` files, one shared Postgres, table-by-table truncate on every test.
 
+After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
+
+| Resource | Per worker |
+|----------|------------|
+| Postgres | `plumber_test_w{N}` |
+| Tiles Postgres | `tiles_test_w{N}` |
+| Redis | 4 logical DBs from `REDIS_DB_OFFSET = N × 4` |
+| DynamoDB | table suffix `w{N}` |
+
+### Before
+
 ```mermaid
 flowchart TB
   GS["global-setup.ts · Testcontainers boot once"]
@@ -143,14 +154,7 @@ flowchart TB
   W --> D
 ```
 
-After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
-
-| Resource | Per worker |
-|----------|------------|
-| Postgres | `plumber_test_w{N}` |
-| Tiles Postgres | `tiles_test_w{N}` |
-| Redis | 4 logical DBs from `REDIS_DB_OFFSET = N × 4` |
-| DynamoDB | table suffix `w{N}` |
+### After
 
 ```mermaid
 flowchart TB
