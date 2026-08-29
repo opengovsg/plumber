@@ -1,5 +1,4 @@
 import { IGlobalVariable, IRawAction } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -20,7 +19,6 @@ import {
   SENSITIVE_HEADERS_ERROR,
   SENSITIVE_HEADERS_SOLUTION,
 } from '../../common/sensitive-headers'
-
 import { requestSchema } from './schema'
 
 type TMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
