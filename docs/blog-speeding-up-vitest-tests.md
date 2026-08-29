@@ -179,7 +179,7 @@ SpyOn moved another 51 unit files to shared workers (−80% total vs baseline). 
 
 ## What we tried — and what to watch for
 
-Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Below: what we tried and reverted, infra we ruled out on the way to [§2](#2-worker-isolation-parallel-integration-without-flakiness), and constraints to follow when adding or debugging tests on the shipped setup.
+Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-you-do-not-need), [§2](#2-worker-isolation-parallel-integration-without-flakiness), [§3](#3-spyon-shrink-the-isolated-bucket)), not from eliminating every mock or parallelizing naively. Below: what we tried and reverted, integration approaches that failed before [§2](#2-worker-isolation-parallel-integration-without-flakiness), and constraints to follow when adding or debugging tests.
 
 ### Mock and spyOn dead ends
 
@@ -203,21 +203,18 @@ Most of the win came from config ([§1](#1-mock-split-stop-paying-for-isolation-
   - Circular init at load: `Cannot read properties of undefined (reading 'key')`.
   - Kept barrel + `vi.mock()` for those graphs.
 
-### Parallel infra: what we ruled out
+### Integration infra dead ends
 
-Alternatives before [§2 — Worker isolation](#2-worker-isolation-parallel-integration-without-flakiness):
+We tried these while parallelizing integration tests. None worked. What we shipped instead is all in [§2](#2-worker-isolation-parallel-integration-without-flakiness).
 
 - **One shared Postgres under parallel workers**
-  - Problem: cross-worker races on truncate and inserts.
-  - Shipped: per-worker DB names in [§2](#2-worker-isolation-parallel-integration-without-flakiness) (`plumber_test_w{N}`, `tiles_test_w{N}`).
+  - Cross-worker races on truncate and inserts.
 
 - **Per-test DynamoDB table clone**
-  - Problem: correct isolation, too slow at our volume.
-  - Shipped: worker suffix `w{N}` + wipe in `afterEach` ([§2](#2-worker-isolation-parallel-integration-without-flakiness)).
+  - Correct isolation, too slow at our test volume.
 
-- **Default 10s `hookTimeout`**
-  - Problem: DynamoDB wipe after ~10k-row tile itest timed out.
-  - Shipped: `hookTimeout: 120_000` in [§2](#2-worker-isolation-parallel-integration-without-flakiness) — do not lower.
+- **Default 10s `hookTimeout` on DynamoDB wipe**
+  - Timed out after a ~10k-row tile itest.
 
 ### When you add or change tests
 
