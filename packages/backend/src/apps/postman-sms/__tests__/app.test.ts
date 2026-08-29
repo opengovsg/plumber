@@ -38,16 +38,18 @@ describe('Postman SMS app', () => {
   let $: IGlobalVariable
 
   beforeEach(async () => {
-    vi.spyOn(getPostmanEnvModule, 'default').mockImplementation(getPostmanEnv)
+    vi.spyOn(getPostmanEnvModule, 'default').mockImplementation(
+      getPostmanEnv as never,
+    )
     vi.spyOn(authSchema.authDataSchema, 'parse').mockImplementation(
-      authDataParseResult,
+      authDataParseResult as never,
     )
     vi.spyOn(axios, 'create').mockImplementation(
-      (createConfig?: CreateAxiosDefaults) =>
+      ((createConfig?: CreateAxiosDefaults) =>
         actualAxiosCreate({
           ...createConfig,
           adapter: axiosRequestAdapter,
-        }),
+        })) as never,
     )
     spyOnStepQuery(
       createStepQueryChain({

@@ -24,7 +24,7 @@ describe('Create plumber folder', () => {
 
   beforeEach(() => {
     vi.spyOn(m365Config, 'getM365TenantInfo').mockImplementation(
-      getM365TenantInfo,
+      getM365TenantInfo as never,
     )
 
     $ = {

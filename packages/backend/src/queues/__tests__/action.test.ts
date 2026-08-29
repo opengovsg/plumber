@@ -32,7 +32,7 @@ describe('action queues', () => {
     const makeActionQueueModule =
       await import('@/queues/helpers/make-action-queue')
     vi.spyOn(makeActionQueueModule, 'makeActionQueue').mockImplementation(
-      makeActionQueue,
+      makeActionQueue as never,
     )
 
     const appsModule = await import('@/apps')

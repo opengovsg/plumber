@@ -49,15 +49,15 @@ describe('Send SMS Action', () => {
 
   beforeEach(() => {
     vi.spyOn(authSchema.authDataSchema, 'safeParse').mockImplementation(
-      authDataParseResult,
+      authDataParseResult as never,
     )
-    vi.spyOn(logger, 'error').mockImplementation(logError)
+    vi.spyOn(logger, 'error').mockImplementation(logError as never)
     vi.spyOn(axios, 'create').mockImplementation(
-      (createConfig?: CreateAxiosDefaults) =>
+      ((createConfig?: CreateAxiosDefaults) =>
         actualAxiosCreate({
           ...createConfig,
           adapter: axiosRequestAdapter,
-        }),
+        })) as never,
     )
 
     const http = createHttpClient({

@@ -36,7 +36,7 @@ describe('create letter from template', () => {
     vi.spyOn(
       attachmentHelpers,
       'downloadAndStoreAttachmentInS3',
-    ).mockImplementation(downloadAndStoreAttachmentInS3)
+    ).mockImplementation(downloadAndStoreAttachmentInS3 as never)
 
     $ = {
       auth: {

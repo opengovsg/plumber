@@ -54,7 +54,7 @@ describe('action workers', () => {
     const makeActionWorkerModule =
       await import('@/workers/helpers/make-action-worker')
     vi.spyOn(makeActionWorkerModule, 'makeActionWorker').mockImplementation(
-      makeActionWorker,
+      makeActionWorker as never,
     )
 
     await import('@/workers/action')

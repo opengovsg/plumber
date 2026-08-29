@@ -40,38 +40,40 @@ describe('send transactional email', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
-    vi.spyOn(launchDarkly, 'getLdFlagValue').mockImplementation(getLdFlagValue)
+    vi.spyOn(launchDarkly, 'getLdFlagValue').mockImplementation(
+      getLdFlagValue as never,
+    )
     vi.spyOn(sesEmailHelper, 'getSesClient').mockReturnValue({
       send: sesSend,
     } as never)
     vi.spyOn(s3Helpers, 'getObjectFromS3Id').mockImplementation(
-      getObjectFromS3Id,
+      getObjectFromS3Id as never,
     )
     vi.spyOn(parametersHelper, 'getDefaultReplyTo').mockImplementation(
-      getDefaultReplyTo,
+      getDefaultReplyTo as never,
     )
     vi.spyOn(parametersHelper, 'filterAttachments').mockImplementation(
-      filterAttachments,
+      filterAttachments as never,
     )
     vi.spyOn(sendBlacklistEmailModule, 'sendBlacklistEmail').mockImplementation(
-      sendBlacklistEmail,
+      sendBlacklistEmail as never,
     )
     vi.spyOn(
       sendBlacklistEmailModule,
       'createRequestBlacklistFormLink',
-    ).mockImplementation(vi.fn())
+    ).mockImplementation(vi.fn() as never)
     vi.spyOn(
       sendInvalidAttachmentsEmailModule,
       'sendInvalidAttachmentsEmail',
-    ).mockImplementation(sendInvalidAttachmentsEmail)
+    ).mockImplementation(sendInvalidAttachmentsEmail as never)
     vi.spyOn(
       sendInvalidAttachmentsEmailModule,
       'createInvalidAttachmentsMessage',
-    ).mockImplementation(createInvalidAttachmentsMessage)
+    ).mockImplementation(createInvalidAttachmentsMessage as never)
     vi.spyOn(EmailSuppressionEntry, 'getSuppressedEmails').mockImplementation(
-      getSuppressedEmails,
+      getSuppressedEmails as never,
     )
-    vi.spyOn(metrics, 'incrementMetric').mockImplementation(vi.fn())
+    vi.spyOn(metrics, 'incrementMetric').mockImplementation(vi.fn() as never)
 
     $ = {
       setActionItem: vi.fn(),

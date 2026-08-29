@@ -52,7 +52,7 @@ describe('processTrigger', () => {
     vi.spyOn(
       shouldTriggerProceedModule,
       'shouldTriggerProceed',
-    ).mockImplementation(shouldTriggerProceed)
+    ).mockImplementation(shouldTriggerProceed as never)
 
     vi.spyOn(Execution, 'query').mockImplementation(
       () =>
@@ -64,8 +64,9 @@ describe('processTrigger', () => {
           })),
         }) as never,
     )
-    vi.spyOn(Execution, 'transaction').mockImplementation((callback) =>
-      (callback as (trx: string) => unknown)('mock-trx'),
+    vi.spyOn(Execution, 'transaction').mockImplementation(
+      ((callback) =>
+        (callback as (trx: string) => unknown)('mock-trx')) as never,
     )
   })
 

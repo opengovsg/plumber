@@ -27,7 +27,7 @@ describe('M365 before request interceptors', () => {
 
   beforeEach(() => {
     vi.spyOn(axios, 'create').mockImplementation(
-      (createConfig?: CreateAxiosDefaults) =>
+      ((createConfig?: CreateAxiosDefaults) =>
         actualAxiosCreate({
           ...createConfig,
           adapter: async (config: InternalAxiosRequestConfig): AxiosPromise => {
@@ -40,16 +40,18 @@ describe('M365 before request interceptors', () => {
               config,
             }
           },
-        }),
+        })) as never,
     )
-    vi.spyOn(logger, 'info').mockImplementation(logInfo)
+    vi.spyOn(logger, 'info').mockImplementation(logInfo as never)
     vi.spyOn(
       m365Config,
       'M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS',
       'get',
-    ).mockReturnValue(1000)
-    vi.spyOn(m365Config, 'isM365TenantKey').mockReturnValue(true)
-    vi.spyOn(tokenCache, 'getAccessToken').mockImplementation(getAccessToken)
+    ).mockReturnValue(1000 as never)
+    vi.spyOn(m365Config, 'isM365TenantKey').mockReturnValue(true as never)
+    vi.spyOn(tokenCache, 'getAccessToken').mockImplementation(
+      getAccessToken as never,
+    )
 
     const $ = {
       auth: {

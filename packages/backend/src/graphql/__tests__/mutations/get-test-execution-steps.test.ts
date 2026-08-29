@@ -66,7 +66,7 @@ describe('Get test execution steps mutation', () => {
         isFailed: true,
         stepId: 'step-id-4',
       },
-    ])
+    ] as never)
   })
 
   afterEach(() => {

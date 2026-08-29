@@ -126,20 +126,20 @@ describe('decrypt form response - MRF specific', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
-    vi.spyOn(logger, 'error').mockImplementation(consoleError)
-    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn)
-    vi.spyOn(formEnv, 'getSdk').mockImplementation(getSdk)
-    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv)
+    vi.spyOn(logger, 'error').mockImplementation(consoleError as never)
+    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn as never)
+    vi.spyOn(formEnv, 'getSdk').mockImplementation(getSdk as never)
+    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv as never)
     vi.spyOn(storeAttachmentInS3Module, 'default').mockImplementation(
-      storeAttachmentInS3,
+      storeAttachmentInS3 as never,
     )
     vi.spyOn(fetchFormSchemaModule, 'fetchFormSchema').mockImplementation(
-      fetchFormSchema,
+      fetchFormSchema as never,
     )
     vi.spyOn(
       decryptFormAttachmentsModule,
       'decryptFormAttachmentsV3OrV4',
-    ).mockImplementation(decryptFormAttachmentsV3OrV4)
+    ).mockImplementation(decryptFormAttachmentsV3OrV4 as never)
 
     $ = makeGlobalVariable()
   })

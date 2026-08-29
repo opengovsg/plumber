@@ -27,9 +27,11 @@ describe('make http request', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
-    vi.spyOn(ipResolver, 'safeAxiosLookup').mockImplementation(isUrlAllowed)
+    vi.spyOn(ipResolver, 'safeAxiosLookup').mockImplementation(
+      isUrlAllowed as never,
+    )
     vi.spyOn(addInterceptorsModule, 'default').mockImplementation(
-      addInterceptors,
+      addInterceptors as never,
     )
     spyOnStepQuery(
       createStepQueryChain({

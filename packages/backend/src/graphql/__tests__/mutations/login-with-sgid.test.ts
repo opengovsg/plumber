@@ -40,18 +40,22 @@ describe('Login with SGID', () => {
     const loggerSpies = spyOnLogger({ error: vi.fn() })
     logError = loggerSpies.error
 
-    vi.spyOn(sgidClient, 'callback').mockImplementation(sgidCallback)
-    vi.spyOn(sgidClient, 'userinfo').mockImplementation(sgidUserInfo)
-    vi.spyOn(auth, 'setAuthCookie').mockImplementation(setAuthCookie)
-    vi.spyOn(auth, 'getOrCreateUser').mockImplementation(getOrCreateUser)
+    vi.spyOn(sgidClient, 'callback').mockImplementation(sgidCallback as never)
+    vi.spyOn(sgidClient, 'userinfo').mockImplementation(sgidUserInfo as never)
+    vi.spyOn(auth, 'setAuthCookie').mockImplementation(setAuthCookie as never)
+    vi.spyOn(auth, 'getOrCreateUser').mockImplementation(
+      getOrCreateUser as never,
+    )
     vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(
-      sendOnboardingEmail,
+      sendOnboardingEmail as never,
     )
-    vi.spyOn(auth, 'updateLastLogin').mockImplementation(updateLastLogin)
+    vi.spyOn(auth, 'updateLastLogin').mockImplementation(
+      updateLastLogin as never,
+    )
     vi.spyOn(LoginWhitelistEntry, 'isWhitelisted').mockImplementation(
-      isWhitelistedEmail,
+      isWhitelistedEmail as never,
     )
-    vi.spyOn(jwt, 'sign').mockImplementation(signJwt)
+    vi.spyOn(jwt, 'sign').mockImplementation(signJwt as never)
   })
 
   afterEach(() => {

@@ -50,14 +50,14 @@ describe('decrypt form response', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
-    vi.spyOn(logger, 'error').mockImplementation(consoleError)
-    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn)
-    vi.spyOn(logger, 'info').mockImplementation(consoleInfo)
+    vi.spyOn(logger, 'error').mockImplementation(consoleError as never)
+    vi.spyOn(logger, 'warn').mockImplementation(consoleWarn as never)
+    vi.spyOn(logger, 'info').mockImplementation(consoleInfo as never)
     vi.spyOn(EmailSuppressionEntry, 'whitelistEmails').mockImplementation(
-      whitelistEmails,
+      whitelistEmails as never,
     )
-    vi.spyOn(formEnv, 'getSdk').mockImplementation(getSdk)
-    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv)
+    vi.spyOn(formEnv, 'getSdk').mockImplementation(getSdk as never)
+    vi.spyOn(formEnv, 'parseFormEnv').mockImplementation(parseFormEnv as never)
   })
 
   // reset global variable before each test

@@ -43,10 +43,12 @@ describe('execution step', () => {
       appKey: 'testApp',
     } as unknown as ExecutionStep
 
-    vi.spyOn(App, 'findOneByKey').mockImplementation(async () => ({
-      triggers,
-      actions,
-    }))
+    vi.spyOn(App, 'findOneByKey').mockImplementation(
+      (async () => ({
+        triggers,
+        actions,
+      })) as never,
+    )
   })
 
   afterEach(() => {
