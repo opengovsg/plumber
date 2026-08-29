@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import retryExecutionStep from '@/graphql/mutations/retry-execution-step'
+import * as actionQueue from '@/queues/action'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -13,11 +14,6 @@ import Context from '@/types/express/context'
 
 import { generateMockUser } from './flow.mock'
 import { generateMockContext } from './tiles/table.mock'
-
-// Mock the action queue
-vi.mock('@/queues/action', () => ({
-  getActionJob: vi.fn(),
-}))
 
 describe('retryExecutionStep mutation', () => {
   let context: Context
@@ -44,14 +40,15 @@ describe('retryExecutionStep mutation', () => {
   }
 
   beforeEach(async () => {
-    vi.resetAllMocks()
-
-    // Initialize mock job
     mockJob = {
       retry: vi.fn().mockResolvedValue(undefined),
       data: { ...mockJobData },
       updateData: vi.fn().mockResolvedValue(undefined),
     }
+
+    getActionJobSpy = vi
+      .spyOn(actionQueue, 'getActionJob')
+      .mockResolvedValue(mockJob)
 
     context = await generateMockContext()
     owner = context.currentUser
@@ -121,15 +118,12 @@ describe('retryExecutionStep mutation', () => {
       },
     ])
 
-    getActionJobSpy = vi.spyOn(
-      await import('@/queues/action.js'),
-      'getActionJob',
-    )
-    getActionJobSpy.mockResolvedValue(mockJob)
     genericInputParams = {
       executionStepId: mockExecutionStep.id,
     }
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   describe('authorization tests', () => {
     it('should allow owner to retry execution step successfully', async () => {
