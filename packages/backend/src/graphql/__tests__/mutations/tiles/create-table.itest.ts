@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createTable from '@/graphql/mutations/tiles/create-table'
+import * as launchDarkly from '@/helpers/launch-darkly'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import TableCollaborator from '@/models/table-collaborators'
@@ -21,13 +22,7 @@ const pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
 const pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
 const ddbCreateTableRowsSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRows')
 
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn().mockResolvedValue('pg'),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
+const getLdFlagValue = vi.fn()
 
 async function generateFlowWithCollaborators(ownerId: string) {
   const flow = await Flow.query().insert({
@@ -52,14 +47,20 @@ describe.each([['pg'], ['ddb']])(
 
     // cant use before all here since the data is re-seeded each time
     beforeEach(async () => {
+      vi.spyOn(launchDarkly, 'getLdFlagValue').mockImplementation(
+        getLdFlagValue as never,
+      )
+
       context = await generateMockContext()
       pgCreateTableSpy.mockClear()
       pgCreateTableRowsSpy.mockClear()
       ddbCreateTableRowsSpy.mockClear()
     })
 
+    afterEach(() => vi.clearAllMocks())
+
     it('should create a blank table', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+      getLdFlagValue.mockResolvedValueOnce(databaseType)
       const table = await createTable(
         null,
         { input: { name: 'Test Table', isBlank: true } },
@@ -78,7 +79,7 @@ describe.each([['pg'], ['ddb']])(
     })
 
     it('should create a table and with placeholder rows and columns', async () => {
-      mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+      getLdFlagValue.mockResolvedValueOnce(databaseType)
       const table = await createTable(
         null,
         { input: { name: 'Test Table', isBlank: false } },
@@ -133,7 +134,7 @@ describe.each([['pg'], ['ddb']])(
       })
 
       it('should add all flow collaborators to table_collaborators when flowId is provided', async () => {
-        mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+        getLdFlagValue.mockResolvedValueOnce(databaseType)
 
         const table = await createTable(
           null,
@@ -181,7 +182,7 @@ describe.each([['pg'], ['ddb']])(
       })
 
       it('should throw error when user is not the flow owner', async () => {
-        mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+        getLdFlagValue.mockResolvedValueOnce(databaseType)
 
         // Create context with flow editor (not owner)
         const editorContext: Context = {
@@ -207,7 +208,7 @@ describe.each([['pg'], ['ddb']])(
       })
 
       it('should throw error when flowId does not exist', async () => {
-        mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
+        getLdFlagValue.mockResolvedValueOnce(databaseType)
 
         const nonExistentFlowId = randomUUID()
 

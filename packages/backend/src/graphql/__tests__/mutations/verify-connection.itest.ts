@@ -1,8 +1,10 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import verifyConnection from '@/graphql/mutations/verify-connection'
+import * as globalVariableModule from '@/helpers/global-variable'
+import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
@@ -16,24 +18,8 @@ import {
 } from './flow.mock'
 import { generateMockContext } from './tiles/table.mock'
 
-const mocks = vi.hoisted(() => ({
-  verifyCredentials: vi.fn().mockResolvedValue(undefined),
-}))
-
-vi.mock('@/helpers/global-variable', () => ({
-  default: vi.fn().mockResolvedValue({}),
-}))
-
-vi.mock('@/models/app', () => ({
-  default: {
-    findOneByKey: vi.fn().mockResolvedValue({
-      key: 'slack',
-      auth: {
-        verifyCredentials: mocks.verifyCredentials,
-      },
-    }),
-  },
-}))
+const globalVariable = vi.fn().mockResolvedValue({})
+const verifyCredentials = vi.fn().mockResolvedValue(undefined)
 
 describe('verifyConnection', () => {
   let context: Context
@@ -46,7 +32,15 @@ describe('verifyConnection', () => {
   let collaboratorConnection: Connection
 
   beforeEach(async () => {
-    vi.clearAllMocks()
+    vi.spyOn(globalVariableModule, 'default').mockImplementation(
+      globalVariable as never,
+    )
+    vi.spyOn(App, 'findOneByKey').mockImplementation((async () => ({
+      key: 'slack',
+      auth: {
+        verifyCredentials,
+      },
+    })) as never)
 
     await FlowConnections.query().delete()
     await Connection.query().delete()
@@ -85,6 +79,8 @@ describe('verifyConnection', () => {
       addedBy: editor.id,
     })
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   describe('access control', () => {
     it('should allow owner to verify their personal connection', async () => {
@@ -145,7 +141,7 @@ describe('verifyConnection', () => {
       )
 
       expect(result.id).toBe(ownerConnection.id)
-      expect(mocks.verifyCredentials).toHaveBeenCalledOnce()
+      expect(verifyCredentials).toHaveBeenCalledOnce()
     })
 
     it('should not allow owner to verify a connection they do not own', async () => {
@@ -183,7 +179,7 @@ describe('verifyConnection', () => {
       )
 
       expect(result.id).toBe(collaboratorConnection.id)
-      expect(mocks.verifyCredentials).toHaveBeenCalledOnce()
+      expect(verifyCredentials).toHaveBeenCalledOnce()
     })
 
     it('should not allow editor to verify connection not in their flow_connections', async () => {
@@ -279,7 +275,7 @@ describe('verifyConnection', () => {
         context,
       )
 
-      expect(mocks.verifyCredentials).toHaveBeenCalledOnce()
+      expect(verifyCredentials).toHaveBeenCalledOnce()
     })
   })
 })
