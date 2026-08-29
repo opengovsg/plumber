@@ -130,6 +130,29 @@ After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 | Redis | 4 logical DBs from `REDIS_DB_OFFSET = N × 4` |
 | DynamoDB | table suffix `w{N}` |
 
+```mermaid
+flowchart TB
+  GS["global-setup.ts · Testcontainers boot once"]
+
+  subgraph before ["Before · singleThread"]
+    B_W["1 Vitest worker · all itests"]
+    B_DB["1 shared Postgres · Redis · Dynamo"]
+    B_W --> B_DB
+  end
+
+  subgraph after ["After · worker N"]
+    W["Vitest worker N"]
+    SLICE["Postgres plumber_test_wN + tiles_test_wN\nRedis DBs N×4 … N×4+3\nDynamo tables suffix wN"]
+    W --> SLICE
+  end
+
+  GS --> before
+  GS --> after
+
+  HOOK["beforeEach: seed Postgres · flush Redis\nafterEach: TRUNCATE · Dynamo wipe"]
+  SLICE --> HOOK
+```
+
 Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
 
 `maxWorkers = min(cpus, 32)` (Redis slot cap).
