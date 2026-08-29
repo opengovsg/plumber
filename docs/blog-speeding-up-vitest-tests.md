@@ -154,60 +154,40 @@ After: each worker gets its own slice via `test/helpers/worker-isolation.ts`:
 
 ```mermaid
 flowchart TB
-  GS["global-setup.ts · Testcontainers boot once"]
-
-  subgraph workers ["Vitest workers · maxWorkers min(cpus, 32)"]
-    W0["Worker 0"]
-    W1["Worker 1"]
-    WN["Worker N"]
-  end
+  GS["global-setup.ts · Testcontainers boot once · maxWorkers min(cpus, 32)"]
 
   subgraph pg ["Postgres"]
-    PG0["plumber_test_w0"]
-    PG1["plumber_test_w1"]
-    PGN["plumber_test_wN"]
+    direction LR
+    W0p["Worker 0"] --> PG0["plumber_test_w0"]
+    W1p["Worker 1"] --> PG1["plumber_test_w1"]
+    WNp["Worker N"] --> PGN["plumber_test_wN"]
   end
 
   subgraph tiles ["Tiles Postgres"]
-    T0["tiles_test_w0"]
-    T1["tiles_test_w1"]
-    TN["tiles_test_wN"]
+    direction LR
+    W0t["Worker 0"] --> T0["tiles_test_w0"]
+    W1t["Worker 1"] --> T1["tiles_test_w1"]
+    WNt["Worker N"] --> TN["tiles_test_wN"]
   end
 
-  subgraph redis ["Redis"]
-    R0["DB 0–3"]
-    R1["DB 4–7"]
-    RN["DB N×4 … N×4+3"]
+  subgraph redis ["Redis · 4 logical DBs per worker"]
+    direction LR
+    W0r["Worker 0"] --> R0["DB 0–3"]
+    W1r["Worker 1"] --> R1["DB 4–7"]
+    WNr["Worker N"] --> RN["DB N×4 … N×4+3"]
   end
 
   subgraph dynamo ["DynamoDB"]
-    D0["suffix w0"]
-    D1["suffix w1"]
-    DN["suffix wN"]
+    direction LR
+    W0d["Worker 0"] --> D0["suffix w0"]
+    W1d["Worker 1"] --> D1["suffix w1"]
+    WNd["Worker N"] --> DN["suffix wN"]
   end
 
   GS --> pg
   GS --> tiles
   GS --> redis
   GS --> dynamo
-
-  W0 --> PG0
-  W0 --> T0
-  W0 --> R0
-  W0 --> D0
-
-  W1 --> PG1
-  W1 --> T1
-  W1 --> R1
-  W1 --> D1
-
-  WN --> PGN
-  WN --> TN
-  WN --> RN
-  WN --> DN
-
-  HOOK["beforeEach: seed Postgres · flush Redis\nafterEach: TRUNCATE · Dynamo wipe"]
-  workers --> HOOK
 ```
 
 Containers boot once in `test/global-setup.ts` (`@opengovsg/testcontainers`). `beforeEach` seeds Postgres and flushes Redis. `afterEach` runs batched `TRUNCATE CASCADE` and wipes DynamoDB. `hookTimeout: 120_000` — wiping 10k tile rows after a large itest exceeded Vitest's default 10s hook limit.
