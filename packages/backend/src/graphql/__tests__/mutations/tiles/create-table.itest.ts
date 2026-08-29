@@ -62,8 +62,6 @@ describe.each([['pg'], ['ddb']])(
       vi.restoreAllMocks()
     })
 
-    afterEach(() => vi.clearAllMocks())
-
     it('should create a blank table', async () => {
       getLdFlagValue.mockResolvedValueOnce(databaseType)
       const table = await createTable(
