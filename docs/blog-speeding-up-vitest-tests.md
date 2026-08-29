@@ -45,42 +45,63 @@ pnpm + Turbo monorepo, Vitest 4, one CI job per suite.
 
 ### Before
 
-Every file paid for full isolation. Integration ran on one thread against one shared database.
+CI already runs unit and integration as **separate jobs in parallel** — wall clock is whichever job finishes last (integration). The bottleneck was *inside* each job: unit rebuilt a fresh module graph for every file, and integration ran **single-threaded** on one shared Postgres.
 
 ```mermaid
-flowchart LR
-  subgraph unit_before ["Unit"]
-    U["one project · isolate true · 147 files"]
-  end
+flowchart TB
+  subgraph ci ["CI — jobs run in parallel, wall clock = slowest job"]
+    direction LR
 
-  subgraph int_before ["Integration"]
-    I["singleThread · one Postgres · 71 files"]
+    subgraph unit ["Unit job"]
+      direction TB
+      U1["1 Vitest project"]
+      U2["isolate true · 147 files"]
+      U3["fresh module graph per file"]
+      U1 --> U2 --> U3
+    end
+
+    subgraph int ["Integration job"]
+      direction TB
+      I1["singleThread: true"]
+      I2["1 shared Postgres"]
+      I3["71 files · serial"]
+      I1 --> I2 --> I3
+    end
   end
 ```
 
 ### After
 
-Both configs grep for `vi.mock` at load time and split into two Vitest projects. Non-mock files share a module graph per worker (`isolate: false`). Integration workers each get their own DB slice.
+Same parallel CI layout. Inside each job: grep-split into shared and isolated Vitest projects. Integration also runs **parallel workers**, each with its own Postgres, Redis, and DynamoDB slice.
 
 ```mermaid
-flowchart LR
-  subgraph detect ["Config load"]
-    grep["grep vi.mock"]
-  end
+flowchart TB
+  subgraph ci ["CI — jobs run in parallel, wall clock = slowest job"]
+    direction LR
 
-  subgraph unit ["Unit"]
-    U1["backend · isolate false · 82–133 files"]
-    U2["backend-isolated · 14–65 files"]
-  end
+    subgraph unit ["Unit job"]
+      direction TB
+      GU["grep vi.mock"]
+      U1["133 files · isolate false · shared graph"]
+      U2["14 files · isolated"]
+      GU --> U1
+      GU --> U2
+    end
 
-  subgraph int ["Integration"]
-    I1["backend-integration · isolate false · 64 files"]
-    I2["backend-integration-isolated · 7 files"]
+    subgraph int ["Integration job"]
+      direction TB
+      GI["grep vi.mock"]
+      I1["64 files · isolate false"]
+      I2["7 files · isolated"]
+      W["parallel workers · DB slice each"]
+      GI --> I1
+      GI --> I2
+      W --- I1
+    end
   end
-
-  grep --> unit
-  grep --> int
 ```
+
+File counts above are at **full stack** (mock split + spyOn). Mock split alone shares 82 unit files before spyOn shrinks the isolated bucket to 14.
 
 One `vi.mock()` anywhere in a file sends the whole file to the isolated project. Migrating three of four mocks in a file does nothing for routing.
 
