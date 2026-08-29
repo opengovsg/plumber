@@ -62,6 +62,8 @@ describe.each([['ddb'], ['pg']])(
       vi.restoreAllMocks()
     })
 
+    afterEach(() => vi.clearAllMocks())
+
     it('should create an empty row in a given table', async () => {
       getLdFlagValue.mockResolvedValueOnce(databaseType)
 
