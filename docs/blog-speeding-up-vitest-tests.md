@@ -298,12 +298,12 @@ Rules the shipped config assumes — break them and tests leak mock state or hit
 
 ## In short
 
-**Start with mock split** — config-only, no test rewrites. On our unit suite that alone was **170s → 96s** (−43%).
+If you are copying this work, roll it out in a different order from how we told the story above.
 
-**Integration next:** per-worker data slices *before* raising `maxWorkers`. Parallel threads on one Postgres was the main flake source — not slow tests.
+Start with **mock split** — it is config-only. Grep for `vi.mock` at load time and run everything else with `isolate: false`. No test rewrites required. On our unit suite, that step alone dropped **170s to 96s** (−43%).
 
-**SpyOn last** — file-by-file, after split is live. Diminishing returns once ~20 files still need hoisted mocks; do not chase 100%.
+For integration, add **worker isolation** next: per-worker Postgres, Redis, and DynamoDB slices *before* you raise `maxWorkers`. When we parallelized on one shared Postgres, tests flaked from cross-worker data races — not from slow assertions.
 
-**Do not start with:** mock migration, eliminating `vi.mock()` everywhere, or tuning worker count — see [what we tried](#what-we-tried--and-what-to-watch-for) above.
+**SpyOn** comes last, file by file, once the split is live. You will eventually hit a tail of ~20 files that still need hoisted `vi.mock()`; beyond that, migration effort stops moving Duration. Do not lead with mock migrations, eliminating every mock, or tuning worker count without isolation — see [what we tried](#what-we-tried--and-what-to-watch-for) above for what we reverted.
 
-When you benchmark your own changes: Vitest **Duration** per suite, cold run, stable baseline — not CI wall clock, not a cached turbo run.
+When you measure your own changes, compare Vitest **Duration** per suite on a cold run against a stable baseline. CI wall clock and Turbo cache hits will not tell you whether the config change worked.
