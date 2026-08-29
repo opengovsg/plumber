@@ -124,26 +124,34 @@ Mock split alone moved 82 files to shared workers (−43%). SpyOn moved another 
 
 ---
 
-## What we tried and did not ship
+## What we tried — and what to watch for
+
+Dead ends are things we attempted and reverted. Gotchas are things that *work* but will bite the next person who forgets how the setup behaves.
+
+### Approaches we did not ship
 
 | Approach | Why it stopped |
 |----------|----------------|
 | **Migrate every file off `vi.mock()`** | ~14 unit + 7 integration files need hoisted mocks. ESM packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, `sqs-consumer`, `@opengovsg/formsg-sdk`) and import-time graphs (FormSG triggers, queue/worker init) cannot be spied reliably. |
 | **`vi.spyOn()` on worker itests** | Workers capture `exponentialBackoffWithJitter` and `tracer.wrap` at module load. Spies in `beforeEach` run too late — 10 failures in `action.itest.ts`. Reverted to `vi.mock()`. |
 | **Dynamic-import workers after spy setup** | Same import-time capture; did not help. |
-| **Partial spyOn inside a file** | Grep routing sees any `vi.mock(`. One remaining mock keeps the file isolated. |
+| **Partial spyOn inside a file** | Config grep routes on any `vi.mock(`. One remaining mock keeps the whole file isolated — no partial win. |
 | **Replace `@/apps` barrel with direct `formsg` import** | Circular init during module load (`Cannot read properties of undefined (reading 'key')`). |
 | **Default 10s `hookTimeout` on DynamoDB wipe** | Post–10k-row tile test, wipe hook timed out. Raised to 120s. |
 | **One shared Postgres under parallel workers** | Cross-worker races. Per-worker DB names fixed it. |
 | **Per-test DynamoDB table clone** | Too slow. Worker suffix + wipe in `afterEach` is faster and stable. |
 
----
+### Gotchas for maintainers
 
-## What got harder
-
-**Shared workers need mock cleanup.** With `isolate: false`, mock state persists. We rely on `vi.clearAllMocks()` / `mockReset()` in `afterEach`, heavy imports in `beforeAll`, and higher timeouts where tests assumed serial execution.
-
-**Worker isolation is real infrastructure.** Flaky data often means the wrong worker's Postgres/Redis/Dynamo slice, or hitting the 32-worker Redis cap. Set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` before app config imports — config snapshots env on first load.
+| Gotcha | What to do |
+|--------|------------|
+| **Mock routing is file-level** | Adding `vi.mock()` anywhere in a file sends the entire file to the isolated project. Migrating "most" mocks in a file does nothing for perf. |
+| **`isolate: false` leaks mock state** | Shared workers need `vi.clearAllMocks()` / `mockReset()` in `afterEach`. Prefer heavy imports in `beforeAll`. |
+| **Worker env must be set before config loads** | Set `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` before importing app config — it snapshots env on first load. |
+| **Flaky data is often the wrong worker slice** | Debug "wrong row count" by checking whether the test hit another worker's Postgres, Redis, or DynamoDB suffix. |
+| **Redis caps parallelism at 32 workers** | Each worker uses 4 logical Redis DBs. `maxWorkers = min(cpus, 32)`. |
+| **Large itests need a longer hook timeout** | DynamoDB wipe after big tile tests can exceed 10s. Keep `hookTimeout: 120_000` on integration setup. |
+| **Turbo cache skews benchmarks** | A cache hit can make a suite look like it ran in seconds. Benchmark cold turbo steps when comparing changes. |
 
 ---
 
