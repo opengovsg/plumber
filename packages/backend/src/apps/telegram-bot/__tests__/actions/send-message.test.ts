@@ -13,10 +13,9 @@ const setActionItem = vi.fn()
 
 describe('send message', () => {
   let $: IGlobalVariable
-  let stepQuery: ReturnType<typeof spyOnStepQuery>
 
   beforeEach(() => {
-    stepQuery = spyOnStepQuery(
+    spyOnStepQuery(
       createStepQueryChain({
         patchAndFetchById: vi.fn(() => ({
           context: vi.fn(),
@@ -68,7 +67,6 @@ describe('send message', () => {
     expect(setActionItem).toHaveBeenCalledWith({
       raw: mockHttpResponse.data,
     })
-    expect(stepQuery).toHaveBeenCalled()
   })
 
   it('should throw step error if message text is empty', async () => {

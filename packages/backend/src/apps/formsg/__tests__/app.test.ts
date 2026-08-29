@@ -7,7 +7,7 @@ import apps from '@/apps'
 import globalVariable from '@/helpers/global-variable'
 import type Connection from '@/models/connection'
 
-import * as formEnv from '../../common/form-env'
+import * as formEnv from '../common/form-env'
 
 const axiosRequestAdapter = vi.fn(async (requestConfig): AxiosPromise => ({
   data: {
