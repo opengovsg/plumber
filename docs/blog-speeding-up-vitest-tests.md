@@ -14,7 +14,7 @@ Integration gains come mostly from worker isolation + mock split; spyOn widens t
 
 **Summary**
 
-| Suite | Before (develop-v2) | After (full stack) | Change |
+| Suite | Before (develop-v2) | After | Change |
 |-------|--------|-------------------|--------|
 | Backend unit (147 files) | **170s** | **34s** | **−80%** |
 | Backend integration (71 files / 814 tests) | **266s** | **104s** | **−61%** |
@@ -209,6 +209,25 @@ This is most of the integration win. Integration was the wall-clock long pole be
 Before (develop-v2): one Vitest project per suite, default `isolate: true`. Every file got a fresh module graph — expensive when ~147 unit files each import most of the backend tree.
 
 After: at config load, grep for `vi.mock` and split into two projects. Files without mocks run with `pool: threads`, `isolate: false`. Files with `vi.mock()` stay isolated so replacements do not leak across tests.
+
+```typescript
+function testsWithModuleMocks(): string[] {
+  return globSync('src/**/*.test.{js,ts}', { cwd: __dirname }).filter((file) =>
+    /\bvi\.mock\s*\(/.test(readFileSync(path.join(__dirname, file), 'utf8')),
+  )
+}
+
+const isolatedTests = testsWithModuleMocks()
+
+export default defineConfig({
+  test: {
+    projects: [
+      { test: { include: ['src/**/*.test.{js,ts}'], exclude: isolatedTests, isolate: false } },
+      { test: { include: isolatedTests, isolate: true } },
+    ],
+  },
+})
+```
 
 | Suite | Shared | Isolated |
 |-------|--------|----------|
