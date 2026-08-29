@@ -53,14 +53,11 @@ flowchart TB
     direction TB
     RUN["npm run test"]
     ROOT["root vitest · all projects"]
-
-    subgraph backend ["backend · same job"]
-      direction LR
-      U["Unit · 147 files\n1 project · isolate true"]
-      I["Integration · 71 files\nsingleThread · 1 Postgres"]
-    end
-
-    RUN --> ROOT --> backend
+    U["Unit · 147 files\n1 project · isolate true"]
+    I["Integration · 71 files\nsingleThread · 1 Postgres"]
+    RUN --> ROOT
+    ROOT --> U
+    ROOT --> I
   end
 ```
 
