@@ -183,25 +183,39 @@ Most of the win came from the three config changes above, not from eliminating e
 
 ### Mock and spyOn dead ends
 
-- **Migrate every file off `vi.mock()`**
-  - Tried shrinking the isolated bucket to zero — **14 unit + 7 integration** files still need hoisted mocks (Summary table above).
-  - Blockers: ESM npm packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, `sqs-consumer`, `@opengovsg/formsg-sdk`) and import-time graphs (queues, workers, FormSG triggers).
-  - `vi.spyOn()` runs after the module graph is built — cannot replace pre-import mocks.
-  - Lesson: migrate file-by-file; accept a small isolated tail.
+These looked like easy follow-ons after mock split and spyOn migrations. Each one either failed in CI or would not have moved Vitest Duration further.
 
-- **`vi.spyOn()` on worker itests**
-  - Workers bind `exponentialBackoffWithJitter` and `tracer.wrap` at import time; spies in `beforeEach` are too late.
-  - **`action.itest.ts` failed 10 tests**; dynamic-import-after-setup failed the same way.
-  - Those files stay on `vi.mock()` and in the isolated project.
+#### Migrate every file off `vi.mock()`
 
-- **Partial spyOn cleanup in one file**
-  - Mock split greps the whole file for `vi.mock` (see After diagram above).
-  - Three of four mocks migrated → still isolated; no Duration win until the last mock is gone.
+**What we tried:** replace every `vi.mock()` with `vi.spyOn()` so no file needs the isolated project.
 
-- **Replace `@/apps` barrel with direct `formsg` import**
-  - Tried during spyOn migrations.
-  - Circular init at load: `Cannot read properties of undefined (reading 'key')`.
-  - Kept barrel + `vi.mock()` for those graphs.
+**Why it fails:** `vi.mock()` is *hoisted* — Vitest applies it before your test file imports anything. That matters for npm ESM packages (`@aws-sdk/*`, `bullmq-pro`, `ai`, …) and for our own code that sets up queues, workers, or FormSG triggers as soon as the file loads. `vi.spyOn()` runs later, after the real module is already in memory, so it cannot stand in for “fake this dependency before the first import.”
+
+**Outcome:** **14 unit + 7 integration** files still need `vi.mock()` (Summary table above). Migrating those would be a lot of rework for zero extra speed — they stay in the isolated bucket by design. Migrate file-by-file where spyOn works; stop when you hit import-time graphs.
+
+#### `vi.spyOn()` on worker itests
+
+**What we tried:** worker integration tests mock helpers like `exponentialBackoffWithJitter` and `tracer.wrap`. We replaced `vi.mock()` with `vi.spyOn()` in `beforeEach` so those files could join the shared pool.
+
+**Why it fails:** worker code grabs those functions when the module *loads*, not when each test runs. By the time `beforeEach` installs a spy, the worker has already captured the real implementations. Tests call the unmocked behaviour — **`action.itest.ts` failed 10 tests**. Loading the worker with `import()` after spy setup did not help; the same bindings happen on load.
+
+**Outcome:** worker itests keep `vi.mock()` and stay in the isolated project. Perf win there comes from mock split + worker isolation, not from spyOn on those files.
+
+#### Partial spyOn cleanup in one file
+
+**What we tried:** a file with four `vi.mock()` calls — migrate three to spyOn, leave one, hope for most of the benefit.
+
+**Why it fails:** mock split does not count “how many mocks remain.” It greps the file for any `vi.mock` string. One left → whole file still runs in the isolated project with a fresh module graph every time — same cost as four mocks. The After diagram above shows the split; routing is all-or-nothing per file.
+
+**Outcome:** no Duration win until the last `vi.mock()` in that file is gone. Partial cleanup is fine for readability, not for benchmarks.
+
+#### Replace `@/apps` barrel with a direct `formsg` import
+
+**What we tried:** during spyOn migrations, import `formsg` directly instead of through `@/apps` so we could drop a barrel-level mock.
+
+**Why it fails:** `@/apps` and the FormSG modules initialize each other during load. Pulling `formsg` in directly hit a half-built module graph — crash: `Cannot read properties of undefined (reading 'key')`.
+
+**Outcome:** kept the barrel and `vi.mock()` for that graph. Some dependency trees are not worth untangling for test speed.
 
 ### Integration infra dead ends
 
