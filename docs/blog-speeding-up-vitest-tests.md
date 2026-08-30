@@ -10,6 +10,14 @@ Three changes, applied across both suites where they apply:
 
 Integration gains come mostly from worker isolation + mock split; spyOn widens the shared pool. Unit gains come mostly from mock split + spyOn.
 
+## The goal
+
+We wanted faster tests without changing product behaviour, and without making every test author learn Vitest internals.
+
+- **Minimal app code** — solve this in test config and setup where we can. Touch production code only when tests genuinely need an env hook (e.g. pointing Redis or DynamoDB at a worker-specific slice). No refactors to services or workers for speed.
+- **Push complexity into test infra** — parallel DB setup, mock routing, and reset hooks should live in Vitest config and shared test helpers, not in every test file.
+- **Routine tests stay routine** — adding or editing a normal unit or integration test should not require thinking about worker indices, module graphs, or Redis logical DBs. Copy patterns from neighbouring files; the harness should handle isolation and routing.
+
 ---
 
 **Summary**
@@ -334,25 +342,44 @@ We tried these while parallelizing integration tests. None worked. Worker isolat
 
 ### When you add or change tests
 
-Rules the shipped config assumes — break them and tests leak mock state or hit the wrong database slice.
+These are downsides of the shipped config — not daily checklist items. Normal new tests don’t touch worker isolation or Redis caps; those run from setup files and Vitest config. What follows matters if you **spy on shared modules**, **change test setup/import order**, or **tune worker count**.
 
-#### `isolate: false` leaks mock state
+Nothing here breaks production. Violations show up as **wrong assertions or flaky tests**, usually only under parallel runs or test reorder — and they **regress cleanly**: fix the mock cleanup or setup order, re-run the suite, green again. No lingering bad state in the app.
 
-- **What breaks:** a spy or mock set up in test A (e.g. `mockReturnValue`, `mockImplementation`) is still active when test B runs.
-- **Why:** mock-split files share one Node worker that loads each module once and reuses the graph across tests.
-- **What to do:** call `vi.clearAllMocks()` or `mockReset()` in `afterEach`; put heavy `import`s in `beforeAll` where you can.
+#### Shared-pool mock cleanup (most relevant to test authors)
 
-#### Worker env before config loads
+- **Downside:** in `isolate: false` files, a spy or mock from test A can still be active when test B runs.
+- **Why:** one Node worker reuses the same module graph across tests in that file (and project).
+- **How often:** only when you use `vi.spyOn` / `mockReturnValue` / `mockImplementation` and skip cleanup. Tests with no mocks are unaffected.
+- **What to do:** `vi.clearAllMocks()` (or `mockReset()`) in `afterEach` — copy migrated tests beside yours.
 
-- **What breaks:** every Vitest worker reads and writes the same Postgres, Redis block, and DynamoDB suffix — wrong rows, cross-test pollution.
-- **Why:** app config reads `POSTGRES_DATABASE`, `REDIS_DB_OFFSET`, and `DYNAMODB_TABLE_SUFFIX` on first import and keeps those values for the process lifetime.
-- **What to do:** let `test/helpers/worker-isolation.ts` set env per worker before any app or config module imports; do not pull app code in early or skip the isolation hook.
+#### Worker env before config loads (infra changes only)
 
-#### Redis caps at 32 workers
+- **Downside:** workers collide on the same Postgres, Redis block, or DynamoDB suffix — cross-test pollution, flaky itests.
+- **Why:** config snapshots env on first import for the process lifetime.
+- **How often:** rare. Only if you add setup files or top-level imports that pull app/config in **before** `ensureWorkerIsolation()` in the existing setup chain. Ordinary new itests don’t hit this.
+- **What to do:** keep `test/helpers/worker-isolation.ts` ahead of app imports in setup; don’t reorder setup files without checking that hook.
 
-- **What breaks:** workers share Redis logical DB indices — queue and cache keys collide across parallel itests.
-- **Why:** each worker needs four contiguous indices; mock split runs two integration Vitest projects (shared + isolated): 256 ÷ 4 ÷ 2 = **32** slots (see worker isolation above).
-- **What to do:** keep `maxWorkers = min(cpus, 32)` unless you change Redis logical DB count or drop back to one integration project.
+#### Redis worker cap (config changes only)
+
+- **Downside:** workers share Redis logical DB indices — queue/cache key collisions across parallel itests.
+- **Why:** four Redis DBs per worker × two integration Vitest projects → **32** slots on a 256-DB Testcontainers Redis (see §1).
+- **How often:** rare. `maxWorkers` is already `min(cpus, 32)` in config. You only hit this by raising the cap or changing Redis DB layout without updating the math.
+- **What to do:** leave the cap unless you deliberately change isolation layout.
+
+---
+
+## Did we hit it?
+
+Mostly yes.
+
+**App code.** No product logic changed for speed. Worker isolation added two env reads in `config/redis.ts` and `config/dynamodb.ts` (`REDIS_DB_OFFSET`, `DYNAMODB_TABLE_SUFFIX`). Unset in prod — same behaviour as before. Postgres already isolated via existing `POSTGRES_DATABASE` env vars.
+
+**Abstracted infra.** Mock split is config-only. Integration parallelism is `worker-isolation.ts` plus reset hooks in setup files — not something each itest opts into. Per-worker Postgres, Redis, and DynamoDB slices are applied before config loads; authors don’t pick a worker index.
+
+**Day-to-day test writing.** Unchanged for most work. New itests follow the same shape as existing ones; worker env and DB resets run automatically. Mock split routes files by grep — add `vi.mock()` and the file lands in the isolated project without a manual flag. The main habit in shared-pool files: `vi.clearAllMocks()` in `afterEach` when you use spies (already standard in migrated tests).
+
+**Where we didn’t fully zero out thinking.** SpyOn was a one-time, file-by-file test rewrite (~51 unit + 16 integration files), not something every new test repeats. ~14 unit + 7 integration files still need hoisted `vi.mock()` — that tail is permanent. See [When you add or change tests](#when-you-add-or-change-tests) for the few edge cases that *can* bite; they’re rare and test-only.
 
 ---
 
