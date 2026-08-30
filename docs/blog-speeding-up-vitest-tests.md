@@ -369,7 +369,7 @@ Nothing here breaks production. Violations show up as **wrong assertions or flak
 
 ---
 
-## Did we hit it?
+## Did we achieve our goal?
 
 Mostly yes.
 
