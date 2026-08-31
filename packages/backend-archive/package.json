@@ -1,6 +1,6 @@
 {
   "name": "backend-archive",
-  "version": "1.79.2",
+  "version": "1.80.0",
   "scripts": {
     "prebuild": "rimraf ./dist",
     "build": "tsc && tsc-alias",
