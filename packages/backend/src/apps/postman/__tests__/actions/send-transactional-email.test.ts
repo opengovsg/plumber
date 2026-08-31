@@ -932,7 +932,7 @@ describe('send transactional email', () => {
 
       // SES gets the RFC 5322-quoted display name...
       const [input] = sentBulkCommands()
-      expect(input.FromEmailAddress).toBe('"Acme, Inc" <info@plumber.gov.sg>')
+      expect(input.FromEmailAddress).toBe('"Acme, Inc" <admin@example.gov.sg>')
 
       // ...but dataOut shows the clean, unquoted form.
       expect($.setActionItem).toHaveBeenCalledWith({
