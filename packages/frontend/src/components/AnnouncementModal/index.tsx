@@ -20,18 +20,23 @@ import { MotionBox } from './MotionBox'
 import { ProgressIndicator } from './ProgressIndicator'
 
 const ITEMS_LENGTH = ANNOUNCEMENT_ITEM_LIST.length
-export const LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY =
-  'announcement-modal-last-opened'
-
-export const LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP = '2025-05-28'
 
 interface AnnouncementModalProps {
   isOpen: boolean
   onClose: () => void
+  // Runs on the last slide's call to action, e.g. to send the user to the
+  // feature being announced. Falls back to just closing the modal.
+  onPrimaryAction?: () => void
+  primaryActionLabel?: string
 }
 
 export default function AnnouncementModal(props: AnnouncementModalProps) {
-  const { isOpen, onClose } = props
+  const {
+    isOpen,
+    onClose,
+    onPrimaryAction,
+    primaryActionLabel = 'Experience it now',
+  } = props
   const [currActiveIdx, setCurrActiveIdx] = useState<number>(0)
   const currAnnouncement = ANNOUNCEMENT_ITEM_LIST[currActiveIdx]
   const isFirstAnnouncement = currActiveIdx === 0
@@ -92,7 +97,9 @@ export default function AnnouncementModal(props: AnnouncementModalProps) {
               )}
 
               {isLastAnnouncement ? (
-                <Button onClick={onClose}>Experience it now</Button>
+                <Button onClick={onPrimaryAction ?? onClose}>
+                  {primaryActionLabel}
+                </Button>
               ) : (
                 <Button onClick={() => setCurrActiveIdx(currActiveIdx + 1)}>
                   Next
