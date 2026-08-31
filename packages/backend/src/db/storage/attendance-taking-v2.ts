@@ -54,10 +54,14 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
         branchName: 'New event attendance',
         conditions: [
           {
-            is: 'is',
-            text: '0',
-            field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'is',
+                text: '0',
+                field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },
@@ -101,10 +105,14 @@ export const ATTENDANCE_TAKING_TEMPLATE: ITemplate = {
         branchName: 'Update existing attendance',
         conditions: [
           {
-            is: 'not',
-            text: '0',
-            field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'not',
+                text: '0',
+                field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },
