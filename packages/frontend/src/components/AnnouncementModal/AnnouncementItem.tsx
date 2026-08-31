@@ -68,7 +68,12 @@ export default function AnnouncementItem(props: AnnouncementItemProps) {
 
   return (
     <>
-      {displayedMultimedia && <Box>{displayedMultimedia}</Box>}
+      {/* Top inset keeps the modal's close button clear of the media */}
+      {displayedMultimedia && (
+        <Box px={6} pt={10}>
+          {displayedMultimedia}
+        </Box>
+      )}
       <ModalHeader mb={displayedMultimedia ? 0 : 2}>
         <Text textStyle="h4">{title}</Text>
       </ModalHeader>

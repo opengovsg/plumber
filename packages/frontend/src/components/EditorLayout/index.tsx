@@ -21,10 +21,6 @@ import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 
-import AnnouncementModal, {
-  LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
-  LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
-} from './AnnouncementModal'
 import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
@@ -59,22 +55,6 @@ export default function EditorLayout() {
     searchParams.delete('showDemo')
     setSearchParams(searchParams, { replace: true })
   }, [searchParams, setSearchParams])
-
-  // for loading announcement modal
-  const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
-    localStorage.getItem(LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY),
-  )
-
-  const handleCloseAnnouncementModal = useCallback(() => {
-    localStorage.setItem(
-      LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
-      LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
-    )
-    setLocalLatestTimestamp(LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP)
-  }, [])
-
-  const shouldOpenAnnouncementModal =
-    localLatestTimestamp !== LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP
 
   const onFlowNameUpdate = useCallback(
     async (name: string) => {
@@ -265,14 +245,6 @@ export default function EditorLayout() {
         isOpen={!!flow?.active}
         handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
       />
-
-      {/* hardcoded to false to always hide announcement modal for now*/}
-      {shouldOpenAnnouncementModal && false && (
-        <AnnouncementModal
-          isOpen={shouldOpenAnnouncementModal}
-          onClose={handleCloseAnnouncementModal}
-        />
-      )}
 
       {shouldOpenDemoModal && (
         <DemoFlowModal
