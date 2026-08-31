@@ -256,7 +256,12 @@ async function sendEmail(
         /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
         '<p style="margin: 0">&nbsp;</p>',
       ),
-      ccList: result.data.destinationEmailCc,
+      // A partial retry only exists because the prior attempt had ≥1
+      // ACCEPTED recipient (that's the isPartialSuccess gate for
+      // PartialStepError) — CC has no status tracking of its own, so it rode
+      // along on that earlier successful send. Re-sending it here would just
+      // spam every CC recipient again on every retry click.
+      ccList: isPartialRetry ? undefined : result.data.destinationEmailCc,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
