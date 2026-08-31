@@ -160,15 +160,15 @@ const action: IRawAction = {
       type: 'multirow' as const,
       required: false,
       addRowButtonText: 'Add attachment field',
-      description:
-        'Upload files to one or more attachment fields on the case.',
+      description: 'Upload files to one or more attachment fields on the case.',
       subFields: [
         {
           label: 'Attachment field',
           key: 'field',
           type: 'dropdown' as const,
           required: true,
-          description: 'Select the attachment field you want to upload files to.',
+          description:
+            'Select the attachment field you want to upload files to.',
           variables: false,
           showOptionValue: false,
           source: {
