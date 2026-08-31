@@ -7,6 +7,7 @@ import { Divider, Flex, IconButton, useDisclosure } from '@chakra-ui/react'
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
+import type { AnchorPlacement } from '@/components/FlowStepConfigurationModal/helpers/anchor-placement'
 import { NESTED_DRAG_HANDLE_WIDTH } from '@/components/SortableList/components/SortableItem'
 import { EditorContext } from '@/contexts/Editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
@@ -23,6 +24,13 @@ interface HoverAddStepButtonProps {
   step: IStep
   allowReorder?: boolean
   canChildStepsReorder?: boolean
+  // Set only when this button stands in for AddAfterBlockButton (an if-then
+  // V2 block nested in a for-each body), to pin/upgrade the block's marker
+  // as the top-level button would.
+  previousBlockId?: string
+  // Opt-in: this button also serves if-then V1 branches and for-each bodies, so
+  // where the new step lands is the caller's to state, not the button's.
+  anchorPlacement?: AnchorPlacement
 }
 
 export function HoverAddStepButton(
@@ -36,6 +44,8 @@ export function HoverAddStepButton(
     step,
     allowReorder,
     canChildStepsReorder,
+    previousBlockId,
+    anchorPlacement,
   } = props
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [isHovered, setIsHovered] = useState(false)
@@ -109,6 +119,8 @@ export function HoverAddStepButton(
           isTrigger={false} // Can only add an action all the time
           isLastStep={isLastStep}
           prevStep={prevStep}
+          previousBlockId={previousBlockId}
+          anchorPlacement={anchorPlacement}
         />
       )}
 

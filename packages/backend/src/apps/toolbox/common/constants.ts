@@ -1,3 +1,5 @@
+import type { IStep } from '@plumber/types'
+
 export const FOR_EACH_ITERATION_KEY = '__ITERATION__'
 export enum FOR_EACH_INPUT_SOURCE {
   M365_EXCEL = 'm365-excel',
@@ -12,6 +14,60 @@ export const TOOLBOX_APP_KEY = 'toolbox'
 export enum TOOLBOX_ACTIONS {
   FOR_EACH = 'forEach',
   IF_THEN = 'ifThen',
+  ONLY_CONTINUE_IF = 'onlyContinueIf',
+}
+
+// System-owned structural marker (like `config.approval`): lives in `config`,
+// not `parameters`, outside the parameters pipeline and invisible to the step
+// form.
+export const BLOCK_END_STEP_ID = 'endStepId'
+
+// Not IStep itself: the execution context's $.step is trimmed (no config), and
+// unit-test fixtures pass partials — neither is a full IStep. Also reused as
+// a base for the slightly wider shapes elsewhere in the toolbox.
+export type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
+
+export function isIfThenStep(step: StepLike | null | undefined): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.IF_THEN
+  )
+}
+
+export function isOnlyContinueIfStep(
+  step: StepLike | null | undefined,
+): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY &&
+    step?.key === TOOLBOX_ACTIONS.ONLY_CONTINUE_IF
+  )
+}
+
+export function isForEachStep(step: StepLike | null | undefined): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.FOR_EACH
+  )
+}
+
+export function isBlockStep(step: StepLike | null | undefined): boolean {
+  return isIfThenStep(step) || isForEachStep(step)
+}
+
+// The if-then V1 branch initializer's blank placeholder child is the only
+// legitimate step with neither an app nor an event.
+// IMPORTANT: createStep requires both fields together, so a step is never
+// mid-configuration with just one of them unset.
+export function isBlankPlaceholderStep(
+  step: StepLike | null | undefined,
+): boolean {
+  return !step?.appKey && !step?.key
+}
+
+// IMPORTANT: presence (Object.hasOwn), not value, distinguishes an if-then V2
+// step from if-then V1.
+export function isIfThenV2(step: StepLike | null | undefined): boolean {
+  return (
+    isIfThenStep(step) && Object.hasOwn(step?.config ?? {}, BLOCK_END_STEP_ID)
+  )
 }
 
 export const FOR_EACH_TABLE_SOURCES = [

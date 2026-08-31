@@ -21,7 +21,6 @@
     "readme:db:rollback": "This command rolls back the last migration BATCH, which might include more than one migration.",
     "db:rollback": "npm run db -- migrate:rollback",
     "db:migrate": "npm run db -- migrate:latest",
-    "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
     "readme:dynamodb:seed": "echo 'Seeds the specified table with 10k rows, use with -- <YOUR_TABLE_ID>'",
     "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
     "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
@@ -133,5 +132,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.79.2"
+  "version": "1.80.1"
 }

@@ -9,6 +9,11 @@ import { UPDATE_STEP } from '@/graphql/mutations/update-step'
 
 export const TOOLBOX_APP_KEY = 'toolbox'
 
+// Signals a fresh if-then V2 block's self-reference on createStep — the real
+// id doesn't exist until after insert. Mirrors the backend's
+// SELF_END_STEP_SENTINEL (apps/toolbox/common/validate-end-step.ts).
+export const SELF_END_STEP_SENTINEL = 'self'
+
 export enum TOOLBOX_ACTIONS {
   IfThen = 'ifThen',
   ForEach = 'forEach',
@@ -67,14 +72,21 @@ export function extractBranchesWithSteps(
 
     const stepDepth = parseInt(step.parameters.depth as string)
 
-    // If depth is NaN, then this step is a nested branch that was just created
-    // by the user via the "Choose app & event" substep. It cannot have a depth
-    // <= currDepth; this needs us to cross a branch created with a createBranch
-    // mutation _AND_ that branch also has its depth <= currDepth.
-    //
-    // Thus this step must always be part of the current branch, so we add it to
-    // `branchWithSteps`.
+    // If depth is NaN, then this step is either a nested branch that was just
+    // created by the user via the "Choose app & event" substep, or an if-then
+    // V2 step (V2 never sets parameters.depth; config.endStepId carries its
+    // extent instead). A just-created branch cannot have a depth <= currDepth;
+    // this needs us to cross a branch created with a createBranch mutation
+    // _AND_ that branch also has its depth <= currDepth. Thus it must always
+    // be part of the current branch, so we add it to `branchWithSteps`. A
+    // marked V2 if-then has no such guarantee, so it always starts a new
+    // branch instead, the same as a same-depth V1 sibling below.
     if (isNaN(stepDepth)) {
+      if (step.config?.endStepId != null) {
+        result.push(branchWithSteps)
+        branchWithSteps = [step]
+        continue
+      }
       branchWithSteps.push(step)
       continue
     }
@@ -131,11 +143,7 @@ export function areAllIfThenBranchesCompleted(
   return branches.every(isIfThenBranchCompleted)
 }
 
-/**
- * Hook used for initializing If-then when the user _first_ chooses it via the
- * "Choose App & Event" substep.
- */
-export function useIfThenInitializer(): [
+export function useIfThenV1Initializer(): [
   (currStep: IStep) => Promise<IStep>,
   boolean,
 ] {
@@ -254,6 +262,65 @@ export function useIfThenInitializer(): [
       return currStep
     },
     [createStep, depth, updateStep],
+  )
+
+  return [initialize, isInitializing]
+}
+
+/**
+ * Hook for initializing an if-then V2 block on a step that already exists
+ * before its app/key are chosen (e.g. a template, or an empty action left
+ * over on an old pipe) — `Editor.onCreateStep` handles a freshly-created
+ * if-then itself, via the SELF_END_STEP_SENTINEL on createStep.
+ *
+ * Preserves `config.approval` alongside the marker (updateStep merges
+ * config), so a block created inside an MRF rejection branch stays confined
+ * to it, per the backend's region rule.
+ */
+export function useIfThenV2Initializer(): [
+  (currStep: IStep) => Promise<IStep>,
+  boolean,
+] {
+  const [isInitializing, setIsInitializing] = useState(false)
+  const { depth } = useContext(BranchContext)
+
+  const [updateStep] = useMutation(UPDATE_STEP, { fetchPolicy: 'no-cache' })
+
+  const initialize = useCallback(
+    async (currStep: IStep) => {
+      setIsInitializing(true)
+
+      const approvalConfig = currStep.config?.approval
+        ? { approval: currStep.config.approval }
+        : {}
+
+      await updateStep({
+        variables: {
+          input: {
+            id: currStep.id,
+            appKey: TOOLBOX_APP_KEY,
+            key: TOOLBOX_ACTIONS.IfThen,
+            flow: {
+              id: currStep.flowId,
+              updatedAt: currStep.flow.updatedAt,
+            },
+            parameters: {
+              depth,
+            },
+            connection: {
+              id: null,
+            },
+            config: { ...approvalConfig, endStepId: currStep.id },
+          },
+        },
+      })
+
+      setIsInitializing(false)
+
+      // The caller refetches GET_FLOW; this hook doesn't.
+      return currStep
+    },
+    [depth, updateStep],
   )
 
   return [initialize, isInitializing]

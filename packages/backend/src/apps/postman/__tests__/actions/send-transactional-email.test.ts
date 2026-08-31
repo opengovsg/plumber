@@ -877,13 +877,13 @@ describe('send transactional email', () => {
         { input: { FromEmailAddress: string } },
       ]
       expect(sentCommand.input.FromEmailAddress).toBe(
-        '"Acme, Inc" <info@plumber.gov.sg>',
+        '"Acme, Inc" <admin@example.gov.sg>',
       )
 
       // ...but dataOut shows the clean, unquoted form.
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: expect.objectContaining({
-          from: 'Acme, Inc <info@plumber.gov.sg>',
+          from: 'Acme, Inc <admin@example.gov.sg>',
         }),
       })
     })
