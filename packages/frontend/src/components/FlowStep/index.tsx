@@ -19,6 +19,7 @@ import ErrorFlowStepHeader from '../ErrorFlowStepHeader'
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
 import { infoboxMdComponents } from '../MarkdownRenderer/CustomMarkdownComponents'
 import { DragHandle } from '../SortableList/components'
+import { NESTED_DRAG_HANDLE_WIDTH } from '../SortableList/components/SortableItem'
 
 import { ApproveReject } from './components/ApproveReject'
 import DeleteStepButton from './components/DeleteStepButton'
@@ -27,7 +28,7 @@ import StepAppIcon from './components/StepAppIcon'
 import StepNameAndDemo from './components/StepNameAndDemo'
 import TestAgainInfobox from './components/TestAgainInfobox'
 import FlowStepWrapper from './FlowStepWrapper'
-import { flowStepStyles } from './styles'
+import { flowStepStyles, NESTED_FLOW_STEP_HEIGHT } from './styles'
 
 type FlowStepProps = {
   step: IStep
@@ -36,6 +37,21 @@ type FlowStepProps = {
   allowReorder?: boolean
   // we use this to control the width of condition steps in if-then and for-each
   canChildStepsReorder?: boolean
+  // An if-then V2 block titles its condition step with the block's own name,
+  // so the block's header reads as the block rather than a generic
+  // "Condition".
+  stepNameOverride?: string
+  // An if-then V2 block's condition step doubles as the block's header, so
+  // the block reads as one big step rather than a card holding a card. The
+  // owning container supplies the selected-state border this drops.
+  isContainerHeader?: boolean
+  // An if-then V2 block's header is a step's usual visuals standing in for
+  // the block's name. It is not a step of its own to configure. That's the
+  // condition card beneath it.
+  isClickable?: boolean
+  // An if-then V2 block's condition card drops its own number since the
+  // block's header above already shows one.
+  hideDisplayPosition?: boolean
 }
 
 export default function FlowStep(
@@ -47,7 +63,23 @@ export default function FlowStep(
     isNested,
     allowReorder = true,
     canChildStepsReorder = false,
+    stepNameOverride,
+    isContainerHeader = false,
+    isClickable = true,
+    hideDisplayPosition = false,
   } = props
+
+  // IMPORTANT: borderTopRadius has to be reset explicitly, not just
+  // borderRadius. It maps to the corner longhands, which beat the shorthand
+  // regardless of prop order.
+  const containerHeaderStyles = isContainerHeader
+    ? {
+        borderWidth: 0,
+        borderTopWidth: 0,
+        borderRadius: 'none',
+        borderTopRadius: 'none',
+      }
+    : {}
 
   const {
     isOpen: isModalOpen,
@@ -71,7 +103,7 @@ export default function FlowStep(
   } = useContext(EditorContext)
   const {
     app,
-    stepName,
+    stepName: derivedStepName,
     displayPosition,
     isCompleted,
     isTrigger,
@@ -83,6 +115,7 @@ export default function FlowStep(
     isMrfStep,
     warnsMrfNoGate,
   } = useStepMetadata(step, allowReorder)
+  const stepName = stepNameOverride ?? derivedStepName
 
   const {
     cancelRef,
@@ -147,6 +180,12 @@ export default function FlowStep(
   }
 
   const headerWidth = getFlowStepHeaderWidth(isDrawerOpen, isMobile, isNested)
+
+  // A nested step's drag handle takes its width from the card's right edge,
+  // pulling the card off the flow's centre line. This offset shifts the card
+  // back to centre.
+  const nestedHandleOffset =
+    isNested && shouldShowDragHandle ? NESTED_DRAG_HANDLE_WIDTH / 2 : 0
 
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`
@@ -213,7 +252,17 @@ export default function FlowStep(
             alignItems={isNested ? 'flex-start' : 'center'}
             justifyContent="center"
             flexDir="column"
-            flex="1"
+            flex={nestedHandleOffset ? undefined : '1'}
+            // Without flexShrink={0}, default flex-shrink would claw the
+            // margin nudge back out of this box's width instead of shifting
+            // its position.
+            flexShrink={nestedHandleOffset ? 0 : undefined}
+            w={
+              nestedHandleOffset
+                ? `calc(100% - ${NESTED_DRAG_HANDLE_WIDTH}px)`
+                : undefined
+            }
+            ml={nestedHandleOffset ? `${nestedHandleOffset}px` : undefined}
             minW="0"
           >
             {showMrfReadOnlyNote && (
@@ -308,14 +357,25 @@ export default function FlowStep(
                 shouldHighlight ? 'base.content.brand' : 'base.divider.medium'
               }
               borderTopRadius={hasInfoBox ? 'none' : 'lg'}
-              h={isNested ? '56px' : isApprovalStep ? undefined : '64px'}
+              h={
+                isNested
+                  ? NESTED_FLOW_STEP_HEIGHT
+                  : isApprovalStep
+                  ? undefined
+                  : '64px'
+              }
               minH={isApprovalStep && !isNested ? '124px' : undefined}
               w={headerWidth}
-              onClick={handleClick}
+              onClick={isClickable ? handleClick : undefined}
+              {...(!isClickable && { cursor: 'default', _hover: {} })}
+              {...containerHeaderStyles}
             >
               <Flex {...flowStepStyles.topHeader}>
                 <StepAppIcon
-                  isCompleted={isCompleted}
+                  // The container header stands in for the whole block; its
+                  // own condition step being "complete" doesn't mean the
+                  // block is, so it never shows the checkmark badge.
+                  isCompleted={isContainerHeader ? false : isCompleted}
                   isNested={isNested}
                   isTestSuccessful={isTestSuccessful}
                   shouldTestStepAgain={shouldTestStepAgain}
@@ -323,7 +383,9 @@ export default function FlowStep(
                   step={step}
                 />
                 <StepNameAndDemo
-                  displayPosition={displayPosition}
+                  displayPosition={
+                    hideDisplayPosition ? undefined : displayPosition
+                  }
                   stepName={stepName}
                 />
                 {isDeletable && (
@@ -334,7 +396,9 @@ export default function FlowStep(
                     <DeleteStepButton
                       isNested={isNested}
                       step={step}
-                      displayPosition={displayPosition}
+                      displayPosition={
+                        hideDisplayPosition ? undefined : displayPosition
+                      }
                       stepName={stepName}
                     />
                   </Flex>

@@ -56,6 +56,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 ## Conventions
 
 - **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, single-threaded). Don't mix.
+- **Business-critical tests**: tests pinning down an explicit, user-specified business rule live in their own `*.critical.test.ts` / `*.critical.itest.ts` file, separate from general coverage. Give the file a header comment stating the rule(s) verbatim. A failing test there means the implementation regressed. Confirm with the user before loosening or deleting the assertion.
 - **Package manager**: only use `npm`. Never use `yarn`, `pnpm`, or other package managers.
 - **Installing packages**: always pass the `-E` (exact version) flag.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.

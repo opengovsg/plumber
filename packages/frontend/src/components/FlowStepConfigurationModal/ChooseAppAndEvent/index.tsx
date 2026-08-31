@@ -12,8 +12,10 @@ import { getMrfApprovalConfig } from '@/helpers/formsg'
 import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useIfThenInitializer,
+  useIfThenV1Initializer,
+  useIfThenV2Initializer,
 } from '@/helpers/toolbox'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 import {
   APP_ALLOWING_EMPTY_CONNECTION,
@@ -50,9 +52,14 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
     flowId,
   } = useContext(EditorContext)
 
-  const { modalState, patchModalState, prevStep, isTrigger, step } = useContext(
-    FlowStepConfigurationContext,
-  )
+  const {
+    modalState,
+    patchModalState,
+    prevStep,
+    isTrigger,
+    step,
+    previousBlockId,
+  } = useContext(FlowStepConfigurationContext)
   const { approvalBranches } = useContext(MrfContext)
 
   const { currentScreen, selectedApp } = modalState
@@ -63,7 +70,9 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
 
   const [fetchAppConnections] = useLazyQuery(GET_APP_CONNECTIONS)
 
-  const [initializeIfThen] = useIfThenInitializer()
+  const { isEnabled: isIfThenV2Enabled } = useIfThenV2Enabled()
+  const [initializeIfThenV1] = useIfThenV1Initializer()
+  const [initializeIfThenV2] = useIfThenV2Initializer()
 
   /**
    * Note: App without connections will skip the connection modal screen (custom-api included)
@@ -130,6 +139,7 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             triggerOrAction.key,
             systemConnection?.id || undefined,
             approvalConfig && { approval: approvalConfig },
+            { previousBlockId, isIfThenV2Enabled },
           )
           newStepId = createdStep.id
         } else if (step) {
@@ -139,6 +149,9 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
             app.key === TOOLBOX_APP_KEY &&
             triggerOrAction.key === TOOLBOX_ACTIONS.IfThen
           ) {
+            const initializeIfThen = isIfThenV2Enabled
+              ? initializeIfThenV2
+              : initializeIfThenV1
             const ifThen = await initializeIfThen(step)
             newStepId = ifThen.id
           } else {
@@ -169,13 +182,16 @@ export default function ChooseAppAndEvent(props: ChooseAppAndEventProps) {
       flowId,
       patchModalState,
       prevStep,
+      previousBlockId,
       step,
       onClose,
       onDrawerOpen,
       setCurrentStepId,
       approvalBranches,
       onCreateStep,
-      initializeIfThen,
+      isIfThenV2Enabled,
+      initializeIfThenV1,
+      initializeIfThenV2,
       onUpdateStep,
     ],
   )

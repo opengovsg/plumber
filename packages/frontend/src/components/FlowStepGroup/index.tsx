@@ -15,7 +15,7 @@ import { MIN_FLOW_STEP_WIDTH } from '../Editor/constants'
 import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import Error from './Content/Error'
 import ForEach from './Content/ForEach'
-import IfThen from './Content/IfThen'
+import IfThenV1 from './Content/IfThen/IfThenV1'
 import useDeleteStepConfirmation from './hooks/useDeleteStepConfirmation'
 import { flowStepGroupStyles } from './styles'
 
@@ -128,7 +128,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
           </Flex>
         </Box>
         {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
-          <IfThen
+          <IfThenV1
             groupedSteps={groupedSteps}
             stepsBeforeGroup={stepsBeforeGroup}
           />
