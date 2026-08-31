@@ -1,22 +1,4 @@
-/**
- * Header names that typically carry credentials. These belong in a Custom API
- * connection (encrypted at rest) rather than in a step's Custom Headers, which
- * are stored as plaintext step parameters.
- */
-const SENSITIVE_HEADER_NAMES = new Set([
-  'authorization',
-  'proxy-authorization',
-  'api-key',
-  'x-api-key',
-  'x-apikey',
-  'apikey',
-  'x-auth-token',
-  'x-access-token',
-  'access-token',
-  'auth-token',
-  'x-secret-key',
-  'secret-key',
-])
+import { SENSITIVE_HEADER_NAMES } from '@/helpers/secrets/sensitive-keys'
 
 /**
  * Same shape as the variable regex in compute-parameters.ts. Auth headers built
