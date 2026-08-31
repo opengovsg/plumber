@@ -1055,7 +1055,7 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
-    it('drops a suppressed CC from the SES call but keeps it in dataOut', async () => {
+    it('drops a suppressed CC from the SES call and surfaces it in dataOut', async () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
       // Only the CC is suppressed — the To recipient still sends.
       mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
@@ -1065,7 +1065,12 @@ describe('send transactional email', () => {
         'cc-good@open.gov.sg,cc-bad@open.gov.sg'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      let thrown: unknown
+      try {
+        await sendTransactionalEmail.run($)
+      } catch (e) {
+        thrown = e
+      }
 
       // Sent once for the single (non-suppressed) To recipient, and the
       // suppressed CC is dropped from the actual SES API call.
@@ -1075,15 +1080,91 @@ describe('send transactional email', () => {
         'cc-good@open.gov.sg',
       ])
 
-      // ...but the full CC list (including the suppressed address) is still
-      // reported in dataOut, since CC status is not tracked.
+      // The full CC list is still reported in dataOut, now alongside a
+      // per-address ccStatus marking the suppressed one.
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: expect.objectContaining({
           status: ['ACCEPTED'],
           recipient: ['recipient@open.gov.sg'],
           cc: ['cc-good@open.gov.sg', 'cc-bad@open.gov.sg'],
+          ccStatus: ['ACCEPTED', 'BLACKLISTED'],
         }),
       })
+
+      // The blacklisted CC is no longer silent: it surfaces as a
+      // PartialStepError (all To recipients succeeded, so the step doesn't
+      // fail outright), but with no retry button yet — CC-only retry isn't
+      // built.
+      expect(thrown).toBeInstanceOf(PartialStepError)
+      const thrownMessage = (thrown as Error).message
+      expect(thrownMessage).toContain('cc-bad@open.gov.sg')
+      expect(thrownMessage).not.toContain('cc-good@open.gov.sg')
+      expect(JSON.parse(thrownMessage).partialRetry.buttonMessage).toBe('')
+
+      // The owner's blacklist notification email includes the blacklisted CC.
+      expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blacklistedRecipients: ['cc-bad@open.gov.sg'],
+        }),
+      )
+    })
+
+    it('shows the blacklist removal instructions once, covering both a blacklisted recipient and a blacklisted CC', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      mocks.getSuppressedEmails.mockResolvedValueOnce([
+        'bad-recipient@open.gov.sg',
+        'bad-cc@open.gov.sg',
+      ])
+
+      $.step.parameters.destinationEmail =
+        'good-recipient@open.gov.sg,bad-recipient@open.gov.sg'
+      $.step.parameters.destinationEmailCc =
+        'good-cc@open.gov.sg,bad-cc@open.gov.sg'
+      $.step.parameters.attachments = []
+
+      let thrown: unknown
+      try {
+        await sendTransactionalEmail.run($)
+      } catch (e) {
+        thrown = e
+      }
+
+      expect(thrown).toBeInstanceOf(PartialStepError)
+      const message = (thrown as Error).message
+      expect(message).toContain('bad-recipient@open.gov.sg')
+      expect(message).toContain('bad-cc@open.gov.sg')
+      // One shared "use this form" sentence, not one per address section.
+      expect(message.match(/use this form/g)).toHaveLength(1)
+    })
+
+    it('does not repeat an address blacklisted as both a recipient and a CC', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      mocks.getSuppressedEmails.mockResolvedValueOnce(['both@open.gov.sg'])
+
+      $.step.parameters.destinationEmail = 'good@open.gov.sg,both@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'both@open.gov.sg'
+      $.step.parameters.attachments = []
+
+      let thrown: unknown
+      try {
+        await sendTransactionalEmail.run($)
+      } catch (e) {
+        thrown = e
+      }
+
+      expect(thrown).toBeInstanceOf(PartialStepError)
+      const message = (thrown as Error).message
+      // Shown once, under the recipients section — no separate CC paragraph
+      // repeating the same address.
+      expect(message.match(/both@open\.gov\.sg/g)).toHaveLength(1)
+      expect(message).not.toContain('CC email address')
+
+      // The owner notification email also lists it once, not twice.
+      expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blacklistedRecipients: ['both@open.gov.sg'],
+        }),
+      )
     })
 
     it('does not resend to CC recipients on a partial retry', async () => {

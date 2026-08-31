@@ -283,6 +283,14 @@ async function sendEmail(
     })
     dataOut.status = updatedStatus
     dataOut.recipient = prevDataOut.recipient
+
+    // CC isn't re-sent on a partial retry (see ccList above), so this attempt
+    // knows nothing new about it — carry the previous attempt's cc/ccStatus
+    // forward instead of letting them silently disappear from dataOut.
+    if (prevDataOut.cc) {
+      dataOut.cc = prevDataOut.cc
+      dataOut.ccStatus = prevDataOut.ccStatus
+    }
   }
 
   /**
@@ -302,6 +310,8 @@ async function sendEmail(
   const blacklistedRecipients = dataOut.recipient.filter(
     (_, i) => dataOut.status[i] === 'BLACKLISTED',
   )
+  const blacklistedCcs =
+    dataOut.cc?.filter((_, i) => dataOut.ccStatus?.[i] === 'BLACKLISTED') ?? []
 
   const defaultSendEmailParams = {
     flowId: $.flow.id,
@@ -320,11 +330,19 @@ async function sendEmail(
    * Send blacklist notification email if any
    * If there are any invalid attachments, it will be included in this email
    */
-  if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
+  if (
+    (blacklistedRecipients.length > 0 || blacklistedCcs.length > 0) &&
+    !$.execution.testRun
+  ) {
     try {
       await sendBlacklistEmail({
         ...defaultSendEmailParams,
-        blacklistedRecipients,
+        // Deduped: the same address can be blacklisted as both a recipient
+        // and a CC, and the owner notification email would otherwise list it
+        // twice.
+        blacklistedRecipients: [
+          ...new Set([...blacklistedRecipients, ...blacklistedCcs]),
+        ],
       })
     } catch (e) {
       logger.error(e)
@@ -333,6 +351,7 @@ async function sendEmail(
         flowId: $.flow.id,
         executionId: $.execution.id,
         blacklistedRecipients,
+        blacklistedCcs,
         error: e,
       })
     }
@@ -372,6 +391,7 @@ async function sendEmail(
       error,
       isPartialSuccess: hasAtLeastOneSuccess || invalidAttachments.length > 0,
       blacklistedRecipients,
+      blacklistedCcs,
       invalidAttachments,
       isRetryWithoutAttachments,
     })
