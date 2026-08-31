@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import '@/types/luxon-extensions'
 
+import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { Settings as LuxonSettings } from 'luxon'
 import { URL } from 'node:url'
 
@@ -92,6 +93,10 @@ type AppConfig = {
     roleArn: string
     configurationSet?: string
     sqsQueueUrl?: string
+    /**
+     * Only used for special scenarios (e.g. no SSO)
+     */
+    credentials?: AwsCredentialIdentity
   }
   archiveEnabled: boolean
 }
@@ -197,12 +202,19 @@ const appConfig: AppConfig = {
   },
   // AWS postman SES
   ses: {
-    fromAddress: 'info@plumber.gov.sg',
-    region: 'ap-southeast-2',
+    fromAddress: process.env.SES_FROM_ADDRESS,
+    region: process.env.SES_REGION,
     roleArn: process.env.SES_ROLE_ARN,
     ...(process.env.SES_CONFIGURATION_SET && {
       configurationSet: process.env.SES_CONFIGURATION_SET,
     }),
+    ...(process.env.SES_ACCESS_KEY_ID &&
+      process.env.SES_SECRET_ACCESS_KEY && {
+        credentials: {
+          accessKeyId: process.env.SES_ACCESS_KEY_ID,
+          secretAccessKey: process.env.SES_SECRET_ACCESS_KEY,
+        },
+      }),
     sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
   },
   archiveEnabled: process.env.ARCHIVE_ENABLED === 'true',
