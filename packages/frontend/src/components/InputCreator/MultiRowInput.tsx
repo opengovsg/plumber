@@ -1,4 +1,4 @@
-import type { IField, IFieldDropdownOption } from '@plumber/types'
+import type { IField, IFieldDropdownOption, IJSONValue } from '@plumber/types'
 
 import MultiRow from '@/components/MultiRow'
 import { shouldHideEmptySourceDropdown } from '@/helpers/isFieldHidden'
@@ -16,6 +16,12 @@ type MultiRowInputProps = {
   schema: IField & { subFields: IField[]; addRowButtonText?: string }
   computedName: string
   stepId?: string
+  maxRows?: number
+  defaultValue?: string | IJSONValue
+  // See IFieldMultiRowMultiCol.autofillable.
+  autofillable?: boolean
+  // See IFieldMultiRowMultiCol.maxAutofillOptions.
+  maxAutofillOptions?: number
 }
 
 /**
@@ -23,7 +29,15 @@ type MultiRowInputProps = {
  * source-backed subfield with hideWhenNoOptions resolves to zero options.
  */
 export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
-  const { schema, computedName, stepId } = props
+  const {
+    schema,
+    computedName,
+    stepId,
+    maxRows,
+    defaultValue,
+    autofillable,
+    maxAutofillOptions,
+  } = props
   const { label, required, description, subFields, addRowButtonText } = schema
   const type = schema.type
 
@@ -46,11 +60,7 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
     const preparedOptions =
       hideProbeSubField.options || optionGenerator(data as RawOption[])
     if (
-      shouldHideEmptySourceDropdown(
-        hideProbeSubField,
-        preparedOptions,
-        loading,
-      )
+      shouldHideEmptySourceDropdown(hideProbeSubField, preparedOptions, loading)
     ) {
       return <></>
     }
@@ -67,6 +77,10 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
       showDivider={type !== 'multirow-multicol'}
       type={type}
       stepId={stepId}
+      maxRows={maxRows}
+      defaultValue={defaultValue}
+      autofillable={autofillable}
+      maxAutofillOptions={maxAutofillOptions}
     />
   )
 }
