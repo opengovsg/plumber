@@ -11,6 +11,22 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-08-31',
+    tag: NEW_FEATURE_TAG,
+    title: '🤖 Introducing Pair actions',
+    details: dedent`
+      Pair brings AI into your pipe with two new actions.
+
+      * **Process image** — Extract data from an image or PDF, like fields from a scanned form.
+      * **Process text** — Summarise, categorise, or write text based on your own prompt.
+
+      Read how to set it up [here](https://guide.plumber.gov.sg/user-guides/actions/pair).
+    `,
+    multimedia: {
+      url: 'https://file.go.gov.sg/plumber-x-pair.png',
+    },
+  },
+  {
     date: '2026-07-21',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'OR conditions for If-then and Only continue if',
