@@ -7,7 +7,9 @@ import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
 import { DefaultChatTransport } from 'ai'
 
+import { NOT_AUTHORISED } from '@/config/errors'
 import * as URLS from '@/config/urls'
+import { useSessionExpiredToast } from '@/hooks/useSessionExpiredToast'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
@@ -128,6 +130,7 @@ export interface UseChatStreamOptions {
 
 export function useChatStream(options: UseChatStreamOptions) {
   const toast = useToast()
+  const showSessionExpiredToast = useSessionExpiredToast()
   const navigate = useNavigate()
   const location = useLocation()
   const { ddSessionId, output, chatId, refetchTestExecutionSteps } =
@@ -187,6 +190,16 @@ export function useChatStream(options: UseChatStreamOptions) {
     transport: new DefaultChatTransport({
       api: '/api/chat',
       credentials: 'include',
+      fetch: async (input, init) => {
+        const response = await fetch(input, init)
+        // REST chat bypasses Apollo's error link, so an expired session would
+        // otherwise surface as a raw "Not Authorised!" error toast.
+        if (response.status === 401) {
+          showSessionExpiredToast()
+          throw new Error(NOT_AUTHORISED)
+        }
+        return response
+      },
       prepareSendMessagesRequest: ({ messages }) => {
         // Filter out any initialMessages already tracked by the AI SDK to avoid
         // duplicates (the SDK accumulates messages across exchanges in its own state)
@@ -269,6 +282,10 @@ export function useChatStream(options: UseChatStreamOptions) {
       },
     }),
     onError: (error: Error) => {
+      // The fetch wrapper above already showed the session-expired toast.
+      if (error.message === NOT_AUTHORISED) {
+        return
+      }
       toast({
         title: 'Error: ' + error.message,
         status: 'error',
