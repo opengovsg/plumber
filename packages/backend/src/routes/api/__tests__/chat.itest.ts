@@ -33,14 +33,18 @@ vi.mock('@langfuse/tracing', () => ({
   updateActiveTrace: mocks.updateActiveTrace,
 }))
 
-vi.mock('ai', () => ({
-  convertToModelMessages: vi.fn((msgs) => msgs),
-  smoothStream: vi.fn(() => ({})),
-  stepCountIs: vi.fn(() => false),
-  streamText: mocks.streamText,
-  createUIMessageStream: mocks.createUIMessageStream,
-  createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
-}))
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ai')>()
+  return {
+    ...actual,
+    convertToModelMessages: vi.fn((msgs) => msgs),
+    smoothStream: vi.fn(() => ({})),
+    stepCountIs: vi.fn(() => false),
+    streamText: mocks.streamText,
+    createUIMessageStream: mocks.createUIMessageStream,
+    createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
+  }
+})
 
 vi.mock('@ai-sdk/mcp', () => ({
   experimental_createMCPClient: vi.fn().mockResolvedValue({

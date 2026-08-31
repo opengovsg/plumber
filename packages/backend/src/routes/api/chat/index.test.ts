@@ -186,8 +186,8 @@ describe('chat handler — GitBook MCP integration', () => {
         onError: expect.any(Function),
       }),
     )
-    const toUIMessageStream = vi.mocked(streamText).mock.results[0]?.value
-      ?.toUIMessageStream
+    const toUIMessageStream =
+      vi.mocked(streamText).mock.results[0]?.value?.toUIMessageStream
     expect(toUIMessageStream).toHaveBeenCalledWith(
       expect.objectContaining({
         onError: expect.any(Function),
