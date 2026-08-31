@@ -1093,13 +1093,14 @@ describe('send transactional email', () => {
 
       // The blacklisted CC is no longer silent: it surfaces as a
       // PartialStepError (all To recipients succeeded, so the step doesn't
-      // fail outright), but with no retry button yet — CC-only retry isn't
-      // built.
+      // fail outright), with a resend button that retries just the CC.
       expect(thrown).toBeInstanceOf(PartialStepError)
       const thrownMessage = (thrown as Error).message
       expect(thrownMessage).toContain('cc-bad@open.gov.sg')
       expect(thrownMessage).not.toContain('cc-good@open.gov.sg')
-      expect(JSON.parse(thrownMessage).partialRetry.buttonMessage).toBe('')
+      expect(JSON.parse(thrownMessage).partialRetry.buttonMessage).toBe(
+        'Resend to blacklisted recipients',
+      )
 
       // The owner's blacklist notification email includes the blacklisted CC.
       expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
@@ -1197,6 +1198,154 @@ describe('send transactional email', () => {
       expect(
         input.BulkEmailEntries?.[0].Destination.CcAddresses,
       ).toBeUndefined()
+    })
+
+    it('retries only a blacklisted CC when every To recipient already succeeded', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.destinationEmail = 'good@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc-bad@open.gov.sg'
+      $.step.parameters.attachments = []
+      // Previously: To recipient succeeded, CC was blacklisted. Nothing is
+      // suppressed this round (default mock), simulating it being whitelisted.
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+        status: 'success',
+        errorDetails: 'error error',
+        dataOut: {
+          status: ['ACCEPTED'],
+          recipient: ['good@open.gov.sg'],
+          cc: ['cc-bad@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // Exactly one CC-only send — no To recipients retried (they already
+      // succeeded), and CC goes out with no ToAddresses at all.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [input] = sentBulkCommands()
+      expect(
+        input.BulkEmailEntries?.[0].Destination.ToAddresses,
+      ).toBeUndefined()
+      expect(input.BulkEmailEntries?.[0].Destination.CcAddresses).toEqual([
+        'cc-bad@open.gov.sg',
+      ])
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED'],
+          recipient: ['good@open.gov.sg'],
+          cc: ['cc-bad@open.gov.sg'],
+          ccStatus: ['ACCEPTED'],
+        }),
+      })
+    })
+
+    it('retries a blacklisted recipient and a blacklisted CC together in one send', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      const recipients = ['good@open.gov.sg', 'bad@open.gov.sg']
+      $.step.parameters.destinationEmail = recipients.join(',')
+      $.step.parameters.destinationEmailCc = 'cc-bad@open.gov.sg'
+      $.step.parameters.attachments = []
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+        status: 'success',
+        errorDetails: 'error error',
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: recipients,
+          cc: ['cc-bad@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // Both the blacklisted recipient and the blacklisted CC go out
+      // together, as one combined send.
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      const [input] = sentBulkCommands()
+      expect(input.BulkEmailEntries?.[0].Destination.ToAddresses).toEqual([
+        'bad@open.gov.sg',
+      ])
+      expect(input.BulkEmailEntries?.[0].Destination.CcAddresses).toEqual([
+        'cc-bad@open.gov.sg',
+      ])
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'ACCEPTED'],
+          recipient: recipients,
+          cc: ['cc-bad@open.gov.sg'],
+          ccStatus: ['ACCEPTED'],
+        }),
+      })
+    })
+
+    it('leaves a still-suppressed CC blacklisted without sending anything on retry', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
+      $.step.parameters.destinationEmail = 'good@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc-bad@open.gov.sg'
+      $.step.parameters.attachments = []
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+        status: 'success',
+        errorDetails: 'error error',
+        dataOut: {
+          status: ['ACCEPTED'],
+          recipient: ['good@open.gov.sg'],
+          cc: ['cc-bad@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        },
+      })
+
+      let thrown: unknown
+      try {
+        await sendTransactionalEmail.run($)
+      } catch (e) {
+        thrown = e
+      }
+
+      // Nothing to send — the To recipient already succeeded and the only CC
+      // to retry is still suppressed, so no SES call is made at all.
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect(thrown).toBeInstanceOf(PartialStepError)
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          cc: ['cc-bad@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        }),
+      })
+    })
+
+    it('drops cc/ccStatus rather than corrupting it when retrying a pre-ccStatus execution', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.destinationEmail = 'good@open.gov.sg,bad@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      $.step.parameters.attachments = []
+      // Simulates an execution from before ccStatus existed: cc is present,
+      // ccStatus is entirely missing (the two are independently optional in
+      // the schema).
+      $.getLastExecutionStep = vi.fn().mockResolvedValueOnce({
+        status: 'success',
+        errorDetails: 'error error',
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: ['good@open.gov.sg', 'bad@open.gov.sg'],
+          cc: ['cc@open.gov.sg'],
+        },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      // cc/ccStatus are dropped rather than carried forward half-formed —
+      // no undefined/null entries that would corrupt dataOutSchema on the
+      // next retry.
+      const raw = vi.mocked($.setActionItem).mock.calls.at(-1)?.[0]?.raw as {
+        cc?: unknown
+        ccStatus?: unknown
+      }
+      expect(raw.cc).toBeUndefined()
+      expect(raw.ccStatus).toBeUndefined()
     })
   })
 

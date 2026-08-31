@@ -166,13 +166,16 @@ const SES_BULK_MAX_ENTRIES = 50
  * recipient in that chunk in `Destination.ToAddresses` — one shared email per
  * chunk (everyone in a chunk sees everyone else's address).
  *
- * CC only needs to be delivered once, so it isn't attached to every chunk —
- * that would both duplicate it across chunks *and* risk exceeding SES's real
- * per-message limit (50 combined To+Cc+Bcc addresses), since a full
- * `SES_BULK_MAX_ENTRIES`-recipient chunk plus any CC would already be over.
- * Instead, only the first chunk carries CC, sized to leave it room
+ * Only one chunk ever carries CC — enough to deliver it once, without
+ * duplicating it across chunks or risking SES's real per-message limit (50
+ * combined To+Cc+Bcc addresses; a full `SES_BULK_MAX_ENTRIES`-recipient chunk
+ * plus any CC would already be over). If there are To recipients, the first
+ * chunk carries CC, sized to leave it room
  * (`SES_BULK_MAX_ENTRIES - ccAddressesToSend.length`); every subsequent chunk
- * gets the full `SES_BULK_MAX_ENTRIES` recipients with no CC at all.
+ * gets the full `SES_BULK_MAX_ENTRIES` recipients with no CC. If there are no
+ * To recipients at all (a CC-only retry — every To recipient already
+ * succeeded, only CC needs resending), CC still goes out on its own: one
+ * chunk with no `ToAddresses`.
  *
  * SES returns exactly one `BulkEmailEntryResult` per entry, so that single
  * outcome is broadcast to every recipient in the chunk. The function still
@@ -181,7 +184,9 @@ const SES_BULK_MAX_ENTRIES = 50
  * there being only one physical email underneath. Suppressed/blacklisted
  * recipients never reach this function (filtered out by the caller before
  * chunking), so blacklist granularity stays fully per-recipient regardless of
- * this broadcast.
+ * this broadcast. CC's own outcome is tracked separately via `ccOutcome`,
+ * scoped to whichever single chunk actually carries it — it isn't "a
+ * recipient" and has no independent send of its own to fail.
  */
 async function sendViaSesBulk(
   activeRecipients: string[],
@@ -191,7 +196,16 @@ async function sendViaSesBulk(
   // inflate the bounce rate). The full email.ccList is still reported in
   // dataOut by the caller — only the API call is filtered.
   ccAddressesToSend: string[] | undefined,
-): Promise<PromiseSettledResult<PostmanPromiseFulfilled>[]> {
+): Promise<{
+  results: PromiseSettledResult<PostmanPromiseFulfilled>[]
+  // Whether ccAddressesToSend (if any) was delivered in at least one group,
+  // and — if not — every failure status seen across the groups that carried
+  // it (there's usually only one, but multiple groups can fail differently).
+  // Undefined when there was no CC to send in the first place.
+  ccOutcome:
+    | { delivered: boolean; failureStatuses: PostmanEmailSendStatus[] }
+    | undefined
+}> {
   // Address sent to SES: display name is RFC 5322-quoted when it contains
   // specials (e.g. a comma) so the header isn't malformed.
   const fromAddress = formatFromAddress(
@@ -225,14 +239,20 @@ async function sendViaSesBulk(
     // Not logged: the user's attachments are simply too big, which is an
     // expected outcome surfaced to them as ATTACHMENT-SIZE-EXCEEDED.
     const error = new AttachmentSizeExceededError()
-    return activeRecipients.map((recipientEmail) => ({
-      status: 'rejected',
-      reason: {
-        status: getSesErrorStatus(error),
-        recipient: recipientEmail,
-        error: error as unknown as HttpError,
-      } satisfies PostmanPromiseRejected,
-    }))
+    const status = getSesErrorStatus(error)
+    return {
+      results: activeRecipients.map((recipientEmail) => ({
+        status: 'rejected',
+        reason: {
+          status,
+          recipient: recipientEmail,
+          error: error as unknown as HttpError,
+        } satisfies PostmanPromiseRejected,
+      })),
+      ccOutcome: ccAddressesToSend?.length
+        ? { delivered: false, failureStatuses: [status] }
+        : undefined,
+    }
   }
 
   // SES renders `TemplateContent` through Handlebars, so user content must never
@@ -275,15 +295,23 @@ async function sendViaSesBulk(
     },
   }
 
-  // Only the first chunk carries CC, sized to leave it room within SES's
-  // 50-combined-recipients-per-message limit — every other chunk gets the
+  // Only one group ever carries CC, sized to leave it room within SES's
+  // 50-combined-recipients-per-message limit — every other group gets the
   // full SES_BULK_MAX_ENTRIES recipients with no CC (it already got its one
-  // copy from the first chunk). When To+CC together fit in one message
-  // already, this collapses to a single chunk with everyone in it.
+  // copy elsewhere). When To+CC together fit in one message already, this
+  // collapses to a single group with everyone in it. If there are no To
+  // recipients at all (a CC-only retry), CC still gets its own group with no
+  // recipients rather than being silently dropped.
   const ccCount = ccAddressesToSend?.length ?? 0
   const recipientGroups: { recipients: string[]; cc: string[] | undefined }[] =
-    ccCount > 0 && activeRecipients.length > 0
-      ? (() => {
+    ccCount === 0
+      ? chunk(activeRecipients, SES_BULK_MAX_ENTRIES).map((recipients) => ({
+          recipients,
+          cc: undefined as string[] | undefined,
+        }))
+      : activeRecipients.length === 0
+      ? [{ recipients: [], cc: ccAddressesToSend }]
+      : (() => {
           const firstChunkSize = Math.min(
             activeRecipients.length,
             SES_BULK_MAX_ENTRIES - ccCount,
@@ -302,12 +330,16 @@ async function sendViaSesBulk(
             ),
           ]
         })()
-      : chunk(activeRecipients, SES_BULK_MAX_ENTRIES).map((recipients) => ({
-          recipients,
-          cc: ccAddressesToSend,
-        }))
 
   const client = getSesClient()
+  // CC rides along on every group (recipient-bearing or CC-only): delivered
+  // if any group succeeds. If none do, every failing group's status is kept
+  // (not just the last one to resolve — groups run concurrently, so there's
+  // no meaningful "latest" failure) and the caller picks the highest-priority
+  // one via the same priority sort it already applies to recipient errors.
+  let ccDelivered = false
+  const ccFailureStatuses: PostmanEmailSendStatus[] = []
+
   const chunkResults = await Promise.all(
     recipientGroups.map(
       async ({
@@ -315,11 +347,11 @@ async function sendViaSesBulk(
         cc: chunkCc,
       }): Promise<PromiseSettledResult<PostmanPromiseFulfilled>[]> => {
         try {
-          // One shared BulkEmailEntry per chunk — every recipient in the chunk
-          // goes into the same Destination.ToAddresses, so they're sent a
-          // single email together (not N personalised copies). SES caps a
-          // single message at 50 combined To/Cc/Bcc addresses, which is why
-          // only the first chunk (see above) carries CC.
+          // One shared BulkEmailEntry per group — every recipient in it goes
+          // into the same Destination.ToAddresses, so they're sent a single
+          // email together (not N personalised copies). SES caps a single
+          // message at 50 combined To/Cc/Bcc addresses, which is why only one
+          // group (see above) ever carries CC.
           const response = await client.send(
             new SendBulkEmailCommand({
               FromEmailAddress: fromAddress,
@@ -328,10 +360,10 @@ async function sendViaSesBulk(
               BulkEmailEntries: [
                 {
                   Destination: {
-                    ToAddresses: recipientChunk,
-                    ...(chunkCc?.length && {
-                      CcAddresses: chunkCc,
+                    ...(recipientChunk.length && {
+                      ToAddresses: recipientChunk,
                     }),
+                    ...(chunkCc?.length && { CcAddresses: chunkCc }),
                   },
                 },
               ],
@@ -354,14 +386,19 @@ async function sendViaSesBulk(
 
           // SES returns exactly one BulkEmailEntryResult here (one entry was
           // sent). A 200 does not mean it was accepted. That single outcome is
-          // broadcast to every recipient in the chunk — the caller still gets
+          // broadcast to every recipient in the group — the caller still gets
           // one result per recipient, in `activeRecipients` order, so dataOut's
           // shape and per-recipient partial retry are unaffected by there
           // being only one physical email underneath.
           const entryResult = response.BulkEmailEntryResults?.[0]
 
           if (entryResult?.Status === 'SUCCESS') {
-            incrementMetric('ses.email.sent', {}, recipientChunk.length)
+            if (chunkCc?.length) {
+              ccDelivered = true
+            }
+            if (recipientChunk.length > 0) {
+              incrementMetric('ses.email.sent', {}, recipientChunk.length)
+            }
             return recipientChunk.map((recipientEmail) => ({
               status: 'fulfilled',
               value: {
@@ -389,6 +426,9 @@ async function sendViaSesBulk(
           const status = entryResult
             ? getSesBulkEntryStatus(entryResult)
             : 'ERROR'
+          if (chunkCc?.length) {
+            ccFailureStatuses.push(status)
+          }
           return recipientChunk.map((recipientEmail) => ({
             status: 'rejected',
             reason: {
@@ -400,7 +440,7 @@ async function sendViaSesBulk(
         } catch (e) {
           // The whole call failed (e.g. TooManyRequestsException,
           // BadRequestException from an oversized TemplateData), so nothing in
-          // this chunk was sent — every recipient in it gets the mapped status.
+          // this group was sent — every recipient in it gets the mapped status.
           logger.error('Email send failed via SES', {
             event: 'postman-step-ses-email-failed',
             recipients: recipientChunk,
@@ -414,6 +454,9 @@ async function sendViaSesBulk(
           })
 
           const status = getSesErrorStatus(e)
+          if (chunkCc?.length) {
+            ccFailureStatuses.push(status)
+          }
           return recipientChunk.map((recipientEmail) => ({
             status: 'rejected' as const,
             reason: {
@@ -427,7 +470,13 @@ async function sendViaSesBulk(
     ),
   )
 
-  return chunkResults.flat()
+  return {
+    results: chunkResults.flat(),
+    ccOutcome:
+      ccCount > 0
+        ? { delivered: ccDelivered, failureStatuses: ccFailureStatuses }
+        : undefined,
+  }
 }
 
 /**
@@ -495,22 +544,35 @@ export async function sendTransactionalEmails(
   const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
   // SES sends the whole batch in ⌈N/50⌉ bulk calls and reports a per-recipient
-  // outcome; Postman still needs one API call per recipient.
-  const results: PromiseSettledResult<PostmanPromiseFulfilled>[] = useSes
+  // outcome; Postman still needs one API call per recipient. CC has no status
+  // tracking on the Postman path (it never checks suppression), so ccOutcome
+  // is only ever populated on the SES path.
+  const {
+    results,
+    ccOutcome,
+  }: {
+    results: PromiseSettledResult<PostmanPromiseFulfilled>[]
+    ccOutcome:
+      | { delivered: boolean; failureStatuses: PostmanEmailSendStatus[] }
+      | undefined
+  } = useSes
     ? await sendViaSesBulk(activeRecipients, email, ccAddressesToSend)
-    : await Promise.allSettled(
-        activeRecipients.map(async (recipientEmail) => {
-          try {
-            return await sendViaPostman(http, recipientEmail, email)
-          } catch (e) {
-            throw {
-              status: getPostmanErrorStatus(e),
-              recipient: recipientEmail,
-              error: e,
-            } satisfies PostmanPromiseRejected
-          }
-        }),
-      )
+    : {
+        results: await Promise.allSettled(
+          activeRecipients.map(async (recipientEmail) => {
+            try {
+              return await sendViaPostman(http, recipientEmail, email)
+            } catch (e) {
+              throw {
+                status: getPostmanErrorStatus(e),
+                recipient: recipientEmail,
+                error: e,
+              } satisfies PostmanPromiseRejected
+            }
+          }),
+        ),
+        ccOutcome: undefined,
+      }
 
   const status: PostmanEmailSendStatus[] = []
   const recipient: string[] = []
@@ -552,10 +614,16 @@ export async function sendTransactionalEmails(
   })
 
   // CC has no per-recipient send of its own to fail — it rides along on the
-  // To send(s) — so a blacklisted CC can only be surfaced by pushing a
-  // synthetic error here. Without this, `errorStatus` below would stay
-  // undefined (and no PartialStepError would ever mention the CC) whenever
-  // every To recipient succeeded.
+  // To send(s) — so a CC problem can only be surfaced by pushing a synthetic
+  // error here. Without this, `errorStatus` below would stay undefined (and
+  // no PartialStepError would ever mention the CC) whenever every To
+  // recipient succeeded. Blacklisted CCs never reach sendViaSesBulk at all
+  // (filtered out pre-send), so their status is known immediately; any other
+  // CC send failure (rate-limited, transient, etc.) is only known via
+  // ccOutcome. The two are mutually exclusive — a blacklisted CC is excluded
+  // from ccAddressesToSend, so ccOutcome only reflects the non-blacklisted
+  // subset — but both are pushed independently and left to the priority sort
+  // below, so e.g. a rate-limited CC still wins over an unrelated blacklist.
   const blacklistedCcs = (email.ccList ?? []).filter((cc) =>
     suppressedSet.has(cc),
   )
@@ -567,6 +635,20 @@ export async function sendTransactionalEmails(
         message: 'CC email address is in suppression list',
       } as HttpError,
     })
+  }
+  if (ccOutcome && !ccOutcome.delivered) {
+    // One entry per distinct failure status seen (usually just one, but
+    // groups run concurrently and can fail differently) — the priority sort
+    // below picks the right one, rather than us guessing which "wins".
+    for (const status of new Set(ccOutcome.failureStatuses)) {
+      errors.push({
+        status,
+        recipient: (ccAddressesToSend ?? []).join(', '),
+        error: {
+          message: 'Failed to deliver to CC recipient(s)',
+        } as HttpError,
+      })
+    }
   }
 
   /**
@@ -591,20 +673,23 @@ export async function sendTransactionalEmails(
 
   // CC status is only meaningful on the SES path — the Postman path never
   // checks suppression, so CC there stays untracked (folded into `params.cc`
-  // only, as before).
+  // only, as before). ccOutcome is the direct, authoritative signal for
+  // whether CC was delivered (it accounts for every group CC rode along on,
+  // including a CC-only send with no To recipients at all) — no need to infer
+  // it from the To recipients' own statuses.
   const ccStatus: PostmanEmailSendStatus[] | undefined =
     useSes && email.ccList?.length
       ? email.ccList.map((cc): PostmanEmailSendStatus => {
           if (suppressedSet.has(cc)) {
             return 'BLACKLISTED'
           }
-          // CCs ride along on every To send in the batch, so they're
-          // delivered whenever any To recipient's send succeeded.
-          if (status.some((s) => s === 'ACCEPTED')) {
+          if (ccOutcome?.delivered) {
             return 'ACCEPTED'
           }
           // Nothing was delivered at all — mirror the same top-priority
-          // error the step itself surfaces.
+          // error the step itself surfaces (ccOutcome's own failure
+          // status(es), if any, were already folded into `errors` above, so
+          // sortedErrors already reflects the right one here).
           return sortedErrors.length ? sortedErrors[0].status : 'ERROR'
         })
       : undefined
