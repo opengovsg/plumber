@@ -15,6 +15,7 @@ import Flows from '@/pages/Flows'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
 import SsoCallback from '@/pages/SsoCallback'
+import SsoInitiate from '@/pages/SsoInitiate'
 import Templates from '@/pages/Templates'
 import TileLayout from '@/pages/Tile/layouts/TileLayout'
 import Tiles from '@/pages/Tiles'
@@ -42,6 +43,14 @@ export default createRoutesFromElements(
       element={
         <PublicLayout>
           <SsoCallback />
+        </PublicLayout>
+      }
+    />
+    <Route
+      path={URLS.LOGIN_SSO}
+      element={
+        <PublicLayout>
+          <SsoInitiate />
         </PublicLayout>
       }
     />

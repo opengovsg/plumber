@@ -13,6 +13,7 @@ export const FOUR_O_FOUR = '/404'
 
 export const LOGIN = '/login'
 export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
+export const LOGIN_SSO = '/login/sso'
 export const LOGIN_SSO_REDIRECT = '/login/sso/redirect'
 export const LOGIN_UNAUTHORIZED = '/login/unauthorized'
 

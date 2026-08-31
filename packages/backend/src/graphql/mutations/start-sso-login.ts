@@ -6,7 +6,7 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 
 const startSsoLogin: MutationResolvers['startSsoLogin'] = async (
   _parent,
-  _params,
+  params,
   context,
 ) => {
   const ssoEnabled = await getLdFlagValue<boolean>(
@@ -17,6 +17,14 @@ const startSsoLogin: MutationResolvers['startSsoLogin'] = async (
 
   if (!ssoEnabled) {
     throw new Error('SSO is not enabled')
+  }
+
+  const iss = params.input?.iss
+  if (iss) {
+    const expectedIssuer = await ssoClient.getDiscoveredIssuer()
+    if (iss !== expectedIssuer) {
+      throw new Error('SSO issuer mismatch')
+    }
   }
 
   const { url, transaction } = await ssoClient.createAuthorizationRequest()

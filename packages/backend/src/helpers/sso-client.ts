@@ -65,6 +65,15 @@ export class SsoClient {
     return this.client
   }
 
+  async getDiscoveredIssuer(): Promise<string> {
+    await this.getClient()
+    const issuer = this.issuer?.metadata.issuer
+    if (!issuer) {
+      throw new Error('SSO issuer is not available')
+    }
+    return issuer
+  }
+
   async createAuthorizationRequest(): Promise<{
     url: string
     transaction: SsoLoginTransaction
