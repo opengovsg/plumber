@@ -1,6 +1,7 @@
 import * as winston from 'winston'
 
 import appConfig from '@/config/app'
+import { redactSecrets } from '@/helpers/secrets/redact-log-secrets'
 
 const levels = {
   error: 0,
@@ -27,6 +28,7 @@ winston.addColors(colors)
 const format = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
+  redactSecrets(),
   appConfig.isDev
     ? winston.format.prettyPrint({ colorize: true })
     : winston.format.json(),
