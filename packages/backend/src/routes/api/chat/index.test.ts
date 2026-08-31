@@ -117,7 +117,7 @@ vi.mock('@opentelemetry/api', () => ({
 }))
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import { streamText } from 'ai'
+import { createUIMessageStream, streamText } from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import Connection from '@/models/connection'
@@ -180,6 +180,19 @@ describe('chat handler — GitBook MCP integration', () => {
       }),
     )
     expect(mockClose).toHaveBeenCalledTimes(1)
+
+    expect(createUIMessageStream).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onError: expect.any(Function),
+      }),
+    )
+    const toUIMessageStream = vi.mocked(streamText).mock.results[0]?.value
+      ?.toUIMessageStream
+    expect(toUIMessageStream).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onError: expect.any(Function),
+      }),
+    )
   })
 
   it('calls streamText with only bridge tools and logs error when GitBook MCP client fails', async () => {
