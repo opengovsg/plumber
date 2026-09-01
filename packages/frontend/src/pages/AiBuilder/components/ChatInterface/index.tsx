@@ -145,7 +145,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       >
         <Flex flexDir="column" gap="1.5rem" w="full" maxW="2xl">
           <Text textStyle="h3" textAlign="left">
-            How can we help?
+            What do you want to automate?
           </Text>
           <PromptInput
             sendMessage={sendMessage}
