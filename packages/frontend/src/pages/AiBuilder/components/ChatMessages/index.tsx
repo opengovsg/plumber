@@ -1,11 +1,10 @@
-import { Fragment } from 'react'
 import { Box, VStack } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import { Message } from '@/hooks/useChatStream'
 
-import ChatMessage, { WarningMessage } from './ChatMessage'
+import ChatMessage from './ChatMessage'
 import StreamingMessage from './StreamingMessage'
 
 interface ChatMessagesProps {
@@ -36,16 +35,13 @@ export default function ChatMessages({
           {messages.map((message, index) => {
             const shouldShowPreview = isMobile && message.isChatReady
             const isLast = index === messages.length - 1
-            const isFirst = index === 0
             return (
-              <Fragment key={message.id}>
-                <ChatMessage
-                  message={message}
-                  shouldShowPreview={shouldShowPreview}
-                  shouldShowToolbar={isLast}
-                />
-                {isFirst && <WarningMessage />}
-              </Fragment>
+              <ChatMessage
+                key={message.id}
+                message={message}
+                shouldShowPreview={shouldShowPreview}
+                shouldShowToolbar={isLast}
+              />
             )
           })}
 

@@ -79,26 +79,34 @@ export function ChakraStreamdown({
   const components = useMemo(
     () => ({
       h1: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h1" {...props} />
+        <Text textStyle="h" fontWeight={600} my={2} {...props} />
       ),
       h2: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h2" mb={2} {...props} />
+        <Text textStyle="h5" mt={4} mb={2} {...props} />
       ),
       h3: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h3" mt={2} mb={2} {...props} />
+        <Text textStyle="h6" fontWeight={600} mt={4} mb={2} {...props} />
       ),
       h4: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h4" mt={2} mb={4} {...props} />
+        <Text textStyle="subhead-1" fontWeight={600} mt={4} mb={4} {...props} />
       ),
       h5: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h5" mt={2} mb={4} {...props} />
+        <Text textStyle="subhead-2" mt={4} mb={4} {...props} />
       ),
       h6: (props: React.ComponentProps<typeof Text>) => (
-        <Text textStyle="h6" mt={2} mb={2} {...props} />
+        <Text textStyle="caption-1" mt={4} mb={2} {...props} />
       ),
-      p: (props: React.ComponentProps<typeof Text>) => <Text {...props} />,
+      p: (props: React.ComponentProps<typeof Text>) => (
+        <Text mb={4} lineHeight={1.6} {...props} />
+      ),
       strong: (props: React.ComponentProps<'strong'>) => (
-        <Box as="strong" fontWeight="semibold" display="inline" {...props} />
+        <Box
+          as="strong"
+          fontWeight="semibold"
+          display="inline"
+          my={4}
+          {...props}
+        />
       ),
       code: (props: React.ComponentProps<typeof Code>) => (
         <Code colorScheme="gray" {...props} />
