@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:22-alpine as build
+FROM node:22-bookworm-slim as build
 
 ARG APP_ENV=prod
 ENV VITE_MODE=$APP_ENV
@@ -12,7 +12,7 @@ RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
 RUN npm run build
 RUN npm prune --omit=dev --ignore-scripts
 
-FROM node:22-alpine as main
+FROM node:22-bookworm-slim as main
 
 WORKDIR /opt/plumber
 
