@@ -4,12 +4,6 @@ import { SECRET_KEY_REGEXP } from './sensitive-keys'
 
 const MAX_DEPTH = 8
 const MAX_ARRAY_LENGTH = 100
-const MAX_NODES = 10_000
-
-type Budget = {
-  // Boxed so the node count is shared across the whole traversal, not copied per branch.
-  nodes: number
-}
 
 function isPlainObject(value: object): boolean {
   const prototype = Object.getPrototypeOf(value)
@@ -27,7 +21,6 @@ export function sanitizeLogValue(
   value: unknown,
   depth: number,
   seen: WeakSet<object>,
-  budget: Budget,
 ): unknown {
   if (typeof value === 'function') {
     return undefined
@@ -39,10 +32,6 @@ export function sanitizeLogValue(
 
   if (depth > MAX_DEPTH) {
     return '[max depth]'
-  }
-
-  if (++budget.nodes > MAX_NODES) {
-    return '[truncated]'
   }
 
   if (seen.has(value)) {
@@ -69,7 +58,7 @@ export function sanitizeLogValue(
     if (isArray) {
       const items: unknown[] = value
         .slice(0, MAX_ARRAY_LENGTH)
-        .map((item) => sanitizeLogValue(item, depth + 1, seen, budget))
+        .map((item) => sanitizeLogValue(item, depth + 1, seen))
 
       if (value.length > MAX_ARRAY_LENGTH) {
         items.push(`[${value.length - MAX_ARRAY_LENGTH} more items]`)
@@ -90,7 +79,7 @@ export function sanitizeLogValue(
     for (const [key, nested] of Object.entries(value)) {
       sanitized[key] = SECRET_KEY_REGEXP.test(key)
         ? '[REDACTED]'
-        : sanitizeLogValue(nested, depth + 1, seen, budget)
+        : sanitizeLogValue(nested, depth + 1, seen)
     }
 
     return sanitized
@@ -108,7 +97,6 @@ export function sanitizeLogValue(
  */
 export const redactSecrets = winston.format((info) => {
   const seen = new WeakSet<object>()
-  const budget: Budget = { nodes: 0 }
 
   for (const key of Object.keys(info)) {
     // The colouriser in prettyPrint depends on this controlled string.
@@ -119,7 +107,7 @@ export const redactSecrets = winston.format((info) => {
     try {
       info[key] = SECRET_KEY_REGEXP.test(key)
         ? '[REDACTED]'
-        : sanitizeLogValue(info[key], 0, seen, budget)
+        : sanitizeLogValue(info[key], 0, seen)
     } catch {
       // Winston rethrows format errors into the caller, so a redaction bug must not break logging.
       info[key] = '[redaction failed]'

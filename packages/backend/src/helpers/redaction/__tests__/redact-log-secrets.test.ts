@@ -41,7 +41,7 @@ async function captureRecord(
 }
 
 const sanitize = (value: unknown): unknown =>
-  sanitizeLogValue(value, 0, new WeakSet(), { nodes: 0 })
+  sanitizeLogValue(value, 0, new WeakSet())
 
 describe('redactSecrets', () => {
   const globalAgent = https.globalAgent as unknown as Record<string, unknown>
@@ -269,14 +269,14 @@ describe('sanitizeLogValue', () => {
     expect(sanitized[100]).toBe('[50 more items]')
   })
 
-  it('stops once the node budget runs out', () => {
+  it('keeps every key of a wide object', () => {
     const wide = Object.fromEntries(
       Array.from({ length: 20_000 }, (_, index) => [`key${index}`, { a: 1 }]),
     )
 
     const sanitized = sanitize(wide) as Record<string, unknown>
 
-    expect(Object.values(sanitized)).toContain('[truncated]')
-    expect(sanitized.key0).toEqual({ a: 1 })
+    expect(Object.keys(sanitized)).toHaveLength(20_000)
+    expect(sanitized.key19999).toEqual({ a: 1 })
   })
 })

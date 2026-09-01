@@ -1,7 +1,7 @@
 import * as winston from 'winston'
 
 import appConfig from '@/config/app'
-import { redactSecrets } from '@/helpers/secrets/redact-log-secrets'
+import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 
 const levels = {
   error: 0,
