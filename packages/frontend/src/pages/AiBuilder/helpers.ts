@@ -13,8 +13,19 @@ import {
 // Complete comments (<!-- ... -->) are invisible in HTML but some markdown parsers
 // surface them as raw text. Incomplete comments that haven't reached --> yet
 // (common mid-stream) are stripped so they never flash as visible content.
-export const stripHtmlComments = (text: string): string =>
-  text.replace(/<!--[\s\S]*?-->/g, '').replace(/<!--[\s\S]*$/, '')
+// Looped because removing one comment can splice its neighbours into a new
+// one (e.g. "<!<!-- -->-- -->" only resolves to empty on a second pass).
+export const stripHtmlComments = (text: string): string => {
+  let result = text
+  let previous: string
+  do {
+    previous = result
+    result = previous
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<!--[\s\S]*$/, '')
+  } while (result !== previous)
+  return result
+}
 
 // Ensure markdown headings are preceded by a newline so the parser treats them
 // as block-level elements. Only fires when a heading marker immediately follows

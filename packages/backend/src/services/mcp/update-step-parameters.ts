@@ -13,6 +13,7 @@ import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
+import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
@@ -162,9 +163,18 @@ export async function updateStepParametersService({
     }
 
     if (connectionId !== undefined) {
-      const connection = await user
-        .withAccessibleConnections({ requiredRole: 'viewer' })
-        .findOne({ 'connections.id': connectionId })
+      // Scoped to this pipe, not "any connection the user can see": a
+      // collaborator's broader accessible-connections set spans every flow
+      // they touch, which would let them attach another flow's connection here.
+      const connection = await Connection.query(trx)
+        .findById(connectionId)
+        .where(function () {
+          this.where('connections.user_id', user.id).orWhereExists(
+            FlowConnections.query(trx)
+              .whereColumn('flow_connections.connection_id', 'connections.id')
+              .where('flow_connections.flow_id', pipeId),
+          )
+        })
 
       if (!connection) {
         throw new Error('Connection not found')
