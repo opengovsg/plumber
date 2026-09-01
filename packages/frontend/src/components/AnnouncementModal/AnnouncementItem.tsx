@@ -1,29 +1,25 @@
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode } from 'react'
 import { Components } from 'react-markdown'
 import {
   Box,
+  chakra,
   Image,
   ModalBody,
   ModalHeader,
-  Skeleton,
   Text,
 } from '@chakra-ui/react'
-import { AnimationConfigWithData } from 'lottie-web'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 
-type AnimationData = AnimationConfigWithData['animationData']
+const Video = chakra('video')
 
 type AnnouncementItemMultimedia = RequireExactlyOne<
   {
     url: string
-    animationData: AnimationData
-    // Dynamic import keeps large Lottie JSON out of the main bundle.
-    animationDataLoader: () => Promise<AnimationData>
+    videoSrc: string
   },
-  'url' | 'animationData' | 'animationDataLoader'
+  'url' | 'videoSrc'
 >
 
 export interface AnnouncementItemProps {
@@ -52,51 +48,27 @@ const mdComponents: Components = {
   },
 }
 
-function LazyLottieAnimation({
-  title,
-  loader,
-}: {
-  title: string
-  loader: () => Promise<AnimationData>
-}) {
-  const [animationData, setAnimationData] = useState<AnimationData | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    void loader().then((data) => {
-      if (!cancelled) {
-        setAnimationData(data)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [loader])
-
-  if (!animationData) {
-    // 16:9 placeholder matching the 1920×1080 Lottie canvases
-    return <Skeleton borderTopRadius="lg" w="100%" aspectRatio={16 / 9} />
-  }
-
-  return <LottieWebAnimation title={title} animationData={animationData} />
-}
-
 export default function AnnouncementItem(props: AnnouncementItemProps) {
   const { title, details, multimedia } = props
 
   let displayedMultimedia: ReactNode
-  if (multimedia?.animationDataLoader) {
+  if (multimedia?.videoSrc) {
     displayedMultimedia = (
-      <LazyLottieAnimation
+      <Video
+        borderTopRadius="lg"
+        w="100%"
+        // Reserve the 16:9 box the 1920x1080 sources fill, so the modal
+        // doesn't reflow once the video's metadata arrives
+        aspectRatio={16 / 9}
+        objectFit="cover"
+        src={multimedia.videoSrc}
+        preload="auto"
         title={title}
-        loader={multimedia.animationDataLoader}
-      />
-    )
-  } else if (multimedia?.animationData) {
-    displayedMultimedia = (
-      <LottieWebAnimation
-        title={title}
-        animationData={multimedia.animationData}
+        // muted is required for autoplay to be allowed by browsers
+        autoPlay
+        muted
+        loop
+        playsInline
       />
     )
   } else if (multimedia?.url) {
