@@ -196,20 +196,12 @@ interface ParameterRowProps {
   children: ReactNode
 }
 
-// Shared row layout for both the connection row and each parameter row —
-// keeps the label column (width, alignment, styling) in one place.
+// Shared layout for the connection row and each parameter row —
+// label stacked above content so long values (e.g. email body) get full width.
 function ParameterRow({ label, children }: ParameterRowProps) {
   return (
-    <Flex align="flex-start" gap={4} py={2}>
-      <Text
-        as="span"
-        display="inline-block"
-        fontSize="sm"
-        color="base.content.medium"
-        fontWeight={500}
-        w="80px"
-        flexShrink={0}
-      >
+    <Flex flexDir="column" align="stretch" gap={1} pt={4} pb={2}>
+      <Text as="span" textStyle="subhead-3" color="base.content.medium">
         {label}
       </Text>
       {children}
@@ -354,8 +346,7 @@ export default function StepParameterRows({
       <Box
         pt={1}
         pb={3}
-        pl="58px"
-        pr={4}
+        px={6}
         borderTop="1px solid"
         borderColor="base.divider.medium"
       >
