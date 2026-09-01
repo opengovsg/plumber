@@ -8,9 +8,11 @@ import {
   ModalHeader,
   Text,
 } from '@chakra-ui/react'
+import { AnimationConfigWithData } from 'lottie-web'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 
 const Video = chakra('video')
 
@@ -18,8 +20,9 @@ type AnnouncementItemMultimedia = RequireExactlyOne<
   {
     url: string
     videoSrc: string
+    animationData: AnimationConfigWithData['animationData']
   },
-  'url' | 'videoSrc'
+  'url' | 'videoSrc' | 'animationData'
 >
 
 export interface AnnouncementItemProps {
@@ -69,6 +72,13 @@ export default function AnnouncementItem(props: AnnouncementItemProps) {
         muted
         loop
         playsInline
+      />
+    )
+  } else if (multimedia?.animationData) {
+    displayedMultimedia = (
+      <LottieWebAnimation
+        title={title}
+        animationData={multimedia.animationData}
       />
     )
   } else if (multimedia?.url) {
