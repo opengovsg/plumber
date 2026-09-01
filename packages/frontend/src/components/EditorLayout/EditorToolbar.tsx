@@ -3,7 +3,7 @@ import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
 import { MdOutlineRemoveRedEye } from 'react-icons/md'
 import { Link } from 'react-router-dom'
-import { Hide, HStack, MenuButton, MenuList, Show } from '@chakra-ui/react'
+import { Box, Hide, HStack, MenuButton, MenuList, Show } from '@chakra-ui/react'
 import {
   Button,
   IconButton,
@@ -150,11 +150,50 @@ const ViewOnlyTag = () => {
   )
 }
 
+const LiveTag = () => {
+  return (
+    <TouchableTooltip
+      label="Your pipe is running. It will do the steps you set up."
+      aria-label="live tooltip"
+    >
+      <Tag
+        {...tagStyles}
+        colorScheme="success"
+        bgColor="transparent"
+        mr={4}
+        pointerEvents="auto"
+      >
+        <Box position="relative" boxSize={2} flexShrink={0}>
+          <Box
+            position="absolute"
+            inset={0}
+            borderRadius="full"
+            bg="currentColor"
+            sx={{
+              animation:
+                'live-dot-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
+              '@keyframes live-dot-ping': {
+                '75%, 100%': {
+                  transform: 'scale(2.2)',
+                  opacity: 0,
+                },
+              },
+            }}
+          />
+          <Box boxSize={2} borderRadius="full" bg="currentColor" />
+        </Box>
+        <TagLabel>Live</TagLabel>
+      </Tag>
+    </TouchableTooltip>
+  )
+}
+
 interface EditorToolbarProps {
   loading: boolean
   shouldWarnOnLeave: boolean
   setShouldWarnOnPublish: (shouldWarnOnPublish: boolean) => void
   onFlowStatusUpdate: (active: boolean) => void
+  onUnpublish: () => void
   setLeaveToUrl: (url: string) => void
   handleWarnOnLeave: (e: React.MouseEvent<HTMLButtonElement>) => void
 }
@@ -174,6 +213,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
           <ExecutionsItem type="icon" />
           <GuideItem type="icon" />
           <SettingsItem {...props} type="icon" settingsLink={settingsLink} />
+          {flow?.active && <LiveTag />}
           {flow?.role === 'viewer' ? (
             <ViewOnlyTag />
           ) : (
@@ -204,6 +244,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
               type="button"
               settingsLink={settingsLink}
             />
+            {flow?.active && <LiveTag />}
             {flow?.role === 'viewer' ? (
               <ViewOnlyTag />
             ) : (

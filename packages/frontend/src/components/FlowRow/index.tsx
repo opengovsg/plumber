@@ -140,7 +140,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
                 colorScheme={flow?.active ? 'success' : 'grey'}
                 variant="subtle"
               >
-                <Text>{flow?.active ? 'Published' : 'Draft'}</Text>
+                <Text>{flow?.active ? 'Live' : 'Draft'}</Text>
               </Badge>
 
               {showMenu ? (
