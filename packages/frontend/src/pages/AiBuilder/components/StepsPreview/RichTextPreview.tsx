@@ -9,21 +9,27 @@ interface RichTextPreviewProps {
 
 const ALLOWED_HREF_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:']
 
+// Goes through the URL API rather than a hand-rolled scheme regex, so it
+// inherits the same tab/newline stripping browsers apply before navigating
+// (otherwise "java\tscript:" reads as scheme-less and slips through). A
+// relative href resolves against `base` and inherits its (allowed) protocol,
+// matching the original "no scheme = safe" intent.
+export function isAllowedHref(href: string, base: string): boolean {
+  try {
+    return ALLOWED_HREF_PROTOCOLS.includes(new URL(href, base).protocol)
+  } catch {
+    return false
+  }
+}
+
 // Parses via DOMParser rather than regex: attribute values it returns are
 // already unquoted and HTML-entity-decoded, so a scheme like javascript:
 // can't hide behind missing quotes or an `&colon;` encoding.
-function sanitizeRichTextHtml(html: string): string {
+export function sanitizeRichTextHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   doc.querySelectorAll('a[href]').forEach((anchor) => {
     const href = anchor.getAttribute('href') ?? ''
-    const trimmed = href.trim()
-    const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed)
-    const isAllowed =
-      !hasScheme ||
-      ALLOWED_HREF_PROTOCOLS.some((protocol) =>
-        trimmed.toLowerCase().startsWith(protocol),
-      )
-    if (!isAllowed) {
+    if (!isAllowedHref(href, window.location.origin)) {
       anchor.setAttribute('href', '#')
     }
   })
