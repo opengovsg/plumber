@@ -1,18 +1,28 @@
-import { useMemo } from 'react'
+import { type ReactNode } from 'react'
 import { Components } from 'react-markdown'
-import { Box, Image, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
+import {
+  Box,
+  chakra,
+  Image,
+  ModalBody,
+  ModalHeader,
+  Text,
+} from '@chakra-ui/react'
 import { AnimationConfigWithData } from 'lottie-web'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 
+const Video = chakra('video')
+
 type AnnouncementItemMultimedia = RequireExactlyOne<
   {
     url: string
+    videoSrc: string
     animationData: AnimationConfigWithData['animationData']
   },
-  'url' | 'animationData'
+  'url' | 'videoSrc' | 'animationData'
 >
 
 export interface AnnouncementItemProps {
@@ -43,19 +53,36 @@ const mdComponents: Components = {
 
 export default function AnnouncementItem(props: AnnouncementItemProps) {
   const { title, details, multimedia } = props
-  const displayedMultimedia = useMemo(() => {
-    if (!multimedia) {
-      return
-    }
-    if (multimedia.animationData) {
-      return (
-        <LottieWebAnimation
-          title={title}
-          animationData={multimedia.animationData}
-        />
-      )
-    }
-    return (
+
+  let displayedMultimedia: ReactNode
+  if (multimedia?.videoSrc) {
+    displayedMultimedia = (
+      <Video
+        borderTopRadius="lg"
+        w="100%"
+        // Reserve the 16:9 box the 1920x1080 sources fill, so the modal
+        // doesn't reflow once the video's metadata arrives
+        aspectRatio={16 / 9}
+        objectFit="cover"
+        src={multimedia.videoSrc}
+        preload="auto"
+        title={title}
+        // muted is required for autoplay to be allowed by browsers
+        autoPlay
+        muted
+        loop
+        playsInline
+      />
+    )
+  } else if (multimedia?.animationData) {
+    displayedMultimedia = (
+      <LottieWebAnimation
+        title={title}
+        animationData={multimedia.animationData}
+      />
+    )
+  } else if (multimedia?.url) {
+    displayedMultimedia = (
       <Image
         borderTopRadius="lg"
         fit="fill"
@@ -64,11 +91,16 @@ export default function AnnouncementItem(props: AnnouncementItemProps) {
         alt={title}
       />
     )
-  }, [multimedia, title])
+  }
 
   return (
     <>
-      {displayedMultimedia && <Box>{displayedMultimedia}</Box>}
+      {/* Top inset keeps the modal's close button clear of the media */}
+      {displayedMultimedia && (
+        <Box px={6} pt={10}>
+          {displayedMultimedia}
+        </Box>
+      )}
       <ModalHeader mb={displayedMultimedia ? 0 : 2}>
         <Text textStyle="h4">{title}</Text>
       </ModalHeader>
