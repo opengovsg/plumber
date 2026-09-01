@@ -1,18 +1,29 @@
-import { useMemo } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Components } from 'react-markdown'
-import { Box, Image, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Image,
+  ModalBody,
+  ModalHeader,
+  Skeleton,
+  Text,
+} from '@chakra-ui/react'
 import { AnimationConfigWithData } from 'lottie-web'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 
+type AnimationData = AnimationConfigWithData['animationData']
+
 type AnnouncementItemMultimedia = RequireExactlyOne<
   {
     url: string
-    animationData: AnimationConfigWithData['animationData']
+    animationData: AnimationData
+    // Dynamic import keeps large Lottie JSON out of the main bundle.
+    animationDataLoader: () => Promise<AnimationData>
   },
-  'url' | 'animationData'
+  'url' | 'animationData' | 'animationDataLoader'
 >
 
 export interface AnnouncementItemProps {
@@ -41,21 +52,57 @@ const mdComponents: Components = {
   },
 }
 
+function LazyLottieAnimation({
+  title,
+  loader,
+}: {
+  title: string
+  loader: () => Promise<AnimationData>
+}) {
+  const [animationData, setAnimationData] = useState<AnimationData | null>(
+    null,
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    void loader().then((data) => {
+      if (!cancelled) {
+        setAnimationData(data)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [loader])
+
+  if (!animationData) {
+    // 16:9 placeholder matching the 1920×1080 Lottie canvases
+    return <Skeleton borderTopRadius="lg" w="100%" aspectRatio={16 / 9} />
+  }
+
+  return <LottieWebAnimation title={title} animationData={animationData} />
+}
+
 export default function AnnouncementItem(props: AnnouncementItemProps) {
   const { title, details, multimedia } = props
-  const displayedMultimedia = useMemo(() => {
-    if (!multimedia) {
-      return
-    }
-    if (multimedia.animationData) {
-      return (
-        <LottieWebAnimation
-          title={title}
-          animationData={multimedia.animationData}
-        />
-      )
-    }
-    return (
+
+  let displayedMultimedia: ReactNode
+  if (multimedia?.animationDataLoader) {
+    displayedMultimedia = (
+      <LazyLottieAnimation
+        title={title}
+        loader={multimedia.animationDataLoader}
+      />
+    )
+  } else if (multimedia?.animationData) {
+    displayedMultimedia = (
+      <LottieWebAnimation
+        title={title}
+        animationData={multimedia.animationData}
+      />
+    )
+  } else if (multimedia?.url) {
+    displayedMultimedia = (
       <Image
         borderTopRadius="lg"
         fit="fill"
@@ -64,7 +111,7 @@ export default function AnnouncementItem(props: AnnouncementItemProps) {
         alt={title}
       />
     )
-  }, [multimedia, title])
+  }
 
   return (
     <>
