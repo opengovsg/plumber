@@ -122,6 +122,26 @@ describe('chatRequestSchema', () => {
       })
       expect(result.success).toBe(true)
     })
+
+    it('should accept data-stepUpdate part', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'data-stepUpdate',
+                data: {
+                  stepId: '550e8400-e29b-41d4-a716-446655440000',
+                  parameters: { subject: 'Hello', recipient: 'test@gov.sg' },
+                },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
   })
 
   describe('messages validation', () => {
@@ -135,12 +155,12 @@ describe('chatRequestSchema', () => {
       )
     })
 
-    it('should reject more than 50 messages', () => {
-      const messages = Array(51).fill(validMessage)
+    it('should reject more than 151 messages', () => {
+      const messages = Array(152).fill(validMessage)
       const result = chatRequestSchema.safeParse({ messages })
       expect(result.success).toBe(false)
       expect(result.error?.issues[0].message).toBe(
-        'Cannot send more than 50 messages',
+        'Cannot send more than 151 messages',
       )
     })
   })
@@ -174,14 +194,14 @@ describe('chatRequestSchema', () => {
       )
     })
 
-    it('should reject more than 25 parts', () => {
-      const parts = Array(26).fill({ type: 'text', text: 'part' })
+    it('should reject more than 50 parts', () => {
+      const parts = Array(51).fill({ type: 'text', text: 'part' })
       const result = chatRequestSchema.safeParse({
         messages: [{ role: 'user', parts }],
       })
       expect(result.success).toBe(false)
       expect(result.error?.issues[0].message).toBe(
-        'Message cannot have more than 25 parts',
+        'Message cannot have more than 50 parts',
       )
     })
   })
@@ -192,12 +212,7 @@ describe('chatRequestSchema', () => {
       // straight to calling a tool. This part is echoed back by the frontend
       // on subsequent turns, so empty strings must be valid.
       const result = chatRequestSchema.safeParse({
-        messages: [
-          {
-            role: 'assistant',
-            parts: [{ type: 'text', text: '' }],
-          },
-        ],
+        messages: [{ role: 'assistant', parts: [{ type: 'text', text: '' }] }],
       })
       expect(result.success).toBe(true)
     })

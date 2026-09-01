@@ -1,6 +1,7 @@
 import { IStepConfig } from '@plumber/types'
 
 import { Fragment, useCallback, useMemo } from 'react'
+import { MdOpenInNew } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
@@ -21,6 +22,7 @@ import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-ste
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
+import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
 import BranchStep from './BranchStep'
 import GroupedStepContainer from './GroupedStepContainer'
@@ -40,8 +42,40 @@ export default function StepsPreview() {
     stepGroupCaption,
     clearPersistedState,
   } = useAiBuilderContext()
+  const { stepParametersByStepId, completedStepIds, activeStepId } =
+    useStepConfigContext()
 
   const isMobile = useIsMobile()
+
+  const isMcpPipeMode = Boolean(output?.pipeId) // Phase 2b+: DB pipe exists
+  const isMcpProposalMode = !isMcpPipeMode && Boolean(output?.mcpMode) // Phase 2a: proposal, no DB
+
+  // Derive the active step as the first uncompleted step in order,
+  // but advance past it if the AI has already moved on (e.g. after a step
+  // failed and was skipped — the failed step stays uncompleted but the AI
+  // is configuring a later one).
+  const effectiveActiveStepId = useMemo(() => {
+    if (!isMcpPipeMode || !output?.steps?.length) {
+      return null
+    }
+    const steps: Array<{ id: string }> = output.steps
+    const firstUncompleted = steps.find((s) => !completedStepIds.has(s.id))
+    if (!firstUncompleted) {
+      return null
+    }
+    // If the AI has sent an update for a step that comes after firstUncompleted
+    // (skipped failure case), highlight that later step instead.
+    if (activeStepId && activeStepId !== firstUncompleted.id) {
+      const firstUncompletedIndex = steps.findIndex(
+        (s) => s.id === firstUncompleted.id,
+      )
+      const activeIndex = steps.findIndex((s) => s.id === activeStepId)
+      if (activeIndex > firstUncompletedIndex) {
+        return activeStepId
+      }
+    }
+    return firstUncompleted.id
+  }, [isMcpPipeMode, output?.steps, completedStepIds, activeStepId])
 
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
@@ -55,6 +89,20 @@ export default function StepsPreview() {
     }
     return groupedSteps.slice(1)
   }, [groupedSteps])
+
+  // When in pipe mode, mute the grouped container if none of its steps are active or completed.
+  const isGroupedContainerPending = useMemo(() => {
+    if (!isMcpPipeMode) {
+      return false
+    }
+    const allGroupedSteps = groupedSteps.flat()
+    const hasActiveOrCompleted = allGroupedSteps.some(
+      (s) =>
+        s.id === effectiveActiveStepId ||
+        (s.id != null && completedStepIds.has(s.id)),
+    )
+    return !hasActiveOrCompleted
+  }, [isMcpPipeMode, groupedSteps, effectiveActiveStepId, completedStepIds])
 
   const onCreateFlowWithSteps = useCallback(async () => {
     const { data } = await createFlowWithSteps({
@@ -107,11 +155,11 @@ export default function StepsPreview() {
     clearPersistedState,
   ])
 
-  if (
-    output?.error ||
-    !steps ||
-    !(output?.trigger && output?.actions?.length)
-  ) {
+  const hasNoContent = isMcpPipeMode
+    ? !output?.steps?.length
+    : output?.error || !steps || !(output?.trigger && output?.actions?.length)
+
+  if (hasNoContent) {
     return (
       <Center h="80%">
         <Flex
@@ -126,7 +174,7 @@ export default function StepsPreview() {
           <Text textStyle="h4" fontWeight="normal">
             Something went wrong.
           </Text>
-          {output?.error && <Text>{output.error}</Text>}
+          {!isMcpPipeMode && output?.error && <Text>{output.error}</Text>}
           <Text>Modify your prompt and try again.</Text>
           <Text>
             If this issue persists,{' '}
@@ -142,14 +190,40 @@ export default function StepsPreview() {
 
   return (
     <>
-      <Box opacity={isCreatingFlow ? 0.4 : 1} pos="relative" w="100%">
-        <Step step={triggerStep} />
+      <Box
+        opacity={
+          !isMcpPipeMode && !isMcpProposalMode && isCreatingFlow ? 0.4 : 1
+        }
+        pos="relative"
+        w="100%"
+      >
+        <Step
+          step={triggerStep}
+          {...(isMcpPipeMode && {
+            isActive: triggerStep?.id === effectiveActiveStepId,
+            isConfigured: Boolean(
+              triggerStep?.id && completedStepIds.has(triggerStep.id),
+            ),
+            parameters: triggerStep?.id
+              ? stepParametersByStepId[triggerStep.id]
+              : undefined,
+          })}
+        />
         {stepsBeforeGroup.map((action) => (
           <Fragment key={`${action.position}-${action.appKey}`}>
             <Step
               key={`${action.position}-${action.appKey}`}
               step={action}
               isLastStep={action.position === actionSteps.length + 1}
+              {...(isMcpPipeMode && {
+                isActive: action.id === effectiveActiveStepId,
+                isConfigured: Boolean(
+                  action.id && completedStepIds.has(action.id),
+                ),
+                parameters: action.id
+                  ? stepParametersByStepId[action.id]
+                  : undefined,
+              })}
             />
           </Fragment>
         ))}
@@ -158,6 +232,7 @@ export default function StepsPreview() {
             stepGroupType={stepGroupType as string}
             stepGroupCaption={stepGroupCaption as string}
             isNested={false}
+            isPending={isGroupedContainerPending}
           >
             {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
               <Flex flexDir="column" w="100%" px={2} gap={4} mt={2}>
@@ -166,6 +241,7 @@ export default function StepsPreview() {
                     key={String(branchSteps[0].position)}
                     branchSteps={branchSteps}
                     isMobile={isMobile}
+                    effectiveActiveStepId={effectiveActiveStepId}
                   />
                 ))}
               </Flex>
@@ -181,6 +257,15 @@ export default function StepsPreview() {
                         forEachSteps.length - 1 === index &&
                         ifThenSteps.length === 0
                       }
+                      {...(isMcpPipeMode && {
+                        isActive: step.id === effectiveActiveStepId,
+                        isConfigured: Boolean(
+                          step.id && completedStepIds.has(step.id),
+                        ),
+                        parameters: step.id
+                          ? stepParametersByStepId[step.id]
+                          : undefined,
+                      })}
                     />
                   ))}
                   {ifThenSteps.length > 0 && (
@@ -195,6 +280,7 @@ export default function StepsPreview() {
                             key={String(branchSteps[0].position)}
                             branchSteps={branchSteps}
                             isMobile={isMobile}
+                            effectiveActiveStepId={effectiveActiveStepId}
                           />
                         ))}
                       </Flex>
@@ -208,15 +294,31 @@ export default function StepsPreview() {
           </GroupedStepContainer>
         )}
         <VStack mt={10} gap={2}>
-          <Text textStyle="body-1">Looks good?</Text>
           <HStack alignItems="center" justifyContent="center" gap={2}>
-            <Button variant="solid" onClick={onCreateFlowWithSteps} size="sm">
-              Create this workflow
-            </Button>
+            {isMcpPipeMode ? (
+              <Button
+                variant="solid"
+                size="sm"
+                rightIcon={<MdOpenInNew />}
+                onClick={() => {
+                  window.open(
+                    URLS.FLOW_EDITOR(output.pipeId),
+                    '_blank',
+                    'noopener,noreferrer',
+                  )
+                }}
+              >
+                Open in editor
+              </Button>
+            ) : isMcpProposalMode ? null : (
+              <Button variant="solid" onClick={onCreateFlowWithSteps} size="sm">
+                Create this workflow
+              </Button>
+            )}
           </HStack>
         </VStack>
       </Box>
-      {isCreatingFlow && (
+      {!isMcpPipeMode && !isMcpProposalMode && isCreatingFlow && (
         <Flex
           pos="absolute"
           top="50%"

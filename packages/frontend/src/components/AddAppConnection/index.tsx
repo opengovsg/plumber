@@ -5,6 +5,7 @@ import { FieldValues, SubmitHandler } from 'react-hook-form'
 import {
   Alert,
   AlertIcon,
+  Box,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -15,6 +16,8 @@ import {
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 
+import ConnectionHeader from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConnectionHeader'
+import { DEFAULT_ADD_CONNECTION_LABEL } from '@/components/FlowStepConfigurationModal/constants'
 import InputCreator from '@/components/InputCreator'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
@@ -26,6 +29,7 @@ type AddAppConnectionProps = {
   onClose: (response: Record<string, unknown>) => void
   application: IApp
   connectionId?: string
+  flowId?: string
 }
 
 type Response = {
@@ -39,7 +43,7 @@ type Response = {
 export default function AddAppConnection(
   props: AddAppConnectionProps,
 ): React.ReactElement {
-  const { application, connectionId, onClose } = props
+  const { application, connectionId, onClose, flowId } = props
   const { name, authDocUrl, key, auth } = application
   const [error, setError] = React.useState<IJSONObject | null>(null)
   const [inProgress, setInProgress] = React.useState(false)
@@ -79,6 +83,7 @@ export default function AddAppConnection(
           id: connectionId,
         },
         fields: data,
+        flowId,
       }
 
       let stepIndex = 0
@@ -107,7 +112,7 @@ export default function AddAppConnection(
 
       setInProgress(false)
     },
-    [connectionId, key, steps, onClose],
+    [connectionId, key, steps, onClose, flowId],
   )
 
   if (auth?.connectionType !== 'user-added') {
@@ -135,10 +140,18 @@ export default function AddAppConnection(
     >
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          {hasConnection ? 'Edit connection' : 'Add connection'}
-        </ModalHeader>
-        <ModalCloseButton />
+        <Box my={8}>
+          <ConnectionHeader
+            selectedApp={application}
+            headerText={
+              hasConnection
+                ? `Edit ${name} connection`
+                : auth?.connectionModalLabel?.addConnectionLabel ??
+                  DEFAULT_ADD_CONNECTION_LABEL
+            }
+          />
+          <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />
+        </Box>
 
         {authDocUrl && (
           <Alert status="info" fontWeight="300" px={8}>

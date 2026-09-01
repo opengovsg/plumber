@@ -38,5 +38,24 @@ export const PLACEHOLDER_MESSAGES = [
   "Share what you're trying to do and we'll help you figure out the best way to automate it",
 ]
 
-// Maximum number of messages allowed in a conversation (hard limit)
-export const MAX_MESSAGES = 50
+// Maximum number of messages allowed in a conversation (hard limit).
+// Keep in sync with backend/src/routes/api/chat/{schema,index}.ts.
+export const MAX_MESSAGES = 150
+
+// App keys that support AI Builder's generic in-chat "add connection" flow
+// (secret-key or OAuth-via-popup apps, driven entirely by each app's
+// auth.fields/auth.authenticationSteps — see components/AddAppConnection).
+// FormSG is handled separately by AddFormsgConnectionModal and is
+// intentionally not in this list. Databricks and M365-Excel are
+// system-added (no user-entered fields) and are out of scope for this list.
+export const AI_BUILDER_INLINE_CONNECT_APP_KEYS = [
+  'lettersg',
+  'gathersg',
+  'paysg',
+  'postman-sms',
+  'telegram-bot',
+  'slack',
+] as const
+
+export type AiBuilderInlineConnectAppKey =
+  (typeof AI_BUILDER_INLINE_CONNECT_APP_KEYS)[number]

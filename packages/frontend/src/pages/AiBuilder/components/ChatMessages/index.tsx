@@ -11,12 +11,14 @@ import StreamingMessage from './StreamingMessage'
 interface ChatMessagesProps {
   messages: Message[]
   currentResponse: string
+  isWorking: boolean
   isStreaming: boolean
 }
 
 export default function ChatMessages({
   messages,
   currentResponse,
+  isWorking,
   isStreaming,
 }: ChatMessagesProps) {
   const isMobile = useIsMobile()
@@ -29,7 +31,7 @@ export default function ChatMessages({
         minHeight: 0,
       }}
     >
-      <Box w="full" maxW="3xl" mx="auto" px={4} py={6}>
+      <Box w="full" maxW="3xl" mx="auto" px={8} py={6}>
         <VStack align="stretch" spacing={4}>
           {messages.map((message, index) => {
             const shouldShowPreview = isMobile && message.isChatReady
@@ -49,7 +51,10 @@ export default function ChatMessages({
 
           {/* Streaming response */}
           {isStreaming && (
-            <StreamingMessage currentResponse={currentResponse} />
+            <StreamingMessage
+              currentResponse={currentResponse}
+              showWorkingIndicator={isWorking}
+            />
           )}
         </VStack>
       </Box>

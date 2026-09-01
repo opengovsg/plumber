@@ -1,6 +1,8 @@
-import { IApp, IStep } from '@plumber/types'
+import { IApp, IJSONObject, IStep } from '@plumber/types'
 
+import { useMemo, useState } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
+import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
 import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
@@ -10,24 +12,48 @@ import { SUPPORT_FORM_LINK } from '@/config/urls'
 import getStepName from '@/helpers/getStepName'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 
+import StepParameterRows from './StepParameterRows'
+
 interface AiStep extends IStep {
   description?: string
+  connectionLabel?: string | null
 }
 
 interface StepProps {
   step?: AiStep | null
   isNested?: boolean
   isLastStep?: boolean
+  isActive?: boolean
+  isConfigured?: boolean
+  parameters?: IJSONObject
 }
 
 export default function Step(props: StepProps) {
-  const { step, isNested, isLastStep } = props
-  const { allApps } = useAiBuilderContext()
+  const { step, isNested, isLastStep, isActive, isConfigured, parameters } =
+    props
+  const { allApps, steps } = useAiBuilderContext()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const app = allApps?.find(
     (currentApp: IApp) => currentApp.key === step?.appKey,
   )
   const { stepName } = getStepName(allApps, step as IStep)
+
+  const stepNameById = useMemo(
+    () =>
+      new Map(
+        steps.map((s) => [
+          s.id,
+          `${s.position}. ${getStepName(allApps, s).stepName}`,
+        ]),
+      ),
+    [steps, allApps],
+  )
+
+  // Only mute when we're in configuration mode (props explicitly set to false)
+  // Undefined means proposal mode — show all steps at full opacity
+  const isPending = isActive === false && isConfigured === false
+  const showParams = parameters && (isActive || (isConfigured && isExpanded))
 
   if (!step) {
     return (
@@ -71,7 +97,12 @@ export default function Step(props: StepProps) {
   }
 
   return (
-    <Flex flexDir="column" w="100%">
+    <Flex
+      flexDir="column"
+      w="100%"
+      opacity={isPending ? 0.55 : 1}
+      transition="opacity 0.15s"
+    >
       <Flex justifyContent="center">
         <Flex
           data-test="flow-step"
@@ -79,17 +110,43 @@ export default function Step(props: StepProps) {
           borderTopWidth="1px"
           borderTopRadius="lg"
           w={isNested ? '100%' : '600px'}
-          pointerEvents="none"
+          pointerEvents={isPending ? 'none' : 'auto'}
+          flexDir="column"
+          alignItems="stretch"
+          justifyContent="flex-start"
+          // The header, not this outer card, owns the expand/collapse click —
+          // suppress the container's own hover highlight so only the header
+          // reacts to hover.
+          _hover={{ bg: 'white', cursor: 'default' }}
+          // Active: override border
+          {...(isActive && {
+            borderColor: 'primary.500',
+            boxShadow: '0 0 0 3px var(--chakra-colors-primary-100)',
+          })}
         >
-          <Flex {...flowStepStyles.topHeader} py={isNested ? 3 : 4}>
+          <Flex
+            {...flowStepStyles.topHeader}
+            py={isNested ? 3 : 4}
+            cursor={isConfigured && !isActive ? 'pointer' : 'default'}
+            onClick={
+              isConfigured && !isActive
+                ? () => setIsExpanded((v) => !v)
+                : undefined
+            }
+            {...(isConfigured &&
+              !isActive && {
+                _hover: { bg: 'interaction.muted.neutral.hover' },
+              })}
+          >
             <StepAppIcon
-              isCompleted={undefined}
+              isCompleted={isConfigured}
               isNested={isNested}
-              isTestSuccessful={undefined}
+              isTestSuccessful={isConfigured ? true : undefined}
               shouldTestStepAgain={false}
               app={app}
               step={step}
             />
+
             <Box w="100%">
               <StepNameAndDemo
                 stepName={stepName}
@@ -97,12 +154,34 @@ export default function Step(props: StepProps) {
               />
               <Text textStyle="body-2">{step.description}</Text>
             </Box>
+
+            {/* Chevron for configured accordion toggle */}
+            {isConfigured && !isActive && (
+              <Icon
+                as={isExpanded ? RiArrowUpSLine : RiArrowDownSLine}
+                boxSize={5}
+                color="base.content.medium"
+                flexShrink={0}
+                ml={2}
+              />
+            )}
           </Flex>
+
+          {showParams && (
+            <StepParameterRows
+              parameters={parameters}
+              appKey={step.appKey ?? ''}
+              stepKey={step.key ?? ''}
+              stepId={step.id ?? ''}
+              connectionLabel={step.connectionLabel}
+              stepNameById={stepNameById}
+            />
+          )}
         </Flex>
       </Flex>
       {!isLastStep && (
         <Flex justifyContent="center" h={isNested ? 6 : 12}>
-          <Divider orientation="vertical" borderColor="base.divider.strong" />
+          <Divider orientation="vertical" borderColor="base.divider.medium" />
         </Flex>
       )}
     </Flex>

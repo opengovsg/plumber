@@ -228,6 +228,11 @@ export interface IFlowConfig {
   // AI Builder config
   aiBuilderConfig?: {
     traceId: string // trace id on Rome (Langfuse)
+    suggested?: Array<{
+      position: number
+      appKey: string | null
+      key: string | null
+    }>
   }
   isForceClogged?: boolean
   // Set to true to prevent the archival job from archiving executions for this
@@ -357,6 +362,14 @@ export interface IBaseField {
    * other array elements).
    */
   hiddenIf?: IFieldVisibilityCondition
+
+  /**
+   * Allows hiding a field from the AI Builder chat only, while still showing
+   * it in the pipe editor. Shares the same condition shape as `hiddenIf`,
+   * but only `always_true` is currently evaluated by the MCP server (which
+   * has no runtime sibling-field values to check other conditions against).
+   */
+  hiddenFromAiIf?: IFieldVisibilityCondition
 
   // message to show when no variables are available
   noVariablesMessage?: string
@@ -1363,4 +1376,105 @@ export interface IFlowSteps {
   trigger: IFlowStepsTrigger
   actions: IFlowStepsAction[]
   traceId?: string
+}
+
+// ── MCP Bridge API types ────────────────────────────────────────────────────
+
+export interface IMcpAppField {
+  key: string
+  label: string
+  type: string
+  description?: string
+  required: boolean
+  options?: IMcpFieldOption[]
+  isDynamic?: boolean
+  dynamicDataKey?: string
+  dynamicDataParameters?: Record<string, string>
+  subFields?: IMcpAppField[]
+  maxGroups?: number
+  maxRowsPerGroup?: number
+  /**
+   * If set, this field only accepts a variable reference whose upstream
+   * output is tagged with one of these types (see `IDataOutMetadatum.type`,
+   * surfaced per-step via `execute_step`'s `dataOutMetadata`).
+   */
+  variableTypes?: TDataOutMetadatumType[]
+}
+
+export interface IMcpAppAction {
+  key: string
+  name: string
+  description?: string
+  requiresConnection: boolean
+  fields: IMcpAppField[]
+}
+
+export interface IMcpApp {
+  key: string
+  name: string
+  triggers: IMcpAppAction[]
+  actions: IMcpAppAction[]
+}
+
+export interface IMcpStepDetail {
+  id: string
+  position: number
+  appKey: string
+  key: string
+  type: 'trigger' | 'action'
+  /** Configured parameter values — never contains connection credentials */
+  parameters: Record<string, unknown>
+}
+
+export interface IMcpPipeSummary {
+  id: string
+  name: string
+  active: boolean
+  stepCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpPipeDetail extends IMcpPipeSummary {
+  steps: IMcpStepDetail[]
+}
+
+export interface IMcpExecution {
+  id: string
+  pipeId: string
+  status: 'success' | 'failure' | null
+  testRun: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpVerifyResponse {
+  userId: string
+  email: string
+}
+
+export interface IMcpConnection {
+  id: string
+  appKey: string
+  label: string
+  verified: boolean
+}
+
+export interface IMcpFieldOption {
+  label: string
+  value: string
+}
+
+
+export interface IMcpIncompleteStep {
+  stepId: string
+  position: number
+  appKey: string | null
+  missingFields: Array<{ key: string; label: string }>
+  missingConnection: boolean
+}
+
+export interface IMcpActivateError {
+  isError: true
+  incompleteSteps: IMcpIncompleteStep[]
 }

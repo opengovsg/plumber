@@ -1,6 +1,8 @@
 export interface ClarificationQuestion {
   question: string
   options: string[]
+  /** Renders the question as a visually urgent warning — reserve for choices with a real, hard-to-reverse consequence (e.g. overriding a connection another pipe depends on). */
+  isWarning?: boolean
 }
 
 /**
@@ -37,6 +39,8 @@ export function parseClarificationBlock(
         continue
       }
       current = { question, options: [] }
+    } else if (/^WARNING:\s*true$/i.test(line) && current) {
+      current.isWarning = true
     } else if (line.startsWith('- ') && current) {
       const option = line.slice(2).trim()
       if (option) {
@@ -55,6 +59,5 @@ export function parseClarificationBlock(
     questions.push(current)
   }
 
-  const valid = questions.filter((q) => q.options.length >= 2)
-  return valid.length > 0 ? valid : null
+  return questions.length > 0 ? questions : null
 }

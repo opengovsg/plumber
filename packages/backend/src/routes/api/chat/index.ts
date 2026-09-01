@@ -15,6 +15,7 @@ import {
   smoothStream,
   stepCountIs,
   streamText,
+  type UIMessageStreamWriter,
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
@@ -30,15 +31,52 @@ import {
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 import { model, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
+import Connection from '@/models/connection'
+import Flow from '@/models/flow'
+import { connectionLabel } from '@/services/mcp/list-connections'
 import { AuthenticatedRequest } from '@/types/express/context'
 
-import { serializeMessagesForLangfuse } from './helpers'
+import {
+  buildEstablishedConnectionReminder,
+  resolveEstablishedFormConnection,
+  serializeMessagesForLangfuse,
+} from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
+import { parseColumnTableBlock } from './parse-column-table-block'
+import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
 import { chatRequestSchema } from './schema'
 
-const MAX_MESSAGES = 50
+// Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
+const MAX_MESSAGES = 150
+
+function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
+  const questions = parseClarificationBlock(text)
+  if (questions) {
+    writer.write({
+      type: 'data-clarification',
+      data: { questions },
+    })
+  }
+
+  const dynamicPicker = parseDynamicPickerBlock(text)
+  if (dynamicPicker) {
+    writer.write({
+      type: 'data-dynamicPicker',
+      data: dynamicPicker,
+    })
+  }
+
+  const columnTable = parseColumnTableBlock(text)
+  if (columnTable) {
+    writer.write({
+      type: 'data-columnTable',
+      data: columnTable,
+    })
+  }
+}
 
 const handleChatStream = observe(
   async (req: AuthenticatedRequest, res: Response) => {
@@ -97,8 +135,13 @@ const handleChatStream = observe(
       // Get the active trace ID from Langfuse context
       const traceId = getActiveTraceId() || ''
 
-      // +1 for the system message
-      const isAtLimit = messages.length + 1 >= MAX_MESSAGES
+      // Use rawMessages (UIMessage count from the client) rather than the expanded
+      // ModelMessages array. convertToModelMessages inflates the count because each
+      // tool call round-trip becomes separate assistant + tool_result model messages,
+      // which would trigger summary mode far too early on tool-heavy conversations.
+      // Mirrors the frontend's hasReachedLimit check exactly (same field, same
+      // threshold) so both sides agree on which turn is the last one.
+      const isAtLimit = rawMessages.length >= MAX_MESSAGES
 
       // Get the prompt from Langfuse
       const prompt = await getPrompt(
@@ -115,9 +158,20 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
+      // Re-derived fresh every turn from the raw message text and verified
+      // against this user's own connections — never trust the connectionId a
+      // user references in their own chat text without checking ownership
+      // first (see resolveEstablishedFormConnection).
+      const establishedFormConnection = await resolveEstablishedFormConnection(
+        context.currentUser,
+        rawMessages,
+      )
+
       const systemMessage = {
         role: 'system' as const,
-        content: buildSystemPrompt(prompt.prompt, restrictedApps),
+        content:
+          buildSystemPrompt(prompt.prompt, restrictedApps) +
+          buildEstablishedConnectionReminder(establishedFormConnection),
       }
       const allMessages = [systemMessage, ...messages]
 
@@ -145,13 +199,29 @@ const handleChatStream = observe(
 
       let workflowError = 'Unable to generate the workflow.'
 
+      let activePipeId: string | null = null
+
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
+          const mcpTools = createMcpBridgeTools(
+            context.currentUser,
+            traceId,
+            (pipeId) => {
+              activePipeId = pipeId
+            },
+            (stepId, parameters, parameterLabels) => {
+              writer.write({
+                type: 'data-stepUpdate',
+                data: { stepId, parameters, parameterLabels },
+              })
+            },
+          )
+
           const result = streamText({
             model,
             messages: allMessages,
-            tools: gitbookTools,
-            stopWhen: stepCountIs(5),
+            tools: { ...gitbookTools, ...mcpTools },
+            stopWhen: stepCountIs(10),
             experimental_transform: smoothStream({
               chunking: 'word', // Stream word-by-word for typing effect
             }),
@@ -190,46 +260,134 @@ const handleChatStream = observe(
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
 
-                const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
-                  event.text,
-                )
+                const mcpStepConfig =
+                  aiBuilderFlag.config.mcpStepConfig ?? false
 
-                let flowSteps: IFlowSteps | undefined = undefined
-
-                if (hasWorkflowMetadata) {
-                  try {
-                    const parsedWorkflowMetadata = parseWorkflowMetadata(
-                      event.text,
-                      restrictedApps,
-                    )
-                    flowSteps = { ...parsedWorkflowMetadata, traceId }
-                  } catch (error) {
-                    workflowError =
-                      error instanceof BadUserInputError
-                        ? error.message
-                        : 'Unable to generate the workflow.'
+                if (mcpStepConfig) {
+                  // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
+                  const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
+                    event.text,
+                  )
+                  if (hasWorkflowMetadata) {
+                    try {
+                      const parsedWorkflowMetadata = parseWorkflowMetadata(
+                        event.text,
+                        restrictedApps,
+                      )
+                      const flowSteps = { ...parsedWorkflowMetadata, traceId }
+                      writer.write({
+                        type: 'data-isChatReady',
+                        data: { isChatReady: true, flowSteps, mcpMode: true },
+                      })
+                    } catch (error) {
+                      const msg =
+                        error instanceof BadUserInputError
+                          ? error.message
+                          : 'Unable to generate the workflow.'
+                      writer.write({
+                        type: 'data-isChatReady',
+                        data: {
+                          isChatReady: true,
+                          error: msg,
+                          mcpMode: true,
+                        },
+                      })
+                    }
                   }
-                }
 
-                // isChatReady: true whenever WORKFLOW_METADATA is present (success or error)
-                // isChatReady: false only when there is no WORKFLOW_METADATA block
-                // NOTE: type MUST start with "data-" - SDK enforces this
-                writer.write({
-                  type: 'data-isChatReady',
-                  data: {
-                    isChatReady: hasWorkflowMetadata,
-                    ...(hasWorkflowMetadata &&
-                      (flowSteps ? { flowSteps } : { error: workflowError })),
-                  },
-                })
+                  // Phase 2b+: MCP tools ran this turn — emit fresh pipe state from DB
+                  if (activePipeId) {
+                    const flow = await Flow.query()
+                      .findById(activePipeId)
+                      .where('user_id', context.currentUser.id)
+                    const steps = flow
+                      ? await flow
+                          .$relatedQuery('steps')
+                          .orderBy('position', 'asc')
+                      : []
 
-                if (!hasWorkflowMetadata) {
-                  const questions = parseClarificationBlock(event.text)
-                  if (questions) {
+                    // Resolve connection labels fresh each turn — a step's
+                    // connection can be repointed independently of the step row.
+                    const connectionIds = [
+                      ...new Set(
+                        steps
+                          .map((step) => step.connectionId)
+                          .filter((id): id is string => !!id),
+                      ),
+                    ]
+                    const connectionsById = connectionIds.length
+                      ? new Map(
+                          (
+                            await Connection.query().findByIds(connectionIds)
+                          ).map((connection) => [connection.id, connection]),
+                        )
+                      : new Map<string, Connection>()
+
                     writer.write({
-                      type: 'data-clarification',
-                      data: { questions },
+                      type: 'data-pipeState',
+                      data: {
+                        pipeId: activePipeId,
+                        steps: steps.map((step) => {
+                          const connection = step.connectionId
+                            ? connectionsById.get(step.connectionId)
+                            : undefined
+                          return {
+                            id: step.id,
+                            appKey: step.appKey,
+                            key: step.key,
+                            type: step.type,
+                            position: step.position,
+                            status: step.status,
+                            parameters: step.parameters,
+                            connectionId: step.connectionId ?? null,
+                            connectionLabel: connection
+                              ? connectionLabel(connection)
+                              : null,
+                          }
+                        }),
+                      },
                     })
+                  }
+
+                  // Clarification blocks on both phases
+                  emitTextAnnotations(event.text, writer)
+                } else {
+                  // Old YAML path — unchanged
+                  const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
+                    event.text,
+                  )
+
+                  let flowSteps: IFlowSteps | undefined = undefined
+
+                  if (hasWorkflowMetadata) {
+                    try {
+                      const parsedWorkflowMetadata = parseWorkflowMetadata(
+                        event.text,
+                        restrictedApps,
+                      )
+                      flowSteps = { ...parsedWorkflowMetadata, traceId }
+                    } catch (error) {
+                      workflowError =
+                        error instanceof BadUserInputError
+                          ? error.message
+                          : 'Unable to generate the workflow.'
+                    }
+                  }
+
+                  // isChatReady: true whenever WORKFLOW_METADATA is present (success or error)
+                  // isChatReady: false only when there is no WORKFLOW_METADATA block
+                  // NOTE: type MUST start with "data-" - SDK enforces this
+                  writer.write({
+                    type: 'data-isChatReady',
+                    data: {
+                      isChatReady: hasWorkflowMetadata,
+                      ...(hasWorkflowMetadata &&
+                        (flowSteps ? { flowSteps } : { error: workflowError })),
+                    },
+                  })
+
+                  if (!hasWorkflowMetadata) {
+                    emitTextAnnotations(event.text, writer)
                   }
                 }
               } catch (error) {
