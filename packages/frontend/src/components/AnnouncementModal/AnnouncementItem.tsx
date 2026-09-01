@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Components } from 'react-markdown'
 import {
   Box,
@@ -59,9 +59,7 @@ function LazyLottieAnimation({
   title: string
   loader: () => Promise<AnimationData>
 }) {
-  const [animationData, setAnimationData] = useState<AnimationData | null>(
-    null,
-  )
+  const [animationData, setAnimationData] = useState<AnimationData | null>(null)
 
   useEffect(() => {
     let cancelled = false
