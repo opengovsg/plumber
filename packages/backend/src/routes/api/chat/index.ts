@@ -23,6 +23,10 @@ import { Router } from 'express'
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import {
+  AI_CHAT_GENERIC_ERROR_MESSAGE,
+  getAiChatErrorMessage,
+} from '@/helpers/ai/get-ai-chat-error-message'
 import { getPrompt } from '@/helpers/ai/get-prompt'
 import {
   parseWorkflowMetadata,
@@ -201,7 +205,11 @@ const handleChatStream = observe(
 
       let activePipeId: string | null = null
 
+      // AI SDK 5 defaults onError to getErrorMessage, which forwards raw
+      // litellm/provider dumps to the client. Override both stream constructors
+      // so only UserFacingError (and a few mapped cases) reach the UI.
       const stream = createUIMessageStream({
+        onError: getAiChatErrorMessage,
         execute: async ({ writer }) => {
           const mcpTools = createMcpBridgeTools(
             context.currentUser,
@@ -417,7 +425,7 @@ const handleChatStream = observe(
                 trace.getActiveSpan()?.end()
               }
             },
-            onError: (error) => {
+            onError: ({ error }) => {
               void mcpClient?.close()
               mcpClient = null
               const errorMessage =
@@ -439,6 +447,7 @@ const handleChatStream = observe(
           // Merge text stream into the response with metadata
           writer.merge(
             result.toUIMessageStream({
+              onError: getAiChatErrorMessage,
               messageMetadata: () => ({
                 traceId,
                 model: MODEL_TYPE,
@@ -456,12 +465,13 @@ const handleChatStream = observe(
     } catch (error) {
       logger.error('Error in chat stream', { error })
 
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred'
+      const errorMessage = getAiChatErrorMessage(error)
 
       // If headers haven't been sent yet, send error response
       if (!res.headersSent) {
-        res.status(500).json({ error: errorMessage })
+        res.status(500).json({
+          error: errorMessage || AI_CHAT_GENERIC_ERROR_MESSAGE,
+        })
       } else {
         res.end()
       }

@@ -286,10 +286,14 @@ export function useChatStream(options: UseChatStreamOptions) {
       if (error.message === NOT_AUTHORISED) {
         return
       }
+      // Backend returns '' for AbortError (user clicked stop). Skip the toast.
+      if (!error.message.trim()) {
+        return
+      }
       toast({
-        title: 'Error: ' + error.message,
+        title: error.message,
         status: 'error',
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
         position: 'top',
       })
