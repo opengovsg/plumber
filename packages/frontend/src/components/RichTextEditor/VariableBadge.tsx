@@ -7,10 +7,13 @@ import { NodeViewWrapper } from '@tiptap/react'
 import { EditorContext } from '@/contexts/Editor'
 import { POPOVER_OPACITY_MOTION_PROPS } from '@/theme/constants'
 
+import { RichTextEditorContext } from './RichTextEditorContext'
+
 const PLACEHOLDER_TEMPLATE_STEP_ID = '00000000-0000-0000-0000-000000000000'
 
 export const VariableBadge = ({ node }: { node: Node }) => {
   const { stepsWithVars } = useContext(EditorContext)
+  const { getVariableStepName } = useContext(RichTextEditorContext)
   // this happens when there is no value mapped properly
   const isEmpty = node.attrs.value === '' || node.attrs.value == null
   const value = String(node.attrs.value)
@@ -21,7 +24,9 @@ export const VariableBadge = ({ node }: { node: Node }) => {
   const stepId = node.attrs.id?.startsWith('step.')
     ? node.attrs.id.split('.')[1]
     : null
-  const step = stepsWithVars.find((step) => step.id === stepId)
+  const stepName =
+    getVariableStepName?.(node.attrs.id) ??
+    stepsWithVars.find((step) => step.id === stepId)?.name
 
   return (
     <NodeViewWrapper>
@@ -31,7 +36,7 @@ export const VariableBadge = ({ node }: { node: Node }) => {
         label={
           isEmpty && !isTemplate
             ? 'This is a missing variable, check your previous steps and reselect a variable'
-            : step?.name
+            : stepName
         }
         aria-label="variable badge tooltip"
       >

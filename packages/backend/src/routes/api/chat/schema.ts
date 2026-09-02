@@ -18,12 +18,31 @@ const optionalTracingId = z
   })
   .optional()
 
-// Limits to protect API and LLM costs
-const MAX_MESSAGES = 50
+// Limits to protect API and LLM costs.
+// Keep in sync with index.ts and frontend/src/pages/AiBuilder/constants.ts.
+const MAX_MESSAGES = 150
+// Hard reject ceiling, with headroom above MAX_MESSAGES so a legitimate request
+// at the boundary (e.g. one carrying the one-time pipe-context-resync message)
+// is never rejected before isAtLimit (index.ts) gets a chance to trigger the
+// chat-summary prompt.
+const MAX_RAW_MESSAGES = MAX_MESSAGES + 1
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
-// 5 steps × up to 4 parts each (step-start + empty-text + dynamic-tool + data-*)
-// plus headroom; must exceed stepCountIs(5) × parts-per-step
-const MAX_PARTS_PER_MESSAGE = 25
+// Tool-use turns can produce many parts (step-start + tool-invocation per call + text),
+// so allow enough headroom for up to ~10 tool calls per assistant turn.
+const MAX_PARTS_PER_MESSAGE = 50
+
+// Tool invocation part shape — shared by all MCP bridge tool entries below.
+// The backend does not process these parts; it only needs to accept them when
+// the AI SDK echoes the full assistant message back on subsequent turns.
+const toolPart = <T extends string>(toolType: T) =>
+  z.object({
+    type: z.literal(toolType),
+    toolCallId: z.string().optional(),
+    toolName: z.string().optional(),
+    state: z.string().optional(),
+    input: z.unknown().optional(),
+    output: z.unknown().optional(),
+  })
 
 const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
@@ -59,7 +78,47 @@ const messagePartSchema = z.discriminatedUnion('type', [
         .array(
           z.object({
             question: z.string(),
-            options: z.array(z.string()).min(2),
+            options: z.array(z.string()),
+            isWarning: z.boolean().optional(),
+          }),
+        )
+        .min(1),
+    }),
+  }),
+  z.object({
+    type: z.literal('data-dynamicPicker'),
+    data: z
+      .object({
+        question: z.string(),
+        stepId: z.uuid().optional(),
+        key: z.string().optional(),
+        appKey: z.string().optional(),
+      })
+      .refine(
+        (d) => {
+          const hasStepMode = Boolean(d.stepId && d.key)
+          const hasAppMode = Boolean(d.appKey)
+          return hasStepMode !== hasAppMode
+        },
+        {
+          message:
+            'Either (stepId + key) or appKey must be provided, but not both',
+        },
+      ),
+  }),
+  z.object({
+    type: z.literal('data-columnTable'),
+    data: z.object({
+      question: z.string(),
+      stepId: z.uuid(),
+      field: z.string(),
+      rows: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            draft: z.string(),
+            include: z.boolean(),
           }),
         )
         .min(1),
@@ -75,6 +134,43 @@ const messagePartSchema = z.discriminatedUnion('type', [
     input: z.unknown().optional(),
     output: z.unknown().optional(),
   }),
+  z.object({
+    type: z.literal('data-stepUpdate'),
+    data: z.object({
+      stepId: z.uuid(),
+      parameters: z.record(z.string(), z.unknown()),
+      parameterLabels: z.record(z.string(), z.string()).optional(),
+    }),
+  }),
+  z.object({
+    type: z.literal('data-pipeState'),
+    data: z.object({
+      pipeId: z.uuid(),
+      steps: z.array(
+        z.object({
+          id: z.uuid(),
+          appKey: z.string(),
+          key: z.string(),
+          type: z.string(),
+          position: z.number(),
+          status: z.string(),
+          parameters: z.record(z.string(), z.unknown()),
+          connectionId: z.string().nullable(),
+          connectionLabel: z.string().nullable().optional(),
+        }),
+      ),
+    }),
+  }),
+  // One entry per MCP bridge tool — keeps discriminatedUnion error quality intact.
+  toolPart('tool-list_apps'),
+  toolPart('tool-list_columns'),
+  toolPart('tool-create_pipe'),
+  toolPart('tool-update_step_parameters'),
+  toolPart('tool-create_step'),
+  toolPart('tool-delete_step'),
+  toolPart('tool-get_form_schema'),
+  toolPart('tool-execute_step'),
+  toolPart('tool-register_connection'),
 ])
 
 const messageSchema = z.object({
@@ -100,7 +196,10 @@ export const chatRequestSchema = z.object({
   messages: z
     .array(messageSchema)
     .min(1, 'Messages array must contain at least one message')
-    .max(MAX_MESSAGES, `Cannot send more than ${MAX_MESSAGES} messages`),
+    .max(
+      MAX_RAW_MESSAGES,
+      `Cannot send more than ${MAX_RAW_MESSAGES} messages`,
+    ),
   /**
    * Unique id for one AI Builder chat session, minted on the frontend. Used as the
    * Langfuse session id so all traces from one conversation group together.

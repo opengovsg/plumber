@@ -32,6 +32,27 @@ export interface VariableInfo {
 
 export type VariableInfoMap = Map<string, VariableInfo>
 
+// Builds a VariableInfoMap from the bare-path-keyed (`step.<id>.<path>`,
+// no braces) label/value maps used outside the live editor, e.g. AI
+// Builder's read-only step preview. No table support: callers needing
+// table-variable rendering should use genVariableInfoMap instead.
+export function buildVariableInfoMapFromPaths(
+  labelsByPath: Map<string, string>,
+  valuesByPath: Map<string, string>,
+): VariableInfoMap {
+  const map: VariableInfoMap = new Map()
+  for (const [path, value] of valuesByPath) {
+    // Fall back to the last path segment, not the full `step.<id>.<path>`
+    // string, which is what a variable chip would otherwise display.
+    const lastSegment = path.split('.').pop() ?? path
+    map.set(`{{${path}}}`, {
+      label: labelsByPath.get(path) ?? lastSegment,
+      testRunValue: value,
+    })
+  }
+  return map
+}
+
 const HEX_MODIFIER_PATTERN = '[a-fA-F0-9]+'
 
 // Matches step variables with optional hex-encoded modifier

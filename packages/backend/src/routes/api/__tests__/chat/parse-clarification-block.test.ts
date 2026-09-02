@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseClarificationBlock } from './parse-clarification-block'
+import { parseClarificationBlock } from '../../chat/parse-clarification-block'
 
 describe('parseClarificationBlock', () => {
   it('returns null when no block is present', () => {
@@ -16,7 +16,7 @@ describe('parseClarificationBlock', () => {
     expect(parseClarificationBlock(text)).toBeNull()
   })
 
-  it('returns null when a question has fewer than 2 options', () => {
+  it('returns a question with a single option', () => {
     const text = `
 Some response.
 <!-- CLARIFICATION_DATA
@@ -24,7 +24,35 @@ Q: What trigger?
 - Form submission
 -->
     `.trim()
-    expect(parseClarificationBlock(text)).toBeNull()
+    expect(parseClarificationBlock(text)).toEqual([
+      { question: 'What trigger?', options: ['Form submission'] },
+    ])
+  })
+
+  it('returns a free-text question with no options', () => {
+    const text = `
+<!-- CLARIFICATION_DATA
+Q: What is the row ID to update?
+-->
+    `.trim()
+    expect(parseClarificationBlock(text)).toEqual([
+      { question: 'What is the row ID to update?', options: [] },
+    ])
+  })
+
+  it('returns a mix of option-based and free-text questions', () => {
+    const text = `
+<!-- CLARIFICATION_DATA
+Q: Which trigger?
+- FormSG
+- Webhook
+Q: What is your table ID?
+-->
+    `.trim()
+    expect(parseClarificationBlock(text)).toEqual([
+      { question: 'Which trigger?', options: ['FormSG', 'Webhook'] },
+      { question: 'What is your table ID?', options: [] },
+    ])
   })
 
   it('parses a single question with 2 options', () => {
@@ -189,13 +217,15 @@ Q:  What trigger?
     ])
   })
 
-  it('returns null when block is present but all questions have < 2 options', () => {
+  it('returns a question with exactly 1 option (no longer requires min 2)', () => {
     const text = `
 <!-- CLARIFICATION_DATA
 Q: What trigger?
 - Form submission
 -->
     `.trim()
-    expect(parseClarificationBlock(text)).toBeNull()
+    expect(parseClarificationBlock(text)).toEqual([
+      { question: 'What trigger?', options: ['Form submission'] },
+    ])
   })
 })

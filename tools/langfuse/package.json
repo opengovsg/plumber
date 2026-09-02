@@ -1,0 +1,12 @@
+{
+  "name": "@plumber/langfuse-tools",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@langfuse/client": "4.2.0",
+    "dotenv": "^16.0.3"
+  }
+}

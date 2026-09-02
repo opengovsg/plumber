@@ -3,15 +3,15 @@
 # NOTE: based on https://github.com/superset-sh/superset/pull/1494.
 #
 # Assign this worktree a port base from a project-local registry shared across
-# Plumber worktrees (via $SUPERSET_ROOT_PATH) and print the port base.
+# Plumber worktrees and print the port base.
 #   bash base_port.sh            -> print the port base (allocating if needed)
 #   bash base_port.sh --release  -> remove this worktree's ($PWD) allocation
 #
 # Allocating also prunes entries whose worktree directory is gone, so bases
 # from worktrees deleted outside Superset (which never ran --release) are reused.
 #
-# Only runs under Superset (needs SUPERSET_ROOT_PATH). A plain `npm run dev`
-# never calls this and falls back to 3000/3001 in vite.config.ts / package.json.
+# A plain `npm run dev` never calls this and falls back to 3000/3001 in
+# vite.config.ts / package.json. Run it via .superset/run.sh instead.
 set -euo pipefail
 
 # Base port for this project's worktrees. Teammates who run other Superset
@@ -22,12 +22,19 @@ STRIDE=10
 LOCK_TIMEOUT=30
 LOCK_STALE=300
 
-if [ -z "${SUPERSET_ROOT_PATH:-}" ]; then
-  echo "base_port.sh: SUPERSET_ROOT_PATH is not set (run under Superset)" >&2
-  exit 1
+# Cursor-created worktrees never set SUPERSET_ROOT_PATH. The git fallback keeps
+# every worktree pointed at the main checkout's single registry.
+ROOT="${SUPERSET_ROOT_PATH:-}"
+if [ -z "$ROOT" ]; then
+  git_dir="$(git rev-parse --git-common-dir 2>/dev/null)" || git_dir=""
+  if [ -z "$git_dir" ]; then
+    echo "base_port.sh: set SUPERSET_ROOT_PATH or run inside the git repo" >&2
+    exit 1
+  fi
+  ROOT="$(cd "$(dirname "$git_dir")" && pwd)"
 fi
-REG="$SUPERSET_ROOT_PATH/.superset/port-registry"
-LOCK_DIR="$SUPERSET_ROOT_PATH/.superset/port-registry.lock"
+REG="$ROOT/.superset/port-registry"
+LOCK_DIR="$ROOT/.superset/port-registry.lock"
 
 acquire_lock() {
   local waited=0 pid mtime

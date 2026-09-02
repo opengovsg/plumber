@@ -8,12 +8,26 @@ import {
 } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Flex, Icon, Textarea } from '@chakra-ui/react'
+import { Box, Flex, Icon, Image, Text, Textarea } from '@chakra-ui/react'
 
-import { type ClarificationQuestion } from '@/hooks/useChatStream'
+import {
+  type ClarificationQuestion,
+  type ColumnTablePart,
+  type DynamicPickerPart,
+} from '@/hooks/useChatStream'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
+import ColumnTablePicker from '@/pages/AiBuilder/components/ChatInterface/ColumnTablePicker'
+import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
+import SecretKeyWarningDialog from '@/pages/AiBuilder/components/ChatInterface/SecretKeyWarningDialog'
+import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
+import {
+  buildNoOptionsFoundMessage,
+  containsSecretKey,
+} from '@/pages/AiBuilder/helpers'
+
+import { buildColumnTableReply } from './helpers/columnTableReply'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -23,6 +37,59 @@ interface PromptInputProps {
   sendMessage: (message: string) => void
   cancelStream: () => void
   clarification?: ClarificationQuestion[]
+  dynamicPicker?: DynamicPickerPart['data']
+  columnTable?: ColumnTablePart['data']
+  onAddConnection?: (context: { question: string; appKey: string }) => void
+  /** Form URL already shared in the conversation (drives the picker's forced key-completion card). */
+  knownFormUrl?: string
+  /** Opens the Add-new-form modal (empty-state "Connect your form" entry). */
+  onConnectForm?: () => void
+  /** Kicks off the chat with an existing connection. */
+  onSelectExistingForm?: (label: string, connectionId: string) => void
+  /**
+   * Display-only chip anchoring the conversation's form to the composer —
+   * the connected form's title, or the shared URL (isConnected: false)
+   * before a secret key has been added.
+   */
+  attachedForm?: { label: string; isConnected?: boolean } | null
+}
+
+// Display-only chip anchoring the conversation's form to the composer.
+function FormChip({
+  form,
+}: {
+  form: { label: string; isConnected?: boolean }
+}) {
+  return (
+    <Flex
+      align="center"
+      gap={1.5}
+      bg="gray.50"
+      borderRadius="full"
+      px={2.5}
+      py={1}
+      maxW="full"
+    >
+      <Image
+        src="/apps/formsg/assets/favicon.svg"
+        boxSize="14px"
+        alt="FormSG"
+      />
+      <Text textStyle="caption-1" noOfLines={1} color="gray.700">
+        {form.label}
+      </Text>
+      {form.isConnected === false && (
+        <Text
+          textStyle="caption-1"
+          color="gray.400"
+          flexShrink={0}
+          whiteSpace="nowrap"
+        >
+          · not connected
+        </Text>
+      )}
+    </Flex>
+  )
 }
 
 export default function PromptInput({
@@ -33,6 +100,13 @@ export default function PromptInput({
   sendMessage,
   cancelStream,
   clarification,
+  dynamicPicker,
+  columnTable,
+  onAddConnection,
+  knownFormUrl,
+  onConnectForm,
+  onSelectExistingForm,
+  attachedForm,
 }: PromptInputProps) {
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -40,6 +114,8 @@ export default function PromptInput({
     Record<number, string>
   >({})
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
+  const [showSecretKeyWarning, setShowSecretKeyWarning] = useState(false)
+  const secretKeyDialogCancelRef = useRef<HTMLButtonElement>(null)
 
   // Reset state whenever a new clarification arrives
   useEffect(() => {
@@ -47,16 +123,30 @@ export default function PromptInput({
     setCurrentQuestionIdx(0)
   }, [clarification])
 
+  const doSend = () => {
+    sendMessage(input)
+    setInput('')
+    setSelectedAnswers({})
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+  }
+
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault()
-    if (input?.trim() && !isStreaming) {
-      sendMessage(input)
-      setInput('')
-      setSelectedAnswers({})
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'
-      }
+    if (!input?.trim() || isStreaming) {
+      return
     }
+    if (containsSecretKey(input)) {
+      setShowSecretKeyWarning(true)
+      return
+    }
+    doSend()
+  }
+
+  const handleSendAnyway = () => {
+    setShowSecretKeyWarning(false)
+    doSend()
   }
 
   const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -84,25 +174,69 @@ export default function PromptInput({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // The resize handler above only fires on typed input, but a long
+  // placeholder wraps onto multiple lines too — without this, the fixed
+  // single-row height overflows and shows a spurious scrollbar. Measure the
+  // placeholder's wrapped height the same way (swap it into the DOM value
+  // just for the measurement) whenever the box is empty.
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el || input) {
+      return
+    }
+    const original = el.value
+    el.value = placeholder
+    handleResize({ currentTarget: el } as FormEvent<HTMLTextAreaElement>)
+    el.value = original
+  }, [placeholder, input])
+
+  // Builds the combined Q:/A: message from an explicit answers map (rather
+  // than reading `selectedAnswers` state) since state from the same tick
+  // as the last answer isn't guaranteed to have landed yet.
+  const sendAnswers = (answers: Record<number, string>) => {
+    if (!clarification) {
+      return
+    }
+    const combined = clarification
+      .map((q, i) => `Q: ${q.question}\nA: ${answers[i]}`)
+      .join('\n\n')
+    sendMessage(combined)
+    setSelectedAnswers({})
+    setCurrentQuestionIdx(0)
+  }
+
+  // Single-select: answering always advances immediately, or sends
+  // immediately if this was the last question — there's no separate
+  // confirm/send step, matching a plain single-select picker.
   const handleAnswer = (answer: string) => {
     if (isStreaming || !clarification) {
       return
     }
 
     const newAnswers = { ...selectedAnswers, [currentQuestionIdx]: answer }
-    setSelectedAnswers(newAnswers)
 
     const isLast = currentQuestionIdx === clarification.length - 1
     if (isLast) {
-      const combined = clarification
-        .map((q, i) => `Q: ${q.question}\nA: ${newAnswers[i]}`)
-        .join('\n\n')
-      sendMessage(combined)
-      setSelectedAnswers({})
-      setCurrentQuestionIdx(0)
+      sendAnswers(newAnswers)
     } else {
+      setSelectedAnswers(newAnswers)
       setCurrentQuestionIdx((prev) => prev + 1)
     }
+  }
+
+  // Back/next only move which already-answered question is in view, to
+  // review or change an earlier answer — they never trigger a send.
+  const handleBack = () => {
+    setCurrentQuestionIdx((prev) => Math.max(0, prev - 1))
+  }
+
+  const handleNext = () => {
+    if (!clarification) {
+      return
+    }
+    setCurrentQuestionIdx((prev) =>
+      Math.min(clarification.length - 1, prev + 1),
+    )
   }
 
   const handleOptionClick = (optionIdx: number) => {
@@ -115,24 +249,82 @@ export default function PromptInput({
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()
 
-  if (clarification && clarification.length > 0) {
+  if (columnTable) {
     return (
-      <ChoicePicker
-        clarification={clarification}
-        currentQuestionIdx={currentQuestionIdx}
+      <ColumnTablePicker
+        data={columnTable}
         isStreaming={isStreaming}
-        onOptionClick={handleOptionClick}
-        onFreeTextSubmit={handleAnswer}
+        onSave={(rows) => {
+          sendMessage(buildColumnTableReply(columnTable.question, rows))
+        }}
         cancelStream={cancelStream}
       />
     )
   }
 
+  if (dynamicPicker) {
+    const isAppKeyMode = 'appKey' in dynamicPicker
+    return (
+      <DynamicPicker
+        question={dynamicPicker.question}
+        {...(isAppKeyMode
+          ? { appKey: dynamicPicker.appKey }
+          : { stepId: dynamicPicker.stepId, dynamicKey: dynamicPicker.key })}
+        isStreaming={isStreaming}
+        onSelect={(name, value) => {
+          sendMessage(`Q: ${dynamicPicker.question}\nA: ${name} (id: ${value})`)
+        }}
+        onSkip={() => {
+          sendMessage(`Q: ${dynamicPicker.question}\nA: skip`)
+        }}
+        onNoOptionsFound={
+          isAppKeyMode
+            ? undefined
+            : (reason) => {
+                sendMessage(
+                  buildNoOptionsFoundMessage(dynamicPicker.question, reason),
+                )
+              }
+        }
+        onAddConnection={
+          onAddConnection && isAppKeyMode
+            ? () =>
+                onAddConnection({
+                  question: dynamicPicker.question,
+                  appKey: dynamicPicker.appKey,
+                })
+            : undefined
+        }
+        knownFormUrl={knownFormUrl}
+        cancelStream={cancelStream}
+      />
+    )
+  }
+
+  if (clarification && clarification.length > 0) {
+    return (
+      <ChoicePicker
+        clarification={clarification}
+        currentQuestionIdx={currentQuestionIdx}
+        selectedAnswers={selectedAnswers}
+        isStreaming={isStreaming}
+        onOptionClick={handleOptionClick}
+        onFreeTextSubmit={handleAnswer}
+        onBack={handleBack}
+        onNext={handleNext}
+        cancelStream={cancelStream}
+      />
+    )
+  }
+
+  const showChipsRow = Boolean(
+    (onConnectForm && onSelectExistingForm) || attachedForm,
+  )
+
   return (
     <Box w="full" maxW="4xl">
       <Flex
-        direction="row"
-        align="stretch"
+        direction="column"
         bg="white"
         border="1px"
         borderColor="gray.200"
@@ -143,70 +335,90 @@ export default function PromptInput({
         minH={showIdeas ? '120px' : '50px'}
         height="auto"
       >
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder={placeholder}
-          w="full"
-          resize="none"
-          border="none"
-          bg="transparent"
-          p={3}
-          color="gray.900"
-          _placeholder={{ color: 'gray.500' }}
-          _focus={{ outline: 'none', boxShadow: 'none' }}
-          fontSize="base"
-          lineHeight="6"
-          maxH="calc(40vh - 100px)"
-          rows={1}
-          overflowY="auto"
-          sx={{
-            '&::-webkit-scrollbar': {
-              width: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: 'transparent',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            },
-          }}
-          onInput={handleResize}
-          onFocus={(e) => {
-            // prevent iOS Safari from zooming in on input focus
-            e.currentTarget.style.fontSize = '16px'
-          }}
-        />
+        <Flex direction="row" align="stretch" flex={1}>
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={placeholder}
+            w="full"
+            resize="none"
+            border="none"
+            bg="transparent"
+            p={3}
+            color="gray.900"
+            _placeholder={{ color: 'gray.500' }}
+            _focus={{ outline: 'none', boxShadow: 'none' }}
+            fontSize="base"
+            lineHeight="6"
+            maxH="calc(40vh - 100px)"
+            rows={1}
+            overflowY="auto"
+            sx={{
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'transparent',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              },
+            }}
+            onInput={handleResize}
+            onFocus={(e) => {
+              // prevent iOS Safari from zooming in on input focus
+              e.currentTarget.style.fontSize = '16px'
+            }}
+          />
+        </Flex>
 
-        <Flex justify="end" align="flex-end" p={3}>
-          {isStreaming ? (
-            <Icon
-              as={FaCircleStop}
-              fontSize="24px"
-              color="red.500"
-              cursor="pointer"
-              onClick={cancelStream}
-              _hover={{ color: 'red.600' }}
-            />
-          ) : (
-            <Icon
-              as={FaArrowCircleUp}
-              fontSize="24px"
-              color={
-                input?.trim()
-                  ? 'primary.500'
-                  : 'interaction.support.disabled-content'
-              }
-              onClick={handleSubmit}
-              cursor={input?.trim() ? 'pointer' : 'default'}
-            />
-          )}
+        <Flex px={2} pb={1} pt={1} align="center" gap={2}>
+          {showChipsRow &&
+            (attachedForm?.isConnected ? (
+              <FormChip form={attachedForm} />
+            ) : onConnectForm && onSelectExistingForm ? (
+              <ConnectFormPopover
+                isStreaming={isStreaming}
+                onSelectExisting={onSelectExistingForm}
+                onAddNewForm={onConnectForm}
+              />
+            ) : attachedForm ? (
+              // Dead-end fallback: a URL is known but not connected, and
+              // there's no trigger left to retry through (e.g. post-pipe,
+              // before the LLM's connection picker has fired).
+              <FormChip form={attachedForm} />
+            ) : null)}
+
+          <Flex ml="auto" pr={1} align="center" flexShrink={0}>
+            {isStreaming ? (
+              <Icon
+                as={FaCircleStop}
+                fontSize="24px"
+                color="red.500"
+                cursor="pointer"
+                onClick={cancelStream}
+                _hover={{ color: 'red.600' }}
+              />
+            ) : (
+              <Icon
+                as={FaArrowCircleUp}
+                fontSize="24px"
+                color={
+                  input?.trim()
+                    ? 'primary.500'
+                    : 'interaction.support.disabled-content'
+                }
+                onClick={handleSubmit}
+                cursor={input?.trim() ? 'pointer' : 'default'}
+              />
+            )}
+          </Flex>
         </Flex>
       </Flex>
 
@@ -224,6 +436,13 @@ export default function PromptInput({
           )}
         </Box>
       )}
+
+      <SecretKeyWarningDialog
+        cancelRef={secretKeyDialogCancelRef}
+        isOpen={showSecretKeyWarning}
+        onClose={() => setShowSecretKeyWarning(false)}
+        onSendAnyway={handleSendAnyway}
+      />
     </Box>
   )
 }

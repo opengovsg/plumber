@@ -18,24 +18,39 @@ import SideDrawer from './SideDrawer'
 interface ChatInterfaceProps {
   messages: Message[]
   currentResponse: string
+  isWorking: boolean
   isStreaming: boolean
   isReadyForPreview: boolean
   sendMessage: (message: string) => void
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
+  onAddConnection?: (context: { question: string; appKey: string }) => void
+  knownFormUrl?: string
+  onConnectForm?: () => void
+  /** Resets any form-connection state that lives outside useChatStream's own reset. */
+  onNewChat?: () => void
+  onSelectExistingForm?: (label: string, connectionId: string) => void
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
   const {
     messages,
     currentResponse,
+    isWorking,
     isStreaming,
     isReadyForPreview,
     sendMessage,
     cancelStream,
     resetChat,
     hasReachedLimit,
+    onAddConnection,
+    knownFormUrl,
+    onConnectForm,
+    onNewChat,
+    onSelectExistingForm,
+    attachedForm,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,9 +65,20 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       ? lastMessage.clarification
       : undefined
 
+  const activeDynamicPicker =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.dynamicPicker
+      : undefined
+
+  const activeColumnTable =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.columnTable
+      : undefined
+
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
+    onNewChat?.()
     setIsDrawerOpen(false)
 
     // Build the new draft from the last assistant message's continuation prompt.
@@ -69,6 +95,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   }, [
     cancelStream,
     resetChat,
+    onNewChat,
     setIsDrawerOpen,
     setChatState,
     navigate,
@@ -122,6 +149,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             placeholder={
               PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
             }
+            onConnectForm={onConnectForm}
+            onSelectExistingForm={onSelectExistingForm}
+            attachedForm={attachedForm}
           />
         </Flex>
       </Flex>
@@ -152,6 +182,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
           <ChatMessages
             messages={messages}
             currentResponse={currentResponse}
+            isWorking={isWorking}
             isStreaming={isStreaming}
           />
 
@@ -166,7 +197,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             <Box
               maxW="3xl"
               mx="auto"
-              px={4}
+              px={8}
               py={4}
               gap={4}
               display="flex"
@@ -181,6 +212,13 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   isStreaming={isStreaming}
                   cancelStream={cancelStream}
                   clarification={activeClarification}
+                  dynamicPicker={activeDynamicPicker}
+                  columnTable={activeColumnTable}
+                  onAddConnection={onAddConnection}
+                  knownFormUrl={knownFormUrl}
+                  onConnectForm={onConnectForm}
+                  onSelectExistingForm={onSelectExistingForm}
+                  attachedForm={attachedForm}
                 />
               )}
               {!isMobile && (

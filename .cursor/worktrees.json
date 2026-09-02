@@ -1,0 +1,7 @@
+{
+  "setup-worktree-unix": [
+    "npm install",
+    "cp \"$ROOT_WORKTREE_PATH/packages/backend/.env\" packages/backend/.env",
+    "codegraph init"
+  ]
+}

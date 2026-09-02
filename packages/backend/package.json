@@ -61,7 +61,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "csv-parse": "5.4.0",
-    "dd-trace": "5.102.0",
+    "dd-trace": "4.55.0",
     "dedent": "1.5.1",
     "dotenv": "16.6.1",
     "electrodb": "3.5.3",
@@ -132,5 +132,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.80.1"
+  "version": "1.81.0"
 }
