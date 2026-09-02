@@ -31,7 +31,7 @@ const mocks = vi.hoisted(() => {
     consoleError: vi.fn(),
     consoleWarn: vi.fn(),
     getSdk: vi.fn(() => mockSdk),
-    parseFormEnv: vi.fn(),
+    parseFormEnv: vi.fn(() => 'prod'),
     storeAttachmentInS3: vi.fn(() => 'mock-s3-id'),
     fetchFormSchema: vi.fn(() => null),
     decryptFormAttachmentsV3OrV4: vi.fn(() => ({})),
@@ -216,6 +216,69 @@ describe('decrypt form response - MRF specific', () => {
         },
         expect.any(Array),
       )
+    })
+
+    it('should trust attachment URLs under the form env-specific prefix for non-prod envs', async () => {
+      $.flow.hasFileProcessingActions = true
+      mocks.parseFormEnv.mockReturnValueOnce('staging')
+      $.request.body.data.attachmentDownloadUrls = {
+        attachField1:
+          'https://s3.ap-southeast-1.amazonaws.com/attachments.staging.form.gov.sg/123',
+      }
+
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        submissionSecretKey: 'mock-secret-key',
+        responses: {
+          attachField1: {
+            fieldType: 'attachment',
+            answer: { answer: 'myfile.pdf' },
+          },
+        },
+        verified: undefined,
+      })
+      mocks.decryptFormAttachmentsV3OrV4.mockResolvedValueOnce({
+        attachField1: {
+          filename: 'myfile.pdf',
+          content: Buffer.from('file content'),
+        },
+      })
+
+      await decryptFormResponse($)
+
+      expect(mocks.decryptFormAttachmentsV3OrV4).toHaveBeenCalledWith(
+        mocks.getSdk(),
+        'mock-secret-key',
+        {
+          attachField1:
+            'https://s3.ap-southeast-1.amazonaws.com/attachments.staging.form.gov.sg/123',
+        },
+        expect.any(Array),
+      )
+    })
+
+    it('should return verified: false when an attachment URL uses the prod prefix for a staging form', async () => {
+      $.flow.hasFileProcessingActions = true
+      mocks.parseFormEnv.mockReturnValueOnce('staging')
+      $.request.body.data.attachmentDownloadUrls = {
+        attachField1:
+          'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/123',
+      }
+
+      mocks.cryptoV3Decrypt.mockReturnValueOnce({
+        submissionSecretKey: 'mock-secret-key',
+        responses: {
+          attachField1: {
+            fieldType: 'attachment',
+            answer: { answer: 'myfile.pdf' },
+          },
+        },
+        verified: undefined,
+      })
+
+      const result = await decryptFormResponse($)
+
+      expect(result).toEqual({ verified: false, internalId: null })
+      expect(mocks.decryptFormAttachmentsV3OrV4).not.toHaveBeenCalled()
     })
 
     it('should return verified: false without downloading when an attachment URL is untrusted', async () => {

@@ -1,11 +1,23 @@
-const TRUSTED_ORIGIN = 'https://s3.ap-southeast-1.amazonaws.com'
-const TRUSTED_PATH_PREFIX = '/attachments.form.gov.sg/'
+import type { FormEnv } from '../common/form-env'
 
-function isTrusted(url: string): boolean {
+const TRUSTED_ORIGIN = 'https://s3.ap-southeast-1.amazonaws.com'
+
+// Prod attachments sit directly under attachments.form.gov.sg, without a
+// `prod.` env segment, since that env predates the other form.gov.sg envs.
+function getTrustedPathPrefix(formEnv: FormEnv): string {
+  return formEnv === 'prod'
+    ? '/attachments.form.gov.sg/'
+    : `/attachments.${formEnv}.form.gov.sg/`
+}
+
+function isTrusted(url: string, formEnv: FormEnv): boolean {
   try {
     const { origin, pathname } = new URL(url)
 
-    return origin === TRUSTED_ORIGIN && pathname.startsWith(TRUSTED_PATH_PREFIX)
+    return (
+      origin === TRUSTED_ORIGIN &&
+      pathname.startsWith(getTrustedPathPrefix(formEnv))
+    )
   } catch {
     // Malformed enough that URL cannot parse it, so it is not FormSG's bucket.
     return false
@@ -21,6 +33,9 @@ function isTrusted(url: string): boolean {
  */
 export function areAttachmentUrlsTrusted(
   attachmentDownloadUrls: Record<string, string>,
+  formEnv: FormEnv,
 ): boolean {
-  return Object.values(attachmentDownloadUrls).every(isTrusted)
+  return Object.values(attachmentDownloadUrls).every((url) =>
+    isTrusted(url, formEnv),
+  )
 }
