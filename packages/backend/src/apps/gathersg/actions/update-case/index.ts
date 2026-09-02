@@ -1,4 +1,9 @@
-import type { IRawAction } from '@plumber/types'
+import type {
+  IGlobalVariable,
+  IJSONArray,
+  IJSONObject,
+  IRawAction,
+} from '@plumber/types'
 
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
@@ -6,11 +11,40 @@ import { fromZodError } from 'zod-validation-error'
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
+import Step from '@/models/step'
 
-import { fieldTypeEnum } from '../../common/constants'
+import { uploadCaseAttachments } from '../../common/attachment'
+import {
+  fieldTypeEnum,
+  GATHER_ATTACHMENT_FIELD_TYPE,
+} from '../../common/constants'
 import throwGatherSGStepError from '../../common/throw-errors'
+import { GatherSGCase } from '../../common/types'
 
 import { requestSchema, responseSchema } from './schema'
+
+/**
+ * Fetch the case's current uuids for an attachment field. Gather stores an
+ * attachment field as the full array of file uuids, so we must read the
+ * existing values and append to them — otherwise a PATCH would replace
+ * (delete) the case's existing attachments.
+ */
+async function getExistingAttachmentUuids(
+  $: IGlobalVariable,
+  caseUuid: string,
+  field: string,
+): Promise<string[]> {
+  const { data } = await $.http.get<{ data: GatherSGCase }>(
+    '/cases/:caseUuid',
+    {
+      urlPathParams: { caseUuid },
+    },
+  )
+  const existing = data.data.fields?.[field]
+  return Array.isArray(existing)
+    ? existing.filter((value): value is string => typeof value === 'string')
+    : []
+}
 
 const action: IRawAction = {
   name: 'Update case',
@@ -120,12 +154,114 @@ const action: IRawAction = {
         },
       ],
     },
+    {
+      label: 'Attachment fields',
+      key: 'attachmentFields',
+      type: 'multirow' as const,
+      required: false,
+      addRowButtonText: 'Add attachment field',
+      description: 'Upload files to one or more attachment fields on the case.',
+      subFields: [
+        {
+          label: 'Field',
+          key: 'field',
+          type: 'dropdown' as const,
+          required: true,
+          variables: false,
+          showOptionValue: false,
+          source: {
+            type: 'query' as const,
+            name: 'getDynamicData' as const,
+            arguments: [
+              { name: 'key', value: 'getCaseAttachmentFields' },
+              {
+                name: 'parameters.caseUuid',
+                value: '{parameters.caseUuid}',
+              },
+            ],
+          },
+        },
+        {
+          label: 'Update mode',
+          key: 'replaceExisting',
+          type: 'boolean-radio' as const,
+          required: true,
+          value: false,
+          options: [
+            {
+              label: 'Add to existing attachments',
+              value: false,
+            },
+            {
+              label: 'Replace existing attachments',
+              value: true,
+            },
+          ],
+        },
+        {
+          label: 'Attachments',
+          key: 'attachments',
+          type: 'attachment' as const,
+          required: true,
+          variables: true,
+          variableTypes: ['file'],
+          hiddenIf: {
+            fieldKey: 'field',
+            op: 'is_empty',
+          },
+        },
+      ],
+    },
   ],
+
+  doesFileProcessing: (step: Step) =>
+    ((step.parameters.attachmentFields as IJSONArray | undefined) ?? []).some(
+      (row) =>
+        Array.isArray((row as IJSONObject).attachments) &&
+        ((row as IJSONObject).attachments as IJSONArray).length > 0,
+    ),
 
   async run($) {
     try {
-      const payload = requestSchema.parse($.step.parameters)
-      const rawResponse = await $.http.patch('/cases/:caseUuid', payload, {
+      const { attachmentFields, ...patchBody } = requestSchema.parse(
+        $.step.parameters,
+      )
+
+      if (attachmentFields.length > 0) {
+        for (const {
+          field,
+          replaceExisting,
+          attachments,
+        } of attachmentFields) {
+          const uuids = await uploadCaseAttachments({
+            $,
+            caseUuid: patchBody.caseUuid,
+            field,
+            fieldType: GATHER_ATTACHMENT_FIELD_TYPE,
+            s3Ids: attachments,
+          })
+
+          const finalUuids = replaceExisting
+            ? uuids
+            : [
+                ...new Set([
+                  ...(await getExistingAttachmentUuids(
+                    $,
+                    patchBody.caseUuid,
+                    field,
+                  )),
+                  ...uuids,
+                ]),
+              ]
+
+          patchBody.fields = {
+            ...(patchBody.fields ?? {}),
+            [field]: finalUuids,
+          } as Record<string, string | number | null>
+        }
+      }
+
+      const rawResponse = await $.http.patch('/cases/:caseUuid', patchBody, {
         urlPathParams: {
           caseUuid: $.step.parameters.caseUuid,
         },
@@ -144,6 +280,10 @@ const action: IRawAction = {
           `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
         )
+      }
+
+      if (error instanceof StepError) {
+        throw error
       }
 
       if (error instanceof HttpError) {
