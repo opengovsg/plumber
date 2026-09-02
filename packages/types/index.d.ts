@@ -52,12 +52,15 @@ export interface IConnection {
 
 /**
  * 'array' is currently used only in formSG checkbox field but
- * will be extended to for-each feature handling
+ * will be extended to for-each feature handling.
+ * 'dropdown' is used for FormSG dropdown answers so downstream
+ * actions can accept them as list sources without allowing all text.
  */
 export type TDataOutMetadatumType =
   | 'text'
   | 'file'
   | 'array'
+  | 'dropdown'
   | 'tile_row_id'
   | 'table'
   | 'approval'
@@ -307,7 +310,12 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 // This is synced with FieldVisibilityOp GraphQL enum.
 // Using jank Extract for now until we get typed GraphQL.
-type FieldVisibilityOp = 'always_true' | 'is_empty' | 'equals' | 'not_equals'
+type FieldVisibilityOp =
+  | 'always_true'
+  | 'is_empty'
+  | 'equals'
+  | 'not_equals'
+  | 'in'
 
 interface IFieldVacuousVisibilityCondition {
   op: Extract<FieldVisibilityOp, 'always_true'>
@@ -326,10 +334,19 @@ interface IFieldComparativeVisibilityCondition {
   fieldValue?: IJSONPrimitive
 }
 
+interface IFieldInVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'in'>
+
+  fieldKey: string
+  // Hide when the sibling field's value is one of these.
+  fieldValues: IJSONPrimitive[]
+}
+
 export type IFieldVisibilityCondition =
   | IFieldComparativeVisibilityCondition
   | IFieldKeyOnlyVisibilityCondition
   | IFieldVacuousVisibilityCondition
+  | IFieldInVisibilityCondition
 
 /**
  * End field visibility
@@ -870,7 +887,7 @@ export interface DynamicDataOutput {
   data: {
     name: string
     value: string
-    type?: 'string' | 'number' | 'null' | 'email'
+    type?: 'string' | 'number' | 'null' | 'email' | 'list'
   }[]
   error?: IJSONObject
 }

@@ -340,4 +340,63 @@ describe('update case', () => {
       },
     )
   })
+
+  it('builds the payload correctly with a list field from a checkbox array', async () => {
+    $.step.parameters.caseFields = [
+      {
+        field: 'categories',
+        fieldType: 'list',
+        value: ['Housing', 'Finance'],
+      },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          categories: ['Housing', 'Finance'],
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('wraps a FormSG dropdown string into a list array', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'priority', fieldType: 'list', value: 'High' },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          priority: ['High'],
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('should throw step error for an empty list field', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'categories', fieldType: 'list', value: [] },
+    ]
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'List value empty for field: categories',
+    )
+  })
 })

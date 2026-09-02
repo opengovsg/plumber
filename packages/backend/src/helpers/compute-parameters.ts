@@ -174,14 +174,17 @@ function findAndSubstituteVariables(
       // which is the case for formSG checkbox only, this is to deal with forEach next time
       let resolvedValue = dataValue
       if (Array.isArray(dataValue)) {
+        if (preprocessVariable) {
+          // Pass the raw array so actions that need string[] (e.g. GatherSG
+          // list fields) can keep it. They join themselves when unused.
+          return preprocessVariable(parameterKey, dataValue)
+        }
         // NOTE: we do not stringify the array if its a for each step
         // to avoid having to parse it back into an array again
         if (!isForEachStep) {
           resolvedValue = dataValue.join(', ')
         }
-      }
-
-      if (preprocessVariable) {
+      } else if (preprocessVariable) {
         return preprocessVariable(parameterKey, resolvedValue)
       }
 
@@ -204,7 +207,17 @@ function findAndSubstituteVariables(
     return filteredParts[0]
   }
 
-  return substitutedParts.join('')
+  // Preserve arrays when the entire parameter is one checkbox variable
+  // (kept by preprocessVariable for GatherSG list fields). Numbers and
+  // other primitives still go through join('') so they stringify as before.
+  const nonEmptyParts = substitutedParts.filter((part) => part !== '')
+  if (nonEmptyParts.length === 1 && Array.isArray(nonEmptyParts[0])) {
+    return nonEmptyParts[0]
+  }
+
+  return substitutedParts
+    .map((part) => (Array.isArray(part) ? part.join(', ') : part))
+    .join('')
 }
 
 export default function computeParameters(

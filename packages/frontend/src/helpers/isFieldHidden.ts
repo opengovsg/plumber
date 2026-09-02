@@ -36,6 +36,12 @@ export function isFieldHidden(
           // are empty so we just negate directly.
           !fieldVal
     }
+    case 'in': {
+      const fieldVal = get(siblingParams, hiddenIfCondition.fieldKey)
+      return hiddenIfCondition.fieldValues.includes(
+        fieldVal as (typeof hiddenIfCondition.fieldValues)[number],
+      )
+    }
   }
 }
 

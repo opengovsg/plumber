@@ -7,7 +7,7 @@ import getCaseFields from '../../dynamic-data/get-case-fields'
 const MOCK_CASE_TYPE_UUID = 'case-type-uuid-123456'
 
 describe('getCaseFields', () => {
-  it('maps GatherSG field types to string/number/email, filtering out unsupported fields', async () => {
+  it('maps GatherSG field types to string/number/email/list, filtering out unsupported fields', async () => {
     const httpGet = vi.fn().mockResolvedValue({
       data: {
         data: {
@@ -47,6 +47,7 @@ describe('getCaseFields', () => {
         { name: 'Money', value: 'Money', type: 'number' },
         { name: 'NRIC', value: 'NRIC', type: 'string' },
         { name: 'Email', value: 'Email', type: 'email' },
+        { name: 'Dropdown', value: 'Dropdown', type: 'list' },
       ],
     })
   })

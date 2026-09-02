@@ -8,13 +8,19 @@ import { z } from 'zod'
 export const CASE_UUID_REGEX = /^[a-zA-Z0-9]{22}$/
 
 export const UNSUPPORTED_FIELDS = [
-  'dropdown', // array of strings
-  'checkbox', // array of strings
   'table', // array of objects
   'attachment',
 ]
 
-export const fieldTypeEnum = z.enum(['string', 'number', 'null', 'email'])
+export const GATHERSG_LIST_TYPES = ['dropdown', 'checkbox']
+
+export const fieldTypeEnum = z.enum([
+  'string',
+  'number',
+  'null',
+  'email',
+  'list',
+])
 
 // GatherSG field types whose values should be treated as numbers. Every other
 // supported field type (text, textarea, date, phone numbers, NRIC/UEN, etc.)
