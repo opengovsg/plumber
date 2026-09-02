@@ -42,6 +42,12 @@ export const PLACEHOLDER_MESSAGES = [
 // Keep in sync with backend/src/routes/api/chat/{schema,index}.ts.
 export const MAX_MESSAGES = 150
 
+// Support form URL, pre-filled with the chat ID for tracing. Keep in sync with
+// backend/src/helpers/ai/build-support-form-url.ts.
+export const SUPPORT_FORM_BASE_URL =
+  'https://form.gov.sg/64929532701266001209ac32'
+export const SUPPORT_FORM_CHAT_ID_FIELD = '6a979221b8ae314641032f5c'
+
 // App keys that support AI Builder's generic in-chat "add connection" flow
 // (secret-key or OAuth-via-popup apps, driven entirely by each app's
 // auth.fields/auth.authenticationSteps — see components/AddAppConnection).

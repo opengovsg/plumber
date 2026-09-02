@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Link, Text } from '@chakra-ui/react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import * as URLS from '@/config/urls'
@@ -8,6 +8,7 @@ import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
 import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
+import { buildSupportFormUrl } from '@/pages/AiBuilder/helpers'
 import { createNewChatDraft } from '@/pages/AiBuilder/new-chat'
 
 import MessageLimitBanner from './MessageLimitBanner'
@@ -54,8 +55,14 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   } = props
   const navigate = useNavigate()
   const location = useLocation()
-  const { chatInput, isMobile, isDrawerOpen, setIsDrawerOpen, setChatState } =
-    useAiBuilderContext()
+  const {
+    chatId,
+    chatInput,
+    isMobile,
+    isDrawerOpen,
+    setIsDrawerOpen,
+    setChatState,
+  } = useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
 
@@ -228,6 +235,15 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   textAlign="center"
                 >
                   This feature is new and still improving. It can make mistakes.
+                  Still need help?{' '}
+                  <Link
+                    href={buildSupportFormUrl(chatId)}
+                    isExternal
+                    textDecoration="underline"
+                  >
+                    Contact us here
+                  </Link>
+                  .
                 </Text>
               )}
             </Box>
