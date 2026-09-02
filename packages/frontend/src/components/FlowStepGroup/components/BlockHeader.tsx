@@ -21,7 +21,7 @@ import {
 import { buildConditionSentence } from '../helpers/buildConditionSentence'
 import type { ConditionPreviewPart } from '../helpers/getConditionBlockPreview'
 
-interface ConditionBlockHeaderProps {
+interface BlockHeaderProps {
   badgeLabel: string
   previewParts: ConditionPreviewPart[]
   stepId: string
@@ -30,23 +30,18 @@ interface ConditionBlockHeaderProps {
 }
 
 /**
- * Shared header for nested condition blocks (IF / CONTINUE IF / REPEAT):
- * pink keyword badge as an inline span in the plain-language preview. Click
- * opens the step drawer.
+ * Shared header for nested condition blocks (IF / CONTINUE IF / REPEAT).
  *
- * Actions overlay the trailing edge rather than sitting beside the text, so
- * revealing them on hover doesn't reflow the sentence. The cost is that they
- * cover the tail of the text, so the text reserves room for them at the widths
- * where they are always visible (see `pr` below); on desktop they only appear
- * on hover, and the tooltip covers what they hide.
+ * IMPORTANT: the actions overlay the trailing edge, so revealing them on hover
+ * does not reflow the sentence.
  */
-export default function ConditionBlockHeader({
+export default function BlockHeader({
   badgeLabel,
   previewParts,
   stepId,
   isSelected = false,
   actions,
-}: ConditionBlockHeaderProps): JSX.Element {
+}: BlockHeaderProps): JSX.Element {
   const {
     currentStepId,
     isDrawerOpen,
@@ -98,12 +93,8 @@ export default function ConditionBlockHeader({
     [badgeLabel, previewParts, varInfoMap],
   )
 
-  /**
-   * Whether the clamp is hiding anything. Needed because the value half is now
-   * cut by layout rather than by character count, which no amount of measuring
-   * the string can predict — so the rendered box is asked directly, and again
-   * whenever it is resized (opening the drawer re-flows every block).
-   */
+  // The value half is cut by layout, so only the rendered box can report a
+  // clamp.
   const clampedTextRef = useRef<HTMLParagraphElement>(null)
   const [isClamped, setIsClamped] = useState(false)
 
@@ -135,8 +126,7 @@ export default function ConditionBlockHeader({
         onClick={handleClick}
       >
         <Tooltip
-          // Only when something was actually cut: a tooltip repeating text
-          // already fully on screen is noise.
+          // A tooltip repeating text already fully on screen is noise.
           isDisabled={!isLeadingTruncated && !isClamped}
           label={fullSentence}
           placement="top-start"
@@ -150,9 +140,8 @@ export default function ConditionBlockHeader({
             noOfLines={2}
             textStyle="body-2"
             color="base.content.medium"
-            // Room for the actions overlay only at the widths where it is always
-            // on. Reserving it on desktop too would cost a quarter of the line
-            // at the 320px minimum to buttons that are usually hidden.
+            // Reserved only at the widths where the overlay is always on,
+            // since desktop hides it until hover.
             pr={{
               base: actions ? `${BLOCK_ACTIONS_OVERLAY_WIDTH_PX}px` : 0,
               lg: 0,
@@ -174,8 +163,6 @@ export default function ConditionBlockHeader({
               {badgeLabel}
             </Text>
             {parts.map((part, index) => {
-              // Connectives and typed values read as ordinary prose; only
-              // variables (and the for-each keyword) are picked out in bold.
               if (part.type === 'text' || part.type === 'literal') {
                 return <span key={`${part.type}-${index}`}>{part.display}</span>
               }
@@ -208,7 +195,7 @@ export default function ConditionBlockHeader({
             alignItems="center"
             {...blockActionsOverlayStyles}
             bg={headerBg}
-            // Always on for touch; fade in over the text on desktop hover.
+            // Always on for touch, since there is no hover there.
             opacity={{ base: 1, lg: 0 }}
             pointerEvents={{ base: 'auto', lg: 'none' }}
             transition="opacity 0.15s ease-in-out"
