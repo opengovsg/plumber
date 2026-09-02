@@ -155,20 +155,18 @@ const action: IRawAction = {
       ],
     },
     {
-      label: 'Attachment updates',
-      key: 'attachmentUpdates',
+      label: 'Attachment fields',
+      key: 'attachmentFields',
       type: 'multirow' as const,
       required: false,
       addRowButtonText: 'Add attachment field',
       description: 'Upload files to one or more attachment fields on the case.',
       subFields: [
         {
-          label: 'Attachment field',
+          label: 'Field',
           key: 'field',
           type: 'dropdown' as const,
           required: true,
-          description:
-            'Select the attachment field you want to upload files to.',
           variables: false,
           showOptionValue: false,
           source: {
@@ -192,14 +190,10 @@ const action: IRawAction = {
           options: [
             {
               label: 'Add to existing attachments',
-              description:
-                'Keeps files already on the case for this field and adds the files selected here.',
               value: false,
             },
             {
               label: 'Replace existing attachments',
-              description:
-                'Sets this field to only the files selected here. Any existing files on the case for this field will be removed.',
               value: true,
             },
           ],
@@ -221,7 +215,7 @@ const action: IRawAction = {
   ],
 
   doesFileProcessing: (step: Step) =>
-    ((step.parameters.attachmentUpdates as IJSONArray | undefined) ?? []).some(
+    ((step.parameters.attachmentFields as IJSONArray | undefined) ?? []).some(
       (row) =>
         Array.isArray((row as IJSONObject).attachments) &&
         ((row as IJSONObject).attachments as IJSONArray).length > 0,
@@ -229,16 +223,16 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const { attachmentUpdates, ...patchBody } = requestSchema.parse(
+      const { attachmentFields, ...patchBody } = requestSchema.parse(
         $.step.parameters,
       )
 
-      if (attachmentUpdates.length > 0) {
+      if (attachmentFields.length > 0) {
         for (const {
           field,
           replaceExisting,
           attachments,
-        } of attachmentUpdates) {
+        } of attachmentFields) {
           const uuids = await uploadCaseAttachments({
             $,
             caseUuid: patchBody.caseUuid,

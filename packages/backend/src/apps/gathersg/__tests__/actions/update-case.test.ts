@@ -353,7 +353,7 @@ describe('update case', () => {
 
     $.step.parameters.caseFields = []
     delete $.step.parameters.caseStatus
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: false,
@@ -398,7 +398,7 @@ describe('update case', () => {
 
     $.step.parameters.caseFields = []
     delete $.step.parameters.caseStatus
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: false,
@@ -428,7 +428,7 @@ describe('update case', () => {
 
     $.step.parameters.caseFields = []
     delete $.step.parameters.caseStatus
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: true,
@@ -457,7 +457,7 @@ describe('update case', () => {
 
     $.step.parameters.caseFields = []
     delete $.step.parameters.caseStatus
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: false,
@@ -492,7 +492,7 @@ describe('update case', () => {
     ])
 
     // keep the default MOCK_CASE_FIELDS and add an attachment field
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: false,
@@ -520,7 +520,7 @@ describe('update case', () => {
 
   it('throws when an attachment field is selected without attachments', async () => {
     const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: false,
@@ -540,7 +540,7 @@ describe('update case', () => {
   })
 
   it('throws when attachments are set without an attachment field', async () => {
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: '',
         replaceExisting: false,
@@ -553,7 +553,7 @@ describe('update case', () => {
   })
 
   it('throws when the same attachment field is repeated', async () => {
-    $.step.parameters.attachmentUpdates = [
+    $.step.parameters.attachmentFields = [
       {
         field: 'photos',
         replaceExisting: false,
@@ -570,32 +570,11 @@ describe('update case', () => {
     )
   })
 
-  it('accepts legacy attachmentField and attachments parameters', async () => {
-    const uploadSpy = vi
-      .spyOn(attachment, 'uploadCaseAttachments')
-      .mockResolvedValue(['file-uuid-1'])
-
-    $.step.parameters.caseFields = []
-    delete $.step.parameters.caseStatus
-    $.step.parameters.attachmentField = 'photos'
-    $.step.parameters.attachments = ['s3:bucket:flow-id-123/a/one.png']
-
-    await updateCaseAction.run($)
-
-    expect(uploadSpy).toHaveBeenCalledWith({
-      $,
-      caseUuid: MOCK_CASE_UUID,
-      field: 'photos',
-      fieldType: 'attachment',
-      s3Ids: ['s3:bucket:flow-id-123/a/one.png'],
-    })
-  })
-
-  it('reports doesFileProcessing when attachmentUpdates contain files', () => {
+  it('reports doesFileProcessing when attachmentFields contain files', () => {
     expect(
       updateCaseAction.doesFileProcessing?.({
         parameters: {
-          attachmentUpdates: [
+          attachmentFields: [
             {
               field: 'photos',
               replaceExisting: false,
@@ -607,7 +586,7 @@ describe('update case', () => {
     ).toBe(true)
     expect(
       updateCaseAction.doesFileProcessing?.({
-        parameters: { attachmentUpdates: [] },
+        parameters: { attachmentFields: [] },
       } as never),
     ).toBe(false)
   })
