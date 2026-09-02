@@ -230,6 +230,7 @@ export function StepsList({ isNested }: StepsListProps) {
                     allowReorder={canReorderBlocks}
                     stepsBeforeGroup={[]}
                     groupedSteps={[]}
+                    // Reads the if-then V2 gate once here, not per step.
                     asConditionBlock
                     addButtonProps={{
                       isHidden: readOnly || !!isOverlay,

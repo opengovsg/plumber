@@ -34,11 +34,7 @@ export default function FlowStepWithAddButton({
     isDisabled: boolean
     showEmptyAction: boolean
   }
-  /**
-   * Draw an only-continue-if step as a CONTINUE IF condition block instead of
-   * an ordinary step card. Set by the if-then V2 render path only, so the flag
-   * is read once by StepsList rather than by every step in the list.
-   */
+  /** Draw an only-continue-if step as a CONTINUE IF condition block. */
   asConditionBlock?: boolean
 }) {
   const { disabledMrfStepToDisplay } = useContext(MrfContext)

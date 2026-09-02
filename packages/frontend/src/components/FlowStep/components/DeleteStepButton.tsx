@@ -24,7 +24,7 @@ interface DeleteStepButtonProps {
   step: IStep
   stepName: string
   displayPosition?: number
-  /** Skip FlowStep’s hover-reveal CSS — parent already controls visibility. */
+  /** Skip FlowStep's hover-reveal CSS, since the parent controls visibility. */
   alwaysVisible?: boolean
 }
 

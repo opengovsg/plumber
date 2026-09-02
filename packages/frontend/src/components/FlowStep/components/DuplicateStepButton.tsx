@@ -15,7 +15,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 interface DuplicateStepButtonProps {
   isNested?: boolean
   step: IStep
-  /** Skip FlowStep’s hover-reveal CSS — parent already controls visibility. */
+  /** Skip FlowStep's hover-reveal CSS, since the parent controls visibility. */
   alwaysVisible?: boolean
 }
 
