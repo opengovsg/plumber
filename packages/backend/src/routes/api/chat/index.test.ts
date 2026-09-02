@@ -218,7 +218,7 @@ describe('chat handler — GitBook MCP integration', () => {
           expect.objectContaining({
             role: 'system',
             content: expect.stringContaining(
-              'TODO_SUPPORT_FORM_BASE_URL?TODO_SUPPORT_FORM_CHAT_ID_FIELD=123e4567-e89b-12d3-a456-426614174000',
+              'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
             ),
           }),
         ]),
@@ -234,11 +234,9 @@ describe('chat handler — GitBook MCP integration', () => {
     const [[{ messages }]] = vi.mocked(streamText).mock.calls
     const systemMessage = messages.find((m) => m.role === 'system')
     expect(systemMessage?.content).toContain(
-      'Support: TODO_SUPPORT_FORM_BASE_URL',
+      'Support: https://form.gov.sg/64929532701266001209ac32',
     )
-    expect(systemMessage?.content).not.toContain(
-      'TODO_SUPPORT_FORM_CHAT_ID_FIELD=',
-    )
+    expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
   })
 })
 

@@ -1,8 +1,7 @@
 export const SUPPORT_FORM_URL_PLACEHOLDER = '{{SUPPORT_FORM_URL}}'
 
-// TODO: fill in the real form.gov.sg support form URL and chat-ID field ID.
-const SUPPORT_FORM_BASE_URL = 'TODO_SUPPORT_FORM_BASE_URL'
-const SUPPORT_FORM_CHAT_ID_FIELD = 'TODO_SUPPORT_FORM_CHAT_ID_FIELD'
+const SUPPORT_FORM_BASE_URL = 'https://form.gov.sg/64929532701266001209ac32'
+const SUPPORT_FORM_CHAT_ID_FIELD = '6a979221b8ae314641032f5c'
 
 export function buildSupportFormUrl(chatId: string | undefined): string {
   if (!chatId) {
