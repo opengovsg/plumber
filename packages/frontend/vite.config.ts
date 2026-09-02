@@ -46,7 +46,7 @@ export default defineConfig({
         secure: false,
       },
       '/admin/queues': {
-        target: 'http://localhost:3000',
+        target: backendTarget,
         changeOrigin: true,
         secure: false,
       },
