@@ -21,8 +21,7 @@ interface HoverAddStepButtonProps {
   isLastStep: boolean
   prevStep: IStep
   showEmptyAction?: boolean
-  // Drops the vertical connector above an empty-state add card (e.g. flush
-  // under an if-then / for-each header).
+  // Drops the vertical connector above an empty-state add card.
   hideLeadingConnector?: boolean
   step: IStep
   allowReorder?: boolean
