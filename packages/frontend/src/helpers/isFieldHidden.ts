@@ -39,6 +39,25 @@ export function isFieldHidden(
   }
 }
 
+/**
+ * Whether a source-backed dropdown should stay hidden: either its dynamic
+ * data is still loading, or it resolved to no options. Staying hidden while
+ * loading avoids a flash of the field appearing and then disappearing once
+ * an empty result comes back.
+ */
+export function shouldHideEmptySourceDropdown(
+  field: IField,
+  options: unknown[],
+  loading: boolean,
+): boolean {
+  return (
+    field.type === 'dropdown' &&
+    !!field.hideWhenNoOptions &&
+    !!field.source &&
+    (loading || options.length === 0)
+  )
+}
+
 export function useIsFieldHidden(
   namePrefix: string | undefined | null,
   field: IField,

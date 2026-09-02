@@ -169,6 +169,7 @@ const action: IRawAction = {
           required: true,
           variables: false,
           showOptionValue: false,
+          hideWhenNoOptions: true,
           source: {
             type: 'query' as const,
             name: 'getDynamicData' as const,
