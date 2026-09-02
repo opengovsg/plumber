@@ -143,7 +143,7 @@ describe('gathersg attachment upload helpers', () => {
     it('throws a StepError when a file exceeds MAX_FILE_SIZE', async () => {
       vi.spyOn(s3, 'getObjectFromS3Id').mockResolvedValue({
         name: 'big.png',
-        data: new Uint8Array(11 * 1024 * 1024),
+        data: new Uint8Array(s3.MAX_FILE_SIZE + 1),
       })
 
       await expect(
