@@ -1,8 +1,11 @@
 {
   "name": "plumber",
+  "version": "1.81.0",
   "license": "AGPL-3.0",
-  "engines": {
-    "npm": ">=11.10.0"
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
   },
   "scripts": {
     "postinstall": "npm run gqlc",
@@ -11,7 +14,7 @@
     "dev:frontend": "npm run -w frontend dev",
     "dev:backend": "npm run -w backend dev",
     "dev:worker": "npm run -w backend worker",
-    "dev": "npm run all --kill-others npm:dev:*",
+    "dev": "npm run all -- --kill-others npm:dev:*",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "npm run --workspaces --if-present build",
     "start": "npm run -w backend start",
@@ -22,37 +25,6 @@
     "test:ui": "vitest --ui",
     "migrate": "npm run -w backend db:migrate",
     "teardown": "npm run -w backend teardown"
-  },
-  "workspaces": {
-    "packages": [
-      "packages/*"
-    ]
-  },
-  "overrides": {
-    "axios": "1.18.1",
-    "graphql-rate-limit": {
-      "@graphql-tools/utils": {
-        "graphql": "16.11.0"
-      }
-    },
-    "qs": "6.15.0",
-    "glob": "13.0.6",
-    "minimatch": "10.2.3",
-    "rollup": "4.59.0",
-    "dd-trace": {
-      "@opentelemetry/core": "2.8.0",
-      "path-to-regexp": "0.1.13"
-    },
-    "@opentelemetry/core": {
-      "@opentelemetry/semantic-conventions": "1.37.0"
-    },
-    "lodash": "4.18.1",
-    "lodash-es": "4.18.1",
-    "vite": "6.4.3",
-    "immutable": "4.3.9",
-    "picomatch": "4.0.4",
-    "shell-quote": "1.9.0",
-    "form-data": "4.0.6"
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
@@ -75,5 +47,33 @@
     "vitest": "^3.2.6",
     "wait-on": "^7.2.0"
   },
-  "version": "1.81.0"
+  "overrides": {
+    "@opentelemetry/core": {
+      "@opentelemetry/semantic-conventions": "1.37.0"
+    },
+    "axios": "1.18.1",
+    "dd-trace": {
+      "@opentelemetry/core": "2.8.0",
+      "path-to-regexp": "0.1.13"
+    },
+    "form-data": "4.0.6",
+    "glob": "13.0.6",
+    "graphql-rate-limit": {
+      "@graphql-tools/utils": {
+        "graphql": "16.11.0"
+      }
+    },
+    "immutable": "4.3.9",
+    "lodash": "4.18.1",
+    "lodash-es": "4.18.1",
+    "minimatch": "10.2.3",
+    "picomatch": "4.0.4",
+    "qs": "6.15.0",
+    "rollup": "4.59.0",
+    "shell-quote": "1.9.0",
+    "vite": "6.4.3"
+  },
+  "engines": {
+    "npm": ">=11.10.0"
+  }
 }
