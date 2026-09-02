@@ -17,7 +17,7 @@ import { StepEnumType } from '@/graphql/__generated__/graphql'
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import useReorderSteps from '@/hooks/useReorderSteps'
 
-import ConditionBlockHeader from '../../components/ConditionBlockHeader'
+import BlockHeader from '../../components/BlockHeader'
 import DeleteConfirmationDialog from '../../components/DeleteConfirmationDialog'
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 import { getForEachBlockPreviewParts } from '../../helpers/getConditionBlockPreview'
@@ -32,13 +32,8 @@ interface ForEachProps {
 }
 
 /**
- * A for-each loop as a condition block: a REPEAT badge and the plain-language
- * list preview stand in for the condition step, so the loop reads as one
- * sentence rather than a captioned box wrapping a card. Same shape as an
- * if-then V2 block.
- *
- * Only rendered on the flag-ON path — see ForEachV1 for the old body, and
- * FlowStepGroup for the fork between them.
+ * A for-each V2 loop drawn as a REPEAT condition block, picked over
+ * `ForEachV1` by `FlowStepGroup`.
  */
 export default function ForEach(props: ForEachProps) {
   const { groupedSteps } = props
@@ -130,15 +125,20 @@ export default function ForEach(props: ForEachProps) {
 
   const isSelected = currentStepId === conditionStep.id
 
+  const previewParts = useMemo(
+    () => getForEachBlockPreviewParts(conditionStep.parameters),
+    [conditionStep.parameters],
+  )
+
   return (
     <Flex
       {...conditionBlockStyles.container}
       borderWidth="1px"
       borderColor={isSelected ? 'base.content.brand' : 'base.divider.medium'}
     >
-      <ConditionBlockHeader
+      <BlockHeader
         badgeLabel="REPEAT"
-        previewParts={getForEachBlockPreviewParts(conditionStep.parameters)}
+        previewParts={previewParts}
         stepId={conditionStep.id}
         isSelected={isSelected}
         actions={

@@ -18,19 +18,14 @@ interface ForEachV1Props {
 }
 
 /**
- * The original for-each body: the loop's condition drawn as a step card of its
- * own, with any if-then group below it recursed back through FlowStepGroup.
- * FlowStepGroup draws the app-icon-and-caption box (and the delete button)
- * around this, so neither lives here.
- *
- * Retired wholesale once the if-then V2 flag is fully rolled out — at which
- * point this file and FlowStepGroup's fork both go.
+ * The for-each V1 body, retired wholesale once the if-then V2 flag is fully
+ * rolled out, along with FlowStepGroup's fork.
  */
 export default function ForEachV1(props: ForEachV1Props) {
   const { groupedSteps } = props
   const { flow } = useContext(EditorContext)
-  // Only for isLoading: FlowStepGroup already decided we are on the V1 path,
-  // but the nested group must not render until the flag has actually resolved.
+  // Only for isLoading, since the nested group must not render before the flag
+  // resolves.
   const { isLoading: isIfThenV2Loading } = useIfThenV2Enabled()
   const { handleReorderUpdate } = useReorderSteps(flow.id)
 
