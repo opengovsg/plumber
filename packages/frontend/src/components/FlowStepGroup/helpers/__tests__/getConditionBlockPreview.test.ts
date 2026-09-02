@@ -18,7 +18,6 @@ const conditions = (rows: Array<Record<string, unknown>>[]): IJSONObject =>
     conditions: rows.map((groupRows) => ({ rows: groupRows })),
   } as unknown as IJSONObject)
 
-/** Renders the parts the way the header does, for readable assertions. */
 const asText = (parts: ConditionPreviewPart[]): string =>
   parts
     .map((part) => (part.type === 'variable' ? part.label : part.text))
@@ -278,6 +277,26 @@ describe('getConditionBlockPreviewParts', () => {
     ).toBe('Specify condition')
   })
 
+  it('tolerates conditions that are not an array', () => {
+    expect(
+      asText(
+        getConditionBlockPreviewParts({
+          conditions: 'nonsense',
+        } as unknown as IJSONObject),
+      ),
+    ).toBe('Specify condition')
+  })
+
+  it('drops a field that is neither text nor a number', () => {
+    expect(
+      asText(
+        getConditionBlockPreviewParts(
+          conditions([[{ field: { a: 1 }, condition: 'equals', text: 'x' }]]),
+        ),
+      ),
+    ).toBe('is equal to x')
+  })
+
   it('marks typed values as literals and the operator as a connective', () => {
     const parts = getConditionBlockPreviewParts(
       conditions([
@@ -292,8 +311,7 @@ describe('getConditionBlockPreviewParts', () => {
     )
 
     expect(typesOf(parts)).toEqual(['variable', 'text', 'text', 'literal'])
-    // The operator phrase is a `text` part so the header leaves it intact; the
-    // typed value is a `literal` so the header may truncate it.
+    // The header leaves a `text` part intact and may truncate a `literal`.
     expect(parts.find((part) => part.type === 'text')).toEqual({
       type: 'text',
       text: ' is greater than or equal to',
@@ -351,7 +369,7 @@ describe('getConditionBlockPreviewParts', () => {
       )
       .map((part) => part.position)
 
-    // field variable, then the value's literal prefix and its variable
+    // field, then the value's literal prefix and its variable
     expect(positions).toEqual(['leading', 'trailing', 'trailing'])
   })
 

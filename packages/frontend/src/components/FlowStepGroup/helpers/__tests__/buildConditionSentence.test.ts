@@ -33,8 +33,7 @@ describe('buildConditionSentence', () => {
     )
 
     expect(resolve).toHaveBeenCalledWith('step.abc.fields.6483.answer')
-    // Long enough to be cut, but it is the resolved label being cut, not
-    // "answer" — which is the whole point of the lookup.
+    // The resolved label is what gets cut, not the "answer" path segment.
     expect(parts[0].display.startsWith('2. What is your')).toBe(true)
   })
 

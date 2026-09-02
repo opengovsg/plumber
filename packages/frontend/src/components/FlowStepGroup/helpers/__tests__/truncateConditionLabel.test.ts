@@ -48,8 +48,7 @@ describe('truncateConditionLabel', () => {
   })
 
   it('leaves interior whitespace alone', () => {
-    // Only the trailing edge of the cut is tidied; the label is otherwise
-    // rendered as the form author wrote it.
+    // The label is otherwise rendered as the form author wrote it.
     expect(truncateConditionLabel('Finance & Corporate  Services')).toBe(
       'Finance & Corporate  Se…',
     )
