@@ -86,6 +86,33 @@ const getTableData = (
   return data as TableData
 }
 
+// NOTE: shared with the top-level 'attachments' handling in matchParamsToDataIn.
+// Attachments need filename-based matching (not strict equality) because FormSG
+// and variable-sourced values are dataIn s3 paths, while the param is a filename.
+const compareAttachmentsArray = (
+  paramValue: unknown,
+  lastTest: unknown,
+  varInfoMap: VariableInfoMap,
+): boolean => {
+  if (!Array.isArray(paramValue) || !Array.isArray(lastTest)) {
+    return false
+  }
+  if (paramValue.length !== lastTest.length) {
+    return false
+  }
+  return paramValue.every((attachment, index) => {
+    const lastTestAttachment = lastTest[index]
+    // manually uploaded attachments will have the same value
+    if (attachment === lastTestAttachment) {
+      return true
+    }
+
+    // attachments from FormSG will be using the s3 id
+    const lastTestFilename = String(lastTestAttachment).split('/').pop()
+    return simpleSubstitute(String(attachment), varInfoMap) === lastTestFilename
+  })
+}
+
 const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
   if (a === b) {
     return true
@@ -108,7 +135,15 @@ const deepCompare = (a: any, b: any, varInfoMap: VariableInfoMap): boolean => {
     if (aKeys.length !== bKeys.length) {
       return false
     }
-    return aKeys.every((key) => deepCompare(a[key], b[key], varInfoMap))
+    return aKeys.every((key) => {
+      // NOTE: special handling for nested attachment fields (e.g. gathersg's
+      // update-case attachmentFields rows), which store s3 ids instead of
+      // plain string values.
+      if (key === 'attachments') {
+        return compareAttachmentsArray(a[key], b[key], varInfoMap)
+      }
+      return deepCompare(a[key], b[key], varInfoMap)
+    })
   }
 
   // Handle string values with substitution
@@ -146,27 +181,12 @@ export const matchParamsToDataIn = (
 
     // NOTE: special handling for postman attachments, which is an array of objects
     // with s3 ids instead of string values
-    if (key === 'attachments') {
-      if (Array.isArray(paramValue) && Array.isArray(lastTest)) {
-        if (paramValue.length !== lastTest.length) {
-          return false
-        }
-
-        return paramValue.every((attachment, index) => {
-          const lastTestAttachment = lastTest[index]
-          // manually uploaded attachments will have the same value
-          if (attachment === lastTestAttachment) {
-            return true
-          }
-
-          // attachments from FormSG will be using the s3 id
-          const lastTestFilename = String(lastTestAttachment).split('/').pop()
-          return (
-            simpleSubstitute(String(attachment), varInfoMap) ===
-            lastTestFilename
-          )
-        })
-      }
+    if (
+      key === 'attachments' &&
+      Array.isArray(paramValue) &&
+      Array.isArray(lastTest)
+    ) {
+      return compareAttachmentsArray(paramValue, lastTest, varInfoMap)
     }
 
     // NOTE: special handling for inputs that allow a single file
