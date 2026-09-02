@@ -1,4 +1,9 @@
-import type { IField, IFieldDropdownOption, IJSONValue } from '@plumber/types'
+import type {
+  IField,
+  IFieldDropdown,
+  IFieldDropdownOption,
+  IJSONValue,
+} from '@plumber/types'
 
 import MultiRow from '@/components/MultiRow'
 import { shouldHideEmptySourceDropdown } from '@/helpers/isFieldHidden'
@@ -42,10 +47,10 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
   const type = schema.type
 
   const hideProbeSubField = subFields.find(
-    (subField) =>
+    (subField): subField is IFieldDropdown =>
       subField.type === 'dropdown' &&
-      subField.hideWhenNoOptions &&
-      subField.source,
+      !!subField.hideWhenNoOptions &&
+      !!subField.source,
   )
 
   const { data, loading } = useDynamicData(
