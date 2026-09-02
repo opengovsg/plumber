@@ -86,10 +86,11 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
   }
 
   /**
-   * A V2 for-each draws its own REPEAT-badge card — including its own delete
-   * button — so it takes a bare width slot instead of the app-icon-and-caption
-   * chrome below. Once the flag retires, that chrome, ForEachV1 and this fork
-   * all go together.
+   * A for-each V2 draws its own REPEAT-badge card and delete button, so it
+   * takes a bare width slot instead of the chrome below.
+   *
+   * IMPORTANT: that chrome, `ForEachV1` and this fork all go once the flag
+   * retires.
    */
   if (stepGroupType === TOOLBOX_ACTIONS.ForEach && isIfThenV2Enabled) {
     return (
