@@ -20,8 +20,8 @@ describe('shouldHideEmptySourceDropdown', () => {
     expect(shouldHideEmptySourceDropdown(sourceDropdown, [], false)).toBe(true)
   })
 
-  it('does not hide while still loading', () => {
-    expect(shouldHideEmptySourceDropdown(sourceDropdown, [], true)).toBe(false)
+  it('hides while still loading, to avoid a flash before it disappears', () => {
+    expect(shouldHideEmptySourceDropdown(sourceDropdown, [], true)).toBe(true)
   })
 
   it('does not hide when there are options', () => {
