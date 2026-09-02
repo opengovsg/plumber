@@ -106,11 +106,13 @@ interface CreateNewOptionProps {
 }
 
 export function useCreateNewOption(setValue: (newValue: string) => void) {
-  const { currentStepId } = useContext(EditorContext)
+  const { currentStepId, flow } = useContext(EditorContext)
   const [createTable] = useMutation(CREATE_TABLE)
   const [updateTable] = useMutation(UPDATE_TABLE)
   const [dynamicAction] = useMutation(DYNAMIC_ACTION)
   const [isCreatingNewOption, setIsCreatingNewOption] = useState(false)
+  // EditorContext defaults flow to an empty object, so steps can be missing.
+  const currentStep = flow.steps?.find((step) => step.id === currentStepId)
   const createNewOption = useCallback(
     async ({
       inputValue,
@@ -160,14 +162,16 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
           }
 
           case 'databricks-createTable': {
-            if (!currentStepId) {
+            if (!currentStep) {
               return
             }
             const { data } = await dynamicAction({
               variables: {
                 input: {
-                  stepId: currentStepId ?? '',
+                  stepId: currentStep.id,
                   key: addNewId,
+                  appKey: currentStep.appKey ?? '',
+                  stepKey: currentStep.key ?? '',
                   parameters: {
                     tableName: inputValue.trim(),
                   },
@@ -179,14 +183,16 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
           }
           case 'databricks-createTableColumn': {
             const tableName = parameters?.tableName as string
-            if (!tableName || !currentStepId) {
+            if (!tableName || !currentStep) {
               return
             }
             const { data } = await dynamicAction({
               variables: {
                 input: {
-                  stepId: currentStepId ?? '',
+                  stepId: currentStep.id,
                   key: addNewId,
+                  appKey: currentStep.appKey ?? '',
+                  stepKey: currentStep.key ?? '',
                   parameters: {
                     tableName: parameters?.tableName as string,
                     columnName: inputValue.trim(),
@@ -208,7 +214,7 @@ export function useCreateNewOption(setValue: (newValue: string) => void) {
         setIsCreatingNewOption(false)
       }
     },
-    [createTable, setValue, updateTable, dynamicAction, currentStepId],
+    [createTable, setValue, updateTable, dynamicAction, currentStep],
   )
   return { createNewOption, isCreatingNewOption }
 }
