@@ -5,6 +5,9 @@ import type {
   IJSONValue,
 } from '@plumber/types'
 
+import { useEffect } from 'react'
+import { useFormContext } from 'react-hook-form'
+
 import MultiRow from '@/components/MultiRow'
 import { shouldHideEmptySourceDropdown } from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
@@ -45,6 +48,7 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
   } = props
   const { label, required, description, subFields, addRowButtonText } = schema
   const type = schema.type
+  const { setValue } = useFormContext()
 
   const hideProbeSubField = subFields.find(
     (subField): subField is IFieldDropdown =>
@@ -61,14 +65,25 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
       : computedName,
   )
 
-  if (hideProbeSubField) {
-    const preparedOptions =
-      hideProbeSubField.options || optionGenerator(data as RawOption[])
-    if (
-      shouldHideEmptySourceDropdown(hideProbeSubField, preparedOptions, loading)
-    ) {
-      return <></>
+  const isHidden =
+    !!hideProbeSubField &&
+    shouldHideEmptySourceDropdown(
+      hideProbeSubField,
+      hideProbeSubField.options || optionGenerator(data as RawOption[]),
+      loading,
+    )
+
+  // react-hook-form keeps a field's value registered after it unmounts, so
+  // hiding the block alone would leave stale rows (e.g. attachments picked
+  // for a previously-selected case) in the submitted payload.
+  useEffect(() => {
+    if (isHidden) {
+      setValue(computedName, [])
     }
+  }, [isHidden, computedName, setValue])
+
+  if (isHidden) {
+    return <></>
   }
 
   return (
