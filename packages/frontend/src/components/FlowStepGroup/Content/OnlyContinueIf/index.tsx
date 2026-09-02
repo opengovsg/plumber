@@ -17,7 +17,7 @@ import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
-import ConditionBlockHeader from '../../components/ConditionBlockHeader'
+import BlockHeader from '../../components/BlockHeader'
 import { getConditionBlockPreviewParts } from '../../helpers/getConditionBlockPreview'
 import { conditionBlockStyles } from '../IfThen/styles'
 
@@ -26,15 +26,15 @@ interface OnlyContinueIfProps {
   isNested?: boolean
   allowReorder?: boolean
   canChildStepsReorder?: boolean
-  /** When true, omit the caption — nothing follows this step to gate. */
+  /** When true, omit the caption, since nothing follows this step to gate. */
   isLastStep?: boolean
 }
 
 /**
- * An only-continue-if step drawn like the IF / REPEAT condition headers: a
- * CONTINUE IF badge and a live condition preview. Unlike those two it holds no
- * steps — the ones it gates are its siblings below — so a caption under the
- * card spells out that a failed check stops the flow there.
+ * An only-continue-if step drawn like the IF / REPEAT condition headers.
+ *
+ * IMPORTANT: it holds no steps of its own, so a caption spells out that a
+ * failed check stops the flow there.
  */
 export default function OnlyContinueIf({
   step,
@@ -135,7 +135,7 @@ export default function OnlyContinueIf({
               }
               borderTopRadius={warnsMrfNoGate ? 'none' : 'lg'}
             >
-              <ConditionBlockHeader
+              <BlockHeader
                 badgeLabel="CONTINUE IF"
                 previewParts={previewParts}
                 stepId={step.id}

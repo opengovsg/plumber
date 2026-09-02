@@ -17,11 +17,7 @@ interface GroupStepWithAddButtonProps {
   allowReorder?: boolean
   showEmptyAction?: boolean
   canChildStepsReorder?: boolean
-  /**
-   * Draw an only-continue-if step as a CONTINUE IF condition block instead of
-   * an ordinary step card. Set by the if-then V2 render paths only, so the flag
-   * is read once by the parent rather than by every step in the list.
-   */
+  /** Draw an only-continue-if step as a CONTINUE IF condition block. */
   asConditionBlock?: boolean
 }
 
