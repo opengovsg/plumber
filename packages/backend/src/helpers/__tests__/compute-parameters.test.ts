@@ -406,4 +406,45 @@ describe('compute parameters', () => {
     const result = computeParameters(params, executionStep)
     expect(result).toEqual(expected)
   })
+
+  it('preserves checkbox arrays when preprocessVariable keeps them', () => {
+    const params = {
+      caseFields: [
+        {
+          field: 'categories',
+          fieldType: 'list',
+          value: `{{step.${randomStepID}.arrayProp}}`,
+        },
+      ],
+    }
+    const preprocessVariable = (key: string, value: unknown) => {
+      if (key === 'value' && Array.isArray(value)) {
+        return value
+      }
+      if (Array.isArray(value)) {
+        return value.join(', ')
+      }
+      return value
+    }
+    const result = computeParameters(params, executionSteps, preprocessVariable)
+    expect(result).toEqual({
+      caseFields: [
+        {
+          field: 'categories',
+          fieldType: 'list',
+          value: ['array value 1', 'hehe', 'array value 3'],
+        },
+      ],
+    })
+  })
+
+  it('still joins checkbox arrays without preprocessVariable', () => {
+    const params = {
+      value: `{{step.${randomStepID}.arrayProp}}`,
+    }
+    const result = computeParameters(params, executionSteps)
+    expect(result).toEqual({
+      value: 'array value 1, hehe, array value 3',
+    })
+  })
 })

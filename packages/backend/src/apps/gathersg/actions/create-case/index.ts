@@ -64,7 +64,7 @@ const action: IRawAction = {
       autofillable: true,
       required: true,
       description:
-        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet.',
+        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. List fields only accept FormSG checkbox or dropdown variables.',
       hiddenIf: {
         fieldKey: 'caseType',
         op: 'is_empty',
@@ -116,6 +116,10 @@ const action: IRawAction = {
               value: ensureZodEnumValue(fieldTypeEnum, 'email'),
             },
             {
+              label: 'List',
+              value: ensureZodEnumValue(fieldTypeEnum, 'list'),
+            },
+            {
               label: 'Null',
               value: ensureZodEnumValue(fieldTypeEnum, 'null'),
             },
@@ -130,8 +134,25 @@ const action: IRawAction = {
           variables: true,
           hiddenIf: {
             fieldKey: 'fieldType',
-            op: 'equals',
-            fieldValue: 'null',
+            op: 'in',
+            fieldValues: ['null', 'list'],
+          },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
+        },
+        {
+          placeholder: 'Select a FormSG checkbox or dropdown',
+          key: 'value',
+          type: 'string' as const,
+          required: true,
+          variables: true,
+          variableTypes: ['array', 'dropdown'],
+          singleVariableSelection: true,
+          noVariablesMessage:
+            ' No variables available - include a checkbox or dropdown field in your FormSG.',
+          hiddenIf: {
+            fieldKey: 'fieldType',
+            op: 'not_equals',
+            fieldValue: 'list',
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
@@ -140,6 +161,17 @@ const action: IRawAction = {
   ],
 
   getDataOutMetadata,
+
+  preprocessVariable(parameterKey: string, variableValue: unknown) {
+    // Keep FormSG checkbox arrays intact for list field values.
+    if (parameterKey === 'value' && Array.isArray(variableValue)) {
+      return variableValue
+    }
+    if (Array.isArray(variableValue)) {
+      return variableValue.join(', ')
+    }
+    return variableValue
+  },
 
   async run($) {
     try {

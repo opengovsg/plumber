@@ -57,6 +57,14 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
     case 'section':
       answer.isHidden = true
       break
+    case 'dropdown':
+      // Distinct from plain text so GatherSG list fields can accept FormSG
+      // dropdowns without opening the picker to every text variable.
+      answer['type'] = 'dropdown'
+      answer['label'] = fieldData.order
+        ? `${fieldData.order}. ${fieldData.question}`
+        : null
+      break
     default:
       answer['type'] = 'text'
       answer['label'] = fieldData.order

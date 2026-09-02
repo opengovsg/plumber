@@ -12,6 +12,7 @@ import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
 import {
   GATHERSG_EMAIL_TYPES,
+  GATHERSG_LIST_TYPES,
   GATHERSG_NUMBER_TYPES,
 } from '../common/constants'
 import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
@@ -65,11 +66,13 @@ const processCaseFields = (
 ): DynamicDataOutput => {
   return {
     data: caseFields.map((field) => {
-      let type: 'string' | 'number' | 'email' = 'string'
+      let type: 'string' | 'number' | 'email' | 'list' = 'string'
       if (GATHERSG_NUMBER_TYPES.includes(field.type)) {
         type = 'number'
       } else if (GATHERSG_EMAIL_TYPES.includes(field.type)) {
         type = 'email'
+      } else if (GATHERSG_LIST_TYPES.includes(field.type)) {
+        type = 'list'
       }
       return {
         name: field.name,
