@@ -35,93 +35,71 @@ const attachmentS3IdsSchema = z
     return result
   })
 
-const attachmentUpdateRowSchema = z.object({
+const attachmentFieldRowSchema = z.object({
   field: z.string().trim(),
   replaceExisting: z.boolean().default(false),
   attachments: attachmentS3IdsSchema,
 })
+
 export const requestSchema = z
-  .preprocess(
-    (raw) => {
-      const data = raw as Record<string, unknown>
-      if (
-        typeof data.attachmentField === 'string' &&
-        data.attachmentField.trim() &&
-        data.attachmentUpdates == null
-      ) {
-        const { attachmentField, attachments, ...rest } = data
-        return {
-          ...rest,
-          attachmentUpdates: [
-            {
-              field: attachmentField,
-              replaceExisting: false,
-              attachments: attachments ?? [],
-            },
-          ],
-        }
-      }
-      return raw
-    },
-    z.object({
-      caseUuid: z
-        .string()
-        .trim()
-        .min(1, {
-          message: 'Please do not leave the case uuid empty',
-        })
-        .regex(CASE_UUID_REGEX, {
-          message: 'Please enter a valid case uuid',
-        }),
-      caseStatus: z.string().trim().optional(),
-      caseFields: caseFieldsSchema.nullish(),
-      attachmentUpdates: z
-        .array(attachmentUpdateRowSchema)
-        .superRefine((rows, context) => {
-          const seenFields = new Set<string>()
-          for (const [index, row] of rows.entries()) {
-            const hasField = !!row.field?.trim()
-            const hasAttachments = row.attachments.length > 0
+  .object({
+    caseUuid: z
+      .string()
+      .trim()
+      .min(1, {
+        message: 'Please do not leave the case uuid empty',
+      })
+      .regex(CASE_UUID_REGEX, {
+        message: 'Please enter a valid case uuid',
+      }),
+    caseStatus: z.string().trim().optional(),
+    caseFields: caseFieldsSchema.nullish(),
+    attachmentFields: z
+      .array(attachmentFieldRowSchema)
+      .superRefine((rows, context) => {
+        const seenFields = new Set<string>()
+        for (const [index, row] of rows.entries()) {
+          const hasField = !!row.field?.trim()
+          const hasAttachments = row.attachments.length > 0
 
-            if (!hasField && !hasAttachments) {
-              continue
-            }
-
-            if (hasField !== hasAttachments) {
-              context.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: hasField
-                  ? 'Please add at least one attachment for the selected field.'
-                  : 'Please select an attachment field for your attachments.',
-                path: [index, hasField ? 'attachments' : 'field'],
-              })
-            }
-
-            if (hasField && seenFields.has(row.field)) {
-              context.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: `${row.field} attachment field is repeated`,
-                path: [index, 'field'],
-              })
-            }
-            if (hasField) {
-              seenFields.add(row.field)
-            }
+          if (!hasField && !hasAttachments) {
+            continue
           }
-        })
-        .transform((rows) =>
-          rows.filter(
-            (row) => row.field.trim().length > 0 && row.attachments.length > 0,
-          ),
-        )
-        .nullish(),
-    }),
-  )
+
+          if (hasField !== hasAttachments) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: hasField
+                ? 'Please add at least one attachment for the selected field.'
+                : 'Please select an attachment field for your attachments.',
+              path: [index, hasField ? 'attachments' : 'field'],
+            })
+          }
+
+          if (hasField && seenFields.has(row.field)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `${row.field} attachment field is repeated`,
+              path: [index, 'field'],
+            })
+          }
+          if (hasField) {
+            seenFields.add(row.field)
+          }
+        }
+      })
+      .transform((rows) =>
+        rows.filter(
+          (row) => row.field.trim().length > 0 && row.attachments.length > 0,
+        ),
+      )
+      .nullish(),
+  })
   .transform((data) => ({
     caseUuid: data.caseUuid,
     ...(data.caseStatus && { status: data.caseStatus }),
     fields: data.caseFields,
-    attachmentUpdates: data.attachmentUpdates ?? [],
+    attachmentFields: data.attachmentFields ?? [],
   }))
 
 // TODO: See if its possible to get more data from the response in the future if necessary
