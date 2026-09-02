@@ -1,0 +1,10 @@
+---
+description: Plumber frontend (packages/frontend) architecture, commands and conventions
+globs: packages/frontend/**/*
+alwaysApply: false
+---
+
+Before reading or changing anything under `packages/frontend/`, read the full
+frontend rules:
+
+@.claude/rules/frontend.md
