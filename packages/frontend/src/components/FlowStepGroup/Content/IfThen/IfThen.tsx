@@ -32,7 +32,7 @@ import { getFlowStepHeaderWidth } from '@/helpers/editor'
 import useReorderSteps from '@/hooks/useReorderSteps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 
-import ConditionBlockHeader from '../../components/ConditionBlockHeader'
+import BlockHeader from '../../components/BlockHeader'
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 import { getConditionBlockPreviewParts } from '../../helpers/getConditionBlockPreview'
 
@@ -58,14 +58,8 @@ interface ReorderItem {
 }
 
 /**
- * A single-branch if-then block: the condition step (the if-then action) plus
- * the steps that run when it passes. An empty block shows the add-first-step
- * placeholder.
- *
- * Drawn as a grey well with an IF badge header. Clicking the header opens the
- * condition drawer — there is no separate condition card or branch-name field.
- * Block-level affordances live in the header (delete / duplicate), beside the
- * box (drag to reorder) and below it (add a step after the block).
+ * A single-branch if-then block: the condition step plus the steps that run
+ * when it passes.
  */
 export default function IfThen({
   block,
@@ -104,8 +98,9 @@ export default function IfThen({
     groupingActions ?? new Set<string>(),
   )
 
-  const conditionPreviewParts = getConditionBlockPreviewParts(
-    ifThenStep.parameters,
+  const conditionPreviewParts = useMemo(
+    () => getConditionBlockPreviewParts(ifThenStep.parameters),
+    [ifThenStep.parameters],
   )
   const isSelected = currentStepId === ifThenStep.id
 
@@ -255,7 +250,7 @@ export default function IfThen({
               isSelected ? 'base.content.brand' : 'base.divider.medium'
             }
           >
-            <ConditionBlockHeader
+            <BlockHeader
               badgeLabel="IF"
               previewParts={conditionPreviewParts}
               stepId={ifThenStep.id}
@@ -286,10 +281,6 @@ export default function IfThen({
               }
             />
 
-            {/*
-              White content band under the flush grey header. Steps (and the
-              empty-state placeholder) live here with their own padding.
-            */}
             <Flex {...conditionBlockStyles.body} pb={isEmptyBlock ? 2 : 3}>
               {isEmptyBlock ? (
                 <HoverAddStepButton
