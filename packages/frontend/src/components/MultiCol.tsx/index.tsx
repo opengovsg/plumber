@@ -1,13 +1,14 @@
 import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 
 import React, { useContext } from 'react'
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { BiTrash } from 'react-icons/bi'
 import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
+import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 import { applyDynamicPlaceholder } from './utils'
 
@@ -35,6 +36,9 @@ export default function MultiCol(props: MultiColProps) {
 
   const { isMobile } = useContext(EditorContext)
   const { getValues } = useFormContext()
+  // Subscribe so switching fieldType (e.g. Text <-> List) drops the hidden
+  // sibling's flex wrapper instead of leaving an empty gap.
+  const rowParams = useWatch({ name }) ?? {}
 
   // Desktop table headers sit above the first row only. Mobile stacks columns,
   // so labels are shown per input instead.
@@ -91,12 +95,22 @@ export default function MultiCol(props: MultiColProps) {
   return (
     <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="flex-end">
       {subFields.map((subF, subFIndex) => {
+        // Skip the flex wrapper entirely when this row hides the sub-field.
+        // Otherwise an empty flex slot (e.g. Text value while type is List)
+        // leaves a gap and pushes the visible value input right.
+        if (isFieldHidden(subF.hiddenIf, rowParams)) {
+          return null
+        }
+
         const showDeleteButton = subFIndex === 0 && canRemoveRow
+        // Index in the key: two sub-fields can share a key (e.g. value for
+        // Text vs List) and must not collide when both are in the map.
+        const subFieldKey = `${name}.${subF.key}.${subFIndex}`
         return isMobile ? (
-          <React.Fragment key={`${name}.${subF.key}`}>
+          <React.Fragment key={subFieldKey}>
             {index !== 0 && subFIndex === 0 && <Divider />}
             <Flex
-              key={`${name}.${subF.key}`}
+              key={subFieldKey}
               style={{ flex: 1, width: '100%', marginTop: 8 }}
             >
               {renderSubFieldInput(subF, subFIndex)}
@@ -108,7 +122,7 @@ export default function MultiCol(props: MultiColProps) {
           // bottom, so a hidden input or a wrapped header can't knock the row
           // out of line.
           <Flex
-            key={`${name}.${subF.key}`}
+            key={subFieldKey}
             flexDir="column"
             alignSelf="stretch"
             style={subF.customStyle}
@@ -121,7 +135,7 @@ export default function MultiCol(props: MultiColProps) {
             <Box mt="auto">{renderSubFieldInput(subF, subFIndex)}</Box>
           </Flex>
         ) : (
-          <div key={`${name}.${subF.key}`} style={subF.customStyle}>
+          <div key={subFieldKey} style={subF.customStyle}>
             {renderSubFieldInput(subF, subFIndex)}
           </div>
         )
