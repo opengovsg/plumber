@@ -85,11 +85,6 @@ const action: IRawAction = {
       return result.output
     }
 
-    // FormSG checkbox variables resolve to string[]; join for email fields.
-    if (Array.isArray(value)) {
-      return value.join(', ')
-    }
-
     // Return unchanged for non-table values
     return value
   },

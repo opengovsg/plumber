@@ -16,6 +16,7 @@ const action: IRawAction = {
   name: 'Update case',
   key: 'updateCase',
   description: 'Update a case based on the case uuid',
+  preserveArrayVariables: true,
   arguments: [
     {
       label: 'Case UUID',

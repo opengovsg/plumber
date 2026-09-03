@@ -407,7 +407,7 @@ describe('compute parameters', () => {
     expect(result).toEqual(expected)
   })
 
-  it('preserves checkbox arrays when preprocessVariable keeps them', () => {
+  it('preserves checkbox arrays only when preserveArrayVariables is set', () => {
     const params = {
       caseFields: [
         {
@@ -417,7 +417,6 @@ describe('compute parameters', () => {
         },
       ],
     }
-    // GatherSG-style: keep the array for Checkbox value fields
     const preprocessVariable = (key: string, value: unknown) => {
       if (key === 'value' && Array.isArray(value)) {
         return value
@@ -427,7 +426,13 @@ describe('compute parameters', () => {
       }
       return value
     }
-    const result = computeParameters(params, executionSteps, preprocessVariable)
+    const result = computeParameters(
+      params,
+      executionSteps,
+      preprocessVariable,
+      undefined,
+      true,
+    )
     expect(result).toEqual({
       caseFields: [
         {
@@ -439,24 +444,11 @@ describe('compute parameters', () => {
     })
   })
 
-  it('still joins checkbox arrays without preprocessVariable', () => {
-    const params = {
-      value: `{{step.${randomStepID}.arrayProp}}`,
-    }
-    const result = computeParameters(params, executionSteps)
-    expect(result).toEqual({
-      value: 'array value 1, hehe, array value 3',
-    })
-  })
-
-  it('joins then escapes when preprocessVariable joins arrays (Telegram-style)', () => {
+  it('joins checkbox arrays by default even when preprocessVariable exists', () => {
     const params = {
       text: `{{step.${randomStepID}.arrayProp}}`,
     }
     const preprocessVariable = (key: string, value: unknown) => {
-      if (Array.isArray(value)) {
-        value = value.join(', ')
-      }
       if (key === 'text' && typeof value === 'string') {
         return `[escaped]${value}`
       }
@@ -465,6 +457,17 @@ describe('compute parameters', () => {
     const result = computeParameters(params, executionSteps, preprocessVariable)
     expect(result).toEqual({
       text: '[escaped]array value 1, hehe, array value 3',
+    })
+    expect(typeof result.text).toBe('string')
+  })
+
+  it('still joins checkbox arrays without preprocessVariable', () => {
+    const params = {
+      value: `{{step.${randomStepID}.arrayProp}}`,
+    }
+    const result = computeParameters(params, executionSteps)
+    expect(result).toEqual({
+      value: 'array value 1, hehe, array value 3',
     })
   })
 })

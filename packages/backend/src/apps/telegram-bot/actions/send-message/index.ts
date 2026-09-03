@@ -60,10 +60,6 @@ const action: IRawAction = {
   ],
 
   preprocessVariable(key: string, value: unknown) {
-    // FormSG checkbox variables resolve to string[]; join for message text.
-    if (Array.isArray(value)) {
-      value = value.join(', ')
-    }
     if (key === 'text' && typeof value === 'string') {
       return escapeMarkdown(value)
     }

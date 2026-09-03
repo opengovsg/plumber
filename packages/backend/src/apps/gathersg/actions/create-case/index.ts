@@ -19,6 +19,7 @@ const action: IRawAction = {
   name: 'Create case',
   key: 'createCase',
   description: 'Create a case',
+  preserveArrayVariables: true,
   arguments: [
     {
       label: 'Case type',
