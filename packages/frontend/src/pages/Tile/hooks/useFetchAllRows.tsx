@@ -81,6 +81,8 @@ export function useFetchAllRows({
     setRows([])
     cursorToContinueFrom.current = undefined
     setIsThroughputError(false)
+    // Stale generations skip the finally block, so nothing else clears this if no new fetch follows.
+    setIsFetching(false)
   }, [tableId])
 
   const fetchAllRows = useCallback(
