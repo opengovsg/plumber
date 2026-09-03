@@ -44,7 +44,13 @@ function VariableTag({
         return {
           label: 'Dropdown',
           tooltip:
-            'This FormSG dropdown can be used as a list value in GatherSG Create/Update case.',
+            'This FormSG dropdown can be used as a Dropdown/Checkbox/Radio value in GatherSG Create/Update case.',
+        }
+      case 'radiobutton':
+        return {
+          label: 'Radio Button',
+          tooltip:
+            'This FormSG radio button can be used as a Dropdown/Checkbox/Radio value in GatherSG Create/Update case.',
         }
       case 'file':
         return {

@@ -50,7 +50,7 @@ const action: IRawAction = {
       autofillable: true,
       required: false,
       description:
-        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. List fields only accept FormSG checkbox or dropdown variables.',
+        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. Dropdown, Checkbox, and Radio Button fields only accept FormSG checkbox, dropdown, or radio button variables.',
 
       subFields: [
         {
@@ -99,15 +99,23 @@ const action: IRawAction = {
               value: ensureZodEnumValue(fieldTypeEnum, 'email'),
             },
             {
-              label: 'List',
-              value: ensureZodEnumValue(fieldTypeEnum, 'list'),
+              label: 'Dropdown',
+              value: ensureZodEnumValue(fieldTypeEnum, 'dropdown'),
+            },
+            {
+              label: 'Checkbox',
+              value: ensureZodEnumValue(fieldTypeEnum, 'checkbox'),
+            },
+            {
+              label: 'Radio Button',
+              value: ensureZodEnumValue(fieldTypeEnum, 'radio'),
             },
             {
               label: 'Null',
               value: ensureZodEnumValue(fieldTypeEnum, 'null'),
             },
           ],
-          customStyle: { flex: 1, maxWidth: 140 },
+          customStyle: { flex: 1, maxWidth: 160 },
         },
         {
           placeholder: 'Value',
@@ -118,24 +126,24 @@ const action: IRawAction = {
           hiddenIf: {
             fieldKey: 'fieldType',
             op: 'in',
-            fieldValues: ['null', 'list'],
+            fieldValues: ['null', 'dropdown', 'checkbox', 'radio', 'list'],
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
         {
-          placeholder: 'Select a FormSG checkbox or dropdown',
+          placeholder: 'Select a FormSG checkbox, dropdown, or radio button',
           key: 'value',
           type: 'string' as const,
           required: true,
           variables: true,
-          variableTypes: ['array', 'dropdown'],
+          variableTypes: ['array', 'dropdown', 'radiobutton'],
           singleVariableSelection: true,
           noVariablesMessage:
-            ' No variables available - include a checkbox or dropdown field in your FormSG.',
+            ' No variables available - include a checkbox, dropdown, or radio button field in your FormSG.',
           hiddenIf: {
             fieldKey: 'fieldType',
-            op: 'not_equals',
-            fieldValue: 'list',
+            op: 'not_in',
+            fieldValues: ['dropdown', 'checkbox', 'radio', 'list'],
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
@@ -144,7 +152,7 @@ const action: IRawAction = {
   ],
 
   preprocessVariable(parameterKey: string, variableValue: unknown) {
-    // Keep FormSG checkbox arrays intact for list field values.
+    // Keep FormSG checkbox arrays intact for Dropdown/Checkbox/Radio field values.
     if (parameterKey === 'value' && Array.isArray(variableValue)) {
       return variableValue
     }

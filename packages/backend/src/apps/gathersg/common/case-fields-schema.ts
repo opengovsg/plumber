@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { fieldTypeEnum } from './constants'
+import { fieldTypeEnum, LIST_LIKE_FIELD_TYPES } from './constants'
 
 const caseFieldSchema = z.object({
   field: z.string().trim().min(1, 'Field empty'),
@@ -41,7 +41,7 @@ const toStringArray = (
 
   context.addIssue({
     code: z.ZodIssueCode.custom,
-    message: `Invalid list value for field: ${field}. Select a FormSG checkbox or dropdown.`,
+    message: `Invalid list value for field: ${field}. Select a FormSG checkbox, dropdown, or radio button.`,
   })
   return z.NEVER
 }
@@ -97,7 +97,10 @@ const transformCaseFields = (params: CaseField[], context: z.RefinementCtx) => {
         return z.NEVER
       }
       result[field] = emailResult.data
-    } else if (fieldType === 'list') {
+    } else if (
+      fieldType != null &&
+      (LIST_LIKE_FIELD_TYPES as readonly string[]).includes(fieldType)
+    ) {
       const listValue = toStringArray(field, value, context)
       if (listValue === z.NEVER) {
         return z.NEVER

@@ -16,6 +16,7 @@ export const VISIBLE_VARIABLE_TYPES: TDataOutMetadatumType[] = [
   'text',
   'array',
   'dropdown',
+  'radiobutton',
   'tile_row_id',
   'approval',
   'ai_response',

@@ -12,13 +12,37 @@ export const UNSUPPORTED_FIELDS = [
   'attachment',
 ]
 
-export const GATHERSG_LIST_TYPES = ['dropdown', 'checkbox']
+/**
+ * GatherSG selection field types. Labels in the Create/Update case UI match
+ * Ownself Gather: Dropdown, Checkbox, Radio Button.
+ */
+export const GATHERSG_SELECTION_TYPES = [
+  'dropdown',
+  'checkbox',
+  'radio',
+] as const
+
+export type GatherSGSelectionType = (typeof GATHERSG_SELECTION_TYPES)[number]
+
+/**
+ * Plumber fieldType values that send `string[]` to GatherSG.
+ * Includes legacy `list` so pipes saved before the Dropdown/Checkbox/Radio
+ * split keep working.
+ */
+export const LIST_LIKE_FIELD_TYPES = [
+  ...GATHERSG_SELECTION_TYPES,
+  'list',
+] as const
 
 export const fieldTypeEnum = z.enum([
   'string',
   'number',
   'null',
   'email',
+  'dropdown',
+  'checkbox',
+  'radio',
+  // Legacy alias for selection fields; kept for saved pipes.
   'list',
 ])
 

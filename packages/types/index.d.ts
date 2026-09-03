@@ -55,12 +55,14 @@ export interface IConnection {
  * will be extended to for-each feature handling.
  * 'dropdown' is used for FormSG dropdown answers so downstream
  * actions can accept them as list sources without allowing all text.
+ * 'radiobutton' is used for FormSG radio button answers for the same reason.
  */
 export type TDataOutMetadatumType =
   | 'text'
   | 'file'
   | 'array'
   | 'dropdown'
+  | 'radiobutton'
   | 'tile_row_id'
   | 'table'
   | 'approval'
@@ -316,6 +318,7 @@ type FieldVisibilityOp =
   | 'equals'
   | 'not_equals'
   | 'in'
+  | 'not_in'
 
 interface IFieldVacuousVisibilityCondition {
   op: Extract<FieldVisibilityOp, 'always_true'>
@@ -335,10 +338,11 @@ interface IFieldComparativeVisibilityCondition {
 }
 
 interface IFieldInVisibilityCondition {
-  op: Extract<FieldVisibilityOp, 'in'>
+  op: Extract<FieldVisibilityOp, 'in' | 'not_in'>
 
   fieldKey: string
-  // Hide when the sibling field's value is one of these.
+  // `in`: hide when the sibling field's value is one of these.
+  // `not_in`: hide when the sibling field's value is not one of these.
   fieldValues: IJSONPrimitive[]
 }
 
@@ -887,7 +891,7 @@ export interface DynamicDataOutput {
   data: {
     name: string
     value: string
-    type?: 'string' | 'number' | 'null' | 'email' | 'list'
+    type?: 'string' | 'number' | 'null' | 'email' | 'list' | 'dropdown' | 'checkbox' | 'radio'
   }[]
   error?: IJSONObject
 }
