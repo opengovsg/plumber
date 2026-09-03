@@ -414,7 +414,6 @@ describe('update case', () => {
     )
   })
 
-
   it('should throw step error for an empty checkbox field', async () => {
     $.step.parameters.caseFields = [
       { field: 'categories', fieldType: 'checkbox', value: [] },
