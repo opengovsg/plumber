@@ -58,16 +58,26 @@ function parseDepth(step: IStep): number {
 }
 
 /**
+ * Mirrors the backend's `getRejectionBranchId`. `config.approval` is only
+ * ever written for rejection branches, so its `stepId` identifies the branch
+ * on its own.
+ */
+function getRejectionBranchId(step: IStep): string | null {
+  return step.config?.approval?.stepId ?? null
+}
+
+function isMrfSubmissionStep(step: IStep): boolean {
+  return step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
+}
+
+/**
  * Derives an if-then V1 (marker-less) block's extent: the last step
  * (inclusive) inside the block. This mirrors the backend's
- * `deriveIfThenV1EndStep` so an if-then V1 displays over exactly the range it
- * actually executes over. An empty block (the next if-then immediately
- * follows) resolves to the if-then itself (self-reference).
+ * `deriveIfThenV1EndStep`, including its clamp to the block's own MRF region,
+ * so an if-then V1 displays over exactly the range it actually executes over.
  *
- * `actionSteps` is the MRF-filtered action-step list (trigger removed), ordered
- * by position. Because that list is already filtered to a single approval
- * branch, "the next if-then that passes the MRF same-approval-branch check" is
- * simply "the next if-then in the list".
+ * IMPORTANT: callers may pass either the MRF-filtered display list or the full
+ * `flow.steps`. The region clamp is what makes both agree.
  */
 export function deriveIfThenV1EndStep(
   actionSteps: IStep[],
@@ -80,15 +90,20 @@ export function deriveIfThenV1EndStep(
     (step, index) =>
       index > startIndex && isIfThenStep(step) && parseDepth(step) <= currDepth,
   )
+  const lastIndex =
+    nextBoundaryIndex === -1 ? actionSteps.length - 1 : nextBoundaryIndex - 1
 
-  if (nextBoundaryIndex === -1) {
-    return actionSteps[actionSteps.length - 1]
+  const blockRejectionBranchId = getRejectionBranchId(ifThenStep)
+  for (let index = startIndex + 1; index <= lastIndex; index++) {
+    const step = actionSteps[index]
+    if (
+      isMrfSubmissionStep(step) ||
+      getRejectionBranchId(step) !== blockRejectionBranchId
+    ) {
+      return actionSteps[index - 1]
+    }
   }
-  return actionSteps[nextBoundaryIndex - 1]
-}
-
-function isMrfSubmissionStep(step: IStep): boolean {
-  return step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
+  return actionSteps[lastIndex]
 }
 
 /**
@@ -108,15 +123,6 @@ function resolveBlockEndStep(
     }
   }
   return deriveIfThenV1EndStep(flowSteps, ifThenStep)
-}
-
-/**
- * Mirrors the backend's `getRejectionBranchId`. `config.approval` is only
- * ever written for rejection branches, so its `stepId` (the approval step
- * the branch hangs off) identifies the branch on its own.
- */
-function getRejectionBranchId(step: IStep): string | null {
-  return step.config?.approval?.stepId ?? null
 }
 
 /**

@@ -104,7 +104,7 @@ describe('deriveIfThenV1EndStep', () => {
     expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('ifThenA')
   })
 
-  it('treats a following if-then as a boundary across an MRF submission step', () => {
+  it('clamps a main-flow block to the step before an MRF submission step', () => {
     const ifThenA = ifThen('ifThenA')
     const rejectIfThen = ifThen('rejectIfThen', {
       config: { approval: { branch: 'reject', stepId: 'ifThenA' } },
@@ -117,7 +117,45 @@ describe('deriveIfThenV1EndStep', () => {
       plain('stepAfter'),
     ]
 
-    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('mrf')
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('stepA')
+  })
+
+  it('clamps a main-flow block to the step before a rejection branch starts', () => {
+    const ifThenA = ifThen('ifThenA')
+    const rejectIfThen = ifThen('rejectIfThen', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const steps = [
+      ifThenA,
+      plain('stepA'),
+      approvalStep('rejectChild'),
+      rejectIfThen,
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('stepA')
+  })
+
+  it('clamps a rejection-branch block to the step before the next MRF submission', () => {
+    const rejectIfThen = ifThen('rejectIfThen', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const steps = [
+      rejectIfThen,
+      approvalStep('rejectChild'),
+      mrfSubmission('mrfNext'),
+      plain('mainAfter'),
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, rejectIfThen).id).toBe('rejectChild')
+  })
+
+  it('returns the if-then itself when its region ends immediately after it', () => {
+    const rejectIfThen = ifThen('rejectIfThen', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const steps = [rejectIfThen, mrfSubmission('mrfNext'), plain('mainAfter')]
+
+    expect(deriveIfThenV1EndStep(steps, rejectIfThen).id).toBe('rejectIfThen')
   })
 
   it('skips a deeper (nested) if-then when scanning for the boundary', () => {
@@ -371,8 +409,8 @@ describe('buildStepsList', () => {
         endStepId: 's2',
       },
     })
-    const s2 = plain('s2')
-    const s3 = plain('s3')
+    const s2 = approvalStep('s2')
+    const s3 = approvalStep('s3')
 
     expect(buildStepsList([approvalIf, s2, s3], GROUPING_ACTIONS)).toEqual([
       {
@@ -394,8 +432,8 @@ describe('buildStepsList', () => {
     const approvalIf = ifThen('approvalIf', {
       config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
     })
-    const s2 = plain('s2')
-    const s3 = plain('s3')
+    const s2 = approvalStep('s2')
+    const s3 = approvalStep('s3')
 
     expect(buildStepsList([approvalIf, s2, s3], GROUPING_ACTIONS)).toEqual([
       {
@@ -491,7 +529,24 @@ describe('isIfThenBlockRegionConfined', () => {
     ]
 
     expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(true)
-    expect(isIfThenBlockRegionConfined(steps, ifThenB)).toBe(false)
+    // The clamp ends ifThenB's extent at the MRF submission, leaving it empty.
+    expect(isIfThenBlockRegionConfined(steps, ifThenB)).toBe(true)
+  })
+
+  it('is true for a main-flow block whose next if-then sits in a rejection branch', () => {
+    const ifThenA = ifThen('ifThenA')
+    const rejectIfThen = ifThen('rejectIfThen', {
+      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+    })
+    const steps = [
+      ifThenA,
+      plain('a1'),
+      plain('a2'),
+      approvalStep('rejectChild'),
+      rejectIfThen,
+    ]
+
+    expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(true)
   })
 
   it('is true for an explicit if-then V2 block confined to one region', () => {
@@ -508,26 +563,15 @@ describe('isIfThenBlockRegionConfined', () => {
     expect(isIfThenBlockRegionConfined(steps, block)).toBe(true)
   })
 
-  it('is false when an MRF submission step sits inside the derived extent', () => {
-    // ifThenA's derived extent runs up to the step before the reject-branch
-    // if-then, i.e. it includes the MRF submission — a straddling block.
-    const ifThenA = ifThen('ifThenA')
-    const rejectIfThen = ifThen('rejectIfThen', {
-      config: { approval: { branch: 'reject', stepId: 'ifThenA' } },
-    })
-    const steps = [
-      ifThenA,
-      plain('a1'),
-      mrfSubmission('mrf'),
-      rejectIfThen,
-      plain('after'),
-    ]
+  it('is false when an MRF submission step sits inside an explicit region', () => {
+    const ifThenA = markedIfThen('ifThenA', 'after')
+    const steps = [ifThenA, plain('a1'), mrfSubmission('mrf'), plain('after')]
 
     expect(isIfThenBlockRegionConfined(steps, ifThenA)).toBe(false)
   })
 
-  it('is false when a top-level block reaches into a rejection branch', () => {
-    const ifThenA = ifThen('ifThenA')
+  it('is false when an explicit top-level block reaches into a rejection branch', () => {
+    const ifThenA = markedIfThen('ifThenA', 'a3')
     const steps = [
       ifThenA,
       plain('a1'),
@@ -556,18 +600,24 @@ describe('isIfThenBlockRegionConfined', () => {
     expect(isIfThenBlockRegionConfined(steps, approvalIfThen)).toBe(true)
   })
 
-  it('is false when a rejection-branch block reaches back out to the main flow', () => {
+  it('is false when an explicit rejection-branch block reaches back out to the main flow', () => {
     const approvalIfThen = ifThen('approvalIf', {
-      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+      config: {
+        approval: { branch: 'reject', stepId: 'someApprovalStep' },
+        endStepId: 'topLevel',
+      },
     })
     const steps = [approvalIfThen, approvalStep('a1'), plain('topLevel')]
 
     expect(isIfThenBlockRegionConfined(steps, approvalIfThen)).toBe(false)
   })
 
-  it('is false for a block spanning two different rejection branches', () => {
+  it('is false for an explicit block spanning two different rejection branches', () => {
     const approvalIfThen = ifThen('approvalIf', {
-      config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
+      config: {
+        approval: { branch: 'reject', stepId: 'someApprovalStep' },
+        endStepId: 'otherBranch',
+      },
     })
     const otherBranchStep = {
       ...plain('otherBranch'),
