@@ -64,7 +64,7 @@ const action: IRawAction = {
       autofillable: true,
       required: true,
       description:
-        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. Dropdown, Checkbox, and Radio Button fields only accept FormSG checkbox, dropdown, or radio button variables.',
+        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. Checkbox fields only accept FormSG checkbox variables. Dropdown values are sent to GatherSG as string arrays. Radio Button values are sent as strings.',
       hiddenIf: {
         fieldKey: 'caseType',
         op: 'is_empty',
@@ -143,27 +143,28 @@ const action: IRawAction = {
           hiddenIf: {
             fieldKey: 'fieldType',
             op: 'in',
-            fieldValues: ['null', 'dropdown', 'checkbox', 'radio', 'list'],
+            fieldValues: ['null', 'checkbox'],
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
         {
-          placeholder: 'Select a FormSG checkbox, dropdown, or radio button',
+          placeholder: 'Select a FormSG checkbox',
           key: 'value',
           type: 'string' as const,
           required: true,
           variables: true,
-          variableTypes: ['array', 'dropdown', 'radiobutton'],
+          variableTypes: ['array'],
           singleVariableSelection: true,
           noVariablesMessage:
-            ' No variables available - include a checkbox, dropdown, or radio button field in your FormSG.',
+            ' No variables available - include a checkbox field in your FormSG.',
           hiddenIf: {
             fieldKey: 'fieldType',
-            op: 'not_in',
-            fieldValues: ['dropdown', 'checkbox', 'radio', 'list'],
+            op: 'not_equals',
+            fieldValue: 'checkbox',
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
+
       ],
     },
   ],
@@ -171,7 +172,7 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   preprocessVariable(parameterKey: string, variableValue: unknown) {
-    // Keep FormSG checkbox arrays intact for Dropdown/Checkbox/Radio field values.
+    // Keep FormSG checkbox arrays intact for Checkbox field values.
     if (parameterKey === 'value' && Array.isArray(variableValue)) {
       return variableValue
     }

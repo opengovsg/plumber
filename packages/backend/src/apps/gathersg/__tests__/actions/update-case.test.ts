@@ -391,7 +391,7 @@ describe('update case', () => {
     )
   })
 
-  it('wraps a FormSG radio string into a radio array', async () => {
+  it('posts a radio field as a plain string', async () => {
     $.step.parameters.caseFields = [
       { field: 'severity', fieldType: 'radio', value: 'High' },
     ]
@@ -403,7 +403,7 @@ describe('update case', () => {
         caseUuid: MOCK_CASE_UUID,
         status: MOCK_CASE_STATUS,
         fields: {
-          severity: ['High'],
+          severity: 'High',
         },
       },
       {

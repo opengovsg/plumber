@@ -57,21 +57,6 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
     case 'section':
       answer.isHidden = true
       break
-    case 'dropdown':
-      // Distinct from plain text so GatherSG selection fields can accept FormSG
-      // dropdowns without opening the picker to every text variable.
-      answer['type'] = 'dropdown'
-      answer['label'] = fieldData.order
-        ? `${fieldData.order}. ${fieldData.question}`
-        : null
-      break
-    case 'radiobutton':
-      // Same idea as dropdown: GatherSG Radio Button fields filter on this type.
-      answer['type'] = 'radiobutton'
-      answer['label'] = fieldData.order
-        ? `${fieldData.order}. ${fieldData.question}`
-        : null
-      break
     default:
       answer['type'] = 'text'
       answer['label'] = fieldData.order
