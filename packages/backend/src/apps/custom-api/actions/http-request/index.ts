@@ -249,6 +249,10 @@ const action: IRawAction = {
   ],
 
   preprocessVariable(parameterKey: string, variableValue: unknown) {
+    // FormSG checkbox variables resolve to string[]; join before string escaping.
+    if (Array.isArray(variableValue)) {
+      variableValue = variableValue.join(', ')
+    }
     if (parameterKey === 'data' && typeof variableValue === 'string') {
       // check if the variable is a valid JSON
       if (variableValue.startsWith('{') || variableValue.endsWith('}')) {

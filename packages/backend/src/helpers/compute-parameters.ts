@@ -175,13 +175,23 @@ function findAndSubstituteVariables(
       let resolvedValue = dataValue
       if (Array.isArray(dataValue)) {
         if (preprocessVariable) {
-          // Pass the raw array so actions that need string[] (e.g. GatherSG
-          // list fields) can keep it. They join themselves when unused.
-          return preprocessVariable(parameterKey, dataValue)
-        }
-        // NOTE: we do not stringify the array if its a for each step
-        // to avoid having to parse it back into an array again
-        if (!isForEachStep) {
+          const processed = preprocessVariable(parameterKey, dataValue)
+          // Keep string[] only when preprocessVariable returns a different
+          // array (explicit keep, e.g. GatherSG checkbox). Same reference
+          // means the action ignored the array. Join so scalar fields
+          // (Telegram text, Postman body, Custom API) stay strings.
+          if (Array.isArray(processed) && processed !== dataValue) {
+            return processed
+          }
+          if (!Array.isArray(processed)) {
+            return processed
+          }
+          if (!isForEachStep) {
+            return preprocessVariable(parameterKey, dataValue.join(', '))
+          }
+        } else if (!isForEachStep) {
+          // NOTE: we do not stringify the array if its a for each step
+          // to avoid having to parse it back into an array again
           resolvedValue = dataValue.join(', ')
         }
       } else if (preprocessVariable) {

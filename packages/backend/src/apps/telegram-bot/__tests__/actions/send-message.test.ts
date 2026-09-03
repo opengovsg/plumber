@@ -7,6 +7,7 @@ import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 
 import sendMessageAction from '../../actions/send-message'
+import { escapeMarkdown } from '../../common/markdown-v1'
 
 const mocks = vi.hoisted(() => ({
   httpPost: vi.fn(),
@@ -242,4 +243,13 @@ describe('send message', () => {
       await expect(sendMessageAction.run($)).rejects.toThrowError()
     },
   )
+
+  it('joins FormSG checkbox arrays in preprocessVariable before escaping', () => {
+    const result = sendMessageAction.preprocessVariable?.('text', [
+      'Option A',
+      'Option B',
+    ])
+    expect(typeof result).toBe('string')
+    expect(result).toBe(escapeMarkdown('Option A, Option B'))
+  })
 })
