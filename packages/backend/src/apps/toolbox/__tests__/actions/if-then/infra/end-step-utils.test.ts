@@ -28,12 +28,25 @@ const trigger = (position: number): Fixture => ({
   position,
 })
 
-const plain = (id: string, position: number): Fixture => ({
+const plain = (
+  id: string,
+  position: number,
+  config: IStepConfig = {},
+): Fixture => ({
   id,
   appKey: 'postman',
   key: 'sendTransactionalEmail',
   position,
+  config,
 })
+
+const REJECT_MANAGER = {
+  approval: { branch: 'reject', stepId: 'mrfManager' },
+} satisfies IStepConfig
+
+const REJECT_DIRECTOR = {
+  approval: { branch: 'reject', stepId: 'mrfDirector' },
+} satisfies IStepConfig
 
 const ifThen = (
   id: string,
@@ -113,7 +126,7 @@ describe('deriveIfThenV1EndStep', () => {
     expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('ifThenA')
   })
 
-  it('treats a following (reject-branch) if-then as an MRF boundary', () => {
+  it('clamps a main-flow block to the step before an mrfSubmission', () => {
     const ifThenA = ifThen('ifThenA', 2)
     const rejectIfThen = ifThen('rejectIfThen', 5, {
       parameters: { depth: '0' },
@@ -127,7 +140,76 @@ describe('deriveIfThenV1EndStep', () => {
       plain('stepAfter', 6),
     ]
 
-    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('mrf')
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('stepA')
+  })
+
+  it('clamps a rejection-branch block to the step before the next mrfSubmission', () => {
+    const ifThenA = ifThen('ifThenA', 3, { config: REJECT_MANAGER })
+    const steps = [
+      trigger(1),
+      mrfSubmission('mrfManager', 2),
+      ifThenA,
+      plain('rejectChild', 4, REJECT_MANAGER),
+      mrfSubmission('mrfDirector', 5),
+      plain('mainAfter', 6),
+      ifThen('ifThenB', 7),
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('rejectChild')
+  })
+
+  it('clamps a main-flow block to the step before a rejection branch starts', () => {
+    const ifThenA = ifThen('ifThenA', 3)
+    const steps = [
+      trigger(1),
+      mrfSubmission('mrfDirector', 2),
+      ifThenA,
+      plain('mainChild', 4),
+      plain('rejectChild', 5, REJECT_DIRECTOR),
+      ifThen('rejectIfThen', 6, { config: REJECT_DIRECTOR }),
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('mainChild')
+  })
+
+  it('clamps at a step belonging to a different rejection branch', () => {
+    const ifThenA = ifThen('ifThenA', 3, { config: REJECT_MANAGER })
+    const steps = [
+      trigger(1),
+      mrfSubmission('mrfManager', 2),
+      ifThenA,
+      plain('managerChild', 4, REJECT_MANAGER),
+      plain('directorChild', 5, REJECT_DIRECTOR),
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('managerChild')
+  })
+
+  it('clamps the no-following-if-then case instead of running to the flow end', () => {
+    const ifThenA = ifThen('ifThenA', 3, { config: REJECT_MANAGER })
+    const steps = [
+      trigger(1),
+      mrfSubmission('mrfManager', 2),
+      ifThenA,
+      plain('rejectChild', 4, REJECT_MANAGER),
+      mrfSubmission('mrfDirector', 5),
+      plain('mainAfter', 6),
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('rejectChild')
+  })
+
+  it('returns the if-then itself when its region ends immediately after it', () => {
+    const ifThenA = ifThen('ifThenA', 3, { config: REJECT_MANAGER })
+    const steps = [
+      trigger(1),
+      mrfSubmission('mrfManager', 2),
+      ifThenA,
+      mrfSubmission('mrfDirector', 4),
+      plain('mainAfter', 5),
+    ]
+
+    expect(deriveIfThenV1EndStep(steps, ifThenA).id).toBe('ifThenA')
   })
 
   it('does not treat a deeper (nested) if-then as a boundary (mirrors V1 depth scan)', () => {

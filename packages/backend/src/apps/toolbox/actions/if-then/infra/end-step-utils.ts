@@ -2,9 +2,11 @@ import type { IStep } from '@plumber/types'
 
 import {
   BLOCK_END_STEP_ID,
+  getRejectionBranchId,
   isBlankPlaceholderStep,
   isIfThenStep,
   isIfThenV2,
+  isMrfSubmissionStep,
   type StepLike,
 } from '../../../common/constants'
 
@@ -34,10 +36,13 @@ function parseDepth(step: ExtentStep): number {
 /**
  * Computes a V1 if-then block's derived extent (the last step, inclusive).
  *
- * IMPORTANT: this is a plain positional scan with no MRF awareness, so it can
- * derive an extent that crosses an mrfSubmission or a rejection-branch
- * boundary — region-confinement write validation is the safety net that
- * refuses to pin one that does.
+ * The extent stops at the block's own MRF region boundary, on half-open
+ * bounds, so an mrfSubmission is never a member. FormSG never sends a
+ * sub-trigger after a rejection, so a rejection branch always ends at the
+ * next mrfSubmission.
+ *
+ * IMPORTANT: returns the if-then itself (an empty block) when its region ends
+ * immediately after it.
  */
 export function deriveIfThenV1EndStep<T extends ExtentStep>(
   flowSteps: T[],
@@ -50,11 +55,20 @@ export function deriveIfThenV1EndStep<T extends ExtentStep>(
     (step, index) =>
       index > startIndex && isIfThenStep(step) && parseDepth(step) <= currDepth,
   )
+  const lastIndex =
+    nextBoundaryIndex === -1 ? flowSteps.length - 1 : nextBoundaryIndex - 1
 
-  if (nextBoundaryIndex === -1) {
-    return flowSteps[flowSteps.length - 1]
+  const blockRejectionBranchId = getRejectionBranchId(ifThenStep)
+  for (let index = startIndex + 1; index <= lastIndex; index++) {
+    const step = flowSteps[index]
+    if (
+      isMrfSubmissionStep(step) ||
+      getRejectionBranchId(step) !== blockRejectionBranchId
+    ) {
+      return flowSteps[index - 1]
+    }
   }
-  return flowSteps[nextBoundaryIndex - 1]
+  return flowSteps[lastIndex]
 }
 
 /**
