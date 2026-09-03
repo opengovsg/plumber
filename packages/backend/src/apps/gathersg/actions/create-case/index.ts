@@ -172,9 +172,8 @@ const action: IRawAction = {
 
   preprocessVariable(parameterKey: string, variableValue: unknown) {
     // Keep FormSG checkbox arrays intact for Checkbox field values.
-    // Return a new array so compute-parameters treats this as an explicit keep.
     if (parameterKey === 'value' && Array.isArray(variableValue)) {
-      return [...variableValue]
+      return variableValue
     }
     if (Array.isArray(variableValue)) {
       return variableValue.join(', ')

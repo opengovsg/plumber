@@ -417,10 +417,10 @@ describe('compute parameters', () => {
         },
       ],
     }
-    // GatherSG-style: return a new array to signal explicit keep
+    // GatherSG-style: keep the array for Checkbox value fields
     const preprocessVariable = (key: string, value: unknown) => {
       if (key === 'value' && Array.isArray(value)) {
-        return [...value]
+        return value
       }
       if (Array.isArray(value)) {
         return value.join(', ')
@@ -449,25 +449,7 @@ describe('compute parameters', () => {
     })
   })
 
-  it('joins checkbox arrays for string-oriented preprocessVariable (Telegram-style)', () => {
-    const params = {
-      text: `{{step.${randomStepID}.arrayProp}}`,
-    }
-    // Telegram-style: only transforms strings, ignores arrays if passed through
-    const preprocessVariable = (key: string, value: unknown) => {
-      if (key === 'text' && typeof value === 'string') {
-        return `[escaped]${value}`
-      }
-      return value
-    }
-    const result = computeParameters(params, executionSteps, preprocessVariable)
-    expect(result).toEqual({
-      text: '[escaped]array value 1, hehe, array value 3',
-    })
-    expect(typeof result.text).toBe('string')
-  })
-
-  it('joins then escapes when preprocessVariable joins arrays itself', () => {
+  it('joins then escapes when preprocessVariable joins arrays (Telegram-style)', () => {
     const params = {
       text: `{{step.${randomStepID}.arrayProp}}`,
     }
