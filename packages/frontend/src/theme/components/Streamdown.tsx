@@ -100,13 +100,7 @@ export function ChakraStreamdown({
         <Text mb={4} lineHeight={1.6} {...props} />
       ),
       strong: (props: React.ComponentProps<'strong'>) => (
-        <Box
-          as="strong"
-          fontWeight="semibold"
-          display="inline"
-          my={4}
-          {...props}
-        />
+        <Box as="strong" fontWeight="semibold" display="inline" {...props} />
       ),
       code: (props: React.ComponentProps<typeof Code>) => (
         <Code colorScheme="gray" {...props} />
