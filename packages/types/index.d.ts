@@ -886,7 +886,14 @@ export interface DynamicDataOutput {
   data: {
     name: string
     value: string
-    type?: 'string' | 'number' | 'null' | 'email' | 'list' | 'dropdown' | 'checkbox' | 'radio'
+    type?:
+      | 'string'
+      | 'number'
+      | 'null'
+      | 'email'
+      | 'dropdown'
+      | 'checkbox'
+      | 'radio'
   }[]
   error?: IJSONObject
 }
