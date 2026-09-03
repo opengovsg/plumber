@@ -62,6 +62,23 @@ export function isBlankPlaceholderStep(
   return !step?.appKey && !step?.key
 }
 
+export function isMrfSubmissionStep(
+  step: StepLike | null | undefined,
+): boolean {
+  return step?.appKey === 'formsg' && step?.key === 'mrfSubmission'
+}
+
+/**
+ * Which MRF rejection branch a step belongs to, or null for the main flow.
+ * `config.approval` is only ever written for rejection branches, so its
+ * `stepId` identifies the branch on its own.
+ */
+export function getRejectionBranchId(
+  step: StepLike | null | undefined,
+): string | null {
+  return step?.config?.approval?.stepId ?? null
+}
+
 // IMPORTANT: presence (Object.hasOwn), not value, distinguishes an if-then V2
 // step from if-then V1.
 export function isIfThenV2(step: StepLike | null | undefined): boolean {

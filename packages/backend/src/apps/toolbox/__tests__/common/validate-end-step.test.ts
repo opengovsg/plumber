@@ -736,7 +736,31 @@ describe('upgradeIfThenV1BlocksIfEnabled', () => {
     expect(stepPatchMocks.patchCalls).toHaveLength(0)
   })
 
-  it('throws end-step-write-rejected when a derived extent violates region confinement', async () => {
+  it('pins a rejection-branch block to its last member inside the branch', async () => {
+    const rejection = { approval: REJECTION_BRANCH }
+    const block = ifThen('block', 3, rejection)
+    const flowSteps = [
+      trigger(1),
+      mrfSubmission('mrf', 2),
+      block,
+      plain('rejectChild', 4, rejection),
+      mrfSubmission('mrfNext', 5),
+      plain('mainAfter', 6),
+    ]
+    getLdFlagValueMock.mockResolvedValue(true)
+
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      fakeFlow('owner@example.com'),
+      flowSteps,
+    )
+
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'block', patch: pinPatch('rejectChild') },
+    ])
+  })
+
+  it('pins a block whose region ends immediately after it to itself', async () => {
     const block = ifThen('block', 3, { approval: REJECTION_BRANCH })
     const flowSteps = [
       trigger(1),
@@ -746,14 +770,15 @@ describe('upgradeIfThenV1BlocksIfEnabled', () => {
     ]
     getLdFlagValueMock.mockResolvedValue(true)
 
-    await expect(
-      upgradeIfThenV1BlocksIfEnabled(
-        trx,
-        fakeFlow('owner@example.com'),
-        flowSteps,
-      ),
-    ).rejects.toThrow()
-    expect(stepPatchMocks.patchCalls).toHaveLength(0)
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      fakeFlow('owner@example.com'),
+      flowSteps,
+    )
+
+    expect(stepPatchMocks.patchCalls).toEqual([
+      { id: 'block', patch: pinPatch('block') },
+    ])
   })
 
   it('deletes a lone blank member and self-references the emptied block', async () => {
