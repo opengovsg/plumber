@@ -27,9 +27,8 @@ export type GatherSGSelectionType = (typeof GATHERSG_SELECTION_TYPES)[number]
 /**
  * Plumber fieldType values that send `string[]` to GatherSG.
  * Radio is excluded: Ownself Gather accepts a plain string for radio.
- * Includes legacy `list` so pipes saved before the type split keep working.
  */
-export const LIST_LIKE_FIELD_TYPES = ['dropdown', 'checkbox', 'list'] as const
+export const LIST_LIKE_FIELD_TYPES = ['dropdown', 'checkbox'] as const
 
 export const fieldTypeEnum = z.enum([
   'string',
@@ -39,8 +38,6 @@ export const fieldTypeEnum = z.enum([
   'dropdown',
   'checkbox',
   'radio',
-  // Legacy alias for selection fields; kept for saved pipes.
-  'list',
 ])
 
 // GatherSG field types whose values should be treated as numbers. Every other

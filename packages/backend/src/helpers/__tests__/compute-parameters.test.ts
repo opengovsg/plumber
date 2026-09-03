@@ -412,7 +412,7 @@ describe('compute parameters', () => {
       caseFields: [
         {
           field: 'categories',
-          fieldType: 'list',
+          fieldType: 'checkbox',
           value: `{{step.${randomStepID}.arrayProp}}`,
         },
       ],
@@ -431,7 +431,7 @@ describe('compute parameters', () => {
       caseFields: [
         {
           field: 'categories',
-          fieldType: 'list',
+          fieldType: 'checkbox',
           value: ['array value 1', 'hehe', 'array value 3'],
         },
       ],
