@@ -1107,6 +1107,13 @@ export interface IBaseAction {
   preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
 
   /**
+   * When true, FormSG checkbox `string[]` values are not joined before
+   * `preprocessVariable`, and a parameter that is only one such array stays
+   * as `string[]`. Default is false so scalar actions keep joined strings.
+   */
+  preserveArrayVariables?: boolean
+
+  /**
    * For optimizing our S3 storage; we won't store files into our S3 unless
    * the pipe has at least 1 action which processes files.
    */
