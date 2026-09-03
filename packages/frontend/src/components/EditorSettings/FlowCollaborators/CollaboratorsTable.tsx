@@ -116,14 +116,7 @@ const TableRow = (props: TableRowProps) => {
     } finally {
       setIsDeleting(false)
     }
-  }, [
-    deleteCollaborator,
-    email,
-    flow.id,
-    navigate,
-    onLeaveDialogClose,
-    toast,
-  ])
+  }, [deleteCollaborator, email, flow.id, navigate, onLeaveDialogClose, toast])
 
   return (
     <Tr key={email}>
