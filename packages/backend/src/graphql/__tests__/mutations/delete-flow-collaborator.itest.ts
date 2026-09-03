@@ -139,6 +139,31 @@ describe('delete flow collaborators', () => {
     ).rejects.toThrow(BadUserInputError)
   })
 
+  it('should not distinguish nonexistent and inaccessible flows when leaving', async () => {
+    context.currentUser = nonCollaborator
+    const otherOwnerFlow = await Flow.query().insert({
+      id: randomUUID(),
+      name: 'other owner flow',
+      userId: owner.id,
+    })
+
+    await expect(
+      deleteFlowCollaborator(
+        null,
+        { input: { flowId: randomUUID(), email: nonCollaborator.email } },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
+
+    await expect(
+      deleteFlowCollaborator(
+        null,
+        { input: { flowId: otherOwnerFlow.id, email: nonCollaborator.email } },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
+  })
+
   it('should throw an error if trying to delete owner', async () => {
     context.currentUser = editor
     await expect(
