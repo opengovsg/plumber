@@ -180,13 +180,14 @@ enum FieldVisibilityOp {
   equals
   not_equals
   in
+  not_in
 }
 
 type FieldVisibilityCondition {
   op: FieldVisibilityOp!
   fieldKey: String
   fieldValue: JSONPrimitive
-  # Used by the `in` op: hide when the sibling field's value is one of these.
+  # Used by the `in` / `not_in` ops: compare the sibling field's value against this set.
   fieldValues: [JSONPrimitive]
 }
 

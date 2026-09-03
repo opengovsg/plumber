@@ -7,7 +7,7 @@ import getCaseFields from '../../dynamic-data/get-case-fields'
 const MOCK_CASE_TYPE_UUID = 'case-type-uuid-123456'
 
 describe('getCaseFields', () => {
-  it('maps GatherSG field types to string/number/email/list, filtering out unsupported fields', async () => {
+  it('maps GatherSG field types to string/number/email/dropdown/checkbox/radio, filtering out unsupported fields', async () => {
     const httpGet = vi.fn().mockResolvedValue({
       data: {
         data: {
@@ -21,6 +21,8 @@ describe('getCaseFields', () => {
             { name: 'NRIC', type: 'nric', optional: true },
             { name: 'Email', type: 'email', optional: true },
             { name: 'Dropdown', type: 'dropdown', optional: true },
+            { name: 'Checkbox', type: 'checkbox', optional: true },
+            { name: 'Radio', type: 'radio', optional: true },
             { name: 'Attachment', type: 'attachment', optional: true },
           ],
         },
@@ -47,7 +49,9 @@ describe('getCaseFields', () => {
         { name: 'Money', value: 'Money', type: 'number' },
         { name: 'NRIC', value: 'NRIC', type: 'string' },
         { name: 'Email', value: 'Email', type: 'email' },
-        { name: 'Dropdown', value: 'Dropdown', type: 'list' },
+        { name: 'Dropdown', value: 'Dropdown', type: 'dropdown' },
+        { name: 'Checkbox', value: 'Checkbox', type: 'checkbox' },
+        { name: 'Radio', value: 'Radio', type: 'radio' },
       ],
     })
   })

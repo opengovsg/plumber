@@ -12,8 +12,9 @@ import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
 import {
   GATHERSG_EMAIL_TYPES,
-  GATHERSG_LIST_TYPES,
   GATHERSG_NUMBER_TYPES,
+  GATHERSG_SELECTION_TYPES,
+  GatherSGSelectionType,
 } from '../common/constants'
 import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
@@ -66,13 +67,16 @@ const processCaseFields = (
 ): DynamicDataOutput => {
   return {
     data: caseFields.map((field) => {
-      let type: 'string' | 'number' | 'email' | 'list' = 'string'
+      let type: 'string' | 'number' | 'email' | GatherSGSelectionType = 'string'
       if (GATHERSG_NUMBER_TYPES.includes(field.type)) {
         type = 'number'
       } else if (GATHERSG_EMAIL_TYPES.includes(field.type)) {
         type = 'email'
-      } else if (GATHERSG_LIST_TYPES.includes(field.type)) {
-        type = 'list'
+      } else if (
+        (GATHERSG_SELECTION_TYPES as readonly string[]).includes(field.type)
+      ) {
+        // Keep Ownself Gather type keys so autofill sets Dropdown/Checkbox/Radio.
+        type = field.type as GatherSGSelectionType
       }
       return {
         name: field.name,

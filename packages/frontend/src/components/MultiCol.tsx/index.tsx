@@ -36,7 +36,7 @@ export default function MultiCol(props: MultiColProps) {
 
   const { isMobile } = useContext(EditorContext)
   const { getValues } = useFormContext()
-  // Subscribe so switching fieldType (e.g. Text <-> List) drops the hidden
+  // Subscribe so switching fieldType (e.g. Text <-> Dropdown) drops the hidden
   // sibling's flex wrapper instead of leaving an empty gap.
   const rowParams = useWatch({ name }) ?? {}
 
