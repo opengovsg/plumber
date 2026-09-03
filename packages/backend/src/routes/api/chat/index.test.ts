@@ -56,7 +56,7 @@ vi.mock('@/models/connection', () => ({
 
 vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: vi.fn().mockResolvedValue({
-    prompt: 'You are a helpful assistant.',
+    prompt: 'You are a helpful assistant. Support: {{SUPPORT_FORM_URL}}',
     toJSON: () => ({}),
   }),
 }))
@@ -200,6 +200,43 @@ describe('chat handler — GitBook MCP integration', () => {
         tools: { ...mockBridgeTools },
       }),
     )
+  })
+
+  it('substitutes the support form URL placeholder with the chat ID pre-filled', async () => {
+    const handler = router.stack[0].route.stack[0].handle
+    await handler(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      makeReq({ chatId: '123e4567-e89b-12d3-a456-426614174000' }) as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      makeRes() as any,
+      vi.fn(),
+    )
+
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'system',
+            content: expect.stringContaining(
+              'https://form.gov.sg/64929532701266001209ac32?6a979221b8ae314641032f5c=123e4567-e89b-12d3-a456-426614174000',
+            ),
+          }),
+        ]),
+      }),
+    )
+  })
+
+  it('falls back to the bare support form URL when chatId is absent', async () => {
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[{ messages }]] = vi.mocked(streamText).mock.calls
+    const systemMessage = messages.find((m) => m.role === 'system')
+    expect(systemMessage?.content).toContain(
+      'Support: https://form.gov.sg/64929532701266001209ac32',
+    )
+    expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
   })
 })
 

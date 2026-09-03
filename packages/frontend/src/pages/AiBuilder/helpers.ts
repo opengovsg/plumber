@@ -8,6 +8,10 @@ import {
   IsChatReadyPart,
   Message,
 } from '@/hooks/useChatStream'
+import {
+  SUPPORT_FORM_BASE_URL,
+  SUPPORT_FORM_CHAT_ID_FIELD,
+} from '@/pages/AiBuilder/constants'
 
 // Strip HTML comment blocks from AI chat text before display.
 // Complete comments (<!-- ... -->) are invisible in HTML but some markdown parsers
@@ -35,6 +39,17 @@ export const normalizeMarkdownHeadings = (text: string): string =>
 
 export const prepareAiText = (text: string): string =>
   normalizeMarkdownHeadings(stripHtmlComments(text))
+
+// Support form URL with the chat ID pre-filled, so a submitted request can be
+// traced back to its Langfuse session.
+export const buildSupportFormUrl = (chatId: string | undefined): string => {
+  if (!chatId) {
+    return SUPPORT_FORM_BASE_URL
+  }
+
+  const params = new URLSearchParams({ [SUPPORT_FORM_CHAT_ID_FIELD]: chatId })
+  return `${SUPPORT_FORM_BASE_URL}?${params.toString()}`
+}
 
 // First user message sent after connecting a form from the empty state.
 // The parenthetical carries the connection id (for assigning the trigger in
