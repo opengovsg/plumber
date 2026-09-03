@@ -139,7 +139,7 @@ export default function ForEach(props: ForEachProps) {
       <BlockHeader
         badgeLabel="REPEAT"
         previewParts={previewParts}
-        stepId={conditionStep.id}
+        step={conditionStep}
         isSelected={isSelected}
         actions={
           readOnly ? undefined : (
