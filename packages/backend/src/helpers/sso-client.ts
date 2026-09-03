@@ -53,14 +53,19 @@ export class SsoClient {
   private async getClient(): Promise<Client> {
     if (!this.client) {
       this.issuer = await Issuer.discover(appConfig.sso.discoveryUrl)
-      this.client = new this.issuer.Client({
-        client_id: appConfig.sso.clientId,
-        client_secret: appConfig.sso.clientSecret,
-        redirect_uris: [redirectUri],
-        response_types: ['code'],
-        id_token_signed_response_alg: 'RS256',
-        token_endpoint_auth_method: 'client_secret_basic',
-      })
+      // one.gov.sg has no client secrets. openid-client signs a fresh
+      // client assertion (unique jti, 60s exp) per token call.
+      this.client = new this.issuer.Client(
+        {
+          client_id: appConfig.sso.clientId,
+          redirect_uris: [redirectUri],
+          response_types: ['code'],
+          id_token_signed_response_alg: 'RS256',
+          token_endpoint_auth_method: 'private_key_jwt',
+          token_endpoint_auth_signing_alg: 'RS256',
+        },
+        { keys: [JSON.parse(appConfig.sso.privateKeyJwk)] },
+      )
     }
     return this.client
   }

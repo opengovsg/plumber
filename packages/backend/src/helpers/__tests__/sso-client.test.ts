@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   discover: vi.fn(),
+  clientConstructor: vi.fn(),
   authorizationUrl: vi.fn(),
   callback: vi.fn(),
   claims: vi.fn(),
@@ -34,6 +35,13 @@ vi.mock('openid-client', () => {
   }
 })
 
+const TEST_PRIVATE_JWK = {
+  kty: 'RSA',
+  n: 'test-modulus',
+  e: 'AQAB',
+  d: 'test-exponent',
+}
+
 vi.mock('@/config/app', () => ({
   default: {
     webAppUrl: 'http://localhost:3001',
@@ -41,7 +49,8 @@ vi.mock('@/config/app', () => ({
     sessionSecretKey: 'sample-app-secret-key',
     sso: {
       clientId: 'plumber-test',
-      clientSecret: 'secret',
+      privateKeyJwk:
+        '{"kty":"RSA","n":"test-modulus","e":"AQAB","d":"test-exponent"}',
       discoveryUrl: 'https://one.gov.sg/api/auth',
     },
   },
@@ -51,10 +60,11 @@ describe('SsoClient', () => {
   beforeEach(() => {
     mocks.discover.mockResolvedValue({
       metadata: { issuer: 'https://one.gov.sg/api/auth' },
-      Client: function Client(): {
+      Client: function Client(...args: unknown[]): {
         authorizationUrl: typeof mocks.authorizationUrl
         callback: typeof mocks.callback
       } {
+        mocks.clientConstructor(...args)
         return {
           authorizationUrl: mocks.authorizationUrl,
           callback: mocks.callback,
@@ -101,6 +111,23 @@ describe('SsoClient', () => {
       nonce: 'generated-nonce',
       codeVerifier: 'generated-verifier',
     })
+  })
+
+  it('authenticates with private_key_jwt using the configured private JWK', async () => {
+    const { ssoClient } = await import('../sso-client')
+    await ssoClient.createAuthorizationRequest()
+
+    expect(mocks.clientConstructor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        client_id: 'plumber-test',
+        token_endpoint_auth_method: 'private_key_jwt',
+        token_endpoint_auth_signing_alg: 'RS256',
+      }),
+      { keys: [TEST_PRIVATE_JWK] },
+    )
+    expect(mocks.clientConstructor.mock.calls[0][0]).not.toHaveProperty(
+      'client_secret',
+    )
   })
 
   it('passes nonce, state, and code_verifier checks to client.callback', async () => {
