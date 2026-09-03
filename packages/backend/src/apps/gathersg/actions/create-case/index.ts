@@ -164,7 +164,6 @@ const action: IRawAction = {
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
-
       ],
     },
   ],

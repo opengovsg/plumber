@@ -29,11 +29,7 @@ export type GatherSGSelectionType = (typeof GATHERSG_SELECTION_TYPES)[number]
  * Radio is excluded: Ownself Gather accepts a plain string for radio.
  * Includes legacy `list` so pipes saved before the type split keep working.
  */
-export const LIST_LIKE_FIELD_TYPES = [
-  'dropdown',
-  'checkbox',
-  'list',
-] as const
+export const LIST_LIKE_FIELD_TYPES = ['dropdown', 'checkbox', 'list'] as const
 
 export const fieldTypeEnum = z.enum([
   'string',
