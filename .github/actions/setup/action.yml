@@ -1,0 +1,33 @@
+name: 'Setup'
+description: 'Restore node_modules and Turbo caches for a CI job'
+
+inputs:
+  job-index:
+    description: "Index of the current job within its matrix, if any. Composite actions can't read the caller's strategy context directly, so matrixed callers must pass it in explicitly to disambiguate their turbo cache key."
+    required: false
+    default: '0'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Restore node_modules cache
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node_modules-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node_modules-
+
+    - name: Restore turbo cache
+      uses: actions/cache@v4
+      with:
+        path: .turbo
+        # inputs.job-index disambiguates matrix legs sharing the same github.job, which would
+        # otherwise race to reserve the same cache key. Defaults to 0 on non-matrix jobs.
+        key: ${{ runner.os }}-turbo-${{ github.job }}-${{ inputs.job-index }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-turbo-${{ github.job }}-${{ inputs.job-index }}-
