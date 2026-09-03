@@ -1,7 +1,6 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
-import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import User from '@/models/user'
 
@@ -22,12 +21,13 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
     const isSelf = validatedEmail === context.currentUser.email
 
     if (isSelf) {
-      const flow = await Flow.query()
+      // Scope to accessible flows so missing and inaccessible IDs share one error.
+      const flow = await context.currentUser
+        .withAccessibleFlows({ requiredRole: 'viewer' })
         .findById(flowId)
-        .throwIfNotFound({ message: 'Flow not found' })
+        .throwIfNotFound()
 
-      // Ownership lives on flows.user_id, not flow_collaborators.
-      if (flow.userId === context.currentUser.id) {
+      if (flow.role === 'owner') {
         throw new BadUserInputError(
           'Owners cannot leave. Transfer ownership first.',
         )
