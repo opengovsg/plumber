@@ -32,7 +32,7 @@ import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
-import { model, MODEL_TYPE } from '@/helpers/pair'
+import { model } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -155,7 +155,7 @@ const handleChatStream = observe(
         chatId,
         ddRumSessionId: rumSessionId,
         userId: context.currentUser.email,
-        model: MODEL_TYPE,
+        model: model.modelId,
       })
 
       // Re-derived fresh every turn from the raw message text and verified
@@ -441,7 +441,7 @@ const handleChatStream = observe(
             result.toUIMessageStream({
               messageMetadata: () => ({
                 traceId,
-                model: MODEL_TYPE,
+                model: model.modelId,
               }),
             }),
           )

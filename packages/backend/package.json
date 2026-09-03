@@ -28,8 +28,8 @@
     "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "3.0.126",
     "@ai-sdk/mcp": "0.0.21",
-    "@ai-sdk/openai": "2.0.88",
     "@apollo/server": "5.5.0",
     "@as-integrations/express4": "1.1.2",
     "@aws-sdk/client-dynamodb": "3.1027.0",

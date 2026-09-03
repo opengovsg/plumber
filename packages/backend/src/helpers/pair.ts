@@ -1,13 +1,13 @@
-import { createOpenAI } from '@ai-sdk/openai'
+import { createBedrockAnthropic } from '@ai-sdk/amazon-bedrock/anthropic'
 
 import appConfig from '@/config/app'
 
-const MODEL_TYPE = appConfig.pair.foundry.model
-const engineProvider = createOpenAI({
-  name: 'pair-engine',
-  baseURL: 'https://engine.pair.gov.sg',
-  apiKey: appConfig.pair.foundry.apiKey,
+const bedrock = createBedrockAnthropic({
+  apiKey: appConfig.pair.bedrock.apiKey,
+  region: appConfig.pair.bedrock.region,
 })
-const model = engineProvider.chat(MODEL_TYPE)
 
-export { engineProvider, model, MODEL_TYPE }
+const model = bedrock(appConfig.pair.bedrock.model)
+const imageModel = bedrock(appConfig.pair.bedrock.imageModel)
+
+export { imageModel, model }

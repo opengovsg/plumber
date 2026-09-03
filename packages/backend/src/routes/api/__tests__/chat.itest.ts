@@ -65,11 +65,7 @@ vi.mock('@/helpers/logger', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
-  model: {},
-  MODEL_TYPE: 'test-model',
-  engineProvider: {
-    chat: vi.fn().mockReturnValue({}),
-  },
+  model: { modelId: 'test-model' },
 }))
 
 vi.mock('@/helpers/mcp-bridge-tools', () => ({
