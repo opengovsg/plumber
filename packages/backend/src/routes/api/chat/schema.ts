@@ -124,7 +124,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
         .min(1),
     }),
   }),
-  // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
+  // AI SDK dynamic tool part — present in assistant messages when
   // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
   z.object({
     type: z.literal('dynamic-tool'),

@@ -66,8 +66,9 @@ type AppConfig = {
     publicKey: string
   }
   pair: {
-    foundry: {
+    bedrock: {
       apiKey: string
+      region: string
       model: string
       imageModel: string
     }
@@ -177,10 +178,11 @@ const appConfig: AppConfig = {
     publicKey: process.env.GATHERSG_PUBLIC_KEY,
   },
   pair: {
-    foundry: {
-      apiKey: process.env.PAIR_FOUNDRY_API_KEY,
-      model: process.env.PAIR_FOUNDRY_MODEL,
-      imageModel: process.env.PAIR_FOUNDRY_IMAGE_MODEL,
+    bedrock: {
+      apiKey: process.env.PAIR_BEDROCK_API_KEY,
+      region: process.env.PAIR_BEDROCK_REGION,
+      model: process.env.PAIR_BEDROCK_MODEL,
+      imageModel: process.env.PAIR_BEDROCK_IMAGE_MODEL,
     },
     rome: {
       baseUrl: process.env.PAIR_ROME_BASE_URL,
@@ -275,11 +277,12 @@ if (!appConfig.gathersg.publicKey) {
 }
 
 if (
-  !appConfig.pair.foundry.apiKey ||
-  !appConfig.pair.foundry.model ||
-  !appConfig.pair.foundry.imageModel
+  !appConfig.pair.bedrock.apiKey ||
+  !appConfig.pair.bedrock.region ||
+  !appConfig.pair.bedrock.model ||
+  !appConfig.pair.bedrock.imageModel
 ) {
-  throw new Error('Pair Foundry environment variables need to be set!')
+  throw new Error('Pair Bedrock environment variables need to be set!')
 }
 
 if (
