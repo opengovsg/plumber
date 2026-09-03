@@ -25,6 +25,7 @@
     "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
     "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
     "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "resend:postman-execution-steps": "ts-node --swc src/scripts/resend-postman-execution-steps.ts",
     "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
