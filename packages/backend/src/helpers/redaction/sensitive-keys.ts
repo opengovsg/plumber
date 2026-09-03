@@ -50,3 +50,6 @@ export const SECRET_KEY_REGEXP = new RegExp(
   ].join('|'),
   'i',
 )
+
+/** Replaces any value the access log must not carry. */
+export const REDACTED = '[redacted]'
