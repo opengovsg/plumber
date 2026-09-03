@@ -12,7 +12,15 @@ interface StreamingMessageProps {
 }
 
 const WorkingIndicator = ({ label }: { label: string }) => (
-  <Flex gap={3} w="full" alignItems="center">
+  <Flex
+    gap={3}
+    w="full"
+    alignItems="center"
+    textStyle="subhead-2"
+    textTransform="uppercase"
+    fontWeight={500}
+    color="gray.500"
+  >
     {label}
     <Loader />
   </Flex>
@@ -25,7 +33,7 @@ const StreamingMessage = ({
   if (currentResponse) {
     return (
       <Flex gap={3} w="full" align="start">
-        <Box flex={1} px={2} color="gray.900">
+        <Box flex={1} px={2} py={2} color="gray.900">
           <ChakraStreamdown isAnimating={true}>
             {prepareAiText(currentResponse)}
           </ChakraStreamdown>
