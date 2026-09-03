@@ -1,6 +1,6 @@
 import { ITableRow, ITableRowCsv } from '@plumber/types'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApolloError, useLazyQuery } from '@apollo/client'
 import { datadogRum } from '@datadog/browser-rum'
 import { zipObject } from 'lodash'
@@ -69,13 +69,25 @@ export function useFetchAllRows({
 
   const cursorToContinueFrom = useRef<string>()
   const startTime = useRef<number>()
+  const fetchGenerationRef = useRef(0)
 
   const [fetchAllRowsQuery] = useLazyQuery(GET_ALL_ROWS, {
     fetchPolicy: 'cache-and-network',
   })
 
+  // Drop in-flight pages when switching tiles so they cannot append onto the new tile.
+  useEffect(() => {
+    fetchGenerationRef.current += 1
+    setRows([])
+    cursorToContinueFrom.current = undefined
+    setIsThroughputError(false)
+    // Stale generations skip the finally block, so nothing else clears this if no new fetch follows.
+    setIsFetching(false)
+  }, [tableId])
+
   const fetchAllRows = useCallback(
     async (cursor?: string) => {
+      const generation = ++fetchGenerationRef.current
       startTime.current = performance.now()
       setIsFetching(true)
       let rowCount = 0
@@ -95,6 +107,9 @@ export function useFetchAllRows({
             },
             context: viewOnlyHeaders ? { headers: viewOnlyHeaders } : undefined,
           })
+          if (generation !== fetchGenerationRef.current) {
+            return
+          }
           if (error) {
             throw error
           }
@@ -112,6 +127,9 @@ export function useFetchAllRows({
           currentCursor = data?.getAllRows.stringifiedCursor ?? undefined
         } while (currentCursor)
       } catch (e) {
+        if (generation !== fetchGenerationRef.current) {
+          return
+        }
         if (
           e instanceof ApolloError &&
           parseGraphqlError(e).code === RATE_LIMITED
@@ -122,12 +140,14 @@ export function useFetchAllRows({
           setIsThroughputError(false)
         }
       } finally {
-        datadogRum.setGlobalContextProperty(
-          'tile_load_time',
-          performance.now() - startTime.current,
-        )
-        datadogRum.setGlobalContextProperty('tile_row_count', rowCount)
-        setIsFetching(false)
+        if (generation === fetchGenerationRef.current) {
+          datadogRum.setGlobalContextProperty(
+            'tile_load_time',
+            performance.now() - startTime.current,
+          )
+          datadogRum.setGlobalContextProperty('tile_row_count', rowCount)
+          setIsFetching(false)
+        }
       }
     },
     [fetchAllRowsQuery, tableId, urlViewOnlyKey, viewToken],
