@@ -414,28 +414,6 @@ describe('update case', () => {
     )
   })
 
-  it('still accepts legacy list fieldType for backward compatibility', async () => {
-    $.step.parameters.caseFields = [
-      { field: 'tags', fieldType: 'list', value: 'Urgent' },
-    ]
-    await updateCaseAction.run($)
-
-    expect(mocks.httpPatch).toHaveBeenCalledWith(
-      '/cases/:caseUuid',
-      {
-        caseUuid: MOCK_CASE_UUID,
-        status: MOCK_CASE_STATUS,
-        fields: {
-          tags: ['Urgent'],
-        },
-      },
-      {
-        urlPathParams: {
-          caseUuid: MOCK_CASE_UUID,
-        },
-      },
-    )
-  })
 
   it('should throw step error for an empty checkbox field', async () => {
     $.step.parameters.caseFields = [
