@@ -152,8 +152,18 @@ export const fields: IField[] = [
   },
 
   // ---- First date (operand A) ----
-  // Value first, then format — matching the field order of the
-  // "Format date / time" action for consistency.
+  // Format first, then value. Choosing "Now" as the format hides the
+  // value field, so format must come first or users face a value
+  // question that does not apply.
+  {
+    label: 'Format of the first date',
+    key: key('firstDateFormat'),
+    type: 'dropdown',
+    required: true,
+    variables: false,
+    showOptionValue: false,
+    options: inputFormatOptions,
+  },
   {
     label: 'First date',
     key: key('firstDateValue'),
@@ -166,17 +176,17 @@ export const fields: IField[] = [
       fieldValue: supportedFormats.enum.now,
     },
   },
+
+  // ---- Second date (operand B) ----
   {
-    label: 'Format of the first date',
-    key: key('firstDateFormat'),
+    label: 'Format of the second date',
+    key: key('secondDateFormat'),
     type: 'dropdown',
     required: true,
     variables: false,
     showOptionValue: false,
     options: inputFormatOptions,
   },
-
-  // ---- Second date (operand B) ----
   {
     label: 'Second date',
     key: key('secondDateValue'),
@@ -188,15 +198,6 @@ export const fields: IField[] = [
       op: 'equals',
       fieldValue: supportedFormats.enum.now,
     },
-  },
-  {
-    label: 'Format of the second date',
-    key: key('secondDateFormat'),
-    type: 'dropdown',
-    required: true,
-    variables: false,
-    showOptionValue: false,
-    options: inputFormatOptions,
   },
 
   // ---- Compare ----
