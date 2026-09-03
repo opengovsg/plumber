@@ -30,6 +30,10 @@ const EMPTY_FOR_EACH_PREVIEW: ConditionPreviewPart[] = [
   { type: 'text', text: 'Specify list' },
 ]
 
+const MULTIPLE_CONDITIONS_PREVIEW: ConditionPreviewPart[] = [
+  { type: 'text', text: 'Multiple conditions' },
+]
+
 // Not `GLOBAL_VARIABLE_REGEX` from RichTextEditor/utils.ts, which captures the
 // whole match rather than the path segment.
 const STEP_VARIABLE_GLOBAL_REGEX =
@@ -97,22 +101,32 @@ const OPERATOR_PHRASES: Record<
 /**
  * Structured preview of a toolbox condition step for the block header.
  * Variables are separate parts so the header can bold / truncate them.
+ *
+ * IMPORTANT: one condition reads as a sentence, several collapse to a label,
+ * since a sentence describing only the first would misstate the step.
  */
 export function getConditionBlockPreviewParts(
   parameters: IJSONObject | undefined,
 ): ConditionPreviewPart[] {
   const groups = conditionGroupsSchema.parse(parameters?.conditions)
+  let firstRowParts: ConditionPreviewPart[] | undefined
 
   for (const group of groups) {
     for (const row of group.rows) {
       const parts = formatConditionRow(row)
-      if (parts.length > 0) {
-        return parts
+      if (parts.length === 0) {
+        continue
       }
+
+      if (firstRowParts) {
+        return MULTIPLE_CONDITIONS_PREVIEW
+      }
+
+      firstRowParts = parts
     }
   }
 
-  return EMPTY_CONDITION_PREVIEW
+  return firstRowParts ?? EMPTY_CONDITION_PREVIEW
 }
 
 export function getForEachBlockPreviewParts(
