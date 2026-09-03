@@ -18,11 +18,12 @@ export default function throwGatherSGStepError(error: HttpError) {
 
   if (errorStatus === 422 && code === 'INVALID_INPUT') {
     const invalidFields = details?.fields as string[]
+    const fieldList = Array.isArray(invalidFields)
+      ? invalidFields.join(', ')
+      : 'unknown fields'
     throw new StepError(
       'Invalid or missing field values',
-      `Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: ${invalidFields.join(
-        ', ',
-      )}`,
+      `Check required fields and types. Dropdown, Checkbox, and Radio Button values must match an Ownself Gather option. Radio Button updates must change the value. Fields: ${fieldList}`,
       error,
     )
   }
