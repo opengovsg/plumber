@@ -84,8 +84,9 @@ export type CoreConfig = {
     publicKey: string
   }
   pair: {
-    foundry: {
+    bedrock: {
       apiKey: string
+      region: string
       model: string
       imageModel: string
     }
@@ -214,15 +215,19 @@ const coreConfig: CoreConfig = {
     ),
   },
   pair: {
-    foundry: {
+    bedrock: {
       apiKey: requireEnv(
-        'PAIR_FOUNDRY_API_KEY',
-        process.env.PAIR_FOUNDRY_API_KEY,
+        'PAIR_BEDROCK_API_KEY',
+        process.env.PAIR_BEDROCK_API_KEY,
       ),
-      model: requireEnv('PAIR_FOUNDRY_MODEL', process.env.PAIR_FOUNDRY_MODEL),
+      region: requireEnv(
+        'PAIR_BEDROCK_REGION',
+        process.env.PAIR_BEDROCK_REGION,
+      ),
+      model: requireEnv('PAIR_BEDROCK_MODEL', process.env.PAIR_BEDROCK_MODEL),
       imageModel: requireEnv(
-        'PAIR_FOUNDRY_IMAGE_MODEL',
-        process.env.PAIR_FOUNDRY_IMAGE_MODEL,
+        'PAIR_BEDROCK_IMAGE_MODEL',
+        process.env.PAIR_BEDROCK_IMAGE_MODEL,
       ),
     },
     rome: {

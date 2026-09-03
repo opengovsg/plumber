@@ -3,18 +3,15 @@ import { generateObject } from 'ai'
 import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
-import appConfig from '@/config/app'
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
-import { engineProvider } from '@/helpers/pair'
+import { imageModel } from '@/helpers/pair'
 import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { hasProvidedImage, schema } from './schema'
-
-const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
 
 const action: IRawAction = {
   name: 'Process image',
@@ -122,7 +119,7 @@ const action: IRawAction = {
       const content = await getImageContent(image[0], $.flow.id)
 
       const { object } = await generateObject({
-        model,
+        model: imageModel,
         schema: responseSchema,
         messages: [
           {
