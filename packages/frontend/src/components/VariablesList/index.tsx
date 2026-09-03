@@ -40,18 +40,6 @@ function VariableTag({
           tooltip:
             'This variable can be used in the For-each action or the body field in Email by Postman action.',
         }
-      case 'dropdown':
-        return {
-          label: 'Dropdown',
-          tooltip:
-            'This FormSG dropdown can be used as a Dropdown/Checkbox/Radio value in GatherSG Create/Update case.',
-        }
-      case 'radiobutton':
-        return {
-          label: 'Radio Button',
-          tooltip:
-            'This FormSG radio button can be used as a Dropdown/Checkbox/Radio value in GatherSG Create/Update case.',
-        }
       case 'file':
         return {
           label: 'File',

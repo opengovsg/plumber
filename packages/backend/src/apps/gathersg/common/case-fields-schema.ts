@@ -35,13 +35,13 @@ const toStringArray = (
   }
 
   if (typeof value === 'string' && value.length > 0) {
-    // FormSG dropdown answers arrive as a single string
+    // Single FormSG dropdown/text answers become a one-element array
     return [value]
   }
 
   context.addIssue({
     code: z.ZodIssueCode.custom,
-    message: `Invalid list value for field: ${field}. Select a FormSG checkbox, dropdown, or radio button.`,
+    message: `Invalid list value for field: ${field}. Provide a string or string array value.`,
   })
   return z.NEVER
 }

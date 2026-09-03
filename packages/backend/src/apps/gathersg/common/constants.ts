@@ -13,8 +13,8 @@ export const UNSUPPORTED_FIELDS = [
 ]
 
 /**
- * GatherSG selection field types. Labels in the Create/Update case UI match
- * Ownself Gather: Dropdown, Checkbox, Radio Button.
+ * GatherSG selection field types. UI labels match Ownself Gather:
+ * Dropdown, Checkbox, Radio Button.
  */
 export const GATHERSG_SELECTION_TYPES = [
   'dropdown',
@@ -26,11 +26,12 @@ export type GatherSGSelectionType = (typeof GATHERSG_SELECTION_TYPES)[number]
 
 /**
  * Plumber fieldType values that send `string[]` to GatherSG.
- * Includes legacy `list` so pipes saved before the Dropdown/Checkbox/Radio
- * split keep working.
+ * Radio is excluded: Ownself Gather accepts a plain string for radio.
+ * Includes legacy `list` so pipes saved before the type split keep working.
  */
 export const LIST_LIKE_FIELD_TYPES = [
-  ...GATHERSG_SELECTION_TYPES,
+  'dropdown',
+  'checkbox',
   'list',
 ] as const
 

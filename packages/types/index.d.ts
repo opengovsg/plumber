@@ -53,16 +53,11 @@ export interface IConnection {
 /**
  * 'array' is currently used only in formSG checkbox field but
  * will be extended to for-each feature handling.
- * 'dropdown' is used for FormSG dropdown answers so downstream
- * actions can accept them as list sources without allowing all text.
- * 'radiobutton' is used for FormSG radio button answers for the same reason.
  */
 export type TDataOutMetadatumType =
   | 'text'
   | 'file'
   | 'array'
-  | 'dropdown'
-  | 'radiobutton'
   | 'tile_row_id'
   | 'table'
   | 'approval'
