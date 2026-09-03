@@ -216,7 +216,7 @@ describe('update case', () => {
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrowError(
-      'Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: age, score',
+      'Check required fields and types. Dropdown, Checkbox, and Radio Button values must match an Ownself Gather option. Radio Button updates must change the value. Fields: age, score',
     )
   })
 
