@@ -1,6 +1,7 @@
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import logger from '@/helpers/logger'
+import Flow from '@/models/flow'
 import FlowCollaborator from '@/models/flow-collaborators'
 import User from '@/models/user'
 
@@ -18,11 +19,46 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
       throw new BadUserInputError('Invalid collaborator email')
     }
 
-    if (validatedEmail === context.currentUser.email) {
-      throw new BadUserInputError('Cannot remove yourself')
+    const isSelf = validatedEmail === context.currentUser.email
+
+    if (isSelf) {
+      const flow = await Flow.query()
+        .findById(flowId)
+        .throwIfNotFound({ message: 'Flow not found' })
+
+      // Ownership lives on flows.user_id, not flow_collaborators.
+      if (flow.userId === context.currentUser.id) {
+        throw new BadUserInputError(
+          'Owners cannot leave. Transfer ownership first.',
+        )
+      }
+
+      try {
+        await FlowCollaborator.query()
+          .delete()
+          .where({
+            flow_id: flowId,
+            user_id: context.currentUser.id,
+          })
+          .returning('*')
+          .throwIfNotFound({ message: 'No such collaborator found' })
+      } catch (e) {
+        logger.error({
+          message: 'Failed to leave pipe as collaborator',
+          data: {
+            flowId,
+            email,
+          },
+          userId: context.currentUser.id,
+          error: e,
+        })
+        throw new Error(e.message ?? 'Failed to leave pipe')
+      }
+
+      return true
     }
 
-    // only editor or owner can delete collaborators
+    // only editor or owner can delete other collaborators
     await FlowCollaborator.hasAccess({
       userId: context.currentUser.id,
       flowId,
