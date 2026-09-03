@@ -19,6 +19,7 @@ import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
+import { StampGraphqlRootFields } from '@/helpers/redaction/graphql-root-fields'
 import tracer from '@/helpers/tracer'
 import type { UnauthenticatedContext } from '@/types/express/context'
 import type AuthenticatedContext from '@/types/express/context'
@@ -88,6 +89,7 @@ export const server = new ApolloServer<UnauthenticatedContext>({
       ? ApolloServerPluginLandingPageLocalDefault()
       : ApolloServerPluginLandingPageDisabled(),
     ApolloServerPluginUserTracer(),
+    StampGraphqlRootFields(),
     PreventBatching(),
   ],
   // We don't want to allow batching within a single HTTP request, this defaults to false
