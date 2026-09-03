@@ -23,7 +23,7 @@ export default function throwGatherSGStepError(error: HttpError) {
       : 'unknown fields'
     throw new StepError(
       'Invalid or missing field values',
-      `Check required fields and types. Dropdown, Checkbox, and Radio Button values must match an Ownself Gather option. Radio Button updates must change the value. Fields: ${fieldList}`,
+      `Check required fields and types. Dropdown, Checkbox, and Radio Button values must match an Ownself Gather option. Fields: ${fieldList}`,
       error,
     )
   }
