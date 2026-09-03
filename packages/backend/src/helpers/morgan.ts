@@ -1,6 +1,10 @@
 import { Request, Response } from 'express'
 import morgan from 'morgan'
 
+import { readGraphqlRootFields } from '@/helpers/redaction/graphql-root-fields'
+import { redactGraphqlVariables } from '@/helpers/redaction/redact-graphql-variables'
+import { REDACTED } from '@/helpers/redaction/sensitive-keys'
+
 import logger from './logger'
 
 const morganOptions: morgan.Options<Request, Response> = {
@@ -34,28 +38,26 @@ morgan.token('graphql-query', (req: Request) => {
   }
 })
 
-const SENSITIVE_MUTATIONS = [
-  'createConnection',
-  'updateConnection',
-  'verifyTableViewPassword',
-  'setTableViewPassword',
-]
-
-morgan.token('graphql-variables', (req: Request) => {
-  if (req.body.variables) {
-    // redact sensitive graphql variables related to connections
-    if (typeof req.body.query === 'string') {
-      if (
-        SENSITIVE_MUTATIONS.some((mutation) =>
-          req.body.query.includes(mutation),
-        )
-      ) {
-        return '[redacted]'
-      }
-    }
-    return JSON.stringify(req.body.variables).replace(/"/g, "'")
+/** Exported so a test can assert the exact string that reaches the log. */
+export function getGraphqlVariables(req: Request): string | undefined {
+  if (!req.body.variables) {
+    return undefined
   }
-})
+
+  const variables = redactGraphqlVariables(
+    readGraphqlRootFields(req),
+    req.body.variables,
+  )
+
+  // Written bare, matching what the old SENSITIVE_MUTATIONS list logged.
+  if (variables === REDACTED) {
+    return REDACTED
+  }
+
+  return JSON.stringify(variables).replace(/"/g, "'")
+}
+
+morgan.token('graphql-variables', getGraphqlVariables)
 
 const morganJsonFormat = JSON.stringify({
   method: ':method',

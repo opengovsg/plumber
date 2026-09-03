@@ -570,6 +570,9 @@ type BulkRetryIterationsResult {
 input DynamicActionInput {
   stepId: String!
   key: String!
+  # Name the owning step so the access log can find its redactParams.
+  appKey: String!
+  stepKey: String!
   parameters: JSONObject!
 }
 

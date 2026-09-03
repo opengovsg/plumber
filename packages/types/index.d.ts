@@ -988,6 +988,13 @@ export interface IBaseTrigger {
    */
   setupMessage?: SetupMessage
 
+  /**
+   * Returns a copy of the step parameters with secrets replaced, for logging.
+   *
+   * IMPORTANT: must not mutate its argument.
+   */
+  redactParams?: (parameters: IJSONObject) => IJSONObject
+
   // link that is used in the infobox. meant for new actions / triggers
   linkToGuide?: string
 
@@ -1109,6 +1116,13 @@ export interface IBaseAction {
    * Used when saving the step.
    */
   validateStepParameters?: (parameters: IJSONObject) => void
+
+  /**
+   * Returns a copy of the step parameters with secrets replaced, for logging.
+   *
+   * IMPORTANT: must not mutate its argument.
+   */
+  redactParams?: (parameters: IJSONObject) => IJSONObject
 
   // link that is used in the infobox. meant for new actions / triggers
   linkToGuide?: string
