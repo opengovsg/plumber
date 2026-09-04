@@ -66,6 +66,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
+    consoleErrorSpy.mockClear()
   })
 
   it('should return the next branch step if found', async () => {
