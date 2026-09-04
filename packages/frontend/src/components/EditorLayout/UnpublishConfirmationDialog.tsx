@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
-import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
+import { FORMSG_APP_KEY } from '@/helpers/formsg'
 
 const DELAY_APP_KEY = 'delay'
 
@@ -28,14 +28,6 @@ interface UnpublishConfirmationDialogProps {
   onClose: () => void
   onUnpublish: () => void | Promise<void>
   steps: IStep[]
-}
-
-function hasLongLivedRuns(steps: IStep[]): boolean {
-  return steps.some(
-    (step) =>
-      (step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY) ||
-      step.appKey === DELAY_APP_KEY,
-  )
 }
 
 function ConsequenceRow({
@@ -65,7 +57,11 @@ export default function UnpublishConfirmationDialog(
     onUnpublish,
     steps,
   } = props
-  const showOngoingRunsNote = hasLongLivedRuns(steps)
+
+  // Only delay steps count as long-lived: an MRF submission waits on an
+  // external approver, so it isn't a run "in progress" the way a delay is.
+  const isLongLivedRun = steps.some((step) => step.appKey === DELAY_APP_KEY)
+  const hasFormSteps = steps.some((step) => step.appKey === FORMSG_APP_KEY)
 
   const handleUnpublish = async () => {
     await onUnpublish()
@@ -88,14 +84,16 @@ export default function UnpublishConfirmationDialog(
                 It stops running until you publish it again.
               </Text>
               <VStack align="stretch" spacing={2}>
-                <ConsequenceRow icon={BiCheck}>
-                  Your form stays open and keeps collecting responses
-                </ConsequenceRow>
+                {hasFormSteps && (
+                  <ConsequenceRow icon={BiCheck}>
+                    Your form stays open and keeps collecting responses
+                  </ConsequenceRow>
+                )}
                 <ConsequenceRow icon={BiX}>
                   No steps run: no emails sent, no rows created in your tiles
                 </ConsequenceRow>
               </VStack>
-              {showOngoingRunsNote ? (
+              {isLongLivedRun ? (
                 <Text textStyle="body-1">
                   Runs that already started will still finish.
                 </Text>
@@ -104,8 +102,8 @@ export default function UnpublishConfirmationDialog(
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button
-              colorScheme="neutral"
-              variant="outline"
+              variant="clear"
+              colorScheme="secondary"
               ref={cancelRef}
               onClick={onClose}
               isDisabled={isLoading}
