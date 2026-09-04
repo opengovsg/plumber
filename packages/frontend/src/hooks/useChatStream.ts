@@ -1,11 +1,10 @@
-import type { IFlowSteps, IJSONObject } from '@plumber/types'
-
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
+import type { IFlowSteps, IJSONObject } from '@plumber/types'
 import { DefaultChatTransport } from 'ai'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { NOT_AUTHORISED } from '@/config/errors'
 import * as URLS from '@/config/urls'
@@ -382,16 +381,16 @@ export function useChatStream(options: UseChatStreamOptions) {
           ...(pipeStatePart
             ? { output: pipeStatePart.data }
             : isChatReady
-            ? {
-                output: {
-                  ...(flowSteps ?? { error }),
-                  mcpMode: mcpMode ?? false,
-                },
-                ...(flowSteps?.name ? { flowName: flowSteps.name } : {}),
-              }
-            : currentOutput
-            ? { output: currentOutput }
-            : {}),
+              ? {
+                  output: {
+                    ...(flowSteps ?? { error }),
+                    mcpMode: mcpMode ?? false,
+                  },
+                  ...(flowSteps?.name ? { flowName: flowSteps.name } : {}),
+                }
+              : currentOutput
+                ? { output: currentOutput }
+                : {}),
         },
         replace: true,
       })

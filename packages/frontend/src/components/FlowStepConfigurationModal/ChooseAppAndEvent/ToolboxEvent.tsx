@@ -5,7 +5,6 @@ import { BiFilterAlt, BiGitRepoForked, BiQuestionMark } from 'react-icons/bi'
 import { SlLoop } from 'react-icons/sl'
 
 import { LAST_STEP_ONLY_REASON } from '../hooks/useIsAppSelectable'
-
 import { HighlightedText } from './HighlightedText'
 import NewBadge from './NewBadge'
 

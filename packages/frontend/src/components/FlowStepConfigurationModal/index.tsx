@@ -2,13 +2,13 @@ import { Modal, ModalContent, ModalOverlay } from '@chakra-ui/react'
 import type { IAction, IApp, IStep, ITrigger } from '@plumber/types'
 import { useContext } from 'react'
 
-import type { AnchorPlacement } from './helpers/anchor-placement'
 import ChooseAndAddConnection from './ChooseAndAddConnection'
 import ChooseAppAndEvent from './ChooseAppAndEvent'
 import {
   FlowStepConfigurationContext,
   FlowStepConfigurationContextProvider,
 } from './FlowStepConfigurationContext'
+import type { AnchorPlacement } from './helpers/anchor-placement'
 import InvalidModalScreen from './InvalidModalScreen'
 import LoadingOverlay from './LoadingOverlay'
 

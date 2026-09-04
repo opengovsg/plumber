@@ -1,5 +1,4 @@
 import type { IJSONObject } from '@plumber/types'
-
 import z from 'zod'
 
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'

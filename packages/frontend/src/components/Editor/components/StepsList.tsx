@@ -1,7 +1,6 @@
-import { IStep } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
 import { Center, Flex } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
 
 import {
   buildStepsList,
@@ -22,7 +21,6 @@ import useReorderSteps from '@/hooks/useReorderSteps'
 
 import { EDITOR_RIGHT_DRAWER_WIDTH } from '../constants'
 import { editorStyles } from '../styles'
-
 import FlowStepWithAddButton from './FlowStepWithAddButton'
 
 interface StepsListProps {

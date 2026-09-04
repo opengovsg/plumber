@@ -1,7 +1,7 @@
-import { useContext } from 'react'
-import { BiPlus } from 'react-icons/bi'
 import { Box, Divider, Flex, useDisclosure } from '@chakra-ui/react'
 import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
+import { BiPlus } from 'react-icons/bi'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import {

@@ -7,8 +7,12 @@ const mocks = vi.hoisted(() => {
   const send = vi.fn(async () => ({}))
   return {
     send,
-    sesV2Client: vi.fn((_config: unknown) => ({ send })),
-    sendEmailCommand: vi.fn((input: unknown) => ({ input })),
+    sesV2Client: vi.fn(function (_config: unknown) {
+      return { send }
+    }),
+    sendEmailCommand: vi.fn(function (input: unknown) {
+      return { input }
+    }),
     fromTemporaryCredentials: vi.fn(
       (_params: unknown) => 'temporary-credentials-provider',
     ),
@@ -54,7 +58,7 @@ vi.mock('@/helpers/logger', () => ({
 // getSesClient memoises its client, so every test needs a fresh module.
 async function importFresh() {
   vi.resetModules()
-  return import('../ses-email-helper')
+  return import('../ses-email-helper.js')
 }
 
 describe('formatFromAddress', () => {
