@@ -253,7 +253,7 @@ export default function IfThen({
             <BlockHeader
               badgeLabel="IF"
               previewParts={conditionPreviewParts}
-              stepId={ifThenStep.id}
+              step={ifThenStep}
               isSelected={isSelected}
               actions={
                 !readOnly ? (

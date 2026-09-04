@@ -1,3 +1,5 @@
+import type { IStep } from '@plumber/types'
+
 import type { ReactNode } from 'react'
 import {
   useCallback,
@@ -24,7 +26,7 @@ import type { ConditionPreviewPart } from '../helpers/getConditionBlockPreview'
 interface BlockHeaderProps {
   badgeLabel: string
   previewParts: ConditionPreviewPart[]
-  stepId: string
+  step: IStep
   isSelected?: boolean
   actions?: ReactNode
 }
@@ -38,7 +40,7 @@ interface BlockHeaderProps {
 export default function BlockHeader({
   badgeLabel,
   previewParts,
-  stepId,
+  step,
   isSelected = false,
   actions,
 }: BlockHeaderProps): JSX.Element {
@@ -59,13 +61,13 @@ export default function BlockHeader({
     handleLeave: discardChanges,
   } = useUnsavedChanges({
     onProceed: () => {
-      setCurrentStepId(stepId)
+      setCurrentStepId(step.id)
       onDrawerOpen()
     },
   })
 
   const handleClick = useCallback(() => {
-    if (isDrawerOpen && currentStepId === stepId) {
+    if (isDrawerOpen && currentStepId === step.id) {
       setCurrentStepId(null)
       onDrawerClose()
       return
@@ -78,19 +80,26 @@ export default function BlockHeader({
     isDrawerOpen,
     onDrawerClose,
     setCurrentStepId,
-    stepId,
+    step.id,
   ])
 
   const headerBg = isSelected ? 'primary.50' : conditionBlockStyles.header.bg
 
-  const { parts, fullSentence, isLeadingTruncated } = useMemo(
+  // Not `useStepMetadata`'s stepName, which falls back to "If-then" and would
+  // mask the condition on every unnamed block.
+  // IMPORTANT: clearing the name saves `''`, which must read as no name.
+  const customStepName = step.config?.stepName || undefined
+
+  const conditionSentence = useMemo(
     () =>
-      buildConditionSentence(
-        badgeLabel,
-        previewParts,
-        (id) => varInfoMap.get(`{{${id}}}`)?.label,
-      ),
-    [badgeLabel, previewParts, varInfoMap],
+      customStepName
+        ? undefined
+        : buildConditionSentence(
+            badgeLabel,
+            previewParts,
+            (id) => varInfoMap.get(`{{${id}}}`)?.label,
+          ),
+    [badgeLabel, customStepName, previewParts, varInfoMap],
   )
 
   // The value half is cut by layout, so only the rendered box can report a
@@ -111,7 +120,7 @@ export default function BlockHeader({
     const observer = new ResizeObserver(measure)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [parts])
+  }, [conditionSentence, customStepName])
 
   return (
     <>
@@ -127,8 +136,12 @@ export default function BlockHeader({
       >
         <Tooltip
           // A tooltip repeating text already fully on screen is noise.
-          isDisabled={!isLeadingTruncated && !isClamped}
-          label={fullSentence}
+          isDisabled={!conditionSentence?.isLeadingTruncated && !isClamped}
+          label={
+            customStepName
+              ? `${badgeLabel} ${customStepName}`
+              : conditionSentence?.fullSentence
+          }
           placement="top-start"
           openDelay={300}
           hasArrow
@@ -162,26 +175,29 @@ export default function BlockHeader({
             >
               {badgeLabel}
             </Text>
-            {parts.map((part, index) => {
-              if (part.type === 'text' || part.type === 'literal') {
-                return <span key={`${part.type}-${index}`}>{part.display}</span>
-              }
+            {customStepName ??
+              conditionSentence?.parts.map((part, index) => {
+                if (part.type === 'text' || part.type === 'literal') {
+                  return (
+                    <span key={`${part.type}-${index}`}>{part.display}</span>
+                  )
+                }
 
-              return (
-                <Text
-                  as="span"
-                  key={
-                    part.type === 'emphasis'
-                      ? `em-${index}`
-                      : `var-${part.id}-${index}`
-                  }
-                  fontWeight="700"
-                  color="base.content.strong"
-                >
-                  {part.display}
-                </Text>
-              )
-            })}
+                return (
+                  <Text
+                    as="span"
+                    key={
+                      part.type === 'emphasis'
+                        ? `em-${index}`
+                        : `var-${part.id}-${index}`
+                    }
+                    fontWeight="700"
+                    color="base.content.strong"
+                  >
+                    {part.display}
+                  </Text>
+                )
+              })}
           </Text>
         </Tooltip>
 

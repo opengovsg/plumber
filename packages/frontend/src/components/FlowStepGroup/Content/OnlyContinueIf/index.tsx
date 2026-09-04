@@ -138,7 +138,7 @@ export default function OnlyContinueIf({
               <BlockHeader
                 badgeLabel="CONTINUE IF"
                 previewParts={previewParts}
-                stepId={step.id}
+                step={step}
                 isSelected={isSelected}
                 actions={
                   isDeletable && !readOnly ? (
