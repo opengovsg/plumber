@@ -90,6 +90,16 @@ export function sanitizeLogValue(
 }
 
 /**
+ * Keys this format must never write back.
+ *
+ * IMPORTANT: `dd` lives on dd-trace's log-injection proxy rather than on the
+ * record, so assigning it back defines it as non-enumerable and `json()` then
+ * drops the trace correlation that tells Datadog the service is `plumber`.
+ * The prettyPrint colouriser needs `level` verbatim.
+ */
+const PRESERVED_KEYS = new Set(['level', 'dd'])
+
+/**
  * Winston format that strips HTTP secrets out of every log line.
  *
  * Guards the 250-odd callsites that pass raw errors, which winston otherwise
@@ -99,8 +109,7 @@ export const redactSecrets = winston.format((info) => {
   const seen = new WeakSet<object>()
 
   for (const key of Object.keys(info)) {
-    // The colouriser in prettyPrint depends on this controlled string.
-    if (key === 'level') {
+    if (PRESERVED_KEYS.has(key)) {
       continue
     }
 
