@@ -1,26 +1,35 @@
 name: 'Setup'
-description: 'Restore node_modules and Turbo caches for a CI job'
+description: 'Install dependencies and restore Turbo cache for a CI job'
 
 inputs:
   job-index:
     description: "Index of the current job within its matrix, if any. Composite actions can't read the caller's strategy context directly, so matrixed callers must pass it in explicitly to disambiguate their turbo cache key."
     required: false
     default: '0'
+  npm-taskforcesh-token:
+    description: 'Auth token for the @taskforcesh private registry. Composite actions cannot read secrets.* directly, so callers must forward it explicitly.'
+    required: true
 
 runs:
   using: composite
   steps:
+    - uses: pnpm/action-setup@v4
+
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
+        cache: 'pnpm'
 
-    - name: Restore node_modules cache
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node_modules-
+    - name: Configure taskforcesh registry auth
+      # pnpm refuses to expand ${VAR} auth tokens from a project-committed .npmrc
+      # (leak risk if the file were ever pointed at an attacker-controlled registry),
+      # so the token is written to the runner's user-level pnpm config instead.
+      shell: bash
+      run: pnpm config set "//npm.taskforce.sh/:_authToken" "${{ inputs.npm-taskforcesh-token }}"
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
 
     - name: Restore turbo cache
       uses: actions/cache@v4

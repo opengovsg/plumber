@@ -25,10 +25,12 @@ const dynamicData: IDynamicData = {
       )
 
       return {
-        data: caseStatuses.data.map((status) => ({
-          name: status.name,
-          value: status.name,
-        })),
+        data: caseStatuses.data.map(
+          (status: GatherSGCaseStatus['data'][number]) => ({
+            name: status.name,
+            value: status.name,
+          }),
+        ),
       }
     } catch (error) {
       return {

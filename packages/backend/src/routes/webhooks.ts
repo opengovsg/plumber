@@ -12,7 +12,7 @@ import appConfig from '@/config/app'
 import webhookHandler from '@/controllers/webhooks/handler'
 import logger from '@/helpers/logger'
 
-const router = Router()
+const router: Router = Router()
 const uploadNone = multer().none()
 
 router.use((req, res, next) => {
