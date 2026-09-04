@@ -1,3 +1,4 @@
+import type AppConfig from '@/config/app.js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Each test re-imports app.ts, which would otherwise re-run dotenv and restore
@@ -18,7 +19,9 @@ async function loadSesConfig(env: SesEnv) {
     vi.stubEnv(key, env[key])
   }
   vi.resetModules()
-  const { default: appConfig } = await import('../app.js')
+  const { default: appConfig } = (await import('@/config/app.js')) as {
+    default: AppConfig
+  }
   return appConfig.ses
 }
 

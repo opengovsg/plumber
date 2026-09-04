@@ -4,11 +4,11 @@ import type {
   AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from 'axios'
+import type { Request } from 'express'
 import type { RelatedQueryBuilder } from 'objection'
 // FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
 // types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
-import type { Request } from 'express'
 
 import HttpError from '@/errors/http'
 
