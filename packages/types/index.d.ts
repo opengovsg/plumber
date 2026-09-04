@@ -1,6 +1,3 @@
-// FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
-// types to type-fest.
-import type HttpError from '@/errors/http'
 import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
 import type {
   AxiosInstance,
@@ -10,6 +7,10 @@ import type {
 import type { Request } from 'express'
 import type { RelatedQueryBuilder } from 'objection'
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
+
+// FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
+// types to type-fest.
+import type HttpError from '@/errors/http'
 
 export type IHttpClient = AxiosInstance
 
@@ -1460,7 +1461,6 @@ export interface IMcpFieldOption {
   label: string
   value: string
 }
-
 
 export interface IMcpIncompleteStep {
   stepId: string
