@@ -15,8 +15,8 @@ import {
   getStepIdToSkipTo,
 } from '../../common/get-step-id-to-skip-to'
 
-const mocks = vi.hoisted(() => ({
-  stepQueryResult: vi.fn().mockResolvedValue([
+const mocks = vi.hoisted(() => {
+  const defaultFlowSteps = [
     {
       id: 'step1',
       appKey: 'formsg',
@@ -50,8 +50,13 @@ const mocks = vi.hoisted(() => ({
       key: 'sendTransactionalEmail',
       position: 5,
     },
-  ]),
-}))
+  ]
+
+  return {
+    defaultFlowSteps,
+    stepQueryResult: vi.fn().mockResolvedValue(defaultFlowSteps),
+  }
+})
 
 vi.mock('@/models/step', () => ({
   default: {
@@ -65,6 +70,8 @@ vi.mock('@/models/step', () => ({
 describe('getIfThenV1StepIdToSkipTo', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
+    mocks.stepQueryResult.mockReset()
+    mocks.stepQueryResult.mockResolvedValue(mocks.defaultFlowSteps)
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
     consoleErrorSpy.mockClear()
   })
@@ -519,6 +526,8 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
+    mocks.stepQueryResult.mockReset()
+    mocks.stepQueryResult.mockResolvedValue(mocks.defaultFlowSteps)
     // The new dispatch fails loud via logger.error (not console.error); spy so
     // we can both silence and assert the structured events.
     loggerErrorSpy = vi
