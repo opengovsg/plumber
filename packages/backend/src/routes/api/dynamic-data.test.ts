@@ -94,7 +94,7 @@ describe('POST /api/dynamic-data', () => {
         key: 'table',
         userId: 'user-1',
         statusCode: 400,
-        error: { name: 'UserFacingError', message: 'Step not found' },
+        error: 'Step not found',
       },
     )
   })
@@ -127,10 +127,7 @@ describe('POST /api/dynamic-data', () => {
         key: 'table',
         userId: 'user-1',
         statusCode: 400,
-        error: {
-          name: 'DynamicDataPrerequisiteError',
-          message: "Missing required value for 'tableId'",
-        },
+        error: "Missing required value for 'tableId'",
       },
     )
   })
@@ -158,7 +155,7 @@ describe('POST /api/dynamic-data', () => {
         key: 'table',
         userId: 'user-1',
         statusCode: 500,
-        error: { name: 'Error', message: 'boom' },
+        error: 'boom',
       },
     )
   })
@@ -202,16 +199,13 @@ describe('POST /api/dynamic-data', () => {
         key: 'table',
         userId: 'user-1',
         statusCode: 500,
-        error: {
-          name: 'AxiosError',
-          message: 'Request failed with status code 401',
-          status: 401,
-        },
+        error: 'Request failed with status code 401',
       },
     )
-    expect(JSON.stringify(mocks.logError.mock.calls)).not.toContain(
-      'leaked-token',
-    )
+
+    const loggedCalls = JSON.stringify(mocks.logError.mock.calls)
+    expect(loggedCalls).not.toContain('leaked-token')
+    expect(loggedCalls).not.toContain('secret-path')
   })
 
   it('returns 200 with the fetched data on success', async () => {
