@@ -40,6 +40,7 @@
     "@aws-sdk/client-sqs": "catalog:aws-sdk",
     "@aws-sdk/credential-providers": "catalog:aws-sdk",
     "@aws-sdk/s3-presigned-post": "catalog:aws-sdk",
+    "@aws-sdk/types": "catalog:aws-sdk",
     "@bull-board/api": "catalog:bull-board",
     "@bull-board/express": "catalog:bull-board",
     "@databricks/sql": "catalog:",
