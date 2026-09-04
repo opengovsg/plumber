@@ -58,6 +58,7 @@ describe('update case', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -127,7 +128,7 @@ describe('update case', () => {
 
   it('parses the raw response correctly', async () => {
     await updateCaseAction.run($)
-    expect($.setActionItem).toBeCalledWith({
+    expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         traceId: MOCK_RESPONSE.traceId,
       },
@@ -190,7 +191,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run($)).rejects.toThrow(
       'Check that you have entered a valid case status.',
     )
   })
@@ -214,7 +215,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run($)).rejects.toThrow(
       'Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: age, score',
     )
   })
@@ -235,7 +236,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run($)).rejects.toThrow(
       'Insufficient permissions to perform this action',
     )
   })
@@ -253,7 +254,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run($)).rejects.toThrow(
       'Please check that you have configured your step correctly',
     )
   })

@@ -7,10 +7,9 @@ const mocks = vi.hoisted(() => {
 
   return {
     // BullMQ worker mocks
-    workerConstructor: vi.fn(() => ({
-      on: workerOn,
-      close: vi.fn(),
-    })),
+    workerConstructor: vi.fn(function () {
+      return { on: workerOn, close: vi.fn() }
+    }),
     workerOn,
 
     // Misc mocks
@@ -58,6 +57,7 @@ vi.mock('@/helpers/generate-error-email', () => ({
 
 describe('makeActionWorker', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

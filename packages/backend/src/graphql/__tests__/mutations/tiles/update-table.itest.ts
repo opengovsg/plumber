@@ -264,7 +264,7 @@ describe.each([['ddb'], ['pg']])(
             },
             context,
           ),
-        ).rejects.toThrowError()
+        ).rejects.toThrow()
       })
 
       it('should throw an error if trying to delete a column from a different table', async () => {

@@ -128,6 +128,7 @@ describe('decrypt form response', () => {
 
   // restore mocks after each test
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -561,7 +562,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.cryptoDecryptWithAttachments).not.toBeCalled()
+      expect(mocks.cryptoDecryptWithAttachments).not.toHaveBeenCalled()
     })
 
     it('attachment decryption function called if pipe processes files', async () => {
@@ -573,7 +574,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(mocks.cryptoDecrypt).not.toBeCalled()
+      expect(mocks.cryptoDecrypt).not.toHaveBeenCalled()
     })
   })
 
@@ -587,8 +588,8 @@ describe('decrypt form response', () => {
         SUCCESS_DECRYPT_RESPONSE,
       )
 
-      expect(mocks.parseFormEnv).toBeCalled()
-      expect(mocks.getSdk).toBeCalledWith('staging')
+      expect(mocks.parseFormEnv).toHaveBeenCalled()
+      expect(mocks.getSdk).toHaveBeenCalledWith('staging')
     })
   })
 

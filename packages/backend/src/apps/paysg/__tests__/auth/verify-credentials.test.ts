@@ -28,6 +28,7 @@ describe('Verify credentials', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

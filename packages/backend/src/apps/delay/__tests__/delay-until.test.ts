@@ -49,6 +49,7 @@ describe('Delay until action', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -59,7 +60,7 @@ describe('Delay until action', () => {
 
     const result = await delayUntilAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: DEFAULT_TIME },
     })
   })
@@ -72,7 +73,7 @@ describe('Delay until action', () => {
 
     const result = await delayUntilAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: VALID_TIME },
     })
   })
@@ -86,7 +87,7 @@ describe('Delay until action', () => {
 
     const result = await delayUntilAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DATE, delayUntilTime: VALID_TIME },
     })
   })
@@ -99,7 +100,7 @@ describe('Delay until action', () => {
 
     const result = await delayUntilAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DD_MMM_YYYY_US, delayUntilTime: VALID_TIME },
     })
   })
@@ -112,7 +113,7 @@ describe('Delay until action', () => {
 
     const result = await delayUntilAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayUntil: VALID_DD_MMM_YYYY_US, delayUntilTime: VALID_TIME },
     })
   })
@@ -126,7 +127,7 @@ describe('Delay until action', () => {
 
       const result = await delayUntilAction.run($)
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: '05 Dec 2026', delayUntilTime: VALID_TIME },
       })
     })
@@ -139,7 +140,7 @@ describe('Delay until action', () => {
 
       const result = await delayUntilAction.run($)
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: VALID_DATE, delayUntilTime: '09:30' },
       })
     })
@@ -152,7 +153,7 @@ describe('Delay until action', () => {
 
       const result = await delayUntilAction.run($)
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: '01 Jan 2027', delayUntilTime: '08:05' },
       })
     })
@@ -165,7 +166,7 @@ describe('Delay until action', () => {
 
       const result = await delayUntilAction.run($)
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { delayUntil: '05 Dec 2026', delayUntilTime: '09:30' },
       })
     })
@@ -180,7 +181,7 @@ describe('Delay until action', () => {
     mocks.getLastExecutionStep.mockResolvedValue(null)
 
     // throw step error
-    await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+    await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
   })
 
   it('throws step error if delay until has an invalid configuration', async () => {
@@ -192,7 +193,7 @@ describe('Delay until action', () => {
     mocks.getLastExecutionStep.mockResolvedValue(null)
 
     // throw step error
-    await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+    await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
   })
 
   describe('retry logic', () => {
@@ -212,7 +213,7 @@ describe('Delay until action', () => {
       const result = await delayUntilAction.run($)
 
       expect(result).toBeFalsy()
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
           delayUntil: DateTime.now().toPlumberFormat('dd MMM yyyy'),
           delayUntilTime: DateTime.now().toPlumberFormat('HH:mm'),
@@ -233,7 +234,7 @@ describe('Delay until action', () => {
         },
       })
 
-      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+      await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
     })
 
     it('handles retry when last execution step has no error details', async () => {
@@ -245,7 +246,7 @@ describe('Delay until action', () => {
       // Mock last execution step without error details
       mocks.getLastExecutionStep.mockResolvedValue({})
 
-      await expect(delayUntilAction.run($)).rejects.toThrowError(StepError)
+      await expect(delayUntilAction.run($)).rejects.toThrow(StepError)
     })
   })
 })
