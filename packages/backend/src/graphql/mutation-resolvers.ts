@@ -28,6 +28,7 @@ import loginWithSgid from './mutations/login-with-sgid'
 import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
 import registerConnection from './mutations/register-connection'
+import replaceConnectionCredentials from './mutations/replace-connection-credentials'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
@@ -66,6 +67,7 @@ export default {
   createConnection,
   generateAuthUrl,
   updateConnection,
+  replaceConnectionCredentials,
   resetConnection,
   verifyConnection,
   deleteConnection,

@@ -68,6 +68,9 @@ type Mutation {
   createConnection(input: CreateConnectionInput): Connection
   generateAuthUrl(input: GenerateAuthUrlInput): AuthLink
   updateConnection(input: UpdateConnectionInput): Connection
+  replaceConnectionCredentials(
+    input: ReplaceConnectionCredentialsInput
+  ): Connection
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
@@ -589,6 +592,11 @@ input UpdateConnectionInput {
   id: String!
   formattedData: JSONObject!
   flowId: String!
+}
+
+input ReplaceConnectionCredentialsInput {
+  id: String!
+  formattedData: JSONObject!
 }
 
 input ResetConnectionInput {
