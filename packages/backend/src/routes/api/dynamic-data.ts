@@ -4,6 +4,8 @@ import { Router } from 'express'
 import { z } from 'zod/v4'
 
 import { UserFacingError } from '@/errors/user-facing-error'
+import logger from '@/helpers/logger'
+import { toSafeLogError } from '@/helpers/to-safe-log-error'
 import {
   DynamicDataPrerequisiteError,
   getDynamicDataService,
@@ -17,6 +19,29 @@ const bodySchema = z.object({
   key: z.string().min(1),
   parameters: z.record(z.string(), z.unknown()).optional(),
 })
+
+function logDynamicDataError({
+  stepId,
+  key,
+  userId,
+  statusCode,
+  error,
+}: {
+  stepId: string
+  key: string
+  userId: string
+  statusCode: number
+  error: unknown
+}) {
+  logger.error('Failed to fetch dynamic data', {
+    event: 'dynamic-data-error',
+    stepId,
+    key,
+    userId,
+    statusCode,
+    error: toSafeLogError(error),
+  })
+}
 
 router.post('/', async (req: AuthenticatedRequest, res) => {
   // Auth: resolved from the session cookie via setCurrentUserContext +
@@ -48,12 +73,33 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     res.json({ data })
   } catch (error) {
     if (error instanceof DynamicDataPrerequisiteError) {
+      logDynamicDataError({
+        stepId,
+        key,
+        userId: user.id,
+        statusCode: 400,
+        error,
+      })
       res
         .status(400)
         .json({ error: error.message, code: 'prerequisite_missing' })
     } else if (error instanceof UserFacingError) {
+      logDynamicDataError({
+        stepId,
+        key,
+        userId: user.id,
+        statusCode: 400,
+        error,
+      })
       res.status(400).json({ error: error.message })
     } else {
+      logDynamicDataError({
+        stepId,
+        key,
+        userId: user.id,
+        statusCode: 500,
+        error,
+      })
       res.status(500).json({ error: 'Internal server error' })
     }
   }
