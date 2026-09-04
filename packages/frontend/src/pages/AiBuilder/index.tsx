@@ -1,11 +1,10 @@
+import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
+import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 import type { IApp, IJSONObject } from '@plumber/types'
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiInfoCircle } from 'react-icons/bi'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
-import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 
 import AddAppConnection from '@/components/AddAppConnection'
 import RedirectToLogin from '@/components/RedirectToLogin'
@@ -15,13 +14,13 @@ import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
 
-import AddFormsgConnectionModal from './components/AddFormsgConnectionModal'
-import ChatInterface from './components/ChatInterface'
-import ExitAlert from './components/ExitAlert'
 import {
   AiBuilderContextProvider,
   useAiBuilderContext,
 } from './AiBuilderContext'
+import AddFormsgConnectionModal from './components/AddFormsgConnectionModal'
+import ChatInterface from './components/ChatInterface'
+import ExitAlert from './components/ExitAlert'
 import {
   buildFormConnectedMessage,
   buildKickoffMessage,

@@ -1,5 +1,4 @@
 import type { IJSONObject } from '@plumber/types'
-
 import type { Router as RouterType } from 'express'
 import { Router } from 'express'
 import { z } from 'zod/v4'
