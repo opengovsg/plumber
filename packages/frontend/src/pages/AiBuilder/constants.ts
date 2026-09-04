@@ -32,11 +32,8 @@ export type AiChatIdea = {
   input: string
 }
 
-export const PLACEHOLDER_MESSAGES = [
-  'Think in order. What happens first, and what follows',
-  "Describe what you have in mind and we'll show you what's possible",
-  "Share what you're trying to do and we'll help you figure out the best way to automate it",
-]
+export const PLACEHOLDER_MESSAGE =
+  "Describe the task and we'll build it for you, or ask a question"
 
 // Maximum number of messages allowed in a conversation (hard limit).
 // Keep in sync with backend/src/routes/api/chat/{schema,index}.ts.
