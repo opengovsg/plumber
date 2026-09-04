@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import verifyOtp from '@/graphql/mutations/verify-otp'
+import * as auth from '@/helpers/auth'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
@@ -8,15 +9,8 @@ import { generateMockContext } from './tiles/table.mock'
 
 const TEST_OTP = '123456'
 
-const mocks = vi.hoisted(() => ({
-  setAuthCookie: vi.fn(),
-  sendOnboardingEmail: vi.fn(),
-}))
-
-vi.mock('@/helpers/auth', () => ({
-  setAuthCookie: mocks.setAuthCookie,
-  sendOnboardingEmail: mocks.sendOnboardingEmail,
-}))
+const setAuthCookie = vi.fn()
+const sendOnboardingEmail = vi.fn()
 
 describe('verifyOtp', () => {
   let context: Context
@@ -24,7 +18,11 @@ describe('verifyOtp', () => {
   let user: User
 
   beforeEach(async () => {
-    vi.resetAllMocks()
+    vi.spyOn(auth, 'setAuthCookie').mockImplementation(setAuthCookie as never)
+    vi.spyOn(auth, 'sendOnboardingEmail').mockImplementation(
+      sendOnboardingEmail as never,
+    )
+
     context = await generateMockContext()
 
     user = await User.query().findOne({
@@ -33,6 +31,8 @@ describe('verifyOtp', () => {
 
     validOtpHash = user.hashOtp(TEST_OTP)
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   it('should throw error when is not gov.sg email', async () => {
     await expect(
@@ -149,8 +149,8 @@ describe('verifyOtp', () => {
     })
     expect(user?.otpAttempts).toBe(1)
 
-    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled()
-    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
+    expect(sendOnboardingEmail).not.toHaveBeenCalled()
+    expect(setAuthCookie).not.toHaveBeenCalled()
   })
 
   it('should reset otp attempts, send onboarding email and set auth cookie for valid otp', async () => {
@@ -168,8 +168,8 @@ describe('verifyOtp', () => {
       email: context.currentUser.email,
     })
     expect(user?.otpAttempts).toBe(0)
-    expect(mocks.sendOnboardingEmail).toHaveBeenCalled()
-    expect(mocks.setAuthCookie).toHaveBeenCalledWith(context.res, {
+    expect(sendOnboardingEmail).toHaveBeenCalled()
+    expect(setAuthCookie).toHaveBeenCalledWith(context.res, {
       userId: user?.id,
     })
   })
