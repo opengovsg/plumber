@@ -225,6 +225,10 @@ describe('redactSecrets', () => {
       }),
     )
 
+    // dd-trace injects `dd` whenever a tracer is loaded, which CI does for Test
+    // Visibility. The fields this test pins down are the caller's own.
+    delete record.dd
+
     expect(record).toEqual({
       level: 'info',
       message: 'flow executed',
