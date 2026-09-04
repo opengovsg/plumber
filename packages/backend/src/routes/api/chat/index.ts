@@ -1,5 +1,3 @@
-import { IFlowSteps } from '@plumber/types'
-
 import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp'
 import {
   getActiveTraceId,
@@ -8,6 +6,7 @@ import {
   updateActiveTrace,
 } from '@langfuse/tracing'
 import { trace } from '@opentelemetry/api'
+import { IFlowSteps } from '@plumber/types'
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -192,7 +191,7 @@ const handleChatStream = observe(
           },
         })
         gitbookTools =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // oxlint-disable-next-line typescript/no-explicit-any
           (await mcpClient.tools()) as Parameters<typeof streamText>[0]['tools']
       } catch (error) {
         await mcpClient?.close()

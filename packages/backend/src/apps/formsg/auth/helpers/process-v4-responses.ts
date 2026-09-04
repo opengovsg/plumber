@@ -1,5 +1,3 @@
-import type { IGlobalVariable } from '@plumber/types'
-
 import type {
   AddressAnswerV4,
   AttachmentAnswerV4,
@@ -13,6 +11,7 @@ import type {
   TableAnswerV4,
   VerifiableAnswerV4,
 } from '@opengovsg/formsg-sdk'
+import type { IGlobalVariable } from '@plumber/types'
 import { DateTime } from 'luxon'
 
 import logger from '@/helpers/logger'

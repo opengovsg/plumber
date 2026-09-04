@@ -1,8 +1,7 @@
-import type { IApp } from '@plumber/types'
-
-import * as React from 'react'
 import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
+import type { IApp } from '@plumber/types'
+import * as React from 'react'
 
 import AppRow from '@/components/AppRow'
 import Container from '@/components/Container'

@@ -1,7 +1,6 @@
-import type { IApp, IConnection } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
 import { useQuery } from '@apollo/client'
+import type { IApp, IConnection } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
@@ -11,7 +10,6 @@ import { getMrfApprovalConfig } from '@/helpers/formsg'
 import { DATABRICKS_APP_KEY, EXCEL_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
-
 import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
 import ConfigureDatabricksConnection from './ConfigureDatabricksConnection'

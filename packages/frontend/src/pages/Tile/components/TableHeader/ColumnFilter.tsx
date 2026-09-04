@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Input } from '@opengovsg/design-system-react'
 import { Column } from '@tanstack/react-table'
 import { debounce } from 'lodash'
+import { useCallback, useMemo, useState } from 'react'
 
 import { GenericRowData } from '../../types'
 

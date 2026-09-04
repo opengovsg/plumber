@@ -1,11 +1,10 @@
-import { IExecution } from '@plumber/types'
-
-import { useCallback, useContext, useState } from 'react'
-import { BiFastForward } from 'react-icons/bi'
-import { TbArrowForwardUpDouble } from 'react-icons/tb'
 import { useMutation } from '@apollo/client'
 import { Icon } from '@chakra-ui/react'
 import { Button, Spinner, useToast } from '@opengovsg/design-system-react'
+import { IExecution } from '@plumber/types'
+import { useCallback, useContext, useState } from 'react'
+import { BiFastForward } from 'react-icons/bi'
+import { TbArrowForwardUpDouble } from 'react-icons/tb'
 
 import { BULK_RETRY_EXECUTIONS_FLAG } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'

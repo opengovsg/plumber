@@ -1,6 +1,6 @@
-import { IGlobalVariable } from '@plumber/types'
-
 import { URL } from 'url'
+
+import { IGlobalVariable } from '@plumber/types'
 
 type TData = {
   channel: string

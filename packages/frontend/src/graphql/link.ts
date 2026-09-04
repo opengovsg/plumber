@@ -1,9 +1,8 @@
-import { CustomGraphQLFormattedError } from '@plumber/types'
-
 import type { ApolloLink } from '@apollo/client'
 import { from, HttpLink } from '@apollo/client'
 import { onError } from '@apollo/client/link/error'
 import { removeTypenameFromVariables } from '@apollo/client/link/remove-typename'
+import { CustomGraphQLFormattedError } from '@plumber/types'
 
 import {
   INVALID_TILE_VIEW_KEY,
@@ -54,19 +53,19 @@ const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
           callback?.(message)
         }
 
-        // eslint-disable-next-line no-console
+        // oxlint-disable-next-line no-console
         console.log(`[GraphQL error]: Message: ${message}, Code: ${code}`)
       })
     } else if (networkError) {
       if (autoSnackbar) {
         callback?.(networkError.toString())
       }
-      // eslint-disable-next-line no-console
+      // oxlint-disable-next-line no-console
       console.log(`[Network error]: ${networkError}`)
     }
   })
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
+// oxlint-disable-next-line no-empty-function
 const noop = () => {}
 
 const createLink = (options: CreateLinkOptions): ApolloLink => {

@@ -1,7 +1,3 @@
-import { ITableColumnMetadata, ITableMetadata } from '@plumber/types'
-
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BiCheck, BiChevronDown, BiChevronUp, BiImport } from 'react-icons/bi'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import {
   Box,
@@ -24,8 +20,11 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { Attachment, Button, ButtonProps } from '@opengovsg/design-system-react'
+import { ITableColumnMetadata, ITableMetadata } from '@plumber/types'
 import { chunk } from 'lodash'
 import Papa, { ParseMeta, ParseResult } from 'papaparse'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BiCheck, BiChevronDown, BiChevronUp, BiImport } from 'react-icons/bi'
 import { SetRequired } from 'type-fest'
 
 import PrimarySpinner from '@/components/PrimarySpinner'

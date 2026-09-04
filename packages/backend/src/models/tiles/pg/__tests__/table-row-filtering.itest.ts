@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 
 import { TableRowFilterOperator } from '../../types'
 import { createTableRows, getTableRows } from '../table-row-functions'
-
 import {
   createFilterTestData,
   createTestSetup,

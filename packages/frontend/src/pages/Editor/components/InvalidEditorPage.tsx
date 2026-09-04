@@ -1,9 +1,10 @@
-import { Helmet } from 'react-helmet'
 import { Box, Stack, Text, VStack } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
+import { Helmet } from 'react-helmet'
 
 import { PipeIcon } from '@/components/Icons/PipeIcon'
 import * as URLS from '@/config/urls'
+
 import styles from '@/pages/UnauthorizedTile/UnauthorizedTile.module.css'
 
 export default function InvalidEditorPage({ message }: { message?: string }) {

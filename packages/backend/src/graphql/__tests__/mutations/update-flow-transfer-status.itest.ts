@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { AES } from 'crypto-js'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -14,8 +15,8 @@ import TableCollaborator from '@/models/table-collaborators'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext, generateMockTable } from './tiles/table.mock'
 import { generateMockFlow, generateMockUser } from './flow.mock'
+import { generateMockContext, generateMockTable } from './tiles/table.mock'
 
 describe('updateFlowTransferStatus', () => {
   let context: Context
@@ -280,9 +281,8 @@ describe('updateFlowTransferStatus', () => {
       expect(excelExecutionSteps.length).toBe(0)
 
       // Verify the original Excel connection still exists with userId intact
-      const originalConnection = await Connection.query().findById(
-        excelConnectionId,
-      )
+      const originalConnection =
+        await Connection.query().findById(excelConnectionId)
       expect(originalConnection).toBeTruthy()
       expect(originalConnection.userId).toBe(owner.id)
 

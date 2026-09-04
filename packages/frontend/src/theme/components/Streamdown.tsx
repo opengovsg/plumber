@@ -1,5 +1,3 @@
-import { useMemo } from 'react'
-import { MdCheck, MdContentCopy } from 'react-icons/md'
 import {
   Box,
   Code,
@@ -16,6 +14,8 @@ import {
   Tr,
   useClipboard,
 } from '@chakra-ui/react'
+import { useMemo } from 'react'
+import { MdCheck, MdContentCopy } from 'react-icons/md'
 import { Streamdown } from 'streamdown'
 
 function extractText(node: React.ReactNode): string {

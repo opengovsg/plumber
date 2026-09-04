@@ -171,7 +171,7 @@ export default function PromptInput({
     if (initialValue) {
       handleResize()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
   // The resize handler above only fires on typed input, but a long

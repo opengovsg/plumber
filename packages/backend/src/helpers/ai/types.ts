@@ -3,7 +3,6 @@ import type {
   IFlowStepsAction,
   IFlowStepsTrigger,
 } from '@plumber/types'
-
 import { z } from 'zod'
 
 const triggerStepSchema = z.object({

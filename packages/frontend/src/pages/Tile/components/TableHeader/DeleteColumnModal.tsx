@@ -1,4 +1,3 @@
-import { useCallback, useRef } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -8,6 +7,7 @@ import {
   AlertDialogOverlay,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { useCallback, useRef } from 'react'
 
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 

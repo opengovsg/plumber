@@ -3,7 +3,6 @@ import type {
   ITableColumnMetadata,
   ITableRow,
 } from '@plumber/types'
-
 import React, {
   createContext,
   MutableRefObject,

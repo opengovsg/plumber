@@ -1,6 +1,6 @@
-import { BiChevronLeft } from 'react-icons/bi'
 import { Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { BiChevronLeft } from 'react-icons/bi'
 
 interface BackButtonProps {
   onBack: () => void

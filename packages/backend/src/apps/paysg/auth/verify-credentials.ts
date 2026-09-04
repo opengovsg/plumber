@@ -1,7 +1,6 @@
 import type { IGlobalVariable } from '@plumber/types'
 
 import { getEnvironmentFromApiKey, PaySgEnvironment } from '../common/api'
-
 import { validateAuthData } from './auth-data'
 
 export default async function verifyCredentials(

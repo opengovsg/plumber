@@ -1,9 +1,8 @@
-import { HiOutlineDotsVertical } from 'react-icons/hi'
 import { Flex, Hide, MenuButton, MenuList, Show } from '@chakra-ui/react'
 import { ButtonProps, IconButton, Menu } from '@opengovsg/design-system-react'
+import { HiOutlineDotsVertical } from 'react-icons/hi'
 
 import { useTableContext } from '../../contexts/TableContext'
-
 import ExportCsvButton from './ExportCsvButton'
 import ImportCsvButton from './ImportCsvButton'
 import ShareButton from './ShareButton'

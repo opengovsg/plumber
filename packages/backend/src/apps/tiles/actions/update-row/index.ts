@@ -12,7 +12,6 @@ import { getTableOperations } from '@/models/tiles/factory'
 import { PatchRowInput } from '@/models/tiles/types'
 
 import { UpdateRowOutput } from '../../types'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {

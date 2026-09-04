@@ -1,10 +1,10 @@
-import { FormEvent } from 'react'
 import {
   Modal,
   ModalCloseButton,
   ModalContent,
   ModalOverlay,
 } from '@chakra-ui/react'
+import { FormEvent } from 'react'
 
 import { FLOW_CREATE_MODE } from '@/pages/Flows/contexts/CreateFlowContext'
 import { useFlowCreation } from '@/pages/Flows/hooks/useFlowCreation'

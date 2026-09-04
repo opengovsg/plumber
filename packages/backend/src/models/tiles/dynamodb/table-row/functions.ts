@@ -1,5 +1,6 @@
-import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 import { randomUUID } from 'crypto'
+
+import { type QueryCommandOutput } from '@aws-sdk/client-dynamodb'
 
 import { DYNAMODB_DEFAULT_PAGINATION_CURSOR } from '@/apps/tiles/common/constants'
 import logger from '@/helpers/logger'
@@ -17,7 +18,6 @@ import {
   UpdateRowInput,
 } from '../../types'
 import { autoMarshallNumberStrings, handleDynamoDBError } from '../helpers'
-
 import { TableRow } from './model'
 
 const MAX_RETRIES = 8
@@ -42,7 +42,7 @@ export const _batchDelete = async (
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     logger.warn(
       `Retrying batchDelete, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )
@@ -67,7 +67,7 @@ export const _batchCreate = async (
     }
     const delay = Math.pow(2, attempts) * EXPONENTIAL_BACKOFF_BASE_DELAY
     attempts++
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     logger.warn(
       `Retrying batchCreate, attempt ${attempts} with ${res.unprocessed.length} unprocessed items}`,
     )

@@ -1,5 +1,4 @@
 import { IGlobalVariable, IJSONValue } from '@plumber/types'
-
 import { z } from 'zod'
 
 import StepError from '@/errors/step'

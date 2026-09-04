@@ -1,5 +1,4 @@
 import { IAction, IApp, ITrigger } from '@plumber/types'
-
 import { memoize } from 'lodash'
 
 import apps from '@/apps'

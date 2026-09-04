@@ -1,6 +1,5 @@
 // Avoid cyclic imports when importing m365ExcelApp
 import '@/apps'
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import tilesApp from '..'

@@ -1,4 +1,3 @@
-import { BiSolidCheckCircle } from 'react-icons/bi'
 import {
   Box,
   Flex,
@@ -9,6 +8,7 @@ import {
   ListItem,
   Text,
 } from '@chakra-ui/react'
+import { BiSolidCheckCircle } from 'react-icons/bi'
 
 import Container from '@/components/Container'
 import MarkdownRenderer from '@/components/MarkdownRenderer'

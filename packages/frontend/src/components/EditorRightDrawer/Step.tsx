@@ -1,7 +1,6 @@
-import type { IStep } from '@plumber/types'
-
-import { Fragment, useCallback, useContext, useMemo } from 'react'
 import { Flex, useDisclosure } from '@chakra-ui/react'
+import type { IStep } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
 
 import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
@@ -16,7 +15,6 @@ import {
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import FlowStepConfigurationModal from '../FlowStepConfigurationModal'
-
 import LearnFromGuideInfobox from './LearnFromGuideInfobox'
 
 type StepProps = {

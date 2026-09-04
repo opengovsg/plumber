@@ -3,7 +3,6 @@ import type {
   IGlobalVariable,
   IUserAddedConnectionAuth,
 } from '@plumber/types'
-
 import qs from 'qs'
 
 const scopes = ['chat:write', 'chat:write.customize', 'chat:write.public']

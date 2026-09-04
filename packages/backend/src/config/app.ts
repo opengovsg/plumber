@@ -1,9 +1,9 @@
 import 'dotenv/config'
 import '@/types/luxon-extensions'
+import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { Settings as LuxonSettings } from 'luxon'
-import { URL } from 'node:url'
 
 type AppConfig = {
   port: string

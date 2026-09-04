@@ -1,10 +1,9 @@
-import { IFlowCollaborator, IFlowCollabRole } from '@plumber/types'
-
-import { useCallback, useContext, useState } from 'react'
-import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex, Text } from '@chakra-ui/react'
 import { IconButton, Tag, useToast } from '@opengovsg/design-system-react'
+import { IFlowCollaborator, IFlowCollabRole } from '@plumber/types'
+import { useCallback, useContext, useState } from 'react'
+import { BiTrash } from 'react-icons/bi'
 
 import CollaboratorRoleSelect from '@/components/CollaboratorRoleSelect'
 import { AuthenticationContext } from '@/contexts/Authentication'

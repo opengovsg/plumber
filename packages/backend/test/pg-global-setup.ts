@@ -1,10 +1,11 @@
-/* eslint-disable no-console */
+import { join } from 'path'
+
+/* oxlint-disable no-console */
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
 import knex, { Knex } from 'knex'
-import { join } from 'path'
 
 let postgresContainer: StartedPostgreSqlContainer
 
