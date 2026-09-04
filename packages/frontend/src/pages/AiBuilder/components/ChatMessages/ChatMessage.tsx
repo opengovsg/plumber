@@ -21,7 +21,7 @@ const AiMessage = memo(
   ({ message, shouldShowPreview, shouldShowToolbar }: ChatMessageProps) => {
     return (
       <Flex gap={3} w="full" align="start">
-        <Box flex={1} px={2} color="gray.900">
+        <Box flex={1} px={2} pt={5} pb={2} color="gray.900">
           <ChakraStreamdown isAnimating={false}>
             {prepareAiText(message.text || '')}
           </ChakraStreamdown>
@@ -87,27 +87,5 @@ const ChatMessage = memo(
 )
 
 ChatMessage.displayName = 'ChatMessage'
-
-export const WarningMessage = () => {
-  return (
-    <Flex justify="flex-start">
-      <Box
-        bg="utility.feedback.warning-subtle"
-        color="gray.900"
-        px={4}
-        py={3}
-        borderRadius="lg"
-        w="full"
-      >
-        <Text textStyle="subhead-1" whiteSpace="pre-wrap">
-          Your conversation won&apos;t be saved.
-        </Text>
-        <Text textStyle="body-1" whiteSpace="pre-wrap">
-          The only thing you can keep is the workflow you create here.
-        </Text>
-      </Box>
-    </Flex>
-  )
-}
 
 export default ChatMessage

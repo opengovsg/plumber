@@ -24,6 +24,7 @@ import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
+import UnpublishConfirmationDialog from './UnpublishConfirmationDialog'
 
 export default function EditorLayout() {
   const cancelRef = useRef(null)
@@ -34,9 +35,12 @@ export default function EditorLayout() {
   const [updateFlow] = useMutation(UPDATE_FLOW, {
     refetchQueries: [GET_FLOW], // need to refetch flow to get the latest updatedAt
   })
-  const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
-    refetchQueries: [GET_FLOW],
-  })
+  const [updateFlowStatus, { loading: isUpdatingFlowStatus }] = useMutation(
+    UPDATE_FLOW_STATUS,
+    {
+      refetchQueries: [GET_FLOW],
+    },
+  )
   const [shouldWarnOnPublish, setShouldWarnOnPublish] = useState(false)
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
   const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
@@ -45,6 +49,12 @@ export default function EditorLayout() {
     onOpen: onWarningOpen,
     onClose: onWarningClose,
   } = useDisclosure()
+  const {
+    isOpen: isUnpublishOpen,
+    onOpen: onUnpublishOpen,
+    onClose: onUnpublishClose,
+  } = useDisclosure()
+  const unpublishCancelRef = useRef(null)
 
   const { data, loading, error } = useQuery(GET_FLOW, {
     variables: { id: flowId },
@@ -85,6 +95,10 @@ export default function EditorLayout() {
     },
     [flow?.updatedAt, flowId, updateFlowStatus],
   )
+
+  const handleUnpublish = useCallback(async () => {
+    await onFlowStatusUpdate(false)
+  }, [onFlowStatusUpdate])
 
   const handleWarningClose = useCallback(() => {
     setShouldWarnOnPublish(false)
@@ -224,6 +238,7 @@ export default function EditorLayout() {
             shouldWarnOnLeave={shouldWarnOnLeave}
             setShouldWarnOnPublish={setShouldWarnOnPublish}
             onFlowStatusUpdate={onFlowStatusUpdate}
+            onUnpublish={onUnpublishOpen}
             setLeaveToUrl={setLeaveToUrl}
             handleWarnOnLeave={handleWarnOnLeave}
           />
@@ -243,7 +258,7 @@ export default function EditorLayout() {
 
       <EditorSnackbar
         isOpen={!!flow?.active}
-        handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
+        handleUnpublish={onUnpublishOpen}
       />
 
       {shouldOpenDemoModal && (
@@ -258,6 +273,16 @@ export default function EditorLayout() {
         isOpen={isWarningOpen}
         onClose={handleWarningClose}
         onLeave={onDiscardChanges}
+      />
+
+      <UnpublishConfirmationDialog
+        cancelRef={unpublishCancelRef}
+        flowName={flow.name}
+        isOpen={isUnpublishOpen}
+        isLoading={isUpdatingFlowStatus}
+        onClose={onUnpublishClose}
+        onUnpublish={handleUnpublish}
+        steps={flow.steps}
       />
     </EditorProvider>
   )
