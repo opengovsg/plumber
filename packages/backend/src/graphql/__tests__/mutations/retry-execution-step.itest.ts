@@ -121,7 +121,10 @@ describe('retryExecutionStep mutation', () => {
       },
     ])
 
-    getActionJobSpy = vi.spyOn(await import('@/queues/action'), 'getActionJob')
+    getActionJobSpy = vi.spyOn(
+      await import('@/queues/action.js'),
+      'getActionJob',
+    )
     getActionJobSpy.mockResolvedValue(mockJob)
     genericInputParams = {
       executionStepId: mockExecutionStep.id,

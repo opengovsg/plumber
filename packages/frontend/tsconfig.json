@@ -4,15 +4,21 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": false,
     "skipLibCheck": true,
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    // Strict exports-map resolution collapses polymorphic prop typing in the
+    // pinned chakra-ui v2 chain and @hookform/resolvers v2 to `any`; Vite's
+    // own esbuild-based resolution isn't this strict, so this stays off.
+    "resolvePackageJsonExports": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "types": [],
+    "noUncheckedSideEffectImports": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
