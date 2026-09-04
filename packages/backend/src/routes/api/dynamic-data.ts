@@ -48,16 +48,13 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     })
     res.json({ data })
   } catch (error) {
-    const isUserFacing = error instanceof UserFacingError
-
+    // IMPORTANT: an axios error carries the request URL, request headers and
+    // response body, so only its message is safe to log.
     logger.error('Failed to fetch dynamic data', {
       event: 'dynamic-data-error',
       stepId,
       key,
       userId: user.id,
-      statusCode: isUserFacing ? 400 : 500,
-      // IMPORTANT: an axios error carries the request URL, request headers and
-      // response body, so only its message is safe to log.
       error: error instanceof Error ? error.message : String(error),
     })
 
@@ -65,7 +62,7 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
       res
         .status(400)
         .json({ error: error.message, code: 'prerequisite_missing' })
-    } else if (isUserFacing) {
+    } else if (error instanceof UserFacingError) {
       res.status(400).json({ error: error.message })
     } else {
       res.status(500).json({ error: 'Internal server error' })
