@@ -54,7 +54,7 @@ jobs:
   build:
     name: Build and push image to ECR
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
