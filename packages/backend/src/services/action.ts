@@ -90,6 +90,36 @@ async function enqueueFirstForEachStep({
 }
 
 /**
+ * Maps a thrown action error onto `$.actionOutput.error`, so the failure is
+ * recorded on the execution step's `errorDetails`. Shared by the single-job path
+ * (`processAction`'s catch) and the batch path (the batch worker's `runBatch`
+ * failure handling), so both record identical error details.
+ */
+export function setActionOutputError($: IGlobalVariable, error: unknown): void {
+  if (error instanceof HttpError) {
+    $.actionOutput.error = {
+      details: error.details,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    }
+    logger.error('Action error', {
+      details: error.details,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    })
+  } else {
+    try {
+      const parsedError = JSON.parse((error as Error).message)
+      $.actionOutput.error = parsedError
+      logger.error('Action error', parsedError)
+    } catch {
+      $.actionOutput.error = { error: (error as Error).message }
+      logger.error('Action error', { error: (error as Error).message })
+    }
+  }
+}
+
+/**
  * The shared execution context for a single action job: everything loaded and
  * computed by `prepareActionExecution` (helper A) before the action runs.
  *
@@ -381,28 +411,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   } catch (error) {
     executionError = error
-
-    if (error instanceof HttpError) {
-      $.actionOutput.error = {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
-      logger.error('Action error', {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      })
-    } else {
-      try {
-        const parsedError = JSON.parse(error.message)
-        $.actionOutput.error = parsedError
-        logger.error('Action error', parsedError)
-      } catch {
-        $.actionOutput.error = { error: error.message }
-        logger.error('Action error', { error: error.message })
-      }
-    }
+    setActionOutputError($, error)
   }
 
   const executionStep = await recordExecutionStep({
