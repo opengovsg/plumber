@@ -1,3 +1,4 @@
+import type HttpError from '@/errors/http'
 import type { JobsProOptions, WorkerProOptions } from '@taskforcesh/bullmq-pro'
 import type {
   AxiosInstance,
@@ -9,8 +10,6 @@ import type { RelatedQueryBuilder } from 'objection'
 // FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
 // types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
-
-import HttpError from '@/errors/http'
 
 export type IHttpClient = AxiosInstance
 

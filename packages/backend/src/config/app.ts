@@ -5,7 +5,7 @@ import { URL } from 'node:url'
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { Settings as LuxonSettings } from 'luxon'
 
-type AppConfig = {
+export type AppConfig = {
   port: string
   webAppUrl: string
   webhookUrl: string

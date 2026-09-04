@@ -1,4 +1,4 @@
-import type AppConfig from '@/config/app.js'
+import type { AppConfig } from '@/config/app.js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Each test re-imports app.ts, which would otherwise re-run dotenv and restore
