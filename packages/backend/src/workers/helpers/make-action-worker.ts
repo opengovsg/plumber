@@ -9,6 +9,7 @@ import {
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
+import FileLockContentionError from '@/errors/file-lock-contention'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import tracer from '@/helpers/tracer'
 import Step from '@/models/step'
@@ -17,6 +18,7 @@ import { processAction } from '@/services/action'
 
 import { advanceAfterStep } from './advance-after-step'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { requeueOnFileLockContention } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 function convertParamsToBullMqOptions(
@@ -118,6 +120,12 @@ export function makeActionWorker(
 
         const processResult = await processAction({ ...jobData, jobId }).catch(
           async (err) => {
+            // Lost the per-file lock race (see file-lock.ts). Re-queue onto the
+            // group with a short delay WITHOUT consuming an attempt - no failed
+            // step was recorded, so this contention stays invisible.
+            if (err instanceof FileLockContentionError) {
+              return requeueOnFileLockContention(worker, job)
+            }
             // This happens when the prerequisite steps for the action fails
             // (e.g. db error, missing execution, flow, step, etc...) in such
             // cases, we do not want to retry

@@ -12,6 +12,7 @@ import {
 
 import RetriableError from '@/errors/retriable-error'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import { withLock } from '@/helpers/distributed-lock'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -56,12 +57,20 @@ const mocks = vi.hoisted(() => ({
   addSpanTags: vi.fn(),
   logInfo: vi.fn(),
   logError: vi.fn(),
+  // The action's getLockKey hook. Defaults to null (lock disabled) so the
+  // happy-path tests are unaffected; the per-file lock tests override it to
+  // engage the REAL distributed lock (imported below, unmocked).
+  getLockKey: vi.fn(),
 }))
 
 vi.mock('@/apps/m365-excel/common/workbook-session', () => ({
   default: {
     acquire: mocks.acquire,
   },
+}))
+
+vi.mock('@/apps/m365-excel/common/file-lock', () => ({
+  getLockKey: mocks.getLockKey,
 }))
 
 // scope/wrap are plain functions (not vi.fn) so vi.restoreAllMocks() in
@@ -233,9 +242,9 @@ async function enqueueCreateRowJob(options: {
   execution: Execution
   metadata?: Record<string, unknown>
   attempts?: number
-}): Promise<void> {
+}) {
   const { flow, createTableRowStep, execution, metadata, attempts } = options
-  await enqueueActionJob({
+  return await enqueueActionJob({
     appKey: 'm365-excel',
     actionKey: 'createTableRow',
     jobName: `${execution.id}-${createTableRowStep.id}${
@@ -308,6 +317,8 @@ describe('m365-excel batch worker (integration)', () => {
 
   beforeEach(async () => {
     mocks.acquire.mockResolvedValue({ request: mocks.request })
+    // Lock disabled by default; the per-file lock tests opt in per test.
+    mocks.getLockKey.mockResolvedValue(null)
     userId = (await User.query().findOne({ email: 'tester@open.gov.sg' })).id
 
     // Pause both workers so we can enqueue every job up front (the batch worker
@@ -650,6 +661,151 @@ describe('m365-excel batch worker (integration)', () => {
       expect((await createTableRowSteps('failure')).length).toBe(ITERATIONS)
       expect((await createTableRowSteps('success')).length).toBe(0)
       expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+    }, 30000)
+  })
+
+  describe('per-file lock', () => {
+    // A unique key so a leaked lock can't bleed into another test (and so the
+    // default TTL on a failed-test lock is harmless).
+    const LOCK_KEY = 'm365-file-lock-itest:contend'
+
+    // Holds the REAL distributed lock for `key` (via withLock) until released -
+    // standing in for a concurrent operation on the same file (a non-batch m365
+    // action on the per-app queue, or a second partial batch). `acquired`
+    // resolves once the lock is held; `release()` frees it and waits for the
+    // holder to settle.
+    function holdLock(key: string): {
+      acquired: Promise<void>
+      release: () => Promise<void>
+    } {
+      let signalAcquired!: () => void
+      const acquired = new Promise<void>((resolve) => {
+        signalAcquired = resolve
+      })
+      let signalRelease!: () => void
+      const releaseRequested = new Promise<void>((resolve) => {
+        signalRelease = resolve
+      })
+
+      const holder = withLock(
+        key,
+        async () => {
+          signalAcquired()
+          await releaseRequested
+        },
+        {
+          onContention: () => {
+            throw new Error('holdLock: unexpected contention while acquiring')
+          },
+        },
+      )
+
+      return {
+        acquired,
+        release: async () => {
+          signalRelease()
+          await holder
+        },
+      }
+    }
+
+    // attemptsMade for each member job, read straight from Redis. Re-queueing a
+    // contended batch via moveToDelayed must NOT touch this - unlike the old
+    // RetriableError path, which incremented it (and ran exponential backoff) on
+    // every contention cycle and would eventually fail the jobs.
+    async function attemptsMadeFor(
+      ids: (string | undefined)[],
+    ): Promise<number[]> {
+      const jobs = await Promise.all(
+        ids.map((id) => (id ? batchQueue.getJob(id) : undefined)),
+      )
+      return jobs.map((job) => job?.attemptsMade ?? -1)
+    }
+
+    it('serializes against a held lock: no write while held, then processes on release', async () => {
+      // Engage the REAL distributed lock for this batch.
+      mocks.getLockKey.mockResolvedValue(LOCK_KEY)
+      mockGraphSuccess(0)
+
+      // Pre-hold the lock so the batch worker loses the race.
+      const held = holdLock(LOCK_KEY)
+      await held.acquired
+
+      try {
+        const flows = await Promise.all(
+          ['Alice', 'Bob'].map((rowValue) => buildCreateRowFlow({ rowValue })),
+        )
+        const jobIds: (string | undefined)[] = []
+        for (const f of flows) {
+          jobIds.push((await enqueueCreateRowJob(f)).id)
+        }
+
+        batchWorker.resume()
+
+        // While the lock is held the batch cannot write: every acquire attempt
+        // loses, so each member is re-queued onto `delayed` (moveToDelayed)
+        // before reaching the Graph POST. No POST, no execution step (no spurious
+        // failure), no next step - and crucially nothing failed and NO attempt
+        // consumed.
+        await sleep(1000)
+        expect(postConfigs()).toHaveLength(0)
+        expect((await createTableRowSteps()).length).toBe(0)
+        expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+        expect(await batchQueue.getFailed()).toHaveLength(0)
+        expect(await attemptsMadeFor(jobIds)).toEqual([0, 0])
+      } finally {
+        // Release -> a subsequent retry acquires the lock and processes.
+        await held.release()
+      }
+
+      // After release every job completes successfully, with no failure step
+      // ever recorded (the contention re-queues never recorded one).
+      await waitFor(
+        async () => (await createTableRowSteps('success')).length === 2,
+      )
+      expect((await createTableRowSteps('failure')).length).toBe(0)
+      expect(postConfigs().length).toBeGreaterThanOrEqual(1)
+    }, 30000)
+
+    it('sustained contention re-queues without consuming attempts or failing', async () => {
+      mocks.getLockKey.mockResolvedValue(LOCK_KEY)
+      mockGraphSuccess(0)
+
+      const held = holdLock(LOCK_KEY)
+      await held.acquired
+
+      try {
+        const flows = await Promise.all(
+          ['Alice', 'Bob'].map((rowValue) => buildCreateRowFlow({ rowValue })),
+        )
+        const jobIds: (string | undefined)[] = []
+        for (const f of flows) {
+          jobIds.push((await enqueueCreateRowJob(f)).id)
+        }
+
+        batchWorker.resume()
+
+        // Hold across many re-queue cycles (the delay is 250-1000ms). Throughout,
+        // every member stays at attemptsMade 0 and nothing fails - the old
+        // RetriableError path would have climbed attemptsMade toward
+        // MAXIMUM_JOB_ATTEMPTS (10) and eventually failed the jobs here.
+        for (let i = 0; i < 6; i++) {
+          await sleep(500)
+          expect(await attemptsMadeFor(jobIds)).toEqual([0, 0])
+          expect(await batchQueue.getFailed()).toHaveLength(0)
+        }
+        expect((await createTableRowSteps()).length).toBe(0)
+      } finally {
+        await held.release()
+      }
+
+      // Once the lock frees the members are processed - proving the group was
+      // never wedged by the delay cycles (moveToDelayed keeps group concurrency
+      // correct) - and complete successfully with no failure step.
+      await waitFor(
+        async () => (await createTableRowSteps('success')).length === 2,
+      )
+      expect((await createTableRowSteps('failure')).length).toBe(0)
     }, 30000)
   })
 })
