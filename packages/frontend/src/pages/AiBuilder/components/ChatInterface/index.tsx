@@ -7,7 +7,7 @@ import * as URLS from '@/config/urls'
 import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
-import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
+import { PLACEHOLDER_MESSAGE } from '@/pages/AiBuilder/constants'
 import { buildSupportFormUrl } from '@/pages/AiBuilder/helpers'
 import { createNewChatDraft } from '@/pages/AiBuilder/new-chat'
 
@@ -153,9 +153,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             cancelStream={cancelStream}
             showIdeas
             initialValue={chatInput}
-            placeholder={
-              PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
-            }
+            placeholder={PLACEHOLDER_MESSAGE}
             onConnectForm={onConnectForm}
             onSelectExistingForm={onSelectExistingForm}
             attachedForm={attachedForm}
