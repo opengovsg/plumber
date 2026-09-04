@@ -1,5 +1,6 @@
+import { useQuery } from '@apollo/client'
+import { Box, Flex, Table, Tbody, Td, Text, Tr } from '@chakra-ui/react'
 import type { IFieldDropdownOption, IJSONObject } from '@plumber/types'
-
 import {
   Fragment,
   type ReactNode,
@@ -8,8 +9,6 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { useQuery } from '@apollo/client'
-import { Box, Flex, Table, Tbody, Td, Text, Tr } from '@chakra-ui/react'
 
 import {
   buildVariableInfoMapFromPaths,
@@ -307,8 +306,8 @@ export default function StepParameterRows({
         displayLines: hasAiLabel
           ? [parameterLabels[key]]
           : isPreview
-          ? []
-          : resolveDisplayValue(stepFields, key, value),
+            ? []
+            : resolveDisplayValue(stepFields, key, value),
         columnValueRows:
           hasAiLabel || isPreview ? null : resolveColumnValueRows(field, value),
         hiddenIf: field?.hiddenIf,

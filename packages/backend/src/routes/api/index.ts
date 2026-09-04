@@ -1,15 +1,15 @@
 import { Router } from 'express'
 
-import {
-  blockAdminOperations,
-  requireAuthentication,
-  setCurrentUserContext,
-} from './middleware/authentication'
 import adminRouter from './admin'
 import appsRouter from './apps'
 import chatRouter from './chat'
 import connectionsRouter from './connections'
 import dynamicDataRouter from './dynamic-data'
+import {
+  blockAdminOperations,
+  requireAuthentication,
+  setCurrentUserContext,
+} from './middleware/authentication'
 
 const router: Router = Router()
 

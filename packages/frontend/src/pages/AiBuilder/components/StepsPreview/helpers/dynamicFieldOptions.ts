@@ -4,7 +4,6 @@ import type {
   IFieldDropdownSource,
   IJSONObject,
 } from '@plumber/types'
-
 import { get, set } from 'lodash'
 
 export interface DynamicField {

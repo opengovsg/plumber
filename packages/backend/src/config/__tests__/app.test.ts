@@ -18,7 +18,10 @@ async function loadSesConfig(env: SesEnv) {
     vi.stubEnv(key, env[key])
   }
   vi.resetModules()
-  const { default: appConfig } = await import('@/config/app')
+  // esModuleInterop double-wraps .default on a value-level dynamic import of a
+  // nodenext CJS module; typeof import(...) models it correctly, so cast through it.
+  const { default: appConfig } =
+    (await import('@/config/app.js')) as unknown as typeof import('@/config/app.js')
   return appConfig.ses
 }
 
