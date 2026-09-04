@@ -6,6 +6,7 @@ import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
 import mainLogo from '@/assets/logo.svg'
+import oneGovLogo from '@/assets/onegov-logo.png'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { FORBIDDEN } from '@/config/errors'
 import * as URLS from '@/config/urls'
@@ -133,11 +134,7 @@ export default function SsoCallback(): JSX.Element {
   return (
     <VStack flex={1} alignItems="center" justifyContent="center" gap={8}>
       <Flex alignItems="center" justifyContent="center" gap={8}>
-        <Image
-          src="https://file.go.gov.sg/onegovlogo.png"
-          alt="one.gov.sg logo"
-          h={12}
-        />
+        <Image src={oneGovLogo} alt="one.gov.sg logo" h={10} />
         <Icon as={BsArrowRight} boxSize={8} color="primary.500" />
         <Image src={mainLogo} alt="plumber-logo" w={12} mr={12} />
       </Flex>
