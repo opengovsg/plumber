@@ -179,12 +179,16 @@ enum FieldVisibilityOp {
   is_empty
   equals
   not_equals
+  in
+  not_in
 }
 
 type FieldVisibilityCondition {
   op: FieldVisibilityOp!
   fieldKey: String
   fieldValue: JSONPrimitive
+  # Used by the `in` / `not_in` ops: compare the sibling field's value against this set.
+  fieldValues: [JSONPrimitive]
 }
 
 enum SetupMessageVariant {

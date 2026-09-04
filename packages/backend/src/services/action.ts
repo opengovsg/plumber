@@ -158,6 +158,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     priorExecutionSteps,
     actionCommand.preprocessVariable,
     forEachContext,
+    actionCommand.preserveArrayVariables,
   )
 
   $.step.parameters = computedParameters

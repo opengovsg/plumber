@@ -42,6 +42,7 @@ function findAndSubstituteVariables(
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
   forEachContext?: ForEachContext,
+  preserveArrayVariables = false,
 ): unknown {
   if (Array.isArray(rawValue)) {
     return rawValue.map((element) =>
@@ -51,6 +52,7 @@ function findAndSubstituteVariables(
         executionSteps,
         preprocessVariable,
         forEachContext,
+        preserveArrayVariables,
       ),
     )
   }
@@ -66,6 +68,7 @@ function findAndSubstituteVariables(
           executionSteps,
           preprocessVariable,
           forEachContext,
+          preserveArrayVariables,
         ),
       }),
       {},
@@ -174,9 +177,9 @@ function findAndSubstituteVariables(
       // which is the case for formSG checkbox only, this is to deal with forEach next time
       let resolvedValue = dataValue
       if (Array.isArray(dataValue)) {
-        // NOTE: we do not stringify the array if its a for each step
-        // to avoid having to parse it back into an array again
-        if (!isForEachStep) {
+        // Default: join to a string so scalar actions stay unchanged.
+        // Opt-in preserveArrayVariables keeps string[] for GatherSG Checkbox.
+        if (!preserveArrayVariables && !isForEachStep) {
           resolvedValue = dataValue.join(', ')
         }
       }
@@ -204,7 +207,20 @@ function findAndSubstituteVariables(
     return filteredParts[0]
   }
 
-  return substitutedParts.join('')
+  // Only preserve a lone checkbox array when the action opted in.
+  // Otherwise join so Telegram / Postman / Tiles-style string fields stay safe.
+  const nonEmptyParts = substitutedParts.filter((part) => part !== '')
+  if (
+    preserveArrayVariables &&
+    nonEmptyParts.length === 1 &&
+    Array.isArray(nonEmptyParts[0])
+  ) {
+    return nonEmptyParts[0]
+  }
+
+  return substitutedParts
+    .map((part) => (Array.isArray(part) ? part.join(', ') : part))
+    .join('')
 }
 
 export default function computeParameters(
@@ -212,6 +228,7 @@ export default function computeParameters(
   executionSteps: ExecutionStep[],
   preprocessVariable?: IAction['preprocessVariable'],
   forEachContext?: ForEachContext,
+  preserveArrayVariables = false,
 ): Step['parameters'] {
   return findAndSubstituteVariables(
     '', // Dummy initial value; will never be used.
@@ -219,5 +236,6 @@ export default function computeParameters(
     executionSteps,
     preprocessVariable,
     forEachContext,
+    preserveArrayVariables,
   ) as Step['parameters']
 }
