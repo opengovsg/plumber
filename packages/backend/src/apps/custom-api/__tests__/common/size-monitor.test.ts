@@ -40,6 +40,7 @@ describe('createSizeMonitor', () => {
     vi.clearAllMocks()
   })
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

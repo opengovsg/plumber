@@ -7,9 +7,9 @@ const mocks = vi.hoisted(() => {
 
   return {
     // BullMQ queue mocks
-    queueConstructor: vi.fn(() => ({
-      on: queueOn,
-    })),
+    queueConstructor: vi.fn(function () {
+      return { on: queueOn }
+    }),
     queueOn,
 
     // Misc mocks
@@ -52,6 +52,7 @@ vi.mock('@/helpers/generate-error-email', () => ({
 
 describe('makeActionQueue', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
 import { useToast } from '@opengovsg/design-system-react'
+import { useCallback } from 'react'
 
 import SessionExpiredToast, {
   SESSION_EXPIRED_TOAST_ID,

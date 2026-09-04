@@ -3,6 +3,7 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
@@ -55,7 +56,8 @@ vi.mock('@/services/action', () => ({
 }))
 
 vi.mock('@/queues/action', async (importOriginal) => {
-  const actualModule = await importOriginal<typeof import('@/queues/action.js')>()
+  const actualModule =
+    await importOriginal<typeof import('@/queues/action.js')>()
   return {
     ...actualModule,
     enqueueActionJob: mocks.enqueueActionJob,
@@ -83,6 +85,14 @@ describe('Action worker job enqueueing', () => {
     await mainActionWorker.waitUntilReady()
   })
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.processAction.mockReset()
+    mocks.processAction.mockResolvedValue({})
+    mocks.enqueueActionJob.mockReset()
+    mocks.enqueueActionJob.mockResolvedValue({})
+  })
+
   afterEach(async () => {
     await flushQueue(mainActionQueue, mainActionWorker)
 
@@ -90,6 +100,7 @@ describe('Action worker job enqueueing', () => {
     // original state after each test
     await restoreWorker(mainActionWorker, originalWorkerState)
 
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -130,7 +141,7 @@ describe('Action worker job enqueueing', () => {
     })
     await jobProcessed
 
-    expect(mocks.enqueueActionJob).toBeCalledWith(
+    expect(mocks.enqueueActionJob).toHaveBeenCalledWith(
       expect.objectContaining({
         appKey: 'next-step-app',
       }),
@@ -166,7 +177,7 @@ describe('Action worker job enqueueing', () => {
     })
     await jobProcessed
 
-    expect(mocks.enqueueActionJob).toBeCalledWith(
+    expect(mocks.enqueueActionJob).toHaveBeenCalledWith(
       expect.objectContaining({
         appKey: 'next-step-app',
       }),

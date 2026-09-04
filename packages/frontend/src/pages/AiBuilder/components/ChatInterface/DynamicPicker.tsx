@@ -1,7 +1,7 @@
+import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 import { FaArrowCircleUp } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
 
 import { AI_BUILDER_INLINE_CONNECT_APP_KEYS } from '@/pages/AiBuilder/constants'
 
@@ -12,7 +12,11 @@ interface DynamicPickerOption {
 
 // Carries the backend's `{ error, code }` body for the catch handler below.
 class DynamicDataFetchError extends Error {
-  constructor(public status: number, message: string, public code?: string) {
+  constructor(
+    public status: number,
+    message: string,
+    public code?: string,
+  ) {
     super(message)
   }
 }

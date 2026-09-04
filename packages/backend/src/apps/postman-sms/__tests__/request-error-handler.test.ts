@@ -23,6 +23,7 @@ describe('Postman SMS request error handler', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

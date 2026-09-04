@@ -4,15 +4,15 @@ import type {
   AxiosRequestConfig,
   InternalAxiosRequestConfig,
 } from 'axios'
+import type { Request } from 'express'
 import type { RelatedQueryBuilder } from 'objection'
-// FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
-// types to type-fest.
 import type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from 'type-fest'
 
-import HttpError from '@/errors/http'
+// FIXME (ogp-weeloong): temporarily importing these to migrate from IJSON...
+// types to type-fest.
+import type HttpError from '@/errors/http'
 
 export type IHttpClient = AxiosInstance
-import type { Request } from 'express'
 
 export type IJSONPrimitive = JsonPrimitive
 export type IJSONValue = IJSONPrimitive | IJSONObject | IJSONArray | JsonValue
@@ -1461,7 +1461,6 @@ export interface IMcpFieldOption {
   label: string
   value: string
 }
-
 
 export interface IMcpIncompleteStep {
   stepId: string

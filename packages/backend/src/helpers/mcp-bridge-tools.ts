@@ -1,5 +1,4 @@
 import type { IApp, IJSONObject, IMcpApp } from '@plumber/types'
-
 import { tool } from 'ai'
 import { z } from 'zod/v4'
 
@@ -107,15 +106,13 @@ export function createMcpBridgeTools(
         const flow = await createFlowWithStepsService({
           user,
           name,
-          steps: steps.map(
-            (s, index): McpStepInput => ({
-              appKey: s.app_key,
-              key: s.trigger_key ?? s.action_key ?? null,
-              type: index === 0 ? 'trigger' : 'action',
-              position: index + 1,
-              ...(s.parameters && { parameters: s.parameters }),
-            }),
-          ),
+          steps: steps.map((s, index): McpStepInput => ({
+            appKey: s.app_key,
+            key: s.trigger_key ?? s.action_key ?? null,
+            type: index === 0 ? 'trigger' : 'action',
+            position: index + 1,
+            ...(s.parameters && { parameters: s.parameters }),
+          })),
           traceId,
         })
         onPipeChange?.(flow.id)

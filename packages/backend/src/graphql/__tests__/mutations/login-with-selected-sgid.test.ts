@@ -46,6 +46,7 @@ describe('Login with selected SGID', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -121,12 +122,12 @@ describe('Login with selected SGID', () => {
         },
         context,
       ),
-    ).rejects.toThrowError('Invalid work email')
+    ).rejects.toThrow('Invalid work email')
 
-    expect(mocks.getOrCreateUser).not.toBeCalled()
-    expect(mocks.sendOnboardingEmail).not.toBeCalled()
-    expect(mocks.updateLastLogin).not.toBeCalled()
-    expect(mocks.setAuthCookie).not.toBeCalled()
+    expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
+    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled()
+    expect(mocks.updateLastLogin).not.toHaveBeenCalled()
+    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
   })
 
   it('should log error if JWT validation failed', async () => {
@@ -145,9 +146,9 @@ describe('Login with selected SGID', () => {
         },
         context,
       ),
-    ).rejects.toThrowError('test')
+    ).rejects.toThrow('test')
 
-    expect(mocks.logError).toBeCalledWith(
+    expect(mocks.logError).toHaveBeenCalledWith(
       'Could not validate sgid multi-hat cookie',
       {
         event: 'sgid-login-failed-cookie-validation',

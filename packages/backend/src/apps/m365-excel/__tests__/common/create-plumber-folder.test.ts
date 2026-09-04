@@ -40,7 +40,18 @@ describe('Create plumber folder', () => {
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    mocks.httpPost.mockReset()
+    mocks.httpGet.mockReset()
+    mocks.getM365TenantInfo.mockReset()
+    mocks.getM365TenantInfo.mockImplementation(() => ({
+      label: 'test-tenant',
+      id: 'test-tenant-id',
+      sharePointSiteId: 'test-sharepoint-site-id',
+      clientId: 'abcd',
+      clientThumbprint: 'abcd',
+      clientPrivateKey: 'abcd',
+      allowedSensitivityLabelGuids: new Set(),
+    }))
   })
 
   it('calls the appropriate Graph API endpoints to create a folder and grants user access', async () => {
@@ -91,7 +102,7 @@ describe('Create plumber folder', () => {
 
   it("errors out if user's email is not set", async () => {
     $.user.email = null
-    await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
+    await expect(createPlumberFolder('local-dev', $)).rejects.toThrow(
       'User email unavailable',
     )
   })
@@ -184,7 +195,7 @@ describe('Create plumber folder', () => {
         data: { id: null },
       }))
 
-    await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
+    await expect(createPlumberFolder('local-dev', $)).rejects.toThrow(
       /a problem creating your folder/,
     )
   })
@@ -212,7 +223,7 @@ describe('Create plumber folder', () => {
         },
       })
 
-    await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
+    await expect(createPlumberFolder('local-dev', $)).rejects.toThrow(
       /a problem creating your folder/,
     )
   })

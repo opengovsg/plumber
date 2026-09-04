@@ -38,6 +38,7 @@ describe('API Authentication Middleware', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
