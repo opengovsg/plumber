@@ -73,6 +73,10 @@ describe('getIfThenV1StepIdToSkipTo', () => {
       .mockClear()
   })
 
+  afterEach(() => {
+    consoleErrorSpy.mockRestore()
+  })
+
   it('should return the next branch step if found', async () => {
     const $ = {
       flow: { id: 'flow1' },
