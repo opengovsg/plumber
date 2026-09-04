@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from 'react'
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client'
 import { Link } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
+import { useCallback, useMemo } from 'react'
 
 import { NOT_AUTHORISED } from '@/config/errors'
 import { createClient } from '@/graphql/client'
