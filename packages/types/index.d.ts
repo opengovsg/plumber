@@ -918,6 +918,11 @@ interface IBaseAuth {
 interface IUserAddedConnectionAuth extends IBaseAuth {
   connectionType: 'user-added'
   fields?: IField[]
+
+  // Whether users may overwrite this app's stored credentials from the
+  // connections page. Editing only submits new credentials; existing ones are
+  // never returned to the client.
+  supportsConnectionEdit?: boolean
 }
 
 interface ISystemAddedConnectionAuth extends IBaseAuth {
