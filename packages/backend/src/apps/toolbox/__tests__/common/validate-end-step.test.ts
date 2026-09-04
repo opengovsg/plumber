@@ -1,6 +1,14 @@
 import type { IStepConfig } from '@plumber/types'
 import { raw, Transaction } from 'objection'
-import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest'
 
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -98,6 +106,10 @@ describe('validateEndStepWrite', () => {
   beforeEach(() => {
     loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
     loggerErrorSpy.mockClear()
+  })
+
+  afterEach(() => {
+    loggerErrorSpy.mockRestore()
   })
 
   it('accepts a valid marker over a run of plain steps', () => {
@@ -405,6 +417,10 @@ describe('extractSelfEndStepIntent', () => {
     loggerErrorSpy.mockClear()
   })
 
+  afterEach(() => {
+    loggerErrorSpy.mockRestore()
+  })
+
   it('passes an absent key through unchanged', () => {
     expect(extractSelfEndStepIntent({ stepName: 'kept' })).toEqual({
       config: { stepName: 'kept' },
@@ -451,6 +467,10 @@ describe('validateFlowBlocks', () => {
   beforeEach(() => {
     loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => null)
     loggerWarnSpy.mockClear()
+  })
+
+  afterEach(() => {
+    loggerWarnSpy.mockRestore()
   })
 
   it('passes a flow whose blocks are all valid and non-empty', () => {
