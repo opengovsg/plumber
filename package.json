@@ -16,6 +16,7 @@
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
     "typecheck": "turbo run typecheck",
+    "typecheck:strict": "turbo run typecheck:strict",
     "test": "turbo run test test:unit test:integration",
     "test:ui": "vitest --ui",
     "migrate": "npm run -w backend db:migrate",
