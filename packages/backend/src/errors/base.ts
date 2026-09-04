@@ -8,7 +8,7 @@ export default class BaseError extends Error {
     try {
       computedError = JSON.parse(error as string)
     } catch {
-      computedError = typeof error === 'string' ? { error } : error
+      computedError = typeof error === 'string' ? { error } : error ?? {}
     }
 
     let computedMessage: string
