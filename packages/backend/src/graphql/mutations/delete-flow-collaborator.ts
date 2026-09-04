@@ -18,11 +18,47 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
       throw new BadUserInputError('Invalid collaborator email')
     }
 
-    if (validatedEmail === context.currentUser.email) {
-      throw new BadUserInputError('Cannot remove yourself')
+    const isSelf = validatedEmail === context.currentUser.email
+
+    if (isSelf) {
+      // Scope to accessible flows so missing and inaccessible IDs share one error.
+      const flow = await context.currentUser
+        .withAccessibleFlows({ requiredRole: 'viewer' })
+        .findById(flowId)
+        .throwIfNotFound()
+
+      if (flow.role === 'owner') {
+        throw new BadUserInputError(
+          'Owners cannot leave. Transfer ownership first.',
+        )
+      }
+
+      try {
+        await FlowCollaborator.query()
+          .delete()
+          .where({
+            flow_id: flowId,
+            user_id: context.currentUser.id,
+          })
+          .returning('*')
+          .throwIfNotFound({ message: 'No such collaborator found' })
+      } catch (e) {
+        logger.error({
+          message: 'Failed to leave pipe as collaborator',
+          data: {
+            flowId,
+            email,
+          },
+          userId: context.currentUser.id,
+          error: e,
+        })
+        throw new Error(e.message ?? 'Failed to leave pipe')
+      }
+
+      return true
     }
 
-    // only editor or owner can delete collaborators
+    // only editor or owner can delete other collaborators
     await FlowCollaborator.hasAccess({
       userId: context.currentUser.id,
       flowId,

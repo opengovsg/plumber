@@ -93,15 +93,75 @@ describe('delete flow collaborators', () => {
     ).rejects.toThrow(NotFoundError)
   })
 
-  it('should throw an error when deleting oneself', async () => {
+  it('should allow an editor to leave the pipe', async () => {
     context.currentUser = editor
+    await deleteFlowCollaborator(
+      null,
+      { input: { flowId: dummyFlow.id, email: editor.email } },
+      context,
+    )
+
+    const editorRow = await FlowCollaborator.query()
+      .findOne({
+        flow_id: dummyFlow.id,
+        user_id: editor.id,
+      })
+      .where('deleted_at', null)
+
+    expect(editorRow).toBeUndefined()
+  })
+
+  it('should allow a viewer to leave the pipe', async () => {
+    context.currentUser = viewer
+    await deleteFlowCollaborator(
+      null,
+      { input: { flowId: dummyFlow.id, email: viewer.email } },
+      context,
+    )
+
+    const viewerRow = await FlowCollaborator.query()
+      .findOne({
+        flow_id: dummyFlow.id,
+        user_id: viewer.id,
+      })
+      .where('deleted_at', null)
+
+    expect(viewerRow).toBeUndefined()
+  })
+
+  it('should throw an error when the owner tries to leave', async () => {
     await expect(
       deleteFlowCollaborator(
         null,
-        { input: { flowId: dummyFlow.id, email: editor.email } },
+        { input: { flowId: dummyFlow.id, email: owner.email } },
         context,
       ),
     ).rejects.toThrow(BadUserInputError)
+  })
+
+  it('should not distinguish nonexistent and inaccessible flows when leaving', async () => {
+    context.currentUser = nonCollaborator
+    const otherOwnerFlow = await Flow.query().insert({
+      id: randomUUID(),
+      name: 'other owner flow',
+      userId: owner.id,
+    })
+
+    await expect(
+      deleteFlowCollaborator(
+        null,
+        { input: { flowId: randomUUID(), email: nonCollaborator.email } },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
+
+    await expect(
+      deleteFlowCollaborator(
+        null,
+        { input: { flowId: otherOwnerFlow.id, email: nonCollaborator.email } },
+        context,
+      ),
+    ).rejects.toThrow(NotFoundError)
   })
 
   it('should throw an error if trying to delete owner', async () => {
