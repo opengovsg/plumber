@@ -1,8 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { generateMockContext } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import generatePresignedPost from '@/graphql/mutations/generate-presigned-post'
+import * as s3Helpers from '@/helpers/s3'
 import Flow from '@/models/flow'
 import Context from '@/types/express/context'
 
@@ -23,34 +24,19 @@ const VALID_PARAMS = {
   },
 }
 
-// Mock the s3 helpers module
-vi.mock('@/helpers/s3', () => ({
-  getPresignedPost: vi.fn(),
-  COMMON_S3_BUCKET: 'test-bucket',
-  COMMON_S3_MOCK_FOLDER_PREFIX: 's3:test-bucket:mock/',
-  parseS3Id: vi.fn(),
-  MAX_FILE_SIZE: 1024 * 1024 * 20,
-  SES_BLOCKED_EXTENSIONS: ['exe', 'bat', 'js', 'msi'],
-  validateObjectKey: vi.fn((objectKey) => {
-    const invalidCharacters = /[\\{}^`%~#<>|[\]]/
-    if (invalidCharacters.test(objectKey)) {
-      return false
-    }
-
-    // validate length of object key
-    const byteLength = Buffer.byteLength(objectKey, 'utf-8')
-    return byteLength <= 1024
-  }),
-}))
-
-import { COMMON_S3_BUCKET, getPresignedPost } from '@/helpers/s3'
+const getPresignedPost = vi.fn()
 
 describe('generatePresignedPost', () => {
   let context: Context
   beforeEach(async () => {
+    vi.spyOn(s3Helpers, 'getPresignedPost').mockImplementation(
+      getPresignedPost as never,
+    )
+
     context = await generateMockContext()
-    vi.clearAllMocks()
   })
+
+  afterEach(() => vi.clearAllMocks())
 
   it('should generate a presigned url', async () => {
     const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
@@ -69,7 +55,7 @@ describe('generatePresignedPost', () => {
       context,
     )
     expect(getPresignedPost).toHaveBeenCalledWith(
-      COMMON_S3_BUCKET,
+      s3Helpers.COMMON_S3_BUCKET,
       expect.stringMatching(
         new RegExp(
           `^${VALID_PARAMS.flow.id}/[a-f0-9-]+/${VALID_PARAMS.filename}$`,
