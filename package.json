@@ -20,6 +20,7 @@
     "format": "turbo run format",
     "format:fix": "turbo run format:fix",
     "typecheck": "turbo run typecheck",
+    "typecheck:strict": "turbo run typecheck:strict",
     "test": "turbo run test test:unit test:integration",
     "test:ui": "vitest --ui",
     "migrate": "pnpm --filter backend run db:migrate",

@@ -22,6 +22,9 @@
     "typecheck": {
       "outputs": []
     },
+    "typecheck:strict": {
+      "outputs": []
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
