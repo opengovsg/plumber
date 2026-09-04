@@ -86,14 +86,17 @@ describe('POST /api/dynamic-data', () => {
 
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith({ error: 'Step not found' })
-    expect(mocks.logError).toHaveBeenCalledWith('Failed to fetch dynamic data', {
-      event: 'dynamic-data-error',
-      stepId: 'step-1',
-      key: 'table',
-      userId: 'user-1',
-      statusCode: 400,
-      error: { name: 'UserFacingError', message: 'Step not found' },
-    })
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Failed to fetch dynamic data',
+      {
+        event: 'dynamic-data-error',
+        stepId: 'step-1',
+        key: 'table',
+        userId: 'user-1',
+        statusCode: 400,
+        error: { name: 'UserFacingError', message: 'Step not found' },
+      },
+    )
   })
 
   it('returns 400 with code prerequisite_missing for a DynamicDataPrerequisiteError', async () => {
@@ -116,17 +119,20 @@ describe('POST /api/dynamic-data', () => {
       error: "Missing required value for 'tableId'",
       code: 'prerequisite_missing',
     })
-    expect(mocks.logError).toHaveBeenCalledWith('Failed to fetch dynamic data', {
-      event: 'dynamic-data-error',
-      stepId: 'step-1',
-      key: 'table',
-      userId: 'user-1',
-      statusCode: 400,
-      error: {
-        name: 'DynamicDataPrerequisiteError',
-        message: "Missing required value for 'tableId'",
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Failed to fetch dynamic data',
+      {
+        event: 'dynamic-data-error',
+        stepId: 'step-1',
+        key: 'table',
+        userId: 'user-1',
+        statusCode: 400,
+        error: {
+          name: 'DynamicDataPrerequisiteError',
+          message: "Missing required value for 'tableId'",
+        },
       },
-    })
+    )
   })
 
   it('returns 500 for an unexpected error', async () => {
@@ -144,14 +150,17 @@ describe('POST /api/dynamic-data', () => {
 
     expect(res.status).toHaveBeenCalledWith(500)
     expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' })
-    expect(mocks.logError).toHaveBeenCalledWith('Failed to fetch dynamic data', {
-      event: 'dynamic-data-error',
-      stepId: 'step-1',
-      key: 'table',
-      userId: 'user-1',
-      statusCode: 500,
-      error: { name: 'Error', message: 'boom' },
-    })
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Failed to fetch dynamic data',
+      {
+        event: 'dynamic-data-error',
+        stepId: 'step-1',
+        key: 'table',
+        userId: 'user-1',
+        statusCode: 500,
+        error: { name: 'Error', message: 'boom' },
+      },
+    )
   })
 
   it('logs a sanitised axios error and still returns a generic 500', async () => {
@@ -185,18 +194,21 @@ describe('POST /api/dynamic-data', () => {
 
     expect(res.status).toHaveBeenCalledWith(500)
     expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' })
-    expect(mocks.logError).toHaveBeenCalledWith('Failed to fetch dynamic data', {
-      event: 'dynamic-data-error',
-      stepId: 'step-1',
-      key: 'table',
-      userId: 'user-1',
-      statusCode: 500,
-      error: {
-        name: 'AxiosError',
-        message: 'Request failed with status code 401',
-        status: 401,
+    expect(mocks.logError).toHaveBeenCalledWith(
+      'Failed to fetch dynamic data',
+      {
+        event: 'dynamic-data-error',
+        stepId: 'step-1',
+        key: 'table',
+        userId: 'user-1',
+        statusCode: 500,
+        error: {
+          name: 'AxiosError',
+          message: 'Request failed with status code 401',
+          status: 401,
+        },
       },
-    })
+    )
     expect(JSON.stringify(mocks.logError.mock.calls)).not.toContain(
       'leaked-token',
     )
