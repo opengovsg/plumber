@@ -11,9 +11,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
-  engineProvider: {
-    chat: vi.fn().mockReturnValue({}),
-  },
+  imageModel: {},
 }))
 
 vi.mock('ai', () => ({

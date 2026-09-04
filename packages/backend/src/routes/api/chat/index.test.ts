@@ -82,11 +82,7 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
-  model: 'mock-model',
-  MODEL_TYPE: 'mock-model-type',
-  engineProvider: {
-    chat: vi.fn().mockReturnValue('mock-model'),
-  },
+  model: { modelId: 'mock-model' },
 }))
 
 vi.mock('@/helpers/stream', () => ({
