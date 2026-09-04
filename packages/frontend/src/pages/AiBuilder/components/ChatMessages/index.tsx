@@ -1,6 +1,5 @@
 import { Box, VStack } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
-import { Fragment } from 'react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import { Message } from '@/hooks/useChatStream'

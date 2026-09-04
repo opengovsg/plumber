@@ -9,7 +9,7 @@ const buildMessage = (parts: CustomUIMessage['parts']): CustomUIMessage =>
     id: 'msg-1',
     role: 'assistant',
     parts,
-  } as CustomUIMessage)
+  }) as CustomUIMessage
 
 describe('extractTextContent', () => {
   it('joins text parts split by a tool call with a blank line', () => {

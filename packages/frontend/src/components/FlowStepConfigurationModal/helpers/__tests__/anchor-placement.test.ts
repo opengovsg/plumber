@@ -1,5 +1,4 @@
 import type { IStep } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -14,7 +13,7 @@ import {
 //
 
 const plain = (id: string): IStep =>
-  ({ id, appKey: 'postman', key: 'sendTransactionalEmail' } as IStep)
+  ({ id, appKey: 'postman', key: 'sendTransactionalEmail' }) as IStep
 
 const ifThen = (id: string, extra: Partial<IStep> = {}): IStep =>
   ({
@@ -23,7 +22,7 @@ const ifThen = (id: string, extra: Partial<IStep> = {}): IStep =>
     key: 'ifThen',
     parameters: { depth: '0' },
     ...extra,
-  } as IStep)
+  }) as IStep
 
 // The endStepId marker is what makes an if-then V2, so tests that need one
 // use this instead of the plain `ifThen` fixture.
@@ -31,7 +30,7 @@ const markedIfThen = (id: string, endStepId: string): IStep =>
   ifThen(id, { config: { endStepId } })
 
 const forEach = (id: string): IStep =>
-  ({ id, appKey: 'toolbox', key: 'forEach' } as IStep)
+  ({ id, appKey: 'toolbox', key: 'forEach' }) as IStep
 
 // The set of grouping actions (`groupsLaterSteps`) is exactly if-then and
 // for-each today.
