@@ -93,7 +93,6 @@ describe('POST /api/dynamic-data', () => {
         stepId: 'step-1',
         key: 'table',
         userId: 'user-1',
-        statusCode: 400,
         error: 'Step not found',
       },
     )
@@ -126,7 +125,6 @@ describe('POST /api/dynamic-data', () => {
         stepId: 'step-1',
         key: 'table',
         userId: 'user-1',
-        statusCode: 400,
         error: "Missing required value for 'tableId'",
       },
     )
@@ -154,7 +152,6 @@ describe('POST /api/dynamic-data', () => {
         stepId: 'step-1',
         key: 'table',
         userId: 'user-1',
-        statusCode: 500,
         error: 'boom',
       },
     )
@@ -198,7 +195,6 @@ describe('POST /api/dynamic-data', () => {
         stepId: 'step-1',
         key: 'table',
         userId: 'user-1',
-        statusCode: 500,
         error: 'Request failed with status code 401',
       },
     )
