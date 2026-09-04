@@ -43,6 +43,42 @@ async function captureRecord(
 const sanitize = (value: unknown): unknown =>
   sanitizeLogValue(value, 0, new WeakSet())
 
+const hasOwn = (obj: object, prop: PropertyKey) =>
+  Object.prototype.hasOwnProperty.call(obj, prop)
+
+const shouldOverride = (target: object, p: PropertyKey) =>
+  p === 'dd' && !Reflect.has(target, p) && Reflect.isExtensible(target)
+
+/**
+ * Mirrors the proxy dd-trace wraps every winston record in when log injection
+ * is on, from packages/dd-trace/src/plugins/log_plugin.js.
+ */
+function injectTraceContext<T extends object>(
+  record: T,
+  holder: { dd: Record<string, string> },
+): T {
+  return new Proxy(record, {
+    get(target, p, receiver) {
+      if (shouldOverride(target, p)) {
+        return holder.dd
+      }
+      return Reflect.get(target, p, receiver)
+    },
+    ownKeys(target) {
+      const ownKeys = Reflect.ownKeys(target)
+      return hasOwn(target, 'dd') || !Reflect.isExtensible(target)
+        ? ownKeys
+        : ['dd', ...ownKeys]
+    },
+    getOwnPropertyDescriptor(target, p) {
+      return Reflect.getOwnPropertyDescriptor(
+        shouldOverride(target, p) ? holder : target,
+        p,
+      )
+    },
+  })
+}
+
 describe('redactSecrets', () => {
   const globalAgent = https.globalAgent as unknown as Record<string, unknown>
   const originalSockets = globalAgent.sockets
@@ -189,6 +225,10 @@ describe('redactSecrets', () => {
       }),
     )
 
+    // dd-trace injects `dd` whenever a tracer is loaded, which CI does for Test
+    // Visibility. The fields this test pins down are the caller's own.
+    delete record.dd
+
     expect(record).toEqual({
       level: 'info',
       message: 'flow executed',
@@ -216,6 +256,29 @@ describe('redactSecrets', () => {
 
     expect(record.level).toBe('warn')
     expect(record.message).toBe('watch out')
+  })
+
+  it('leaves dd-trace log injection serialisable so Datadog keeps service:plumber', () => {
+    const holder = {
+      dd: {
+        trace_id: '1234567890',
+        span_id: '9876543210',
+        service: 'plumber',
+        env: 'prod',
+      },
+    }
+    const record = injectTraceContext(
+      { level: 'info', message: 'flow executed', apiKey: 'real-secret' },
+      holder,
+    )
+
+    const transformed = redactSecrets().transform(record)
+
+    // winston's json format only serialises enumerable own keys.
+    expect(JSON.parse(JSON.stringify(transformed))).toMatchObject({
+      dd: holder.dd,
+      apiKey: '[REDACTED]',
+    })
   })
 
   it('marks a repeated reference as circular only when it is a cycle', async () => {
