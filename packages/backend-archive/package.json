@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:aws-sdk",
-    "@plumber/types": "workspace:*",
     "dotenv": "catalog:",
     "knex": "catalog:",
     "luxon": "catalog:luxon",
