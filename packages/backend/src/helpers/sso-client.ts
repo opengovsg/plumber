@@ -1,99 +1,141 @@
-import { Client, Issuer } from 'openid-client'
+import { Client, custom, generators, Issuer } from 'openid-client'
 
 import appConfig from '@/config/app'
+import logger from '@/helpers/logger'
+import {
+  expectedIssuerFromDiscoveryUrl,
+  pemToPrivateJwks,
+} from '@/helpers/sso-config'
+import {
+  assertVerifiedIdTokenClaims,
+  type VerifiedSsoClaims,
+} from '@/helpers/sso-id-token'
 
-import logger from './logger'
+const DISCOVERY_TIMEOUT_MS = 5000
+const ID_TOKEN_CLOCK_TOLERANCE_SECONDS = 60
+const SSO_SCOPE = 'openid email'
 
-export interface SsoTokenResponse {
-  accessToken: string
-  idToken: string
-  refreshToken?: string
-  sub: string
+export const ssoRedirectUri = `${appConfig.webAppUrl}/api/login/sso/callback`
+export const ssoIssuer = expectedIssuerFromDiscoveryUrl(
+  appConfig.sso.discoveryUrl,
+)
+
+export type SsoAuthorizationRequest = {
+  authorizationUrl: string
+  state: string
+  nonce: string
+  codeVerifier: string
 }
 
-export interface SsoUserInfo {
-  sub: string
-  email?: string
-  [key: string]: any
-}
+Issuer[custom.http_options] = (_url, options) => ({
+  ...options,
+  timeout: DISCOVERY_TIMEOUT_MS,
+  followRedirect: false,
+})
 
-const redirectUri = `${appConfig.webAppUrl}/login/sso/redirect`
 export class SsoClient {
   private client: Client | null = null
-  private issuer: Issuer<Client> | null = null
 
   private async getClient(): Promise<Client> {
-    if (!this.client) {
-      this.issuer = await Issuer.discover(appConfig.sso.discoveryUrl)
-      this.client = new this.issuer.Client({
-        client_id: appConfig.sso.clientId,
-        client_secret: appConfig.sso.clientSecret,
-        redirect_uris: [redirectUri],
-        response_types: ['code'],
-      })
+    if (this.client) {
+      return this.client
     }
-    return this.client
+
+    try {
+      const issuer = await Issuer.discover(appConfig.sso.discoveryUrl)
+      if (issuer.metadata.issuer !== ssoIssuer) {
+        throw new Error('SSO discovery issuer mismatch')
+      }
+      if (
+        !issuer.metadata.authorization_endpoint ||
+        !issuer.metadata.token_endpoint ||
+        !issuer.metadata.jwks_uri
+      ) {
+        throw new Error('SSO discovery document is missing endpoints')
+      }
+
+      const client = new issuer.Client(
+        {
+          client_id: appConfig.sso.clientId,
+          token_endpoint_auth_method: 'private_key_jwt',
+          token_endpoint_auth_signing_alg: 'RS256',
+          id_token_signed_response_alg: 'RS256',
+          redirect_uris: [ssoRedirectUri],
+          response_types: ['code'],
+        },
+        pemToPrivateJwks(appConfig.sso.privateKeyPem),
+      )
+      client[custom.clock_tolerance] = ID_TOKEN_CLOCK_TOLERANCE_SECONDS
+      this.client = client
+      return client
+    } catch (error) {
+      this.client = null
+      throw error
+    }
   }
 
-  async callback(params: {
+  async authorizationUrl(): Promise<SsoAuthorizationRequest> {
+    const client = await this.getClient()
+    const codeVerifier = generators.codeVerifier()
+    const state = generators.state()
+    const nonce = generators.nonce()
+
+    const authorizationUrl = client.authorizationUrl({
+      redirect_uri: ssoRedirectUri,
+      scope: SSO_SCOPE,
+      code_challenge: generators.codeChallenge(codeVerifier),
+      code_challenge_method: 'S256',
+      state,
+      nonce,
+      response_type: 'code',
+    })
+
+    return {
+      authorizationUrl,
+      state,
+      nonce,
+      codeVerifier,
+    }
+  }
+
+  async exchangeAuthorizationCode(params: {
     code: string
+    state: string
+    iss: string
     nonce: string
     codeVerifier: string
-    state?: string
-  }): Promise<SsoTokenResponse> {
+  }): Promise<VerifiedSsoClaims> {
     const client = await this.getClient()
 
     try {
       const tokenSet = await client.callback(
-        redirectUri,
+        ssoRedirectUri,
         {
           code: params.code,
-          iss: this.issuer.metadata.issuer,
+          state: params.state,
+          iss: params.iss,
         },
         {
           nonce: params.nonce,
+          state: params.state,
           code_verifier: params.codeVerifier,
+          response_type: 'code',
         },
       )
 
-      return {
-        accessToken: tokenSet.access_token,
-        idToken: tokenSet.id_token,
-        refreshToken: tokenSet.refresh_token,
-        sub: tokenSet.claims().sub,
-      }
-    } catch (e) {
-      logger.error('SSO: Unable to get token set', {
+      return assertVerifiedIdTokenClaims({
+        claims: tokenSet.claims() as unknown as Record<string, unknown>,
+        issuer: ssoIssuer,
+        clientId: appConfig.sso.clientId,
+        nonce: params.nonce,
+      })
+    } catch (error) {
+      logger.error('SSO token exchange failed', {
         event: 'sso-login-failed-token-set',
       })
-      throw e
+      throw error
     }
   }
-
-  async userinfo(params: {
-    accessToken: string
-    sub: string
-  }): Promise<SsoUserInfo> {
-    const client = await this.getClient()
-    const userinfo = await client.userinfo(params.accessToken)
-
-    return {
-      sub: params.sub,
-      ...userinfo,
-    }
-  }
-
-  // async refreshToken(refreshToken: string): Promise<SsoTokenResponse> {
-  //   const client = await this.getClient()
-  //   const tokenSet = await client.refresh(refreshToken)
-
-  //   return {
-  //     accessToken: tokenSet.access_token!,
-  //     idToken: tokenSet.id_token!,
-  //     refreshToken: tokenSet.refresh_token,
-  //     sub: tokenSet.claims().sub,
-  //   }
-  // }
 }
 
 export const ssoClient = new SsoClient()

@@ -1,6 +1,8 @@
-import { type FormEvent, useContext, useState } from 'react'
+import { type FormEvent, useContext, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
+import { useToast } from '@opengovsg/design-system-react'
 
 import appConfig from '@/config/app'
 import { SGID_FEATURE_FLAG, SSO_FEATURE_FLAG } from '@/config/flags'
@@ -18,6 +20,8 @@ import SsoLoginSection from './SsoLoginSection'
 
 export const LoginForm = (): JSX.Element => {
   const { getFlagValue } = useContext(LaunchDarklyContext)
+  const [searchParams] = useSearchParams()
+  const toast = useToast()
 
   const headers = useResponseHeaders()
 
@@ -30,6 +34,21 @@ export const LoginForm = (): JSX.Element => {
   const [isOtpSent, setIsOtpSent] = useState(false)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
+  const hasShownSsoError = useRef(false)
+
+  useEffect(() => {
+    if (searchParams.get('sso_error') !== '1' || hasShownSsoError.current) {
+      return
+    }
+    hasShownSsoError.current = true
+    toast({
+      title: 'There was a problem signing you in. Please try again.',
+      status: 'error',
+      duration: 4000,
+      isClosable: true,
+      position: 'bottom-right',
+    })
+  }, [searchParams, toast])
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()

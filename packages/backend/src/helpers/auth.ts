@@ -18,6 +18,7 @@ const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-03-10')
 interface AuthCookiePayload {
   userId: string
   isSso?: boolean
+  ssoSid?: string
 }
 
 export function setAuthCookie(res: Response, payload: AuthCookiePayload): void {
@@ -47,6 +48,7 @@ export function getParsedAuthCookie(req: Request) {
   return jwt.verify(token, appConfig.sessionSecretKey) as {
     userId: string
     isSso?: boolean
+    ssoSid?: string
   }
 }
 

@@ -3,10 +3,12 @@ import { Router } from 'express'
 import graphQLInstance from '@/helpers/graphql-instance'
 
 import apiRouter from './api'
+import ssoRouter from './sso'
 import webhooksRouter from './webhooks'
 
 const router = Router()
 
+router.use('/api/login/sso', ssoRouter)
 router.use('/api', apiRouter)
 router.use('/graphql', graphQLInstance)
 router.use('/webhooks', webhooksRouter)

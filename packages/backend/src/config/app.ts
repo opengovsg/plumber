@@ -59,7 +59,7 @@ type AppConfig = {
   }
   sso: {
     clientId: string
-    clientSecret: string
+    privateKeyPem: string
     discoveryUrl: string
   }
   gathersg: {
@@ -170,7 +170,10 @@ const appConfig: AppConfig = {
   },
   sso: {
     clientId: process.env.SSO_CLIENT_ID,
-    clientSecret: process.env.SSO_CLIENT_SECRET,
+    privateKeyPem: (process.env.SSO_CLIENT_PRIVATE_KEY_PEM || '').replace(
+      /\\n/g,
+      '\n',
+    ),
     discoveryUrl: process.env.SSO_DISCOVERY_URL,
   },
   gathersg: {
@@ -247,7 +250,7 @@ if (
 
 if (
   !appConfig.sso.clientId ||
-  !appConfig.sso.clientSecret ||
+  !appConfig.sso.privateKeyPem ||
   !appConfig.sso.discoveryUrl
 ) {
   throw new Error('SSO environment variables need to be set!')

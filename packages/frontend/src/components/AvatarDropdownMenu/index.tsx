@@ -20,8 +20,9 @@ export default function AvatarDropdownMenu() {
     const { data } = await logout()
     if (data?.logout?.isSso) {
       toast({
-        title: 'You have been logged out of Plumber',
-        description: 'To log out from SSO, visit https://sso.open.gov.sg',
+        title: 'You have been signed out of this app',
+        description:
+          'Your one.gov.sg session is still active, so the next login may succeed without a prompt.',
         status: 'success',
         isClosable: true,
       })

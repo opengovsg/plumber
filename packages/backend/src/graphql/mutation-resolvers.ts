@@ -25,7 +25,6 @@ import generateAuthUrl from './mutations/generate-auth-url'
 import generatePresignedPost from './mutations/generate-presigned-post'
 import loginWithSelectedSgid from './mutations/login-with-selected-sgid'
 import loginWithSgid from './mutations/login-with-sgid'
-import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
 import registerConnection from './mutations/register-connection'
 import requestOtp from './mutations/request-otp'
@@ -93,7 +92,6 @@ export default {
   logout,
   loginWithSgid,
   loginWithSelectedSgid,
-  loginWithSso,
   createFlowTransfer,
   updateFlowTransferStatus,
   duplicateBranch,

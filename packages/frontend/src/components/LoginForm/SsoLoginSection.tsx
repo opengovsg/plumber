@@ -1,51 +1,37 @@
 import { useCallback, useState } from 'react'
-import { Flex, Link, Text } from '@chakra-ui/react'
-import { Button, Infobox } from '@opengovsg/design-system-react'
+import { Flex, Image, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 
-import { SUPPORT_FORM_LINK } from '@/config/urls'
-import { generateSsoAuthUrl } from '@/helpers/oidc'
+import oneGovSgLogo from '@/assets/one-gov-sg-logo.png'
+import * as URLS from '@/config/urls'
 
 export default function SsoLoginSection(): JSX.Element {
   const [isRedirecting, setIsRedirecting] = useState(false)
-  const [hasError, setHasError] = useState(false)
 
-  const handleSsoLogin = useCallback(
-    async () => {
-      setIsRedirecting(true)
-      try {
-        const { url, verifier, nonce } = await generateSsoAuthUrl()
-        sessionStorage.setItem('sso-verifier', verifier)
-        sessionStorage.setItem('sso-nonce', nonce)
-        location.assign(url)
-      } catch {
-        setHasError(true)
-      }
-    },
-    // Empty dep list as this is expected to be one-shot.
-    [],
-  )
+  const handleSsoLogin = useCallback(() => {
+    setIsRedirecting(true)
+    location.assign(URLS.LOGIN_SSO)
+  }, [])
 
   return (
     <Flex flexDir="column" alignItems="center">
       <Button
-        // isFullWidth a bit ugly
         width="full"
         variant="outline"
         mb={2}
         onClick={handleSsoLogin}
         isLoading={isRedirecting}
       >
-        Log in with OGP SSO
+        Log in with{' '}
+        <Image
+          src={oneGovSgLogo}
+          alt="one.gov.sg"
+          h="20px"
+          w="63px"
+          ml={1}
+          objectFit="contain"
+        />
       </Button>
-      {hasError && (
-        <Infobox variant="error" mb={2}>
-          There was a problem generating encryption parameters; please visit our{' '}
-          <Link href={SUPPORT_FORM_LINK} isExternal>
-            support form
-          </Link>{' '}
-          for help.
-        </Infobox>
-      )}
       <Text textStyle="body-2">For OGP officers only</Text>
     </Flex>
   )
