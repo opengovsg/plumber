@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
   consumePostLoginRedirect,
@@ -34,6 +34,18 @@ describe('isSafeInternalPath', () => {
 })
 
 describe('storePostLoginRedirect', () => {
+  // The frontend suite runs in node, so these browser globals are absent.
+  beforeAll(() => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+      clear: () => store.clear(),
+    })
+    vi.stubGlobal('window', { location: { origin: 'https://plumber.gov.sg' } })
+  })
+
   afterEach(() => {
     sessionStorage.clear()
   })
