@@ -14,7 +14,7 @@ import type { AuthenticatedRequest } from '@/types/express/context'
 const router = Router()
 
 const bodySchema = z.object({
-  stepId: z.string().min(1),
+  stepId: z.uuid(),
   key: z.string().min(1),
   parameters: z.record(z.string(), z.unknown()).optional(),
 })

@@ -26,6 +26,8 @@ import {
 
 import router from './dynamic-data'
 
+const STEP_ID = '11111111-1111-4111-8111-111111111111'
+
 function makeReq(body: Record<string, unknown>) {
   return {
     body,
@@ -69,6 +71,27 @@ describe('POST /api/dynamic-data', () => {
     expect(mocks.logError).not.toHaveBeenCalled()
   })
 
+  it('returns 400 when stepId is not a UUID', async () => {
+    const res = makeRes()
+    const handler = getHandler()
+
+    await handler(
+      makeReq({
+        stepId: '(step ID for Step 3)',
+        key: 'table',
+      }) as unknown as Parameters<typeof handler>[0],
+      res as unknown as Parameters<typeof handler>[1],
+      vi.fn(),
+    )
+
+    expect(res.status).toHaveBeenCalledWith(400)
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'Invalid request' }),
+    )
+    expect(getDynamicDataService).not.toHaveBeenCalled()
+    expect(mocks.logError).not.toHaveBeenCalled()
+  })
+
   it('returns 400 with the message when the service throws a UserFacingError', async () => {
     vi.mocked(getDynamicDataService).mockRejectedValue(
       new UserFacingError('Step not found'),
@@ -77,7 +100,7 @@ describe('POST /api/dynamic-data', () => {
     const handler = getHandler()
 
     await handler(
-      makeReq({ stepId: 'step-1', key: 'table' }) as unknown as Parameters<
+      makeReq({ stepId: STEP_ID, key: 'table' }) as unknown as Parameters<
         typeof handler
       >[0],
       res as unknown as Parameters<typeof handler>[1],
@@ -90,7 +113,7 @@ describe('POST /api/dynamic-data', () => {
       'Failed to fetch dynamic data',
       {
         event: 'dynamic-data-error',
-        stepId: 'step-1',
+        stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
         error: 'Step not found',
@@ -106,7 +129,7 @@ describe('POST /api/dynamic-data', () => {
     const handler = getHandler()
 
     await handler(
-      makeReq({ stepId: 'step-1', key: 'table' }) as unknown as Parameters<
+      makeReq({ stepId: STEP_ID, key: 'table' }) as unknown as Parameters<
         typeof handler
       >[0],
       res as unknown as Parameters<typeof handler>[1],
@@ -122,7 +145,7 @@ describe('POST /api/dynamic-data', () => {
       'Failed to fetch dynamic data',
       {
         event: 'dynamic-data-error',
-        stepId: 'step-1',
+        stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
         error: "Missing required value for 'tableId'",
@@ -136,7 +159,7 @@ describe('POST /api/dynamic-data', () => {
     const handler = getHandler()
 
     await handler(
-      makeReq({ stepId: 'step-1', key: 'table' }) as unknown as Parameters<
+      makeReq({ stepId: STEP_ID, key: 'table' }) as unknown as Parameters<
         typeof handler
       >[0],
       res as unknown as Parameters<typeof handler>[1],
@@ -149,7 +172,7 @@ describe('POST /api/dynamic-data', () => {
       'Failed to fetch dynamic data',
       {
         event: 'dynamic-data-error',
-        stepId: 'step-1',
+        stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
         error: 'boom',
@@ -179,7 +202,7 @@ describe('POST /api/dynamic-data', () => {
     const handler = getHandler()
 
     await handler(
-      makeReq({ stepId: 'step-1', key: 'table' }) as unknown as Parameters<
+      makeReq({ stepId: STEP_ID, key: 'table' }) as unknown as Parameters<
         typeof handler
       >[0],
       res as unknown as Parameters<typeof handler>[1],
@@ -192,7 +215,7 @@ describe('POST /api/dynamic-data', () => {
       'Failed to fetch dynamic data',
       {
         event: 'dynamic-data-error',
-        stepId: 'step-1',
+        stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
         error: 'Request failed with status code 401',
@@ -212,7 +235,7 @@ describe('POST /api/dynamic-data', () => {
 
     await handler(
       makeReq({
-        stepId: 'step-1',
+        stepId: STEP_ID,
         key: 'table',
         parameters: { spreadsheetId: 'abc' },
       }) as unknown as Parameters<typeof handler>[0],
@@ -222,7 +245,7 @@ describe('POST /api/dynamic-data', () => {
 
     expect(getDynamicDataService).toHaveBeenCalledWith({
       user: { id: 'user-1', email: 'test@example.com' },
-      stepId: 'step-1',
+      stepId: STEP_ID,
       key: 'table',
       parameters: { spreadsheetId: 'abc' },
     })
