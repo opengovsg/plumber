@@ -1,11 +1,45 @@
 export const POST_LOGIN_REDIRECT_KEY = 'post-login-redirect'
 
+const MAX_INTERNAL_PATH_LENGTH = 2048
+
+/**
+ * True only for same-origin relative paths that cannot be interpreted as a
+ * protocol-relative URL (`//host`) after browser URL parsing.
+ *
+ * Rejects backslashes because some parsers treat `\` like `/`, so a value such
+ * as `/\attacker.com` can become `//attacker.com`.
+ */
 export function isSafeInternalPath(
   path: string | null | undefined,
 ): path is string {
-  return (
-    typeof path === 'string' && path.startsWith('/') && !path.startsWith('//')
-  )
+  if (typeof path !== 'string' || path.length === 0) {
+    return false
+  }
+  if (path.length > MAX_INTERNAL_PATH_LENGTH) {
+    return false
+  }
+  if (path.includes('\\') || /[\0\r\n\t]/.test(path)) {
+    return false
+  }
+  if (!path.startsWith('/') || path.startsWith('//')) {
+    return false
+  }
+  if (typeof window === 'undefined') {
+    return true
+  }
+
+  try {
+    const origin = window.location.origin
+    const resolved = new URL(path, origin)
+    return (
+      resolved.origin === origin &&
+      resolved.protocol === new URL(origin).protocol &&
+      resolved.pathname.startsWith('/') &&
+      !resolved.pathname.startsWith('//')
+    )
+  } catch {
+    return false
+  }
 }
 
 export function storePostLoginRedirect(path: string | null | undefined): void {
