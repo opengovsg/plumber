@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
     command: tunnel run --protocol http2
     environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN}
+      - TUNNEL_TOKEN=${CLOUDFLARE_TOKEN:-}
   minio:
     image: 'minio/minio:RELEASE.2025-09-07T16-13-09Z'
     user: '0:0'
