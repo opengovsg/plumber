@@ -1,3 +1,4 @@
+import { createPrivateKey, generateKeyPairSync } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -35,12 +36,17 @@ vi.mock('openid-client', () => {
   }
 })
 
-const TEST_PRIVATE_JWK = {
-  kty: 'RSA',
-  n: 'test-modulus',
-  e: 'AQAB',
-  d: 'test-exponent',
-}
+const { privateKey: TEST_PRIVATE_KEY } = generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+})
+const TEST_PRIVATE_KEY_PEM = TEST_PRIVATE_KEY.export({
+  type: 'pkcs8',
+  format: 'pem',
+}) as string
+const TEST_PRIVATE_JWK = createPrivateKey({
+  key: TEST_PRIVATE_KEY_PEM,
+  format: 'pem',
+}).export({ format: 'jwk' })
 
 vi.mock('@/config/app', () => ({
   default: {
@@ -49,9 +55,8 @@ vi.mock('@/config/app', () => ({
     sessionSecretKey: 'sample-app-secret-key',
     sso: {
       clientId: 'plumber-test',
-      privateKeyJwk:
-        '{"kty":"RSA","n":"test-modulus","e":"AQAB","d":"test-exponent"}',
-      discoveryUrl: 'https://one.gov.sg/api/auth',
+      privateKeyPem: TEST_PRIVATE_KEY_PEM,
+      issuer: 'https://one.gov.sg/api/auth',
     },
   },
 }))
@@ -111,6 +116,23 @@ describe('SsoClient', () => {
       nonce: 'generated-nonce',
       codeVerifier: 'generated-verifier',
     })
+  })
+
+  it('rejects a discovery document whose issuer is not the configured issuer', async () => {
+    mocks.discover.mockResolvedValue({
+      metadata: { issuer: 'https://one.gov.sg' },
+      Client: function Client() {
+        mocks.clientConstructor()
+        return {}
+      },
+    })
+
+    const { ssoClient } = await import('../sso-client')
+
+    await expect(ssoClient.createAuthorizationRequest()).rejects.toThrow(
+      'SSO discovery issuer mismatch',
+    )
+    expect(mocks.clientConstructor).not.toHaveBeenCalled()
   })
 
   it('authenticates with private_key_jwt using the configured private JWK', async () => {
@@ -186,7 +208,7 @@ describe('SsoClient', () => {
     ).rejects.toThrow('SSO issuer mismatch')
   })
 
-  it('rejects when id_token claims.iss does not match the discovered issuer', async () => {
+  it('rejects when id_token claims.iss does not match the configured issuer', async () => {
     mocks.claims.mockReturnValue({
       iss: 'https://evil.example/auth',
       sub: 'officer@agency.gov.sg',

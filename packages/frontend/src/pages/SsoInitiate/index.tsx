@@ -9,7 +9,10 @@ import mainLogo from '@/assets/logo.svg'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
 import { START_SSO_LOGIN } from '@/graphql/mutations/start-sso-login'
-import { storePostLoginRedirect } from '@/helpers/post-login-redirect'
+import {
+  clearPostLoginRedirect,
+  storePostLoginRedirect,
+} from '@/helpers/post-login-redirect'
 
 export default function SsoInitiate(): JSX.Element {
   const [searchParams] = useSearchParams()
@@ -43,6 +46,8 @@ export default function SsoInitiate(): JSX.Element {
         }
         location.assign(authorizationUrl)
       } catch {
+        // Otherwise a later OTP/SGID login inherits this abandoned target.
+        clearPostLoginRedirect()
         setFailed(true)
       }
     }

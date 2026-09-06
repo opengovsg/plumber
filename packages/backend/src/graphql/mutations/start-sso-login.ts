@@ -1,3 +1,4 @@
+import appConfig from '@/config/app'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import { ssoClient } from '@/helpers/sso-client'
 import { setSsoLoginCookie } from '@/helpers/sso-login'
@@ -19,12 +20,10 @@ const startSsoLogin: MutationResolvers['startSsoLogin'] = async (
     throw new Error('SSO is not enabled')
   }
 
+  // IdP-initiated login (OIDC Core §4). Never follow an attacker-named issuer.
   const iss = params.input?.iss
-  if (iss) {
-    const expectedIssuer = await ssoClient.getDiscoveredIssuer()
-    if (iss !== expectedIssuer) {
-      throw new Error('SSO issuer mismatch')
-    }
+  if (iss && iss !== appConfig.sso.issuer) {
+    throw new Error('SSO issuer mismatch')
   }
 
   const { url, transaction } = await ssoClient.createAuthorizationRequest()

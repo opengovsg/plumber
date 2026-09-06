@@ -1,3 +1,4 @@
+import { createPrivateKey } from 'node:crypto'
 import { Client, generators, Issuer, type TokenSet } from 'openid-client'
 
 import appConfig from '@/config/app'
@@ -21,10 +22,7 @@ export interface SsoIdentity {
 
 const redirectUri = `${appConfig.webAppUrl}/login/sso/redirect`
 
-function assertVerifiedIdentity(
-  claims: ReturnType<TokenSet['claims']>,
-  expectedIssuer: string,
-): void {
+function assertVerifiedIdentity(claims: ReturnType<TokenSet['claims']>): void {
   const requiredClaims = ['iss', 'sub', 'aud', 'exp', 'iat', 'nonce'] as const
   for (const claim of requiredClaims) {
     if (claims[claim] === undefined || claims[claim] === null) {
@@ -32,7 +30,7 @@ function assertVerifiedIdentity(
     }
   }
 
-  if (claims.iss !== expectedIssuer) {
+  if (claims.iss !== appConfig.sso.issuer) {
     throw new Error('SSO issuer mismatch')
   }
 
@@ -48,14 +46,21 @@ function assertVerifiedIdentity(
 
 export class SsoClient {
   private client: Client | null = null
-  private issuer: Issuer<Client> | null = null
 
   private async getClient(): Promise<Client> {
     if (!this.client) {
-      this.issuer = await Issuer.discover(appConfig.sso.discoveryUrl)
+      const issuer = await Issuer.discover(appConfig.sso.issuer)
+      // OIDC Discovery §4.3: a document naming another issuer is not one.gov.sg.
+      if (issuer.metadata.issuer !== appConfig.sso.issuer) {
+        throw new Error('SSO discovery issuer mismatch')
+      }
+      const jwk = createPrivateKey({
+        key: appConfig.sso.privateKeyPem,
+        format: 'pem',
+      }).export({ format: 'jwk' })
       // one.gov.sg has no client secrets. openid-client signs a fresh
       // client assertion (unique jti, 60s exp) per token call.
-      this.client = new this.issuer.Client(
+      this.client = new issuer.Client(
         {
           client_id: appConfig.sso.clientId,
           redirect_uris: [redirectUri],
@@ -64,19 +69,10 @@ export class SsoClient {
           token_endpoint_auth_method: 'private_key_jwt',
           token_endpoint_auth_signing_alg: 'RS256',
         },
-        { keys: [JSON.parse(appConfig.sso.privateKeyJwk)] },
+        { keys: [jwk] },
       )
     }
     return this.client
-  }
-
-  async getDiscoveredIssuer(): Promise<string> {
-    await this.getClient()
-    const issuer = this.issuer?.metadata.issuer
-    if (!issuer) {
-      throw new Error('SSO issuer is not available')
-    }
-    return issuer
   }
 
   async createAuthorizationRequest(): Promise<{
@@ -117,9 +113,8 @@ export class SsoClient {
     codeVerifier: string
   }): Promise<SsoIdentity> {
     const client = await this.getClient()
-    const expectedIssuer = this.issuer?.metadata.issuer
 
-    if (!expectedIssuer || params.iss !== expectedIssuer) {
+    if (params.iss !== appConfig.sso.issuer) {
       throw new Error('SSO issuer mismatch')
     }
 
@@ -140,7 +135,7 @@ export class SsoClient {
       )
 
       const claims = tokenSet.claims()
-      assertVerifiedIdentity(claims, expectedIssuer)
+      assertVerifiedIdentity(claims)
 
       const email =
         typeof claims.email === 'string'
