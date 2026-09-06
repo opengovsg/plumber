@@ -6,7 +6,9 @@ import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
 import mainLogo from '@/assets/logo.svg'
-import oneGovLogo from '@/assets/onegov-logo.png'
+// Inline as base64: this page loads right after an SSO redirect, before the
+// browser can fetch a separate asset file, so an un-inlined image flashes alt text.
+import oneGovLogo from '@/assets/onegov-logo.png?inline'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { FORBIDDEN } from '@/config/errors'
 import * as URLS from '@/config/urls'
