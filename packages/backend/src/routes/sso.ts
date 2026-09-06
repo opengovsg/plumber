@@ -103,7 +103,7 @@ export async function startSsoLogin(
       transactionCookieOptions,
     )
     res.redirect(303, authorization.authorizationUrl)
-  } catch (error) {
+  } catch {
     logger.error('SSO login start failed', {
       event: 'sso-login-start-failed',
     })
@@ -117,7 +117,7 @@ export async function handleSsoCallback(
 ): Promise<void> {
   try {
     await handleSsoCallbackUnsafe(req, res)
-  } catch (error) {
+  } catch {
     logger.error('SSO callback failed', {
       event: 'sso-login-callback-failed',
     })
@@ -196,7 +196,7 @@ async function handleSsoCallbackUnsafe(
       ssoSid: claims.sid,
     })
     res.redirect(303, webAppPath('/flows'))
-  } catch (error) {
+  } catch {
     logger.error('SSO callback failed', {
       event: 'sso-login-callback-failed',
     })

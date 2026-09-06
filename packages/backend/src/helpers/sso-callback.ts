@@ -1,5 +1,4 @@
 import { timingSafeEqual } from 'node:crypto'
-
 import { z } from 'zod'
 
 export const ssoCallbackQuerySchema = z.object({

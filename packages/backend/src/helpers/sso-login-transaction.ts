@@ -1,5 +1,4 @@
 import { randomBytes } from 'node:crypto'
-
 import { z } from 'zod'
 
 import { redisAppDataClient } from '@/helpers/redis-app-data'

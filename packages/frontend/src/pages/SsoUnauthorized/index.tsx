@@ -17,7 +17,7 @@ export default function SsoUnauthorized(): JSX.Element {
       <Box>
         <Image h={10} src={textlogo} alt="plumber-logo" />
       </Box>
-      <Text textStyle="h4">You don't have access to Plumber</Text>
+      <Text textStyle="h4">You do not have access to Plumber</Text>
       <Text textStyle="body-1">
         one.gov.sg confirmed your identity, but this login is limited to OGP
         officers. Request access through our{' '}
