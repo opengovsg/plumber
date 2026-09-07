@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-
+import { readFileSync } from 'fs'
+import { join, resolve } from 'path'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -124,7 +123,7 @@ describe('composePinnedSystemPrompt', () => {
 
 describe('prompt drafts', () => {
   it('retain runtime output contracts without static app catalogs', () => {
-    const promptsDirectory = path.resolve(
+    const promptsDirectory = resolve(
       __dirname,
       '../../../../../../tools/langfuse/prompts/ai-builder',
     )
@@ -139,7 +138,7 @@ describe('prompt drafts', () => {
       'output-format.md',
     ]
     const content = files
-      .map((file) => readFileSync(path.join(promptsDirectory, file), 'utf8'))
+      .map((file) => readFileSync(join(promptsDirectory, file), 'utf8'))
       .join('\n')
 
     for (const marker of [
