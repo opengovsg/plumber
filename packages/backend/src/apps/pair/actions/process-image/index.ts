@@ -13,6 +13,7 @@ import Step from '@/models/step'
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
 
+import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { hasProvidedImage, schema } from './schema'
 
 const model = engineProvider.chat(appConfig.pair.foundry.imageModel)
@@ -157,13 +158,19 @@ const action: IRawAction = {
         s3Id: image[0],
       })
 
-      throw new StepError(
-        error?.message
-          ? `Failed to process image: ${error.message}`
-          : 'Failed to process image',
-        'Please try again.',
-        error,
-      )
+      if (isBedrockImageTooLargeError(error)) {
+        throw new StepError(
+          'Image is too large',
+          'Please limit your images to 4MB or less and try again.',
+        )
+      }
+
+      /**
+       * The error is already logged above, so we don't surface `error.message`
+       * here. litellm's error message is a long, noisy string with repeated
+       * fallback-attempt details tacked on.
+       */
+      throw new StepError('Failed to process image', 'Please try again.', error)
     }
   },
 }
