@@ -3,7 +3,11 @@ import {
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
 } from '@/config/flags'
 
-export type AiBuilderLdFlagValue = typeof AI_BUILDER_FEATURE_FLAG_FALLBACK
+export type AiBuilderLdFlagValue = typeof AI_BUILDER_FEATURE_FLAG_FALLBACK & {
+  config: typeof AI_BUILDER_FEATURE_FLAG_FALLBACK.config & {
+    skillManifestPromptName?: string
+  }
+}
 
 /**
  * Resolves the ai-builder flag from a full LD flag map (e.g. `allFlagsState`),
