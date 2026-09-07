@@ -25,11 +25,7 @@ describe('parseTileSetupBlock', () => {
 
   it('parses a columns-only block when NAME is omitted', () => {
     const text = makeBlock(
-      [
-        'Q: Add these columns?',
-        'COLUMNS:',
-        '- Notes',
-      ].join('\n'),
+      ['Q: Add these columns?', 'COLUMNS:', '- Notes'].join('\n'),
     )
 
     expect(parseTileSetupBlock(text)).toEqual({
@@ -45,9 +41,7 @@ describe('parseTileSetupBlock', () => {
   })
 
   it('returns null when there are no columns', () => {
-    const text = makeBlock(
-      ['Q: Review', 'NAME: Tile', 'COLUMNS:'].join('\n'),
-    )
+    const text = makeBlock(['Q: Review', 'NAME: Tile', 'COLUMNS:'].join('\n'))
     expect(parseTileSetupBlock(text)).toBeNull()
   })
 

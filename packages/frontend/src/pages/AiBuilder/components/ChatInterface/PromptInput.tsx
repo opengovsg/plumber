@@ -315,8 +315,7 @@ export default function PromptInput({
         }
         onCreateNew={
           !isAppKeyMode && dynamicPicker.key === 'listTables'
-            ? () =>
-                sendMessage(`Q: ${dynamicPicker.question}\nA: [create new]`)
+            ? () => sendMessage(`Q: ${dynamicPicker.question}\nA: [create new]`)
             : undefined
         }
         knownFormUrl={knownFormUrl}
