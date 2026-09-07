@@ -55,6 +55,12 @@ function isEditRequest(text: string): boolean {
   )
 }
 
+function confirmsProposal(text: string): boolean {
+  return /^(yes|yes, create it|create it|go ahead|set it up|confirm)\b/i.test(
+    text.trim(),
+  )
+}
+
 function isGuideQuestion(text: string): boolean {
   const asksForHelp = /\?|^(how|what|when|where|why|can|does|is)\b/i.test(
     text.trim(),
@@ -88,7 +94,7 @@ export function inferChatPhase(messages: ChatRequest['messages']): ChatPhase {
       textFromMessage(message).includes('<!-- WORKFLOW_METADATA'),
   )
   if (hasProposal) {
-    return 'propose'
+    return confirmsProposal(latestUserText) ? 'configure' : 'propose'
   }
 
   return isGuideQuestion(latestUserText) ? 'guide' : 'align'
