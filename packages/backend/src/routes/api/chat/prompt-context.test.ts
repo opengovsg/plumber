@@ -43,9 +43,18 @@ describe('inferChatPhase', () => {
     expect(
       inferChatPhase([
         assistantMessage('<!-- WORKFLOW_METADATA\nname: Test\n-->'),
-        userMessage('Yes, create it'),
+        userMessage("No, I'll keep refining"),
       ]),
     ).toBe('propose')
+  })
+
+  it('loads configure when the user confirms a proposal', () => {
+    expect(
+      inferChatPhase([
+        assistantMessage('<!-- WORKFLOW_METADATA\nname: Test\n-->'),
+        userMessage('Yes, create it'),
+      ]),
+    ).toBe('configure')
   })
 
   it('uses configure or edit after a pipe exists', () => {
