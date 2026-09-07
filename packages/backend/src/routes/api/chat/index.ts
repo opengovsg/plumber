@@ -199,12 +199,16 @@ const handleChatStream = observe(
             })
 
           prompt = manifestPrompt
-          systemPrompt = composePinnedSystemPrompt({
-            corePrompt: corePrompt.prompt,
-            skillPrompts: skillPrompts.map((skillPrompt) => skillPrompt.prompt),
-            restrictedApps,
-            facts: connectionReminder,
-          })
+          systemPrompt =
+            buildSystemPrompt(
+              composePinnedSystemPrompt({
+                corePrompt: corePrompt.prompt,
+                skillPrompts: skillPrompts.map(
+                  (skillPrompt) => skillPrompt.prompt,
+                ),
+              }),
+              restrictedApps,
+            ) + connectionReminder
           promptVersions = [
             {
               name: skillManifestPromptName,
