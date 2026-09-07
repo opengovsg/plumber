@@ -3,13 +3,13 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import type { ChatRequest } from './schema'
 import {
   composePinnedSystemPrompt,
   inferChatPhase,
   promptManifestSchema,
   selectPromptNames,
 } from './prompt-context'
+import type { ChatRequest } from './schema'
 
 type Message = ChatRequest['messages'][number]
 
