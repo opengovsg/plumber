@@ -4,6 +4,7 @@ import { Router } from 'express'
 import { z } from 'zod/v4'
 
 import { UserFacingError } from '@/errors/user-facing-error'
+import logger from '@/helpers/logger'
 import {
   DynamicDataPrerequisiteError,
   getDynamicDataService,
@@ -13,7 +14,7 @@ import type { AuthenticatedRequest } from '@/types/express/context'
 const router = Router()
 
 const bodySchema = z.object({
-  stepId: z.string().min(1),
+  stepId: z.uuid(),
   key: z.string().min(1),
   parameters: z.record(z.string(), z.unknown()).optional(),
 })
@@ -47,6 +48,14 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     })
     res.json({ data })
   } catch (error) {
+    logger.error('Failed to fetch dynamic data', {
+      event: 'dynamic-data-error',
+      stepId,
+      key,
+      userId: user.id,
+      error,
+    })
+
     if (error instanceof DynamicDataPrerequisiteError) {
       res
         .status(400)
