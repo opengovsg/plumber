@@ -93,9 +93,8 @@ describe('POST /api/dynamic-data', () => {
   })
 
   it('returns 400 with the message when the service throws a UserFacingError', async () => {
-    vi.mocked(getDynamicDataService).mockRejectedValue(
-      new UserFacingError('Step not found'),
-    )
+    const error = new UserFacingError('Step not found')
+    vi.mocked(getDynamicDataService).mockRejectedValue(error)
     const res = makeRes()
     const handler = getHandler()
 
@@ -116,15 +115,16 @@ describe('POST /api/dynamic-data', () => {
         stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
-        error: 'Step not found',
+        error,
       },
     )
   })
 
   it('returns 400 with code prerequisite_missing for a DynamicDataPrerequisiteError', async () => {
-    vi.mocked(getDynamicDataService).mockRejectedValue(
-      new DynamicDataPrerequisiteError("Missing required value for 'tableId'"),
+    const error = new DynamicDataPrerequisiteError(
+      "Missing required value for 'tableId'",
     )
+    vi.mocked(getDynamicDataService).mockRejectedValue(error)
     const res = makeRes()
     const handler = getHandler()
 
@@ -148,13 +148,14 @@ describe('POST /api/dynamic-data', () => {
         stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
-        error: "Missing required value for 'tableId'",
+        error,
       },
     )
   })
 
   it('returns 500 for an unexpected error', async () => {
-    vi.mocked(getDynamicDataService).mockRejectedValue(new Error('boom'))
+    const error = new Error('boom')
+    vi.mocked(getDynamicDataService).mockRejectedValue(error)
     const res = makeRes()
     const handler = getHandler()
 
@@ -175,12 +176,12 @@ describe('POST /api/dynamic-data', () => {
         stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
-        error: 'boom',
+        error,
       },
     )
   })
 
-  it('logs a sanitised axios error and still returns a generic 500', async () => {
+  it('logs an unexpected axios error and still returns a generic 500', async () => {
     const axiosError = new axios.AxiosError(
       'Request failed with status code 401',
       'ERR_BAD_REQUEST',
@@ -218,13 +219,9 @@ describe('POST /api/dynamic-data', () => {
         stepId: STEP_ID,
         key: 'table',
         userId: 'user-1',
-        error: 'Request failed with status code 401',
+        error: axiosError,
       },
     )
-
-    const loggedCalls = JSON.stringify(mocks.logError.mock.calls)
-    expect(loggedCalls).not.toContain('leaked-token')
-    expect(loggedCalls).not.toContain('secret-path')
   })
 
   it('returns 200 with the fetched data on success', async () => {

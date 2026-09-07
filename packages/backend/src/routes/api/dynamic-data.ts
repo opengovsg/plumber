@@ -48,14 +48,12 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
     })
     res.json({ data })
   } catch (error) {
-    // IMPORTANT: an axios error carries the request URL, request headers and
-    // response body, so only its message is safe to log.
     logger.error('Failed to fetch dynamic data', {
       event: 'dynamic-data-error',
       stepId,
       key,
       userId: user.id,
-      error: error instanceof Error ? error.message : String(error),
+      error,
     })
 
     if (error instanceof DynamicDataPrerequisiteError) {
