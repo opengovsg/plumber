@@ -5,7 +5,7 @@ import { areAttachmentUrlsTrusted } from '../../auth/trusted-attachment-urls'
 const TRUSTED_PROD_URL =
   'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/6878bfa1f4c0afec0b00d66c/3717b2ffb126e8d78c78acd3c0742939f03ea0e3/123'
 const TRUSTED_STAGING_URL =
-  'https://s3.ap-southeast-1.amazonaws.com/attachments.staging.form.gov.sg/6878bfa1f4c0afec0b00d66c/3717b2ffb126e8d78c78acd3c0742939f03ea0e3/123'
+  'https://s3.ap-southeast-1.amazonaws.com/attachments.stg.form.gov.sg/6878bfa1f4c0afec0b00d66c/3717b2ffb126e8d78c78acd3c0742939f03ea0e3/123'
 const TRUSTED_UAT_URL =
   'https://s3.ap-southeast-1.amazonaws.com/attachments.uat.form.gov.sg/6878bfa1f4c0afec0b00d66c/3717b2ffb126e8d78c78acd3c0742939f03ea0e3/123'
 
@@ -28,10 +28,7 @@ describe('areAttachmentUrlsTrusted', () => {
 
   it('accepts FormSG bucket URLs for the staging env', () => {
     expect(
-      areAttachmentUrlsTrusted(
-        { attachField1: TRUSTED_STAGING_URL },
-        'staging',
-      ),
+      areAttachmentUrlsTrusted({ attachField1: TRUSTED_STAGING_URL }, 'stg'),
     ).toBe(true)
   })
 
@@ -44,8 +41,8 @@ describe('areAttachmentUrlsTrusted', () => {
   it.each([
     ['a staging URL against the prod env', TRUSTED_STAGING_URL, 'prod'],
     ['a uat URL against the prod env', TRUSTED_UAT_URL, 'prod'],
-    ['a prod URL against the staging env', TRUSTED_PROD_URL, 'staging'],
-    ['a uat URL against the staging env', TRUSTED_UAT_URL, 'staging'],
+    ['a prod URL against the staging env', TRUSTED_PROD_URL, 'stg'],
+    ['a uat URL against the staging env', TRUSTED_UAT_URL, 'stg'],
     ['a prod URL against the uat env', TRUSTED_PROD_URL, 'uat'],
     ['a staging URL against the uat env', TRUSTED_STAGING_URL, 'uat'],
   ] as const)('rejects %s', (_label, url, formEnv) => {

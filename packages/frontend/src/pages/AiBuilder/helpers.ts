@@ -188,7 +188,7 @@ export const isNoOptionsSignalMessage = (text: string): boolean =>
   text.includes('\nA: [no options available')
 
 // Matches FormSG share links across environments (form.gov.sg,
-// staging.form.gov.sg, …) ending in a 24-hex-char form ID.
+// stg.form.gov.sg, …) ending in a 24-hex-char form ID.
 const FORM_URL_REGEX =
   /https:\/\/(?:[a-z0-9-]+\.)?form\.gov\.sg\/(?:[a-zA-Z0-9/]*\/)?[a-f0-9]{24}/gi
 

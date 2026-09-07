@@ -220,10 +220,10 @@ describe('decrypt form response - MRF specific', () => {
 
     it('should trust attachment URLs under the form env-specific prefix for non-prod envs', async () => {
       $.flow.hasFileProcessingActions = true
-      mocks.parseFormEnv.mockReturnValueOnce('staging')
+      mocks.parseFormEnv.mockReturnValueOnce('stg')
       $.request.body.data.attachmentDownloadUrls = {
         attachField1:
-          'https://s3.ap-southeast-1.amazonaws.com/attachments.staging.form.gov.sg/123',
+          'https://s3.ap-southeast-1.amazonaws.com/attachments.stg.form.gov.sg/123',
       }
 
       mocks.cryptoV3Decrypt.mockReturnValueOnce({
@@ -250,7 +250,7 @@ describe('decrypt form response - MRF specific', () => {
         'mock-secret-key',
         {
           attachField1:
-            'https://s3.ap-southeast-1.amazonaws.com/attachments.staging.form.gov.sg/123',
+            'https://s3.ap-southeast-1.amazonaws.com/attachments.stg.form.gov.sg/123',
         },
         expect.any(Array),
       )
@@ -258,7 +258,7 @@ describe('decrypt form response - MRF specific', () => {
 
     it('should return verified: false when an attachment URL uses the prod prefix for a staging form', async () => {
       $.flow.hasFileProcessingActions = true
-      mocks.parseFormEnv.mockReturnValueOnce('staging')
+      mocks.parseFormEnv.mockReturnValueOnce('stg')
       $.request.body.data.attachmentDownloadUrls = {
         attachField1:
           'https://s3.ap-southeast-1.amazonaws.com/attachments.form.gov.sg/123',

@@ -27,11 +27,11 @@ describe('extractLastFormUrl', () => {
   it('extracts a staging admin-form URL', () => {
     const messages = [
       makeMessage(
-        'see https://staging.form.gov.sg/admin/form/654ab1234abc1a012345f1e0',
+        'see https://stg.form.gov.sg/admin/form/654ab1234abc1a012345f1e0',
       ),
     ]
     expect(extractLastFormUrl(messages)).toBe(
-      'https://staging.form.gov.sg/admin/form/654ab1234abc1a012345f1e0',
+      'https://stg.form.gov.sg/admin/form/654ab1234abc1a012345f1e0',
     )
   })
 
