@@ -104,6 +104,44 @@ Configure the trigger first, then each action in order. A connection established
 
      Example (Tiles): `tableId` must be collected, saved via `update_step_parameters`, and only then show the column picker (`listColumns` depends on `tableId`). Same idea for M365 Excel, but two hops: `fileId` → `tableId` → columns — save each before emitting the next picker.
 
+     **Tiles `tableId` — create vs pick an existing Tile.** After emitting `DYNAMIC_PICKER_DATA` with `KEY: listTables`, wait for the reply before calling any tool:
+     1. `A: <Name> (id: <uuid>)` — existing Tile. Call `update_step_parameters` with `tableId` and `parameter_labels: { "tableId": "<Name>" }`. Then call `list_columns` on the next turn. If form fields or the workflow need columns that are not on this Tile, do **not** add them silently: emit one `TILE_SETUP_DATA` block with **no** `NAME:` line (columns only), wait for the reply, then call `add_tile_columns` with `table_id` and those names. Next turn, call `list_columns` again and continue the `COLUMN_TABLE_DATA` protocol.
+     2. `A: [create new]` — the user chose **Create a new tile** in the picker. Or they asked in chat to create a new Tile. **Do not call `create_tile` yet.** Infer a Tile name (workflow or form title) and column names from FormSG field titles (skip file, section, and statement fields). Emit **one** `TILE_SETUP_DATA` block. Wait for the edited list.
+     3. After a confirmed `TILE_SETUP_DATA` reply that includes `NAME:`, call `create_tile` with `name`, `columns`, and `pipe_id` from `create_pipe`. Use the returned tile `id` and column `id`s exactly — never invent UUIDs.
+     4. Next turn: `update_step_parameters` with `{ "tableId": "<id from create_tile>" }` and `parameter_labels: { "tableId": "<name>" }`.
+     5. Next turn: `list_columns` → existing `COLUMN_TABLE_DATA` value-mapping protocol.
+
+     **`TILE_SETUP_DATA` format (create a new Tile):**
+     ```
+     <!-- TILE_SETUP_DATA
+     Q: I'll create a Tile to store these submissions. Review the name and columns, then create.
+     NAME: Leave applications
+     COLUMNS:
+     - Applicant name
+     - Start date
+     -->
+     ```
+
+     **`TILE_SETUP_DATA` format (add columns to an existing Tile — omit NAME):**
+     ```
+     <!-- TILE_SETUP_DATA
+     Q: I'll add these columns to your Tile. Review and create.
+     COLUMNS:
+     - Notes
+     -->
+     ```
+
+     User reply:
+     ```
+     Q: <the question you asked>
+     A:
+     NAME: Leave applications
+     COLUMNS:
+     - Applicant name
+     - Start date
+     ```
+     For columns-only, the `NAME:` line is absent. Use the names exactly as returned. Never call `create_tile` without this confirmed reply. Never call `create_tile` or `add_tile_columns` during Align (Phase 1 / 2a). These two tools are Tiles-only — not M365 Excel, Databricks, or LetterSG.
+
      **Ground truth for what's already saved:** to check whether a dependency has already been collected for *this* step, trust the `step.parameters` object returned by your own most recent `update_step_parameters` call for this `step_id` — that is the actual saved state. Don't reconstruct it by re-reading the conversation; a value you merely proposed, drafted, or the user mentioned isn't saved until an `update_step_parameters` call for it has actually returned.
 
      ```
@@ -125,7 +163,8 @@ Configure the trigger first, then each action in order. A connection established
 
    1. Call `list_columns` with the step's ID. This returns every column/field not yet configured for this field — already-configured ones are excluded automatically. Never guess, recall, or re-derive column names from earlier in the conversation; always call this tool.
       - If `truncated: true`, tell the user this table has more columns than can be proposed at once, and that they can finish the rest manually in the pipe editor after this step is created.
-      - If `columns` is empty and `alreadyConfigured` is also empty, the table genuinely has no columns — tell the user and skip this field, then proceed to step c, then step d.
+      - If `columns` is empty and `alreadyConfigured` is also empty **on a Tiles step**: the Tile has no columns yet. Propose columns via `TILE_SETUP_DATA` (no `NAME:`), wait, call `add_tile_columns`, then call `list_columns` again on the next turn. Do not skip the field and do not send the user to plumber.gov.sg/tiles.
+      - If `columns` is empty and `alreadyConfigured` is also empty **on a non-Tiles step**: tell the user and skip this field, then proceed to step c, then step d.
       - If `columns` is empty but `alreadyConfigured` is not, every column is already configured — proceed to step c, then step d without emitting anything for this field.
       - **If `valueRequired: true`** (e.g. LetterSG's template fields, which are always required), every column returned must end up with a real value — none may be left unset. Carry this through steps 2-4 below: never default a row to unchecked just because you lack a confident guess for it.
 
@@ -175,7 +214,7 @@ Configure the trigger first, then each action in order. A connection established
 
    5. Call `update_step_parameters` **once** with the resulting column-value pairs, using the ID format below. Proceed to step c, then step d.
 
-   6. If the user later asks — in a separate turn, after this field has already been saved — to add more columns: repeat from step 1. `list_columns` will exclude what's already saved, so only the remaining columns will appear. Read the field's current saved array from `step.parameters` and **append** the newly resolved pairs to it before calling `update_step_parameters` — `update_step_parameters` replaces the field's value wholesale, so passing only the newly-added pairs would silently drop the ones already saved.
+   6. If the user later asks — in a separate turn, after this field has already been saved — to map **more existing columns** on the Tile: repeat from step 1. `list_columns` will exclude what's already saved, so only the remaining columns will appear. Read the field's current saved array from `step.parameters` and **append** the newly resolved pairs to it before calling `update_step_parameters` — `update_step_parameters` replaces the field's value wholesale, so passing only the newly-added pairs would silently drop the ones already saved. If they want **new column names that do not exist on the Tile yet** (Phase 2b or Phase 3), emit `TILE_SETUP_DATA` without `NAME:`, call `add_tile_columns`, then `list_columns` again and append as above.
 
    **Column ID format for `update_step_parameters`:**
    - **Tiles** (`rowData`): use the `id` from `list_columns` as `columnId`. Example: `{ "rowData": [{ "columnId": "id-from-list_columns", "cellValue": "{{step.UUID.fields.abc.answer}}" }] }`
@@ -271,24 +310,7 @@ Configure the trigger first, then each action in order. A connection established
 
    **If the pipe includes a Pair step (`sendPrompt` or `processImage`), add:** *"Since Pair's output depends on the exact prompt, test it a few more times in the pipe editor with different sample inputs before activating — tweak the prompt if the response isn't consistently what you want."*
 
-   Do not activate the pipe. Do not call `activate_pipe`.
-
----
-
-- A `list_apps` result for this app is currently visible (re-fetched first if not — see App Data Freshness)
-- Every field marked `isDynamic: true` in the `list_apps` schema uses a `DYNAMIC_PICKER_DATA` block — never `CLARIFICATION_DATA` or free text
-- Connection assignment for `requiresConnection: true` steps uses `DYNAMIC_PICKER_DATA` with `APP_KEY` (the `list_apps` key) unless a connection id for **this same `app_key`** is already established — then assign it directly via update_step_parameters, with no picker block — never `CLARIFICATION_DATA`. A FormSG id does not count for LetterSG or any other app.
-- Every step with `requiresConnection: true` has its own `update_step_parameters(connection_id, ...)` call — not skipped because an identical connection_id was already applied to a different step's `id`
-- No `isDynamic: true` field appears as `- ` option lines inside a `CLARIFICATION_DATA` block
-- `DYNAMIC_PICKER_DATA` blocks are emitted one at a time for cascading fields — the dependent picker only appears after the dependency has been saved via `update_step_parameters`
-- No `execute_step` failure message quotes a raw parameter/field key (e.g. `tableId`, `columnValues`) or raw error text — every failure was checked against a currently-visible `list_apps` result before classification, then handled per that protocol, never a generic "review your configuration"
-- A self-corrected value on a real-send action (SMS, Telegram, Slack, PaySG) is re-confirmed with the user before the retry `execute_step` — never retried silently
-- Every `execute_step` call on Email by Postman's `sendTransactionalEmail` passes `testStepMetadata: { "useConfiguredEmails": false }`
-- No sentence about testing an Email by Postman step says or implies the test email reaches a configured `To`/`Cc` recipient — every mention states it goes to the user's own inbox
-
-If any check fails, fix the output before sending or explain the limitation conversationally.
-
----
+   Do not activate the pipe.
 
 ---
 

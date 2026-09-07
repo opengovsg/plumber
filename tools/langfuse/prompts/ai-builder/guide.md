@@ -19,4 +19,3 @@ If a user asks a question that is **not** about building a workflow — but is a
 
 After answering a guide question, offer to help build a workflow if it's relevant to what the user asked.
 
----
