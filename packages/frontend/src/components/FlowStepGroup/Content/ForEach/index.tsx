@@ -24,7 +24,12 @@ import { getForEachBlockPreviewParts } from '../../helpers/getConditionBlockPrev
 import useDeleteStepConfirmation from '../../hooks/useDeleteStepConfirmation'
 import { HoverAddStepButton } from '../IfThen/HoverAddStepButton'
 import IfThen from '../IfThen/IfThen'
-import { blockActionButtonStyles, conditionBlockStyles } from '../IfThen/styles'
+import {
+  blockActionButtonStyles,
+  CONDITION_BLOCK_BODY_PB,
+  conditionBlockStyles,
+  EMPTY_CONDITION_BLOCK_BODY_PB,
+} from '../IfThen/styles'
 
 interface ForEachProps {
   groupedSteps: IStep[][]
@@ -153,7 +158,14 @@ export default function ForEach(props: ForEachProps) {
         }
       />
 
-      <Flex {...conditionBlockStyles.body}>
+      <Flex
+        {...conditionBlockStyles.body}
+        pb={
+          hasNoActionSteps
+            ? EMPTY_CONDITION_BLOCK_BODY_PB
+            : CONDITION_BLOCK_BODY_PB
+        }
+      >
         {hasNoActionSteps ? (
           <HoverAddStepButton
             isDisabled={readOnly}

@@ -95,16 +95,25 @@ export const conditionBlockStyles = {
     minH: 12,
     w: '100%',
   },
+  // Every consumer sets its own `pb`, so none is declared here.
   body: {
     alignItems: 'stretch',
     bg: 'white',
     direction: 'column' as FlexProps['direction'],
     px: 3,
     pt: 4,
-    pb: 0,
     w: '100%',
   },
 }
+
+/** Sits below the trailing hover-+ strip a block's last step reserves. */
+export const CONDITION_BLOCK_BODY_PB = 3
+
+/**
+ * An empty block reserves no such strip, so its padding stands in for one and
+ * every condition block's bottom lines up. The 4 is the strip's own height.
+ */
+export const EMPTY_CONDITION_BLOCK_BODY_PB = CONDITION_BLOCK_BODY_PB + 4
 
 export const hoverAddStepButtonStyles = {
   container: {
