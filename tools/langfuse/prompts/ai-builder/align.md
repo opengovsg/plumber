@@ -173,4 +173,3 @@ Work through these before planning any workflow:
 7. **Outputs?** → Notifications or data writes.
 8. **Anything unsupported?** → Flag before generating.
 
----
