@@ -16,6 +16,7 @@ import {
   type DynamicPickerPart,
   type TileSetupPart,
 } from '@/hooks/useChatStream'
+import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
 import ColumnTablePicker from '@/pages/AiBuilder/components/ChatInterface/ColumnTablePicker'
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
@@ -30,6 +31,7 @@ import {
 } from '@/pages/AiBuilder/helpers'
 
 import { buildColumnTableReply } from './helpers/columnTableReply'
+import { isTilesListTablesPicker } from './helpers/isTilesListTablesPicker'
 import { buildTileSetupReply } from './helpers/tileSetupReply'
 
 interface PromptInputProps {
@@ -113,6 +115,7 @@ export default function PromptInput({
   onSelectExistingForm,
   attachedForm,
 }: PromptInputProps) {
+  const { steps } = useAiBuilderContext()
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [selectedAnswers, setSelectedAnswers] = useState<
@@ -314,7 +317,7 @@ export default function PromptInput({
             : undefined
         }
         onCreateNew={
-          !isAppKeyMode && dynamicPicker.key === 'listTables'
+          isTilesListTablesPicker(dynamicPicker, steps)
             ? () => sendMessage(`Q: ${dynamicPicker.question}\nA: [create new]`)
             : undefined
         }
