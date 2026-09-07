@@ -34,46 +34,34 @@ npm run setup
 
 This also creates the `plumber-development-archive-bucket` MinIO bucket used below.
 
-### 2. Create `.env.archival`
+The `-local` archive commands run through `scripts/with-op-env.mjs`, so you also need the 1Password desktop app unlocked and an `op-dev.json` holding an `archival` environment id. The [root README](../../README.md) covers that one-time setup.
 
-Create a `.env.archival` file at the repo root (do **not** commit it):
+### 2. Supply the environment
 
-```bash
-# Postgres — matches dev Docker defaults
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=plumber_dev
-POSTGRES_USERNAME=postgres
-POSTGRES_PASSWORD=postgres
+There is no `.env` file. Variables come from three places, in descending priority:
 
-# Reader endpoint — required. Use localhost for local dev (same Postgres).
-ARCHIVE_POSTGRES_READER_HOST=localhost
+1. Shell exports, for one-off overrides.
+2. The `archival` 1Password environment, which the loader fetches at spawn time and injects into the process. The `-local` scripts only.
+3. [`.env-example`](.env-example), which `config.ts` loads at runtime for any key still unset. It loads only while `APP_ENV=development`.
 
-# MinIO (local S3)
-S3_ENDPOINT=http://localhost:9000
-S3_ACCESS_KEY=minio-username
-S3_SECRET_KEY=minio-password
-ARCHIVE_BUCKET=plumber-development-archive-bucket
+Those placeholders already point at the dev Docker stack, so a local run needs three overrides:
 
-# Job settings
-ARCHIVE_ENABLED=true
-ARCHIVE_DRY_RUN=true            # flip to false for a live (destructive) run
-ARCHIVE_RETENTION_DAYS=90
-ARCHIVE_BATCH_SIZE=500
-ARCHIVE_BATCH_SLEEP_MS=0        # 0 = no sleep between batches (fine for local)
-ARCHIVE_INTRA_BATCH_CONCURRENCY=10
-ARCHIVE_MAX_RUNTIME_MS=0        # 0 = no wall-clock limit
-ARCHIVE_DELETED_FLOWS_ONLY=true # restrict to soft-deleted flows only
-ARCHIVE_TEST_RUNS=false         # also archive test executions on active flows
-```
+| Variable | Local value | Why |
+|---|---|---|
+| `S3_ACCESS_KEY` | `minio-username` | `.env-example` ships `...`, which MinIO rejects with `InvalidAccessKeyId`. |
+| `S3_SECRET_KEY` | `minio-password` | Same. |
+| `ARCHIVE_ENABLED` | `true` | Defaults to `false`, which exits at once and logs `archival.run.disabled`. |
+
+Keep them in the `archival` 1Password environment, or pass them inline as below.
 
 ### 3. Run the archival script
 
 ```bash
-# Load env vars, then run
-set -a && source .env.archival && set +a
-npm run -w backend-archive archive:backfill
+S3_ACCESS_KEY=minio-username S3_SECRET_KEY=minio-password ARCHIVE_ENABLED=true \
+  npm run -w backend-archive archive:backfill-local
 ```
+
+1Password asks for biometric approval before the script starts. `ARCHIVE_DRY_RUN` defaults to `true`, so the run writes to S3 and deletes nothing. Set `ARCHIVE_DRY_RUN=false` for a live, destructive run.
 
 The script logs structured JSON to stdout. Key events to look for:
 
@@ -100,40 +88,66 @@ mc cat "local/plumber-development-archive-bucket/executions/flow_id=<uuid>/year=
 
 ---
 
-## Running rehydration against a real environment
+## Running against a production target
 
-Rehydration connects to a **live** Postgres and S3 bucket. Run it from a machine with network access to both (e.g. a bastion, a local machine with an AWS SSO session + an SSH tunnel to RDS, or an ad-hoc ECS task).
+Both the archival and the rehydration script can point at a **live** Postgres and S3 bucket. Run them from a machine with network access to both.
 
-### 1. Set environment variables
+**Set `APP_ENV` to any value other than `development`.** That stops `.env-example` from loading and drops `config.ts`'s dev defaults, so a variable you forget throws instead of quietly reaching a local `plumber_dev`.
 
-`DOTENV_CONFIG_PATH` tells the script which `.env` file to load. Create one for the target environment (do **not** commit it):
+**Set `ARCHIVE_DRY_RUN` explicitly for a backfill.** With those placeholders gone it falls back to `false`, and the run deletes rows from the target.
+
+### From your own machine
+
+Repoint `op-dev.json`'s `archival` entry at a 1Password environment holding the target's variables, `APP_ENV` included. Then use the `-local` scripts:
 
 ```bash
-# Example: .env.staging
-POSTGRES_HOST=<rds-writer-endpoint>
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=<db-name>
-POSTGRES_USERNAME=<db-user>
-POSTGRES_PASSWORD=<db-password>
-POSTGRES_ENABLE_SSL=true
+npm run -w backend-archive archive:rehydrate-local -- --flow-id <uuid>
+npm run -w backend-archive archive:backfill-local
+```
 
-ARCHIVE_POSTGRES_READER_HOST=<rds-reader-endpoint>
+The loader injects that environment into the process and writes nothing to disk. Shell exports still outrank it, so you can override a single key inline.
+
+### From a bastion host or an ECS task
+
+1Password does not run there. Export the variables yourself and use the unsuffixed scripts, which take the shell as-is:
+
+```bash
+export APP_ENV=production
+export POSTGRES_HOST=<rds-writer-endpoint>
+export POSTGRES_PORT=5432
+export POSTGRES_DATABASE=<db-name>
+export POSTGRES_USERNAME=<db-user>
+export POSTGRES_PASSWORD=<db-password>
+export POSTGRES_ENABLE_SSL=true
+
+export ARCHIVE_POSTGRES_READER_HOST=<rds-reader-endpoint>
 
 # S3 — IAM role credentials are used automatically in AWS environments.
-# Only set these if running from a non-AWS machine without instance credentials.
-# S3_ACCESS_KEY=...
-# S3_SECRET_KEY=...
+# Only set these if running from a machine without instance credentials.
+# export S3_ACCESS_KEY=...
+# export S3_SECRET_KEY=...
 
-ARCHIVE_BUCKET=<prod-or-staging-bucket-name>
+export ARCHIVE_BUCKET=<prod-or-staging-bucket-name>
+
+# Backfill only. It exits at once without ARCHIVE_ENABLED.
+export ARCHIVE_ENABLED=true
+export ARCHIVE_DRY_RUN=true
 ```
 
-### 2. Run the rehydration CLI
+Then run:
 
 ```bash
-DOTENV_CONFIG_PATH=.env.staging npm run -w backend-archive archive:rehydrate -- --flow-id <uuid>
+npm run -w backend-archive archive:rehydrate -- --flow-id <uuid>
+npm run -w backend-archive archive:backfill
 ```
 
-#### Subcommands
+Both call `ts-node`, a devDependency, so the host needs a full checkout and an install that kept devDependencies. The `Dockerfile.archival` image has neither. Inside that image, call the compiled entrypoint from `/opt/plumber`:
+
+```bash
+node packages/backend-archive/dist/scripts/rehydrate-execution.js --flow-id <uuid>
+```
+
+### Rehydration subcommands
 
 | Goal | Command |
 |---|---|
@@ -142,7 +156,7 @@ DOTENV_CONFIG_PATH=.env.staging npm run -w backend-archive archive:rehydrate -- 
 | Restore all executions for a flow to Postgres | `-- --flow-id <uuid> --restore` |
 | Restore a single execution to Postgres | `-- --flow-id <uuid> --execution-id <uuid> --restore` |
 
-#### What `--restore` does
+### What `--restore` does
 
 1. Sets `archiveDisabled: true` in the flow's `config` JSONB — prevents the nightly archival job from immediately re-archiving the restored rows.
 2. Inserts the execution row (`ON CONFLICT DO NOTHING` — idempotent).
@@ -234,6 +248,7 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
+| `APP_ENV` | no | `development` | Any value other than `development` skips the `.env-example` fallback and the dev defaults below. |
 | `POSTGRES_HOST` / `RDS_PROXY_HOST` | yes (dev/prod) | — | Postgres writer host. `RDS_PROXY_HOST` takes precedence. |
 | `POSTGRES_PORT` | no | `5432` | Postgres port. |
 | `POSTGRES_DATABASE` | yes | `plumber_dev` (dev only) | Database name. |
@@ -269,4 +284,4 @@ npm run -w backend-archive test:unit
 
 The archival task runs as a scheduled ECS Fargate task built from `Dockerfile.archival`. The task definition template is at [`ecs/archival-task-definition.json`](../../ecs/archival-task-definition.json). All secrets are sourced from AWS Secrets Manager — no plaintext values in the task definition.
 
-In production, S3 credentials are provided by the task's IAM role; no `S3_ACCESS_KEY` / `S3_SECRET_KEY` are needed.
+The task's IAM role provides S3 credentials, so `S3_ACCESS_KEY` and `S3_SECRET_KEY` are not needed. The scheduled task calls the compiled entrypoint directly and never touches the npm scripts above.
