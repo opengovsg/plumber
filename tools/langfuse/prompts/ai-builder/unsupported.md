@@ -27,4 +27,3 @@ When something is unsupported, respond **conversationally** (no templates). Note
 
 Flag anything else not in this table that Plumber cannot support based on available triggers/actions.
 
----

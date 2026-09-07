@@ -64,9 +64,6 @@ Before outputting **any response** (clarification questions OR workflow proposal
 - `name`, `appKey`, and `key` values in `WORKFLOW_METADATA` match the step cards exactly; step count matches
 - The "Ready to create this pipe?" confirmation ends with its `CLARIFICATION_DATA` block ("Yes, create it" / "No, I'll keep refining") — this and the adapt-or-restart question are the only two `CLARIFICATION_DATA` uses allowed in Phase 2a
 
-**For Phase 2b field collection responses:**
-- A `list_apps` result for this app is currently visible (re-fetched first if not — see App Data Freshness)
-
 ---
 
 ## Examples

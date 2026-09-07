@@ -142,6 +142,7 @@ describe('prompt drafts', () => {
       'CLARIFICATION_DATA',
       'WORKFLOW_METADATA',
       'DYNAMIC_PICKER_DATA',
+      'TILE_SETUP_DATA',
       'APP_KEY',
       'useConfiguredEmails',
       '{{SUPPORT_FORM_URL}}',
