@@ -12,8 +12,6 @@ export const MAX_TILE_NAME_LENGTH = 64
 export const MAX_COLUMN_NAME_LENGTH = 255
 export const MAX_COLUMNS_PER_CALL = 50
 
-const COLUMN_NAME_CHARSET = /^[a-zA-Z0-9 _\-!@#$%^&*()+=[\]{};:'",.<>/?|~]+$/
-
 const tileNameSchema = z
   .string()
   .trim()
@@ -30,10 +28,6 @@ const columnNameSchema = z
   .max(
     MAX_COLUMN_NAME_LENGTH,
     `Column names must be ${MAX_COLUMN_NAME_LENGTH} characters or fewer`,
-  )
-  .regex(
-    COLUMN_NAME_CHARSET,
-    'Column names can only include letters, numbers, spaces, and common special characters',
   )
 
 const columnNamesSchema = z

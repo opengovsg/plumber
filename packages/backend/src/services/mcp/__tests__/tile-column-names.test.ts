@@ -48,8 +48,12 @@ describe('parseColumnNames', () => {
     expect(() => parseColumnNames(['Name', 'name'])).toThrow(UserFacingError)
   })
 
-  it('rejects disallowed characters', () => {
-    expect(() => parseColumnNames(['Name\nbreak'])).toThrow(UserFacingError)
+  it('accepts unicode names, matching updateTable', () => {
+    expect(parseColumnNames(['客户', 'Café', '🎉'])).toEqual([
+      '客户',
+      'Café',
+      '🎉',
+    ])
   })
 })
 
