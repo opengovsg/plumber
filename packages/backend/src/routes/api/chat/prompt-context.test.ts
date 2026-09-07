@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import type { ChatRequest } from './schema'
@@ -24,9 +25,9 @@ const assistantMessage = (text: string): Message => ({
 
 describe('inferChatPhase', () => {
   it('defaults workflow requests to align', () => {
-    expect(inferChatPhase([userMessage('Send email when my form submits')])).toBe(
-      'align',
-    )
+    expect(
+      inferChatPhase([userMessage('Send email when my form submits')]),
+    ).toBe('align')
   })
 
   it('detects guide questions without treating workflow requests as guides', () => {
@@ -64,9 +65,9 @@ describe('inferChatPhase', () => {
     expect(inferChatPhase([pipeState, userMessage('Continue')])).toBe(
       'configure',
     )
-    expect(inferChatPhase([pipeState, userMessage('Remove the Slack step')])).toBe(
-      'edit',
-    )
+    expect(
+      inferChatPhase([pipeState, userMessage('Remove the Slack step')]),
+    ).toBe('edit')
   })
 })
 
@@ -108,17 +109,15 @@ describe('composePinnedSystemPrompt', () => {
 
     expect(result).not.toContain('| Store data | M365 Excel |')
     expect(result).toContain('user does not have access to')
-    expect(result).toEndWith('Known fact')
+    expect(result.endsWith('Known fact')).toBe(true)
   })
 })
 
 describe('prompt drafts', () => {
   it('retain runtime output contracts without static app catalogs', () => {
-    const promptsDirectory = fileURLToPath(
-      new URL(
-        '../../../../../../tools/langfuse/prompts/ai-builder/',
-        import.meta.url,
-      ),
+    const promptsDirectory = path.resolve(
+      __dirname,
+      '../../../../../../tools/langfuse/prompts/ai-builder',
     )
     const files = [
       'core.md',
@@ -131,7 +130,7 @@ describe('prompt drafts', () => {
       'output-format.md',
     ]
     const content = files
-      .map((file) => readFileSync(`${promptsDirectory}${file}`, 'utf8'))
+      .map((file) => readFileSync(path.join(promptsDirectory, file), 'utf8'))
       .join('\n')
 
     for (const marker of [
