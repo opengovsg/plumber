@@ -58,6 +58,7 @@ vi.mock('@/services/mcp/register-connection', () => ({
     .mockResolvedValue({ connectionRegistered: true }),
 }))
 
+import { UserFacingError } from '@/errors/user-facing-error'
 import { addTileColumnsService } from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
@@ -136,6 +137,23 @@ describe('createMcpBridgeTools', () => {
     })
   })
 
+  it('create_tile returns { error } instead of throwing', async () => {
+    vi.mocked(createTileService).mockRejectedValueOnce(
+      new UserFacingError('Pipe not found'),
+    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await expect(
+      tools.create_tile.execute(
+        {
+          name: 'Leave applications',
+          columns: ['Name'],
+          pipe_id: '123e4567-e89b-12d3-a456-426614174000',
+        },
+        { toolCallId: 'create_tile', messages: [] },
+      ),
+    ).resolves.toEqual({ error: 'Pipe not found' })
+  })
+
   it('add_tile_columns calls addTileColumnsService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.add_tile_columns.execute(
@@ -150,6 +168,38 @@ describe('createMcpBridgeTools', () => {
       tableId: '123e4567-e89b-12d3-a456-426614174111',
       columns: ['Notes'],
     })
+  })
+
+  it('add_tile_columns accepts a ULID table_id', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.add_tile_columns.execute(
+      {
+        table_id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        columns: ['Notes'],
+      },
+      { toolCallId: 'add_tile_columns', messages: [] },
+    )
+    expect(vi.mocked(addTileColumnsService)).toHaveBeenCalledWith({
+      user: mockUser,
+      tableId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      columns: ['Notes'],
+    })
+  })
+
+  it('add_tile_columns returns { error } instead of throwing', async () => {
+    vi.mocked(addTileColumnsService).mockRejectedValueOnce(
+      new UserFacingError('Tile not found'),
+    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await expect(
+      tools.add_tile_columns.execute(
+        {
+          table_id: '123e4567-e89b-12d3-a456-426614174111',
+          columns: ['Notes'],
+        },
+        { toolCallId: 'add_tile_columns', messages: [] },
+      ),
+    ).resolves.toEqual({ error: 'Tile not found' })
   })
 
   it('update_step_parameters calls updateStepParametersService with camelCase args', async () => {

@@ -3,6 +3,8 @@ import type { IApp, IJSONObject, IMcpApp } from '@plumber/types'
 import { tool } from 'ai'
 import { z } from 'zod/v4'
 
+import { UserFacingError } from '@/errors/user-facing-error'
+import logger from '@/helpers/logger'
 import type Flow from '@/models/flow'
 import type Step from '@/models/step'
 import type User from '@/models/user'
@@ -43,6 +45,15 @@ import {
 } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
+
+function mcpToolError(error: unknown, fallback: string): { error: string } {
+  if (error instanceof UserFacingError) {
+    return { error: error.message }
+  }
+  const message = error instanceof Error ? error.message : fallback
+  logger.warn('MCP tool failed', { error: message })
+  return { error: fallback }
+}
 
 export function createMcpBridgeTools(
   user: User,
@@ -100,13 +111,17 @@ export function createMcpBridgeTools(
         name,
         columns,
         pipe_id,
-      }): Promise<CreateTileResult> => {
-        return createTileService({
-          user,
-          name,
-          columns,
-          pipeId: pipe_id,
-        })
+      }): Promise<CreateTileResult | { error: string }> => {
+        try {
+          return await createTileService({
+            user,
+            name,
+            columns,
+            pipeId: pipe_id,
+          })
+        } catch (error) {
+          return mcpToolError(error, 'Unable to create tile')
+        }
       },
     }),
 
@@ -114,19 +129,28 @@ export function createMcpBridgeTools(
       description:
         'Add named columns to an existing Tile the user can edit. Names that already exist (case-insensitive) are skipped and returned in skipped rather than erroring. Returns the full column list with ids. Tiles-only; do not rename or delete columns.',
       inputSchema: z.object({
-        table_id: z.uuid().describe('ID of the Tile to add columns to'),
+        table_id: z
+          .union([z.uuid(), z.ulid()])
+          .describe('ID of the Tile to add columns to'),
         columns: z
           .array(z.string())
           .min(1)
           .max(50)
           .describe('Column names to add (1–50 unique names)'),
       }),
-      execute: async ({ table_id, columns }): Promise<AddTileColumnsResult> => {
-        return addTileColumnsService({
-          user,
-          tableId: table_id,
-          columns,
-        })
+      execute: async ({
+        table_id,
+        columns,
+      }): Promise<AddTileColumnsResult | { error: string }> => {
+        try {
+          return await addTileColumnsService({
+            user,
+            tableId: table_id,
+            columns,
+          })
+        } catch (error) {
+          return mcpToolError(error, 'Unable to add tile columns')
+        }
       },
     }),
 

@@ -6,7 +6,10 @@ import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 import type User from '@/models/user'
 
-import { parseColumnNames, type TileColumnResult } from './tile-column-names'
+import {
+  parseAddTileColumnsInput,
+  type TileColumnResult,
+} from './tile-column-names'
 
 export interface AddTileColumnsInput {
   user: User
@@ -26,10 +29,11 @@ export async function addTileColumnsService({
   tableId,
   columns,
 }: AddTileColumnsInput): Promise<AddTileColumnsResult> {
-  const columnNames = parseColumnNames(columns)
+  const { tableId: parsedTableId, columns: columnNames } =
+    parseAddTileColumnsInput({ tableId, columns })
 
   try {
-    await TableCollaborator.hasAccess(user.id, tableId, 'editor')
+    await TableCollaborator.hasAccess(user.id, parsedTableId, 'editor')
   } catch (error) {
     if (error instanceof ForbiddenError) {
       throw new UserFacingError(
@@ -39,7 +43,7 @@ export async function addTileColumnsService({
     throw error
   }
 
-  const table = await TableMetadata.query().findById(tableId)
+  const table = await TableMetadata.query().findById(parsedTableId)
   if (!table) {
     throw new UserFacingError('Tile not found')
   }
@@ -77,7 +81,7 @@ export async function addTileColumnsService({
         .returning('id')
 
       await tableOperations.createTableColumns(
-        tableId,
+        parsedTableId,
         inserted.map((column) => column.id),
       )
     })

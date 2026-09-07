@@ -7,8 +7,7 @@ import { type DatabaseType } from '@/models/tiles/types'
 import type User from '@/models/user'
 
 import {
-  parseColumnNames,
-  parseTileName,
+  parseCreateTileInput,
   type TileColumnResult,
 } from './tile-column-names'
 
@@ -33,14 +32,17 @@ export async function createTileService({
   columns,
   pipeId,
 }: CreateTileInput): Promise<CreateTileResult> {
-  const tableName = parseTileName(name)
-  const columnNames = parseColumnNames(columns)
+  const {
+    name: tableName,
+    columns: columnNames,
+    pipeId: parsedPipeId,
+  } = parseCreateTileInput({ name, columns, pipeId })
 
   let flow
-  if (pipeId) {
+  if (parsedPipeId) {
     flow = await user
       .withAccessibleFlows({ requiredRole: 'editor' })
-      .findById(pipeId)
+      .findById(parsedPipeId)
 
     if (!flow) {
       throw new UserFacingError('Pipe not found')

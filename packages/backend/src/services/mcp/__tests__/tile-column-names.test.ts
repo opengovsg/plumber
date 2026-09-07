@@ -4,7 +4,9 @@ import { UserFacingError } from '@/errors/user-facing-error'
 
 import {
   MAX_COLUMNS_PER_CALL,
+  parseAddTileColumnsInput,
   parseColumnNames,
+  parseCreateTileInput,
   parseTileName,
 } from '../tile-column-names'
 
@@ -48,5 +50,60 @@ describe('parseColumnNames', () => {
 
   it('rejects disallowed characters', () => {
     expect(() => parseColumnNames(['Name\nbreak'])).toThrow(UserFacingError)
+  })
+})
+
+describe('parseCreateTileInput', () => {
+  it('accepts an optional UUID pipeId', () => {
+    expect(
+      parseCreateTileInput({
+        name: 'Leave',
+        columns: ['Name'],
+        pipeId: '123e4567-e89b-12d3-a456-426614174000',
+      }),
+    ).toMatchObject({
+      pipeId: '123e4567-e89b-12d3-a456-426614174000',
+    })
+  })
+
+  it('rejects a non-UUID pipeId', () => {
+    expect(() =>
+      parseCreateTileInput({
+        name: 'Leave',
+        columns: ['Name'],
+        pipeId: 'not-a-uuid',
+      }),
+    ).toThrow(UserFacingError)
+  })
+})
+
+describe('parseAddTileColumnsInput', () => {
+  const SAMPLE_ULID = '01ARZ3NDEKTSV4RRFFQ69G5FAV'
+
+  it('accepts a UUID tableId', () => {
+    expect(
+      parseAddTileColumnsInput({
+        tableId: '123e4567-e89b-12d3-a456-426614174111',
+        columns: ['Notes'],
+      }),
+    ).toMatchObject({ tableId: '123e4567-e89b-12d3-a456-426614174111' })
+  })
+
+  it('accepts a ULID tableId', () => {
+    expect(
+      parseAddTileColumnsInput({
+        tableId: SAMPLE_ULID,
+        columns: ['Notes'],
+      }),
+    ).toMatchObject({ tableId: SAMPLE_ULID })
+  })
+
+  it('rejects a tableId that is neither UUID nor ULID', () => {
+    expect(() =>
+      parseAddTileColumnsInput({
+        tableId: 'not-an-id',
+        columns: ['Notes'],
+      }),
+    ).toThrow(UserFacingError)
   })
 })
