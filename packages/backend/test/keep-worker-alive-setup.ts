@@ -11,9 +11,7 @@ let alreadyWarned = false
 process.exit = ((code?: number | string | null): never => {
   if (!alreadyWarned) {
     alreadyWarned = true
-    console.warn(
-      `Ignored process.exit(${code ?? ''}): tests must not kill the vitest worker.`,
-    )
+    console.warn(`Ignored process.exit(${code ?? ''}) during tests.`)
   }
 
   return undefined as never
