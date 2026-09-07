@@ -2,14 +2,18 @@ import { z } from 'zod'
 
 import { UserFacingError } from '@/errors/user-facing-error'
 import { firstZodParseError } from '@/helpers/zod-utils'
+import {
+  MAX_COLUMN_NAME_LENGTH,
+  MAX_TILE_NAME_LENGTH,
+} from '@/models/tiles/constants'
 
 export interface TileColumnResult {
   id: string
   name: string
   position: number
 }
-export const MAX_TILE_NAME_LENGTH = 64
-export const MAX_COLUMN_NAME_LENGTH = 255
+
+/** MCP-only cap. updateTable does not limit how many columns a call may add. */
 export const MAX_COLUMNS_PER_CALL = 50
 
 const tileNameSchema = z

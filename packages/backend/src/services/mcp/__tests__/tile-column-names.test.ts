@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { UserFacingError } from '@/errors/user-facing-error'
+import {
+  MAX_COLUMN_NAME_LENGTH,
+  MAX_TILE_NAME_LENGTH,
+} from '@/models/tiles/constants'
 
 import {
   MAX_COLUMNS_PER_CALL,
@@ -19,8 +23,10 @@ describe('parseTileName', () => {
     expect(() => parseTileName('   ')).toThrow(UserFacingError)
   })
 
-  it('rejects names longer than 64 characters', () => {
-    expect(() => parseTileName('a'.repeat(65))).toThrow(UserFacingError)
+  it('rejects names longer than MAX_TILE_NAME_LENGTH', () => {
+    expect(() => parseTileName('a'.repeat(MAX_TILE_NAME_LENGTH + 1))).toThrow(
+      UserFacingError,
+    )
   })
 })
 
@@ -54,6 +60,12 @@ describe('parseColumnNames', () => {
       'Café',
       '🎉',
     ])
+  })
+
+  it('rejects names longer than MAX_COLUMN_NAME_LENGTH', () => {
+    expect(() =>
+      parseColumnNames(['a'.repeat(MAX_COLUMN_NAME_LENGTH + 1)]),
+    ).toThrow(UserFacingError)
   })
 })
 
