@@ -56,8 +56,9 @@ function isEditRequest(text: string): boolean {
 }
 
 function isGuideQuestion(text: string): boolean {
-  const asksForHelp =
-    /\?|^(how|what|when|where|why|can|does|is)\b/i.test(text.trim())
+  const asksForHelp = /\?|^(how|what|when|where|why|can|does|is)\b/i.test(
+    text.trim(),
+  )
   const mentionsGuidance =
     /\b(connect|configure|guide|set up|setup|troubleshoot|triggering|work)\b/i.test(
       text,
@@ -69,11 +70,9 @@ function isGuideQuestion(text: string): boolean {
   return asksForHelp && mentionsGuidance && !requestsWorkflow
 }
 
-export function inferChatPhase(
-  messages: ChatRequest['messages'],
-): ChatPhase {
-  const latestUserMessage = messages
-    .toReversed()
+export function inferChatPhase(messages: ChatRequest['messages']): ChatPhase {
+  const latestUserMessage = [...messages]
+    .reverse()
     .find((message) => message.role === 'user')
   const latestUserText = latestUserMessage
     ? textFromMessage(latestUserMessage)
