@@ -27,7 +27,7 @@ import {
   SUPPORT_FORM_URL_PLACEHOLDER,
 } from '@/helpers/ai/build-support-form-url'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
-import { getPrompt } from '@/helpers/ai/get-prompt'
+import { getPrompt, getPrompts } from '@/helpers/ai/get-prompt'
 import {
   parseWorkflowMetadata,
   WORKFLOW_METADATA_REGEX,
@@ -51,6 +51,12 @@ import {
 import { parseClarificationBlock } from './parse-clarification-block'
 import { parseColumnTableBlock } from './parse-column-table-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
+import {
+  composePinnedSystemPrompt,
+  inferChatPhase,
+  promptManifestSchema,
+  selectPromptNames,
+} from './prompt-context'
 import { chatRequestSchema } from './schema'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
@@ -99,8 +105,12 @@ const handleChatStream = observe(
     // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
     const restrictedApps = getRestrictedAppKeys(allLdFlags)
 
-    const { chatPromptName, chatSummaryPromptName, version } =
-      aiBuilderFlag.config
+    const {
+      chatPromptName,
+      chatSummaryPromptName,
+      skillManifestPromptName,
+      version,
+    } = aiBuilderFlag.config
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -147,12 +157,82 @@ const handleChatStream = observe(
       // threshold) so both sides agree on which turn is the last one.
       const isAtLimit = rawMessages.length >= MAX_MESSAGES
 
-      // Get the prompt from Langfuse
-      const prompt = await getPrompt(
-        isAtLimit ? chatSummaryPromptName : chatPromptName,
-        'aiBuilder',
-        version,
+      // Re-derived fresh every turn from the raw message text and verified
+      // against this user's own connections — never trust the connectionId a
+      // user references in their own chat text without checking ownership
+      // first (see resolveEstablishedFormConnection).
+      const establishedFormConnection = await resolveEstablishedFormConnection(
+        context.currentUser,
+        rawMessages,
       )
+      const connectionReminder = buildEstablishedConnectionReminder(
+        establishedFormConnection,
+      )
+
+      let prompt: Awaited<ReturnType<typeof getPrompt>>
+      let systemPrompt: string
+      let promptVersions: Array<{ name: string; version: number }>
+
+      if (skillManifestPromptName && !isAtLimit) {
+        try {
+          const manifestPrompt = await getPrompt(
+            skillManifestPromptName,
+            'aiBuilder',
+            version,
+          )
+          const manifest = promptManifestSchema.parse(manifestPrompt.config)
+          const phase = inferChatPhase(rawMessages)
+          const promptNames = selectPromptNames(manifest, phase)
+          const prompts = await getPrompts(promptNames, 'aiBuilder', version)
+          const corePrompt = prompts.get(manifest.core)
+          if (!corePrompt) {
+            throw new Error('Langfuse skill manifest core prompt is missing')
+          }
+          const skillPrompts = promptNames
+            .filter((name) => name !== manifest.core)
+            .map((name) => {
+              const skillPrompt = prompts.get(name)
+              if (!skillPrompt) {
+                throw new Error(`Langfuse skill prompt is missing: ${name}`)
+              }
+              return skillPrompt
+            })
+
+          prompt = manifestPrompt
+          systemPrompt = composePinnedSystemPrompt({
+            corePrompt: corePrompt.prompt,
+            skillPrompts: skillPrompts.map((skillPrompt) => skillPrompt.prompt),
+            restrictedApps,
+            facts: connectionReminder,
+          })
+          promptVersions = [
+            {
+              name: skillManifestPromptName,
+              version: manifestPrompt.version,
+            },
+            ...promptNames.map((name) => ({
+              name,
+              version: prompts.get(name)!.version,
+            })),
+          ]
+        } catch (error) {
+          logger.warn('Failed to load Langfuse skills; using chat prompt', {
+            error: error instanceof Error ? error.message : String(error),
+          })
+          prompt = await getPrompt(chatPromptName, 'aiBuilder', version)
+          systemPrompt =
+            buildSystemPrompt(prompt.prompt, restrictedApps) + connectionReminder
+          promptVersions = [
+            { name: chatPromptName, version: prompt.version },
+          ]
+        }
+      } else {
+        const promptName = isAtLimit ? chatSummaryPromptName : chatPromptName
+        prompt = await getPrompt(promptName, 'aiBuilder', version)
+        systemPrompt =
+          buildSystemPrompt(prompt.prompt, restrictedApps) + connectionReminder
+        promptVersions = [{ name: promptName, version: prompt.version }]
+      }
 
       logger.info('Starting AI chat stream', {
         traceId,
@@ -162,22 +242,12 @@ const handleChatStream = observe(
         model: MODEL_TYPE,
       })
 
-      // Re-derived fresh every turn from the raw message text and verified
-      // against this user's own connections — never trust the connectionId a
-      // user references in their own chat text without checking ownership
-      // first (see resolveEstablishedFormConnection).
-      const establishedFormConnection = await resolveEstablishedFormConnection(
-        context.currentUser,
-        rawMessages,
-      )
-
       const systemMessage = {
         role: 'system' as const,
-        content:
-          buildSystemPrompt(prompt.prompt, restrictedApps).replaceAll(
-            SUPPORT_FORM_URL_PLACEHOLDER,
-            buildSupportFormUrl(chatId),
-          ) + buildEstablishedConnectionReminder(establishedFormConnection),
+        content: systemPrompt.replaceAll(
+          SUPPORT_FORM_URL_PLACEHOLDER,
+          buildSupportFormUrl(chatId),
+        ),
       }
       const allMessages = [systemMessage, ...messages]
 
@@ -245,8 +315,9 @@ const handleChatStream = observe(
                 ddRumSessionId: rumSessionId || undefined,
                 userId: context.currentUser.email,
                 environment: appConfig.appEnv,
-                promptName: chatPromptName,
+                promptName: promptVersions.map(({ name }) => name).join(','),
                 promptVersion: version,
+                promptVersions: JSON.stringify(promptVersions),
                 langfusePrompt: prompt.toJSON(),
                 tags: [
                   'ai-builder',

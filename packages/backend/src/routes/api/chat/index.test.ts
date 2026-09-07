@@ -57,8 +57,11 @@ vi.mock('@/models/connection', () => ({
 vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: vi.fn().mockResolvedValue({
     prompt: 'You are a helpful assistant. Support: {{SUPPORT_FORM_URL}}',
+    config: {},
+    version: 1,
     toJSON: () => ({}),
   }),
+  getPrompts: vi.fn(),
 }))
 
 vi.mock('@/helpers/build-system-prompt', () => ({
@@ -120,6 +123,7 @@ import { experimental_createMCPClient } from '@ai-sdk/mcp'
 import { streamText } from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import { getPrompt, getPrompts } from '@/helpers/ai/get-prompt'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 
@@ -145,6 +149,19 @@ function makeRes() {
     headersSent: false,
     end: vi.fn(),
   }
+}
+
+function makePrompt(
+  prompt: string,
+  version: number,
+  config: Record<string, unknown> = {},
+): Awaited<ReturnType<typeof getPrompt>> {
+  return {
+    prompt,
+    version,
+    config,
+    toJSON: () => ({ version }),
+  } as Awaited<ReturnType<typeof getPrompt>>
 }
 
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
@@ -237,6 +254,86 @@ describe('chat handler — GitBook MCP integration', () => {
       'Support: https://form.gov.sg/64929532701266001209ac32',
     )
     expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
+  })
+})
+
+describe('chat handler — Langfuse skills', () => {
+  const manifest = {
+    core: 'ai-builder/core',
+    summary: 'chat-summary',
+    skills: [
+      {
+        id: 'align',
+        prompt: 'ai-builder/align',
+        phases: ['align'],
+      },
+    ],
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        generateStepsPromptName: 'generate-steps',
+        version: 'latest',
+        mcpStepConfig: true,
+        skillManifestPromptName: 'ai-builder/manifest',
+      },
+    })
+  })
+
+  it('loads and composes prompts selected by the manifest', async () => {
+    vi.mocked(getPrompt).mockResolvedValueOnce(
+      makePrompt('{}', 3, manifest),
+    )
+    vi.mocked(getPrompts).mockResolvedValueOnce(
+      new Map([
+        ['ai-builder/core', makePrompt('Core', 4)],
+        ['ai-builder/align', makePrompt('Align', 5)],
+      ]),
+    )
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[options]] = vi.mocked(streamText).mock.calls
+    const systemMessage = options.messages.find(
+      (message) => message.role === 'system',
+    )
+    expect(systemMessage?.content).toBe('Core\n\n---\n\nAlign')
+    expect(options.experimental_telemetry?.metadata?.promptVersions).toBe(
+      JSON.stringify([
+        { name: 'ai-builder/manifest', version: 3 },
+        { name: 'ai-builder/core', version: 4 },
+        { name: 'ai-builder/align', version: 5 },
+      ]),
+    )
+  })
+
+  it('falls back to the monolith when a skill fetch fails', async () => {
+    vi.mocked(getPrompt)
+      .mockResolvedValueOnce(makePrompt('{}', 3, manifest))
+      .mockResolvedValueOnce(makePrompt('Monolith', 179))
+    vi.mocked(getPrompts).mockRejectedValueOnce(new Error('unavailable'))
+
+    const handler = router.stack[0].route.stack[0].handle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    const [[options]] = vi.mocked(streamText).mock.calls
+    const systemMessage = options.messages.find(
+      (message) => message.role === 'system',
+    )
+    expect(systemMessage?.content).toBe('Monolith')
+    expect(getPrompt).toHaveBeenLastCalledWith(
+      'chat',
+      'aiBuilder',
+      'latest',
+    )
   })
 })
 
