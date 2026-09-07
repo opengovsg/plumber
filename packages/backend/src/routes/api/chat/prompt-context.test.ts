@@ -107,25 +107,22 @@ describe('prompt manifest', () => {
 })
 
 describe('composePinnedSystemPrompt', () => {
-  it('strips restricted apps after composing skills and appends facts', () => {
+  it('joins core and skill prompts', () => {
     const result = composePinnedSystemPrompt({
       corePrompt: 'Core',
-      skillPrompts: ['| Store data | M365 Excel |'],
-      restrictedApps: ['m365-excel'],
-      facts: '\nKnown fact',
+      skillPrompts: ['Align', 'Propose'],
     })
 
-    expect(result).not.toContain('| Store data | M365 Excel |')
-    expect(result).toContain('user does not have access to')
-    expect(result.endsWith('Known fact')).toBe(true)
+    expect(result).toBe('Core\n\n---\n\nAlign\n\n---\n\nPropose')
   })
 })
 
 describe('prompt drafts', () => {
   it('retain runtime output contracts without static app catalogs', () => {
+    // Vitest cwd is packages/backend.
     const promptsDirectory = resolve(
-      __dirname,
-      '../../../../../../tools/langfuse/prompts/ai-builder',
+      process.cwd(),
+      '../../tools/langfuse/prompts/ai-builder',
     )
     const files = [
       'core.md',

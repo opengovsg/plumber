@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import { buildSystemPrompt } from '@/helpers/build-system-prompt'
-
 import type { ChatRequest } from './schema'
 
 export type ChatPhase = 'align' | 'propose' | 'configure' | 'edit' | 'guide'
@@ -115,16 +113,11 @@ export function selectPromptNames(
 interface ComposePinnedSystemPromptParams {
   corePrompt: string
   skillPrompts: string[]
-  restrictedApps: string[]
-  facts?: string
 }
 
 export function composePinnedSystemPrompt({
   corePrompt,
   skillPrompts,
-  restrictedApps,
-  facts = '',
 }: ComposePinnedSystemPromptParams): string {
-  const composedPrompt = [corePrompt, ...skillPrompts].join('\n\n---\n\n')
-  return buildSystemPrompt(composedPrompt, restrictedApps) + facts
+  return [corePrompt, ...skillPrompts].join('\n\n---\n\n')
 }
