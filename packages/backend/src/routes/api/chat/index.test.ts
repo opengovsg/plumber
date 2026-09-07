@@ -161,7 +161,7 @@ function makePrompt(
     version,
     config,
     toJSON: () => ({ version }),
-  } as Awaited<ReturnType<typeof getPrompt>>
+  } as unknown as Awaited<ReturnType<typeof getPrompt>>
 }
 
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
@@ -286,9 +286,7 @@ describe('chat handler — Langfuse skills', () => {
   })
 
   it('loads and composes prompts selected by the manifest', async () => {
-    vi.mocked(getPrompt).mockResolvedValueOnce(
-      makePrompt('{}', 3, manifest),
-    )
+    vi.mocked(getPrompt).mockResolvedValueOnce(makePrompt('{}', 3, manifest))
     vi.mocked(getPrompts).mockResolvedValueOnce(
       new Map([
         ['ai-builder/core', makePrompt('Core', 4)],
@@ -329,11 +327,7 @@ describe('chat handler — Langfuse skills', () => {
       (message) => message.role === 'system',
     )
     expect(systemMessage?.content).toBe('Monolith')
-    expect(getPrompt).toHaveBeenLastCalledWith(
-      'chat',
-      'aiBuilder',
-      'latest',
-    )
+    expect(getPrompt).toHaveBeenLastCalledWith('chat', 'aiBuilder', 'latest')
   })
 })
 

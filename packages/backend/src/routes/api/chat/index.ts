@@ -221,10 +221,9 @@ const handleChatStream = observe(
           })
           prompt = await getPrompt(chatPromptName, 'aiBuilder', version)
           systemPrompt =
-            buildSystemPrompt(prompt.prompt, restrictedApps) + connectionReminder
-          promptVersions = [
-            { name: chatPromptName, version: prompt.version },
-          ]
+            buildSystemPrompt(prompt.prompt, restrictedApps) +
+            connectionReminder
+          promptVersions = [{ name: chatPromptName, version: prompt.version }]
         }
       } else {
         const promptName = isAtLimit ? chatSummaryPromptName : chatPromptName
