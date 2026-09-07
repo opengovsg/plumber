@@ -41,6 +41,12 @@ import { HoverAddStepButton } from './HoverAddStepButton'
 import { blockActionButtonStyles, conditionBlockStyles } from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 
+/**
+ * 3 + 4, from `conditionBlockStyles.body`'s usual padding and the height
+ * HoverAddStepButton reserves for a last step's strip.
+ */
+const EMPTY_BLOCK_BODY_PB = 7
+
 interface IfThenProps {
   block: IfThenBlock
   // Whether this block is the last item in the flow, which drives the
@@ -281,7 +287,12 @@ export default function IfThen({
               }
             />
 
-            <Flex {...conditionBlockStyles.body} pb={isEmptyBlock ? 2 : 3}>
+            <Flex
+              {...conditionBlockStyles.body}
+              // An empty block reserves no trailing hover-+ strip, so its
+              // padding stands in for one and both blocks' bottoms align.
+              pb={isEmptyBlock ? EMPTY_BLOCK_BODY_PB : 3}
+            >
               {isEmptyBlock ? (
                 <HoverAddStepButton
                   isDisabled={readOnly}
