@@ -82,6 +82,9 @@ async function getIfThenStepIdToSkipTo(
   // row (a full Objection Step).
   const flowSteps = await loadFlowSteps($)
   const ifThenStep = flowSteps.find((step) => step.id === $.step.id)
+  if (!ifThenStep) {
+    throw new Error(`Step ${$.step.id} not found in its own flow's steps`)
+  }
 
   // Legacy if-then (no endStepId marker in config) → depth-scan engine verbatim,
   // so pure-legacy flows stay byte-identical.
@@ -142,7 +145,7 @@ async function getOnlyContinueIfStepIdToSkipTo(
 
 export async function getIfThenV1StepIdToSkipTo(
   $: IGlobalVariable,
-): Promise<IStep['id']> {
+): Promise<IStep['id'] | null> {
   // PERF-FIXME: Objectionjs does no caching, so this will almost always be
   // queried multiple times by the same worker during a test run. If it does
   // turn out to impact perf, we can LRU memoize this by executionId.

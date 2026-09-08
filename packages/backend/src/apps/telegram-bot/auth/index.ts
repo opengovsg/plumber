@@ -13,7 +13,6 @@ const auth: IUserAddedConnectionAuth = {
       type: 'string' as const,
       required: true,
       readOnly: false,
-      value: null,
       description: 'Bot token which should be retrieved from @botfather.',
       clickToCopy: false,
       autoComplete: 'off' as const,
