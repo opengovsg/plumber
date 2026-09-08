@@ -6,6 +6,7 @@ import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 import type User from '@/models/user'
 
+import { appendAddTileColumnsAiBuilderConfig } from './tile-ai-builder-config'
 import {
   parseAddTileColumnsInput,
   type TileColumnResult,
@@ -15,6 +16,7 @@ export interface AddTileColumnsInput {
   user: User
   tableId: string
   columns: string[]
+  traceId?: string
 }
 
 export interface AddTileColumnsResult {
@@ -28,6 +30,7 @@ export async function addTileColumnsService({
   user,
   tableId,
   columns,
+  traceId,
 }: AddTileColumnsInput): Promise<AddTileColumnsResult> {
   const { tableId: parsedTableId, columns: columnNames } =
     parseAddTileColumnsInput({ tableId, columns })
@@ -84,6 +87,15 @@ export async function addTileColumnsService({
         parsedTableId,
         inserted.map((column) => column.id),
       )
+
+      if (traceId) {
+        await table.$query(trx).patch({
+          config: appendAddTileColumnsAiBuilderConfig(table.config, {
+            traceId,
+            addedColumnIds: inserted.map((column) => column.id),
+          }),
+        })
+      }
     })
   }
 

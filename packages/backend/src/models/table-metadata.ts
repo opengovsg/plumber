@@ -1,4 +1,4 @@
-import { ITableCollabRole } from '@plumber/types'
+import { ITableCollabRole, ITableConfig } from '@plumber/types'
 
 import Base from './base'
 import ExtendedQueryBuilder from './query-builder'
@@ -25,6 +25,7 @@ class TableMetadata extends Base {
   role?: ITableCollabRole
   lastAccessedAt?: Date
   db: 'pg' | 'ddb'
+  config: ITableConfig | null
 
   static tableName = 'table_metadata'
 
@@ -41,6 +42,7 @@ class TableMetadata extends Base {
           tokenNonce: { type: 'string' },
         },
       },
+      config: { type: ['object', 'null'] },
     },
   }
 

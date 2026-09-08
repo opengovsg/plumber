@@ -5,6 +5,7 @@ import { UserFacingError } from '@/errors/user-facing-error'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
 
 import {
   generateMockCollaborator,
@@ -45,6 +46,26 @@ describe('createTileService', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     )
     expect(await checkIfTableExists(result.id)).toBe(true)
+
+    const stored = await TableMetadata.query().findById(result.id)
+    expect(stored?.config).toBeNull()
+  })
+
+  it('stamps aiBuilderConfig.createTile when traceId is provided', async () => {
+    const context = await generateMockContext()
+    const result = await createTileService({
+      user: context.currentUser,
+      name: 'AI Tile',
+      columns: ['Status'],
+      traceId: 'trace-create',
+    })
+
+    const stored = await TableMetadata.query().findById(result.id)
+    expect(stored?.config).toEqual({
+      aiBuilderConfig: {
+        createTile: { traceId: 'trace-create' },
+      },
+    })
   })
 
   it('wires pipe collaborators when pipeId is provided', async () => {

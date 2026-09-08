@@ -5,6 +5,7 @@ import createTable from '@/graphql/mutations/tiles/create-table'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import TableCollaborator from '@/models/table-collaborators'
+import TableMetadata from '@/models/table-metadata'
 import * as ddbTableRowFunctions from '@/models/tiles/dynamodb/table-row/functions'
 import * as pgTableFunctions from '@/models/tiles/pg/table-functions'
 import * as pgTableRowFunctions from '@/models/tiles/pg/table-row-functions'
@@ -70,6 +71,8 @@ describe.each([['pg'], ['ddb']])(
       expect(tableColumnCount).toBe(0)
       expect(pgCreateTableRowsSpy).not.toHaveBeenCalled()
       expect(ddbCreateTableRowsSpy).not.toHaveBeenCalled()
+      const stored = await TableMetadata.query().findById(table.id)
+      expect(stored?.config).toBeNull()
       if (databaseType === 'pg') {
         expect(pgCreateTableSpy).toHaveBeenCalledWith(table.id, [])
         // we check if the table is actually created here

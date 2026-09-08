@@ -134,6 +134,7 @@ describe('createMcpBridgeTools', () => {
       name: 'Leave applications',
       columns: ['Name'],
       pipeId: '123e4567-e89b-12d3-a456-426614174000',
+      traceId: mockTraceId,
     })
   })
 
@@ -167,6 +168,7 @@ describe('createMcpBridgeTools', () => {
       user: mockUser,
       tableId: '123e4567-e89b-12d3-a456-426614174111',
       columns: ['Notes'],
+      traceId: mockTraceId,
     })
   })
 
@@ -183,6 +185,7 @@ describe('createMcpBridgeTools', () => {
       user: mockUser,
       tableId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
       columns: ['Notes'],
+      traceId: mockTraceId,
     })
   })
 

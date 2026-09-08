@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { UserFacingError } from '@/errors/user-facing-error'
+import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 
 import {
@@ -10,6 +11,7 @@ import {
   generateMockTableColumns,
 } from '../../../graphql/__tests__/mutations/tiles/table.mock'
 import { addTileColumnsService } from '../add-tile-columns'
+import { createTileService } from '../create-tile'
 
 const mocks = vi.hoisted(() => ({
   getLdFlagValue: vi.fn().mockResolvedValue('pg'),
@@ -47,6 +49,102 @@ describe('addTileColumnsService', () => {
     expect(result.columns.map((column) => column.name)).toContain(
       'Test Column 0',
     )
+
+    const stored = await TableMetadata.query().findById(table.id)
+    expect(stored?.config).toBeNull()
+  })
+
+  it('appends aiBuilderConfig.addTileColumns without inventing createTile', async () => {
+    const context = await generateMockContext()
+    const { table } = await generateMockTable({
+      userId: context.currentUser.id,
+      databaseType: 'pg',
+    })
+    await generateMockTableColumns({
+      tableId: table.id,
+      numColumns: 1,
+      databaseType: 'pg',
+    })
+
+    const first = await addTileColumnsService({
+      user: context.currentUser,
+      tableId: table.id,
+      columns: ['Notes'],
+      traceId: 'trace-add-1',
+    })
+    const notesId = first.columns.find((column) => column.name === 'Notes')?.id
+
+    const second = await addTileColumnsService({
+      user: context.currentUser,
+      tableId: table.id,
+      columns: ['Priority'],
+      traceId: 'trace-add-2',
+    })
+    const priorityId = second.columns.find(
+      (column) => column.name === 'Priority',
+    )?.id
+
+    const stored = await TableMetadata.query().findById(table.id)
+    expect(notesId).toBeDefined()
+    expect(priorityId).toBeDefined()
+    expect(stored?.config).toEqual({
+      aiBuilderConfig: {
+        addTileColumns: [
+          { traceId: 'trace-add-1', addedColumnIds: [notesId] },
+          { traceId: 'trace-add-2', addedColumnIds: [priorityId] },
+        ],
+      },
+    })
+  })
+
+  it('does not stamp config when every column name is skipped', async () => {
+    const context = await generateMockContext()
+    const { table } = await generateMockTable({
+      userId: context.currentUser.id,
+      databaseType: 'pg',
+    })
+    await generateMockTableColumns({
+      tableId: table.id,
+      numColumns: 1,
+      databaseType: 'pg',
+    })
+
+    await addTileColumnsService({
+      user: context.currentUser,
+      tableId: table.id,
+      columns: ['Test Column 0'],
+      traceId: 'trace-skip',
+    })
+
+    const stored = await TableMetadata.query().findById(table.id)
+    expect(stored?.config).toBeNull()
+  })
+
+  it('keeps createTile when add_tile_columns runs on an AI-created tile', async () => {
+    const context = await generateMockContext()
+    const created = await createTileService({
+      user: context.currentUser,
+      name: 'AI Tile',
+      columns: ['Status'],
+      traceId: 'trace-create',
+    })
+
+    const added = await addTileColumnsService({
+      user: context.currentUser,
+      tableId: created.id,
+      columns: ['Extra'],
+      traceId: 'trace-add',
+    })
+    const extraId = added.columns.find((column) => column.name === 'Extra')?.id
+
+    const stored = await TableMetadata.query().findById(created.id)
+    expect(extraId).toBeDefined()
+    expect(stored?.config).toEqual({
+      aiBuilderConfig: {
+        createTile: { traceId: 'trace-create' },
+        addTileColumns: [{ traceId: 'trace-add', addedColumnIds: [extraId] }],
+      },
+    })
   })
 
   it('rejects viewers', async () => {

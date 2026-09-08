@@ -1248,6 +1248,18 @@ export interface ITableColumnConfig {
   width?: number
 }
 
+export interface ITableAiBuilderConfig {
+  createTile?: { traceId: string }
+  addTileColumns?: Array<{
+    traceId: string
+    addedColumnIds: string[]
+  }>
+}
+
+export interface ITableConfig {
+  aiBuilderConfig?: ITableAiBuilderConfig
+}
+
 export interface ITableColumnMetadata {
   id: string
   name: string
