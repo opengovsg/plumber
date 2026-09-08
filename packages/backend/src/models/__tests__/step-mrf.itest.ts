@@ -43,7 +43,7 @@ describe('step model - getNextStep MRF branch handling', () => {
       const nextStep = await currentStep.getNextStep()
 
       expect(nextStep).toBeDefined()
-      expect(nextStep.id).toBe(step3.id)
+      expect(nextStep!.id).toBe(step3.id)
     })
 
     it('should return undefined when there is no next step', async () => {
@@ -72,7 +72,7 @@ describe('step model - getNextStep MRF branch handling', () => {
       const nextStep = await currentStep.getNextStep()
 
       expect(nextStep).toBeDefined()
-      expect(nextStep.id).toBe(step2.id)
+      expect(nextStep!.id).toBe(step2.id)
     })
   })
 
@@ -101,7 +101,7 @@ describe('step model - getNextStep MRF branch handling', () => {
       const nextStep = await currentStep.getNextStep()
 
       expect(nextStep).toBeDefined()
-      expect(nextStep.id).toBe(rejectStep2.id)
+      expect(nextStep!.id).toBe(rejectStep2.id)
     })
 
     it('should return undefined if the next step is in a different rejection branch', async () => {
@@ -214,7 +214,7 @@ describe('step model - getNextStep MRF branch handling', () => {
       const nextStep = await currentStep.getNextStep()
 
       expect(nextStep).toBeDefined()
-      expect(nextStep.id).toBe(mrfStep5.id)
+      expect(nextStep!.id).toBe(mrfStep5.id)
     })
 
     it('should return undefined when no MRF action step follows the reject branch', async () => {
@@ -273,7 +273,7 @@ describe('step model - getNextStep MRF branch handling', () => {
       const nextStep = await currentStep.getNextStep()
 
       expect(nextStep).toBeDefined()
-      expect(nextStep.id).toBe(mrfStep6.id)
+      expect(nextStep!.id).toBe(mrfStep6.id)
     })
   })
 
@@ -315,13 +315,13 @@ describe('step model - getNextStep MRF branch handling', () => {
       const step2 = await fetchStep(mrfStep2.id)
       const nextFrom2 = await step2.getNextStep()
       expect(nextFrom2).toBeDefined()
-      expect(nextFrom2.id).toBe(mrfStep4.id)
+      expect(nextFrom2!.id).toBe(mrfStep4.id)
 
       // From mrfStep4, should skip its reject branch and land on mrfStep6
       const step4 = await fetchStep(mrfStep4.id)
       const nextFrom4 = await step4.getNextStep()
       expect(nextFrom4).toBeDefined()
-      expect(nextFrom4.id).toBe(mrfStep6.id)
+      expect(nextFrom4!.id).toBe(mrfStep6.id)
     })
 
     it('should not skip non-reject-branch normal steps', async () => {
@@ -342,7 +342,7 @@ describe('step model - getNextStep MRF branch handling', () => {
 
       // Normal step at position 3 is not in a rejection branch → return it directly
       expect(nextStep).toBeDefined()
-      expect(nextStep.id).toBe(normalStep3.id)
+      expect(nextStep!.id).toBe(normalStep3.id)
     })
   })
 })

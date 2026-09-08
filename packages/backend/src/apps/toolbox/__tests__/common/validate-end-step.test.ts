@@ -104,7 +104,7 @@ describe('validateEndStepWrite', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
     loggerErrorSpy.mockClear()
   })
 
@@ -413,7 +413,7 @@ describe('extractSelfEndStepIntent', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
     loggerErrorSpy.mockClear()
   })
 
@@ -465,7 +465,7 @@ describe('validateFlowBlocks', () => {
   let loggerWarnSpy: MockInstance
 
   beforeEach(() => {
-    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => null)
+    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
     loggerWarnSpy.mockClear()
   })
 

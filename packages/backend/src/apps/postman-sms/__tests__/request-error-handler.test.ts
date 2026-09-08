@@ -33,10 +33,10 @@ describe('Postman SMS request error handler', () => {
         status: 429,
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -55,7 +55,7 @@ describe('Postman SMS request error handler', () => {
         },
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(StepError)
     })
   })
 
@@ -66,10 +66,10 @@ describe('Postman SMS request error handler', () => {
         status,
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -80,10 +80,10 @@ describe('Postman SMS request error handler', () => {
         message: 'read ETIMEDOUT',
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -95,10 +95,10 @@ describe('Postman SMS request error handler', () => {
         code: 'ETIMEDOUT',
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -110,8 +110,10 @@ describe('Postman SMS request error handler', () => {
         status: 400,
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
-      await expect(requestErrorHandler($, error)).rejects.not.toThrow(TypeError)
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler!($, error)).rejects.not.toThrow(
+        TypeError,
+      )
     })
   })
 })
