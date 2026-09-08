@@ -54,9 +54,12 @@ const globalVariable = async (
     },
   )
 
-  const $: IGlobalVariable = {
+  // http is attached below via mutation, since createHttpClient captures $ by
+  // reference for its (deferred, async) interceptors, and $ can't reference
+  // itself from within its own literal.
+  const $ = {
     auth: {
-      set: async (args: IJSONObject) => {
+      set: async (args: IJSONObject): Promise<null> => {
         const updatedAuthData = {
           ...$.auth.data,
           ...args,
@@ -113,7 +116,9 @@ const globalVariable = async (
      *
      * For-each case: add the iteration number to get the correct execution step for steps in the for-each
      */
-    getLastExecutionStep: async (options) => {
+    getLastExecutionStep: async (
+      options: Parameters<IGlobalVariable['getLastExecutionStep']>[0],
+    ) => {
       if (options?.sameExecution && !execution?.id) {
         throw new Error('Execution ID is required to get last execution step')
       }
@@ -152,7 +157,7 @@ const globalVariable = async (
     },
     user: user ?? flow?.user,
     metadata,
-  }
+  } as unknown as IGlobalVariable
 
   if (request) {
     $.request = request

@@ -36,7 +36,7 @@ describe('send payment email', () => {
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
-    }
+    } as unknown as IGlobalVariable
   })
 
   afterEach(() => {

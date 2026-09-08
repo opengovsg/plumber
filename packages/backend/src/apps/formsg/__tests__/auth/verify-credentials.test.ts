@@ -50,7 +50,7 @@ describe('verify credentials', () => {
         }),
       } as unknown as IHttpClient, // deliberately cast
       app: apps.formsg,
-    }
+    } as unknown as IGlobalVariable
   })
 
   // Reset each mock after tests
