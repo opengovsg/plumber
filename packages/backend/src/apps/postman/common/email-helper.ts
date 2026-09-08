@@ -5,6 +5,7 @@ import { sortBy } from 'lodash'
 
 import appConfig from '@/config/app'
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import { incrementMetric } from '@/helpers/metrics'
 import { sanitizeEmailHtml } from '@/helpers/sanitize-email-html'
@@ -78,7 +79,7 @@ interface PostmanPromiseFulfilled {
 interface PostmanPromiseRejected {
   status: PostmanEmailSendStatus
   recipient: string
-  error: HttpError
+  error: unknown
 }
 
 async function sendViaPostman(
@@ -95,7 +96,7 @@ async function sendViaPostman(
     `${email.senderName} <${appConfig.postman.fromAddress}>`,
   )
   requestData.append('disable_tracking', 'true')
-  if (email.ccList?.length > 0) {
+  if ((email.ccList?.length ?? 0) > 0) {
     requestData.append('cc', JSON.stringify(email.ccList))
   }
 
@@ -167,6 +168,14 @@ async function sendViaSes(
   // attachments for) every recipient.
   sharedRawMessage: Buffer | undefined,
 ): Promise<PostmanPromiseFulfilled> {
+  if (!appConfig.ses.fromAddress) {
+    throw new StepError({
+      name: 'SES_FROM_ADDRESS environment variable needs to be set!',
+      solution:
+        'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+      kind: 'internal',
+    })
+  }
   const client = getSesClient()
   // Address sent to SES: display name is RFC 5322-quoted when it contains
   // specials (e.g. a comma) so the header isn't malformed.
@@ -295,7 +304,7 @@ export async function sendTransactionalEmails(
 ): Promise<{
   dataOut: PostmanEmailDataOut
   errorStatus?: PostmanEmailSendStatus
-  error?: HttpError
+  error?: unknown
 }> {
   // Pre-send suppression check (SES path only). CC addresses are included so a
   // blacklisted CC can be dropped from the SES call rather than re-sent to
@@ -339,6 +348,10 @@ export async function sendTransactionalEmails(
     )
     if (totalAttachmentBytes > SES_MAX_TOTAL_ATTACHMENT_SIZE) {
       attachmentBuildError = new AttachmentSizeExceededError()
+    } else if (!appConfig.ses.fromAddress) {
+      attachmentBuildError = new Error(
+        'SES_FROM_ADDRESS environment variable needs to be set!',
+      )
     } else {
       try {
         sharedRawMessage = await buildRawEmail({
@@ -421,7 +434,7 @@ export async function sendTransactionalEmails(
   const results = await Promise.allSettled(promises)
   const status: PostmanEmailSendStatus[] = []
   const recipient: string[] = []
-  let params: Omit<PostmanEmailDataOut, 'status' | 'recipient'>
+  let params: Omit<PostmanEmailDataOut, 'status' | 'recipient'> | undefined
   const errors: PostmanPromiseRejected[] = []
 
   // Merge suppressed entries and send results back into input order so

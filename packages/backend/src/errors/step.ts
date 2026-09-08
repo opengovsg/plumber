@@ -14,7 +14,8 @@ export interface StepErrorOptions {
   name: string
   solution: string
   kind?: StepErrorKind
-  cause?: HttpError
+  // Not always an HttpError: SDK errors (e.g. SES) are kept so their kind can still be classified.
+  cause?: unknown
 }
 
 export default class StepError extends Error {
@@ -56,7 +57,11 @@ export default class StepError extends Error {
       name,
       solution,
       kind,
-      details: cause?.details as IJSONObject,
+      details: (typeof cause === 'object' &&
+      cause !== null &&
+      'details' in cause
+        ? cause.details
+        : undefined) as IJSONObject,
       ...extraProperties,
     }
     const computedMessage = JSON.stringify(stepError)
