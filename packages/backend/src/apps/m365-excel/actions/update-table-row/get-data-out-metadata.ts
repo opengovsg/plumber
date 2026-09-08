@@ -4,7 +4,7 @@ import { dataOutSchema } from './schemas'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut: rawDataOut } = executionStep
   if (!rawDataOut) {
     return null

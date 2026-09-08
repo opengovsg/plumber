@@ -1,6 +1,7 @@
 import { IFlowCollabRole, ITableCollabRole } from '@plumber/types'
 
 import crypto from 'crypto'
+import type { Knex } from 'knex'
 import {
   AnyQueryBuilder,
   ModelOptions,
@@ -32,7 +33,7 @@ class User extends Base {
   id!: string
   email!: string
   otpHash?: string
-  otpAttempts: number
+  otpAttempts!: number
   otpSentAt?: Date
   connections?: Connection[]
   flows?: Flow[]
@@ -153,11 +154,14 @@ class User extends Base {
       .modifyGraph('flow', (flowQuery: any) => {
         // this.applyFlowRoleSelection(flowQuery, userId)
         flowQuery
-          .leftJoin('flow_collaborators as fc', function () {
-            this.on('fc.flow_id', 'flows.id')
-              .andOnNull('fc.deleted_at')
-              .andOnVal('fc.user_id', userId)
-          })
+          .leftJoin(
+            'flow_collaborators as fc',
+            function (this: Knex.JoinClause) {
+              this.on('fc.flow_id', 'flows.id')
+                .andOnNull('fc.deleted_at')
+                .andOnVal('fc.user_id', userId)
+            },
+          )
           .select('flows.*', Flow.raw(ROLE_STMT, [userId]))
       })
   }

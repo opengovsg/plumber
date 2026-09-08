@@ -9,7 +9,7 @@ import { CreateRowOutput } from '../../types'
  */
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut } = executionStep
   if (!dataOut?.row || typeof dataOut.row !== 'object') {
     return null
