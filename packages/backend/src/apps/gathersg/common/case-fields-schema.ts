@@ -107,7 +107,8 @@ const transformCaseFields = (params: CaseField[], context: z.RefinementCtx) => {
       }
       result[field] = listValue
     } else {
-      result[field] = typeof value === 'string' ? value : value?.join(', ')
+      result[field] =
+        (typeof value === 'string' ? value : value?.join(', ')) ?? null
     }
   }
   return result
