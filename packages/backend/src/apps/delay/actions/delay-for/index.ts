@@ -13,7 +13,7 @@ const action: IRawAction = {
       key: 'delayForUnit',
       type: 'dropdown' as const,
       required: true,
-      value: null,
+      value: undefined,
       description: 'Delay for unit, e.g. minutes, hours, days, weeks.',
       variables: false,
       showOptionValue: false,
