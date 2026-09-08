@@ -16,7 +16,7 @@ function getCurrentTenantKeys(connections: Connection[]): ReadonlySet<string> {
         (connection) =>
           connection.formattedData?.tenantKey as string | undefined | null,
       )
-      .filter((key) => !!key),
+      .filter((key): key is string => !!key),
   )
 }
 

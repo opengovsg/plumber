@@ -1,3 +1,5 @@
+import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
+
 // Needed to break circular import between auth.getSystemAddedConnections and
 // main app definition
 export const APP_KEY = 'm365-excel'
@@ -13,7 +15,7 @@ export const TEST_STEP_MAX_COLUMNS = 100
 
 export const MAX_LOOKUP_CONDITIONS = 3
 
-export const LOOKUP_CONDITIONS_SUBFIELDS = [
+export const LOOKUP_CONDITIONS_SUBFIELDS: IFieldMultiRowMultiColSubField[] = [
   {
     placeholder: 'Lookup column',
     key: 'lookupColumn',
