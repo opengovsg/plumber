@@ -19,7 +19,6 @@ const auth: IUserAddedConnectionAuth = {
       type: 'string' as const,
       required: true,
       readOnly: false,
-      value: null,
       description:
         'Click share on your form and copy the link. It should be in the format: https://form.gov.sg/654ab1234abc1a012345f1e0b',
       clickToCopy: false,
@@ -31,7 +30,6 @@ const auth: IUserAddedConnectionAuth = {
       type: 'dragdrop' as const,
       required: true,
       readOnly: false,
-      value: null,
       description:
         'This is the key you downloaded/saved when you created the form',
       placeholder: 'Enter or drop your Secret Key here to continue',

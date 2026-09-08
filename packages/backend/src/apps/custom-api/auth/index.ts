@@ -12,7 +12,6 @@ const auth: IUserAddedConnectionAuth = {
       type: 'string' as const,
       required: true,
       readOnly: false,
-      value: null,
       clickToCopy: false,
     },
     {
@@ -21,7 +20,6 @@ const auth: IUserAddedConnectionAuth = {
       type: 'multiline' as const,
       required: false,
       readOnly: false,
-      value: null,
       description:
         'Enter your headers in this format: KEY=VALUE (one per line)',
       clickToCopy: false,

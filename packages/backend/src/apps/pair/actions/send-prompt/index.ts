@@ -107,6 +107,10 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     const validatedParameters = schema.safeParse($.step.parameters)
 
     if (!validatedParameters.success) {
