@@ -34,6 +34,10 @@ interface DynamicPickerProps {
   onNoOptionsFound?: (reason?: string) => void
   onAddConnection?: () => void
   /**
+   * Tiles listTables picker: send A: [create new] so the LLM can propose a schema.
+   */
+  onCreateNew?: () => void
+  /**
    * FormSG only: a form URL already shared in the conversation. When set,
    * the picker skips the connections list entirely and shows a single
    * "finish connecting" card — the user just adds their secret key for the
@@ -53,6 +57,7 @@ export default function DynamicPicker({
   onSkip,
   onNoOptionsFound,
   onAddConnection,
+  onCreateNew,
   knownFormUrl,
   cancelStream,
 }: DynamicPickerProps) {
@@ -123,7 +128,7 @@ export default function DynamicPicker({
         }
 
         // Zero options is a real result — let the LLM self-troubleshoot.
-        if (!isAppKeyMode && data.length === 0) {
+        if (!isAppKeyMode && data.length === 0 && !onCreateNew) {
           onNoOptionsFound?.()
         }
       })
@@ -250,6 +255,15 @@ export default function DynamicPicker({
                   Plumber&apos;s connection settings.
                 </Text>
               )
+            ) : onCreateNew ? (
+              <Button
+                variant="outline"
+                alignSelf="flex-start"
+                isDisabled={isStreaming}
+                onClick={onCreateNew}
+              >
+                Create a new tile
+              </Button>
             ) : (
               <Text color="gray.500" fontSize="sm" px={2}>
                 No matching options were found for this field.
@@ -334,6 +348,18 @@ export default function DynamicPicker({
                   {appKey === 'formsg'
                     ? 'Add a new form'
                     : 'Add a new connection'}
+                </Button>
+              )}
+              {onCreateNew && hasOptions && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  color="primary.500"
+                  isDisabled={isStreaming}
+                  onClick={onCreateNew}
+                  fontWeight="normal"
+                >
+                  Create a new tile
                 </Button>
               )}
             </Flex>
