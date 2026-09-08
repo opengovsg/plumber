@@ -90,6 +90,23 @@ async function enqueueFirstForEachStep({
 }
 
 /**
+ * error may be anything thrown (including null/undefined), not just an Error
+ * instance, so message extraction can't assume `.message` exists. A bare
+ * String(error) would turn a null error into the valid-JSON string "null"
+ * (silently clearing actionOutput.error below) and an undefined error into
+ * the unhelpful literal string "undefined".
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (error === null || error === undefined) {
+    return 'Unknown error'
+  }
+  return String(error)
+}
+
+/**
  * Maps a thrown action error onto `$.actionOutput.error`, so the failure is
  * recorded on the execution step's `errorDetails`. Shared by the single-job path
  * (`processAction`'s catch) and the batch path (the batch worker's `runBatch`
@@ -108,13 +125,14 @@ export function setActionOutputError($: IGlobalVariable, error: unknown): void {
       statusText: error.response.statusText,
     })
   } else {
+    const message = getErrorMessage(error)
     try {
-      const parsedError = JSON.parse((error as Error).message)
+      const parsedError = JSON.parse(message)
       $.actionOutput.error = parsedError
       logger.error('Action error', parsedError)
     } catch {
-      $.actionOutput.error = { error: (error as Error).message }
-      logger.error('Action error', { error: (error as Error).message })
+      $.actionOutput.error = { error: message }
+      logger.error('Action error', { error: message })
     }
   }
 }
