@@ -32,15 +32,18 @@ export type AiChatIdea = {
   input: string
 }
 
-export const PLACEHOLDER_MESSAGES = [
-  'Think in order. What happens first, and what follows',
-  "Describe what you have in mind and we'll show you what's possible",
-  "Share what you're trying to do and we'll help you figure out the best way to automate it",
-]
+export const PLACEHOLDER_MESSAGE =
+  "Describe the task and we'll build it for you, or ask a question"
 
 // Maximum number of messages allowed in a conversation (hard limit).
 // Keep in sync with backend/src/routes/api/chat/{schema,index}.ts.
 export const MAX_MESSAGES = 150
+
+// Support form URL, pre-filled with the chat ID for tracing. Keep in sync with
+// backend/src/helpers/ai/build-support-form-url.ts.
+export const SUPPORT_FORM_BASE_URL =
+  'https://form.gov.sg/64929532701266001209ac32'
+export const SUPPORT_FORM_CHAT_ID_FIELD = '6a979221b8ae314641032f5c'
 
 // App keys that support AI Builder's generic in-chat "add connection" flow
 // (secret-key or OAuth-via-popup apps, driven entirely by each app's

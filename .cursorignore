@@ -1,0 +1,19 @@
+# Secrets: keep credentials out of Cursor's index and AI context.
+# .env-example files stay visible because they hold no secrets.
+.env
+.env.*
+
+# Private keys and keystores. None exist today; these are pre-emptive.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_ed25519
+
+# Credential stores that tooling drops into working directories.
+.netrc
+.pgpass
+*.tfvars
+cypress.env.json

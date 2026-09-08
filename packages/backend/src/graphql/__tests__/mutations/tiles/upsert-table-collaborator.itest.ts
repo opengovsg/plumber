@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import TableMetadata from '@/models/table-metadata'
@@ -9,6 +9,15 @@ import Context from '@/types/express/context'
 import upsertTableCollaborator from '../../../mutations/tiles/upsert-table-collaborator'
 
 import { generateMockContext, generateMockTable } from './table.mock'
+
+const mocks = vi.hoisted(() => ({
+  // Empty string means no login block, so new collaborators are allowed.
+  getLdFlagValue: vi.fn().mockResolvedValue(''),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
+}))
 
 describe.each([['ddb'], ['pg']])(
   'update table collaborators: %s',

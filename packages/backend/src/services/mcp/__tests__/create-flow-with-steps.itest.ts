@@ -22,7 +22,6 @@ describe('createFlowWithStepsService', () => {
       'ai-builder': {
         enabled: true,
         config: {
-          generateStepsPromptName: 'generate-steps',
           version: 'production',
         },
       },

@@ -1,10 +1,13 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 
 import * as URLS from '@/config/urls'
 import { CREATE_FLOW } from '@/graphql/mutations/create-flow'
-import { useCreateFlowContext } from '@/pages/Flows/contexts/CreateFlowContext'
+import {
+  FLOW_CREATE_MODE,
+  useCreateFlowContext,
+} from '@/pages/Flows/contexts/CreateFlowContext'
 
 export const useFlowCreation = () => {
   const navigate = useNavigate()
@@ -17,14 +20,7 @@ export const useFlowCreation = () => {
     setFlowName(inputRef.current?.value || '')
   }, [])
 
-  const isButtonDisabled = useMemo(() => {
-    // ai builder auto-suggests a name for the pipe
-    // template does not require a name
-    if (createMode === 'ai' || createMode === 'template') {
-      return false
-    }
-    return flowName.trim() === ''
-  }, [createMode, flowName])
+  const isButtonDisabled = flowName.trim() === ''
 
   const onCreateFlow = useCallback(
     async (flowName: string) => {
@@ -43,14 +39,16 @@ export const useFlowCreation = () => {
   )
 
   const handleModeSubmit = useCallback(
-    (options?: { onClose?: () => void }) => {
-      if (createMode === 'ai') {
+    (options?: { onClose?: () => void; mode?: FLOW_CREATE_MODE }) => {
+      const mode = options?.mode ?? createMode
+
+      if (mode === 'ai') {
         options?.onClose?.()
         navigate(`${URLS.EDITOR}/ai`, { replace: true })
         return
       }
 
-      if (createMode === 'template') {
+      if (mode === 'template') {
         options?.onClose?.()
         navigate(URLS.TEMPLATES)
         return

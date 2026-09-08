@@ -7,7 +7,12 @@ import {
   DynamicPickerPart,
   IsChatReadyPart,
   Message,
+  TileSetupPart,
 } from '@/hooks/useChatStream'
+import {
+  SUPPORT_FORM_BASE_URL,
+  SUPPORT_FORM_CHAT_ID_FIELD,
+} from '@/pages/AiBuilder/constants'
 
 // Strip HTML comment blocks from AI chat text before display.
 // Complete comments (<!-- ... -->) are invisible in HTML but some markdown parsers
@@ -35,6 +40,17 @@ export const normalizeMarkdownHeadings = (text: string): string =>
 
 export const prepareAiText = (text: string): string =>
   normalizeMarkdownHeadings(stripHtmlComments(text))
+
+// Support form URL with the chat ID pre-filled, so a submitted request can be
+// traced back to its Langfuse session.
+export const buildSupportFormUrl = (chatId: string | undefined): string => {
+  if (!chatId) {
+    return SUPPORT_FORM_BASE_URL
+  }
+
+  const params = new URLSearchParams({ [SUPPORT_FORM_CHAT_ID_FIELD]: chatId })
+  return `${SUPPORT_FORM_BASE_URL}?${params.toString()}`
+}
 
 // First user message sent after connecting a form from the empty state.
 // The parenthetical carries the connection id (for assigning the trigger in
@@ -173,7 +189,7 @@ export const isNoOptionsSignalMessage = (text: string): boolean =>
   text.includes('\nA: [no options available')
 
 // Matches FormSG share links across environments (form.gov.sg,
-// staging.form.gov.sg, …) ending in a 24-hex-char form ID.
+// stg.form.gov.sg, …) ending in a 24-hex-char form ID.
 const FORM_URL_REGEX =
   /https:\/\/(?:[a-z0-9-]+\.)?form\.gov\.sg\/(?:[a-zA-Z0-9/]*\/)?[a-f0-9]{24}/gi
 
@@ -322,6 +338,10 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       (part): part is ColumnTablePart => part.type === 'data-columnTable',
     )
 
+    const tileSetupPart = msg.parts.find(
+      (part): part is TileSetupPart => part.type === 'data-tileSetup',
+    )
+
     return {
       id: msg.id,
       text: extractTextContent(msg),
@@ -331,6 +351,7 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       clarification: clarificationPart?.data.questions,
       dynamicPicker: dynamicPickerPart?.data,
       columnTable: columnTablePart?.data,
+      tileSetup: tileSetupPart?.data,
     }
   })
 

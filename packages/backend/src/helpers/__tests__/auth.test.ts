@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import appConfig from '@/config/app'
+import { BLOCK_NEW_LOGINS_FLAG } from '@/config/flags'
 import User from '@/models/user'
 
 import {
@@ -12,6 +13,7 @@ import {
   sendOnboardingEmail,
   updateLastLogin,
 } from '../auth'
+import { getLdFlagValue } from '../launch-darkly'
 
 const mockPatchWhere = vi.fn()
 
@@ -52,6 +54,9 @@ vi.mock('@/config/app', () => ({
     onboardingEmailWebhookUrl: 'https://test-webhook.com',
     adminJwtSecretKey: 'test-secret-key',
   },
+}))
+vi.mock('../launch-darkly', () => ({
+  getLdFlagValue: vi.fn(),
 }))
 
 describe('Auth helpers', () => {
@@ -104,6 +109,10 @@ describe('Auth helpers', () => {
   })
 
   describe('getOrCreateUser', () => {
+    beforeEach(() => {
+      vi.mocked(getLdFlagValue).mockResolvedValue('')
+    })
+
     afterEach(() => {
       vi.clearAllMocks() // Clear mocks after each test
     })
@@ -189,6 +198,43 @@ describe('Auth helpers', () => {
       expect(mocks.insertAndFetch).toHaveBeenCalledWith({
         email: email.toLowerCase(),
       })
+    })
+
+    it('should reject a new login with the message served by LD', async () => {
+      mocks.findOne.mockResolvedValueOnce(null)
+      vi.mocked(getLdFlagValue).mockResolvedValue(
+        'Logins are paused while we migrate your agency.',
+      )
+
+      await expect(getOrCreateUser('chef@kitchen.com')).rejects.toThrowError(
+        'Logins are paused while we migrate your agency.',
+      )
+
+      expect(mocks.insertAndFetch).not.toHaveBeenCalled()
+    })
+
+    it('should evaluate the block flag against the lowercased email', async () => {
+      mocks.findOne.mockResolvedValueOnce(null)
+      mocks.insertAndFetch.mockResolvedValueOnce({ id: 'new-user-id' })
+
+      await getOrCreateUser('  Chef@KITCHEN.com  ')
+
+      expect(getLdFlagValue).toHaveBeenCalledWith(
+        BLOCK_NEW_LOGINS_FLAG,
+        'chef@kitchen.com',
+        '',
+      )
+    })
+
+    it('should not consult LD for an existing user', async () => {
+      mocks.findOne.mockResolvedValueOnce({
+        id: 'test-user-id',
+        email: 'barista@coffee.com',
+      })
+
+      await getOrCreateUser('barista@coffee.com')
+
+      expect(getLdFlagValue).not.toHaveBeenCalled()
     })
   })
 

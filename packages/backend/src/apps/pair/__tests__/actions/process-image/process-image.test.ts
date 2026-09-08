@@ -1,5 +1,6 @@
 import { type IGlobalVariable } from '@plumber/types'
 
+import { APICallError } from 'ai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
@@ -16,7 +17,8 @@ vi.mock('@/helpers/pair', () => ({
   },
 }))
 
-vi.mock('ai', () => ({
+vi.mock('ai', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('ai')>()),
   generateObject: mocks.generateObject,
 }))
 
@@ -143,5 +145,56 @@ describe('Process image action', () => {
         Document_type: 'invoice',
       },
     })
+  })
+
+  it('surfaces a clear error when Bedrock rejects an oversized image', async () => {
+    mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: 'image exceeds 5 MB maximum: 5899164 bytes > 5242880 bytes',
+        url: 'https://litellm.example.com/v1/chat/completions',
+        requestBodyValues: {},
+        statusCode: 400,
+      }),
+    )
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toThrow(
+      /Image is too large/,
+    )
+  })
+
+  it('hides the noisy litellm message for other API call errors', async () => {
+    mocks.getImageContent.mockResolvedValue([{ type: 'image', image: 'data' }])
+    mocks.generateObject.mockRejectedValue(
+      new APICallError({
+        message: [
+          'litellm.RateLimitError: rate limited',
+          'Received Model Group=bedrock-nova',
+          'Available Model Group Fallbacks=[bedrock-claude]',
+        ].join('\n'),
+        url: 'https://litellm.example.com/v1/chat/completions',
+        requestBodyValues: {},
+        statusCode: 429,
+      }),
+    )
+
+    $.step.parameters = {
+      image: ['s3-id-123'],
+      responseFields,
+    }
+
+    await expect(processImageAction.run($)).rejects.toSatisfy(
+      (error: StepError) => {
+        expect(error).toBeInstanceOf(StepError)
+        expect(error.message).not.toMatch(/RateLimitError|Model Group/)
+        expect(error.message).toMatch(/Failed to process image/)
+        return true
+      },
+    )
   })
 })

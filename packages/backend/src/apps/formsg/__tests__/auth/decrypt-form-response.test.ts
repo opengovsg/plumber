@@ -582,14 +582,14 @@ describe('decrypt form response', () => {
     it('should grab the sdk corresponding to the form environment', async () => {
       $.flow.hasFileProcessingActions = false
       mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
-      mocks.parseFormEnv.mockReturnValue('staging')
+      mocks.parseFormEnv.mockReturnValue('stg')
 
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
 
       expect(mocks.parseFormEnv).toBeCalled()
-      expect(mocks.getSdk).toBeCalledWith('staging')
+      expect(mocks.getSdk).toBeCalledWith('stg')
     })
   })
 

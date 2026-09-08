@@ -55,14 +55,14 @@ describe('getFormSchemaService', () => {
       vi.mocked(axios.get).mockResolvedValue(mockForm())
 
       const result = await getFormSchemaService(
-        `https://staging.form.gov.sg/admin/form/${FORM_ID}`,
+        `https://stg.form.gov.sg/admin/form/${FORM_ID}`,
       )
 
       expect(vi.mocked(axios.get)).toHaveBeenCalledWith(
-        `https://staging.form.gov.sg/api/v3/forms/${FORM_ID}`,
+        `https://stg.form.gov.sg/api/v3/forms/${FORM_ID}`,
         expect.anything(),
       )
-      expect(result).toMatchObject({ env: 'staging' })
+      expect(result).toMatchObject({ env: 'stg' })
     })
 
     it('never fetches a non-form.gov.sg URL', async () => {

@@ -12,12 +12,12 @@ describe('Form environment handling', () => {
   describe('parseFormIdAsUrl', () => {
     it.each([
       'https://form.gov.sg/topkek',
-      'http://staging.form.gov.sg/hmmm',
+      'http://stg.form.gov.sg/hmmm',
       'form.gov.sg/1234',
       'www.form.gov.sg/',
       'uat.form.gov.sg',
       'uat.form.gov.sg/abcd-1234/cup-of-tea',
-      'https://staging.form.gov.sg/url%20encoded%20stuff?query=1234',
+      'https://stg.form.gov.sg/url%20encoded%20stuff?query=1234',
     ])('returns the URL object for valid URLs (%s)', (rawUrl) => {
       expect(parseFormIdAsUrl(rawUrl)).toBeInstanceOf(URL)
     })
@@ -52,8 +52,8 @@ describe('Form environment handling', () => {
         expectedEnv: 'prod',
       },
       {
-        formId: 'https://staging.form.gov.sg/95967305e41b75001293e70c',
-        expectedEnv: 'staging',
+        formId: 'https://stg.form.gov.sg/95967305e41b75001293e70c',
+        expectedEnv: 'stg',
       },
       {
         formId: 'https://uat.form.gov.sg/95967305e41b75001293e70c',
@@ -108,7 +108,7 @@ describe('Form environment handling', () => {
       expect(sdkMode).toEqual('production')
     })
 
-    it.each(['staging', 'uat'] as const)(
+    it.each(['stg', 'uat'] as const)(
       'returns staging sdk if the input environment is not prod',
       (env) => {
         const sdkMode = getSdk(env) as unknown as string

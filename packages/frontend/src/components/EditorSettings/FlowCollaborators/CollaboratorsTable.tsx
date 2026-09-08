@@ -1,7 +1,8 @@
 import { IFlow, IFlowCollaborator, IFlowCollabRole } from '@plumber/types'
 
-import { useCallback, useContext, useState } from 'react'
-import { BiTrash } from 'react-icons/bi'
+import { useCallback, useContext, useRef, useState } from 'react'
+import { BiLogOut, BiTrash } from 'react-icons/bi'
+import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Center,
@@ -14,11 +15,14 @@ import {
   Th,
   Thead,
   Tr,
+  useDisclosure,
 } from '@chakra-ui/react'
 import { IconButton, Tag, useToast } from '@opengovsg/design-system-react'
 
 import CollaboratorRoleSelect from '@/components/CollaboratorRoleSelect'
+import MenuAlertDialog from '@/components/MenuAlertDialog'
 import PrimarySpinner from '@/components/PrimarySpinner'
+import * as URLS from '@/config/urls'
 import { AuthenticationContext } from '@/contexts/Authentication'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 import { DELETE_FLOW_COLLABORATOR } from '@/graphql/mutations/delete-flow-collaborator'
@@ -51,6 +55,7 @@ const TableRow = (props: TableRowProps) => {
   const { collaborator, flow, hasEditPermission, onRoleChange } = props
   const { currentUser } = useContext(AuthenticationContext)
   const { email = '', role } = collaborator
+  const navigate = useNavigate()
 
   const toast = useToast({
     status: 'success',
@@ -61,9 +66,17 @@ const TableRow = (props: TableRowProps) => {
   const [deleteCollaborator] = useMutation(DELETE_FLOW_COLLABORATOR)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const {
+    isOpen: isLeaveDialogOpen,
+    onOpen: onLeaveDialogOpen,
+    onClose: onLeaveDialogClose,
+  } = useDisclosure()
+
   const isOwner = role === 'owner'
   const isSelf = email === currentUser?.email
   const isEditable = hasEditPermission && !isOwner && !isSelf
+  const canLeave = isSelf && !isOwner
 
   const onDeleteHandler = useCallback(async () => {
     setIsDeleting(true)
@@ -84,6 +97,26 @@ const TableRow = (props: TableRowProps) => {
       setIsDeleting(false)
     }
   }, [deleteCollaborator, email, flow.id, toast])
+
+  const onLeaveHandler = useCallback(async () => {
+    setIsDeleting(true)
+    try {
+      await deleteCollaborator({
+        variables: {
+          input: { flowId: flow.id, email },
+        },
+        onCompleted: () => {
+          onLeaveDialogClose()
+          toast({
+            title: 'You have left this pipe',
+          })
+          navigate(URLS.FLOWS)
+        },
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [deleteCollaborator, email, flow.id, navigate, onLeaveDialogClose, toast])
 
   return (
     <Tr key={email}>
@@ -117,6 +150,27 @@ const TableRow = (props: TableRowProps) => {
             isLoading={isDeleting}
             icon={<BiTrash />}
           />
+        )}
+        {canLeave && (
+          <>
+            <IconButton
+              colorScheme="critical"
+              onClick={onLeaveDialogOpen}
+              aria-label="leave pipe"
+              variant="clear"
+              isLoading={isDeleting}
+              icon={<BiLogOut />}
+            />
+            <MenuAlertDialog
+              cancelRef={cancelRef}
+              isLoading={isDeleting}
+              isDialogOpen={isLeaveDialogOpen}
+              onDialogClose={onLeaveDialogClose}
+              dialogType="leave"
+              dialogHeader="Pipe"
+              onClick={onLeaveHandler}
+            />
+          </>
         )}
       </Td>
     </Tr>

@@ -1,6 +1,6 @@
 import { ITableMetadata } from '@plumber/types'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Helmet } from 'react-helmet'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
@@ -65,13 +65,17 @@ export default function Tile(): JSX.Element | null {
       : undefined,
   })
   const ownRole = getTableData?.getTable?.role
+  const loadedTableId = getTableData?.getTable?.id
+  const refetchRowsRef = useRef(refetch)
+  refetchRowsRef.current = refetch
 
+  // Column reorder refetches GET_TABLE. Depending on that result would reload
+  // rows and visually duplicate them.
   useEffect(() => {
-    if (isGetTableCalled && getTableData?.getTable) {
-      // load rows after fetching table metadata
-      refetch()
+    if (loadedTableId) {
+      void refetchRowsRef.current()
     }
-  }, [isGetTableCalled, getTableError, getTableData, refetch])
+  }, [loadedTableId, viewToken, urlViewOnlyKey])
 
   // Refetch table data when view token changes (e.g. after password verification)
   useEffect(() => {

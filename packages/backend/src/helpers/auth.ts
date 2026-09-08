@@ -3,8 +3,11 @@ import { Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
+import { BLOCK_NEW_LOGINS_FLAG } from '@/config/flags'
+import BaseError from '@/errors/base'
 import User from '@/models/user'
 
+import { getLdFlagValue } from './launch-darkly'
 import logger from './logger'
 
 const AUTH_COOKIE_NAME = 'plumber.sid'
@@ -67,11 +70,32 @@ export function deleteAuthCookie(res: Response) {
   res.clearCookie(AUTH_COOKIE_NAME)
 }
 
+/**
+ * Rejects a first-time login when LD targets the email's domain.
+ *
+ * The flag serves the user-facing message itself, so an empty value means the
+ * domain is not blocked. That keeps an LD outage from locking new users out.
+ */
+async function assertLoginNotBlocked(email: string): Promise<void> {
+  const blockedMessage = await getLdFlagValue(BLOCK_NEW_LOGINS_FLAG, email, '')
+
+  if (!blockedMessage) {
+    return
+  }
+
+  logger.info({
+    event: 'block-new-logins-rejected',
+    email,
+  })
+  throw new BaseError(blockedMessage)
+}
+
 export async function getOrCreateUser(email: string): Promise<User> {
   email = email.trim().toLowerCase()
 
   let user = await User.query().findOne({ email })
   if (!user) {
+    await assertLoginNotBlocked(email)
     user = await User.query().insertAndFetch({ email })
   }
 

@@ -6,6 +6,7 @@ import {
   ModalOverlay,
 } from '@chakra-ui/react'
 
+import { FLOW_CREATE_MODE } from '@/pages/Flows/contexts/CreateFlowContext'
 import { useFlowCreation } from '@/pages/Flows/hooks/useFlowCreation'
 
 import FlowNameAndModeContent from './FlowNameAndModeContent'
@@ -31,6 +32,10 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
     handleModeSubmit({ onClose })
   }
 
+  const handleModeSelect = (mode: FLOW_CREATE_MODE) => {
+    handleModeSubmit({ onClose, mode })
+  }
+
   return (
     <Modal
       isOpen={true}
@@ -48,6 +53,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
           flowName={flowName}
           handleInputChange={handleInputChange}
           handleSubmit={handleSubmit}
+          onModeSelect={handleModeSelect}
         />
         <ModalCloseButton mt={3} />
       </ModalContent>

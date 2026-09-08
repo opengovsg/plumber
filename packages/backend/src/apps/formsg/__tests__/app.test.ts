@@ -61,13 +61,13 @@ describe('FormSG app', () => {
   })
 
   it('on each outgoing connection, sets the appropriate base API url for the form environment', async () => {
-    mocks.parseFormEnv.mockReturnValue('staging')
+    mocks.parseFormEnv.mockReturnValue('stg')
     mocks.getApiBaseUrl.mockReturnValue('sample-mock-url')
 
     await $.http.get('localhost')
 
     expect(mocks.parseFormEnv).toBeCalled()
-    expect(mocks.getApiBaseUrl).toBeCalledWith('staging')
+    expect(mocks.getApiBaseUrl).toBeCalledWith('stg')
     expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         baseURL: 'sample-mock-url',

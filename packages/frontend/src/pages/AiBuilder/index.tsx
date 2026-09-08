@@ -2,8 +2,10 @@ import type { IApp, IJSONObject } from '@plumber/types'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
+import { BiInfoCircle } from 'react-icons/bi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
+import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 
 import AddAppConnection from '@/components/AddAppConnection'
 import RedirectToLogin from '@/components/RedirectToLogin'
@@ -340,8 +342,18 @@ function AiBuilderContent() {
               <Flex flex={1} alignItems="center" minWidth={0} gap={2}>
                 <CloseButton size="sm" onClick={handleClose} />
 
-                <Text>{flowName}</Text>
+                <Text noOfLines={1}>{flowName}</Text>
               </Flex>
+              <Tag
+                colorScheme="sub"
+                variant="subtle"
+                size="xs"
+                pointerEvents="none"
+                flexShrink={0}
+              >
+                <TagLeftIcon as={BiInfoCircle} />
+                <TagLabel>This conversation isn&apos;t saved</TagLabel>
+              </Tag>
             </HStack>
           )}
           <Container

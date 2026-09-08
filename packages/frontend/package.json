@@ -1,14 +1,15 @@
 {
   "name": "frontend",
-  "version": "1.81.0",
+  "version": "1.83.0",
   "type": "module",
   "scripts": {
     "dev": "wait-on tcp:${DEV_BACKEND_PORT:-3000} && vite --host --force",
     "build": "tsc && vite build --mode=${VITE_MODE:-prod}",
     "build:lib": "vite build -c vite.config.lib.ts --mode=${VITE_MODE:-prod} && tsc-alias -p tsconfig.lib.json",
     "prebuild": "rimraf ./build",
-    "lint": "eslint . --ignore-path ../../.eslintignore && tsc --noEmit",
-    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore && tsc --noEmit",
+    "lint": "eslint . --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "gen:theme-typings": "chakra-cli tokens ./src/theme/index.ts",
     "postinstall": "npm run gen:theme-typings"

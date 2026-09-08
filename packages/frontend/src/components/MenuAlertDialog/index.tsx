@@ -16,6 +16,7 @@ export type AlertDialogType =
   | 'duplicate'
   | 'duplicate-branch'
   | 'share-connections'
+  | 'leave'
 export type AlertHeaderType =
   | 'Connection'
   | 'Pipe'
@@ -78,6 +79,14 @@ function getAlertDialogContent(
           customBody ??
           `The collaborator will have access to your connections.`,
         buttonText: 'Yes, add editor',
+      }
+    case 'leave':
+      return {
+        header: 'Leave pipe',
+        body:
+          customBody ??
+          'Are you sure you want to leave this pipe? You will lose access.',
+        buttonText: 'Leave',
       }
   }
 }
