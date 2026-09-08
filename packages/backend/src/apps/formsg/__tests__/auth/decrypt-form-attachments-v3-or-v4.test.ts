@@ -65,8 +65,11 @@ const FORM_FIELDS: FormField[] = [
   },
 ]
 
+// IGlobalVariable.request is optional, but the webhook path always has it.
+type GlobalVariableWithRequest = IGlobalVariable & { request: IRequest }
+
 describe('decrypt form attachments v3', () => {
-  let $: IGlobalVariable
+  let $: GlobalVariableWithRequest
   beforeEach(() => {
     $ = {
       request: {
@@ -89,7 +92,7 @@ describe('decrypt form attachments v3', () => {
           },
         },
       } as IRequest,
-    } as IGlobalVariable
+    } as GlobalVariableWithRequest
   })
 
   afterEach(() => {

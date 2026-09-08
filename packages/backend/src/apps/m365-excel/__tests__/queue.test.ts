@@ -25,7 +25,7 @@ describe('Queue config', () => {
   })
 
   it('configures a delayable queue', () => {
-    expect(m365ExcelApp.queue.isQueueDelayable).toEqual(true)
+    expect(m365ExcelApp.queue!.isQueueDelayable).toEqual(true)
   })
 
   it('sets group ID to the file ID', async () => {
@@ -34,7 +34,7 @@ describe('Queue config', () => {
         fileId: 'mock-file-id',
       },
     })
-    const groupConfig = await m365ExcelApp.queue.getGroupConfigForJob({
+    const groupConfig = await m365ExcelApp.queue!.getGroupConfigForJob!({
       flowId: 'test-flow-id',
       stepId: 'test-step-id',
       executionId: 'test-step-id',
@@ -45,13 +45,13 @@ describe('Queue config', () => {
   })
 
   it('sets group concurrency to 1', () => {
-    expect(m365ExcelApp.queue.groupLimits).toEqual({
+    expect(m365ExcelApp.queue!.groupLimits).toEqual({
       type: 'concurrency',
       concurrency: 1,
     })
   })
 
   it('avoids bursting via a leaky bucket approach', () => {
-    expect(m365ExcelApp.queue.queueRateLimit.max).toEqual(1)
+    expect(m365ExcelApp.queue!.queueRateLimit!.max).toEqual(1)
   })
 })

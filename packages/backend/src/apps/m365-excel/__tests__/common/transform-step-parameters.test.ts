@@ -294,7 +294,7 @@ describe('transformStepParameters', () => {
           lookupColumn: 'Email',
           lookupValue: 'test@example.com',
           filters: undefined,
-        },
+        } as unknown as IJSONObject,
         1,
       )
 

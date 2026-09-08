@@ -123,7 +123,7 @@ describe('Only continue if', () => {
       text: 1,
     })
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { result: true },
@@ -138,7 +138,7 @@ describe('Only continue if', () => {
       ],
     }
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { result: true },
@@ -159,7 +159,7 @@ describe('Only continue if', () => {
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
@@ -178,7 +178,7 @@ describe('Only continue if', () => {
 
     mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
@@ -204,7 +204,7 @@ describe('Only continue if', () => {
     // the legacy engine queries again — so both reads need the same flow.
     mocks.stepQueryResult.mockResolvedValue(MOCK_FLOW)
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toEqual({
       nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
     })
@@ -230,7 +230,7 @@ describe('Only continue if', () => {
     // the legacy engine queries again — so both reads need the same flow.
     mocks.stepQueryResult.mockResolvedValue(MOCK_FLOW)
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toEqual({
       nextStep: { command: 'stop-execution' },
     })
@@ -249,7 +249,7 @@ describe('Only continue if', () => {
     })
 
     // throw partial step error message
-    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(
+    await expect(onlyContinueIfAction.run!($)).rejects.toThrowError(
       `Conditional logic block contains an unknown operator: ${invalidCondition}`,
     )
   })
@@ -261,7 +261,7 @@ describe('Only continue if', () => {
       condition: 'empty',
     })
 
-    const result = await onlyContinueIfAction.run($)
+    const result = await onlyContinueIfAction.run!($)
     expect(result).toBeFalsy()
     expect(mocks.setActionItem).toBeCalledWith({
       raw: { result: true },
@@ -284,7 +284,7 @@ describe('Only continue if', () => {
         text,
       })
 
-      const result = await onlyContinueIfAction.run($)
+      const result = await onlyContinueIfAction.run!($)
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
         raw: { result: true },
@@ -300,6 +300,6 @@ describe('Only continue if', () => {
       text: '19 Nov 2021',
     })
 
-    await expect(onlyContinueIfAction.run($)).rejects.toThrowError(StepError)
+    await expect(onlyContinueIfAction.run!($)).rejects.toThrowError(StepError)
   })
 })

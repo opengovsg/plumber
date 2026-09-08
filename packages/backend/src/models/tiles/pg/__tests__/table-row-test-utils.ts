@@ -45,17 +45,21 @@ export const createStringTestData = (
   columnIds: string[],
   data: Record<string, string>[],
 ) => {
+  // The isEmpty filter must be tested against real null and undefined cells,
+  // which the row data type does not admit.
+  const cells = data as Record<string, string | null | undefined>[]
+
   // Set up string column (columnIds[2]) with various empty/null values
-  data[0][columnIds[2]] = 'even'
-  data[1][columnIds[2]] = null
-  data[2][columnIds[2]] = 'even'
-  data[3][columnIds[2]] = ''
-  data[4][columnIds[2]] = 'even'
-  delete data[5][columnIds[2]]
-  data[6][columnIds[2]] = 'even'
-  data[7][columnIds[2]] = undefined
-  data[8][columnIds[2]] = 'even'
-  data[9][columnIds[2]] = null
+  cells[0][columnIds[2]] = 'even'
+  cells[1][columnIds[2]] = null
+  cells[2][columnIds[2]] = 'even'
+  cells[3][columnIds[2]] = ''
+  cells[4][columnIds[2]] = 'even'
+  delete cells[5][columnIds[2]]
+  cells[6][columnIds[2]] = 'even'
+  cells[7][columnIds[2]] = undefined
+  cells[8][columnIds[2]] = 'even'
+  cells[9][columnIds[2]] = null
 
   return data
 }

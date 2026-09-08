@@ -96,7 +96,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       // field2 is not in mrf.fields, so all its properties should be hidden
       expect(result.fields.field2).toEqual({
@@ -120,7 +120,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       // field1 is in mrf.fields, should have normal question/answer metadata
       expect(result.fields.field1.question).toEqual(
@@ -162,7 +162,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       expect(result.fields.field2.answer.type).toBe('approval')
     })
@@ -193,7 +193,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       expect(result.fields.field1.answer.type).toBe('text')
     })
@@ -222,7 +222,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       // field1 is visible, gets question order 1
       expect(result.fields.field1.question.label).toBe('Question 1')
@@ -247,7 +247,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       // No field should have type 'approval'
       expect(result.fields.field1.answer.type).toBe('text')
@@ -280,7 +280,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       // All fields should have the hidden structure
       expect(result.fields.field1).toEqual({
@@ -313,7 +313,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         },
       })
 
-      const result = await getDataOutMetadata(executionStep)
+      const result = (await getDataOutMetadata(executionStep))!
 
       // Both fields should be visible with normal metadata
       expect(result.fields.field1.question).toEqual(

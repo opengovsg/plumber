@@ -25,7 +25,11 @@ export const BLOCK_END_STEP_ID = 'endStepId'
 // Not IStep itself: the execution context's $.step is trimmed (no config), and
 // unit-test fixtures pass partials — neither is a full IStep. Also reused as
 // a base for the slightly wider shapes elsewhere in the toolbox.
-export type StepLike = Partial<Pick<IStep, 'appKey' | 'key' | 'config'>>
+// `appKey` and `key` are nullable columns, so a freshly-added blank step reads
+// back as null rather than undefined.
+export type StepLike = Partial<
+  Pick<IStep, 'config'> & { appKey: string | null; key: string | null }
+>
 
 export function isIfThenStep(step: StepLike | null | undefined): boolean {
   return (

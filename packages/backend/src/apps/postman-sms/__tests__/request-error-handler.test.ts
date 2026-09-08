@@ -40,10 +40,10 @@ describe('Postman SMS request error handler', () => {
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -68,7 +68,7 @@ describe('Postman SMS request error handler', () => {
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(StepError)
     })
   })
 
@@ -85,10 +85,10 @@ describe('Postman SMS request error handler', () => {
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -103,10 +103,10 @@ describe('Postman SMS request error handler', () => {
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -122,10 +122,10 @@ describe('Postman SMS request error handler', () => {
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
       })
@@ -143,8 +143,10 @@ describe('Postman SMS request error handler', () => {
 
       const error = new HttpError(axiosError)
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
-      await expect(requestErrorHandler($, error)).rejects.not.toThrow(TypeError)
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler!($, error)).rejects.not.toThrow(
+        TypeError,
+      )
     })
   })
 })

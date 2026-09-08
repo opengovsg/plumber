@@ -248,7 +248,7 @@ describe('If-then', () => {
         condition: 'equals',
         text: 1,
       })
-      const result = await ifThenAction.run($)
+      const result = await ifThenAction.run!($)
 
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
@@ -261,7 +261,7 @@ describe('If-then', () => {
         { rows: [{ field: 1, is: 'is', condition: 'equals', text: 9999 }] },
         { rows: [{ field: 1, is: 'is', condition: 'equals', text: 1 }] },
       ]
-      const result = await ifThenAction.run($)
+      const result = await ifThenAction.run!($)
 
       expect(result).toBeFalsy()
       expect(mocks.setActionItem).toBeCalledWith({
@@ -278,7 +278,7 @@ describe('If-then', () => {
           ],
         },
       ]
-      const result = await ifThenAction.run($)
+      const result = await ifThenAction.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
@@ -295,7 +295,7 @@ describe('If-then', () => {
         condition: 'equals',
         text: 9999,
       })
-      const result = await ifThenAction.run($)
+      const result = await ifThenAction.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
@@ -316,7 +316,7 @@ describe('If-then', () => {
       // pre-queries to read the step's config, then the legacy engine queries
       // again on the marker-less path — so both reads need the same steps.
       mocks.stepQueryResult.mockResolvedValue(FLAT_PIPE_STEPS.slice(0, 3))
-      const result = await ifThenAction.run($)
+      const result = await ifThenAction.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'stop-execution' },
@@ -330,8 +330,8 @@ describe('If-then', () => {
       // The evaluator is strict but defensive: missing conditions evaluate to
       // false rather than throwing (empty conditions are caught by frontend
       // "Check step" validation and the incomplete-step activation guard).
-      $.step.parameters.conditions = undefined
-      const result = await ifThenAction.run($)
+      delete $.step.parameters.conditions
+      const result = await ifThenAction.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'jump-to-step', stepId: 'branch-2' },
@@ -351,7 +351,7 @@ describe('If-then', () => {
       })
 
       // throw partial step error message
-      await expect(ifThenAction.run($)).rejects.toThrowError(
+      await expect(ifThenAction.run!($)).rejects.toThrowError(
         `Conditional logic block contains an unknown operator: ${invalidCondition}`,
       )
     })
@@ -386,7 +386,7 @@ describe('If-then', () => {
           condition: 'equals',
           text: 1,
         })
-        const result = await ifThenAction.run($)
+        const result = await ifThenAction.run!($)
 
         expect(result).toBeFalsy()
         expect(mocks.setActionItem).toBeCalledWith({
@@ -413,7 +413,7 @@ describe('If-then', () => {
           text: 9999,
         })
 
-        const result = await ifThenAction.run($)
+        const result = await ifThenAction.run!($)
 
         expect(result).toEqual({
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
@@ -441,7 +441,7 @@ describe('If-then', () => {
           text: 9999,
         })
 
-        const result = await ifThenAction.run($)
+        const result = await ifThenAction.run!($)
 
         expect(result).toEqual({
           nextStep: { command: 'jump-to-step', stepId: expectedNextStepId },
@@ -470,7 +470,7 @@ describe('If-then', () => {
           text: 9999,
         })
 
-        const result = await ifThenAction.run($)
+        const result = await ifThenAction.run!($)
 
         expect(result).toEqual({
           nextStep: { command: 'stop-execution' },
@@ -496,7 +496,7 @@ describe('If-then', () => {
           text,
         })
 
-        await ifThenAction.run($)
+        await ifThenAction.run!($)
         expect(mocks.setActionItem).toBeCalledWith({
           raw: { isConditionMet: expectedResult },
         })
