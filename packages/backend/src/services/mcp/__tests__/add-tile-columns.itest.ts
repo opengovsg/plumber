@@ -54,7 +54,7 @@ describe('addTileColumnsService', () => {
     expect(stored?.config).toEqual({})
   })
 
-  it('appends aiBuilderConfig.addTileColumns without inventing createTile', async () => {
+  it('stamps each added column without updating the tile config', async () => {
     const context = await generateMockContext()
     const { table } = await generateMockTable({
       userId: context.currentUser.id,
@@ -66,33 +66,37 @@ describe('addTileColumnsService', () => {
       databaseType: 'pg',
     })
 
-    const first = await addTileColumnsService({
+    await addTileColumnsService({
       user: context.currentUser,
       tableId: table.id,
       columns: ['Notes'],
       traceId: 'trace-add-1',
     })
-    const notesId = first.columns.find((column) => column.name === 'Notes')?.id
 
-    const second = await addTileColumnsService({
+    await addTileColumnsService({
       user: context.currentUser,
       tableId: table.id,
       columns: ['Priority'],
       traceId: 'trace-add-2',
     })
-    const priorityId = second.columns.find(
-      (column) => column.name === 'Priority',
-    )?.id
 
-    const stored = await TableMetadata.query().findById(table.id)
-    expect(notesId).toBeDefined()
-    expect(priorityId).toBeDefined()
-    expect(stored?.config).toEqual({
+    const stored = await TableMetadata.query()
+      .findById(table.id)
+      .withGraphFetched('columns')
+    const notes = stored?.columns.find((column) => column.name === 'Notes')
+    const priority = stored?.columns.find((column) => column.name === 'Priority')
+
+    expect(stored?.config).toEqual({})
+    expect(notes?.config).toEqual({
       aiBuilderConfig: {
-        addTileColumns: [
-          { traceId: 'trace-add-1', addedColumnIds: [notesId] },
-          { traceId: 'trace-add-2', addedColumnIds: [priorityId] },
-        ],
+        traceId: 'trace-add-1',
+        tool: 'add_tile_columns',
+      },
+    })
+    expect(priority?.config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-add-2',
+        tool: 'add_tile_columns',
       },
     })
   })
@@ -120,7 +124,7 @@ describe('addTileColumnsService', () => {
     expect(stored?.config).toEqual({})
   })
 
-  it('keeps createTile when add_tile_columns runs on an AI-created tile', async () => {
+  it('keeps the tile trace when add_tile_columns runs', async () => {
     const context = await generateMockContext()
     const created = await createTileService({
       user: context.currentUser,
@@ -129,25 +133,39 @@ describe('addTileColumnsService', () => {
       traceId: 'trace-create',
     })
 
-    const added = await addTileColumnsService({
+    await addTileColumnsService({
       user: context.currentUser,
       tableId: created.id,
       columns: ['Extra'],
       traceId: 'trace-add',
     })
-    const extraId = added.columns.find((column) => column.name === 'Extra')?.id
 
-    const stored = await TableMetadata.query().findById(created.id)
-    expect(extraId).toBeDefined()
+    const stored = await TableMetadata.query()
+      .findById(created.id)
+      .withGraphFetched('columns')
+    const status = stored?.columns.find((column) => column.name === 'Status')
+    const extra = stored?.columns.find((column) => column.name === 'Extra')
+
     expect(stored?.config).toEqual({
       aiBuilderConfig: {
-        createTile: { traceId: 'trace-create' },
-        addTileColumns: [{ traceId: 'trace-add', addedColumnIds: [extraId] }],
+        traceId: 'trace-create',
+      },
+    })
+    expect(status?.config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-create',
+        tool: 'create_tile',
+      },
+    })
+    expect(extra?.config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-add',
+        tool: 'add_tile_columns',
       },
     })
   })
 
-  it('keeps both addTileColumns records when two calls run in parallel', async () => {
+  it('stamps columns from parallel add_tile_columns calls', async () => {
     const context = await generateMockContext()
     const { table } = await generateMockTable({
       userId: context.currentUser.id,
@@ -159,7 +177,7 @@ describe('addTileColumnsService', () => {
       databaseType: 'pg',
     })
 
-    const [first, second] = await Promise.all([
+    await Promise.all([
       addTileColumnsService({
         user: context.currentUser,
         tableId: table.id,
@@ -174,23 +192,21 @@ describe('addTileColumnsService', () => {
       }),
     ])
 
-    const notesId = first.columns.find((column) => column.name === 'Notes')?.id
-    const priorityId = second.columns.find(
-      (column) => column.name === 'Priority',
-    )?.id
-    const stored = await TableMetadata.query().findById(table.id)
-    const adds = stored?.config?.aiBuilderConfig?.addTileColumns ?? []
+    const stored = await TableMetadata.query()
+      .findById(table.id)
+      .withGraphFetched('columns')
+    const notes = stored?.columns.find((column) => column.name === 'Notes')
+    const priority = stored?.columns.find((column) => column.name === 'Priority')
 
-    expect(notesId).toBeDefined()
-    expect(priorityId).toBeDefined()
-    expect(adds).toHaveLength(2)
-    expect(adds).toEqual(
-      expect.arrayContaining([
-        { traceId: 'trace-parallel-1', addedColumnIds: [notesId] },
-        { traceId: 'trace-parallel-2', addedColumnIds: [priorityId] },
-      ]),
-    )
-    expect(stored?.config?.aiBuilderConfig?.createTile).toBeUndefined()
+    expect(notes?.config.aiBuilderConfig).toEqual({
+      traceId: 'trace-parallel-1',
+      tool: 'add_tile_columns',
+    })
+    expect(priority?.config.aiBuilderConfig).toEqual({
+      traceId: 'trace-parallel-2',
+      tool: 'add_tile_columns',
+    })
+    expect(stored?.config).toEqual({})
   })
 
   it('rejects viewers', async () => {

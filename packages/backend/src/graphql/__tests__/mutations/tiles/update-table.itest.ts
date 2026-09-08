@@ -77,6 +77,33 @@ describe.each([['ddb'], ['pg']])(
         )
         expect(updatedTable.name).toBe('Test Table')
       })
+
+      it('preserves AI Builder config when updating the table', async () => {
+        await dummyTable.$query().patch({
+          config: {
+            aiBuilderConfig: {
+              traceId: 'trace-create',
+            },
+          },
+        })
+
+        const updatedTable = await updateTable(
+          null,
+          {
+            input: {
+              id: dummyTable.id,
+              name: 'Updated AI Tile',
+            },
+          },
+          context,
+        )
+
+        expect(updatedTable.config).toEqual({
+          aiBuilderConfig: {
+            traceId: 'trace-create',
+          },
+        })
+      })
     })
 
     describe('adding columns to table', () => {
@@ -153,6 +180,15 @@ describe.each([['ddb'], ['pg']])(
       })
 
       it('should modify column widths', async () => {
+        await dummyTable.$relatedQuery('columns').findById(dummyColumnId).patch({
+          config: {
+            aiBuilderConfig: {
+              traceId: 'trace-create',
+              tool: 'create_tile',
+            },
+          },
+        })
+
         const updatedTable = await updateTable(
           null,
           {
@@ -173,7 +209,13 @@ describe.each([['ddb'], ['pg']])(
           },
           context,
         )
-        expect(updatedTable.columns[0].config.width).toBe(100)
+        expect(updatedTable.columns[0].config).toEqual({
+          width: 100,
+          aiBuilderConfig: {
+            traceId: 'trace-create',
+            tool: 'create_tile',
+          },
+        })
       })
 
       it('should fail if column does not exist', async () => {

@@ -51,7 +51,7 @@ describe('createTileService', () => {
     expect(stored?.config).toEqual({})
   })
 
-  it('stamps aiBuilderConfig.createTile when traceId is provided', async () => {
+  it('stamps the tile and columns when traceId is provided', async () => {
     const context = await generateMockContext()
     const result = await createTileService({
       user: context.currentUser,
@@ -60,10 +60,18 @@ describe('createTileService', () => {
       traceId: 'trace-create',
     })
 
-    const stored = await TableMetadata.query().findById(result.id)
+    const stored = await TableMetadata.query()
+      .findById(result.id)
+      .withGraphFetched('columns')
     expect(stored?.config).toEqual({
       aiBuilderConfig: {
-        createTile: { traceId: 'trace-create' },
+        traceId: 'trace-create',
+      },
+    })
+    expect(stored?.columns[0].config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-create',
+        tool: 'create_tile',
       },
     })
   })

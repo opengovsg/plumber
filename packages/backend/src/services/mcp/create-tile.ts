@@ -6,7 +6,10 @@ import { getTableOperations } from '@/models/tiles/factory'
 import { type DatabaseType } from '@/models/tiles/types'
 import type User from '@/models/user'
 
-import { createTileAiBuilderConfig } from './tile-ai-builder-config'
+import {
+  createColumnAiBuilderConfig,
+  createTileAiBuilderConfig,
+} from './tile-ai-builder-config'
 import {
   parseCreateTileInput,
   type TileColumnResult,
@@ -69,6 +72,9 @@ export async function createTileService({
       columns: columnNames.map((columnName, position) => ({
         name: columnName,
         position,
+        ...(traceId && {
+          config: createColumnAiBuilderConfig(traceId, 'create_tile'),
+        }),
       })),
     })
 

@@ -1,35 +1,20 @@
-import type { ITableConfig } from '@plumber/types'
-
-import { raw } from 'objection'
+import type {
+  ITableColumnAiBuilderTool,
+  ITableColumnConfig,
+  ITableConfig,
+} from '@plumber/types'
 
 export function createTileAiBuilderConfig(traceId: string): ITableConfig {
   return {
-    aiBuilderConfig: {
-      createTile: { traceId },
-    },
+    aiBuilderConfig: { traceId },
   }
 }
 
-/**
- * Appends in SQL so two parallel MCP calls cannot overwrite each other's record.
- */
-export function appendAddTileColumnsConfigPatch(entry: {
-  traceId: string
-  addedColumnIds: string[]
-}) {
-  return raw(
-    `jsonb_set(
-      jsonb_set(
-        config,
-        '{aiBuilderConfig}',
-        COALESCE(config->'aiBuilderConfig', '{}'::jsonb),
-        true
-      ),
-      '{aiBuilderConfig,addTileColumns}',
-      COALESCE(config->'aiBuilderConfig'->'addTileColumns', '[]'::jsonb)
-        || jsonb_build_array(?::jsonb),
-      true
-    )`,
-    [JSON.stringify(entry)],
-  )
+export function createColumnAiBuilderConfig(
+  traceId: string,
+  tool: ITableColumnAiBuilderTool,
+): ITableColumnConfig {
+  return {
+    aiBuilderConfig: { traceId, tool },
+  }
 }

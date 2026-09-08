@@ -1244,16 +1244,20 @@ export interface IStepError {
 }
 
 // Tiles
+export type ITableColumnAiBuilderTool = 'create_tile' | 'add_tile_columns'
+
+export interface ITableColumnAiBuilderConfig {
+  traceId: string
+  tool: ITableColumnAiBuilderTool
+}
+
 export interface ITableColumnConfig {
   width?: number
+  aiBuilderConfig?: ITableColumnAiBuilderConfig
 }
 
 export interface ITableAiBuilderConfig {
-  createTile?: { traceId: string }
-  addTileColumns?: Array<{
-    traceId: string
-    addedColumnIds: string[]
-  }>
+  traceId: string
 }
 
 export interface ITableConfig {
