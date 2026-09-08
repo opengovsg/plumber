@@ -82,7 +82,7 @@ describe('create letter from template', () => {
 
   it('builds the payload correctly without any letter params', async () => {
     $.auth.data.apiKey = 'test_v1_123456'
-    await createLetterAction.run($)
+    await createLetterAction.run!($)
 
     expect(mockAdapter.history.post[0].data).toEqual(
       JSON.stringify({ templateId: 123, letterParams: {} }),
@@ -96,7 +96,7 @@ describe('create letter from template', () => {
     ]
 
     $.auth.data.apiKey = 'test_v1_123456'
-    await createLetterAction.run($)
+    await createLetterAction.run!($)
 
     expect(mockAdapter.history.post[0].data).toEqual(
       JSON.stringify({
@@ -110,7 +110,7 @@ describe('create letter from template', () => {
     $.auth.data.apiKey = 'test_v1_123456'
     $.flow.hasFileProcessingActions = false
 
-    await createLetterAction.run($)
+    await createLetterAction.run!($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
         publicId: MOCK_RESPONSE.publicId,
@@ -125,7 +125,7 @@ describe('create letter from template', () => {
     $.auth.data.apiKey = 'test_v1_123456'
     $.step.parameters.shouldGeneratePdf = true
 
-    await createLetterAction.run($)
+    await createLetterAction.run!($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
         publicId: MOCK_RESPONSE.publicId,
@@ -139,7 +139,7 @@ describe('create letter from template', () => {
 
   it('should throw step error for invalid parameters (no field)', async () => {
     $.step.parameters.letterParams = [{ value: 'test' }]
-    await expect(createLetterAction.run($)).rejects.toThrowError()
+    await expect(createLetterAction.run!($)).rejects.toThrowError()
   })
 
   it('should throw step error for insufficient fields used', async () => {
@@ -147,14 +147,14 @@ describe('create letter from template', () => {
     mockAdapter.onPost('/v1/letters').reply(400, {
       message: 'Invalid letter params.',
     })
-    await expect(createLetterAction.run($)).rejects.toThrowError(
+    await expect(createLetterAction.run!($)).rejects.toThrowError(
       'Personalised field(s) not specified',
     )
   })
 
   it('should throw generic step error for unknown error', async () => {
     mockAdapter.onPost('/v1/letters').reply(400, { message: 'Unknown error' })
-    await expect(createLetterAction.run($)).rejects.toBeInstanceOf(StepError)
+    await expect(createLetterAction.run!($)).rejects.toBeInstanceOf(StepError)
   })
 
   it('should propagate RetriableError from downloadAndStoreAttachmentInS3', async () => {
@@ -168,7 +168,7 @@ describe('create letter from template', () => {
     $.auth.data.apiKey = 'test_v1_123456'
     $.step.parameters.shouldGeneratePdf = true
 
-    await expect(createLetterAction.run($)).rejects.toBeInstanceOf(
+    await expect(createLetterAction.run!($)).rejects.toBeInstanceOf(
       RetriableError,
     )
   })

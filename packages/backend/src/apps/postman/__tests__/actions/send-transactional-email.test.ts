@@ -12,13 +12,19 @@ import sendTransactionalEmail from '../../actions/send-transactional-email'
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
   getDefaultReplyTo: vi.fn(() => 'replyTo@open.gov.sg'),
-  filterAttachments: vi.fn(() => {
-    return {
-      attachmentFiles: [],
-      invalidAttachments: [],
-      submissionId: null,
-    }
-  }),
+  filterAttachments: vi.fn(
+    (): {
+      attachmentFiles: { fileName: string; data: Uint8Array }[]
+      invalidAttachments: string[]
+      submissionId: string | null
+    } => {
+      return {
+        attachmentFiles: [],
+        invalidAttachments: [],
+        submissionId: null,
+      }
+    },
+  ),
   sendBlacklistEmail: vi.fn(),
   sendInvalidAttachmentsEmail: vi.fn(),
   createInvalidAttachmentsMessage: vi.fn(() => 'test invalid attachment body'),
@@ -142,7 +148,7 @@ describe('send transactional email', () => {
   })
 
   it("invokes Postman's API to send transactional email", async () => {
-    await expect(sendTransactionalEmail.run($)).to.resolves.not.toThrow()
+    await expect(sendTransactionalEmail.run!($)).to.resolves.not.toThrow()
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED'],
@@ -158,7 +164,7 @@ describe('send transactional email', () => {
   it('should throw step error for invalid parameters', async () => {
     $.step.parameters.body = ''
     // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
       'Empty body',
     )
   })
@@ -201,7 +207,7 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(error)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
         stepErrorName,
       )
     },
@@ -237,7 +243,7 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(errorUnknown)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
         postmanResponseData.code,
       )
     },
@@ -246,7 +252,7 @@ describe('send transactional email', () => {
   it('should return a list of status and recipients', async () => {
     const recipients = ['recipient1@open.gov.sg', 'recipient2@open.gov.sg']
     $.step.parameters.destinationEmail = recipients.join(',')
-    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'ACCEPTED'],
@@ -264,7 +270,7 @@ describe('send transactional email', () => {
     const ccRecipients = ['cc1@open.gov.sg', 'cc2@open.gov.sg']
     $.step.parameters.destinationEmail = recipients.join(',')
     $.step.parameters.destinationEmailCc = ccRecipients.join(',')
-    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'ACCEPTED'],
@@ -305,7 +311,7 @@ describe('send transactional email', () => {
           },
         } as AxiosError),
       )
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
       PartialStepError,
     )
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -321,7 +327,7 @@ describe('send transactional email', () => {
     expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
-      userEmail: $.user.email,
+      userEmail: $.user!.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
     })
@@ -371,7 +377,7 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
       RetriableError,
     )
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -388,7 +394,7 @@ describe('send transactional email', () => {
     expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
-      userEmail: $.user.email,
+      userEmail: $.user!.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
     })
@@ -452,7 +458,7 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: [
@@ -495,7 +501,7 @@ describe('send transactional email', () => {
           },
         } as AxiosError),
       )
-    await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'ERROR'],
@@ -524,7 +530,7 @@ describe('send transactional email', () => {
         recipient: recipients,
       },
     })
-    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
     expect($.http.post).toBeCalledTimes(2)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -563,7 +569,7 @@ describe('send transactional email', () => {
       },
     })
     $.execution.testRun = false
-    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
     expect($.http.post).toBeCalledTimes(4)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -601,12 +607,12 @@ describe('send transactional email', () => {
       },
     })
     $.execution.testRun = true
-    await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+    await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
     expect($.http.post).toBeCalledTimes(1)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED'],
-        recipient: [$.user.email],
+        recipient: [$.user!.email],
         subject: 'test subject',
         body: 'test body',
         from: 'jack',
@@ -627,14 +633,14 @@ describe('send transactional email', () => {
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
     })
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
       PartialStepError,
     )
     expect($.http.post).toBeCalledTimes(2)
     expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
-      userEmail: $.user.email,
+      userEmail: $.user!.email,
       executionId: $.execution.id,
       submissionId: 'abc',
       invalidAttachments: ['file-2.svg'],
@@ -656,10 +662,10 @@ describe('send transactional email', () => {
     it("redirects email to the test runner's address and drops CCs when testRun is true", async () => {
       $.step.parameters.destinationEmail = 'recipient@example.com'
       $.step.parameters.destinationEmailCc = 'cc@example.com'
-      $.user.email = 'me@example.com'
+      $.user!.email = 'me@example.com'
       $.execution.testRun = true
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
       expect($.http.post).toBeCalledTimes(1)
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -678,10 +684,10 @@ describe('send transactional email', () => {
       const ccRecipients = ['cc1@open.gov.sg', 'cc2@open.gov.sg']
       $.step.parameters.destinationEmail = recipients.join(',')
       $.step.parameters.destinationEmailCc = ccRecipients.join(',')
-      $.user.email = 'me@example.com'
+      $.user!.email = 'me@example.com'
       $.execution.testRun = false
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
           status: ['ACCEPTED', 'ACCEPTED'],
@@ -698,10 +704,10 @@ describe('send transactional email', () => {
     it("collapses multiple configured recipients to the test runner's address in test mode", async () => {
       $.step.parameters.destinationEmail = 'a@x.com, b@x.com, c@x.com'
       $.step.parameters.destinationEmailCc = 'cc1@x.com, cc2@x.com'
-      $.user.email = 'me@example.com'
+      $.user!.email = 'me@example.com'
       $.execution.testRun = true
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
       expect($.http.post).toBeCalledTimes(1)
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -720,11 +726,11 @@ describe('send transactional email', () => {
       const ccRecipients = ['cc1@open.gov.sg', 'cc2@open.gov.sg']
       $.step.parameters.destinationEmail = recipients.join(',')
       $.step.parameters.destinationEmailCc = ccRecipients.join(',')
-      $.user.email = 'me@example.com'
+      $.user!.email = 'me@example.com'
       $.execution.testRun = true
 
       await expect(
-        sendTransactionalEmail.testRun($, { useConfiguredEmails: true }),
+        sendTransactionalEmail.testRun!($, { useConfiguredEmails: true }),
       ).resolves.not.toThrow()
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -751,11 +757,11 @@ describe('send transactional email', () => {
       async ({ metadata }) => {
         $.step.parameters.destinationEmail = 'recipient@example.com'
         $.step.parameters.destinationEmailCc = 'cc@example.com'
-        $.user.email = 'me@example.com'
+        $.user!.email = 'me@example.com'
         $.execution.testRun = true
 
         await expect(
-          sendTransactionalEmail.testRun($, metadata),
+          sendTransactionalEmail.testRun!($, metadata),
         ).resolves.not.toThrow()
         expect($.http.post).toBeCalledTimes(1)
         expect($.setActionItem).toHaveBeenCalledWith({
@@ -811,7 +817,7 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
       PartialStepError,
     )
     expect($.http.post).toBeCalledTimes(2)
@@ -828,14 +834,14 @@ describe('send transactional email', () => {
     expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
-      userEmail: $.user.email,
+      userEmail: $.user!.email,
       executionId: $.execution.id,
       blacklistedRecipients: [recipients[1]],
     })
     expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
-      userEmail: $.user.email,
+      userEmail: $.user!.email,
       executionId: $.execution.id,
       submissionId: 'abc',
       invalidAttachments: ['file-2.svg'],
@@ -849,7 +855,7 @@ describe('send transactional email', () => {
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       expect($.http.post).not.toHaveBeenCalled()
       expect(mocks.sesSend).toHaveBeenCalledTimes(2)
@@ -870,7 +876,7 @@ describe('send transactional email', () => {
       $.step.parameters.senderName = 'Acme, Inc'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       // SES gets the RFC 5322-quoted display name...
       const [sentCommand] = mocks.sesSend.mock.calls[0] as unknown as [
@@ -896,7 +902,7 @@ describe('send transactional email', () => {
       $.step.parameters.destinationEmail = 'a@open.gov.sg,b@gmail.com'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       expect(mocks.sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(2)
@@ -914,7 +920,7 @@ describe('send transactional email', () => {
         submissionId: null,
       })
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       expect(mocks.sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
@@ -934,7 +940,7 @@ describe('send transactional email', () => {
         submissionId: null,
       })
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       expect(mocks.sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
@@ -952,7 +958,7 @@ describe('send transactional email', () => {
         submissionId: null,
       })
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       expect($.http.post).not.toHaveBeenCalled()
       expect(mocks.sesSend).toHaveBeenCalledTimes(1)
@@ -980,7 +986,7 @@ describe('send transactional email', () => {
         submissionId: null,
       })
 
-      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      await expect(sendTransactionalEmail.run!($)).rejects.toThrowError(
         'Total attachment size exceeded',
       )
       // The size guard runs before the SES API call.
@@ -991,7 +997,7 @@ describe('send transactional email', () => {
       $.step.parameters.destinationEmail = 'a@open.gov.sg'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       expect(mocks.sesSend).not.toHaveBeenCalled()
       expect($.http.post).toHaveBeenCalledTimes(1)
@@ -1007,7 +1013,7 @@ describe('send transactional email', () => {
         'cc-good@open.gov.sg,cc-bad@open.gov.sg'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run!($)).resolves.not.toThrow()
 
       // Sent once for the single (non-suppressed) To recipient, and the
       // suppressed CC is dropped from the actual SES API call.

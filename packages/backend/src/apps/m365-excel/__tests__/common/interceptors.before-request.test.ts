@@ -81,8 +81,8 @@ describe('M365 before request interceptors', () => {
     http = createHttpClient({
       $,
       baseURL: 'http://localhost/mock-m365-graph-api',
-      beforeRequest: m365ExcelApp.beforeRequest,
-      requestErrorHandler: null,
+      beforeRequest: m365ExcelApp.beforeRequest!,
+      requestErrorHandler: undefined,
     })
   })
 

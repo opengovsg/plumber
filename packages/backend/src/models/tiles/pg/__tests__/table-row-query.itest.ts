@@ -57,7 +57,7 @@ describe('table-row-functions: query operations', () => {
       })
 
       expect(result).toBeDefined()
-      expect(result.data).toEqual(data)
+      expect(result!.data).toEqual(data)
     })
 
     it('should return null for non-existent row ID', async () => {
@@ -85,7 +85,7 @@ describe('table-row-functions: query operations', () => {
         columnIds: [setup.testColumnIds[0]],
       })
 
-      expect(Object.keys(result.data)).toEqual([setup.testColumnIds[0]])
+      expect(Object.keys(result!.data)).toEqual([setup.testColumnIds[0]])
     })
 
     it('should include timestamps when includeTimestamps is true', async () => {

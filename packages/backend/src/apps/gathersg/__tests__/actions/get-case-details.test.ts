@@ -93,7 +93,7 @@ describe('get case details', () => {
   })
 
   it('downloads attachment, uploads to s3, and stores s3Id', async () => {
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
       urlPathParams: { caseUuid: MOCK_CASE_UUID },
@@ -153,7 +153,7 @@ describe('get case details', () => {
       },
     }))
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(mocks.putObject).not.toHaveBeenCalled()
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -190,7 +190,7 @@ describe('get case details', () => {
       throw new Error('attachment download failed')
     })
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'Please check that you have configured your step correctly',
     )
   })
@@ -212,7 +212,7 @@ describe('get case details', () => {
       },
     }))
 
-    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+    await expect(getCaseDetailsAction.run!($)).rejects.toThrow(
       'exceeds maximum size',
     )
     expect(mocks.putObject).not.toHaveBeenCalled()
@@ -262,7 +262,7 @@ describe('get case details', () => {
         `s3:common-bucket:${MOCK_EXECUTION_ID}/gathersg/${MOCK_CASE_UUID}/${MOCK_ATTACHMENT_UUID_2}/${MOCK_ATTACHMENT_NAME_2}`,
       )
 
-    await getCaseDetailsAction.run($)
+    await getCaseDetailsAction.run!($)
 
     expect(httpGet).toHaveBeenCalledWith(
       '/cases/:caseUuid/attachments/:attachmentUuid',

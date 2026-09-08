@@ -52,7 +52,7 @@ describe('http request interceptors', () => {
       $,
       baseURL: app.apiBaseUrl,
       beforeRequest: app.beforeRequest ?? [],
-      requestErrorHandler: app.requestErrorHandler ?? null,
+      requestErrorHandler: app.requestErrorHandler,
     })
   })
 
@@ -69,7 +69,7 @@ describe('http request interceptors', () => {
   ])('should prevent recursive URLS', async (url: string) => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = url
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
+    await expect(makeRequestAction.run!($)).rejects.toThrowError(
       RECURSIVE_WEBHOOK_ERROR,
     )
   })
@@ -77,7 +77,7 @@ describe('http request interceptors', () => {
   it('should allow not recursive URL', async () => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = 'https://mock.codes/200'
-    await expect(makeRequestAction.run($)).resolves.toBeUndefined()
+    await expect(makeRequestAction.run!($)).resolves.toBeUndefined()
   })
 
   it.each([
@@ -89,7 +89,7 @@ describe('http request interceptors', () => {
   ])('should prevent internal IPs', async (url: string) => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = url
-    await expect(makeRequestAction.run($)).rejects.toThrowError(
+    await expect(makeRequestAction.run!($)).rejects.toThrowError(
       DISALLOWED_IP_RESOLVED_ERROR,
     )
   })
@@ -99,7 +99,7 @@ describe('http request interceptors', () => {
   ])('should allow external IP', async (ip) => {
     $.step.parameters.method = 'GET'
     $.step.parameters.url = ip
-    await expect(makeRequestAction.run($)).resolves.toBeUndefined()
+    await expect(makeRequestAction.run!($)).resolves.toBeUndefined()
   })
 
   describe('interceptors should be called when following redirects', () => {
@@ -119,7 +119,7 @@ describe('http request interceptors', () => {
         statusCode: 301,
         redirectTo: url,
       })
-      await expect(makeRequestAction.run($)).rejects.toThrowError(
+      await expect(makeRequestAction.run!($)).rejects.toThrowError(
         RECURSIVE_WEBHOOK_ERROR,
       )
     })
@@ -136,7 +136,7 @@ describe('http request interceptors', () => {
         statusCode: 307,
         redirectTo: url,
       })
-      await expect(makeRequestAction.run($)).rejects.toThrowError(
+      await expect(makeRequestAction.run!($)).rejects.toThrowError(
         DISALLOWED_IP_RESOLVED_ERROR,
       )
     })

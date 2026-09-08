@@ -514,7 +514,7 @@ describe('table-row-functions: filtering and querying', () => {
       const secondPage = await getTableRows({
         tableId: setup.testTable.id,
         scanLimit: PAGINATION_PAGE_SIZE,
-        stringifiedCursor: firstPage.stringifiedCursor,
+        stringifiedCursor: firstPage.stringifiedCursor!,
       })
 
       expect(secondPage.rows).toHaveLength(PAGINATION_PAGE_SIZE)
@@ -523,7 +523,7 @@ describe('table-row-functions: filtering and querying', () => {
       const thirdPage = await getTableRows({
         tableId: setup.testTable.id,
         scanLimit: 999,
-        stringifiedCursor: secondPage.stringifiedCursor,
+        stringifiedCursor: secondPage.stringifiedCursor!,
       })
 
       expect(thirdPage.rows).toHaveLength(TEST_ROW_COUNT - 8)

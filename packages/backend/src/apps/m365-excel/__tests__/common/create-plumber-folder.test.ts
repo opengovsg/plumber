@@ -91,7 +91,7 @@ describe('Create plumber folder', () => {
   })
 
   it("errors out if user's email is not set", async () => {
-    $.user.email = null
+    $.user!.email = ''
     await expect(createPlumberFolder('local-dev', $)).rejects.toThrowError(
       'User email unavailable',
     )

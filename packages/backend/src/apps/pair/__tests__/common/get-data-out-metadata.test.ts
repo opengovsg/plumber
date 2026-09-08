@@ -8,7 +8,7 @@ describe('getDataOutMetadata', () => {
   it('should return null when dataOut is null', async () => {
     const executionStep = {
       dataOut: null,
-    } as IExecutionStep
+    } as unknown as IExecutionStep
 
     const result = await getDataOutMetadata(executionStep)
     expect(result).toBeNull()

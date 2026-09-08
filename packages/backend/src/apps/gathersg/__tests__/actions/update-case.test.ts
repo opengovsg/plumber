@@ -63,7 +63,7 @@ describe('update case', () => {
   })
 
   it('builds the payload correctly with all parameters', async () => {
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
@@ -87,7 +87,7 @@ describe('update case', () => {
   it('builds the payload correctly with only case status (no fields)', async () => {
     $.step.parameters.caseStatus = MOCK_CASE_STATUS
     $.step.parameters.caseFields = []
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
@@ -106,7 +106,7 @@ describe('update case', () => {
 
   it('builds the payload correctly with only case fields (no status)', async () => {
     delete $.step.parameters.caseStatus
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
@@ -127,7 +127,7 @@ describe('update case', () => {
   })
 
   it('parses the raw response correctly', async () => {
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
         traceId: MOCK_RESPONSE.traceId,
@@ -137,14 +137,14 @@ describe('update case', () => {
 
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
-    await expect(updateCaseAction.run($)).rejects.toThrow(
+    await expect(updateCaseAction.run!($)).rejects.toThrow(
       'Please enter a valid case uuid',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
-    await expect(updateCaseAction.run($)).rejects.toThrow(
+    await expect(updateCaseAction.run!($)).rejects.toThrow(
       'Please do not leave the case uuid empty',
     )
   })
@@ -153,7 +153,7 @@ describe('update case', () => {
     $.step.parameters.caseFields = [
       { field: '', fieldType: 'string', value: 'test' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrow('Field empty')
+    await expect(updateCaseAction.run!($)).rejects.toThrow('Field empty')
   })
 
   it('should throw step error for duplicate fields', async () => {
@@ -161,7 +161,7 @@ describe('update case', () => {
       { field: 'name', fieldType: 'string', value: 'Peter' },
       { field: 'name', fieldType: 'string', value: 'Mary' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrow(
+    await expect(updateCaseAction.run!($)).rejects.toThrow(
       'name field is repeated',
     )
   })
@@ -170,7 +170,7 @@ describe('update case', () => {
     $.step.parameters.caseFields = [
       { field: 'age', fieldType: 'number', value: 'not-a-number' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrow(
+    await expect(updateCaseAction.run!($)).rejects.toThrow(
       'Invalid number type for field: age',
     )
   })
@@ -191,7 +191,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run!($)).rejects.toThrowError(
       'Check that you have entered a valid case status.',
     )
   })
@@ -215,7 +215,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run!($)).rejects.toThrowError(
       'Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: age, score',
     )
   })
@@ -236,7 +236,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run!($)).rejects.toThrowError(
       'Insufficient permissions to perform this action',
     )
   })
@@ -254,7 +254,7 @@ describe('update case', () => {
     const httpError = new HttpError(error)
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
-    await expect(updateCaseAction.run($)).rejects.toThrowError(
+    await expect(updateCaseAction.run!($)).rejects.toThrowError(
       'Please check that you have configured your step correctly',
     )
   })
@@ -263,7 +263,7 @@ describe('update case', () => {
     $.step.parameters.caseFields = [
       { field: 'deleted_at', fieldType: 'null', value: '' },
     ]
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
@@ -286,7 +286,7 @@ describe('update case', () => {
     $.step.parameters.caseFields = [
       { field: 'email', fieldType: 'email', value: 'peter@example.com' },
     ]
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',
@@ -309,7 +309,7 @@ describe('update case', () => {
     $.step.parameters.caseFields = [
       { field: 'email', fieldType: 'email', value: 'not-an-email' },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrow(
+    await expect(updateCaseAction.run!($)).rejects.toThrow(
       'Invalid email for field: email',
     )
   })
@@ -320,7 +320,7 @@ describe('update case', () => {
       { field: 'age', fieldType: 'number', value: '25' },
       { field: 'is_active', fieldType: 'null', value: '' },
     ]
-    await updateCaseAction.run($)
+    await updateCaseAction.run!($)
 
     expect(mocks.httpPatch).toHaveBeenCalledWith(
       '/cases/:caseUuid',

@@ -97,7 +97,7 @@ describe('validateEndStepWrite', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
   })
 
   it('accepts a valid marker over a run of plain steps', () => {
@@ -401,7 +401,7 @@ describe('extractSelfEndStepIntent', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
   })
 
   it('passes an absent key through unchanged', () => {
@@ -448,7 +448,7 @@ describe('validateFlowBlocks', () => {
   let loggerWarnSpy: MockInstance
 
   beforeEach(() => {
-    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => null)
+    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
   })
 
   it('passes a flow whose blocks are all valid and non-empty', () => {

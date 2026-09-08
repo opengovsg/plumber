@@ -51,7 +51,7 @@ describe('get payment', () => {
     'invokes the correct URL based on the API key and payment ID',
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
-      await getPaymentAction.run($)
+      await getPaymentAction.run!($)
 
       expect(mocks.httpGet).toHaveBeenCalledWith(
         '/v1/payment-services/:paymentServiceId/payments/:paymentId',
@@ -66,7 +66,7 @@ describe('get payment', () => {
   )
 
   it('parses the response correctly', async () => {
-    await getPaymentAction.run($)
+    await getPaymentAction.run!($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
         id: MOCK_PAYMENT.id,

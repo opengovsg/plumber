@@ -49,7 +49,7 @@ describe('send payment email', () => {
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
 
-      await sendEmailAction.run($)
+      await sendEmailAction.run!($)
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
         '/v1/payment-services/:paymentServiceId/payments/:paymentId/send-email',

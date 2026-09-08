@@ -58,7 +58,7 @@ describe('tag or untag case', () => {
   })
 
   it('builds the payload correctly for tagging a case', async () => {
-    await tagOrUntagCaseAction.run($)
+    await tagOrUntagCaseAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/cases/:caseUuid/tag',
@@ -77,7 +77,7 @@ describe('tag or untag case', () => {
 
   it('builds the payload correctly for untagging a case', async () => {
     $.step.parameters.tagOrUntag = false
-    await tagOrUntagCaseAction.run($)
+    await tagOrUntagCaseAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/cases/:caseUuid/untag',
@@ -95,7 +95,7 @@ describe('tag or untag case', () => {
   })
 
   it('parses the raw response correctly', async () => {
-    await tagOrUntagCaseAction.run($)
+    await tagOrUntagCaseAction.run!($)
     expect($.setActionItem).toBeCalledWith({
       raw: {
         traceId: MOCK_RESPONSE.traceId,
@@ -105,35 +105,35 @@ describe('tag or untag case', () => {
 
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrow(
       'Please enter a valid case uuid',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrow(
       'Please do not leave the case uuid empty',
     )
   })
 
   it('should throw step error for empty tag value', async () => {
     $.step.parameters.tagValue = ''
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrow(
       'Please do not leave the tag empty',
     )
   })
 
   it('should throw step error for invalid parameters (whitespace only case uuid)', async () => {
     $.step.parameters.caseUuid = '   '
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrow(
       'Please do not leave the case uuid empty',
     )
   })
 
   it('should throw step error for invalid parameters (whitespace only tag value)', async () => {
     $.step.parameters.tagValue = '   '
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrowError()
   })
 
   it('should throw step error for case not found', async () => {
@@ -152,7 +152,7 @@ describe('tag or untag case', () => {
     const httpError = new HttpError(error)
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrowError()
   })
 
   it('should throw step error for invalid tag value', async () => {
@@ -171,7 +171,7 @@ describe('tag or untag case', () => {
     const httpError = new HttpError(error)
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrowError(
       'Please check that you have configured your step correctly',
     )
   })
@@ -189,7 +189,7 @@ describe('tag or untag case', () => {
     const httpError = new HttpError(error)
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrowError(
       'Please check that you have configured your step correctly',
     )
   })
@@ -197,7 +197,7 @@ describe('tag or untag case', () => {
   it('should handle long tag values', async () => {
     const longTagValue = 'a'.repeat(100)
     $.step.parameters.tagValue = longTagValue
-    await tagOrUntagCaseAction.run($)
+    await tagOrUntagCaseAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/cases/:caseUuid/tag',

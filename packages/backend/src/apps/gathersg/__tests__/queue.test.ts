@@ -20,6 +20,8 @@ vi.mock('@/models/step', () => ({
 }))
 
 describe('Queue config', () => {
+  const queue = gathersgApp.queue!
+
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -28,7 +30,7 @@ describe('Queue config', () => {
     mocks.stepQueryResult.mockResolvedValueOnce({
       connectionId: 'mock-connection-id',
     })
-    const groupConfig = await gathersgApp.queue.getGroupConfigForJob({
+    const groupConfig = await queue.getGroupConfigForJob!({
       flowId: 'test-flow-id',
       stepId: 'test-step-id',
       executionId: 'test-execution-id',
@@ -39,7 +41,7 @@ describe('Queue config', () => {
   })
 
   it('rate limits each connection and spreads calls evenly', () => {
-    expect(gathersgApp.queue.groupLimits).toMatchObject({
+    expect(queue.groupLimits).toMatchObject({
       type: 'rate-limit',
       limit: {
         max: 1,
@@ -49,7 +51,7 @@ describe('Queue config', () => {
   })
 
   it('runs on an action worker and does not delay the whole queue', () => {
-    expect(gathersgApp.queue.workerType).toEqual('action')
-    expect(gathersgApp.queue.isQueueDelayable).toEqual(false)
+    expect(queue.workerType).toEqual('action')
+    expect(queue.isQueueDelayable).toEqual(false)
   })
 })
