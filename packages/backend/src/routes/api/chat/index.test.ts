@@ -250,7 +250,6 @@ describe('chat handler — data-columnTable emission', () => {
       config: {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
-        generateStepsPromptName: 'generate-steps',
         version: 'production',
         mcpStepConfig: true,
       },
@@ -331,7 +330,6 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
       config: {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
-        generateStepsPromptName: 'generate-steps',
         version: 'production',
         mcpStepConfig: true,
       },

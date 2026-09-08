@@ -5,19 +5,25 @@ import { BadUserInputError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
+import {
+  MAX_COLUMN_NAME_LENGTH,
+  MAX_TILE_NAME_LENGTH,
+} from '@/models/tiles/constants'
 import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
 export const updateTableSchema = z.object({
   id: z.string().uuid(),
-  name: z.string().trim().min(1).max(64).optional(),
-  addedColumns: z.array(z.string().trim().min(1).max(255)).optional(),
+  name: z.string().trim().min(1).max(MAX_TILE_NAME_LENGTH).optional(),
+  addedColumns: z
+    .array(z.string().trim().min(1).max(MAX_COLUMN_NAME_LENGTH))
+    .optional(),
   modifiedColumns: z
     .array(
       z.object({
         id: z.string().uuid(),
-        name: z.string().trim().min(1).max(255).optional(),
+        name: z.string().trim().min(1).max(MAX_COLUMN_NAME_LENGTH).optional(),
         position: z.number().int().min(0).optional(),
         config: z
           .object({

@@ -30,7 +30,6 @@ describe('createFlowWithSteps mutation integration tests', () => {
       'ai-builder': {
         enabled: true,
         config: {
-          generateStepsPromptName: 'generate-steps',
           version: 'production',
         },
       },

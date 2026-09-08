@@ -51,6 +51,7 @@ import {
 import { parseClarificationBlock } from './parse-clarification-block'
 import { parseColumnTableBlock } from './parse-column-table-block'
 import { parseDynamicPickerBlock } from './parse-dynamic-picker-block'
+import { parseTileSetupBlock } from './parse-tile-setup-block'
 import { chatRequestSchema } from './schema'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
@@ -78,6 +79,14 @@ function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
     writer.write({
       type: 'data-columnTable',
       data: columnTable,
+    })
+  }
+
+  const tileSetup = parseTileSetupBlock(text)
+  if (tileSetup) {
+    writer.write({
+      type: 'data-tileSetup',
+      data: tileSetup,
     })
   }
 }

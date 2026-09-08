@@ -14,11 +14,14 @@ import {
   type ClarificationQuestion,
   type ColumnTablePart,
   type DynamicPickerPart,
+  type TileSetupPart,
 } from '@/hooks/useChatStream'
+import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChoicePicker from '@/pages/AiBuilder/components/ChatInterface/ChoicePicker'
 import ColumnTablePicker from '@/pages/AiBuilder/components/ChatInterface/ColumnTablePicker'
 import DynamicPicker from '@/pages/AiBuilder/components/ChatInterface/DynamicPicker'
 import SecretKeyWarningDialog from '@/pages/AiBuilder/components/ChatInterface/SecretKeyWarningDialog'
+import TileSetupPicker from '@/pages/AiBuilder/components/ChatInterface/TileSetupPicker'
 import ConnectFormPopover from '@/pages/AiBuilder/components/ConnectFormPopover'
 import IdeaButtons from '@/pages/AiBuilder/components/IdeaButtons'
 import { AI_CHAT_IDEAS, type AiChatIdea } from '@/pages/AiBuilder/constants'
@@ -28,6 +31,8 @@ import {
 } from '@/pages/AiBuilder/helpers'
 
 import { buildColumnTableReply } from './helpers/columnTableReply'
+import { isTilesListTablesPicker } from './helpers/isTilesListTablesPicker'
+import { buildTileSetupReply } from './helpers/tileSetupReply'
 
 interface PromptInputProps {
   isStreaming: boolean
@@ -39,6 +44,7 @@ interface PromptInputProps {
   clarification?: ClarificationQuestion[]
   dynamicPicker?: DynamicPickerPart['data']
   columnTable?: ColumnTablePart['data']
+  tileSetup?: TileSetupPart['data']
   onAddConnection?: (context: { question: string; appKey: string }) => void
   /** Form URL already shared in the conversation (drives the picker's forced key-completion card). */
   knownFormUrl?: string
@@ -102,12 +108,14 @@ export default function PromptInput({
   clarification,
   dynamicPicker,
   columnTable,
+  tileSetup,
   onAddConnection,
   knownFormUrl,
   onConnectForm,
   onSelectExistingForm,
   attachedForm,
 }: PromptInputProps) {
+  const { steps } = useAiBuilderContext()
   const [input, setInput] = useState<string>(initialValue)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [selectedAnswers, setSelectedAnswers] = useState<
@@ -249,6 +257,19 @@ export default function PromptInput({
   // only show idea buttons if showIdeas is true and the user has not entered any text
   const shouldShowIdeas = showIdeas && !input?.trim()
 
+  if (tileSetup) {
+    return (
+      <TileSetupPicker
+        data={tileSetup}
+        isStreaming={isStreaming}
+        onSave={(name, columns) => {
+          sendMessage(buildTileSetupReply(tileSetup.question, name, columns))
+        }}
+        cancelStream={cancelStream}
+      />
+    )
+  }
+
   if (columnTable) {
     return (
       <ColumnTablePicker
@@ -293,6 +314,11 @@ export default function PromptInput({
                   question: dynamicPicker.question,
                   appKey: dynamicPicker.appKey,
                 })
+            : undefined
+        }
+        onCreateNew={
+          isTilesListTablesPicker(dynamicPicker, steps)
+            ? () => sendMessage(`Q: ${dynamicPicker.question}\nA: [create new]`)
             : undefined
         }
         knownFormUrl={knownFormUrl}
