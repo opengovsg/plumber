@@ -54,6 +54,7 @@ describe.each<[string, IDynamicData]>([
       }),
     )
     const $ = {
+      user: { email: 'user@open.gov.sg' },
       step: { parameters: validParameters },
     } as unknown as IGlobalVariable
 
@@ -66,6 +67,7 @@ describe.each<[string, IDynamicData]>([
     const accessError = new Error('boom')
     mocks.validateCanAccessFile.mockRejectedValue(accessError)
     const $ = {
+      user: { email: 'user@open.gov.sg' },
       step: { parameters: validParameters },
     } as unknown as IGlobalVariable
 
