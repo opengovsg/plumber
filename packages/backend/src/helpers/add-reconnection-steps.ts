@@ -64,17 +64,25 @@ function replaceCreateConnectionsWithUpdate(steps: IAuthenticationStep[]) {
 }
 
 function addReconnectionSteps(app: IApp): IApp {
-  const hasReconnectionSteps = app.auth.reconnectionSteps
+  const auth = app.auth
+  if (!auth) {
+    throw new Error(`Cannot add reconnection steps for app '${app.key}'`)
+  }
 
-  if (hasReconnectionSteps) {
+  if (auth.reconnectionSteps) {
     return app
   }
 
-  const updatedSteps = replaceCreateConnectionsWithUpdate(
-    app.auth.authenticationSteps,
-  )
+  const authenticationSteps = auth.authenticationSteps
+  if (!authenticationSteps) {
+    throw new Error(
+      `Cannot add reconnection steps for app '${app.key}': authenticationSteps is not set`,
+    )
+  }
 
-  app.auth.reconnectionSteps = [resetConnectionStep, ...updatedSteps]
+  const updatedSteps = replaceCreateConnectionsWithUpdate(authenticationSteps)
+
+  auth.reconnectionSteps = [resetConnectionStep, ...updatedSteps]
 
   return app
 }

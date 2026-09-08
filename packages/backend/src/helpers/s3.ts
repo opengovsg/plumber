@@ -169,14 +169,24 @@ function throwAttachmentError(
   throw new StepError(name, solution)
 }
 
+function requireDevEnv(name: string, value: string | undefined): string {
+  if (!value) {
+    throw new Error(`${name} environment variable needs to be set for dev!`)
+  }
+  return value
+}
+
 const s3Client = new S3Client({
   region: 'ap-southeast-1',
   ...(appConfig.isDev && {
     credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY,
-      secretAccessKey: process.env.S3_SECRET_KEY,
+      accessKeyId: requireDevEnv('S3_ACCESS_KEY', process.env.S3_ACCESS_KEY),
+      secretAccessKey: requireDevEnv(
+        'S3_SECRET_KEY',
+        process.env.S3_SECRET_KEY,
+      ),
     },
-    endpoint: process.env.S3_ENDPOINT,
+    endpoint: requireDevEnv('S3_ENDPOINT', process.env.S3_ENDPOINT),
     forcePathStyle: true,
   }),
 })
@@ -216,7 +226,9 @@ export function parseS3Id(id: string): S3IdData | null {
   return {
     bucket,
     objectKey,
-    objectName: objectKey.split('/').pop(),
+    // objectKey is non-empty here (checked above), so split() always yields
+    // at least one element.
+    objectName: objectKey.split('/').pop() ?? objectKey,
   }
 }
 
@@ -306,7 +318,8 @@ export async function deleteObjects(
       throw new Error('Error deleting object')
     }
   } catch (err) {
-    throw new Error(`Error deleting object: ${err.message}`)
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(`Error deleting object: ${message}`)
   }
 }
 
@@ -396,7 +409,11 @@ export async function getObjectFromS3Id(
           idData.objectKey,
         )
         if (!isValid) {
-          throwAttachmentError(scanStatus, metadata)
+          // No scan-status tag found is treated the same as a failed scan.
+          throwAttachmentError(
+            scanStatus ?? MALWARE_SCAN_STATUS.FAILED,
+            metadata,
+          )
         }
       }
     }
