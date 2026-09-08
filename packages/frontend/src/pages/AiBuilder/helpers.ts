@@ -7,6 +7,7 @@ import {
   DynamicPickerPart,
   IsChatReadyPart,
   Message,
+  TileSetupPart,
 } from '@/hooks/useChatStream'
 import {
   SUPPORT_FORM_BASE_URL,
@@ -337,6 +338,10 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       (part): part is ColumnTablePart => part.type === 'data-columnTable',
     )
 
+    const tileSetupPart = msg.parts.find(
+      (part): part is TileSetupPart => part.type === 'data-tileSetup',
+    )
+
     return {
       id: msg.id,
       text: extractTextContent(msg),
@@ -346,6 +351,7 @@ export const transformMessages = (messages: CustomUIMessage[]): Message[] => {
       clarification: clarificationPart?.data.questions,
       dynamicPicker: dynamicPickerPart?.data,
       columnTable: columnTablePart?.data,
+      tileSetup: tileSetupPart?.data,
     }
   })
 
