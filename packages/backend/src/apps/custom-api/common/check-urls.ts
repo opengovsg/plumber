@@ -12,6 +12,10 @@ import {
 import { isIpAllowed } from './ip-resolver'
 
 const checkUrls: TBeforeRequest = async ($, requestConfig) => {
+  if (!requestConfig.baseURL) {
+    throw new Error(INVALID_URL_ERROR)
+  }
+
   // Prohibit calling ourselves to prevent self-DoS.
   if (requestConfig.baseURL.toLowerCase().endsWith('plumber.gov.sg')) {
     throw new Error(RECURSIVE_WEBHOOK_ERROR)
