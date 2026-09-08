@@ -2,6 +2,8 @@ import path from 'node:path'
 
 import { config } from 'dotenv'
 
+import { requireEnv } from './require-env'
+
 // Placeholders backstop missing keys. Local dev gets its real values from 1Password,
 // which dotenv never overrides.
 // IMPORTANT: without the guard, placeholders would satisfy a deployed environment's
@@ -24,7 +26,10 @@ const dbConfig: DbConfig = {
   postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),
   postgresHost:
     process.env.RDS_PROXY_HOST || process.env.POSTGRES_HOST || 'localhost',
-  postgresUsername: process.env.POSTGRES_USERNAME,
+  postgresUsername: requireEnv(
+    'POSTGRES_USERNAME',
+    process.env.POSTGRES_USERNAME,
+  ),
   postgresPassword: process.env.POSTGRES_PASSWORD,
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
 }
