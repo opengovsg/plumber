@@ -115,10 +115,10 @@ const trigger: IRawTrigger = {
     if (
       formSchema.form.responseMode === 'multirespondent' &&
       // if the workflow is not set up, we treat it as a single respondent form
-      formSchema.form.workflow?.length > 0
+      (formSchema.form.workflow?.length ?? 0) > 0
     ) {
       // Create MRF steps for multirespondent forms
-      const mrfWorkflowData = await parseWorkflowData($, formSchema)
+      const mrfWorkflowData = parseWorkflowData($, formSchema)
       try {
         await createMrfSteps($, mrfWorkflowData)
       } catch (error) {

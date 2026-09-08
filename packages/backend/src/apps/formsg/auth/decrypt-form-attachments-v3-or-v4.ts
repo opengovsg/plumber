@@ -35,7 +35,7 @@ export async function decryptFormAttachmentsV3OrV4(
   const decryptedAttachments: DecryptedAttachments = {}
 
   const filenames = formFields.reduce((acc, field) => {
-    if (field.fieldType === 'attachment') {
+    if (field.fieldType === 'attachment' && field.answer) {
       acc[field._id] = field.answer
     }
     return acc

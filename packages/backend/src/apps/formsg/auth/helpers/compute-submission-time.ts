@@ -19,7 +19,7 @@ interface FormsgPayload {
  * This funciton returns the submission time based on whether it's an MRF or SRF form.
  */
 export function computeSubmissionTime(data: FormsgPayload): string {
-  const workflowContent: FormsgPayloadWorkflowContent = data.workflowContent
+  const workflowContent = data.workflowContent
 
   // If not MRF, just return submission creation time
   if (

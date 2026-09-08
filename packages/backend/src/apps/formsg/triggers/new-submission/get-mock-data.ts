@@ -107,6 +107,11 @@ function generateVerifiedSubmitterInfoData(
   $: IGlobalVariable,
 ): Record<string, Record<string, string>> {
   const filteredNric = filterNric($, MOCK_NRIC)
+  if (filteredNric === null) {
+    // NRIC filter is set to "Remove" - matches real decryption's behaviour of
+    // omitting the field entirely.
+    return {}
+  }
   switch (authType) {
     case 'SGID': // deprecated
     case 'SGID_MyInfo': // deprecated
@@ -189,7 +194,7 @@ function generateMockPaymentData(products: Partial<PaymentProduct>[]) {
       payer: 'payer@open.gov.sg',
       url: 'https://form.gov.sg/api/v3/payments/abcde/12345/invoice/download',
       paymentIntent: 'pi_12345',
-      amount: (firstProduct.amount_cents / 100).toFixed(2),
+      amount: ((firstProduct.amount_cents ?? 0) / 100).toFixed(2),
       productService: firstProduct.name,
       dateTime: new Date().toISOString(),
       transactionFee: '0.05',
@@ -277,6 +282,9 @@ function patchMockData(
       }
 
       if (mockData.responses[formFields[i]._id].fieldType === 'email') {
+        if (!$.user) {
+          throw new Error('Test run is missing the triggering user')
+        }
         mockData.responses[formFields[i]._id].answer = $.user.email
       }
 

@@ -59,7 +59,7 @@ export function getFormDetailsFromGlobalVariable($: IGlobalVariable) {
 
 export async function registerWebhookUrl(
   $: IGlobalVariable,
-): ReturnType<IAuth['registerConnection']> {
+): ReturnType<NonNullable<IAuth['registerConnection']>> {
   const { userEmail, webhookUrl, formId, env } =
     getFormDetailsFromGlobalVariable($)
 

@@ -11,7 +11,7 @@ import {
 export function parseWorkflowData(
   $: IGlobalVariable,
   formSchema: FormSchema,
-): ParsedMrfWorkflow | null {
+): ParsedMrfWorkflow {
   const result = mrfWorkflowDataSchema.safeParse(formSchema.form.workflow)
   if (!result.success) {
     throw new StepError(
