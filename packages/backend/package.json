@@ -15,6 +15,7 @@
     "lint": "eslint . --ignore-path ../../.eslintignore",
     "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
     "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc -p tsconfig.strict.json --noEmit",
     "db": "DOTENV_CONFIG_PATH=.env knex",
     "readme:db:migration:create": "HOW TO USE: npm run -w backend db:migration:create your_migration_name",
     "db:migration:create": "npm run db -- migrate:make",

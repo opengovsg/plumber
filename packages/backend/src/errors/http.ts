@@ -1,11 +1,29 @@
 import { IJSONObject } from '@plumber/types'
 
-import type { AxiosError, AxiosResponse } from 'axios'
+import type {
+  AxiosError,
+  AxiosRequestHeaders,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios'
 
 import BaseError from './base'
 
+// error.response is only present on AxiosError when the server actually
+// replied, so status/statusText/config can genuinely be absent here.
+type SanitisedAxiosResponse = Omit<
+  AxiosResponse,
+  'status' | 'statusText' | 'config'
+> & {
+  status?: number
+  statusText?: string
+  config?: Omit<InternalAxiosRequestConfig, 'headers'> & {
+    headers?: AxiosRequestHeaders
+  }
+}
+
 export default class HttpError extends BaseError {
-  response: AxiosResponse
+  response: SanitisedAxiosResponse
   code?: string
   resolvedIp?: string
 
