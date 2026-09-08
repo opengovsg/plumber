@@ -14,9 +14,9 @@ describe('EmailSuppressionEntry model', () => {
         sesMessageId: 'msg-001',
       })
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: testEmail,
-      })
+      }))!
       expect(row).toBeDefined()
       expect(row.reason).toBe('BOUNCE')
       expect(row.reasonDetail).toBe('NoEmail')
@@ -62,9 +62,9 @@ describe('EmailSuppressionEntry model', () => {
         reasonDetail: 'NoEmail',
       })
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: testEmail,
-      })
+      }))!
       expect(row.whitelistCount).toBe(1)
       expect(row.lastWhitelistedAt).toBeNull()
     })
@@ -83,9 +83,9 @@ describe('EmailSuppressionEntry model', () => {
         reasonDetail: 'NoEmail',
       })
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: testEmail,
-      })
+      }))!
       expect(row.reason).toBe('BOUNCE')
       expect(row.reasonDetail).toBe('NoEmail')
     })
@@ -112,9 +112,9 @@ describe('EmailSuppressionEntry model', () => {
         reasonDetail: 'abuse',
       })
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: testEmail,
-      })
+      }))!
       expect(row).toBeDefined()
       expect(row.deletedAt).toBeNull()
       expect(row.reason).toBe('COMPLAINT')
@@ -136,9 +136,9 @@ describe('EmailSuppressionEntry model', () => {
         reason: 'BOUNCE',
       })
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: 'mixedcase@example.com',
-      })
+      }))!
       expect(row).toBeDefined()
       expect(row.email).toBe('mixedcase@example.com')
     })
@@ -220,9 +220,9 @@ describe('EmailSuppressionEntry model', () => {
       ])
       expect(result).toEqual(['suppressed@example.com'])
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: 'suppressed@example.com',
-      })
+      }))!
       expect(row.lastWhitelistedAt).not.toBeNull()
     })
 
@@ -230,9 +230,9 @@ describe('EmailSuppressionEntry model', () => {
       // Starts at 0 from the suppression in beforeEach.
       await EmailSuppressionEntry.whitelistEmails(['suppressed@example.com'])
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: 'suppressed@example.com',
-      })
+      }))!
       expect(row.whitelistCount).toBe(1)
     })
 
@@ -244,9 +244,9 @@ describe('EmailSuppressionEntry model', () => {
       ])
       expect(result).toEqual([])
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: 'suppressed@example.com',
-      })
+      }))!
       expect(row.whitelistCount).toBe(1)
     })
 
@@ -268,9 +268,9 @@ describe('EmailSuppressionEntry model', () => {
       // whitelist again (count -> 2)
       await EmailSuppressionEntry.whitelistEmails(['suppressed@example.com'])
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: 'suppressed@example.com',
-      })
+      }))!
       expect(row.whitelistCount).toBe(2)
       expect(row.lastWhitelistedAt).not.toBeNull()
     })
@@ -286,9 +286,9 @@ describe('EmailSuppressionEntry model', () => {
       ])
       expect(result).toEqual(['suppressed@example.com'])
 
-      const row = await EmailSuppressionEntry.query().findOne({
+      const row = (await EmailSuppressionEntry.query().findOne({
         email: 'suppressed@example.com',
-      })
+      }))!
       expect(row.lastWhitelistedAt).not.toBeNull()
     })
   })
