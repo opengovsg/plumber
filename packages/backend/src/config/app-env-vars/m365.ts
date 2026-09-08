@@ -74,7 +74,8 @@ function makeTenantInfo(opts: Partial<M365TenantInfo>): M365TenantInfo {
     !sharePointSiteId ||
     !clientId ||
     !clientThumbprint ||
-    !clientPrivateKey
+    !clientPrivateKey ||
+    !allowedSensitivityLabelGuids
   ) {
     throw new Error(
       `M365 tenant '${
@@ -142,5 +143,9 @@ export function getM365TenantInfo(key: string): M365TenantInfo {
   if (!isM365TenantKey(key)) {
     throw new Error(`${key} is an invalid M365 tenant.`)
   }
-  return m365TenantInfo[key]
+  const tenantInfo = m365TenantInfo[key]
+  if (!tenantInfo) {
+    throw new Error(`${key} is an invalid M365 tenant.`)
+  }
+  return tenantInfo
 }

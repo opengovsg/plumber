@@ -26,8 +26,8 @@ type AppConfig = {
   serveWebAppSeparately: boolean
   redisHost: string
   redisPort: number
-  redisUsername: string
-  redisPassword: string
+  redisUsername?: string
+  redisPassword?: string
   redisTls: boolean
   redisClusterMode: boolean
   enableBullMQDashboard: boolean
@@ -88,8 +88,8 @@ type AppConfig = {
     }
   }
   ses: {
-    fromAddress: string
-    region: string
+    fromAddress?: string
+    region?: string
     roleArn: string
     configurationSet?: string
     sqsQueueUrl?: string
@@ -101,14 +101,25 @@ type AppConfig = {
   archiveEnabled: boolean
 }
 
+function requireEnv(name: string, value: string | undefined): string {
+  if (!value) {
+    throw new Error(`${name} environment variable needs to be set!`)
+  }
+  return value
+}
+
 const port = process.env.PORT || '3000'
 
 // use apiUrl by default, which has less priority over the following cases
 
-let webAppUrl = new URL(process.env.WEB_APP_URL).toString()
+let webAppUrl = new URL(
+  requireEnv('WEB_APP_URL', process.env.WEB_APP_URL),
+).toString()
 webAppUrl = webAppUrl.substring(0, webAppUrl.length - 1) // remove trailing slash
 
-let webhookUrl = new URL(process.env.WEBHOOK_URL).toString()
+let webhookUrl = new URL(
+  requireEnv('WEBHOOK_URL', process.env.WEBHOOK_URL),
+).toString()
 webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1) // remove trailing slash
 
 const appEnv = process.env.APP_ENV || 'development'
@@ -118,12 +129,15 @@ const appConfig: AppConfig = {
   appEnv: appEnv,
   isProd: appEnv === 'prod',
   isDev: appEnv === 'development',
-  version: process.env.npm_package_version,
+  version: process.env.npm_package_version ?? 'unknown',
   postgresDatabase: process.env.POSTGRES_DATABASE || 'plumber_dev',
   postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),
   postgresHost:
     process.env.RDS_PROXY_HOST || process.env.POSTGRES_HOST || 'localhost',
-  postgresUsername: process.env.POSTGRES_USERNAME,
+  postgresUsername: requireEnv(
+    'POSTGRES_USERNAME',
+    process.env.POSTGRES_USERNAME,
+  ),
   postgresPassword: process.env.POSTGRES_PASSWORD,
   postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
   encryptionKey: process.env.ENCRYPTION_KEY || '',
@@ -136,67 +150,110 @@ const appConfig: AppConfig = {
   redisPassword: process.env.REDIS_PASSWORD,
   redisTls: process.env.REDIS_TLS === 'true',
   redisClusterMode: process.env.REDIS_CLUSTER_MODE === 'true',
-  adminUserEmail: process.env.ADMIN_USER_EMAIL,
+  adminUserEmail: requireEnv('ADMIN_USER_EMAIL', process.env.ADMIN_USER_EMAIL),
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
-  s3CommonBucket: process.env.S3_COMMON_BUCKET,
-  baseUrl: process.env.BASE_URL,
+  s3CommonBucket: requireEnv('S3_COMMON_BUCKET', process.env.S3_COMMON_BUCKET),
+  baseUrl: requireEnv('BASE_URL', process.env.BASE_URL),
   webAppUrl,
   webhookUrl,
   requestBodySizeLimit: '1mb',
-  isWorker: /worker\.(ts|js)$/.test(require.main?.filename),
+  isWorker: /worker\.(ts|js)$/.test(require.main?.filename ?? ''),
   workerActionConcurrency: parseInt(
     process.env.WORKER_ACTION_CONCURRENCY || '10',
   ),
   sgid: {
-    clientId: process.env.SGID_CLIENT_ID,
-    clientSecret: process.env.SGID_CLIENT_SECRET,
-    privateKey: process.env.SGID_PRIVATE_KEY,
+    clientId: requireEnv('SGID_CLIENT_ID', process.env.SGID_CLIENT_ID),
+    clientSecret: requireEnv(
+      'SGID_CLIENT_SECRET',
+      process.env.SGID_CLIENT_SECRET,
+    ),
+    privateKey: requireEnv('SGID_PRIVATE_KEY', process.env.SGID_PRIVATE_KEY),
   },
   postman: {
-    apiKey: process.env.POSTMAN_API_KEY,
+    apiKey: requireEnv('POSTMAN_API_KEY', process.env.POSTMAN_API_KEY),
     fromAddress: process.env.POSTMAN_FROM_ADDRESS || 'info@plumber.gov.sg',
-    rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT) || 169,
+    rateLimit: parseInt(process.env.POSTMAN_RATE_LIMIT ?? '') || 169,
   },
-  launchDarklySdkKey: process.env.LAUNCH_DARKLY_SDK_KEY,
+  launchDarklySdkKey: requireEnv(
+    'LAUNCH_DARKLY_SDK_KEY',
+    process.env.LAUNCH_DARKLY_SDK_KEY,
+  ),
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
   tilesPostgres: {
     host: process.env.TILES_POSTGRES_HOST || 'localhost',
     port: parseInt(process.env.TILES_POSTGRES_PORT || '5431'),
-    username: process.env.TILES_POSTGRES_USERNAME,
-    password: process.env.TILES_POSTGRES_PASSWORD,
+    username: requireEnv(
+      'TILES_POSTGRES_USERNAME',
+      process.env.TILES_POSTGRES_USERNAME,
+    ),
+    password: requireEnv(
+      'TILES_POSTGRES_PASSWORD',
+      process.env.TILES_POSTGRES_PASSWORD,
+    ),
     database: process.env.TILES_POSTGRES_DATABASE || 'plumber_tiles_dev',
     enableSsl: process.env.TILES_POSTGRES_ENABLE_SSL === 'true',
   },
   sso: {
-    clientId: process.env.SSO_CLIENT_ID,
-    clientSecret: process.env.SSO_CLIENT_SECRET,
-    discoveryUrl: process.env.SSO_DISCOVERY_URL,
+    clientId: requireEnv('SSO_CLIENT_ID', process.env.SSO_CLIENT_ID),
+    clientSecret: requireEnv(
+      'SSO_CLIENT_SECRET',
+      process.env.SSO_CLIENT_SECRET,
+    ),
+    discoveryUrl: requireEnv(
+      'SSO_DISCOVERY_URL',
+      process.env.SSO_DISCOVERY_URL,
+    ),
   },
   gathersg: {
-    publicKey: process.env.GATHERSG_PUBLIC_KEY,
+    publicKey: requireEnv(
+      'GATHERSG_PUBLIC_KEY',
+      process.env.GATHERSG_PUBLIC_KEY,
+    ),
   },
   pair: {
     foundry: {
-      apiKey: process.env.PAIR_FOUNDRY_API_KEY,
-      model: process.env.PAIR_FOUNDRY_MODEL,
-      imageModel: process.env.PAIR_FOUNDRY_IMAGE_MODEL,
+      apiKey: requireEnv(
+        'PAIR_FOUNDRY_API_KEY',
+        process.env.PAIR_FOUNDRY_API_KEY,
+      ),
+      model: requireEnv('PAIR_FOUNDRY_MODEL', process.env.PAIR_FOUNDRY_MODEL),
+      imageModel: requireEnv(
+        'PAIR_FOUNDRY_IMAGE_MODEL',
+        process.env.PAIR_FOUNDRY_IMAGE_MODEL,
+      ),
     },
     rome: {
-      baseUrl: process.env.PAIR_ROME_BASE_URL,
+      baseUrl: requireEnv('PAIR_ROME_BASE_URL', process.env.PAIR_ROME_BASE_URL),
       cloudflare: {
-        zeroTrustClientKey:
+        zeroTrustClientKey: requireEnv(
+          'PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY',
           process.env.PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY,
-        zeroTrustSecretKey:
+        ),
+        zeroTrustSecretKey: requireEnv(
+          'PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY',
           process.env.PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY,
+        ),
       },
       aiBuilder: {
-        publicKey: process.env.PAIR_ROME_AI_BUILDER_PUBLIC_KEY,
-        secretKey: process.env.PAIR_ROME_AI_BUILDER_SECRET_KEY,
+        publicKey: requireEnv(
+          'PAIR_ROME_AI_BUILDER_PUBLIC_KEY',
+          process.env.PAIR_ROME_AI_BUILDER_PUBLIC_KEY,
+        ),
+        secretKey: requireEnv(
+          'PAIR_ROME_AI_BUILDER_SECRET_KEY',
+          process.env.PAIR_ROME_AI_BUILDER_SECRET_KEY,
+        ),
       },
       pairAction: {
-        publicKey: process.env.PAIR_ROME_PAIR_ACTION_PUBLIC_KEY,
-        secretKey: process.env.PAIR_ROME_PAIR_ACTION_SECRET_KEY,
+        publicKey: requireEnv(
+          'PAIR_ROME_PAIR_ACTION_PUBLIC_KEY',
+          process.env.PAIR_ROME_PAIR_ACTION_PUBLIC_KEY,
+        ),
+        secretKey: requireEnv(
+          'PAIR_ROME_PAIR_ACTION_SECRET_KEY',
+          process.env.PAIR_ROME_PAIR_ACTION_SECRET_KEY,
+        ),
       },
     },
   },
@@ -204,7 +261,7 @@ const appConfig: AppConfig = {
   ses: {
     fromAddress: process.env.SES_FROM_ADDRESS,
     region: process.env.SES_REGION,
-    roleArn: process.env.SES_ROLE_ARN,
+    roleArn: requireEnv('SES_ROLE_ARN', process.env.SES_ROLE_ARN),
     ...(process.env.SES_CONFIGURATION_SET && {
       configurationSet: process.env.SES_CONFIGURATION_SET,
     }),
@@ -232,31 +289,6 @@ if (!appConfig.adminJwtSecretKey) {
   throw new Error('ADMIN_JWT_SECRET_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.postman.apiKey) {
-  throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
-}
-
-if (
-  !appConfig.sgid ||
-  !appConfig.sgid.clientId ||
-  !appConfig.sgid.clientSecret ||
-  !appConfig.sgid.privateKey
-) {
-  throw new Error('Sgid environment variables need to be set!')
-}
-
-if (
-  !appConfig.sso.clientId ||
-  !appConfig.sso.clientSecret ||
-  !appConfig.sso.discoveryUrl
-) {
-  throw new Error('SSO environment variables need to be set!')
-}
-
-if (!appConfig.launchDarklySdkKey) {
-  throw new Error('LAUNCH_DARKLY_SDK_KEY environment variable needs to be set!')
-}
-
 if (
   isNaN(appConfig.maxJobAttempts) ||
   !Number.isInteger(appConfig.maxJobAttempts)
@@ -264,38 +296,6 @@ if (
   throw new Error(
     'MAX_JOB_ATTEMPTS environment variable is not a valid integer!',
   )
-}
-
-if (!appConfig.s3CommonBucket) {
-  throw new Error('S3_COMMON_BUCKET environment variable needs to be set!')
-}
-
-if (!appConfig.gathersg.publicKey) {
-  throw new Error('GATHERSG_PUBLIC_KEY environment variable needs to be set!')
-}
-
-if (
-  !appConfig.pair.foundry.apiKey ||
-  !appConfig.pair.foundry.model ||
-  !appConfig.pair.foundry.imageModel
-) {
-  throw new Error('Pair Foundry environment variables need to be set!')
-}
-
-if (
-  !appConfig.pair.rome.baseUrl ||
-  !appConfig.pair.rome.cloudflare.zeroTrustClientKey ||
-  !appConfig.pair.rome.cloudflare.zeroTrustSecretKey ||
-  !appConfig.pair.rome.aiBuilder.publicKey ||
-  !appConfig.pair.rome.aiBuilder.secretKey ||
-  !appConfig.pair.rome.pairAction.publicKey ||
-  !appConfig.pair.rome.pairAction.secretKey
-) {
-  throw new Error('Pair Rome environment variables need to be set!')
-}
-
-if (!appConfig.ses.roleArn) {
-  throw new Error('SES_ROLE_ARN environment variable needs to be set!')
 }
 
 // Force SGT date-time formatting no matter what

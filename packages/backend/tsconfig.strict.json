@@ -3,22 +3,10 @@
   "compilerOptions": {
     "strict": true
   },
-  "exclude": [
-    "src/app.ts",
-    "src/apps",
-    "src/config",
-    "src/controllers",
-    "src/db",
-    "src/graphql",
-    "src/helpers",
-    "src/instrumentation.ts",
-    "src/models",
-    "src/queues",
-    "src/routes",
-    "src/server.ts",
-    "src/services",
-    "src/types",
-    "src/worker.ts",
-    "src/workers"
+  "include": [
+    "src/errors/**/*",
+    "src/config/**/*",
+    "src/helpers/logger.ts",
+    "src/helpers/redaction/**/*"
   ]
 }
