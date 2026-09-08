@@ -36,8 +36,9 @@ export function evaluateConditionGroups(
       }
     } catch (err) {
       // Fail-fast, but name the offending group for the user.
+      const errorMessage = err instanceof Error ? err.message : String(err)
       throw new StepError(
-        `Error in condition group ${i + 1}: ${err.message}`,
+        `Error in condition group ${i + 1}: ${errorMessage}`,
         'Check that the condition has been configured properly.',
       )
     }
