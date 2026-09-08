@@ -14,11 +14,11 @@ import User from './user'
 class Connection extends Base {
   id!: string
   key!: string
-  data: string
+  data!: string
   formattedData?: IJSONObject
-  userId!: string
-  verified: boolean
-  draft: boolean
+  userId!: string | null
+  verified!: boolean
+  draft!: boolean
   count?: number
   flowCount?: number
   flow?: Flow
@@ -120,7 +120,7 @@ class Connection extends Base {
   static duplicate = async (
     connectionId: string,
     trx?: Transaction,
-  ): Promise<Connection> => {
+  ): Promise<Connection | undefined> => {
     const connection = await this.query(trx).findOne({ id: connectionId })
 
     if (!connection) {

@@ -55,7 +55,7 @@ function resolveAttachments(
 
 async function getDataOutMetadata(
   step: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut: rawDataOut } = step
   if (!rawDataOut) {
     return null

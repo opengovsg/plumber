@@ -13,9 +13,9 @@ interface ViewOnlyPassword {
 
 class TableMetadata extends Base {
   id!: string
-  name: string
+  name!: string
   collaborators!: User[]
-  columns: TableColumnMetadata[]
+  columns!: TableColumnMetadata[]
   viewOnlyKey?: string | null
   viewOnlyPassword?: ViewOnlyPassword | null
 
@@ -24,7 +24,7 @@ class TableMetadata extends Base {
    */
   role?: ITableCollabRole
   lastAccessedAt?: Date
-  db: 'pg' | 'ddb'
+  db!: 'pg' | 'ddb'
 
   static tableName = 'table_metadata'
 
@@ -107,8 +107,9 @@ class TableMetadata extends Base {
 
     const mappedData: Record<string, string> = {}
     for (const [key, value] of Object.entries(data)) {
-      if (columnMap.get(key)) {
-        mappedData[columnMap.get(key)] = value
+      const columnName = columnMap.get(key)
+      if (columnName) {
+        mappedData[columnName] = value
       }
     }
     return mappedData

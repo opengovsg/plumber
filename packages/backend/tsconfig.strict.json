@@ -233,6 +233,24 @@
     "src/types/interfaces/json-object.ts",
     "src/types/luxon-extensions.ts",
     "src/types/step.ts",
-    "src/workers/helpers/job-queue-timing.ts"
+    "src/workers/helpers/job-queue-timing.ts",
+    "src/db/storage/archived_templates/attendance-taking.ts",
+    "src/db/storage/archived_templates/schedule-reminders.ts",
+    "src/db/storage/archived_templates/update-mailing-lists.ts",
+    "src/db/storage/attendance-taking-v2.ts",
+    "src/db/storage/for-each-reminder.ts",
+    "src/db/storage/get-live-updates-through-telegram.ts",
+    "src/db/storage/route-support-enquiries-with-pair.ts",
+    "src/db/storage/route-support-enquiries.ts",
+    "src/db/storage/send-a-copy-of-form-response.ts",
+    "src/db/storage/send-follow-ups.ts",
+    "src/db/storage/track-feedback.ts",
+    "src/db/storage/update-mailing-lists-v2.ts",
+    "src/helpers/delay-as-milliseconds.ts",
+    "src/helpers/email-validator.ts",
+    "src/helpers/pagination.ts",
+    "src/models/base.ts",
+    "src/routes/api/chat/schema.ts",
+    "src/types/app-info.ts"
   ]
 }

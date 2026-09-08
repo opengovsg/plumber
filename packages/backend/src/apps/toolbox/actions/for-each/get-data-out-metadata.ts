@@ -22,7 +22,7 @@ const isBackwardCompatibilityColumnId = (id: string, numColumns: number) => {
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut: rawDataOut } = executionStep
   if (!rawDataOut) {
     return null
