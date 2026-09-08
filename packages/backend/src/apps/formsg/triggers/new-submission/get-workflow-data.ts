@@ -12,7 +12,7 @@ import {
 export function parseWorkflowData(
   $: IGlobalVariable,
   formSchema: FormSchema,
-): ParsedMrfWorkflow | null {
+): ParsedMrfWorkflow {
   return parseMrfWorkflow(formSchema.form.workflow)
 }
 
