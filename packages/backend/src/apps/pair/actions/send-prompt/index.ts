@@ -106,6 +106,16 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const user = $.user
+    if (!user) {
+      throw new StepError({
+        name: 'Flow is missing an owner',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
+
     const validatedParameters = schema.safeParse($.step.parameters)
 
     if (!validatedParameters.success) {
@@ -132,10 +142,10 @@ const action: IRawAction = {
     const dynamicSchema = generateSchemaFromFields(responseFields)
 
     const response = await withAiTelemetryContext(
-      { distinctId: $.user.id, aiSessionId: $.execution.id },
+      { distinctId: user.id, aiSessionId: $.execution.id },
       () =>
         generateObject(convertedPrompt, dynamicSchema, {
-          userId: $.user.email,
+          userId: user.email,
           flowId: $.flow.id,
           stepId: $.step.id,
           executionId: $.execution.id,
