@@ -104,6 +104,11 @@ export async function decryptResponse(
   $: IGlobalVariable,
 ): Promise<{ verified: boolean; internalId: string | null }> {
   try {
+    if (!$.request) {
+      logger.error('No trigger item provided')
+      return { verified: false, internalId: null }
+    }
+
     const { app, data, encryptedData, signature, timestamp } = $.request.body
     const { encryptionKey } = $.step.parameters
 

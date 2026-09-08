@@ -67,7 +67,7 @@ const transformCaseFields = (params: CaseField[], context: z.RefinementCtx) => {
       }
       result[field] = emailResult.data
     } else {
-      result[field] = value
+      result[field] = value ?? null
     }
   }
   return result

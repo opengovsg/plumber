@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
@@ -43,7 +44,7 @@ const action: IRawAction = {
         throw new StepError(
           `Invalid case uuid: ${caseUuid}`,
           'Please check that you have configured your step correctly',
-          error,
+          error instanceof HttpError ? error : undefined,
         )
       }
 
@@ -80,8 +81,10 @@ const action: IRawAction = {
         `Failed to get case details for case ${$.step.parameters.caseUuid}:`,
         error,
       )
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       throw new StepError(
-        `An error occurred: '${error.message}'`,
+        `An error occurred: '${errorMessage}'`,
         'Please check that you have configured your step correctly',
       )
     }

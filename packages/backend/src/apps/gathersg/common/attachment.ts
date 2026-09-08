@@ -2,6 +2,7 @@ import { IGlobalVariable, IJSONValue } from '@plumber/types'
 
 import { z } from 'zod'
 
+import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 import { COMMON_S3_BUCKET, MAX_FILE_SIZE, putObject } from '@/helpers/s3'
@@ -90,7 +91,7 @@ async function downloadAndStoreAttachmentInS3(
     throw new StepError(
       `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
       'Please check that your case attachments are accessible and try again.',
-      error,
+      error instanceof HttpError ? error : undefined,
     )
   }
 }

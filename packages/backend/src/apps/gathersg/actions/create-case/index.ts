@@ -175,8 +175,10 @@ const action: IRawAction = {
       if (error instanceof HttpError) {
         throwGatherSGStepError(error)
       }
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       throw new StepError(
-        `An error occurred: '${error.message}'`,
+        `An error occurred: '${errorMessage}'`,
         'Please check that you have configured your step correctly',
       )
     }
