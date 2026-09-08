@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  appendAddTileColumnsAiBuilderConfig,
+  appendAddTileColumnsConfigPatch,
   createTileAiBuilderConfig,
 } from '../tile-ai-builder-config'
 
@@ -14,38 +14,14 @@ describe('tile AI builder config', () => {
     })
   })
 
-  it('appends add_tile_columns without inventing createTile', () => {
-    expect(
-      appendAddTileColumnsAiBuilderConfig(null, {
-        traceId: 'trace-2',
-        addedColumnIds: ['col-a'],
-      }),
-    ).toEqual({
-      aiBuilderConfig: {
-        addTileColumns: [{ traceId: 'trace-2', addedColumnIds: ['col-a'] }],
-      },
-    })
-  })
-
-  it('keeps createTile when appending column adds', () => {
-    const created = createTileAiBuilderConfig('trace-1')
-    const firstAdd = appendAddTileColumnsAiBuilderConfig(created, {
+  it('appends add_tile_columns with a SQL jsonb concat', () => {
+    const patch = appendAddTileColumnsConfigPatch({
       traceId: 'trace-2',
       addedColumnIds: ['col-a'],
     })
-    expect(
-      appendAddTileColumnsAiBuilderConfig(firstAdd, {
-        traceId: 'trace-3',
-        addedColumnIds: ['col-b', 'col-c'],
-      }),
-    ).toEqual({
-      aiBuilderConfig: {
-        createTile: { traceId: 'trace-1' },
-        addTileColumns: [
-          { traceId: 'trace-2', addedColumnIds: ['col-a'] },
-          { traceId: 'trace-3', addedColumnIds: ['col-b', 'col-c'] },
-        ],
-      },
-    })
+    expect(JSON.stringify(patch)).toContain('jsonb_build_array')
+    expect(JSON.stringify(patch)).toContain('aiBuilderConfig')
+    expect(JSON.stringify(patch)).toContain('trace-2')
+    expect(JSON.stringify(patch)).toContain('col-a')
   })
 })

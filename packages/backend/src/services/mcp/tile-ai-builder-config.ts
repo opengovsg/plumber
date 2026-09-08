@@ -1,5 +1,7 @@
 import type { ITableConfig } from '@plumber/types'
 
+import { raw } from 'objection'
+
 export function createTileAiBuilderConfig(traceId: string): ITableConfig {
   return {
     aiBuilderConfig: {
@@ -8,18 +10,26 @@ export function createTileAiBuilderConfig(traceId: string): ITableConfig {
   }
 }
 
-export function appendAddTileColumnsAiBuilderConfig(
-  config: ITableConfig | null | undefined,
-  entry: { traceId: string; addedColumnIds: string[] },
-): ITableConfig {
-  return {
-    ...config,
-    aiBuilderConfig: {
-      ...config?.aiBuilderConfig,
-      addTileColumns: [
-        ...(config?.aiBuilderConfig?.addTileColumns ?? []),
-        entry,
-      ],
-    },
-  }
+/**
+ * Appends in SQL so two parallel MCP calls cannot overwrite each other's record.
+ */
+export function appendAddTileColumnsConfigPatch(entry: {
+  traceId: string
+  addedColumnIds: string[]
+}) {
+  return raw(
+    `jsonb_set(
+      jsonb_set(
+        COALESCE(config, '{}'::jsonb),
+        '{aiBuilderConfig}',
+        COALESCE(config->'aiBuilderConfig', '{}'::jsonb),
+        true
+      ),
+      '{aiBuilderConfig,addTileColumns}',
+      COALESCE(config->'aiBuilderConfig'->'addTileColumns', '[]'::jsonb)
+        || jsonb_build_array(?::jsonb),
+      true
+    )`,
+    [JSON.stringify(entry)],
+  )
 }

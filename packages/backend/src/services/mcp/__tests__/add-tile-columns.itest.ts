@@ -147,6 +147,52 @@ describe('addTileColumnsService', () => {
     })
   })
 
+  it('keeps both addTileColumns records when two calls run in parallel', async () => {
+    const context = await generateMockContext()
+    const { table } = await generateMockTable({
+      userId: context.currentUser.id,
+      databaseType: 'pg',
+    })
+    await generateMockTableColumns({
+      tableId: table.id,
+      numColumns: 1,
+      databaseType: 'pg',
+    })
+
+    const [first, second] = await Promise.all([
+      addTileColumnsService({
+        user: context.currentUser,
+        tableId: table.id,
+        columns: ['Notes'],
+        traceId: 'trace-parallel-1',
+      }),
+      addTileColumnsService({
+        user: context.currentUser,
+        tableId: table.id,
+        columns: ['Priority'],
+        traceId: 'trace-parallel-2',
+      }),
+    ])
+
+    const notesId = first.columns.find((column) => column.name === 'Notes')?.id
+    const priorityId = second.columns.find(
+      (column) => column.name === 'Priority',
+    )?.id
+    const stored = await TableMetadata.query().findById(table.id)
+    const adds = stored?.config?.aiBuilderConfig?.addTileColumns ?? []
+
+    expect(notesId).toBeDefined()
+    expect(priorityId).toBeDefined()
+    expect(adds).toHaveLength(2)
+    expect(adds).toEqual(
+      expect.arrayContaining([
+        { traceId: 'trace-parallel-1', addedColumnIds: [notesId] },
+        { traceId: 'trace-parallel-2', addedColumnIds: [priorityId] },
+      ]),
+    )
+    expect(stored?.config?.aiBuilderConfig?.createTile).toBeUndefined()
+  })
+
   it('rejects viewers', async () => {
     const context = await generateMockContext()
     const { table, viewer } = await generateMockTable({

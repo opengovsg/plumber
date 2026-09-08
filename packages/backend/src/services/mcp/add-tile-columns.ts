@@ -6,7 +6,7 @@ import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
 import type User from '@/models/user'
 
-import { appendAddTileColumnsAiBuilderConfig } from './tile-ai-builder-config'
+import { appendAddTileColumnsConfigPatch } from './tile-ai-builder-config'
 import {
   parseAddTileColumnsInput,
   type TileColumnResult,
@@ -90,7 +90,7 @@ export async function addTileColumnsService({
 
       if (traceId) {
         await table.$query(trx).patch({
-          config: appendAddTileColumnsAiBuilderConfig(table.config, {
+          config: appendAddTileColumnsConfigPatch({
             traceId,
             addedColumnIds: inserted.map((column) => column.id),
           }),
