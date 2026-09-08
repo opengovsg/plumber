@@ -1,7 +1,6 @@
+import { type PartialModelObject, raw } from 'objection'
 import pLimit from 'p-limit'
 import { z } from 'zod'
-
-import { type PartialModelObject, raw } from 'objection'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import TableCollaborator from '@/models/table-collaborators'

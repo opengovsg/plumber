@@ -84,7 +84,9 @@ describe('addTileColumnsService', () => {
       .findById(table.id)
       .withGraphFetched('columns')
     const notes = stored?.columns.find((column) => column.name === 'Notes')
-    const priority = stored?.columns.find((column) => column.name === 'Priority')
+    const priority = stored?.columns.find(
+      (column) => column.name === 'Priority',
+    )
 
     expect(stored?.config).toEqual({})
     expect(notes?.config).toEqual({
@@ -196,7 +198,9 @@ describe('addTileColumnsService', () => {
       .findById(table.id)
       .withGraphFetched('columns')
     const notes = stored?.columns.find((column) => column.name === 'Notes')
-    const priority = stored?.columns.find((column) => column.name === 'Priority')
+    const priority = stored?.columns.find(
+      (column) => column.name === 'Priority',
+    )
 
     expect(notes?.config.aiBuilderConfig).toEqual({
       traceId: 'trace-parallel-1',

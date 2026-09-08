@@ -15,9 +15,7 @@ describe('tile AI builder config', () => {
   })
 
   it('stamps column origin', () => {
-    expect(
-      createColumnAiBuilderConfig('trace-2', 'add_tile_columns'),
-    ).toEqual({
+    expect(createColumnAiBuilderConfig('trace-2', 'add_tile_columns')).toEqual({
       aiBuilderConfig: {
         traceId: 'trace-2',
         tool: 'add_tile_columns',

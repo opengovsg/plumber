@@ -180,14 +180,17 @@ describe.each([['ddb'], ['pg']])(
       })
 
       it('should modify column widths', async () => {
-        await dummyTable.$relatedQuery('columns').findById(dummyColumnId).patch({
-          config: {
-            aiBuilderConfig: {
-              traceId: 'trace-create',
-              tool: 'create_tile',
+        await dummyTable
+          .$relatedQuery('columns')
+          .findById(dummyColumnId)
+          .patch({
+            config: {
+              aiBuilderConfig: {
+                traceId: 'trace-create',
+                tool: 'create_tile',
+              },
             },
-          },
-        })
+          })
 
         const updatedTable = await updateTable(
           null,

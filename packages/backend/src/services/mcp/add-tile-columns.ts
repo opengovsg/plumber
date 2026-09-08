@@ -80,10 +80,7 @@ export async function addTileColumnsService({
             name,
             position: maxPosition + i + 1,
             ...(traceId && {
-              config: createColumnAiBuilderConfig(
-                traceId,
-                'add_tile_columns',
-              ),
+              config: createColumnAiBuilderConfig(traceId, 'add_tile_columns'),
             }),
           })),
         )
