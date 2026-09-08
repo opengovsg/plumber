@@ -23,7 +23,6 @@ const trigger: IRawTrigger = {
       type: 'dropdown' as const,
       description: 'What day of the week should this workflow start?',
       required: true,
-      value: null,
       variables: false,
       showOptionValue: false,
       options: [
@@ -63,7 +62,6 @@ const trigger: IRawTrigger = {
       type: 'dropdown' as const,
       description: TIME_OF_DAY_DESCRIPTION,
       required: true,
-      value: null,
       variables: false,
       showOptionValue: false,
       options: TIME_OF_DAY_OPTIONS,
@@ -81,6 +79,9 @@ const trigger: IRawTrigger = {
   },
 
   async run($) {
+    if (!this.getInterval) {
+      throw new Error('Trigger is missing getInterval')
+    }
     const nextCronDateTime = getNextCronDateTime(
       this.getInterval($.step.parameters),
     )
