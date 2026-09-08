@@ -86,7 +86,7 @@ function isVerifiedEmailField(
 
 export async function decryptFormResponse(
   $: IGlobalVariable,
-): ReturnType<IAuth['verifyWebhook']> {
+): ReturnType<NonNullable<IAuth['verifyWebhook']>> {
   if (!$.request) {
     logger.error('No trigger item provided')
     return { verified: false, internalId: null }
@@ -98,7 +98,7 @@ export async function decryptFormResponse(
       event: 'formsg-missing-connection',
       flowId: $.flow.id,
       stepId: $.step.id,
-      userId: $.user.id,
+      userId: $.user?.id,
     })
     return { verified: false, internalId: null }
   }
@@ -114,7 +114,10 @@ export async function decryptFormResponse(
   try {
     formSgSdk.webhooks.authenticate(
       headers['x-formsg-signature'] as string,
-      $.webhookUrl,
+      // webhookUrl is only unset when $ is built without a flow; this
+      // function only ever runs as a webhook trigger's verifyWebhook, which
+      // always builds $ with one (see controllers/webhooks/handler.ts).
+      $.webhookUrl as string,
     )
   } catch {
     logger.error('Unable to verify formsg signature')
@@ -177,8 +180,8 @@ export async function decryptFormResponse(
         formSecretKey,
         data,
       )
-      submission = decryptedResponse?.content
-      attachments = decryptedResponse?.attachments
+      submission = decryptedResponse?.content ?? null
+      attachments = decryptedResponse?.attachments ?? null
     } else {
       submission = formSgSdk.crypto.decrypt(formSecretKey, data)
     }
@@ -213,10 +216,14 @@ export async function decryptFormResponse(
             row.map((column) => column.replaceAll('\u0000', '')),
           )
 
-          rest.answer = convertTableAnswerArrayToTableObject(
-            rest.question,
-            rest.answerArray,
-          )
+          // Table fields carry a 2-D answerArray; FormField's answer/answerArray
+          // are otherwise mutually exclusive, but we also store a derived
+          // table object under answer for these.
+          ;(rest as { answer?: unknown }).answer =
+            convertTableAnswerArrayToTableObject(
+              rest.question,
+              rest.answerArray,
+            )
         } else {
           rest.answerArray = (rest.answerArray as string[]).map((answer) =>
             typeof answer === 'string'
@@ -351,8 +358,10 @@ export async function decryptFormResponse(
       $.request.body.paymentContent = data.paymentContent
     }
 
-    delete $.request.headers
-    delete $.request.query
+    // Express's Request types headers/query as always-present; we clear them
+    // here to avoid holding onto raw webhook request data longer than needed.
+    delete ($.request as { headers?: unknown }).headers
+    delete ($.request as { query?: unknown }).query
 
     const internalId = data.submissionId
 
