@@ -2,6 +2,12 @@ import helmet, { HelmetOptions } from 'helmet'
 
 import appConfig from '@/config/app'
 
+// Array.filter(Boolean) doesn't narrow away `false` from the element type,
+// since Boolean isn't a type predicate.
+function isString(value: string | false): value is string {
+  return typeof value === 'string'
+}
+
 const helmetOptions: HelmetOptions = {
   contentSecurityPolicy: {
     directives: {
@@ -32,7 +38,7 @@ const helmetOptions: HelmetOptions = {
         "'self'",
         'https://demo.arcade.software',
         appConfig.isDev && 'https://*.apollographql.com',
-      ].filter(Boolean),
+      ].filter(isString),
       imgSrc: [
         "'self'",
         'data:',
@@ -41,7 +47,7 @@ const helmetOptions: HelmetOptions = {
         'https://www.googletagmanager.com',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.baseUrl,
-      ].filter(Boolean),
+      ].filter(isString),
       objectSrc: ["'none'"],
       // for google fonts
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
@@ -52,11 +58,11 @@ const helmetOptions: HelmetOptions = {
         'https://www.googletagmanager.com',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.isDev && "'unsafe-inline'",
-      ].filter(Boolean),
+      ].filter(isString),
       manifestSrc: [
         "'self'",
         !appConfig.isDev && 'https://*.apollographql.com',
-      ].filter(Boolean),
+      ].filter(isString),
       upgradeInsecureRequests: [],
       workerSrc: ['blob:', "'self'"],
     },

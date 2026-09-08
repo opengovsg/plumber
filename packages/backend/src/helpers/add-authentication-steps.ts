@@ -1,10 +1,15 @@
 import { IApp } from '@plumber/types'
 
 function addAuthenticationSteps(app: IApp): IApp {
-  if (app.auth.generateAuthUrl) {
-    app.auth.authenticationSteps = authenticationStepsWithAuthUrl
+  const auth = app.auth
+  if (!auth) {
+    throw new Error(`Cannot add authentication steps for app '${app.key}'`)
+  }
+
+  if (auth.generateAuthUrl) {
+    auth.authenticationSteps = authenticationStepsWithAuthUrl
   } else {
-    app.auth.authenticationSteps = authenticationStepsWithoutAuthUrl
+    auth.authenticationSteps = authenticationStepsWithoutAuthUrl
   }
 
   return app

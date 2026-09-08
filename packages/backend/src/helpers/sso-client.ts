@@ -42,19 +42,28 @@ export class SsoClient {
     state?: string
   }): Promise<SsoTokenResponse> {
     const client = await this.getClient()
+    // getClient() always sets issuer alongside client.
+    const issuer = this.issuer
+    if (!issuer) {
+      throw new Error('SsoClient: issuer not initialized')
+    }
 
     try {
       const tokenSet = await client.callback(
         redirectUri,
         {
           code: params.code,
-          iss: this.issuer.metadata.issuer,
+          iss: issuer.metadata.issuer,
         },
         {
           nonce: params.nonce,
           code_verifier: params.codeVerifier,
         },
       )
+
+      if (!tokenSet.access_token || !tokenSet.id_token) {
+        throw new Error('SSO: token set missing access_token or id_token')
+      }
 
       return {
         accessToken: tokenSet.access_token,
@@ -78,8 +87,8 @@ export class SsoClient {
     const userinfo = await client.userinfo(params.accessToken)
 
     return {
-      sub: params.sub,
       ...userinfo,
+      sub: params.sub,
     }
   }
 
