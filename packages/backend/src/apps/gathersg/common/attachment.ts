@@ -102,7 +102,7 @@ async function downloadAndStoreAttachmentInS3(
     throw new StepError(
       `Failed to process attachment ${attachmentUuid} for case ${caseUuid}`,
       'Please check that your case attachments are accessible and try again.',
-      error,
+      error instanceof HttpError ? error : undefined,
     )
   }
 }
