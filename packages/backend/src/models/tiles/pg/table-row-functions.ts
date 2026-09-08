@@ -46,7 +46,11 @@ export const createTableRow = async ({
       })
       .returning('*')
 
-    return formatTableRow(res[0], tableId)
+    const row = formatTableRow(res[0], tableId)
+    if (!row) {
+      throw new Error('Failed to create row')
+    }
+    return row
   } catch (e: unknown) {
     logger.error(e)
     throw e
@@ -110,51 +114,56 @@ export const patchTableRow = async ({
   try {
     const query = tilesClient(tableId).where({ rowId: rowIdToUse })
 
-    Object.entries(patchData.set || {}).forEach(
-      ([key, value]: [string, string]) => {
-        query.update(key, value)
-      },
-    )
+    // patchData's values are always strings by construction (see
+    // TableRowItem['data'] callers), but ElectroDB's 'any' attribute type
+    // erases that to unknown.
+    const patchSet = (patchData.set || {}) as Record<string, string>
+    const patchAdd = (patchData.add || {}) as Record<string, string>
+    const patchSubtract = (patchData.subtract || {}) as Record<string, string>
 
-    Object.entries(patchData.add || {}).forEach(
-      ([key, value]: [string, string]) => {
-        if (isNaN(+value)) {
-          throw new Error(`Invalid value for add operation: ${value}`)
-        }
-        query
-          .update(
-            key,
-            tilesClient.raw('(CAST(?? AS double precision) + ?)::text', [
-              key,
-              +value,
-            ]),
-          )
-          .where(key, '~', VALID_NUMBER_REGEX_STRING)
-      },
-    )
+    Object.entries(patchSet).forEach(([key, value]) => {
+      query.update(key, value)
+    })
 
-    Object.entries(patchData.subtract || {}).forEach(
-      ([key, value]: [string, string]) => {
-        if (isNaN(+value)) {
-          throw new Error(`Invalid value for subtract operation: ${value}`)
-        }
-        query
-          .update(
+    Object.entries(patchAdd).forEach(([key, value]) => {
+      if (isNaN(+value)) {
+        throw new Error(`Invalid value for add operation: ${value}`)
+      }
+      query
+        .update(
+          key,
+          tilesClient.raw('(CAST(?? AS double precision) + ?)::text', [
             key,
-            tilesClient.raw('(CAST(?? AS double precision) - ?)::text', [
-              key,
-              +value,
-            ]),
-          )
-          .where(key, '~', VALID_NUMBER_REGEX_STRING)
-      },
-    )
+            +value,
+          ]),
+        )
+        .where(key, '~', VALID_NUMBER_REGEX_STRING)
+    })
+
+    Object.entries(patchSubtract).forEach(([key, value]) => {
+      if (isNaN(+value)) {
+        throw new Error(`Invalid value for subtract operation: ${value}`)
+      }
+      query
+        .update(
+          key,
+          tilesClient.raw('(CAST(?? AS double precision) - ?)::text', [
+            key,
+            +value,
+          ]),
+        )
+        .where(key, '~', VALID_NUMBER_REGEX_STRING)
+    })
 
     const res = await query.update('updatedAt', new Date()).returning('*')
     if (res.length === 0) {
       throw new Error('No rows to patch')
     }
-    return formatTableRow(res[0], tableId)
+    const row = formatTableRow(res[0], tableId)
+    if (!row) {
+      throw new Error('Failed to patch row')
+    }
+    return row
   } catch (e: unknown) {
     logger.error(e)
     throw e
@@ -181,7 +190,7 @@ export const getTableRowCount = async ({
 }): Promise<number> => {
   try {
     const res = await tilesClient(tableId).count({ count: '*' })
-    return res[0].count
+    return Number(res[0].count)
   } catch (e: unknown) {
     logger.error(e)
     throw e
@@ -199,12 +208,20 @@ function addFiltersToQuery(
     [TableRowFilterOperator.LessThanOrEquals]: '<=',
   }
   for (const filter of filters) {
+    if (filter.operator !== TableRowFilterOperator.IsEmpty && !filter.value) {
+      throw new Error(
+        `Filter value is required for operator: ${filter.operator}`,
+      )
+    }
+    // Guaranteed above for every operator except IsEmpty, which never reads it.
+    const value = filter.value as string
+
     switch (filter.operator) {
       case TableRowFilterOperator.Equals:
-        query.where(filter.columnId, '=', filter.value)
+        query.where(filter.columnId, '=', value)
         break
       case TableRowFilterOperator.Contains:
-        query.where(filter.columnId, 'ilike', `%${filter.value}%`)
+        query.where(filter.columnId, 'ilike', `%${value}%`)
         break
       case TableRowFilterOperator.GreaterThan:
       case TableRowFilterOperator.GreaterThanOrEquals:
@@ -212,22 +229,18 @@ function addFiltersToQuery(
       case TableRowFilterOperator.LessThanOrEquals: {
         // if the value to compare against is a numeric string number,
         // we cast the stored values to a number and compare numerically
-        if (isValidNumericString(filter.value)) {
+        if (isValidNumericString(value)) {
           query
             .where(filter.columnId, '~', VALID_NUMBER_REGEX_STRING)
             .andWhere(
               tilesClient.raw('??::numeric', [filter.columnId]),
               NumericOperators[filter.operator],
-              +filter.value,
+              +value,
             )
         } else {
           // if the value to compare against is a string, we compare strings
           // regardless of whether the stored value is a number or a string
-          query.where(
-            filter.columnId,
-            NumericOperators[filter.operator],
-            filter.value,
-          )
+          query.where(filter.columnId, NumericOperators[filter.operator], value)
         }
         break
       }
@@ -237,7 +250,7 @@ function addFiltersToQuery(
         })
         break
       case TableRowFilterOperator.BeginsWith:
-        query.where(filter.columnId, 'ilike', `${filter.value}%`)
+        query.where(filter.columnId, 'ilike', `${value}%`)
         break
       default:
         throw new Error(`Unsupported filter operator: ${filter.operator}`)
