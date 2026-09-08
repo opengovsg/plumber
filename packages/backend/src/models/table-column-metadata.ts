@@ -6,9 +6,9 @@ import TableMetadata from './table-metadata'
 class TableColumnMetadata extends Base {
   id!: string
   tableId!: string
-  name: string
-  position: number
-  config: ITableColumnConfig
+  name!: string
+  position!: number
+  config!: ITableColumnConfig
   table!: TableMetadata
 
   static tableName = 'table_column_metadata'

@@ -8,7 +8,7 @@ import { sanitizeOutputFieldName } from './schema'
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const { dataOut } = executionStep
   if (!dataOut) {
     return null
