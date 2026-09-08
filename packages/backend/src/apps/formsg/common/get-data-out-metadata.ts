@@ -17,8 +17,8 @@ import { ParsedMrfWorkflowStep } from './types'
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
     type: 'text',
-    label: fieldData.order ? `Question ${fieldData.order}` : null,
-    order: fieldData.order ? (fieldData.order as number) : null,
+    label: fieldData.order ? `Question ${fieldData.order}` : undefined,
+    order: fieldData.order ? (fieldData.order as number) : undefined,
     isCollapsedByDefault: true,
   }
 
@@ -35,7 +35,7 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
 
 function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
-    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    order: fieldData.order ? (fieldData.order as number) + 0.1 : undefined,
   }
 
   switch (fieldData.fieldType) {
@@ -61,7 +61,7 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       answer['type'] = 'text'
       answer['label'] = fieldData.order
         ? `${fieldData.order}. ${fieldData.question}`
-        : null
+        : undefined
   }
 
   return answer
@@ -111,7 +111,7 @@ function buildAnswerArrayForCheckbox(
   return {
     type: 'array',
     label: `${order}. ${question}`,
-    order: order ? (order as number) + 0.1 : null,
+    order: order ? (order as number) + 0.1 : undefined,
   }
 }
 
@@ -177,7 +177,7 @@ function buildAnswerArrayForTable(
       nestedAnswerArray.push({
         type: 'text',
         label,
-        order: order ? (order as number) + 0.1 : null,
+        order: order ? (order as number) + 0.1 : undefined,
         // NOTE: we hide the option if it is empty
         // mock data will have dummy strings in the answerArray
         // actual submissions should contain real data, otherwise the cells should be hidden
@@ -208,7 +208,7 @@ function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
     label: fieldData.question
       ? `${fieldData.order}. ${fieldData.question}`
       : `Response ${fieldData.order}`,
-    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    order: fieldData.order ? (fieldData.order as number) + 0.1 : undefined,
     type: 'table',
     displayedValue: `${rowsFound} row${rowsFound != 1 ? 's' : ''}`,
     value: tableObject,

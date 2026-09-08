@@ -67,6 +67,9 @@ async function getDataOutMetadata(
   }
 
   const { data: dataOut } = parsedDataOut.data
+  if (!dataOut) {
+    return null
+  }
 
   const metadata = {
     data: {
