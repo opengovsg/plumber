@@ -19,9 +19,11 @@ type PostmanApiErrorData = {
 // Until this is fixed, we will retry these requests on behalf of the user
 const POSTMAN_RETRIABLE_HTTP_CODES = [500, 502, 504, 520, 524]
 
-export function getPostmanErrorStatus(
-  error: HttpError,
-): PostmanEmailSendStatus {
+export function getPostmanErrorStatus(error: unknown): PostmanEmailSendStatus {
+  if (!(error instanceof HttpError)) {
+    return 'ERROR'
+  }
+
   const postmanErrorData: PostmanApiErrorData = error.response?.data ?? {}
   const { code: errorCode, message: errorMessage } = postmanErrorData
   // catch common postman error codes and provide solution
@@ -40,7 +42,10 @@ export function getPostmanErrorStatus(
     case 'attachment_limit':
       return 'ATTACHMENT-SIZE-EXCEEDED'
     default:
-      if (POSTMAN_RETRIABLE_HTTP_CODES.includes(error.response?.status)) {
+      if (
+        error.response?.status !== undefined &&
+        POSTMAN_RETRIABLE_HTTP_CODES.includes(error.response.status)
+      ) {
         return 'INTERMITTENT-ERROR'
       }
       // return original error if not caught
@@ -89,7 +94,7 @@ export function getSesErrorStatus(error: unknown): PostmanEmailSendStatus {
   }
 
   // Server errors — 500+ are transient, worth retrying
-  if (httpStatus >= 500) {
+  if (httpStatus !== undefined && httpStatus >= 500) {
     return 'INTERMITTENT-ERROR'
   }
 
@@ -143,8 +148,8 @@ export function throwPostmanStepError({
   isRetryWithoutAttachments,
 }: {
   $: IGlobalVariable
-  status: PostmanEmailSendStatus
-  error: HttpError
+  status?: PostmanEmailSendStatus
+  error?: unknown
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
   invalidAttachments: string[]
@@ -156,9 +161,17 @@ export function throwPostmanStepError({
     // should not show attachments list if we are retrying without attachments
     showAttachmentsList: !isRetryWithoutAttachments,
   })
+  // Only some error paths (e.g. AttachmentSizeExceededError) produce a real
+  // HttpError; StepError/RetriableError's `error`/`.details` still want a best
+  // effort message either way.
+  const httpError = error instanceof HttpError ? error : undefined
+  const errorMessage = error instanceof Error ? error.message : undefined
 
   switch (status) {
     case 'BLACKLISTED': {
+      if (!$.user) {
+        throw new Error('Flow is missing an owner')
+      }
       let name = 'Blacklisted recipient email'
       const formLink = createRequestBlacklistFormLink({
         userEmail: $.user.email,
@@ -202,12 +215,12 @@ export function throwPostmanStepError({
           },
         })
       }
-      throw new StepError(name, solution, error)
+      throw new StepError(name, solution, httpError)
     }
     case 'RATE-LIMITED':
       // this will be auto-retried later on
       throw new RetriableError({
-        error: error.details ?? error.message,
+        error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'queue',
       })
@@ -215,17 +228,17 @@ export function throwPostmanStepError({
       throw new StepError(
         'Password-protected attachment(s)',
         `Check that the attachment(s) are not password-protected.`,
-        error,
+        httpError,
       )
     case 'ATTACHMENT-SIZE-EXCEEDED':
       throw new StepError(
         'Total attachment size exceeded',
         'Check that the attachments do not exceed 20MB in total.',
-        error,
+        httpError,
       )
     case 'INTERMITTENT-ERROR':
       throw new RetriableError({
-        error: error.details ?? error.message,
+        error: httpError?.details ?? errorMessage ?? 'Unknown error',
         delayInMs: 'default',
         delayType: 'step',
       })
@@ -233,9 +246,9 @@ export function throwPostmanStepError({
     default:
       // socket hang up is a Cloudflare/Postman-specific issue; only retry
       // if the error came from the Postman path (not SES).
-      if (error?.message === 'socket hang up') {
+      if (errorMessage === 'socket hang up') {
         throw new RetriableError({
-          error: `Retrying ${error.message}`,
+          error: `Retrying ${errorMessage}`,
           delayInMs: 'default',
           delayType: 'step',
         })
@@ -253,7 +266,7 @@ export function throwPostmanStepError({
         // throw StepError for test runs so that user cannot publish the pipe
         // until the error is fixed
         if ($.execution.testRun) {
-          throw new StepError(name, solution, error)
+          throw new StepError(name, solution, httpError)
         }
 
         throw new PartialStepError({
@@ -265,7 +278,7 @@ export function throwPostmanStepError({
       throw new StepError(
         'Something went wrong',
         'Please contact plumber@open.gov.sg for assistance.',
-        error,
+        httpError,
       )
   }
 }
