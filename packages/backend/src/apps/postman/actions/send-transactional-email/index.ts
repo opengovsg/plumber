@@ -90,9 +90,9 @@ const action: IRawAction = {
   },
 
   doesFileProcessing: (step: Step) => {
-    return (
+    return Boolean(
       step.parameters.attachments &&
-      (step.parameters.attachments as IJSONArray).length > 0
+        (step.parameters.attachments as IJSONArray).length > 0,
     )
   },
 
@@ -141,6 +141,10 @@ function getSendEmailParams(
     ? parsed.data.useConfiguredEmails ?? false
     : false
 
+  if (!$.user) {
+    throw new Error('Test run is missing the triggering user')
+  }
+
   return {
     subject,
     body,
@@ -156,6 +160,10 @@ async function sendEmail(
   $: IGlobalVariable,
   testRunMetadata?: TestRunStepMetadata,
 ) {
+  if (!$.user) {
+    throw new Error('Flow is missing an owner')
+  }
+
   const {
     subject,
     body,
@@ -208,15 +216,18 @@ async function sendEmail(
   const prevDataOutParseResult = dataOutSchema.safeParse(
     lastExecutionStep?.dataOut,
   )
-  const isPartialRetry =
+  const isPartialRetry = Boolean(
     prevDataOutParseResult.success &&
-    lastExecutionStep.errorDetails &&
-    // Don't do partial retry in test runs! always send to all recipients
-    !$.execution.testRun
+      lastExecutionStep?.errorDetails &&
+      // Don't do partial retry in test runs! always send to all recipients
+      !$.execution.testRun,
+  )
 
-  if (isPartialRetry) {
+  if (isPartialRetry && prevDataOutParseResult.success) {
     const { status, recipient } = prevDataOutParseResult.data
-    recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
+    recipientsToSend = recipient.filter(
+      (_: string, i: number) => status[i] !== 'ACCEPTED',
+    )
   }
 
   // Resolve the transport once, on the configured attachments and the actual
@@ -241,7 +252,7 @@ async function sendEmail(
     $,
     attachmentsList: result.data.attachments,
     isPartialRetry,
-    lastExecutionStep,
+    lastExecutionStep: lastExecutionStep ?? null,
     extensionPolicy,
   })
 
@@ -267,7 +278,7 @@ async function sendEmail(
   /**
    * Patch the status of the recipients that were sent in the previous execution
    */
-  if (isPartialRetry) {
+  if (isPartialRetry && prevDataOutParseResult.success) {
     const prevDataOut = prevDataOutParseResult.data
     const updatedStatus = prevDataOut.status.map((oldStatus, i) => {
       const correspondingRecipient = prevDataOut.recipient[i]
@@ -342,11 +353,13 @@ async function sendEmail(
     hasInvalidAttachments &&
     !isPartialRetry &&
     !$.execution.testRun &&
-    !isRetryWithoutAttachments
+    !isRetryWithoutAttachments &&
+    submissionId
   ) {
     await sendInvalidAttachmentsEmail({
       ...defaultSendEmailParams,
       ...invalidAttachmentParams,
+      submissionId,
     })
 
     logger.warn({
