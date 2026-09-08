@@ -65,7 +65,7 @@ export async function createTileService({
       name: tableName,
       role: 'owner',
       db: databaseType,
-      config: traceId ? createTileAiBuilderConfig(traceId) : {},
+      ...(traceId && { config: createTileAiBuilderConfig(traceId) }),
       columns: columnNames.map((columnName, position) => ({
         name: columnName,
         position,

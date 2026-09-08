@@ -1,7 +1,5 @@
 import { ITableCollabRole, ITableConfig } from '@plumber/types'
 
-import type { QueryContext } from 'objection'
-
 import Base from './base'
 import ExtendedQueryBuilder from './query-builder'
 import TableCollaborator from './table-collaborators'
@@ -46,11 +44,6 @@ class TableMetadata extends Base {
       },
       config: { type: 'object' },
     },
-  }
-
-  async $beforeInsert(queryContext: QueryContext): Promise<void> {
-    await super.$beforeInsert(queryContext)
-    this.config ??= {}
   }
 
   // This ensures that the attributes are available in JSON serialization
