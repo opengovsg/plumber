@@ -25,7 +25,7 @@ describe('Verify credentials', () => {
         get: mocks.httpGet,
       } as unknown as IGlobalVariable['http'],
       app,
-    }
+    } as unknown as IGlobalVariable
   })
 
   afterEach(() => {

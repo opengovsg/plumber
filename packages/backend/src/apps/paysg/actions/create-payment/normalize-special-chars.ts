@@ -38,6 +38,9 @@ const UNICODE_TO_ASCII_MAP: Record<number, string> = {
 
 function replacer(inputChar: string): string {
   const codePoint = inputChar.codePointAt(0)
+  if (codePoint === undefined) {
+    return inputChar
+  }
 
   // Edge case: Latin range of halfwidth and fullwidth can be converted
   // mathematically.

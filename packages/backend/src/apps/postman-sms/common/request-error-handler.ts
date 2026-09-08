@@ -5,7 +5,7 @@ import StepError from '@/errors/step'
 import { parseRetryAfterToMs } from '@/helpers/parse-retry-after-to-ms'
 
 type ThrowingHandler = (
-  ...args: Parameters<IApp['requestErrorHandler']>
+  ...args: Parameters<NonNullable<IApp['requestErrorHandler']>>
 ) => never
 
 const handle429: ThrowingHandler = (_, error): never => {
