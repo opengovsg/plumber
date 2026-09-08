@@ -362,11 +362,14 @@ export async function deriveV1EndStepDroppingBlankMembers(
   const refetchedSteps = (
     await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
   ).filter((step) => !excludeStepIds.has(step.id))
+  const refetchedIfThenStep = refetchedSteps.find(
+    (step) => step.id === ifThenStep.id,
+  )
+  if (!refetchedIfThenStep) {
+    throw new Error(`If-then step ${ifThenStep.id} not found after refetch`)
+  }
   return {
-    endStep: deriveIfThenV1EndStep(
-      refetchedSteps,
-      refetchedSteps.find((step) => step.id === ifThenStep.id),
-    ),
+    endStep: deriveIfThenV1EndStep(refetchedSteps, refetchedIfThenStep),
     cleaned: true,
   }
 }
@@ -413,6 +416,9 @@ export async function upgradeIfThenV1BlocksIfEnabled(
     const liveIfThenStep = currentSteps.find(
       (step) => step.id === ifThenStep.id,
     )
+    if (!liveIfThenStep) {
+      throw new Error(`If-then step ${ifThenStep.id} not found in flow steps`)
+    }
     const { endStep, cleaned } = await deriveV1EndStepDroppingBlankMembers(
       trx,
       flow,

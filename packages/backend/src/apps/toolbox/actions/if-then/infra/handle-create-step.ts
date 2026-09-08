@@ -90,6 +90,12 @@ export async function fixupEndStepOnCreateStep({
     const preBlockStep = preInsertSteps.find(
       (step) => step.id === previousBlockId,
     )
+    if (!preBlockStep) {
+      rejectEndStepWrite('previous-block-not-found', {
+        previousBlockId,
+        flowId,
+      })
+    }
     const derivedEndStep = deriveIfThenV1EndStep(preInsertSteps, preBlockStep)
     if (previousStep.id !== derivedEndStep.id) {
       rejectEndStepWrite('previous-step-not-block-end', {
