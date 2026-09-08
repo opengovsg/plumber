@@ -108,7 +108,10 @@ const action: IRawAction = {
       )
     }
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
 
     /**
      * convert array to object
