@@ -20,7 +20,7 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
       <AppIcon
         name={firstStep.name}
         variant="rounded"
-        url={firstStep?.iconUrl}
+        url={firstStep?.iconUrl ?? undefined}
         h={8}
         w={8}
         isTrigger={true}
@@ -34,7 +34,7 @@ export default function FlowAppIcons(props: FlowAppIconsProps) {
         <AppIcon
           name={lastStep.name}
           variant="rounded"
-          url={lastStep?.iconUrl}
+          url={lastStep?.iconUrl ?? undefined}
           h={8}
           w={8}
         />

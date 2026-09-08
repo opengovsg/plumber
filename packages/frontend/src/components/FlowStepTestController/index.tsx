@@ -313,7 +313,7 @@ export default function FlowStepTestController(
       {isWebhookSubstep && (
         <VStack w="100%" ref={webhookUrlInfoRef}>
           <WebhookUrlInfo
-            webhookUrl={step.webhookUrl}
+            webhookUrl={step.webhookUrl ?? ''}
             webhookTriggerInstructions={
               (selectedActionOrTrigger as IBaseTrigger)
                 .webhookTriggerInstructions || defaultTriggerInstructions
