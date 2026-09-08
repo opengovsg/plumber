@@ -20,7 +20,7 @@ const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async (
   const step = await Step.query().findById(jobData.stepId).throwIfNotFound()
   const tableId = step.parameters['tableId'] as string
 
-  if (QUEUED_ACTIONS.has(step.key)) {
+  if (step.key && QUEUED_ACTIONS.has(step.key)) {
     return {
       id: `${tableId}-${step.key}`,
     }
@@ -28,7 +28,7 @@ const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async (
 
   // All other Tile actions are not grouped and do not need to be rate limited
   // as the write operations are fast and less expensive.
-  return null
+  return undefined
 }
 
 const queueSettings = {

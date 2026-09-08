@@ -42,7 +42,7 @@ describe('Queue config', () => {
     })
   })
 
-  it('sets group ID to null', async () => {
+  it('sets group ID to undefined', async () => {
     mocks.stepQueryResult.mockResolvedValueOnce({
       parameters: {
         tableId: 'mock-table-id',
@@ -55,7 +55,7 @@ describe('Queue config', () => {
       stepId: 'test-step-id',
       executionId: 'test-step-id',
     })
-    expect(groupConfig).toEqual(null)
+    expect(groupConfig).toEqual(undefined)
   })
 
   it('sets group concurrency to 1', () => {
