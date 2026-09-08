@@ -1,6 +1,8 @@
 import { IGlobalVariable, IRawTrigger } from '@plumber/types'
 import { DateTime } from 'luxon'
 
+import StepError from '@/errors/step'
+
 import cronTimes from '../../common/cron-times'
 import getDateTimeObjectRepresentation from '../../common/get-date-time-object'
 import getNextCronDateTime from '../../common/get-next-cron-date-time'
@@ -42,6 +44,14 @@ const trigger: IRawTrigger = {
   },
 
   async run($) {
+    if (!this.getInterval) {
+      throw new StepError({
+        name: 'Trigger is missing getInterval',
+        solution:
+          'This should not happen. Please contact [Plumber support](https://go.gov.sg/plumber-support) for assistance.',
+        kind: 'internal',
+      })
+    }
     const nextCronDateTime = getNextCronDateTime(
       this.getInterval($.step.parameters),
     )
