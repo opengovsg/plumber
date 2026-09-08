@@ -59,7 +59,7 @@ describe('create payment', () => {
     async (apiKey) => {
       $.auth.data.apiKey = apiKey
 
-      await createPaymentAction.run($)
+      await createPaymentAction.run!($)
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
         '/v1/payment-services/:paymentServiceId/payments',
@@ -81,7 +81,7 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    await createPaymentAction.run($)
+    await createPaymentAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/v1/payment-services/:paymentServiceId/payments',
@@ -116,7 +116,7 @@ describe('create payment', () => {
       { key: 'test-key-2', value: 'test-value-2' },
     ]
 
-    await createPaymentAction.run($)
+    await createPaymentAction.run!($)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         id: MOCK_PAYMENT.id,
@@ -145,7 +145,7 @@ describe('create payment', () => {
       },
     })
 
-    await createPaymentAction.run($)
+    await createPaymentAction.run!($)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         id: MOCK_PAYMENT.id,
@@ -198,7 +198,7 @@ describe('create payment', () => {
     }) => {
       $.step.parameters.payerName = payerName
       $.step.parameters.payerAddress = payerAddress
-      await createPaymentAction.run($)
+      await createPaymentAction.run!($)
 
       expect(mocks.httpPost).toHaveBeenCalledWith(
         '/v1/payment-services/:paymentServiceId/payments',
@@ -217,12 +217,12 @@ describe('create payment', () => {
 
   it('allows for optional fields, handles empty strings and nullish values', async () => {
     $.step.parameters.payerAddress = ''
-    $.step.parameters.payerIdentifier = undefined
+    delete $.step.parameters.payerIdentifier
     $.step.parameters.payerEmail = ' '
     $.step.parameters.dueDate = null
     $.step.parameters.returnUrl = ''
 
-    await createPaymentAction.run($)
+    await createPaymentAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledWith(
       '/v1/payment-services/:paymentServiceId/payments',

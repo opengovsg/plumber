@@ -11,7 +11,7 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.pretty_date.label).toEqual('Date')
+    expect(testMetadata!.pretty_date.label).toEqual('Date')
   })
 
   it('pretty_time to convert to Time', async () => {
@@ -21,7 +21,7 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.pretty_time.label).toEqual('Time')
+    expect(testMetadata!.pretty_time.label).toEqual('Time')
   })
 
   it('ISO_date_time to convert to date and time', async () => {
@@ -31,7 +31,7 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.ISO_date_time.label).toEqual('Standard date and time')
+    expect(testMetadata!.ISO_date_time.label).toEqual('Standard date and time')
   })
 
   it('pretty_day_of_week to convert to day of the week', async () => {
@@ -41,7 +41,7 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.pretty_day_of_week.label).toEqual('Day of the week')
+    expect(testMetadata!.pretty_day_of_week.label).toEqual('Day of the week')
   })
 
   it('default keys to remain untouched', async () => {
@@ -51,6 +51,6 @@ describe('Test getDataOutMetadata', () => {
       },
     } as unknown as IExecutionStep
     const testMetadata = await getDataOutMetadata(testExecutionStep)
-    expect(testMetadata.someDefaultKey.label).toEqual('someDefaultKey')
+    expect(testMetadata!.someDefaultKey.label).toEqual('someDefaultKey')
   })
 })

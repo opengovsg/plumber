@@ -33,10 +33,10 @@ describe('Postman SMS request error handler', () => {
         status: 429,
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
         kind: undefined,
@@ -56,8 +56,8 @@ describe('Postman SMS request error handler', () => {
         },
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         kind: 'config',
       })
     })
@@ -71,7 +71,7 @@ describe('Postman SMS request error handler', () => {
         data: { error: { code: 'invalid_api_key_provided' } },
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         message: expect.stringContaining('"name":"Invalid Postman API key"'),
         kind: 'config',
       })
@@ -86,7 +86,7 @@ describe('Postman SMS request error handler', () => {
         data: { error: { code: 'invalid_ip_address_used' } },
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         message: expect.stringContaining(
           `"name":"Plumber's IPs are not whitelisted in your campaign"`,
         ),
@@ -104,10 +104,10 @@ describe('Postman SMS request error handler', () => {
           status,
         })
 
-        await expect(requestErrorHandler($, error)).rejects.toThrow(
+        await expect(requestErrorHandler!($, error)).rejects.toThrow(
           RetriableError,
         )
-        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
           delayType: 'step',
           delayInMs: 3000,
           kind: 'third-party',
@@ -120,10 +120,10 @@ describe('Postman SMS request error handler', () => {
         message: 'read ETIMEDOUT',
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
         kind: 'third-party',
@@ -136,10 +136,10 @@ describe('Postman SMS request error handler', () => {
         code: 'ETIMEDOUT',
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(
         RetriableError,
       )
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         delayType: 'step',
         delayInMs: 3000,
         kind: 'third-party',
@@ -152,8 +152,10 @@ describe('Postman SMS request error handler', () => {
         status: 400,
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toThrow(StepError)
-      await expect(requestErrorHandler($, error)).rejects.not.toThrow(TypeError)
+      await expect(requestErrorHandler!($, error)).rejects.toThrow(StepError)
+      await expect(requestErrorHandler!($, error)).rejects.not.toThrow(
+        TypeError,
+      )
     })
   })
 
@@ -161,7 +163,7 @@ describe('Postman SMS request error handler', () => {
     it('keeps the StepError name', async () => {
       const error = makeHttpError({ message: 'bad request', status: 400 })
 
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         message: expect.stringContaining('"name":"Error sending SMS"'),
       })
     })
@@ -179,7 +181,7 @@ describe('Postman SMS request error handler', () => {
         data: { error: { code } },
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         message: expect.stringContaining('"name":"Error sending SMS"'),
         kind: 'internal',
         cause: error,
@@ -195,7 +197,7 @@ describe('Postman SMS request error handler', () => {
           code: 'ERR_BAD_REQUEST',
         })
 
-        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
           kind: 'internal',
           cause: error,
         })
@@ -208,7 +210,7 @@ describe('Postman SMS request error handler', () => {
         status: 504,
       })
 
-      const thrown = await requestErrorHandler($, error).catch((e) => e)
+      const thrown = await requestErrorHandler!($, error).catch((e) => e)
       expect(thrown).toBeInstanceOf(StepError)
       expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
     })
@@ -219,7 +221,7 @@ describe('Postman SMS request error handler', () => {
         code: 'ECONNRESET',
       })
 
-      const thrown = await requestErrorHandler($, error).catch((e) => e)
+      const thrown = await requestErrorHandler!($, error).catch((e) => e)
       expect(thrown).toBeInstanceOf(StepError)
       expect(thrown).toMatchObject({ kind: 'third-party', cause: error })
     })
@@ -230,7 +232,7 @@ describe('Postman SMS request error handler', () => {
         code: 'ENOTFOUND',
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         kind: 'third-party',
         cause: error,
       })
@@ -241,7 +243,7 @@ describe('Postman SMS request error handler', () => {
       async (code) => {
         const error = makeHttpError({ message: code, code })
 
-        await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+        await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
           kind: 'internal',
           cause: error,
         })
@@ -253,7 +255,7 @@ describe('Postman SMS request error handler', () => {
         message: 'Unsupported postman environment',
       })
 
-      await expect(requestErrorHandler($, error)).rejects.toMatchObject({
+      await expect(requestErrorHandler!($, error)).rejects.toMatchObject({
         kind: 'internal',
         cause: error,
       })

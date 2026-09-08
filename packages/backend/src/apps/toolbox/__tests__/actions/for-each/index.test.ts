@@ -127,7 +127,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -153,7 +153,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      await action.run($)
+      await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -172,7 +172,7 @@ describe('For each action', () => {
 
       mockedIsCheckboxItems.mockReturnValue(true)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -195,9 +195,9 @@ describe('For each action', () => {
     it('should throw error when checkbox items validation fails', async () => {
       $.step.parameters.items = 'item1,item2,item3'
 
-      await expect(action.run($)).rejects.toThrow(StepError)
-      await expect(action.run($)).rejects.toThrow('Invalid input list')
-      await expect(action.run($)).rejects.toMatchObject({ kind: 'config' })
+      await expect(action.run!($)).rejects.toThrow(StepError)
+      await expect(action.run!($)).rejects.toThrow('Invalid input list')
+      await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
     })
   })
 
@@ -252,7 +252,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(validTableData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -289,7 +289,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -321,7 +321,7 @@ describe('For each action', () => {
       }
 
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -359,7 +359,7 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -396,7 +396,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -447,7 +447,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -484,7 +484,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(excelData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -521,7 +521,7 @@ describe('For each action', () => {
 
       mockedProcessItems.mockReturnValue(processedResult)
 
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -552,7 +552,7 @@ describe('For each action', () => {
       }
 
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(VALID_TABLE_DATA)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -586,7 +586,7 @@ describe('For each action', () => {
         inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
       }
       mockedProcessItems.mockReturnValue(processedResult)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(mockedProcessItems).toHaveBeenCalledWith(mockTableFieldData)
       expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -627,9 +627,9 @@ describe('For each action', () => {
       async ({ items }) => {
         $.step.parameters.items = items
 
-        await expect(action.run($)).rejects.toThrow(StepError)
-        await expect(action.run($)).rejects.toThrow('Invalid input list')
-        await expect(action.run($)).rejects.toMatchObject({ kind: 'config' })
+        await expect(action.run!($)).rejects.toThrow(StepError)
+        await expect(action.run!($)).rejects.toThrow('Invalid input list')
+        await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
       },
     )
 
@@ -637,7 +637,7 @@ describe('For each action', () => {
       $.execution.testRun = true
       $.step.parameters.items = []
 
-      await expect(action.run($)).rejects.toMatchObject({ kind: 'config' })
+      await expect(action.run!($)).rejects.toMatchObject({ kind: 'config' })
     })
 
     it('should throw an internal StepError and log when processing valid input fails', async () => {
@@ -649,7 +649,7 @@ describe('For each action', () => {
         .spyOn(logger, 'error')
         .mockImplementation(() => logger)
 
-      await expect(action.run($)).rejects.toMatchObject({
+      await expect(action.run!($)).rejects.toMatchObject({
         kind: 'internal',
         message: expect.stringContaining('Invalid input list'),
       })

@@ -193,7 +193,7 @@ describe('new submission trigger', () => {
 
     it('should use mock data if preferMock is true and there is no past submission', async () => {
       getLastExecutionStepMock.mockResolvedValue(null)
-      await trigger.testRun($, { preferMock: true })
+      await trigger.testRun!($, { preferMock: true })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,
         meta: {
@@ -210,7 +210,7 @@ describe('new submission trigger', () => {
         dataOut: actualData,
         createdAt: '2025-06-16 07:06:30.155+00',
       })
-      await trigger.testRun($, { preferMock: true })
+      await trigger.testRun!($, { preferMock: true })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,
         meta: {
@@ -226,7 +226,7 @@ describe('new submission trigger', () => {
 
     it('should use mock data if testRunMetadata is undefined and there is no past submission', async () => {
       getLastExecutionStepMock.mockResolvedValue(null)
-      await trigger.testRun($, undefined)
+      await trigger.testRun!($, undefined)
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,
         meta: {
@@ -243,7 +243,7 @@ describe('new submission trigger', () => {
         dataOut: actualData,
         createdAt: '2025-06-16 07:06:30.155+00',
       })
-      await trigger.testRun($, undefined)
+      await trigger.testRun!($, undefined)
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: actualData,
         meta: {
@@ -262,7 +262,7 @@ describe('new submission trigger', () => {
         dataOut: actualData,
         createdAt: '2025-06-16 07:06:30.155+00',
       })
-      await trigger.testRun($, { preferMock: false })
+      await trigger.testRun!($, { preferMock: false })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: actualData,
         meta: {
@@ -278,7 +278,7 @@ describe('new submission trigger', () => {
 
     it('should use mock data if preferMock is false and there is no past submission', async () => {
       getLastExecutionStepMock.mockResolvedValue(null)
-      await trigger.testRun($, { preferMock: false })
+      await trigger.testRun!($, { preferMock: false })
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,
         meta: {
@@ -295,7 +295,7 @@ describe('new submission trigger', () => {
         dataOut: { ...actualData, submissionTime: undefined },
         createdAt: '2025-06-16 07:06:30.155+00',
       })
-      await trigger.testRun($, { preferMock: false })
+      await trigger.testRun!($, { preferMock: false })
 
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: { ...actualData, submissionTime: undefined },
@@ -337,7 +337,7 @@ describe('new submission trigger', () => {
 
     it('should call remove MRF steps function if the form is storage mode', async () => {
       getLastExecutionStepMock.mockResolvedValue(null)
-      await trigger.testRun($, { preferMock: false })
+      await trigger.testRun!($, { preferMock: false })
       expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
     })
 
@@ -369,7 +369,7 @@ describe('new submission trigger', () => {
         })
         mocks.parseWorkflowData.mockReturnValue(mrfWorkflowData)
 
-        await trigger.testRun($, { preferMock: true })
+        await trigger.testRun!($, { preferMock: true })
 
         expect(mocks.parseWorkflowData).toHaveBeenCalledOnce()
         expect(mocks.createMrfSteps).toHaveBeenCalledOnce()
@@ -402,7 +402,7 @@ describe('new submission trigger', () => {
         mocks.createMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
         const error = await trigger
-          .testRun($, { preferMock: true })
+          .testRun!($, { preferMock: true })
           .catch((e) => e)
 
         expect(error).toMatchObject({
@@ -424,7 +424,7 @@ describe('new submission trigger', () => {
         mocks.removeMrfSteps.mockRejectedValueOnce(new Error('db error'))
 
         const error = await trigger
-          .testRun($, { preferMock: true })
+          .testRun!($, { preferMock: true })
           .catch((e) => e)
 
         expect(error).toMatchObject({
@@ -444,7 +444,7 @@ describe('new submission trigger', () => {
           },
         })
 
-        await trigger.testRun($, { preferMock: true })
+        await trigger.testRun!($, { preferMock: true })
 
         expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
         expect(mocks.createMrfSteps).not.toHaveBeenCalled()
@@ -460,7 +460,7 @@ describe('new submission trigger', () => {
           },
         })
 
-        await trigger.testRun($, { preferMock: true })
+        await trigger.testRun!($, { preferMock: true })
 
         expect(mocks.removeMrfSteps).toHaveBeenCalledOnce()
         expect(mocks.createMrfSteps).not.toHaveBeenCalled()
@@ -469,7 +469,7 @@ describe('new submission trigger', () => {
   })
   describe('dataOut metadata', () => {
     it('ensures that only question, answer and answerArray props are visible', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       for (const [propName, data] of Object.entries(
         metadata.fields.textFieldId,
@@ -489,13 +489,13 @@ describe('new submission trigger', () => {
     })
 
     it('changes the question label to "Question #n"', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId.question.label).toEqual('Question 1')
     })
 
     it('changes the answer label to "1. What is your name?"', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId.answer.label).toEqual(
         '1. What is your name?',
@@ -503,7 +503,7 @@ describe('new submission trigger', () => {
     })
 
     it('positions the answer after the question', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId.question.order).toBeLessThan(
         metadata.fields.textFieldId.answer.order,
@@ -523,7 +523,7 @@ describe('new submission trigger', () => {
         }
       }
 
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId1.question.order).toBe(1)
       expect(metadata.fields.textFieldId1.answer.order).toBe(1.1)
@@ -536,35 +536,35 @@ describe('new submission trigger', () => {
     })
 
     it('sets a label for SingPass verified NRIC/FIN', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.verifiedSubmitterInfo.uinFin.label).toEqual(
         'NRIC/FIN (Verified)',
       )
     })
 
     it('sets a label for sgID verified NRIC/FIN', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.verifiedSubmitterInfo.sgidUinFin.label).toEqual(
         'NRIC/FIN (Verified)',
       )
     })
 
     it('sets a label for verified CorpPass UEN', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.verifiedSubmitterInfo.cpUen.label).toEqual(
         'CorpPass UEN (Verified)',
       )
     })
 
     it('sets a label for verified CorpPass UID', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.verifiedSubmitterInfo.cpUid.label).toEqual(
         'CorpPass UID (Verified)',
       )
     })
 
     it('sets a label for verified CorpPass UEN', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.verifiedSubmitterInfo.cpUen.label).toEqual(
         'CorpPass UEN (Verified)',
       )
@@ -579,7 +579,7 @@ describe('new submission trigger', () => {
         },
       }
 
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.fields.fileFieldId.answer.type).toEqual('file')
     })
 
@@ -592,7 +592,7 @@ describe('new submission trigger', () => {
         },
       }
 
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.fields.fileFieldId.answer.displayedValue).toEqual(
         'my file.txt',
       )
@@ -607,36 +607,36 @@ describe('new submission trigger', () => {
         },
       }
 
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.fields.fileFieldId.answer.label).toEqual(
         '1. Attach a file.',
       )
     })
 
     it('should hide header answers but not questions', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.fields.headerFieldId.answer.isHidden).toBe(true)
       expect(metadata.fields.headerFieldId.question.isHidden).toBeFalsy()
     })
 
     it('collapses question variables', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.fields.textFieldId.question.isCollapsedByDefault).toEqual(
         true,
       )
     })
 
     it('should handle null dataOut', async () => {
-      executionStep.dataOut = null
+      executionStep.dataOut = null as unknown as IJSONObject
 
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = await trigger.getDataOutMetadata!(executionStep)
       expect(metadata).toEqual(null)
     })
 
     it('should handle undefined `dataOut.fields` property', async () => {
       executionStep.dataOut = {}
 
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = await trigger.getDataOutMetadata!(executionStep)
       expect(metadata).toEqual(null)
     })
 
@@ -656,10 +656,12 @@ describe('new submission trigger', () => {
       })
 
       it('should set labels for payment data', async () => {
-        const metadata = await trigger.getDataOutMetadata(executionStep)
+        const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
         expect(metadata).toHaveProperty('paymentContent')
-        for (const key of Object.keys(executionStep.dataOut.paymentContent)) {
+        for (const key of Object.keys(
+          executionStep.dataOut.paymentContent as IJSONObject,
+        )) {
           expect(metadata.paymentContent).toHaveProperty(key)
           expect(metadata.paymentContent[key]).toHaveProperty('label')
           expect(typeof metadata.paymentContent[key].label).toBe('string')
@@ -672,10 +674,12 @@ describe('new submission trigger', () => {
           .productService
         delete (executionStep.dataOut.paymentContent as IJSONObject).url
 
-        const metadata = await trigger.getDataOutMetadata(executionStep)
+        const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
         // Also check that metadata is still provided for the other fields.
-        for (const key of Object.keys(executionStep.dataOut.paymentContent)) {
+        for (const key of Object.keys(
+          executionStep.dataOut.paymentContent as IJSONObject,
+        )) {
           expect(metadata.paymentContent[key].label.length).toBeGreaterThan(0)
         }
       })
@@ -685,10 +689,12 @@ describe('new submission trigger', () => {
           .paymentContent as IJSONObject
         paymentContentObject.futureProp = 'sample data'
 
-        const metadata = await trigger.getDataOutMetadata(executionStep)
+        const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
         // Also check that metadata is still provided for the known fields
-        for (const key of Object.keys(executionStep.dataOut.paymentContent)) {
+        for (const key of Object.keys(
+          executionStep.dataOut.paymentContent as IJSONObject,
+        )) {
           if (key === 'futureProp') {
             continue
           }
@@ -699,7 +705,7 @@ describe('new submission trigger', () => {
       it('should not have payment metadata if there is no paymentContent in dataOut', async () => {
         delete (executionStep.dataOut as IJSONObject).paymentContent
 
-        const metadata = await trigger.getDataOutMetadata(executionStep)
+        const metadata = await trigger.getDataOutMetadata!(executionStep)
         expect(metadata).not.toHaveProperty('paymentContent')
       })
     })
@@ -803,13 +809,13 @@ describe('new submission trigger for answer array fields', () => {
 
   describe('dataOut metadata', () => {
     it('changes the question label to "Question 1"', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId1.question.label).toEqual('Question 1')
     })
 
     it('Checkbox type: changes the answerArray label to a single response', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       const array = metadata.fields.textFieldId1.answerArray
       // type will be array instead of text!
       expect(array).toEqual({
@@ -820,13 +826,13 @@ describe('new submission trigger for answer array fields', () => {
     })
 
     it('changes the question label to "Question 2"', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId2.question.label).toEqual('Question 2')
     })
 
     it('Table type: changes the answerArray label to a group of rows and columns', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       const array = metadata.fields.textFieldId2.answerArray
 
       for (let i = 0; i < array.length; i++) {
@@ -842,18 +848,18 @@ describe('new submission trigger for answer array fields', () => {
     })
 
     it('changes the question label to "Question 3"', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
       expect(metadata.fields.textFieldId3.question.label).toEqual('Question 3')
     })
 
     it('Unknown type: answerArray label should be undefined', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       expect(metadata.fields.textFieldId3.answerArray).toBeUndefined()
     })
 
     it('Address type: includes all address fields', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       const addressMetadata = metadata.fields.addressFieldComplete
         .answerArray as IDataOutMetadatum[]
 
@@ -866,7 +872,7 @@ describe('new submission trigger for answer array fields', () => {
     })
 
     it('Address type: includes all metadata for empty address fields', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       const addressMetadata = metadata.fields.addressFieldPartial
         .answerArray as IDataOutMetadatum[]
       ADDRESS_LABELS.forEach((label, index) => {
@@ -877,7 +883,7 @@ describe('new submission trigger for answer array fields', () => {
     })
 
     it('Signature type: includes all metadata for signature fields but it is hidden', async () => {
-      const metadata = await trigger.getDataOutMetadata(executionStep)
+      const metadata = (await trigger.getDataOutMetadata!(executionStep))!
       const signatureMetadata = metadata.fields.signatureField
         .answerArray as IDataOutMetadatum[]
       expect(signatureMetadata).toHaveLength(2)

@@ -70,7 +70,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error) => error instanceof StepError && error.kind === 'config',
     )
     expect(mocks.generateObject).not.toHaveBeenCalled()
@@ -84,7 +84,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error) => error instanceof StepError && error.kind === 'config',
     )
     expect(mocks.generateObject).not.toHaveBeenCalled()
@@ -97,7 +97,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await processImageAction.run($)
+    await processImageAction.run!($)
 
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.getImageContent).not.toHaveBeenCalled()
@@ -116,7 +116,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await processImageAction.run($)
+    await processImageAction.run!($)
 
     expect(mocks.generateObject).not.toHaveBeenCalled()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
@@ -142,7 +142,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await processImageAction.run($)
+    await processImageAction.run!($)
 
     expect(mocks.getImageContent).toHaveBeenCalledWith('s3-id-123', 'flow-id')
     expect(mocks.generateObject).toHaveBeenCalled()
