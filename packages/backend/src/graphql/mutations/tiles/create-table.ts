@@ -53,6 +53,7 @@ const createTable: MutationResolvers['createTable'] = async (
         name: tableName,
         role: 'owner',
         db: databaseType,
+        config: {},
         columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
       })
 

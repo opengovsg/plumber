@@ -20,7 +20,7 @@ export function appendAddTileColumnsConfigPatch(entry: {
   return raw(
     `jsonb_set(
       jsonb_set(
-        COALESCE(config, '{}'::jsonb),
+        config,
         '{aiBuilderConfig}',
         COALESCE(config->'aiBuilderConfig', '{}'::jsonb),
         true
