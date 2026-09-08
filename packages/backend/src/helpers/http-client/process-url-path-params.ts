@@ -53,6 +53,11 @@ export function processUrlPathParams<T>(
   if (!urlPathParams) {
     return config
   }
+  if (!url) {
+    throw new Error(
+      'urlPathParams was provided without a url to substitute into',
+    )
+  }
 
   return {
     ...config,

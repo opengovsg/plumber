@@ -69,7 +69,7 @@ export const createSizeMonitor = (compressedSize?: number) => {
 
         callback(null, chunk)
       } catch (error) {
-        callback(error)
+        callback(error instanceof Error ? error : new Error(String(error)))
       }
     },
     flush(callback) {
