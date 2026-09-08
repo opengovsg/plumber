@@ -136,6 +136,7 @@
     "src/apps/telegram-bot/common/force-ipv4.ts",
     "src/apps/telegram-bot/common/interceptor/rate-limit.ts",
     "src/apps/telegram-bot/common/markdown-v1.ts",
+    "src/apps/telegram-bot/dynamic-data/get-chat-ids.ts",
     "src/apps/telegram-bot/dynamic-data/types.ts",
     "src/apps/telegram-bot/index.d.ts",
     "src/apps/tiles/actions/find-multiple-rows/schema.ts",

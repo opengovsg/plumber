@@ -19,8 +19,8 @@ type ChatInfo = {
   id: number
 }
 
-function extractChatFromUpdate(update: TelegramUpdate): ChatInfo {
-  const messageObject: HasTelegramChat =
+function extractChatFromUpdate(update: TelegramUpdate): ChatInfo | null {
+  const messageObject: HasTelegramChat | undefined =
     update.message ||
     update.my_chat_member ||
     update.channel_post ||
@@ -41,7 +41,7 @@ function extractChatFromUpdate(update: TelegramUpdate): ChatInfo {
     return null
   }
   const name = `${title || username} (${type})`
-  return { title: name || username, id }
+  return { title: name, id }
 }
 
 const dynamicData: IDynamicData = {
@@ -80,7 +80,9 @@ const dynamicData: IDynamicData = {
     } catch (e) {
       return {
         data: [],
-        error: e.message,
+        error: {
+          message: e instanceof Error ? e.message : String(e),
+        },
       }
     }
   },
