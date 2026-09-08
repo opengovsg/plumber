@@ -39,7 +39,7 @@ export interface IConnection {
   key: string
   data: string
   formattedData?: IJSONObject
-  userId: string
+  userId: string | null
   verified: boolean
   count?: number
   flowCount?: number
@@ -211,8 +211,8 @@ export interface IStep {
   flowId: string
   key?: string
   appKey?: string
-  iconUrl: string
-  webhookUrl: string
+  iconUrl: string | null
+  webhookUrl: string | null
   type: 'action' | 'trigger'
   connectionId?: string
   status: string
@@ -291,7 +291,7 @@ export interface IFlow {
   createdAt: string
   updatedAt: string
   remoteWebhookId: string
-  lastInternalId: () => Promise<string>
+  lastInternalId: () => Promise<string | null | undefined>
   config: IFlowConfig | null
   pendingTransfer?: IFlowTransfer
   template?: ITemplate
