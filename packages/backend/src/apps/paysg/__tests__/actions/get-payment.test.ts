@@ -40,7 +40,7 @@ describe('get payment', () => {
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
-    }
+    } as unknown as IGlobalVariable
   })
 
   afterEach(() => {

@@ -38,7 +38,7 @@ describe('formsg webhook registration', () => {
         updatedAt: `${new Date().getTime()}`,
       },
       app: apps.formsg,
-    }
+    } as unknown as IGlobalVariable
   })
 
   // Reset each mock after tests

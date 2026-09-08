@@ -147,7 +147,7 @@ function makeGlobalVariable(): IGlobalVariable {
       updatedAt: `${new Date().getTime()}`,
     },
     app: apps.formsg,
-  }
+  } as unknown as IGlobalVariable
 }
 
 describe('decrypt form response - MRF specific', () => {

@@ -8,7 +8,7 @@ import type {
 type TransformFunction = (
   $: IGlobalVariable,
   valueToTransform: string,
-) => ReturnType<IRawAction['run']>
+) => ReturnType<NonNullable<IRawAction['run']>>
 
 /**
  * Helper object for transforms to describe themselves.

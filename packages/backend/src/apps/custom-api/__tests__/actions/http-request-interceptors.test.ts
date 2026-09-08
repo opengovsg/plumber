@@ -47,7 +47,7 @@ describe('http request interceptors', () => {
       },
       setActionItem: vi.fn(),
       app,
-    }
+    } as unknown as IGlobalVariable
     $.http = createHttpClient({
       $,
       baseURL: app.apiBaseUrl,

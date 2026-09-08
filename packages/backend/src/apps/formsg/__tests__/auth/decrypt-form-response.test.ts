@@ -124,7 +124,7 @@ describe('decrypt form response', () => {
         updatedAt: `${new Date().getTime()}`,
       },
       app: apps.formsg,
-    }
+    } as unknown as IGlobalVariable
   })
 
   // restore mocks after each test
