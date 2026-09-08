@@ -171,6 +171,8 @@ const messagePartSchema = z.discriminatedUnion('type', [
   toolPart('tool-get_form_schema'),
   toolPart('tool-execute_step'),
   toolPart('tool-register_connection'),
+  toolPart('tool-create_tile'),
+  toolPart('tool-add_tile_columns'),
 ])
 
 const messageSchema = z.object({
