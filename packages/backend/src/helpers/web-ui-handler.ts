@@ -9,6 +9,10 @@ const webUIHandler = async (app: Application) => {
     return
   }
 
+  if (!require.main) {
+    throw new Error('webUIHandler: require.main is not set')
+  }
+
   const webBuildPath = join(
     dirname(require.main.filename),
     '..',

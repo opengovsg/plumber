@@ -1,5 +1,6 @@
 type TParameters = {
-  [key: string]: string
+  // A parameter with no '=' in it parses to an undefined value.
+  [key: string]: string | undefined
   rel?: string
 }
 
