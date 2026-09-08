@@ -48,7 +48,7 @@ describe('createTileService', () => {
     expect(await checkIfTableExists(result.id)).toBe(true)
 
     const stored = await TableMetadata.query().findById(result.id)
-    expect(stored?.config).toBeNull()
+    expect(stored?.config).toEqual({})
   })
 
   it('stamps aiBuilderConfig.createTile when traceId is provided', async () => {

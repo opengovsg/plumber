@@ -72,7 +72,7 @@ describe.each([['pg'], ['ddb']])(
       expect(pgCreateTableRowsSpy).not.toHaveBeenCalled()
       expect(ddbCreateTableRowsSpy).not.toHaveBeenCalled()
       const stored = await TableMetadata.query().findById(table.id)
-      expect(stored?.config).toBeNull()
+      expect(stored?.config).toEqual({})
       if (databaseType === 'pg') {
         expect(pgCreateTableSpy).toHaveBeenCalledWith(table.id, [])
         // we check if the table is actually created here

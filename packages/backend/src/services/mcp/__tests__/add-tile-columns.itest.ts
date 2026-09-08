@@ -51,7 +51,7 @@ describe('addTileColumnsService', () => {
     )
 
     const stored = await TableMetadata.query().findById(table.id)
-    expect(stored?.config).toBeNull()
+    expect(stored?.config).toEqual({})
   })
 
   it('appends aiBuilderConfig.addTileColumns without inventing createTile', async () => {
@@ -117,7 +117,7 @@ describe('addTileColumnsService', () => {
     })
 
     const stored = await TableMetadata.query().findById(table.id)
-    expect(stored?.config).toBeNull()
+    expect(stored?.config).toEqual({})
   })
 
   it('keeps createTile when add_tile_columns runs on an AI-created tile', async () => {

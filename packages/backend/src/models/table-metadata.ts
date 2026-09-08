@@ -25,7 +25,7 @@ class TableMetadata extends Base {
   role?: ITableCollabRole
   lastAccessedAt?: Date
   db: 'pg' | 'ddb'
-  config: ITableConfig | null
+  config: ITableConfig
 
   static tableName = 'table_metadata'
 
@@ -42,7 +42,7 @@ class TableMetadata extends Base {
           tokenNonce: { type: 'string' },
         },
       },
-      config: { type: ['object', 'null'] },
+      config: { type: 'object' },
     },
   }
 
