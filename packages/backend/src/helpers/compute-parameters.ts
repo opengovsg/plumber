@@ -109,12 +109,13 @@ function findAndSubstituteVariables(
       })
       const data = executionStep?.dataOut
       const stepIsInForEach =
-        forEachStepPosition > -1 &&
-        stepPositions?.[stepId] >= forEachStepPosition
+        forEachStepPosition !== undefined &&
+        stepPositions?.[stepId] !== undefined &&
+        stepPositions[stepId] >= forEachStepPosition
 
       const keyPath = keyPaths.join('.') // for lodash get to work
       let dataValue = get(data, keyPath)
-      if (stepIsInForEach) {
+      if (stepIsInForEach && executionStep && data && forEachContext) {
         dataValue = computeForEachParameters({
           data,
           keyPath,
