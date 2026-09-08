@@ -8,6 +8,10 @@ const getGroupConfigForJob: IAppQueue['getGroupConfigForJob'] = async ({
 }) => {
   const step = await Step.query().findById(stepId).throwIfNotFound()
 
+  if (!step.connectionId) {
+    return undefined
+  }
+
   return {
     // Each connection ID should, _in theory_, represent a different campaign.
     //
