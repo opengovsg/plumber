@@ -365,7 +365,7 @@ function buildPaymentContentMetadata(
 
 async function getDataOutMetadata(
   executionStep: IExecutionStep,
-): Promise<IDataOutMetadata> {
+): Promise<IDataOutMetadata | null> {
   const data = executionStep.dataOut
 
   if (!data || !data.fields) {

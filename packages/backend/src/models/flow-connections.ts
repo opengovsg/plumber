@@ -19,7 +19,7 @@ class FlowConnections extends Base {
   connection?: Connection
   table?: TableMetadata
   user?: User
-  metadata: Record<string, any>
+  metadata!: Record<string, any>
   flow?: Flow
 
   static tableName = 'flow_connections'
@@ -213,9 +213,15 @@ class FlowConnections extends Base {
    */
   getConnection(): Connection | TableMetadata {
     if (this.connectionType === 'connection') {
+      if (!this.connection) {
+        throw new Error('Connection relation was not loaded')
+      }
       return this.connection
     }
     if (this.connectionType === 'table') {
+      if (!this.table) {
+        throw new Error('Table relation was not loaded')
+      }
       return this.table
     }
     throw new Error('Connection type is not valid')
