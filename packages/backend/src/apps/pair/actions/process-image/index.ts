@@ -3,6 +3,7 @@ import { generateObject } from 'ai'
 import z from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
+import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
 import logger from '@/helpers/logger'
@@ -91,6 +92,11 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    const user = $.user
+    if (!user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     const validatedParameters = schema.safeParse($.step.parameters)
     if (!validatedParameters.success) {
       const firstError = fromZodError(validatedParameters.error).details[0]
@@ -120,7 +126,7 @@ const action: IRawAction = {
       const content = await getImageContent(image[0], $.flow.id)
 
       const { object } = await withAiTelemetryContext(
-        { distinctId: $.user.id, aiSessionId: $.execution.id },
+        { distinctId: user.id, aiSessionId: $.execution.id },
         () =>
           generateObject({
             model: imageModel,
@@ -136,7 +142,7 @@ const action: IRawAction = {
               isEnabled: true,
               functionId: 'pair-action-process-image',
               metadata: {
-                userId: $.user.email,
+                userId: user.email,
                 executionId: $.execution.id,
                 flowId: $.flow.id,
                 stepId: $.step.id,
@@ -155,7 +161,7 @@ const action: IRawAction = {
         flowId: $.flow.id,
         executionId: $.execution.id,
         stepId: $.step.id,
-        userId: $.user.email,
+        userId: user.email,
         s3Id: image[0],
       })
 
@@ -167,7 +173,11 @@ const action: IRawAction = {
       }
 
       // The error is already logged above. Its raw message is not written for users.
-      throw new StepError('Failed to process image', 'Please try again.', error)
+      throw new StepError(
+        'Failed to process image',
+        'Please try again.',
+        error instanceof HttpError ? error : undefined,
+      )
     }
   },
 }
