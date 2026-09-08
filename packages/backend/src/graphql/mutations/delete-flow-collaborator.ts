@@ -42,7 +42,7 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
           })
           .returning('*')
           .throwIfNotFound({ message: 'No such collaborator found' })
-      } catch (e) {
+      } catch {
         logger.error({
           message: 'Failed to leave pipe as collaborator',
           data: {
@@ -50,9 +50,8 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
             email,
           },
           userId: context.currentUser.id,
-          error: e,
         })
-        throw new Error(e.message ?? 'Failed to leave pipe')
+        throw new Error('Failed to leave pipe')
       }
 
       return true
