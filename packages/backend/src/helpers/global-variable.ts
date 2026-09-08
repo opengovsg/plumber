@@ -44,7 +44,6 @@ const globalVariable = async (
     metadata,
   } = options
 
-  const isTrigger = step?.isTrigger
   const nextStep = await step?.getNextStep()
 
   // http is attached below via mutation, since createHttpClient captures $ by
@@ -61,7 +60,7 @@ const globalVariable = async (
             },
           })
 
-          $.auth.data = connection.formattedData
+          $.auth.data = connection.formattedData ?? {}
         }
 
         return null
@@ -110,7 +109,7 @@ const globalVariable = async (
       }
       return (
         await step?.getLastExecutionStep({
-          executionId: options?.sameExecution ? execution.id : undefined,
+          executionId: options?.sameExecution ? execution?.id : undefined,
           testRunOnly: options?.testRunOnly,
           additionalFilter: options?.additionalFilter,
           iteration: options?.iteration,
@@ -153,7 +152,7 @@ const globalVariable = async (
     $,
     baseURL: app.apiBaseUrl,
     beforeRequest: app.beforeRequest ?? [],
-    requestErrorHandler: app.requestErrorHandler ?? null,
+    requestErrorHandler: app.requestErrorHandler,
   })
 
   if (flow) {
@@ -161,29 +160,32 @@ const globalVariable = async (
     $.webhookUrl = webhookUrl
   }
 
-  if (isTrigger && (await step.getTriggerCommand()).type === 'webhook') {
-    $.flow.setRemoteWebhookId = async (remoteWebhookId) => {
-      await flow.$query().patchAndFetch({
-        remoteWebhookId,
-      })
+  if (flow && step?.isTrigger) {
+    const triggerCommand = await step.getTriggerCommand()
+    if (triggerCommand?.type === 'webhook') {
+      $.flow.setRemoteWebhookId = async (remoteWebhookId) => {
+        await flow.$query().patchAndFetch({
+          remoteWebhookId,
+        })
 
-      $.flow.remoteWebhookId = remoteWebhookId
+        $.flow.remoteWebhookId = remoteWebhookId
+      }
+
+      $.flow.remoteWebhookId = flow.remoteWebhookId
     }
-
-    $.flow.remoteWebhookId = flow.remoteWebhookId
   }
 
   // Fetch and cache last internal ids for isAlreadyProcessed
-  let lastInternalIds: string[] | undefined
+  let lastInternalIds: (string | null | undefined)[] | undefined
 
   const isAlreadyProcessed = async (internalId: string): Promise<boolean> => {
-    if (testRun || (flow && step.isAction)) {
+    if (testRun || (flow && step?.isAction)) {
       return false
     }
     if (!lastInternalIds) {
       lastInternalIds = await flow?.lastInternalIds(500)
     }
-    return lastInternalIds?.includes(internalId)
+    return lastInternalIds?.includes(internalId) ?? false
   }
 
   return $

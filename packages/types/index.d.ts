@@ -1141,7 +1141,7 @@ export type IHttpClientParams = {
   $: IGlobalVariable
   baseURL?: string
   beforeRequest: TBeforeRequest[]
-  requestErrorHandler: TRequestErrorHandler
+  requestErrorHandler?: TRequestErrorHandler
 }
 
 export type IGlobalVariable = {
