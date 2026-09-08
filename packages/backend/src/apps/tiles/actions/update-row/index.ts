@@ -153,7 +153,10 @@ const action: IRawAction = {
 
     const columnIds = table.columns.map((c) => c.id)
 
-    await TableCollaborator.hasAccess($.user?.id, tableId, 'editor', $)
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+    await TableCollaborator.hasAccess($.user.id, tableId, 'editor', $)
 
     /**
      * Row ID is empty, this could be because the previous get single row action
