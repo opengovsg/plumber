@@ -2,13 +2,13 @@ import { z } from 'zod'
 
 import logger from '@/helpers/logger'
 
-export const databricksConfig = Object.freeze({
+const rawDatabricksConfig = {
   serverHostname: process.env.DATABRICKS_SERVER_HOSTNAME,
   httpPath: process.env.DATABRICKS_HTTP_PATH,
   catalog: process.env.DATABRICKS_CATALOG,
   clientId: process.env.DATABRICKS_CLIENT_ID,
   clientSecret: process.env.DATABRICKS_CLIENT_SECRET,
-})
+}
 
 const databricksConfigSchema = z.object({
   serverHostname: z.string().min(1, 'Databricks server hostname is required'),
@@ -19,7 +19,7 @@ const databricksConfigSchema = z.object({
 })
 
 const databricksConfigParseResult =
-  databricksConfigSchema.safeParse(databricksConfig)
+  databricksConfigSchema.safeParse(rawDatabricksConfig)
 
 if (databricksConfigParseResult.success === false) {
   logger.error(
@@ -28,3 +28,5 @@ if (databricksConfigParseResult.success === false) {
   )
   throw new Error('Invalid databricks configuration')
 }
+
+export const databricksConfig = Object.freeze(databricksConfigParseResult.data)

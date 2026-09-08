@@ -14,7 +14,7 @@ const removeBaseUrlForAbsoluteUrls = (
   requestConfig: InternalAxiosRequestConfig,
 ): InternalAxiosRequestConfig => {
   try {
-    const url = new URL(requestConfig.url)
+    const url = new URL(requestConfig.url ?? '')
     requestConfig.baseURL = url.origin
     requestConfig.url = url.pathname + url.search
 
@@ -88,7 +88,7 @@ export default function createHttpClient({
 
       if (
         (status === 401 || status === 403) &&
-        $.app.auth.refreshToken &&
+        $.app.auth?.refreshToken &&
         !$.app.auth.isRefreshTokenRequested
       ) {
         $.app.auth.isRefreshTokenRequested = true

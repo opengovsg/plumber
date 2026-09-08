@@ -111,7 +111,10 @@ export const requestSchema = z
       .max(10, 'cannot have more than 10 metadata entries')
       .transform((rawMetadata, context) => {
         // Again.. to remove this when we fix the UX issue.
-        const metadata = rawMetadata.filter((metadatum) => !!metadatum.key)
+        const metadata = rawMetadata.filter(
+          (metadatum): metadatum is typeof metadatum & { key: string } =>
+            !!metadatum.key,
+        )
 
         if (metadata.length === 0) {
           return null
