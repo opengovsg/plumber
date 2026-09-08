@@ -5,6 +5,12 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { getClientIp } from '@/helpers/get-client-ip'
 import logger from '@/helpers/logger'
 
+// Narrower than the real (global) Express.Request.context augmentation, to
+// avoid pulling in the models graph just for this one field.
+type RequestWithContext = Request & {
+  context?: { currentUser?: { id: string } | null }
+}
+
 // Create rate limiter for API routes
 // Allow 10 requests per minute per user/IP
 // NOTE: this works now because we only have 1 route,
@@ -24,7 +30,7 @@ const apiRateLimiter = new RateLimiterRedis({
  * Uses the same IP identification logic as GraphQL authentication.
  */
 export async function rateLimitApi(
-  req: Request,
+  req: RequestWithContext,
   res: Response,
   next: NextFunction,
 ) {
