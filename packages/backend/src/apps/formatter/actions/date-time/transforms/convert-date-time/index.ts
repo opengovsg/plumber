@@ -58,8 +58,10 @@ export const spec = {
         throw error
       }
 
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       throw new StepError(
-        `Error with the original value: '${error.message}'`,
+        `Error with the original value: '${errorMessage}'`,
         'Ensure that you have selected the correct date format for your original value.',
       )
     }

@@ -1,5 +1,6 @@
 import { IRawAction } from '@plumber/types'
 
+import HttpError from '@/errors/http'
 import StepError from '@/errors/step'
 import logger from '@/helpers/logger'
 
@@ -95,6 +96,9 @@ const action: IRawAction = {
         raw: response.data,
       })
     } catch (err) {
+      if (!(err instanceof HttpError)) {
+        throw err
+      }
       await throwSendMessageError(err, $.step, $.execution.testRun)
     }
   },

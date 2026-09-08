@@ -142,7 +142,8 @@ const createRowAction: IRawAction = {
         testRun: $.execution?.testRun,
         error: e,
       })
-      throw new StepError('Failed to create row', e.message)
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      throw new StepError('Failed to create row', errorMessage)
     } finally {
       await endSession()
     }
