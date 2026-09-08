@@ -21,6 +21,10 @@ const dynamicData: IDynamicAction = {
   key: 'databricks-createTable',
   type: 'action',
   async run($: IGlobalVariable): Promise<IJSONObject> {
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     const parametersParseResult = createTableSchema.safeParse({
       ...$.step.parameters,
       userEmail: $.user.email,

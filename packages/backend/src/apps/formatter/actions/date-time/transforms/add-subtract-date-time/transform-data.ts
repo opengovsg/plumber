@@ -82,8 +82,9 @@ export const transformData: TransformSpec['transformData'] = async (
       throw error
     }
 
+    const errorMessage = error instanceof Error ? error.message : String(error)
     throw new StepError(
-      `Error processing dates: '${error.message}'`,
+      `Error processing dates: '${errorMessage}'`,
       'Ensure that you have selected the correct date format, and that time periods to add / subtract are valid numbers.',
     )
   }
