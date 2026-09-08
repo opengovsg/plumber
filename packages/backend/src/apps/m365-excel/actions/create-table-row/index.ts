@@ -24,8 +24,9 @@ function buildRowUpdateArgs(
   try {
     return constructMsGraphValuesArrayForRowWrite(...args)
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
     throw new StepError(
-      `Error creating table row: ${err.message}`,
+      `Error creating table row: ${errorMessage}`,
       'Double check that your step is configured correctly',
     )
   }
@@ -136,9 +137,13 @@ const action: IRawAction = {
   getDataOutMetadata,
 
   async run($) {
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     if ($.execution.testRun) {
       // FOR RELEASE ONLY TO STEM ANY THUNDERING HERDS; REMOVE AFTER 21 Jul 2024.
-      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user?.email, $)
+      await RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024($.user.email, $)
     }
 
     const parametersParseResult = parametersSchema.safeParse($.step.parameters)

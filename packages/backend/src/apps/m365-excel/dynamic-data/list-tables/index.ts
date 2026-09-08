@@ -34,8 +34,12 @@ const dynamicData: IDynamicData = {
     // browsing through files, so directly invoke access validation.
     // FIXME (ogp-weeloong): move to a central file metadata cache to remove
     // need for this check
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     await validateCanAccessFile(
-      $.user?.email,
+      $.user.email,
       authData,
       fileId as string,
       $.http,

@@ -66,13 +66,17 @@ export default class WorkbookSession {
     $: IGlobalVariable,
     fileId: string,
   ): Promise<WorkbookSession> {
+    if (!$.user) {
+      throw new Error('Flow is missing an owner')
+    }
+
     const authData = extractAuthDataWithPlumberFolder($)
 
     // We _always_ check against the server in case file sensitivity has changed
     // or it has been moved. This guards against things likes delayed actions
     // working on files whose sensitivity has been upgraded during the delay
     // period.
-    await validateCanAccessFile($.user?.email, authData, fileId, $.http)
+    await validateCanAccessFile($.user.email, authData, fileId, $.http)
 
     const tenant = getM365TenantInfo(authData.tenantKey)
     let sessionId = await getSessionIdFromRedis(tenant, fileId)

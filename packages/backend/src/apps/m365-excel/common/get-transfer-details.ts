@@ -54,7 +54,9 @@ async function getTransferDetails(
       connectionName: results.data.name,
     }
   } catch (error) {
-    const errorCode = get(error, 'details.error.code', '')
+    // lodash.get can't infer a path's type through `unknown`, so it falls
+    // back to the default's literal type ('') instead of `string`.
+    const errorCode = get(error, 'details.error.code', '') as string
     logger.warn('Error with M365 excel before pipe transfer', {
       event: 'm365-excel-pipe-transfer',
       errorCode,

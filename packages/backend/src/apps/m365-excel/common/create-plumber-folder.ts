@@ -8,9 +8,10 @@ import { tryParseGraphApiError } from './parse-graph-api-error'
 async function checkForExistingFolder(
   $: IGlobalVariable,
   tenant: M365TenantInfo,
+  userEmail: string,
 ): Promise<string> {
   const filterQueryParams = new URLSearchParams({
-    filter: `name eq '${$.user.email}'`,
+    filter: `name eq '${userEmail}'`,
     select: 'id',
   }).toString()
 
@@ -30,9 +31,10 @@ export async function createPlumberFolder(
   tenantKey: string,
   $: IGlobalVariable,
 ): Promise<string> {
-  if (!$.user.email) {
+  if (!$.user?.email) {
     throw new Error('User email unavailable')
   }
+  const userEmail = $.user.email
 
   const tenant = getM365TenantInfo(tenantKey)
 
@@ -42,7 +44,7 @@ export async function createPlumberFolder(
     const createFolderResult = await $.http.post<{ id: string }>(
       '/v1.0/sites/:sharePointSiteId/drive/root/children',
       {
-        name: $.user.email,
+        name: userEmail,
         folder: {},
       },
       {
@@ -60,7 +62,7 @@ export async function createPlumberFolder(
       throw error
     }
 
-    folderId = await checkForExistingFolder($, tenant)
+    folderId = await checkForExistingFolder($, tenant, userEmail)
   }
 
   if (!folderId) {
@@ -73,7 +75,7 @@ export async function createPlumberFolder(
     await $.http.post(
       '/v1.0/sites/:sharePointSiteId/drive/items/:folderId/invite',
       {
-        recipients: [{ email: $.user.email }],
+        recipients: [{ email: userEmail }],
         requireSignIn: true,
         sendInvitation: false,
         roles: ['sp.full control'],
