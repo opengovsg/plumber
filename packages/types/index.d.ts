@@ -1046,7 +1046,7 @@ export interface IActionOutput {
 }
 
 export interface IActionItem {
-  raw: IJSONObject
+  raw: IJSONObject | null
   meta?: IExecutionStepMetadata
 }
 
@@ -1230,7 +1230,7 @@ export interface IRequest extends Request {
 
 export interface IVerifyConnectionRegistrationOutput {
   registrationVerified: boolean
-  message: string | null
+  message: string | null | undefined
 }
 
 export interface ITestConnectionOutput

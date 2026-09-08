@@ -17,6 +17,9 @@ async function deleteAllStepsInMrfBranch(
   trx: Transaction,
 ) {
   const mrfStep = allSteps.find((step) => step.id === mrfStepId)
+  if (!mrfStep) {
+    throw new Error(`MRF step ${mrfStepId} not found in flow's steps`)
+  }
   const nextMrfStep = allSteps.find(
     (step) =>
       step.position > mrfStep.position &&
@@ -94,11 +97,13 @@ export async function createMrfSteps(
 
     // Delete steps that no longer exist in actions
     const stepsToDelete = existingMrfSteps.filter((step) => {
+      // lodash.get can't resolve a path's type through IJSONObject, so it
+      // falls back to a type far broader than the string this actually is.
       const formWorkflowStepId = get(
         step.parameters,
         'mrf.formWorkflowStepId',
         null,
-      )
+      ) as string | null
       return !formWorkflowStepId || !actionStepIds.has(formWorkflowStepId)
     })
 
