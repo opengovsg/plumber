@@ -86,17 +86,20 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
     return null
   }
 
+  let userId: string
   try {
-    const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
+    const payload = jwt.verify(token, appConfig.sessionSecretKey) as {
       userId: string
     }
+    userId = payload.userId
     if (await isAuthCookieRevoked(token)) {
       return null
     }
-    return User.query().findById(userId)
   } catch {
     return null
   }
+
+  return (await User.query().findById(userId)) ?? null
 }
 
 async function isAuthCookieRevoked(token: string): Promise<boolean> {
@@ -230,7 +233,7 @@ export async function sendOnboardingEmail(user: User) {
   } catch (error) {
     logger.error({
       event: 'onboarding-email-error',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     })
   }
 }

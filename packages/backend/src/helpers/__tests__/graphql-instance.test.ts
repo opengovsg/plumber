@@ -17,7 +17,7 @@ describe('GraphQL instance', () => {
         query: `query TwoHealthChecks { h1: healthcheck { version } h2: healthcheck { version } }`,
       })
       assert(result.body.kind === 'single')
-      expect(result.body.singleResult.errors[0]).toHaveProperty(
+      expect(result.body.singleResult.errors![0]).toHaveProperty(
         'code',
         'BAD_USER_INPUT',
       )
