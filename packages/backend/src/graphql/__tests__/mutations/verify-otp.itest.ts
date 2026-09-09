@@ -40,7 +40,7 @@ describe('verifyOtp', () => {
   it('should throw error when is not gov.sg email', async () => {
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: '123456', email: 'test@example.com' } },
         context,
       ),
@@ -50,7 +50,7 @@ describe('verifyOtp', () => {
   it('should throw error when no otp provided', async () => {
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: '', email: context.currentUser.email } },
         context,
       ),
@@ -60,7 +60,7 @@ describe('verifyOtp', () => {
   it('should throw error when no user found', async () => {
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: '123456', email: 'non-existent-user@open.gov.sg' } },
         context,
       ),
@@ -73,7 +73,7 @@ describe('verifyOtp', () => {
       .where({ email: context.currentUser.email })
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: '123456', email: context.currentUser.email } },
         context,
       ),
@@ -86,7 +86,7 @@ describe('verifyOtp', () => {
       .where({ email: context.currentUser.email })
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: '123456', email: context.currentUser.email } },
         context,
       ),
@@ -102,7 +102,7 @@ describe('verifyOtp', () => {
       .where({ email: context.currentUser.email })
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: '123456', email: context.currentUser.email } },
         context,
       ),
@@ -122,7 +122,7 @@ describe('verifyOtp', () => {
 
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: 'incorrect-otp', email: context.currentUser.email } },
         context,
       ),
@@ -141,7 +141,7 @@ describe('verifyOtp', () => {
 
     await expect(
       verifyOtp(
-        null,
+        {},
         { input: { otp: 'invalid-otp', email: context.currentUser.email } },
         context,
       ),
@@ -162,7 +162,7 @@ describe('verifyOtp', () => {
       .where({ email: context.currentUser.email })
 
     await verifyOtp(
-      null,
+      {},
       { input: { otp: TEST_OTP, email: context.currentUser.email } },
       context,
     )

@@ -86,7 +86,7 @@ describe.each([['ddb'], ['pg']])(
       const newData = generateMockTableRowData({ columnIds: dummyColumnIds })
 
       const updatedId = await updateRow(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -141,7 +141,7 @@ describe.each([['ddb'], ['pg']])(
         columnIds: dummyColumnIds.slice(2),
       })
       const updatedId = await updateRow(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -178,7 +178,7 @@ describe.each([['ddb'], ['pg']])(
       })
       await expect(
         updateRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -194,7 +194,7 @@ describe.each([['ddb'], ['pg']])(
     it('should throw an error if row id is not found', async () => {
       await expect(
         updateRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -216,7 +216,7 @@ describe.each([['ddb'], ['pg']])(
 
       await expect(
         updateRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -241,7 +241,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         updateRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -257,7 +257,7 @@ describe.each([['ddb'], ['pg']])(
 
       await expect(
         updateRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
