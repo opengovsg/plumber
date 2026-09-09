@@ -6,7 +6,7 @@ import globalVariable from '@/helpers/global-variable'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const dynamicAction: MutationResolvers['dynamicAction'] = async (
+const dynamicAction: NonNullable<MutationResolvers['dynamicAction']> = async (
   _parent,
   params,
   context,

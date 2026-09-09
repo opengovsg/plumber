@@ -2,7 +2,7 @@ import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteFlow: MutationResolvers['deleteFlow'] = async (
+const deleteFlow: NonNullable<MutationResolvers['deleteFlow']> = async (
   _parent,
   params,
   context,

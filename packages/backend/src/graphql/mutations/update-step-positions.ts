@@ -12,11 +12,9 @@ import Step from '@/models/step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateStepPositions: NonNullable<
+  MutationResolvers['updateStepPositions']
+> = async (_parent, params, context) => {
   const { input } = params
   const { stepPositions } = input
 

@@ -2,11 +2,9 @@ import { getTestExecutionSteps as getTestExecutionStepsHelper } from '@/helpers/
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const getTestExecutionSteps: NonNullable<
+  QueryResolvers['getTestExecutionSteps']
+> = async (_parent, params, context) => {
   const { flowId } = params
   // For checking if user is a collaborator
   const flow = await context.currentUser

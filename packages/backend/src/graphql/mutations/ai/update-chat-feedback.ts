@@ -4,11 +4,9 @@ import logger from '@/helpers/logger'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
 
-const updateChatFeedback: MutationResolvers['updateChatFeedback'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateChatFeedback: NonNullable<
+  MutationResolvers['updateChatFeedback']
+> = async (_parent, params, context) => {
   const { traceId, feedback, score } = params.input
 
   try {

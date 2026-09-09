@@ -6,11 +6,9 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 // Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive Data
 // Scanner
 
-const updateConnection: MutationResolvers['updateConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateConnection: NonNullable<
+  MutationResolvers['updateConnection']
+> = async (_parent, params, context) => {
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findById(params.input.flowId)

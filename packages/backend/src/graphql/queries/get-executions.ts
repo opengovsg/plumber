@@ -14,7 +14,7 @@ import type { QueryResolvers } from '../__generated__/types.generated'
 // rather than hiding data the archival job will never remove.
 const EXECUTION_HISTORY_WINDOW = { months: 3 }
 
-const getExecutions: QueryResolvers['getExecutions'] = async (
+const getExecutions: NonNullable<QueryResolvers['getExecutions']> = async (
   _parent,
   params,
   context,

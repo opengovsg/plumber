@@ -2,7 +2,7 @@ import TableCollaborator from '@/models/table-collaborators'
 
 import type { AdminQueryResolvers } from '../../__generated__/types.generated'
 
-const getTableOwner: AdminQueryResolvers['getTableOwner'] = async (
+const getTableOwner: NonNullable<AdminQueryResolvers['getTableOwner']> = async (
   _parent,
   params,
   _context,

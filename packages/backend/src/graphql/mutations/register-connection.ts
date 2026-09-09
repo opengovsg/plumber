@@ -42,11 +42,9 @@ async function makeGlobalVariableForPerFlowRegistration(
   })
 }
 
-const registerConnection: MutationResolvers['registerConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const registerConnection: NonNullable<
+  MutationResolvers['registerConnection']
+> = async (_parent, params, context) => {
   const { connectionId, flowId } = params.input
 
   const flow = await context.currentUser

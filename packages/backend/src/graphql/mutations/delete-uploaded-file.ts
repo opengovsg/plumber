@@ -9,11 +9,9 @@ import Step from '@/models/step'
 
 import { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const deleteUploadedFile: NonNullable<
+  MutationResolvers['deleteUploadedFile']
+> = async (_parent, params, context) => {
   const { id, flowUpdatedAt } = params
   if (!validateManualUploadId(id)) {
     throw new Error('Invalid id')

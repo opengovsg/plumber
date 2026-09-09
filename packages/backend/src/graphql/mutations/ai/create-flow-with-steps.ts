@@ -12,11 +12,9 @@ import { MutationResolvers } from '../../__generated__/types.generated'
 import { getActionStepsSchema } from './schemas/action-steps-schema'
 import { generateSchema } from './schemas/schema-generator'
 
-const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const createFlowWithSteps: NonNullable<
+  MutationResolvers['createFlowWithSteps']
+> = async (_parent, params, context) => {
   const {
     input: { steps, flowName, aiBuilderConfig },
   } = params

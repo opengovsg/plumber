@@ -4,9 +4,9 @@ import type { Resolvers } from '../__generated__/types.generated'
 
 type ExecutionStepResolver = Resolvers['ExecutionStep']
 
-const dataOutMetadata: ExecutionStepResolver['dataOutMetadata'] = async (
-  parent,
-) => {
+const dataOutMetadata: NonNullable<
+  ExecutionStepResolver['dataOutMetadata']
+> = async (parent) => {
   const {
     appKey,
     key: stepKey,

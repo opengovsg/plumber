@@ -8,11 +8,9 @@ import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const generateAuthUrl: MutationResolvers['generateAuthUrl'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const generateAuthUrl: NonNullable<
+  MutationResolvers['generateAuthUrl']
+> = async (_parent, params, context) => {
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findById(params.input.flowId)

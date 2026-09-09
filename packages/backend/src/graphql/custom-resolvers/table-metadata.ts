@@ -4,11 +4,15 @@ import type { Resolvers } from '../__generated__/types.generated'
 
 type TableMetadataResolver = Resolvers['TableMetadata']
 
-const databaseType: TableMetadataResolver['databaseType'] = async (parent) => {
+const databaseType: NonNullable<TableMetadataResolver['databaseType']> = async (
+  parent,
+) => {
   return parent.db
 }
 
-const columns: TableMetadataResolver['columns'] = async (parent) => {
+const columns: NonNullable<TableMetadataResolver['columns']> = async (
+  parent,
+) => {
   const columns = await parent
     .$relatedQuery('columns')
     .orderBy('position', 'asc')
@@ -16,9 +20,9 @@ const columns: TableMetadataResolver['columns'] = async (parent) => {
   return columns
 }
 
-const collaborators: TableMetadataResolver['collaborators'] = async (
-  parent,
-) => {
+const collaborators: NonNullable<
+  TableMetadataResolver['collaborators']
+> = async (parent) => {
   const collaborators = await parent
     .$relatedQuery('collaborators')
     .select('email', 'role')

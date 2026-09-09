@@ -5,23 +5,22 @@ import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const createShareableTableLink: MutationResolvers['createShareableTableLink'] =
-  async (_parent, params, context) => {
-    const tableId = params.tableId
+const createShareableTableLink: NonNullable<
+  MutationResolvers['createShareableTableLink']
+> = async (_parent, params, context) => {
+  const tableId = params.tableId
 
-    await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
+  await TableCollaborator.hasAccess(context.currentUser.id, tableId, 'editor')
 
-    const table = await TableMetadata.query()
-      .findById(tableId)
-      .throwIfNotFound()
+  const table = await TableMetadata.query().findById(tableId).throwIfNotFound()
 
-    const newViewOnlyKey = randomUUID()
+  const newViewOnlyKey = randomUUID()
 
-    await table.$query().patch({
-      viewOnlyKey: newViewOnlyKey,
-    })
+  await table.$query().patch({
+    viewOnlyKey: newViewOnlyKey,
+  })
 
-    return newViewOnlyKey
-  }
+  return newViewOnlyKey
+}
 
 export default createShareableTableLink

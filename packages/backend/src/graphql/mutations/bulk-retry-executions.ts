@@ -47,11 +47,9 @@ async function getAllFailedExecutionSteps(
     .select('id', 'execution_id', 'status', 'job_id')
 }
 
-const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const bulkRetryExecutions: NonNullable<
+  MutationResolvers['bulkRetryExecutions']
+> = async (_parent, params, context) => {
   let latestFailedExecutionSteps = await getAllFailedExecutionSteps(
     context.currentUser.email === appConfig.adminUserEmail
       ? Execution.query()

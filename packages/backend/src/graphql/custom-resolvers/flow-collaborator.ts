@@ -2,7 +2,9 @@ import type { Resolvers } from '../__generated__/types.generated'
 
 type FlowCollaboratorResolver = Resolvers['FlowCollaborator']
 
-const email: FlowCollaboratorResolver['email'] = async (parent) => {
+const email: NonNullable<FlowCollaboratorResolver['email']> = async (
+  parent,
+) => {
   // user is eagerly loaded in queries, we should use the loaded relation first
   if (parent?.user?.email) {
     return parent?.user?.email

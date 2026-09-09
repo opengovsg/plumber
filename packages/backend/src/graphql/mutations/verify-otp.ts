@@ -11,7 +11,7 @@ const MAX_OTP_ATTEMPTS = 5
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
-const verifyOtp: MutationResolvers['verifyOtp'] = async (
+const verifyOtp: NonNullable<MutationResolvers['verifyOtp']> = async (
   _parent,
   params,
   context,

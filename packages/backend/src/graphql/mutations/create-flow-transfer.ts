@@ -5,11 +5,9 @@ import User from '@/models/user'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createFlowTransfer: MutationResolvers['createFlowTransfer'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const createFlowTransfer: NonNullable<
+  MutationResolvers['createFlowTransfer']
+> = async (_parent, params, context) => {
   const { flowId, newOwnerEmail } = params.input
 
   // check if flow belongs to the old owner first

@@ -47,7 +47,11 @@ const getSharedConnections = async (
   }
 }
 
-const getApp: QueryResolvers['getApp'] = async (_parent, params, context) => {
+const getApp: NonNullable<QueryResolvers['getApp']> = async (
+  _parent,
+  params,
+  context,
+) => {
   const { flowId, key } = params
   const app = await App.findOneByKey(key)
 

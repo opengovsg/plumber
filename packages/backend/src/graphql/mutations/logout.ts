@@ -2,7 +2,7 @@ import { deleteAuthCookie, getParsedAuthCookie } from '@/helpers/auth'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const logout: MutationResolvers['logout'] = async (
+const logout: NonNullable<MutationResolvers['logout']> = async (
   _parent,
   _params,
   context,
