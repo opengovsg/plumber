@@ -50,6 +50,18 @@ explicitly, e.g. `nvm use && npm run -w backend lint`.
 - `npm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
 - `npm run teardown` — tears the Docker services back down when the human is done.
 
+**Secrets:** there is no `packages/backend/.env`. Never create or read one. Never run
+`npm run dev` or `npm run setup` either. Both fetch secrets from 1Password behind a
+biometric prompt that an agent cannot answer.
+
+- `npm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
+  `.env-example` placeholders.
+- **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
+  Those calls fail with third-party authentication errors. That is expected, not a bug to
+  fix.
+- `lint`, `typecheck`, `test:unit`, `test:integration` and `migrate` need nothing. They
+  already read `.env-example`.
+
 **Testing:**
 
 - `npm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
