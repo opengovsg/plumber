@@ -132,7 +132,7 @@ export interface IExecutionStep {
   stepId: IStep['id']
   step: IStep
   dataIn: IJSONObject
-  dataOut: IJSONObject
+  dataOut: IJSONObject | null
   errorDetails?: IJSONObject | null
   status: 'success' | 'failure'
   appKey?: string | null

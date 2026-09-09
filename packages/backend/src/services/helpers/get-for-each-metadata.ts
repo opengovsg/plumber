@@ -11,7 +11,7 @@ export default function getForEachMetadata({
 }: {
   forEachContext: ForEachContext
   metadata: NextStepMetadata
-  dataOut: IJSONObject
+  dataOut: IJSONObject | null
   runResult: IActionRunResult
 }) {
   const { forEachStepPosition, isForEachStep } = forEachContext

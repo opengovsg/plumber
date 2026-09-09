@@ -66,7 +66,7 @@ async function enqueueFirstForEachStep({
   const results = await Promise.allSettled(
     Array.from({ length: iterations }, (_, i) =>
       enqueueActionJob({
-        appKey: firstStepInForEach.appKey,
+        appKey: firstStepInForEach.appKey ?? null,
         actionKey: firstStepInForEach.key,
         jobName: `${executionId}-${firstStepInForEach.id}-${i + 1}`,
         jobData: {
@@ -204,9 +204,14 @@ export async function prepareActionExecution(
     metadata.isLastStep = true
   }
 
+  const app = await step.getApp()
+  if (!app) {
+    throw new Error(`App not found for step: ${step.id}`)
+  }
+
   const $ = await globalVariable({
     flow,
-    app: await step.getApp(),
+    app,
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
@@ -234,6 +239,12 @@ export async function prepareActionExecution(
     })
 
   const actionCommand = await step.getActionCommand()
+  if (!actionCommand) {
+    throw new Error(`Action command not found for step: ${step.id}`)
+  }
+  if (!actionCommand.run) {
+    throw new Error(`Action command has no run() for step: ${step.id}`)
+  }
   const forEachContext: ForEachContext = {
     executionStepMetadata: metadata,
     forEachStepPosition,

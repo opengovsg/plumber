@@ -15,7 +15,7 @@ import TableMetadata from '@/models/table-metadata'
  * collaborator(s) to have access to all the files in the owner's Plumber SharePoint folder.
  */
 export const APP_CONNECTION_FIELDS: Record<
-  IStep['appKey'],
+  NonNullable<IStep['appKey']>,
   {
     parameterKey?: string
     dynamicDataKey?: string
@@ -81,12 +81,16 @@ export async function getConnectionDetails(steps: IStep[]): Promise<{
 
   // Single pass: build connections object and collect connection/table IDs
   steps.forEach((step) => {
+    if (!step.appKey) {
+      return
+    }
+
     if (step.connectionId && appKeysWithConnections.includes(step.appKey)) {
       connectionIdsFromSteps.add(step.connectionId)
       connections.connection[step.connectionId] ??= {}
 
       const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey
-      const paramValue = step.parameters[paramKey] as string
+      const paramValue = step.parameters[paramKey ?? ''] as string
 
       // only some apps need the metadata, so we only add it if the app has a parameter key
       if (paramKey) {
@@ -110,7 +114,7 @@ export async function getConnectionDetails(steps: IStep[]): Promise<{
      */
     if (step.appKey === 'tiles') {
       const paramKey = APP_CONNECTION_FIELDS[step.appKey]?.parameterKey
-      const paramValue = step.parameters[paramKey] as string
+      const paramValue = step.parameters[paramKey ?? ''] as string
 
       if (paramValue) {
         tableIdsFromSteps.add(paramValue)
