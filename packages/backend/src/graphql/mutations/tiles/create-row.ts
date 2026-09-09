@@ -4,7 +4,7 @@ import { getTableOperations } from '@/models/tiles/factory'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
-const createRow: MutationResolvers['createRow'] = async (
+const createRow: NonNullable<MutationResolvers['createRow']> = async (
   _parent,
   params,
   context,

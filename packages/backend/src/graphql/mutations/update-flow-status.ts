@@ -3,11 +3,9 @@ import { updateFlowStatusService } from '@/services/flow/update-flow-status'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateFlowStatus: NonNullable<
+  MutationResolvers['updateFlowStatus']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')
