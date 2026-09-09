@@ -33,9 +33,9 @@ describe('processSesEvent', () => {
     const row = await EmailSuppressionEntry.query().findOne({
       email: 'bounce@example.com',
     })
-    expect(row.reason).toBe('BOUNCE')
-    expect(row.reasonDetail).toBe('NoEmail')
-    expect(row.sesMessageId).toBe('ses-msg-001')
+    expect(row!.reason).toBe('BOUNCE')
+    expect(row!.reasonDetail).toBe('NoEmail')
+    expect(row!.sesMessageId).toBe('ses-msg-001')
   })
 
   it('should NOT suppress email on transient bounce', async () => {
@@ -58,8 +58,8 @@ describe('processSesEvent', () => {
     const row = await EmailSuppressionEntry.query().findOne({
       email: 'complainer@example.com',
     })
-    expect(row.reason).toBe('COMPLAINT')
-    expect(row.reasonDetail).toBe('abuse')
+    expect(row!.reason).toBe('COMPLAINT')
+    expect(row!.reasonDetail).toBe('abuse')
   })
 
   it('should auto-whitelist on not-spam complaint', async () => {
@@ -81,7 +81,7 @@ describe('processSesEvent', () => {
     const row = await EmailSuppressionEntry.query().findOne({
       email: 'notspam@example.com',
     })
-    expect(row.lastWhitelistedAt).not.toBeNull()
+    expect(row!.lastWhitelistedAt).not.toBeNull()
   })
 
   it('should handle not-spam complaint for non-suppressed email gracefully', async () => {

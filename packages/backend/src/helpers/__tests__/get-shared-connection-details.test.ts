@@ -54,7 +54,7 @@ describe('getConnectionDetails', () => {
     flowId: 'flow-1',
     appKey: 'slack',
     type: 'action',
-    connectionId: null,
+    connectionId: undefined,
     status: 'completed',
     position: 1,
     parameters: {},
@@ -220,7 +220,7 @@ describe('getConnectionDetails', () => {
       }),
       createMockStep({
         appKey: 'custom-api',
-        connectionId: null,
+        connectionId: undefined,
         parameters: { channel: 'random' },
       }),
     ]
@@ -238,7 +238,7 @@ describe('getConnectionDetails', () => {
       createMockStep({
         appKey: 'slack',
         connectionId: 'slack-connection-id',
-        parameters: { channel: undefined },
+        parameters: { channel: null },
       }),
       createMockStep({
         appKey: 'slack',
@@ -298,17 +298,17 @@ describe('getConnectionDetails', () => {
       const steps: IStep[] = [
         createMockStep({
           appKey: 'tiles',
-          connectionId: null,
+          connectionId: undefined,
           parameters: { tableId: 'table-123' },
         }),
         createMockStep({
           appKey: 'tiles',
-          connectionId: null,
+          connectionId: undefined,
           parameters: { tableId: 'table-123' }, // duplicate
         }),
         createMockStep({
           appKey: 'tiles',
-          connectionId: null,
+          connectionId: undefined,
           parameters: { tableId: 'table-456' },
         }),
       ]
