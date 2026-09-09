@@ -69,7 +69,7 @@ describe('delete flow collaborators', () => {
 
   it('should be able to delete collaborators', async () => {
     await deleteFlowCollaborator(
-      null,
+      {},
       { input: { flowId: dummyFlow.id, email: viewer.email } },
       context,
     )
@@ -87,7 +87,7 @@ describe('delete flow collaborators', () => {
   it('should throw an error if collaborator is not found', async () => {
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         { input: { flowId: dummyFlow.id, email: 'viewer332@plumber.gov.sg' } },
         context,
       ),
@@ -97,7 +97,7 @@ describe('delete flow collaborators', () => {
   it('should allow an editor to leave the pipe', async () => {
     context.currentUser = editor
     await deleteFlowCollaborator(
-      null,
+      {},
       { input: { flowId: dummyFlow.id, email: editor.email } },
       context,
     )
@@ -115,7 +115,7 @@ describe('delete flow collaborators', () => {
   it('should allow a viewer to leave the pipe', async () => {
     context.currentUser = viewer
     await deleteFlowCollaborator(
-      null,
+      {},
       { input: { flowId: dummyFlow.id, email: viewer.email } },
       context,
     )
@@ -133,7 +133,7 @@ describe('delete flow collaborators', () => {
   it('should throw an error when the owner tries to leave', async () => {
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         { input: { flowId: dummyFlow.id, email: owner.email } },
         context,
       ),
@@ -150,7 +150,7 @@ describe('delete flow collaborators', () => {
 
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         { input: { flowId: randomUUID(), email: nonCollaborator.email } },
         context,
       ),
@@ -158,7 +158,7 @@ describe('delete flow collaborators', () => {
 
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         { input: { flowId: otherOwnerFlow.id, email: nonCollaborator.email } },
         context,
       ),
@@ -169,7 +169,7 @@ describe('delete flow collaborators', () => {
     context.currentUser = editor
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         { input: { flowId: dummyFlow.id, email: owner.email } },
         context,
       ),
@@ -179,7 +179,7 @@ describe('delete flow collaborators', () => {
   it('should throw an error if user is not a collaborator', async () => {
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         {
           input: {
             flowId: dummyFlow.id,
@@ -195,7 +195,7 @@ describe('delete flow collaborators', () => {
     context.currentUser = viewer
     await expect(
       deleteFlowCollaborator(
-        null,
+        {},
         { input: { flowId: dummyFlow.id, email: editor.email } },
         context,
       ),

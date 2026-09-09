@@ -79,7 +79,7 @@ describe('duplicateBranch endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: member.id } })
 
     const result = await duplicateBranch(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -119,7 +119,7 @@ describe('duplicateBranch endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: ifThen.id } })
 
     const result = await duplicateBranch(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),
@@ -146,7 +146,7 @@ describe('duplicateBranch endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: tail.id } })
 
     const result = await duplicateBranch(
-      null,
+      {},
       {
         input: {
           flow: flowInput(),

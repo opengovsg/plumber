@@ -169,7 +169,7 @@ describe('updateStepPositions mutation', () => {
       },
     }
 
-    await updateStepPositions(null, { input }, context)
+    await updateStepPositions({}, { input }, context)
 
     // should call and update the step positions
     expect(stepFindByIdSpy).toHaveBeenCalledTimes(3)
@@ -201,7 +201,7 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Step not found',
     )
   })
@@ -222,10 +222,10 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: must update contiguous action steps!',
     )
   })
@@ -246,10 +246,10 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: must update contiguous action steps!',
     )
   })
@@ -273,10 +273,10 @@ describe('updateStepPositions mutation', () => {
       },
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: step positions are out of bounds.',
     )
   })
@@ -307,10 +307,10 @@ describe('updateStepPositions mutation', () => {
       ],
     } as any
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Pipe is active. Cannot update step in active pipe!',
     )
   })
@@ -338,10 +338,10 @@ describe('updateStepPositions mutation', () => {
       },
     }
 
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
-    await expect(updateStepPositions(null, { input }, context)).rejects.toThrow(
+    await expect(updateStepPositions({}, { input }, context)).rejects.toThrow(
       'Failed to update: steps were not found',
     )
   })
@@ -422,7 +422,7 @@ describe('updateStepPositions endStepId repair', () => {
 
     // Reorder the block interior [s3, s4, s5] -> [s5, s3, s4].
     await updateStepPositions(
-      null,
+      {},
       {
         input: {
           stepPositions: [
@@ -452,7 +452,7 @@ describe('updateStepPositions endStepId repair', () => {
 
     // Reorder two later steps that sit outside the block.
     await updateStepPositions(
-      null,
+      {},
       {
         input: {
           stepPositions: [
@@ -478,7 +478,7 @@ describe('updateStepPositions endStepId repair', () => {
     ])
 
     await updateStepPositions(
-      null,
+      {},
       {
         input: {
           stepPositions: [
@@ -532,7 +532,7 @@ describe('updateStepPositions endStepId repair', () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
 
       await updateStepPositions(
-        null,
+        {},
         { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
         context,
       )
@@ -549,7 +549,7 @@ describe('updateStepPositions endStepId repair', () => {
       mocks.getLdFlagValue.mockResolvedValue(false)
 
       await updateStepPositions(
-        null,
+        {},
         { input: swapBlocksInput(ifThenB, childB, ifThenA, childA) },
         context,
       )

@@ -45,7 +45,7 @@ describe.each([['ddb'], ['pg']])(
     })
     it('should return table metadata with ordered columns', async () => {
       const table = await getTable(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -62,7 +62,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should return table metadata with role', async () => {
       const table = await getTable(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },
@@ -77,7 +77,7 @@ describe.each([['ddb'], ['pg']])(
         databaseType,
       })
       const table = await getTable(
-        null,
+        {},
         {
           tableId: insertedTable.id,
         },
@@ -90,7 +90,7 @@ describe.each([['ddb'], ['pg']])(
     it('should throw an error if table does not exist', async () => {
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: randomUUID(),
           },
@@ -107,7 +107,7 @@ describe.each([['ddb'], ['pg']])(
         .andWhere('user_id', editor.id)
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -120,7 +120,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -131,7 +131,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = viewer
       await expect(
         getTable(
-          null,
+          {},
           {
             tableId: dummyTable.id,
           },
@@ -142,7 +142,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should return all collaborators ordered by roles', async () => {
       const table = await getTable(
-        null,
+        {},
         {
           tableId: dummyTable.id,
         },

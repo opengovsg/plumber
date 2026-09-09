@@ -44,7 +44,7 @@ describe('upsert flow collaborator', () => {
 
   it('owner should be able to add new editor', async () => {
     await upsertFlowCollaborator(
-      null,
+      {},
       { input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' } },
       context,
     )
@@ -59,7 +59,7 @@ describe('upsert flow collaborator', () => {
 
   it('owner should be able to add new viewer', async () => {
     await upsertFlowCollaborator(
-      null,
+      {},
       { input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' } },
       context,
     )
@@ -74,7 +74,7 @@ describe('upsert flow collaborator', () => {
 
   it('should be able to update roles', async () => {
     await upsertFlowCollaborator(
-      null,
+      {},
       { input: { flowId: dummyFlow.id, email: editor.email, role: 'viewer' } },
       context,
     )
@@ -91,7 +91,7 @@ describe('upsert flow collaborator', () => {
   it('should not allow editing role of owner', async () => {
     await expect(
       upsertFlowCollaborator(
-        null,
+        {},
         {
           input: {
             flowId: dummyFlow.id,
@@ -108,7 +108,7 @@ describe('upsert flow collaborator', () => {
     context.currentUser = editor
     await expect(
       upsertFlowCollaborator(
-        null,
+        {},
         {
           input: {
             flowId: dummyFlow.id,
@@ -125,7 +125,7 @@ describe('upsert flow collaborator', () => {
     context.currentUser = viewer
     await expect(
       upsertFlowCollaborator(
-        null,
+        {},
         {
           input: {
             flowId: dummyFlow.id,
@@ -187,7 +187,7 @@ describe('upsert flow collaborator', () => {
 
       // Add first collaborator - this should trigger connection sharing
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -230,7 +230,7 @@ describe('upsert flow collaborator', () => {
 
       // Add first collaborator - this should trigger connection sharing
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -239,7 +239,7 @@ describe('upsert flow collaborator', () => {
 
       // Add second collaborator - this should NOT trigger connection sharing again
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' },
         },
@@ -270,7 +270,7 @@ describe('upsert flow collaborator', () => {
 
       // Add collaborator - this should not fail even with no connections
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -313,7 +313,7 @@ describe('upsert flow collaborator', () => {
 
       // Add collaborator
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -344,7 +344,7 @@ describe('upsert flow collaborator', () => {
 
       // Add collaborator - this should not fail
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -375,7 +375,7 @@ describe('upsert flow collaborator', () => {
 
       // Step 2: Add first collaborator
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -416,7 +416,7 @@ describe('upsert flow collaborator', () => {
       // Step 6: Add a new collaborator - should not fail on duplicate connection
       await expect(
         upsertFlowCollaborator(
-          null,
+          {},
           {
             input: {
               flowId: dummyFlow.id,
@@ -500,7 +500,7 @@ describe('upsert flow collaborator', () => {
 
       // Add collaborator - this should trigger table collaborator sharing
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -542,7 +542,7 @@ describe('upsert flow collaborator', () => {
 
       // Add viewer collaborator
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: viewer.email, role: 'viewer' },
         },
@@ -572,7 +572,7 @@ describe('upsert flow collaborator', () => {
       })
 
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -609,7 +609,7 @@ describe('upsert flow collaborator', () => {
       ])
 
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -656,7 +656,7 @@ describe('upsert flow collaborator', () => {
 
       // Add first collaborator - this should trigger both connection and table sharing
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -710,7 +710,7 @@ describe('upsert flow collaborator', () => {
       })
 
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -749,7 +749,7 @@ describe('upsert flow collaborator', () => {
       context.currentUser = editor
       await expect(
         upsertFlowCollaborator(
-          null,
+          {},
           {
             input: {
               flowId: dummyFlow.id,
@@ -776,7 +776,7 @@ describe('upsert flow collaborator', () => {
 
       // add the editor as a collaborator of the Pipe first
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -793,7 +793,7 @@ describe('upsert flow collaborator', () => {
 
       // now we downgrade the Pipe collaborator from an Editor to a Viewer
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'viewer' },
         },
@@ -822,7 +822,7 @@ describe('upsert flow collaborator', () => {
 
       // add the editor as a collaborator of the Pipe first
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: { flowId: dummyFlow.id, email: editor.email, role: 'editor' },
         },
@@ -843,7 +843,7 @@ describe('upsert flow collaborator', () => {
         email: 'new-collaborator@plumber.gov.sg',
       })
       await upsertFlowCollaborator(
-        null,
+        {},
         {
           input: {
             flowId: dummyFlow.id,
@@ -918,7 +918,7 @@ describe('upsert flow collaborator', () => {
       // so the error should be silently ignored
       await expect(
         upsertFlowCollaborator(
-          null,
+          {},
           {
             input: {
               flowId: dummyFlow.id,
@@ -988,7 +988,7 @@ describe('upsert flow collaborator', () => {
       // Add old owner as viewer (even though they're Tile owner)
       await expect(
         upsertFlowCollaborator(
-          null,
+          {},
           {
             input: {
               flowId: dummyFlow.id,

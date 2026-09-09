@@ -102,7 +102,7 @@ describe('deleteFlowConnection', () => {
       })
 
       const result = await deleteFlowConnection(
-        null,
+        {},
         { input: defaultInput },
         context,
       )
@@ -120,7 +120,7 @@ describe('deleteFlowConnection', () => {
       })
 
       const result = await deleteFlowConnection(
-        null,
+        {},
         { input: defaultInput },
         context,
       )
@@ -132,7 +132,7 @@ describe('deleteFlowConnection', () => {
       context.currentUser = viewer
 
       await expect(
-        deleteFlowConnection(null, { input: defaultInput }, context),
+        deleteFlowConnection({}, { input: defaultInput }, context),
       ).rejects.toThrow('You do not have access to this flow')
     })
 
@@ -140,7 +140,7 @@ describe('deleteFlowConnection', () => {
       context.currentUser = nonCollaborator
 
       await expect(
-        deleteFlowConnection(null, { input: defaultInput }, context),
+        deleteFlowConnection({}, { input: defaultInput }, context),
       ).rejects.toThrow('You do not have access to this flow')
     })
   })
@@ -189,7 +189,7 @@ describe('deleteFlowConnection', () => {
       })
 
       await expect(
-        deleteFlowConnection(null, { input: defaultInput }, context),
+        deleteFlowConnection({}, { input: defaultInput }, context),
       ).rejects.toThrow('Connection is in use and cannot be deleted.')
 
       // Check flow connection is not deleted
@@ -238,7 +238,7 @@ describe('deleteFlowConnection', () => {
         addedBy: owner.id,
       })
 
-      await deleteFlowConnection(null, { input: defaultInput }, context)
+      await deleteFlowConnection({}, { input: defaultInput }, context)
 
       // Check flow connection is deleted
       const flowConnection = await FlowConnections.query().findOne({
@@ -292,7 +292,7 @@ describe('deleteFlowConnection', () => {
         addedBy: owner.id,
       })
 
-      await deleteFlowConnection(null, { input: defaultInput }, context)
+      await deleteFlowConnection({}, { input: defaultInput }, context)
 
       // Check other flow's step is NOT affected
       const unchangedStep = await Step.query().findById(otherStep.id)
@@ -329,7 +329,7 @@ describe('deleteFlowConnection', () => {
 
       await expect(
         deleteFlowConnection(
-          null,
+          {},
           {
             input: {
               flowId: testFlow.id,
@@ -377,7 +377,7 @@ describe('deleteFlowConnection', () => {
       })
 
       await deleteFlowConnection(
-        null,
+        {},
         {
           input: {
             flowId: testFlow.id,

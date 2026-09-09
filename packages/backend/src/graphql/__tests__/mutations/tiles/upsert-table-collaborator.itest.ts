@@ -42,7 +42,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should be able to add new viewers', async () => {
       await upsertTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -64,7 +64,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should be able to add new editors', async () => {
       await upsertTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -86,7 +86,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should be able to update roles', async () => {
       await upsertTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -110,7 +110,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         upsertTableCollaborator(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -127,7 +127,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         upsertTableCollaborator(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -143,7 +143,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         upsertTableCollaborator(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -160,7 +160,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = viewer
       await expect(
         upsertTableCollaborator(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -178,7 +178,7 @@ describe.each([['ddb'], ['pg']])(
         context.currentUser = editor
         await expect(
           upsertTableCollaborator(
-            null,
+            {},
             {
               input: {
                 tableId: dummyTable.id,
@@ -194,7 +194,7 @@ describe.each([['ddb'], ['pg']])(
       it('should allow transfer of owner role if you are owner, old owner will become editor', async () => {
         await expect(
           upsertTableCollaborator(
-            null,
+            {},
             {
               input: {
                 tableId: dummyTable.id,
@@ -219,7 +219,7 @@ describe.each([['ddb'], ['pg']])(
       it('should not allow transfer of ownership to non-existent user', async () => {
         await expect(
           upsertTableCollaborator(
-            null,
+            {},
             {
               input: {
                 tableId: dummyTable.id,
