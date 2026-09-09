@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { z } from 'zod/v4'
 
 import { listConnectionsService } from '@/services/mcp/list-connections'
-import type { AuthenticatedRequest } from '@/types/express/context'
+
+import { getAuthenticatedContext } from './middleware/authentication'
 
 const router = Router()
 
@@ -10,8 +11,8 @@ const querySchema = z.object({
   appKey: z.string().min(1),
 })
 
-router.get('/', async (req: AuthenticatedRequest, res) => {
-  const user = req.context.currentUser
+router.get('/', async (req, res) => {
+  const user = getAuthenticatedContext(req).currentUser
 
   const parsed = querySchema.safeParse(req.query)
   if (!parsed.success) {

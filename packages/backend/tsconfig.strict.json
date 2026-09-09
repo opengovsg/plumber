@@ -454,6 +454,26 @@
     "src/helpers/__tests__/html-utils.test.ts",
     "src/helpers/__tests__/graphql-instance.test.ts",
     "src/helpers/__tests__/get-test-execution-steps.itest.ts",
-    "src/helpers/__tests__/authentication.test.ts"
+    "src/helpers/__tests__/authentication.test.ts",
+    "src/types/express.d.ts",
+    "src/types/express/context.ts",
+    "src/workers/helpers/make-sub-trigger-worker.ts",
+    "src/workers/trigger.ts",
+    "src/workers/helpers/worker-event-handlers.ts",
+    "src/workers/helpers/make-action-worker.ts",
+    "src/workers/flow.ts",
+    "src/controllers/webhooks/handler.ts",
+    "src/routes/api/chat/index.ts",
+    "src/routes/api/middleware/authentication.ts",
+    "src/routes/api/dynamic-data.ts",
+    "src/routes/api/connections.ts",
+    "src/queues/__tests__/helpers.get-generic-app-queue.test.ts",
+    "src/routes/api/chat/index.test.ts",
+    "src/workers/__tests__/action.itest.ts",
+    "src/workers/__tests__/action.enqueue-jobs.itest.ts",
+    "src/workers/__tests__/trigger.itest.ts",
+    "src/workers/__tests__/helpers.for-each-status-manager.test.ts",
+    "src/workers/__tests__/flow.itest.ts",
+    "src/routes/api/dynamic-data.test.ts"
   ]
 }

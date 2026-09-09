@@ -132,7 +132,9 @@ export default async (request: IRequest, response: Response) => {
 
     const verifyResult = await triggerApp.auth.verifyWebhook($)
 
-    if (!verifyResult.verified) {
+    // Implementations only return a null internalId alongside verified: false,
+    // so an unidentifiable payload belongs on the same 401 path.
+    if (!verifyResult.verified || !verifyResult.internalId) {
       return response.sendStatus(401)
     }
     internalId = verifyResult.internalId
@@ -226,7 +228,19 @@ export default async (request: IRequest, response: Response) => {
     return sendWebhookResponse(response, customWebhookResponse)
   }
 
+  // processTrigger returns a null executionId only on the early-return paths
+  // that also set shouldExecute to false, which is handled above.
+  if (!executionId) {
+    throw new Error(`Execution not created for flow ${flowId}`)
+  }
+
   const nextStep = await triggerStep.getNextStep()
+
+  // A flow cannot be published without an action after its trigger.
+  if (!nextStep) {
+    throw new Error(`Trigger step ${triggerStep.id} has no next step`)
+  }
+
   const jobName = `${executionId}-${nextStep.id}`
 
   const jobData = {
