@@ -1,11 +1,8 @@
 {
   "name": "plumber",
-  "version": "1.81.0",
   "license": "AGPL-3.0",
-  "workspaces": {
-    "packages": [
-      "packages/*"
-    ]
+  "engines": {
+    "npm": ">=11.10.0"
   },
   "packageManager": "npm@11.19.0",
   "scripts": {
@@ -23,6 +20,37 @@
     "test:ui": "vitest --ui",
     "migrate": "npm run -w backend db:migrate",
     "teardown": "npm run -w backend teardown"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "overrides": {
+    "axios": "1.18.1",
+    "graphql-rate-limit": {
+      "@graphql-tools/utils": {
+        "graphql": "16.11.0"
+      }
+    },
+    "qs": "6.15.0",
+    "glob": "13.0.6",
+    "minimatch": "10.2.3",
+    "rollup": "4.59.0",
+    "dd-trace": {
+      "@opentelemetry/core": "2.8.0",
+      "path-to-regexp": "0.1.13"
+    },
+    "@opentelemetry/core": {
+      "@opentelemetry/semantic-conventions": "1.37.0"
+    },
+    "lodash": "4.18.1",
+    "lodash-es": "4.18.1",
+    "vite": "6.4.3",
+    "immutable": "4.3.9",
+    "picomatch": "4.0.4",
+    "shell-quote": "1.9.0",
+    "form-data": "4.0.6"
   },
   "devDependencies": {
     "@eddeee888/gcg-typescript-resolver-files": "0.7.2",
