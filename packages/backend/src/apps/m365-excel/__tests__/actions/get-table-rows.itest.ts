@@ -131,7 +131,7 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
 
-    await expect(getTableRowsAction.run($)).rejects.toThrow(StepError)
+    await expect(getTableRowsAction.run!($)).rejects.toThrow(StepError)
   })
 
   it('should return foundRows: 0 when no matching rows are found', async () => {
@@ -141,7 +141,7 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
 
-    await getTableRowsAction.run($)
+    await getTableRowsAction.run!($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -156,7 +156,7 @@ describe('getTableRowsAction', () => {
   })
 
   it('should return matching rows when found', async () => {
-    await getTableRowsAction.run($)
+    await getTableRowsAction.run!($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -213,7 +213,7 @@ describe('getTableRowsAction', () => {
       $.step.parameters,
       $.step.version,
     )
-    await getTableRowsAction.run($)
+    await getTableRowsAction.run!($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
@@ -261,10 +261,10 @@ describe('getTableRowsAction', () => {
 
   it('should handle invalid parameters', async () => {
     $.step.parameters.fileId = ''
-    await expect(getTableRowsAction.run($)).rejects.toThrow(StepError)
+    await expect(getTableRowsAction.run!($)).rejects.toThrow(StepError)
 
     $.step.parameters.tableId = '!!!'
-    await expect(getTableRowsAction.run($)).rejects.toThrow(StepError)
+    await expect(getTableRowsAction.run!($)).rejects.toThrow(StepError)
   })
 
   it('should handle case-sensitive matching', async () => {
@@ -276,7 +276,7 @@ describe('getTableRowsAction', () => {
       $.step.version,
     )
 
-    await getTableRowsAction.run($)
+    await getTableRowsAction.run!($)
 
     // Should not find any matches due to case sensitivity
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -315,7 +315,7 @@ describe('getTableRowsAction', () => {
       $.step.version,
     )
 
-    await getTableRowsAction.run($)
+    await getTableRowsAction.run!($)
 
     // Should find the exact case match
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -349,7 +349,7 @@ describe('getTableRowsAction', () => {
       headerSheetRowIndex: 0,
     })
 
-    await getTableRowsAction.run($)
+    await getTableRowsAction.run!($)
 
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: expect.objectContaining({
@@ -396,7 +396,7 @@ describe('getTableRowsAction', () => {
         { lookupColumn: 'Column4', lookupValue: '3' },
       ]
 
-      await getTableRowsAction.run($)
+      await getTableRowsAction.run!($)
 
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -443,7 +443,7 @@ describe('getTableRowsAction', () => {
         { lookupColumn: 'Column2', lookupValue: 'non-matching' },
       ]
 
-      await getTableRowsAction.run($)
+      await getTableRowsAction.run!($)
 
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
@@ -468,7 +468,7 @@ describe('getTableRowsAction', () => {
         { lookupColumn: 'Column2', lookupValue: 'data4' },
       ]
 
-      await getTableRowsAction.run($)
+      await getTableRowsAction.run!($)
 
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
