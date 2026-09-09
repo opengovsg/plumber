@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { BsArrowRight } from 'react-icons/bs'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Flex, Icon, Image, Text, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
-import mainLogo from '@/assets/logo.svg'
-import PrimarySpinner from '@/components/PrimarySpinner'
+import SsoLoadingScreen from '@/components/SsoLoadingScreen'
 import * as URLS from '@/config/urls'
 import { START_SSO_LOGIN } from '@/graphql/mutations/start-sso-login'
 import {
@@ -67,16 +64,5 @@ export default function SsoInitiate(): JSX.Element {
     return <Navigate to={URLS.LOGIN} replace />
   }
 
-  return (
-    <VStack flex={1} alignItems="center" justifyContent="center" gap={8}>
-      <Flex alignItems="center" justifyContent="center" gap={8}>
-        <Text fontSize="5xl" fontWeight="bold">
-          one.gov.sg
-        </Text>
-        <Icon as={BsArrowRight} boxSize={8} color="primary.500" />
-        <Image src={mainLogo} alt="plumber-logo" w={12} mr={12} />
-      </Flex>
-      <PrimarySpinner fontSize="3xl" thickness="4px" pr={10} />
-    </VStack>
-  )
+  return <SsoLoadingScreen />
 }

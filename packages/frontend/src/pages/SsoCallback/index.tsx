@@ -1,15 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { BsArrowRight } from 'react-icons/bs'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
-import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
 
-import mainLogo from '@/assets/logo.svg'
-// Inline as base64: this page loads right after an SSO redirect, before the
-// browser can fetch a separate asset file, so an un-inlined image flashes alt text.
-import oneGovLogo from '@/assets/onegov-logo.png?inline'
-import PrimarySpinner from '@/components/PrimarySpinner'
+import SsoLoadingScreen from '@/components/SsoLoadingScreen'
 import { FORBIDDEN } from '@/config/errors'
 import * as URLS from '@/config/urls'
 import { LOGIN_WITH_SSO } from '@/graphql/mutations/login-with-sso'
@@ -133,14 +127,5 @@ export default function SsoCallback(): JSX.Element {
     return <Navigate to={URLS.LOGIN} replace />
   }
 
-  return (
-    <VStack flex={1} alignItems="center" justifyContent="center" gap={8}>
-      <Flex alignItems="center" justifyContent="center" gap={8}>
-        <Image src={oneGovLogo} alt="one.gov.sg logo" h={10} />
-        <Icon as={BsArrowRight} boxSize={8} color="primary.500" />
-        <Image src={mainLogo} alt="plumber-logo" w={12} mr={12} />
-      </Flex>
-      <PrimarySpinner fontSize="3xl" thickness="4px" pr={10} />
-    </VStack>
-  )
+  return <SsoLoadingScreen />
 }
