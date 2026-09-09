@@ -24,7 +24,7 @@ const PLACEHOLDER_ROWS = new Array(5).fill({})
 // DELETE THIS FLAG ONCE IT'S NO LONGER IN USE
 const DATABASE_TYPE_LD_FLAG_KEY = 'tiles-database-type'
 
-const createTable: MutationResolvers['createTable'] = async (
+const createTable: NonNullable<MutationResolvers['createTable']> = async (
   _parent,
   params,
   context,

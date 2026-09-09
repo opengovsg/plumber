@@ -6,7 +6,7 @@ import testStep from '@/services/test-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const executeStep: MutationResolvers['executeStep'] = async (
+const executeStep: NonNullable<MutationResolvers['executeStep']> = async (
   _parent,
   params,
   context,

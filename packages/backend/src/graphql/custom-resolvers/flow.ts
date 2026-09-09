@@ -10,7 +10,7 @@ import type {
 
 type FlowResolver = Resolvers['Flow']
 
-const template: FlowResolver['template'] = async (parent) => {
+const template: NonNullable<FlowResolver['template']> = async (parent) => {
   const templateId = parent?.config?.templateConfig?.templateId
   if (!templateId) {
     return null
@@ -18,7 +18,9 @@ const template: FlowResolver['template'] = async (parent) => {
   return TEMPLATES.find((template) => template.id === templateId)
 }
 
-const collaborators: FlowResolver['collaborators'] = async (parent) => {
+const collaborators: NonNullable<FlowResolver['collaborators']> = async (
+  parent,
+) => {
   let collaborators = parent?.collaborators
   if (!collaborators) {
     const flowCollaborators = await FlowCollaborator.query()
@@ -44,7 +46,7 @@ const collaborators: FlowResolver['collaborators'] = async (parent) => {
   )
 }
 
-const role: FlowResolver['role'] = async (parent) => {
+const role: NonNullable<FlowResolver['role']> = async (parent) => {
   // Return the computed role from the query
   return (parent as any)?.role || 'viewer'
 }
@@ -54,10 +56,11 @@ const role: FlowResolver['role'] = async (parent) => {
 // however, there may be existing flows that already have errorConfig.notificationFrequency
 // and when returning, may not contain this `notificationRecipients` field
 // to avoid gql errors, we force it to return an empty array
-const notificationRecipients: FlowErrorConfigResolvers['notificationRecipients'] =
-  (parent) => {
-    return parent?.notificationRecipients ?? []
-  }
+const notificationRecipients: NonNullable<
+  FlowErrorConfigResolvers['notificationRecipients']
+> = (parent) => {
+  return parent?.notificationRecipients ?? []
+}
 
 export const FlowErrorConfig: FlowErrorConfigResolvers = {
   notificationRecipients,

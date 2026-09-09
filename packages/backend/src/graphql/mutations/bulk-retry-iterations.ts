@@ -47,11 +47,9 @@ async function getAllFailedIterations(context: Context, executionId: string) {
   return failedExecutionSteps
 }
 
-const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const bulkRetryIterations: NonNullable<
+  MutationResolvers['bulkRetryIterations']
+> = async (_parent, params, context) => {
   if (!params.input.executionId) {
     throw new Error('Execution ID is required')
   }

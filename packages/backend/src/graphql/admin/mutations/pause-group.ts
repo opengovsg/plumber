@@ -2,7 +2,7 @@ import { actionQueuesByName } from '@/queues/action'
 
 import type { AdminMutationResolvers } from '../../__generated__/types.generated'
 
-const pauseGroup: AdminMutationResolvers['pauseGroup'] = async (
+const pauseGroup: NonNullable<AdminMutationResolvers['pauseGroup']> = async (
   _parent,
   params,
   _context,

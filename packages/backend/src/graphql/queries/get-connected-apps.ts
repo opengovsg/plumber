@@ -2,11 +2,9 @@ import App from '@/models/app'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getConnectedApps: QueryResolvers['getConnectedApps'] = async (
-  _parent,
-  _params,
-  context,
-) => {
+const getConnectedApps: NonNullable<
+  QueryResolvers['getConnectedApps']
+> = async (_parent, _params, context) => {
   let apps = await App.findAll()
 
   const connections = await context.currentUser

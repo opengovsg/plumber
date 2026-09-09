@@ -22,7 +22,7 @@ function getStepsToInvalidate(steps: Step[], deletedIds: Set<string>) {
   return stepsToInvalidate
 }
 
-const deleteStep: MutationResolvers['deleteStep'] = async (
+const deleteStep: NonNullable<MutationResolvers['deleteStep']> = async (
   _parent,
   params,
   context,

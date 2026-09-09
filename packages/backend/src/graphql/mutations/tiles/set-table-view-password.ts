@@ -13,11 +13,9 @@ const setTableViewPasswordSchema = z.object({
   password: z.string().min(8).max(100),
 })
 
-const setTableViewPassword: MutationResolvers['setTableViewPassword'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const setTableViewPassword: NonNullable<
+  MutationResolvers['setTableViewPassword']
+> = async (_parent, params, context) => {
   const result = setTableViewPasswordSchema.safeParse(params.input)
   if (!result.success) {
     throw new BadUserInputError('Ensure password is 8-100 characters long')

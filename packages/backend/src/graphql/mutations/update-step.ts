@@ -13,7 +13,7 @@ import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const updateStep: MutationResolvers['updateStep'] = async (
+const updateStep: NonNullable<MutationResolvers['updateStep']> = async (
   _parent,
   params,
   context,

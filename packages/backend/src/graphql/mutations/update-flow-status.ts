@@ -37,11 +37,9 @@ const validateFlowSteps = (steps: Step[]) => {
   }
 }
 
-const updateFlowStatus: MutationResolvers['updateFlowStatus'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateFlowStatus: NonNullable<
+  MutationResolvers['updateFlowStatus']
+> = async (_parent, params, context) => {
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
     .findOne({

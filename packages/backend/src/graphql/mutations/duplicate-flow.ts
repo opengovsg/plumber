@@ -9,7 +9,7 @@ import Flow from '@/models/flow'
 import { MutationResolvers } from '../__generated__/types.generated'
 
 // transaction does 2 things: update duplicate count for flow + duplicate flow + steps
-const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
+const duplicateFlow: NonNullable<MutationResolvers['duplicateFlow']> = async (
   _parent,
   params,
   context,

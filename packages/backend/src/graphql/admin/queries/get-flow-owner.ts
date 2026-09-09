@@ -2,7 +2,7 @@ import Flow from '@/models/flow'
 
 import type { AdminQueryResolvers } from '../../__generated__/types.generated'
 
-const getFlowOwner: AdminQueryResolvers['getFlowOwner'] = async (
+const getFlowOwner: NonNullable<AdminQueryResolvers['getFlowOwner']> = async (
   _parent,
   params,
   _context,

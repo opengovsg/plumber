@@ -6,11 +6,9 @@ import { processAction } from '@/services/action'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const retryPartialStep: NonNullable<
+  MutationResolvers['retryPartialStep']
+> = async (_parent, params, context) => {
   const executionStep = await ExecutionStep.query()
     .findById(params.input.executionStepId)
     .withGraphJoined('execution')
