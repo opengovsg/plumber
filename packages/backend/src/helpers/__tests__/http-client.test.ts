@@ -54,7 +54,7 @@ describe('Http client', () => {
         $,
         baseURL: 'http://localhost',
         beforeRequest: [],
-        requestErrorHandler: null,
+        requestErrorHandler: undefined,
       })
     })
 
@@ -106,7 +106,7 @@ describe('Http client', () => {
         $,
         baseURL: 'http://localhost',
         beforeRequest: [beforeRequestCallback],
-        requestErrorHandler: null,
+        requestErrorHandler: undefined,
       })
 
       await http.get('/drive/:userId/:folderName', {

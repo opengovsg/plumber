@@ -27,7 +27,7 @@ export function updateStepVariables(
   parameters: Step['parameters'],
   oldToNewStepIdsMap: Record<string, string>,
 ): Step['parameters'] {
-  const entries = Object.entries(parameters)
+  const entries = Object.entries(parameters ?? {})
   return entries.reduce((result, [key, value]) => {
     if (typeof value === 'string') {
       return {

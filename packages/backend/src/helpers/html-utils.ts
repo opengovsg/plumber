@@ -11,7 +11,12 @@ function escapeHtml(unsafe: string): string {
 // tag function for safe HTML templates
 function safeHtml(
   strings: TemplateStringsArray,
-  ...values: (string | { __html: string; __trusted: boolean })[]
+  ...values: (
+    | string
+    | null
+    | undefined
+    | { __html: string; __trusted: boolean }
+  )[]
 ): string {
   let result = ''
 
