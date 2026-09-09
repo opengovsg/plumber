@@ -45,7 +45,7 @@ function makeRes() {
 }
 
 function getHandler() {
-  return router.stack[0].route.stack[0].handle
+  return router.stack[0].route!.stack[0].handle
 }
 
 describe('POST /api/dynamic-data', () => {
