@@ -93,7 +93,7 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
     if (await isAuthCookieRevoked(token)) {
       return null
     }
-    return User.query().findById(userId)
+    return (await User.query().findById(userId)) ?? null
   } catch {
     return null
   }
@@ -230,7 +230,7 @@ export async function sendOnboardingEmail(user: User) {
   } catch (error) {
     logger.error({
       event: 'onboarding-email-error',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     })
   }
 }

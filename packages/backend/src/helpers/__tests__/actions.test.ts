@@ -246,6 +246,9 @@ describe('action helper functions', () => {
             },
           })
         } catch (e) {
+          if (!(e instanceof Error)) {
+            expect.unreachable()
+          }
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
@@ -294,6 +297,9 @@ describe('action helper functions', () => {
             },
           })
         } catch (e) {
+          if (!(e instanceof Error)) {
+            expect.unreachable()
+          }
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
@@ -420,7 +426,7 @@ describe('action helper functions', () => {
         expect(Object.keys(thrown as Error)).not.toContain('cause')
       })
 
-      it.each([
+      it.each<{ errorDetails: IJSONObject; executionError: unknown }>([
         {
           errorDetails: {
             status: 500,
@@ -457,13 +463,7 @@ describe('action helper functions', () => {
         },
       ])(
         'does not retry other types of errors',
-        ({
-          errorDetails,
-          executionError,
-        }: {
-          errorDetails: IJSONObject
-          executionError: unknown
-        }) => {
+        ({ errorDetails, executionError }) => {
           expect(() =>
             handleFailedStepAndThrow({
               errorDetails,

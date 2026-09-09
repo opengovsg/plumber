@@ -5,8 +5,8 @@ import RetriableError, { DEFAULT_DELAY_MS } from '@/errors/retriable-error'
 import logger from './logger'
 
 type BackoffStrategy = NonNullable<
-  WorkerProOptions['settings']
->['backoffStrategy']
+  NonNullable<WorkerProOptions['settings']>['backoffStrategy']
+>
 export const exponentialBackoffWithJitter: BackoffStrategy = async function (
   attemptsMade,
   _type,
