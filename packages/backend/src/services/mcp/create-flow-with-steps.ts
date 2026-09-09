@@ -338,7 +338,7 @@ export async function createFlowWithStepsService({
           version: getStepVersion(step.appKey, step.key ?? undefined),
           type: step.type,
           appKey: step.appKey,
-          key: step.key ?? null,
+          key: step.key ?? undefined,
           config: createStepAiBuilderConfig(traceId, 'create_pipe'),
           parameters: {
             ...defaults,
