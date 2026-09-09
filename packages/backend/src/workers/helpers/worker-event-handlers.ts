@@ -43,6 +43,17 @@ export function registerWorkerEventHandlers(
   })
 
   worker.on('failed', async (job, err) => {
+    // BullMQ omits the job when it could not be fetched from Redis. None of
+    // the bookkeeping below is possible without the job data.
+    if (!job) {
+      logger.error(`[${queueName}] Worker failed a job it could not fetch`, {
+        err,
+        queueName,
+        workerVersion: appConfig.version,
+      })
+      return
+    }
+
     const { flowId, executionId } = job.data
 
     logger.error(

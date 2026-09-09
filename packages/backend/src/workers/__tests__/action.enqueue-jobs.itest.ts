@@ -84,11 +84,11 @@ describe('Action worker job enqueueing', () => {
   })
 
   afterEach(async () => {
-    await flushQueue(mainActionQueue, mainActionWorker)
+    await flushQueue(mainActionQueue!, mainActionWorker)
 
     // Tests tend to clobber workers (e.g adding listeners), so restore
     // original state after each test
-    await restoreWorker(mainActionWorker, originalWorkerState)
+    await restoreWorker(mainActionWorker, originalWorkerState!)
 
     vi.restoreAllMocks()
   })
@@ -118,7 +118,7 @@ describe('Action worker job enqueueing', () => {
         resolve()
       })
     })
-    await unmockedEnqueueActionJob({
+    await unmockedEnqueueActionJob!({
       appKey: null,
       jobName: 'test-job',
       jobData: {
@@ -154,7 +154,7 @@ describe('Action worker job enqueueing', () => {
         }
       })
     })
-    await unmockedEnqueueActionJob({
+    await unmockedEnqueueActionJob!({
       appKey: null,
       jobName: 'test-job',
       jobData: {

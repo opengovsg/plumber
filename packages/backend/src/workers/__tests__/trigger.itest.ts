@@ -70,7 +70,7 @@ describe('Trigger worker', () => {
 
     // Tests tend to clobber workers (e.g adding listeners), so restore original
     // state after each test
-    await restoreWorker(triggerWorker, originalWorkerState)
+    await restoreWorker(triggerWorker, originalWorkerState!)
 
     vi.restoreAllMocks()
   })
@@ -85,6 +85,7 @@ describe('Trigger worker', () => {
   describe('Event listeners', () => {
     it('logs jobs as started on completion', async () => {
       mocks.processTrigger.mockResolvedValue({
+        executionId: 'test-execution-id',
         executionStep: {
           // Mock to true so that we return immediately.
           isFailed: true,
@@ -131,6 +132,7 @@ describe('Trigger worker', () => {
       })
 
       mocks.processTrigger.mockResolvedValue({
+        executionId: 'test-execution-id',
         executionStep: {
           // Mock to true so that we return immediately.
           isFailed: true,
@@ -156,6 +158,7 @@ describe('Trigger worker', () => {
   describe('Job enqueing', () => {
     it('enqueues the next step to the correct app queue', async () => {
       mocks.processTrigger.mockResolvedValue({
+        executionId: 'test-execution-id',
         executionStep: { isFailed: false, stepId: 'curr-step-id' },
       })
       mocks.getNextStep.mockResolvedValueOnce({
@@ -182,6 +185,7 @@ describe('Trigger worker', () => {
 
     it('throws an unrecoverable error if job enqueue failed', async () => {
       mocks.processTrigger.mockResolvedValueOnce({
+        executionId: 'test-execution-id',
         executionStep: { isFailed: false, stepId: 'curr-step-id' },
       })
       mocks.getNextStep.mockResolvedValueOnce({

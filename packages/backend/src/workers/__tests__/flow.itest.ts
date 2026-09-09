@@ -73,7 +73,7 @@ describe('Flow worker', () => {
 
     // Tests tend to clobber workers (e.g adding listeners), so restore
     // original state after each test
-    await restoreWorker(flowWorker, originalWorkerState)
+    await restoreWorker(flowWorker, originalWorkerState!)
 
     vi.restoreAllMocks()
   })

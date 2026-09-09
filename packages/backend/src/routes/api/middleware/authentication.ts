@@ -43,8 +43,14 @@ export function requireAuthentication(
  * Type guard to ensure the request has an authenticated context.
  * Use this in route handlers to get type-safe access to currentUser.
  */
+function hasAuthenticatedContext(
+  req: Request,
+): req is Request & { context: Context } {
+  return Boolean(req.context?.currentUser)
+}
+
 export function getAuthenticatedContext(req: Request): Context {
-  if (!req.context?.currentUser) {
+  if (!hasAuthenticatedContext(req)) {
     throw new Error('User must be authenticated')
   }
 

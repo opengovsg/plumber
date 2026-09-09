@@ -23,12 +23,25 @@ export const worker = new WorkerPro(
       job.data as JobData,
     )
 
+    // processTrigger returns these as null only on its duplicate-submission
+    // early return, which applies to webhook apps that never reach this queue.
+    if (!executionId || !executionStep) {
+      throw new UnrecoverableError(
+        `Trigger execution step not created for step: ${stepId}`,
+      )
+    }
+
     if (executionStep.isFailed) {
       return
     }
 
     const step = await Step.query().findById(stepId).throwIfNotFound()
     const nextStep = await step.getNextStep()
+
+    if (!nextStep) {
+      throw new UnrecoverableError(`Trigger step ${stepId} has no next step`)
+    }
+
     const jobName = `${executionId}-${nextStep.id}`
 
     const jobData = {
@@ -47,7 +60,9 @@ export const worker = new WorkerPro(
     } catch (error) {
       // Don't retry if we failed to enqueue the next step (e.g. if
       // getGroupConfigForJob throws an error)
-      throw new UnrecoverableError(error.message)
+      throw new UnrecoverableError(
+        error instanceof Error ? error.message : String(error),
+      )
     }
   },
   {
@@ -62,7 +77,7 @@ worker.on('completed', (job) => {
 
 worker.on('failed', (job, err) => {
   logger.error(
-    `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
+    `JOB ID: ${job?.id} - FLOW ID: ${job?.data.flowId} has failed to start with ${err.message}`,
   )
 })
 

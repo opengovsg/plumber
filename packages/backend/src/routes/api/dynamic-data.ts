@@ -8,7 +8,8 @@ import {
   DynamicDataPrerequisiteError,
   getDynamicDataService,
 } from '@/services/mcp/get-dynamic-data'
-import type { AuthenticatedRequest } from '@/types/express/context'
+
+import { getAuthenticatedContext } from './middleware/authentication'
 
 const router = Router()
 
@@ -18,7 +19,7 @@ const bodySchema = z.object({
   parameters: z.record(z.string(), z.unknown()).optional(),
 })
 
-router.post('/', async (req: AuthenticatedRequest, res) => {
+router.post('/', async (req, res) => {
   // Auth: resolved from the session cookie via setCurrentUserContext +
   // requireAuthentication middleware applied to all /api/* routes.
   //
@@ -26,7 +27,7 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
   // user from the MCP API key or OAuth token in the Authorization header
   // instead of the session cookie. The getDynamicDataService call below is
   // already transport-agnostic — only this user-resolution line changes.
-  const user = req.context.currentUser
+  const user = getAuthenticatedContext(req).currentUser
 
   const parsed = bodySchema.safeParse(req.body)
   if (!parsed.success) {

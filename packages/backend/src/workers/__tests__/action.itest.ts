@@ -94,7 +94,7 @@ describe('Action worker', () => {
 
     // Tests tend to clobber workers (e.g adding listeners), so restore
     // original state after each test
-    await restoreWorker(mainActionWorker, originalWorkerState)
+    await restoreWorker(mainActionWorker, originalWorkerState!)
 
     vi.restoreAllMocks()
   })
@@ -158,7 +158,7 @@ describe('Action worker', () => {
 
       const jobProcessed = new Promise<void>((resolve) => {
         mainActionWorker.on('failed', async (job) => {
-          if (job.attemptsMade === maxAttempts) {
+          if (job?.attemptsMade === maxAttempts) {
             resolve()
           }
         })
@@ -426,7 +426,7 @@ describe('Action worker', () => {
       // WorkerPro's 'failed' event is typed with base bullmq's Job (not
       // JobPro) since WorkerPro doesn't override it, but the job instance is
       // actually a JobPro at runtime - we need JobPro's updateData/retry below.
-      let failedJob: JobPro<IActionJobData>
+      let failedJob!: JobPro<IActionJobData>
       const jobFailed = new Promise<void>((resolve) => {
         mainActionWorker.on('failed', async (job) => {
           failedJob = job as unknown as JobPro<IActionJobData>

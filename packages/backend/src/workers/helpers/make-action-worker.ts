@@ -102,6 +102,11 @@ export function makeActionWorker(
         const span = tracer.scope().active()
 
         const jobData = job.data
+        if (!job.id) {
+          throw new UnrecoverableError(
+            `Job in ${queueName} is missing its BullMQ ID`,
+          )
+        }
         const jobId = makeActionJobId(queueName, job.id)
 
         // The reason why we dont add .throwIfNotFound() here is to prevent job
@@ -186,7 +191,11 @@ export function makeActionWorker(
 
         let jobOptions = DEFAULT_JOB_OPTIONS
 
-        if (currStep.appKey === 'delay') {
+        if (
+          currStep?.appKey === 'delay' &&
+          currStep.key &&
+          executionStep.dataOut
+        ) {
           jobOptions = {
             ...DEFAULT_JOB_OPTIONS,
             delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
@@ -203,7 +212,9 @@ export function makeActionWorker(
         } catch (error) {
           // Don't retry if we failed to enqueue the next step (e.g. if
           // getGroupConfigForJob throws an error)
-          throw new UnrecoverableError(error.message)
+          throw new UnrecoverableError(
+            error instanceof Error ? error.message : String(error),
+          )
         }
       },
     ),
