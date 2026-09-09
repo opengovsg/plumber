@@ -97,6 +97,11 @@ export async function listConnectionsService(
     const app = await App.findOneByKey(appKey)
 
     if (app?.auth?.connectionType === 'system-added') {
+      if (!app.auth.getSystemAddedConnections) {
+        throw new Error(
+          `App '${appKey}' has connectionType 'system-added' but no getSystemAddedConnections()`,
+        )
+      }
       // getSystemAddedConnections may insert new Connection rows for eligible
       // tenants as a side effect — this mirrors the GraphQL resolver's behaviour
       // and is intentional.

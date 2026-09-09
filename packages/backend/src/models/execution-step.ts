@@ -13,8 +13,8 @@ class ExecutionStep extends Base {
   executionId!: string
   stepId!: string
   dataIn!: IJSONObject
-  dataOut!: IJSONObject
-  errorDetails!: IJSONObject
+  dataOut!: IJSONObject | null
+  errorDetails!: IJSONObject | null
   status!: 'success' | 'failure'
   appKey!: string
   jobId?: string

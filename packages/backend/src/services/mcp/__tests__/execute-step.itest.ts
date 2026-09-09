@@ -47,7 +47,7 @@ const makeExecutionStep = (
   }
   return {
     ...base,
-    get isFailed() {
+    get isFailed(): boolean {
       return this.status === 'failure'
     },
   }
@@ -101,12 +101,12 @@ describe('executeStepService', () => {
       executionId: execution.id,
     })
 
-    const result = await executeStepService(user, actionStep.id)
+    const result = await executeStepService(user, actionStep!.id)
 
     expect(result).toMatchObject({
       success: true,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       executionStepId: execStep.id,
       dataOut: { output: 'data' },
       errorDetails: null,
@@ -119,14 +119,14 @@ describe('executeStepService', () => {
       cc: { type: 'array' },
     })
 
-    const updated = await Step.query().findById(actionStep.id)
-    expect(updated.status).toBe('completed')
+    const updated = await Step.query().findById(actionStep!.id)
+    expect(updated!.status).toBe('completed')
 
     const updatedFlow = await Flow.query().findById(flow.id)
-    expect(updatedFlow.testExecutionId).toBe(execution.id)
+    expect(updatedFlow!.testExecutionId).toBe(execution.id)
 
     expect(mocks.testStep).toHaveBeenCalledWith({
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       testRunMetadata: { preferMock: true },
     })
   })
@@ -148,7 +148,7 @@ describe('executeStepService', () => {
       executionId: execution.id,
     })
 
-    const result = await executeStepService(user, actionStep.id)
+    const result = await executeStepService(user, actionStep!.id)
 
     expect(result.success).toBe(false)
     expect(result.errorDetails).toMatchObject({
@@ -157,8 +157,8 @@ describe('executeStepService', () => {
     // dataOut is null, so getDataOutMetadata has nothing to tag types for.
     expect(result.dataOutMetadata).toBeNull()
 
-    const unchanged = await Step.query().findById(actionStep.id)
-    expect(unchanged.status).not.toBe('completed')
+    const unchanged = await Step.query().findById(actionStep!.id)
+    expect(unchanged!.status).not.toBe('completed')
   })
 
   it('returns dataOutMetadata:null (instead of throwing) when getDataOutMetadata fails', async () => {
@@ -174,14 +174,19 @@ describe('executeStepService', () => {
       executionId: execution.id,
     })
 
-    const sendEmailAction = apps.postman.actions.find(
+    const sendEmailAction = apps.postman.actions!.find(
       (a) => a.key === 'sendTransactionalEmail',
-    )
+    )!
+    const actionWithMetadata = sendEmailAction as typeof sendEmailAction & {
+      getDataOutMetadata: NonNullable<
+        (typeof sendEmailAction)['getDataOutMetadata']
+      >
+    }
     const getDataOutMetadataSpy = vi
-      .spyOn(sendEmailAction, 'getDataOutMetadata')
+      .spyOn(actionWithMetadata, 'getDataOutMetadata')
       .mockRejectedValueOnce(new Error('schema mismatch'))
 
-    const result = await executeStepService(user, actionStep.id)
+    const result = await executeStepService(user, actionStep!.id)
 
     expect(result.success).toBe(true)
     expect(result.dataOutMetadata).toBeNull()

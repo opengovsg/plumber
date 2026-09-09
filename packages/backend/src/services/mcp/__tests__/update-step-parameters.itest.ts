@@ -94,7 +94,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: {
         subject: 'Hello world', // valid — in postman sendTransactionalEmail schema
         destinationEmail: ['a@b.com'], // valid — in postman sendTransactionalEmail schema
@@ -143,7 +143,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Test' },
     })
 
@@ -187,7 +187,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user: intruder,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: { subject: 'Hack' },
       }),
     ).rejects.toThrow('Step not found')
@@ -259,7 +259,7 @@ describe('updateStepParametersService', () => {
     await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello world' },
     })
 
@@ -267,7 +267,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { destinationEmail: ['a@b.com'] },
     })
 
@@ -316,7 +316,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
       connectionId: connection.id,
     })
@@ -369,7 +369,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user: intruder,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: connection.id,
       }),
@@ -417,7 +417,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: connection.id,
       }),
@@ -457,7 +457,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: randomUUID(), // does not exist
       }),
@@ -515,7 +515,7 @@ describe('updateStepParametersService', () => {
       updateStepParametersService({
         user: collaborator,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
         parameters: {},
         connectionId: ownerConnection.id,
       }),
@@ -862,7 +862,7 @@ describe('no connectionRegistrationType — connectionId set directly', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
       connectionId: connection.id,
     })

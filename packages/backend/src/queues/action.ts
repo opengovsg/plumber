@@ -72,12 +72,12 @@ export async function enqueueActionJob({
   jobData,
   jobOptions,
 }: EnqueueActionJobParams): Promise<JobPro<IActionJobData>> {
-  if (!(appKey in appActionQueues)) {
+  if (!appKey || !(appKey in appActionQueues)) {
     return await mainActionQueue.add(jobName, jobData, jobOptions)
   }
 
   const appQueue = appActionQueues[appKey]
-  const groupConfig = await apps[appKey].queue.getGroupConfigForJob?.(jobData)
+  const groupConfig = await apps[appKey].queue?.getGroupConfigForJob?.(jobData)
 
   return await appQueue.add(jobName, jobData, {
     ...jobOptions,

@@ -56,7 +56,7 @@ describe('createStepService', () => {
       pipeId: flow.id,
       appKey: 'slack',
       key: 'sendMessageToChannel',
-      previousStepId: lastStep.id,
+      previousStepId: lastStep!.id,
     })
 
     expect(step.appKey).toBe('slack')
@@ -106,7 +106,7 @@ describe('createStepService', () => {
       pipeId: flow.id,
       appKey: 'postman',
       key: 'sendTransactionalEmail',
-      previousStepId: triggerStep.id,
+      previousStepId: triggerStep!.id,
     })
 
     expect(newStep.position).toBe(2)

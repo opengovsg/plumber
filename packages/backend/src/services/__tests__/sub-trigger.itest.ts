@@ -245,7 +245,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).not.toBeNull()
-      const execStep = result.executionStep
+      const execStep = result!.executionStep!
       expect(execStep.stepId).toBe(mrfStep.id)
       expect(execStep.executionId).toBe(execution.id)
       expect(execStep.dataIn).toEqual(mrfStep.parameters)

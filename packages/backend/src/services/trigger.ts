@@ -29,7 +29,7 @@ export type CustomWebhookResponse = z.infer<typeof customWebhookResponseSchema>
 type ProcessTriggerResult = {
   flowId: string
   stepId: string
-  executionId: string
+  executionId: string | null
   executionStep: ExecutionStep | null
   shouldExecute: boolean
   customWebhookResponse?: CustomWebhookResponse

@@ -73,7 +73,7 @@ describe('variables', () => {
 
     describe('extracts variables from complex thingys', () => {
       it('handles nested objects', () => {
-        executionSteps[0].dataOut.objectProp = {
+        executionSteps[0].dataOut!.objectProp = {
           a: 1,
           b: 'str-2',
         }
@@ -96,7 +96,7 @@ describe('variables', () => {
       })
 
       it('handles arrays', () => {
-        executionSteps[0].dataOut.arrayProp = [
+        executionSteps[0].dataOut!.arrayProp = [
           9000,
           'HI THAR',
           { c: '1', d: 2 },

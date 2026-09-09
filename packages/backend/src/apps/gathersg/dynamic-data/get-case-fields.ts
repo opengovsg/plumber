@@ -37,7 +37,7 @@ const getCaseUuidFromVariable = async (
     }
 
     return computeForEachParameters({
-      data: executionStep?.dataOut,
+      data: executionStep?.dataOut ?? {},
       keyPath: keyPaths.join('.'),
       executionSteps: testExecutionSteps,
       executionStep,

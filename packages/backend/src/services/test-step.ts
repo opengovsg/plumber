@@ -81,6 +81,10 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
     })
   }
 
+  // testExecutionId is now guaranteed set: either it was already set, or we
+  // just set it above.
+  const testExecutionId = flow.testExecutionId as string
+
   /**
    * If step is action, replace old execution step by setting execution id to null
    * and creating a new execution step with the test execution id
@@ -89,7 +93,7 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
     const { executionStep: newExecutionStep } = await processAction({
       flowId: flow.id,
       stepId: stepToTest.id,
-      executionId: flow.testExecutionId,
+      executionId: testExecutionId,
       testRun: true,
       metadata: options.testRunMetadata,
     })
@@ -97,13 +101,13 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
     // Delete old execution steps of the same step
     await ExecutionStep.query()
       .whereNot('id', newExecutionStep.id)
-      .andWhere('execution_id', flow.testExecutionId)
-      .andWhere('step_id', stepToTest.id)
+      .andWhere('executionId', testExecutionId)
+      .andWhere('stepId', stepToTest.id)
       .delete()
 
     return {
       executionStep: newExecutionStep,
-      executionId: flow.testExecutionId,
+      executionId: testExecutionId,
     }
   }
 
@@ -121,27 +125,44 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
 
     const hasTriggerStepFailed = !!triggerError
 
-    const { executionId, executionStep: triggerExecutionStep } =
-      await processTrigger({
-        flowId: flow.id,
-        stepId: stepToTest.id,
-        error: hasTriggerStepFailed ? triggerError : undefined,
-        triggerItem: hasTriggerStepFailed ? undefined : data[0],
-        testRun: true,
-      })
+    const {
+      executionId: triggerExecutionId,
+      executionStep: triggerExecutionStep,
+    } = await processTrigger({
+      flowId: flow.id,
+      stepId: stepToTest.id,
+      error: hasTriggerStepFailed ? triggerError : undefined,
+      triggerItem: hasTriggerStepFailed ? undefined : data[0],
+      testRun: true,
+    })
+
+    // testRun: true always proceeds straight to creating a real execution
+    // step, so processTrigger cannot have taken its early-return path (the
+    // only path that produces a null executionId/executionStep).
+    if (!triggerExecutionId || !triggerExecutionStep) {
+      throw new Error(
+        `Trigger execution step not created for step: ${stepToTest.id}`,
+      )
+    }
 
     if (testActionExecutionSteps.length) {
       await ExecutionStep.query()
         .patch({
-          executionId,
+          executionId: triggerExecutionId,
         })
         .whereIn(
           'id',
           testActionExecutionSteps.map((execStep) => execStep.id),
         )
     }
-    return { executionStep: triggerExecutionStep, executionId }
+
+    return {
+      executionStep: triggerExecutionStep,
+      executionId: triggerExecutionId,
+    }
   }
+
+  throw new Error(`Step is neither an action nor a trigger: ${stepToTest.id}`)
 }
 
 export default testStep

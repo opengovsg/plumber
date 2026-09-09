@@ -64,8 +64,8 @@ describe('getDynamicDataService', () => {
     await Step.query().insertAndFetch({
       id: randomUUID(),
       flowId: flow.id,
-      appKey: null,
-      key: null,
+      appKey: undefined,
+      key: undefined,
       type: 'trigger',
       position: 1,
       parameters: {},

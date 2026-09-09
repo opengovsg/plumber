@@ -63,7 +63,7 @@ describe('deleteStepService', () => {
     const result = await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
     })
 
     expect(result.steps).toHaveLength(2)
@@ -104,15 +104,15 @@ describe('deleteStepService', () => {
     const result = await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: triggerStep.id,
+      stepId: triggerStep!.id,
     })
 
     expect(result.steps).toHaveLength(2)
     const newTrigger = result.steps.find((s) => s.type === 'trigger')
     expect(newTrigger).toBeDefined()
-    expect(newTrigger.appKey).toBeNull()
-    expect(newTrigger.key).toBeNull()
-    expect(newTrigger.id).not.toBe(triggerStep.id)
+    expect(newTrigger!.appKey).toBeNull()
+    expect(newTrigger!.key).toBeNull()
+    expect(newTrigger!.id).not.toBe(triggerStep!.id)
   })
 
   it('throws if the step does not belong to the requesting user', async () => {
@@ -152,7 +152,7 @@ describe('deleteStepService', () => {
       deleteStepService({
         user: intruder,
         pipeId: flow.id,
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
       }),
     ).rejects.toThrow('Step not found')
   })
@@ -190,7 +190,7 @@ describe('deleteStepService', () => {
       deleteStepService({
         user,
         pipeId: randomUUID(), // wrong pipe ID
-        stepId: actionStep.id,
+        stepId: actionStep!.id,
       }),
     ).rejects.toThrow('Step not found')
   })
