@@ -65,6 +65,41 @@ function parseArgs(argv) {
   return { envName, command: argv.slice(index) }
 }
 
+async function createOpClient(accountName) {
+  try {
+    return await createClient({
+      auth: new DesktopAuth(accountName),
+      integrationName: 'Plumber local dev',
+      integrationVersion: 'v1.0.0',
+    })
+  } catch (error) {
+    fail(
+      'could not connect to 1Password.\n' +
+        'Check that:\n' +
+        '  - the 1Password app is running and unlocked\n' +
+        '  - Settings > Developer > Integrate with other apps is on\n' +
+        `  - "accountName" in ${CONFIG_FILE} matches the account name in the app\n` +
+        `${error.message}`,
+    )
+  }
+}
+
+async function fetchEnvironmentVariables(client, environmentId, label) {
+  try {
+    const { variables } = await client.environments.getVariables(environmentId)
+    return Object.fromEntries(variables.map(({ name, value }) => [name, value]))
+  } catch (error) {
+    fail(
+      `could not read the "${label}" 1Password environment.\n` +
+        'Check that:\n' +
+        '  - the 1Password app is running and unlocked\n' +
+        '  - Settings > Developer > Integrate with other apps is on\n' +
+        `  - the "${label}" environment id in ${CONFIG_FILE} is current\n` +
+        `${error.message}`,
+    )
+  }
+}
+
 async function fetchVariables(envName) {
   const config = readConfig()
   const environmentId = config.environments?.[envName]
@@ -76,25 +111,23 @@ async function fetchVariables(envName) {
     fail(`${CONFIG_FILE} has no environment id for "${envName}".`)
   }
 
-  try {
-    const client = await createClient({
-      auth: new DesktopAuth(config.accountName),
-      integrationName: 'Plumber local dev',
-      integrationVersion: 'v1.0.0',
-    })
-    const { variables } = await client.environments.getVariables(environmentId)
-    return Object.fromEntries(variables.map(({ name, value }) => [name, value]))
-  } catch (error) {
-    fail(
-      `could not read the "${envName}" 1Password environment.\n` +
-        'Check that:\n' +
-        '  - the 1Password app is running and unlocked\n' +
-        '  - Settings > Developer > Integrate with other apps is on\n' +
-        `  - "accountName" in ${CONFIG_FILE} matches the account name in the app\n` +
-        `  - the "${envName}" environment id in ${CONFIG_FILE} is current\n` +
-        `${error.message}`,
+  const client = await createOpClient(config.accountName)
+
+  // Inherited environments hold common team-level env vars, so they load
+  // first: a developer's own "--env" environment overrides any of them.
+  const variables = {}
+  for (const inheritedId of config.inheritedEnvironments ?? []) {
+    Object.assign(
+      variables,
+      await fetchEnvironmentVariables(client, inheritedId, 'inherited'),
     )
   }
+  Object.assign(
+    variables,
+    await fetchEnvironmentVariables(client, environmentId, envName),
+  )
+
+  return variables
 }
 
 function run(command, env) {
