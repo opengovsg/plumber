@@ -1,0 +1,24 @@
+.confetti-embedded-survey {
+  --confetti-rating-active-bg-color: #cf1a68;
+  --confetti-indicator-active-bg-color: #cf1a68;
+}
+
+.confetti-embedded-survey .confetti {
+  gap: 20px;
+}
+
+.confetti-embedded-survey .cf-rating-section {
+  gap: 8px;
+}
+
+.confetti-embedded-survey .cf-title {
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0;
+  color: #666c7a;
+}
+
+.confetti-embedded-survey .cf-rating-display-star {
+  justify-content: start;
+}
