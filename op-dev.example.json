@@ -1,0 +1,8 @@
+{
+  "accountName": "your 1Password account name or UUID",
+  "environments": {
+    "dev": "your dev environment id",
+    "setup": "your setup environment id",
+    "archival": "your archival environment id"
+  }
+}

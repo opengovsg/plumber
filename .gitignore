@@ -153,3 +153,6 @@ docs/superpowers/
 /.superset/port-registry
 /.superset/port-registry.lock
 /.superset/config.local.json
+
+# local 1Password environment ids (per-developer, never committed)
+/op-dev.json
