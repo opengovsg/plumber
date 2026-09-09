@@ -84,7 +84,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
 
       // Verify flow was created
       expect(result).toBeDefined()
@@ -174,7 +174,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
 
       expect(result.name).toBe('Trimmed Flow Name')
     })
@@ -203,7 +203,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
       const steps = await Step.query()
         .where('flow_id', result.id)
         .orderBy('position', 'asc')
@@ -266,7 +266,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
       const steps = await Step.query()
         .where('flow_id', result.id)
         .orderBy('position', 'asc')
@@ -299,7 +299,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe name needs to have at least 1 character.',
       )
 
@@ -327,7 +327,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe name needs to have at least 1 character.',
       )
 
@@ -355,7 +355,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe contains invalid action steps',
       )
 
@@ -392,7 +392,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Must be contiguous steps!',
       )
 
@@ -434,7 +434,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Must be contiguous steps!',
       )
 
@@ -469,7 +469,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Must be contiguous steps!',
       )
 
@@ -506,7 +506,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe must always start with a trigger',
       )
 
@@ -541,7 +541,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Must be contiguous steps!',
       )
 
@@ -569,7 +569,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe must always start with a trigger',
       )
 
@@ -612,7 +612,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
       },
     }
 
-    await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+    await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
       'Pipe contains invalid action steps',
     )
 
@@ -677,7 +677,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
 
       expect(result).toBeDefined()
       expect(result.name).toBe('Test Flow with If-Then')
@@ -730,7 +730,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
       expect(result).toBeDefined()
 
       const steps = await Step.query()
@@ -776,7 +776,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
       expect(result).toBeDefined()
 
       const steps = await Step.query()
@@ -815,7 +815,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe contains invalid action steps',
       )
 
@@ -850,7 +850,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe contains invalid action steps',
       )
 
@@ -892,7 +892,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      const result = await createFlowWithSteps(null, params, context)
+      const result = await createFlowWithSteps({}, params, context)
       expect(result).toBeDefined()
 
       const steps = await Step.query()
@@ -931,7 +931,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe contains invalid action steps',
       )
     })
@@ -964,7 +964,7 @@ describe('createFlowWithSteps mutation integration tests', () => {
         },
       }
 
-      await expect(createFlowWithSteps(null, params, context)).rejects.toThrow(
+      await expect(createFlowWithSteps({}, params, context)).rejects.toThrow(
         'Pipe must always start with a trigger',
       )
     })

@@ -101,7 +101,7 @@ const callGetExecutions = async (
   params = {},
 ) => {
   return await getExecutions(
-    null,
+    {},
     { flowId, ...DEFAULT_LIMIT_OFFSET, ...params },
     context,
   )

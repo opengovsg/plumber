@@ -90,7 +90,7 @@ describe('getFlow', () => {
 
   describe('successful flow retrieval', () => {
     it('should return flow data for owner', async () => {
-      const result = await getFlow(null, { id: mockFlow.id }, context)
+      const result = await getFlow({}, { id: mockFlow.id }, context)
 
       expect(result).toMatchObject({
         id: mockFlow.id,
@@ -132,7 +132,7 @@ describe('getFlow', () => {
     })
 
     it('should include owner as collaborator with correct role', async () => {
-      const result = await getFlow(null, { id: mockFlow.id }, context)
+      const result = await getFlow({}, { id: mockFlow.id }, context)
 
       // Test collaborators by manually calling the custom resolver
       const collaborators = await flowResolvers.collaborators(
@@ -148,7 +148,7 @@ describe('getFlow', () => {
 
     it('should return flow data for editor', async () => {
       context.currentUser = editor
-      const result = await getFlow(null, { id: mockFlow.id }, context)
+      const result = await getFlow({}, { id: mockFlow.id }, context)
 
       expect(result).toMatchObject({
         id: mockFlow.id,
@@ -169,7 +169,7 @@ describe('getFlow', () => {
 
     it('should return flow data for viewer', async () => {
       context.currentUser = viewer
-      const result = await getFlow(null, { id: mockFlow.id }, context)
+      const result = await getFlow({}, { id: mockFlow.id }, context)
 
       expect(result).toMatchObject({
         id: mockFlow.id,
@@ -193,7 +193,7 @@ describe('getFlow', () => {
     it('should throw error for non-collaborator user', async () => {
       context.currentUser = nonCollaborator
 
-      await expect(getFlow(null, { id: mockFlow.id }, context)).rejects.toThrow(
+      await expect(getFlow({}, { id: mockFlow.id }, context)).rejects.toThrow(
         NotFoundError,
       )
     })
@@ -202,7 +202,7 @@ describe('getFlow', () => {
       const nonExistentFlowId = randomUUID()
 
       await expect(
-        getFlow(null, { id: nonExistentFlowId }, context),
+        getFlow({}, { id: nonExistentFlowId }, context),
       ).rejects.toThrow(NotFoundError)
     })
 
@@ -215,7 +215,7 @@ describe('getFlow', () => {
 
       context.currentUser = editor
 
-      await expect(getFlow(null, { id: mockFlow.id }, context)).rejects.toThrow(
+      await expect(getFlow({}, { id: mockFlow.id }, context)).rejects.toThrow(
         NotFoundError,
       )
     })
@@ -224,18 +224,18 @@ describe('getFlow', () => {
   describe('input validation', () => {
     it('should throw error for invalid UUID format', async () => {
       await expect(
-        getFlow(null, { id: 'invalid-uuid' }, context),
+        getFlow({}, { id: 'invalid-uuid' }, context),
       ).rejects.toThrow('Please provide a valid pipe ID in your URL.')
     })
 
     it('should throw error for non-string ID', async () => {
-      await expect(getFlow(null, { id: 123 as any }, context)).rejects.toThrow(
+      await expect(getFlow({}, { id: 123 as any }, context)).rejects.toThrow(
         'Please provide a valid pipe ID in your URL.',
       )
     })
 
     it('should throw error for empty string ID', async () => {
-      await expect(getFlow(null, { id: '' }, context)).rejects.toThrow(
+      await expect(getFlow({}, { id: '' }, context)).rejects.toThrow(
         'Please provide a valid pipe ID in your URL.',
       )
     })
@@ -250,7 +250,7 @@ describe('getFlow', () => {
 
       // Note: This would require the FlowTransfer model to be imported
       // For now, we'll test that the query structure supports it
-      const result = await getFlow(null, { id: mockFlow.id }, context)
+      const result = await getFlow({}, { id: mockFlow.id }, context)
 
       expect(result).toMatchObject({
         id: mockFlow.id,
@@ -271,7 +271,7 @@ describe('getFlow', () => {
 
       await mockStep2.$query().patch({ connectionId: connection.id })
 
-      const result = await getFlow(null, { id: mockFlow.id }, context)
+      const result = await getFlow({}, { id: mockFlow.id }, context)
 
       expect(result.steps).toHaveLength(2)
       const stepWithConnection = result.steps.find((s) => s.id === mockStep2.id)
