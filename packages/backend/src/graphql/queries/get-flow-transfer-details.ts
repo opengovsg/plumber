@@ -7,11 +7,9 @@ import globalVariable from '@/helpers/global-variable'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getFlowTransferDetails: QueryResolvers['getFlowTransferDetails'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const getFlowTransferDetails: NonNullable<
+  QueryResolvers['getFlowTransferDetails']
+> = async (_parent, params, context) => {
   const flowTransferDetails: ITransferDetails[] = []
 
   const flow = await context.currentUser

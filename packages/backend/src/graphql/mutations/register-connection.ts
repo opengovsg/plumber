@@ -42,11 +42,9 @@ async function makeGlobalVariableForPerFlowRegistration(
   })
 }
 
-const registerConnection: MutationResolvers['registerConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const registerConnection: NonNullable<
+  MutationResolvers['registerConnection']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

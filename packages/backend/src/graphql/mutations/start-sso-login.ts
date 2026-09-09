@@ -5,7 +5,7 @@ import { setSsoLoginCookie } from '@/helpers/sso-login'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const startSsoLogin: MutationResolvers['startSsoLogin'] = async (
+const startSsoLogin: NonNullable<MutationResolvers['startSsoLogin']> = async (
   _parent,
   params,
   context,

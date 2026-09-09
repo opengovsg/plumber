@@ -2,7 +2,7 @@ import User from '@/models/user'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getCurrentUser: QueryResolvers['getCurrentUser'] = async (
+const getCurrentUser: NonNullable<QueryResolvers['getCurrentUser']> = async (
   _parent,
   _params,
   context,

@@ -8,11 +8,9 @@ import type { MutationResolvers } from '../__generated__/types.generated'
 // Sensitive graphql variables redacted in morgan.ts and datadog's Sensitive
 // Data Scanner
 
-const createConnection: MutationResolvers['createConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const createConnection: NonNullable<
+  MutationResolvers['createConnection']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

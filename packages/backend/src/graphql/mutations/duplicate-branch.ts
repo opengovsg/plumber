@@ -12,11 +12,9 @@ import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const duplicateBranch: NonNullable<
+  MutationResolvers['duplicateBranch']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

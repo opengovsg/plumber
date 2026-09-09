@@ -4,7 +4,7 @@ import { deleteStepsInTransaction } from '@/services/delete-steps'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteStep: MutationResolvers['deleteStep'] = async (
+const deleteStep: NonNullable<MutationResolvers['deleteStep']> = async (
   _parent,
   params,
   context,
