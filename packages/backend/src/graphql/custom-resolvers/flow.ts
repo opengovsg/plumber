@@ -58,10 +58,11 @@ const role: FlowResolver['role'] = async (parent) => {
 // however, there may be existing flows that already have errorConfig.notificationFrequency
 // and when returning, may not contain this `notificationRecipients` field
 // to avoid gql errors, we force it to return an empty array
-const notificationRecipients: FlowErrorConfigResolvers['notificationRecipients'] =
-  (parent) => {
-    return parent?.notificationRecipients ?? []
-  }
+const notificationRecipients: NonNullable<
+  FlowErrorConfigResolvers['notificationRecipients']
+> = (parent) => {
+  return parent?.notificationRecipients ?? []
+}
 
 export const FlowErrorConfig: FlowErrorConfigResolvers = {
   notificationRecipients,

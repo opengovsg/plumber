@@ -4,11 +4,9 @@ import paginate from '@/helpers/pagination'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const getExecutionSteps: QueryResolvers['getExecutionSteps'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const getExecutionSteps: NonNullable<
+  QueryResolvers['getExecutionSteps']
+> = async (_parent, params, context) => {
   const execution = await context.currentUser
     .withAccessibleExecutions({ requiredRole: 'viewer' })
     .withGraphFetched({ executionSteps: true })

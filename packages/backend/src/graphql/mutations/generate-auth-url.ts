@@ -9,11 +9,9 @@ import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const generateAuthUrl: MutationResolvers['generateAuthUrl'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const generateAuthUrl: NonNullable<
+  MutationResolvers['generateAuthUrl']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

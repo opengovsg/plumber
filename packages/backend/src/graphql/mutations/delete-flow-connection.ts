@@ -8,11 +8,9 @@ import Step from '@/models/step'
 
 import { MutationResolvers } from '../__generated__/types.generated'
 
-const deleteFlowConnection: MutationResolvers['deleteFlowConnection'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const deleteFlowConnection: NonNullable<
+  MutationResolvers['deleteFlowConnection']
+> = async (_parent, params, context) => {
   const { flowId, connectionId, connectionType } = params.input as {
     flowId: string
     connectionId: string

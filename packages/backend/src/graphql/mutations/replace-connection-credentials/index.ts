@@ -13,56 +13,57 @@ const replaceConnectionCredentialsInputSchema = z.object({
   formattedData: z.record(z.string(), z.unknown()),
 })
 
-const replaceConnectionCredentials: MutationResolvers['replaceConnectionCredentials'] =
-  async (_parent, params, context) => {
-    let input: z.infer<typeof replaceConnectionCredentialsInputSchema>
-    try {
-      input = replaceConnectionCredentialsInputSchema.parse(params.input)
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new BadUserInputError(
-          fromZodError(error).details[0]?.message ?? 'Invalid connection data',
-        )
-      }
-      throw error
+const replaceConnectionCredentials: NonNullable<
+  MutationResolvers['replaceConnectionCredentials']
+> = async (_parent, params, context) => {
+  let input: z.infer<typeof replaceConnectionCredentialsInputSchema>
+  try {
+    input = replaceConnectionCredentialsInputSchema.parse(params.input)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw new BadUserInputError(
+        fromZodError(error).details[0]?.message ?? 'Invalid connection data',
+      )
     }
-
-    const { connection, app } = await getOwnEditableConnection({
-      context,
-      connectionId: input.id,
-    })
-
-    const candidate = buildConnectionEditCandidate({
-      appKey: app.key,
-      auth: app.auth,
-      storedData: connection.formattedData,
-      submittedData: input.formattedData,
-    })
-    // Omit `connection` so verifyCredentials / $.auth.set cannot patch the
-    // live row. Seed the candidate on $ in memory, then replace stored
-    // credentials only after verify succeeds.
-    const $ = await globalVariable({
-      app,
-      user: context.currentUser,
-    })
-    $.auth.connectionId = connection.id
-    await $.auth.set(candidate)
-
-    if (!app.auth.verifyCredentials) {
-      throw new Error('App does not support credential verification')
-    }
-    await app.auth.verifyCredentials($)
-
-    const updatedConnection = await connection.$query().patchAndFetch({
-      formattedData: $.auth.data,
-      verified: true,
-      draft: false,
-    })
-
-    return {
-      ...updatedConnection,
-      app,
-    }
+    throw error
   }
+
+  const { connection, app } = await getOwnEditableConnection({
+    context,
+    connectionId: input.id,
+  })
+
+  const candidate = buildConnectionEditCandidate({
+    appKey: app.key,
+    auth: app.auth,
+    storedData: connection.formattedData,
+    submittedData: input.formattedData,
+  })
+  // Omit `connection` so verifyCredentials / $.auth.set cannot patch the
+  // live row. Seed the candidate on $ in memory, then replace stored
+  // credentials only after verify succeeds.
+  const $ = await globalVariable({
+    app,
+    user: context.currentUser,
+  })
+  $.auth.connectionId = connection.id
+  await $.auth.set(candidate)
+
+  if (!app.auth.verifyCredentials) {
+    throw new Error('App does not support credential verification')
+  }
+  await app.auth.verifyCredentials($)
+
+  const updatedConnection = await connection.$query().patchAndFetch({
+    formattedData: $.auth.data,
+    verified: true,
+    draft: false,
+  })
+
+  return {
+    ...updatedConnection,
+    app,
+  }
+}
 
 export default replaceConnectionCredentials

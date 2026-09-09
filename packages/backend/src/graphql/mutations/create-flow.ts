@@ -2,7 +2,7 @@ import { BadUserInputError } from '@/errors/graphql-errors'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createFlow: MutationResolvers['createFlow'] = async (
+const createFlow: NonNullable<MutationResolvers['createFlow']> = async (
   _parent,
   params,
   context,
