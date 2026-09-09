@@ -362,11 +362,11 @@ describe('dynamodb table row functions', () => {
         columnIds: dummyColumnIds,
       })
       const row = await createTableRow({ tableId: dummyTable.id, data })
-      const rawRow = await getRawRowById({
+      const rawRow = (await getRawRowById({
         tableId: dummyTable.id,
         rowId: row.rowId,
         columnIds: dummyColumnIds,
-      })
+      }))!
       expect(rawRow.data).toEqual(rawRow.data)
     })
 
@@ -375,11 +375,11 @@ describe('dynamodb table row functions', () => {
         columnIds: dummyColumnIds,
       })
       const row = await createTableRow({ tableId: dummyTable.id, data })
-      const rawRow = await getRawRowById({
+      const rawRow = (await getRawRowById({
         tableId: dummyTable.id,
         rowId: row.rowId,
         columnIds: [dummyColumnIds[0]],
-      })
+      }))!
       expect(Object.keys(rawRow.data)).toEqual([dummyColumnIds[0]])
     })
   })
@@ -399,11 +399,11 @@ describe('dynamodb table row functions', () => {
         rowId: row.rowId,
         data: newData,
       })
-      const updatedRow = await getRawRowById({
+      const updatedRow = (await getRawRowById({
         tableId: dummyTable.id,
         rowId: row.rowId,
         columnIds: dummyColumnIds,
-      })
+      }))!
       expect(updatedRow.data).toEqual(newData)
     })
   })
@@ -575,7 +575,7 @@ describe('dynamodb table row functions', () => {
         rowId: row.rowId,
         patchData: { [dummyColumnIds[0]]: '123' },
       })
-      expect(updatedRow.updatedAt).toBeGreaterThan(row.updatedAt)
+      expect(updatedRow.updatedAt).toBeGreaterThan(row.updatedAt!)
     })
   })
 })

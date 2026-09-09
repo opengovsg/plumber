@@ -32,7 +32,7 @@ const stepQueryResult = vi.fn().mockResolvedValue({
   },
 })
 
-describe.each([['ddb'], ['pg']])(
+describe.each([['ddb'], ['pg']] as const)(
   'findMultipleRowsAction: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -117,19 +117,19 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should allow owners to find multiple rows', async () => {
-      await expect(findMultipleRowsAction.run($)).resolves.toBeUndefined()
+      await expect(findMultipleRowsAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should allow editors to find multiple rows', async () => {
       $.user = editor
-      await expect(findMultipleRowsAction.run($)).resolves.toBeUndefined()
+      await expect(findMultipleRowsAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should not allow viewers to find multiple rows', async () => {
       $.user = viewer
-      await expect(findMultipleRowsAction.run($)).rejects.toThrow(StepError)
+      await expect(findMultipleRowsAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should throw correct error if Tile deleted', async () => {
@@ -144,7 +144,7 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ table_id: $.step.parameters.tableId })
-      await expect(findMultipleRowsAction.run($)).rejects.toThrow(StepError)
+      await expect(findMultipleRowsAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should call getTableRows with scan limit if exists in step config', async () => {
@@ -157,7 +157,7 @@ describe.each([['ddb'], ['pg']])(
           rows: [],
           stringifiedCursor: undefined,
         })
-      await findMultipleRowsAction.run($)
+      await findMultipleRowsAction.run!($)
       expect(getTableRowsSpy).toHaveBeenCalledWith({
         columnIds: dummyColumnIds,
         tableId: $.step.parameters.tableId,
@@ -183,7 +183,7 @@ describe.each([['ddb'], ['pg']])(
         stringifiedCursor: undefined,
       })
 
-      await findMultipleRowsAction.run($)
+      await findMultipleRowsAction.run!($)
 
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: expect.objectContaining({
