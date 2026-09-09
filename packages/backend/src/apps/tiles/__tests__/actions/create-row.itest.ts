@@ -17,7 +17,7 @@ import Context from '@/types/express/context'
 import tiles from '../..'
 import createRowAction from '../../actions/create-row'
 
-describe.each([['ddb'], ['pg']])(
+describe.each([['ddb'], ['pg']] as const)(
   'tiles create row action: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -74,19 +74,19 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should allow owners to create row', async () => {
-      await expect(createRowAction.run($)).resolves.toBeUndefined()
+      await expect(createRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toBeCalled()
     })
 
     it('should allow editors to create row', async () => {
       $.user = editor
-      await expect(createRowAction.run($)).resolves.toBeUndefined()
+      await expect(createRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toBeCalled()
     })
 
     it('should not allow viewers to create row', async () => {
       $.user = viewer
-      await expect(createRowAction.run($)).rejects.toThrow(StepError)
+      await expect(createRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should throw correct error if Tile deleted', async () => {
@@ -96,7 +96,7 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ id: $.step.parameters.tableId })
-      await expect(createRowAction.run($)).rejects.toThrow(StepError)
+      await expect(createRowAction.run!($)).rejects.toThrow(StepError)
     })
   },
 )

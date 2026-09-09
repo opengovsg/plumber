@@ -39,7 +39,7 @@ vi.mock('@/models/step', () => ({
   },
 }))
 
-describe.each([['ddb'], ['pg']])(
+describe.each([['ddb'], ['pg']] as const)(
   'tiles find single row action: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -106,14 +106,14 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should allow owners to find single row', async () => {
-      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toBeCalled()
     })
 
     it('should return an empty columns if no rows are found', async () => {
       const filters = $.step.parameters.filters as TableRowFilter[]
       filters[0].value = 'not a valid value'
-      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
       const emptyRow = dummyColumnIds.reduce((acc, c) => {
         acc[c] = ''
         return acc
@@ -129,13 +129,13 @@ describe.each([['ddb'], ['pg']])(
 
     it('should allow editors to find single row', async () => {
       $.user = editor
-      await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
+      await expect(findSingleRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toBeCalled()
     })
 
     it('should not allow viewers to find single row', async () => {
       $.user = viewer
-      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+      await expect(findSingleRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should throw correct error if Tile deleted', async () => {
@@ -150,7 +150,7 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ table_id: $.step.parameters.tableId })
-      await expect(findSingleRowAction.run($)).rejects.toThrow(StepError)
+      await expect(findSingleRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should call getTableRows with scan limit if exists in step config', async () => {
@@ -163,7 +163,7 @@ describe.each([['ddb'], ['pg']])(
           rows: [],
           stringifiedCursor: undefined,
         })
-      await findSingleRowAction.run($)
+      await findSingleRowAction.run!($)
       expect(getTableRowsSpy).toHaveBeenCalledWith({
         tableId: $.step.parameters.tableId,
         filters: $.step.parameters.filters,
@@ -183,7 +183,7 @@ describe.each([['ddb'], ['pg']])(
           stringifiedCursor: undefined,
         })
       $.step.parameters.returnLastRow = true
-      await findSingleRowAction.run($)
+      await findSingleRowAction.run!($)
       expect(getTableRowsSpy).toHaveBeenCalledWith({
         tableId: $.step.parameters.tableId,
         filters: $.step.parameters.filters,

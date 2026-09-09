@@ -30,7 +30,7 @@ describe('mrf-submission action (integration)', () => {
   beforeEach(async () => {
     context = await generateMockContext()
     await generateMockFlow(context, FLOW_ID)
-    flow = await Flow.query().findById(FLOW_ID)
+    flow = (await Flow.query().findById(FLOW_ID))!
     triggerStep = await generateMockStep(
       context,
       'newSubmission',
@@ -110,7 +110,7 @@ describe('mrf-submission action (integration)', () => {
       // But no execution step for the MRF action step itself
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'pause-execution' },
@@ -150,7 +150,7 @@ describe('mrf-submission action (integration)', () => {
       })
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toBeUndefined()
     })
@@ -189,7 +189,7 @@ describe('mrf-submission action (integration)', () => {
       })
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toBeUndefined()
     })
@@ -234,7 +234,7 @@ describe('mrf-submission action (integration)', () => {
       })
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toEqual({
         nextStep: {
@@ -279,7 +279,7 @@ describe('mrf-submission action (integration)', () => {
       })
 
       const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       expect(result).toEqual({
         nextStep: { command: 'stop-execution' },
@@ -341,7 +341,7 @@ describe('mrf-submission action (integration)', () => {
       })
 
       const $ = createGlobalVariable(mrfStep3, execution)
-      const result = await action.run($)
+      const result = await action.run!($)
 
       // Should continue normally because mrfStep2 (the real previous step) succeeded
       // If the rejection branch step were incorrectly picked as the previous step,
