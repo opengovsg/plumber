@@ -100,6 +100,25 @@ async function fetchEnvironmentVariables(client, environmentId, label) {
   }
 }
 
+function readInheritedEnvironmentIds(config) {
+  const { inheritedEnvironments } = config
+
+  if (inheritedEnvironments === undefined) {
+    return []
+  }
+  if (
+    !Array.isArray(inheritedEnvironments) ||
+    inheritedEnvironments.some((id) => typeof id !== 'string' || id === '')
+  ) {
+    fail(
+      `${CONFIG_FILE}'s "inheritedEnvironments" must be an array of ` +
+        'environment id strings, e.g. ["team environment 1", "team environment 2"].',
+    )
+  }
+
+  return inheritedEnvironments
+}
+
 async function fetchVariables(envName) {
   const config = readConfig()
   const environmentId = config.environments?.[envName]
@@ -111,12 +130,13 @@ async function fetchVariables(envName) {
     fail(`${CONFIG_FILE} has no environment id for "${envName}".`)
   }
 
+  const inheritedIds = readInheritedEnvironmentIds(config)
   const client = await createOpClient(config.accountName)
 
   // Inherited environments hold common team-level env vars, so they load
   // first: a developer's own "--env" environment overrides any of them.
   const variables = {}
-  for (const inheritedId of config.inheritedEnvironments ?? []) {
+  for (const inheritedId of inheritedIds) {
     Object.assign(
       variables,
       await fetchEnvironmentVariables(client, inheritedId, 'inherited'),
