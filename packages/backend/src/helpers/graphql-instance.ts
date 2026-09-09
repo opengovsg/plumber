@@ -21,10 +21,9 @@ import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import type { UnauthenticatedContext } from '@/types/express/context'
-import type AuthenticatedContext from '@/types/express/context'
 
 // Adds the logged in user's email (if available) as a span tag to each query.
-function ApolloServerPluginUserTracer(): ApolloServerPlugin<AuthenticatedContext> {
+function ApolloServerPluginUserTracer(): ApolloServerPlugin<UnauthenticatedContext> {
   return {
     async requestDidStart(requestContext) {
       // Add the tag right before we reply the user.
@@ -62,7 +61,7 @@ function PreventBatching(): ApolloServerPlugin {
           ) as OperationDefinitionNode | undefined
 
           // Check if there are multiple selections (root fields) in the query
-          if (queryDefinition?.selectionSet.selections.length > 1) {
+          if ((queryDefinition?.selectionSet.selections.length ?? 0) > 1) {
             throw new BadUserInputError(
               'Multiple root fields in a single operation are not allowed.',
             )

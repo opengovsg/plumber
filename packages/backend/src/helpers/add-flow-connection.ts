@@ -27,20 +27,27 @@ async function addFlowConnection({
   addedBy,
   trx,
 }: AddFlowConnectionParams): Promise<void> {
-  const appKey = step.appKey
-  const { parameterKey } = APP_CONNECTION_FIELDS?.[appKey] ?? {}
+  const { appKey, flowId, connectionId } = step
 
-  const flowId = step.flowId
-  const connectionId = step?.connectionId
+  if (!connectionId) {
+    throw new Error(`Step ${step.id} has no connection to add`)
+  }
+
+  const parameterKey = appKey
+    ? APP_CONNECTION_FIELDS[appKey]?.parameterKey
+    : undefined
+  const parameterValue = parameterKey
+    ? step.parameters?.[parameterKey]
+    : undefined
 
   // only flow connections with a parameterKey specified need to have
   // its metadata updated with the parameter value
-  if (step.parameters?.[parameterKey]) {
+  if (parameterKey && parameterValue) {
     await FlowConnections.patchFlowConnectionMetadata({
       flowId,
       connectionId,
       parameterKey,
-      parameterValue: step.parameters[parameterKey] as string,
+      parameterValue: parameterValue as string,
       addedBy,
       trx,
     })

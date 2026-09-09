@@ -185,7 +185,12 @@ describe('s3', () => {
 
     it('should handle null metadata', async () => {
       await expect(
-        getPresignedPost(COMMON_S3_BUCKET, 'test/file.txt', 'text/plain', null),
+        getPresignedPost(
+          COMMON_S3_BUCKET,
+          'test/file.txt',
+          'text/plain',
+          null as unknown as Record<string, string>,
+        ),
       ).rejects.toThrow('Metadata is required')
     })
 

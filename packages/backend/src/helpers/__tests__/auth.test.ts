@@ -83,7 +83,7 @@ describe('Auth helpers', () => {
         },
       )
       const result = parseAdminToken(token)
-      expect(result.userEmail).toEqual('coffee@plumber.local')
+      expect(result!.userEmail).toEqual('coffee@plumber.local')
     })
 
     it('does not accept tokens past a certain age', () => {
@@ -104,7 +104,7 @@ describe('Auth helpers', () => {
       })
 
       expect(mocks.whereUser).toBeCalledWith('email', 'coffee@plumber.local')
-      expect(result.id).toEqual('test-user-id')
+      expect(result!.id).toEqual('test-user-id')
     })
   })
 

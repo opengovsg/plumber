@@ -196,7 +196,7 @@ describe('validateApprovalConfig', () => {
         appKey: 'formsg',
         key: 'mrfSubmission',
         parameters: {
-          mrf: { approvalField: undefined },
+          mrf: {},
         },
       })
 

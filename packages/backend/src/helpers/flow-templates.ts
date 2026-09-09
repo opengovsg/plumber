@@ -32,7 +32,7 @@ const CREATE_APP_EVENT_KEY = (appKey?: string, eventKey?: string) => {
 }
 
 function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
-  let app: IApp
+  let app: IApp | undefined
   const { position, appKey, eventKey } = step
   if (appKey) {
     app = apps[appKey]
@@ -46,7 +46,7 @@ function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   if (eventKey) {
     const event = app?.triggers
       ? app?.triggers.find((trigger) => trigger.key === eventKey)
-      : app?.actions.find((action) => action.key === eventKey)
+      : app?.actions?.find((action) => action.key === eventKey)
     if (!event) {
       throw new Error(
         `Invalid event key for ${templateName} template at step ${position}`,
@@ -131,14 +131,21 @@ function replaceAllPlaceholdersInValue(
   placeholderReplacementMap: IJSONObject,
 ): string {
   // Remove the '<<' and '>>' using the captured group directly
-  return value.replace(PLACEHOLDER_REGEX, (match, capturedGroup) => {
-    const placeholderId = capturedGroup.trim() // Remove any accidental spaces
+  return value.replace(
+    PLACEHOLDER_REGEX,
+    (match: string, capturedGroup: string) => {
+      const placeholderId = capturedGroup.trim() // Remove any accidental spaces
 
-    // placeholder could be nested with the dot notation e.g. tiles column data
-    // use lodash `get` function to go into nested objects
-    const replacementValue = get(placeholderReplacementMap, placeholderId, null)
-    return replacementValue !== null ? replacementValue : match
-  })
+      // placeholder could be nested with the dot notation e.g. tiles column data
+      // use lodash `get` function to go into nested objects
+      const replacementValue = get(
+        placeholderReplacementMap,
+        placeholderId,
+        null,
+      )
+      return replacementValue !== null ? String(replacementValue) : match
+    },
+  )
 }
 
 /**
@@ -201,7 +208,10 @@ export async function createFlowFromTemplate(
         }
 
         // replace column names with column ids for each row data and create table rows
-        const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
+        const newRowData = replaceColumnNamesWithIds(
+          rowData ?? [],
+          columnNameToIdMap,
+        )
 
         // TODO: tiles-v2: use table operations to create rows
         await createTableRows({ tableId, dataArray: newRowData })
@@ -214,7 +224,7 @@ export async function createFlowFromTemplate(
     // prepare placeholder map for replacement
     const placeholderReplacementMap: IJSONObject = {
       [USER_EMAIL_KEY]: user.email,
-      [TILE_ID_KEY]: tableId,
+      [TILE_ID_KEY]: tableId ?? null,
       [TILE_COL_DATA_KEY]: columnNameToIdMap,
     }
 

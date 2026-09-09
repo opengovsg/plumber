@@ -514,7 +514,7 @@ describe('computeForEachParameters', () => {
       const executionStep = mockExecutionStepsCheckbox[1] // for-each step
 
       const result = computeForEachParameters({
-        data: executionStep.dataOut,
+        data: executionStep.dataOut!,
         keyPath,
         executionSteps: mockExecutionStepsCheckbox,
         executionStep,
@@ -590,7 +590,7 @@ describe('computeForEachParameters', () => {
     ({ keyPath, iteration, expected }) => {
       const executionStep = mockExecutionStepsTable[1] // for-each step
       const result = computeForEachParameters({
-        data: executionStep.dataOut,
+        data: executionStep.dataOut!,
         keyPath,
         executionSteps: mockExecutionStepsTable,
         executionStep,
@@ -617,7 +617,7 @@ describe('computeForEachParameters', () => {
     ({ keyPath, expected }) => {
       const executionStep = mockExecutionStepsAfterForEach[0]
       const result = computeForEachParameters({
-        data: executionStep.dataOut,
+        data: executionStep.dataOut!,
         keyPath,
         executionSteps: mockExecutionStepsTable,
         executionStep,
@@ -631,7 +631,7 @@ describe('computeForEachParameters', () => {
   it('should handle non-existent step id', () => {
     const executionStep = mockExecutionStepsAfterForEach[0]
     const result = computeForEachParameters({
-      data: executionStep.dataOut,
+      data: executionStep.dataOut!,
       keyPath: 'stringProp',
       executionSteps: mockExecutionStepsAfterForEach,
       executionStep: mockExecutionStepsAfterForEach[0],
@@ -645,7 +645,7 @@ describe('computeForEachParameters', () => {
     const keyPath = `items.columns.${FOR_EACH_ITERATION_KEY}.value`
     const executionStep = mockExecutionStepsCheckbox[2]
     const result = computeForEachParameters({
-      data: executionStep.dataOut,
+      data: executionStep.dataOut!,
       keyPath,
       executionSteps: mockExecutionStepsCheckbox,
       executionStep,
@@ -661,7 +661,7 @@ describe('computeForEachParameters', () => {
     const executionStep = mockExecutionStepsTable[1] // for-each step
 
     const result = computeForEachParameters({
-      data: executionStep.dataOut,
+      data: executionStep.dataOut!,
       keyPath,
       executionSteps: mockExecutionStepsTable,
       executionStep,
