@@ -51,7 +51,7 @@ describe('createConnection', () => {
     it('should not create connection without a flowId', async () => {
       await expect(
         createConnection(
-          null,
+          {},
           {
             // @ts-expect-error - intentionally exclude the flowId
             input: {
@@ -67,7 +67,7 @@ describe('createConnection', () => {
 
   describe('with flowId', () => {
     it('should add connection to flow_connections', async () => {
-      await createConnection(null, { input: defaultInput }, context)
+      await createConnection({}, { input: defaultInput }, context)
 
       const flowConnections = await FlowConnections.query()
       expect(flowConnections).toHaveLength(1)
@@ -76,7 +76,7 @@ describe('createConnection', () => {
     describe('access control', () => {
       it('should allow owner to create connection', async () => {
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -89,7 +89,7 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -101,7 +101,7 @@ describe('createConnection', () => {
         context.currentUser = viewer
 
         await expect(
-          createConnection(null, { input: defaultInput }, context),
+          createConnection({}, { input: defaultInput }, context),
         ).rejects.toThrow()
       })
 
@@ -110,7 +110,7 @@ describe('createConnection', () => {
 
         await expect(
           createConnection(
-            null,
+            {},
             { input: { ...defaultInput, flowId: testFlow.id } },
             context,
           ),
@@ -123,7 +123,7 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -134,7 +134,7 @@ describe('createConnection', () => {
 
       it('owner-created connection has owner userId', async () => {
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -149,7 +149,7 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -166,7 +166,7 @@ describe('createConnection', () => {
 
       it('owner-created connection is added to flow_connections when flow has collaborators', async () => {
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -184,7 +184,7 @@ describe('createConnection', () => {
         const soloFlow = await generateMockFlow(context, randomUUID())
 
         const result = await createConnection(
-          null,
+          {},
           { input: { ...defaultInput, flowId: soloFlow.id } },
           context,
         )
@@ -203,7 +203,7 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )
@@ -218,7 +218,7 @@ describe('createConnection', () => {
         context.currentUser = editor
 
         const result = await createConnection(
-          null,
+          {},
           { input: defaultInput },
           context,
         )

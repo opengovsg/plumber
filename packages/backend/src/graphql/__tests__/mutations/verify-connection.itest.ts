@@ -88,7 +88,7 @@ describe('verifyConnection', () => {
   describe('access control', () => {
     it('should allow owner to verify their personal connection', async () => {
       const result = await verifyConnection(
-        null,
+        {},
         { input: { id: ownerConnection.id, flowId: testFlow.id } },
         context,
       )
@@ -101,7 +101,7 @@ describe('verifyConnection', () => {
       context.currentUser = editor
 
       const result = await verifyConnection(
-        null,
+        {},
         { input: { id: collaboratorConnection.id, flowId: testFlow.id } },
         context,
       )
@@ -115,7 +115,7 @@ describe('verifyConnection', () => {
 
       await expect(
         verifyConnection(
-          null,
+          {},
           { input: { id: ownerConnection.id, flowId: testFlow.id } },
           context,
         ),
@@ -127,7 +127,7 @@ describe('verifyConnection', () => {
 
       await expect(
         verifyConnection(
-          null,
+          {},
           { input: { id: ownerConnection.id, flowId: testFlow.id } },
           context,
         ),
@@ -138,7 +138,7 @@ describe('verifyConnection', () => {
   describe('owner path - fetches from personal connections', () => {
     it('should verify connection belonging to owner', async () => {
       const result = await verifyConnection(
-        null,
+        {},
         { input: { id: ownerConnection.id, flowId: testFlow.id } },
         context,
       )
@@ -158,7 +158,7 @@ describe('verifyConnection', () => {
 
       await expect(
         verifyConnection(
-          null,
+          {},
           {
             input: {
               id: editorPersonalConnection.id,
@@ -176,7 +176,7 @@ describe('verifyConnection', () => {
       context.currentUser = editor
 
       const result = await verifyConnection(
-        null,
+        {},
         { input: { id: collaboratorConnection.id, flowId: testFlow.id } },
         context,
       )
@@ -191,7 +191,7 @@ describe('verifyConnection', () => {
       // connectionId that exists but is NOT in this flow's flow_connections
       await expect(
         verifyConnection(
-          null,
+          {},
           { input: { id: ownerConnection.id, flowId: testFlow.id } },
           context,
         ),
@@ -213,7 +213,7 @@ describe('verifyConnection', () => {
       // Editor tries to verify - should hit ownership guard, not "not found"
       await expect(
         verifyConnection(
-          null,
+          {},
           { input: { id: ownerConnection.id, flowId: testFlow.id } },
           context,
         ),
@@ -250,7 +250,7 @@ describe('verifyConnection', () => {
       // Editor tries to verify a connection from otherFlow, but passes testFlow's id
       await expect(
         verifyConnection(
-          null,
+          {},
           { input: { id: otherFlowConnection.id, flowId: testFlow.id } },
           context,
         ),
@@ -261,7 +261,7 @@ describe('verifyConnection', () => {
   describe('post-verification state', () => {
     it('should mark connection as verified and non-draft after successful verification', async () => {
       await verifyConnection(
-        null,
+        {},
         { input: { id: ownerConnection.id, flowId: testFlow.id } },
         context,
       )
@@ -273,7 +273,7 @@ describe('verifyConnection', () => {
 
     it('should call verifyCredentials exactly once', async () => {
       await verifyConnection(
-        null,
+        {},
         { input: { id: ownerConnection.id, flowId: testFlow.id } },
         context,
       )

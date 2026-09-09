@@ -132,7 +132,7 @@ describe('updateStep mutation', () => {
       parameters: { updatedParam: 'newValue' },
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -152,7 +152,7 @@ describe('updateStep mutation', () => {
       connection: { id: connectionId },
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -178,7 +178,7 @@ describe('updateStep mutation', () => {
       connectionNotFound: true,
     })
 
-    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+    await expect(updateStep({}, { input }, context)).rejects.toThrow(
       NotFoundError,
     )
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
@@ -198,7 +198,7 @@ describe('updateStep mutation', () => {
       stepNotFound: true,
     })
 
-    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+    await expect(updateStep({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
     expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
@@ -213,7 +213,7 @@ describe('updateStep mutation', () => {
       connection: { id: null } as any,
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendMessage',
@@ -232,7 +232,7 @@ describe('updateStep mutation', () => {
       key: 'invalidKey',
     }
 
-    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+    await expect(updateStep({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
 
@@ -241,7 +241,7 @@ describe('updateStep mutation', () => {
       appKey: 'invalidAppKey',
     }
 
-    await expect(updateStep(null, { input: input2 }, context)).rejects.toThrow(
+    await expect(updateStep({}, { input: input2 }, context)).rejects.toThrow(
       BadUserInputError,
     )
   })
@@ -252,7 +252,7 @@ describe('updateStep mutation', () => {
       status: 'incomplete',
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -271,7 +271,7 @@ describe('updateStep mutation', () => {
       config: { stepName: 'Updated Step Name' },
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -290,7 +290,7 @@ describe('updateStep mutation', () => {
       config: { stepName: '' },
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -324,7 +324,7 @@ describe('updateStep mutation', () => {
       config: { stepName: 'Updated Step Name' },
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -369,7 +369,7 @@ describe('updateStep mutation', () => {
       config: { stepName: '' },
     }
 
-    await updateStep(null, { input }, context)
+    await updateStep({}, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
       key: 'sendTransactionalEmail',
@@ -404,7 +404,7 @@ describe('updateStep mutation', () => {
       stepAppKey: 'postman',
       flowUpdatedAt: testFlowISODateString,
     })
-    await updateStep(null, { input: { ...genericInputParams } }, context)
+    await updateStep({}, { input: { ...genericInputParams } }, context)
     expect(patchLastUpdatedSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -415,7 +415,7 @@ describe('updateStep mutation', () => {
       key: 'forEach',
       parameters: { items: 'not a valid items variable' },
     }
-    await expect(updateStep(null, { input }, context)).rejects.toThrow(
+    await expect(updateStep({}, { input }, context)).rejects.toThrow(
       BadUserInputError,
     )
   })
@@ -440,7 +440,7 @@ describe('updateStep mutation', () => {
           },
         )
 
-        await expect(updateStep(null, { input }, context)).rejects.toThrow(
+        await expect(updateStep({}, { input }, context)).rejects.toThrow(
           BadUserInputError,
         )
         expect(patchAndFetchByIdSpy).not.toHaveBeenCalled()
@@ -472,9 +472,7 @@ describe('updateStep mutation', () => {
           connectionKey: 'postman',
         })
 
-        await expect(
-          updateStep(null, { input }, context),
-        ).resolves.not.toThrow()
+        await expect(updateStep({}, { input }, context)).resolves.not.toThrow()
         expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
           key: 'sendTransactionalEmail',
           appKey: 'postman',
@@ -491,7 +489,7 @@ describe('updateStep mutation', () => {
   describe('version assignment', () => {
     it('does not include version in patch when app has no stepTransformer', async () => {
       // postman has no stepTransformer
-      await updateStep(null, { input: { ...genericInputParams } }, context)
+      await updateStep({}, { input: { ...genericInputParams } }, context)
 
       expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
         mockStepId,
@@ -524,7 +522,7 @@ describe('updateStep mutation', () => {
       })
 
       try {
-        await updateStep(null, { input: { ...genericInputParams } }, context)
+        await updateStep({}, { input: { ...genericInputParams } }, context)
 
         expect(mockTransformStepParameters).toHaveBeenCalledWith(
           'sendTransactionalEmail',
@@ -574,7 +572,7 @@ describe('updateStep mutation', () => {
       try {
         // Frontend sends params in old format (stale)
         await updateStep(
-          null,
+          {},
           {
             input: {
               ...genericInputParams,
@@ -652,7 +650,7 @@ describe('updateStep mutation', () => {
         parameters: { fileId: '1234567890' },
       }
 
-      await updateStep(null, { input }, context)
+      await updateStep({}, { input }, context)
 
       expect(patchSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
@@ -675,7 +673,7 @@ describe('updateStep mutation', () => {
         connection: { id: mockConnectionId },
       }
 
-      await updateStep(null, { input }, context)
+      await updateStep({}, { input }, context)
 
       expect(patchSpy).not.toHaveBeenCalled()
       expect(addSpy).toHaveBeenCalledWith({
@@ -696,7 +694,7 @@ describe('updateStep mutation', () => {
         connection: { id: mockConnectionId },
       }
 
-      await updateStep(null, { input }, context)
+      await updateStep({}, { input }, context)
 
       expect(addSpy).toHaveBeenCalledWith({
         flowId: mockFlowId,
@@ -746,7 +744,7 @@ describe('updateStep mutation', () => {
         connection: { id: mockConnectionId },
       }
 
-      await updateStep(null, { input }, context)
+      await updateStep({}, { input }, context)
 
       expect(patchSpy).not.toHaveBeenCalled()
       expect(addSpy).not.toHaveBeenCalled()
@@ -776,7 +774,7 @@ describe('updateStep mutation', () => {
         connection: {},
       }
 
-      await updateStep(null, { input }, context)
+      await updateStep({}, { input }, context)
 
       expect(patchSpy).not.toHaveBeenCalled()
       expect(addSpy).not.toHaveBeenCalled()
@@ -827,7 +825,7 @@ describe('updateStep mutation', () => {
         parameters: { tableId: mockTableId },
       }
 
-      await updateStep(null, { input }, context)
+      await updateStep({}, { input }, context)
 
       expect(patchSpy).not.toHaveBeenCalled()
       expect(addSpy).toHaveBeenCalledWith({
@@ -923,7 +921,7 @@ describe('updateStep endStepId config merge', () => {
     ])
 
     await updateStep(
-      null,
+      {},
       {
         input: {
           id: ifThen.id,
@@ -952,7 +950,7 @@ describe('updateStep endStepId config merge', () => {
     })
 
     await updateStep(
-      null,
+      {},
       {
         input: {
           id: ifThen.id,
@@ -977,7 +975,7 @@ describe('updateStep endStepId config merge', () => {
 
     await expect(
       updateStep(
-        null,
+        {},
         {
           input: {
             id: postmanStep.id,
@@ -1010,7 +1008,7 @@ describe('updateStep endStepId config merge', () => {
 
     await expect(
       updateStep(
-        null,
+        {},
         {
           input: {
             id: ifThen.id,

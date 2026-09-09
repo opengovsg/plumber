@@ -43,7 +43,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should delete table, columns and collaborators', async () => {
       const success = await deleteTable(
-        null,
+        {},
         { input: { id: dummyTable.id } },
         context,
       )
@@ -64,12 +64,12 @@ describe.each([['ddb'], ['pg']])(
     it('should throw an error if user is not the owner', async () => {
       context.currentUser = editor
       await expect(
-        deleteTable(null, { input: { id: dummyTable.id } }, context),
+        deleteTable({}, { input: { id: dummyTable.id } }, context),
       ).rejects.toThrow(ForbiddenError)
 
       context.currentUser = viewer
       await expect(
-        deleteTable(null, { input: { id: dummyTable.id } }, context),
+        deleteTable({}, { input: { id: dummyTable.id } }, context),
       ).rejects.toThrow(ForbiddenError)
     })
   },
@@ -85,7 +85,7 @@ describe('delete table mutation - general tests', () => {
 
   it('should throw an error if table is not found', async () => {
     const deleteTableAction = deleteTable(
-      null,
+      {},
       { input: { id: randomUUID() } },
       context,
     )

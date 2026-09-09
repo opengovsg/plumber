@@ -88,7 +88,7 @@ describe('Login with SGID', () => {
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
       'loong_loong@coffee.gov.sg',
@@ -119,7 +119,7 @@ describe('Login with SGID', () => {
     async (data) => {
       mocks.sgidUserInfo.mockResolvedValueOnce({ data })
 
-      const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+      const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
       expect(mocks.getOrCreateUser).not.toBeCalled()
       expect(mocks.setAuthCookie).not.toBeCalled()
@@ -142,7 +142,7 @@ describe('Login with SGID', () => {
       },
     })
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).not.toBeCalled()
     expect(mocks.sendOnboardingEmail).not.toBeCalled()
@@ -181,7 +181,7 @@ describe('Login with SGID', () => {
     })
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
     expect(mocks.getOrCreateUser).toHaveBeenCalledWith('loong@tea.gov.sg')
     expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith({ id: 'abc-def' })
@@ -219,7 +219,7 @@ describe('Login with SGID', () => {
         },
       })
       mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
-      const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+      const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
       if (isWhitelisted) {
         expect(mocks.getOrCreateUser).toHaveBeenCalledWith(
@@ -253,7 +253,7 @@ describe('Login with SGID', () => {
     })
 
     await expect(
-      loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT),
+      loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT),
     ).rejects.toThrowError('Received malformed data from POCDEX')
 
     expect(mocks.logError).toBeCalledWith(
@@ -275,7 +275,7 @@ describe('Login with SGID', () => {
     })
 
     await expect(
-      loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT),
+      loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT),
     ).rejects.toThrowError('derp')
 
     expect(mocks.logError).toBeCalledWith('Unable to query user info', {
@@ -343,7 +343,7 @@ describe('Login with SGID', () => {
       },
     ]
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
     expect(result.publicOfficerEmployments).toEqual(expectedEntries)
     expect(mocks.signJwt).toBeCalledWith(
@@ -379,7 +379,7 @@ describe('Login with SGID', () => {
       },
     })
 
-    const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
+    const result = await loginWithSgid({}, STUB_PARAMS, STUB_CONTEXT)
 
     expect(result.publicOfficerEmployments).toEqual([
       {

@@ -56,7 +56,7 @@ describe('generatePresignedPost', () => {
     const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
 
     await generatePresignedPost(
-      null,
+      {},
       {
         input: {
           ...VALID_PARAMS,
@@ -97,7 +97,7 @@ describe('generatePresignedPost', () => {
     context.currentUser = editor
 
     await generatePresignedPost(
-      null,
+      {},
       {
         input: {
           ...VALID_PARAMS,
@@ -120,7 +120,7 @@ describe('generatePresignedPost', () => {
       .where('id', VALID_PARAMS.flow.id)
 
     await expect(
-      generatePresignedPost(null, { input: VALID_PARAMS }, context),
+      generatePresignedPost({}, { input: VALID_PARAMS }, context),
     ).rejects.toThrow(ForbiddenError)
   })
 
@@ -136,7 +136,7 @@ describe('generatePresignedPost', () => {
     context.currentUser = viewer
 
     await expect(
-      generatePresignedPost(null, { input: VALID_PARAMS }, context),
+      generatePresignedPost({}, { input: VALID_PARAMS }, context),
     ).rejects.toThrow(ForbiddenError)
   })
 
@@ -149,7 +149,7 @@ describe('generatePresignedPost', () => {
 
     const tooLargeParams = { ...VALID_PARAMS, size: 20 * 1024 * 1024 + 1 }
     await expect(
-      generatePresignedPost(null, { input: tooLargeParams }, context),
+      generatePresignedPost({}, { input: tooLargeParams }, context),
     ).rejects.toThrow('Size of attachment exceeds 20MB')
   })
 
@@ -170,7 +170,7 @@ describe('generatePresignedPost', () => {
       }
 
       await expect(
-        generatePresignedPost(null, { input: unsupportedParams }, context),
+        generatePresignedPost({}, { input: unsupportedParams }, context),
       ).rejects.toThrow('Unsupported file type')
     },
   )
@@ -183,7 +183,7 @@ describe('generatePresignedPost', () => {
       const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)
 
       await generatePresignedPost(
-        null,
+        {},
         {
           input: {
             ...VALID_PARAMS,

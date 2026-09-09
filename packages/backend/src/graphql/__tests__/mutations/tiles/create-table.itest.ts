@@ -61,7 +61,7 @@ describe.each([['pg'], ['ddb']])(
     it('should create a blank table', async () => {
       mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
       const table = await createTable(
-        null,
+        {},
         { input: { name: 'Test Table', isBlank: true } },
         context,
       )
@@ -80,7 +80,7 @@ describe.each([['pg'], ['ddb']])(
     it('should create a table and with placeholder rows and columns', async () => {
       mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
       const table = await createTable(
-        null,
+        {},
         { input: { name: 'Test Table', isBlank: false } },
         context,
       )
@@ -98,13 +98,13 @@ describe.each([['pg'], ['ddb']])(
 
     it('should be able create tables with the same name', async () => {
       const table = await createTable(
-        null,
+        {},
         { input: { name: 'Test Table', isBlank: false } },
         context,
       )
 
       const table2 = await createTable(
-        null,
+        {},
         { input: { name: 'Test Table', isBlank: false } },
         context,
       )
@@ -114,7 +114,7 @@ describe.each([['pg'], ['ddb']])(
 
     it('should throw an error when table name is empty', async () => {
       await expect(
-        createTable(null, { input: { name: '', isBlank: false } }, context),
+        createTable({}, { input: { name: '', isBlank: false } }, context),
       ).rejects.toThrow()
     })
 
@@ -136,7 +136,7 @@ describe.each([['pg'], ['ddb']])(
         mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
 
         const table = await createTable(
-          null,
+          {},
           {
             input: {
               name: 'Flow Table',
@@ -193,7 +193,7 @@ describe.each([['pg'], ['ddb']])(
 
         await expect(
           createTable(
-            null,
+            {},
             {
               input: {
                 name: 'Editor Flow Table',
@@ -213,7 +213,7 @@ describe.each([['pg'], ['ddb']])(
 
         await expect(
           createTable(
-            null,
+            {},
             {
               input: {
                 name: 'Flow Table',

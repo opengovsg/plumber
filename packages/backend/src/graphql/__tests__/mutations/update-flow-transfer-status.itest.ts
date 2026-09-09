@@ -61,7 +61,7 @@ describe('updateFlowTransferStatus', () => {
     it('should reject setting status back to pending', async () => {
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'pending' } },
           context,
         ),
@@ -72,7 +72,7 @@ describe('updateFlowTransferStatus', () => {
       context.currentUser = otherUser
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'approved' } },
           context,
         ),
@@ -83,7 +83,7 @@ describe('updateFlowTransferStatus', () => {
       context.currentUser = otherUser
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'rejected' } },
           context,
         ),
@@ -94,7 +94,7 @@ describe('updateFlowTransferStatus', () => {
       context.currentUser = otherUser
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'cancelled' } },
           context,
         ),
@@ -106,7 +106,7 @@ describe('updateFlowTransferStatus', () => {
     it('new owner can reject; only status is updated', async () => {
       context.currentUser = newOwner
       const res = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'rejected' } },
         context,
       )
@@ -119,7 +119,7 @@ describe('updateFlowTransferStatus', () => {
     it('old owner can cancel; only status is updated', async () => {
       context.currentUser = owner
       const res = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'cancelled' } },
         context,
       )
@@ -159,7 +159,7 @@ describe('updateFlowTransferStatus', () => {
 
       context.currentUser = newOwner
       const result = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       )
@@ -261,7 +261,7 @@ describe('updateFlowTransferStatus', () => {
       // Approve the transfer
       context.currentUser = newOwner
       const result = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       )
@@ -322,7 +322,7 @@ describe('updateFlowTransferStatus', () => {
       // Approve the transfer as new owner
       context.currentUser = newOwner
       const result = await updateFlowTransferStatus(
-        null,
+        {},
         { input: { id: transfer.id, status: 'approved' } },
         context,
       )
@@ -383,7 +383,7 @@ describe('updateFlowTransferStatus', () => {
       // Should throw an error indicating old owner lacks permissions
       await expect(
         updateFlowTransferStatus(
-          null,
+          {},
           { input: { id: transfer.id, status: 'approved' } },
           context,
         ),

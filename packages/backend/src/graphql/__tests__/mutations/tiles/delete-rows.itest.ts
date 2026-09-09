@@ -71,7 +71,7 @@ describe.each([['pg'], ['ddb']])(
       const slicedRows = rowIds.slice(0, 5)
 
       const success = await deleteRows(
-        null,
+        {},
         { input: { tableId: dummyTable.id, rowIds: slicedRows } },
         context,
       )
@@ -104,7 +104,7 @@ describe.each([['pg'], ['ddb']])(
 
     it('should be able to delete more than 25 rows', async () => {
       const success = await deleteRows(
-        null,
+        {},
         { input: { tableId: dummyTable.id, rowIds } },
         context,
       )
@@ -140,7 +140,7 @@ describe.each([['pg'], ['ddb']])(
 
       await expect(
         deleteRows(
-          null,
+          {},
           { input: { tableId: dummyTable.id, rowIds: invalidRowIds } },
           context,
         ),
@@ -167,7 +167,7 @@ describe.each([['pg'], ['ddb']])(
       context.currentUser = editor
       await expect(
         deleteRows(
-          null,
+          {},
           { input: { tableId: dummyTable.id, rowIds: slicedRows } },
           context,
         ),
@@ -180,7 +180,7 @@ describe.each([['pg'], ['ddb']])(
       context.currentUser = viewer
       await expect(
         deleteRows(
-          null,
+          {},
           { input: { tableId: dummyTable.id, rowIds: slicedRows } },
           context,
         ),

@@ -130,7 +130,7 @@ describe('retryExecutionStep mutation', () => {
   describe('authorization tests', () => {
     it('should allow owner to retry execution step successfully', async () => {
       const result = await retryExecutionStep(
-        null,
+        {},
         { input: genericInputParams },
         context,
       )
@@ -144,7 +144,7 @@ describe('retryExecutionStep mutation', () => {
       context.currentUser = editor
 
       const result = await retryExecutionStep(
-        null,
+        {},
         { input: genericInputParams },
         context,
       )
@@ -158,7 +158,7 @@ describe('retryExecutionStep mutation', () => {
       context.currentUser = viewer
 
       await expect(
-        retryExecutionStep(null, { input: genericInputParams }, context),
+        retryExecutionStep({}, { input: genericInputParams }, context),
       ).rejects.toThrow(Error)
     })
 
@@ -166,7 +166,7 @@ describe('retryExecutionStep mutation', () => {
       context.currentUser = nonCollaborator
 
       await expect(
-        retryExecutionStep(null, { input: genericInputParams }, context),
+        retryExecutionStep({}, { input: genericInputParams }, context),
       ).rejects.toThrow(Error)
     })
   })
@@ -177,9 +177,9 @@ describe('retryExecutionStep mutation', () => {
         executionStepId: randomUUID(), // Non-existent ID
       }
 
-      await expect(
-        retryExecutionStep(null, { input }, context),
-      ).rejects.toThrow('Execution step not found')
+      await expect(retryExecutionStep({}, { input }, context)).rejects.toThrow(
+        'Execution step not found',
+      )
     })
 
     it('should throw error when execution step has no job_id', async () => {
@@ -187,7 +187,7 @@ describe('retryExecutionStep mutation', () => {
       await mockExecutionStep.$query().patch({ jobId: null })
 
       await expect(
-        retryExecutionStep(null, { input: genericInputParams }, context),
+        retryExecutionStep({}, { input: genericInputParams }, context),
       ).rejects.toThrow('Execution step not found')
     })
 
@@ -196,7 +196,7 @@ describe('retryExecutionStep mutation', () => {
       await mockExecutionStep.$query().patch({ status: 'success' })
 
       await expect(
-        retryExecutionStep(null, { input: genericInputParams }, context),
+        retryExecutionStep({}, { input: genericInputParams }, context),
       ).rejects.toThrow('Execution step not found')
     })
   })
@@ -206,7 +206,7 @@ describe('retryExecutionStep mutation', () => {
       getActionJobSpy.mockResolvedValue(null)
 
       await expect(
-        retryExecutionStep(null, { input: genericInputParams }, context),
+        retryExecutionStep({}, { input: genericInputParams }, context),
       ).rejects.toThrow('Job not found or has expired')
 
       // Verify that job_id was removed from execution step
@@ -221,7 +221,7 @@ describe('retryExecutionStep mutation', () => {
         executionStepId: mockExecutionStep.id,
       }
 
-      const result = await retryExecutionStep(null, { input }, context)
+      const result = await retryExecutionStep({}, { input }, context)
 
       expect(result).toBe(true)
       expect(getActionJobSpy).toHaveBeenCalledWith('test-job-id')
@@ -231,7 +231,7 @@ describe('retryExecutionStep mutation', () => {
     it('should stamp retryTimestamp on the job before calling retry', async () => {
       vi.spyOn(Date, 'now').mockReturnValue(123456789)
 
-      await retryExecutionStep(null, { input: genericInputParams }, context)
+      await retryExecutionStep({}, { input: genericInputParams }, context)
 
       expect(mockJob.updateData).toHaveBeenCalledWith({
         ...mockJobData,
@@ -247,7 +247,7 @@ describe('retryExecutionStep mutation', () => {
       mockJob.retry.mockRejectedValue(retryErr)
 
       await expect(
-        retryExecutionStep(null, { input: genericInputParams }, context),
+        retryExecutionStep({}, { input: genericInputParams }, context),
       ).rejects.toThrow(retryErr)
 
       expect(mockJob.updateData).toHaveBeenNthCalledWith(1, {
@@ -260,7 +260,7 @@ describe('retryExecutionStep mutation', () => {
 
   describe('execution status updates', () => {
     it('should set execution status to null after successful retry', async () => {
-      await retryExecutionStep(null, { input: genericInputParams }, context)
+      await retryExecutionStep({}, { input: genericInputParams }, context)
 
       const updatedExecution = await Execution.query().findById(
         mockExecution.id,
@@ -281,7 +281,7 @@ describe('retryExecutionStep mutation', () => {
         .mockResolvedValue(undefined)
 
       const result = await retryExecutionStep(
-        null,
+        {},
         { input: genericInputParams },
         context,
       )
@@ -299,7 +299,7 @@ describe('retryExecutionStep mutation', () => {
         .spyOn(ExecutionStep, 'patchIterationStatus')
         .mockResolvedValue(undefined)
 
-      await retryExecutionStep(null, { input: genericInputParams }, context)
+      await retryExecutionStep({}, { input: genericInputParams }, context)
 
       expect(patchIterationStatusSpy).not.toHaveBeenCalled()
     })
