@@ -32,7 +32,7 @@ describe('delete table collaborators', () => {
 
   it('should be able to delete collaborators', async () => {
     await deleteTableCollaborator(
-      null,
+      {},
       {
         input: {
           tableId: dummyTable.id,
@@ -55,7 +55,7 @@ describe('delete table collaborators', () => {
   it('should throw an error if user is not found', async () => {
     await expect(
       deleteTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -69,7 +69,7 @@ describe('delete table collaborators', () => {
 
   it('should throw an error if collaborator is not found', async () => {
     await deleteTableCollaborator(
-      null,
+      {},
       {
         input: {
           tableId: dummyTable.id,
@@ -80,7 +80,7 @@ describe('delete table collaborators', () => {
     )
     await expect(
       deleteTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -96,7 +96,7 @@ describe('delete table collaborators', () => {
     context.currentUser = editor
     await expect(
       deleteTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -112,7 +112,7 @@ describe('delete table collaborators', () => {
     context.currentUser = editor
     await expect(
       deleteTableCollaborator(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,

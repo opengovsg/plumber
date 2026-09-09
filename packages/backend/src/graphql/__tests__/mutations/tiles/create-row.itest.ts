@@ -62,7 +62,7 @@ describe.each([['ddb'], ['pg']])(
       mocks.getLdFlagValue.mockResolvedValueOnce(databaseType)
 
       const row = await createRow(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -95,7 +95,7 @@ describe.each([['ddb'], ['pg']])(
         columnIds: dummyColumnIds,
       })
       const row = await createRow(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -127,7 +127,7 @@ describe.each([['ddb'], ['pg']])(
       })
       await expect(
         createRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -143,7 +143,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = editor
       await expect(
         createRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -159,7 +159,7 @@ describe.each([['ddb'], ['pg']])(
       context.currentUser = viewer
       await expect(
         createRow(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,

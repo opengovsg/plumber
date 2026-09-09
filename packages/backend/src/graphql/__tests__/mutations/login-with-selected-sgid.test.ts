@@ -71,7 +71,7 @@ describe('Login with selected SGID', () => {
     mocks.getOrCreateUser.mockResolvedValueOnce({ id: 'abc-def' } as User)
 
     const result = await loginWithSelectedSgid(
-      null,
+      {},
       {
         input: {
           workEmail: 'loong_loong@coffee.gov.sg',
@@ -113,7 +113,7 @@ describe('Login with selected SGID', () => {
 
     await expect(
       loginWithSelectedSgid(
-        null,
+        {},
         {
           input: {
             workEmail: 'not_loong@coffee.gov.sg',
@@ -137,7 +137,7 @@ describe('Login with selected SGID', () => {
 
     await expect(
       loginWithSelectedSgid(
-        null,
+        {},
         {
           input: {
             workEmail: 'not_loong@coffee.gov.sg',

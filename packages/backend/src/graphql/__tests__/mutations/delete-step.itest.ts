@@ -102,7 +102,7 @@ describe('deleteStep mutation', () => {
 
   it('should throw error when no steps to delete', async () => {
     await expect(
-      deleteStep(null, { input: { ids: [], ...defaultFlowInput } }, context),
+      deleteStep({}, { input: { ids: [], ...defaultFlowInput } }, context),
     ).rejects.toThrow('Nothing to delete')
   })
 
@@ -125,7 +125,7 @@ describe('deleteStep mutation', () => {
 
     await expect(
       deleteStep(
-        null,
+        {},
         {
           input: { ids: [testSteps[0].id, otherStep.id], ...defaultFlowInput },
         },
@@ -136,7 +136,7 @@ describe('deleteStep mutation', () => {
 
   it('should delete a single trigger step and create a new one', async () => {
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
       context,
     )
@@ -154,7 +154,7 @@ describe('deleteStep mutation', () => {
 
   it('should delete contiguous action steps and update positions', async () => {
     await deleteStep(
-      null,
+      {},
       {
         input: { ids: [testSteps[1].id, testSteps[2].id], ...defaultFlowInput },
       },
@@ -184,7 +184,7 @@ describe('deleteStep mutation', () => {
 
     await expect(
       deleteStep(
-        null,
+        {},
         {
           input: { ids: [testSteps[1].id, fourthStep.id], ...defaultFlowInput },
         },
@@ -206,7 +206,7 @@ describe('deleteStep mutation', () => {
     )
 
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
       context,
     )
@@ -218,7 +218,7 @@ describe('deleteStep mutation', () => {
 
   it('should call patchLastUpdated when deleting trigger step', async () => {
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
       context,
     )
@@ -227,7 +227,7 @@ describe('deleteStep mutation', () => {
 
   it('should call patchLastUpdated when deleting action steps', async () => {
     await deleteStep(
-      null,
+      {},
       {
         input: { ids: [testSteps[1].id, testSteps[2].id], ...defaultFlowInput },
       },
@@ -238,7 +238,7 @@ describe('deleteStep mutation', () => {
 
   it('should allow owner to delete steps', async () => {
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
       context,
     )
@@ -254,7 +254,7 @@ describe('deleteStep mutation', () => {
   it('should allow editor to delete steps', async () => {
     context.currentUser = editor
     await deleteStep(
-      null,
+      {},
       { input: { ids: [testSteps[1].id], ...defaultFlowInput } },
       context,
     )
@@ -271,7 +271,7 @@ describe('deleteStep mutation', () => {
     context.currentUser = nonCollaborator
     await expect(
       deleteStep(
-        null,
+        {},
         { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
         context,
       ),
@@ -288,7 +288,7 @@ describe('deleteStep mutation', () => {
     context.currentUser = viewer
     await expect(
       deleteStep(
-        null,
+        {},
         { input: { ids: [testSteps[0].id], ...defaultFlowInput } },
         context,
       ),
@@ -349,7 +349,7 @@ describe('deleteStep mutation', () => {
       const after = await addPlain(5)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [ifThen.id], ...blockFlowInput } },
         context,
       )
@@ -370,7 +370,7 @@ describe('deleteStep mutation', () => {
       const after = await addPlain(5)
 
       await deleteStep(
-        null,
+        {},
         {
           input: { ids: [ifThen.id, s3.id, s4.id], ...blockFlowInput },
         },
@@ -388,7 +388,7 @@ describe('deleteStep mutation', () => {
       const s4 = await addPlain(4)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [legacy.id], ...blockFlowInput } },
         context,
       )
@@ -406,7 +406,7 @@ describe('deleteStep mutation', () => {
       const ifThen = await addIfThen(2, { endStepId: s4.id })
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [s4.id], ...blockFlowInput } },
         context,
       )
@@ -422,7 +422,7 @@ describe('deleteStep mutation', () => {
       const ifThen = await addIfThen(2, { endStepId: s3.id })
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [s3.id], ...blockFlowInput } },
         context,
       )
@@ -438,7 +438,7 @@ describe('deleteStep mutation', () => {
       const ifThen = await addIfThen(2, { endStepId: 'does-not-exist' })
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [ifThen.id], ...blockFlowInput } },
         context,
       )
@@ -472,7 +472,7 @@ describe('deleteStep mutation', () => {
       )
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [trigger.id], ...blockFlowInput } },
         context,
       )
@@ -546,7 +546,7 @@ describe('deleteStep mutation', () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [unrelated.id], ...blockFlowInput } },
         context,
       )
@@ -570,7 +570,7 @@ describe('deleteStep mutation', () => {
       mocks.getLdFlagValue.mockResolvedValue(false)
 
       await deleteStep(
-        null,
+        {},
         { input: { ids: [unrelated.id], ...blockFlowInput } },
         context,
       )

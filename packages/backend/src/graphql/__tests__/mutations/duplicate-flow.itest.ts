@@ -72,7 +72,7 @@ describe('duplicateFlow endStepId remap', () => {
     const [, ifThen, s3] = steps
     await ifThen.$query().patch({ config: { endStepId: s3.id } })
 
-    await duplicateFlow(null, { input: { id: flow.id } }, context)
+    await duplicateFlow({}, { input: { id: flow.id } }, context)
 
     const copies = await copiedSteps()
     const copiedIfThen = copies[1]
@@ -90,7 +90,7 @@ describe('duplicateFlow endStepId remap', () => {
     const [, ifThen] = steps
     await ifThen.$query().patch({ config: { endStepId: ifThen.id } })
 
-    await duplicateFlow(null, { input: { id: flow.id } }, context)
+    await duplicateFlow({}, { input: { id: flow.id } }, context)
 
     const copies = await copiedSteps()
     const copiedIfThen = copies[1]
@@ -108,7 +108,7 @@ describe('duplicateFlow endStepId remap', () => {
     await ifThen.$query().patch({ config: { endStepId: 'does-not-exist' } })
 
     await expect(
-      duplicateFlow(null, { input: { id: flow.id } }, context),
+      duplicateFlow({}, { input: { id: flow.id } }, context),
     ).rejects.toThrow(/dangling endStepId/)
 
     const copy = await Flow.query().where('name', '[COPY] Source Flow').first()

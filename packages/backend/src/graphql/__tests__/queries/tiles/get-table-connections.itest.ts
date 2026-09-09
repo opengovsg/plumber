@@ -29,12 +29,12 @@ describe('get table connections query', () => {
   })
 
   it('should return empty object if no tables found', async () => {
-    const { edges } = await getTables(null, { limit: 10, offset: 0 }, context)
+    const { edges } = await getTables({}, { limit: 10, offset: 0 }, context)
     const tables = edges.map((edge) => edge.node)
     expect(tables).toHaveLength(0)
 
     const tableConnections = await getTableConnections(
-      null,
+      {},
       { tableIds: [] },
       context,
     )
@@ -49,7 +49,7 @@ describe('get table connections query', () => {
     const testIds = Array.from({ length: numTables }, () => crypto.randomUUID())
 
     const tableConnections = await getTableConnections(
-      null,
+      {},
       { tableIds: testIds },
       context,
     )
@@ -86,7 +86,7 @@ describe('get table connections query', () => {
       for (let i = 0; i < Math.ceil(numTables / 2); i++) {
         const offset = limit * i
         const { edges, pageInfo } = await getTables(
-          null,
+          {},
           { limit, offset },
           context,
         )
@@ -100,7 +100,7 @@ describe('get table connections query', () => {
         const pageTableIds = edges.map((edge) => edge.node.id)
 
         const tableConnections = await getTableConnections(
-          null,
+          {},
           { tableIds: pageTableIds },
           context,
         )
@@ -154,7 +154,7 @@ describe('get table connections query', () => {
       for (let i = 0; i < Math.ceil(numTables / 2); i++) {
         const offset = limit * i
         const { edges, pageInfo } = await getTables(
-          null,
+          {},
           { limit, offset },
           context,
         )
@@ -168,7 +168,7 @@ describe('get table connections query', () => {
         const pageTableIds = edges.map((edge) => edge.node.id)
 
         const tableConnections = await getTableConnections(
-          null,
+          {},
           { tableIds: pageTableIds },
           context,
         )
@@ -219,7 +219,7 @@ describe('get table connections query', () => {
 
       // test as a whole
       const { edges, pageInfo } = await getTables(
-        null,
+        {},
         { limit: 10, offset: 0 },
         context,
       )
@@ -233,7 +233,7 @@ describe('get table connections query', () => {
       const testIds = [...pageTableIds, crypto.randomUUID()] // add a random table id
       expect(testIds).toHaveLength(numTables + 1)
       const tableConnections = await getTableConnections(
-        null,
+        {},
         { tableIds: testIds },
         context,
       )
@@ -248,7 +248,7 @@ describe('get table connections query', () => {
 
   it('should throw error if tableIds is null', async () => {
     await expect(
-      getTableConnections(null, { tableIds: null }, context),
+      getTableConnections({}, { tableIds: null }, context),
     ).rejects.toThrow('tableIds is required')
   })
 })

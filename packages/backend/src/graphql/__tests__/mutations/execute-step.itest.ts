@@ -112,7 +112,7 @@ describe('executeStep mutation - access control', () => {
         testRunMetadata: { testKey: 'testValue' },
       }
 
-      const result = await executeStep(null, { input }, context)
+      const result = await executeStep({}, { input }, context)
 
       expect(testStepSpy).toHaveBeenCalledWith({
         stepId: mockStepId,
@@ -143,7 +143,7 @@ describe('executeStep mutation - access control', () => {
         stepId: mockStepId,
         testRunMetadata: { testKey: 'testValue' },
       }
-      const result = await executeStep(null, { input }, context)
+      const result = await executeStep({}, { input }, context)
 
       expect(testStepSpy).toHaveBeenCalledWith({
         stepId: mockStepId,
@@ -169,7 +169,7 @@ describe('executeStep mutation - access control', () => {
         testRunMetadata: { testKey: 'testValue' },
       }
 
-      await expect(executeStep(null, { input }, context)).rejects.toThrow(
+      await expect(executeStep({}, { input }, context)).rejects.toThrow(
         ForbiddenError,
       )
     })
@@ -189,7 +189,7 @@ describe('executeStep mutation - access control', () => {
         testRunMetadata: { testKey: 'testValue' },
       }
 
-      await expect(executeStep(null, { input }, context)).rejects.toThrow(
+      await expect(executeStep({}, { input }, context)).rejects.toThrow(
         ForbiddenError,
       )
     })
@@ -237,7 +237,7 @@ describe('executeStep mutation - access control', () => {
         }
       })
 
-    await expect(executeStep(null, { input } as any, context)).rejects.toThrow()
+    await expect(executeStep({}, { input } as any, context)).rejects.toThrow()
   })
 
   it('should call testStep service with correct parameters', async () => {
@@ -283,7 +283,7 @@ describe('executeStep mutation - access control', () => {
       testRunMetadata: { testKey: 'testValue' },
     }
 
-    await executeStep(null, { input }, context)
+    await executeStep({}, { input }, context)
 
     expect(testStepSpy).toHaveBeenCalledWith({
       stepId: mockStepId,
@@ -311,7 +311,7 @@ describe('executeStep mutation - access control', () => {
         }
       })
 
-    await expect(executeStep(null, { input }, context)).rejects.toThrow(
+    await expect(executeStep({}, { input }, context)).rejects.toThrow(
       NotFoundError,
     )
   })
