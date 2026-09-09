@@ -6,6 +6,7 @@ import {
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 import logger from '@/helpers/logger'
+import type ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
 
 import processForEachStatus from '../helpers/for-each-status-manager'
@@ -13,12 +14,14 @@ import processForEachStatus from '../helpers/for-each-status-manager'
 const mocks = vi.hoisted(() => ({
   patchIterationStatus: vi.fn(),
   getForEachExecutionState: vi.fn(),
-  getIterationSteps: vi.fn(() => [
-    {
-      status: 'success',
-      errorDetails: null,
-    },
-  ]),
+  getIterationSteps: vi.fn(
+    (): Pick<ExecutionStep, 'status' | 'errorDetails'>[] => [
+      {
+        status: 'success',
+        errorDetails: null,
+      },
+    ],
+  ),
   setStatus: vi.fn(),
 }))
 
