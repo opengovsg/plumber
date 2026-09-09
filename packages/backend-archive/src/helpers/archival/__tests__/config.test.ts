@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Prevent dotenv from loading the local .env file during tests — config.ts
-// re-executes `import 'dotenv/config'` on every vi.resetModules() + import(),
-// which would restore deleted env vars from .env and break the "throws when X
-// is absent" assertions.
-vi.mock('dotenv/config', () => ({}))
+// config.ts re-runs dotenv on every vi.resetModules() + import(), which would
+// restore deleted env vars from .env-example and break the "throws when X is
+// absent" assertions.
+vi.mock('dotenv', () => ({ config: () => ({}) }))
 
 describe('archival/config', () => {
   const REQUIRED_ENV: Record<string, string> = {
