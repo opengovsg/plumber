@@ -74,7 +74,7 @@ worker.on('completed', (job) => {
 
 worker.on('failed', (job, err) => {
   logger.error(
-    `JOB ID: ${job.id} - FLOW ID: ${job.data.flowId} has failed to start with ${err.message}`,
+    `JOB ID: ${job?.id} - FLOW ID: ${job?.data.flowId} has failed to start with ${err.message}`,
   )
 })
 

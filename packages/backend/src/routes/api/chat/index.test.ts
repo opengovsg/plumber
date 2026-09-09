@@ -230,7 +230,7 @@ describe('chat handler — GitBook MCP integration', () => {
       mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
     )
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
@@ -265,7 +265,7 @@ describe('chat handler — GitBook MCP integration', () => {
       mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
     )
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
@@ -277,7 +277,7 @@ describe('chat handler — GitBook MCP integration', () => {
   })
 
   it('streams the support form URL with the chat ID pre-filled', async () => {
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     await handler(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       makeReq({ chatId: '123e4567-e89b-12d3-a456-426614174000' }) as any,
@@ -332,7 +332,7 @@ describe('chat handler — GitBook MCP integration', () => {
         .mockResolvedValue({ search_docs: vi.fn(), get_page: vi.fn() }),
       close: vi.fn().mockResolvedValue(undefined),
     } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
 
@@ -636,7 +636,7 @@ FIELD: columns
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as unknown as typeof streamText)
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -721,7 +721,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
       { id: 'conn-1', formattedData: { screenName: 'My Workspace' } },
     ])
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -756,7 +756,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
     ])
     mockConnections([])
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -783,7 +783,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
     // Dangling reference: the connection was deleted/inaccessible.
     mockConnections([])
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise
@@ -829,7 +829,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any)
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await handler(makeReq() as any, makeRes() as any, vi.fn())
     await mocks.onFinishPromise

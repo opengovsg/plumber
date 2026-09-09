@@ -13,7 +13,7 @@ import {
   streamText,
   type UIMessageStreamWriter,
 } from 'ai'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import { Router } from 'express'
 import type { z } from 'zod'
 
@@ -51,7 +51,8 @@ import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
-import { AuthenticatedRequest } from '@/types/express/context'
+
+import { getAuthenticatedContext } from '../middleware/authentication'
 
 import { buildChatSystemMessages } from './build-chat-system-messages'
 import {
@@ -116,7 +117,7 @@ const handleChatStream = observe(
     body: z.infer<typeof chatRequestSchema>,
   ) => {
     const abortController = new AbortController()
-    const context = req.context
+    const context = getAuthenticatedContext(req)
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
     const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
 
@@ -279,7 +280,7 @@ const handleChatStream = observe(
                     sessionId: chatId || rumSessionId || 'unknown',
                     // Plain metadata (non-special key) so RUM traces can still be
                     // correlated with Langfuse without driving session grouping.
-                    ddRumSessionId: rumSessionId || undefined,
+                    ...(rumSessionId ? { ddRumSessionId: rumSessionId } : {}),
                     userId: context.currentUser.email,
                     environment: appConfig.appEnv,
                     promptName: chatPromptName,
