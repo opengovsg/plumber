@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // Each test re-imports app.ts, which would otherwise re-run dotenv and restore
-// the real .env values on top of the stubbed ones.
-vi.mock('dotenv/config', () => ({}))
+// the .env-example placeholders on top of the stubbed values.
+vi.mock('dotenv', () => ({ config: () => ({}) }))
 
 const SES_ENV_KEYS = [
   'SES_FROM_ADDRESS',
