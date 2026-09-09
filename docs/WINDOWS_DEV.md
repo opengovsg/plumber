@@ -19,11 +19,15 @@ npm install
 
 ### 2. Configure environment
 
+Local dev secrets come from 1Password, not from a `.env` file. Install the [1Password desktop app](https://1password.com/downloads) and sign in. Turn on Settings > Developer > Integrate with other apps, and turn on Windows Hello under Settings > Security so you can answer the prompt.
+
 ```powershell
-copy packages\backend\.env-example packages\backend\.env
+copy op-dev.example.json op-dev.json
 ```
 
-Then open `packages/backend/.env` and change these values:
+Then open `op-dev.json` and fill in your account name and your three environment ids. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID.
+
+Set these in your `dev` environment:
 
 ```
 # Required — "..." is not a valid URL and crashes the server at startup
@@ -45,11 +49,15 @@ docker compose -f packages/backend/docker-compose.dev.yml up -d
 
 ### 4. Run DB migrations (first time only)
 
-`npm run migrate` does not work on Windows because it uses Unix-style env var syntax. Run directly:
+```powershell
+npm run migrate
+```
+
+The Unix-style env var prefix that used to break this on Windows is gone. If it still fails, run knex directly:
 
 ```powershell
 cd packages/backend
-$env:DOTENV_CONFIG_PATH=".env"; npx knex migrate:latest
+npx knex migrate:latest
 cd ../..
 ```
 
@@ -59,6 +67,8 @@ cd ../..
 npm run dev
 ```
 
+> **Known gap on Windows:** `npm run dev` goes through `scripts/with-op-env.mjs`, which spawns without a shell. Windows cannot resolve the `.cmd` shims in `node_modules\.bin` that way, so the command fails to start. Nobody has fixed this yet.
+
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3000
 
@@ -67,7 +77,7 @@ npm run dev
 The app uses OTP email login, but in local dev the OTP is printed to the terminal instead of being sent:
 
 1. Go to http://localhost:3001
-2. Enter `admin@example.gov.sg` (from `ADMIN_USER_EMAIL` in your `.env`)
+2. Enter `admin@example.gov.sg` (from `ADMIN_USER_EMAIL` in your `dev` environment)
 3. Watch the `[backend]` terminal output — the OTP appears there in highlighted text
 4. Enter the OTP in the browser
 
