@@ -134,7 +134,7 @@ export default function ExecutionStep({
                 <JSONViewer data={executionStep.dataIn} />
               </TabPanel>
               <TabPanel>
-                <JSONViewer data={executionStep.dataOut} />
+                <JSONViewer data={executionStep.dataOut ?? {}} />
               </TabPanel>
               {showAlertTab && (
                 <TabPanel>
@@ -145,7 +145,7 @@ export default function ExecutionStep({
                 <TabPanel>
                   <ErrorResult
                     executionStepId={executionStep.id}
-                    errorDetails={executionStep.errorDetails}
+                    errorDetails={executionStep.errorDetails ?? {}}
                     isTestRun={false}
                   />
                 </TabPanel>

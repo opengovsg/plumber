@@ -17,7 +17,7 @@ export type ProcessSubTriggerOptions = {
 
 type ProcessSubTriggerResult = {
   executionId: string
-  executionStep: ExecutionStep
+  executionStep: ExecutionStep | null
   /**
    * The next step to execute after the MRF action step
    */
