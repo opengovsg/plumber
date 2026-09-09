@@ -10,6 +10,21 @@ vi.mock('@/services/mcp/list-columns', () => ({
     truncated: false,
   }),
 }))
+vi.mock('@/services/mcp/create-tile', () => ({
+  createTileService: vi.fn().mockResolvedValue({
+    id: 'tile-1',
+    name: 'Leave applications',
+    columns: [{ id: 'col-1', name: 'Name', position: 0 }],
+  }),
+}))
+vi.mock('@/services/mcp/add-tile-columns', () => ({
+  addTileColumnsService: vi.fn().mockResolvedValue({
+    id: 'tile-1',
+    name: 'Leave applications',
+    columns: [{ id: 'col-1', name: 'Name', position: 0 }],
+    skipped: [],
+  }),
+}))
 vi.mock('@/services/mcp/create-flow-with-steps', () => ({
   createFlowWithStepsService: vi
     .fn()
@@ -43,9 +58,12 @@ vi.mock('@/services/mcp/register-connection', () => ({
     .mockResolvedValue({ connectionRegistered: true }),
 }))
 
+import { UserFacingError } from '@/errors/user-facing-error'
+import { addTileColumnsService } from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
+import { createTileService } from '@/services/mcp/create-tile'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { listColumnsService } from '@/services/mcp/list-columns'
@@ -63,6 +81,8 @@ describe('createMcpBridgeTools', () => {
     expect(Object.keys(tools)).toEqual([
       'list_apps',
       'list_columns',
+      'create_tile',
+      'add_tile_columns',
       'create_pipe',
       'update_step_parameters',
       'create_step',
@@ -97,6 +117,89 @@ describe('createMcpBridgeTools', () => {
       user: mockUser,
       stepId: '123e4567-e89b-12d3-a456-426614174000',
     })
+  })
+
+  it('create_tile calls createTileService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_tile.execute(
+      {
+        name: 'Leave applications',
+        columns: ['Name'],
+        pipe_id: '123e4567-e89b-12d3-a456-426614174000',
+      },
+      { toolCallId: 'create_tile', messages: [] },
+    )
+    expect(vi.mocked(createTileService)).toHaveBeenCalledWith({
+      user: mockUser,
+      name: 'Leave applications',
+      columns: ['Name'],
+      pipeId: '123e4567-e89b-12d3-a456-426614174000',
+    })
+  })
+
+  it('create_tile returns { error } instead of throwing', async () => {
+    vi.mocked(createTileService).mockRejectedValueOnce(
+      new UserFacingError('Pipe not found'),
+    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await expect(
+      tools.create_tile.execute(
+        {
+          name: 'Leave applications',
+          columns: ['Name'],
+          pipe_id: '123e4567-e89b-12d3-a456-426614174000',
+        },
+        { toolCallId: 'create_tile', messages: [] },
+      ),
+    ).resolves.toEqual({ error: 'Pipe not found' })
+  })
+
+  it('add_tile_columns calls addTileColumnsService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.add_tile_columns.execute(
+      {
+        table_id: '123e4567-e89b-12d3-a456-426614174111',
+        columns: ['Notes'],
+      },
+      { toolCallId: 'add_tile_columns', messages: [] },
+    )
+    expect(vi.mocked(addTileColumnsService)).toHaveBeenCalledWith({
+      user: mockUser,
+      tableId: '123e4567-e89b-12d3-a456-426614174111',
+      columns: ['Notes'],
+    })
+  })
+
+  it('add_tile_columns accepts a ULID table_id', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.add_tile_columns.execute(
+      {
+        table_id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+        columns: ['Notes'],
+      },
+      { toolCallId: 'add_tile_columns', messages: [] },
+    )
+    expect(vi.mocked(addTileColumnsService)).toHaveBeenCalledWith({
+      user: mockUser,
+      tableId: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      columns: ['Notes'],
+    })
+  })
+
+  it('add_tile_columns returns { error } instead of throwing', async () => {
+    vi.mocked(addTileColumnsService).mockRejectedValueOnce(
+      new UserFacingError('Tile not found'),
+    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await expect(
+      tools.add_tile_columns.execute(
+        {
+          table_id: '123e4567-e89b-12d3-a456-426614174111',
+          columns: ['Notes'],
+        },
+        { toolCallId: 'add_tile_columns', messages: [] },
+      ),
+    ).resolves.toEqual({ error: 'Tile not found' })
   })
 
   it('update_step_parameters calls updateStepParametersService with camelCase args', async () => {

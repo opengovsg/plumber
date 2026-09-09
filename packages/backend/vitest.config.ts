@@ -15,7 +15,10 @@ export default defineConfig({
   test: {
     name: 'backend',
     // load env variables
-    setupFiles: ['dotenv/config'],
+    setupFiles: [
+      'dotenv/config',
+      path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
+    ],
     include: ['src/**/*.test.{js,ts}'],
     onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
       if (log.startsWith('vite:')) {

@@ -82,6 +82,11 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       ? lastMessage.columnTable
       : undefined
 
+  const activeTileSetup =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.tileSetup
+      : undefined
+
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
@@ -219,6 +224,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   clarification={activeClarification}
                   dynamicPicker={activeDynamicPicker}
                   columnTable={activeColumnTable}
+                  tileSetup={activeTileSetup}
                   onAddConnection={onAddConnection}
                   knownFormUrl={knownFormUrl}
                   onConnectForm={onConnectForm}

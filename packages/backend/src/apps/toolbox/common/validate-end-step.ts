@@ -17,8 +17,10 @@ import Step from '@/models/step'
 
 import {
   BLOCK_END_STEP_ID,
+  getRejectionBranchId,
   isIfThenStep,
   isIfThenV2,
+  isMrfSubmissionStep,
   type StepLike,
 } from './constants'
 
@@ -82,23 +84,9 @@ function rejectPublishEndStep(
   )
 }
 
-function isMrfSubmissionStep(step: ValidationStep): boolean {
-  return step.appKey === 'formsg' && step.key === 'mrfSubmission'
-}
-
 interface EndStepViolation {
   reason: string
   details: Record<string, unknown>
-}
-
-/**
- * Which MRF rejection branch a step belongs to, or null for the main flow.
- * `config.approval` is only ever written for rejection branches (its `branch`
- * is typed `'reject'`), so its `stepId` — the approval step the branch hangs
- * off — identifies the branch on its own.
- */
-function getRejectionBranchId(step: ValidationStep): string | null {
-  return step.config?.approval?.stepId ?? null
 }
 
 /**
@@ -391,8 +379,8 @@ export async function deriveV1EndStepDroppingBlankMembers(
  * pinned, the existing V2 repair logic protects the block forever after, so
  * this only ever needs to run once per block.
  *
- * IMPORTANT: a region-confinement violation on a pre-existing block throws
- * here too. This is an accepted risk on prod data, not a bug to soften.
+ * IMPORTANT: the derived extent is already region-confined, so an MRF pipe
+ * upgrades without tripping the region checks in `checkEndStepWrite`.
  */
 export async function upgradeIfThenV1BlocksIfEnabled(
   trx: Transaction,
