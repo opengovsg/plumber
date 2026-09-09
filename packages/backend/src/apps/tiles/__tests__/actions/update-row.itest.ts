@@ -18,7 +18,7 @@ import Context from '@/types/express/context'
 import tiles from '../..'
 import updateRowAction from '../../actions/update-row'
 
-describe.each([['ddb'], ['pg']])(
+describe.each([['ddb'], ['pg']] as const)(
   'tiles update row action: %s',
   (databaseType: DatabaseType) => {
     let context: Context
@@ -86,24 +86,24 @@ describe.each([['ddb'], ['pg']])(
     })
 
     it('should allow owners to update row', async () => {
-      await expect(updateRowAction.run($)).resolves.toBeUndefined()
+      await expect(updateRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should allow editors to update row', async () => {
       $.user = editor
-      await expect(updateRowAction.run($)).resolves.toBeUndefined()
+      await expect(updateRowAction.run!($)).resolves.toBeUndefined()
       expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should not allow viewers to update row', async () => {
       $.user = viewer
-      await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+      await expect(updateRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should throw error if no tableId', async () => {
       $.step.parameters.tableId = ''
-      await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+      await expect(updateRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should throw correct error if Tile deleted', async () => {
@@ -118,12 +118,12 @@ describe.each([['ddb'], ['pg']])(
           deletedAt: new Date().toISOString(),
         })
         .where({ table_id: $.step.parameters.tableId })
-      await expect(updateRowAction.run($)).rejects.toThrow(StepError)
+      await expect(updateRowAction.run!($)).rejects.toThrow(StepError)
     })
 
     it('should not fail if row does not exist', async () => {
       $.step.parameters.rowId = '123'
-      await expect(updateRowAction.run($)).resolves.not.toThrow(StepError)
+      await expect(updateRowAction.run!($)).resolves.not.toThrow(StepError)
     })
 
     it('should not update columns that are not in the table', async () => {
@@ -141,7 +141,7 @@ describe.each([['ddb'], ['pg']])(
         { columnId: 'invalid_column', cellValue: '123' },
         { columnId: dummyColumnIds[0], cellValue: '123' },
       ]
-      await updateRowAction.run($)
+      await updateRowAction.run!($)
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
           rowId: row.rowId,

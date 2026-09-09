@@ -51,7 +51,7 @@ describe('removeMrfSteps', () => {
     await removeMrfSteps(FLOW_ID)
 
     const updatedTrigger = await Step.query().findById(trigger.id)
-    expect(updatedTrigger.parameters).toEqual({})
+    expect(updatedTrigger!.parameters).toEqual({})
   })
 
   it('should delete reject branch steps', async () => {
