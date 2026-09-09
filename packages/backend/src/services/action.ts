@@ -56,7 +56,7 @@ async function enqueueFirstForEachStep({
   const results = await Promise.allSettled(
     Array.from({ length: iterations }, (_, i) =>
       enqueueActionJob({
-        appKey: firstStepInForEach.appKey,
+        appKey: firstStepInForEach.appKey ?? null,
         jobName: `${executionId}-${firstStepInForEach.id}-${i + 1}`,
         jobData: {
           flowId: flowId,
@@ -117,9 +117,14 @@ export const processAction = async (options: ProcessActionOptions) => {
     metadata.isLastStep = true
   }
 
+  const app = await step.getApp()
+  if (!app) {
+    throw new Error(`App not found for step: ${step.id}`)
+  }
+
   const $ = await globalVariable({
     flow,
-    app: await step.getApp(),
+    app,
     step: step,
     connection: await step.$relatedQuery('connection'),
     execution: execution,
@@ -146,6 +151,12 @@ export const processAction = async (options: ProcessActionOptions) => {
     })
 
   const actionCommand = await step.getActionCommand()
+  if (!actionCommand) {
+    throw new Error(`Action command not found for step: ${step.id}`)
+  }
+  if (!actionCommand.run) {
+    throw new Error(`Action command has no run() for step: ${step.id}`)
+  }
   const forEachContext: ForEachContext = {
     executionStepMetadata: metadata,
     forEachStepPosition,
@@ -179,8 +190,8 @@ export const processAction = async (options: ProcessActionOptions) => {
     if (error instanceof HttpError) {
       $.actionOutput.error = {
         details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
+        status: error.response.status ?? null,
+        statusText: error.response.statusText ?? null,
       }
       logger.error('Action error', {
         details: error.details,
@@ -188,13 +199,15 @@ export const processAction = async (options: ProcessActionOptions) => {
         statusText: error.response.statusText,
       })
     } else {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       try {
-        const parsedError = JSON.parse(error.message)
+        const parsedError = JSON.parse(errorMessage)
         $.actionOutput.error = parsedError
         logger.error('Action error', parsedError)
       } catch {
-        $.actionOutput.error = { error: error.message }
-        logger.error('Action error', { error: error.message })
+        $.actionOutput.error = { error: errorMessage }
+        logger.error('Action error', { error: errorMessage })
       }
     }
   }

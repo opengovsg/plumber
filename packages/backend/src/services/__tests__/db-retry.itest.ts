@@ -50,7 +50,7 @@ describe('transient DB retry idempotency (real DB)', () => {
 
     const user = await User.query().findOne({ email: 'tester@open.gov.sg' })
     flow = await Flow.query().insertGraphAndFetch({
-      userId: user.id,
+      userId: user!.id,
       name: 'db-retry-test-flow',
       steps: [
         {

@@ -97,7 +97,7 @@ function handleHttpError(
   if (retryAfterMs !== null) {
     if (retryAfterMs <= RETRY_AFTER_LIMIT_MS) {
       throw new RetriableError({
-        error: errorDetails,
+        error: errorDetails ?? undefined,
         delayInMs: retryAfterMs,
         delayType: 'step',
       })
@@ -111,7 +111,7 @@ function handleHttpError(
     RETRIABLE_STATUS_CODES.includes(executionError.response.status)
   ) {
     throw new RetriableError({
-      error: errorDetails,
+      error: errorDetails ?? undefined,
       delayInMs: 'default',
       delayType: 'step',
     })
@@ -122,7 +122,7 @@ function handleHttpError(
   for (const errorSubstring of RETRIABLE_ERROR_SUBSTRINGS) {
     if (errorString.includes(errorSubstring)) {
       throw new RetriableError({
-        error: errorDetails,
+        error: errorDetails ?? undefined,
         delayInMs: 'default',
         delayType: 'step',
       })

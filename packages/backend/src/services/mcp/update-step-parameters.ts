@@ -103,6 +103,9 @@ export async function updateStepParametersService({
     if (!step) {
       throw new Error('Step cannot be updated')
     }
+    if (!step.appKey || !step.key) {
+      throw new Error('No such trigger or action')
+    }
 
     // Use App.findTriggerOrActionByKey for type/validity checks
     const triggerOrAction = await App.findTriggerOrActionByKey(

@@ -146,13 +146,17 @@ export async function getFormSchemaService(
     )
     response = data
   } catch (e) {
+    const errorMessage = e instanceof Error ? e.message : String(e)
     logger.warn('getFormSchemaService: error fetching public form schema', {
       formId,
       env,
-      error: e.message,
+      error: errorMessage,
     })
-    if (e.response?.status === 404) {
-      if (e.response.data?.isPageFound) {
+    const errorResponse = (
+      e as { response?: { status?: number; data?: { isPageFound?: boolean } } }
+    )?.response
+    if (errorResponse?.status === 404) {
+      if (errorResponse.data?.isPageFound) {
         return {
           error:
             'This form is not public. Ask the user to make the form public and try again.',

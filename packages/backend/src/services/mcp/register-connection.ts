@@ -67,6 +67,9 @@ export async function registerConnectionService(
     $ = await globalVariable({ connection, app, flow, user })
   }
 
+  if (!app.auth.isStillVerified) {
+    throw new UserFacingError('App does not support connection verification')
+  }
   const isVerified = await app.auth.isStillVerified($)
   if (!isVerified) {
     throw new UserFacingError('Connection is not verified')

@@ -5,13 +5,13 @@ import ExecutionStep from '@/models/execution-step'
 import { ProcessTriggerOptions } from '../trigger'
 
 type CanTriggerProceedOptions = ProcessTriggerOptions & {
-  stepAppKey: string
+  stepAppKey: string | undefined
 }
 
 type ProcessTriggerResult = {
   flowId: string
   stepId: string
-  executionId: string
+  executionId: string | null
   executionStep: ExecutionStep | null
   shouldExecute: boolean
 }
@@ -57,7 +57,7 @@ const checkDuplicateExecution = async (
     logger.error(
       `${appKey}: ${flowId}-${internalId} is already being processed`,
     )
-    return { isDuplicate: true, executionId: null }
+    return { isDuplicate: true, executionId: undefined }
   }
 
   return { isDuplicate: false }
@@ -70,7 +70,7 @@ const checkDuplicateExecution = async (
  */
 export const shouldTriggerProceed = async (
   options: CanTriggerProceedOptions,
-): Promise<ProcessTriggerResult | null> => {
+): Promise<ProcessTriggerResult> => {
   const { triggerItem, stepAppKey } = options
   const { flowId, stepId } = options
 
@@ -89,6 +89,9 @@ export const shouldTriggerProceed = async (
 
   switch (stepAppKey) {
     case 'formsg': {
+      if (!triggerItem) {
+        throw new Error(`Trigger item not found for step: ${stepId}`)
+      }
       const { isDuplicate, executionId } = await checkDuplicateExecution(
         flowId,
         triggerItem.meta.internalId,
@@ -103,6 +106,9 @@ export const shouldTriggerProceed = async (
     }
 
     case 'gathersg': {
+      if (!triggerItem) {
+        throw new Error(`Trigger item not found for step: ${stepId}`)
+      }
       // check that this execution has not already been processed for this particular flow
       // the internalId is comprised of: {uuid}-{createdAt or updatedAt}
       const internalId = triggerItem.meta.internalId

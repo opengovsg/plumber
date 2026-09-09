@@ -1,4 +1,4 @@
-import { IGlobalVariable, IJSONObject } from '@plumber/types'
+import { IGlobalVariable } from '@plumber/types'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -122,7 +122,7 @@ describe('mrf-submission action gating rules (integration)', () => {
         executionId: execution.id,
         stepId: triggerStep.id,
         status: 'failure',
-        dataOut: null as unknown as IJSONObject,
+        dataOut: null,
         appKey: 'formsg',
       })
 
@@ -184,7 +184,7 @@ describe('mrf-submission action gating rules (integration)', () => {
         executionId: execution.id,
         stepId: failedStep.id,
         status: 'failure',
-        dataOut: null as unknown as IJSONObject,
+        dataOut: null,
         appKey: 'postman',
       })
       await ExecutionStep.query().insert({

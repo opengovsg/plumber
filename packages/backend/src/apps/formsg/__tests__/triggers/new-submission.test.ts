@@ -427,7 +427,7 @@ describe('new submission trigger', () => {
     })
 
     it('should computes order for questions and answers even if order is not provided', async () => {
-      const fields = executionStep.dataOut.fields as IJSONObject
+      const fields = executionStep.dataOut!.fields as IJSONObject
       delete fields.textFieldId
       // generate a few fields
       for (let i = 0; i < 10; i++) {
@@ -487,7 +487,7 @@ describe('new submission trigger', () => {
     })
 
     it('sets type to file for attachment answers', async () => {
-      executionStep.dataOut.fields = {
+      executionStep.dataOut!.fields = {
         fileFieldId: {
           question: 'Attach a file.',
           answer: 's3:bucket_name:abcd/efg/my file.txt',
@@ -500,7 +500,7 @@ describe('new submission trigger', () => {
     })
 
     it('sets displayed value for attachment answers', async () => {
-      executionStep.dataOut.fields = {
+      executionStep.dataOut!.fields = {
         fileFieldId: {
           question: 'Attach a file.',
           answer: 's3:bucket_name:abcd/efg/my file.txt',
@@ -515,7 +515,7 @@ describe('new submission trigger', () => {
     })
 
     it('sets label to the associated question for attachment answers with question number', async () => {
-      executionStep.dataOut.fields = {
+      executionStep.dataOut!.fields = {
         fileFieldId: {
           question: 'Attach a file.',
           answer: 's3:bucket_name:abcd/efg/my file.txt',
@@ -558,7 +558,7 @@ describe('new submission trigger', () => {
 
     describe('formsg payments', () => {
       beforeEach(() => {
-        executionStep.dataOut.paymentContent = {
+        executionStep.dataOut!.paymentContent = {
           type: 'payment_charge',
           status: 'succeeded',
           payer: 'ken@open.gov.sg',
@@ -576,7 +576,7 @@ describe('new submission trigger', () => {
 
         expect(metadata).toHaveProperty('paymentContent')
         for (const key of Object.keys(
-          executionStep.dataOut.paymentContent as IJSONObject,
+          executionStep.dataOut!.paymentContent as IJSONObject,
         )) {
           expect(metadata.paymentContent).toHaveProperty(key)
           expect(metadata.paymentContent[key]).toHaveProperty('label')
@@ -586,22 +586,22 @@ describe('new submission trigger', () => {
       })
 
       it('should not error out even if some payment fields are not provided', async () => {
-        delete (executionStep.dataOut.paymentContent as IJSONObject)
+        delete (executionStep.dataOut!.paymentContent as IJSONObject)
           .productService
-        delete (executionStep.dataOut.paymentContent as IJSONObject).url
+        delete (executionStep.dataOut!.paymentContent as IJSONObject).url
 
         const metadata = (await trigger.getDataOutMetadata!(executionStep))!
 
         // Also check that metadata is still provided for the other fields.
         for (const key of Object.keys(
-          executionStep.dataOut.paymentContent as IJSONObject,
+          executionStep.dataOut!.paymentContent as IJSONObject,
         )) {
           expect(metadata.paymentContent[key].label.length).toBeGreaterThan(0)
         }
       })
 
       it('should not error out if new payment fields are added', async () => {
-        const paymentContentObject = executionStep.dataOut
+        const paymentContentObject = executionStep.dataOut!
           .paymentContent as IJSONObject
         paymentContentObject.futureProp = 'sample data'
 
@@ -609,7 +609,7 @@ describe('new submission trigger', () => {
 
         // Also check that metadata is still provided for the known fields
         for (const key of Object.keys(
-          executionStep.dataOut.paymentContent as IJSONObject,
+          executionStep.dataOut!.paymentContent as IJSONObject,
         )) {
           if (key === 'futureProp') {
             continue
