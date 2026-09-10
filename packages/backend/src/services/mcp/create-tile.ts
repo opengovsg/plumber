@@ -7,6 +7,10 @@ import { type DatabaseType } from '@/models/tiles/types'
 import type User from '@/models/user'
 
 import {
+  createColumnAiBuilderConfig,
+  createTileAiBuilderConfig,
+} from './tile-ai-builder-config'
+import {
   parseCreateTileInput,
   type TileColumnResult,
 } from './tile-column-names'
@@ -18,6 +22,7 @@ export interface CreateTileInput {
   name: string
   columns: string[]
   pipeId?: string
+  traceId?: string
 }
 
 export interface CreateTileResult {
@@ -31,6 +36,7 @@ export async function createTileService({
   name,
   columns,
   pipeId,
+  traceId,
 }: CreateTileInput): Promise<CreateTileResult> {
   const {
     name: tableName,
@@ -62,9 +68,13 @@ export async function createTileService({
       name: tableName,
       role: 'owner',
       db: databaseType,
+      ...(traceId && { config: createTileAiBuilderConfig(traceId) }),
       columns: columnNames.map((columnName, position) => ({
         name: columnName,
         position,
+        ...(traceId && {
+          config: createColumnAiBuilderConfig(traceId, 'create_tile'),
+        }),
       })),
     })
 
