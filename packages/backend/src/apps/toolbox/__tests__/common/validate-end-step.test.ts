@@ -1,14 +1,6 @@
 import type { IStepConfig } from '@plumber/types'
 import { raw, Transaction } from 'objection'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  MockInstance,
-  vi,
-} from 'vitest'
+import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -104,16 +96,12 @@ describe('validateEndStepWrite', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
-    loggerErrorSpy.mockClear()
-  })
-
-  afterEach(() => {
-    loggerErrorSpy.mockRestore()
-  })
-
-  afterEach(() => {
-    loggerErrorSpy.mockRestore()
+    // vi.spyOn reuses the existing spy on repeat calls, so calls from earlier
+    // tests in this file would otherwise leak into `not.toHaveBeenCalled()`.
+    loggerErrorSpy = vi
+      .spyOn(logger, 'error')
+      .mockImplementation(() => null)
+      .mockClear()
   })
 
   it('accepts a valid marker over a run of plain steps', () => {
@@ -417,16 +405,10 @@ describe('extractSelfEndStepIntent', () => {
   let loggerErrorSpy: MockInstance
 
   beforeEach(() => {
-    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => null)
-    loggerErrorSpy.mockClear()
-  })
-
-  afterEach(() => {
-    loggerErrorSpy.mockRestore()
-  })
-
-  afterEach(() => {
-    loggerErrorSpy.mockRestore()
+    loggerErrorSpy = vi
+      .spyOn(logger, 'error')
+      .mockImplementation(() => null)
+      .mockClear()
   })
 
   it('passes an absent key through unchanged', () => {
@@ -473,16 +455,10 @@ describe('validateFlowBlocks', () => {
   let loggerWarnSpy: MockInstance
 
   beforeEach(() => {
-    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => null)
-    loggerWarnSpy.mockClear()
-  })
-
-  afterEach(() => {
-    loggerWarnSpy.mockRestore()
-  })
-
-  afterEach(() => {
-    loggerWarnSpy.mockRestore()
+    loggerWarnSpy = vi
+      .spyOn(logger, 'warn')
+      .mockImplementation(() => null)
+      .mockClear()
   })
 
   it('passes a flow whose blocks are all valid and non-empty', () => {
