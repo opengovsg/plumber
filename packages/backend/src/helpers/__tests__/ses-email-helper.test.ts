@@ -5,14 +5,22 @@ import { formatFromAddress } from '../ses-email-helper'
 
 const mocks = vi.hoisted(() => {
   const send = vi.fn(async () => ({}))
+  const SESv2Client = vi.fn(function (
+    this: { send: typeof send },
+    _config: unknown,
+  ) {
+    this.send = send
+  })
+  const SendEmailCommand = vi.fn(function (
+    this: { input: unknown },
+    input: unknown,
+  ) {
+    this.input = input
+  })
   return {
     send,
-    sesV2Client: vi.fn(function (_config: unknown) {
-      return { send }
-    }),
-    sendEmailCommand: vi.fn(function (input: unknown) {
-      return { input }
-    }),
+    SESv2Client,
+    SendEmailCommand,
     fromTemporaryCredentials: vi.fn(
       (_params: unknown) => 'temporary-credentials-provider',
     ),
@@ -27,8 +35,8 @@ const mocks = vi.hoisted(() => {
 })
 
 vi.mock('@aws-sdk/client-sesv2', () => ({
-  SESv2Client: mocks.sesV2Client,
-  SendEmailCommand: mocks.sendEmailCommand,
+  SESv2Client: mocks.SESv2Client,
+  SendEmailCommand: mocks.SendEmailCommand,
 }))
 
 vi.mock('@aws-sdk/credential-providers', () => ({
@@ -92,7 +100,7 @@ describe('formatFromAddress', () => {
 
 describe('getSesClient', () => {
   beforeEach(() => {
-    mocks.sesV2Client.mockClear()
+    mocks.SESv2Client.mockClear()
     mocks.fromTemporaryCredentials.mockClear()
     mocks.sesConfig.region = 'ap-southeast-1'
     mocks.sesConfig.credentials = undefined
@@ -104,8 +112,8 @@ describe('getSesClient', () => {
     const { getSesClient } = await importFresh()
     getSesClient()
 
-    expect(mocks.sesV2Client).toHaveBeenCalledTimes(1)
-    expect(mocks.sesV2Client.mock.calls[0][0]).toMatchObject({
+    expect(mocks.SESv2Client).toHaveBeenCalledTimes(1)
+    expect(mocks.SESv2Client.mock.calls[0][0]).toMatchObject({
       region: 'ap-southeast-2',
       credentials: 'temporary-credentials-provider',
     })
@@ -158,14 +166,14 @@ describe('getSesClient', () => {
     const { getSesClient } = await importFresh()
 
     expect(getSesClient()).toBe(getSesClient())
-    expect(mocks.sesV2Client).toHaveBeenCalledTimes(1)
+    expect(mocks.SESv2Client).toHaveBeenCalledTimes(1)
   })
 })
 
 describe('sendEmailViaSes', () => {
   beforeEach(() => {
     mocks.send.mockClear()
-    mocks.sendEmailCommand.mockClear()
+    mocks.SendEmailCommand.mockClear()
     mocks.getSuppressedEmails.mockResolvedValue([])
     mocks.sesConfig.fromAddress = 'admin@example.gov.sg'
   })
@@ -180,7 +188,7 @@ describe('sendEmailViaSes', () => {
       recipient: 'someone@agency.gov.sg',
     })
 
-    expect(mocks.sendEmailCommand.mock.calls[0][0]).toMatchObject({
+    expect(mocks.SendEmailCommand.mock.calls[0][0]).toMatchObject({
       FromEmailAddress: 'Plumber <noreply@agency.gov.sg>',
     })
   })
