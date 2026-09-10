@@ -1,15 +1,21 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
     "declaration": true,
     "esModuleInterop": true,
     "lib": ["es2021", "ES2022.Error", "ES2022.Object"],
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "noImplicitAny": true,
+    "noUncheckedSideEffectImports": true,
     "outDir": "dist",
+    "rootDir": "src",
+    // TS7 defaults strict to true; this repo was never written against full
+    // strict mode (strictNullChecks alone floods hundreds of errors). Pinned
+    // off so the version bump doesn't silently change what's enforced.
+    "strict": false,
+    "types": [],
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"]
     },
     "skipLibCheck": true,
     "sourceMap": true,
@@ -21,8 +27,5 @@
       "./src/types"
     ]
   },
-  "include": ["src/**/*"],
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  }
+  "include": ["src/**/*"]
 }

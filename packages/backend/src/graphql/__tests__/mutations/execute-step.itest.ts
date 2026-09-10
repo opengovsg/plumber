@@ -56,7 +56,7 @@ const getMockResolvedValue = (userId: string) => {
   }
 }
 
-vi.mock('@/services/test-step', () => ({
+vi.mock('@/services/test-step.js', () => ({
   default: vi.fn(() => {
     return {
       executionStep: {
@@ -89,7 +89,14 @@ describe('executeStep mutation - access control', () => {
     viewer = await generateMockUser('viewer')
     nonCollaborator = await generateMockUser('nonCollaborator')
 
-    testStepSpy = vi.spyOn(await import('@/services/test-step'), 'default')
+    // esModuleInterop double-wraps .default on a value-level dynamic import of a
+    // nodenext CJS module; typeof import(...) models it correctly, so cast through it.
+    testStepSpy = vi.spyOn(
+      (await import(
+        '@/services/test-step.js'
+      )) as unknown as typeof import('@/services/test-step.js'),
+      'default',
+    )
   })
 
   describe('access control', () => {
@@ -379,8 +386,8 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
 
   it("forwards testRunMetadata to the action's testRun handler", async () => {
     const { default: realTestStep } = await vi.importActual<
-      typeof import('@/services/test-step')
-    >('@/services/test-step')
+      typeof import('@/services/test-step.js')
+    >('@/services/test-step.js')
 
     const testRunMetadata = { 'fake:key': { hello: 'world' } }
 

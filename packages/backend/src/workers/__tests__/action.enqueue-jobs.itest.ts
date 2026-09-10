@@ -55,7 +55,7 @@ vi.mock('@/services/action', () => ({
 }))
 
 vi.mock('@/queues/action', async (importOriginal) => {
-  const actualModule = await importOriginal<typeof import('@/queues/action')>()
+  const actualModule = await importOriginal<typeof import('@/queues/action.js')>()
   return {
     ...actualModule,
     enqueueActionJob: mocks.enqueueActionJob,
@@ -66,17 +66,17 @@ describe('Action worker job enqueueing', () => {
   let originalWorkerState: WorkerState | null = null
   // This is needed as we need to mock enqueueActionJob to test.
   let unmockedEnqueueActionJob:
-    | (typeof import('@/queues/action'))['enqueueActionJob']
+    | (typeof import('@/queues/action.js'))['enqueueActionJob']
     | null = null
   let mainActionQueue:
-    | (typeof import('@/queues/action'))['mainActionQueue']
+    | (typeof import('@/queues/action.js'))['mainActionQueue']
     | null = null
 
   beforeAll(async () => {
     originalWorkerState = await backupWorker(mainActionWorker)
 
     vi.doUnmock('@/queues/action')
-    const actionQueues = await import('@/queues/action')
+    const actionQueues = await import('@/queues/action.js')
     unmockedEnqueueActionJob = actionQueues.enqueueActionJob
     mainActionQueue = actionQueues.mainActionQueue
 
