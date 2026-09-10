@@ -15,10 +15,12 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 interface DuplicateStepButtonProps {
   isNested?: boolean
   step: IStep
+  /** Skip FlowStep's hover-reveal CSS, since the parent controls visibility. */
+  alwaysVisible?: boolean
 }
 
 export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
-  const { isNested, step } = props
+  const { isNested, step, alwaysVisible = false } = props
 
   const { flow, isMobile, onDrawerOpen, setCurrentStepId } =
     useContext(EditorContext)
@@ -84,8 +86,10 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
           icon={<BiDuplicate />}
           minHeight={isNested ? 6 : 8}
           minWidth={isNested ? 6 : 8}
-          className={isMobile ? undefined : 'hover-remove-button'}
-          visibility={isMobile ? 'visible' : 'hidden'}
+          className={
+            isMobile || alwaysVisible ? undefined : 'hover-remove-button'
+          }
+          visibility={isMobile || alwaysVisible ? 'visible' : 'hidden'}
         />
       </Tooltip>
       <UnsavedChangesAlert

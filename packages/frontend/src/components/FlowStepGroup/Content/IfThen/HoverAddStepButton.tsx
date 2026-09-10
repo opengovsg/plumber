@@ -21,6 +21,8 @@ interface HoverAddStepButtonProps {
   isLastStep: boolean
   prevStep: IStep
   showEmptyAction?: boolean
+  // Drops the vertical connector above an empty-state add card.
+  hideLeadingConnector?: boolean
   step: IStep
   allowReorder?: boolean
   canChildStepsReorder?: boolean
@@ -41,6 +43,7 @@ export function HoverAddStepButton(
     isLastStep,
     prevStep,
     showEmptyAction,
+    hideLeadingConnector,
     step,
     allowReorder,
     canChildStepsReorder,
@@ -67,9 +70,14 @@ export function HoverAddStepButton(
     <>
       {showEmptyAction ? (
         <Flex flexDir="column" alignItems="center" mb={1}>
-          <Flex h="2rem">
-            <Divider orientation="vertical" borderColor="base.divider.strong" />
-          </Flex>
+          {!hideLeadingConnector && (
+            <Flex h="2rem">
+              <Divider
+                orientation="vertical"
+                borderColor="base.divider.strong"
+              />
+            </Flex>
+          )}
           <EmptyFlowStepHeader
             isNested={true}
             isTrigger={false}
