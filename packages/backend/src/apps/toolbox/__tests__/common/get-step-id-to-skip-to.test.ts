@@ -65,16 +65,12 @@ vi.mock('@/models/step', () => ({
 describe('getIfThenV1StepIdToSkipTo', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
-    consoleErrorSpy.mockClear()
-  })
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore()
-  })
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore()
+    // vi.spyOn reuses the existing spy on repeat calls, so calls from earlier
+    // tests in this file would otherwise leak into `not.toHaveBeenCalled()`.
+    consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => null)
+      .mockClear()
   })
 
   it('should return the next branch step if found', async () => {
