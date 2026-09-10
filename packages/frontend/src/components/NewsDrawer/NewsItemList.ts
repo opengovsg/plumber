@@ -11,6 +11,18 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-09-14',
+    tag: NEW_FEATURE_TAG,
+    title: '📅 Compare or calculate dates with Formatter',
+    details: dedent`
+      Formatter's new **Compare or calculate dates** action lets you work with two dates in one step:
+
+      * **Compare** — check if one date is before, after, or the same as another.
+      * **Check gap** — see if two dates are within (or outside) a set amount of time from each other.
+      * **Calculate** — find the difference between two dates, in the unit of your choice.
+    `,
+  },
+  {
     date: '2026-08-31',
     tag: NEW_FEATURE_TAG,
     title: '🤖 Introducing Pair actions',
