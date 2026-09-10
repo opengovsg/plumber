@@ -15,6 +15,7 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 4. Install the [1Password desktop app](https://1password.com/downloads) and sign in
 5. In 1Password, turn on Settings > Developer > Integrate with other apps. Turn on Touch ID (or Windows Hello) under Settings > Security so you can answer the prompt
 6. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your three environment ids. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
+   - `inheritedEnvironments` is optional. List environment ids there to load common team-level env vars before your own. Your own environment's variables override theirs
 7. Setup services `npm run setup`
 8. Run DB migrations `npm run migrate` (only for first time setup)
 9. Start the server `npm run dev`
