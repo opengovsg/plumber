@@ -1,5 +1,6 @@
-import { config } from 'dotenv'
 import path from 'node:path'
+
+import { config } from 'dotenv'
 
 // Placeholders backstop missing keys. Local dev gets its real values from 1Password,
 // which dotenv never overrides.
