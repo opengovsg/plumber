@@ -250,7 +250,7 @@ describe('getConditionBlockPreviewParts', () => {
     ).toBe('42 is equal to true')
   })
 
-  it('previews the first non-empty row, skipping blank rows and groups', () => {
+  it('previews the only non-empty row, skipping blank rows and groups', () => {
     expect(
       asText(
         getConditionBlockPreviewParts(
@@ -259,12 +259,63 @@ describe('getConditionBlockPreviewParts', () => {
             [
               { field: '', condition: '', text: '' },
               { field: variable('Second'), condition: 'equals', text: 'yes' },
-              { field: variable('Third'), condition: 'equals', text: 'no' },
             ],
           ]),
         ),
       ),
     ).toBe('Second is equal to yes')
+  })
+
+  it('labels two filled rows in one group as multiple conditions', () => {
+    expect(
+      getConditionBlockPreviewParts(
+        conditions([
+          [
+            { field: variable('First'), condition: 'equals', text: 'yes' },
+            { field: variable('Second'), condition: 'equals', text: 'no' },
+          ],
+        ]),
+      ),
+    ).toEqual([{ type: 'text', text: 'Multiple conditions' }])
+  })
+
+  it('labels one filled row per group as multiple conditions', () => {
+    expect(
+      getConditionBlockPreviewParts(
+        conditions([
+          [{ field: variable('First'), condition: 'equals', text: 'yes' }],
+          [{ field: variable('Second'), condition: 'equals', text: 'no' }],
+        ]),
+      ),
+    ).toEqual([{ type: 'text', text: 'Multiple conditions' }])
+  })
+
+  it('keeps the sentence when the second row is still blank', () => {
+    expect(
+      asText(
+        getConditionBlockPreviewParts(
+          conditions([
+            [
+              { field: variable('First'), condition: 'equals', text: 'yes' },
+              { field: '', condition: '', text: '' },
+            ],
+          ]),
+        ),
+      ),
+    ).toBe('First is equal to yes')
+  })
+
+  it('counts a half-filled second row as another condition', () => {
+    expect(
+      getConditionBlockPreviewParts(
+        conditions([
+          [
+            { field: variable('First'), condition: 'equals', text: 'yes' },
+            { field: variable('Second'), condition: '', text: '' },
+          ],
+        ]),
+      ),
+    ).toEqual([{ type: 'text', text: 'Multiple conditions' }])
   })
 
   it('tolerates a group with no rows array', () => {
