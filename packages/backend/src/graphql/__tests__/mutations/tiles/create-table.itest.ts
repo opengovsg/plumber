@@ -18,9 +18,9 @@ import { generateMockCollaborator, generateMockUser } from '../flow.mock'
 import { generateMockContext } from './table.mock'
 import { checkIfTableExists } from './tiles-pg-helper'
 
-const pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
-const pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
-const ddbCreateTableRowsSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRows')
+let pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
+let pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
+let ddbCreateTableRowsSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRows')
 
 const getLdFlagValue = vi.fn()
 
@@ -52,12 +52,15 @@ describe.each([['pg'], ['ddb']])(
       )
 
       context = await generateMockContext()
-      pgCreateTableSpy.mockClear()
-      pgCreateTableRowsSpy.mockClear()
-      ddbCreateTableRowsSpy.mockClear()
+      pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
+      pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
+      ddbCreateTableRowsSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRows')
     })
 
-    afterEach(() => vi.clearAllMocks())
+    afterEach(() => {
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
+    })
 
     it('should create a blank table', async () => {
       getLdFlagValue.mockResolvedValueOnce(databaseType)

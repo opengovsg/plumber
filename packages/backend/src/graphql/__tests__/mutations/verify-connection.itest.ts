@@ -80,7 +80,10 @@ describe('verifyConnection', () => {
     })
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
 
   describe('access control', () => {
     it('should allow owner to verify their personal connection', async () => {

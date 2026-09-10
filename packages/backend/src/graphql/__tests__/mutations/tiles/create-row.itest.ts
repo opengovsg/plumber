@@ -19,8 +19,8 @@ import {
 
 const getLdFlagValue = vi.fn()
 
-const pgCreateTableRowSpy = vi.spyOn(pgTableRowFunctions, 'createTableRow')
-const ddbCreateTableRowSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRow')
+let pgCreateTableRowSpy = vi.spyOn(pgTableRowFunctions, 'createTableRow')
+let ddbCreateTableRowSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRow')
 
 describe.each([['ddb'], ['pg']])(
   'create row mutation: %s',
@@ -53,11 +53,14 @@ describe.each([['ddb'], ['pg']])(
         databaseType,
       })
 
-      pgCreateTableRowSpy.mockClear()
-      ddbCreateTableRowSpy.mockClear()
+      pgCreateTableRowSpy = vi.spyOn(pgTableRowFunctions, 'createTableRow')
+      ddbCreateTableRowSpy = vi.spyOn(ddbTableRowFunctions, 'createTableRow')
     })
 
-    afterEach(() => vi.clearAllMocks())
+    afterEach(() => {
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
+    })
 
     it('should create an empty row in a given table', async () => {
       getLdFlagValue.mockResolvedValueOnce(databaseType)
