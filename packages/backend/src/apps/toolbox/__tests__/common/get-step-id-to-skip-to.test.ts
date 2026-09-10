@@ -66,6 +66,7 @@ describe('getIfThenV1StepIdToSkipTo', () => {
   let consoleErrorSpy: MockInstance
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => null)
+    consoleErrorSpy.mockClear()
   })
 
   it('should return the next branch step if found', async () => {
@@ -546,7 +547,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         position,
         parameters: {},
       },
-    } as any)
+    }) as any
 
   // $ for an only-continue-if step.
   const oci$ = (id: string, position: number) =>
@@ -559,7 +560,7 @@ describe('getStepIdToSkipTo (new-style dispatch)', () => {
         position,
         parameters: {},
       },
-    } as any)
+    }) as any
 
   describe('when an if-then condition is FALSE', () => {
     it('resumes after the block endStep via getNextStep', async () => {

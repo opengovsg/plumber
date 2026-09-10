@@ -1,7 +1,7 @@
+import { randomUUID } from 'crypto'
+
 // packages/backend/src/services/mcp/__tests__/list-columns.itest.ts
 import type { IApp, IJSONObject } from '@plumber/types'
-
-import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'

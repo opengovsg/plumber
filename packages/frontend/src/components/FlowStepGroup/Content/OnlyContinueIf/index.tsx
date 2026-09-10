@@ -1,9 +1,8 @@
-import { IStep } from '@plumber/types'
-
-import { useContext, useMemo } from 'react'
-import { BiSolidErrorCircle } from 'react-icons/bi'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { useContext, useMemo } from 'react'
+import { BiSolidErrorCircle } from 'react-icons/bi'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import { MIN_FLOW_STEP_WIDTH } from '@/components/Editor/constants'

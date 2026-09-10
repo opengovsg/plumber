@@ -49,7 +49,7 @@ const makeUser = () =>
         .fn()
         .mockResolvedValue({ id: 'conn-1', key: 'formsg', userId: 'user-1' }),
     }),
-  } as any)
+  }) as any
 
 describe('verifyConnectionRegistrationService', () => {
   let user: ReturnType<typeof makeUser>

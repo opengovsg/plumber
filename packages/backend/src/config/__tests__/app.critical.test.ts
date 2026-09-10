@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 /**
  * Business-critical: local dev environment variable precedence.
  *
@@ -12,8 +15,6 @@
  * IMPORTANT: never mock dotenv here. The real dotenv call is the subject.
  */
 import { parse } from 'dotenv'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // BASE_URL is one of the keys .superset/run.sh exports per worktree, and app.ts

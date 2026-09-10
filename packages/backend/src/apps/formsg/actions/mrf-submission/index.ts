@@ -17,7 +17,6 @@ import {
   parsedMrfWorkflowStepSchema,
   submittedStepsSchema,
 } from '../../common/types'
-
 import { findPreviousExecutableStep } from './previous-executable-step'
 
 /**

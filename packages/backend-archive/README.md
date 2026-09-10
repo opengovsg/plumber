@@ -46,11 +46,11 @@ There is no `.env` file. Variables come from three places, in descending priorit
 
 Those placeholders already point at the dev Docker stack, so a local run needs three overrides:
 
-| Variable | Local value | Why |
-|---|---|---|
-| `S3_ACCESS_KEY` | `minio-username` | `.env-example` ships `...`, which MinIO rejects with `InvalidAccessKeyId`. |
-| `S3_SECRET_KEY` | `minio-password` | Same. |
-| `ARCHIVE_ENABLED` | `true` | Defaults to `false`, which exits at once and logs `archival.run.disabled`. |
+| Variable          | Local value      | Why                                                                        |
+| ----------------- | ---------------- | -------------------------------------------------------------------------- |
+| `S3_ACCESS_KEY`   | `minio-username` | `.env-example` ships `...`, which MinIO rejects with `InvalidAccessKeyId`. |
+| `S3_SECRET_KEY`   | `minio-password` | Same.                                                                      |
+| `ARCHIVE_ENABLED` | `true`           | Defaults to `false`, which exits at once and logs `archival.run.disabled`. |
 
 Keep them in the `archival` 1Password environment, or pass them inline as below.
 
@@ -246,29 +246,29 @@ aws s3 ls s3://<bucket>/_meta/runs/ \
 
 ## Configuration reference
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `APP_ENV` | no | `development` | Any value other than `development` skips the `.env-example` fallback and the dev defaults below. |
-| `POSTGRES_HOST` / `RDS_PROXY_HOST` | yes (dev/prod) | — | Postgres writer host. `RDS_PROXY_HOST` takes precedence. |
-| `POSTGRES_PORT` | no | `5432` | Postgres port. |
-| `POSTGRES_DATABASE` | yes | `plumber_dev` (dev only) | Database name. |
-| `POSTGRES_USERNAME` | yes | `postgres` (dev only) | Database user. |
-| `POSTGRES_PASSWORD` | no | — | Database password. |
-| `POSTGRES_ENABLE_SSL` | no | `false` | Set to `true` for SSL connections (required in prod). |
-| `ARCHIVE_POSTGRES_READER_HOST` | **yes** | — | Postgres reader host for eligibility scans. Use `localhost` for local dev. |
-| `S3_ENDPOINT` | yes (dev) | — | S3-compatible endpoint URL (MinIO in dev). Not required in AWS — uses IAM. |
-| `S3_ACCESS_KEY` | yes (dev) | — | S3 access key (MinIO in dev). |
-| `S3_SECRET_KEY` | yes (dev) | — | S3 secret key (MinIO in dev). |
-| `ARCHIVE_BUCKET` | **yes** | — | S3 bucket name for archived objects. |
-| `ARCHIVE_ENABLED` | no | `false` | Must be `true` for the archival script to do anything. |
-| `ARCHIVE_DRY_RUN` | no | `false` | When `true`, writes to S3 but skips Postgres deletes. |
-| `ARCHIVE_RETENTION_DAYS` | no | `365` | Executions older than this are eligible for archival. |
-| `ARCHIVE_BATCH_SIZE` | no | `500` | Executions fetched per batch. |
-| `ARCHIVE_BATCH_SLEEP_MS` | no | `2000` | Sleep between batches to reduce DB load. |
-| `ARCHIVE_INTRA_BATCH_CONCURRENCY` | no | `10` | Concurrent S3 uploads within a batch. |
-| `ARCHIVE_MAX_RUNTIME_MS` | **yes** | — | Wall-clock limit for a single run (ms). Set to `0` to disable. |
-| `ARCHIVE_DELETED_FLOWS_ONLY` | no | `false` | Restrict archival to executions belonging to soft-deleted flows. |
-| `ARCHIVE_TEST_RUNS` | no | `false` | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
+| Variable                           | Required       | Default                  | Description                                                                                                                                  |
+| ---------------------------------- | -------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_ENV`                          | no             | `development`            | Any value other than `development` skips the `.env-example` fallback and the dev defaults below.                                             |
+| `POSTGRES_HOST` / `RDS_PROXY_HOST` | yes (dev/prod) | —                        | Postgres writer host. `RDS_PROXY_HOST` takes precedence.                                                                                     |
+| `POSTGRES_PORT`                    | no             | `5432`                   | Postgres port.                                                                                                                               |
+| `POSTGRES_DATABASE`                | yes            | `plumber_dev` (dev only) | Database name.                                                                                                                               |
+| `POSTGRES_USERNAME`                | yes            | `postgres` (dev only)    | Database user.                                                                                                                               |
+| `POSTGRES_PASSWORD`                | no             | —                        | Database password.                                                                                                                           |
+| `POSTGRES_ENABLE_SSL`              | no             | `false`                  | Set to `true` for SSL connections (required in prod).                                                                                        |
+| `ARCHIVE_POSTGRES_READER_HOST`     | **yes**        | —                        | Postgres reader host for eligibility scans. Use `localhost` for local dev.                                                                   |
+| `S3_ENDPOINT`                      | yes (dev)      | —                        | S3-compatible endpoint URL (MinIO in dev). Not required in AWS — uses IAM.                                                                   |
+| `S3_ACCESS_KEY`                    | yes (dev)      | —                        | S3 access key (MinIO in dev).                                                                                                                |
+| `S3_SECRET_KEY`                    | yes (dev)      | —                        | S3 secret key (MinIO in dev).                                                                                                                |
+| `ARCHIVE_BUCKET`                   | **yes**        | —                        | S3 bucket name for archived objects.                                                                                                         |
+| `ARCHIVE_ENABLED`                  | no             | `false`                  | Must be `true` for the archival script to do anything.                                                                                       |
+| `ARCHIVE_DRY_RUN`                  | no             | `false`                  | When `true`, writes to S3 but skips Postgres deletes.                                                                                        |
+| `ARCHIVE_RETENTION_DAYS`           | no             | `365`                    | Executions older than this are eligible for archival.                                                                                        |
+| `ARCHIVE_BATCH_SIZE`               | no             | `500`                    | Executions fetched per batch.                                                                                                                |
+| `ARCHIVE_BATCH_SLEEP_MS`           | no             | `2000`                   | Sleep between batches to reduce DB load.                                                                                                     |
+| `ARCHIVE_INTRA_BATCH_CONCURRENCY`  | no             | `10`                     | Concurrent S3 uploads within a batch.                                                                                                        |
+| `ARCHIVE_MAX_RUNTIME_MS`           | **yes**        | —                        | Wall-clock limit for a single run (ms). Set to `0` to disable.                                                                               |
+| `ARCHIVE_DELETED_FLOWS_ONLY`       | no             | `false`                  | Restrict archival to executions belonging to soft-deleted flows.                                                                             |
+| `ARCHIVE_TEST_RUNS`                | no             | `false`                  | When `ARCHIVE_DELETED_FLOWS_ONLY=true`, also archive test executions on active flows. Has no effect when `ARCHIVE_DELETED_FLOWS_ONLY=false`. |
 
 ---
 
