@@ -31,8 +31,9 @@ export function fileLockRequeueDelayMs(): number {
  *
  * The per-app action queue groups its jobs by file, so `rateLimitGroup` always
  * has a group id to pause. The batch worker can't use this path (its synthetic
- * container job carries no group id) and re-queues the whole batch via a thrown
- * RetriableError instead — see make-action-batch-worker.ts.
+ * container job carries no group id) and instead re-queues each batch member via
+ * `moveToDelayed` inside `withLock`'s `onContention` callback — see
+ * make-action-batch-worker.ts.
  */
 export function requeueOnFileLockContention(
   worker: WorkerPro<IActionJobData>,
