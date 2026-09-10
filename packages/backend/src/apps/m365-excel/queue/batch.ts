@@ -56,8 +56,13 @@ const getGroupConfigForJob: IActionBatchQueue['getGroupConfigForJob'] = async (
   // missing connectionId is safe rather than pooled across identities: such jobs
   // share the same empty segment, and runBatch's single access check fails them
   // together (a connection-less m365 job can never pass it anyway).
+  //
+  // step.key is prepended so a batch never mixes actions: runBatch resolves
+  // the action to run from only the first job in the batch, so two different
+  // batch-enabled actions sharing a group id would silently run through the
+  // wrong action.
   return {
-    id: `${fileId}::${tableId}::${connectionId ?? ''}`,
+    id: `${step.key}::${fileId}::${tableId}::${connectionId ?? ''}`,
   }
 }
 
