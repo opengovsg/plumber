@@ -13,7 +13,7 @@ async function executeGetHandler(
   req: Partial<Request>,
   res: Partial<Response>,
 ) {
-  const mod = await import('../connections')
+  const mod = await import('../connections.js')
   const router = mod.default
   const getHandler = (router as any).stack.find(
     (layer: any) => layer.route?.methods?.get,
