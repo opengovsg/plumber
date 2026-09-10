@@ -11,23 +11,17 @@ import { URL } from 'node:url'
 // IMPORTANT: without the guard, placeholders would satisfy a deployed environment's
 // missing-env-var checks.
 if ((process.env.APP_ENV ?? 'development') === 'development') {
-  config({ path: path.resolve(__dirname, '../../.env-example') })
+  config({ path: path.resolve(__dirname, '../../../.env-example') })
 }
 
-type AppConfig = {
+export type CoreConfig = {
   port: string
   webAppUrl: string
   webhookUrl: string
   appEnv: string
   isProd: boolean
   isDev: boolean
-  postgresDatabase: string
-  postgresPort: number
-  postgresHost: string
-  postgresUsername: string
-  postgresPassword?: string
   version: string
-  postgresEnableSsl: boolean
   baseUrl: string
   encryptionKey: string
   sessionSecretKey: string
@@ -122,19 +116,15 @@ webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1) // remove trailing s
 
 const appEnv = process.env.APP_ENV || 'development'
 
-const appConfig: AppConfig = {
+const coreConfig: CoreConfig = {
   port,
   appEnv: appEnv,
   isProd: appEnv === 'prod',
   isDev: appEnv === 'development',
   version: process.env.npm_package_version,
-  postgresDatabase: process.env.POSTGRES_DATABASE || 'plumber_dev',
-  postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),
-  postgresHost:
-    process.env.RDS_PROXY_HOST || process.env.POSTGRES_HOST || 'localhost',
-  postgresUsername: process.env.POSTGRES_USERNAME,
-  postgresPassword: process.env.POSTGRES_PASSWORD,
-  postgresEnableSsl: process.env.POSTGRES_ENABLE_SSL === 'true',
+  baseUrl: process.env.BASE_URL,
+  webAppUrl,
+  webhookUrl,
   encryptionKey: process.env.ENCRYPTION_KEY || '',
   sessionSecretKey: process.env.SESSION_SECRET_KEY || '',
   adminJwtSecretKey: process.env.ADMIN_JWT_SECRET_KEY || '',
@@ -148,9 +138,6 @@ const appConfig: AppConfig = {
   adminUserEmail: process.env.ADMIN_USER_EMAIL,
   enableBullMQDashboard: process.env.ENABLE_BULLMQ_DASHBOARD === 'true',
   s3CommonBucket: process.env.S3_COMMON_BUCKET,
-  baseUrl: process.env.BASE_URL,
-  webAppUrl,
-  webhookUrl,
   requestBodySizeLimit: '1mb',
   isWorker: /worker\.(ts|js)$/.test(require.main?.filename),
   workerActionConcurrency: parseInt(
@@ -229,81 +216,81 @@ const appConfig: AppConfig = {
   archiveEnabled: process.env.ARCHIVE_ENABLED === 'true',
 }
 
-if (!appConfig.encryptionKey) {
+if (!coreConfig.encryptionKey) {
   throw new Error('ENCRYPTION_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.sessionSecretKey) {
+if (!coreConfig.sessionSecretKey) {
   throw new Error('SESSION_SECRET_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.adminJwtSecretKey) {
+if (!coreConfig.adminJwtSecretKey) {
   throw new Error('ADMIN_JWT_SECRET_KEY environment variable needs to be set!')
 }
 
-if (!appConfig.postman.apiKey) {
+if (!coreConfig.postman.apiKey) {
   throw new Error('POSTMAN_API_KEY environment variable needs to be set!')
 }
 
 if (
-  !appConfig.sgid ||
-  !appConfig.sgid.clientId ||
-  !appConfig.sgid.clientSecret ||
-  !appConfig.sgid.privateKey
+  !coreConfig.sgid ||
+  !coreConfig.sgid.clientId ||
+  !coreConfig.sgid.clientSecret ||
+  !coreConfig.sgid.privateKey
 ) {
   throw new Error('Sgid environment variables need to be set!')
 }
 
 if (
-  !appConfig.sso.clientId ||
-  !appConfig.sso.clientSecret ||
-  !appConfig.sso.discoveryUrl
+  !coreConfig.sso.clientId ||
+  !coreConfig.sso.clientSecret ||
+  !coreConfig.sso.discoveryUrl
 ) {
   throw new Error('SSO environment variables need to be set!')
 }
 
-if (!appConfig.launchDarklySdkKey) {
+if (!coreConfig.launchDarklySdkKey) {
   throw new Error('LAUNCH_DARKLY_SDK_KEY environment variable needs to be set!')
 }
 
 if (
-  isNaN(appConfig.maxJobAttempts) ||
-  !Number.isInteger(appConfig.maxJobAttempts)
+  isNaN(coreConfig.maxJobAttempts) ||
+  !Number.isInteger(coreConfig.maxJobAttempts)
 ) {
   throw new Error(
     'MAX_JOB_ATTEMPTS environment variable is not a valid integer!',
   )
 }
 
-if (!appConfig.s3CommonBucket) {
+if (!coreConfig.s3CommonBucket) {
   throw new Error('S3_COMMON_BUCKET environment variable needs to be set!')
 }
 
-if (!appConfig.gathersg.publicKey) {
+if (!coreConfig.gathersg.publicKey) {
   throw new Error('GATHERSG_PUBLIC_KEY environment variable needs to be set!')
 }
 
 if (
-  !appConfig.pair.foundry.apiKey ||
-  !appConfig.pair.foundry.model ||
-  !appConfig.pair.foundry.imageModel
+  !coreConfig.pair.foundry.apiKey ||
+  !coreConfig.pair.foundry.model ||
+  !coreConfig.pair.foundry.imageModel
 ) {
   throw new Error('Pair Foundry environment variables need to be set!')
 }
 
 if (
-  !appConfig.pair.rome.baseUrl ||
-  !appConfig.pair.rome.cloudflare.zeroTrustClientKey ||
-  !appConfig.pair.rome.cloudflare.zeroTrustSecretKey ||
-  !appConfig.pair.rome.aiBuilder.publicKey ||
-  !appConfig.pair.rome.aiBuilder.secretKey ||
-  !appConfig.pair.rome.pairAction.publicKey ||
-  !appConfig.pair.rome.pairAction.secretKey
+  !coreConfig.pair.rome.baseUrl ||
+  !coreConfig.pair.rome.cloudflare.zeroTrustClientKey ||
+  !coreConfig.pair.rome.cloudflare.zeroTrustSecretKey ||
+  !coreConfig.pair.rome.aiBuilder.publicKey ||
+  !coreConfig.pair.rome.aiBuilder.secretKey ||
+  !coreConfig.pair.rome.pairAction.publicKey ||
+  !coreConfig.pair.rome.pairAction.secretKey
 ) {
   throw new Error('Pair Rome environment variables need to be set!')
 }
 
-if (!appConfig.ses.roleArn) {
+if (!coreConfig.ses.roleArn) {
   throw new Error('SES_ROLE_ARN environment variable needs to be set!')
 }
 
@@ -311,4 +298,4 @@ if (!appConfig.ses.roleArn) {
 LuxonSettings.defaultZone = 'Asia/Singapore'
 LuxonSettings.defaultLocale = 'en-SG'
 
-export default appConfig
+export default coreConfig
