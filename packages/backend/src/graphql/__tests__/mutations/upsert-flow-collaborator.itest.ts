@@ -50,7 +50,10 @@ describe('upsert flow collaborator', () => {
     })
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
 
   it('owner should be able to add new editor', async () => {
     await upsertFlowCollaborator(
