@@ -15,7 +15,7 @@
     "lint": "eslint . --ignore-path ../../.eslintignore",
     "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
     "typecheck": "tsc --noEmit",
-    "db": "knex",
+    "db": "node ../../scripts/with-op-migration.mjs knex",
     "readme:db:migration:create": "HOW TO USE: npm run -w backend db:migration:create your_migration_name",
     "db:migration:create": "npm run db -- migrate:make",
     "db:list": "npm run db -- migrate:list",
