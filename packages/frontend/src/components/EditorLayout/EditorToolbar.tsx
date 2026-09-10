@@ -9,14 +9,9 @@ import {
   TouchableTooltip,
 } from '@opengovsg/design-system-react'
 import { useContext } from 'react'
-import { useContext } from 'react'
-import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { BiCog, BiHistory, BiInfoCircle } from 'react-icons/bi'
 import { HiOutlineDotsVertical } from 'react-icons/hi'
-import { HiOutlineDotsVertical } from 'react-icons/hi'
 import { MdOutlineRemoveRedEye } from 'react-icons/md'
-import { MdOutlineRemoveRedEye } from 'react-icons/md'
-import { Link } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
