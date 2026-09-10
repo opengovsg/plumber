@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { withLock } from '../distributed-lock'
+import logger from '../logger'
+import { makeRedisAppDataKey, redisAppDataClient } from '../redis-app-data'
 
 //
 // Exercises `withLock` against the REAL app-data Redis (testcontainers). Covers
@@ -20,23 +22,35 @@ function deferred(): { promise: Promise<void>; resolve: () => void } {
 }
 
 describe('withLock (integration)', () => {
-  it('runs fn directly with no lock when the key is null', async () => {
-    let ran = false
+  it("returns fn's result when the release fails after fn settled (not routed to onContention)", async () => {
+    const key = 'wl:release-fail'
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
+
     const result = await withLock(
-      null,
+      key,
       async () => {
-        ran = true
-        return 'ran'
+        // Simulate the lock lapsing mid-operation: redlock's token-checked
+        // release then deletes 0 keys and throws ExecutionError from `finally`.
+        await redisAppDataClient.del(
+          makeRedisAppDataKey('distributed-lock', `${key}:lock`),
+        )
+        return 'committed'
       },
       {
         onContention: () => {
-          throw new Error('onContention must not fire for a null key')
+          throw new Error(
+            'a release failure must not be routed to onContention',
+          )
         },
       },
     )
 
-    expect(ran).toBe(true)
-    expect(result).toBe('ran')
+    expect(result).toBe('committed')
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Failed to release distributed lock',
+      expect.objectContaining({ lockKey: key }),
+    )
+    errorSpy.mockRestore()
   })
 
   it('serializes same-key work: a contender hits onContention while the key is held, then acquires once freed', async () => {

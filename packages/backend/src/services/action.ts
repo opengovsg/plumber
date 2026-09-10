@@ -14,6 +14,7 @@ import {
 import FileLockContentionError from '@/errors/file-lock-contention'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
+import StepError from '@/errors/step'
 import {
   ForEachContext,
   getStepContext,
@@ -436,64 +437,67 @@ export const processAction = async (options: ProcessActionOptions) => {
   // `onContention` without writing a spurious failure step: the worker
   // translates FileLockContentionError into a no-attempt group re-queue, and
   // test runs surface a user-facing StepError. The lock is released once run +
-  // record + resolve are done (inside withLock's `finally`).
+  // record + resolve are done (inside withLock's `finally`). A null key means
+  // the app declares no lock, so the action runs directly.
   const lockKey = await resolveLockKey($)
   const span = tracer.scope().active()
 
-  return withLock(
-    lockKey,
-    async () => {
-      let runResult: IActionRunResult = {}
-      let executionError: unknown = null
-      try {
-        // Cannot assign directly to runResult due to void return type.
-        const result =
-          testRun && actionCommand.testRun
-            ? await actionCommand.testRun($, metadata)
-            : await actionCommand.run($, metadata)
-        if (result) {
-          runResult = result
-        }
-      } catch (error) {
-        executionError = error
-        setActionOutputError($, error)
+  const runAction = async () => {
+    let runResult: IActionRunResult = {}
+    let executionError: unknown = null
+    try {
+      // Cannot assign directly to runResult due to void return type.
+      const result =
+        testRun && actionCommand.testRun
+          ? await actionCommand.testRun($, metadata)
+          : await actionCommand.run($, metadata)
+      if (result) {
+        runResult = result
       }
+    } catch (error) {
+      executionError = error
+      setActionOutputError($, error)
+    }
 
-      const executionStep = await recordExecutionStep({
-        prepared,
-        runResult,
-        executionError,
-        jobId,
-      })
+    const executionStep = await recordExecutionStep({
+      prepared,
+      runResult,
+      executionError,
+      jobId,
+    })
 
-      const nextStep = await resolveNextStep({ prepared, runResult })
+    const nextStep = await resolveNextStep({ prepared, runResult })
 
-      return {
-        flowId,
-        stepId,
-        executionId,
-        executionStep,
-        computedParameters,
-        nextStep,
-        nextStepMetadata: {
-          ...runResult.nextStepMetadata,
-          ...metadata,
-        },
-        executionError,
-      }
-    },
-    {
-      span,
-      onContention: (key) => {
-        if (testRun) {
-          throw new StepError(
-            'This file is busy right now.',
-            'Please try again in a moment.',
-          )
-        }
-        span?.addTags({ 'lock.requeued': true })
-        throw new FileLockContentionError(key)
+    return {
+      flowId,
+      stepId,
+      executionId,
+      executionStep,
+      computedParameters,
+      nextStep,
+      nextStepMetadata: {
+        ...runResult.nextStepMetadata,
+        ...metadata,
       },
+      executionError,
+    }
+  }
+
+  if (!lockKey) {
+    return runAction()
+  }
+
+  return withLock(lockKey, runAction, {
+    span,
+    onContention: (key) => {
+      if (testRun) {
+        throw new StepError(
+          'This file is busy right now.',
+          'Please try again in a moment.',
+        )
+      }
+      span?.addTags({ 'lock.requeued': true })
+      throw new FileLockContentionError(key)
     },
-  )
+  })
 }

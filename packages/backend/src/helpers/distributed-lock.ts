@@ -5,6 +5,8 @@ import {
 } from '@sesamecare-oss/redlock'
 import { type Span } from 'dd-trace'
 
+import { REDIS_DB_INDEX } from '@/config/redis'
+
 import logger from './logger'
 import { makeRedisAppDataKey, redisAppDataClient } from './redis-app-data'
 
@@ -54,6 +56,9 @@ function makeLockResourceKey(key: string): string {
 }
 
 const redlock = new Redlock([redisAppDataClient], {
+  // IMPORTANT: redlock runs SELECT <db> inside its Lua scripts and defaults to
+  // db 0, so without this the keys would land in the queue DB, not app-data.
+  db: REDIS_DB_INDEX.APP_DATA,
   retryCount: ACQUIRE_RETRY_COUNT,
   retryDelay: ACQUIRE_RETRY_DELAY_MS,
   retryJitter: ACQUIRE_RETRY_JITTER_MS,
@@ -76,7 +81,8 @@ redlock.on('error', (err) => {
 
 /**
  * Runs `fn` while holding the distributed lock for `lockKey`, releasing it when
- * `fn` settles. If `lockKey` is null the lock is skipped and `fn` runs directly.
+ * `fn` settles. Callers that may have no key (app declares no `getLockKey`)
+ * branch themselves: `lockKey ? withLock(lockKey, body, opts) : body()`.
  *
  * While `fn` runs the lock is auto-extended (redlock's `using`), so a slow/long
  * operation never expires the lock out from under itself; on worker death
@@ -91,30 +97,36 @@ redlock.on('error', (err) => {
  * `lock.contended` span tags are emitted here; any path-specific tag (e.g.
  * `lock.requeued`) belongs in `onContention`.
  *
+ * IMPORTANT: redlock's `using` also throws `ExecutionError` when the RELEASE in
+ * its `finally` fails (Redis blip, or the key already expired / was taken over).
+ * That throw would replace `fn`'s result, so we capture `fn`'s outcome inside
+ * the routine and only treat an `ExecutionError` as contention when the routine
+ * never started. A release failure after `fn` settled is logged and `fn`'s own
+ * outcome is returned: the work is already committed, and re-queueing it (the
+ * contention path) would duplicate the write. The key expires on its own.
+ *
  * Trade-off: redlock's `using` aborts the supplied signal if an auto-extension
  * fails. We don't thread that signal into `run`/`runBatch` today (parity with
- * the previous heartbeat, which also let `fn` finish), so a successful
- * operation whose lock lapsed mid-flight could surface as a thrown error ->
- * batch retry -> a potential duplicate write. The window is tiny (one
- * operation, well under the 60s TTL) and is strictly safer than writing under a
- * lock we no longer hold; it's the same accepted-duplication class noted as a
+ * the previous heartbeat, which also let `fn` finish), so a write could complete
+ * under a lock we no longer hold. The window is tiny (extension only fails when
+ * Redis is unreachable) and is the same accepted-duplication class noted as a
  * non-goal in the m365 batching plan.
  */
+type Outcome<T> = { ok: true; value: T } | { ok: false; error: unknown }
+
 export async function withLock<T>(
-  lockKey: string | null,
+  lockKey: string,
   fn: () => Promise<T>,
   opts: {
     span?: Span | null
     onContention: (lockKey: string) => Promise<T> | T
   },
 ): Promise<T> {
-  if (!lockKey) {
-    return fn()
-  }
-
   const start = Date.now()
+  let outcome: Outcome<T> | null = null
+
   try {
-    return await redlock.using(
+    await redlock.using(
       [makeLockResourceKey(lockKey)],
       LOCK_TTL_MS,
       async () => {
@@ -122,22 +134,40 @@ export async function withLock<T>(
           'lock.wait_ms': Date.now() - start,
           'lock.contended': false,
         })
-        return fn()
+        try {
+          outcome = { ok: true, value: await fn() }
+        } catch (error) {
+          outcome = { ok: false, error }
+        }
       },
     )
   } catch (err) {
-    // Distinguish "could not acquire after the up-front retry" (contention ->
-    // the handler disposes of the work) from a genuine `fn` error (e.g. a
-    // runBatch failure), which must propagate so the batch retries. redlock
-    // surfaces acquisition failure as ExecutionError; a thrown `fn` is any
-    // other error type.
-    if (err instanceof ExecutionError) {
-      opts.span?.addTags({
-        'lock.wait_ms': Date.now() - start,
-        'lock.contended': true,
-      })
-      return opts.onContention(lockKey)
+    if (outcome === null) {
+      // The routine never ran, so this is an acquisition failure. redlock
+      // surfaces "could not acquire after the up-front retry" as ExecutionError.
+      if (err instanceof ExecutionError) {
+        opts.span?.addTags({
+          'lock.wait_ms': Date.now() - start,
+          'lock.contended': true,
+        })
+        return opts.onContention(lockKey)
+      }
+      throw err
     }
-    throw err
+    logger.error('Failed to release distributed lock', {
+      event: 'lock-release-failed',
+      lockKey,
+      err,
+    })
   }
+
+  // Cast: TS does not track assignments made inside the `using` callback.
+  const settled = outcome as Outcome<T> | null
+  if (settled === null) {
+    throw new Error('withLock: routine did not run')
+  }
+  if (settled.ok === false) {
+    throw settled.error
+  }
+  return settled.value
 }
