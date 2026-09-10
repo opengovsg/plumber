@@ -38,7 +38,12 @@ import { getConditionBlockPreviewParts } from '../../helpers/getConditionBlockPr
 
 import { AddAfterBlockButton } from './AddAfterBlockButton'
 import { HoverAddStepButton } from './HoverAddStepButton'
-import { blockActionButtonStyles, conditionBlockStyles } from './styles'
+import {
+  blockActionButtonStyles,
+  CONDITION_BLOCK_BODY_PB,
+  conditionBlockStyles,
+  EMPTY_CONDITION_BLOCK_BODY_PB,
+} from './styles'
 import useDuplicateBranch from './useDuplicateBranch'
 
 interface IfThenProps {
@@ -281,7 +286,14 @@ export default function IfThen({
               }
             />
 
-            <Flex {...conditionBlockStyles.body} pb={isEmptyBlock ? 2 : 3}>
+            <Flex
+              {...conditionBlockStyles.body}
+              pb={
+                isEmptyBlock
+                  ? EMPTY_CONDITION_BLOCK_BODY_PB
+                  : CONDITION_BLOCK_BODY_PB
+              }
+            >
               {isEmptyBlock ? (
                 <HoverAddStepButton
                   isDisabled={readOnly}
