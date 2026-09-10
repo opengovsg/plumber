@@ -81,6 +81,7 @@ export default function ExitAlert({
               ref={confettiRef}
               surveyId={appConfig.confettiAiBuilderSurveyId}
               publishableKey={appConfig.confettiSurveyPublishableKey}
+              apiBaseUrl={appConfig.confettiApiBaseUrl}
               respondent={`${userEmail}-${chatId}`}
             />
           </AlertDialogBody>
