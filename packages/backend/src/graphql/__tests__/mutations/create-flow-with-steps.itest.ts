@@ -45,7 +45,10 @@ describe('createFlowWithSteps mutation integration tests', () => {
     }
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
 
   describe('happy flow', () => {
     it('should create a flow with steps successfully', async () => {

@@ -131,7 +131,10 @@ describe('retryExecutionStep mutation', () => {
     }
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
 
   describe('authorization tests', () => {
     it('should allow owner to retry execution step successfully', async () => {

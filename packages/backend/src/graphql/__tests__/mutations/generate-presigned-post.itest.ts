@@ -36,7 +36,10 @@ describe('generatePresignedPost', () => {
     context = await generateMockContext()
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
 
   it('should generate a presigned url', async () => {
     const mockFlow = await generateMockFlow(context, VALID_PARAMS.flow.id)

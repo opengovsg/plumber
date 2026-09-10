@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createTable from '@/graphql/mutations/tiles/create-table'
 import Flow from '@/models/flow'
@@ -15,8 +15,8 @@ import { generateMockCollaborator, generateMockUser } from '../flow.mock'
 import { generateMockContext } from './table.mock'
 import { checkIfTableExists } from './tiles-pg-helper'
 
-const pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
-const pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
+let pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
+let pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
 
 async function generateFlowWithCollaborators(ownerId: string) {
   const flow = await Flow.query().insert({
@@ -40,8 +40,13 @@ describe('create table mutation', () => {
   // cant use before all here since the data is re-seeded each time
   beforeEach(async () => {
     context = await generateMockContext()
-    pgCreateTableSpy.mockClear()
-    pgCreateTableRowsSpy.mockClear()
+    pgCreateTableSpy = vi.spyOn(pgTableFunctions, 'createTable')
+    pgCreateTableRowsSpy = vi.spyOn(pgTableRowFunctions, 'createTableRows')
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should create a blank table', async () => {

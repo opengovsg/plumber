@@ -32,7 +32,10 @@ describe('verifyOtp', () => {
     validOtpHash = user.hashOtp(TEST_OTP)
   })
 
-  afterEach(() => vi.clearAllMocks())
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
+  })
 
   it('should throw error when is not gov.sg email', async () => {
     await expect(
