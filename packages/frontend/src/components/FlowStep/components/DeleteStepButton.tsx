@@ -24,10 +24,18 @@ interface DeleteStepButtonProps {
   step: IStep
   stepName: string
   displayPosition?: number
+  /** Skip FlowStep's hover-reveal CSS, since the parent controls visibility. */
+  alwaysVisible?: boolean
 }
 
 export default function DeleteStepButton(props: DeleteStepButtonProps) {
-  const { isNested, step, stepName, displayPosition } = props
+  const {
+    isNested,
+    step,
+    stepName,
+    displayPosition,
+    alwaysVisible = false,
+  } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const customBody = stepName
     ? `Are you sure you want to delete step **${
@@ -139,8 +147,10 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
           icon={<BiTrash />}
           minHeight={isNested ? 6 : 8}
           minWidth={isNested ? 6 : 8}
-          className={isMobile ? undefined : 'hover-remove-button'}
-          visibility={isMobile ? 'visible' : 'hidden'}
+          className={
+            isMobile || alwaysVisible ? undefined : 'hover-remove-button'
+          }
+          visibility={isMobile || alwaysVisible ? 'visible' : 'hidden'}
         />
       </Flex>
 
