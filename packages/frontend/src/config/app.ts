@@ -9,6 +9,7 @@ interface AppConfig {
   confettiSurveyPublishableKey: string
   confettiSurveyId: string
   confettiAiBuilderSurveyId: string
+  confettiApiBaseUrl: string
 }
 
 function getAppConfig(): AppConfig {
@@ -18,10 +19,14 @@ function getAppConfig(): AppConfig {
   const version = import.meta.env.PACKAGE_VERSION
   const confettiSurveyPublishableKey =
     'cfti_pk_dfde134552a318551e05559024f432ba'
+  // Routed through our own domain, since CSP only allows connecting to
+  // plumber.gov.sg domains directly (see packages/backend/src/helpers/csp.ts).
+  const confettiApiBaseUrl = 'https://confetti.plumber.gov.sg'
   const commonEnv = {
     env,
     version,
     confettiSurveyPublishableKey,
+    confettiApiBaseUrl,
   }
 
   switch (env) {
