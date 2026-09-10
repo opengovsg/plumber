@@ -2,7 +2,7 @@
 
 Plumber is a no-code workflow automation tool. Users build "flows" out of triggers and actions provided by integrated "apps" (FormSG, Postman, M365 Excel, Slack, etc.). Flow executions are queued and run by background workers (some flow triggers run on the server).
 
-This uses an npm workspaces monorepo:
+This uses a pnpm workspaces monorepo:
 
 - [packages/backend/](packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](.claude/rules/backend.md).
 - [packages/frontend/](packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](.claude/rules/frontend.md).
@@ -40,43 +40,46 @@ messages. Follow them to maintain maximum clarity and eliminate filler:
 
 Do **not** run these yourself unless the user asks — the human runs the dev server in their own terminal.
 
-**Node version:** run `nvm use` (repo `.nvmrc`) before any `npm`, `npx`, or `node`
+**Node version:** run `nvm use` (repo `.nvmrc`) before any `pnpm`, `npx`, or `node`
 command. Claude Code does this automatically via a hook. Other agents must do it
-explicitly, e.g. `nvm use && npm run -w backend lint`.
+explicitly, e.g. `nvm use && pnpm --filter backend run lint`.
 
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
-- `npm run setup` — one-time per session; brings up Postgres, Redis, DynamoDB, MinIO, etc. via Docker.
-- `npm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
-- `npm run teardown` — tears the Docker services back down when the human is done.
+- `pnpm run setup` — one-time per session; brings up Postgres, Redis, DynamoDB, MinIO, etc. via Docker.
+- `pnpm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
+- `pnpm run teardown` — tears the Docker services back down when the human is done.
 
 **Secrets:** there is no `packages/backend/.env`. Never create or read one. Never run
-`npm run dev` or `npm run setup` either. Both fetch secrets from 1Password behind a
+`pnpm run dev` or `pnpm run setup` either. Both fetch secrets from 1Password behind a
 biometric prompt that an agent cannot answer.
 
-- `npm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
+- `pnpm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
   `.env-example` placeholders.
 - **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
   Those calls fail with third-party authentication errors. That is expected, not a bug to
   fix.
-- `lint`, `typecheck`, `test:unit`, `test:integration` and `migrate` need nothing. They
-  already read `.env-example`.
+- `lint`, `typecheck` and `migrate` need nothing. They already read `.env-example`.
+- **`test:unit` needs Docker running** (`pnpm run setup`), even though it reads
+  `.env-example` and touches no schema. Backend unit tests create real Redis clients at
+  import time. Without Redis reachable, they retry the connection forever instead of
+  failing fast, and the run hangs with no test output.
 
 **Testing:**
 
-- `npm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
-- `npm run -w backend test:unit` — runs backend unit tests only.
-- `npx vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
+- `pnpm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
+- `pnpm --filter backend run test:unit` — runs backend unit tests only. Requires Docker (see above).
+- `pnpm exec vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
 - Backend integration tests use the `.itest.ts` suffix and require Docker/testcontainers — see [.claude/rules/backend.md](.claude/rules/backend.md).
 
 ## Conventions
 
 - **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, single-threaded). Don't mix.
 - **Business-critical tests**: tests pinning down an explicit, user-specified business rule live in their own `*.critical.test.ts` / `*.critical.itest.ts` file, separate from general coverage. Give the file a header comment stating the rule(s) verbatim. A failing test there means the implementation regressed. Confirm with the user before loosening or deleting the assertion.
-- **Package manager**: only use `npm`. Never use `yarn`, `pnpm`, or other package managers.
+- **Package manager**: only use `pnpm`. Never use `npm`, `yarn`, or other package managers.
 - **Installing packages**: always pass the `-E` (exact version) flag.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
-- **Linting**: before committing, run `npm run lint:fix` (auto-fixes), then `npm run lint` and `npm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `npm run -w backend lint:fix`; frontend-only → `npm run -w frontend lint:fix`; otherwise run the root commands.
+- **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend run lint:fix`; frontend-only → `pnpm --filter frontend run lint:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.
