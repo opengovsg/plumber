@@ -1244,8 +1244,24 @@ export interface IStepError {
 }
 
 // Tiles
+export type ITableColumnAiBuilderTool = 'create_tile' | 'add_tile_columns'
+
+export interface ITableColumnAiBuilderConfig {
+  traceId: string
+  tool: ITableColumnAiBuilderTool
+}
+
 export interface ITableColumnConfig {
   width?: number
+  aiBuilderConfig?: ITableColumnAiBuilderConfig
+}
+
+export interface ITableAiBuilderConfig {
+  traceId: string
+}
+
+export interface ITableConfig {
+  aiBuilderConfig?: ITableAiBuilderConfig
 }
 
 export interface ITableColumnMetadata {

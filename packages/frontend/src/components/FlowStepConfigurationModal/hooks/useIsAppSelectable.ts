@@ -26,10 +26,11 @@ export const LAST_STEP_ONLY_REASON = 'This can only be used as the last step'
  * An if-then block runs the steps it contains, so an if-then among them would
  * be a nested branch — which the block model does not support.
  */
-const IF_THEN_INSIDE_BLOCK_REASON =
+export const IF_THEN_INSIDE_BLOCK_REASON =
   'You cannot add an If-then inside another If-then'
 
-const FOR_EACH_INSIDE_BLOCK_REASON = 'For-each cannot be used in an If-then'
+export const FOR_EACH_INSIDE_BLOCK_REASON =
+  'For-each cannot be used in an If-then'
 
 export interface AppSelectability {
   isSelectable: boolean
@@ -119,7 +120,7 @@ function isIfThenSelectable({
  * leaving nesting as the sole restriction. For-each has no such extent, so it
  * still swallows every later step and must stay last.
  */
-function getIfThenV2Selectability({
+export function getIfThenV2Selectability({
   isLastStep,
   anchorPlacement,
   anchorStep,

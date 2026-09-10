@@ -82,6 +82,7 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
+  chatModel: 'mock-model',
   model: 'mock-model',
   MODEL_TYPE: 'mock-model-type',
   engineProvider: {

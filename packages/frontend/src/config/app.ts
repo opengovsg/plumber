@@ -8,6 +8,8 @@ interface AppConfig {
   ssoHostname: string
   confettiSurveyPublishableKey: string
   confettiSurveyId: string
+  confettiAiBuilderSurveyId: string
+  confettiApiBaseUrl: string
 }
 
 function getAppConfig(): AppConfig {
@@ -17,10 +19,14 @@ function getAppConfig(): AppConfig {
   const version = import.meta.env.PACKAGE_VERSION
   const confettiSurveyPublishableKey =
     'cfti_pk_dfde134552a318551e05559024f432ba'
+  // Routed through our own domain, since CSP only allows connecting to
+  // plumber.gov.sg domains directly (see packages/backend/src/helpers/csp.ts).
+  const confettiApiBaseUrl = 'https://confetti.plumber.gov.sg'
   const commonEnv = {
     env,
     version,
     confettiSurveyPublishableKey,
+    confettiApiBaseUrl,
   }
 
   switch (env) {
@@ -32,6 +38,7 @@ function getAppConfig(): AppConfig {
         ssoClientId: 'plumber-prod',
         ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'n1yv6rl15ynq6wazr3x1pdjc',
+        confettiAiBuilderSurveyId: 'he8paxvow3kv4lp0ozdtxw44',
         ...commonEnv,
       }
     case 'uat':
@@ -42,6 +49,7 @@ function getAppConfig(): AppConfig {
         ssoClientId: 'plumber-uat',
         ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
+        confettiAiBuilderSurveyId: 'm6g5hm6803jcbgkip7hqoqim',
         ...commonEnv,
       }
     case 'staging':
@@ -52,6 +60,7 @@ function getAppConfig(): AppConfig {
         ssoClientId: 'plumber-staging',
         ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
+        confettiAiBuilderSurveyId: 'm6g5hm6803jcbgkip7hqoqim',
         ...commonEnv,
       }
     default:
@@ -62,6 +71,7 @@ function getAppConfig(): AppConfig {
         ssoClientId: 'plumber-local',
         ssoHostname: 'http://localhost:5354',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
+        confettiAiBuilderSurveyId: 'm6g5hm6803jcbgkip7hqoqim',
         ...commonEnv,
       }
   }

@@ -1,6 +1,6 @@
 {
   "name": "backend-archive",
-  "version": "1.83.0",
+  "version": "1.84.0",
   "scripts": {
     "prebuild": "rimraf ./dist",
     "build": "tsc && tsc-alias",
@@ -10,7 +10,9 @@
     "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
     "typecheck": "tsc --noEmit",
     "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:rehydrate": "DOTENV_CONFIG_PATH=\"${DOTENV_CONFIG_PATH:-.env}\" ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
+    "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
+    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1027.0",

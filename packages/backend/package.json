@@ -15,7 +15,7 @@
     "lint": "eslint . --ignore-path ../../.eslintignore",
     "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
     "typecheck": "tsc --noEmit",
-    "db": "DOTENV_CONFIG_PATH=.env knex",
+    "db": "knex",
     "readme:db:migration:create": "HOW TO USE: npm run -w backend db:migration:create your_migration_name",
     "db:migration:create": "npm run db -- migrate:make",
     "db:list": "npm run db -- migrate:list",
@@ -133,5 +133,5 @@
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },
-  "version": "1.83.0"
+  "version": "1.84.0"
 }
