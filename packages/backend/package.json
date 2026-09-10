@@ -18,7 +18,7 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
-    "db": "knex",
+    "db": "node ../../scripts/with-op-migration.mjs knex",
     "readme:db:migration:create": "HOW TO USE: pnpm --filter backend run db:migration:create your_migration_name",
     "db:migration:create": "pnpm run db migrate:make",
     "db:list": "pnpm run db migrate:list",
