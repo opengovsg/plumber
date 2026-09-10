@@ -292,6 +292,9 @@ export default function IfThen({
                   hideLeadingConnector
                   step={ifThenStep}
                   allowReorder={false}
+                  // The anchor is the if-then step itself, which reads as outside
+                  // its own block.
+                  anchorPlacement="inside-if-then-block"
                 />
               ) : (
                 <SortableList
