@@ -209,6 +209,9 @@ catalogs:
       specifier: ^4.2.0
       version: 4.2.0
   default:
+    '@1password/sdk':
+      specifier: 0.5.0
+      version: 0.5.0
     '@databricks/sql':
       specifier: 2.0.0
       version: 2.0.0
@@ -777,6 +780,9 @@ importers:
 
   .:
     devDependencies:
+      '@1password/sdk':
+        specifier: 'catalog:'
+        version: 0.5.0
       '@eddeee888/gcg-typescript-resolver-files':
         specifier: 'catalog:'
         version: 0.7.2(graphql@16.11.0)
@@ -1541,9 +1547,6 @@ importers:
       '@langfuse/client':
         specifier: 4.2.0
         version: 4.2.0(@opentelemetry/api@1.9.1)
-      dotenv:
-        specifier: ^16.0.3
-        version: 16.6.1
 
   tools/load-tests:
     devDependencies:
@@ -1564,6 +1567,12 @@ importers:
         version: 9.0.1
 
 packages:
+
+  '@1password/sdk-core@0.5.0':
+    resolution: {integrity: sha512-9g7LWOKRKdePZ85evVgE9xEom3DAg3hRIyQdOwLPvpL/F7KpDXmUHMi72rsqJxKaDbWApXmrYjDExMSPqUg7xw==}
+
+  '@1password/sdk@0.5.0':
+    resolution: {integrity: sha512-k6kov3pcA7PRg2tev9CgTfEf/3JSyAp11BPQNCEsqAD32QbqM032OXC1rfjyC8Ba0sfH+NHYZxcifUZToyGyYA==}
 
   '@75lb/deep-merge@1.1.4':
     resolution: {integrity: sha512-Fjmi8VSxoGF80wn8HSHTPfUKLSJ+aiQE7rXyrFV6apP8Xyj8v4bqdC7BBoklxjt671gUqP0yREwpDlUP5R/VyQ==}
@@ -11995,6 +12004,12 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@1password/sdk-core@0.5.0': {}
+
+  '@1password/sdk@0.5.0':
+    dependencies:
+      '@1password/sdk-core': 0.5.0
 
   '@75lb/deep-merge@1.1.4':
     dependencies:
