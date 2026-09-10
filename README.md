@@ -17,10 +17,21 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 6. Copy `op-dev.example.json` to `op-dev.json`, then fill in your account name and your three environment ids. Copy an id from Developer > View Environments > View environment > Manage environment > Copy environment ID
    - `inheritedEnvironments` is optional. List environment ids there to load common team-level env vars before your own. Your own environment's variables override theirs
 7. Setup services `npm run setup`
-8. Run DB migrations `npm run migrate` (only for first time setup)
+8. Run `npm run migrate` (only for first time setup). When prompted (see [Running DB migrations](#running-db-migrations)), choose "Local dev"
 9. Start the server `npm run dev`
 
 `npm run setup` and `npm run dev` each fetch their secrets from 1Password, so both prompt once and both need the app running. There is no `.env` file.
+
+### Running DB migrations
+
+The `db` scripts in `backend` handle migration; run these with `npm run -w backend db:*`. In general:
+
+1. `npm run -w backend db:list` to list pending migrations
+2. `npm run -w backend db:migrate` to run the migrations themselves.
+
+Every `npm run -w backend db:*` script (`db:migrate`, `db:rollback`, `db:migration:create`, `db:list`) can write to a real Postgres database, so it runs through `scripts/with-op-migration.mjs` to load the appropriate env vars from 1Password. These 1Password environments should contain only the vars [`db.ts`](./packages/backend/src/config/app/db.ts) reads (e.g. `POSTGRES_HOST`, `POSTGRES_USERNAME`, `POSTGRES_PASSWORD`, `POSTGRES_DATABASE`).
+
+DB migrations on local dev doesn't load from 1Password. It relies on `.env-example`'s defaults.
 
 ### On Windows?
 
