@@ -179,6 +179,7 @@ describe('Chat Route Handler', () => {
   }
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

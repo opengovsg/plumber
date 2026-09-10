@@ -79,6 +79,7 @@ describe('Postman SMS app', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

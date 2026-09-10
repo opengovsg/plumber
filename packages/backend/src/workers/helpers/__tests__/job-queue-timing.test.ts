@@ -17,6 +17,7 @@ function makeJob(
 
 describe('getJobQueueTimingTags', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

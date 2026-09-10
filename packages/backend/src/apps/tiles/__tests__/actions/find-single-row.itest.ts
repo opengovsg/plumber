@@ -106,7 +106,7 @@ describe.each([['ddb'], ['pg']])(
 
     it('should allow owners to find single row', async () => {
       await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
-      expect($.setActionItem).toBeCalled()
+      expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should return an empty columns if no rows are found', async () => {
@@ -120,7 +120,7 @@ describe.each([['ddb'], ['pg']])(
         },
         {} as Record<string, string>,
       )
-      expect($.setActionItem).toBeCalledWith({
+      expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
           rowsFound: 0,
           rowId: ' ',
@@ -132,7 +132,7 @@ describe.each([['ddb'], ['pg']])(
     it('should allow editors to find single row', async () => {
       $.user = editor
       await expect(findSingleRowAction.run($)).resolves.toBeUndefined()
-      expect($.setActionItem).toBeCalled()
+      expect($.setActionItem).toHaveBeenCalled()
     })
 
     it('should not allow viewers to find single row', async () => {

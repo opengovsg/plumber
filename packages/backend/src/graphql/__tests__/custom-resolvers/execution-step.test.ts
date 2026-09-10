@@ -55,6 +55,7 @@ describe('execution step', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

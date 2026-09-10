@@ -1,10 +1,3 @@
-import {
-  type DragEvent as ReactDragEvent,
-  type FormEvent,
-  useCallback,
-  useEffect,
-  useState,
-} from 'react'
 import { useMutation } from '@apollo/client'
 import {
   FormControl,
@@ -26,6 +19,13 @@ import {
   Infobox,
   ModalCloseButton,
 } from '@opengovsg/design-system-react'
+import {
+  type DragEvent as ReactDragEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react'
 
 import FileUpload from '@/components/FileUpload'
 import { CREATE_CONNECTION } from '@/graphql/mutations/create-connection'
@@ -231,8 +231,8 @@ export default function AddFormsgConnectionModal({
     variant === 'url-only'
       ? 'Share your form'
       : lockFormUrl
-      ? 'Add your Form Secret Key'
-      : 'Add new form'
+        ? 'Add your Form Secret Key'
+        : 'Add new form'
 
   // The URL stays locked only while it hasn't failed yet — once the backend
   // rejects it (e.g. "Form does not exist"), the user needs to be able to

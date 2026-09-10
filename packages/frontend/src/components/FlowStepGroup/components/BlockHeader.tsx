@@ -1,5 +1,5 @@
+import { Flex, Text, Tooltip } from '@chakra-ui/react'
 import type { IStep } from '@plumber/types'
-
 import type { ReactNode } from 'react'
 import {
   useCallback,
@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Flex, Text, Tooltip } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'

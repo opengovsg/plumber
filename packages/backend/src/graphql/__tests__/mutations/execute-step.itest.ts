@@ -92,9 +92,7 @@ describe('executeStep mutation - access control', () => {
     // esModuleInterop double-wraps .default on a value-level dynamic import of a
     // nodenext CJS module; typeof import(...) models it correctly, so cast through it.
     testStepSpy = vi.spyOn(
-      (await import(
-        '@/services/test-step.js'
-      )) as unknown as typeof import('@/services/test-step.js'),
+      (await import('@/services/test-step.js')) as unknown as typeof import('@/services/test-step.js'),
       'default',
     )
   })
@@ -381,6 +379,7 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

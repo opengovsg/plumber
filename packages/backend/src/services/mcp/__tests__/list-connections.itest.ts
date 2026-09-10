@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '@/models/app'

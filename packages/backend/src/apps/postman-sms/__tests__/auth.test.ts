@@ -34,6 +34,7 @@ describe('Postman SMS auth', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -58,7 +59,7 @@ describe('Postman SMS auth', () => {
       mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Test)
 
       await verifyCredentials($)
-      expect(mocks.authSet).toBeCalledWith(
+      expect(mocks.authSet).toHaveBeenCalledWith(
         expect.objectContaining({
           screenName: '[TEST] My Campaign',
         }),
@@ -70,14 +71,14 @@ describe('Postman SMS auth', () => {
       mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Test)
 
       await verifyCredentials($)
-      expect(mocks.authSet).not.toBeCalled()
+      expect(mocks.authSet).not.toHaveBeenCalled()
     })
 
     it('Does not modify the label for campaigns in prod', async () => {
       mocks.getPostmanEnv.mockReturnValue(PostmanEnv.Prod)
 
       await verifyCredentials($)
-      expect(mocks.authSet).not.toBeCalled()
+      expect(mocks.authSet).not.toHaveBeenCalled()
     })
   })
 
@@ -109,7 +110,7 @@ describe('Postman SMS auth', () => {
         } as AxiosError),
       )
 
-      await expect(isStillVerified($)).rejects.toThrowError(
+      await expect(isStillVerified($)).rejects.toThrow(
         "Plumber's IPs are not whitelisted in your campaign",
       )
     })
@@ -123,7 +124,7 @@ describe('Postman SMS auth', () => {
         } as AxiosError),
       )
 
-      await expect(isStillVerified($)).rejects.toThrowError(
+      await expect(isStillVerified($)).rejects.toThrow(
         'Provided API key is not for the provided campaign',
       )
     })
@@ -157,7 +158,7 @@ describe('Postman SMS auth', () => {
       'throws the underlying error if request failed due to another reason',
       async (error) => {
         mocks.httpGet.mockRejectedValue(error)
-        await expect(isStillVerified($)).rejects.toThrowError(error)
+        await expect(isStillVerified($)).rejects.toThrow(error)
       },
     )
   })

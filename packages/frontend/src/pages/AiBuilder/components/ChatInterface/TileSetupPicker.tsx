@@ -1,7 +1,3 @@
-import { useState } from 'react'
-import { BiTrash } from 'react-icons/bi'
-import { FaArrowCircleUp, FaPlus } from 'react-icons/fa'
-import { FaCircleStop } from 'react-icons/fa6'
 import {
   Box,
   Button,
@@ -17,6 +13,10 @@ import {
   Tr,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { useState } from 'react'
+import { BiTrash } from 'react-icons/bi'
+import { FaArrowCircleUp, FaPlus } from 'react-icons/fa'
+import { FaCircleStop } from 'react-icons/fa6'
 
 import type { TileSetupData } from '@/hooks/useChatStream'
 

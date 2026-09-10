@@ -62,6 +62,7 @@ vi.mock('@/models/execution', () => ({
 
 describe('action helper functions', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -202,7 +203,7 @@ describe('action helper functions', () => {
               executionError: error,
               context: MOCK_CONTEXT,
             }),
-          ).toThrowError(UnrecoverableError)
+          ).toThrow(UnrecoverableError)
         },
       )
 
@@ -218,7 +219,7 @@ describe('action helper functions', () => {
             executionError: error,
             context: MOCK_CONTEXT,
           }),
-        ).toThrowError(RetriableError)
+        ).toThrow(RetriableError)
       })
 
       it.each([
@@ -233,7 +234,7 @@ describe('action helper functions', () => {
               executionError: EMPTY_HTTP_ERROR,
               context: MOCK_CONTEXT,
             }),
-          ).toThrowError(RetriableError)
+          ).toThrow(RetriableError)
         },
       )
     })
@@ -257,8 +258,8 @@ describe('action helper functions', () => {
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
-          expect(mocks.workerRateLimit).toBeCalledWith(100)
-          expect(mocks.workerRateLimitGroup).not.toBeCalled()
+          expect(mocks.workerRateLimit).toHaveBeenCalledWith(100)
+          expect(mocks.workerRateLimitGroup).not.toHaveBeenCalled()
         }
       })
 
@@ -275,8 +276,8 @@ describe('action helper functions', () => {
           }),
         ).toThrow(RetriableError)
 
-        expect(mocks.workerRateLimit).not.toBeCalled()
-        expect(mocks.workerRateLimitGroup).not.toBeCalled()
+        expect(mocks.workerRateLimit).not.toHaveBeenCalled()
+        expect(mocks.workerRateLimitGroup).not.toHaveBeenCalled()
       })
 
       it("delays the job's group if delayType is group", () => {
@@ -305,8 +306,8 @@ describe('action helper functions', () => {
           expect(e.name).toEqual(BULLMQ_RATE_LIMIT_ERROR.name)
           expect(e.message).toEqual(BULLMQ_RATE_LIMIT_ERROR.message)
 
-          expect(mocks.workerRateLimitGroup).toBeCalledWith(job, 100)
-          expect(mocks.workerRateLimit).not.toBeCalled()
+          expect(mocks.workerRateLimitGroup).toHaveBeenCalledWith(job, 100)
+          expect(mocks.workerRateLimit).not.toHaveBeenCalled()
         }
       })
 
@@ -323,8 +324,8 @@ describe('action helper functions', () => {
           }),
         ).toThrow(RetriableError)
 
-        expect(mocks.workerRateLimit).not.toBeCalled()
-        expect(mocks.workerRateLimitGroup).not.toBeCalled()
+        expect(mocks.workerRateLimit).not.toHaveBeenCalled()
+        expect(mocks.workerRateLimitGroup).not.toHaveBeenCalled()
       })
 
       it('throws the original RetriableError if delayType is step', () => {
@@ -378,7 +379,7 @@ describe('action helper functions', () => {
               executionError: stepError,
               context: MOCK_CONTEXT,
             }),
-          ).toThrowError(expectedErrorType)
+          ).toThrow(expectedErrorType)
         },
       )
 
@@ -432,7 +433,7 @@ describe('action helper functions', () => {
               executionError,
               context: MOCK_CONTEXT,
             }),
-          ).toThrowError(UnrecoverableError)
+          ).toThrow(UnrecoverableError)
         },
       )
     })
@@ -461,7 +462,7 @@ describe('action helper functions', () => {
               context: MOCK_CONTEXT,
             }),
           ).toThrow()
-          expect(mocks.addSpanTags).toBeCalledWith({
+          expect(mocks.addSpanTags).toHaveBeenCalledWith({
             willRetry: expectedTagValue,
           })
         },

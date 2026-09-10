@@ -20,6 +20,7 @@ vi.mock('@/models/step', () => ({
 
 describe('Queue config', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

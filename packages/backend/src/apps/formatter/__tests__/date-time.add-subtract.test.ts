@@ -27,6 +27,7 @@ describe('add / subtract date time', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -154,7 +155,7 @@ describe('add / subtract date time', () => {
         addSubtractDateTimeOps: [op],
       }
       transformData($, '2024-04-01T12:05:10.000+08:00')
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { result: expectedResult },
       })
     },
@@ -256,7 +257,7 @@ describe('add / subtract date time', () => {
         addSubtractDateTimeOps: [op],
       }
       transformData($, '2024-04-01T12:05:10.000+08:00')
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { result: expectedResult },
       })
     },
@@ -287,7 +288,7 @@ describe('add / subtract date time', () => {
         addSubtractDateTimeOps: ops,
       }
       transformData($, '30 Apr 2017')
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { result: expectedResult },
       })
     },
@@ -313,7 +314,7 @@ describe('add / subtract date time', () => {
       addSubtractDateTimeOps: [op],
     }
     transformData($, valueToTransform)
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: expectedResult },
     })
   })
@@ -326,7 +327,7 @@ describe('add / subtract date time', () => {
       ],
     }
     transformData($, '2024-02-29T00:00:00.000+08:00')
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: '2025-02-28T00:00:00.000+08:00' },
     })
   })
