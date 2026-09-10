@@ -9,4 +9,4 @@ export BASE_URL="http://localhost:$base"
 export WEB_APP_URL="http://localhost:$((base + 1))"
 export DEV_BACKEND_PORT="$base"
 export DEV_FRONTEND_PORT="$((base + 1))"
-exec npm run dev
+exec pnpm run dev

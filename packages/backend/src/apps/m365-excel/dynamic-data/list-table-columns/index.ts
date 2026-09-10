@@ -56,10 +56,10 @@ const dynamicData: IDynamicData = {
           },
         },
       )
-    ).data.value.map((column) => column.name)
+    ).data.value.map((column: { name: string }) => column.name)
 
     return {
-      data: columnNames.map((columnName) => ({
+      data: columnNames.map((columnName: string) => ({
         name: columnName,
         value: columnName,
       })),

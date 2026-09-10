@@ -74,7 +74,7 @@ async function run($: IGlobalVariable) {
       lookup: safeAxiosLookup,
       timeout,
       //  overwriting this to allow redirects to resolve
-      validateStatus: (status) =>
+      validateStatus: (status: number) =>
         (status >= 200 && status < 300) ||
         REDIRECT_STATUS_CODES.includes(status),
       // stream the response for custom api to protect against gzip bombs

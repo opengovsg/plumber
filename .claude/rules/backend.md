@@ -9,18 +9,18 @@ Express + Apollo GraphQL server, BullMQ workers, Knex/Objection on Postgres, plu
 
 ## Important commands
 
-Run from [packages/backend/](../../packages/backend/) or via `npm run -w backend …`.
+Run from [packages/backend/](../../packages/backend/) or via `pnpm --filter backend …`.
 
 **Testing:**
 
-- `npm run test:unit` — unit tests (`src/**/*.test.ts`, no DB).
-- `npm run test:integration` — integration tests (`src/**/*.itest.ts`); uses testcontainers (Docker required) and runs single-threaded.
-- `npx vitest -c packages/backend/vitest.config.integration.ts path/to/file.itest.ts` — single integration file.
+- `pnpm run test:unit` — unit tests (`src/**/*.test.ts`, no DB).
+- `pnpm run test:integration` — integration tests (`src/**/*.itest.ts`); uses testcontainers (Docker required) and runs single-threaded.
+- `pnpm exec vitest -c packages/backend/vitest.config.integration.ts path/to/file.itest.ts` — single integration file.
 
 **Creating test data (DynamoDB local only):**
 
-- `npm run dynamodb:setup` — create the tile table.
-- `npm run dynamodb:seed -- <table-id>` — seed 10k rows into the given table.
+- `pnpm run dynamodb:setup` — create the tile table.
+- `pnpm run dynamodb:seed -- <table-id>` — seed 10k rows into the given table.
 
 ## App plugin model
 
