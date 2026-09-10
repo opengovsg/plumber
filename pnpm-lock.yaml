@@ -1392,12 +1392,6 @@ packages:
     dependencies:
       '@1password/sdk-core': 0.5.0
 
-  '@1password/sdk-core@0.5.0':
-    resolution: {integrity: sha512-9g7LWOKRKdePZ85evVgE9xEom3DAg3hRIyQdOwLPvpL/F7KpDXmUHMi72rsqJxKaDbWApXmrYjDExMSPqUg7xw==}
-
-  '@1password/sdk@0.5.0':
-    resolution: {integrity: sha512-k6kov3pcA7PRg2tev9CgTfEf/3JSyAp11BPQNCEsqAD32QbqM032OXC1rfjyC8Ba0sfH+NHYZxcifUZToyGyYA==}
-
   '@75lb/deep-merge@1.1.4':
     resolution: {integrity: sha512-Fjmi8VSxoGF80wn8HSHTPfUKLSJ+aiQE7rXyrFV6apP8Xyj8v4bqdC7BBoklxjt671gUqP0yREwpDlUP5R/VyQ==}
     engines: {node: '>=12.17'}
