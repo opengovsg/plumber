@@ -1,10 +1,9 @@
-import { IStep } from '@plumber/types'
-
-import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
-import { BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
+import { BiTrash } from 'react-icons/bi'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import MenuAlertDialog from '@/components/MenuAlertDialog'

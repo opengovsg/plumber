@@ -4,7 +4,6 @@ import { DecryptedAttachments } from '@opengovsg/formsg-sdk/dist/types'
 import logger from '@/helpers/logger'
 
 import { getSdk } from '../common/form-env'
-
 import { downloadEncryptedAttachment } from './download-encrypted-attachment'
 
 /**
@@ -34,12 +33,15 @@ export async function decryptFormAttachmentsV3OrV4(
 
   const decryptedAttachments: DecryptedAttachments = {}
 
-  const filenames = formFields.reduce((acc, field) => {
-    if (field.fieldType === 'attachment') {
-      acc[field._id] = field.answer
-    }
-    return acc
-  }, {} as Record<string, string>)
+  const filenames = formFields.reduce(
+    (acc, field) => {
+      if (field.fieldType === 'attachment') {
+        acc[field._id] = field.answer
+      }
+      return acc
+    },
+    {} as Record<string, string>,
+  )
 
   await Promise.all(
     Object.entries(attachmentDownloadUrls).map(async ([fieldId, url]) => {

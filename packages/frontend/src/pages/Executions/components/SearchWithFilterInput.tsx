@@ -1,5 +1,3 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BiSearch, BiSolidXCircle } from 'react-icons/bi'
 import {
   Divider,
   Icon,
@@ -9,6 +7,8 @@ import {
   InputRightElement,
 } from '@chakra-ui/react'
 import { debounce } from 'lodash'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BiSearch, BiSolidXCircle } from 'react-icons/bi'
 
 import ExecutionStatusMenu from '@/components/ExecutionStatusMenu'
 

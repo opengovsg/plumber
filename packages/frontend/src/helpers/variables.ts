@@ -5,7 +5,6 @@ import type {
   IExecutionStep,
   TDataOutMetadatumType,
 } from '@plumber/types'
-
 import { get } from 'lodash'
 
 import { RawColumn, RawRow } from '@/components/VariablesList/utils'

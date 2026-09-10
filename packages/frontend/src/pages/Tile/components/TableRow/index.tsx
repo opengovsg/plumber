@@ -1,6 +1,6 @@
-import { Fragment, useMemo } from 'react'
 import { flexRender, Row, TableMeta } from '@tanstack/react-table'
 import { VirtualItem } from '@tanstack/react-virtual'
+import { Fragment, useMemo } from 'react'
 
 import {
   BORDER_COLOR,

@@ -1,5 +1,6 @@
-import express, { Application } from 'express'
 import { dirname, join } from 'path'
+
+import express, { Application } from 'express'
 
 import appConfig from '@/config/app'
 

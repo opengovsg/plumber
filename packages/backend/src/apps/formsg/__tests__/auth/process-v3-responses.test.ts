@@ -1,8 +1,6 @@
 // you need to import this to make the toPlumberFormat method available
 import '@/types/luxon-extensions'
-
 import type { IGlobalVariable } from '@plumber/types'
-
 import { describe, expect, it, vi } from 'vitest'
 
 import { processResponsesV3 } from '../../auth/helpers/process-v3-responses'

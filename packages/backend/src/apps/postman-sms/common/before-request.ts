@@ -1,7 +1,6 @@
 import type { TBeforeRequest } from '@plumber/types'
 
 import { authDataSchema } from '../auth/schema'
-
 import { PostmanEnv, PROD_ENV_API_URL, TEST_ENV_API_URL } from './constants'
 import getPostmanEnv from './get-postman-env'
 

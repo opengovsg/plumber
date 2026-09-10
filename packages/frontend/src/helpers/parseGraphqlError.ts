@@ -1,6 +1,5 @@
-import { CustomGraphQLFormattedError } from '@plumber/types'
-
 import { ApolloError, ServerError } from '@apollo/client'
+import { CustomGraphQLFormattedError } from '@plumber/types'
 
 export function parseGraphqlError(
   error: ApolloError,

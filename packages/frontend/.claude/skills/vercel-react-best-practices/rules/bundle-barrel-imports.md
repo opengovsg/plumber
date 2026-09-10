@@ -30,8 +30,8 @@ import { Button, TextField } from '@mui/material'
 // next.config.js - automatically optimizes barrel imports at build time
 module.exports = {
   experimental: {
-    optimizePackageImports: ['lucide-react', '@mui/material']
-  }
+    optimizePackageImports: ['lucide-react', '@mui/material'],
+  },
 }
 ```
 

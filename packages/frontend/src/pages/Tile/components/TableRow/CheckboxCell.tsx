@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react'
-import { BsPlus } from 'react-icons/bs'
 import { Icon } from '@chakra-ui/react'
 import { CellContext } from '@tanstack/react-table'
+import { useCallback, useState } from 'react'
+import { BsPlus } from 'react-icons/bs'
 
 import { BORDER_COLOR, NEW_ROW_ID, Z_INDEX_CELL } from '../../constants'
 import { useRowContext } from '../../contexts/RowContext'

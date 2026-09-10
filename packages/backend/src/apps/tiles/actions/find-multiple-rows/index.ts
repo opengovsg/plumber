@@ -15,7 +15,6 @@ import {
 } from '../../common/constants'
 import { validateFilters } from '../../common/validate-filters'
 import { FindMultipleRowsOutput, TileColumnMetadata } from '../../types'
-
 import getDataOutMetadata from './get-data-out-metadata'
 
 const action: IRawAction = {

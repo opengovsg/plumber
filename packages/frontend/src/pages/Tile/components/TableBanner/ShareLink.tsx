@@ -1,5 +1,3 @@
-import { useCallback, useState } from 'react'
-import { BiCopy, BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   Divider,
@@ -17,6 +15,8 @@ import {
   Input,
 } from '@opengovsg/design-system-react'
 import copy from 'clipboard-copy'
+import { useCallback, useState } from 'react'
+import { BiCopy, BiTrash } from 'react-icons/bi'
 
 import * as URLS from '@/config/urls'
 import { CREATE_SHAREABLE_TABLE_LINK } from '@/graphql/mutations/tiles/create-shareable-link'
@@ -24,7 +24,6 @@ import { DELETE_SHAREABLE_TABLE_LINK } from '@/graphql/mutations/tiles/delete-sh
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
-
 import ShareLinkPasswordSection from './ShareLinkPasswordSection'
 
 const ShareLink = () => {

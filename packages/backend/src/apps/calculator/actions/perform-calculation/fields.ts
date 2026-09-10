@@ -1,5 +1,4 @@
 import type { IRawAction } from '@plumber/types'
-
 import { capitalize } from 'lodash'
 import z from 'zod'
 

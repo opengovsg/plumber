@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { selectAllRows } from '@/graphql/__tests__/mutations/tiles/tiles-pg-helper'
 
 import { createTableRows, deleteTableRows } from '../table-row-functions'
-
 import {
   createMultipleTestRows,
   createTestSetup,

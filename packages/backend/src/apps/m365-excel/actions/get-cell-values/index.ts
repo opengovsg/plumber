@@ -3,7 +3,6 @@ import type { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
-
 import type { DataOut } from './data-out'
 import getDataOutMetadata from './get-data-out-metadata'
 import { parametersSchema } from './schema'

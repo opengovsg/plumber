@@ -1,6 +1,5 @@
-import { IHttpClient } from '@plumber/types'
-
 import { SendEmailCommand } from '@aws-sdk/client-sesv2'
+import { IHttpClient } from '@plumber/types'
 import FormData from 'form-data'
 import { sortBy } from 'lodash'
 
@@ -122,7 +121,6 @@ async function sendViaPostman(
       },
     },
   )
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { body, subject, from, reply_to } = response.data.params
   return {
     status: 'ACCEPTED',

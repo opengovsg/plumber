@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
@@ -7,13 +8,13 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import {
   generateMockCollaborator,
   generateMockFlow,
   generateMockStep,
   generateMockUser,
 } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 const mockFlowId = '8c2a70d1-e78b-431e-9069-a4d8f97883f6'
 const mockBucket = 'test-bucket'

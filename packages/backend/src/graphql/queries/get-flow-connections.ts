@@ -136,8 +136,8 @@ const getFlowConnections: QueryResolvers['getFlowConnections'] = async (
     const isTable = flowConnection.connectionType === 'table'
     const appKey = isTable ? 'tiles' : flowConnection.connection?.key
     const connectionName = isTable
-      ? flowConnection.table?.name ?? ''
-      : (flowConnection.connection?.formattedData?.screenName as string) ?? ''
+      ? (flowConnection.table?.name ?? '')
+      : ((flowConnection.connection?.formattedData?.screenName as string) ?? '')
     const app = findApp(appKey!, apps)
 
     return {

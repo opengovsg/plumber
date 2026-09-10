@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import {
   Modal,
   ModalBody,
@@ -10,6 +9,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { Link } from 'react-router-dom'
 
 import * as URLS from '../../../config/urls'
 

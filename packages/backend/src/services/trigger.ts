@@ -1,7 +1,7 @@
-import type { IJSONObject, ITriggerItem } from '@plumber/types'
-
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { randomUUID } from 'crypto'
+
+import type { IJSONObject, ITriggerItem } from '@plumber/types'
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { z } from 'zod'
 
 import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'

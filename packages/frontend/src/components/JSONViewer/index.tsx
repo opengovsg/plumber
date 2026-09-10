@@ -1,5 +1,4 @@
 import type { IJSONObject } from '@plumber/types'
-
 import { JSONTree } from 'react-json-tree'
 
 type JSONViewerProps = {

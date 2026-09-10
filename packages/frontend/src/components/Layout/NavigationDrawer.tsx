@@ -1,5 +1,3 @@
-import { useContext } from 'react'
-import { BiMenu } from 'react-icons/bi'
 import {
   Drawer,
   DrawerBody,
@@ -8,6 +6,8 @@ import {
   DrawerOverlay,
 } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
+import { BiMenu } from 'react-icons/bi'
 
 import { LayoutNavigationContext } from '@/contexts/LayoutNavigation'
 

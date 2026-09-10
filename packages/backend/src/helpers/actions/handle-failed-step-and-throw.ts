@@ -1,7 +1,9 @@
 import type { IActionJobData } from '@plumber/types'
-
-import { type JobPro, WorkerPro } from '@taskforcesh/bullmq-pro'
-import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
+import {
+  type JobPro,
+  UnrecoverableError,
+  WorkerPro,
+} from '@taskforcesh/bullmq-pro'
 import { type Span } from 'dd-trace'
 import get from 'lodash.get'
 

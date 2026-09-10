@@ -1,5 +1,4 @@
 import { IApp, IStep } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import getStepName from '@/helpers/getStepName'

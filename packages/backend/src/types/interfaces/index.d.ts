@@ -1,1 +1,1 @@
-declare module 'interfaces';
+declare module 'interfaces'

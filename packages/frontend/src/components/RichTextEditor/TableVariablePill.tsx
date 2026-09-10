@@ -1,4 +1,3 @@
-import { useCallback, useContext, useMemo } from 'react'
 import {
   Badge,
   Box,
@@ -21,6 +20,7 @@ import {
 import { Button, TouchableTooltip } from '@opengovsg/design-system-react'
 import { Node } from '@tiptap/pm/model'
 import { NodeViewWrapper } from '@tiptap/react'
+import { useCallback, useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { hexDecode, hexEncode } from '@/helpers/hex-encoding'

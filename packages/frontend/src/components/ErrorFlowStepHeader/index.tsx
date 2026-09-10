@@ -1,8 +1,7 @@
+import { Flex, Icon, Text } from '@chakra-ui/react'
 import type { IStep } from '@plumber/types'
-
 import { useContext } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
-import { Flex, Icon, Text } from '@chakra-ui/react'
 
 import { SUPPORT_FORM_LINK } from '@/config/urls'
 import { EditorContext } from '@/contexts/Editor'

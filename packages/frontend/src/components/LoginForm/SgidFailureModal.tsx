@@ -1,5 +1,3 @@
-import { useRef } from 'react'
-import { BiSad } from 'react-icons/bi'
 import {
   Box,
   Flex,
@@ -13,6 +11,8 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { useRef } from 'react'
+import { BiSad } from 'react-icons/bi'
 
 import { SGID_CHECK_ELIGIBILITY_URL } from '@/config/urls'
 

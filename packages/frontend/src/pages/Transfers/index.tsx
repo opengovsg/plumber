@@ -1,10 +1,9 @@
-import { IFlowTransfer } from '@plumber/types'
-
-import { BiLeftArrowAlt } from 'react-icons/bi'
-import { Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Center, Flex, Icon, Text, useDisclosure } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { IFlowTransfer } from '@plumber/types'
+import { BiLeftArrowAlt } from 'react-icons/bi'
+import { Link } from 'react-router-dom'
 
 import Container from '@/components/Container'
 import PrimarySpinner from '@/components/PrimarySpinner'

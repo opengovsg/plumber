@@ -1,8 +1,3 @@
-import type { IExecution } from '@plumber/types'
-
-import { ReactElement } from 'react'
-import { BiChevronRight } from 'react-icons/bi'
-import { Link } from 'react-router-dom'
 import {
   Card,
   CardBody,
@@ -15,7 +10,11 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Badge } from '@opengovsg/design-system-react'
+import type { IExecution } from '@plumber/types'
 import { DateTime } from 'luxon'
+import { ReactElement } from 'react'
+import { BiChevronRight } from 'react-icons/bi'
+import { Link } from 'react-router-dom'
 
 import { StatusType } from '@/components/ExecutionStatusMenu'
 import FlowAppIcons from '@/components/FlowAppIcons'
@@ -114,8 +113,8 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
                     execution.status === StatusType.Success
                       ? 'success'
                       : execution.status === StatusType.Failure
-                      ? 'critical'
-                      : 'grey'
+                        ? 'critical'
+                        : 'grey'
                   }
                   variant="subtle"
                 >
@@ -123,8 +122,8 @@ export default function ExecutionRow(props: ExecutionRowProps): ReactElement {
                     {execution.status === StatusType.Success
                       ? 'Success'
                       : execution.status === StatusType.Failure
-                      ? 'Failure'
-                      : 'Waiting'}
+                        ? 'Failure'
+                        : 'Waiting'}
                   </Text>
                 </Badge>
 

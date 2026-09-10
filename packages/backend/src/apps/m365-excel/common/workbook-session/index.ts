@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import type { AxiosRequestConfig, AxiosResponse } from 'axios'
 
 import {
@@ -13,7 +12,6 @@ import logger from '@/helpers/logger'
 import { extractAuthDataWithPlumberFolder } from '../auth-data'
 import { validateCanAccessFile } from '../file-privacy'
 import { tryParseGraphApiError } from '../parse-graph-api-error'
-
 import {
   clearSessionIdFromRedis,
   getSessionIdFromRedis,

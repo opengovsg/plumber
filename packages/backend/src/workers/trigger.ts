@@ -1,5 +1,4 @@
 import { IJSONObject, ITriggerItem } from '@plumber/types'
-
 import { UnrecoverableError, WorkerPro } from '@taskforcesh/bullmq-pro'
 
 import { createRedisClient } from '@/config/redis'

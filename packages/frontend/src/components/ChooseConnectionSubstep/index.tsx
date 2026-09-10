@@ -1,10 +1,9 @@
-import type { IApp, IStep, ITestConnectionOutput } from '@plumber/types'
-
-import { useContext, useMemo } from 'react'
-import { BiLink, BiRefresh, BiSolidCircle } from 'react-icons/bi'
 import { useQuery } from '@apollo/client'
 import { Flex, Icon, Text, Tooltip } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
+import type { IApp, IStep, ITestConnectionOutput } from '@plumber/types'
+import { useContext, useMemo } from 'react'
+import { BiLink, BiRefresh, BiSolidCircle } from 'react-icons/bi'
 
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'

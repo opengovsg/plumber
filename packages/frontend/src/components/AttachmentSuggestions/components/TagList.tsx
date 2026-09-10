@@ -1,5 +1,5 @@
-import { useContext } from 'react'
 import { Tag, TagCloseButton, TagLabel, Tooltip } from '@chakra-ui/react'
+import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 

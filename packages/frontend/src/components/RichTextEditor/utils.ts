@@ -1,4 +1,3 @@
-import { FieldValues, UseFormGetValues } from 'react-hook-form'
 import { PlacementWithLogical } from '@chakra-ui/react'
 import { Editor } from '@tiptap/react'
 import escapeHtml from 'escape-html'
@@ -8,6 +7,7 @@ import {
   parse,
   TextNode,
 } from 'node-html-parser'
+import { FieldValues, UseFormGetValues } from 'react-hook-form'
 
 import { hexDecode } from '@/helpers/hex-encoding'
 import type { StepWithVariables, TableVariable } from '@/helpers/variables'
@@ -505,7 +505,7 @@ export function removeProblematicWhitespace(text: string): string {
       // Replace non-breaking space with regular space
       .replace(/\u00A0/g, ' ')
       // Remove null character that breaks DB/JSON
-      // eslint-disable-next-line no-control-regex
+      // oxlint-disable-next-line no-control-regex
       .replace(/\x00/g, '')
   )
 }

@@ -1,5 +1,4 @@
 import type { IAuthenticationStepField, IJSONObject } from '@plumber/types'
-
 import get from 'lodash/get'
 
 type Variables = {

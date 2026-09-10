@@ -1,6 +1,3 @@
-import { memo } from 'react'
-import { BiTrash } from 'react-icons/bi'
-import { BsDot } from 'react-icons/bs'
 import {
   Checkbox as ChakraCheckbox,
   Flex,
@@ -9,6 +6,9 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
+import { memo } from 'react'
+import { BiTrash } from 'react-icons/bi'
+import { BsDot } from 'react-icons/bs'
 
 import { formatFileSizeToStr } from '@/components/AttachmentSuggestions/utils'
 import { toPrettyDateString } from '@/helpers/dateTime'

@@ -1,5 +1,4 @@
 import { IJSONObject } from '@plumber/types'
-
 import { AES, enc } from 'crypto-js'
 import type { RelationMappings, Transaction } from 'objection'
 import { ModelOptions, QueryContext } from 'objection'

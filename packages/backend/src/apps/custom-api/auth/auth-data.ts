@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { z } from 'zod'
 
 import { screenNameSchema } from '@/helpers/app-auth-schema'

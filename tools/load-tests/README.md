@@ -7,9 +7,11 @@ then
 `k6 run formsg.js`
 
 ### Build k6 with extensions
+
 Since we are using k6 plugins, we need to use xk6 to build k6 with extensions.
 
 We are using the following extensions:
+
 - postgres
 - dotenv
 - dashboard

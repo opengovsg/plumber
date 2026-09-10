@@ -5,7 +5,6 @@ import {
   IRawTrigger,
   ITrigger,
 } from '@plumber/types'
-
 import { cloneDeep, omit } from 'lodash'
 
 import apps from '@/apps'

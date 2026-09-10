@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { CreateConnectionInput } from '@/graphql/__generated__/types.generated'
@@ -9,12 +10,12 @@ import FlowConnections from '@/models/flow-connections'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import {
   generateMockCollaborator,
   generateMockFlow,
   generateMockUser,
 } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 describe('createConnection', () => {
   let context: Context

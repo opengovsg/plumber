@@ -5,7 +5,6 @@ import StepError from '@/errors/step'
 
 import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
 import { validateCanAccessFile } from '../../common/file-privacy'
-
 import { parametersSchema } from './schema'
 
 const dynamicData: IDynamicData = {

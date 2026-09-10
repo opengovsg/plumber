@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { FormSchema } from '../../common/types'

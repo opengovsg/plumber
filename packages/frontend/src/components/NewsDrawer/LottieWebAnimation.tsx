@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
 import { Box, BoxProps } from '@chakra-ui/react'
 import lottie, { AnimationConfigWithData } from 'lottie-web'
+import { useEffect, useRef } from 'react'
 
 interface LottieWebAnimationProps extends BoxProps {
   animationData: AnimationConfigWithData['animationData']

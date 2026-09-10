@@ -1,4 +1,5 @@
 import dns from 'dns'
+
 import ipaddr from 'ipaddr.js'
 
 import { DISALLOWED_IP_RESOLVED_ERROR } from './constants'

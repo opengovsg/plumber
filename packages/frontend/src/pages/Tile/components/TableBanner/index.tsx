@@ -2,7 +2,6 @@ import { Flex, Text } from '@chakra-ui/react'
 
 import { TABLE_BANNER_HEIGHT } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'
-
 import BreadCrumb from './BreadCrumb'
 import EditMode from './EditMode'
 import ImportExportToolbar from './ImportExportToolbar'

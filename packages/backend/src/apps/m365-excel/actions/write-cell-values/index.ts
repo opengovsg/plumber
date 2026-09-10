@@ -3,7 +3,6 @@ import type { IRawAction } from '@plumber/types'
 import StepError from '@/errors/step'
 
 import WorkbookSession from '../../common/workbook-session'
-
 import { parametersSchema } from './schema'
 
 /**

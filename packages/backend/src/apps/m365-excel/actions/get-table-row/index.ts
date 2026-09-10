@@ -1,5 +1,4 @@
 import type { IRawAction } from '@plumber/types'
-
 import z from 'zod'
 
 import StepError from '@/errors/step'
@@ -12,7 +11,6 @@ import { lookupParametersSchema } from '../../common/schema'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import getTableRowImpl, { MAX_ROWS } from './implementation'
 import { dataOutSchema } from './schemas'

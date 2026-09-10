@@ -18,7 +18,7 @@ itself.
 <Composer
   isThread
   isEditing={false}
-  channelId='abc'
+  channelId="abc"
   showAttachments
   showFormatting={false}
 />

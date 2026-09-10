@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 import { GenericContainer, StartedTestContainer } from 'testcontainers'
 
 let redisContainer: StartedTestContainer

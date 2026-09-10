@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 import { createDynamoDBTable } from '@/config/dynamodb'
 
 createDynamoDBTable().then(() => {

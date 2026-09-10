@@ -1,10 +1,11 @@
+import { promisify } from 'node:util'
+import { gunzip } from 'node:zlib'
+
 import {
   GetObjectCommand,
   ListObjectsV2Command,
   S3Client,
 } from '@aws-sdk/client-s3'
-import { promisify } from 'node:util'
-import { gunzip } from 'node:zlib'
 
 import { S3_PREFIX_EXECUTIONS, S3_PREFIX_TEST_EXECUTIONS } from './build-s3-key'
 import logger from './logger'

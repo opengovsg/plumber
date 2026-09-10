@@ -1,6 +1,6 @@
-import { IFlowConfig } from '@plumber/types'
-
 import { randomUUID } from 'crypto'
+
+import { IFlowConfig } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Execution from '@/models/execution'

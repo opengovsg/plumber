@@ -1,8 +1,8 @@
 import type { IApp } from '@plumber/types'
 
-import beforeRequest from './common/before-request'
 import actions from './actions'
 import auth from './auth'
+import beforeRequest from './common/before-request'
 import queue from './queue'
 import triggers from './triggers'
 

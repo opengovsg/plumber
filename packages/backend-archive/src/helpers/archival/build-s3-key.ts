@@ -1,5 +1,4 @@
 import '@/types/luxon-extensions'
-
 import { DateTime } from 'luxon'
 
 export const S3_PREFIX_EXECUTIONS = 'executions'

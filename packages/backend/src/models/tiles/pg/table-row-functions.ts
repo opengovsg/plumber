@@ -16,7 +16,6 @@ import {
   TableRowOutputWithTimestamps,
   UpdateRowInput,
 } from '../types'
-
 import { isValidNumericString, VALID_NUMBER_REGEX_STRING } from './helpers'
 
 function formatTableRow(

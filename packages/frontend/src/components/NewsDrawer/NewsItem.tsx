@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react'
 import { Box, Image, Text } from '@chakra-ui/react'
 import { AnimationConfigWithData } from 'lottie-web'
 import { DateTime } from 'luxon'
+import React, { useMemo } from 'react'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'

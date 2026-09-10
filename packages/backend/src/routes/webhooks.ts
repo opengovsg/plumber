@@ -1,5 +1,4 @@
 import { IRequest } from '@plumber/types'
-
 import express, {
   NextFunction,
   RequestHandler,
@@ -52,8 +51,7 @@ router.use(
   express.text({
     limit: appConfig.requestBodySizeLimit,
     verify(req, res, buf) {
-      // eslint-disable-next-line prettier/prettier
-      (req as IRequest).rawBody = buf
+      ;(req as IRequest).rawBody = buf
     },
   }),
 )

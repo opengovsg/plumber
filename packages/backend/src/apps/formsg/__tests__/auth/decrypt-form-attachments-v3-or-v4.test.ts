@@ -1,6 +1,5 @@
-import { IGlobalVariable, IRequest } from '@plumber/types'
-
 import { FormField } from '@opengovsg/formsg-sdk/dist/types'
+import { IGlobalVariable, IRequest } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { decryptFormAttachmentsV3OrV4 } from '../../auth/decrypt-form-attachments-v3-or-v4'

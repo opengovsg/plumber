@@ -1,12 +1,10 @@
 import { IGlobalVariable, IRequest } from '@plumber/types'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
 
 import { decryptFormResponse } from '../../auth/decrypt-form-response'
 import type { FormsgPayloadWorkflowContent } from '../../common/types'
-
 import {
   exampleV4Submission,
   makeExampleV4FormSchema,

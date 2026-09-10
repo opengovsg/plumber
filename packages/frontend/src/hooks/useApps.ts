@@ -1,5 +1,4 @@
 import type { IApp } from '@plumber/types'
-
 import { useEffect, useState } from 'react'
 
 interface UseAppsResult {

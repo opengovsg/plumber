@@ -1,14 +1,14 @@
+import process from 'process'
+
 // The following two lines are required to get count values as number.
 // More info: https://github.com/knex/knex/issues/387#issuecomment-51554522
 import pg from 'pg'
-import process from 'process'
 
 pg.types.setTypeParser(20, 'text', parseInt)
 import type { Knex } from 'knex'
 import knex from 'knex'
 
 import logger from '../helpers/logger'
-
 import appConfig from './app'
 
 export const config = {

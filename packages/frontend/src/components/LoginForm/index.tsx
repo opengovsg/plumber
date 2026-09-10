@@ -1,6 +1,6 @@
-import { type FormEvent, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
+import { type FormEvent, useContext, useState } from 'react'
 
 import appConfig from '@/config/app'
 import { SGID_FEATURE_FLAG, SSO_FEATURE_FLAG } from '@/config/flags'

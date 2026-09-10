@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { Text } from '@chakra-ui/react'
 import {
   AvatarMenu,
@@ -6,6 +5,7 @@ import {
   Menu,
   useToast,
 } from '@opengovsg/design-system-react'
+import { useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 import apolloClient from '@/graphql/client'

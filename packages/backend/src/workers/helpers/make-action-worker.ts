@@ -1,5 +1,4 @@
 import type { IActionJobData, IAppQueue } from '@plumber/types'
-
 import {
   UnrecoverableError,
   WorkerPro,

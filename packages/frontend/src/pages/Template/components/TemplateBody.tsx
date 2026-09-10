@@ -1,8 +1,7 @@
-import type { IApp, ITemplateStep } from '@plumber/types'
-
-import { Fragment, useMemo } from 'react'
 import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { Infobox } from '@opengovsg/design-system-react'
+import type { IApp, ITemplateStep } from '@plumber/types'
+import { Fragment, useMemo } from 'react'
 
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'
 
