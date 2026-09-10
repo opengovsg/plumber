@@ -52,7 +52,7 @@ export interface IConnection {
 
 /**
  * 'array' is currently used only in formSG checkbox field but
- * will be extended to for-each feature handling
+ * will be extended to for-each feature handling.
  */
 export type TDataOutMetadatumType =
   | 'text'
@@ -307,7 +307,13 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 // This is synced with FieldVisibilityOp GraphQL enum.
 // Using jank Extract for now until we get typed GraphQL.
-type FieldVisibilityOp = 'always_true' | 'is_empty' | 'equals' | 'not_equals'
+type FieldVisibilityOp =
+  | 'always_true'
+  | 'is_empty'
+  | 'equals'
+  | 'not_equals'
+  | 'in'
+  | 'not_in'
 
 interface IFieldVacuousVisibilityCondition {
   op: Extract<FieldVisibilityOp, 'always_true'>
@@ -326,10 +332,20 @@ interface IFieldComparativeVisibilityCondition {
   fieldValue?: IJSONPrimitive
 }
 
+interface IFieldInVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'in' | 'not_in'>
+
+  fieldKey: string
+  // `in`: hide when the sibling field's value is one of these.
+  // `not_in`: hide when the sibling field's value is not one of these.
+  fieldValues: IJSONPrimitive[]
+}
+
 export type IFieldVisibilityCondition =
   | IFieldComparativeVisibilityCondition
   | IFieldKeyOnlyVisibilityCondition
   | IFieldVacuousVisibilityCondition
+  | IFieldInVisibilityCondition
 
 /**
  * End field visibility
@@ -870,7 +886,14 @@ export interface DynamicDataOutput {
   data: {
     name: string
     value: string
-    type?: 'string' | 'number' | 'null' | 'email'
+    type?:
+      | 'string'
+      | 'number'
+      | 'null'
+      | 'email'
+      | 'dropdown'
+      | 'checkbox'
+      | 'radio'
   }[]
   error?: IJSONObject
 }
@@ -1082,6 +1105,13 @@ export interface IBaseAction {
    * Useful for cases where variables needs to be escaped in some way before substitution.
    */
   preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
+
+  /**
+   * When true, FormSG checkbox `string[]` values are not joined before
+   * `preprocessVariable`, and a parameter that is only one such array stays
+   * as `string[]`. Default is false so scalar actions keep joined strings.
+   */
+  preserveArrayVariables?: boolean
 
   /**
    * For optimizing our S3 storage; we won't store files into our S3 unless
