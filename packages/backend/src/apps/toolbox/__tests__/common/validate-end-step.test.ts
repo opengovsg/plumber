@@ -112,6 +112,10 @@ describe('validateEndStepWrite', () => {
     loggerErrorSpy.mockRestore()
   })
 
+  afterEach(() => {
+    loggerErrorSpy.mockRestore()
+  })
+
   it('accepts a valid marker over a run of plain steps', () => {
     const block = ifThen('block', 2)
     const flowSteps = [trigger(1), block, plain('s3', 3), plain('s4', 4)]
@@ -421,6 +425,10 @@ describe('extractSelfEndStepIntent', () => {
     loggerErrorSpy.mockRestore()
   })
 
+  afterEach(() => {
+    loggerErrorSpy.mockRestore()
+  })
+
   it('passes an absent key through unchanged', () => {
     expect(extractSelfEndStepIntent({ stepName: 'kept' })).toEqual({
       config: { stepName: 'kept' },
@@ -467,6 +475,10 @@ describe('validateFlowBlocks', () => {
   beforeEach(() => {
     loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => null)
     loggerWarnSpy.mockClear()
+  })
+
+  afterEach(() => {
+    loggerWarnSpy.mockRestore()
   })
 
   afterEach(() => {
