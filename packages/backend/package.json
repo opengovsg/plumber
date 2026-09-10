@@ -117,7 +117,7 @@
   },
   "devDependencies": {
     "@ai-sdk/provider": "catalog:ai-sdk",
-    "@testcontainers/postgresql": "catalog:testcontainers",
+    "@opengovsg/testcontainers": "catalog:testcontainers",
     "@types/bcrypt": "catalog:",
     "@types/big.js": "catalog:big.js",
     "@types/bull": "catalog:",
