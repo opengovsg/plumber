@@ -1,5 +1,4 @@
 import type { IStep } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
@@ -18,7 +17,7 @@ import {
 //
 
 const plain = (id: string): IStep =>
-  ({ id, appKey: 'postman', key: 'sendTransactionalEmail' } as IStep)
+  ({ id, appKey: 'postman', key: 'sendTransactionalEmail' }) as IStep
 
 // The endStepId marker is what makes an if-then V2, so every block here
 // carries one. A marker pointing at the if-then itself is an empty block.
@@ -34,7 +33,7 @@ const ifThen = (id: string, endStepId: string): IStep => {
 }
 
 const forEach = (id: string): IStep =>
-  ({ id, appKey: 'toolbox', key: 'forEach' } as IStep)
+  ({ id, appKey: 'toolbox', key: 'forEach' }) as IStep
 
 const GROUPING_ACTIONS = new Set(['toolbox-ifThen', 'toolbox-forEach'])
 

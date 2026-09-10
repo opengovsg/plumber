@@ -1478,7 +1478,6 @@ export interface IMcpFieldOption {
   value: string
 }
 
-
 export interface IMcpIncompleteStep {
   stepId: string
   position: number

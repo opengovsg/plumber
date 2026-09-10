@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 /**
  * Business-critical: local dev environment variable precedence.
  *
@@ -12,9 +15,9 @@
  * IMPORTANT: never mock dotenv here. The real dotenv call is the subject.
  */
 import { parse } from 'dotenv'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import type { AppConfig } from '../app.js'
 
 // BASE_URL is one of the keys .superset/run.sh exports per worktree, and app.ts
 // reads it without a hardcoded default.
@@ -27,7 +30,9 @@ const placeholders = parse(
 async function loadBaseUrl(value: string | undefined) {
   vi.stubEnv(KEY, value)
   vi.resetModules()
-  const { default: appConfig } = await import('@/config/app')
+  const { default: appConfig } = (await import('../app.js')) as unknown as {
+    default: AppConfig
+  }
   return appConfig.baseUrl
 }
 

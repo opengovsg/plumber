@@ -1,5 +1,4 @@
 import type { IStep } from '@plumber/types'
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -21,7 +20,7 @@ import {
 //
 
 const plain = (id: string): IStep =>
-  ({ id, appKey: 'postman', key: 'sendTransactionalEmail' } as IStep)
+  ({ id, appKey: 'postman', key: 'sendTransactionalEmail' }) as IStep
 
 const ifThen = (id: string, extra: Partial<IStep> = {}): IStep =>
   ({
@@ -30,7 +29,7 @@ const ifThen = (id: string, extra: Partial<IStep> = {}): IStep =>
     key: 'ifThen',
     parameters: { depth: '0' },
     ...extra,
-  } as IStep)
+  }) as IStep
 
 const markedIfThen = (id: string, endStepId: string): IStep =>
   ifThen(id, { config: { endStepId } })
@@ -43,20 +42,20 @@ const nullMarkerIfThen = (id: string): IStep =>
   ifThen(id, { config: { endStepId: null } as unknown as IStep['config'] })
 
 const forEach = (id: string): IStep =>
-  ({ id, appKey: 'toolbox', key: 'forEach' } as IStep)
+  ({ id, appKey: 'toolbox', key: 'forEach' }) as IStep
 
 const mrfSubmission = (id: string): IStep =>
-  ({ id, appKey: 'formsg', key: 'mrfSubmission' } as IStep)
+  ({ id, appKey: 'formsg', key: 'mrfSubmission' }) as IStep
 
 const approvalStep = (id: string): IStep =>
   ({
     ...plain(id),
     config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
-  } as IStep)
+  }) as IStep
 
 // A leftover blank child from the if-then V1 branch initializer: neither
 // appKey nor key ever set.
-const blank = (id: string): IStep => ({ id } as IStep)
+const blank = (id: string): IStep => ({ id }) as IStep
 
 // The set of grouping actions (`groupsLaterSteps`) is exactly if-then and
 // for-each today.

@@ -5,7 +5,7 @@ import { Message } from '@/hooks/useChatStream'
 import { extractLastFormUrl } from '../helpers'
 
 const makeMessage = (text: string, isUser = true): Message =>
-  ({ id: text, text, isUser } as Message)
+  ({ id: text, text, isUser }) as Message
 
 describe('extractLastFormUrl', () => {
   it('returns undefined when no messages mention a form URL', () => {

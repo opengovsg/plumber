@@ -145,8 +145,8 @@ export default function AddAppConnection(
             headerText={
               hasConnection
                 ? `Edit ${name} connection`
-                : auth?.connectionModalLabel?.addConnectionLabel ??
-                  DEFAULT_ADD_CONNECTION_LABEL
+                : (auth?.connectionModalLabel?.addConnectionLabel ??
+                  DEFAULT_ADD_CONNECTION_LABEL)
             }
           />
           <ModalCloseButton mt={2} size="xs" colorScheme="secondary" />

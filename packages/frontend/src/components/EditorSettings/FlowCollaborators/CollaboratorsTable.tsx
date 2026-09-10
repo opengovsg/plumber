@@ -1,8 +1,3 @@
-import { IFlow, IFlowCollaborator, IFlowCollabRole } from '@plumber/types'
-
-import { useCallback, useContext, useRef, useState } from 'react'
-import { BiLogOut, BiTrash } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import {
   Center,
@@ -18,6 +13,10 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { IconButton, Tag, useToast } from '@opengovsg/design-system-react'
+import { IFlow, IFlowCollaborator, IFlowCollabRole } from '@plumber/types'
+import { useCallback, useContext, useRef, useState } from 'react'
+import { BiLogOut, BiTrash } from 'react-icons/bi'
+import { useNavigate } from 'react-router-dom'
 
 import CollaboratorRoleSelect from '@/components/CollaboratorRoleSelect'
 import MenuAlertDialog from '@/components/MenuAlertDialog'

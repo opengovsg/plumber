@@ -1,5 +1,4 @@
 import type { IDataOutMetadata, IJSONObject } from '@plumber/types'
-
 import { raw } from 'objection'
 
 import logger from '@/helpers/logger'

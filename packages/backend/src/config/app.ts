@@ -1,10 +1,10 @@
 import '@/types/luxon-extensions'
+import path from 'node:path'
+import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { config } from 'dotenv'
 import { Settings as LuxonSettings } from 'luxon'
-import path from 'node:path'
-import { URL } from 'node:url'
 
 // Placeholders backstop missing keys. Local dev gets its real values from 1Password,
 // which dotenv never overrides.
@@ -14,7 +14,7 @@ if ((process.env.APP_ENV ?? 'development') === 'development') {
   config({ path: path.resolve(__dirname, '../../.env-example') })
 }
 
-type AppConfig = {
+export type AppConfig = {
   port: string
   webAppUrl: string
   webhookUrl: string

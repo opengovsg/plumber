@@ -1,11 +1,10 @@
+import { ApolloError, useMutation, useQuery } from '@apollo/client'
+import { Box, Flex, HStack, Icon, useDisclosure } from '@chakra-ui/react'
 import type { IFlow } from '@plumber/types'
-
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ApolloError, useMutation, useQuery } from '@apollo/client'
-import { Box, Flex, HStack, Icon, useDisclosure } from '@chakra-ui/react'
 
 import Container from '@/components/Container'
 import EditableInput from '@/components/EditableInput'
@@ -20,7 +19,6 @@ import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
-
 import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'

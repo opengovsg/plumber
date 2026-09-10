@@ -1,10 +1,9 @@
-import { IApp, IExecutionStep, IStep } from '@plumber/types'
-
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
 import { useIsMobile } from '@opengovsg/design-system-react'
+import { IApp, IExecutionStep, IStep } from '@plumber/types'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'

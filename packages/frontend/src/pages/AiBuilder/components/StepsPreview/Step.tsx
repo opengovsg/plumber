@@ -1,9 +1,8 @@
+import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 import { IApp, IJSONObject, IStep } from '@plumber/types'
-
 import { useMemo, useState } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
-import { Box, Divider, Flex, Icon, Text } from '@chakra-ui/react'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
 import StepNameAndDemo from '@/components/FlowStep/components/StepNameAndDemo'

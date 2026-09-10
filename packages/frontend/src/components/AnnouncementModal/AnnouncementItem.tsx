@@ -1,5 +1,3 @@
-import { type ReactNode } from 'react'
-import { Components } from 'react-markdown'
 import {
   Box,
   chakra,
@@ -9,6 +7,8 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { AnimationConfigWithData } from 'lottie-web'
+import { type ReactNode } from 'react'
+import { Components } from 'react-markdown'
 import { RequireExactlyOne } from 'type-fest'
 
 import MarkdownRenderer from '@/components/MarkdownRenderer'

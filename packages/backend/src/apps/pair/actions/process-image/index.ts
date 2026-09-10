@@ -11,7 +11,6 @@ import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
 import { getImageContent } from '../../common/get-image-content'
-
 import { isBedrockImageTooLargeError } from './bedrock-image-size-error'
 import { hasProvidedImage, schema } from './schema'
 

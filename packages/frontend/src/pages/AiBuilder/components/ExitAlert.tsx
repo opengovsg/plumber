@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -10,6 +9,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { useIsMobile } from '@opengovsg/design-system-react'
+import { useRef } from 'react'
 
 import ConfettiEmbeddedSurvey, {
   ConfettiEmbeddedSurveyRef,

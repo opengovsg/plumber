@@ -1,5 +1,4 @@
 import type { IJSONObject } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -16,7 +15,7 @@ const variable = (path: string) => `{{step.${STEP_ID}.${path}}}`
 const conditions = (rows: Array<Record<string, unknown>>[]): IJSONObject =>
   ({
     conditions: rows.map((groupRows) => ({ rows: groupRows })),
-  } as unknown as IJSONObject)
+  }) as unknown as IJSONObject
 
 const asText = (parts: ConditionPreviewPart[]): string =>
   parts

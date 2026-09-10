@@ -1,5 +1,7 @@
+import { useMutation } from '@apollo/client'
+import { Box, Flex, useDisclosure } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 import { IStep } from '@plumber/types'
-
 import {
   type MouseEventHandler,
   useCallback,
@@ -8,9 +10,6 @@ import {
   useRef,
 } from 'react'
 import { BiDuplicate, BiTrash } from 'react-icons/bi'
-import { useMutation } from '@apollo/client'
-import { Box, Flex, useDisclosure } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
 
 import UnsavedChangesAlert from '@/components/Editor/components/UnsavedChangesAlert'
 import { MIN_FLOW_STEP_WIDTH } from '@/components/Editor/constants'
@@ -35,7 +34,6 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
 import BlockHeader from '../../components/BlockHeader'
 import GroupStepWithAddButton from '../../components/GroupStepWithAddButton'
 import { getConditionBlockPreviewParts } from '../../helpers/getConditionBlockPreview'
-
 import { AddAfterBlockButton } from './AddAfterBlockButton'
 import { HoverAddStepButton } from './HoverAddStepButton'
 import {
