@@ -11,7 +11,7 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
-    date: '2026-09-09',
+    date: '2026-09-11',
     tag: NEW_ENHANCEMENT_TAG,
     title: 'Ownself Gather - Dropdown, Checkbox and Radio Button fields',
     details: dedent`
