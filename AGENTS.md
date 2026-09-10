@@ -6,7 +6,7 @@ This uses a pnpm workspaces monorepo:
 
 - [packages/backend/](packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](.claude/rules/backend.md).
 - [packages/frontend/](packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](.claude/rules/frontend.md).
-- [packages/types/](packages/types/) — shared `@plumber/types` (linked via `file:` deps).
+- [packages/types/](packages/types/) — shared `@plumber/types` (linked via `workspace:*` deps).
 
 ## Language and phrasing
 
@@ -77,9 +77,10 @@ biometric prompt that an agent cannot answer.
 - **Backend test file naming**: `*.test.ts` = unit (no DB), `*.itest.ts` = integration (real Postgres/Redis/DynamoDB via testcontainers, single-threaded). Don't mix.
 - **Business-critical tests**: tests pinning down an explicit, user-specified business rule live in their own `*.critical.test.ts` / `*.critical.itest.ts` file, separate from general coverage. Give the file a header comment stating the rule(s) verbatim. A failing test there means the implementation regressed. Confirm with the user before loosening or deleting the assertion.
 - **Package manager**: only use `pnpm`. Never use `npm`, `yarn`, or other package managers.
-- **Installing packages**: always pass the `-E` (exact version) flag.
+- **Installing packages**: always pass the `-E` (exact version) flag. Dependency versions live in the `catalog:` section of [pnpm-workspace.yaml](pnpm-workspace.yaml); every `package.json` references them via `"catalog:"` instead of a version string.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
 - **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend run lint:fix`; frontend-only → `pnpm --filter frontend run lint:fix`; otherwise run the root commands.
+- **Formatting**: run `pnpm run format:fix` (auto-fixes), then `pnpm run format` to confirm. Scope to the workspace you touched, same as linting: `pnpm --filter backend run format:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.

@@ -13,7 +13,7 @@
     "moduleResolution": "bundler",
     // Strict exports-map resolution collapses polymorphic prop typing in the
     // pinned chakra-ui v2 chain and @hookform/resolvers v2 to `any`; Vite's
-    // own esbuild-based resolution isn't this strict, so this stays off.
+    // bundler resolution isn't this strict, so this stays off.
     "resolvePackageJsonExports": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
