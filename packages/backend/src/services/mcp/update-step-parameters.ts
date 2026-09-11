@@ -130,9 +130,13 @@ export async function updateStepParametersService({
         : rawApp?.actions?.find((a) => a.key === step.key)
     ) as IRawAction | IRawTrigger | undefined
 
-    // Silently drop any keys not in this action/trigger's declared argument schema
+    // Silently drop any keys not in this action/trigger's declared argument schema.
+    // A tabbed field stores its selection under a separate key that has no
+    // field of its own, so that key has to be allowed explicitly.
     const allowedKeys = new Set(
-      (rawTriggerOrAction?.arguments ?? []).map((f) => f.key),
+      (rawTriggerOrAction?.arguments ?? []).flatMap((f) =>
+        'tabs' in f && f.tabs ? [f.key, f.tabs.key] : [f.key],
+      ),
     )
     const filteredParameters = Object.fromEntries(
       Object.entries(parameters).filter(([k]) => allowedKeys.has(k)),
