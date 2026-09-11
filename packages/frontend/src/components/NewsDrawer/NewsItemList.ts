@@ -11,6 +11,19 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-09-11',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Ownself Gather - Dropdown, Checkbox and Radio Button fields',
+    details: dedent`
+      Create case and Update case now support Ownself Gather **Dropdown**, **Checkbox**, and **Radio Button** fields.
+
+      * Map FormSG answers into these field types when creating or updating a case.
+      * Checkbox fields accept FormSG checkbox variables.
+      * Autofill sets the matching field type for you.
+    `,
+    ldFlagKey: 'app_gathersg',
+  },
+  {
     date: '2026-08-31',
     tag: NEW_FEATURE_TAG,
     title: '🤖 Introducing Pair actions',

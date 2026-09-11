@@ -16,6 +16,7 @@ const action: IRawAction = {
   name: 'Update case',
   key: 'updateCase',
   description: 'Update a case based on the case uuid',
+  preserveArrayVariables: true,
   arguments: [
     {
       label: 'Case UUID',
@@ -50,7 +51,7 @@ const action: IRawAction = {
       autofillable: true,
       required: false,
       description:
-        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet.',
+        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. Checkbox fields only accept FormSG checkbox variables. Dropdown values are sent to GatherSG as string arrays. Radio Button values are sent as strings.',
 
       subFields: [
         {
@@ -99,11 +100,23 @@ const action: IRawAction = {
               value: ensureZodEnumValue(fieldTypeEnum, 'email'),
             },
             {
+              label: 'Dropdown',
+              value: ensureZodEnumValue(fieldTypeEnum, 'dropdown'),
+            },
+            {
+              label: 'Checkbox',
+              value: ensureZodEnumValue(fieldTypeEnum, 'checkbox'),
+            },
+            {
+              label: 'Radio Button',
+              value: ensureZodEnumValue(fieldTypeEnum, 'radio'),
+            },
+            {
               label: 'Null',
               value: ensureZodEnumValue(fieldTypeEnum, 'null'),
             },
           ],
-          customStyle: { flex: 1, maxWidth: 140 },
+          customStyle: { flex: 1, maxWidth: 160 },
         },
         {
           placeholder: 'Value',
@@ -113,14 +126,42 @@ const action: IRawAction = {
           variables: true,
           hiddenIf: {
             fieldKey: 'fieldType',
-            op: 'equals',
-            fieldValue: 'null',
+            op: 'in',
+            fieldValues: ['null', 'checkbox'],
+          },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
+        },
+        {
+          placeholder: 'Select a FormSG checkbox',
+          key: 'value',
+          type: 'string' as const,
+          required: true,
+          variables: true,
+          variableTypes: ['array'],
+          singleVariableSelection: true,
+          noVariablesMessage:
+            ' No variables available - include a checkbox field in your FormSG.',
+          hiddenIf: {
+            fieldKey: 'fieldType',
+            op: 'not_equals',
+            fieldValue: 'checkbox',
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },
   ],
+
+  preprocessVariable(parameterKey: string, variableValue: unknown) {
+    // Keep FormSG checkbox arrays intact for Checkbox field values.
+    if (parameterKey === 'value' && Array.isArray(variableValue)) {
+      return variableValue
+    }
+    if (Array.isArray(variableValue)) {
+      return variableValue.join(', ')
+    }
+    return variableValue
+  },
 
   async run($) {
     try {
