@@ -9,6 +9,12 @@ import {
   type SsoLoginTransaction,
 } from './sso-client'
 
+const ssoLoginCookieOptions = {
+  httpOnly: true,
+  sameSite: 'strict' as const,
+  secure: !appConfig.isDev,
+}
+
 export function setSsoLoginCookie(
   res: Response,
   transaction: SsoLoginTransaction,
@@ -18,9 +24,7 @@ export function setSsoLoginCookie(
   })
 
   res.cookie(SSO_LOGIN_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: !appConfig.isDev,
+    ...ssoLoginCookieOptions,
     maxAge: SSO_LOGIN_COOKIE_TTL_SECONDS * 1000,
   })
 }
@@ -30,7 +34,8 @@ export function consumeSsoLoginCookie(
   res: Response,
 ): SsoLoginTransaction | null {
   const token = req.cookies?.[SSO_LOGIN_COOKIE_NAME] as string | undefined
-  res.clearCookie(SSO_LOGIN_COOKIE_NAME)
+  // Browsers ignore a delete unless SameSite and Secure match the original cookie.
+  res.clearCookie(SSO_LOGIN_COOKIE_NAME, ssoLoginCookieOptions)
 
   if (!token) {
     return null
