@@ -72,6 +72,13 @@ function serializeField(
     base.options = mapOptions(field.options)
   }
 
+  if ('tabs' in field && field.tabs) {
+    base.tabs = {
+      key: field.tabs.key,
+      options: mapOptions(field.tabs.options),
+    }
+  }
+
   if (
     (field.type === 'multirow' ||
       field.type === 'multirow-multicol' ||
