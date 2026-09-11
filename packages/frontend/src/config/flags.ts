@@ -15,6 +15,7 @@ export const SSO_FEATURE_FLAG = 'ogp-sso-enabled'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const IF_THEN_THEN_FEATURE_FLAG = 'feature_if_then_then'
+export const PLUMPRO_FEATURE_FLAG = 'plumpro'
 
 /**
  * App/events flags
