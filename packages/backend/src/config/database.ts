@@ -9,17 +9,17 @@ import knex from 'knex'
 
 import logger from '../helpers/logger'
 
-import appConfig from './app'
+import dbConfig from './app/db'
 
 export const config = {
   client: 'pg',
   connection: {
-    host: appConfig.postgresHost,
-    port: appConfig.postgresPort,
-    user: appConfig.postgresUsername,
-    password: appConfig.postgresPassword,
-    database: appConfig.postgresDatabase,
-    ssl: appConfig.postgresEnableSsl
+    host: dbConfig.postgresHost,
+    port: dbConfig.postgresPort,
+    user: dbConfig.postgresUsername,
+    password: dbConfig.postgresPassword,
+    database: dbConfig.postgresDatabase,
+    ssl: dbConfig.postgresEnableSsl
       ? {
           rejectUnauthorized: false,
         }
