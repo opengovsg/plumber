@@ -10,6 +10,8 @@ interface AppConfig {
   confettiSurveyId: string
   confettiAiBuilderSurveyId: string
   confettiApiBaseUrl: string
+  posthogProjectToken: string
+  posthogHost: string
 }
 
 function getAppConfig(): AppConfig {
@@ -22,11 +24,15 @@ function getAppConfig(): AppConfig {
   // Routed through our own domain, since CSP only allows connecting to
   // plumber.gov.sg domains directly (see packages/backend/src/helpers/csp.ts).
   const confettiApiBaseUrl = 'https://confetti.plumber.gov.sg'
+  const posthogProjectToken = 'phc_nwcM6rC7WU7CzdW9Z4zvB3dcZWFM9fn2URbqs35FFQQQ'
+  const posthogHost = 'https://a.plumber.gov.sg'
   const commonEnv = {
     env,
     version,
     confettiSurveyPublishableKey,
     confettiApiBaseUrl,
+    posthogProjectToken,
+    posthogHost,
   }
 
   switch (env) {
