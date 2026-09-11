@@ -90,7 +90,8 @@ export default function UnpublishConfirmationDialog(
                   </ConsequenceRow>
                 )}
                 <ConsequenceRow icon={BiX}>
-                  No steps run: no emails sent, no rows created in your tiles
+                  No steps run. For example, no emails are sent, and no rows are
+                  created in your tiles
                 </ConsequenceRow>
               </VStack>
               {isLongLivedRun ? (
