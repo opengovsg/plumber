@@ -1,6 +1,5 @@
 import type { LangfuseProject } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
-import { redisAppDataClient } from '@/helpers/redis-app-data'
 
 /** Keep stale prompts long enough to survive multi-day Rome outages. */
 export const PROMPT_CACHE_TTL_SECONDS = 60 * 60 * 24 * 30
@@ -20,6 +19,15 @@ export function makePromptCacheKey(
   return `${PROMPT_CACHE_KEY_PREFIX}:${project}:${promptName}:${label}`
 }
 
+/**
+ * Lazy-load Redis so importing this module during unit tests does not open a
+ * connection (ioredis connects on construct and can kill the vitest worker).
+ */
+async function getRedisAppDataClient() {
+  const { redisAppDataClient } = await import('@/helpers/redis-app-data')
+  return redisAppDataClient
+}
+
 export async function readCachedPrompt(
   project: LangfuseProject,
   promptName: string,
@@ -27,6 +35,7 @@ export async function readCachedPrompt(
 ): Promise<string | null> {
   const redisKey = makePromptCacheKey(project, promptName, label)
   try {
+    const redisAppDataClient = await getRedisAppDataClient()
     const raw = await redisAppDataClient.get(redisKey)
     if (!raw) {
       return null
@@ -64,6 +73,7 @@ export async function writeCachedPrompt(
   }
 
   try {
+    const redisAppDataClient = await getRedisAppDataClient()
     await redisAppDataClient.set(
       redisKey,
       JSON.stringify(payload),

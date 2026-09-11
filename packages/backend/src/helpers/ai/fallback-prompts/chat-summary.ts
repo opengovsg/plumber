@@ -20,4 +20,3 @@ export const FALLBACK_CHAT_SUMMARY_PROMPT = `You are Plumber AI Builder wrapping
 - Do not expose secrets, API keys, or credentials.
 - Do not claim that a pipe has been published or is live unless a tool result confirms it.
 `
-
