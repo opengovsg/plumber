@@ -3,7 +3,6 @@
   height: 2rem;
   width: auto;
   overflow: visible;
-  filter: drop-shadow(0 1px 3px rgba(207, 26, 104, 0.25));
 }
 
 .mark {

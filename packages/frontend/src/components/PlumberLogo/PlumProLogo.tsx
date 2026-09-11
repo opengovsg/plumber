@@ -42,14 +42,7 @@ export default function PlumProLogo(): JSX.Element {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient
-          id={gradientId}
-          x1="0"
-          y1="0"
-          x2="90"
-          y2="47"
-          gradientUnits="userSpaceOnUse"
-        >
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#AA004B" />
           <stop offset="0.55" stopColor="#CF1A68" />
           <stop offset="1" stopColor="#E8558F" />
