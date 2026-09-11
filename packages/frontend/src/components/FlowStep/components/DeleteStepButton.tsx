@@ -15,6 +15,7 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
@@ -110,6 +111,9 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       await client.refetchQueries({
         include: [GET_FLOW, GET_TEST_EXECUTION_STEPS],
       })
+      if (isPostHogConfigured) {
+        posthog.capture('flow_step_deleted')
+      }
 
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
