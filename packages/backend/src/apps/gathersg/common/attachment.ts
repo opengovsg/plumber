@@ -159,7 +159,15 @@ export async function generateUploadToken(
     '/cases/upload/token',
     { field, type, uuid: caseUuid },
   )
-  return data.data.token
+
+  const token = data?.data?.token
+  if (!token) {
+    throw new StepError(
+      'Ownself Gather did not return an upload token',
+      'Please try again. If this persists, check that your Ownself Gather API key is valid.',
+    )
+  }
+  return token
 }
 
 /**
