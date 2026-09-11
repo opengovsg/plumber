@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   promptGet: vi.fn(),
-  redisGet: vi.fn(),
-  redisSet: vi.fn(),
+  readCachedPrompt: vi.fn(),
+  writeCachedPrompt: vi.fn(),
   loggerInfo: vi.fn(),
   loggerWarn: vi.fn(),
   loggerError: vi.fn(),
@@ -17,11 +17,10 @@ vi.mock('@/helpers/langfuse', () => ({
   })),
 }))
 
-vi.mock('@/helpers/redis-app-data', () => ({
-  redisAppDataClient: {
-    get: mocks.redisGet,
-    set: mocks.redisSet,
-  },
+// Mock the cache module so these unit tests never open a Redis connection.
+vi.mock('@/helpers/ai/get-prompt-cache', () => ({
+  readCachedPrompt: mocks.readCachedPrompt,
+  writeCachedPrompt: mocks.writeCachedPrompt,
 }))
 
 vi.mock('@/helpers/logger', () => ({
@@ -34,14 +33,12 @@ vi.mock('@/helpers/logger', () => ({
 
 import { FALLBACK_CHAT_PROMPT } from '@/helpers/ai/fallback-prompts/chat'
 import { getPrompt } from '@/helpers/ai/get-prompt'
-import {
-  makePromptCacheKey,
-  PROMPT_CACHE_TTL_SECONDS,
-} from '@/helpers/ai/get-prompt-cache'
 
 describe('getPrompt', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.writeCachedPrompt.mockResolvedValue(undefined)
+    mocks.readCachedPrompt.mockResolvedValue(null)
   })
 
   it('returns the Langfuse prompt and writes it to Redis on success', async () => {
@@ -50,7 +47,6 @@ describe('getPrompt', () => {
       toJSON: () => '{"name":"chat"}',
     }
     mocks.promptGet.mockResolvedValueOnce(livePrompt)
-    mocks.redisSet.mockResolvedValueOnce('OK')
 
     const result = await getPrompt('chat', 'aiBuilder', 'production')
 
@@ -58,41 +54,24 @@ describe('getPrompt', () => {
     expect(mocks.promptGet).toHaveBeenCalledWith('chat', {
       label: 'production',
     })
-    expect(mocks.redisSet).toHaveBeenCalledWith(
-      makePromptCacheKey('aiBuilder', 'chat', 'production'),
-      expect.stringContaining('live system prompt'),
-      'EX',
-      PROMPT_CACHE_TTL_SECONDS,
+    expect(mocks.writeCachedPrompt).toHaveBeenCalledWith(
+      'aiBuilder',
+      'chat',
+      'production',
+      'live system prompt',
     )
-  })
-
-  it('still returns the live prompt when Redis write fails', async () => {
-    const livePrompt = {
-      prompt: 'live system prompt',
-      toJSON: () => '{"name":"chat"}',
-    }
-    mocks.promptGet.mockResolvedValueOnce(livePrompt)
-    mocks.redisSet.mockRejectedValueOnce(new Error('redis down'))
-
-    const result = await getPrompt('chat', 'aiBuilder', 'production')
-
-    expect(result).toBe(livePrompt)
-    expect(mocks.loggerWarn).toHaveBeenCalledWith(
-      'Failed to write Langfuse prompt cache',
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      'Loaded Langfuse prompt',
       expect.objectContaining({
-        event: 'langfuse-prompt-cache-write-error',
+        event: 'langfuse-prompt-loaded',
+        source: 'langfuse',
       }),
     )
   })
 
   it('returns the Redis-cached prompt when Langfuse fails', async () => {
     mocks.promptGet.mockRejectedValueOnce(new Error('Rome unavailable'))
-    mocks.redisGet.mockResolvedValueOnce(
-      JSON.stringify({
-        promptText: 'cached system prompt',
-        cachedAt: '2026-09-11T00:00:00.000Z',
-      }),
-    )
+    mocks.readCachedPrompt.mockResolvedValueOnce('cached system prompt')
 
     const result = await getPrompt('chat', 'aiBuilder', 'production')
 
@@ -110,7 +89,7 @@ describe('getPrompt', () => {
 
   it('returns the static fallback when Langfuse and Redis both miss', async () => {
     mocks.promptGet.mockRejectedValueOnce(new Error('Rome unavailable'))
-    mocks.redisGet.mockResolvedValueOnce(null)
+    mocks.readCachedPrompt.mockResolvedValueOnce(null)
 
     const result = await getPrompt('chat', 'aiBuilder', 'production')
 
@@ -120,30 +99,19 @@ describe('getPrompt', () => {
       source: 'static',
       isFallback: true,
     })
+    expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      'Using static Langfuse prompt fallback',
+      expect.objectContaining({ source: 'static' }),
+    )
   })
 
   it('rethrows when Langfuse fails and no Redis or static fallback exists', async () => {
     const romeError = new Error('Rome unavailable')
     mocks.promptGet.mockRejectedValueOnce(romeError)
-    mocks.redisGet.mockResolvedValueOnce(null)
+    mocks.readCachedPrompt.mockResolvedValueOnce(null)
 
     await expect(
       getPrompt('unknown-prompt', 'aiBuilder', 'production'),
     ).rejects.toBe(romeError)
-  })
-
-  it('falls through to static when Redis read fails after Langfuse failure', async () => {
-    mocks.promptGet.mockRejectedValueOnce(new Error('Rome unavailable'))
-    mocks.redisGet.mockRejectedValueOnce(new Error('redis read failed'))
-
-    const result = await getPrompt('chat', 'aiBuilder', 'production')
-
-    expect(result.prompt).toBe(FALLBACK_CHAT_PROMPT)
-    expect(mocks.loggerWarn).toHaveBeenCalledWith(
-      'Failed to read Langfuse prompt cache',
-      expect.objectContaining({
-        event: 'langfuse-prompt-cache-read-error',
-      }),
-    )
   })
 })
