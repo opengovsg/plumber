@@ -7,14 +7,17 @@ import AttachmentSuggestions from '@/components/AttachmentSuggestions'
 import ControlledAutocomplete from '@/components/ControlledAutocomplete'
 import DragDropInput from '@/components/DragDropInput'
 import GroupedMultiRow from '@/components/GroupedMultiRow'
-import MultiRow from '@/components/MultiRow'
+import MultiRowInput from '@/components/InputCreator/MultiRowInput'
 import MultiSelect from '@/components/MultiSelect'
 import RichTextEditor from '@/components/RichTextEditor'
 import RichTextEditorWithPresets from '@/components/RichTextEditorWithPresets'
 import TextField from '@/components/TextField'
 import { EditorContext } from '@/contexts/Editor'
 import { getDefaultValue } from '@/helpers/editor'
-import { useIsFieldHidden } from '@/helpers/isFieldHidden'
+import {
+  shouldHideEmptySourceDropdown,
+  useIsFieldHidden,
+} from '@/helpers/isFieldHidden'
 import useDynamicData from '@/hooks/useDynamicData'
 
 import { COLLABORATOR_RESTRICTED_ADDNEW_IDS } from '../Editor/constants'
@@ -114,6 +117,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
 
   if (type === 'dropdown') {
     const preparedOptions = schema.options || optionGenerator(data)
+    if (shouldHideEmptySourceDropdown(schema, preparedOptions, loading)) {
+      return <></>
+    }
     return (
       <ControlledAutocomplete
         isSearchable={schema.isSearchable ?? true}
@@ -243,20 +249,14 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
 
   if (type === 'multirow' || type === 'multirow-multicol') {
     return (
-      <MultiRow
-        name={computedName}
-        label={label}
-        description={description}
-        subFields={schema.subFields}
-        required={required}
-        addRowButtonText={schema.addRowButtonText}
-        showDivider={type !== 'multirow-multicol'}
-        type={type}
+      <MultiRowInput
+        schema={schema}
+        computedName={computedName}
         autofillable={'autofillable' in schema && schema.autofillable}
         maxAutofillOptions={
           'maxAutofillOptions' in schema ? schema.maxAutofillOptions : undefined
         }
-        // These are InputCreatorProps which MultiRow will forward.
+        // These are InputCreatorProps which MultiRowInput/MultiRow will forward.
         stepId={stepId}
         maxRows={schema.maxRows}
         defaultValue={getDefaultValue(formContext, schema?.defaultValue)}
