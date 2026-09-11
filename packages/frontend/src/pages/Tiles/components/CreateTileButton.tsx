@@ -29,6 +29,7 @@ import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
 import { ImportCsvModalContent } from '@/pages/Tile/components/TableBanner/ImportCsvButton'
 import { TableContextProvider } from '@/pages/Tile/contexts/TableContext'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 type TILE_CREATE_MODE = 'import' | 'new'
 
@@ -123,6 +124,11 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
         return
       }
       setTableData(data.createTable)
+      if (isPostHogConfigured) {
+        posthog.capture('tile_created', {
+          creation_mode: isBlank ? 'import' : 'new',
+        })
+      }
       return data.createTable
     },
     [createTableMutation, tableName],
