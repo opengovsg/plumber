@@ -1,7 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { createRoutesFromElements, Route } from 'react-router-dom'
 
-import ErrorPage from '@/components/ErrorPage'
+import ErrorPage, {
+  Error403PageContent,
+  Error404PageContent,
+  ErrorUnexpectedPageContent,
+} from '@/components/ErrorPage'
 import Layout from '@/components/Layout'
 import PublicLayout from '@/components/PublicLayout'
 import * as URLS from '@/config/urls'
@@ -29,7 +33,14 @@ const Landing = lazy(() => import('@/pages/Landing'))
 const Tile = lazy(() => import('@/pages/Tile'))
 
 export default createRoutesFromElements(
-  <Route path="/" errorElement={<ErrorPage />}>
+  <Route
+    path="/"
+    errorElement={
+      <ErrorPage>
+        <ErrorUnexpectedPageContent />
+      </ErrorPage>
+    }
+  >
     <Route
       path={URLS.LOGIN_SGID_REDIRECT}
       element={
@@ -167,7 +178,14 @@ export default createRoutesFromElements(
       }
     />
 
-    <Route path={URLS.LOGIN_UNAUTHORIZED} element={<ErrorPage is403 />} />
+    <Route
+      path={URLS.LOGIN_UNAUTHORIZED}
+      element={
+        <ErrorPage>
+          <Error403PageContent />
+        </ErrorPage>
+      }
+    />
     <Route
       path={URLS.LOGIN}
       element={
@@ -188,7 +206,14 @@ export default createRoutesFromElements(
       }
     />
 
-    <Route path="*" element={<ErrorPage is404 />} />
+    <Route
+      path="*"
+      element={
+        <ErrorPage>
+          <Error404PageContent />
+        </ErrorPage>
+      }
+    />
 
     <Route path={`${URLS.USE_CASES}/*`} element={<UseCasesRoutes />} />
   </Route>,
