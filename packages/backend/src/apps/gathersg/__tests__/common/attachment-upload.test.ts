@@ -156,5 +156,23 @@ describe('gathersg attachment upload helpers', () => {
         }),
       ).rejects.toThrow('exceeds maximum size')
     })
+
+    it('throws a StepError when s3Ids exceeds the max attachments per field', async () => {
+      const getObjectSpy = vi.spyOn(s3, 'getObjectFromS3Id').mockResolvedValue({
+        name: 'photo.png',
+        data: new Uint8Array([1, 2, 3]),
+      })
+
+      await expect(
+        uploadCaseAttachments({
+          $,
+          caseUuid: MOCK_CASE_UUID,
+          field: 'photos',
+          fieldType: 'attachment',
+          s3Ids: Array(11).fill(MOCK_S3_ID),
+        }),
+      ).rejects.toThrow('exceeding the maximum of 10')
+      expect(getObjectSpy).not.toHaveBeenCalled()
+    })
   })
 })
