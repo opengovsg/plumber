@@ -25,6 +25,9 @@ export const attachmentsSchema = z.record(
     s3Id: z.string().min(1).optional(),
   }),
 )
+// GatherSG's file-api rejects uploads past this count per field.
+export const MAX_ATTACHMENTS_PER_FIELD = 10
+
 type ParsedAttachment = z.infer<typeof attachmentsSchema>[string]
 type EnrichedAttachment = ParsedAttachment & { s3Id: string }
 export type ProcessedAttachment = EnrichedAttachment & {
@@ -225,6 +228,13 @@ export async function uploadCaseAttachments({
 }): Promise<string[]> {
   if (!s3Ids.length) {
     return []
+  }
+
+  if (s3Ids.length > MAX_ATTACHMENTS_PER_FIELD) {
+    throw new StepError(
+      `Field ${field} has ${s3Ids.length} attachments, exceeding the maximum of ${MAX_ATTACHMENTS_PER_FIELD}`,
+      `Please check that your case attachments do not exceed ${MAX_ATTACHMENTS_PER_FIELD} files per field.`,
+    )
   }
 
   const files = await Promise.all(
