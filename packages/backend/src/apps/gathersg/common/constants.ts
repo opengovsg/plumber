@@ -8,13 +8,37 @@ import { z } from 'zod'
 export const CASE_UUID_REGEX = /^[a-zA-Z0-9]{22}$/
 
 export const UNSUPPORTED_FIELDS = [
-  'dropdown', // array of strings
-  'checkbox', // array of strings
   'table', // array of objects
   'attachment',
 ]
 
-export const fieldTypeEnum = z.enum(['string', 'number', 'null', 'email'])
+/**
+ * GatherSG selection field types. UI labels match Ownself Gather:
+ * Dropdown, Checkbox, Radio Button.
+ */
+export const GATHERSG_SELECTION_TYPES = [
+  'dropdown',
+  'checkbox',
+  'radio',
+] as const
+
+export type GatherSGSelectionType = (typeof GATHERSG_SELECTION_TYPES)[number]
+
+/**
+ * Plumber fieldType values that send `string[]` to GatherSG.
+ * Radio is excluded: Ownself Gather accepts a plain string for radio.
+ */
+export const LIST_LIKE_FIELD_TYPES = ['dropdown', 'checkbox'] as const
+
+export const fieldTypeEnum = z.enum([
+  'string',
+  'number',
+  'null',
+  'email',
+  'dropdown',
+  'checkbox',
+  'radio',
+])
 
 // GatherSG field types whose values should be treated as numbers. Every other
 // supported field type (text, textarea, date, phone numbers, NRIC/UEN, etc.)

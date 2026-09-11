@@ -1,12 +1,14 @@
 import { z } from 'zod'
 
-import { fieldTypeEnum } from './constants'
+import { fieldTypeEnum, LIST_LIKE_FIELD_TYPES } from './constants'
 
 const caseFieldSchema = z.object({
   field: z.string().trim().min(1, 'Field empty'),
   // we add nullish here because defaultValue or value doesnt work properly in dropdown
   fieldType: fieldTypeEnum.nullish(),
-  value: z.string().trim().nullish(),
+  // string for scalar fields; string[] after compute-parameters resolves a
+  // FormSG checkbox into a list field
+  value: z.union([z.string().trim(), z.array(z.string())]).nullish(),
 })
 
 // `fieldType` is widened to `string` (rather than reused verbatim from
@@ -16,8 +18,37 @@ type CaseField = Omit<z.infer<typeof caseFieldSchema>, 'fieldType'> & {
   fieldType?: string | null
 }
 
+const toStringArray = (
+  field: string,
+  value: string | string[] | null | undefined,
+  context: z.RefinementCtx,
+): string[] | typeof z.NEVER => {
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `List value empty for field: ${field}`,
+      })
+      return z.NEVER
+    }
+    return value.map((item) => String(item))
+  }
+
+  if (typeof value === 'string' && value.length > 0) {
+    // Single FormSG dropdown/text answers become a one-element array
+    return [value]
+  }
+
+  context.addIssue({
+    code: z.ZodIssueCode.custom,
+    message: `Invalid list value for field: ${field}. Provide a string or string array value.`,
+  })
+  return z.NEVER
+}
+
 const transformCaseFields = (params: CaseField[], context: z.RefinementCtx) => {
-  const result: Record<string, string | number | null> = Object.create(null)
+  const result: Record<string, string | number | null | string[]> =
+    Object.create(null)
   const seenFields = new Set<string>()
   for (const { field, fieldType, value } of params) {
     /**
@@ -66,8 +97,17 @@ const transformCaseFields = (params: CaseField[], context: z.RefinementCtx) => {
         return z.NEVER
       }
       result[field] = emailResult.data
+    } else if (
+      fieldType != null &&
+      (LIST_LIKE_FIELD_TYPES as readonly string[]).includes(fieldType)
+    ) {
+      const listValue = toStringArray(field, value, context)
+      if (listValue === z.NEVER) {
+        return z.NEVER
+      }
+      result[field] = listValue
     } else {
-      result[field] = value
+      result[field] = typeof value === 'string' ? value : value?.join(', ')
     }
   }
   return result
@@ -76,7 +116,7 @@ const transformCaseFields = (params: CaseField[], context: z.RefinementCtx) => {
 /**
  * Shared `caseFields` array schema for create-case/update-case, parsing the
  * multirow-multicol `{ field, fieldType, value }` rows into a
- * `Record<string, string | number | null>` payload. A missing/null
+ * `Record<string, string | number | null | string[]>` payload. A missing/null
  * `fieldType` is treated the same as `'string'` by `transformCaseFields`'s
  * fallback branch, so no default is needed here.
  */

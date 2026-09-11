@@ -22,6 +22,7 @@ export interface ConfettiEmbeddedSurveyRef {
 interface ConfettiEmbeddedSurveyProps {
   surveyId: string
   publishableKey: string
+  apiBaseUrl?: string
   respondent?: string
   metadata?: Record<string, string>
 }
@@ -38,7 +39,7 @@ function NotifyLoaded({ onLoaded }: { onLoaded: () => void }) {
 const ConfettiEmbeddedSurvey = forwardRef<
   ConfettiEmbeddedSurveyRef,
   ConfettiEmbeddedSurveyProps
->(({ surveyId, publishableKey, respondent, metadata }, ref) => {
+>(({ surveyId, publishableKey, apiBaseUrl, respondent, metadata }, ref) => {
   const submitRef = useRef<() => void>()
   const [isLoaded, setIsLoaded] = useState(false)
 
@@ -58,6 +59,7 @@ const ConfettiEmbeddedSurvey = forwardRef<
         <ConfettiProvider
           surveyId={surveyId}
           publishableKey={publishableKey}
+          apiBaseUrl={apiBaseUrl}
           respondent={respondent}
           metadata={metadata}
         >
