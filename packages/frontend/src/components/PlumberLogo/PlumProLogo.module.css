@@ -26,12 +26,12 @@
 
 .sheen {
   opacity: 0;
-  animation: sheenSweep 900ms ease-in-out 820ms both;
+  animation: sheenSweep 1100ms ease-in-out 780ms both;
 }
 
 /* A second, identical animation lets hover restart the sweep. */
 .wordmark:hover .sheen {
-  animation: sheenReplay 900ms ease-in-out both;
+  animation: sheenReplay 1100ms ease-in-out both;
 }
 
 @keyframes markIn {
@@ -51,7 +51,10 @@
 @keyframes letterIn {
   from {
     opacity: 0;
-    transform: translateX(-16px) scale(0.9);
+    transform: translateX(-26px) scale(0.88);
+  }
+  50% {
+    opacity: 1;
   }
   to {
     opacity: 1;
@@ -76,34 +79,34 @@
 @keyframes sheenSweep {
   from {
     opacity: 0;
-    transform: translateX(-34px) skewX(-18deg);
+    transform: translateX(-40px) skewX(-18deg);
   }
-  25% {
+  20% {
     opacity: 1;
   }
-  80% {
+  85% {
     opacity: 1;
   }
   to {
     opacity: 0;
-    transform: translateX(112px) skewX(-18deg);
+    transform: translateX(116px) skewX(-18deg);
   }
 }
 
 @keyframes sheenReplay {
   from {
     opacity: 0;
-    transform: translateX(-34px) skewX(-18deg);
+    transform: translateX(-40px) skewX(-18deg);
   }
-  25% {
+  20% {
     opacity: 1;
   }
-  80% {
+  85% {
     opacity: 1;
   }
   to {
     opacity: 0;
-    transform: translateX(112px) skewX(-18deg);
+    transform: translateX(116px) skewX(-18deg);
   }
 }
 

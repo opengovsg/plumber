@@ -59,12 +59,13 @@ export default function PlumProLogo(): JSX.Element {
           id={sheenGradientId}
           x1="0"
           y1="0"
-          x2="20"
+          x2="26"
           y2="0"
           gradientUnits="userSpaceOnUse"
         >
           <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#FFFFFF" stopOpacity="0.85" />
+          <stop offset="0.45" stopColor="#FFFFFF" stopOpacity="0.95" />
+          <stop offset="0.55" stopColor="#FFFFFF" stopOpacity="0.95" />
           <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
 
@@ -96,7 +97,7 @@ export default function PlumProLogo(): JSX.Element {
           className={styles.sheen}
           x="0"
           y="-10"
-          width="20"
+          width="26"
           height="67"
           fill={`url(#${sheenGradientId})`}
         />
