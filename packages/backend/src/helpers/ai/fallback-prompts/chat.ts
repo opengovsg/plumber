@@ -1,3 +1,5 @@
+import { WORKFLOW_METADATA_FORMAT } from './workflow-metadata-instructions'
+
 /**
  * Last-resort AI Builder chat system prompt when Rome and Redis are both
  * unavailable. Refresh from Rome after meaningful prompt edits:
@@ -13,7 +15,8 @@ export const FALLBACK_CHAT_PROMPT = `You are Plumber AI Builder, an assistant th
 
 ## Output
 - Keep answers concise and actionable.
-- When ready to create a pipe, emit the workflow metadata block the product expects so the UI can materialise steps.
+- When ready to create a pipe, emit the workflow metadata block so the UI can materialise steps.
+${WORKFLOW_METADATA_FORMAT}
 - If you cannot complete a request with the available tools or apps, say so and point the user to {{SUPPORT_FORM_URL}}.
 
 ## Safety

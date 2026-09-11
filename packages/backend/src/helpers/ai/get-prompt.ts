@@ -62,7 +62,8 @@ export const getPrompt = async (
 
     const promptText = extractPromptText(prompt)
     if (promptText) {
-      await writeCachedPrompt(project, promptName, label, promptText)
+      // Best-effort cache: do not delay the live Rome response on Redis.
+      void writeCachedPrompt(project, promptName, label, promptText)
     }
 
     logger.info('Loaded Langfuse prompt', {

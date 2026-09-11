@@ -1,3 +1,5 @@
+import { WORKFLOW_METADATA_FORMAT } from './workflow-metadata-instructions'
+
 /**
  * Last-resort AI Builder chat-summary system prompt when Rome and Redis are
  * both unavailable. Refresh from Rome after meaningful prompt edits:
@@ -13,7 +15,8 @@ export const FALLBACK_CHAT_SUMMARY_PROMPT = `You are Plumber AI Builder wrapping
 
 ## Output
 - Keep the summary short.
-- If a createable workflow is ready, emit the workflow metadata block the product expects.
+- If a createable workflow is ready, emit the workflow metadata block:
+${WORKFLOW_METADATA_FORMAT}
 - If the design is incomplete, list the open questions briefly and point to {{SUPPORT_FORM_URL}} if the user is blocked.
 
 ## Safety

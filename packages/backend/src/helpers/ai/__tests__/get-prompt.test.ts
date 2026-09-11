@@ -41,7 +41,7 @@ describe('getPrompt', () => {
     mocks.readCachedPrompt.mockResolvedValue(null)
   })
 
-  it('returns the Langfuse prompt and writes it to Redis on success', async () => {
+  it('returns the Langfuse prompt and fire-and-forgets the Redis write', async () => {
     const livePrompt = {
       prompt: 'live system prompt',
       toJSON: () => '{"name":"chat"}',
@@ -54,6 +54,7 @@ describe('getPrompt', () => {
     expect(mocks.promptGet).toHaveBeenCalledWith('chat', {
       label: 'production',
     })
+    // Cache write is intentionally not awaited on the happy path.
     expect(mocks.writeCachedPrompt).toHaveBeenCalledWith(
       'aiBuilder',
       'chat',
