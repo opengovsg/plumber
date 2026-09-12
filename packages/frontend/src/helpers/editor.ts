@@ -102,7 +102,7 @@ export function withDefaultParameters(
         continue
       }
 
-      defaultParameters[arg.key] = arg.value as IJSONValue
+      defaultParameters[arg.key] = arg.value satisfies IJSONValue
     }
   }
 
