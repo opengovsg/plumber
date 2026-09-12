@@ -19,6 +19,11 @@ import { typeDefs } from '@/graphql/__generated__/typeDefs.generated'
 import resolvers from '@/graphql/resolvers'
 import authentication, { setCurrentUserContext } from '@/helpers/authentication'
 import logger from '@/helpers/logger'
+import {
+  createRequestContext,
+  getRequestStats,
+  requestContext,
+} from '@/helpers/request-context'
 import tracer from '@/helpers/tracer'
 import type { UnauthenticatedContext } from '@/types/express/context'
 import type AuthenticatedContext from '@/types/express/context'
@@ -156,14 +161,27 @@ export const server = new ApolloServer<UnauthenticatedContext>({
 
 let graphqlInstance: RequestHandler | undefined
 
-const graphqlRouteHandler: RequestHandler = async (...args) => {
+const graphqlRouteHandler: RequestHandler = async (req, res, next) => {
   if (!graphqlInstance) {
     await server.start()
     graphqlInstance = expressMiddleware<UnauthenticatedContext>(server, {
       context: setCurrentUserContext,
     })
   }
-  return graphqlInstance(...args)
+
+  const operationName = req.body?.operationName || 'unknown'
+  const startTime = Date.now()
+
+  requestContext.run(createRequestContext(operationName), () => {
+    res.on('finish', () => {
+      const stats = getRequestStats()
+      const totalMs = Date.now() - startTime
+      logger.info(
+        `[GraphQL][${operationName}] ${totalMs}ms | ${stats.queryCount} queries (${stats.totalQueryMs}ms)`,
+      )
+    })
+    graphqlInstance(req, res, next)
+  })
 }
 
 export default graphqlRouteHandler
