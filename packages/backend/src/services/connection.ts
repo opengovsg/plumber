@@ -1,3 +1,5 @@
+import type { IApp, IUserAddedConnectionAuth } from '@plumber/types'
+
 import { Transaction } from 'objection'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
@@ -5,6 +7,10 @@ import App from '@/models/app'
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import Context from '@/types/express/context'
+
+export type EditableConnectionApp = IApp & {
+  auth: IUserAddedConnectionAuth
+}
 
 type GetConnectionParams = {
   context: Context
@@ -70,7 +76,7 @@ type GetOwnEditableConnectionParams = {
  */
 export const getOwnEditableConnection = async (
   params: GetOwnEditableConnectionParams,
-) => {
+): Promise<{ connection: Connection; app: EditableConnectionApp }> => {
   const { context, connectionId, trx } = params
 
   const connection = await context.currentUser
@@ -87,5 +93,8 @@ export const getOwnEditableConnection = async (
     throw new ForbiddenError('This connection cannot be edited')
   }
 
-  return connection
+  return {
+    connection,
+    app: app as EditableConnectionApp,
+  }
 }

@@ -27,6 +27,8 @@ type GlobalVariableOptions = {
   request?: IRequest
   user?: User // only required in GraphQL context
   metadata?: IJSONObject
+  authData?: IJSONObject
+  persistAuthData?: boolean
 }
 
 const globalVariable = async (
@@ -42,6 +44,8 @@ const globalVariable = async (
     testRun = false,
     user,
     metadata,
+    authData,
+    persistAuthData = true,
   } = options
 
   const isTrigger = step?.isTrigger
@@ -50,20 +54,21 @@ const globalVariable = async (
   const $: IGlobalVariable = {
     auth: {
       set: async (args: IJSONObject) => {
-        if (connection) {
-          await connection.$query().patchAndFetch({
-            formattedData: {
-              ...connection.formattedData,
-              ...args,
-            },
-          })
-
-          $.auth.data = connection.formattedData
+        const updatedAuthData = {
+          ...$.auth.data,
+          ...args,
         }
 
+        if (connection && persistAuthData) {
+          await connection.$query().patchAndFetch({
+            formattedData: updatedAuthData,
+          })
+        }
+
+        $.auth.data = updatedAuthData
         return null
       },
-      data: connection?.formattedData,
+      data: authData ?? connection?.formattedData,
       connectionId: connection?.id,
     },
     app: app,
