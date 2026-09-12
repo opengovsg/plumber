@@ -1,8 +1,15 @@
-import type { IGlobalVariable, IRawAction } from '@plumber/types'
+import type {
+  IGlobalVariable,
+  IRawAction,
+  RunBatchJobResult,
+} from '@plumber/types'
 
+import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
+import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
 import { TEST_STEP_MAX_COLUMNS } from '../../common/constants'
+import { validateCanAccessFile } from '../../common/file-privacy'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -37,52 +44,153 @@ interface TableHeaderInfo {
   columnNames: string[] // Ordered
 }
 
+// A job whose params parsed cleanly. Collected per job (so a single bad-input
+// job is isolated) before the batch's shared access check + write.
+type ParsedJob = {
+  index: number
+  $: IGlobalVariable
+  params: ReturnType<typeof parseRowParams>
+}
+
+// Parse + validate one job's params, throwing a StepError on bad input.
+function parseRowParams($: IGlobalVariable) {
+  const parametersParseResult = parametersSchema.safeParse($.step.parameters)
+  if (parametersParseResult.success === false) {
+    throw new StepError(
+      'There was a problem with the input.',
+      parametersParseResult.error.issues[0].message,
+    )
+  }
+  return parametersParseResult.data
+}
+
 // Performs a single multi-row insert for a batch of createTableRow jobs that
 // all target the same file + table. Each job carries its own `$` (its own
 // step / params / execution) and gets its own `sheetRowNumber` output.
 //
-// `run($)` (test runs + the single-job drain path) delegates here with a batch
-// of one, so the insert logic lives in exactly one place.
+// Per-job isolation: each job's PARAMS are parsed individually, so a single
+// bad-input job is excluded (`failed`) while the rest commit. FILE ACCESS is
+// authorized ONCE for the whole batch - the batch group key
+// (`${fileId}::${tableId}::${connectionId}`) pins every job to one connection +
+// file, so a single Graph permission query authorizes them all. A PERMANENT
+// denial isolates the entire batch (`failed`); a TRANSIENT access error
+// (RetriableError) THROWS so the whole batch retries (see below). The return
+// value reports, per input job (aligned by index), whether it committed
+// (`success`) or was excluded (`failed`) - so the batch worker can isolate the
+// bad jobs while the rest commit. A genuine WRITE failure (the Graph POST
+// itself) likewise THROWS, so the whole batch fails all-or-none and is retried
+// (nothing was committed).
 //
-// All-or-none: any error throws before any job's output is set, so the whole
-// batch fails (and is retried) together.
-async function runBatch(jobs: Array<{ $: IGlobalVariable }>): Promise<void> {
-  if (jobs.length === 0) {
-    return
-  }
+// `run($)` (test runs + the single-job drain path) delegates here with a batch
+// of one and re-throws a `failed` result, so the insert logic lives in one
+// place and the single-job contract (throw on failure) is preserved.
+async function runBatch(
+  jobs: Array<{ $: IGlobalVariable }>,
+): Promise<RunBatchJobResult[]> {
+  // results[i] is the outcome for jobs[i]. Valid jobs are collected for the
+  // single shared write; invalid jobs stay `failed` and are never written.
+  const results: RunBatchJobResult[] = []
 
-  // Parse + validate every job's params up front. A single bad job fails the
-  // whole batch (all-or-none) before any Graph call is made.
-  const parsedJobs = jobs.map(({ $ }) => {
-    const parametersParseResult = parametersSchema.safeParse($.step.parameters)
-
-    if (parametersParseResult.success === false) {
-      throw new StepError(
-        'There was a problem with the input.',
-        parametersParseResult.error.issues[0].message,
-      )
+  // Phase 1 - parse each job's params individually, so a single bad-input job is
+  // isolated (reported `failed`, excluded from the write) without sinking its
+  // batch-mates. forEach is synchronous, so `parsed` is already in batch order.
+  const parsed: ParsedJob[] = []
+  jobs.forEach(({ $ }, index) => {
+    try {
+      parsed.push({ index, $, params: parseRowParams($) })
+    } catch (error) {
+      results[index] = { status: 'failed', error }
     }
-
-    return { $, ...parametersParseResult.data }
   })
 
-  // Group affinity guarantees every job in the batch shares one file + table,
-  // but assert it defensively: runBatch issues exactly one POST to one
-  // (fileId, tableId), so a mixed batch would write rows to the wrong table.
-  const { fileId, tableId } = parsedJobs[0]
-  for (const parsedJob of parsedJobs) {
-    if (parsedJob.fileId !== fileId || parsedJob.tableId !== tableId) {
+  // Every job had bad params: nothing to authorize or write, no Graph call.
+  if (parsed.length === 0) {
+    return results
+  }
+
+  // Group affinity guarantees every job shares one file + table + connection
+  // (the batch group key is `${fileId}::${tableId}::${connectionId}`), but
+  // assert it defensively over the parsed set: runBatch issues exactly one POST
+  // through one WorkbookSession after ONE access check, so a job for a different
+  // table would write to the wrong table, and a job for a different access
+  // identity would have its rows written under the wrong authorization.
+  //
+  // We assert EXACTLY what the single validateCanAccessFile call consumes -
+  // pipe owner (email) + connection id + the auth data the verdict is computed
+  // from (tenantKey + Plumber folderId) - not just the connectionId FK. Two jobs
+  // can share a connectionId yet load divergent auth data: each job's `$.auth`
+  // is loaded independently during the parallel prepare, so a connection record
+  // mutated between those loads could change tenant/folder under a stable id. We
+  // read the raw `$.auth.data` here (no parse) so a malformed-auth job is caught
+  // by the access check below, not thrown out of the assertion.
+  const { fileId, tableId } = parsed[0].params
+  const { $: firstJob } = parsed[0]
+  const identityOf = ($: IGlobalVariable) =>
+    [
+      $.user?.email ?? null,
+      $.auth?.connectionId ?? null,
+      $.auth?.data?.tenantKey ?? null,
+      $.auth?.data?.folderId ?? null,
+    ].join('\0')
+  const firstIdentity = identityOf(firstJob)
+  for (const { $, params } of parsed) {
+    if (params.fileId !== fileId || params.tableId !== tableId) {
       throw new Error(
         'createTableRow batch contains jobs for different files or tables; ' +
           `expected ${String(fileId)}::${String(tableId)}.`,
       )
     }
+    if (identityOf($) !== firstIdentity) {
+      throw new Error(
+        'createTableRow batch contains jobs with different access identities ' +
+          '(connection / user / auth data); the batch group key must pin every ' +
+          'job to one connection.',
+      )
+    }
   }
 
-  const session = await WorkbookSession.acquire(
-    parsedJobs[0].$,
-    fileId as string,
-  )
+  // ONE file-access check for the whole batch. validateCanAccessFile's verdict
+  // depends only on the access identity asserted above + fileId (never on row
+  // data), so a single Graph permission query authorizes the entire batch
+  // instead of one query per job.
+  //
+  // Failure handling splits by cause, because one check now covers the whole
+  // batch:
+  // - TRANSIENT (Graph 429/5xx/timeout, surfaced as RetriableError by the m365
+  //   http interceptor): rethrow so the WHOLE batch retries with the usual
+  //   backoff - exactly like a transient WRITE failure. Isolating here would
+  //   permanently fail up to a full batch on one blip.
+  // - PERMANENT (revoked access / wrong folder / disallowed sensitivity, or any
+  //   non-retriable error): isolate EVERY job (reported `failed`, never retried)
+  //   since retrying cannot help.
+  try {
+    await validateCanAccessFile(
+      firstJob.user?.email,
+      extractAuthDataWithPlumberFolder(firstJob),
+      fileId,
+      firstJob.http,
+    )
+  } catch (error) {
+    if (error instanceof RetriableError) {
+      throw error
+    }
+    for (const { index } of parsed) {
+      results[index] = { status: 'failed', error }
+    }
+    return results
+  }
+
+  // All parsed jobs are authorized: they are the candidate set, in batch order.
+  // Each still has to build its row (a per-job step that can fail on a column
+  // name that doesn't exist in the table), so we don't mark `success` until the
+  // row is built AND committed below.
+  //
+  // The whole batch is written through ONE session (the first job's). Every job
+  // shares that job's connection (asserted above) and the single check
+  // authorized it, so this session's authorization is correct for every row.
+  // acquire re-checks access as defensive depth (and it is the sole check on the
+  // single-job `run` path).
+  const session = await WorkbookSession.acquire(firstJob, fileId as string)
 
   const tableHeaderInfoResponse = await session.request<{
     rowIndex: number
@@ -107,18 +215,38 @@ async function runBatch(jobs: Array<{ $: IGlobalVariable }>): Promise<void> {
     columnNames: tableHeaderInfoResponse.data.values[0],
   }
 
-  // One ordered values row per job, in batch order. Note: we disallow
+  // Build each parsed job's ordered values row INDIVIDUALLY, isolating a per-job
+  // build failure (e.g. a `columnName` that doesn't exist in the table) the same
+  // way a bad-params job is isolated above - one un-buildable row must not sink
+  // the whole batch. buildRowUpdateArgs throws a StepError, recorded as that
+  // job's failure (and re-thrown on the single-job `run` path). The schema parse
+  // above can't catch this: a non-existent column is still a valid non-empty
+  // string, so it only fails here, against the table's real columns. We disallow
   // blacklisted formulas and sanitise when necessary.
-  const values = parsedJobs.map(({ $, columnValues }) =>
-    buildRowUpdateArgs(
-      $,
-      tableHeaderInfo.columnNames,
-      columnValues.map((col) => ({
-        columnName: col.columnName,
-        value: sanitiseInputValue(col.value),
-      })),
-    ),
-  )
+  const writable: Array<{ index: number; $: IGlobalVariable }> = []
+  const values: Array<ReturnType<typeof buildRowUpdateArgs>> = []
+  parsed.forEach(({ index, $, params }) => {
+    try {
+      values.push(
+        buildRowUpdateArgs(
+          $,
+          tableHeaderInfo.columnNames,
+          params.columnValues.map((col) => ({
+            columnName: col.columnName,
+            value: sanitiseInputValue(col.value),
+          })),
+        ),
+      )
+      writable.push({ index, $ })
+    } catch (error) {
+      results[index] = { status: 'failed', error }
+    }
+  })
+
+  // Every parsed job failed to build its row: nothing to write, no Graph POST.
+  if (writable.length === 0) {
+    return results
+  }
 
   const createRowResponse = await session.request<{ index: number }>(
     `/tables/:tableId/rows`,
@@ -135,13 +263,19 @@ async function runBatch(jobs: Array<{ $: IGlobalVariable }>): Promise<void> {
   )
 
   // The multi-row response returns a single `index`: the table-index of the
-  // FIRST inserted row (Approach A). Rows are inserted contiguously, so job i
-  // lands at responseStartIndex + i. (Gated by the >=2-row test, and by the
-  // per-file lock which guarantees no concurrent appends shift these rows.)
+  // FIRST inserted row (Approach A). Rows are inserted contiguously in `values`
+  // order, so the i-th WRITTEN job lands at responseStartIndex + i. (Gated by the
+  // >=2-row test, and by the per-file lock which guarantees no concurrent appends
+  // shift these rows.)
   const responseStartIndex = createRowResponse.data.index
 
-  // Only now that all rows are committed do we set each job's own output.
-  parsedJobs.forEach(({ $ }, index) => {
+  // Only now that all rows are committed do we mark each written job `success`
+  // and set its own output. `writeIndex` is the row's position in the POSTed
+  // `values` (NOT the original batch index): isolated build-failures were
+  // excluded from the write, so the surviving rows are contiguous from
+  // responseStartIndex.
+  writable.forEach(({ $, index }, writeIndex) => {
+    results[index] = { status: 'success' }
     $.setActionItem({
       raw: {
         // `sheetRowNumber` exposes the actual row number of the created row.
@@ -159,13 +293,15 @@ async function runBatch(jobs: Array<{ $: IGlobalVariable }>): Promise<void> {
         //   /* ...and add... */
         //   +
         //   /* ... the new row's index from the header row (1-indexed) */
-        //   (responseStartIndex + index) + 1
+        //   (responseStartIndex + writeIndex) + 1
         sheetRowNumber:
-          tableHeaderInfo.rowIndex + 1 + (responseStartIndex + index) + 1,
+          tableHeaderInfo.rowIndex + 1 + (responseStartIndex + writeIndex) + 1,
         success: true,
       },
     })
   })
+
+  return results
 }
 
 const action: IRawAction = {
@@ -274,8 +410,13 @@ const action: IRawAction = {
     }
 
     // A test run (or a single-job drain off the old queue) is just a batch of
-    // one. All insert logic lives in runBatch so there's one code path.
-    await runBatch([{ $ }])
+    // one. All insert logic lives in runBatch so there's one code path; a
+    // `failed` result (bad params / revoked access) is re-thrown to preserve the
+    // single-job contract (run throws on failure, processAction records it).
+    const [result] = await runBatch([{ $ }])
+    if (result.status === 'failed') {
+      throw result.error
+    }
   },
 
   runBatch,

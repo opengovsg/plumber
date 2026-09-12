@@ -43,9 +43,9 @@ import {
 // Redis + Postgres. The ONLY thing stubbed is the MS Graph HTTP layer
 // (WorkbookSession), so the single multi-row POST is observable and we never
 // touch the network. Everything else - routing (enqueueActionJob), grouping
-// (group affinity by `${fileId}::${tableId}`), the batch processor, per-job
-// execution-step recording, next-step enqueueing, for-each bookkeeping - runs
-// for real.
+// (group affinity by `${fileId}::${tableId}::${connectionId}`), the batch
+// processor, per-job execution-step recording, next-step enqueueing, for-each
+// bookkeeping - runs for real.
 //
 
 const mocks = vi.hoisted(() => ({
@@ -61,6 +61,13 @@ const mocks = vi.hoisted(() => ({
   // happy-path tests are unaffected; the per-file lock tests override it to
   // engage the REAL distributed lock (imported below, unmocked).
   getLockKey: vi.fn(),
+  // The file-access check that createTableRow's runBatch runs ONCE per batch
+  // (the batch group key pins every job to one connection). Defaults to
+  // resolving (access granted) so happy-path tests are unaffected; the
+  // access-denial tests make it reject to fail the whole batch. In production
+  // this runs inside WorkbookSession.acquire (mocked here), but runBatch calls
+  // file-privacy directly (so we mock it).
+  validateCanAccessFile: vi.fn(),
 }))
 
 vi.mock('@/apps/m365-excel/common/workbook-session', () => ({
@@ -71,6 +78,21 @@ vi.mock('@/apps/m365-excel/common/workbook-session', () => ({
 
 vi.mock('@/apps/m365-excel/common/file-lock', () => ({
   getLockKey: mocks.getLockKey,
+}))
+
+vi.mock('@/apps/m365-excel/common/file-privacy', () => ({
+  validateCanAccessFile: mocks.validateCanAccessFile,
+}))
+
+// createTableRow's runBatch derives auth data (to pass to validateCanAccessFile)
+// from `$`. The test flows have no real m365 connection, so the real
+// extractAuthDataWithPlumberFolder would throw; stub it to a dummy
+// (validateCanAccessFile is mocked above, so the value is never actually used).
+vi.mock('@/apps/m365-excel/common/auth-data', () => ({
+  extractAuthDataWithPlumberFolder: () => ({
+    tenantKey: 'itest-tenant',
+    folderId: 'ITEST-FOLDER',
+  }),
 }))
 
 // scope/wrap are plain functions (not vi.fn) so vi.restoreAllMocks() in
@@ -168,12 +190,17 @@ async function buildCreateRowFlow(options: {
   tableId?: string
   withNextStep?: boolean
   withForEach?: boolean
+  // Produces a step whose params fail createTableRow's schema (empty
+  // columnValues) while keeping a valid fileId/tableId, so the job still routes
+  // to the same batch group but is isolated by runBatch's per-job params parse.
+  badParams?: boolean
 }): Promise<CreateRowFlow> {
   const {
     rowValue,
     tableId = TABLE_ID,
     withNextStep = false,
     withForEach = false,
+    badParams = false,
   } = options
 
   let position = 1
@@ -204,7 +231,11 @@ async function buildCreateRowFlow(options: {
     parameters: {
       fileId: FILE_ID,
       tableId,
-      columnValues: [{ columnName: COLUMN_NAME, value: rowValue }],
+      // Empty columnValues fails parametersSchema's `.min(1)` -> runBatch's
+      // per-job params parse throws -> the job is isolated, batch unaffected.
+      columnValues: badParams
+        ? []
+        : [{ columnName: COLUMN_NAME, value: rowValue }],
     },
   })
   if (withNextStep) {
@@ -319,6 +350,8 @@ describe('m365-excel batch worker (integration)', () => {
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     // Lock disabled by default; the per-file lock tests opt in per test.
     mocks.getLockKey.mockResolvedValue(null)
+    // File access granted by default; the partial-failure tests reject one job.
+    mocks.validateCanAccessFile.mockResolvedValue(undefined)
     userId = (await User.query().findOne({ email: 'tester@open.gov.sg' })).id
 
     // Pause both workers so we can enqueue every job up front (the batch worker
@@ -529,6 +562,45 @@ describe('m365-excel batch worker (integration)', () => {
     expect(await mainActionQueue.getWaiting()).toHaveLength(0)
   }, 30000)
 
+  it('retries the whole batch when the shared access check fails transiently', async () => {
+    mockGraphSuccess(0)
+    // A transient access-check error (Graph 429/5xx -> RetriableError) must NOT
+    // permanently isolate the batch; it throws so the batch retries, like a
+    // transient write failure. A small step delay keeps the test fast.
+    mocks.validateCanAccessFile.mockRejectedValue(
+      new RetriableError({
+        error: 'Encountered HTTP 503 from MS',
+        delayInMs: 50,
+        delayType: 'step',
+      }),
+    )
+
+    const flows = await Promise.all(
+      ['Alice', 'Bob'].map((rowValue) => buildCreateRowFlow({ rowValue })),
+    )
+    for (const f of flows) {
+      await enqueueCreateRowJob({ ...f, attempts: 2 })
+    }
+
+    batchWorker.resume()
+
+    // The access check is re-run because the batch is retried (attempts: 2). No
+    // POST ever happens (access never passes), and the jobs are NOT isolated as
+    // permanent failures on the first transient error.
+    await waitFor(
+      async () => mocks.validateCanAccessFile.mock.calls.length >= 2,
+      { timeout: 25000 },
+    )
+    await sleep(200)
+
+    expect(
+      mocks.validateCanAccessFile.mock.calls.length,
+    ).toBeGreaterThanOrEqual(2)
+    expect(postConfigs()).toHaveLength(0)
+    expect((await createTableRowSteps('success')).length).toBe(0)
+    expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+  }, 30000)
+
   describe('for-each of createTableRow as the last step', () => {
     const ITERATIONS = 3
 
@@ -661,6 +733,53 @@ describe('m365-excel batch worker (integration)', () => {
       expect((await createTableRowSteps('failure')).length).toBe(ITERATIONS)
       expect((await createTableRowSteps('success')).length).toBe(0)
       expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+    }, 30000)
+
+    it('fails every iteration and writes nothing when the shared file-access check is denied', async () => {
+      mockGraphSuccess(0)
+      // File access is authorized ONCE for the whole batch (every iteration
+      // shares the pipe owner + connection + file), so a denial fails EVERY
+      // iteration rather than isolating one. The denial is permanent, so the
+      // iterations ride the resolve path (setAsFailed, no retry), NOT the
+      // all-or-none throw - and runBatch returns before any POST.
+      mocks.validateCanAccessFile.mockRejectedValue(
+        new Error('You need write access to use this file.'),
+      )
+
+      const flow = await buildCreateRowFlow({
+        rowValue: 'iter',
+        withForEach: true,
+      })
+      await seedForEachStep(flow.execution, flow.forEachStep)
+      await enqueueIterations(flow)
+
+      batchWorker.resume()
+
+      // The execution resolves to failure - it must not hang at null.
+      await waitFor(async () => {
+        const execution = await Execution.query().findById(flow.execution.id)
+        return execution.status === 'failure'
+      })
+      await sleep(200)
+
+      // No POST: runBatch returns before acquiring the session when the shared
+      // access check is denied.
+      expect(postConfigs()).toHaveLength(0)
+
+      // Every iteration recorded a failure step and had its slot patched to
+      // 'failure' (no slot left null, so the for-each does not hang); no
+      // successes, no next steps.
+      expect((await createTableRowSteps('failure')).length).toBe(ITERATIONS)
+      expect((await createTableRowSteps('success')).length).toBe(0)
+      const iterationStatus = await getForEachIterationStatus(flow.execution.id)
+      expect(Object.values(iterationStatus)).toEqual(
+        Array(ITERATIONS).fill('failure'),
+      )
+      expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+
+      // Resolve-path isolation: each iteration is setAsFailed (UnrecoverableError
+      // -> no retry), so all land on the batch queue's failed set.
+      expect(await batchQueue.getFailed()).toHaveLength(ITERATIONS)
     }, 30000)
   })
 
@@ -806,6 +925,141 @@ describe('m365-excel batch worker (integration)', () => {
         async () => (await createTableRowSteps('success')).length === 2,
       )
       expect((await createTableRowSteps('failure')).length).toBe(0)
+    }, 30000)
+  })
+
+  describe('partial-batch failure isolation', () => {
+    it('isolates a bad-params job and still commits the healthy jobs in one POST', async () => {
+      mockGraphSuccess(0)
+
+      // Two healthy jobs + one whose params fail validation. All share the same
+      // file+table group, so they coalesce into one batch.
+      const good = await Promise.all(
+        ['Alice', 'Bob'].map((rowValue) =>
+          buildCreateRowFlow({ rowValue, withNextStep: true }),
+        ),
+      )
+      const bad = await buildCreateRowFlow({ rowValue: 'bad', badParams: true })
+
+      for (const f of [...good, bad]) {
+        await enqueueCreateRowJob(f)
+      }
+
+      batchWorker.resume()
+
+      // The healthy jobs commit (success) and the bad one fails - exactly one
+      // POST carrying only the healthy rows.
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('success')).length === good.length &&
+          (await createTableRowSteps('failure')).length === 1,
+      )
+      await sleep(200)
+
+      const posts = postConfigs()
+      expect(posts).toHaveLength(1)
+      expect(posts[0].data.values).toHaveLength(good.length)
+      expect(posts[0].data.values).toEqual(
+        expect.arrayContaining([['Alice'], ['Bob']]),
+      )
+
+      // Each healthy job recorded success + enqueued its next step; the bad job
+      // recorded a single failure step and enqueued nothing.
+      expect((await createTableRowSteps('success')).length).toBe(good.length)
+      expect((await createTableRowSteps('failure')).length).toBe(1)
+      expect(await mainActionQueue.getWaiting()).toHaveLength(good.length)
+
+      expect(mocks.addSpanTags).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'batch.outcome': 'partial',
+          'batch.succeeded_count': good.length,
+          'batch.failed_count': 1,
+        }),
+      )
+
+      // The isolated job is a NORMAL failed job (setAsFailed with
+      // UnrecoverableError -> no retry), so it lands on the batch queue's failed
+      // set and is bulk-retriable via the existing failed-job retry surface.
+      expect(await batchQueue.getFailed()).toHaveLength(1)
+    }, 30000)
+
+    it('fails every job and writes nothing when the shared file-access check is denied', async () => {
+      mockGraphSuccess(0)
+      // File access is authorized ONCE for the whole batch (every job shares the
+      // pipe owner + connection + file), so a denial fails EVERY job and writes
+      // nothing - it is NOT isolated to one job. The denial is permanent, so the
+      // jobs are setAsFailed (no retry), not thrown for an all-or-none retry.
+      mocks.validateCanAccessFile.mockRejectedValue(
+        new Error('You need write access to use this file.'),
+      )
+
+      const flows = await Promise.all(
+        ['Alice', 'Bob', 'Carol'].map((rowValue) =>
+          buildCreateRowFlow({ rowValue, withNextStep: true }),
+        ),
+      )
+      for (const f of flows) {
+        await enqueueCreateRowJob(f)
+      }
+
+      batchWorker.resume()
+
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('failure')).length === flows.length,
+      )
+      await sleep(200)
+
+      // No POST at all: runBatch returns before the session acquire when the
+      // shared access check is denied.
+      expect(postConfigs()).toHaveLength(0)
+      expect((await createTableRowSteps('success')).length).toBe(0)
+      expect((await createTableRowSteps('failure')).length).toBe(flows.length)
+      expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+      // Every job isolated-failed (no retry), so all show on the failed set.
+      expect(await batchQueue.getFailed()).toHaveLength(flows.length)
+      expect(mocks.addSpanTags).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'batch.outcome': 'failed',
+          'batch.succeeded_count': 0,
+          'batch.failed_count': flows.length,
+        }),
+      )
+    }, 30000)
+
+    it('writes nothing and fails every job when the whole batch is bad', async () => {
+      mockGraphSuccess(0)
+
+      const flows = await Promise.all(
+        ['a', 'b'].map((rowValue) =>
+          buildCreateRowFlow({ rowValue, badParams: true }),
+        ),
+      )
+      for (const f of flows) {
+        await enqueueCreateRowJob(f)
+      }
+
+      batchWorker.resume()
+
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('failure')).length === flows.length,
+      )
+      await sleep(200)
+
+      // No Graph POST at all (no healthy jobs to write).
+      expect(postConfigs()).toHaveLength(0)
+      expect((await createTableRowSteps('success')).length).toBe(0)
+      expect(await mainActionQueue.getWaiting()).toHaveLength(0)
+      // Every job isolated-failed (no retry), so all show on the failed set.
+      expect(await batchQueue.getFailed()).toHaveLength(flows.length)
+      expect(mocks.addSpanTags).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'batch.outcome': 'failed',
+          'batch.succeeded_count': 0,
+          'batch.failed_count': flows.length,
+        }),
+      )
     }, 30000)
   })
 })
