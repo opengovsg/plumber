@@ -4,6 +4,7 @@ import verifyCredentials from './verify-credentials'
 
 const auth: IUserAddedConnectionAuth = {
   connectionType: 'user-added' as const,
+  supportsConnectionEdit: true,
 
   fields: [
     {
