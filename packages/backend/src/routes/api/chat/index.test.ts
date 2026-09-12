@@ -54,6 +54,22 @@ vi.mock('@/models/connection', () => ({
   default: { query: vi.fn() },
 }))
 
+// Avoid loading apps → Redis via list-connections (ioredis connect-on-construct
+// can kill the vitest worker when Redis is unavailable in unit CI).
+vi.mock('@/services/mcp/list-connections', () => ({
+  connectionLabel: vi.fn(
+    (connection: {
+      formattedData?: { screenName?: string }
+      description?: string
+      key: string
+    }) =>
+      connection.formattedData?.screenName ??
+      connection.description ??
+      connection.key,
+  ),
+  listConnectionsService: vi.fn(),
+}))
+
 vi.mock('@/helpers/ai/get-prompt', () => ({
   getPrompt: vi.fn().mockResolvedValue({
     prompt: 'You are a helpful assistant. Support: {{SUPPORT_FORM_URL}}',
