@@ -118,6 +118,7 @@ export function createMcpBridgeTools(
             name,
             columns,
             pipeId: pipe_id,
+            traceId,
           })
         } catch (error) {
           return mcpToolError(error, 'Unable to create tile')
@@ -147,6 +148,7 @@ export function createMcpBridgeTools(
             user,
             tableId: table_id,
             columns,
+            traceId,
           })
         } catch (error) {
           return mcpToolError(error, 'Unable to add tile columns')

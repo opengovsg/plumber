@@ -1,3 +1,4 @@
+import { type PartialModelObject, raw } from 'objection'
 import pLimit from 'p-limit'
 import { z } from 'zod'
 
@@ -94,11 +95,18 @@ const updateTable: MutationResolvers['updateTable'] = async (
       // we're setting a concurrency limit of 5.
       await Promise.all(
         modifiedColumns.map(async (column) => {
-          const { id, ...rest } = column
+          const { id, config, ...rest } = column
+          const patch: PartialModelObject<TableColumnMetadata> = rest
+          if (config?.width !== undefined) {
+            patch.config = raw(
+              `jsonb_set(config, '{width}', to_jsonb(?::integer), true)`,
+              [config.width],
+            )
+          }
           return limit(() =>
             table
               .$relatedQuery('columns', trx)
-              .patchAndFetchById(id, rest)
+              .patchAndFetchById(id, patch)
               .throwIfNotFound(),
           )
         }),

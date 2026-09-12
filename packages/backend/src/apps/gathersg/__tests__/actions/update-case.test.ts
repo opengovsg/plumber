@@ -216,7 +216,7 @@ describe('update case', () => {
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrowError(
-      'Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: age, score',
+      'Check these fields in your step: age, score. Make sure each has a value. If any is a Dropdown, Checkbox, or Radio Button, use a value that exactly matches an option in Ownself Gather.',
     )
   })
 
@@ -338,6 +338,88 @@ describe('update case', () => {
           caseUuid: MOCK_CASE_UUID,
         },
       },
+    )
+  })
+
+  it('builds the payload correctly with a checkbox field from a FormSG checkbox array', async () => {
+    $.step.parameters.caseFields = [
+      {
+        field: 'categories',
+        fieldType: 'checkbox',
+        value: ['Housing', 'Finance'],
+      },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          categories: ['Housing', 'Finance'],
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('wraps a FormSG dropdown string into a dropdown array', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'priority', fieldType: 'dropdown', value: 'High' },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          priority: ['High'],
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('posts a radio field as a plain string', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'severity', fieldType: 'radio', value: 'High' },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          severity: 'High',
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('should throw step error for an empty checkbox field', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'categories', fieldType: 'checkbox', value: [] },
+    ]
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'List value empty for field: categories',
     )
   })
 })

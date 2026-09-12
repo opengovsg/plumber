@@ -36,7 +36,7 @@ import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
-import { model, MODEL_TYPE } from '@/helpers/pair'
+import { chatModel, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
@@ -233,7 +233,7 @@ const handleChatStream = observe(
           )
 
           const result = streamText({
-            model,
+            model: chatModel,
             messages: allMessages,
             tools: { ...gitbookTools, ...mcpTools },
             stopWhen: stepCountIs(10),

@@ -65,6 +65,7 @@ vi.mock('@/helpers/logger', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
+  chatModel: {},
   model: {},
   MODEL_TYPE: 'test-model',
   engineProvider: {
