@@ -68,8 +68,8 @@ type AppConfig = {
   }
   sso: {
     clientId: string
-    clientSecret: string
-    discoveryUrl: string
+    privateKeyPem: string
+    issuer: string
   }
   gathersg: {
     publicKey: string
@@ -179,8 +179,9 @@ const appConfig: AppConfig = {
   },
   sso: {
     clientId: process.env.SSO_CLIENT_ID,
-    clientSecret: process.env.SSO_CLIENT_SECRET,
-    discoveryUrl: process.env.SSO_DISCOVERY_URL,
+    // Secret managers often store the PEM single-line with literal "\n".
+    privateKeyPem: process.env.SSO_PRIVATE_KEY_PEM?.replace(/\\n/g, '\n'),
+    issuer: process.env.SSO_ISSUER?.replace(/\/$/, ''),
   },
   gathersg: {
     publicKey: process.env.GATHERSG_PUBLIC_KEY,
@@ -256,8 +257,8 @@ if (
 
 if (
   !appConfig.sso.clientId ||
-  !appConfig.sso.clientSecret ||
-  !appConfig.sso.discoveryUrl
+  !appConfig.sso.privateKeyPem ||
+  !appConfig.sso.issuer
 ) {
   throw new Error('SSO environment variables need to be set!')
 }

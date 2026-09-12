@@ -1,7 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { createRoutesFromElements, Route } from 'react-router-dom'
 
-import ErrorPage from '@/components/ErrorPage'
+import ErrorPage, {
+  Error403PageContent,
+  Error404PageContent,
+  ErrorUnexpectedPageContent,
+} from '@/components/ErrorPage'
 import Layout from '@/components/Layout'
 import PublicLayout from '@/components/PublicLayout'
 import * as URLS from '@/config/urls'
@@ -15,6 +19,7 @@ import Flows from '@/pages/Flows'
 import Login from '@/pages/Login'
 import SgidCallback from '@/pages/SgidCallback'
 import SsoCallback from '@/pages/SsoCallback'
+import SsoInitiate from '@/pages/SsoInitiate'
 import Templates from '@/pages/Templates'
 import TileLayout from '@/pages/Tile/layouts/TileLayout'
 import Tiles from '@/pages/Tiles'
@@ -28,7 +33,14 @@ const Landing = lazy(() => import('@/pages/Landing'))
 const Tile = lazy(() => import('@/pages/Tile'))
 
 export default createRoutesFromElements(
-  <Route path="/" errorElement={<ErrorPage />}>
+  <Route
+    path="/"
+    errorElement={
+      <ErrorPage>
+        <ErrorUnexpectedPageContent />
+      </ErrorPage>
+    }
+  >
     <Route
       path={URLS.LOGIN_SGID_REDIRECT}
       element={
@@ -42,6 +54,14 @@ export default createRoutesFromElements(
       element={
         <PublicLayout>
           <SsoCallback />
+        </PublicLayout>
+      }
+    />
+    <Route
+      path={URLS.LOGIN_SSO}
+      element={
+        <PublicLayout>
+          <SsoInitiate />
         </PublicLayout>
       }
     />
@@ -159,6 +179,14 @@ export default createRoutesFromElements(
     />
 
     <Route
+      path={URLS.LOGIN_UNAUTHORIZED}
+      element={
+        <ErrorPage>
+          <Error403PageContent />
+        </ErrorPage>
+      }
+    />
+    <Route
       path={URLS.LOGIN}
       element={
         <PublicLayout>
@@ -178,7 +206,14 @@ export default createRoutesFromElements(
       }
     />
 
-    <Route path="*" element={<ErrorPage is404 />} />
+    <Route
+      path="*"
+      element={
+        <ErrorPage>
+          <Error404PageContent />
+        </ErrorPage>
+      }
+    />
 
     <Route path={`${URLS.USE_CASES}/*`} element={<UseCasesRoutes />} />
   </Route>,

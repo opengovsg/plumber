@@ -1,52 +1,34 @@
-import { useCallback, useState } from 'react'
-import { Flex, Link, Text } from '@chakra-ui/react'
-import { Button, Infobox } from '@opengovsg/design-system-react'
+import { useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Flex, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 
-import { SUPPORT_FORM_LINK } from '@/config/urls'
-import { generateSsoAuthUrl } from '@/helpers/oidc'
+import * as URLS from '@/config/urls'
+import { isSafeInternalPath } from '@/helpers/post-login-redirect'
 
 export default function SsoLoginSection(): JSX.Element {
-  const [isRedirecting, setIsRedirecting] = useState(false)
-  const [hasError, setHasError] = useState(false)
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
 
-  const handleSsoLogin = useCallback(
-    async () => {
-      setIsRedirecting(true)
-      try {
-        const { url, verifier, nonce } = await generateSsoAuthUrl()
-        sessionStorage.setItem('sso-verifier', verifier)
-        sessionStorage.setItem('sso-nonce', nonce)
-        location.assign(url)
-      } catch {
-        setHasError(true)
-      }
-    },
-    // Empty dep list as this is expected to be one-shot.
-    [],
-  )
+  const handleSsoLogin = useCallback(() => {
+    const redirect = searchParams.get('redirect')
+    const params = new URLSearchParams()
+    if (isSafeInternalPath(redirect)) {
+      params.set('redirect', redirect)
+    }
+    const query = params.toString()
+    navigate({
+      pathname: URLS.LOGIN_SSO,
+      search: query ? `?${query}` : '',
+    })
+  }, [navigate, searchParams])
 
   return (
     <Flex flexDir="column" alignItems="center">
-      <Button
-        // isFullWidth a bit ugly
-        width="full"
-        variant="outline"
-        mb={2}
-        onClick={handleSsoLogin}
-        isLoading={isRedirecting}
-      >
-        Log in with OGP SSO
+      <Button width="full" variant="outline" mb={2} onClick={handleSsoLogin}>
+        Log in with one.gov.sg
       </Button>
-      {hasError && (
-        <Infobox variant="error" mb={2}>
-          There was a problem generating encryption parameters; please visit our{' '}
-          <Link href={SUPPORT_FORM_LINK} isExternal>
-            support form
-          </Link>{' '}
-          for help.
-        </Infobox>
-      )}
-      <Text textStyle="body-2">For OGP officers only</Text>
+      <Text textStyle="body-2">For government officers</Text>
     </Flex>
   )
 }
