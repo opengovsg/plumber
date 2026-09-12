@@ -11,17 +11,21 @@ import {
   FOR_EACH_ITERATION_DELAY,
   FOR_EACH_MAX_ITERATIONS,
 } from '@/apps/toolbox/common/constants'
+import FileLockContentionError from '@/errors/file-lock-contention'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
+import StepError from '@/errors/step'
 import {
   ForEachContext,
   getStepContext,
 } from '@/helpers/compute-for-each-parameters'
 import computeParameters from '@/helpers/compute-parameters'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
+import { withLock } from '@/helpers/distributed-lock'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
+import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -411,48 +415,89 @@ export async function resolveNextStep({
   return nextStep
 }
 
+/**
+ * Resolve the per-resource distributed-lock key for an action run, or null when
+ * the app's queue declares no `getLockKey` hook (lock skipped). Shared by the
+ * single-job (`processAction`) and batch (`make-action-batch-worker`) paths.
+ */
+export const resolveLockKey = async (
+  $: IGlobalVariable,
+): Promise<string | null> =>
+  $.app.queue?.getLockKey ? $.app.queue.getLockKey($) : null
+
 export const processAction = async (options: ProcessActionOptions) => {
   const { flowId, stepId, executionId, jobId } = options
 
   const prepared = await prepareActionExecution(options)
   const { $, actionCommand, testRun, metadata, computedParameters } = prepared
 
-  let runResult: IActionRunResult = {}
-  let executionError: unknown = null
-  try {
-    // Cannot assign directly to runResult due to void return type.
-    const result =
-      testRun && actionCommand.testRun
-        ? await actionCommand.testRun($, metadata)
-        : await actionCommand.run($, metadata)
-    if (result) {
-      runResult = result
+  // Acquire the per-resource lock (if the app's queue declares one via
+  // getLockKey) AFTER prepare — so we have the computed params / fileId — but
+  // BEFORE any execution step is recorded. Contention short-circuits via
+  // `onContention` without writing a spurious failure step: the worker
+  // translates FileLockContentionError into a no-attempt group re-queue, and
+  // test runs surface a user-facing StepError. The lock is released once run +
+  // record + resolve are done (inside withLock's `finally`). A null key means
+  // the app declares no lock, so the action runs directly.
+  const lockKey = await resolveLockKey($)
+  const span = tracer.scope().active()
+
+  const runAction = async () => {
+    let runResult: IActionRunResult = {}
+    let executionError: unknown = null
+    try {
+      // Cannot assign directly to runResult due to void return type.
+      const result =
+        testRun && actionCommand.testRun
+          ? await actionCommand.testRun($, metadata)
+          : await actionCommand.run($, metadata)
+      if (result) {
+        runResult = result
+      }
+    } catch (error) {
+      executionError = error
+      setActionOutputError($, error)
     }
-  } catch (error) {
-    executionError = error
-    setActionOutputError($, error)
+
+    const executionStep = await recordExecutionStep({
+      prepared,
+      runResult,
+      executionError,
+      jobId,
+    })
+
+    const nextStep = await resolveNextStep({ prepared, runResult })
+
+    return {
+      flowId,
+      stepId,
+      executionId,
+      executionStep,
+      computedParameters,
+      nextStep,
+      nextStepMetadata: {
+        ...runResult.nextStepMetadata,
+        ...metadata,
+      },
+      executionError,
+    }
   }
 
-  const executionStep = await recordExecutionStep({
-    prepared,
-    runResult,
-    executionError,
-    jobId,
-  })
+  if (!lockKey) {
+    return runAction()
+  }
 
-  const nextStep = await resolveNextStep({ prepared, runResult })
-
-  return {
-    flowId,
-    stepId,
-    executionId,
-    executionStep,
-    computedParameters,
-    nextStep,
-    nextStepMetadata: {
-      ...runResult.nextStepMetadata,
-      ...metadata,
+  return withLock(lockKey, runAction, {
+    span,
+    onContention: (key) => {
+      if (testRun) {
+        throw new StepError(
+          'This file is busy right now.',
+          'Please try again in a moment.',
+        )
+      }
+      span?.addTags({ 'lock.requeued': true })
+      throw new FileLockContentionError(key)
     },
-    executionError,
-  }
+  })
 }
