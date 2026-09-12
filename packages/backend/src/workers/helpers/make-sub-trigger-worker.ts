@@ -173,6 +173,7 @@ export function makeSubTriggerWorker(
           }
           await enqueueActionJob({
             appKey: nextStep.appKey,
+            actionKey: nextStep.key,
             jobName,
             jobData: jobPayload,
             jobOptions: DEFAULT_JOB_OPTIONS,

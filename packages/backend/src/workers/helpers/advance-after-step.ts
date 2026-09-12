@@ -130,6 +130,7 @@ export async function advanceAfterStep({
   try {
     await enqueueActionJob({
       appKey: nextStep.appKey,
+      actionKey: nextStep.key,
       jobName,
       jobData: jobPayload,
       jobOptions,
