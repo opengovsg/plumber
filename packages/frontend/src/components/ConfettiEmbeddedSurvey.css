@@ -22,3 +22,12 @@
 .confetti-embedded-survey .cf-rating-display-star {
   justify-content: start;
 }
+
+/* Confetti hides the per-question error slot, which leaves nothing to tell the
+   user which required question is holding up their exit. */
+.confetti-embedded-survey .confetti .cf-question .cf-error {
+  display: block;
+  color: #c03434;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
