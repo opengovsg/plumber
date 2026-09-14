@@ -1,6 +1,5 @@
-import type { AddressInfo } from 'node:net'
-
 import express from 'express'
+import type { AddressInfo } from 'node:net'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import appAssetsHandler from './app-assets-handler'
