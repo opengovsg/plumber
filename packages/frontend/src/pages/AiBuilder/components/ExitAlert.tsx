@@ -52,8 +52,14 @@ export default function ExitAlert({
   const userEmail = currentUser?.email ?? 'unknown-user'
 
   const handleExit = () => {
+    // Confetti's `required` setting decides whether the user may leave. Default
+    // to allowing the exit when the survey isn't mounted, so a survey outage
+    // can't strand the user in the builder.
+    const hasSubmitted = confettiRef.current?.submitIfComplete() ?? true
+    if (!hasSubmitted) {
+      return
+    }
     // Fire-and-forget: exiting must never block on the survey network call.
-    confettiRef.current?.submit()
     onExit?.()
     onClose()
   }
