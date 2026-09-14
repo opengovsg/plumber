@@ -1,4 +1,5 @@
 import { IGlobalVariable, TBeforeRequest } from '@plumber/types'
+
 import { InternalAxiosRequestConfig } from 'axios'
 
 /**
@@ -18,7 +19,9 @@ function isConfiguredOrigin(
   }
 
   try {
-    return new URL(configuredUrl).origin === new URL(requestConfig.baseURL).origin
+    return (
+      new URL(configuredUrl).origin === new URL(requestConfig.baseURL).origin
+    )
   } catch {
     return false
   }
