@@ -9,7 +9,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Flex, Text, Tooltip } from '@chakra-ui/react'
+import { BiSolidCheckCircle } from 'react-icons/bi'
+import { Flex, Icon, Text, Tooltip } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
@@ -22,6 +23,11 @@ import {
 } from '../Content/IfThen/styles'
 import { buildConditionSentence } from '../helpers/buildConditionSentence'
 import type { ConditionPreviewPart } from '../helpers/getConditionBlockPreview'
+
+const COMPLETED_BADGE_SIZE_PX = 16
+
+/** How far the badge sits outside the label's top trailing corner. */
+const COMPLETED_BADGE_OVERHANG_PX = COMPLETED_BADGE_SIZE_PX / 2
 
 interface BlockHeaderProps {
   badgeLabel: string
@@ -159,9 +165,16 @@ export default function BlockHeader({
               base: actions ? `${BLOCK_ACTIONS_OVERLAY_WIDTH_PX}px` : 0,
               lg: 0,
             }}
+            // Room for the completion badge, which `noOfLines`' own
+            // `overflow: hidden` would otherwise cut.
+            // IMPORTANT: the negative margin cancels it, so the sentence stays
+            // centred and the header keeps its height.
+            pt={`${COMPLETED_BADGE_OVERHANG_PX}px`}
+            mt={`-${COMPLETED_BADGE_OVERHANG_PX}px`}
           >
             <Text
               as="span"
+              position="relative"
               display="inline-flex"
               alignItems="center"
               verticalAlign="text-bottom"
@@ -174,6 +187,24 @@ export default function BlockHeader({
               textStyle="caption-3"
             >
               {badgeLabel}
+              {step.status === 'completed' && (
+                <Flex
+                  as="span"
+                  position="absolute"
+                  top={0}
+                  insetEnd={0}
+                  boxSize={`${COMPLETED_BADGE_SIZE_PX}px`}
+                  transform={`translate(${COMPLETED_BADGE_OVERHANG_PX}px, -${COMPLETED_BADGE_OVERHANG_PX}px)`}
+                  borderRadius="full"
+                  bg="white"
+                >
+                  <Icon
+                    boxSize="full"
+                    color="interaction.success.default"
+                    as={BiSolidCheckCircle}
+                  />
+                </Flex>
+              )}
             </Text>
             {customStepName ??
               conditionSentence?.parts.map((part, index) => {
