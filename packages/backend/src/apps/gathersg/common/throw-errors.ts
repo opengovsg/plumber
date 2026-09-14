@@ -24,7 +24,7 @@ export default function throwGatherSGStepError(error: HttpError) {
         : 'unknown fields'
     throw new StepError(
       `Invalid or missing values for: ${fieldList}`,
-      `Check these fields in your step: ${fieldList}. Make sure each has a value. If any is a Dropdown, Checkbox, or Radio Button, use a value that exactly matches an option in Ownself Gather.`,
+      `Check these fields in your step: ${fieldList}. Make sure each has a value. If any is a Dropdown, Checkbox, or Radio Button, use a value that exactly matches an option in Ownself Gather. If any is an attachment field, keep the total files at or below the maximum configured in Ownself Gather.`,
       error,
     )
   }
