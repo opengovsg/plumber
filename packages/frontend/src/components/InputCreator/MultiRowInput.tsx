@@ -76,11 +76,13 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
   // react-hook-form keeps a field's value registered after it unmounts, so
   // hiding the block alone would leave stale rows (e.g. attachments picked
   // for a previously-selected case) in the submitted payload.
+  // Wait until loading finishes. isHidden is also true while the source
+  // query is in flight, and clearing then would wipe saved rows on reopen.
   useEffect(() => {
-    if (isHidden) {
+    if (isHidden && !loading) {
       setValue(computedName, [])
     }
-  }, [isHidden, computedName, setValue])
+  }, [isHidden, loading, computedName, setValue])
 
   if (isHidden) {
     return <></>
