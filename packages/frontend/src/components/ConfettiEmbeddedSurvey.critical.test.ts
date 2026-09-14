@@ -61,9 +61,9 @@ describe('isReadyToSubmit', () => {
   })
 
   it('enables the button after the survey load timeout', () => {
-    expect(
-      isReadyToSubmit({ completeness: null, hasLoadTimedOut: true }),
-    ).toBe(true)
+    expect(isReadyToSubmit({ completeness: null, hasLoadTimedOut: true })).toBe(
+      true,
+    )
   })
 })
 
