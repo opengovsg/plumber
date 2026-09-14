@@ -18,6 +18,7 @@ import {
   isSilentStreamPhase,
   transformMessages,
 } from '@/pages/AiBuilder/helpers'
+import { getChatToastMessage } from '@/pages/AiBuilder/helpers/getChatToastMessage'
 
 export type DynamicPickerData =
   | { question: string; stepId: string; key: string }
@@ -298,12 +299,15 @@ export function useChatStream(options: UseChatStreamOptions) {
       if (error.message === NOT_AUTHORISED) {
         return
       }
-      // Backend returns '' for AbortError (user clicked stop). Skip the toast.
-      if (!error.message.trim()) {
+      // '' for AbortError (user clicked stop) or an empty transport message.
+      // Also unwraps JSON HTTP bodies so pre-stream 400/403/500s do not toast
+      // as raw `{"error":...}` strings from DefaultChatTransport.
+      const title = getChatToastMessage(error)
+      if (!title) {
         return
       }
       toast({
-        title: error.message,
+        title,
         status: 'error',
         duration: 5000,
         isClosable: true,
