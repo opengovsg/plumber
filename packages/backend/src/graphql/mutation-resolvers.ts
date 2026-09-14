@@ -32,6 +32,7 @@ import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
 import retryPartialStep from './mutations/retry-partial-step'
+import startSsoLogin from './mutations/start-sso-login'
 import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
@@ -93,6 +94,7 @@ export default {
   logout,
   loginWithSgid,
   loginWithSelectedSgid,
+  startSsoLogin,
   loginWithSso,
   createFlowTransfer,
   updateFlowTransferStatus,

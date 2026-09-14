@@ -56,10 +56,11 @@ export const LoginForm = (): JSX.Element => {
   }
 
   const shouldShowSgidLogin = getFlagValue(SGID_FEATURE_FLAG, false)
-  // show sso login if request is from OGP office wifi or in dev
+  // In prod, restrict sso login to OGP office wifi. Elsewhere, the feature
+  // flag alone gates it.
   const shouldShowSsoLogin =
-    (headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true' ||
-      appConfig.isDev) &&
+    (appConfig.env !== 'prod' ||
+      headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true') &&
     getFlagValue(SSO_FEATURE_FLAG, false)
 
   return (

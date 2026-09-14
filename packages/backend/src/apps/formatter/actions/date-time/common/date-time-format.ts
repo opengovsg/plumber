@@ -115,7 +115,7 @@ const formatConverters = Object.assign({
       }
 
       // en-US parsing failed, fall back to en-SG.
-      return DateTime.fromFormat(input, 'd MMM yyyy')
+      return DateTime.fromFormat(input, 'd MMM yyyy', { locale: 'en-SG' })
     },
     stringify: (dateTime: DateTime): string =>
       dateTime.toPlumberFormat('dd MMM yyyy'),
