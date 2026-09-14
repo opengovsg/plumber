@@ -9,10 +9,7 @@ import * as URLS from '@/config/urls'
 import { LOGIN_WITH_SSO } from '@/graphql/mutations/login-with-sso'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
-import {
-  consumePostLoginRedirect,
-  storePostLoginRedirect,
-} from '@/helpers/post-login-redirect'
+import { clearPostLoginRedirect } from '@/helpers/post-login-redirect'
 
 function safeIdpErrorDescription(description: string | null): string | null {
   if (!description) {
@@ -51,9 +48,6 @@ export default function SsoCallback(): JSX.Element {
     }
 
     alreadyProcessed.current = true
-    // Clear unconditionally on mount so a failed SSO cannot poison a later OTP
-    // login. Restore only after a successful token exchange for PublicLayout.
-    const pendingRedirect = consumePostLoginRedirect()
 
     const idpError = searchParams.get('error')
     const idpErrorDescription = searchParams.get('error_description')
@@ -84,7 +78,7 @@ export default function SsoCallback(): JSX.Element {
     }
 
     const callMutation = async () => {
-      const result = await loginWithSso({
+      await loginWithSso({
         variables: {
           input: {
             authCode,
@@ -100,10 +94,6 @@ export default function SsoCallback(): JSX.Element {
           setFailed(true)
         },
       })
-
-      if (result.data?.loginWithSso) {
-        storePostLoginRedirect(pendingRedirect)
-      }
     }
 
     callMutation()
@@ -111,10 +101,13 @@ export default function SsoCallback(): JSX.Element {
   }, [])
 
   if (isForbidden) {
+    // Otherwise a later OTP/SGID login inherits this abandoned target.
+    clearPostLoginRedirect()
     return <Navigate to={URLS.LOGIN_UNAUTHORIZED} replace />
   }
 
   if (hasFailed) {
+    clearPostLoginRedirect()
     toast({
       title:
         failureMessage ??
