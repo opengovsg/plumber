@@ -10,6 +10,7 @@ export const REDIS_DB_INDEX = {
   RATE_LIMIT: 1,
   PIPE_ERRORS: 2,
   APP_DATA: 3,
+  AUTH_TOKEN_DENYLIST: 4,
 }
 
 function reconnectOnError(err: Error) {
