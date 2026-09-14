@@ -1,9 +1,11 @@
 import axios from 'axios'
+import { createHash } from 'crypto'
 import { Request, Response } from 'express'
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'
 import { BLOCK_NEW_LOGINS_FLAG } from '@/config/flags'
+import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import BaseError from '@/errors/base'
 import User from '@/models/user'
 
@@ -14,6 +16,19 @@ const AUTH_COOKIE_NAME = 'plumber.sid'
 // 3 days expiry
 const TOKEN_EXPIRES_IN_SEC = 3 * 24 * 60 * 60
 const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-03-10')
+
+// The auth cookie is a self-contained JWT, not a server-side session, so
+// logout can't destroy anything server-side by default. This denylist lets
+// us reject a specific token before its natural expiry; entries are keyed by
+// hash (never the raw token) and TTLed to the token's remaining lifetime so
+// they clean themselves up.
+const authTokenDenylistClient = createRedisClient(
+  REDIS_DB_INDEX.AUTH_TOKEN_DENYLIST,
+)
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
+}
 
 interface AuthCookiePayload {
   userId: string
@@ -60,14 +75,67 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
     const { userId } = jwt.verify(token, appConfig.sessionSecretKey) as {
       userId: string
     }
+    if (await isAuthCookieRevoked(token)) {
+      return null
+    }
     return User.query().findById(userId)
   } catch {
     return null
   }
 }
 
+async function isAuthCookieRevoked(token: string): Promise<boolean> {
+  try {
+    const denylisted = await authTokenDenylistClient.exists(hashToken(token))
+    return denylisted === 1
+  } catch (error) {
+    // Redis is already load-bearing for queues; treat a lookup failure the
+    // same way the rate limiter does, logging it and letting the request
+    // through rather than locking every user out.
+    logger.error('Failed to check auth token denylist', {
+      event: 'auth-token-denylist-check-error',
+      error: error.message,
+    })
+    return false
+  }
+}
+
 export function deleteAuthCookie(res: Response) {
   res.clearCookie(AUTH_COOKIE_NAME)
+}
+
+/**
+ * Revokes the current request's auth token server-side, on top of clearing
+ * the cookie client-side, so a captured pre-logout token stops working
+ * immediately instead of staying valid until it naturally expires.
+ */
+export async function invalidateAuthCookie(req: Request): Promise<void> {
+  const token = getAuthCookie(req)
+  if (!token) {
+    return
+  }
+
+  const decoded = jwt.decode(token) as { exp?: number } | null
+  const remainingTtlSec = decoded?.exp
+    ? decoded.exp - Math.floor(Date.now() / 1000)
+    : 0
+  if (remainingTtlSec <= 0) {
+    return
+  }
+
+  try {
+    await authTokenDenylistClient.set(
+      hashToken(token),
+      '1',
+      'EX',
+      remainingTtlSec,
+    )
+  } catch (error) {
+    logger.error('Failed to revoke auth token on logout', {
+      event: 'auth-token-revoke-error',
+      error: error.message,
+    })
+  }
 }
 
 /**
