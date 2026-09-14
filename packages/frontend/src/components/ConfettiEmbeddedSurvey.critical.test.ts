@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   decideSubmit,
+  isReadyToSubmit,
   MISSING_ANSWER_ERROR,
   resolveQuestionError,
 } from './ConfettiEmbeddedSurvey.helpers'
@@ -40,6 +41,32 @@ describe('decideSubmit', () => {
   })
 })
 
+describe('isReadyToSubmit', () => {
+  it('disables the button while required questions are incomplete', () => {
+    expect(
+      isReadyToSubmit({ completeness: false, hasLoadTimedOut: false }),
+    ).toBe(false)
+  })
+
+  it('disables the button while the survey is loading', () => {
+    expect(
+      isReadyToSubmit({ completeness: null, hasLoadTimedOut: false }),
+    ).toBe(false)
+  })
+
+  it('enables the button when Confetti reports completion', () => {
+    expect(
+      isReadyToSubmit({ completeness: true, hasLoadTimedOut: false }),
+    ).toBe(true)
+  })
+
+  it('enables the button after the survey load timeout', () => {
+    expect(
+      isReadyToSubmit({ completeness: null, hasLoadTimedOut: true }),
+    ).toBe(true)
+  })
+})
+
 describe('resolveQuestionError', () => {
   it('flags a required question the user left blank', () => {
     expect(
@@ -47,7 +74,7 @@ describe('resolveQuestionError', () => {
         question: { required: true },
         error: 'Invalid input',
         answer: undefined,
-        hasTriedSubmit: true,
+        showRequiredError: true,
       }),
     ).toEqual(MISSING_ANSWER_ERROR)
   })
@@ -58,7 +85,7 @@ describe('resolveQuestionError', () => {
         question: { required: true },
         error: 'This field is required',
         answer: '   ',
-        hasTriedSubmit: true,
+        showRequiredError: true,
       }),
     ).toEqual(MISSING_ANSWER_ERROR)
   })
@@ -69,7 +96,7 @@ describe('resolveQuestionError', () => {
         question: { required: true },
         error: undefined,
         answer: 5,
-        hasTriedSubmit: true,
+        showRequiredError: true,
       }),
     ).toBeUndefined()
   })

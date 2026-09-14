@@ -26,13 +26,13 @@ describe('isAnswered', () => {
 })
 
 describe('resolveQuestionError', () => {
-  it('shows nothing before the user tries to exit', () => {
+  it('shows nothing before Confetti reports the survey as incomplete', () => {
     expect(
       resolveQuestionError({
         question: { required: true },
         error: 'Invalid input',
         answer: undefined,
-        hasTriedSubmit: false,
+        showRequiredError: false,
       }),
     ).toBeUndefined()
   })
@@ -43,7 +43,7 @@ describe('resolveQuestionError', () => {
         question: { required: false },
         error: undefined,
         answer: undefined,
-        hasTriedSubmit: true,
+        showRequiredError: true,
       }),
     ).toBeUndefined()
   })
@@ -54,7 +54,7 @@ describe('resolveQuestionError', () => {
         question: { required: true },
         error: 'Please enter less than 1000 characters',
         answer: 'a long answer',
-        hasTriedSubmit: true,
+        showRequiredError: true,
       }),
     ).toEqual('Please enter less than 1000 characters')
   })

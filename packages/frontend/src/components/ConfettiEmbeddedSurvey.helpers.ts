@@ -31,6 +31,16 @@ export function decideSubmit({
   return 'submit'
 }
 
+export function isReadyToSubmit({
+  completeness,
+  hasLoadTimedOut,
+}: {
+  completeness: SurveyCompleteness
+  hasLoadTimedOut: boolean
+}): boolean {
+  return decideSubmit({ completeness, hasLoadTimedOut }) === 'submit'
+}
+
 export function isAnswered(answer: Answer | undefined): boolean {
   if (answer === undefined || answer === null) {
     return false
@@ -48,16 +58,16 @@ export function resolveQuestionError({
   question,
   error,
   answer,
-  hasTriedSubmit,
+  showRequiredError,
 }: {
   question: Pick<Question, 'required'>
   error: string | undefined
   answer: Answer | undefined
-  hasTriedSubmit: boolean
+  showRequiredError: boolean
 }): string | undefined {
   // Confetti validates each question as it mounts, so an unanswered required
   // question is already errored before the user touches anything.
-  if (!hasTriedSubmit) {
+  if (!showRequiredError) {
     return undefined
   }
   if (question.required && !isAnswered(answer)) {

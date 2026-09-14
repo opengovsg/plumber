@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Box, Skeleton, Text, VStack } from '@chakra-ui/react'
+import { Box, Skeleton, VStack } from '@chakra-ui/react'
 import {
   Answer,
   ConfettiController,
@@ -19,6 +19,7 @@ import {
 
 import {
   decideSubmit,
+  isReadyToSubmit,
   resolveQuestionError,
   SurveyCompleteness,
 } from './ConfettiEmbeddedSurvey.helpers'
@@ -42,6 +43,7 @@ interface ConfettiEmbeddedSurveyProps {
   apiBaseUrl?: string
   respondent?: string
   metadata?: Record<string, string>
+  onReadyToSubmitChange?: (isReady: boolean) => void
 }
 
 // ConfettiController renders nothing until the survey has loaded, so this
@@ -53,97 +55,133 @@ function NotifyLoaded({ onLoaded }: { onLoaded: () => void }) {
   return null
 }
 
+function NotifyReadyToSubmit({
+  isReady,
+  onReadyToSubmitChange,
+}: {
+  isReady: boolean
+  onReadyToSubmitChange?: (isReady: boolean) => void
+}) {
+  useEffect(() => {
+    onReadyToSubmitChange?.(isReady)
+  }, [isReady, onReadyToSubmitChange])
+  return null
+}
+
 const ConfettiEmbeddedSurvey = forwardRef<
   ConfettiEmbeddedSurveyRef,
   ConfettiEmbeddedSurveyProps
->(({ surveyId, publishableKey, apiBaseUrl, respondent, metadata }, ref) => {
-  const submitRef = useRef<() => void>()
-  const completenessRef = useRef<SurveyCompleteness>(null)
-  const answersRef = useRef<Record<Question['id'], Answer>>({})
-  const hasLoadTimedOutRef = useRef(false)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [hasTriedSubmit, setHasTriedSubmit] = useState(false)
-
-  useEffect(() => {
-    if (isLoaded) {
-      return
-    }
-    const timer = window.setTimeout(() => {
-      hasLoadTimedOutRef.current = true
-    }, SURVEY_LOAD_TIMEOUT_MS)
-    return () => window.clearTimeout(timer)
-  }, [isLoaded])
-
-  useImperativeHandle(ref, () => ({
-    submitIfComplete: () => {
-      const decision = decideSubmit({
-        completeness: completenessRef.current,
-        hasLoadTimedOut: hasLoadTimedOutRef.current,
-      })
-      if (decision !== 'submit') {
-        setHasTriedSubmit(true)
-        return false
-      }
-      submitRef.current?.()
-      return true
+>(
+  (
+    {
+      surveyId,
+      publishableKey,
+      apiBaseUrl,
+      respondent,
+      metadata,
+      onReadyToSubmitChange,
     },
-  }))
+    ref,
+  ) => {
+    const submitRef = useRef<() => void>()
+    const completenessRef = useRef<SurveyCompleteness>(null)
+    const answersRef = useRef<Record<Question['id'], Answer>>({})
+    const [isLoaded, setIsLoaded] = useState(false)
+    const [hasLoadTimedOut, setHasLoadTimedOut] = useState(false)
 
-  return (
-    <div className="confetti-embedded-survey">
-      {!isLoaded && (
-        <VStack align="stretch" gap={5}>
-          <Skeleton height="16px" width="60%" borderRadius="base" />
-          <Skeleton height="40px" borderRadius="base" />
-          {hasTriedSubmit && (
-            <Text textStyle="body-2">
-              The survey is still loading. Please try again in a moment.
-            </Text>
-          )}
-        </VStack>
-      )}
-      <Box display={isLoaded ? 'block' : 'none'}>
-        <ConfettiProvider
-          surveyId={surveyId}
-          publishableKey={publishableKey}
-          apiBaseUrl={apiBaseUrl}
-          respondent={respondent}
-          metadata={metadata}
-        >
-          <ConfettiController>
-            {({ questions, update, errors, submit, isCompleted }) => {
-              submitRef.current = submit
-              completenessRef.current = isCompleted
-              return (
-                <>
-                  <NotifyLoaded onLoaded={() => setIsLoaded(true)} />
-                  {questions
-                    .filter((question) => question.visible)
-                    .map((question) => (
-                      <SurveyQuestionFactory
-                        key={question.id}
-                        question={question}
-                        error={resolveQuestionError({
-                          question,
-                          error: errors[question.id],
-                          answer: answersRef.current[question.id],
-                          hasTriedSubmit,
-                        })}
-                        onChange={(answer: Answer) => {
-                          answersRef.current[question.id] = answer
-                          update({ question: question.position, answer })
-                        }}
-                      />
-                    ))}
-                </>
-              )
-            }}
-          </ConfettiController>
-        </ConfettiProvider>
-      </Box>
-    </div>
-  )
-})
+    useEffect(() => {
+      if (isLoaded) {
+        return
+      }
+      const timer = window.setTimeout(() => {
+        setHasLoadTimedOut(true)
+      }, SURVEY_LOAD_TIMEOUT_MS)
+      return () => window.clearTimeout(timer)
+    }, [isLoaded])
+
+    useEffect(() => {
+      if (hasLoadTimedOut && !isLoaded) {
+        onReadyToSubmitChange?.(
+          isReadyToSubmit({
+            completeness: completenessRef.current,
+            hasLoadTimedOut,
+          }),
+        )
+      }
+    }, [hasLoadTimedOut, isLoaded, onReadyToSubmitChange])
+
+    useImperativeHandle(ref, () => ({
+      submitIfComplete: () => {
+        const decision = decideSubmit({
+          completeness: completenessRef.current,
+          hasLoadTimedOut,
+        })
+        if (decision !== 'submit') {
+          return false
+        }
+        submitRef.current?.()
+        return true
+      },
+    }))
+
+    return (
+      <div className="confetti-embedded-survey">
+        {!isLoaded && (
+          <VStack align="stretch" gap={5}>
+            <Skeleton height="16px" width="60%" borderRadius="base" />
+            <Skeleton height="40px" borderRadius="base" />
+          </VStack>
+        )}
+        <Box display={isLoaded ? 'block' : 'none'}>
+          <ConfettiProvider
+            surveyId={surveyId}
+            publishableKey={publishableKey}
+            apiBaseUrl={apiBaseUrl}
+            respondent={respondent}
+            metadata={metadata}
+          >
+            <ConfettiController>
+              {({ questions, update, errors, submit, isCompleted }) => {
+                submitRef.current = submit
+                completenessRef.current = isCompleted
+                return (
+                  <>
+                    <NotifyLoaded onLoaded={() => setIsLoaded(true)} />
+                    <NotifyReadyToSubmit
+                      isReady={isReadyToSubmit({
+                        completeness: isCompleted,
+                        hasLoadTimedOut,
+                      })}
+                      onReadyToSubmitChange={onReadyToSubmitChange}
+                    />
+                    {questions
+                      .filter((question) => question.visible)
+                      .map((question) => (
+                        <SurveyQuestionFactory
+                          key={question.id}
+                          question={question}
+                          error={resolveQuestionError({
+                            question,
+                            error: errors[question.id],
+                            answer: answersRef.current[question.id],
+                            showRequiredError: !isCompleted,
+                          })}
+                          onChange={(answer: Answer) => {
+                            answersRef.current[question.id] = answer
+                            update({ question: question.position, answer })
+                          }}
+                        />
+                      ))}
+                  </>
+                )
+              }}
+            </ConfettiController>
+          </ConfettiProvider>
+        </Box>
+      </div>
+    )
+  },
+)
 ConfettiEmbeddedSurvey.displayName = 'ConfettiEmbeddedSurvey'
 
 export default ConfettiEmbeddedSurvey
