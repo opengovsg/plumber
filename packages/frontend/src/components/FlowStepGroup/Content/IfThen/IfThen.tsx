@@ -91,7 +91,7 @@ export default function IfThen({
 
   // A not-yet-upgraded if-then V1 block whose only child is the branch
   // initializer's leftover blank placeholder should read as an empty V2
-  // block, so the (redundant) hover-+ around that placeholder is suppressed.
+  // block.
   const isSoleBlankPlaceholder =
     children.length === 1 && isBlankPlaceholderStep(children[0])
 
@@ -259,6 +259,11 @@ export default function IfThen({
               badgeLabel="IF"
               previewParts={conditionPreviewParts}
               step={ifThenStep}
+              isCompleted={
+                ifThenStep.status === 'completed' &&
+                !isEmptyBlock &&
+                !isSoleBlankPlaceholder
+              }
               isSelected={isSelected}
               actions={
                 !readOnly ? (

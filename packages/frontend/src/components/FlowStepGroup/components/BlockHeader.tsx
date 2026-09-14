@@ -33,6 +33,11 @@ interface BlockHeaderProps {
   badgeLabel: string
   previewParts: ConditionPreviewPart[]
   step: IStep
+  /**
+   * Owned by the caller: `step.status` alone reads `completed` on a block
+   * that has no steps to run.
+   */
+  isCompleted: boolean
   isSelected?: boolean
   actions?: ReactNode
 }
@@ -47,6 +52,7 @@ export default function BlockHeader({
   badgeLabel,
   previewParts,
   step,
+  isCompleted,
   isSelected = false,
   actions,
 }: BlockHeaderProps): JSX.Element {
@@ -187,7 +193,7 @@ export default function BlockHeader({
               textStyle="caption-3"
             >
               {badgeLabel}
-              {step.status === 'completed' && (
+              {isCompleted && (
                 <Flex
                   as="span"
                   position="absolute"
