@@ -221,7 +221,7 @@ describe('update case', () => {
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrowError(
-      'Check these fields in your step: age, score. Make sure each has a value. If any is a Dropdown, Checkbox, or Radio Button, use a value that exactly matches an option in Ownself Gather.',
+      'Check these fields in your step: age, score. Make sure each has a value. If any is a Dropdown, Checkbox, or Radio Button, use a value that exactly matches an option in Ownself Gather. If any is an attachment field, keep the total files at or below the maximum configured in Ownself Gather.',
     )
   })
 
@@ -621,7 +621,8 @@ describe('update case', () => {
     expect(uploadSpy).not.toHaveBeenCalled()
   })
 
-  it('throws when attachments are set without an attachment field', async () => {
+  it('ignores leftover attachments when the attachment field is cleared', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
     $.step.parameters.attachmentFields = [
       {
         field: '',
@@ -629,8 +630,24 @@ describe('update case', () => {
         attachments: ['s3:bucket:flow-id-123/a/one.png'],
       },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please select an attachment field for your attachments',
+    await updateCaseAction.run($)
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
     )
   })
 

@@ -62,17 +62,18 @@ export const requestSchema = z
           const hasField = !!row.field?.trim()
           const hasAttachments = row.attachments.length > 0
 
-          if (!hasField && !hasAttachments) {
+          // The UI hides (but does not clear) attachments when no field is
+          // selected, so leftover s3Ids can remain. Ignore those rows.
+          if (!hasField) {
             continue
           }
 
-          if (hasField !== hasAttachments) {
+          if (!hasAttachments) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              message: hasField
-                ? 'Please add at least one attachment for the selected field.'
-                : 'Please select an attachment field for your attachments.',
-              path: [index, hasField ? 'attachments' : 'field'],
+              message:
+                'Please add at least one attachment for the selected field.',
+              path: [index, 'attachments'],
             })
           }
 
