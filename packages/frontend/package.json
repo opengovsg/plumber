@@ -45,6 +45,7 @@
     "dedent": "1.5.1",
     "escape-html": "1.0.3",
     "file-saver": "2.0.5",
+    "framer-motion": "12.34.5",
     "lodash": "^4.18.1",
     "lottie-web": "5.12.2",
     "luxon": "^2.3.1",
