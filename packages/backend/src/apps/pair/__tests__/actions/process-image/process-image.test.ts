@@ -137,10 +137,7 @@ describe('Process image action', () => {
 
     await processImageAction.run($)
 
-    expect(mocks.getImageContent).toHaveBeenCalledWith(
-      's3-id-123',
-      'flow-id',
-    )
+    expect(mocks.getImageContent).toHaveBeenCalledWith('s3-id-123', 'flow-id')
     expect(mocks.generateObject).toHaveBeenCalled()
     expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: {
