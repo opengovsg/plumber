@@ -121,7 +121,7 @@ const action: IRawAction = {
       }
       const responseSchema = z.object(schemaShape).strict()
 
-      const content = await getImageContent(image[0])
+      const content = await getImageContent(image[0], $.flow.id)
 
       const { object } = await generateObject({
         model,

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -47,13 +47,19 @@ export default function ExitAlert({
   const isMobile = useIsMobile()
   const contentStyles = isMobile ? mobileStyles : defaultStyles
   const confettiRef = useRef<ConfettiEmbeddedSurveyRef>(null)
+  const [isReadyToSubmit, setIsReadyToSubmit] = useState(false)
   const { chatId } = useAiBuilderContext()
   const { currentUser } = useAuthentication()
   const userEmail = currentUser?.email ?? 'unknown-user'
 
   const handleExit = () => {
+    // Keep this check behind the disabled state so a stale render cannot
+    // bypass Confetti's `required` setting.
+    const hasSubmitted = confettiRef.current?.submitIfComplete() ?? false
+    if (!hasSubmitted) {
+      return
+    }
     // Fire-and-forget: exiting must never block on the survey network call.
-    confettiRef.current?.submit()
     onExit?.()
     onClose()
   }
@@ -83,6 +89,7 @@ export default function ExitAlert({
               publishableKey={appConfig.confettiSurveyPublishableKey}
               apiBaseUrl={appConfig.confettiApiBaseUrl}
               respondent={`${userEmail}-${chatId}`}
+              onReadyToSubmitChange={setIsReadyToSubmit}
             />
           </AlertDialogBody>
           <AlertDialogFooter
@@ -101,7 +108,11 @@ export default function ExitAlert({
             >
               Cancel
             </Button>
-            <Button colorScheme="critical" onClick={handleExit}>
+            <Button
+              colorScheme="critical"
+              isDisabled={!isReadyToSubmit}
+              onClick={handleExit}
+            >
               Submit and exit
             </Button>
           </AlertDialogFooter>
