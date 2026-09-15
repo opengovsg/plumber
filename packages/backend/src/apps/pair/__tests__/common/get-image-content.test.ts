@@ -13,9 +13,8 @@ vi.mock('@/helpers/s3', async (importOriginal) => {
   }
 })
 
-import { COMMON_S3_BUCKET } from '@/helpers/s3'
-
 import { getImageContent } from '@/apps/pair/common/get-image-content'
+import { COMMON_S3_BUCKET } from '@/helpers/s3'
 
 describe('getImageContent', () => {
   it("scopes the S3 lookup to the calling flow's id", async () => {
