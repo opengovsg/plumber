@@ -4,9 +4,16 @@ const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
 }))
 
-vi.mock('@/helpers/s3', () => ({
-  getObjectFromS3Id: mocks.getObjectFromS3Id,
-}))
+vi.mock('@/helpers/s3', async (importOriginal) => {
+  // No reason to mock other things like parseS3Id/COMMON_S3_BUCKET
+  const actual = await importOriginal<typeof import('@/helpers/s3')>()
+  return {
+    ...actual,
+    getObjectFromS3Id: mocks.getObjectFromS3Id,
+  }
+})
+
+import { COMMON_S3_BUCKET } from '@/helpers/s3'
 
 import { getImageContent } from '@/apps/pair/common/get-image-content'
 
@@ -17,11 +24,12 @@ describe('getImageContent', () => {
       data: new Uint8Array([1, 2, 3]),
     })
 
-    await getImageContent('s3:bucket:key', 'flow-id')
+    await getImageContent(`s3:${COMMON_S3_BUCKET}:key`, 'flow-id')
 
-    expect(mocks.getObjectFromS3Id).toHaveBeenCalledWith('s3:bucket:key', {
-      flowId: 'flow-id',
-    })
+    expect(mocks.getObjectFromS3Id).toHaveBeenCalledWith(
+      `s3:${COMMON_S3_BUCKET}:key`,
+      { flowId: 'flow-id' },
+    )
   })
 
   it('rejects an S3 object belonging to a different flow', async () => {
@@ -31,8 +39,24 @@ describe('getImageContent', () => {
       ),
     )
 
-    await expect(getImageContent('s3:bucket:key', 'flow-id')).rejects.toThrow(
-      /S3 metadata mismatch/,
+    await expect(
+      getImageContent(`s3:${COMMON_S3_BUCKET}:key`, 'flow-id'),
+    ).rejects.toThrow(/S3 metadata mismatch/)
+  })
+
+  it('rejects an S3 id pointing at a bucket other than the app bucket', async () => {
+    await expect(
+      getImageContent('s3:some-other-bucket:key', 'flow-id'),
+    ).rejects.toThrow(/Invalid S3 ID/)
+
+    expect(mocks.getObjectFromS3Id).not.toHaveBeenCalled()
+  })
+
+  it('rejects a malformed S3 id', async () => {
+    await expect(getImageContent('not-an-s3-id', 'flow-id')).rejects.toThrow(
+      /Invalid S3 ID/,
     )
+
+    expect(mocks.getObjectFromS3Id).not.toHaveBeenCalled()
   })
 })

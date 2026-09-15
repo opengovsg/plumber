@@ -1,4 +1,4 @@
-import { getObjectFromS3Id } from '@/helpers/s3'
+import { COMMON_S3_BUCKET, getObjectFromS3Id, parseS3Id } from '@/helpers/s3'
 
 function getMimeType(extension: string): string {
   const mimeTypes: Record<string, string> = {
@@ -17,6 +17,15 @@ function getMimeType(extension: string): string {
 }
 
 async function getImageContent(s3Id: string, flowId: string) {
+  /**
+   * `getObjectFromS3Id` trusts the bucket embedded in `s3Id` as-is; the
+   * `image` step parameter is user-controlled, so pin it to the app's own
+   * bucket before the flowId metadata check even runs (GTA-119-009).
+   */
+  if (parseS3Id(s3Id)?.bucket !== COMMON_S3_BUCKET) {
+    throw new Error(`Invalid S3 ID: ${s3Id}`)
+  }
+
   const s3Object = await getObjectFromS3Id(s3Id, { flowId })
   const base64String = Buffer.from(s3Object.data).toString('base64')
   const extension = s3Object.name.split('.').pop() || ''
