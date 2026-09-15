@@ -28,7 +28,6 @@ type GlobalVariableOptions = {
   user?: User // only required in GraphQL context
   metadata?: IJSONObject
   authData?: IJSONObject
-  persistAuthData?: boolean
 }
 
 const globalVariable = async (
@@ -45,7 +44,6 @@ const globalVariable = async (
     user,
     metadata,
     authData,
-    persistAuthData = true,
   } = options
 
   const isTrigger = step?.isTrigger
@@ -59,7 +57,7 @@ const globalVariable = async (
           ...args,
         }
 
-        if (connection && persistAuthData) {
+        if (connection) {
           await connection.$query().patchAndFetch({
             formattedData: updatedAuthData,
           })
