@@ -1,6 +1,6 @@
 import type { IGlobalVariable, IUserAddedConnectionAuth } from '@plumber/types'
 
-import { PostmanEnv } from '../common/constants'
+import { PostmanEnv, POSTMAN_TEST_LABEL_PREFIX } from '../common/constants'
 import getPostmanEnv from '../common/get-postman-env'
 
 import isStillVerified from './is-still-verified'
@@ -14,10 +14,10 @@ const verifyCredentials: IUserAddedConnectionAuth['verifyCredentials'] = async (
   // Prefix label with "[TEST]"" for test environments, unless user has already done it themselves.
   if (
     getPostmanEnv($) === PostmanEnv.Test &&
-    !screenName.startsWith('[TEST] ')
+    !screenName.startsWith(POSTMAN_TEST_LABEL_PREFIX)
   ) {
     await $.auth.set({
-      screenName: `[TEST] ${screenName}`,
+      screenName: `${POSTMAN_TEST_LABEL_PREFIX}${screenName}`,
     })
   }
 

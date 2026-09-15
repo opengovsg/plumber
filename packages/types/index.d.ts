@@ -946,6 +946,13 @@ interface IUserAddedConnectionAuth extends IBaseAuth {
   // connections page. Editing only submits new credentials; existing ones are
   // never returned to the client.
   supportsConnectionEdit?: boolean
+
+  /**
+   * Label to prefill when the user edits this connection. Apps that bake env
+   * tags into screenName (e.g. Postman `[TEST] `, LetterSG ` [STAGING]`) should
+   * strip those tags here so they are not duplicated on save.
+   */
+  getEditableConnectionLabel?(formattedData?: IJSONObject): string
 }
 
 interface ISystemAddedConnectionAuth extends IBaseAuth {
@@ -1515,7 +1522,6 @@ export interface IMcpFieldOption {
   label: string
   value: string
 }
-
 
 export interface IMcpIncompleteStep {
   stepId: string
