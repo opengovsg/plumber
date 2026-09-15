@@ -1,6 +1,10 @@
 import type { IActionJobData } from '@plumber/types'
 
-import { UnrecoverableError, type WorkerPro } from '@taskforcesh/bullmq-pro'
+import {
+  type JobPro,
+  UnrecoverableError,
+  type WorkerPro,
+} from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
@@ -42,17 +46,22 @@ export function registerWorkerEventHandlers(
     )
   })
 
-  worker.on('failed', async (job, err) => {
-    const { flowId, executionId } = job.data
+  // Post-failure processing for a single (non-batch) job: mark its execution
+  // failed and send the error email. Factored out so batch jobs can reuse it.
+  async function handleFailedJob(
+    failedJob: JobPro<IActionJobData>,
+    err: Error,
+  ): Promise<void> {
+    const { flowId, executionId } = failedJob.data
 
     logger.error(
-      `[${queueName}] JOB ID: ${job.id} - FLOW ID: ${flowId} has failed to start with ${err.message}`,
+      `[${queueName}] JOB ID: ${failedJob.id} - FLOW ID: ${flowId} has failed to start with ${err.message}`,
       {
         err,
         queueName,
-        job: job.data,
-        attemptsMade: job.attemptsMade,
-        attemptsStarted: job.attemptsStarted,
+        job: failedJob.data,
+        attemptsMade: failedJob.attemptsMade,
+        attemptsStarted: failedJob.attemptsStarted,
         workerVersion: appConfig.version,
       },
     )
@@ -62,7 +71,7 @@ export function registerWorkerEventHandlers(
     // 2. We haven't exceeded the maximum number of retry attempts
     const willRetryJob =
       !(err instanceof UnrecoverableError) && // Not an unrecoverable error
-      job.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
+      failedJob.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
 
     // No further post-processing needed if we're retrying.
     if (willRetryJob) {
@@ -73,7 +82,7 @@ export function registerWorkerEventHandlers(
       await Execution.setStatus(executionId, 'failure')
 
       const flow = await Flow.query()
-        .findById(job.data.flowId)
+        .findById(flowId)
         .withGraphFetched({
           user: true,
           collaborators: {
@@ -92,7 +101,7 @@ export function registerWorkerEventHandlers(
 
       const emailErrorDetails = await sendErrorEmail(flow)
       logger.info(`Sent error email for execution ID: ${executionId}`, {
-        errorDetails: { ...emailErrorDetails, ...job.data },
+        errorDetails: { ...emailErrorDetails, ...failedJob.data },
       })
     } catch (err) {
       logger.error(
@@ -100,9 +109,25 @@ export function registerWorkerEventHandlers(
         {
           event: 'onfailed-callback-failed',
           err,
-          jobData: job.data,
+          jobData: failedJob.data,
         },
       )
+    }
+  }
+
+  worker.on('failed', async (job, err) => {
+    // BullMQ Pro batches surface a synthetic container job whose `data` is empty
+    // (its real jobs - each with its own execution - live in getBatch()). Fan
+    // out over the batch so every execution is resolved; single jobs have no
+    // batch and fall back to themselves. Without this, a failed batch leaves all
+    // its executions stuck at a null status (and sends no error email).
+    const failedJobs = job.getBatch?.() ?? [job]
+
+    // Sequentially, so the per-flow error-email de-dup (Redis) and the
+    // idempotent execution status update behave exactly as they do for the
+    // separate single jobs of a for-each today.
+    for (const failedJob of failedJobs) {
+      await handleFailedJob(failedJob, err)
     }
   })
 
