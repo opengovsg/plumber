@@ -47,7 +47,8 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const [deleteConnection, { loading: isDeletingConnection }] =
     useMutation(DELETE_CONNECTION)
 
-  const { id, key, formattedData, createdAt, flowCount } = props.connection
+  const { id, key, formattedData, createdAt, updatedAt, flowCount } =
+    props.connection
 
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
@@ -119,6 +120,9 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const relativeCreatedAt = DateTime.fromMillis(
     parseInt(createdAt, 10),
   ).toRelative()
+  const relativeUpdatedAt = DateTime.fromMillis(
+    parseInt(updatedAt, 10),
+  ).toRelative()
 
   return (
     <>
@@ -145,7 +149,9 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
             {formattedData?.screenName?.toString() || 'Unnamed'}
           </Text>
 
-          <Text textStyle="caption-2">added {relativeCreatedAt}</Text>
+          <Text textStyle="caption-2" color="base.content.medium">
+            Added {relativeCreatedAt} · Last updated {relativeUpdatedAt}
+          </Text>
         </Stack>
 
         <Flex gap={[0, 1, 2]} alignItems="center">

@@ -416,6 +416,7 @@ type Connection {
   verified: Boolean
   app: App
   createdAt: String
+  updatedAt: String
   flowCount: Int
   description: String
   editableLabel: String
