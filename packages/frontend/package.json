@@ -85,6 +85,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "jsdom": "26.1.0",
     "prettier": "^2.5.1",
     "type-fest": "4.10.3",
     "vite": "^6.4.3",

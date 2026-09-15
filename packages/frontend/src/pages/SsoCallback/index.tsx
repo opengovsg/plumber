@@ -9,10 +9,7 @@ import * as URLS from '@/config/urls'
 import { LOGIN_WITH_SSO } from '@/graphql/mutations/login-with-sso'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
 import { parseGraphqlError } from '@/helpers/parseGraphqlError'
-import {
-  consumePostLoginRedirect,
-  storePostLoginRedirect,
-} from '@/helpers/post-login-redirect'
+import { clearPostLoginRedirect } from '@/helpers/post-login-redirect'
 
 function safeIdpErrorDescription(description: string | null): string | null {
   if (!description) {
@@ -51,14 +48,17 @@ export default function SsoCallback(): JSX.Element {
     }
 
     alreadyProcessed.current = true
-    // Clear unconditionally on mount so a failed SSO cannot poison a later OTP
-    // login. Restore only after a successful token exchange for PublicLayout.
-    const pendingRedirect = consumePostLoginRedirect()
 
     const idpError = searchParams.get('error')
     const idpErrorDescription = searchParams.get('error_description')
 
+    // IMPORTANT: clear the stored redirect on failure only, so a failed SSO
+    // cannot poison a later OTP login. On success PublicLayout consumes the
+    // path itself, because the GET_CURRENT_USER refetch renders the logged-in
+    // user before this effect resumes after `loginWithSso`.
     if (idpError) {
+      clearPostLoginRedirect()
+
       if (idpError === 'access_denied') {
         setForbidden(true)
         return
@@ -79,6 +79,7 @@ export default function SsoCallback(): JSX.Element {
     const iss = searchParams.get('iss')
 
     if (!authCode || !state || !iss) {
+      clearPostLoginRedirect()
       setFailed(true)
       return
     }
@@ -101,8 +102,8 @@ export default function SsoCallback(): JSX.Element {
         },
       })
 
-      if (result.data?.loginWithSso) {
-        storePostLoginRedirect(pendingRedirect)
+      if (!result.data?.loginWithSso) {
+        clearPostLoginRedirect()
       }
     }
 
