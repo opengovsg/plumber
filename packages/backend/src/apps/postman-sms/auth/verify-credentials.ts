@@ -1,6 +1,6 @@
 import type { IGlobalVariable, IUserAddedConnectionAuth } from '@plumber/types'
 
-import { PostmanEnv, POSTMAN_TEST_LABEL_PREFIX } from '../common/constants'
+import { POSTMAN_TEST_LABEL_PREFIX, PostmanEnv } from '../common/constants'
 import getPostmanEnv from '../common/get-postman-env'
 
 import isStillVerified from './is-still-verified'
