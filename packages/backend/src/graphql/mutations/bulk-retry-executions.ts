@@ -109,7 +109,13 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   const chunkedSteps = chunk(latestFailedExecutionSteps, CHUNK_SIZE)
   for (const currChunk of chunkedSteps) {
     const promises = currChunk.map(async (executionStep) => {
-      const { id: executionStepId, executionId, jobId, appKey } = executionStep
+      const {
+        id: executionStepId,
+        executionId,
+        jobId,
+        appKey,
+        key,
+      } = executionStep
 
       const job = await getActionJob(jobId)
       if (!job) {
@@ -159,6 +165,7 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
         await job.remove()
         const newJob = await enqueueActionJob({
           appKey: appKey,
+          actionKey: key,
           jobName: job.name,
           jobData: job.data,
           jobOptions: DEFAULT_JOB_OPTIONS,
