@@ -1,6 +1,5 @@
 import { IField } from '@plumber/types'
 
-import validator from 'email-validator'
 import { uniq } from 'lodash'
 import { z } from 'zod'
 
@@ -8,6 +7,15 @@ import appConfig from '@/config/app'
 import { parseS3Id } from '@/helpers/s3'
 
 import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
+
+// Keep the RFC 5321 mailbox length cap. Skip the 64-char local-part cap so
+// plus-tagged routing addresses still parse.
+const MAX_MAILBOX_LENGTH = 254
+const mailboxSchema = z.email().max(MAX_MAILBOX_LENGTH)
+
+function isValidMailbox(email: string): boolean {
+  return mailboxSchema.safeParse(email).success
+}
 
 function recipientStringToArray(value: string) {
   const recipientArray = value
@@ -20,7 +28,7 @@ function recipientStringToArray(value: string) {
 
 function validateEmails(value: string, ctx: z.RefinementCtx, msg: string) {
   const recipients = recipientStringToArray(value)
-  if (recipients.some((recipient) => !validator.validate(recipient))) {
+  if (recipients.some((recipient) => !isValidMailbox(recipient))) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: msg,
@@ -141,7 +149,7 @@ export const transactionalEmailSchema = z.object({
     },
     z
       .string()
-      .refine((value) => validator.validate(value), {
+      .refine((value) => isValidMailbox(value), {
         message: 'Invalid reply to email',
       })
       .optional(),
