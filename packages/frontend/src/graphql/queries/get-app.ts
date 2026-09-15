@@ -43,19 +43,6 @@ export const GET_APP = gql`
             }
           }
         }
-        reconnectionSteps {
-          type
-          name
-          arguments {
-            name
-            value
-            type
-            properties {
-              name
-              value
-            }
-          }
-        }
       }
     }
   }
