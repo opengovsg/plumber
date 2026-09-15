@@ -9,8 +9,10 @@ import {
   Box,
   Card,
   Flex,
+  HStack,
   Spinner,
   Stack,
+  StackDivider,
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
@@ -149,10 +151,13 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
             {formattedData?.screenName?.toString() || 'Unnamed'}
           </Text>
 
-          <Text textStyle="caption-2">
-            Added {relativeCreatedAt}&nbsp;&nbsp;•&nbsp;&nbsp;Last updated{' '}
-            {relativeUpdatedAt}
-          </Text>
+          <HStack
+            spacing={2}
+            divider={<StackDivider borderColor="base.divider.medium" />}
+          >
+            <Text textStyle="caption-2">Added {relativeCreatedAt}</Text>
+            <Text textStyle="caption-2">Last updated {relativeUpdatedAt}</Text>
+          </HStack>
         </Stack>
 
         <Flex gap={[0, 1, 2]} alignItems="center">
