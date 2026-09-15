@@ -16,28 +16,22 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock('@/helpers/global-variable', () => ({
-  default: vi.fn(
-    async ({
-      authData,
-    }: {
-      authData: IJSONObject
-    }): Promise<IGlobalVariable> => {
-      const $ = {
-        auth: {
-          data: authData,
-          set: async (updates: IJSONObject): Promise<null> => {
-            $.auth.data = {
-              ...$.auth.data,
-              ...updates,
-            }
-            return null
-          },
+  default: vi.fn(async (): Promise<IGlobalVariable> => {
+    const $ = {
+      auth: {
+        data: {} as IJSONObject,
+        set: async (updates: IJSONObject): Promise<null> => {
+          $.auth.data = {
+            ...$.auth.data,
+            ...updates,
+          }
+          return null
         },
-      }
+      },
+    }
 
-      return $ as unknown as IGlobalVariable
-    },
-  ),
+    return $ as unknown as IGlobalVariable
+  }),
 }))
 
 vi.mock('@/models/app', () => ({
@@ -109,7 +103,6 @@ describe('replaceConnectionCredentials', () => {
     expect(vi.mocked(globalVariable)).toHaveBeenCalledWith({
       app: expect.objectContaining({ key: 'telegram-bot' }),
       user: owner,
-      authData: { token: 'new-token' },
     })
 
     const updated = await Connection.query().findById(connection.id)
