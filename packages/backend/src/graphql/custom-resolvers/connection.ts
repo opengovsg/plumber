@@ -1,7 +1,6 @@
 import App from '@/models/app'
-import type Connection from '@/models/connection'
 
-import type { Resolvers } from '../__generated__/types.generated'
+import type { Connection, Resolvers } from '../__generated__/types.generated'
 
 type ConnectionResolver = Resolvers['Connection']
 
