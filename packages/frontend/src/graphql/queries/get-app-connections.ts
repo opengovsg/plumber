@@ -20,6 +20,7 @@ export const GET_APP_CONNECTIONS = gql`
         }
         description
         createdAt
+        updatedAt
       }
     }
   }
