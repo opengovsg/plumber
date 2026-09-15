@@ -7,33 +7,29 @@ const context = {
   currentUser: {
     withAccessibleFlows: vi.fn(() => {
       return {
-        withGraphFetched: vi.fn(() => {
+        findById: vi.fn(() => {
           return {
-            findById: vi.fn(() => {
+            throwIfNotFound: vi.fn(() => {
               return {
-                throwIfNotFound: vi.fn(() => {
-                  return {
-                    id: 'flow-id',
-                    steps: [
-                      {
-                        id: 'step-id-1',
-                        status: 'completed',
-                      },
-                      {
-                        id: 'step-id-2',
-                        status: 'incomplete',
-                      },
-                      {
-                        id: 'step-id-3',
-                        status: 'incomplete',
-                      },
-                      {
-                        id: 'step-id-4',
-                        status: 'completed',
-                      },
-                    ],
-                  }
-                }),
+                id: 'flow-id',
+                steps: [
+                  {
+                    id: 'step-id-1',
+                    status: 'completed',
+                  },
+                  {
+                    id: 'step-id-2',
+                    status: 'incomplete',
+                  },
+                  {
+                    id: 'step-id-3',
+                    status: 'incomplete',
+                  },
+                  {
+                    id: 'step-id-4',
+                    status: 'completed',
+                  },
+                ],
               }
             }),
           }
