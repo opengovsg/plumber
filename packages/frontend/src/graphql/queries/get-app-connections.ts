@@ -13,6 +13,7 @@ export const GET_APP_CONNECTIONS = gql`
         verified
         flowCount
         editableLabel
+        environmentLabel
         formattedData {
           screenName
           env
