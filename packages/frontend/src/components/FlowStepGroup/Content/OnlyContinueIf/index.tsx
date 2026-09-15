@@ -139,6 +139,7 @@ export default function OnlyContinueIf({
                 badgeLabel="CONTINUE IF"
                 previewParts={previewParts}
                 step={step}
+                isCompleted={step.status === 'completed'}
                 isSelected={isSelected}
                 actions={
                   isDeletable && !readOnly ? (

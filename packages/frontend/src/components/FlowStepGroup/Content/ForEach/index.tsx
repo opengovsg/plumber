@@ -145,6 +145,7 @@ export default function ForEach(props: ForEachProps) {
         badgeLabel="REPEAT"
         previewParts={previewParts}
         step={conditionStep}
+        isCompleted={conditionStep.status === 'completed' && !hasNoActionSteps}
         isSelected={isSelected}
         actions={
           readOnly ? undefined : (
