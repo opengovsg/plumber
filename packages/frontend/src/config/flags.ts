@@ -11,7 +11,12 @@ export const BANNER_TEXT_FLAG = 'banner_display'
  */
 export const BULK_RETRY_EXECUTIONS_FLAG = 'bulk-retry-failed-executions-v1'
 export const SGID_FEATURE_FLAG = 'sgid-login'
-export const SSO_FEATURE_FLAG = 'ogp-sso-enabled'
+/**
+ * String flag with values 'all' | 'ogp' | 'off'. 'all' shows the one.gov.sg
+ * login button regardless of wifi, 'ogp' requires OGP wifi, 'off' (or
+ * missing) hides it. Replaces the old boolean 'ogp-sso-enabled' flag.
+ */
+export const ONEGOV_FEATURE_FLAG = 'onegov-enabled'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const IF_THEN_THEN_FEATURE_FLAG = 'feature_if_then_then'
