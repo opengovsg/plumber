@@ -2,7 +2,7 @@ import { type FormEvent, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { AbsoluteCenter, Box, Divider, Flex, Text } from '@chakra-ui/react'
 
-import { ONEGOV_FEATURE_FLAG, SGID_FEATURE_FLAG } from '@/config/flags'
+import { SGID_FEATURE_FLAG } from '@/config/flags'
 import { RESPONSE_HEADERS } from '@/config/headers'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { REQUEST_OTP } from '@/graphql/mutations/request-otp'
@@ -12,6 +12,7 @@ import { useResponseHeaders } from '@/hooks/useResponseHeaders'
 
 import EmailInput from './EmailInput'
 import OtpInput from './OtpInput'
+import { resolveShouldShowSsoLogin } from './resolveShouldShowSsoLogin'
 import SgidLoginSection from './SgidLoginSection'
 import SsoLoginSection from './SsoLoginSection'
 
@@ -55,11 +56,10 @@ export const LoginForm = (): JSX.Element => {
   }
 
   const shouldShowSgidLogin = getFlagValue(SGID_FEATURE_FLAG, false)
-  const onegovFlagValue = getFlagValue(ONEGOV_FEATURE_FLAG, 'off')
-  const shouldShowSsoLogin =
-    onegovFlagValue === 'all' ||
-    (onegovFlagValue === 'ogp' &&
-      headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER] === 'true')
+  const shouldShowSsoLogin = resolveShouldShowSsoLogin(
+    getFlagValue,
+    headers[RESPONSE_HEADERS.OGP_INTERNAL_HEADER],
+  )
 
   return (
     <form onSubmit={handleSubmit}>
