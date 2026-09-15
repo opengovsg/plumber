@@ -149,7 +149,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
             {formattedData?.screenName?.toString() || 'Unnamed'}
           </Text>
 
-          <Text textStyle="caption-2" color="base.content.medium">
+          <Text textStyle="caption-2">
             Added {relativeCreatedAt} · Last updated {relativeUpdatedAt}
           </Text>
         </Stack>
