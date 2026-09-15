@@ -7,6 +7,8 @@ import {
   ITriggerItem,
 } from '@plumber/types'
 
+import { isEqual } from 'lodash'
+
 import appConfig from '@/config/app'
 import EarlyExitError from '@/errors/early-exit'
 import Connection from '@/models/connection'
@@ -55,7 +57,10 @@ const globalVariable = async (
           ...args,
         }
 
-        if (connection) {
+        // Skip the DB write when nothing changed. isStillVerified often calls
+        // set with the same screen name or tokens. A no-op patch still bumps
+        // connection.updatedAt.
+        if (connection && !isEqual(updatedAuthData, $.auth.data)) {
           await connection.$query().patchAndFetch({
             formattedData: updatedAuthData,
           })
