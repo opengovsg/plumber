@@ -21,6 +21,21 @@ const editableLabel: ConnectionResolver['editableLabel'] = async (parent) => {
   return storedScreenName(parent)
 }
 
+const environmentLabel: ConnectionResolver['environmentLabel'] = async (
+  parent,
+) => {
+  const app = await App.findOneByKey(parent.key)
+  if (
+    app.auth?.connectionType === 'user-added' &&
+    app.auth.getConnectionEnvironmentLabel
+  ) {
+    return app.auth.getConnectionEnvironmentLabel(parent.formattedData)
+  }
+
+  return null
+}
+
 export default {
   editableLabel,
+  environmentLabel,
 }

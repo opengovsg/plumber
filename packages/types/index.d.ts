@@ -953,6 +953,12 @@ interface IUserAddedConnectionAuth extends IBaseAuth {
    * strip those tags here so they are not duplicated on save.
    */
   getEditableConnectionLabel?(formattedData?: IJSONObject): string
+
+  /**
+   * User-facing environment name shown when editing this connection.
+   * Return null when the app has no environment to display.
+   */
+  getConnectionEnvironmentLabel?(formattedData?: IJSONObject): string | null
 }
 
 interface ISystemAddedConnectionAuth extends IBaseAuth {
