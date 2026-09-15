@@ -72,7 +72,7 @@ describe('Login with SSO', () => {
   })
 
   it('logs in officers who pass the existing RP allowlist', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(true)
+    mocks.getLdFlagValue.mockResolvedValueOnce('all')
     mocks.consumeSsoLoginCookie.mockReturnValueOnce({
       state: 'csrf-state',
       nonce: 'nonce',
@@ -103,7 +103,7 @@ describe('Login with SSO', () => {
   })
 
   it('returns 403 without creating a session when the RP allowlist rejects the email', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(true)
+    mocks.getLdFlagValue.mockResolvedValueOnce('all')
     mocks.consumeSsoLoginCookie.mockReturnValueOnce({
       state: 'csrf-state',
       nonce: 'nonce',
@@ -124,7 +124,7 @@ describe('Login with SSO', () => {
   })
 
   it('rejects reused or mismatched login transactions', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(true)
+    mocks.getLdFlagValue.mockResolvedValueOnce('all')
     mocks.consumeSsoLoginCookie.mockReturnValueOnce({
       state: 'other-state',
       nonce: 'nonce',
@@ -138,7 +138,7 @@ describe('Login with SSO', () => {
   })
 
   it('does not start SSO when the feature flag is off', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(false)
+    mocks.getLdFlagValue.mockResolvedValueOnce('off')
 
     await expect(loginWithSso(null, STUB_PARAMS, STUB_CONTEXT)).rejects.toThrow(
       'SSO is not enabled',

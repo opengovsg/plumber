@@ -40,7 +40,7 @@ describe('Start SSO login', () => {
   })
 
   it('stores the login transaction server-side and returns the authorize URL', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(true)
+    mocks.getLdFlagValue.mockResolvedValueOnce('all')
     mocks.createAuthorizationRequest.mockResolvedValueOnce({
       url: 'https://one.gov.sg/api/auth/oauth2/authorize?client_id=plumber',
       transaction: {
@@ -65,7 +65,7 @@ describe('Start SSO login', () => {
   })
 
   it('rejects initiate-login requests whose iss does not match the configured issuer', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(true)
+    mocks.getLdFlagValue.mockResolvedValueOnce('all')
 
     await expect(
       startSsoLogin(
@@ -78,7 +78,7 @@ describe('Start SSO login', () => {
   })
 
   it('starts SSO when the initiate-login iss matches the configured issuer', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(true)
+    mocks.getLdFlagValue.mockResolvedValueOnce('all')
     mocks.createAuthorizationRequest.mockResolvedValueOnce({
       url: 'https://one.gov.sg/api/auth/oauth2/authorize?client_id=plumber',
       transaction: {
@@ -99,11 +99,23 @@ describe('Start SSO login', () => {
   })
 
   it('does not start SSO when the feature flag is off', async () => {
-    mocks.getLdFlagValue.mockResolvedValueOnce(false)
+    mocks.getLdFlagValue.mockResolvedValueOnce('off')
 
     await expect(startSsoLogin(null, {}, STUB_CONTEXT)).rejects.toThrow(
       'SSO is not enabled',
     )
     expect(mocks.createAuthorizationRequest).not.toHaveBeenCalled()
+  })
+
+  it('starts SSO when the feature flag is ogp', async () => {
+    mocks.getLdFlagValue.mockResolvedValueOnce('ogp')
+    mocks.createAuthorizationRequest.mockResolvedValueOnce({
+      url: 'https://one.gov.sg/api/auth/oauth2/authorize?client_id=plumber',
+      transaction: { state: 'state', nonce: 'nonce', codeVerifier: 'verifier' },
+    })
+
+    const result = await startSsoLogin(null, {}, STUB_CONTEXT)
+
+    expect(result.authorizationUrl).toContain('oauth2/authorize')
   })
 })
