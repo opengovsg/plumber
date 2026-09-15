@@ -27,7 +27,6 @@ type GlobalVariableOptions = {
   request?: IRequest
   user?: User // only required in GraphQL context
   metadata?: IJSONObject
-  authData?: IJSONObject
 }
 
 const globalVariable = async (
@@ -43,7 +42,6 @@ const globalVariable = async (
     testRun = false,
     user,
     metadata,
-    authData,
   } = options
 
   const isTrigger = step?.isTrigger
@@ -66,7 +64,7 @@ const globalVariable = async (
         $.auth.data = updatedAuthData
         return null
       },
-      data: authData ?? connection?.formattedData,
+      data: connection?.formattedData,
       connectionId: connection?.id,
     },
     app: app,

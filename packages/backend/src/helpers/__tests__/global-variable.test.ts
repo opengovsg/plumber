@@ -16,9 +16,9 @@ describe('globalVariable auth persistence', () => {
 
     const $ = await globalVariable({
       app,
-      authData: candidate,
     })
 
+    await $.auth.set(candidate)
     await $.auth.set({ screenName: 'Candidate bot' })
 
     expect($.auth.data).toEqual({
