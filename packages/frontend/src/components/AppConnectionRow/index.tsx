@@ -150,7 +150,8 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
           </Text>
 
           <Text textStyle="caption-2">
-            Added {relativeCreatedAt} · Last updated {relativeUpdatedAt}
+            Added {relativeCreatedAt}&nbsp;&nbsp;•&nbsp;&nbsp;Last updated{' '}
+            {relativeUpdatedAt}
           </Text>
         </Stack>
 
