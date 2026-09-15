@@ -1,3 +1,4 @@
+import Connection from './connection'
 import ExecutionStep from './execution-step'
 import Flow, { FlowErrorConfig } from './flow'
 import FlowCollaborator from './flow-collaborator'
@@ -15,6 +16,7 @@ import TableMetadata from './table-metadata'
  */
 
 export default {
+  Connection,
   ExecutionStep,
   TableMetadata,
   Flow,
