@@ -1,5 +1,6 @@
 import paginate from '@/helpers/pagination'
 import App from '@/models/app'
+import Connection from '@/models/connection'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
@@ -8,6 +9,7 @@ import FlowTransfer from '@/models/flow-transfers'
 import TableMetadata from '@/models/table-metadata'
 
 export type AppGraphQLType = App
+export type ConnectionGraphQLType = Connection
 export type ExecutionStepGraphQLType = ExecutionStep
 export type FlowCollaboratorGraphQLType = FlowCollaborator
 export type TableMetadataGraphQLType = TableMetadata

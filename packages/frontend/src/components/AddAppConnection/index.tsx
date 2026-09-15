@@ -25,10 +25,7 @@ import { REPLACE_CONNECTION_CREDENTIALS } from '@/graphql/mutations/replace-conn
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
-import {
-  getConnectionEnvLabel,
-  getEditableConnectionLabel,
-} from '@/helpers/connection-label'
+import { getConnectionEnvLabel } from '@/helpers/connection-label'
 import { getOpenerOrigin } from '@/helpers/window'
 
 import Form from '../Form'
@@ -84,13 +81,10 @@ export default function AddAppConnection(
   )
 
   const editingConnection = connectionsData?.getApp?.connections?.find(
-    (connection: { id?: string }) => connection.id === connectionId,
+    (connection: { id?: string; editableLabel?: string | null }) =>
+      connection.id === connectionId,
   )
-  const storedScreenName = editingConnection?.formattedData?.screenName
-  const labelDefault = getEditableConnectionLabel(
-    key,
-    storedScreenName?.toString(),
-  )
+  const labelDefault = editingConnection?.editableLabel ?? ''
   const envLabel = getConnectionEnvLabel(
     editingConnection?.formattedData?.env?.toString(),
   )
