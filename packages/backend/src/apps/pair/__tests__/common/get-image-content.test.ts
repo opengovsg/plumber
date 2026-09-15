@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   getObjectFromS3Id: vi.fn(),
@@ -17,6 +17,10 @@ import { getImageContent } from '@/apps/pair/common/get-image-content'
 import { COMMON_S3_BUCKET } from '@/helpers/s3'
 
 describe('getImageContent', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   it("scopes the S3 lookup to the calling flow's id", async () => {
     mocks.getObjectFromS3Id.mockResolvedValue({
       name: 'image.png',
