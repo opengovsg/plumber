@@ -6,7 +6,7 @@ import type {
 
 import { describe, expect, it } from 'vitest'
 
-import buildConnectionEditCandidate from '@/helpers/build-connection-edit-candidate'
+import buildConnectionEditCandidate from './build-connection-edit-candidate'
 
 function createAuth(fields: IField[]): IUserAddedConnectionAuth {
   return {
