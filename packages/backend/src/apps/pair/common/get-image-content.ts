@@ -16,8 +16,8 @@ function getMimeType(extension: string): string {
   return mimeType
 }
 
-async function getImageContent(s3Id: string) {
-  const s3Object = await getObjectFromS3Id(s3Id)
+async function getImageContent(s3Id: string, flowId: string) {
+  const s3Object = await getObjectFromS3Id(s3Id, { flowId })
   const base64String = Buffer.from(s3Object.data).toString('base64')
   const extension = s3Object.name.split('.').pop() || ''
   const mimeType = getMimeType(extension)
