@@ -12,6 +12,13 @@ export type EditableConnectionApp = IApp & {
   auth: IUserAddedConnectionAuth
 }
 
+function isEditableConnectionApp(app: IApp): app is EditableConnectionApp {
+  return (
+    app.auth?.connectionType === 'user-added' &&
+    Boolean(app.auth.supportsConnectionEdit)
+  )
+}
+
 type GetConnectionParams = {
   context: Context
   connectionId: string
@@ -86,15 +93,12 @@ export const getOwnEditableConnection = async (
 
   const app = await App.findOneByKey(connection.key)
 
-  if (
-    app.auth?.connectionType !== 'user-added' ||
-    !app.auth.supportsConnectionEdit
-  ) {
+  if (!isEditableConnectionApp(app)) {
     throw new ForbiddenError('This connection cannot be edited')
   }
 
   return {
     connection,
-    app: app as EditableConnectionApp,
+    app,
   }
 }
