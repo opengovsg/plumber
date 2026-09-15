@@ -52,7 +52,8 @@ export default function Application(): React.ReactElement | null {
   const navigate = useNavigate()
   const { data, loading } = useQuery(GET_APP, { variables: { key: appKey } })
 
-  const goToApplicationPage = () => navigate(URLS.APP_CONNECTIONS(appKey))
+  const goToApplicationPage = () =>
+    navigate(URLS.APP_CONNECTIONS(appKey), { replace: true })
   const app = data?.getApp || {}
 
   if (loading) {

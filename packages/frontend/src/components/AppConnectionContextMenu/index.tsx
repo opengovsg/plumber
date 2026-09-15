@@ -13,8 +13,8 @@ type Action = {
 type ContextMenuProps = {
   appKey: string
   connectionId: string
-  // Whether the app's auth opted into credential editing; comes from the backend
-  // via GetAppConnections.
+  // Whether the app's auth opted into credential editing.
+  // Comes from the backend via GetAppConnections.
   supportsConnectionEdit?: boolean
   onMenuItemClick: (event: React.MouseEvent, action: Action) => void
 }
@@ -62,11 +62,7 @@ export default function ContextMenu(
           </MenuItem>
 
           {supportsConnectionEdit ? (
-            <MenuItem
-              as={Link}
-              to={URLS.APP_EDIT_CONNECTION(appKey, connectionId)}
-              onClick={createActionHandler({ type: 'edit' })}
-            >
+            <MenuItem onClick={createActionHandler({ type: 'edit' })}>
               Edit connection
             </MenuItem>
           ) : null}

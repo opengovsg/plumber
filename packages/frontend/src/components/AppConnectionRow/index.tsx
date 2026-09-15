@@ -3,6 +3,7 @@ import type { IConnection } from '@plumber/types'
 import * as React from 'react'
 import { useCallback, useRef, useState } from 'react'
 import { MdCheckCircle, MdError } from 'react-icons/md'
+import { useNavigate } from 'react-router-dom'
 import { useLazyQuery, useMutation } from '@apollo/client'
 import {
   Box,
@@ -17,7 +18,8 @@ import { useToast } from '@opengovsg/design-system-react'
 import { DateTime } from 'luxon'
 
 import ConnectionContextMenu from '@/components/AppConnectionContextMenu'
-import MenuAlertDialog from '@/components/MenuAlertDialog'
+import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
+import * as URLS from '@/config/urls'
 import { DELETE_CONNECTION } from '@/graphql/mutations/delete-connection'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
 
@@ -28,6 +30,7 @@ type AppConnectionRowProps = {
 
 function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const toast = useToast()
+  const navigate = useNavigate()
 
   const [verificationVisible, setVerificationVisible] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
@@ -52,6 +55,7 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
     onOpen: onDialogOpen,
     onClose: onDialogClose,
   } = useDisclosure()
+  const [dialogType, setDialogType] = useState<AlertDialogType>('delete')
 
   const onConnectionDelete = useCallback(async () => {
     await deleteConnection({
@@ -78,12 +82,21 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
     })
   }, [deleteConnection, id, toast, onDialogClose])
 
+  const onConfirmEdit = useCallback(() => {
+    onDialogClose()
+    navigate(URLS.APP_EDIT_CONNECTION(key, id))
+  }, [id, key, navigate, onDialogClose])
+
   const onContextMenuAction = useCallback(
     async (
       _event: React.MouseEvent<Element, MouseEvent>,
       action: { [key: string]: string },
     ) => {
       if (action.type === 'delete') {
+        setDialogType('delete')
+        onDialogOpen()
+      } else if (action.type === 'edit') {
+        setDialogType('edit-connection')
         onDialogOpen()
       } else if (action.type === 'test') {
         setVerificationVisible(true)
@@ -190,9 +203,9 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         cancelRef={cancelRef}
         onDialogClose={onDialogClose}
         dialogHeader="Connection"
-        dialogType="delete"
-        onClick={onConnectionDelete}
-        isLoading={isDeletingConnection}
+        dialogType={dialogType}
+        onClick={dialogType === 'delete' ? onConnectionDelete : onConfirmEdit}
+        isLoading={dialogType === 'delete' ? isDeletingConnection : false}
       />
     </>
   )
