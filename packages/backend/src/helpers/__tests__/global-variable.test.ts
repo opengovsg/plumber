@@ -11,20 +11,12 @@ describe('globalVariable auth persistence', () => {
     beforeRequest: [],
   } as unknown as IApp
 
-  it('updates auth data in memory without updating the connection', async () => {
-    const patchAndFetch = vi.fn()
-    const connection = {
-      id: 'connection-id',
-      formattedData: { token: 'stored-token' },
-      $query: () => ({ patchAndFetch }),
-    } as unknown as Connection
+  it('does not persist auth updates when no connection is passed', async () => {
     const candidate: IJSONObject = { token: 'candidate-token' }
 
     const $ = await globalVariable({
       app,
-      connection,
       authData: candidate,
-      persistAuthData: false,
     })
 
     await $.auth.set({ screenName: 'Candidate bot' })
@@ -33,8 +25,7 @@ describe('globalVariable auth persistence', () => {
       token: 'candidate-token',
       screenName: 'Candidate bot',
     })
-    expect(patchAndFetch).not.toHaveBeenCalled()
-    expect(connection.formattedData).toEqual({ token: 'stored-token' })
+    expect($.auth.connectionId).toBeUndefined()
   })
 
   it('continues to persist auth updates by default', async () => {

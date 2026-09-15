@@ -3,6 +3,7 @@ import type { IGlobalVariable, IJSONObject } from '@plumber/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import replaceConnectionCredentials from '@/graphql/mutations/replace-connection-credentials'
+import globalVariable from '@/helpers/global-variable'
 import Connection from '@/models/connection'
 import User from '@/models/user'
 import Context from '@/types/express/context'
@@ -104,6 +105,12 @@ describe('replaceConnectionCredentials', () => {
       },
       context,
     )
+
+    expect(vi.mocked(globalVariable)).toHaveBeenCalledWith({
+      app: expect.objectContaining({ key: 'telegram-bot' }),
+      user: owner,
+      authData: { token: 'new-token' },
+    })
 
     const updated = await Connection.query().findById(connection.id)
     expect(updated.formattedData).toEqual({

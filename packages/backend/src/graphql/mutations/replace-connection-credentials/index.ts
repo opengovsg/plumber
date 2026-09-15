@@ -39,13 +39,14 @@ const replaceConnectionCredentials: MutationResolvers['replaceConnectionCredenti
       storedData: connection.formattedData,
       submittedData: input.formattedData,
     })
+    // Omit `connection` so verifyCredentials / $.auth.set cannot patch the
+    // live row. Stored credentials are replaced only after verify succeeds.
     const $ = await globalVariable({
-      connection,
       app,
       user: context.currentUser,
       authData: candidate,
-      persistAuthData: false,
     })
+    $.auth.connectionId = connection.id
 
     await app.auth.verifyCredentials($)
 
