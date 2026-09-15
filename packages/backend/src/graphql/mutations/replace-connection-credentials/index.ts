@@ -3,11 +3,11 @@ import { fromZodError } from 'zod-validation-error'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
-import { getOwnEditableConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
 import buildConnectionEditCandidate from './build-connection-edit-candidate'
+import getOwnEditableConnection from './get-own-editable-connection'
 
 const replaceConnectionCredentialsInputSchema = z.object({
   id: z.string().trim().min(1, 'Connection id is required'),
