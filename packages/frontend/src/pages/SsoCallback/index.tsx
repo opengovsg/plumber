@@ -85,7 +85,7 @@ export default function SsoCallback(): JSX.Element {
     }
 
     const callMutation = async () => {
-      const result = await loginWithSso({
+      await loginWithSso({
         variables: {
           input: {
             authCode,
@@ -101,10 +101,6 @@ export default function SsoCallback(): JSX.Element {
           setFailed(true)
         },
       })
-
-      if (!result.data?.loginWithSso) {
-        clearPostLoginRedirect()
-      }
     }
 
     callMutation()
@@ -112,10 +108,13 @@ export default function SsoCallback(): JSX.Element {
   }, [])
 
   if (isForbidden) {
+    // Otherwise a later OTP/SGID login inherits this abandoned target.
+    clearPostLoginRedirect()
     return <Navigate to={URLS.LOGIN_UNAUTHORIZED} replace />
   }
 
   if (hasFailed) {
+    clearPostLoginRedirect()
     toast({
       title:
         failureMessage ??
