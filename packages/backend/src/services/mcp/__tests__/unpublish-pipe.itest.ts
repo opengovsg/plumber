@@ -26,9 +26,8 @@ async function createPipe(
     id: randomUUID(),
     name: `${trigger} pipe`,
     userId: user.id,
-    active,
+    active: false,
     config: {},
-    publishedAt: active ? new Date().toISOString() : null,
   })
 
   await Step.query().insert([
@@ -52,7 +51,14 @@ async function createPipe(
     },
   ])
 
-  return flow
+  if (!active) {
+    return flow
+  }
+
+  return flow.$query().patchAndFetch({
+    active: true,
+    publishedAt: new Date().toISOString(),
+  })
 }
 
 describe('unpublishPipeService', () => {
