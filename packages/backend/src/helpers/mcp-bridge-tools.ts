@@ -74,6 +74,13 @@ function mcpToolError(
   return { error: fallback }
 }
 
+function publishedPipeOrThrow(error: unknown): PublishedPipeErrorResult {
+  if (isPublishedPipeError(error)) {
+    return publishedPipeErrorResult()
+  }
+  throw error
+}
+
 export function createMcpBridgeTools(
   user: User,
   traceId: string,
@@ -304,12 +311,7 @@ export function createMcpBridgeTools(
           onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
           return result
         } catch (error) {
-          return mcpToolError(
-            error,
-            'Unable to update step parameters',
-            'update_step_parameters',
-            traceId,
-          )
+          return publishedPipeOrThrow(error)
         }
       },
     }),
@@ -346,12 +348,7 @@ export function createMcpBridgeTools(
           onPipeChange?.(pipe_id)
           return step
         } catch (error) {
-          return mcpToolError(
-            error,
-            'Unable to create step',
-            'create_step',
-            traceId,
-          )
+          return publishedPipeOrThrow(error)
         }
       },
     }),
@@ -373,12 +370,7 @@ export function createMcpBridgeTools(
           onPipeChange?.(pipe_id)
           return flow
         } catch (error) {
-          return mcpToolError(
-            error,
-            'Unable to delete step',
-            'delete_step',
-            traceId,
-          )
+          return publishedPipeOrThrow(error)
         }
       },
     }),
@@ -398,12 +390,7 @@ export function createMcpBridgeTools(
           pipeId = result.pipeId
           return result
         } catch (error) {
-          return mcpToolError(
-            error,
-            'Unable to test step',
-            'execute_step',
-            traceId,
-          )
+          return publishedPipeOrThrow(error)
         } finally {
           if (pipeId) {
             onPipeChange?.(pipeId)
@@ -449,14 +436,18 @@ export function createMcpBridgeTools(
         pipe_id,
         step_id,
         connection_id,
-      }): Promise<RegisterConnectionResult> => {
-        const result = await registerConnectionService(
-          user,
-          step_id,
-          connection_id,
-        )
-        onPipeChange?.(pipe_id)
-        return result
+      }): Promise<RegisterConnectionResult | PublishedPipeErrorResult> => {
+        try {
+          const result = await registerConnectionService(
+            user,
+            step_id,
+            connection_id,
+          )
+          onPipeChange?.(pipe_id)
+          return result
+        } catch (error) {
+          return publishedPipeOrThrow(error)
+        }
       },
     }),
   }
