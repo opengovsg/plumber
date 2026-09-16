@@ -2,7 +2,7 @@ import type { IApp, IField, IJSONObject } from '@plumber/types'
 
 import * as React from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
-import { useMutation } from '@apollo/client'
+import { useMutation, useQuery } from '@apollo/client'
 import {
   Alert,
   AlertIcon,
@@ -13,6 +13,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Text,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
@@ -21,6 +22,7 @@ import ConnectionHeader from '@/components/FlowStepConfigurationModal/ChooseAndA
 import { DEFAULT_ADD_CONNECTION_LABEL } from '@/components/FlowStepConfigurationModal/constants'
 import InputCreator from '@/components/InputCreator'
 import { REPLACE_CONNECTION_CREDENTIALS } from '@/graphql/mutations/replace-connection-credentials'
+import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
@@ -36,6 +38,20 @@ type AddAppConnectionProps = {
 
 type Response = {
   [key: string]: any
+}
+
+const LABEL_FIELD_KEYS = new Set(['screenName', 'label'])
+
+function withLabelPrefill(field: IField, labelDefault: string): IField {
+  if (!LABEL_FIELD_KEYS.has(field.key) || !labelDefault) {
+    return field
+  }
+
+  if (field.type === 'string' || field.type === 'multiline') {
+    return { ...field, value: labelDefault }
+  }
+
+  return field
 }
 
 /**
@@ -54,6 +70,35 @@ export default function AddAppConnection(
   )
   const hasConnection = Boolean(connectionId)
   const steps = auth?.authenticationSteps
+
+  const { data: connectionsData, loading: connectionLoading } = useQuery(
+    GET_APP_CONNECTIONS,
+    {
+      variables: { key },
+      skip: !connectionId,
+    },
+  )
+
+  const editingConnection = connectionsData?.getApp?.connections?.find(
+    (connection: {
+      id?: string
+      editableLabel?: string | null
+      environmentLabel?: string | null
+    }) => connection.id === connectionId,
+  )
+  const labelDefault = editingConnection?.editableLabel ?? ''
+  const envLabel = editingConnection?.environmentLabel
+
+  const defaultValues = React.useMemo(() => {
+    if (!hasConnection || !labelDefault) {
+      return undefined
+    }
+
+    return {
+      screenName: labelDefault,
+      label: labelDefault,
+    }
+  }, [hasConnection, labelDefault])
 
   React.useEffect(() => {
     if (
@@ -227,24 +272,41 @@ export default function AddAppConnection(
         )}
 
         <ModalBody>
-          <Form onSubmit={submitHandler}>
-            <VStack gap={4} pt={4} pb={8} alignItems="stretch">
-              {auth?.fields?.map((field: IField) => (
-                <InputCreator key={field.key} schema={field} />
-              ))}
+          {hasConnection && connectionLoading ? null : (
+            <Form defaultValues={defaultValues} onSubmit={submitHandler}>
+              <VStack gap={4} pt={4} pb={8} alignItems="stretch">
+                {hasConnection && key === 'telegram-bot' ? (
+                  <Infobox>
+                    The connection name is taken from the bot after you save.
+                  </Infobox>
+                ) : null}
 
-              <Button
-                type="submit"
-                variant="solid"
-                colorScheme="primary"
-                isLoading={inProgress}
-                data-test="create-connection-button"
-                isFullWidth
-              >
-                {hasConnection ? 'Update connection' : 'Connect'}
-              </Button>
-            </VStack>
-          </Form>
+                {hasConnection && envLabel ? (
+                  <Text textStyle="body-2" color="base.content.medium">
+                    Environment: {envLabel}
+                  </Text>
+                ) : null}
+
+                {auth?.fields?.map((field: IField) => (
+                  <InputCreator
+                    key={field.key}
+                    schema={withLabelPrefill(field, labelDefault)}
+                  />
+                ))}
+
+                <Button
+                  type="submit"
+                  variant="solid"
+                  colorScheme="primary"
+                  isLoading={inProgress}
+                  data-test="create-connection-button"
+                  isFullWidth
+                >
+                  {hasConnection ? 'Update connection' : 'Connect'}
+                </Button>
+              </VStack>
+            </Form>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>

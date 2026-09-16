@@ -418,6 +418,8 @@ type Connection {
   createdAt: String
   flowCount: Int
   description: String
+  editableLabel: String
+  environmentLabel: String
 }
 
 type ConnectionData {

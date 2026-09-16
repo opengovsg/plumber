@@ -3,6 +3,8 @@ export enum PostmanEnv {
   Prod = 'prod',
 }
 
+export const POSTMAN_TEST_LABEL_PREFIX = '[TEST] '
+
 export const PROD_ENV_KEY_PREFIX = 'key_live_'
 export const PROD_ENV_API_URL = 'https://postman.gov.sg/api/v2'
 

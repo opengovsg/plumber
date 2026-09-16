@@ -3,6 +3,8 @@ export enum LetterSgEnvironment {
   Prod = 'live',
 }
 
+export const LETTERSG_STAGING_LABEL_SUFFIX = ' [STAGING]'
+
 const STAGING_ENV_API_KEY_PREFIX = 'test_'
 const STAGING_ENV_BASE_URL = 'https://staging.letters.gov.sg/api'
 
