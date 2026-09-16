@@ -242,7 +242,12 @@ export function createMcpBridgeTools(
           onPipeChange?.(pipe_id)
           return result
         } catch (error) {
-          return mcpToolError(error, 'Unable to unpublish pipe')
+          return mcpToolError(
+            error,
+            'Unable to unpublish pipe',
+            'unpublish_pipe',
+            traceId,
+          )
         }
       },
     }),
