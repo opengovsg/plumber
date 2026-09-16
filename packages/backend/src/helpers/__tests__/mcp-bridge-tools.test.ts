@@ -1,3 +1,4 @@
+import { ValidationError } from 'objection'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/services/mcp/apps', () => ({
@@ -81,6 +82,7 @@ import { createTileService } from '@/services/mcp/create-tile'
 import { deleteStepService } from '@/services/mcp/delete-step'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { listColumnsService } from '@/services/mcp/list-columns'
+import { PublishedPipeError } from '@/services/mcp/published-pipe-error'
 import { registerConnectionService } from '@/services/mcp/register-connection'
 import { unpublishPipeService } from '@/services/mcp/unpublish-pipe'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
@@ -140,6 +142,54 @@ describe('createMcpBridgeTools', () => {
       '123e4567-e89b-12d3-a456-426614174000',
     )
     expect(result).toEqual({ pipeId: 'f1', active: false })
+  })
+
+  it('returns a structured error when a step update hits a published pipe', async () => {
+    vi.mocked(updateStepParametersService).mockRejectedValueOnce(
+      new ValidationError({
+        message: 'Cannot edit published pipe.',
+        type: 'editingPublishedPipeError',
+      }),
+    )
+    const onPipeChange = vi.fn()
+    const onStepUpdate = vi.fn()
+    const tools = createMcpBridgeTools(
+      mockUser,
+      mockTraceId,
+      onPipeChange,
+      onStepUpdate,
+    )
+
+    const result = await tools.update_step_parameters.execute(
+      { pipe_id: 'flow-1', step_id: 'step-1', parameters: {} },
+      { toolCallId: 'update_step_parameters', messages: [] },
+    )
+
+    expect(result).toEqual({
+      error:
+        'This pipe is published. Ask the user to unpublish it before making changes.',
+      pipePublished: true,
+    })
+    expect(onPipeChange).not.toHaveBeenCalled()
+    expect(onStepUpdate).not.toHaveBeenCalled()
+  })
+
+  it('returns a structured error when testing a published pipe', async () => {
+    vi.mocked(executeStepService).mockRejectedValueOnce(
+      new PublishedPipeError(),
+    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+
+    const result = await tools.execute_step.execute(
+      { step_id: 'step-1' },
+      { toolCallId: 'execute_step', messages: [] },
+    )
+
+    expect(result).toEqual({
+      error:
+        'This pipe is published. Ask the user to unpublish it before making changes.',
+      pipePublished: true,
+    })
   })
 
   it('list_columns calls listColumnsService with camelCase args', async () => {

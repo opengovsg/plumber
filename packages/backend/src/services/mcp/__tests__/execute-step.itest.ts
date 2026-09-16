@@ -197,7 +197,7 @@ describe('executeStepService', () => {
 
     const anyStep = flow.steps[0]
     await expect(executeStepService(user, anyStep.id)).rejects.toThrow(
-      'Cannot test a step in an active pipe',
+      'This pipe is published. Ask the user to unpublish it before making changes.',
     )
   })
 
