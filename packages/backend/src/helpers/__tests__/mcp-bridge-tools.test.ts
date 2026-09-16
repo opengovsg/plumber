@@ -57,6 +57,12 @@ vi.mock('@/services/mcp/register-connection', () => ({
     .fn()
     .mockResolvedValue({ connectionRegistered: true }),
 }))
+vi.mock('@/services/mcp/unpublish-pipe', () => ({
+  unpublishPipeService: vi.fn().mockResolvedValue({
+    pipeId: 'f1',
+    active: false,
+  }),
+}))
 vi.mock('@/helpers/logger', () => ({
   default: {
     http: vi.fn(),
@@ -76,6 +82,7 @@ import { deleteStepService } from '@/services/mcp/delete-step'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { listColumnsService } from '@/services/mcp/list-columns'
 import { registerConnectionService } from '@/services/mcp/register-connection'
+import { unpublishPipeService } from '@/services/mcp/unpublish-pipe'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
@@ -92,6 +99,7 @@ describe('createMcpBridgeTools', () => {
       'create_tile',
       'add_tile_columns',
       'create_pipe',
+      'unpublish_pipe',
       'update_step_parameters',
       'create_step',
       'delete_step',
@@ -113,6 +121,29 @@ describe('createMcpBridgeTools', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.list_apps.execute({}, { toolCallId: 'list_apps', messages: [] })
     expect(vi.mocked(listAppsService)).toHaveBeenCalled()
+  })
+
+  it('unpublish_pipe calls unpublishPipeService and reports the pipe change', async () => {
+    const onPipeChange = vi.fn()
+    const tools = createMcpBridgeTools(
+      mockUser,
+      mockTraceId,
+      onPipeChange,
+    )
+
+    const result = await tools.unpublish_pipe.execute(
+      { pipe_id: '123e4567-e89b-12d3-a456-426614174000' },
+      { toolCallId: 'unpublish_pipe', messages: [] },
+    )
+
+    expect(vi.mocked(unpublishPipeService)).toHaveBeenCalledWith(
+      mockUser,
+      '123e4567-e89b-12d3-a456-426614174000',
+    )
+    expect(onPipeChange).toHaveBeenCalledWith(
+      '123e4567-e89b-12d3-a456-426614174000',
+    )
+    expect(result).toEqual({ pipeId: 'f1', active: false })
   })
 
   it('list_columns calls listColumnsService with camelCase args', async () => {
