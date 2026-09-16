@@ -38,8 +38,8 @@ import {
 } from '@/services/mcp/list-columns'
 import {
   isPublishedPipeError,
-  publishedPipeErrorResult,
   type PublishedPipeErrorResult,
+  publishedPipeErrorResult,
 } from '@/services/mcp/published-pipe-error'
 import {
   type RegisterConnectionResult,
@@ -363,10 +363,7 @@ export function createMcpBridgeTools(
         pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
         step_id: z.uuid().describe('ID of the step to delete'),
       }),
-      execute: async ({
-        pipe_id,
-        step_id,
-      }): Promise<Flow | McpToolError> => {
+      execute: async ({ pipe_id, step_id }): Promise<Flow | McpToolError> => {
         try {
           const flow = await deleteStepService({
             user,
