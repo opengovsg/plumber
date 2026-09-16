@@ -57,6 +57,14 @@ vi.mock('@/services/mcp/register-connection', () => ({
     .fn()
     .mockResolvedValue({ connectionRegistered: true }),
 }))
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    http: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+}))
 
 import { UserFacingError } from '@/errors/user-facing-error'
 import { addTileColumnsService } from '@/services/mcp/add-tile-columns'
