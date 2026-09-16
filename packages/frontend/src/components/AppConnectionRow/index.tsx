@@ -9,8 +9,10 @@ import {
   Box,
   Card,
   Flex,
+  HStack,
   Spinner,
   Stack,
+  StackDivider,
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
@@ -47,7 +49,8 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const [deleteConnection, { loading: isDeletingConnection }] =
     useMutation(DELETE_CONNECTION)
 
-  const { id, key, formattedData, createdAt, flowCount } = props.connection
+  const { id, key, formattedData, createdAt, updatedAt, flowCount } =
+    props.connection
 
   const cancelRef = useRef<HTMLButtonElement>(null)
   const {
@@ -119,6 +122,9 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
   const relativeCreatedAt = DateTime.fromMillis(
     parseInt(createdAt, 10),
   ).toRelative()
+  const relativeUpdatedAt = DateTime.fromMillis(
+    parseInt(updatedAt, 10),
+  ).toRelative()
 
   return (
     <>
@@ -136,19 +142,32 @@ function AppConnectionRow(props: AppConnectionRowProps): React.ReactElement {
         <Stack
           justifyContent="center"
           alignItems="flex-start"
-          flexShrink={1}
-          overflowX="hidden"
+          flex={1}
+          minW={0}
           spacing={1}
-          maxW="60%"
         >
-          <Text textStyle={['body-2', 'body-1', 'subhead-1']} textAlign="left">
+          <Text
+            textStyle={['body-2', 'body-1', 'subhead-1']}
+            textAlign="left"
+            noOfLines={1}
+          >
             {formattedData?.screenName?.toString() || 'Unnamed'}
           </Text>
 
-          <Text textStyle="caption-2">added {relativeCreatedAt}</Text>
+          <HStack
+            spacing={2}
+            divider={<StackDivider borderColor="base.divider.strong" />}
+          >
+            <Text textStyle="caption-2" whiteSpace="nowrap">
+              Added {relativeCreatedAt}
+            </Text>
+            <Text textStyle="caption-2" whiteSpace="nowrap">
+              Last updated {relativeUpdatedAt}
+            </Text>
+          </HStack>
         </Stack>
 
-        <Flex gap={[0, 1, 2]} alignItems="center">
+        <Flex gap={[0, 1, 2]} alignItems="center" flexShrink={0}>
           <Flex gap={2}>
             {verificationVisible && testCalled && testLoading && (
               <>

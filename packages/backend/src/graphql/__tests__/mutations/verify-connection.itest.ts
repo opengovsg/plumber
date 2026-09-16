@@ -271,6 +271,24 @@ describe('verifyConnection', () => {
       expect(updated.draft).toBe(false)
     })
 
+    it('should not rewrite verified or draft when they are already set', async () => {
+      const alreadyVerified = await ownerConnection.$query().patchAndFetch({
+        verified: true,
+        draft: false,
+      })
+
+      await verifyConnection(
+        null,
+        { input: { id: ownerConnection.id, flowId: testFlow.id } },
+        context,
+      )
+
+      const updated = await Connection.query().findById(ownerConnection.id)
+      expect(updated.verified).toBe(true)
+      expect(updated.draft).toBe(false)
+      expect(updated.updatedAt).toEqual(alreadyVerified.updatedAt)
+    })
+
     it('should call verifyCredentials exactly once', async () => {
       await verifyConnection(
         null,

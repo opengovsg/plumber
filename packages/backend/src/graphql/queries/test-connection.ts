@@ -85,10 +85,14 @@ const testConnection: QueryResolvers['testConnection'] = async (
     })
   }
 
-  connection = await connection.$query().patchAndFetch({
-    formattedData: connection.formattedData,
-    verified: isStillVerified,
-  })
+  // Testing should not bump updatedAt when the connection is already in the
+  // same verified state. Auth data changes are persisted by $.auth.set only
+  // when the merged payload actually differs.
+  if (connection.verified !== isStillVerified) {
+    connection = await connection.$query().patchAndFetch({
+      verified: isStillVerified,
+    })
+  }
 
   // if testing outside of the editor, it does not verify registration (e.g. setting of webhook url)
   if (!isStillVerified || !flowId || !supportsConnectionRegistration) {

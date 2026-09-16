@@ -46,4 +46,25 @@ describe('globalVariable auth persistence', () => {
       },
     })
   })
+
+  it('does not persist auth updates when merged data is unchanged', async () => {
+    const patchAndFetch = vi.fn()
+    const connection = {
+      id: 'connection-id',
+      formattedData: {
+        token: 'stored-token',
+        screenName: 'Stored bot',
+      },
+      $query: () => ({ patchAndFetch }),
+    } as unknown as Connection
+
+    const $ = await globalVariable({ app, connection })
+    await $.auth.set({ screenName: 'Stored bot' })
+
+    expect(patchAndFetch).not.toHaveBeenCalled()
+    expect($.auth.data).toEqual({
+      token: 'stored-token',
+      screenName: 'Stored bot',
+    })
+  })
 })
