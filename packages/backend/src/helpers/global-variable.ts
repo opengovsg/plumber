@@ -50,17 +50,18 @@ const globalVariable = async (
   const $: IGlobalVariable = {
     auth: {
       set: async (args: IJSONObject) => {
-        if (connection) {
-          await connection.$query().patchAndFetch({
-            formattedData: {
-              ...connection.formattedData,
-              ...args,
-            },
-          })
-
-          $.auth.data = connection.formattedData
+        const updatedAuthData = {
+          ...$.auth.data,
+          ...args,
         }
 
+        if (connection) {
+          await connection.$query().patchAndFetch({
+            formattedData: updatedAuthData,
+          })
+        }
+
+        $.auth.data = updatedAuthData
         return null
       },
       data: connection?.formattedData,
