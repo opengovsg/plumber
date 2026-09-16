@@ -144,7 +144,8 @@ export async function updateFlowStatusService({
       }
     } catch (error) {
       logger.warn({
-        message: 'Failed to clean leftover repeatable Redis keys after unpublish',
+        message:
+          'Failed to clean leftover repeatable Redis keys after unpublish',
         flowId: flow.id,
         jobKey: job.key,
         error,
