@@ -17,6 +17,8 @@ export type AlertDialogType =
   | 'duplicate-branch'
   | 'share-connections'
   | 'leave'
+  | 'edit-connection'
+
 export type AlertHeaderType =
   | 'Connection'
   | 'Pipe'
@@ -41,6 +43,7 @@ interface AlertDialogContent {
   header: string
   body: string
   buttonText: string
+  buttonColorScheme: 'critical' | 'primary'
   customBody?: string
 }
 
@@ -57,6 +60,7 @@ function getAlertDialogContent(
           customBody ??
           `Are you sure you want to delete this ${dialogHeader?.toLowerCase()}? You can't undo this action afterwards.`,
         buttonText: 'Delete',
+        buttonColorScheme: 'critical',
       }
     case 'duplicate':
       return {
@@ -65,12 +69,14 @@ function getAlertDialogContent(
           customBody ??
           `You'll need to replace the data in every step and test each step in your duplicated pipe before publishing it.`,
         buttonText: 'Duplicate',
+        buttonColorScheme: 'critical',
       }
     case 'duplicate-branch':
       return {
         header: `Duplicate ${dialogHeader}`,
         body: `Every step in this ${dialogHeader} will be duplicated. You will need to check each step again.`,
         buttonText: 'Duplicate',
+        buttonColorScheme: 'critical',
       }
     case 'share-connections':
       return {
@@ -79,6 +85,7 @@ function getAlertDialogContent(
           customBody ??
           `The collaborator will have access to your connections.`,
         buttonText: 'Yes, add editor',
+        buttonColorScheme: 'critical',
       }
     case 'leave':
       return {
@@ -87,6 +94,16 @@ function getAlertDialogContent(
           customBody ??
           'Are you sure you want to leave this pipe? You will lose access.',
         buttonText: 'Leave',
+        buttonColorScheme: 'critical',
+      }
+    case 'edit-connection':
+      return {
+        header: 'Edit connection',
+        body:
+          customBody ??
+          'Editing replaces the stored credentials. You cannot recover the old key, token, or password afterwards. A wrong value can break pipes that use this connection.',
+        buttonText: 'Continue',
+        buttonColorScheme: 'primary',
       }
   }
 }
@@ -102,7 +119,7 @@ export default function MenuAlertDialog(props: MenuAlertDialogProps) {
     isLoading,
     customBody,
   } = props
-  const { header, body, buttonText } = getAlertDialogContent(
+  const { header, body, buttonText, buttonColorScheme } = getAlertDialogContent(
     dialogHeader,
     dialogType,
     customBody,
@@ -132,7 +149,7 @@ export default function MenuAlertDialog(props: MenuAlertDialogProps) {
               Cancel
             </Button>
             <Button
-              colorScheme="critical"
+              colorScheme={buttonColorScheme}
               onClick={onClick}
               ml={3}
               isLoading={isLoading}
