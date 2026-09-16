@@ -37,6 +37,11 @@ import {
   listColumnsService,
 } from '@/services/mcp/list-columns'
 import {
+  isPublishedPipeError,
+  publishedPipeErrorResult,
+  type PublishedPipeErrorResult,
+} from '@/services/mcp/published-pipe-error'
+import {
   type RegisterConnectionResult,
   registerConnectionService,
 } from '@/services/mcp/register-connection'
@@ -50,13 +55,17 @@ import {
 } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
+type McpToolError = { error: string } | PublishedPipeErrorResult
 
 function mcpToolError(
   error: unknown,
   fallback: string,
   tool: string,
   traceId: string,
-): { error: string } {
+): McpToolError {
+  if (isPublishedPipeError(error)) {
+    return publishedPipeErrorResult()
+  }
   if (error instanceof UserFacingError) {
     return { error: error.message }
   }
@@ -282,17 +291,26 @@ export function createMcpBridgeTools(
         parameters,
         connection_id,
         parameter_labels,
-      }): Promise<McpUpdateStepParametersResult> => {
-        const result = await updateStepParametersService({
-          user,
-          pipeId: pipe_id,
-          stepId: step_id,
-          parameters,
-          connectionId: connection_id,
-        })
-        onPipeChange?.(pipe_id)
-        onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
-        return result
+      }): Promise<McpUpdateStepParametersResult | McpToolError> => {
+        try {
+          const result = await updateStepParametersService({
+            user,
+            pipeId: pipe_id,
+            stepId: step_id,
+            parameters,
+            connectionId: connection_id,
+          })
+          onPipeChange?.(pipe_id)
+          onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
+          return result
+        } catch (error) {
+          return mcpToolError(
+            error,
+            'Unable to update step parameters',
+            'update_step_parameters',
+            traceId,
+          )
+        }
       },
     }),
 
@@ -316,16 +334,25 @@ export function createMcpBridgeTools(
         app_key,
         action_key,
         previous_step_id,
-      }): Promise<Step> => {
-        const step = await createStepService({
-          user,
-          pipeId: pipe_id,
-          appKey: app_key,
-          key: action_key,
-          previousStepId: previous_step_id,
-        })
-        onPipeChange?.(pipe_id)
-        return step
+      }): Promise<Step | McpToolError> => {
+        try {
+          const step = await createStepService({
+            user,
+            pipeId: pipe_id,
+            appKey: app_key,
+            key: action_key,
+            previousStepId: previous_step_id,
+          })
+          onPipeChange?.(pipe_id)
+          return step
+        } catch (error) {
+          return mcpToolError(
+            error,
+            'Unable to create step',
+            'create_step',
+            traceId,
+          )
+        }
       },
     }),
 
@@ -336,14 +363,26 @@ export function createMcpBridgeTools(
         pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
         step_id: z.uuid().describe('ID of the step to delete'),
       }),
-      execute: async ({ pipe_id, step_id }): Promise<Flow> => {
-        const flow = await deleteStepService({
-          user,
-          pipeId: pipe_id,
-          stepId: step_id,
-        })
-        onPipeChange?.(pipe_id)
-        return flow
+      execute: async ({
+        pipe_id,
+        step_id,
+      }): Promise<Flow | McpToolError> => {
+        try {
+          const flow = await deleteStepService({
+            user,
+            pipeId: pipe_id,
+            stepId: step_id,
+          })
+          onPipeChange?.(pipe_id)
+          return flow
+        } catch (error) {
+          return mcpToolError(
+            error,
+            'Unable to delete step',
+            'delete_step',
+            traceId,
+          )
+        }
       },
     }),
 
@@ -353,12 +392,21 @@ export function createMcpBridgeTools(
       inputSchema: z.object({
         step_id: z.uuid().describe('ID of the step to test'),
       }),
-      execute: async ({ step_id }): Promise<McpExecuteStepResult> => {
+      execute: async ({
+        step_id,
+      }): Promise<McpExecuteStepResult | McpToolError> => {
         let pipeId: string | undefined
         try {
           const result = await executeStepService(user, step_id)
           pipeId = result.pipeId
           return result
+        } catch (error) {
+          return mcpToolError(
+            error,
+            'Unable to test step',
+            'execute_step',
+            traceId,
+          )
         } finally {
           if (pipeId) {
             onPipeChange?.(pipeId)
