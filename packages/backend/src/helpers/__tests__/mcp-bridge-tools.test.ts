@@ -42,6 +42,9 @@ vi.mock('@/services/mcp/create-step', () => ({
 vi.mock('@/services/mcp/delete-step', () => ({
   deleteStepService: vi.fn().mockResolvedValue({ id: 'f1', steps: [] }),
 }))
+vi.mock('@/services/mcp/execute-step', () => ({
+  executeStepService: vi.fn(),
+}))
 vi.mock('@/services/mcp/get-form-schema', () => ({
   getFormSchemaService: vi.fn().mockResolvedValue({
     formId: 'a'.repeat(24),
@@ -80,6 +83,7 @@ import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-step
 import { createStepService } from '@/services/mcp/create-step'
 import { createTileService } from '@/services/mcp/create-tile'
 import { deleteStepService } from '@/services/mcp/delete-step'
+import { executeStepService } from '@/services/mcp/execute-step'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { listColumnsService } from '@/services/mcp/list-columns'
 import { PublishedPipeError } from '@/services/mcp/published-pipe-error'
