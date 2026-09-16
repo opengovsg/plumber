@@ -105,57 +105,94 @@ jobs:
         id: app-vulns
         env:
           SCAN_RESULTS: ${{ steps.inspector.outputs.inspector_scan_results }}
-          # Matched as a substring, so a leading slash or layer prefix on
-          # Inspector's package paths cannot silence the count.
-          APP_PATH_PATTERN: opt/plumber/node_modules/
+          # Path-segment match. A leading slash or image-layer prefix is allowed.
+          # A trailing slash is not required.
+          APP_PATH_PATTERN: opt/plumber/node_modules
           CRITICAL_THRESHOLD: 5
           HIGH_THRESHOLD: 10
         run: |
+          set -euo pipefail
+
           report=$(jq --arg pattern "$APP_PATH_PATTERN" '
             def severity_rank: {"critical": 5, "high": 4, "medium": 3, "low": 2}[.] // 1;
+            def is_app_path: test("(^|/)" + $pattern + "(/|$)");
+            def is_malware:
+              ((.id // "") | startswith("MAL-"))
+              or (([.properties[]? | select(.name == "amazon:inspector:sbom_scanner:is_malicious") | .value] | index("true")) != null);
+            def is_dockerfile: ((.id // "") | startswith("IN-DOCKER"));
 
-            [.sbom.components[]? | recurse(.components[]?)] as $components
-            | ([$components[]
-                | select(has("bom-ref"))
-                | {key: .["bom-ref"],
-                   value: [.properties[]?
-                           | select(.name == "amazon:inspector:sbom_scanner:path"
-                                    or .name == "amazon:inspector:sbom_generator:source_path")
-                           | .value]}]
-               | from_entries) as $paths
-            | [.sbom.vulnerabilities[]?
-               | select((.id // "") | contains("IN-DOCKER") | not)
-               | select((.id // "") | startswith("MAL-") | not)
-               | select([.properties[]? | select(.name == "amazon:inspector:sbom_scanner:is_malicious") | .value] | index("true") | not)
-               | {id: (.id // "unknown"),
-                  paths: [.affects[]?.ref | $paths[.]? // [] | .[]],
-                  rank: ([.ratings[]?
-                          | select((.method == "other" and (.source.name? // "") == "EPSS") | not)
-                          | .severity? | select(. != null) | ascii_downcase | severity_rank] | max // 1)}]
-            | {scanned: length,
-               located: (map(select(.paths | length > 0)) | length)}
-              + (map(select(.paths | any(contains($pattern))))
-                 | group_by(.id)
-                 | map({rank: (map(.rank) | max)})
-                 | {critical: (map(select(.rank == 5)) | length),
-                    high: (map(select(.rank == 4)) | length),
-                    medium: (map(select(.rank == 3)) | length),
-                    low: (map(select(.rank == 2)) | length),
-                    other: (map(select(.rank == 1)) | length)})
+            if has("sbom") | not then
+              {sbom: false, app_components: 0, scanned: 0, located: 0,
+               app_malware: 0, critical: 0, high: 0, medium: 0, low: 0, other: 0}
+            else
+              [.sbom.components[]? | recurse(.components[]?)] as $components
+              | ([$components[]
+                  | select(has("bom-ref"))
+                  | {key: .["bom-ref"],
+                     value: [.properties[]?
+                             | select(.name == "amazon:inspector:sbom_scanner:path"
+                                      or .name == "amazon:inspector:sbom_generator:source_path")
+                             | .value]}]
+                 | from_entries) as $paths
+              | ($paths
+                 | [.[]] | flatten
+                 | map(select(type == "string" and is_app_path))
+                 | unique | length) as $app_components
+              | [.sbom.vulnerabilities[]?
+                 | select(is_dockerfile | not)
+                 | {id: (.id // "unknown"),
+                    malware: is_malware,
+                    paths: [.affects[]?.ref | $paths[.]? // [] | .[]],
+                    rank: ([.ratings[]?
+                            | select((.method == "other" and (.source.name? // "") == "EPSS") | not)
+                            | .severity? | select(. != null) | ascii_downcase | severity_rank] | max // 1)}]
+              | . as $findings
+              | ($findings | map(select((.paths | any(is_app_path)) and .malware))) as $app_malware
+              | ($findings | map(select(.paths | any(is_app_path)))) as $app_findings
+              | {sbom: true,
+                 app_components: $app_components,
+                 scanned: ($findings | length),
+                 located: ($findings | map(select(.paths | length > 0)) | length),
+                 app_malware: ($app_malware | length)}
+                + ($app_findings
+                   | group_by(.id)
+                   | map({rank: (map(.rank) | max)})
+                   | {critical: (map(select(.rank == 5)) | length),
+                      high: (map(select(.rank == 4)) | length),
+                      medium: (map(select(.rank == 3)) | length),
+                      low: (map(select(.rank == 2)) | length),
+                      other: (map(select(.rank == 1)) | length)})
+            end
           ' "$SCAN_RESULTS")
 
           echo "Package vulnerabilities in $APP_PATH_PATTERN"
           jq -r 'to_entries | map("  \(.key): \(.value)") | .[]' <<< "$report"
 
+          sbom=$(jq -r '.sbom' <<< "$report")
+          app_components=$(jq -r '.app_components' <<< "$report")
           scanned=$(jq -r '.scanned' <<< "$report")
           located=$(jq -r '.located' <<< "$report")
+          app_malware=$(jq -r '.app_malware' <<< "$report")
           critical=$(jq -r '.critical' <<< "$report")
           high=$(jq -r '.high' <<< "$report")
 
-          # Inspector findings carry no package path, so the app filter cannot be
-          # trusted. Alert instead of reporting a silent zero.
-          if [ "$scanned" -gt 0 ] && [ "$located" -eq 0 ]; then
-            echo "::warning::Could not map any Inspector finding to a package path; app-only filter is not working."
+          for value in "$app_components" "$scanned" "$located" "$app_malware" "$critical" "$high"; do
+            case "$value" in
+              ''|*[!0-9]*)
+                echo "::warning::App vulnerability count produced a non-integer. Review the full scan."
+                {
+                  echo "summary=App vulnerability count failed validation. Review the full scan."
+                  echo "threshold_exceeded=1"
+                } >> "$GITHUB_OUTPUT"
+                exit 0
+                ;;
+            esac
+          done
+
+          # Fail loud when the filter cannot see Plumber app packages. A silent
+          # zero would hide both CVEs and malware.
+          if [ "$sbom" != "true" ] || [ "$app_components" -eq 0 ] || { [ "$scanned" -gt 0 ] && [ "$located" -eq 0 ]; }; then
+            echo "::warning::Could not map Inspector findings onto $APP_PATH_PATTERN; app-only filter is not working."
             {
               echo "summary=Could not map findings to app packages, so the app-only filter did not run. Review the full scan."
               echo "threshold_exceeded=1"
@@ -164,15 +201,15 @@ jobs:
           fi
 
           threshold_exceeded=0
-          if [ "$critical" -ge "$CRITICAL_THRESHOLD" ] || [ "$high" -ge "$HIGH_THRESHOLD" ]; then
+          if [ "$app_malware" -gt 0 ] || [ "$critical" -ge "$CRITICAL_THRESHOLD" ] || [ "$high" -ge "$HIGH_THRESHOLD" ]; then
             threshold_exceeded=1
           fi
 
-          echo "Thresholds: critical >= $CRITICAL_THRESHOLD, high >= $HIGH_THRESHOLD"
+          echo "Thresholds: critical >= $CRITICAL_THRESHOLD, high >= $HIGH_THRESHOLD, malware > 0"
           echo "Threshold exceeded: $threshold_exceeded"
 
           {
-            echo "summary=Plumber app packages: $critical critical, $high high."
+            echo "summary=Plumber app packages: $critical critical, $high high, $app_malware malware."
             echo "threshold_exceeded=$threshold_exceeded"
           } >> "$GITHUB_OUTPUT"
 
