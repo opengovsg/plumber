@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import Flow from '@/models/flow'
 import User from '@/models/user'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
@@ -183,5 +184,41 @@ describe('createStepService', () => {
         previousStepId: randomUUID(),
       }),
     ).rejects.toThrow('Pipe not found')
+  })
+
+  it('rejects creating a step on a published pipe', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-step-published-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Published Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: 'trace-create-published',
+    })
+    await Flow.knex().table('flows').where('id', flow.id).update({
+      active: true,
+    })
+    const loadedFlow = await flow.$fetchGraph('steps')
+
+    await expect(
+      createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'slack',
+        key: 'sendMessageToChannel',
+        previousStepId: loadedFlow.steps[0].id,
+      }),
+    ).rejects.toThrow(
+      'This pipe is published. Ask the user to unpublish it before making changes.',
+    )
   })
 })
