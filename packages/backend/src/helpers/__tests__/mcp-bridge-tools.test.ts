@@ -125,11 +125,7 @@ describe('createMcpBridgeTools', () => {
 
   it('unpublish_pipe calls unpublishPipeService and reports the pipe change', async () => {
     const onPipeChange = vi.fn()
-    const tools = createMcpBridgeTools(
-      mockUser,
-      mockTraceId,
-      onPipeChange,
-    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
 
     const result = await tools.unpublish_pipe.execute(
       { pipe_id: '123e4567-e89b-12d3-a456-426614174000' },
