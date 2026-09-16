@@ -1,6 +1,11 @@
 import { type IGlobalVariable } from '@plumber/types'
 
-import { COMMON_S3_BUCKET, putObject } from '@/helpers/s3'
+import {
+  ATTACHMENT_TYPE,
+  buildAttachmentTypeTagging,
+  COMMON_S3_BUCKET,
+  putObject,
+} from '@/helpers/s3'
 
 export async function downloadAndStoreAttachmentInS3(
   $: IGlobalVariable,
@@ -29,8 +34,11 @@ export async function downloadAndStoreAttachmentInS3(
     metadata: {
       flowId: $.flow.id,
       stepId: $.step.id,
-      executionId: $.execution.id ?? '', // Empty = test runs
+      executionId: $.execution.id ?? '',
       publicId,
     },
+    tagging: buildAttachmentTypeTagging(
+      $.execution.testRun ? ATTACHMENT_TYPE.TEST : ATTACHMENT_TYPE.TRANSITIVE,
+    ),
   })
 }
