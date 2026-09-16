@@ -98,8 +98,83 @@ jobs:
         with:
           artifact_type: 'container'
           artifact_path: '${{ steps.ecr-image-uri.outputs.image }}'
-          critical_threshold: 5
-          high_threshold: 10
+          # Thresholds live in the next step, because whole-image counts include
+          # runtime and OS packages that must not page us.
+
+      - name: Count vulnerabilities in Plumber app packages
+        id: app-vulns
+        env:
+          SCAN_RESULTS: ${{ steps.inspector.outputs.inspector_scan_results }}
+          # Matched as a substring, so a leading slash or layer prefix on
+          # Inspector's package paths cannot silence the count.
+          APP_PATH_PATTERN: opt/plumber/node_modules/
+          CRITICAL_THRESHOLD: 5
+          HIGH_THRESHOLD: 10
+        run: |
+          report=$(jq --arg pattern "$APP_PATH_PATTERN" '
+            def severity_rank: {"critical": 5, "high": 4, "medium": 3, "low": 2}[.] // 1;
+
+            [.sbom.components[]? | recurse(.components[]?)] as $components
+            | ([$components[]
+                | select(has("bom-ref"))
+                | {key: .["bom-ref"],
+                   value: [.properties[]?
+                           | select(.name == "amazon:inspector:sbom_scanner:path"
+                                    or .name == "amazon:inspector:sbom_generator:source_path")
+                           | .value]}]
+               | from_entries) as $paths
+            | [.sbom.vulnerabilities[]?
+               | select((.id // "") | contains("IN-DOCKER") | not)
+               | select((.id // "") | startswith("MAL-") | not)
+               | select([.properties[]? | select(.name == "amazon:inspector:sbom_scanner:is_malicious") | .value] | index("true") | not)
+               | {id: (.id // "unknown"),
+                  paths: [.affects[]?.ref | $paths[.]? // [] | .[]],
+                  rank: ([.ratings[]?
+                          | select((.method == "other" and (.source.name? // "") == "EPSS") | not)
+                          | .severity? | select(. != null) | ascii_downcase | severity_rank] | max // 1)}]
+            | {scanned: length,
+               located: (map(select(.paths | length > 0)) | length)}
+              + (map(select(.paths | any(contains($pattern))))
+                 | group_by(.id)
+                 | map({rank: (map(.rank) | max)})
+                 | {critical: (map(select(.rank == 5)) | length),
+                    high: (map(select(.rank == 4)) | length),
+                    medium: (map(select(.rank == 3)) | length),
+                    low: (map(select(.rank == 2)) | length),
+                    other: (map(select(.rank == 1)) | length)})
+          ' "$SCAN_RESULTS")
+
+          echo "Package vulnerabilities in $APP_PATH_PATTERN"
+          jq -r 'to_entries | map("  \(.key): \(.value)") | .[]' <<< "$report"
+
+          scanned=$(jq -r '.scanned' <<< "$report")
+          located=$(jq -r '.located' <<< "$report")
+          critical=$(jq -r '.critical' <<< "$report")
+          high=$(jq -r '.high' <<< "$report")
+
+          # Inspector findings carry no package path, so the app filter cannot be
+          # trusted. Alert instead of reporting a silent zero.
+          if [ "$scanned" -gt 0 ] && [ "$located" -eq 0 ]; then
+            echo "::warning::Could not map any Inspector finding to a package path; app-only filter is not working."
+            {
+              echo "summary=Could not map findings to app packages, so the app-only filter did not run. Review the full scan."
+              echo "threshold_exceeded=1"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          threshold_exceeded=0
+          if [ "$critical" -ge "$CRITICAL_THRESHOLD" ] || [ "$high" -ge "$HIGH_THRESHOLD" ]; then
+            threshold_exceeded=1
+          fi
+
+          echo "Thresholds: critical >= $CRITICAL_THRESHOLD, high >= $HIGH_THRESHOLD"
+          echo "Threshold exceeded: $threshold_exceeded"
+
+          {
+            echo "summary=Plumber app packages: $critical critical, $high high."
+            echo "threshold_exceeded=$threshold_exceeded"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Display CycloneDX SBOM (JSON)
         run: cat ${{ steps.inspector.outputs.artifact_sbom }}
@@ -118,8 +193,8 @@ jobs:
             ${{ steps.inspector.outputs.artifact_sbom }}
           retention-days: 7
 
-      - name: Notify Slack if vulnerability threshold is exceeded
-        if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
+      - name: Notify Slack if app vulnerability threshold is exceeded
+        if: steps.app-vulns.outputs.threshold_exceeded == '1'
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2
         with:
           method: chat.postMessage
@@ -127,7 +202,7 @@ jobs:
           payload: |
             channel: "${{ secrets.SLACK_CHANNEL_ID }}"
             username: "Plumber Deployment Scanner"
-            text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). ${{ steps.app-vulns.outputs.summary }} Uploaded scan results also cover runtime and OS packages: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Push image to ECR after scan passes
         env:
