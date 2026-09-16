@@ -103,6 +103,94 @@ describe('wrapMcpToolsWithUsageLogs', () => {
     })
   })
 
+  it('redacts free-form parameters and unknown keys, keeps ids', async () => {
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        update_step_parameters: {
+          execute: vi.fn().mockResolvedValue({ ok: true }),
+        },
+      },
+      { source: 'plumber', traceId: 'trace-5' },
+    )
+
+    await tools.update_step_parameters.execute({
+      pipe_id: 'flow-1',
+      step_id: 'step-1',
+      connection_id: 'conn-1',
+      parameters: {
+        message: 'NRIC S1234567A',
+        body: 'secret text',
+        rowData: [{ columnId: 'col-1', value: 'alice' }],
+      },
+      parameter_labels: { message: 'NRIC' },
+      query: 'how to send sms',
+    } as never)
+
+    expect(mocks.http).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: {
+          pipe_id: 'flow-1',
+          step_id: 'step-1',
+          connection_id: 'conn-1',
+          parameters: {
+            message: '[redacted]',
+            body: '[redacted]',
+            rowData: [{ columnId: '[redacted]', value: '[redacted]' }],
+          },
+          parameter_labels: { message: '[redacted]' },
+          query: '[redacted]',
+        },
+      }),
+    )
+  })
+
+  it('redacts nested create_pipe step parameters and keeps app keys', async () => {
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        create_pipe: {
+          execute: vi.fn().mockResolvedValue({ id: 'flow-1' }),
+        },
+      },
+      { source: 'plumber', traceId: 'trace-6' },
+    )
+
+    await tools.create_pipe.execute({
+      name: 'Leave pipe',
+      steps: [
+        {
+          app_key: 'formsg',
+          trigger_key: 'newSubmission',
+          parameters: { formId: 'abc' },
+        },
+        {
+          app_key: 'postman',
+          action_key: 'sendTransactionalEmail',
+          parameters: { destinationEmail: 'user@example.com' },
+        },
+      ],
+    } as never)
+
+    expect(mocks.http).toHaveBeenCalledWith(
+      expect.objectContaining({
+        args: {
+          name: 'Leave pipe',
+          steps: [
+            {
+              app_key: 'formsg',
+              trigger_key: 'newSubmission',
+              parameters: { formId: '[redacted]' },
+            },
+            {
+              app_key: 'postman',
+              action_key: 'sendTransactionalEmail',
+              parameters: { destinationEmail: '[redacted]' },
+            },
+          ],
+        },
+      }),
+    )
+  })
+
   it('leaves tools without execute unchanged', () => {
     const passthrough = vi.fn()
     const tools = wrapMcpToolsWithUsageLogs(
