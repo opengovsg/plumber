@@ -40,6 +40,7 @@ import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
+import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import { chatModel, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
@@ -204,9 +205,17 @@ const handleChatStream = observe(
             url: 'https://guide.plumber.gov.sg/~gitbook/mcp',
           },
         })
-        gitbookTools =
+        gitbookTools = wrapMcpToolsWithUsageLogs(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (await mcpClient.tools()) as Parameters<typeof streamText>[0]['tools']
+          (await mcpClient.tools()) as Parameters<
+            typeof streamText
+          >[0]['tools'],
+          {
+            source: 'gitbook',
+            traceId,
+            userId: context.currentUser.email,
+          },
+        )
       } catch (error) {
         await mcpClient?.close()
         mcpClient = null
