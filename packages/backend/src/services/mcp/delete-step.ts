@@ -6,6 +6,8 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { PublishedPipeError } from './published-pipe-error'
+
 export interface DeleteStepInput {
   user: User
   pipeId: string
@@ -30,6 +32,10 @@ export async function deleteStepService({
     }
 
     const flow = step.flow
+
+    if (flow.active) {
+      throw new PublishedPipeError()
+    }
 
     if (step.type === 'trigger') {
       if (step.appKey === 'formsg' && step.key === 'newSubmission') {
