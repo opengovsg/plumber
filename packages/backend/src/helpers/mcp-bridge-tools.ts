@@ -5,6 +5,7 @@ import { z } from 'zod/v4'
 
 import { UserFacingError } from '@/errors/user-facing-error'
 import logger from '@/helpers/logger'
+import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import type Flow from '@/models/flow'
 import type Step from '@/models/step'
 import type User from '@/models/user'
@@ -46,12 +47,17 @@ import {
 
 type ListAppsInput = Record<string, IApp[]>
 
-function mcpToolError(error: unknown, fallback: string): { error: string } {
+function mcpToolError(
+  error: unknown,
+  fallback: string,
+  tool: string,
+  traceId: string,
+): { error: string } {
   if (error instanceof UserFacingError) {
     return { error: error.message }
   }
   const message = error instanceof Error ? error.message : fallback
-  logger.warn('MCP tool failed', { error: message })
+  logger.warn('MCP tool failed', { tool, traceId, error: message })
   return { error: fallback }
 }
 
@@ -65,7 +71,7 @@ export function createMcpBridgeTools(
     parameterLabels?: Record<string, string>,
   ) => void,
 ) {
-  return {
+  const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
       description:
         "List all available Plumber apps, triggers, and actions with their field schemas. A field's variableTypes, when present, restricts it to upstream variables whose execute_step dataOutMetadata type matches one of the listed values.",
@@ -121,7 +127,12 @@ export function createMcpBridgeTools(
             traceId,
           })
         } catch (error) {
-          return mcpToolError(error, 'Unable to create tile')
+          return mcpToolError(
+            error,
+            'Unable to create tile',
+            'create_tile',
+            traceId,
+          )
         }
       },
     }),
@@ -151,7 +162,12 @@ export function createMcpBridgeTools(
             traceId,
           })
         } catch (error) {
-          return mcpToolError(error, 'Unable to add tile columns')
+          return mcpToolError(
+            error,
+            'Unable to add tile columns',
+            'add_tile_columns',
+            traceId,
+          )
         }
       },
     }),
@@ -371,4 +387,10 @@ export function createMcpBridgeTools(
       },
     }),
   }
+
+  return wrapMcpToolsWithUsageLogs(tools, {
+    source: 'plumber',
+    traceId,
+    userId: user.email,
+  })
 }

@@ -6,6 +6,11 @@ function generateEmails(length: number) {
   return Array.from({ length }, (_, i) => `user${i + 1}@example.com`).join(',')
 }
 
+// Stacked plus tags push the local part past the 64-character limit that
+// email-validator enforced.
+const longLocalPart = `deploy-env+${'a'.repeat(30)}+${'b'.repeat(30)}+main`
+const longLocalPartEmail = `${longLocalPart}@example.com`
+
 describe('postman transactional email schema zod validation', () => {
   let validPayload: Record<string, unknown>
 
@@ -75,6 +80,44 @@ describe('postman transactional email schema zod validation', () => {
     const result = transactionalEmailSchema.safeParse(validPayload)
     assert(result.success === false)
     expect(result.error?.issues[0].message).toEqual('Invalid recipient emails')
+  })
+
+  it('accepts plus-tagged addresses whose local part exceeds 64 characters', () => {
+    expect(longLocalPart.length).toBeGreaterThan(64)
+    validPayload.destinationEmail = longLocalPartEmail
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.destinationEmail).toEqual([longLocalPartEmail])
+  })
+
+  it('accepts a mailbox of exactly 254 characters', () => {
+    const mailbox = `${'a'.repeat(242)}@example.com`
+    expect(mailbox).toHaveLength(254)
+    validPayload.destinationEmail = mailbox
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.destinationEmail).toEqual([mailbox])
+  })
+
+  it('rejects a mailbox longer than 254 characters', () => {
+    validPayload.destinationEmail = `${'a'.repeat(243)}@example.com`
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === false)
+    expect(result.error?.issues[0].message).toEqual('Invalid recipient emails')
+  })
+
+  it('still rejects addresses without a TLD', () => {
+    validPayload.destinationEmail = 'user@localhost'
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === false)
+    expect(result.error?.issues[0].message).toEqual('Invalid recipient emails')
+  })
+
+  it('accepts a long plus-tagged reply-to address', () => {
+    validPayload.replyTo = longLocalPartEmail
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.replyTo).toEqual(longLocalPartEmail)
   })
 
   it('should fail if email string is not defined', () => {

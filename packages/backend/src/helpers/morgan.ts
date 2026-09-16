@@ -36,6 +36,7 @@ morgan.token('graphql-query', (req: Request) => {
 
 const SENSITIVE_MUTATIONS = [
   'createConnection',
+  'replaceConnectionCredentials',
   'updateConnection',
   'verifyTableViewPassword',
   'setTableViewPassword',

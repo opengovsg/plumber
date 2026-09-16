@@ -46,10 +46,11 @@ const helmetOptions: HelmetOptions = {
       // for google fonts
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       scriptSrcAttr: ["'none'"],
+      // No script is loaded from google-analytics.com or googletagmanager.com;
+      // allow-listing them only exposed a GTM debug endpoint that reflects
+      // attacker-controlled JS (GTA-119-003).
       scriptSrc: [
         "'self'",
-        'https://www.google-analytics.com',
-        'https://www.googletagmanager.com',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.isDev && "'unsafe-inline'",
       ].filter(Boolean),

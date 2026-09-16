@@ -2,6 +2,7 @@ import type { IApp, IField, IJSONObject } from '@plumber/types'
 
 import * as React from 'react'
 import { FieldValues, SubmitHandler } from 'react-hook-form'
+import { useMutation, useQuery } from '@apollo/client'
 import {
   Alert,
   AlertIcon,
@@ -12,6 +13,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Text,
   VStack,
 } from '@chakra-ui/react'
 import { Button, Infobox, Link } from '@opengovsg/design-system-react'
@@ -19,6 +21,8 @@ import { Button, Infobox, Link } from '@opengovsg/design-system-react'
 import ConnectionHeader from '@/components/FlowStepConfigurationModal/ChooseAndAddConnection/ConnectionHeader'
 import { DEFAULT_ADD_CONNECTION_LABEL } from '@/components/FlowStepConfigurationModal/constants'
 import InputCreator from '@/components/InputCreator'
+import { REPLACE_CONNECTION_CREDENTIALS } from '@/graphql/mutations/replace-connection-credentials'
+import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
@@ -36,6 +40,20 @@ type Response = {
   [key: string]: any
 }
 
+const LABEL_FIELD_KEYS = new Set(['screenName', 'label'])
+
+function withLabelPrefill(field: IField, labelDefault: string): IField {
+  if (!LABEL_FIELD_KEYS.has(field.key) || !labelDefault) {
+    return field
+  }
+
+  if (field.type === 'string' || field.type === 'multiline') {
+    return { ...field, value: labelDefault }
+  }
+
+  return field
+}
+
 /**
  * TODO: deprecate this component, we only need to support the callback route
  * /app/:appKey/connections/add
@@ -47,10 +65,40 @@ export default function AddAppConnection(
   const { name, authDocUrl, key, auth } = application
   const [error, setError] = React.useState<IJSONObject | null>(null)
   const [inProgress, setInProgress] = React.useState(false)
+  const [replaceConnectionCredentials] = useMutation(
+    REPLACE_CONNECTION_CREDENTIALS,
+  )
   const hasConnection = Boolean(connectionId)
-  const steps = hasConnection
-    ? auth?.reconnectionSteps
-    : auth?.authenticationSteps
+  const steps = auth?.authenticationSteps
+
+  const { data: connectionsData, loading: connectionLoading } = useQuery(
+    GET_APP_CONNECTIONS,
+    {
+      variables: { key },
+      skip: !connectionId,
+    },
+  )
+
+  const editingConnection = connectionsData?.getApp?.connections?.find(
+    (connection: {
+      id?: string
+      editableLabel?: string | null
+      environmentLabel?: string | null
+    }) => connection.id === connectionId,
+  )
+  const labelDefault = editingConnection?.editableLabel ?? ''
+  const envLabel = editingConnection?.environmentLabel
+
+  const defaultValues = React.useMemo(() => {
+    if (!hasConnection || !labelDefault) {
+      return undefined
+    }
+
+    return {
+      screenName: labelDefault,
+      label: labelDefault,
+    }
+  }, [hasConnection, labelDefault])
 
   React.useEffect(() => {
     if (
@@ -70,6 +118,37 @@ export default function AddAppConnection(
 
   const submitHandler: SubmitHandler<FieldValues> = React.useCallback(
     async (data) => {
+      if (hasConnection && connectionId) {
+        setInProgress(true)
+        setError(null)
+
+        try {
+          const result = await replaceConnectionCredentials({
+            variables: {
+              input: {
+                id: connectionId,
+                formattedData: data,
+              },
+            },
+            context: {
+              autoSnackbar: false,
+            },
+          })
+
+          onClose({
+            replaceConnectionCredentials:
+              result.data?.replaceConnectionCredentials,
+          })
+        } catch (err) {
+          const mutationError = err as IJSONObject
+          setError((mutationError.graphQLErrors as IJSONObject[])?.[0])
+        } finally {
+          setInProgress(false)
+        }
+
+        return
+      }
+
       if (!steps) {
         return
       }
@@ -112,7 +191,15 @@ export default function AddAppConnection(
 
       setInProgress(false)
     },
-    [connectionId, key, steps, onClose, flowId],
+    [
+      connectionId,
+      flowId,
+      hasConnection,
+      key,
+      onClose,
+      replaceConnectionCredentials,
+      steps,
+    ],
   )
 
   if (auth?.connectionType !== 'user-added') {
@@ -185,24 +272,41 @@ export default function AddAppConnection(
         )}
 
         <ModalBody>
-          <Form onSubmit={submitHandler}>
-            <VStack gap={4} pt={4} pb={8} alignItems="stretch">
-              {auth?.fields?.map((field: IField) => (
-                <InputCreator key={field.key} schema={field} />
-              ))}
+          {hasConnection && connectionLoading ? null : (
+            <Form defaultValues={defaultValues} onSubmit={submitHandler}>
+              <VStack gap={4} pt={4} pb={8} alignItems="stretch">
+                {hasConnection && key === 'telegram-bot' ? (
+                  <Infobox>
+                    The connection name is taken from the bot after you save.
+                  </Infobox>
+                ) : null}
 
-              <Button
-                type="submit"
-                variant="solid"
-                colorScheme="primary"
-                isLoading={inProgress}
-                data-test="create-connection-button"
-                isFullWidth
-              >
-                Connect
-              </Button>
-            </VStack>
-          </Form>
+                {hasConnection && envLabel ? (
+                  <Text textStyle="body-2" color="base.content.medium">
+                    Environment: {envLabel}
+                  </Text>
+                ) : null}
+
+                {auth?.fields?.map((field: IField) => (
+                  <InputCreator
+                    key={field.key}
+                    schema={withLabelPrefill(field, labelDefault)}
+                  />
+                ))}
+
+                <Button
+                  type="submit"
+                  variant="solid"
+                  colorScheme="primary"
+                  isLoading={inProgress}
+                  data-test="create-connection-button"
+                  isFullWidth
+                >
+                  {hasConnection ? 'Update connection' : 'Connect'}
+                </Button>
+              </VStack>
+            </Form>
+          )}
         </ModalBody>
       </ModalContent>
     </Modal>

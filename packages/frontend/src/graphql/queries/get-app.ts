@@ -12,6 +12,7 @@ export const GET_APP = gql`
       auth {
         connectionType
         connectionRegistrationType
+        supportsConnectionEdit
         fields {
           key
           label
@@ -30,19 +31,6 @@ export const GET_APP = gql`
           }
         }
         authenticationSteps {
-          type
-          name
-          arguments {
-            name
-            value
-            type
-            properties {
-              name
-              value
-            }
-          }
-        }
-        reconnectionSteps {
           type
           name
           arguments {

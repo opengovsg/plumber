@@ -68,6 +68,9 @@ type Mutation {
   createConnection(input: CreateConnectionInput): Connection
   generateAuthUrl(input: GenerateAuthUrlInput): AuthLink
   updateConnection(input: UpdateConnectionInput): Connection
+  replaceConnectionCredentials(
+    input: ReplaceConnectionCredentialsInput
+  ): Connection
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
@@ -376,6 +379,7 @@ type AppAuth {
   reconnectionSteps: [ReconnectionStep]
   connectionModalLabel: ConnectionModalLabel
   autoCheckStep: Boolean
+  supportsConnectionEdit: Boolean
 }
 
 enum ArgumentEnumType {
@@ -414,6 +418,8 @@ type Connection {
   createdAt: String
   flowCount: Int
   description: String
+  editableLabel: String
+  environmentLabel: String
 }
 
 type ConnectionData {
@@ -593,6 +599,11 @@ input UpdateConnectionInput {
   id: String!
   formattedData: JSONObject!
   flowId: String!
+}
+
+input ReplaceConnectionCredentialsInput {
+  id: String!
+  formattedData: JSONObject!
 }
 
 input ResetConnectionInput {
