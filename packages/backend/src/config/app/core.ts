@@ -88,6 +88,11 @@ export type CoreConfig = {
       region: string
       model: string
       imageModel: string
+      /**
+       * Local dev only. Which AWS SSO profile to assume for Bedrock calls,
+       * independent of whatever AWS_PROFILE is set to for other services (e.g. SES).
+       */
+      devAwsProfile?: string
     }
     rome: {
       baseUrl: string
@@ -224,6 +229,7 @@ const coreConfig: CoreConfig = {
         'PAIR_BEDROCK_IMAGE_MODEL',
         process.env.PAIR_BEDROCK_IMAGE_MODEL,
       ),
+      devAwsProfile: process.env.PAIR_BEDROCK_DEV_AWS_PROFILE,
     },
     rome: {
       baseUrl: requireEnv('PAIR_ROME_BASE_URL', process.env.PAIR_ROME_BASE_URL),
