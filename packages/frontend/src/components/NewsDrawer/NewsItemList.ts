@@ -11,6 +11,19 @@ const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
   {
+    date: '2026-09-18',
+    tag: NEW_ENHANCEMENT_TAG,
+    title: 'Ownself Gather - Upload attachments when updating a case',
+    details: dedent`
+      Update case can now add files to a case's attachment fields.
+
+      * Map FormSG attachments into one or more Ownself Gather attachment fields.
+      * Choose whether to add to existing files or replace them, per field.
+      * The attachment inputs only appear when the case type has attachment fields.
+    `,
+    ldFlagKey: 'app_gathersg',
+  },
+  {
     date: '2026-09-14',
     tag: NEW_FEATURE_TAG,
     title: '📅 Compare or calculate dates with Formatter',
