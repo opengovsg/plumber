@@ -11,29 +11,16 @@ const getTestExecutionSteps: QueryResolvers['getTestExecutionSteps'] = async (
   // For checking if user is a collaborator
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'viewer' })
-    .withGraphFetched({
-      steps: true,
-    })
     .findById(flowId)
     .throwIfNotFound()
 
-  const testExecutionSteps = await getTestExecutionStepsHelper(flow.id)
-
-  // We do not return test execution steps if the step is not complete
-  // to ensure we dont show variables from other step/events.
-  // However, we will show errors regardless as the step may have never been
-  // successfully tested before
-  const flowStepIds = flow.steps.map((step) => step.id)
-  const completedStepIdsSet = new Set(flowStepIds)
-  const filteredTestExecutionSteps = testExecutionSteps.filter(
-    (executionStep) => {
-      if (executionStep.isFailed) {
-        return true
-      }
-      return completedStepIdsSet.has(executionStep.stepId)
-    },
-  )
-  return filteredTestExecutionSteps
+  /**
+   * Note: We only return test execution steps from steps with the status: 'completed'.
+   * For now, only when pipe is transferred, excel steps will become incomplete.
+   */
+  return getTestExecutionStepsHelper(flow.id, {
+    testExecutionId: flow.testExecutionId ?? null,
+  })
 }
 
 export default getTestExecutionSteps
