@@ -56,18 +56,22 @@ export function isFieldHidden(
  * data is still loading, or it resolved to no options. Staying hidden while
  * loading avoids a flash of the field appearing and then disappearing once
  * an empty result comes back.
+ *
+ * IMPORTANT: a failed query leaves options undefined. That means "unknown",
+ * not "no options", so the field stays visible like any other dropdown.
  */
 export function shouldHideEmptySourceDropdown(
   field: IField,
   options: unknown[] | null | undefined,
   loading: boolean,
+  failed = false,
 ): boolean {
   return (
     field.type === 'dropdown' &&
     !!field.hideWhenNoOptions &&
     !!field.source &&
-    // A failed query (e.g. an invalid case uuid) yields no options at all.
-    (loading || !options || options.length === 0)
+    !failed &&
+    (loading || !options?.length)
   )
 }
 

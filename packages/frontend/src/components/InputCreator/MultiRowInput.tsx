@@ -71,6 +71,7 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
       hideProbeSubField,
       hideProbeSubField.options || optionGenerator(data as RawOption[]),
       loading,
+      !!error,
     )
 
   // react-hook-form keeps a field's value registered after it unmounts, so
@@ -78,12 +79,11 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
   // for a previously-selected case) in the submitted payload.
   // Wait until loading finishes. isHidden is also true while the source
   // query is in flight, and clearing then would wipe saved rows on reopen.
-  // A failed query says nothing about the case's fields, so keep rows too.
   useEffect(() => {
-    if (isHidden && !loading && !error) {
+    if (isHidden && !loading) {
       setValue(computedName, [])
     }
-  }, [isHidden, loading, error, computedName, setValue])
+  }, [isHidden, loading, computedName, setValue])
 
   if (isHidden) {
     return <></>

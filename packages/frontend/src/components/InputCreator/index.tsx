@@ -76,7 +76,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     (Object.keys(flow).length > 0 && flow?.role === 'viewer') || readOnly
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
-  const { data, loading, refetch } = useDynamicData(
+  const { data, error, loading, refetch } = useDynamicData(
     stepId,
     schema,
     computedName,
@@ -117,7 +117,9 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
 
   if (type === 'dropdown') {
     const preparedOptions = schema.options || optionGenerator(data)
-    if (shouldHideEmptySourceDropdown(schema, preparedOptions, loading)) {
+    if (
+      shouldHideEmptySourceDropdown(schema, preparedOptions, loading, !!error)
+    ) {
       return <></>
     }
     return (
