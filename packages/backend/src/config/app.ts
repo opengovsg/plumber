@@ -76,7 +76,6 @@ type AppConfig = {
   }
   pair: {
     bedrock: {
-      apiKey: string
       region: string
       model: string
       imageModel: string
@@ -189,7 +188,6 @@ const appConfig: AppConfig = {
   },
   pair: {
     bedrock: {
-      apiKey: process.env.PAIR_BEDROCK_API_KEY,
       region: process.env.PAIR_BEDROCK_REGION,
       model: process.env.PAIR_BEDROCK_MODEL,
       imageModel: process.env.PAIR_BEDROCK_IMAGE_MODEL,
@@ -287,7 +285,6 @@ if (!appConfig.gathersg.publicKey) {
 }
 
 if (
-  !appConfig.pair.bedrock.apiKey ||
   !appConfig.pair.bedrock.region ||
   !appConfig.pair.bedrock.model ||
   !appConfig.pair.bedrock.imageModel
