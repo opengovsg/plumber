@@ -83,17 +83,17 @@ export type CoreConfig = {
   gathersg: {
     publicKey: string
   }
+  bedrock: {
+    region: string
+    model: string
+    imageModel: string
+    /**
+     * Local dev only. Which AWS SSO profile to assume for Bedrock calls,
+     * independent of whatever AWS_PROFILE is set to for other services (e.g. SES).
+     */
+    devAwsProfile?: string
+  }
   pair: {
-    bedrock: {
-      region: string
-      model: string
-      imageModel: string
-      /**
-       * Local dev only. Which AWS SSO profile to assume for Bedrock calls,
-       * independent of whatever AWS_PROFILE is set to for other services (e.g. SES).
-       */
-      devAwsProfile?: string
-    }
     rome: {
       baseUrl: string
       cloudflare: {
@@ -218,19 +218,16 @@ const coreConfig: CoreConfig = {
       process.env.GATHERSG_PUBLIC_KEY,
     ),
   },
+  bedrock: {
+    region: requireEnv('BEDROCK_REGION', process.env.BEDROCK_REGION),
+    model: requireEnv('BEDROCK_MODEL', process.env.BEDROCK_MODEL),
+    imageModel: requireEnv(
+      'BEDROCK_IMAGE_MODEL',
+      process.env.BEDROCK_IMAGE_MODEL,
+    ),
+    devAwsProfile: process.env.BEDROCK_DEV_AWS_PROFILE,
+  },
   pair: {
-    bedrock: {
-      region: requireEnv(
-        'PAIR_BEDROCK_REGION',
-        process.env.PAIR_BEDROCK_REGION,
-      ),
-      model: requireEnv('PAIR_BEDROCK_MODEL', process.env.PAIR_BEDROCK_MODEL),
-      imageModel: requireEnv(
-        'PAIR_BEDROCK_IMAGE_MODEL',
-        process.env.PAIR_BEDROCK_IMAGE_MODEL,
-      ),
-      devAwsProfile: process.env.PAIR_BEDROCK_DEV_AWS_PROFILE,
-    },
     rome: {
       baseUrl: requireEnv('PAIR_ROME_BASE_URL', process.env.PAIR_ROME_BASE_URL),
       cloudflare: {
