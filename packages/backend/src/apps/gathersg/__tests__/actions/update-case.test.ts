@@ -531,6 +531,54 @@ describe('update case', () => {
     )
   })
 
+  it('reads the case once, after all uploads, when several fields append', async () => {
+    vi.spyOn(attachment, 'uploadCaseAttachments')
+      .mockResolvedValueOnce(['photo-uuid'])
+      .mockResolvedValueOnce(['doc-uuid'])
+    mocks.httpGet.mockReturnValueOnce({
+      data: {
+        data: {
+          fields: {
+            photos: ['existing-photo'],
+            supporting_documents: ['existing-doc'],
+          },
+        },
+      },
+    })
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+      {
+        field: 'supporting_documents',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/two.pdf'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    // A single snapshot keeps the read-modify-write window as narrow as
+    // possible, instead of reading once per field between uploads.
+    expect(mocks.httpGet).toHaveBeenCalledTimes(1)
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: {
+          photos: ['existing-photo', 'photo-uuid'],
+          supporting_documents: ['existing-doc', 'doc-uuid'],
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
   it('uploads attachments to multiple attachment fields in one run', async () => {
     const uploadSpy = vi
       .spyOn(attachment, 'uploadCaseAttachments')

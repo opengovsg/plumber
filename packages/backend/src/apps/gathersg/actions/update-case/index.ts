@@ -24,26 +24,41 @@ import { GatherSGCase } from '../../common/types'
 import { requestSchema, responseSchema } from './schema'
 
 /**
- * Fetch the case's current uuids for an attachment field. Gather stores an
- * attachment field as the full array of file uuids, so we must read the
- * existing values and append to them — otherwise a PATCH would replace
- * (delete) the case's existing attachments.
+ * Read the case's current uuids for each of the given attachment fields.
+ * Gather stores an attachment field as the full array of file uuids, so
+ * appending requires sending the existing values back. Otherwise a PATCH
+ * would replace (delete) the case's existing attachments.
+ *
+ * IMPORTANT: this read-modify-write can still lose a concurrent writer's
+ * attachments, since Gather offers no append or compare-and-set operation.
+ * One snapshot taken immediately before the PATCH keeps that window as
+ * small as we can make it from here.
  */
 async function getExistingAttachmentUuids(
   $: IGlobalVariable,
   caseUuid: string,
-  field: string,
-): Promise<string[]> {
+  fields: string[],
+): Promise<Map<string, string[]>> {
   const { data } = await $.http.get<{ data: GatherSGCase }>(
     '/cases/:caseUuid',
     {
       urlPathParams: { caseUuid },
     },
   )
-  const existing = data.data.fields?.[field]
-  return Array.isArray(existing)
-    ? existing.filter((value): value is string => typeof value === 'string')
-    : []
+
+  return new Map(
+    fields.map((field) => {
+      const existing = data.data.fields?.[field]
+      return [
+        field,
+        Array.isArray(existing)
+          ? existing.filter(
+              (value): value is string => typeof value === 'string',
+            )
+          : [],
+      ]
+    }),
+  )
 }
 
 const action: IRawAction = {
@@ -268,31 +283,45 @@ const action: IRawAction = {
       )
 
       if (attachmentFields.length > 0) {
+        const uploaded: {
+          field: string
+          replaceExisting: boolean
+          uuids: string[]
+        }[] = []
+
         for (const {
           field,
           replaceExisting,
           attachments,
         } of attachmentFields) {
-          const uuids = await uploadCaseAttachments({
-            $,
-            caseUuid: patchBody.caseUuid,
+          uploaded.push({
             field,
-            fieldType: GATHER_ATTACHMENT_FIELD_TYPE,
-            s3Ids: attachments,
+            replaceExisting,
+            uuids: await uploadCaseAttachments({
+              $,
+              caseUuid: patchBody.caseUuid,
+              field,
+              fieldType: GATHER_ATTACHMENT_FIELD_TYPE,
+              s3Ids: attachments,
+            }),
           })
+        }
 
+        const fieldsToAppend = uploaded
+          .filter(({ replaceExisting }) => !replaceExisting)
+          .map(({ field }) => field)
+        const existingUuids = fieldsToAppend.length
+          ? await getExistingAttachmentUuids(
+              $,
+              patchBody.caseUuid,
+              fieldsToAppend,
+            )
+          : new Map<string, string[]>()
+
+        for (const { field, replaceExisting, uuids } of uploaded) {
           const finalUuids = replaceExisting
             ? uuids
-            : [
-                ...new Set([
-                  ...(await getExistingAttachmentUuids(
-                    $,
-                    patchBody.caseUuid,
-                    field,
-                  )),
-                  ...uuids,
-                ]),
-              ]
+            : [...new Set([...(existingUuids.get(field) ?? []), ...uuids])]
 
           patchBody.fields = {
             ...(patchBody.fields ?? {}),
