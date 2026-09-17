@@ -62,6 +62,27 @@ export const getCaseUuidFromVariable = async (
   }
 }
 
+/**
+ * Resolves a pasted UUID or a step variable. Returns '' when the source
+ * step is gone so callers skip GET /cases/:caseUuid.
+ * urlcat throws on empty path params and GraphQL turns that into a full-page error.
+ */
+export async function resolveCaseUuid(
+  $: IGlobalVariable,
+  caseUuid: unknown,
+): Promise<string> {
+  if (typeof caseUuid !== 'string' || !caseUuid.trim()) {
+    return ''
+  }
+
+  if (caseUuid.match(`^${VARIABLE_REGEX.source}$`)) {
+    const resolved = await getCaseUuidFromVariable($, caseUuid)
+    return typeof resolved === 'string' ? resolved : ''
+  }
+
+  return caseUuid
+}
+
 const processCaseFields = (
   caseFields: GatherSGCaseField[],
 ): DynamicDataOutput => {
@@ -103,19 +124,9 @@ const dynamicData: IDynamicData = {
 
         return processCaseFields(filteredFields)
       } else if (caseUuid) {
-        // account that case uuid can be pasted in the frontend
-        // and may not always be a variable
-        let computedCaseUuid = caseUuid as string
-
-        if (
-          typeof caseUuid === 'string' &&
-          caseUuid.match(`^${VARIABLE_REGEX.source}$`)
-        ) {
-          // if the case uuid is a variable, we need to compute the value
-          computedCaseUuid = (await getCaseUuidFromVariable(
-            $,
-            caseUuid,
-          )) as string
+        const computedCaseUuid = await resolveCaseUuid($, caseUuid)
+        if (!computedCaseUuid) {
+          return { data: [] }
         }
 
         // use the case uuid to fetch the case data to derive the case type uuid

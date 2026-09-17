@@ -3,8 +3,11 @@ import type { IGlobalVariable } from '@plumber/types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import getCaseAttachmentFields from '../../dynamic-data/get-case-attachment-fields'
+import * as getCaseFields from '../../dynamic-data/get-case-fields'
 
 const MOCK_CASE_UUID = '1234567890abcdefghijkl'
+const DANGLING_CASE_UUID_VARIABLE =
+  '{{step.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.data.uuid}}'
 
 const mocks = vi.hoisted(() => ({
   httpGet: vi.fn(),
@@ -57,5 +60,16 @@ describe('getCaseAttachmentFields', () => {
     $.step.parameters.caseUuid = ''
     const result = await getCaseAttachmentFields.run($)
     expect(result).toEqual({ data: [] })
+    expect(mocks.httpGet).not.toHaveBeenCalled()
+  })
+
+  it('returns empty data when the caseUuid variable resolves to empty', async () => {
+    $.step.parameters.caseUuid = DANGLING_CASE_UUID_VARIABLE
+    vi.spyOn(getCaseFields, 'resolveCaseUuid').mockResolvedValue('')
+
+    const result = await getCaseAttachmentFields.run($)
+
+    expect(result).toEqual({ data: [] })
+    expect(mocks.httpGet).not.toHaveBeenCalled()
   })
 })

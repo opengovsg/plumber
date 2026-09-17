@@ -5,12 +5,11 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
-import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 
 import { fetchCaseFields } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
-import { getCaseUuidFromVariable } from './get-case-fields'
+import { resolveCaseUuid } from './get-case-fields'
 
 const dynamicData: IDynamicData = {
   key: 'getCaseAttachmentFields',
@@ -18,21 +17,9 @@ const dynamicData: IDynamicData = {
   async run($: IGlobalVariable): Promise<DynamicDataOutput> {
     try {
       const { caseUuid } = $.step.parameters
-
-      if (!caseUuid) {
+      const computedCaseUuid = await resolveCaseUuid($, caseUuid)
+      if (!computedCaseUuid) {
         return { data: [] }
-      }
-
-      // The case uuid may be pasted directly or be a variable reference.
-      let computedCaseUuid = caseUuid as string
-      if (
-        typeof caseUuid === 'string' &&
-        caseUuid.match(`^${VARIABLE_REGEX.source}$`)
-      ) {
-        computedCaseUuid = (await getCaseUuidFromVariable(
-          $,
-          caseUuid,
-        )) as string
       }
 
       // Resolve the case type uuid from the case, then fetch its fields.
