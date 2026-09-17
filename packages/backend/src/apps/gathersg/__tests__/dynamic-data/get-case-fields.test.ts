@@ -2,7 +2,13 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import { describe, expect, it, vi } from 'vitest'
 
+import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
+
 import getCaseFields from '../../dynamic-data/get-case-fields'
+
+vi.mock('@/helpers/get-test-execution-steps', () => ({
+  getTestExecutionSteps: vi.fn(),
+}))
 
 const MOCK_CASE_TYPE_UUID = 'case-type-uuid-123456'
 
@@ -54,5 +60,25 @@ describe('getCaseFields', () => {
         { name: 'Radio', value: 'Radio', type: 'radio' },
       ],
     })
+  })
+
+  it('returns empty data when the caseUuid variable resolves to empty', async () => {
+    const httpGet = vi.fn()
+    vi.mocked(getTestExecutionSteps).mockResolvedValue([])
+
+    const $ = {
+      flow: { id: 'flow-id-123' },
+      step: {
+        parameters: {
+          caseUuid: '{{step.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.data.uuid}}',
+        },
+      },
+      http: { get: httpGet },
+    } as unknown as IGlobalVariable
+
+    const result = await getCaseFields.run($)
+
+    expect(result).toEqual({ data: [] })
+    expect(httpGet).not.toHaveBeenCalled()
   })
 })
