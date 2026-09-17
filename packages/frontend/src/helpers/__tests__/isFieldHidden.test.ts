@@ -24,6 +24,12 @@ describe('shouldHideEmptySourceDropdown', () => {
     expect(shouldHideEmptySourceDropdown(sourceDropdown, [], true)).toBe(true)
   })
 
+  it('hides when the query failed and yielded no options array', () => {
+    expect(
+      shouldHideEmptySourceDropdown(sourceDropdown, undefined, false),
+    ).toBe(true)
+  })
+
   it('does not hide when there are options', () => {
     expect(
       shouldHideEmptySourceDropdown(

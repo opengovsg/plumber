@@ -87,7 +87,7 @@ function useDynamicData(
 
   const shouldSkipQuery =
     !stepId || schema.type !== 'dropdown' || !schema.source
-  const { called, data, loading, refetch } = useQuery(GET_DYNAMIC_DATA, {
+  const { called, data, error, loading, refetch } = useQuery(GET_DYNAMIC_DATA, {
     variables: {
       stepId,
       ...nonFormFieldArgs,
@@ -143,6 +143,7 @@ function useDynamicData(
   return {
     called,
     data: data?.getDynamicData,
+    error,
     loading,
     refetch,
   }

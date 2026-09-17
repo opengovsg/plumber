@@ -57,7 +57,7 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
       !!subField.source,
   )
 
-  const { data, loading } = useDynamicData(
+  const { data, error, loading } = useDynamicData(
     stepId,
     hideProbeSubField ?? schema,
     hideProbeSubField
@@ -78,11 +78,12 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
   // for a previously-selected case) in the submitted payload.
   // Wait until loading finishes. isHidden is also true while the source
   // query is in flight, and clearing then would wipe saved rows on reopen.
+  // A failed query says nothing about the case's fields, so keep rows too.
   useEffect(() => {
-    if (isHidden && !loading) {
+    if (isHidden && !loading && !error) {
       setValue(computedName, [])
     }
-  }, [isHidden, loading, computedName, setValue])
+  }, [isHidden, loading, error, computedName, setValue])
 
   if (isHidden) {
     return <></>

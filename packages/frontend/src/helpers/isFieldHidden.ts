@@ -59,14 +59,15 @@ export function isFieldHidden(
  */
 export function shouldHideEmptySourceDropdown(
   field: IField,
-  options: unknown[],
+  options: unknown[] | null | undefined,
   loading: boolean,
 ): boolean {
   return (
     field.type === 'dropdown' &&
     !!field.hideWhenNoOptions &&
     !!field.source &&
-    (loading || options.length === 0)
+    // A failed query (e.g. an invalid case uuid) yields no options at all.
+    (loading || !options || options.length === 0)
   )
 }
 
