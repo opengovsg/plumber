@@ -144,9 +144,7 @@ describe('CSV formula injection protection (CWE-1236)', () => {
 
   it('also prefixes a benign string starting with - or +, as an accepted trade-off of blanket prefixing', () => {
     const columns = cols('Delta')
-    const rows = [
-      { rowId: 'r1', col1: '-5' },
-    ] as unknown as GenericRowData[]
+    const rows = [{ rowId: 'r1', col1: '-5' }] as unknown as GenericRowData[]
 
     expect(buildCsv(rows, columns)).toBe(`Delta\r\n"'-5"`)
   })
