@@ -90,6 +90,54 @@ async function enqueueFirstForEachStep({
 }
 
 /**
+ * error may be anything thrown (including null/undefined), not just an Error
+ * instance, so message extraction can't assume `.message` exists. A bare
+ * String(error) would turn a null error into the valid-JSON string "null"
+ * (silently clearing actionOutput.error below) and an undefined error into
+ * the unhelpful literal string "undefined".
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+  if (error === null || error === undefined) {
+    return 'Unknown error'
+  }
+  return String(error)
+}
+
+/**
+ * Maps a thrown action error onto `$.actionOutput.error`, so the failure is
+ * recorded on the execution step's `errorDetails`. Shared by the single-job path
+ * (`processAction`'s catch) and the batch path (the batch worker's `runBatch`
+ * failure handling), so both record identical error details.
+ */
+export function setActionOutputError($: IGlobalVariable, error: unknown): void {
+  if (error instanceof HttpError) {
+    $.actionOutput.error = {
+      details: error.details,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    }
+    logger.error('Action error', {
+      details: error.details,
+      status: error.response.status,
+      statusText: error.response.statusText,
+    })
+  } else {
+    const message = getErrorMessage(error)
+    try {
+      const parsedError = JSON.parse(message)
+      $.actionOutput.error = parsedError
+      logger.error('Action error', parsedError)
+    } catch {
+      $.actionOutput.error = { error: message }
+      logger.error('Action error', { error: message })
+    }
+  }
+}
+
+/**
  * The shared execution context for a single action job: everything loaded and
  * computed by `prepareActionExecution` (helper A) before the action runs.
  *
@@ -382,28 +430,7 @@ export const processAction = async (options: ProcessActionOptions) => {
     }
   } catch (error) {
     executionError = error
-
-    if (error instanceof HttpError) {
-      $.actionOutput.error = {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      }
-      logger.error('Action error', {
-        details: error.details,
-        status: error.response.status,
-        statusText: error.response.statusText,
-      })
-    } else {
-      try {
-        const parsedError = JSON.parse(error.message)
-        $.actionOutput.error = parsedError
-        logger.error('Action error', parsedError)
-      } catch {
-        $.actionOutput.error = { error: error.message }
-        logger.error('Action error', { error: error.message })
-      }
-    }
+    setActionOutputError($, error)
   }
 
   const executionStep = await recordExecutionStep({
