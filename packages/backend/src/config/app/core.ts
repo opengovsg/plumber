@@ -85,7 +85,6 @@ export type CoreConfig = {
   }
   pair: {
     bedrock: {
-      apiKey: string
       region: string
       model: string
       imageModel: string
@@ -216,10 +215,6 @@ const coreConfig: CoreConfig = {
   },
   pair: {
     bedrock: {
-      apiKey: requireEnv(
-        'PAIR_BEDROCK_API_KEY',
-        process.env.PAIR_BEDROCK_API_KEY,
-      ),
       region: requireEnv(
         'PAIR_BEDROCK_REGION',
         process.env.PAIR_BEDROCK_REGION,
