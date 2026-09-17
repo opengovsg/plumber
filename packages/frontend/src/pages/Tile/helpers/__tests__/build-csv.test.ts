@@ -99,3 +99,53 @@ describe('buildCsv', () => {
     expect(buildCsv(rows, columns)).toBe('Name,Email\r\nAlice,')
   })
 })
+
+describe('CSV formula injection protection (CWE-1236)', () => {
+  it('prefixes a cell value starting with = to prevent formula execution', () => {
+    const columns = cols('Name', 'Note')
+    const rows = [
+      { rowId: 'r1', col1: 'Alice', col2: `=cmd|'/C calc'!A0` },
+    ] as unknown as GenericRowData[]
+
+    expect(buildCsv(rows, columns)).toBe(
+      `Name,Note\r\nAlice,"'=cmd|'/C calc'!A0"`,
+    )
+  })
+
+  it('prefixes cell values starting with +, -, or @', () => {
+    const columns = cols('Formula')
+    const rows = [
+      { rowId: 'r1', col1: '+1+1' },
+      { rowId: 'r2', col1: '-2+3' },
+      { rowId: 'r3', col1: '@SUM(A1:A2)' },
+    ] as unknown as GenericRowData[]
+
+    const csv = buildCsv(rows, columns)
+    expect(csv).toContain(`"'+1+1"`)
+    expect(csv).toContain(`"'-2+3"`)
+    expect(csv).toContain(`"'@SUM(A1:A2)"`)
+  })
+
+  it('sanitises column headers that begin with a formula trigger character', () => {
+    const columns = cols('=HYPERLINK("http://evil.com")', 'Safe')
+    expect(buildCsv([], columns)).toContain(
+      `"'=HYPERLINK(""http://evil.com"")"`,
+    )
+  })
+
+  it('does not alter values that merely contain, but do not start with, a formula trigger character', () => {
+    const columns = cols('Name', 'Score')
+    const rows = [
+      { rowId: 'r1', col1: 'Alice', col2: '5 - 3 = 2' },
+    ] as unknown as GenericRowData[]
+
+    expect(buildCsv(rows, columns)).toBe('Name,Score\r\nAlice,5 - 3 = 2')
+  })
+
+  it('also prefixes a benign string starting with - or +, as an accepted trade-off of blanket prefixing', () => {
+    const columns = cols('Delta')
+    const rows = [{ rowId: 'r1', col1: '-5' }] as unknown as GenericRowData[]
+
+    expect(buildCsv(rows, columns)).toBe(`Delta\r\n"'-5"`)
+  })
+})
