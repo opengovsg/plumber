@@ -600,7 +600,7 @@ describe('update case', () => {
     )
   })
 
-  it('throws when an attachment field is selected without attachments', async () => {
+  it('skips an attachment field whose attachments are empty, and still updates the rest of the case', async () => {
     const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
     $.step.parameters.attachmentFields = [
       {
@@ -609,10 +609,112 @@ describe('update case', () => {
         attachments: [],
       },
     ]
-    await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please add at least one attachment for the selected field',
-    )
+
+    await updateCaseAction.run($)
+
     expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('skips an attachment field whose file variable resolved to an empty string', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        // What computeParameters leaves behind when the submission had no file
+        // for the selected attachment variable.
+        attachments: [''],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpGet).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('does not wipe existing attachments when a replace-mode field receives no attachments', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: true,
+        attachments: [''],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      { caseUuid: MOCK_CASE_UUID, fields: {} },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('uploads the fields that did receive attachments and skips the ones that did not', async () => {
+    const uploadSpy = vi
+      .spyOn(attachment, 'uploadCaseAttachments')
+      .mockResolvedValue(['doc-uuid'])
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      { field: 'photos', replaceExisting: false, attachments: [''] },
+      {
+        field: 'supporting_documents',
+        replaceExisting: true,
+        attachments: ['s3:bucket:flow-id-123/a/two.pdf'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).toHaveBeenCalledTimes(1)
+    expect(uploadSpy).toHaveBeenCalledWith({
+      $,
+      caseUuid: MOCK_CASE_UUID,
+      field: 'supporting_documents',
+      fieldType: 'attachment',
+      s3Ids: ['s3:bucket:flow-id-123/a/two.pdf'],
+    })
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: { supporting_documents: ['doc-uuid'] },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
   })
 
   it('does not call the upload helper when no attachments are set', async () => {

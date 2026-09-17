@@ -59,36 +59,28 @@ export const requestSchema = z
       .superRefine((rows, context) => {
         const seenFields = new Set<string>()
         for (const [index, row] of rows.entries()) {
-          const hasField = !!row.field?.trim()
-          const hasAttachments = row.attachments.length > 0
+          const field = row.field?.trim()
 
           // The UI hides (but does not clear) attachments when no field is
           // selected, so leftover s3Ids can remain. Ignore those rows.
-          if (!hasField) {
+          if (!field) {
             continue
           }
 
-          if (!hasAttachments) {
+          if (seenFields.has(field)) {
             context.addIssue({
               code: z.ZodIssueCode.custom,
-              message:
-                'Please add at least one attachment for the selected field.',
-              path: [index, 'attachments'],
-            })
-          }
-
-          if (hasField && seenFields.has(row.field)) {
-            context.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: `${row.field} attachment field is repeated`,
+              message: `${field} attachment field is repeated`,
               path: [index, 'field'],
             })
           }
-          if (hasField) {
-            seenFields.add(row.field)
-          }
+          seenFields.add(field)
         }
       })
+      // A row whose attachment variable resolved to no file is dropped rather
+      // than rejected. A submission without that optional attachment must
+      // still update the rest of the case, and patching the field with an
+      // empty list would wipe the case's existing attachments.
       .transform((rows) =>
         rows.filter(
           (row) => row.field.trim().length > 0 && row.attachments.length > 0,
