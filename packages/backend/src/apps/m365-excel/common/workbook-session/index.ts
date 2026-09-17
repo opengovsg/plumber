@@ -46,9 +46,16 @@ async function refreshSessionId(
 /**
  * Helper class to ensure we use the same session ID for the same file.
  *
- * Since we serialize operations to the same file across all our workers via
- * BullMQ Pro, this class just stores the session ID in Redis, keyed by the file
- * ID (no synchronization needed).
+ * Operations to the same file are serialized by an explicit per-file Redis lock
+ * (see `apps/m365-excel/common/file-lock.ts`), acquired by the execution path
+ * (`processAction` / the batch worker) around each action's `run` / `runBatch`.
+ * This class therefore just stores the session ID in Redis, keyed by the file
+ * ID (no synchronization needed here).
+ *
+ * Previously that serialization was provided implicitly by BullMQ Pro's per-file
+ * queue concurrency (`group.concurrency: 1`); the dedicated batch queue for
+ * `createTableRow` broke that, so the lock now restores it across BOTH the
+ * per-app and batch queues (and test runs).
  *
  * Note that we sync expiry times of the session ID keys in redis (see the
  * SESSION_ID_EXPIRY_SECONDS constant) to the same time period as Microsoft's
