@@ -41,10 +41,15 @@ const verifyConnection: MutationResolvers['verifyConnection'] = async (
 
   await app.auth.verifyCredentials($)
 
-  connection = await connection.$query().patchAndFetch({
-    verified: true,
-    draft: false,
-  })
+  // First-time add still needs this write (verified starts false). Skip when
+  // the row is already verified and not a draft so a later verify does not
+  // bump updatedAt.
+  if (connection.verified !== true || connection.draft !== false) {
+    connection = await connection.$query().patchAndFetch({
+      verified: true,
+      draft: false,
+    })
+  }
 
   return {
     ...connection,

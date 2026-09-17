@@ -106,6 +106,17 @@ export const m365TenantInfo = Object.freeze({
       process.env.M365_SG_GOVT_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
     ),
   }),
+  'sg-moe': makeTenantInfo({
+    label: 'SG MOE SharePoint',
+    id: process.env.M365_SG_MOE_TENANT_ID,
+    sharePointSiteId: process.env.M365_SG_MOE_SHAREPOINT_SITE_ID,
+    clientId: process.env.M365_SG_MOE_CLIENT_ID,
+    clientThumbprint: process.env.M365_SG_MOE_CLIENT_THUMBPRINT,
+    clientPrivateKey: process.env.M365_SG_MOE_CLIENT_PRIVATE_KEY,
+    allowedSensitivityLabelGuids: sensitivityLabelGuidsSchema.parse(
+      process.env.M365_SG_MOE_ALLOWED_SENSITIVITY_LABEL_GUIDS_CSV,
+    ),
+  }),
   ...(!appConfig.isProd
     ? {
         'local-dev': makeTenantInfo({

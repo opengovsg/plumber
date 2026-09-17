@@ -1,7 +1,45 @@
 import { z } from 'zod'
 
+import { parseS3Id } from '@/helpers/s3'
+
 import { caseFieldsSchema } from '../../common/case-fields-schema'
 import { CASE_UUID_REGEX } from '../../common/constants'
+
+const attachmentS3IdsSchema = z
+  .array(z.string())
+  .transform((array, context) => {
+    const result: string[] = []
+    for (const value of array) {
+      // A file-type variable resolves to "" when the upstream step
+      // produced no file; skip these empty entries.
+      if (!value) {
+        continue
+      }
+      // parseS3Id returns null for non-S3 ids and throws on path
+      // traversal; treat both as an invalid attachment.
+      let parsedS3Id: ReturnType<typeof parseS3Id> = null
+      try {
+        parsedS3Id = parseS3Id(value)
+      } catch {
+        parsedS3Id = null
+      }
+      if (!parsedS3Id) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${value} is not a S3 ID.`,
+        })
+        return z.NEVER
+      }
+      result.push(value)
+    }
+    return result
+  })
+
+const attachmentFieldRowSchema = z.object({
+  field: z.string().trim(),
+  replaceExisting: z.boolean().default(false),
+  attachments: attachmentS3IdsSchema,
+})
 
 export const requestSchema = z
   .object({
@@ -16,11 +54,45 @@ export const requestSchema = z
       }),
     caseStatus: z.string().trim().optional(),
     caseFields: caseFieldsSchema.nullish(),
+    attachmentFields: z
+      .array(attachmentFieldRowSchema)
+      .superRefine((rows, context) => {
+        const seenFields = new Set<string>()
+        for (const [index, row] of rows.entries()) {
+          const field = row.field?.trim()
+
+          // The UI hides (but does not clear) attachments when no field is
+          // selected, so leftover s3Ids can remain. Ignore those rows.
+          if (!field) {
+            continue
+          }
+
+          if (seenFields.has(field)) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `${field} attachment field is repeated`,
+              path: [index, 'field'],
+            })
+          }
+          seenFields.add(field)
+        }
+      })
+      // A row whose attachment variable resolved to no file is dropped rather
+      // than rejected. A submission without that optional attachment must
+      // still update the rest of the case, and patching the field with an
+      // empty list would wipe the case's existing attachments.
+      .transform((rows) =>
+        rows.filter(
+          (row) => row.field.trim().length > 0 && row.attachments.length > 0,
+        ),
+      )
+      .nullish(),
   })
   .transform((data) => ({
     caseUuid: data.caseUuid,
     ...(data.caseStatus && { status: data.caseStatus }),
     fields: data.caseFields,
+    attachmentFields: data.attachmentFields ?? [],
   }))
 
 // TODO: See if its possible to get more data from the response in the future if necessary
