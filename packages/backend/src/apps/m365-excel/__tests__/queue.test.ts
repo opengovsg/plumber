@@ -3,6 +3,7 @@ import '@/apps'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import batchQueueConfig from '../queue/batch'
 import m365ExcelApp from '..'
 
 const mocks = vi.hoisted(() => ({
@@ -53,5 +54,58 @@ describe('Queue config', () => {
 
   it('avoids bursting via a leaky bucket approach', () => {
     expect(m365ExcelApp.queue.queueRateLimit.max).toEqual(1)
+  })
+})
+
+describe('Batch queue config', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('sets the batch group ID to actionKey::fileId::tableId::connectionId', async () => {
+    mocks.stepQueryResult.mockResolvedValueOnce({
+      key: 'createTableRow',
+      connectionId: 'conn-1',
+      parameters: {
+        fileId: 'mock-file-id',
+        tableId: '{mock-table-id}',
+      },
+    })
+
+    const groupConfig = await batchQueueConfig.getGroupConfigForJob({
+      flowId: 'test-flow-id',
+      stepId: 'test-step-id',
+      executionId: 'test-execution-id',
+    })
+
+    // connectionId is in the key so a batch never mixes connections - that lets
+    // runBatch authorize the whole batch with a single file-access check.
+    // actionKey is in the key so a batch never mixes actions.
+    expect(groupConfig).toEqual({
+      id: 'createTableRow::mock-file-id::{mock-table-id}::conn-1',
+    })
+  })
+
+  it('groups connection-less jobs together via an empty connection segment', async () => {
+    mocks.stepQueryResult.mockResolvedValueOnce({
+      key: 'createTableRow',
+      connectionId: null,
+      parameters: {
+        fileId: 'mock-file-id',
+        tableId: '{mock-table-id}',
+      },
+    })
+
+    const groupConfig = await batchQueueConfig.getGroupConfigForJob({
+      flowId: 'test-flow-id',
+      stepId: 'test-step-id',
+      executionId: 'test-execution-id',
+    })
+
+    // A missing connectionId is safe rather than thrown: such jobs share the
+    // empty segment and runBatch's single access check fails them together.
+    expect(groupConfig).toEqual({
+      id: 'createTableRow::mock-file-id::{mock-table-id}::',
+    })
   })
 })
