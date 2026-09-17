@@ -74,17 +74,17 @@ type AppConfig = {
   gathersg: {
     publicKey: string
   }
+  bedrock: {
+    region: string
+    model: string
+    imageModel: string
+    /**
+     * Local dev only. Which AWS SSO profile to assume for Bedrock calls,
+     * independent of whatever AWS_PROFILE is set to for other services (e.g. SES).
+     */
+    devAwsProfile?: string
+  }
   pair: {
-    bedrock: {
-      region: string
-      model: string
-      imageModel: string
-      /**
-       * Local dev only. Which AWS SSO profile to assume for Bedrock calls,
-       * independent of whatever AWS_PROFILE is set to for other services (e.g. SES).
-       */
-      devAwsProfile?: string
-    }
     rome: {
       baseUrl: string
       cloudflare: {
@@ -191,13 +191,13 @@ const appConfig: AppConfig = {
   gathersg: {
     publicKey: process.env.GATHERSG_PUBLIC_KEY,
   },
+  bedrock: {
+    region: process.env.BEDROCK_REGION,
+    model: process.env.BEDROCK_MODEL,
+    imageModel: process.env.BEDROCK_IMAGE_MODEL,
+    devAwsProfile: process.env.BEDROCK_DEV_AWS_PROFILE,
+  },
   pair: {
-    bedrock: {
-      region: process.env.PAIR_BEDROCK_REGION,
-      model: process.env.PAIR_BEDROCK_MODEL,
-      imageModel: process.env.PAIR_BEDROCK_IMAGE_MODEL,
-      devAwsProfile: process.env.PAIR_BEDROCK_DEV_AWS_PROFILE,
-    },
     rome: {
       baseUrl: process.env.PAIR_ROME_BASE_URL,
       cloudflare: {
@@ -291,11 +291,11 @@ if (!appConfig.gathersg.publicKey) {
 }
 
 if (
-  !appConfig.pair.bedrock.region ||
-  !appConfig.pair.bedrock.model ||
-  !appConfig.pair.bedrock.imageModel
+  !appConfig.bedrock.region ||
+  !appConfig.bedrock.model ||
+  !appConfig.bedrock.imageModel
 ) {
-  throw new Error('Pair Bedrock environment variables need to be set!')
+  throw new Error('Bedrock environment variables need to be set!')
 }
 
 if (
