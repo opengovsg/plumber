@@ -61,6 +61,19 @@ const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('step-start'),
   }),
+  // Bedrock Claude's extended thinking. The frontend echoes this back on
+  // subsequent turns; the signature must round-trip unmodified or Anthropic
+  // rejects the next request.
+  z.object({
+    type: z.literal('reasoning'),
+    text: z
+      .string()
+      .max(MAX_TEXT_LENGTH, `Text cannot exceed ${MAX_TEXT_LENGTH} characters`),
+    state: z.enum(['streaming', 'done']).optional(),
+    providerMetadata: z
+      .record(z.string(), z.record(z.string(), z.unknown()))
+      .optional(),
+  }),
   z.object({
     type: z.literal('data-isChatReady'),
     data: z.union([
