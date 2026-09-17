@@ -1,3 +1,5 @@
+import type { TransactionOrKnex } from 'objection'
+
 import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { getConnectionDetails } from '@/helpers/get-shared-connection-details'
 import logger from '@/helpers/logger'
@@ -11,6 +13,32 @@ import Step from '@/models/step'
 import TableCollaborator from '@/models/table-collaborators'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
+
+const NOT_PENDING_ERROR_MESSAGE =
+  'This pipe transfer is no longer pending. Please ask the pipe owner for a new transfer request.'
+
+/**
+ * Moves a transfer out of 'pending', refusing to act on one that already left it.
+ *
+ * IMPORTANT: the status condition belongs in the UPDATE itself so two
+ * concurrent approvals of the same transfer cannot both run.
+ */
+async function leavePendingStatus(
+  flowTransfer: FlowTransfer,
+  status: Exclude<FlowTransfer['status'], 'pending'>,
+  trx?: TransactionOrKnex,
+): Promise<FlowTransfer> {
+  const [updatedTransfer] = await FlowTransfer.query(trx)
+    .patch({ status })
+    .where({ id: flowTransfer.id, status: 'pending' })
+    .returning('*')
+
+  if (!updatedTransfer) {
+    throw new Error(NOT_PENDING_ERROR_MESSAGE)
+  }
+
+  return updatedTransfer
+}
 
 /**
  * Note that this mutation does two things
@@ -31,6 +59,14 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       .withGraphFetched({ newOwner: true })
       .throwIfNotFound()
 
+    /**
+     * Stops a recipient from replaying an old transfer id to self-assign Owner,
+     * long after the transfer was completed, rejected or cancelled.
+     */
+    if (flowTransfer.status !== 'pending') {
+      throw new Error(NOT_PENDING_ERROR_MESSAGE)
+    }
+
     // To prevent possible exploits: for approved/rejected status: check if new owner matches
     if (
       (status === 'approved' || status === 'rejected') &&
@@ -48,9 +84,7 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
     }
 
     if (status === 'rejected' || status === 'cancelled') {
-      return await flowTransfer.$query().patchAndFetch({
-        status,
-      })
+      return await leavePendingStatus(flowTransfer, status)
     }
 
     // Approval flow: only fetch flow here instead of doing it above unnecessarily
@@ -67,15 +101,25 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
 
     /**
      * This transaction does the following to complete a flow transfer:
+     * - Update the flow transfer status to 'approved'
      * - Duplicate all connections in the connections table and nullify the user ids
      *   (EXCEPT M365-excel: nullify all connections)
      * - Patch the steps to reference the duplicate connection(s)
      * - Share all connections and tables to flow_connections (if not already shared)
      * - Add the new owner as an editor in the table (if not already an editor)
      * - Update the flow id to the new owner
-     * - Update the flow transfer status to 'approved'
      */
     return await FlowTransfer.transaction(async (trx) => {
+      /**
+       * Claimed up front so a concurrent approval blocks on this row and bails
+       * out before redoing the work below.
+       */
+      const approvedTransfer = await leavePendingStatus(
+        flowTransfer,
+        status,
+        trx,
+      )
+
       // logging for recovery purposes
       const connectionIds: string[] = []
       const tableIds: string[] = []
@@ -302,10 +346,7 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       // update the flow owner id
       await flow.$query(trx).patchAndFetch({ userId: context.currentUser.id })
 
-      // FINALLY, MARK THE FLOW TRANSFER AS APPROVED AND COMPLETED
-      return await flowTransfer.$query(trx).patchAndFetch({
-        status,
-      })
+      return approvedTransfer
     })
   }
 
