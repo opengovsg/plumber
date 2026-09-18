@@ -26,6 +26,7 @@ import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
 import { processStep } from '@/helpers/authenticationSteps'
 import computeAuthStepVariables from '@/helpers/computeAuthStepVariables'
 import { getOpenerOrigin } from '@/helpers/window'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import Form from '../Form'
 
@@ -185,6 +186,9 @@ export default function AddAppConnection(
         stepIndex++
 
         if (stepIndex === steps.length) {
+          if (isPostHogConfigured) {
+            posthog.capture('app_connection_connected', { app_key: key })
+          }
           onClose(response)
         }
       }

@@ -8,6 +8,7 @@ import { datadogRum } from '@datadog/browser-rum'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { LOGOUT } from '@/graphql/mutations/logout'
 import { GET_CURRENT_USER } from '@/graphql/queries/get-current-user'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 type CurrentUser = Pick<
   IUser,
@@ -42,6 +43,9 @@ export const AuthenticationProvider = ({
     onCompleted: () => {
       // force datadog rum to stop tracking once logged out
       datadogRum.setTrackingConsent('not-granted')
+      if (isPostHogConfigured) {
+        posthog.reset()
+      }
     },
   })
 
@@ -50,6 +54,9 @@ export const AuthenticationProvider = ({
       datadogRum.setUser(currentUser)
       // grant consent to start tracking once logged in
       datadogRum.setTrackingConsent('granted')
+      if (isPostHogConfigured) {
+        posthog.identify(currentUser.id, { email: currentUser.email })
+      }
     }
   }, [currentUser])
 
