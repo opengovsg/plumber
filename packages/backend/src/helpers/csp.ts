@@ -57,13 +57,13 @@ const helmetOptions: HelmetOptions = {
       // attacker-controlled JS (GTA-119-003).
       scriptSrc: [
         "'self'",
-        appConfig.isDev && "https://*.apollographql.com",
+        appConfig.isDev && 'https://*.apollographql.com',
         posthogAssetsHost,
         appConfig.isDev && "'unsafe-inline'",
       ].filter(Boolean),
       manifestSrc: [
         "'self'",
-        !appConfig.isDev && "https://*.apollographql.com",
+        !appConfig.isDev && 'https://*.apollographql.com',
       ].filter(Boolean),
       upgradeInsecureRequests: [],
       workerSrc: ['blob:', "'self'"],
