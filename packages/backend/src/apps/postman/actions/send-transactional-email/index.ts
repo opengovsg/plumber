@@ -287,6 +287,9 @@ async function sendEmail(
     })
     dataOut.status = updatedStatus
     dataOut.recipient = prevDataOut.recipient
+    // No CC patch-back: the full CC list rides along on every send, so the
+    // retry's own cc/ccStatus already stand. A retry routed to Postman reports
+    // no ccStatus, since Postman cannot track it.
   }
 
   /**
@@ -306,6 +309,8 @@ async function sendEmail(
   const blacklistedRecipients = dataOut.recipient.filter(
     (_, i) => dataOut.status[i] === 'BLACKLISTED',
   )
+  const blacklistedCcs =
+    dataOut.cc?.filter((_, i) => dataOut.ccStatus?.[i] === 'BLACKLISTED') ?? []
 
   const defaultSendEmailParams = {
     flowId: $.flow.id,
@@ -324,11 +329,16 @@ async function sendEmail(
    * Send blacklist notification email if any
    * If there are any invalid attachments, it will be included in this email
    */
-  if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
+  if (
+    (blacklistedRecipients.length > 0 || blacklistedCcs.length > 0) &&
+    !$.execution.testRun
+  ) {
     try {
+      // The removal form and the notification treat every address alike, so
+      // CCs are merged in here rather than threaded through as a second list.
       await sendBlacklistEmail({
         ...defaultSendEmailParams,
-        blacklistedRecipients,
+        blacklistedRecipients: [...blacklistedRecipients, ...blacklistedCcs],
       })
     } catch (e) {
       logger.error(e)
@@ -337,6 +347,7 @@ async function sendEmail(
         flowId: $.flow.id,
         executionId: $.execution.id,
         blacklistedRecipients,
+        blacklistedCcs,
         error: e,
       })
     }
@@ -376,6 +387,7 @@ async function sendEmail(
       error,
       isPartialSuccess: hasAtLeastOneSuccess || invalidAttachments.length > 0,
       blacklistedRecipients,
+      blacklistedCcs,
       invalidAttachments,
       isRetryWithoutAttachments,
     })

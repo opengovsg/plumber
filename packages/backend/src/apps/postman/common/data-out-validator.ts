@@ -2,25 +2,26 @@ import { z } from 'zod'
 
 import { MAILBOX_PATTERN } from './parameters'
 
+const sendStatusSchema = z.enum([
+  'ACCEPTED',
+  'BLACKLISTED',
+  'RATE-LIMITED',
+  'INVALID-ATTACHMENT',
+  'ATTACHMENT-SIZE-EXCEEDED',
+  'INTERMITTENT-ERROR',
+  'ERROR',
+])
+
 export const dataOutSchema = z
   .object({
-    status: z.array(
-      z.enum([
-        'ACCEPTED',
-        'BLACKLISTED',
-        'RATE-LIMITED',
-        'INVALID-ATTACHMENT',
-        'ATTACHMENT-SIZE-EXCEEDED',
-        'INTERMITTENT-ERROR',
-        'ERROR',
-      ]),
-    ),
-    // Must accept the same addresses transactionalEmailSchema (parameters.ts)
-    // accepts as input, or a partial-retry's dataOut fails to parse here and
-    // resends to every recipient, not just the ones that failed.
+    status: z.array(sendStatusSchema),
     recipient: z.array(
       z.string().email({ pattern: MAILBOX_PATTERN }).toLowerCase(),
     ),
+    // Aligned arrays like status/recipient. Only the SES path tracks CC status,
+    // so both stay optional.
+    cc: z.array(z.string().email().toLowerCase()).optional(),
+    ccStatus: z.array(sendStatusSchema).optional(),
     body: z.string().optional(),
     subject: z.string().optional(),
     from: z.string().optional(),
