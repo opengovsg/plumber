@@ -22,6 +22,7 @@ import {
   sendTransactionalEmails,
 } from '../../common/email-helper'
 import {
+  SEND_MODE_KEY,
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
@@ -119,6 +120,7 @@ function getSendEmailParams(
     senderName,
     replyTo,
     attachments = [],
+    [SEND_MODE_KEY]: sendMode,
   } = $.step.parameters
 
   // Production runs must always use the configured recipients. `useConfiguredEmails`
@@ -133,6 +135,7 @@ function getSendEmailParams(
       senderName,
       replyTo,
       attachments,
+      sendMode,
     }
   }
 
@@ -149,6 +152,7 @@ function getSendEmailParams(
     senderName,
     replyTo,
     attachments,
+    sendMode,
   }
 }
 
@@ -164,9 +168,11 @@ async function sendEmail(
     senderName,
     replyTo,
     attachments,
+    sendMode,
   } = getSendEmailParams($, testRunMetadata)
 
   const result = transactionalEmailSchema.safeParse({
+    [SEND_MODE_KEY]: sendMode,
     destinationEmail,
     destinationEmailCc,
     senderName,
@@ -260,6 +266,7 @@ async function sendEmail(
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
+      sendMode: result.data[SEND_MODE_KEY],
     },
     useSes,
   )

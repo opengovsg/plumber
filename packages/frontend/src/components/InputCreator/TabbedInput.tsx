@@ -24,25 +24,27 @@ interface TabbedInputProps {
   children: React.ReactNode
 }
 
+// Segmented pill: grey track, white selected pill, dark text throughout.
 const tabStyle: TabProps = {
   _selected: {
-    color: 'primary.500',
+    color: 'base.content.strong',
     bg: 'white',
-    _hover: {
-      color: 'primary.500',
-    },
+    boxShadow: 'sm',
   },
   _hover: {
-    color: 'primary.500',
+    color: 'base.content.strong',
   },
+  color: 'base.content.default',
   bg: 'transparent',
   letterSpacing: '0',
-  fontWeight: 'medium',
+  fontWeight: 'normal',
   textTransform: 'none',
-  borderRadius: 'md',
+  borderRadius: 'full',
+  border: 'none',
   px: 4,
-  py: 1.5,
+  py: 1,
   textStyle: 'body-2',
+  whiteSpace: 'nowrap',
 }
 
 /**
@@ -80,19 +82,19 @@ export default function TabbedInput(props: TabbedInputProps) {
             )}
 
             <Tabs
-              variant="enclosed-colored"
+              variant="unstyled"
               index={selectedIndex}
               onChange={(index) =>
                 !readOnly && onChange(tabs.options[index].value)
               }
-              backgroundColor="base.divider.medium"
-              py={1}
-              px={0.5}
-              borderRadius="md"
+              bg="base.divider.medium"
+              p={1}
+              borderRadius="full"
               w="fit-content"
               maxW="100%"
+              mb={2}
             >
-              <TabList gap={1} overflow="hidden" border="none">
+              <TabList gap={1} overflowX="auto">
                 {tabs.options.map((option) => (
                   <Tab key={option.value} {...tabStyle}>
                     {option.label}
@@ -102,12 +104,12 @@ export default function TabbedInput(props: TabbedInputProps) {
             </Tabs>
 
             {description && (
-              <FormLabel.Description mt={2} mb={2} whiteSpace="pre-wrap">
+              <FormLabel.Description whiteSpace="pre-wrap">
                 {description}
               </FormLabel.Description>
             )}
 
-            <Box>{children}</Box>
+            <Box mt={2}>{children}</Box>
           </FormControl>
         )
       }}

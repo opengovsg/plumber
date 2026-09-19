@@ -36,12 +36,9 @@ function isSesSimulatorAddress(
  * Process a parsed SES event (called by the SQS consumer's handleMessage).
  *
  * NOTE on recipient arrays:
- *   `bouncedRecipients` and `complainedRecipients` are arrays per the SES
- *   spec, but in practice each event we receive will only contain ONE
- *   recipient. This is because our SES sender (sendViaSes) calls
- *   SendEmailCommand with a single `ToAddresses` per call. The loops below
- *   still iterate to remain faithful to the spec and to be safe if Phase 2
- *   ever introduces multi-recipient sends via SendBulkEmailCommand.
+ *   `bouncedRecipients` and `complainedRecipients` can hold several addresses.
+ *   The Postman action's combined send mode puts up to 50 recipients on one
+ *   SendEmailCommand, so one event may report a bounce for many of them.
  */
 export async function processSesEvent(data: SesEventInput): Promise<void> {
   const { sesEvent, sqsMessageId } = data

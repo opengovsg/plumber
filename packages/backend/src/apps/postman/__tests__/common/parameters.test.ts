@@ -268,4 +268,25 @@ describe('postman transactional email schema zod validation', () => {
     assert(result.success === true)
     expect(result.data.senderName).toEqual('a'.repeat(validLength))
   })
+
+  describe('sendMode', () => {
+    it('defaults to combined when the key is absent', () => {
+      const result = transactionalEmailSchema.safeParse(validPayload)
+      assert(result.success === true)
+      expect(result.data.sendMode).toEqual('combined')
+    })
+
+    it.each(['combined', 'individual'])('accepts %s', (sendMode) => {
+      validPayload.sendMode = sendMode
+      const result = transactionalEmailSchema.safeParse(validPayload)
+      assert(result.success === true)
+      expect(result.data.sendMode).toEqual(sendMode)
+    })
+
+    it('rejects an unknown value', () => {
+      validPayload.sendMode = 'bcc'
+      const result = transactionalEmailSchema.safeParse(validPayload)
+      expect(result.success).toBe(false)
+    })
+  })
 })
