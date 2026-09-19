@@ -296,6 +296,33 @@ async function sendViaSes(
 }
 
 /**
+ * CCs ride along on To sends, so a CC that was not suppressed shares the fate
+ * of the To sends. When nothing was delivered it takes the top send error.
+ *
+ * IMPORTANT: a healthy CC must never come out BLACKLISTED just because every
+ * To recipient was, or it would be reported to the owner as blacklisted itself.
+ */
+function getCcStatuses(
+  ccList: string[],
+  suppressedSet: Set<string>,
+  toStatuses: PostmanEmailSendStatus[],
+  errors: PostmanPromiseRejected[],
+): PostmanEmailSendStatus[] {
+  const anyToAccepted = toStatuses.includes('ACCEPTED')
+  const topSendError = errors.find((error) => error.status !== 'BLACKLISTED')
+  const undeliveredStatus: PostmanEmailSendStatus = topSendError
+    ? topSendError.status
+    : 'ERROR'
+
+  return ccList.map((cc) => {
+    if (suppressedSet.has(cc)) {
+      return 'BLACKLISTED'
+    }
+    return anyToAccepted ? 'ACCEPTED' : undeliveredStatus
+  })
+}
+
+/**
  * Resolve whether to route via SES for the given recipients. SES is used only
  * when `ses_enabled` is true for every recipient; if the email carries
  * attachments, `ses_attachments_enabled` must also be true for every recipient.
@@ -544,6 +571,20 @@ export async function sendTransactionalEmails(
     }
   })
 
+  // Suppressed CCs surface as BLACKLISTED like suppressed To recipients, so the
+  // step reports them even when every To send succeeded.
+  for (const cc of email.ccList ?? []) {
+    if (suppressedSet.has(cc)) {
+      errors.push({
+        status: 'BLACKLISTED',
+        recipient: cc,
+        error: {
+          message: 'CC email address is in suppression list',
+        } as HttpError,
+      })
+    }
+  }
+
   /**
    * Since we can only return one error per postman step, we have to select in terms of priority:
    * 1. RATE-LIMITED (so we can auto-retry)
@@ -568,6 +609,11 @@ export async function sendTransactionalEmails(
     status,
     recipient,
     ...params,
+    ...(useSes &&
+      email.ccList?.length && {
+        cc: email.ccList,
+        ccStatus: getCcStatuses(email.ccList, suppressedSet, status, errors),
+      }),
   } satisfies PostmanEmailDataOut
   return {
     dataOut,
