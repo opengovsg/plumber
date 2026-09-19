@@ -133,12 +133,17 @@ function getInvalidAttachmentSolution({
   `
 }
 
+function formatAddressList(addresses: string[]): string {
+  return addresses.map((address) => `**${address}**`).join('\n\n')
+}
+
 export function throwPostmanStepError({
   $,
   status,
   error,
   isPartialSuccess,
   blacklistedRecipients,
+  blacklistedCcs = [],
   invalidAttachments,
   isRetryWithoutAttachments,
 }: {
@@ -147,6 +152,7 @@ export function throwPostmanStepError({
   error: HttpError
   isPartialSuccess: boolean
   blacklistedRecipients: string[]
+  blacklistedCcs?: string[]
   invalidAttachments: string[]
   isRetryWithoutAttachments: boolean
 }) {
@@ -159,37 +165,69 @@ export function throwPostmanStepError({
 
   switch (status) {
     case 'BLACKLISTED': {
-      let name = 'Blacklisted recipient email'
+      const hasBlacklistedRecipients = blacklistedRecipients.length > 0
+      const hasBlacklistedCcs = blacklistedCcs.length > 0
+
+      let name = hasBlacklistedRecipients
+        ? 'Blacklisted recipient email'
+        : 'Blacklisted CC email'
       const formLink = createRequestBlacklistFormLink({
         userEmail: $.user.email,
         executionId: $.execution.id,
-        blacklistedRecipients,
+        blacklistedRecipients: [...blacklistedRecipients, ...blacklistedCcs],
       })
 
       // log individual blacklisted recipients
-      blacklistedRecipients.forEach((recipient) => {
-        logger.info('Blacklisted recipient for postman email step', {
-          event: 'postman-step-blacklisted-recipient',
-          blacklistedEmail: recipient,
-          stepId: $.step.id,
-          executionId: $.execution.id,
-        })
-      })
+      for (const [isCc, addresses] of [
+        [false, blacklistedRecipients],
+        [true, blacklistedCcs],
+      ] as const) {
+        for (const address of addresses) {
+          logger.info('Blacklisted recipient for postman email step', {
+            event: 'postman-step-blacklisted-recipient',
+            blacklistedEmail: address,
+            isCc,
+            stepId: $.step.id,
+            executionId: $.execution.id,
+          })
+        }
+      }
 
-      let solution = `The following email addresses have been blacklisted by Postman:
-         \n${blacklistedRecipients
-           .map((recipient) => `**${recipient}**`)
-           .join('\n\n')}
-         \nIf you believe that they are valid and active, please [use this form](${formLink}) to request for removal from blacklist and try again.
-        `
+      const sections: string[] = []
+      if (hasBlacklistedRecipients) {
+        sections.push(
+          `The following email addresses have been blacklisted by Postman:\n\n${formatAddressList(
+            blacklistedRecipients,
+          )}`,
+        )
+      }
+      if (hasBlacklistedCcs) {
+        sections.push(
+          `The following CC email addresses have been blacklisted by Postman and did not receive a copy:\n\n${formatAddressList(
+            blacklistedCcs,
+          )}`,
+        )
+      }
+      // A CC-only blacklist has nothing to retry, so the removal-form prompt
+      // is left out too.
+      if (hasBlacklistedRecipients) {
+        sections.push(
+          `If you believe that they are valid and active, please [use this form](${formLink}) to request for removal from blacklist and try again.`,
+        )
+      }
+      let solution = sections.join('\n\n')
 
       if (hasInvalidAttachments) {
         name += ` and invalid attachment(s)`
         solution += `\n\n&nbsp;\n\n${invalidAttachmentsSolution}`
       }
 
-      let buttonMessage = 'Resend to blacklisted recipients'
-      if (isRetryWithoutAttachments) {
+      // CCs are never retried on their own: they ride along on the next To
+      // send, so a CC-only blacklist gets no button.
+      let buttonMessage = hasBlacklistedRecipients
+        ? 'Resend to blacklisted recipients'
+        : ''
+      if (buttonMessage && isRetryWithoutAttachments) {
         buttonMessage += ' without attachments'
       }
 
