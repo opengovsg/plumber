@@ -119,4 +119,14 @@ describe('withRecipient', () => {
     expect(forAlice).toMatch(/^To: alice@open\.gov\.sg\r\n/)
     expect(forBob).toMatch(/^To: bob@open\.gov\.sg\r\n/)
   })
+
+  it('joins several recipients into one To header', async () => {
+    const raw = await buildRawEmail({ ...baseInput, to: undefined })
+    const withTo = withRecipient(raw, [
+      'alice@open.gov.sg',
+      'bob@open.gov.sg',
+    ]).toString('utf-8')
+
+    expect(withTo).toMatch(/^To: alice@open\.gov\.sg, bob@open\.gov\.sg\r\n/)
+  })
 })

@@ -64,11 +64,15 @@ export function buildRawEmail(input: RawEmailInput): Promise<Buffer> {
 /**
  * Cheaply add a `To:` header to a message built without one (`to` omitted
  * from `buildRawEmail`'s input), so the expensive part of building a message
- * (base64-encoding attachments) can happen once and be reused per recipient.
+ * (base64-encoding attachments) can happen once and be reused per send.
  *
  * Safe because the header block isn't terminated until the first blank line,
  * and `buildRawEmail` never emits one before the first real header.
  */
-export function withRecipient(rawMessage: Buffer, to: string): Buffer {
-  return Buffer.concat([Buffer.from(`To: ${to}\r\n`, 'utf-8'), rawMessage])
+export function withRecipient(
+  rawMessage: Buffer,
+  to: string | string[],
+): Buffer {
+  const header = Array.isArray(to) ? to.join(', ') : to
+  return Buffer.concat([Buffer.from(`To: ${header}\r\n`, 'utf-8'), rawMessage])
 }
