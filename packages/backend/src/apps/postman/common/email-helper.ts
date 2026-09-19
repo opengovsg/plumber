@@ -492,6 +492,33 @@ async function sendGroups(
 }
 
 /**
+ * CCs ride along on To sends, so a CC that was not suppressed shares the fate
+ * of the To sends. When nothing was delivered it takes the top send error.
+ *
+ * IMPORTANT: a healthy CC must never come out BLACKLISTED just because every
+ * To recipient was, or it would be reported to the owner as blacklisted itself.
+ */
+function getCcStatuses(
+  ccList: string[],
+  suppressedSet: Set<string>,
+  toStatuses: PostmanEmailSendStatus[],
+  errors: PostmanPromiseRejected[],
+): PostmanEmailSendStatus[] {
+  const anyToAccepted = toStatuses.includes('ACCEPTED')
+  const topSendError = errors.find((error) => error.status !== 'BLACKLISTED')
+  const undeliveredStatus: PostmanEmailSendStatus = topSendError
+    ? topSendError.status
+    : 'ERROR'
+
+  return ccList.map((cc) => {
+    if (suppressedSet.has(cc)) {
+      return 'BLACKLISTED'
+    }
+    return anyToAccepted ? 'ACCEPTED' : undeliveredStatus
+  })
+}
+
+/**
  * Maps group outcomes back to one status per configured recipient, in input
  * order. Retries rely on dataOut.status[i] matching dataOut.recipient[i].
  */
@@ -501,6 +528,7 @@ function collectResults(
   suppressed: Set<string>,
   groups: SendGroup[],
   groupResults: PromiseSettledResult<SentParams>[],
+  useSes: boolean,
 ): SendOutcome {
   // IMPORTANT: groups hold the unsuppressed recipients in input order. The
   // index walk below depends on it.
@@ -559,6 +587,20 @@ function collectResults(
     }
   })
 
+  // Suppressed CCs surface as BLACKLISTED like suppressed To recipients, so the
+  // step reports them even when every To send succeeded.
+  for (const cc of ccList ?? []) {
+    if (suppressed.has(cc)) {
+      errors.push({
+        status: 'BLACKLISTED',
+        recipient: cc,
+        error: {
+          message: 'CC email address is in suppression list',
+        } as HttpError,
+      })
+    }
+  }
+
   /**
    * Since we can only return one error per postman step, we have to select in terms of priority:
    * 1. RATE-LIMITED (so we can auto-retry)
@@ -584,6 +626,11 @@ function collectResults(
     recipient,
     // dataOut reports the configured CCs, including any that were suppressed.
     ...(params && { ...params, ...(ccList?.length && { cc: ccList }) }),
+    ...(useSes &&
+      ccList?.length && {
+        cc: ccList,
+        ccStatus: getCcStatuses(ccList, suppressed, status, errors),
+      }),
   } satisfies PostmanEmailDataOut
   return {
     dataOut,
@@ -611,5 +658,6 @@ export async function sendTransactionalEmails(
     resolved.suppressed,
     groups,
     groupResults,
+    useSes,
   )
 }
