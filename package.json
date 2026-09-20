@@ -10,6 +10,7 @@
     "setup": "node scripts/with-op-env.mjs --env setup npm run -w backend setup",
     "dev": "node scripts/with-op-env.mjs turbo watch dev worker --continue",
     "dev:sample-env": "turbo watch dev worker --continue",
+    "sbx": "sbx env run .sbx/sbenv/claude.yaml -y",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
     "start": "npm run -w backend start",

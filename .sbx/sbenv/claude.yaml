@@ -1,0 +1,30 @@
+schemaVersion: '1'
+name: plumber-dev-claude
+
+agent: plumber-claude
+sandboxOptions:
+  template: plumber-dev:claude
+
+workspace: ../../
+additionalWorkspaces:
+  - path: ../../.sbx
+    readOnly: true
+
+args:
+  backendPort:
+    default: 3000
+  frontendPort:
+    default: 3001
+
+kits:
+  - source: .sbx/kits/plumber-dev
+    args:
+      backendPort: ${{ env.args.backendPort }}
+      frontendPort: ${{ env.args.frontendPort }}
+  - source: .sbx/kits/plumber-claude
+
+ports:
+  - sandbox: ${{ env.args.backendPort }}
+    host: ${{ env.args.backendPort }}
+  - sandbox: ${{ env.args.frontendPort }}
+    host: ${{ env.args.frontendPort }}
