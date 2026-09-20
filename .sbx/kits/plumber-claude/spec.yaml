@@ -1,0 +1,15 @@
+schemaVersion: '2'
+kind: sandbox
+name: plumber-claude
+displayName: Plumber + Claude
+description: Runs Claude & Plumber concurrently using tmux
+
+extends: claude
+
+environment:
+  variables:
+    CLAUDE_CODE_TMUX_TRUECOLOR: 1
+
+sandbox:
+  entrypoint: ['bash', '-li']
+  command: ['--', '/home/agent/init.sh']
