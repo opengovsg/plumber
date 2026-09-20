@@ -1,0 +1,42 @@
+schemaVersion: '2'
+kind: mixin
+name: plumber-dev
+displayName: Plumber development
+description: Sets up sbx for Plumber development
+
+args:
+  backendPort:
+    default: 3000
+  frontendPort:
+    default: 3001
+
+setup:
+  startup:
+    - command: ['npm', 'install']
+      description: >
+        Run npm install to get arch-specific versions of packages with native
+        modules (e.g. swc)
+
+environment:
+  variables:
+    TILES_POSTGRES_HOST: host.docker.internal
+    POSTGRES_HOST: host.docker.internal
+    REDIS_HOST: host.docker.internal
+    PORT: '${{ kit.args.backendPort }}'
+    BASE_URL: 'http://localhost:${{ kit.args.backendPort }}'
+    WEB_APP_URL: 'http://localhost:${{ kit.args.frontendPort }}'
+
+permissions:
+  network:
+    allow:
+      - '*.launchdarkly.com'
+      # Not doing docker-in-docker; this enables connecting to locally (but
+      # separately) hosted postgres & redis containers
+      - localhost:5432
+      - localhost:6379
+
+ports:
+  - container: ${{ kit.args.backendPort }}
+    name: backend
+  - container: ${{ kit.args.frontendPort }}
+    name: frontend

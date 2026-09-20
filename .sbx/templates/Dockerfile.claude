@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+FROM docker/sandbox-templates:claude-code-minimal
+ARG PLUMBER_NODE_VERSION=22.19.0
+
+USER root
+RUN apt-get update -y && apt-get install -y --no-install-recommends tmux
+
+USER agent
+ENV IS_DOCKER_SANDBOX=1
+
+ENV NVM_DIR=/home/agent/.nvm
+ENV NPM_CONFIG_PREFIX=
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.7/install.sh | bash
+RUN bash -c "source $NVM_DIR/nvm.sh && nvm install $PLUMBER_NODE_VERSION && nvm use $PLUMBER_NODE_VERSION && npm install -g npm@11.19.0"
+
+RUN bash -c "claude update"
