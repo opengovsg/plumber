@@ -56,21 +56,23 @@ counted many times.
 
 One-row Stat panel. Birth cohort in the window, plus one snapshot that ignores the window.
 
+Aliases are quoted with spaces (no underscores) so Grafana Stat titles wrap.
+
 Asked-for columns:
 
-- `ai_builder_created` — pipes born in the window whose config contains `aiBuilderConfig`. Includes deleted pipes.
-- `ai_builder_flowed` — those pipes with a live (non-test) execution, or `archived_execution_count > 0`. Ignores `flows.active`.
-- `ai_builder_currently_published` — those pipes that are still live and `flows.active = true`. This is publish state, not the glossary "active pipe" (which is flowed-in-period). A pipe can flow then be unpublished, so this is usually smaller than `ai_builder_flowed`.
+- `ai builder created` — pipes born in the window whose config contains `aiBuilderConfig`. Includes deleted pipes.
+- `ai builder flowed` — those pipes with a live (non-test) execution, or `archived_execution_count > 0`. Ignores `flows.active`.
+- `ai builder currently published` — those pipes that are still live and `flows.active = true`. This is publish state, not the glossary "active pipe" (which is flowed-in-period). A pipe can flow then be unpublished, so this is usually smaller than `ai builder flowed`.
 
 Suggested extras, same row:
 
-- `ai_builder_succeeded` — a non-test execution with `status = success`. Flowed includes failures and still-running executions.
-- `ai_builder_flowed_in_window` — a live execution whose `created_at` sits in the same window. Tells you whether the cohort generated traffic during the window, not just ever.
-- `ai_builder_owners` / `ai_builder_owners_with_a_flowed_pipe` — unique owners. Adoption vs pipe-count.
-- `ai_builder_flowed_pct` — headline conversion. Compare to `manual_editor_flowed_pct`.
-- `manual_editor_created` / `manual_editor_flowed` / `manual_editor_flowed_pct` — same-window baseline.
-- `ai_builder_share_of_new_pipes` — AI Builder share of all pipes born in the window, including templates.
-- `ai_builder_published_snapshot` — live published AI Builder pipes **right now**, any create date. Does not move with the time picker.
+- `ai builder succeeded` — a non-test execution with `status = success`. Flowed includes failures and still-running executions.
+- `ai builder flowed in window` — a live execution whose `created_at` sits in the same window. Tells you whether the cohort generated traffic during the window, not just ever.
+- `ai builder owners` / `ai builder owners with a flowed pipe` — unique owners. Adoption vs pipe-count.
+- `ai builder flowed pct` — headline conversion. Compare to `manual editor flowed pct`.
+- `manual editor created` / `manual editor flowed` / `manual editor flowed pct` — same-window baseline.
+- `ai builder share of new pipes` — AI Builder share of all pipes born in the window, including templates.
+- `ai builder published snapshot` — live published AI Builder pipes **right now**, any create date. Does not move with the time picker.
 
 Not in this query, already covered elsewhere: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c).
 

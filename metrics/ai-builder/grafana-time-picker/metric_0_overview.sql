@@ -1,4 +1,5 @@
 -- Grafana: query format Table. Stat panel (one row, many fields).
+-- Quoted aliases use spaces so Stat titles wrap.
 -- Time picker filters pipes by flows.created_at (birth cohort).
 -- Later stages use that cohort's current outcome, including after the range.
 --
@@ -69,41 +70,41 @@ classified AS MATERIALIZED (
   ) fw ON true
 )
 SELECT
-  COUNT(*) FILTER (WHERE cohort = 'ai_builder') AS ai_builder_created,
-  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_flowed) AS ai_builder_flowed,
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder') AS "ai builder created",
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_flowed) AS "ai builder flowed",
   COUNT(*) FILTER (
     WHERE cohort = 'ai_builder'
       AND active
       AND deleted_at IS NULL
-  ) AS ai_builder_currently_published,
-  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_succeeded) AS ai_builder_succeeded,
-  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND flowed_in_window) AS ai_builder_flowed_in_window,
-  COUNT(DISTINCT user_id) FILTER (WHERE cohort = 'ai_builder') AS ai_builder_owners,
+  ) AS "ai builder currently published",
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_succeeded) AS "ai builder succeeded",
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND flowed_in_window) AS "ai builder flowed in window",
+  COUNT(DISTINCT user_id) FILTER (WHERE cohort = 'ai_builder') AS "ai builder owners",
   COUNT(DISTINCT user_id) FILTER (
     WHERE cohort = 'ai_builder' AND ever_flowed
-  ) AS ai_builder_owners_with_a_flowed_pipe,
+  ) AS "ai builder owners with a flowed pipe",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_flowed)
       / NULLIF(COUNT(*) FILTER (WHERE cohort = 'ai_builder'), 0),
     1
-  ) AS ai_builder_flowed_pct,
-  COUNT(*) FILTER (WHERE cohort = 'manual_editor') AS manual_editor_created,
-  COUNT(*) FILTER (WHERE cohort = 'manual_editor' AND ever_flowed) AS manual_editor_flowed,
+  ) AS "ai builder flowed pct",
+  COUNT(*) FILTER (WHERE cohort = 'manual_editor') AS "manual editor created",
+  COUNT(*) FILTER (WHERE cohort = 'manual_editor' AND ever_flowed) AS "manual editor flowed",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE cohort = 'manual_editor' AND ever_flowed)
       / NULLIF(COUNT(*) FILTER (WHERE cohort = 'manual_editor'), 0),
     1
-  ) AS manual_editor_flowed_pct,
+  ) AS "manual editor flowed pct",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE cohort = 'ai_builder')
       / NULLIF(COUNT(*), 0),
     1
-  ) AS ai_builder_share_of_new_pipes,
+  ) AS "ai builder share of new pipes",
   (
     SELECT COUNT(*)
     FROM flows f
     WHERE f.deleted_at IS NULL
       AND f.active
       AND COALESCE(f.config, '{}'::jsonb) ? 'aiBuilderConfig'
-  ) AS ai_builder_published_snapshot
+  ) AS "ai builder published snapshot"
 FROM classified;
