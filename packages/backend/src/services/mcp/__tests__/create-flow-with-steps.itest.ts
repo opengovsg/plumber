@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Flow from '@/models/flow'
 import User from '@/models/user'
 
-import { createFlowWithStepsService } from '../create-flow-with-steps'
+import {
+  createFlowWithStepsService,
+  flattenNestedSteps,
+} from '../create-flow-with-steps'
 
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
@@ -432,5 +435,59 @@ describe('createFlowWithStepsService', () => {
         { position: 3, appKey: 'postman', key: 'sendTransactionalEmail' },
       ],
     })
+  })
+
+  it('rejects a hidden, system-managed action like FormSG mrfSubmission', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-hidden-action-${randomUUID()}@example.com`,
+    })
+
+    await expect(
+      createFlowWithStepsService({
+        user,
+        name: 'MRF Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'formsg',
+            key: 'mrfSubmission',
+            type: 'action',
+            position: 2,
+          },
+        ],
+        traceId: 'trace-hidden-action',
+      }),
+    ).rejects.toThrow('Action can only be created by system')
+  })
+
+  it('rejects a hidden action nested inside an If block', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-hidden-nested-${randomUUID()}@example.com`,
+    })
+
+    const steps = flattenNestedSteps([
+      { appKey: 'formsg', key: 'newSubmission' },
+      {
+        appKey: 'toolbox',
+        key: 'ifThen',
+        steps: [{ appKey: 'formsg', key: 'mrfSubmission' }],
+      },
+    ])
+
+    await expect(
+      createFlowWithStepsService({
+        user,
+        name: 'Nested MRF Pipe',
+        steps,
+        traceId: 'trace-hidden-nested',
+      }),
+    ).rejects.toThrow('Action can only be created by system')
   })
 })
