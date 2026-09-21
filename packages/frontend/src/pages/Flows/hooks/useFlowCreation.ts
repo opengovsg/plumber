@@ -8,6 +8,7 @@ import {
   FLOW_CREATE_MODE,
   useCreateFlowContext,
 } from '@/pages/Flows/contexts/CreateFlowContext'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 export const useFlowCreation = () => {
   const navigate = useNavigate()
@@ -31,6 +32,9 @@ export const useFlowCreation = () => {
           },
         },
       })
+      if (response.data?.createFlow && isPostHogConfigured) {
+        posthog.capture('flow_created')
+      }
       navigate(URLS.FLOW_EDITOR(response.data?.createFlow?.id), {
         replace: true,
       })

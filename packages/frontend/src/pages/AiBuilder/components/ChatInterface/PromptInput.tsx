@@ -29,6 +29,7 @@ import {
   buildNoOptionsFoundMessage,
   containsSecretKey,
 } from '@/pages/AiBuilder/helpers'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { buildColumnTableReply } from './helpers/columnTableReply'
 import { isTilesListTablesPicker } from './helpers/isTilesListTablesPicker'
@@ -132,6 +133,9 @@ export default function PromptInput({
   }, [clarification])
 
   const doSend = () => {
+    if (isPostHogConfigured) {
+      posthog.capture('ai_builder_message_sent')
+    }
     sendMessage(input)
     setInput('')
     setSelectedAnswers({})

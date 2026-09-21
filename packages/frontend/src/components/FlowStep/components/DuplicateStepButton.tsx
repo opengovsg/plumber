@@ -11,6 +11,7 @@ import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 interface DuplicateStepButtonProps {
   isNested?: boolean
@@ -57,6 +58,9 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
     })
 
     const newStep = createdStep.data.createStep
+    if (isPostHogConfigured) {
+      posthog.capture('flow_step_duplicated')
+    }
     setCurrentStepId(newStep.id)
     onDrawerOpen()
   }, [flow, step, createStep, setCurrentStepId, onDrawerOpen])
