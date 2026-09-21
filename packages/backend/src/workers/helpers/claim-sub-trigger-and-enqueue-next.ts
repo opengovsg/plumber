@@ -16,6 +16,11 @@ export type ClaimSubTriggerAndEnqueueNextParams = {
   jobPayload: IActionJobData
 }
 
+type ClaimResult =
+  | 'missing'
+  | { kind: 'claimed'; id: string }
+  | { kind: 'already'; id: string }
+
 /**
  * Marks the sub-trigger execution step successful, then enqueues the next job.
  *
@@ -23,8 +28,10 @@ export type ClaimSubTriggerAndEnqueueNextParams = {
  * before an in-transaction patch is visible, so the next step would miss
  * this step's dataOut.
  *
- * The row transitions to success exactly once under `forUpdate`, so exactly
- * one worker reaches the enqueue below.
+ * A retried worker still enqueues if the row is already successful. A crash
+ * after commit would otherwise stall with no next job, which is harder to
+ * recover than a possible duplicate run. A stable job id keeps a second add
+ * from starting another run while the first job is still in Redis.
  */
 export async function claimSubTriggerAndEnqueueNext(
   params: ClaimSubTriggerAndEnqueueNextParams,
@@ -46,7 +53,7 @@ export async function claimSubTriggerAndEnqueueNext(
         executionId,
         stepId,
       })
-      return null
+      return 'missing' satisfies ClaimResult
     }
 
     if (executionStep.status === 'success') {
@@ -56,13 +63,16 @@ export async function claimSubTriggerAndEnqueueNext(
         stepId,
         executionStepId: executionStep.id,
       })
-      return null
+      return { kind: 'already', id: executionStep.id } satisfies ClaimResult
     }
 
-    return await executionStep.$query(trx).patchAndFetch({ status: 'success' })
+    const updated = await executionStep
+      .$query(trx)
+      .patchAndFetch({ status: 'success' })
+    return { kind: 'claimed', id: updated.id } satisfies ClaimResult
   })
 
-  if (!claimed) {
+  if (claimed === 'missing') {
     return
   }
 
@@ -73,14 +83,15 @@ export async function claimSubTriggerAndEnqueueNext(
       jobData: jobPayload,
       jobOptions: {
         ...DEFAULT_JOB_OPTIONS,
-        // Unclaiming below lets a retry enqueue again. BullMQ ignores an add
-        // whose id already exists, so a Redis error that actually landed the
-        // job cannot produce a second run of this step.
+        // BullMQ ignores an add whose id already exists. That covers a retry
+        // that races the first enqueue, or a Redis error that actually landed.
         jobId: `${jobPayload.executionId}-${jobPayload.stepId}`,
       },
     })
   } catch (error) {
-    await ExecutionStep.query().findById(claimed.id).patch({ status: null })
+    if (claimed.kind === 'claimed') {
+      await ExecutionStep.query().findById(claimed.id).patch({ status: null })
+    }
     throw error
   }
 }
