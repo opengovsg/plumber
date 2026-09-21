@@ -348,7 +348,7 @@ export default function IfThen({
               isDialogOpen={deleteConfirmationIsOpen}
               cancelRef={cancelDeleteButton}
               onDialogClose={closeDeleteConfirmation}
-              dialogHeader="If-then"
+              dialogHeader="If"
               dialogType="delete"
               onClick={deleteBlock}
               isLoading={isDeletingBlock}
@@ -358,7 +358,7 @@ export default function IfThen({
               isDialogOpen={duplicateConfirmationIsOpen}
               cancelRef={cancelDuplicateButton}
               onDialogClose={closeDuplicateConfirmation}
-              dialogHeader="If-then"
+              dialogHeader="If"
               dialogType="duplicate-branch"
               onClick={duplicateBranch}
               isLoading={isDuplicatingBranch}

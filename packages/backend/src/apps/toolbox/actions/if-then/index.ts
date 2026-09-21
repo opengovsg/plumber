@@ -12,7 +12,7 @@ import { getStepIdToSkipTo } from '../../common/get-step-id-to-skip-to'
 const ACTION_KEY = 'ifThen'
 
 const action: IRawAction = {
-  name: 'If-then',
+  name: 'If',
   key: ACTION_KEY,
   description: 'Run different actions based on certain conditions',
   groupsLaterSteps: true,
