@@ -123,6 +123,26 @@ describe('chatRequestSchema', () => {
       expect(result.success).toBe(true)
     })
 
+    it('should accept a get_flow tool part echoed back by the client', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool-get_flow',
+                toolCallId: 'call-1',
+                state: 'output-available',
+                input: { pipe_id: '550e8400-e29b-41d4-a716-446655440000' },
+                output: { steps: [] },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+    })
+
     it('should accept data-stepUpdate part', () => {
       const result = chatRequestSchema.safeParse({
         messages: [

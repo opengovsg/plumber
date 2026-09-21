@@ -1,6 +1,7 @@
 import { IGlobalVariable } from '@/../../types'
 import StepError from '@/errors/step'
 
+import { getMrfStepName } from '../../common/get-mrf-step-name'
 import {
   type FormSchema,
   mrfWorkflowDataSchema,
@@ -26,9 +27,7 @@ export function parseWorkflowData(
   for (const step of result.data) {
     populatedFields.push(...step.edit)
     parsedSteps.push({
-      defaultStepName: step.step_name
-        ? step.step_name.trim()
-        : `MRF Step ${parsedSteps.length + 1}`,
+      defaultStepName: getMrfStepName(step.step_name, parsedSteps.length),
       type: step.workflow_type,
       fields: [...populatedFields],
       formWorkflowStepId: step._id,
