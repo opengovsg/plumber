@@ -5,6 +5,11 @@ import { raw } from 'objection'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
+import {
+  getMrfTestStartStep,
+  isMrfStep,
+  testRemainingMrfSteps,
+} from '@/services/test-mrf-steps'
 import testStep from '@/services/test-step'
 
 import { PublishedPipeError } from './published-pipe-error'
@@ -23,17 +28,20 @@ export async function executeStepService(
   user: User,
   stepId: string,
 ): Promise<McpExecuteStepResult> {
-  const step = await user
+  const requestedStep = await user
     .withAccessibleSteps({ requiredRole: 'editor' })
     .withGraphFetched('flow')
     .findById(stepId)
     .throwIfNotFound()
 
-  if (step.flow.active) {
+  if (requestedStep.flow.active) {
     throw new PublishedPipeError()
   }
 
-  // TODO: MRF redirect when AI builder supports it
+  // Same as the editor: an MRF form is tested as a whole, from its trigger.
+  const step = isMrfStep(requestedStep)
+    ? await getMrfTestStartStep(requestedStep)
+    : requestedStep
 
   // AI Builder testing happens inline in chat, with no real user action to
   // wait on — always prefer mock data (e.g. FormSG's newSubmission trigger)
@@ -49,10 +57,15 @@ export async function executeStepService(
   })
 
   if (!executionStep.isFailed) {
-    await step.$query().patchAndFetch({
+    const completedStep = await step.$query().patchAndFetch({
       status: 'completed',
       config: raw(`config - 'templateConfig'`),
     })
+
+    // Passing the trigger completes every stage step too, as in the editor.
+    if (isMrfStep(completedStep)) {
+      await testRemainingMrfSteps(step.flowId, { preferMock: true })
+    }
   }
 
   const command = step.isAction
