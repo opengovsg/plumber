@@ -78,16 +78,22 @@ Not in this query, already covered elsewhere: median time-to-configure (panel 2)
 
 ### 0b. Overview QoQ
 
-One-row Stat. Grafana time picker is ignored. Calendar quarters in SGT.
+One-row Stat, six headline numbers. Grafana time picker is ignored. Calendar quarters in SGT.
 
-Compares **current quarter-to-date** with the **previous full quarter**. Count `qoq pct` is
-`(qtd - prev) / prev * 100`. That mixes a partial quarter with a full quarter, so it runs negative
-until the current quarter catches up. Rate columns use `qoq pp` (percentage points), which is
-length-fair.
+Compares **current quarter-to-date** with the **previous full quarter**. Same birth-cohort rules as
+panel 0. Values shown are quarter-to-date. The previous quarter appears only inside the change.
 
-Same birth-cohort rules as panel 0. `current qtd window` / `previous quarter window` are labels.
+- `window` — label, e.g. `Q3 2026 to 21 Sep vs Q2 2026`.
+- `ai builder created` / `ai builder created qoq pct`
+- `ai builder flowed` / `ai builder flowed qoq pct`
+- `manual created` / `manual created qoq pct`
+- `manual flowed` / `manual flowed qoq pct`
+- `total new pipes` / `total new pipes qoq pct` — every cohort, including templates.
+- `ai builder share of new pipes` / `ai builder share of new pipes qoq pp`
 
-Each overview field is emitted three times: `qtd`, `prev q`, and `qoq pct` or `qoq pp`.
+`qoq pct` is `(qtd - prev) / prev * 100`. It mixes a partial quarter with a full quarter, so counts
+run negative until the current quarter catches up. The share uses `qoq pp` (percentage points),
+which is length-fair.
 
 ### 1. Configuration funnel
 
