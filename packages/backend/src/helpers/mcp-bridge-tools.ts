@@ -29,6 +29,7 @@ import {
   executeStepService,
   type McpExecuteStepResult,
 } from '@/services/mcp/execute-step'
+import { getFlowService, type McpFlow } from '@/services/mcp/get-flow'
 import {
   getFormSchemaService,
   type McpFormSchemaResult,
@@ -142,6 +143,17 @@ export function createMcpBridgeTools(
       }),
       execute: async ({ step_id }): Promise<ListColumnsResult> => {
         return listColumnsService({ user, stepId: step_id })
+      },
+    }),
+
+    get_flow: tool({
+      description:
+        "Get a pipe's current steps in position order, including hidden FormSG MRF steps (appKey 'formsg', key 'mrfSubmission') auto-created after the trigger's last test run — these only exist once the trigger has been tested and are not present in create_pipe's response. Identify an MRF step by its appKey/key; identify an MRF approval step via parameters.mrf.approvalField; an existing reject-branch assignment appears as config.approval ({ branch: 'reject', stepId }). MRF steps are system-managed — never attempt to create, delete, or reorder them (create_step rejects it server-side regardless).",
+      inputSchema: z.object({
+        pipe_id: z.uuid().describe('ID of the pipe to fetch'),
+      }),
+      execute: async ({ pipe_id }): Promise<McpFlow> => {
+        return getFlowService({ user, pipeId: pipe_id })
       },
     }),
 
@@ -335,7 +347,7 @@ export function createMcpBridgeTools(
 
     create_step: tool({
       description:
-        "Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.\n\nTo route a step into an MRF approval step's reject path, pass approval_branch with step_id set to that approval step's own id. Omit it for the default (approve/continue) path. Every step in the reject path needs the same approval_branch. That includes an If step, the steps inside it, and steps added after the block. For a later step in the path, previous_step_id is the last step you created in it.",
+        "Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.\n\nTo route a step into an MRF approval step's reject path, pass approval_branch with step_id set to that approval step's own id (from get_flow, where parameters.mrf.approvalField is set). Omit it for the default (approve/continue) path. Every step in the reject path needs the same approval_branch. That includes an If step, the steps inside it, and steps added after the block. For a later step in the path, previous_step_id is the last step you created in it.",
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe to add the step to'),
         app_key: z.string().describe('App key (e.g. "slack")'),
@@ -446,7 +458,9 @@ export function createMcpBridgeTools(
         'Requires no connection and no secret key, so it can be used before a pipe or connection exists. ' +
         'Returns the form title, storage-mode/MRF flags, warnings, and per-field ' +
         '{ id, title, fieldType, required, answerType, variablePath } for templating variables as ' +
-        '{{step.<triggerStepId>.<variablePath>}}. Errors are returned as { error } — relay them to the user.',
+        '{{step.<triggerStepId>.<variablePath>}}. For an MRF form it also returns mrfStages, the workflow stages in order ' +
+        '({ name, isApproval, approvalFieldId?, fieldIds }). The first stage is the trigger. isApproval marks a stage that needs an approve/reject answer. ' +
+        'Errors are returned as { error } — relay them to the user.',
       inputSchema: z.object({
         form_url: z
           .string()
