@@ -16,15 +16,6 @@ export type ClaimSubTriggerAndEnqueueNextParams = {
   jobPayload: IActionJobData
 }
 
-function isDuplicateJobError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') {
-    return false
-  }
-  const message =
-    'message' in error && typeof error.message === 'string' ? error.message : ''
-  return /already exists/i.test(message) || /duplicated/i.test(message)
-}
-
 /**
  * Marks the sub-trigger execution step successful, then enqueues the next job.
  *
@@ -32,9 +23,8 @@ function isDuplicateJobError(error: unknown): boolean {
  * before an in-transaction patch is visible, so the next step would miss
  * this step's dataOut.
  *
- * A retried worker still enqueues if the row is already successful. That is
- * the same recovery as today's enqueue-then-patch path. A stable job id keeps
- * a second add from creating another job.
+ * The row transitions to success exactly once under `forUpdate`, so exactly
+ * one worker reaches the enqueue below.
  */
 export async function claimSubTriggerAndEnqueueNext(
   params: ClaimSubTriggerAndEnqueueNextParams,
@@ -56,7 +46,7 @@ export async function claimSubTriggerAndEnqueueNext(
         executionId,
         stepId,
       })
-      return 'missing' as const
+      return null
     }
 
     if (executionStep.status === 'success') {
@@ -66,16 +56,13 @@ export async function claimSubTriggerAndEnqueueNext(
         stepId,
         executionStepId: executionStep.id,
       })
-      return { kind: 'already' as const, id: executionStep.id }
+      return null
     }
 
-    const updated = await executionStep
-      .$query(trx)
-      .patchAndFetch({ status: 'success' })
-    return { kind: 'claimed' as const, id: updated.id }
+    return await executionStep.$query(trx).patchAndFetch({ status: 'success' })
   })
 
-  if (claimed === 'missing') {
+  if (!claimed) {
     return
   }
 
@@ -86,16 +73,14 @@ export async function claimSubTriggerAndEnqueueNext(
       jobData: jobPayload,
       jobOptions: {
         ...DEFAULT_JOB_OPTIONS,
+        // Unclaiming below lets a retry enqueue again. BullMQ ignores an add
+        // whose id already exists, so a Redis error that actually landed the
+        // job cannot produce a second run of this step.
         jobId: `${jobPayload.executionId}-${jobPayload.stepId}`,
       },
     })
   } catch (error) {
-    if (isDuplicateJobError(error)) {
-      return
-    }
-    if (claimed.kind === 'claimed') {
-      await ExecutionStep.query().findById(claimed.id).patch({ status: null })
-    }
+    await ExecutionStep.query().findById(claimed.id).patch({ status: null })
     throw error
   }
 }
