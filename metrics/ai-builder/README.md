@@ -15,6 +15,7 @@ executed by the app and nothing imports them.
   runtime. Run it before debugging a slow panel.
 
 Same filenames in both directories map to the same panel. Only the `params` CTE differs.
+`metric_0_overview_qoq.sql` is identical in both folders. It ignores the time picker.
 Grafana output aliases use spaces (no underscores) so panel titles wrap.
 
 ## How terms map to tables
@@ -74,6 +75,19 @@ Suggested extras, same row:
 - `ai builder share of new pipes` — AI Builder share of all pipes born in the window, including templates.
 
 Not in this query, already covered elsewhere: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c). `ran successfully` lives on panel 1.
+
+### 0b. Overview QoQ
+
+One-row Stat. Grafana time picker is ignored. Calendar quarters in SGT.
+
+Compares **current quarter-to-date** with the **previous full quarter**. Count `qoq pct` is
+`(qtd - prev) / prev * 100`. That mixes a partial quarter with a full quarter, so it runs negative
+until the current quarter catches up. Rate columns use `qoq pp` (percentage points), which is
+length-fair.
+
+Same birth-cohort rules as panel 0. `current qtd window` / `previous quarter window` are labels.
+
+Each overview field is emitted three times: `qtd`, `prev q`, and `qoq pct` or `qoq pp`.
 
 ### 1. Configuration funnel
 
