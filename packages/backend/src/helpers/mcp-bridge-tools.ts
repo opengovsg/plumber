@@ -335,7 +335,7 @@ export function createMcpBridgeTools(
 
     create_step: tool({
       description:
-        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.',
+        "Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.\n\nTo route a step into an MRF approval step's reject path, pass approval_branch with step_id set to that approval step's own id. Omit it for the default (approve/continue) path. Every step in the reject path needs the same approval_branch. That includes an If step, the steps inside it, and steps added after the block. For a later step in the path, previous_step_id is the last step you created in it.",
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe to add the step to'),
         app_key: z.string().describe('App key (e.g. "slack")'),
@@ -353,6 +353,15 @@ export function createMcpBridgeTools(
           .describe(
             'Set true to insert after the whole If block that previous_step_id belongs to, outside it, instead of inside. previous_step_id must then be the ifThen step or the last step inside its block.',
           ),
+        approval_branch: z
+          .object({
+            branch: z.literal('reject'),
+            step_id: z.uuid(),
+          })
+          .optional()
+          .describe(
+            'Route this step into the reject path of the MRF approval step at step_id. Omit to attach to the default (approve/continue) path.',
+          ),
       }),
       execute: async ({
         pipe_id,
@@ -360,6 +369,7 @@ export function createMcpBridgeTools(
         action_key,
         previous_step_id,
         after_if_then_block,
+        approval_branch,
       }): Promise<Step | McpToolError> => {
         try {
           const step = await createStepService({
@@ -369,6 +379,12 @@ export function createMcpBridgeTools(
             key: action_key,
             previousStepId: previous_step_id,
             ...(after_if_then_block && { afterIfThenBlock: true }),
+            approvalBranch: approval_branch
+              ? {
+                  branch: approval_branch.branch,
+                  stepId: approval_branch.step_id,
+                }
+              : undefined,
           })
           onPipeChange?.(pipe_id)
           return step
