@@ -1,0 +1,66 @@
+kits:
+  - source: .sbx/kits/pair-foundry
+  - source: .sbx/kits/pair-rome
+
+secrets:
+  pair-foundry:
+    ref: op://Plumber - Individual/Pair Foundry/credential
+
+lifecycle:
+  postCreate:
+    ## Pair Rome: Langfuse
+    ## ---
+    # Langfuse uses basic auth which SBX has limited support for (it can't
+    # differentiate between different users/projects). To inject the correct
+    # secret for AI builder vs Pair action, we use sbx custom secrets and look
+    # for the matching basic auth header values based on the env vars defined in
+    # our Pair Rome kit.
+    #
+    # Note that we also need to do a replace for the public key placeholder
+    # since that's set by langfuse in x-langfuse-public-key.
+    #
+    # WARNING: set-custom is a naive search and replace in the request, so it is
+    # technically possible to exfil real secrets by putting the same placeholder
+    # in the request body. This is no worse off than exposing the secret (e.g.
+    # as env var) to the sandbox, but still a risk to note.
+    - command: >
+        sbx secret set-custom \
+         --host rome.pair.gov.sg \
+         --placeholder $(printf pk-PAIR_ROME_AI_BUILDER_PUBLIC_KEY-placeholder:sk-PAIR_ROME_AI_BUILDER_SECRET_KEY-placeholder | base64) \
+         --sandbox $SBX_SANDBOX_NAME \
+         --ref "op://Plumber - Individual/Pair Rome - AI builder/header value"
+    - command: >
+        sbx secret set-custom \
+         --host rome.pair.gov.sg \
+         --placeholder pk-PAIR_ROME_AI_BUILDER_PUBLIC_KEY-placeholder \
+         --sandbox $SBX_SANDBOX_NAME \
+         --ref "op://Plumber - Individual/Pair Rome - AI builder/username"
+    - command: >
+        sbx secret set-custom \
+         --host rome.pair.gov.sg \
+         --placeholder $(printf pk-PAIR_ROME_PAIR_ACTION_PUBLIC_KEY-placeholder:sk-PAIR_ROME_PAIR_ACTION_SECRET_KEY-placeholder | base64) \
+         --sandbox $SBX_SANDBOX_NAME \
+         --ref "op://Plumber - Individual/Pair Rome - Pair action/header value" \
+    - command: >
+        sbx secret set-custom \
+         --host rome.pair.gov.sg \
+         --placeholder pk-PAIR_ROME_PAIR_ACTION_PUBLIC_KEY-placeholder \
+         --sandbox $SBX_SANDBOX_NAME \
+         --ref "op://Plumber - Individual/Pair Rome - Pair action/username" \
+    ## Pair Rome: Cloudflare Access
+    ## ---
+    # Cloudflare access uses its own headers (e.g. CF-Access-Client-ID), and sbx
+    # seems to break when injecting it via the usual `credential` route. For
+    # now, unblock by using custom secrets first.
+    - command: >
+        sbx secret set-custom \
+         --host rome.pair.gov.sg \
+         --placeholder PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY-placeholder \
+         --sandbox $SBX_SANDBOX_NAME \
+         --ref "op://Plumber - Individual/Pair Rome Cloudflare/username" \
+    - command: >
+        sbx secret set-custom \
+         --host rome.pair.gov.sg \
+         --placeholder PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY-placeholder \
+         --sandbox $SBX_SANDBOX_NAME \
+         --ref "op://Plumber - Individual/Pair Rome Cloudflare/credential" \

@@ -11,6 +11,7 @@
     "dev": "node scripts/with-op-env.mjs turbo watch dev worker --continue",
     "dev:sample-env": "turbo watch dev worker --continue",
     "sbx": "sbx env run .sbx/sbenv/claude.yaml -y",
+    "sbx-dangerous": "sbx env run .sbx/sbenv/claude.yaml .sbx/sbenv/sensitive-services.yaml -y",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
     "start": "npm run -w backend start",
