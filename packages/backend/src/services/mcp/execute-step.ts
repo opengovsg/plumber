@@ -33,8 +33,6 @@ export async function executeStepService(
     throw new PublishedPipeError()
   }
 
-  // TODO: MRF redirect when AI builder supports it
-
   // AI Builder testing happens inline in chat, with no real user action to
   // wait on — always prefer mock data (e.g. FormSG's newSubmission trigger)
   // instead of waiting on a real event. Apps that don't recognise
