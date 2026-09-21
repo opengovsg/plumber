@@ -1,0 +1,116 @@
+-- Grafana: query format Table. Stat panel (one row, many fields).
+-- Window is always the previous calendar quarter in SGT.
+-- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
+-- Half-open [period_start, period_end). Grafana's time picker is ignored.
+-- Later stages use that cohort's current outcome, including after the quarter.
+--
+-- PERFORMANCE: the live-execution probe is LEFT JOIN LATERAL ... LIMIT 1, not
+-- EXISTS and not a join onto executions. LIMIT 1 blocks subquery pull-up and
+-- stops at the first matching row per pipe. classified is MATERIALIZED because
+-- flowed / succeeded are each referenced more than once by the outer SELECT.
+WITH params AS (
+  SELECT
+    (
+      date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore')
+      - interval '3 months'
+    ) AT TIME ZONE 'Asia/Singapore' AS period_start,
+    (
+      date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore')
+    ) AT TIME ZONE 'Asia/Singapore' AS period_end
+),
+pipes AS MATERIALIZED (
+  SELECT
+    f.id,
+    f.user_id,
+    f.active,
+    f.deleted_at,
+    f.archived_execution_count,
+    CASE
+      WHEN COALESCE(f.config, '{}'::jsonb) ? 'aiBuilderConfig' THEN 'ai_builder'
+      WHEN COALESCE(f.config, '{}'::jsonb) ? 'templateConfig' THEN 'template'
+      ELSE 'manual_editor'
+    END AS cohort
+  FROM flows f
+  CROSS JOIN params p
+  WHERE f.created_at >= p.period_start
+    AND f.created_at < p.period_end
+),
+classified AS MATERIALIZED (
+  SELECT
+    p.id,
+    p.user_id,
+    p.cohort,
+    p.active,
+    p.deleted_at,
+    (
+      p.archived_execution_count > 0
+      OR lv.has_live IS NOT NULL
+    ) AS ever_flowed,
+    (sc.has_success IS NOT NULL) AS ever_succeeded,
+    (fw.has_live_in_window IS NOT NULL) AS flowed_in_window
+  FROM pipes p
+  CROSS JOIN params prm
+  LEFT JOIN LATERAL (
+    SELECT 1 AS has_live
+    FROM executions e
+    WHERE e.flow_id = p.id
+      AND e.test_run = false
+    LIMIT 1
+  ) lv ON true
+  LEFT JOIN LATERAL (
+    SELECT 1 AS has_success
+    FROM executions e
+    WHERE e.flow_id = p.id
+      AND e.test_run = false
+      AND e.status = 'success'
+    LIMIT 1
+  ) sc ON true
+  LEFT JOIN LATERAL (
+    SELECT 1 AS has_live_in_window
+    FROM executions e
+    WHERE e.flow_id = p.id
+      AND e.test_run = false
+      AND e.created_at >= prm.period_start
+      AND e.created_at < prm.period_end
+    LIMIT 1
+  ) fw ON true
+)
+SELECT
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder') AS ai_builder_created,
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_flowed) AS ai_builder_flowed,
+  COUNT(*) FILTER (
+    WHERE cohort = 'ai_builder'
+      AND active
+      AND deleted_at IS NULL
+  ) AS ai_builder_currently_published,
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_succeeded) AS ai_builder_succeeded,
+  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND flowed_in_window) AS ai_builder_flowed_in_window,
+  COUNT(DISTINCT user_id) FILTER (WHERE cohort = 'ai_builder') AS ai_builder_owners,
+  COUNT(DISTINCT user_id) FILTER (
+    WHERE cohort = 'ai_builder' AND ever_flowed
+  ) AS ai_builder_owners_with_a_flowed_pipe,
+  ROUND(
+    100.0 * COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_flowed)
+      / NULLIF(COUNT(*) FILTER (WHERE cohort = 'ai_builder'), 0),
+    1
+  ) AS ai_builder_flowed_pct,
+  COUNT(*) FILTER (WHERE cohort = 'manual_editor') AS manual_editor_created,
+  COUNT(*) FILTER (WHERE cohort = 'manual_editor' AND ever_flowed) AS manual_editor_flowed,
+  ROUND(
+    100.0 * COUNT(*) FILTER (WHERE cohort = 'manual_editor' AND ever_flowed)
+      / NULLIF(COUNT(*) FILTER (WHERE cohort = 'manual_editor'), 0),
+    1
+  ) AS manual_editor_flowed_pct,
+  ROUND(
+    100.0 * COUNT(*) FILTER (WHERE cohort = 'ai_builder')
+      / NULLIF(COUNT(*), 0),
+    1
+  ) AS ai_builder_share_of_new_pipes,
+  (
+    SELECT COUNT(*)
+    FROM flows f
+    WHERE f.deleted_at IS NULL
+      AND f.active
+      AND COALESCE(f.config, '{}'::jsonb) ? 'aiBuilderConfig'
+  ) AS ai_builder_published_snapshot
+FROM classified;
