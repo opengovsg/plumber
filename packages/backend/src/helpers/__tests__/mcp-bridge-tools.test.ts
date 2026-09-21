@@ -251,6 +251,28 @@ describe('createMcpBridgeTools', () => {
     })
   })
 
+  it('create_step passes approval_branch through to createStepService as approvalBranch', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_step.execute(
+      {
+        pipe_id: 'flow-1',
+        app_key: 'postman',
+        action_key: 'sendTransactionalEmail',
+        previous_step_id: 'mrf-approval-step',
+        approval_branch: { branch: 'reject', step_id: 'mrf-approval-step' },
+      },
+      { toolCallId: 'create_step', messages: [] },
+    )
+    expect(vi.mocked(createStepService)).toHaveBeenCalledWith({
+      user: mockUser,
+      pipeId: 'flow-1',
+      appKey: 'postman',
+      key: 'sendTransactionalEmail',
+      previousStepId: 'mrf-approval-step',
+      approvalBranch: { branch: 'reject', stepId: 'mrf-approval-step' },
+    })
+  })
+
   it('delete_step calls deleteStepService with camelCase args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.delete_step.execute(
