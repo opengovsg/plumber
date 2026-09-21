@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 FROM docker/sandbox-templates:shell
-ARG PLUMBER_NODE_VERSION=22.19.0
+ARG PLUMBER_NODE_VERSION=22.21.0
 
 USER root
 RUN apt-get update -y &&                        \
