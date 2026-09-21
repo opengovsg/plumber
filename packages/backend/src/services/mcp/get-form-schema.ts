@@ -184,7 +184,7 @@ export async function getFormSchemaService(
   }
   if (isMrf) {
     warnings.push(
-      'This is a multi-respondent (MRF) form, which is not supported by Plumber.',
+      'This is a multi-respondent (MRF) form. Test the trigger first — the individual MRF workflow steps (and any approval branching) only become available to attach actions to after that.',
     )
   }
 
