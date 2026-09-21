@@ -37,6 +37,7 @@ export async function claimSubTriggerAndEnqueueNext(
       .forUpdate()
 
     if (!executionStep) {
+      // this should never happen! but we can safely return here
       logger.warn('bug: Execution step not found', {
         event: 'sub-trigger-execution-step-not-found',
         executionId,

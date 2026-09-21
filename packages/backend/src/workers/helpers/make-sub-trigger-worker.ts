@@ -131,6 +131,11 @@ export function makeSubTriggerWorker(
           return
         }
 
+        /**
+         * Ensure that the next action job is enqueued only once by leveraging the execution step status.
+         * To avoid race conditions (such as multiple workers trying to enqueue simultaneously),
+         * we use a transaction and explicitly lock the execution step row with `forUpdate`.
+         */
         await claimSubTriggerAndEnqueueNext({
           executionId: $.execution.id,
           stepId: $.step.id,
