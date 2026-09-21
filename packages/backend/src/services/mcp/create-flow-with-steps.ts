@@ -7,6 +7,7 @@ import { generateSchema } from '@/graphql/mutations/ai/schemas/schema-generator'
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
+import App from '@/models/app'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
 
@@ -36,6 +37,23 @@ export async function createFlowWithStepsService({
 
   if (steps.length === 0) {
     throw new Error('At least one step is required.')
+  }
+
+  // Independent of the Zod schema validation below (which is skipped
+  // entirely when any step lacks a key, e.g. an if-then placeholder branch):
+  // never let the AI Builder fabricate a hidden, system-managed step (e.g.
+  // FormSG's mrfSubmission) directly, same guard as create-step.ts.
+  for (const step of steps) {
+    if (!step.key) {
+      continue
+    }
+    const triggerOrAction = await App.findTriggerOrActionByKey(
+      step.appKey,
+      step.key,
+    )
+    if (triggerOrAction?.hiddenFromUser) {
+      throw new Error('Action can only be created by system')
+    }
   }
 
   if (
