@@ -20,7 +20,7 @@ Plumber is a no-code solution that helps public officers automate their repetiti
 8. Run DB migrations `npm run migrate` (only for first time setup)
 9. Start the server `npm run dev`
 
-`npm run setup` and `npm run dev` each fetch their secrets from 1Password, so both prompt once and both need the app running. There is no `.env` file.
+`npm run setup` and `npm run dev` each fetch their secrets from 1Password, so both prompt once and both need the app running.
 
 ### On Windows?
 

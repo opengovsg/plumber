@@ -11,7 +11,12 @@ import { URL } from 'node:url'
 // IMPORTANT: without the guard, placeholders would satisfy a deployed environment's
 // missing-env-var checks.
 if ((process.env.APP_ENV ?? 'development') === 'development') {
-  config({ path: path.resolve(__dirname, '../../.env-example') })
+  config({
+    path: [
+      path.resolve(__dirname, '../../.env'),
+      path.resolve(__dirname, '../../.env-example'),
+    ],
+  })
 }
 
 type AppConfig = {
