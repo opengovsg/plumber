@@ -54,7 +54,7 @@ counted many times.
 
 ### 0. Overview
 
-One-row Stat panel. Birth cohort in the window, plus one snapshot that ignores the window.
+One-row Stat panel. Birth cohort in the window.
 
 Aliases are quoted with spaces (no underscores) so Grafana Stat titles wrap.
 
@@ -66,15 +66,13 @@ Asked-for columns:
 
 Suggested extras, same row:
 
-- `ai builder succeeded` — a non-test execution with `status = success`. Flowed includes failures and still-running executions.
 - `ai builder flowed in window` — a live execution whose `created_at` sits in the same window. Tells you whether the cohort generated traffic during the window, not just ever.
-- `ai builder owners` / `ai builder owners with a flowed pipe` — unique owners. Adoption vs pipe-count.
+- `ai builder owners with a flowed pipe` — unique owners of a flowed AI Builder pipe.
 - `ai builder flowed pct` — headline conversion. Compare to `manual editor flowed pct`.
 - `manual editor created` / `manual editor flowed` / `manual editor flowed pct` — same-window baseline.
 - `ai builder share of new pipes` — AI Builder share of all pipes born in the window, including templates.
-- `ai builder published snapshot` — live published AI Builder pipes **right now**, any create date. Does not move with the time picker.
 
-Not in this query, already covered elsewhere: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c).
+Not in this query, already covered elsewhere: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c). `ran_successfully` lives on panel 1.
 
 ### 1. Configuration funnel
 

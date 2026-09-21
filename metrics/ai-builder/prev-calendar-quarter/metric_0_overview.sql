@@ -8,7 +8,7 @@
 -- PERFORMANCE: the live-execution probe is LEFT JOIN LATERAL ... LIMIT 1, not
 -- EXISTS and not a join onto executions. LIMIT 1 blocks subquery pull-up and
 -- stops at the first matching row per pipe. classified is MATERIALIZED because
--- flowed / succeeded are each referenced more than once by the outer SELECT.
+-- flowed is referenced more than once by the outer SELECT.
 WITH params AS (
   SELECT
     (
@@ -47,7 +47,6 @@ classified AS MATERIALIZED (
       p.archived_execution_count > 0
       OR lv.has_live IS NOT NULL
     ) AS ever_flowed,
-    (sc.has_success IS NOT NULL) AS ever_succeeded,
     (fw.has_live_in_window IS NOT NULL) AS flowed_in_window
   FROM pipes p
   CROSS JOIN params prm
@@ -58,14 +57,6 @@ classified AS MATERIALIZED (
       AND e.test_run = false
     LIMIT 1
   ) lv ON true
-  LEFT JOIN LATERAL (
-    SELECT 1 AS has_success
-    FROM executions e
-    WHERE e.flow_id = p.id
-      AND e.test_run = false
-      AND e.status = 'success'
-    LIMIT 1
-  ) sc ON true
   LEFT JOIN LATERAL (
     SELECT 1 AS has_live_in_window
     FROM executions e
@@ -84,9 +75,7 @@ SELECT
       AND active
       AND deleted_at IS NULL
   ) AS "ai builder currently published",
-  COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND ever_succeeded) AS "ai builder succeeded",
   COUNT(*) FILTER (WHERE cohort = 'ai_builder' AND flowed_in_window) AS "ai builder flowed in window",
-  COUNT(DISTINCT user_id) FILTER (WHERE cohort = 'ai_builder') AS "ai builder owners",
   COUNT(DISTINCT user_id) FILTER (
     WHERE cohort = 'ai_builder' AND ever_flowed
   ) AS "ai builder owners with a flowed pipe",
@@ -106,12 +95,5 @@ SELECT
     100.0 * COUNT(*) FILTER (WHERE cohort = 'ai_builder')
       / NULLIF(COUNT(*), 0),
     1
-  ) AS "ai builder share of new pipes",
-  (
-    SELECT COUNT(*)
-    FROM flows f
-    WHERE f.deleted_at IS NULL
-      AND f.active
-      AND COALESCE(f.config, '{}'::jsonb) ? 'aiBuilderConfig'
-  ) AS "ai builder published snapshot"
+  ) AS "ai builder share of new pipes"
 FROM classified;
