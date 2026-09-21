@@ -19,7 +19,7 @@ npm install
 
 ### 2. Configure environment
 
-Local dev secrets come from 1Password, not from a `.env` file. Install the [1Password desktop app](https://1password.com/downloads) and sign in. Turn on Settings > Developer > Integrate with other apps, and turn on Windows Hello under Settings > Security so you can answer the prompt.
+Local dev secrets come from 1Password. Install the [1Password desktop app](https://1password.com/downloads) and sign in. Turn on Settings > Developer > Integrate with other apps, and turn on Windows Hello under Settings > Security so you can answer the prompt.
 
 ```powershell
 copy op-dev.example.json op-dev.json

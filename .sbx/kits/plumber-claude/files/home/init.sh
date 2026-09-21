@@ -8,7 +8,7 @@ if [ $? != 0 ]; then
   tmux split-window -h
 
   tmux send-keys -t main:0.0 "claude --dangerously-skip-permissions" C-m
-  tmux send-keys -t main:0.1 "npm run dev:sample-env" C-m
+  tmux send-keys -t main:0.1 "npm run dev:local" C-m
 fi
 
 tmux attach-session -t main

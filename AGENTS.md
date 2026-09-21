@@ -8,12 +8,21 @@ This uses an npm workspaces monorepo:
 - [packages/frontend/](packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](.claude/rules/frontend.md).
 - [packages/types/](packages/types/) — shared `@plumber/types` (linked via `file:` deps).
 
+## Secrets
+
+**NEVER read `packages/backend/.env`.** It holds live secrets.
+
+- Do not open, print, copy, or diff it. This ban covers `Read`, `cat`, `grep`, `sed`, and every other tool.
+- Never edit it either.
+- `packages/backend/.env-example` holds placeholders, not secrets. Read it freely.
+
 ## Language and phrasing
 
 These rules apply to all output, including code comments and commit
 messages. Follow them to maintain maximum clarity and eliminate filler:
 
 - ONE CONCEPT PER SENTENCE: Write short, direct sentences.
+
   - Max 20 words for instructions/procedures.
   - Max 25 words for descriptions.
   - Do NOT use semicolons or em-dashes (—). Split them into separate sentences.
@@ -21,14 +30,17 @@ messages. Follow them to maintain maximum clarity and eliminate filler:
 - ONE TERM PER ENTITY: Do not rotate synonyms. Pick one standard name for an object or concept and use it consistently (e.g., choose "user" and do not alternate with "client" or "customer").
 
 - NEVER REPEAT YOURSELF: State each fact or instruction once. Do not restate it in different words later in the same passage.
+
   - WRONG: "Not an exhaustive list — apply this to any case, not just these."
   - RIGHT: "Not an exhaustive list."
 
 - ACTIVE VERBS ONLY: Use direct action verbs instead of normalized nouns.
+
   - WRONG: "Perform an analysis of the logs."
   - RIGHT: "Analyze the logs."
 
 - NO HEDGING OR FILLER: State facts directly.
+
   - WRONG: "It is important to note that this configuration may potentially help improve performance."
   - RIGHT: "This configuration improves performance."
 
@@ -38,7 +50,7 @@ messages. Follow them to maintain maximum clarity and eliminate filler:
 
 ## Important top-level commands
 
-Do **not** run these yourself unless the user asks — the human runs the dev server in their own terminal.
+Do **not** run the human dev loop commands below yourself unless the user asks. The human runs those in their own terminal.
 
 **Node version:** run `nvm use` (repo `.nvmrc`) before any `npm`, `npx`, or `node`
 command. Claude Code does this automatically via a hook. Other agents must do it
@@ -47,20 +59,16 @@ explicitly, e.g. `nvm use && npm run -w backend lint`.
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
 - `npm run setup` — one-time per session; brings up Postgres, Redis, DynamoDB, MinIO, etc. via Docker.
-- `npm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
+- `npm run dev` — runs an agent, and backend + frontend + worker in a docker sandbox.
+- `npm run dev:dangerous` — runs an agent, and backend + frontend + worker in a docker sandbox, with sensitive secrets injected from 1Password.
 - `npm run teardown` — tears the Docker services back down when the human is done.
 
-**Secrets:** there is no `packages/backend/.env`. Never create or read one. Never run
-`npm run dev` or `npm run setup` either. Both fetch secrets from 1Password behind a
-biometric prompt that an agent cannot answer.
+**Agent dev process**
 
-- `npm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
-  `.env-example` placeholders.
-- **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
-  Those calls fail with third-party authentication errors. That is expected, not a bug to
-  fix.
-- `lint`, `typecheck`, `test:unit`, `test:integration` and `migrate` need nothing. They
-  already read `.env-example`.
+1. You should already be in a sandbox (local docker sandbox or cloud sandbox).
+   **IMPORTANT**: If you are not in a sandbox, confirm with the human that they want to continue development!
+2. If not already running, run `npm run dev:local` to start backend + frontend + worker.
+   Never run `npm run dev` or `npm run dev:dangerous`. Those commands create a new sandbox.
 
 **Testing:**
 
