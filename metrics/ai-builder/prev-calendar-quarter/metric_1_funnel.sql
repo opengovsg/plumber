@@ -1,5 +1,6 @@
 -- Grafana: query format Table. Bar chart, X-axis = cohort.
--- Percent (0-100) on the *_pct columns.
+-- Percent (0-100) on the pct columns.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Window is always the previous calendar quarter in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
@@ -93,29 +94,29 @@ classified AS MATERIALIZED (
 )
 SELECT
   cohort,
-  COUNT(*) AS skeleton_created,
-  COUNT(*) FILTER (WHERE all_steps_keyed) AS all_steps_keyed,
-  COUNT(*) FILTER (WHERE all_steps_filled_in) AS all_steps_filled_in,
-  COUNT(*) FILTER (WHERE turned_on) AS turned_on,
-  COUNT(*) FILTER (WHERE ever_succeeded) AS ran_successfully,
+  COUNT(*) AS "skeleton created",
+  COUNT(*) FILTER (WHERE all_steps_keyed) AS "all steps keyed",
+  COUNT(*) FILTER (WHERE all_steps_filled_in) AS "all steps filled in",
+  COUNT(*) FILTER (WHERE turned_on) AS "turned on",
+  COUNT(*) FILTER (WHERE ever_succeeded) AS "ran successfully",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE all_steps_filled_in) / NULLIF(COUNT(*), 0),
     1
-  ) AS skeleton_to_filled_pct,
+  ) AS "skeleton to filled pct",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE turned_on)
       / NULLIF(COUNT(*) FILTER (WHERE all_steps_filled_in), 0),
     1
-  ) AS filled_to_turned_on_pct,
+  ) AS "filled to turned on pct",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE ever_succeeded)
       / NULLIF(COUNT(*) FILTER (WHERE turned_on), 0),
     1
-  ) AS turned_on_to_success_pct,
+  ) AS "turned on to success pct",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE ever_succeeded) / NULLIF(COUNT(*), 0),
     1
-  ) AS skeleton_to_success_pct
+  ) AS "skeleton to success pct"
 FROM classified
 GROUP BY cohort
 ORDER BY cohort;

@@ -1,4 +1,5 @@
 -- Grafana: query format Table. Stat / table panel.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Window is always the previous calendar quarter in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
@@ -78,8 +79,8 @@ configured_steps AS MATERIALIZED (
 )
 SELECT
   cs.cohort,
-  COUNT(*) AS configured_steps,
-  ROUND(AVG(a.attempt_count)::numeric, 2) AS avg_check_attempts_until_success
+  COUNT(*) AS "configured steps",
+  ROUND(AVG(a.attempt_count)::numeric, 2) AS "avg check attempts until success"
 FROM configured_steps cs
 JOIN attempts_per_step a ON a.step_id = cs.step_id
 GROUP BY cs.cohort

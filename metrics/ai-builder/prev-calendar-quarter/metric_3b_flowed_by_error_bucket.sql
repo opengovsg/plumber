@@ -1,5 +1,6 @@
--- Grafana: query format Table. Bar chart, X-axis = error_bucket.
--- Percent (0-100) on flowed_pct.
+-- Grafana: query format Table. Bar chart, X-axis = error bucket.
+-- Percent (0-100) on flowed pct.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Window is always the previous calendar quarter in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
@@ -86,13 +87,13 @@ classified AS MATERIALIZED (
 )
 SELECT
   cohort,
-  error_bucket,
-  COUNT(*) AS pipe_count,
-  COUNT(*) FILTER (WHERE ever_flowed) AS flowed_count,
+  error_bucket AS "error bucket",
+  COUNT(*) AS "pipe count",
+  COUNT(*) FILTER (WHERE ever_flowed) AS "flowed count",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE ever_flowed) / NULLIF(COUNT(*), 0),
     1
-  ) AS flowed_pct
+  ) AS "flowed pct"
 FROM classified
 GROUP BY cohort, error_bucket
 ORDER BY cohort, error_bucket;

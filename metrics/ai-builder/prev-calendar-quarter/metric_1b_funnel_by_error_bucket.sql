@@ -1,5 +1,6 @@
--- Grafana: query format Table. Bar chart, X-axis = error_bucket, split by cohort.
--- Percent (0-100) on skeleton_to_filled_pct.
+-- Grafana: query format Table. Bar chart, X-axis = error bucket, split by cohort.
+-- Percent (0-100) on skeleton to filled pct.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Window is always the previous calendar quarter in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
@@ -87,13 +88,13 @@ classified AS (
 )
 SELECT
   cohort,
-  error_bucket,
-  COUNT(*) AS skeleton_created,
-  COUNT(*) FILTER (WHERE is_filled_in) AS all_steps_filled_in,
+  error_bucket AS "error bucket",
+  COUNT(*) AS "skeleton created",
+  COUNT(*) FILTER (WHERE is_filled_in) AS "all steps filled in",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE is_filled_in) / NULLIF(COUNT(*), 0),
     1
-  ) AS skeleton_to_filled_pct
+  ) AS "skeleton to filled pct"
 FROM classified
 GROUP BY cohort, error_bucket
 ORDER BY cohort, error_bucket;

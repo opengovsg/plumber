@@ -1,4 +1,5 @@
 -- Grafana: query format Table. Stat / table panel.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Time picker filters pipes by flows.created_at.
 -- First success may fall after the selected range. That is elapsed time for the cohort.
 --
@@ -42,22 +43,22 @@ durations AS (
 )
 SELECT
   cohort,
-  COUNT(*) AS pipes_with_successful_flow,
-  ROUND(AVG(hours_to_success)::numeric, 3) AS avg_hours,
+  COUNT(*) AS "pipes with successful flow",
+  ROUND(AVG(hours_to_success)::numeric, 3) AS "avg hours",
   ROUND(
     (PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY hours_to_success))::numeric,
     3
-  ) AS median_hours,
-  ROUND(MIN(hours_to_success)::numeric, 5) AS min_hours,
-  ROUND(MAX(hours_to_success)::numeric, 1) AS max_hours,
+  ) AS "median hours",
+  ROUND(MIN(hours_to_success)::numeric, 5) AS "min hours",
+  ROUND(MAX(hours_to_success)::numeric, 1) AS "max hours",
   ROUND(
     (PERCENTILE_CONT(0.1) WITHIN GROUP (ORDER BY hours_to_success))::numeric,
     3
-  ) AS p10_hours,
+  ) AS "p10 hours",
   ROUND(
     (PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY hours_to_success))::numeric,
     1
-  ) AS p90_hours
+  ) AS "p90 hours"
 FROM durations
 GROUP BY cohort
 ORDER BY cohort;

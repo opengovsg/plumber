@@ -1,4 +1,5 @@
 -- Grafana: query format Table. Stat / table panel.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Time picker filters pipes by flows.created_at.
 --
 -- PERFORMANCE: execution_steps is reached only through correlated LATERALs keyed
@@ -70,8 +71,8 @@ configured_steps AS MATERIALIZED (
 )
 SELECT
   cs.cohort,
-  COUNT(*) AS configured_steps,
-  ROUND(AVG(a.attempt_count)::numeric, 2) AS avg_check_attempts_until_success
+  COUNT(*) AS "configured steps",
+  ROUND(AVG(a.attempt_count)::numeric, 2) AS "avg check attempts until success"
 FROM configured_steps cs
 JOIN attempts_per_step a ON a.step_id = cs.step_id
 GROUP BY cs.cohort

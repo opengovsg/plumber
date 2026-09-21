@@ -1,5 +1,6 @@
--- Grafana: query format Table. Table panel, sort by fail_pct.
--- Percent (0-100) on fail_pct.
+-- Grafana: query format Table. Table panel, sort by fail pct.
+-- Percent (0-100) on fail pct.
+-- Quoted aliases use spaces so Grafana titles wrap.
 -- Window is always the previous calendar quarter in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
@@ -57,16 +58,16 @@ check_steps AS MATERIALIZED (
 )
 SELECT
   te.cohort,
-  cs.app_key,
+  cs.app_key AS "app key",
   cs.key,
-  COUNT(*) AS check_attempts,
-  COUNT(*) FILTER (WHERE cs.status = 'failure') AS failed_attempts,
-  COUNT(*) FILTER (WHERE cs.status = 'success') AS successful_attempts,
+  COUNT(*) AS "check attempts",
+  COUNT(*) FILTER (WHERE cs.status = 'failure') AS "failed attempts",
+  COUNT(*) FILTER (WHERE cs.status = 'success') AS "successful attempts",
   ROUND(
     100.0 * COUNT(*) FILTER (WHERE cs.status = 'failure') / NULLIF(COUNT(*), 0),
     1
-  ) AS fail_pct
+  ) AS "fail pct"
 FROM check_steps cs
 JOIN test_executions te ON te.execution_id = cs.execution_id
 GROUP BY te.cohort, cs.app_key, cs.key
-ORDER BY failed_attempts DESC, check_attempts DESC;
+ORDER BY "failed attempts" DESC, "check attempts" DESC;
