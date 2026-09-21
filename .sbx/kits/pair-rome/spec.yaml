@@ -1,0 +1,22 @@
+schemaVersion: '2'
+kind: mixin
+name: pair-rome
+displayName: Pair Rome
+description: Sets up sbx to connect to Pair Rome
+
+# These are placeholders which should match with the custom secret placehodlers
+# in our sbx env.
+environment:
+  variables:
+    PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY: PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY-placeholder
+    PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY: PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY-placeholder
+    PAIR_ROME_AI_BUILDER_PUBLIC_KEY: pk-PAIR_ROME_AI_BUILDER_PUBLIC_KEY-placeholder
+    PAIR_ROME_AI_BUILDER_SECRET_KEY: sk-PAIR_ROME_AI_BUILDER_SECRET_KEY-placeholder
+    PAIR_ROME_PAIR_ACTION_PUBLIC_KEY: pk-PAIR_ROME_PAIR_ACTION_PUBLIC_KEY-placeholder
+    PAIR_ROME_PAIR_ACTION_SECRET_KEY: sk-PAIR_ROME_PAIR_ACTION_SECRET_KEY-placeholder
+
+permissions:
+  network:
+    allow:
+      - rome.pair.gov.sg
+      - guide.plumber.gov.sg
