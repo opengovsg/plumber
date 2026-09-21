@@ -1,20 +1,20 @@
 import { IStepConfig } from '@plumber/types'
 
-import { raw } from 'objection'
-
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
 import {
   extractSelfEndStepIntent,
   upgradeIfThenV1BlocksIfEnabled,
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
-import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
-import { validateApprovalConfig } from '@/helpers/validate-approval-config'
 import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
+import {
+  createActionStepCore,
+  InvalidApprovalConfigError,
+} from '@/services/create-action-step'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -90,33 +90,24 @@ const createStep: MutationResolvers['createStep'] = async (
     const { config: newStepConfig, wantsSelfEndStep } =
       extractSelfEndStepIntent(input.config as IStepConfig)
 
-    const validationResult = await validateApprovalConfig(
-      newStepConfig,
-      previousStep,
-    )
-    if (!validationResult.isApprovalConfigValid) {
-      throw new BadUserInputError('Invalid approval config')
-    }
-
-    await flow
-      .$relatedQuery('steps', trx)
-      .patch({
-        position: raw(`position + 1`),
+    let step: Step
+    try {
+      step = await createActionStepCore({
+        trx,
+        flow,
+        previousStep,
+        appKey: input.appKey,
+        key: input.key,
+        parameters: input.parameters,
+        config: newStepConfig,
+        connectionId: input.connection?.id,
       })
-      .where('position', '>=', validationResult.newStepPosition)
-
-    const version = getStepVersion(input.appKey, input.key)
-
-    const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
-      key: input.key,
-      appKey: input.appKey,
-      type: 'action',
-      position: validationResult.newStepPosition,
-      parameters: input.parameters,
-      connectionId: input.connection?.id,
-      config: newStepConfig,
-      version,
-    })
+    } catch (error) {
+      if (error instanceof InvalidApprovalConfigError) {
+        throw new BadUserInputError('Invalid approval config')
+      }
+      throw error
+    }
 
     // Opportunistically pins any other legacy if-then block, if the flag is
     // on for the pipe owner.
