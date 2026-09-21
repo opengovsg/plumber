@@ -1522,6 +1522,8 @@ export interface IFlowStepsTrigger {
   appKey: string
   key: string
   description: string
+  // Set only on an MRF proposal's trigger, to the form's first stage name.
+  config?: { stepName: string }
 }
 
 export interface IFlowStepsAction {
@@ -1537,6 +1539,10 @@ export interface IFlowStepsAction {
   // Number of following actions inside this If block. Only set on if-then
   // actions laid out with explicit blocks.
   ifThenChildCount?: number
+  // Set on an MRF stage entry that routes by approval. Preview only.
+  isApproval?: boolean
+  // Set on an action that runs when the approval stage rejects. Preview only.
+  approvalBranch?: 'reject'
 }
 
 export interface IFlowSteps {

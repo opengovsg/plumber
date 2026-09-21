@@ -34,7 +34,15 @@ vi.mock('@/apps', () => ({
           ],
         },
       ],
-      actions: [],
+      actions: [
+        {
+          key: 'mrfSubmission',
+          name: 'New form response',
+          description: 'Hidden action for a subsequent MRF submission',
+          hiddenFromUser: true,
+          arguments: [],
+        },
+      ],
     },
     slack: {
       key: 'slack',
@@ -339,6 +347,17 @@ describe('listAppsService', () => {
       )
       expect(field?.isDynamic).toBeUndefined()
       expect(field?.dynamicDataKey).toBeUndefined()
+    })
+  })
+
+  describe('hiddenFromUser filtering', () => {
+    it('excludes a hiddenFromUser action entirely, not just its fields', async () => {
+      const apps = await listAppsService(user)
+      const formsg = apps.find((a) => a.key === 'formsg')
+      expect(formsg?.actions).toHaveLength(0)
+      expect(
+        formsg?.actions.find((a) => a.key === 'mrfSubmission'),
+      ).toBeUndefined()
     })
   })
 

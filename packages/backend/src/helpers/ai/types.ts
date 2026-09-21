@@ -11,6 +11,7 @@ const triggerStepSchema = z.object({
   appKey: z.string(),
   key: z.string(),
   description: z.string(),
+  config: z.object({ stepName: z.string() }).optional(),
 }) satisfies z.ZodType<IFlowStepsTrigger>
 
 const actionStepSchema = z.object({
@@ -29,6 +30,8 @@ const actionStepSchema = z.object({
     })
     .optional(),
   ifThenChildCount: z.number().int().min(1).optional(),
+  isApproval: z.boolean().optional(),
+  approvalBranch: z.literal('reject').optional(),
 }) satisfies z.ZodType<IFlowStepsAction>
 
 export const flowStepsSchema = z.object({
