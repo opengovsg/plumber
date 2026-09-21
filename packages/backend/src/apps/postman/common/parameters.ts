@@ -16,6 +16,11 @@ const mailboxSchema = z.email().max(MAX_MAILBOX_LENGTH)
 function isValidMailbox(email: string): boolean {
   return mailboxSchema.safeParse(email).success
 }
+export const SEND_MODE_KEY = 'sendMode'
+
+export const sendModeSchema = z.enum(['combined', 'individual'])
+
+export type SendMode = z.infer<typeof sendModeSchema>
 
 function recipientStringToArray(value: string) {
   const recipientArray = value
@@ -67,17 +72,32 @@ export const transactionalEmailFields: IField[] = [
     key: 'destinationEmail',
     type: 'string' as const,
     required: true,
-    description:
-      'Enter the email addresses of the main recipients, separated by commas.\nEach recipient will receive an individual email.',
     variables: true,
+    tabs: {
+      key: SEND_MODE_KEY,
+      value: 'combined' satisfies SendMode,
+      options: [
+        {
+          label: 'One email to all',
+          value: 'combined' satisfies SendMode,
+          description:
+            'Sent as one email with everyone in To/CC. Each recipient will see the full list of who else received it.',
+        },
+        {
+          label: 'Individual email to each recipient',
+          value: 'individual' satisfies SendMode,
+          description:
+            'Sent as separate emails, one per recipient. No one sees who else received it.\nCC recipients will receive a copy of the email for each main recipient.',
+        },
+      ],
+    },
   },
   {
     label: 'CC recipient email(s)',
     key: 'destinationEmailCc',
     type: 'string' as const,
     required: false,
-    description:
-      'Enter the email addresses to CC, separated by commas.\nCC recipients will receive a copy of the email for each main recipient.',
+    description: 'Enter the email addresses to CC, separated by commas.',
     tooltipText:
       'CC recipient status is not tracked. Blacklisted CC recipients will be ignored, but the email will still be sent to other recipients.',
     variables: true,
@@ -111,6 +131,10 @@ export const transactionalEmailFields: IField[] = [
 ]
 
 export const transactionalEmailSchema = z.object({
+  // Steps created before this field existed carry `individual`, injected by the
+  // step transformer. Only steps saved without the key fall through to the
+  // default, which is the behaviour new steps get.
+  [SEND_MODE_KEY]: sendModeSchema.default('combined'),
   subject: z
     .string()
     .min(1, { message: 'Empty subject' })

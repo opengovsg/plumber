@@ -105,6 +105,9 @@ describe('send transactional email', () => {
             's3:my-bucket:abcd/file 1.txt',
             's3:my-bucket:wxyz/file-2.png',
           ],
+          // Mirrors what the v1 → v2 step transformer injects into steps that
+          // predate the send-mode toggle. Combined mode is tested separately.
+          sendMode: 'individual',
         },
         position: 2,
       },
@@ -1028,6 +1031,225 @@ describe('send transactional email', () => {
           cc: ['cc-good@open.gov.sg', 'cc-bad@open.gov.sg'],
         }),
       })
+    })
+  })
+
+  describe('combined send mode (one email to all)', () => {
+    type SentCommand = {
+      input: {
+        Destination: { ToAddresses: string[]; CcAddresses?: string[] }
+        Content: { Raw?: { Data: Uint8Array } }
+      }
+    }
+    const sentCommands = () =>
+      mocks.sesSend.mock.calls.map(
+        (call) => (call as unknown as [SentCommand])[0],
+      )
+
+    function emails(count: number, prefix = 'r') {
+      return Array.from(
+        { length: count },
+        (_, i) => `${prefix}${i}@open.gov.sg`,
+      )
+    }
+
+    beforeEach(() => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.sendMode = 'combined'
+      $.step.parameters.attachments = []
+    })
+
+    it('puts every recipient and CC on a single SES call', async () => {
+      $.step.parameters.destinationEmail =
+        'a@open.gov.sg,b@open.gov.sg,c@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc1@open.gov.sg,cc2@open.gov.sg'
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination).toEqual({
+        ToAddresses: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
+        CcAddresses: ['cc1@open.gov.sg', 'cc2@open.gov.sg'],
+      })
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
+          cc: ['cc1@open.gov.sg', 'cc2@open.gov.sg'],
+        }),
+      })
+    })
+
+    it('defaults to combined mode when the step has no sendMode', async () => {
+      delete $.step.parameters.sendMode
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination.ToAddresses).toHaveLength(2)
+    })
+
+    it('chunks at 50 destinations, with CCs counted against the first chunk only', async () => {
+      $.step.parameters.destinationEmail = emails(60).join(',')
+      $.step.parameters.destinationEmailCc = emails(5, 'cc').join(',')
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      const [first, second] = sentCommands()
+      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
+      expect(first.input.Destination.ToAddresses).toEqual(
+        emails(60).slice(0, 45),
+      )
+      expect(first.input.Destination.CcAddresses).toEqual(emails(5, 'cc'))
+      expect(second.input.Destination.ToAddresses).toEqual(emails(60).slice(45))
+      expect(second.input.Destination.CcAddresses).toBeUndefined()
+    })
+
+    it('chunks 120 recipients with no CC into 50/50/20', async () => {
+      $.step.parameters.destinationEmail = emails(120).join(',')
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(
+        sentCommands().map((c) => c.input.Destination.ToAddresses.length),
+      ).toEqual([50, 50, 20])
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: Array(120).fill('ACCEPTED'),
+        }),
+      })
+    })
+
+    it('fails every recipient in a chunk together, leaving other chunks intact', async () => {
+      $.step.parameters.destinationEmail = emails(60).join(',')
+      const throttled = Object.assign(new Error('Rate exceeded'), {
+        name: 'TooManyRequestsException',
+        $metadata: { httpStatusCode: 429 },
+      })
+      mocks.sesSend
+        .mockResolvedValueOnce({})
+        .mockRejectedValueOnce(throttled as never)
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        RetriableError,
+      )
+
+      const raw = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
+        .raw
+      expect(raw.status.slice(0, 50)).toEqual(Array(50).fill('ACCEPTED'))
+      expect(raw.status.slice(50)).toEqual(Array(10).fill('RATE-LIMITED'))
+    })
+
+    it('excludes suppressed recipients before the single send and keeps input order', async () => {
+      mocks.getSuppressedEmails.mockResolvedValueOnce([
+        'b@open.gov.sg',
+        'c@open.gov.sg',
+      ])
+      $.step.parameters.destinationEmail =
+        'a@open.gov.sg,b@open.gov.sg,c@open.gov.sg'
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        PartialStepError,
+      )
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination.ToAddresses).toEqual([
+        'a@open.gov.sg',
+      ])
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'BLACKLISTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
+        }),
+      })
+    })
+
+    it('makes no SES call and fails the step when every recipient is suppressed', async () => {
+      mocks.getSuppressedEmails.mockResolvedValueOnce([
+        'a@open.gov.sg',
+        'b@open.gov.sg',
+      ])
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+
+      const run = sendTransactionalEmail.run($)
+      await expect(run).rejects.toThrow('Blacklisted recipient email')
+      await expect(run).rejects.not.toThrow(PartialStepError)
+
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.setActionItem).not.toHaveBeenCalled()
+    })
+
+    it('resends only the previously failed recipients as one combined email on retry', async () => {
+      $.step.parameters.destinationEmail =
+        'a@open.gov.sg,b@open.gov.sg,c@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination.ToAddresses).toEqual([
+        'b@open.gov.sg',
+        'c@open.gov.sg',
+      ])
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
+        }),
+      })
+    })
+
+    it('lists every chunk recipient in the raw MIME To header, with Cc only on the first chunk', async () => {
+      $.step.parameters.destinationEmail = emails(51).join(',')
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      mocks.filterAttachments.mockReturnValueOnce({
+        attachmentFiles: [
+          { fileName: 'report.pdf', data: new Uint8Array([1, 2, 3]) },
+        ],
+        invalidAttachments: [],
+        submissionId: null,
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      const [first, second] = sentCommands().map((c) =>
+        Buffer.from(c.input.Content.Raw!.Data).toString('utf-8'),
+      )
+      // 49 To + 1 Cc fills the first message.
+      expect(first).toMatch(/^To: r0@open\.gov\.sg, r1@open\.gov\.sg/)
+      expect(first).toContain('r48@open.gov.sg')
+      expect(first).toContain('Cc: cc@open.gov.sg')
+      expect(second).toMatch(/^To: r49@open\.gov\.sg, r50@open\.gov\.sg\r\n/)
+      expect(second).not.toContain('Cc:')
+    })
+
+    it('falls back to individual Postman sends when LD routes away from SES', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(false)
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).not.toHaveBeenCalled()
+      expect($.http.post).toHaveBeenCalledTimes(2)
+    })
+
+    it('sends to the test runner only on a test run', async () => {
+      $.execution.testRun = true
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+
+      await expect(sendTransactionalEmail.testRun($, {})).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination.ToAddresses).toEqual([
+        'tester@open.gov.sg',
+      ])
     })
   })
 })

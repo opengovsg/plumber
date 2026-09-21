@@ -43,8 +43,8 @@ describe('updateStep mutation', () => {
   let genericInputParams = {
     id: mockStepId,
     flow: { id: mockFlowId, updatedAt: testFlowISODateString },
-    key: 'sendTransactionalEmail',
-    appKey: 'postman',
+    key: 'createLetter',
+    appKey: 'lettersg',
     parameters: { testParam: 'value' },
     connection: { id: mockConnectionId },
   }
@@ -83,8 +83,8 @@ describe('updateStep mutation', () => {
     // Create a test step
     await generateMockStep(
       context,
-      'sendTransactionalEmail',
-      'postman',
+      'createLetter',
+      'lettersg',
       'action',
       mockFlowId,
       1,
@@ -114,14 +114,14 @@ describe('updateStep mutation', () => {
       owner,
       currentUser: context.currentUser,
       flowId: mockFlowId,
-      stepKey: 'sendTransactionalEmail',
-      stepAppKey: 'postman',
+      stepKey: 'createLetter',
+      stepAppKey: 'lettersg',
       stepConnection: { id: mockConnectionId, userId: owner.id },
       flowUpdatedAt: testFlowISODateString,
     })
 
     mockConnectionsRelatedQuery(context.currentUser, {
-      connectionKey: 'postman',
+      connectionKey: 'lettersg',
       connectionId: mockConnectionId,
     })
   })
@@ -135,8 +135,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId: mockConnectionId,
       parameters: { updatedParam: 'newValue' },
       status: 'completed',
@@ -155,8 +155,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId,
       parameters: { testParam: 'value' },
       status: 'completed',
@@ -174,7 +174,7 @@ describe('updateStep mutation', () => {
 
     mockConnectionsRelatedQuery(context.currentUser, {
       connectionId: randomUUID(),
-      connectionKey: 'postman',
+      connectionKey: 'lettersg',
       connectionNotFound: true,
     })
 
@@ -193,8 +193,8 @@ describe('updateStep mutation', () => {
     context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
       owner,
       currentUser: context.currentUser,
-      stepKey: 'sendTransactionalEmail',
-      stepAppKey: 'postman',
+      stepKey: 'createLetter',
+      stepAppKey: 'lettersg',
       stepNotFound: true,
     })
 
@@ -255,8 +255,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'incomplete',
@@ -274,8 +274,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'completed',
@@ -293,8 +293,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'completed',
@@ -308,8 +308,8 @@ describe('updateStep mutation', () => {
     context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
       owner,
       currentUser: context.currentUser,
-      stepKey: 'sendTransactionalEmail',
-      stepAppKey: 'postman',
+      stepKey: 'createLetter',
+      stepAppKey: 'lettersg',
       stepId: mockStepId,
       stepConfig: {
         stepName: 'some-step-name',
@@ -327,8 +327,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'completed',
@@ -355,8 +355,8 @@ describe('updateStep mutation', () => {
     context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
       owner,
       currentUser: context.currentUser,
-      stepKey: 'sendTransactionalEmail',
-      stepAppKey: 'postman',
+      stepKey: 'createLetter',
+      stepAppKey: 'lettersg',
       stepConfig: {
         stepName: 'some-step-name',
         templateConfig: { appEventKey: 'existingAppEventKey' },
@@ -372,8 +372,8 @@ describe('updateStep mutation', () => {
     await updateStep(null, { input }, context)
 
     expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-      key: 'sendTransactionalEmail',
-      appKey: 'postman',
+      key: 'createLetter',
+      appKey: 'lettersg',
       connectionId: mockConnectionId,
       parameters: { testParam: 'value' },
       status: 'completed',
@@ -400,8 +400,8 @@ describe('updateStep mutation', () => {
     context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
       owner,
       currentUser: context.currentUser,
-      stepKey: 'sendTransactionalEmail',
-      stepAppKey: 'postman',
+      stepKey: 'createLetter',
+      stepAppKey: 'lettersg',
       flowUpdatedAt: testFlowISODateString,
     })
     await updateStep(null, { input: { ...genericInputParams } }, context)
@@ -433,8 +433,8 @@ describe('updateStep mutation', () => {
           {
             owner,
             currentUser: context.currentUser,
-            stepKey: 'sendTransactionalEmail',
-            stepAppKey: 'postman',
+            stepKey: 'createLetter',
+            stepAppKey: 'lettersg',
             stepNotFound: true,
             flowUpdatedAt: testFlowISODateString,
           },
@@ -461,23 +461,23 @@ describe('updateStep mutation', () => {
           {
             owner,
             currentUser: context.currentUser,
-            stepKey: 'sendTransactionalEmail',
-            stepAppKey: 'postman',
+            stepKey: 'createLetter',
+            stepAppKey: 'lettersg',
             flowUpdatedAt: testFlowISODateString,
           },
         )
 
         mockConnectionsRelatedQuery(context.currentUser, {
           connectionId: mockConnectionId,
-          connectionKey: 'postman',
+          connectionKey: 'lettersg',
         })
 
         await expect(
           updateStep(null, { input }, context),
         ).resolves.not.toThrow()
         expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(mockStepId, {
-          key: 'sendTransactionalEmail',
-          appKey: 'postman',
+          key: 'createLetter',
+          appKey: 'lettersg',
           connectionId: mockConnectionId,
           parameters: { updatedParam: 'newValue' },
           status: 'completed',
@@ -490,7 +490,7 @@ describe('updateStep mutation', () => {
 
   describe('version assignment', () => {
     it('does not include version in patch when app has no stepTransformer', async () => {
-      // postman has no stepTransformer
+      // lettersg has no stepTransformer
       await updateStep(null, { input: { ...genericInputParams } }, context)
 
       expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
@@ -504,9 +504,9 @@ describe('updateStep mutation', () => {
         .fn()
         .mockReturnValue({ transformed: true })
       const mockGetLatestStepVersion = vi.fn().mockReturnValue(3)
-      const originalPostman = apps['postman']
-      apps['postman'] = {
-        ...originalPostman,
+      const originalLettersg = apps['lettersg']
+      apps['lettersg'] = {
+        ...originalLettersg,
         stepTransformer: {
           transformStepParameters: mockTransformStepParameters,
           getLatestStepVersion: mockGetLatestStepVersion,
@@ -516,8 +516,8 @@ describe('updateStep mutation', () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: context.currentUser,
-        stepKey: 'sendTransactionalEmail',
-        stepAppKey: 'postman',
+        stepKey: 'createLetter',
+        stepAppKey: 'lettersg',
         stepVersion: 1,
         stepConnection: { id: mockConnectionId, userId: owner.id },
         flowUpdatedAt: testFlowISODateString,
@@ -527,13 +527,11 @@ describe('updateStep mutation', () => {
         await updateStep(null, { input: { ...genericInputParams } }, context)
 
         expect(mockTransformStepParameters).toHaveBeenCalledWith(
-          'sendTransactionalEmail',
+          'createLetter',
           genericInputParams.parameters,
           1, // step.version is undefined in mock, falls back to 1
         )
-        expect(mockGetLatestStepVersion).toHaveBeenCalledWith(
-          'sendTransactionalEmail',
-        )
+        expect(mockGetLatestStepVersion).toHaveBeenCalledWith('createLetter')
         expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
           mockStepId,
           expect.objectContaining({
@@ -542,7 +540,7 @@ describe('updateStep mutation', () => {
           }),
         )
       } finally {
-        apps['postman'] = originalPostman
+        apps['lettersg'] = originalLettersg
       }
     })
 
@@ -551,9 +549,9 @@ describe('updateStep mutation', () => {
         .fn()
         .mockReturnValue({ upgraded: true })
       const mockGetLatestStepVersion = vi.fn().mockReturnValue(2)
-      const originalPostman = apps['postman']
-      apps['postman'] = {
-        ...originalPostman,
+      const originalLettersg = apps['lettersg']
+      apps['lettersg'] = {
+        ...originalLettersg,
         stepTransformer: {
           transformStepParameters: mockTransformStepParameters,
           getLatestStepVersion: mockGetLatestStepVersion,
@@ -564,8 +562,8 @@ describe('updateStep mutation', () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: context.currentUser,
-        stepKey: 'sendTransactionalEmail',
-        stepAppKey: 'postman',
+        stepKey: 'createLetter',
+        stepAppKey: 'lettersg',
         stepVersion: 1,
         stepConnection: { id: mockConnectionId, userId: owner.id },
         flowUpdatedAt: testFlowISODateString,
@@ -586,7 +584,7 @@ describe('updateStep mutation', () => {
 
         // Transformer should be called with DB version (1), not whatever frontend thinks
         expect(mockTransformStepParameters).toHaveBeenCalledWith(
-          'sendTransactionalEmail',
+          'createLetter',
           { oldFormatParam: 'value' },
           1,
         )
@@ -598,7 +596,7 @@ describe('updateStep mutation', () => {
           }),
         )
       } finally {
-        apps['postman'] = originalPostman
+        apps['lettersg'] = originalLettersg
       }
     })
   })
@@ -618,14 +616,14 @@ describe('updateStep mutation', () => {
         owner,
         currentUser: owner,
         stepKey: 'sendMessage',
-        stepAppKey: 'slack',
+        stepAppKey: 'lettersg',
         flowId: mockFlowId,
         stepRole: 'owner',
         flowUpdatedAt: testFlowISODateString,
       })
 
       mockConnectionsRelatedQuery(context.currentUser, {
-        connectionKey: 'slack',
+        connectionKey: 'lettersg',
         connectionId: mockConnectionId,
       })
     })
@@ -669,8 +667,8 @@ describe('updateStep mutation', () => {
       const input = {
         id: mockStepId,
         flow: { id: mockFlowId, updatedAt: testFlowISODateString },
-        key: 'sendMessageToChannel',
-        appKey: 'slack',
+        key: 'createLetter',
+        appKey: 'lettersg',
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
       }
@@ -690,8 +688,8 @@ describe('updateStep mutation', () => {
     it('should call addFlowConnection when app has connection fields but parameter does not exist', async () => {
       const input = {
         ...genericInputParams,
-        appKey: 'slack',
-        key: 'sendMessageToChannel',
+        appKey: 'lettersg',
+        key: 'createLetter',
         parameters: { message: 'Hello world' }, // No channel parameter
         connection: { id: mockConnectionId },
       }
@@ -719,8 +717,8 @@ describe('updateStep mutation', () => {
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: owner,
-        stepKey: 'sendMessageToChannel',
-        stepAppKey: 'slack',
+        stepKey: 'createLetter',
+        stepAppKey: 'lettersg',
         flowId: mockFlowId,
         stepRole: 'editor', // Not owner
         flowUpdatedAt: testFlowISODateString,
@@ -732,7 +730,7 @@ describe('updateStep mutation', () => {
         findOne: vi.fn().mockReturnValue({
           withGraphFetched: vi.fn().mockReturnValue({
             throwIfNotFound: vi.fn().mockResolvedValue({
-              connection: { id: mockConnectionId, key: 'slack' },
+              connection: { id: mockConnectionId, key: 'lettersg' },
             }),
           }),
         }),
@@ -740,8 +738,8 @@ describe('updateStep mutation', () => {
 
       const input = {
         ...genericInputParams,
-        key: 'sendMessageToChannel',
-        appKey: 'slack',
+        key: 'createLetter',
+        appKey: 'lettersg',
         parameters: { channel: 'C1234567890' },
         connection: { id: mockConnectionId },
       }
@@ -759,19 +757,19 @@ describe('updateStep mutation', () => {
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
-      // Mock step with postman that doesn't have connection fields
+      // Mock step with lettersg that doesn't have connection fields
       context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
         owner,
         currentUser: owner,
-        stepKey: 'sendTransactionalEmail',
-        stepAppKey: 'postman',
+        stepKey: 'createLetter',
+        stepAppKey: 'lettersg',
         stepRole: 'owner',
         flowUpdatedAt: testFlowISODateString,
       })
 
       const input = {
         ...genericInputParams,
-        appKey: 'postman',
+        appKey: 'lettersg',
         parameters: { testParam: 'value' },
         connection: {},
       }
@@ -945,7 +943,7 @@ describe('updateStep endStepId config merge', () => {
     const [, ifThen, stepA] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
       { key: 'ifThen', appKey: 'toolbox', type: 'action' },
-      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'createLetter', appKey: 'lettersg', type: 'action' },
     ])
     await ifThen.$query().patch({
       config: { endStepId: stepA.id, stepName: 'orig' },
@@ -970,9 +968,9 @@ describe('updateStep endStepId config merge', () => {
   })
 
   it('rolls back an endStepId write on a non-if-then step', async () => {
-    const [, postmanStep] = await seedSteps([
+    const [, lettersgStep] = await seedSteps([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
-      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'createLetter', appKey: 'lettersg', type: 'action' },
     ])
 
     await expect(
@@ -980,20 +978,20 @@ describe('updateStep endStepId config merge', () => {
         null,
         {
           input: {
-            id: postmanStep.id,
+            id: lettersgStep.id,
             flow: flowInput(),
-            key: 'sendTransactionalEmail',
-            appKey: 'postman',
+            key: 'createLetter',
+            appKey: 'lettersg',
             connection: {},
             parameters: {},
-            config: { endStepId: postmanStep.id },
+            config: { endStepId: lettersgStep.id },
           },
         },
         context,
       ),
     ).rejects.toThrow()
 
-    expect((await reload(postmanStep.id)).config.endStepId).toBeUndefined()
+    expect((await reload(lettersgStep.id)).config.endStepId).toBeUndefined()
   })
 
   it('rolls back an endStepId write on an approval-bearing if-then', async () => {
@@ -1005,7 +1003,7 @@ describe('updateStep endStepId config merge', () => {
         type: 'action',
         config: { approval: { branch: 'reject', stepId: 'someApprovalStep' } },
       },
-      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+      { key: 'createLetter', appKey: 'lettersg', type: 'action' },
     ])
 
     await expect(
