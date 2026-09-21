@@ -16,12 +16,25 @@ export type ClaimSubTriggerAndEnqueueNextParams = {
   jobPayload: IActionJobData
 }
 
+function isDuplicateJobError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+  const message =
+    'message' in error && typeof error.message === 'string' ? error.message : ''
+  return /already exists/i.test(message) || /duplicated/i.test(message)
+}
+
 /**
  * Marks the sub-trigger execution step successful, then enqueues the next job.
  *
  * IMPORTANT: Enqueue only after the success commit. A Redis job can start
  * before an in-transaction patch is visible, so the next step would miss
  * this step's dataOut.
+ *
+ * A retried worker still enqueues if the row is already successful. That is
+ * the same recovery as today's enqueue-then-patch path. A stable job id keeps
+ * a second add from creating another job.
  */
 export async function claimSubTriggerAndEnqueueNext(
   params: ClaimSubTriggerAndEnqueueNextParams,
@@ -43,7 +56,7 @@ export async function claimSubTriggerAndEnqueueNext(
         executionId,
         stepId,
       })
-      return null
+      return 'missing' as const
     }
 
     if (executionStep.status === 'success') {
@@ -53,13 +66,16 @@ export async function claimSubTriggerAndEnqueueNext(
         stepId,
         executionStepId: executionStep.id,
       })
-      return null
+      return { kind: 'already' as const, id: executionStep.id }
     }
 
-    return await executionStep.$query(trx).patchAndFetch({ status: 'success' })
+    const updated = await executionStep
+      .$query(trx)
+      .patchAndFetch({ status: 'success' })
+    return { kind: 'claimed' as const, id: updated.id }
   })
 
-  if (!claimed) {
+  if (claimed === 'missing') {
     return
   }
 
@@ -68,10 +84,18 @@ export async function claimSubTriggerAndEnqueueNext(
       appKey: nextStep.appKey ?? null,
       jobName,
       jobData: jobPayload,
-      jobOptions: DEFAULT_JOB_OPTIONS,
+      jobOptions: {
+        ...DEFAULT_JOB_OPTIONS,
+        jobId: `${jobPayload.executionId}-${jobPayload.stepId}`,
+      },
     })
   } catch (error) {
-    await ExecutionStep.query().findById(claimed.id).patch({ status: null })
+    if (isDuplicateJobError(error)) {
+      return
+    }
+    if (claimed.kind === 'claimed') {
+      await ExecutionStep.query().findById(claimed.id).patch({ status: null })
+    }
     throw error
   }
 }

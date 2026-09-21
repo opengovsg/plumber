@@ -109,13 +109,16 @@ describe('claimSubTriggerAndEnqueueNext', () => {
           executionId: execution.id,
           stepId: nextStep.id,
         },
+        jobOptions: expect.objectContaining({
+          jobId: `${execution.id}-${nextStep.id}`,
+        }),
       }),
     )
     const row = await ExecutionStep.query().findById(executionStep.id)
     expect(row?.status).toBe('success')
   })
 
-  it('does not enqueue when the execution step is already successful', async () => {
+  it('still enqueues when the execution step is already successful', async () => {
     const { mrfStep, nextStep, execution, executionStep } =
       await seedPendingHandoff()
     await executionStep.$query().patch({ status: 'success' })
@@ -132,7 +135,9 @@ describe('claimSubTriggerAndEnqueueNext', () => {
       },
     })
 
-    expect(mocks.enqueueActionJob).not.toHaveBeenCalled()
+    expect(mocks.enqueueActionJob).toHaveBeenCalledOnce()
+    const row = await ExecutionStep.query().findById(executionStep.id)
+    expect(row?.status).toBe('success')
   })
 
   it('does not enqueue when the execution step is missing', async () => {
@@ -208,6 +213,54 @@ describe('claimSubTriggerAndEnqueueNext', () => {
     expect(mocks.enqueueActionJob).toHaveBeenCalledTimes(2)
   })
 
+  it('does not clear success if a retried worker fails to enqueue', async () => {
+    const { mrfStep, nextStep, execution, executionStep } =
+      await seedPendingHandoff()
+    await executionStep.$query().patch({ status: 'success' })
+    mocks.enqueueActionJob.mockRejectedValueOnce(new Error('redis down'))
+
+    await expect(
+      claimSubTriggerAndEnqueueNext({
+        executionId: execution.id,
+        stepId: mrfStep.id,
+        nextStep,
+        jobName: `${execution.id}-${mrfStep.id}`,
+        jobPayload: {
+          flowId: FLOW_ID,
+          executionId: execution.id,
+          stepId: nextStep.id,
+        },
+      }),
+    ).rejects.toThrow('redis down')
+
+    const row = await ExecutionStep.query().findById(executionStep.id)
+    expect(row?.status).toBe('success')
+  })
+
+  it('ignores a duplicate job id from a second enqueue', async () => {
+    const { mrfStep, nextStep, execution, executionStep } =
+      await seedPendingHandoff()
+    await executionStep.$query().patch({ status: 'success' })
+    mocks.enqueueActionJob.mockRejectedValueOnce(
+      new Error('Job already exists'),
+    )
+
+    await claimSubTriggerAndEnqueueNext({
+      executionId: execution.id,
+      stepId: mrfStep.id,
+      nextStep,
+      jobName: `${execution.id}-${mrfStep.id}`,
+      jobPayload: {
+        flowId: FLOW_ID,
+        executionId: execution.id,
+        stepId: nextStep.id,
+      },
+    })
+
+    const row = await ExecutionStep.query().findById(executionStep.id)
+    expect(row?.status).toBe('success')
+  })
+
   it('enqueues only once when two claims race', async () => {
     const { mrfStep, nextStep, execution } = await seedPendingHandoff()
     const params = {
@@ -227,6 +280,11 @@ describe('claimSubTriggerAndEnqueueNext', () => {
       claimSubTriggerAndEnqueueNext(params),
     ])
 
-    expect(mocks.enqueueActionJob).toHaveBeenCalledOnce()
+    expect(mocks.enqueueActionJob).toHaveBeenCalledTimes(2)
+    const row = await ExecutionStep.query().findOne({
+      execution_id: execution.id,
+      step_id: mrfStep.id,
+    })
+    expect(row?.status).toBe('success')
   })
 })
