@@ -24,7 +24,120 @@ steps:
 -->
 `
 
+const MRF_PROPOSAL = `
+<!-- WORKFLOW_METADATA
+name: Leave Approval
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    stepName: Requestor
+    description: Leave request submitted
+  - step: 2
+    appKey: formsg
+    key: mrfSubmission
+    stepName: Approval
+    description: The manager approves or rejects
+  - step: 3
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email the applicant
+    description: Tell the applicant the outcome
+-->
+`
+
+const approvalProposal = (rejectedStageLine: string) => `
+<!-- WORKFLOW_METADATA
+name: Leave Approval
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    stepName: Requestor
+    description: Leave request submitted
+  - step: 2
+    appKey: formsg
+    key: mrfSubmission
+    stepName: Approval
+    description: The manager approves or rejects
+${rejectedStageLine}
+  - step: 3
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email approved
+    description: Tell the applicant it is approved
+  - step: 4
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email rejected
+    description: Tell the applicant it is rejected
+    approvalBranch: reject
+-->
+`
+
 describe('parseWorkflowMetadata', () => {
+  describe('MRF approval stages', () => {
+    it('keeps the approval flag on the stage and the reject flag on its actions', () => {
+      const result = parseWorkflowMetadata(
+        approvalProposal('    isApproval: true'),
+      )
+
+      expect(
+        result.actions.map((a) => [a.isApproval, a.approvalBranch]),
+      ).toEqual([
+        [true, undefined],
+        [undefined, undefined],
+        [undefined, 'reject'],
+      ])
+    })
+
+    it('keeps the form stage name on the trigger of an MRF proposal', () => {
+      const result = parseWorkflowMetadata(MRF_PROPOSAL)
+
+      expect(result.trigger.config?.stepName).toBe('Requestor')
+    })
+
+    it('leaves the trigger name off a proposal with no MRF stage', () => {
+      const result = parseWorkflowMetadata(VALID_WORKFLOW)
+
+      expect(result.trigger.config).toBeUndefined()
+    })
+
+    it('rejects a rejected-path action when no stage is an approval', () => {
+      expect(() =>
+        parseWorkflowMetadata(approvalProposal('    isApproval: false')),
+      ).toThrow('A rejected-path action must come after an approval stage')
+    })
+
+    it('ignores isApproval on an action that is not an MRF stage', () => {
+      const result = parseWorkflowMetadata(
+        approvalProposal('    isApproval: true').replace(
+          'key: sendTransactionalEmail\n    stepName: Email approved',
+          'key: sendTransactionalEmail\n    isApproval: true\n    stepName: Email approved',
+        ),
+      )
+
+      expect(result.actions[1].isApproval).toBeUndefined()
+    })
+  })
+
+  describe('MRF stage steps', () => {
+    it('lets a proposal show a stage step so the preview can draw it', () => {
+      const result = parseWorkflowMetadata(MRF_PROPOSAL)
+
+      expect(result.actions.map((a) => [a.appKey, a.key])).toEqual([
+        ['formsg', 'mrfSubmission'],
+        ['postman', 'sendTransactionalEmail'],
+      ])
+    })
+
+    it('keeps the stage name as the step title', () => {
+      const result = parseWorkflowMetadata(MRF_PROPOSAL)
+
+      expect(result.actions[0].config?.stepName).toBe('Approval')
+    })
+  })
+
   describe('valid metadata', () => {
     it('extracts trigger and actions', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
