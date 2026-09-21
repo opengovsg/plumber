@@ -15,7 +15,7 @@ class ExecutionStep extends Base {
   dataIn!: IJSONObject
   dataOut!: IJSONObject
   errorDetails: IJSONObject
-  status: 'success' | 'failure'
+  status: 'success' | 'failure' | null
   appKey: string
   jobId: string
   step: Step
@@ -34,7 +34,10 @@ class ExecutionStep extends Base {
       stepId: { type: 'string' },
       dataIn: { type: ['object', 'null'] },
       dataOut: { type: ['object', 'null'] },
-      status: { type: 'string', enum: ['success', 'failure'] },
+      status: {
+        type: ['string', 'null'],
+        enum: ['success', 'failure', null],
+      },
       errorDetails: { type: ['object', 'null'] },
       appKey: { type: ['string', 'null'] },
       jobId: { type: ['string', 'null'] },

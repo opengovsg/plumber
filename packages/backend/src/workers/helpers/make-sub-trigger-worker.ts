@@ -10,16 +10,14 @@ import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import HttpError from '@/errors/http'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
-import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 import Execution from '@/models/execution'
-import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
-import { enqueueActionJob } from '@/queues/action'
 
+import { claimSubTriggerAndEnqueueNext } from './claim-sub-trigger-and-enqueue-next'
 import { getJobQueueTimingTags } from './job-queue-timing'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -133,51 +131,17 @@ export function makeSubTriggerWorker(
           return
         }
 
-        const jobPayload = {
-          flowId,
-          executionId,
-          stepId: nextStep.id,
-          metadata: runResult.nextStepMetadata,
-        }
-
-        /**
-         * Ensure that the next action job is enqueued only once by leveraging the execution step status.
-         * To avoid race conditions (such as multiple workers trying to enqueue simultaneously),
-         * we use a transaction and explicitly lock the execution step row with `forUpdate`.
-         */
-        await ExecutionStep.transaction(async (trx): Promise<void> => {
-          const executionStep = await ExecutionStep.query(trx)
-            .findOne({
-              execution_id: $.execution.id,
-              step_id: $.step.id,
-            })
-            .forUpdate()
-          if (!executionStep) {
-            // this should never happen! but we can safely return here
-            logger.warn('bug: Execution step not found', {
-              event: 'sub-trigger-execution-step-not-found',
-              executionId: $.execution.id,
-              stepId: $.step.id,
-            })
-            return
-          }
-
-          if (executionStep.status === 'success') {
-            logger.debug({
-              event: 'sub-trigger-execution-step-already-succeeded',
-              executionId: $.execution.id,
-              stepId: $.step.id,
-              executionStepId: executionStep.id,
-            })
-            return
-          }
-          await enqueueActionJob({
-            appKey: nextStep.appKey,
-            jobName,
-            jobData: jobPayload,
-            jobOptions: DEFAULT_JOB_OPTIONS,
-          })
-          await executionStep.$query(trx).patch({ status: 'success' })
+        await claimSubTriggerAndEnqueueNext({
+          executionId: $.execution.id,
+          stepId: $.step.id,
+          nextStep,
+          jobName,
+          jobPayload: {
+            flowId,
+            executionId,
+            stepId: nextStep.id,
+            metadata: runResult.nextStepMetadata,
+          },
         })
       } catch (error) {
         if (error instanceof HttpError) {
