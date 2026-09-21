@@ -28,6 +28,7 @@ import {
   executeStepService,
   type McpExecuteStepResult,
 } from '@/services/mcp/execute-step'
+import { getFlowService, type McpFlow } from '@/services/mcp/get-flow'
 import {
   getFormSchemaService,
   type McpFormSchemaResult,
@@ -93,6 +94,17 @@ export function createMcpBridgeTools(
       }),
       execute: async ({ step_id }): Promise<ListColumnsResult> => {
         return listColumnsService({ user, stepId: step_id })
+      },
+    }),
+
+    get_flow: tool({
+      description:
+        "Get a pipe's current steps in position order, including hidden FormSG MRF steps (appKey 'formsg', key 'mrfSubmission') auto-created after the trigger's last test run — these only exist once the trigger has been tested and are not present in create_pipe's response. Identify an MRF step by its appKey/key; identify an MRF approval step via parameters.mrf.approvalField; an existing reject-branch assignment appears as config.approval ({ branch: 'reject', stepId }). MRF steps are system-managed — never attempt to create, delete, or reorder them (create_step rejects it server-side regardless).",
+      inputSchema: z.object({
+        pipe_id: z.uuid().describe('ID of the pipe to fetch'),
+      }),
+      execute: async ({ pipe_id }): Promise<McpFlow> => {
+        return getFlowService({ user, pipeId: pipe_id })
       },
     }),
 
