@@ -497,6 +497,31 @@ export interface IFieldText extends IBaseField {
 
   // To only allow selection of one variable
   singleVariableSelection?: boolean
+
+  /**
+   * Renders a pill toggle above the input, where each pill describes a
+   * different way the same input will be used.
+   *
+   * The selection is stored under `tabs.key`, a sibling parameter with no field
+   * of its own, so the input keeps its own key, type and stored value.
+   */
+  tabs?: IFieldTabs
+}
+
+export interface IFieldTabs {
+  // Sibling parameter key holding the selected tab's value.
+  key: string
+  // Seeded into newly created steps. See withDefaultParameters.
+  value: string
+  options: IFieldTabOption[]
+}
+
+export interface IFieldTabOption {
+  label: string
+  value: string
+  // Shown below the pills while this tab is selected, in place of the field's
+  // own description.
+  description?: string
 }
 
 export interface IFieldAttachment extends IBaseField {
@@ -1468,6 +1493,16 @@ export interface IMcpAppField {
    * surfaced per-step via `execute_step`'s `dataOutMetadata`).
    */
   variableTypes?: TDataOutMetadatumType[]
+  /**
+   * Present when this field's behaviour is switched by a separate parameter.
+   * The AI must set `tabs.key` to one of `tabs.options` alongside this field.
+   */
+  tabs?: IMcpFieldTabs
+}
+
+export interface IMcpFieldTabs {
+  key: string
+  options: IMcpFieldOption[]
 }
 
 export interface IMcpAppAction {

@@ -23,6 +23,7 @@ import useDynamicData from '@/hooks/useDynamicData'
 import { COLLABORATOR_RESTRICTED_ADDNEW_IDS } from '../Editor/constants'
 
 import BooleanRadio from './BooleanRadio'
+import TabbedInput from './TabbedInput'
 
 export type InputCreatorProps = {
   schema: IField
@@ -188,38 +189,54 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   }
 
   if (type === 'string' || type === 'multiline') {
-    if (variables) {
-      return (
-        <RichTextEditor
-          name={computedName}
-          required={required}
-          label={label}
-          description={description}
-          placeholder={placeholder}
-          isSingleLine={parentType === 'multicol'}
-          variablesEnabled
-          tooltipText={tooltipText}
-          variableTypes={schema.variableTypes}
-          parentType={parentType}
-          autoFocus={autoFocus}
-          singleVariableSelection={schema.singleVariableSelection}
-          noVariablesMessage={noVariablesMessage}
-        />
-      )
-    }
+    // A tabbed field's label and description belong to the wrapper, so the
+    // input itself renders neither.
+    const tabs = 'tabs' in schema ? schema.tabs : undefined
 
-    return (
+    const input = variables ? (
+      <RichTextEditor
+        name={computedName}
+        required={required}
+        label={tabs ? undefined : label}
+        description={tabs ? undefined : description}
+        placeholder={placeholder}
+        isSingleLine={parentType === 'multicol'}
+        variablesEnabled
+        tooltipText={tabs ? undefined : tooltipText}
+        variableTypes={schema.variableTypes}
+        parentType={parentType}
+        autoFocus={autoFocus}
+        singleVariableSelection={schema.singleVariableSelection}
+        noVariablesMessage={noVariablesMessage}
+      />
+    ) : (
       <TextField
         defaultValue={value}
         required={required}
         placeholder={placeholder}
         readOnly={isReadOnly}
         name={computedName}
-        label={label}
+        label={tabs ? undefined : label}
         multiline={type === 'multiline'}
-        description={description}
+        description={tabs ? undefined : description}
         clickToCopy={clickToCopy}
       />
+    )
+
+    if (!tabs) {
+      return input
+    }
+
+    return (
+      <TabbedInput
+        name={namePrefix ? `${namePrefix}.${tabs.key}` : tabs.key}
+        label={label}
+        required={required}
+        tooltipText={tooltipText}
+        tabs={tabs}
+      >
+        {input}
+      </TabbedInput>
     )
   }
 

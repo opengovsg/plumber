@@ -89,16 +89,23 @@ export function withDefaultParameters(
 
   for (const substep of substeps ?? []) {
     for (const arg of substep.arguments ?? []) {
-      if (arg.value === undefined || step.parameters[arg.key] !== undefined) {
-        continue
-      }
-
       // Skip fields hidden behind a not-yet-active input flag: seeding their
       // default here would make the form report a value the user never saw
       // and the backend never received, desyncing it from `dataIn`.
       if (
         !isInputVisibleForStep(actionOrTriggerKey, arg.key, step, getFlagValue)
       ) {
+        continue
+      }
+
+      // A tabbed field's selection lives under its own key, so it needs seeding
+      // separately from the field's `value`.
+      const tabs = 'tabs' in arg ? arg.tabs : undefined
+      if (tabs && step.parameters[tabs.key] === undefined) {
+        defaultParameters[tabs.key] = tabs.value
+      }
+
+      if (arg.value === undefined || step.parameters[arg.key] !== undefined) {
         continue
       }
 
