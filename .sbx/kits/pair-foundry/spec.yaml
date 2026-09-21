@@ -1,0 +1,19 @@
+schemaVersion: '2'
+kind: mixin
+name: pair-foundry
+displayName: Pair Foundry
+description: Sets up sbx to connect to Pair Foundry
+
+credentials:
+  - service: pair-foundry
+    apiKey:
+      name: PAIR_FOUNDRY_API_KEY
+      proxyManaged: true
+      inject:
+        - domain: engine.pair.gov.sg
+          scheme: bearer
+
+permissions:
+  network:
+    allow:
+      - engine.pair.gov.sg
