@@ -112,17 +112,31 @@ for (const [appKey, app] of Object.entries(apps)) {
  * flows owned by an @open.gov.sg user. The DB lookup only runs for 'ogp' (and
  * only for m365-excel's createTableRow, the only batch action today), so 'all'
  * and 'off' - the expected steady states - never pay for it.
+ *
+ * IMPORTANT: unlike a plain flag-value mismatch (which getLdFlagValue itself
+ * falls back on), a LaunchDarkly client/network failure rejects the promise.
+ * Falling back to the pre-flag 'all' behaviour here keeps that from failing
+ * every action enqueue.
  */
 async function shouldRouteToBatchQueue(
   appKey: string,
   actionKey: string,
   jobData: IActionJobData,
 ): Promise<boolean> {
-  const rollout = await getLdFlagValue<string>(
-    M365_EXCEL_BATCH_ROLLOUT_FLAG,
-    null,
-    M365_EXCEL_BATCH_ROLLOUT_ALL,
-  )
+  let rollout: string
+  try {
+    rollout = await getLdFlagValue<string>(
+      M365_EXCEL_BATCH_ROLLOUT_FLAG,
+      null,
+      M365_EXCEL_BATCH_ROLLOUT_ALL,
+    )
+  } catch (error) {
+    logger.error({
+      event: 'm365-excel-batch-rollout-flag-lookup-failed',
+      message: (error as Error).message,
+    })
+    return true
+  }
 
   if (rollout === M365_EXCEL_BATCH_ROLLOUT_OFF) {
     return false

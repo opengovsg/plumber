@@ -311,6 +311,28 @@ describe('enqueueActionJob routing', () => {
     expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
   })
 
+  it('falls back to the batch queue when the rollout flag lookup rejects', async () => {
+    mocks.getLdFlagValue.mockRejectedValue(new Error('Authentication failed'))
+
+    await enqueueActionJob({
+      appKey: 'app-with-batch',
+      actionKey: 'batchedAction',
+      jobName: 'job-1',
+      jobData,
+      jobOptions,
+    })
+
+    expect(actionBatchQueues['app-with-batch'].add).toHaveBeenCalledWith(
+      'job-1',
+      jobData,
+      {
+        ...jobOptions,
+        group: { id: 'file-1::table-1' },
+      },
+    )
+    expect(appActionQueues['app-with-batch'].add).not.toHaveBeenCalled()
+  })
+
   it('routes a non-batch action of the same app to the per-app queue', async () => {
     await enqueueActionJob({
       appKey: 'app-with-batch',
