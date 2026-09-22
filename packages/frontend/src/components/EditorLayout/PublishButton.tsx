@@ -75,7 +75,7 @@ export default function PublishButton({
           : isFlowIncomplete
           ? 'Set up for all steps must be completed before you can publish your pipe'
           : hasEmptyIfThenBlock
-          ? 'Your If-then has no steps in it'
+          ? 'Your If block has no steps in it'
           : ''
       }
       wrapperStyles={{ width: '100%' }}

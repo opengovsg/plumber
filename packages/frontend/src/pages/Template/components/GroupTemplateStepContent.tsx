@@ -46,7 +46,7 @@ export default function GroupTemplateStepContent(
     return <></>
   }
   const groupedSteps = extractBranchesWithSteps(templateSteps)
-  const header = groupType === TOOLBOX_ACTIONS.IfThen ? 'If-then' : 'For each'
+  const header = groupType === TOOLBOX_ACTIONS.IfThen ? 'If' : 'Repeat'
   const headerIcon =
     TOOLBOX_ACTION_TO_ICON_MAP[
       groupType as keyof typeof TOOLBOX_ACTION_TO_ICON_MAP

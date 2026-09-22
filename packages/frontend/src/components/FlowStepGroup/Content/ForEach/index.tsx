@@ -152,7 +152,7 @@ export default function ForEach(props: ForEachProps) {
             <IconButton
               {...blockActionButtonStyles}
               onClick={openDeleteConfirmation}
-              aria-label="Delete for each action"
+              aria-label="Delete Repeat block"
               icon={<BiTrash />}
             />
           )
@@ -223,7 +223,7 @@ export default function ForEach(props: ForEachProps) {
       </Flex>
 
       <DeleteConfirmationDialog
-        name="For each"
+        name="Repeat"
         cancelRef={cancelRef}
         isOpen={isDeleteConfirmationOpen}
         onClose={closeDeleteConfirmation}

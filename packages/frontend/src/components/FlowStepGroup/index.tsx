@@ -43,12 +43,12 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
 
     if (groupKey === TOOLBOX_ACTIONS.IfThen) {
       stepGroupType = TOOLBOX_ACTIONS.IfThen
-      stepGroupCaption = 'If-then'
+      stepGroupCaption = 'If'
     }
 
     if (groupKey === TOOLBOX_ACTIONS.ForEach) {
       stepGroupType = TOOLBOX_ACTIONS.ForEach
-      stepGroupCaption = 'For each'
+      stepGroupCaption = 'Repeat'
     }
 
     return { stepGroupType, stepGroupCaption }
@@ -147,7 +147,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
                 <IconButton
                   boxSize={8}
                   variant="clear"
-                  aria-label="Delete for each action"
+                  aria-label="Delete Repeat block"
                   icon={<BiTrash />}
                   colorScheme="secondary"
                   onClick={openDeleteConfirmation}
@@ -168,7 +168,7 @@ export default function FlowStepGroup(props: FlowStepGroupProps) {
               stepsBeforeGroup={stepsBeforeGroup}
             />
             <DeleteConfirmationDialog
-              name="For each"
+              name="Repeat"
               cancelRef={cancelRef}
               isOpen={isDeleteConfirmationOpen}
               onClose={closeDeleteConfirmation}
