@@ -194,15 +194,21 @@ export function makeSubTriggerWorker(
          *
          * Enqueueing after the commit is still exactly-once. A competing worker
          * blocks on the row lock, then reads 'success' and claims nothing.
-         * A failure here leaves the execution stalled rather than duplicated,
-         * which is the safer half of the trade.
          */
-        await enqueueActionJob({
-          appKey: nextStep.appKey,
-          jobName,
-          jobData: jobPayload,
-          jobOptions: DEFAULT_JOB_OPTIONS,
-        })
+        try {
+          await enqueueActionJob({
+            appKey: nextStep.appKey,
+            jobName,
+            jobData: jobPayload,
+            jobOptions: DEFAULT_JOB_OPTIONS,
+          })
+        } catch (error) {
+          // Don't retry if we failed to enqueue the next step. The claim is
+          // already committed, so a retry would read 'success' and enqueue
+          // nothing. The execution stalls instead of running the next step
+          // twice.
+          throw new UnrecoverableError(error.message)
+        }
       } catch (error) {
         if (error instanceof HttpError) {
           $.actionOutput.error = {
