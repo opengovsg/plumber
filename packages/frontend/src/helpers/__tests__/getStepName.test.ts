@@ -54,15 +54,15 @@ describe('getStepName', () => {
       const result = getStepName([], step)
       expect(result).toEqual({
         stepName: 'My Condition',
-        defaultStepName: 'If-then',
+        defaultStepName: 'If',
       })
     })
 
-    it('returns "If-then" when no custom name', () => {
+    it('returns "If" when no custom name', () => {
       const result = getStepName([], ifThenStep)
       expect(result).toEqual({
-        stepName: 'If-then',
-        defaultStepName: 'If-then',
+        stepName: 'If',
+        defaultStepName: 'If',
       })
     })
 
@@ -73,8 +73,8 @@ describe('getStepName', () => {
       })
       const result = getStepName([], step)
       expect(result).toEqual({
-        stepName: 'If-then',
-        defaultStepName: 'If-then',
+        stepName: 'If',
+        defaultStepName: 'If',
       })
     })
 
@@ -87,7 +87,7 @@ describe('getStepName', () => {
       const result = getStepName([], step, false)
       expect(result).toEqual({
         stepName: 'My Condition',
-        defaultStepName: 'If-then',
+        defaultStepName: 'If',
       })
     })
 
@@ -99,8 +99,8 @@ describe('getStepName', () => {
       })
       const result = getStepName([], step, true)
       expect(result).toEqual({
-        stepName: 'If-then',
-        defaultStepName: 'If-then',
+        stepName: 'If',
+        defaultStepName: 'If',
       })
     })
 
@@ -129,23 +129,23 @@ describe('getStepName', () => {
       })
     })
 
-    it('falls back to "If-then" for a leftover V1 step with no branchName, flag on', () => {
+    it('falls back to "If" for a leftover V1 step with no branchName, flag on', () => {
       const result = getStepName([], ifThenStep, true)
       expect(result).toEqual({
-        stepName: 'If-then',
-        defaultStepName: 'If-then',
+        stepName: 'If',
+        defaultStepName: 'If',
       })
     })
 
-    it('falls back to "If-then" when config.stepName was explicitly cleared to an empty string', () => {
+    it('falls back to "If" when config.stepName was explicitly cleared to an empty string', () => {
       const step = createMockStep({
         ...ifThenStep,
         config: { stepName: '' },
       })
       const result = getStepName([], step)
       expect(result).toEqual({
-        stepName: 'If-then',
-        defaultStepName: 'If-then',
+        stepName: 'If',
+        defaultStepName: 'If',
       })
     })
   })
@@ -164,27 +164,27 @@ describe('getStepName', () => {
       const result = getStepName([], step)
       expect(result).toEqual({
         stepName: 'Loop Items',
-        defaultStepName: 'For each item',
+        defaultStepName: 'Repeat',
       })
     })
 
-    it('falls back to "For each item" when config.stepName was explicitly cleared to an empty string', () => {
+    it('falls back to "Repeat" when config.stepName was explicitly cleared to an empty string', () => {
       const step = createMockStep({
         ...forEachStep,
         config: { stepName: '' },
       })
       const result = getStepName([], step)
       expect(result).toEqual({
-        stepName: 'For each item',
-        defaultStepName: 'For each item',
+        stepName: 'Repeat',
+        defaultStepName: 'Repeat',
       })
     })
 
-    it('returns "For each item" when no custom name', () => {
+    it('returns "Repeat" when no custom name', () => {
       const result = getStepName([], forEachStep)
       expect(result).toEqual({
-        stepName: 'For each item',
-        defaultStepName: 'For each item',
+        stepName: 'Repeat',
+        defaultStepName: 'Repeat',
       })
     })
   })
