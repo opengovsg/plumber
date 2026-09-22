@@ -271,7 +271,7 @@ export default function StepsPreview() {
                   {ifThenSteps.length > 0 && (
                     <GroupedStepContainer
                       stepGroupType={TOOLBOX_ACTIONS.IfThen}
-                      stepGroupCaption="If-then"
+                      stepGroupCaption="If"
                       isNested={true}
                     >
                       <Flex flexDir="column" w="100%" px={2} gap={4} mt={2}>

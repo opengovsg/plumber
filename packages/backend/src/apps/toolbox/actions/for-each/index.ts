@@ -23,7 +23,7 @@ import { inputSchema, parameterSchema } from './schema'
 const action: IRawAction = {
   name: 'Repeat for each item',
   key: 'forEach',
-  description: 'Run this same actions for each item in your list',
+  description: 'Run the same actions for each item in your list',
   groupsLaterSteps: true,
   linkToGuide:
     'https://guide.plumber.gov.sg/user-guides/actions/for-each-item-coming-soon',
