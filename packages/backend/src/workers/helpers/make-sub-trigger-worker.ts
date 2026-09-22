@@ -141,43 +141,67 @@ export function makeSubTriggerWorker(
         }
 
         /**
-         * Ensure that the next action job is enqueued only once by leveraging the execution step status.
-         * To avoid race conditions (such as multiple workers trying to enqueue simultaneously),
-         * we use a transaction and explicitly lock the execution step row with `forUpdate`.
+         * Claim this sub-trigger by flipping its execution step to success.
+         * This is to prevent the race condition when the sub-trigger webhook (C) from formsg
+         * comes roughly the same time as the previous step (B) gets executed. Both will
+         * attempt the enqueue the next job (D) simultaneously.
+         * Scenario:  A (first submission) -> B (action) -> C (sub-trigger/ second submission)
+         * -> D (next step to be enqueued).
+         * So, we lock the row with `forUpdate` and let only the first one through.
          */
-        await ExecutionStep.transaction(async (trx): Promise<void> => {
-          const executionStep = await ExecutionStep.query(trx)
-            .findOne({
-              execution_id: $.execution.id,
-              step_id: $.step.id,
-            })
-            .forUpdate()
-          if (!executionStep) {
-            // this should never happen! but we can safely return here
-            logger.warn('bug: Execution step not found', {
-              event: 'sub-trigger-execution-step-not-found',
-              executionId: $.execution.id,
-              stepId: $.step.id,
-            })
-            return
-          }
+        const claimed = await ExecutionStep.transaction(
+          async (trx): Promise<boolean> => {
+            const executionStep = await ExecutionStep.query(trx)
+              .findOne({
+                execution_id: $.execution.id,
+                step_id: $.step.id,
+              })
+              .forUpdate()
+            if (!executionStep) {
+              // this should never happen! but we can safely return here
+              logger.warn('bug: Execution step not found', {
+                event: 'sub-trigger-execution-step-not-found',
+                executionId: $.execution.id,
+                stepId: $.step.id,
+              })
+              return false
+            }
 
-          if (executionStep.status === 'success') {
-            logger.debug({
-              event: 'sub-trigger-execution-step-already-succeeded',
-              executionId: $.execution.id,
-              stepId: $.step.id,
-              executionStepId: executionStep.id,
-            })
-            return
-          }
-          await enqueueActionJob({
-            appKey: nextStep.appKey,
-            jobName,
-            jobData: jobPayload,
-            jobOptions: DEFAULT_JOB_OPTIONS,
-          })
-          await executionStep.$query(trx).patch({ status: 'success' })
+            if (executionStep.status === 'success') {
+              logger.debug({
+                event: 'sub-trigger-execution-step-already-succeeded',
+                executionId: $.execution.id,
+                stepId: $.step.id,
+                executionStepId: executionStep.id,
+              })
+              return false
+            }
+
+            await executionStep.$query(trx).patch({ status: 'success' })
+            return true
+          },
+        )
+
+        if (!claimed) {
+          return
+        }
+
+        /**
+         * IMPORTANT: this must stay outside the transaction above.
+         * `processAction` reads prior execution steps filtered on status
+         * 'success', so a next job that starts before the commit cannot see
+         * this step. Its variables would silently resolve to empty strings.
+         *
+         * Enqueueing after the commit is still exactly-once. A competing worker
+         * blocks on the row lock, then reads 'success' and claims nothing.
+         * A failure here leaves the execution stalled rather than duplicated,
+         * which is the safer half of the trade.
+         */
+        await enqueueActionJob({
+          appKey: nextStep.appKey,
+          jobName,
+          jobData: jobPayload,
+          jobOptions: DEFAULT_JOB_OPTIONS,
         })
       } catch (error) {
         if (error instanceof HttpError) {
