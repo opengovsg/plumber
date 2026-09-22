@@ -6,7 +6,7 @@ import http from 'k6/http'
 import {
   BASE_URL,
   JSON_HEADERS,
-  parsePaths,
+  pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
   webhookUrl,
@@ -16,10 +16,10 @@ import {
 // ids). Aim: confirm the batch queue round-robins fairly across files
 // instead of favouring whichever job id arrives first.
 //
-// Setup: M365_BATCH_WEBHOOK_PATHS must list the webhook paths of 10 pipes,
-// each with a createTableRow action (batch: true) pointing at its own M365
-// Excel file/table.
-const PATHS = parsePaths('M365_BATCH_WEBHOOK_PATHS', 'even-spread')
+// Setup: pipes.json's "webhookPaths" must list the webhook paths of 10
+// pipes, each with a createTableRow action (batch: true) pointing at its own
+// M365 Excel file/table.
+const PATHS = pipePaths('webhookPaths', 'even-spread')
 
 export const options = {
   discardResponseBodies: true,

@@ -3,14 +3,19 @@
 // Shared helpers for the M365 batching load tests (see README.md for the
 // pipe setup each script expects).
 
-export function parsePaths(envVar, label) {
-  const raw = __ENV[envVar]
-  if (!raw) {
+// Webhook paths are edited into pipes.json rather than passed as env vars,
+// since each scenario needs several of them and k6's open() only works in
+// init context, so it has to happen at module load time either way.
+const pipes = JSON.parse(open('./pipes.json'))
+
+export function pipePaths(key, label) {
+  const value = pipes[key]
+  if (!value) {
     throw new Error(
-      `${envVar} is not set. Set it to a comma-separated list of webhook paths for the ${label} pipe(s).`,
+      `pipes.json is missing "${key}", needed for the ${label} pipe(s). Edit tools/load-tests/m365-batch/pipes.json with real webhook paths before running.`,
     )
   }
-  return raw.split(',').map((path) => path.trim())
+  return Array.isArray(value) ? value : [value]
 }
 
 export function webhookUrl(baseUrl, path) {

@@ -6,7 +6,7 @@ import http from 'k6/http'
 import {
   BASE_URL,
   JSON_HEADERS,
-  parsePaths,
+  pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
   webhookUrl,
@@ -17,12 +17,12 @@ import {
 // groupAffinity round-robins fairly so the hotspot job id can't stall the
 // other job ids sharing the batch queue.
 //
-// Setup: M365_BATCH_HOTSPOT_PATH is the webhook path of the hot pipe.
-// M365_BATCH_WEBHOOK_PATHS lists the webhook paths of the cold pipes (reuse
-// the even-spread pipes). Every pipe needs a createTableRow action
+// Setup: pipes.json's "hotspotPath" is the webhook path of the hot pipe.
+// "webhookPaths" lists the webhook paths of the cold pipes (reuse the
+// even-spread pipes). Every pipe needs a createTableRow action
 // (batch: true) pointing at its own M365 Excel file/table.
-const HOT_PATH = parsePaths('M365_BATCH_HOTSPOT_PATH', 'hotspot hot id')[0]
-const COLD_PATHS = parsePaths('M365_BATCH_WEBHOOK_PATHS', 'hotspot cold ids')
+const [HOT_PATH] = pipePaths('hotspotPath', 'hotspot hot id')
+const COLD_PATHS = pipePaths('webhookPaths', 'hotspot cold ids')
 
 // 1 in COLD_EVERY iterations goes to a cold id (round-robin); the rest go to
 // the hot id.

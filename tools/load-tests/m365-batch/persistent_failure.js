@@ -5,7 +5,7 @@ import http from 'k6/http'
 import {
   BASE_URL,
   JSON_HEADERS,
-  parsePaths,
+  pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
   webhookUrl,
@@ -20,18 +20,15 @@ import {
 // webhook trigger itself keeps accepting jobs, it can't see queue depth or
 // worker-side failures.
 //
-// Setup: M365_BATCH_FAILURE_PATH is the webhook path of a pipe whose
+// Setup: pipes.json's "failurePath" is the webhook path of a pipe whose
 // createTableRow action (batch: true) points at an M365 connection that will
-// reliably fail (e.g. a revoked/invalid connection). M365_BATCH_WEBHOOK_PATHS
-// supplies a healthy control-group pipe (the first path is used) so we can
-// see whether its throughput degrades once the failing job id backs up the
-// batch queue.
-const [FAILING_PATH] = parsePaths(
-  'M365_BATCH_FAILURE_PATH',
-  'persistent-failure',
-)
-const [HEALTHY_PATH] = parsePaths(
-  'M365_BATCH_WEBHOOK_PATHS',
+// reliably fail (e.g. a revoked/invalid connection). "webhookPaths" supplies
+// a healthy control-group pipe (the first path is used) so we can see
+// whether its throughput degrades once the failing job id backs up the batch
+// queue.
+const [FAILING_PATH] = pipePaths('failurePath', 'persistent-failure')
+const [HEALTHY_PATH] = pipePaths(
+  'webhookPaths',
   'persistent-failure control group',
 )
 

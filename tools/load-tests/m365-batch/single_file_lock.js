@@ -5,7 +5,7 @@ import http from 'k6/http'
 import {
   BASE_URL,
   JSON_HEADERS,
-  parsePaths,
+  pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
   webhookUrl,
@@ -15,14 +15,11 @@ import {
 // per-file redlock (file-lock.ts) correctly serializes writes so concurrent
 // batches never race on the same Excel file.
 //
-// Setup: M365_BATCH_SINGLE_FILE_PATH is the webhook path of a single pipe
+// Setup: pipes.json's "singleFilePath" is the webhook path of a single pipe
 // with a createTableRow action (batch: true). After the run, check the
 // destination table for duplicate/overwritten rows and check for lock
 // contention errors in the logs.
-const [SINGLE_FILE_PATH] = parsePaths(
-  'M365_BATCH_SINGLE_FILE_PATH',
-  'single-file-lock',
-)
+const [SINGLE_FILE_PATH] = pipePaths('singleFilePath', 'single-file-lock')
 
 export const options = {
   discardResponseBodies: true,
