@@ -22,9 +22,6 @@ export type ClaimSubTriggerAndEnqueueNextParams = {
  * IMPORTANT: Enqueue only after the success commit. A Redis job can start
  * before an in-transaction patch is visible, so the next step would miss
  * this step's dataOut.
- *
- * Skip enqueue when the row is already successful. That is the same
- * enqueue-once rule as the old in-transaction handoff.
  */
 export async function claimSubTriggerAndEnqueueNext(
   params: ClaimSubTriggerAndEnqueueNextParams,
@@ -71,15 +68,11 @@ export async function claimSubTriggerAndEnqueueNext(
       appKey: nextStep.appKey ?? null,
       jobName,
       jobData: jobPayload,
-      jobOptions: {
-        ...DEFAULT_JOB_OPTIONS,
-        // Unclaiming below lets a retry enqueue again. BullMQ ignores an add
-        // whose id already exists, so a Redis error that actually landed the
-        // job cannot produce a second run of this step.
-        jobId: `${jobPayload.executionId}-${jobPayload.stepId}`,
-      },
+      jobOptions: DEFAULT_JOB_OPTIONS,
     })
   } catch (error) {
+    // Undo the claim so this step stays retryable, matching the rollback the
+    // enclosing transaction used to give us.
     await ExecutionStep.query().findById(claimed.id).patch({ status: null })
     throw error
   }

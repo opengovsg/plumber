@@ -6,6 +6,7 @@ import {
   generateMockFlow,
   generateMockStep,
 } from '@/apps/formsg/__tests__/mrf.mock'
+import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import type Context from '@/types/express/context'
@@ -109,9 +110,7 @@ describe('claimSubTriggerAndEnqueueNext', () => {
           executionId: execution.id,
           stepId: nextStep.id,
         },
-        jobOptions: expect.objectContaining({
-          jobId: `${execution.id}-${nextStep.id}`,
-        }),
+        jobOptions: DEFAULT_JOB_OPTIONS,
       }),
     )
     const row = await ExecutionStep.query().findById(executionStep.id)
