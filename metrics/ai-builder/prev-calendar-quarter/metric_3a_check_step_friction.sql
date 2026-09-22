@@ -5,9 +5,22 @@
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
 -- Later stages use that cohort's current outcome, including after the quarter.
 --
--- PERFORMANCE: execution_steps is reached only through correlated LATERALs keyed
--- on execution_id. OFFSET 0 stops the planner from flattening the LATERAL into a
--- hash join over the whole table. Keep MATERIALIZED, the LATERALs and OFFSET 0.
+-- PERFORMANCE, do not undo any of these:
+--  * COALESCE(es.execution_id, <zero uuid>) is deliberately not indexable. It
+--    stops the planner picking one random index probe per test execution. A
+--    quarter's cohort has hundreds of thousands of them, and each probe costs
+--    about four random page reads. One parallel sequential pass over
+--    execution_steps touches roughly 8x fewer pages and reads them in physical
+--    order. IMPORTANT: this is the right trade only because the window is a
+--    whole quarter. The grafana-time-picker twin keeps the indexed join.
+--  * check_steps is the one MATERIALIZED CTE, because it is read twice. Its
+--    own parallel scan still runs; only reading a CTE is parallel restricted.
+--  * the first success per step comes from MIN ... GROUP BY, not a window
+--    function. The window form sorts every attempt row and spills to disk.
+--  * the join to steps prunes attempts on steps that never reached completed.
+--    Those are excluded from the average anyway.
+--  * the iteration test leads with the jsonb key check. That short-circuits
+--    before ->> has to build text out of the payload.
 WITH params AS (
   SELECT
     (
@@ -18,7 +31,7 @@ WITH params AS (
       date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore')
     ) AT TIME ZONE 'Asia/Singapore' AS period_end
 ),
-pipes AS MATERIALIZED (
+pipes AS (
   SELECT
     f.id,
     f.deleted_at,
@@ -32,56 +45,48 @@ pipes AS MATERIALIZED (
   WHERE f.created_at >= p.period_start
     AND f.created_at < p.period_end
 ),
-test_executions AS MATERIALIZED (
-  SELECT e.id AS execution_id
-  FROM pipes p
-  CROSS JOIN LATERAL (
-    SELECT e.id
-    FROM executions e
-    WHERE e.flow_id = p.id
-      AND e.test_run = true
-    OFFSET 0
-  ) e
-),
-check_steps AS MATERIALIZED (
-  SELECT es.step_id, es.status, es.created_at
-  FROM test_executions te
-  CROSS JOIN LATERAL (
-    SELECT es.step_id, es.status, es.created_at
-    FROM execution_steps es
-    WHERE es.execution_id = te.execution_id
-      AND COALESCE(es.metadata ->> 'iteration', '') = ''
-    OFFSET 0
-  ) es
-),
--- One pass over check_steps: tag every attempt with its step's first success.
-attempts_per_step AS (
-  SELECT r.step_id, COUNT(*) AS attempt_count
-  FROM (
-    SELECT
-      cs.step_id,
-      cs.created_at,
-      MIN(cs.created_at) FILTER (WHERE cs.status = 'success')
-        OVER (PARTITION BY cs.step_id) AS first_success_at
-    FROM check_steps cs
-  ) r
-  WHERE r.first_success_at IS NOT NULL
-    AND r.created_at <= r.first_success_at
-  GROUP BY r.step_id
-),
-configured_steps AS MATERIALIZED (
+configured_steps AS (
   SELECT p.cohort, s.id AS step_id
   FROM pipes p
   JOIN steps s
     ON s.flow_id = p.id
    AND (s.deleted_at IS NULL OR p.deleted_at IS NOT NULL)
   WHERE s.status = 'completed'
+),
+test_executions AS (
+  SELECT e.id AS execution_id
+  FROM pipes p
+  JOIN executions e
+    ON e.flow_id = p.id
+   AND e.test_run = true
+),
+check_steps AS MATERIALIZED (
+  SELECT cst.cohort, es.step_id, es.status, es.created_at
+  FROM execution_steps es
+  JOIN test_executions te
+    ON te.execution_id
+     = COALESCE(es.execution_id, '00000000-0000-0000-0000-000000000000'::uuid)
+  JOIN configured_steps cst ON cst.step_id = es.step_id
+  WHERE NOT (es.metadata ? 'iteration')
+     OR COALESCE(es.metadata ->> 'iteration', '') = ''
+),
+first_success AS (
+  SELECT cs.step_id, MIN(cs.created_at) AS first_success_at
+  FROM check_steps cs
+  WHERE cs.status = 'success'
+  GROUP BY cs.step_id
+),
+attempts_per_step AS (
+  SELECT cs.cohort, cs.step_id, COUNT(*) AS attempt_count
+  FROM check_steps cs
+  JOIN first_success fs ON fs.step_id = cs.step_id
+  WHERE cs.created_at <= fs.first_success_at
+  GROUP BY cs.cohort, cs.step_id
 )
 SELECT
-  cs.cohort,
+  cohort,
   COUNT(*) AS "configured steps",
-  ROUND(AVG(a.attempt_count)::numeric, 2) AS "avg check attempts until success"
-FROM configured_steps cs
-JOIN attempts_per_step a ON a.step_id = cs.step_id
-GROUP BY cs.cohort
-ORDER BY cs.cohort;
+  ROUND(AVG(attempt_count)::numeric, 2) AS "avg check attempts until success"
+FROM attempts_per_step
+GROUP BY cohort
+ORDER BY cohort;

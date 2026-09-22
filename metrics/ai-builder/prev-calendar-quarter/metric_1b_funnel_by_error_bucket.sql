@@ -6,9 +6,18 @@
 -- Half-open [period_start, period_end). Grafana's time picker is ignored.
 -- Later stages use that cohort's current outcome, including after the quarter.
 --
--- PERFORMANCE: execution_steps is reached only through correlated LATERALs keyed
--- on execution_id. A plain JOIN lets the planner seq-scan the whole table, which
--- is what times out. Keep MATERIALIZED and the LATERALs.
+-- PERFORMANCE, do not undo any of these:
+--  * COALESCE(es.execution_id, <zero uuid>) is deliberately not indexable. It
+--    stops the planner picking one random index probe per test execution. A
+--    quarter's cohort has hundreds of thousands of them, and each probe costs
+--    about four random page reads. One parallel sequential pass over
+--    execution_steps touches roughly 8x fewer pages and reads them in physical
+--    order. IMPORTANT: this is the right trade only because the window is a
+--    whole quarter. The grafana-time-picker twin keeps the indexed join.
+--  * every CTE stays inlined (no MATERIALIZED). A CTE scan is parallel
+--    restricted, so materializing one here removes the parallel scan.
+--  * the iteration test leads with the jsonb key check. That short-circuits
+--    before ->> has to build text out of the payload.
 WITH params AS (
   SELECT
     (
@@ -19,7 +28,7 @@ WITH params AS (
       date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore')
     ) AT TIME ZONE 'Asia/Singapore' AS period_end
 ),
-pipes AS MATERIALIZED (
+pipes AS (
   SELECT
     f.id,
     f.deleted_at,
@@ -33,30 +42,27 @@ pipes AS MATERIALIZED (
   WHERE f.created_at >= p.period_start
     AND f.created_at < p.period_end
 ),
-test_executions AS MATERIALIZED (
+test_executions AS (
   SELECT p.id AS flow_id, e.id AS execution_id
   FROM pipes p
-  CROSS JOIN LATERAL (
-    SELECT e.id
-    FROM executions e
-    WHERE e.flow_id = p.id
-      AND e.test_run = true
-    OFFSET 0
-  ) e
+  JOIN executions e
+    ON e.flow_id = p.id
+   AND e.test_run = true
 ),
-failed_checks AS MATERIALIZED (
-  SELECT te.flow_id, SUM(x.n) AS failed_check_attempts
-  FROM test_executions te
-  CROSS JOIN LATERAL (
-    SELECT COUNT(*) AS n
-    FROM execution_steps es
-    WHERE es.execution_id = te.execution_id
-      AND es.status = 'failure'
-      AND COALESCE(es.metadata ->> 'iteration', '') = ''
-  ) x
+failed_checks AS (
+  SELECT te.flow_id, COUNT(*) AS failed_check_attempts
+  FROM execution_steps es
+  JOIN test_executions te
+    ON te.execution_id
+     = COALESCE(es.execution_id, '00000000-0000-0000-0000-000000000000'::uuid)
+  WHERE es.status = 'failure'
+    AND (
+      NOT (es.metadata ? 'iteration')
+      OR COALESCE(es.metadata ->> 'iteration', '') = ''
+    )
   GROUP BY te.flow_id
 ),
-step_state AS MATERIALIZED (
+step_state AS (
   SELECT
     p.id AS flow_id,
     COUNT(*) AS step_count,

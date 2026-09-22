@@ -7,15 +7,19 @@
 -- Later stages use that cohort's current outcome, including after the quarter.
 --
 -- PERFORMANCE, do not undo any of these:
---  * execution_steps is filtered by execution_id = ANY (ARRAY(...)). The array
---    makes the id set a constant, so the planner uses a Bitmap Index Scan plus a
---    Bitmap Heap Scan and reads the heap in physical page order. A plain JOIN
---    lets it seq-scan the whole table instead, which is what timed out.
---  * every trigger Check step click inserts a NEW test execution, so a pipe
---    accumulates many of them and most are empty shells. One random index probe
---    per shell is what made the per-execution LATERAL slow here. The bitmap scan
---    collapses them all into one ordered pass.
---  * test_executions stays MATERIALIZED so the id set is built exactly once.
+--  * COALESCE(es.execution_id, <zero uuid>) is deliberately not indexable. It
+--    stops the planner picking one random index probe per test execution. A
+--    quarter's cohort has hundreds of thousands of them, and each probe costs
+--    about four random page reads. One parallel sequential pass over
+--    execution_steps touches roughly 8x fewer pages and reads them in physical
+--    order. IMPORTANT: this is the right trade only because the window is a
+--    whole quarter. The grafana-time-picker twin keeps the indexed join.
+--  * every CTE stays inlined (no MATERIALIZED). A CTE scan is parallel
+--    restricted, so materializing one here removes the parallel scan.
+--  * ORDER BY sits in the outer query, over the grouped rows. Sorting inside
+--    the aggregate makes the planner sort every attempt row instead.
+--  * the iteration test leads with the jsonb key check. That short-circuits
+--    before ->> has to build text out of the payload.
 WITH params AS (
   SELECT
     (
@@ -26,7 +30,7 @@ WITH params AS (
       date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore')
     ) AT TIME ZONE 'Asia/Singapore' AS period_end
 ),
-pipes AS MATERIALIZED (
+pipes AS (
   SELECT
     f.id,
     CASE
@@ -39,35 +43,36 @@ pipes AS MATERIALIZED (
   WHERE f.created_at >= p.period_start
     AND f.created_at < p.period_end
 ),
-test_executions AS MATERIALIZED (
+test_executions AS (
   SELECT p.cohort, e.id AS execution_id
   FROM pipes p
-  CROSS JOIN LATERAL (
-    SELECT e.id
-    FROM executions e
-    WHERE e.flow_id = p.id
-      AND e.test_run = true
-    OFFSET 0
-  ) e
+  JOIN executions e
+    ON e.flow_id = p.id
+   AND e.test_run = true
 ),
-check_steps AS MATERIALIZED (
-  SELECT es.execution_id, es.app_key, es.key, es.status
+by_app_action AS (
+  SELECT
+    te.cohort,
+    es.app_key,
+    es.key,
+    COUNT(*) AS check_attempts,
+    COUNT(*) FILTER (WHERE es.status = 'failure') AS failed_attempts,
+    COUNT(*) FILTER (WHERE es.status = 'success') AS successful_attempts
   FROM execution_steps es
-  WHERE es.execution_id = ANY (ARRAY(SELECT execution_id FROM test_executions))
-    AND COALESCE(es.metadata ->> 'iteration', '') = ''
+  JOIN test_executions te
+    ON te.execution_id
+     = COALESCE(es.execution_id, '00000000-0000-0000-0000-000000000000'::uuid)
+  WHERE NOT (es.metadata ? 'iteration')
+     OR COALESCE(es.metadata ->> 'iteration', '') = ''
+  GROUP BY te.cohort, es.app_key, es.key
 )
 SELECT
-  te.cohort,
-  cs.app_key AS "app key",
-  cs.key,
-  COUNT(*) AS "check attempts",
-  COUNT(*) FILTER (WHERE cs.status = 'failure') AS "failed attempts",
-  COUNT(*) FILTER (WHERE cs.status = 'success') AS "successful attempts",
-  ROUND(
-    100.0 * COUNT(*) FILTER (WHERE cs.status = 'failure') / NULLIF(COUNT(*), 0),
-    1
-  ) AS "fail pct"
-FROM check_steps cs
-JOIN test_executions te ON te.execution_id = cs.execution_id
-GROUP BY te.cohort, cs.app_key, cs.key
-ORDER BY "failed attempts" DESC, "check attempts" DESC;
+  cohort,
+  app_key AS "app key",
+  key,
+  check_attempts AS "check attempts",
+  failed_attempts AS "failed attempts",
+  successful_attempts AS "successful attempts",
+  ROUND(100.0 * failed_attempts / NULLIF(check_attempts, 0), 1) AS "fail pct"
+FROM by_app_action
+ORDER BY failed_attempts DESC, check_attempts DESC;

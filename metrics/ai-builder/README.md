@@ -159,20 +159,81 @@ is where guidance is needed.
 Grafana's 30s timeout. The queries carry inline comments marking the parts that exist purely
 to hold a plan. Do not simplify them away.
 
-The rules that matter:
+### Pick the access path from the window width
 
-- Reach `execution_steps` only through a correlated `LATERAL` keyed on `execution_id`, or
-  through `execution_id = ANY (ARRAY(...))`. A plain `JOIN` lets the planner seq-scan the whole
-  table. The planner also mis-estimates the `COALESCE(metadata->>'iteration', '') = ''`
-  predicate badly, so it picks that plan readily.
+Panels 1b, 3a, 3b and 3c all have to read every Check step attempt made by the cohort. There
+are only two plans for that, and the right one depends on how many test executions the cohort
+owns.
+
+| Window | Access path | Cost shape |
+| --- | --- | --- |
+| Narrow (days to weeks) | indexed: `LATERAL` on `execution_id`, or `execution_id = ANY (ARRAY(...))` | one random index probe per test execution, about four page reads each |
+| A whole quarter | `COALESCE(es.execution_id, <zero uuid>) = te.execution_id` | one parallel sequential pass over `execution_steps` |
+
+The indexed path wins while the cohort is small. It collapses once the cohort is a quarter
+wide: 7,200 pipes owning 628,000 test executions cost 2.57M page touches, all random. The
+sequential path costs 235,000-341,000 page touches in physical order, an 8-11x reduction, and
+splits across parallel workers.
+
+`COALESCE(execution_id, ...)` is not an indexable expression, so it removes the indexed plan
+from the planner's choices. That is the whole point. With the plain `= es.execution_id` form
+the planner picks random probes once the id set is large, even when the array form is used.
+
+So [prev-calendar-quarter/](prev-calendar-quarter/) uses the sequential form and
+[grafana-time-picker/](grafana-time-picker/) keeps the indexed form. **If you widen the picker
+past roughly a quarter, copy the quarter twin's join form into it.**
+
+### Other rules that matter
+
 - `OFFSET 0` on a row-returning `LATERAL` blocks subquery pull-up. Without it the planner
   flattens the subquery straight back into a hash join.
 - `LIMIT 1` on an existence probe blocks pull-up into a semi-join over the whole `executions`
   table, and stops at the first matching row.
-- `MATERIALIZED` on a CTE whose columns are referenced more than once by the outer aggregate.
-  Otherwise each reference is re-evaluated per row, multiplying the probes.
+- `MATERIALIZED` on a CTE whose columns are referenced more than once. Otherwise each
+  reference is re-evaluated, multiplying the probes.
+- Conversely, **do not** use `MATERIALIZED` in the sequential-path queries. A CTE scan is
+  parallel restricted, so it removes the parallel scan. 3a is the one exception: it reads its
+  attempt rows twice, and a CTE's own scan can still run in parallel.
+- Get the first success per step from `MIN(...) GROUP BY step_id`, not a window function. The
+  window form sorts every attempt row and spills to disk.
+- Put `ORDER BY` outside the aggregate. Ordering by an aggregate makes the planner sort the
+  pre-aggregate rows.
+- Lead the iteration test with `NOT (metadata ? 'iteration')`. The key check short-circuits
+  before `->>` has to build text out of the payload.
 
-Every trigger Check step click inserts a **new** test execution and re-points earlier
-`execution_steps` to it, so a pipe accumulates many test executions and most end up empty.
-Panel runtime scales with that count, not with the size of `execution_steps`.
-[prod_sizing_check.sql](prod_sizing_check.sql) reports it.
+### Ask the DBA for `work_mem`
+
+The sequential path hashes the cohort's test executions. At the 4MB default that hash spills,
+and the spill drags the 15M-row probe side into temp files with it: 0.4-1.9GB of temp I/O per
+panel. One role setting removes all of it.
+
+```sql
+ALTER ROLE <grafana read-only role> SET work_mem = '256MB';
+```
+
+Measured on the benchmark set below, that took temp I/O to zero on all four panels.
+
+### If these time out again
+
+In order of effort:
+
+1. Raise `work_mem` as above, if it hasn't been done.
+2. Raise `max_parallel_workers_per_gather` for the same role. The sequential path scales with
+   it almost linearly.
+3. Drop the `template` cohort from these four panels. They exist to compare AI Builder against
+   the manual-editor baseline, and templates are dead weight in the scan.
+4. Bound the Check step attempts to the quarter by adding `AND e.created_at < p.period_end` to
+   `test_executions`. This changes the metric: pipes born late in the quarter lose the attempts
+   they made after it.
+5. Pre-aggregate. One nightly pass that writes attempts per `(flow_id, step_id, app_key, key)`
+   turns all four panels into small scans. This needs a writable analytics database, so it is
+   not something a read-replica can host.
+
+### Why the row counts are what they are
+
+Every trigger Check step click inserts a **new** test execution
+([test-step.ts](../../packages/backend/src/services/test-step.ts)) and re-points only the
+surviving action steps to it. Older attempts stay behind on the executions they were made on,
+so a pipe's attempt history is spread across all of its test executions. Panel runtime scales
+with total Check step clicks in the cohort, not with pipe count.
+[prod_sizing_check.sql](prod_sizing_check.sql) reports the counts that drive it.
