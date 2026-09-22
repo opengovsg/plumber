@@ -32,6 +32,43 @@ docker run --rm -it -e GOOS=darwin -u "$(id -u):$(id -g)" -v "${PWD}:/xk6" \
 - Make a formsg submissions, and copy the ecrypted data and formsg signature from the logs
 - Paste it in formsg.js and run the test
 
+### Testing M365 batching
+
+Scripts in `m365-batch/` cover the scenarios from the M365 batching test plan.
+All 4 scripts hit webhook trigger endpoints (`/webhooks/:path`), so run them
+against an environment with real M365 connections (staging), not
+`dev:sample-env` - M365 calls fail there.
+
+Every script uses `constant-arrival-rate`. Test rate defaults to 10 qps
+(override with `M365_BATCH_RATE_QPS`): the M365 rate limit is 15 qps and
+production runs at ~3.3 qps (300ms between calls), so 10 qps exercises
+sustained load without exceeding the rate limit outright.
+
+Set up pipes with a `createTableRow` action (`batch: true`) before running:
+
+| Script                  | Scenario                                                       | Required env vars                                     |
+| ------------------------ | --------------------------------------------------------------- | ------------------------------------------------------ |
+| `even_spread.js`         | Even spread of writes across 10 job ids (round-robin)            | `M365_BATCH_WEBHOOK_PATHS` (10 comma-separated paths)   |
+| `hotspot.js`             | One job id gets most writes, the rest get few                    | `M365_BATCH_HOTSPOT_PATH`, `M365_BATCH_WEBHOOK_PATHS`   |
+| `persistent_failure.js`  | One job id fails on every call, plus a healthy control job       | `M365_BATCH_FAILURE_PATH`, `M365_BATCH_WEBHOOK_PATHS`   |
+| `single_file_lock.js`    | All writes go to a single file, to stress the per-file redlock   | `M365_BATCH_SINGLE_FILE_PATH`                           |
+
+`M365_BATCH_BASE_URL` sets the target host (defaults to
+`http://localhost:3000`). `DURATION` overrides the run length (defaults to
+`5m`).
+
+```
+k6 run m365-batch/even_spread.js
+k6 run m365-batch/hotspot.js
+k6 run m365-batch/persistent_failure.js
+k6 run m365-batch/single_file_lock.js
+```
+
+k6 only checks that the webhook trigger is accepted - it can't see queue
+depth or the async write outcome. Verify the actual batching behaviour
+(round-robin fairness, no queue jam, correct locking) via Bull Board, Datadog,
+and the destination M365 tables after each run.
+
 ## Results
 
 ### After query optimization
