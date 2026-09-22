@@ -59,14 +59,6 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       .withGraphFetched({ newOwner: true })
       .throwIfNotFound()
 
-    /**
-     * Stops a recipient from replaying an old transfer id to self-assign Owner,
-     * long after the transfer was completed, rejected or cancelled.
-     */
-    if (flowTransfer.status !== 'pending') {
-      throw new Error(NOT_PENDING_ERROR_MESSAGE)
-    }
-
     // To prevent possible exploits: for approved/rejected status: check if new owner matches
     if (
       (status === 'approved' || status === 'rejected') &&
@@ -81,6 +73,14 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
       flowTransfer.oldOwnerId !== context.currentUser.id
     ) {
       throw new Error('Pipe transfer request does not belong to old owner')
+    }
+
+    /**
+     * Stops a recipient from replaying an old transfer id to self-assign Owner,
+     * long after the transfer was completed, rejected or cancelled.
+     */
+    if (flowTransfer.status !== 'pending') {
+      throw new Error(NOT_PENDING_ERROR_MESSAGE)
     }
 
     if (status === 'rejected' || status === 'cancelled') {
