@@ -196,6 +196,23 @@ retention cutoff, so the last column counts the first-timers that evidence contr
 floor on the error, not the whole of it: the count also rises for pipes whose archived rows were
 only test runs, which prove nothing about flowing.
 
+### 5. Flowed pipes by age and AI Builder
+
+Pipes with a non-test execution in the window, split by when the pipe was created and whether
+it is AI Builder. Grain is pipes, not users. `archived_execution_count` is ignored. Flowed
+means a live execution whose `created_at` sits in the window.
+
+Lives in [grafana-time-picker/](grafana-time-picker/), [prev-calendar-quarter/](prev-calendar-quarter/),
+and [current-quarter/](current-quarter/).
+
+- `pipe cohort` — `Created this quarter` if `flows.created_at >= period_start`, else
+  `Created before this quarter`.
+- `builder` — `ai builder` if config contains `aiBuilderConfig`, else `not ai builder`.
+  Templates sit in `not ai builder`.
+- `pipes` — count of distinct pipes in that cell.
+
+Four rows when every combination exists. Empty combinations are omitted.
+
 ## Performance
 
 `execution_steps` is the largest table in the database and these panels must return inside
