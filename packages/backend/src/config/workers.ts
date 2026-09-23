@@ -10,7 +10,7 @@ export const WORKER_CONCURRENCY = {
 // Maximum number of jobs the m365-excel batch worker collapses into a single
 // multi-row Graph insert. Also used as the batch queue's group concurrency cap
 // (group.concurrency === batch.size). See make-action-batch-worker.ts.
-export const M365_BATCH_SIZE = Number(process.env.M365_BATCH_SIZE ?? '10')
+export const M365_BATCH_SIZE = Number(process.env.M365_BATCH_SIZE ?? '1')
 
 if (!Number.isInteger(M365_BATCH_SIZE) || M365_BATCH_SIZE < 1) {
   throw new Error(
