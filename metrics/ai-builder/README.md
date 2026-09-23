@@ -181,7 +181,7 @@ is growing, remembering that the current window is a partial quarter.
   below. Subtract it for a floor.
 
 `metric_4_newly_activated_users_original.sql` is the same two-column query the panel started from, with only the bounds CTE changed.
-`metric_4_newly_activated_users_ai_builder.sql` attributes first-timers to the pipe that produced that first flow. Two rows: previous quarter, and current quarter to date. Same bounds as the original.
+`metric_4_newly_activated_users_ai_builder.sql` attributes those first-timers to the pipe that produced the first-ever flow. Two rows: previous quarter, and current quarter to date. Newly activated uses the same all-time `MIN` rule as metric 4. No `users` join and no `deleted_at` guard.
 
 The first two counts are exact. The split is not, because of archival. The archival task deletes
 executions older than `ARCHIVE_RETENTION_DAYS` out of Postgres, so "first ever" can only be read
