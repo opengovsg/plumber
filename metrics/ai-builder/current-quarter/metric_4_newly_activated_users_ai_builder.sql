@@ -7,6 +7,15 @@
 -- first-ever non-test execution across all pipes, all time, lands in the window.
 -- AI Builder is attributed from the pipe that produced that first execution.
 -- No deleted_at guard on executions or flows, and no users join, matching metric 4.
+--
+-- PERFORMANCE:
+--  * first_flowed_at comes from MIN(...) GROUP BY user_id, not DISTINCT ON.
+--    DISTINCT ON sorts every live execution (millions of rows) and spills to
+--    disk. The aggregate is one hash pass and no sort.
+--  * the AI Builder flag is resolved only for newly activated users, via
+--    LATERAL ... LIMIT 1 on (flow_id, test_run, created_at). That index probe
+--    stops at the first matching row per pipe, then picks the earliest pipe.
+--    Running it for every owner would multiply the probes by the full user base.
 WITH sgt AS (
   SELECT date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore') AS curr_quarter_naive
 ),
@@ -21,41 +30,48 @@ bounds AS (
   FROM sgt
 ),
 quarters AS (
-  SELECT
-    b.prev_quarter_label AS quarter,
-    b.prev_quarter_start AS period_start,
-    b.curr_quarter_start AS period_end
-  FROM bounds b
+  SELECT b.prev_quarter_label AS quarter FROM bounds b
   UNION ALL
-  SELECT
-    b.curr_quarter_label,
-    b.curr_quarter_start,
-    b.curr_quarter_end
-  FROM bounds b
+  SELECT b.curr_quarter_label FROM bounds b
 ),
--- Same grain as metric 4's first_flow: one row per owner, the earliest surviving
--- non-test execution across every pipe they own. e.id breaks timestamp ties so
--- the AI Builder flag is taken from a single pipe.
+-- Same grain as metric 4: one first-flow timestamp per owner, all time.
 first_flow AS (
-  SELECT DISTINCT ON (f.user_id)
+  SELECT
     f.user_id,
-    e.created_at AS first_flowed_at,
-    (COALESCE(f.config, '{}'::jsonb) ? 'aiBuilderConfig') AS is_ai_builder
+    MIN(e.created_at) AS first_flowed_at
   FROM executions e
   JOIN flows f ON f.id = e.flow_id
   WHERE e.test_run = false
-  ORDER BY f.user_id, e.created_at ASC, e.id ASC
+  GROUP BY f.user_id
 ),
 newly_activated AS (
   SELECT
     ff.user_id,
-    ff.is_ai_builder,
+    fp.is_ai_builder,
     CASE
       WHEN ff.first_flowed_at < b.curr_quarter_start THEN b.prev_quarter_label
       ELSE b.curr_quarter_label
     END AS quarter
   FROM first_flow ff
   CROSS JOIN bounds b
+  -- Resolve the pipe that produced that first flow, only for this quarter's
+  -- first-timers. The outer LIMIT 1 picks the earliest pipe; the inner LIMIT 1
+  -- stops at that pipe's earliest live execution.
+  CROSS JOIN LATERAL (
+    SELECT (COALESCE(f.config, '{}'::jsonb) ? 'aiBuilderConfig') AS is_ai_builder
+    FROM flows f
+    CROSS JOIN LATERAL (
+      SELECT e.created_at, e.id
+      FROM executions e
+      WHERE e.flow_id = f.id
+        AND e.test_run = false
+      ORDER BY e.created_at ASC, e.id ASC
+      LIMIT 1
+    ) e
+    WHERE f.user_id = ff.user_id
+    ORDER BY e.created_at ASC, e.id ASC
+    LIMIT 1
+  ) fp
   WHERE ff.first_flowed_at >= b.prev_quarter_start
     AND ff.first_flowed_at < b.curr_quarter_end
 )
