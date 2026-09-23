@@ -270,7 +270,7 @@ export function createMcpBridgeTools(
 
     create_step: tool({
       description:
-        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.',
+        "Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nTo route this step into an MRF approval step's reject branch, pass approval_branch with step_id set to that approval step's own id (from get_flow, where parameters.mrf.approvalField is true). Omit approval_branch for the default (approve/continue) path. For a second or later step in the same reject branch, previousStepId is the last step you created in that branch, and approval_branch must repeat the exact same step_id — not the approval step's id again.",
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe to add the step to'),
         app_key: z.string().describe('App key (e.g. "slack")'),
@@ -282,12 +282,22 @@ export function createMcpBridgeTools(
           .describe(
             "ID of the step after which to insert. Pass the last step's id to append at the end.",
           ),
+        approval_branch: z
+          .object({
+            branch: z.literal('reject'),
+            step_id: z.uuid(),
+          })
+          .optional()
+          .describe(
+            'Route this step into the reject branch of the MRF approval step at step_id. Omit to attach to the default (approve/continue) path.',
+          ),
       }),
       execute: async ({
         pipe_id,
         app_key,
         action_key,
         previous_step_id,
+        approval_branch,
       }): Promise<Step> => {
         const step = await createStepService({
           user,
@@ -295,6 +305,12 @@ export function createMcpBridgeTools(
           appKey: app_key,
           key: action_key,
           previousStepId: previous_step_id,
+          approvalBranch: approval_branch
+            ? {
+                branch: approval_branch.branch,
+                stepId: approval_branch.step_id,
+              }
+            : undefined,
         })
         onPipeChange?.(pipe_id)
         return step

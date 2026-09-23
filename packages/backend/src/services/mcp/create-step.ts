@@ -1,9 +1,12 @@
-import { raw } from 'objection'
-
-import { getStepVersion } from '@/helpers/get-step-version'
 import App from '@/models/app'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { createActionStepCore } from '@/services/create-action-step'
+
+export interface CreateStepApprovalBranchInput {
+  branch: 'reject'
+  stepId: string
+}
 
 export interface CreateStepInput {
   user: User
@@ -11,6 +14,7 @@ export interface CreateStepInput {
   appKey: string
   key: string
   previousStepId: string
+  approvalBranch?: CreateStepApprovalBranchInput
 }
 
 export async function createStepService({
@@ -19,6 +23,7 @@ export async function createStepService({
   appKey,
   key,
   previousStepId,
+  approvalBranch,
 }: CreateStepInput): Promise<Step> {
   const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
 
@@ -26,6 +31,8 @@ export async function createStepService({
     throw new Error('No such trigger or action')
   }
 
+  // Hidden actions (e.g. FormSG's mrfSubmission) are system-managed and can
+  // never be created directly by the AI Builder, approval-branch input or not.
   if (triggerOrAction.hiddenFromUser) {
     throw new Error('Action can only be created by system')
   }
@@ -49,22 +56,20 @@ export async function createStepService({
       throw new Error('Previous step not found')
     }
 
-    const newStepPosition = previousStep.position + 1
-
-    await flow
-      .$relatedQuery('steps', trx)
-      .patch({ position: raw('position + 1') })
-      .where('position', '>=', newStepPosition)
-
-    const version = getStepVersion(appKey, key)
-
-    const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
-      key,
+    const step = await createActionStepCore({
+      trx,
+      flow,
+      previousStep,
       appKey,
-      type: 'action',
-      position: newStepPosition,
-      parameters: {},
-      version,
+      key,
+      config: approvalBranch
+        ? {
+            approval: {
+              branch: approvalBranch.branch,
+              stepId: approvalBranch.stepId,
+            },
+          }
+        : {},
     })
 
     await flow.patchLastUpdated({

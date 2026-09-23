@@ -1,7 +1,8 @@
 import { IStep, IStepConfig } from '@plumber/types'
 
-import get from 'lodash.get'
+import type { Transaction } from 'objection'
 
+import { isMrfApprovalStep } from '@/apps/formsg/common/is-mrf-approval-step'
 import { stepApprovalConfigSchema } from '@/apps/formsg/common/types'
 import Step from '@/models/step'
 
@@ -10,6 +11,7 @@ import logger from './logger'
 export async function validateApprovalConfig(
   config: IStepConfig,
   prevStep: IStep,
+  trx?: Transaction,
 ): Promise<
   | {
       isApprovalConfigValid: true
@@ -29,11 +31,7 @@ export async function validateApprovalConfig(
     }
   }
 
-  const isPreviousStepMrfApprovalStep =
-    prevStep.appKey === 'formsg' &&
-    prevStep.key === 'mrfSubmission' &&
-    // if no approval field, it's just a normal mrf step
-    !!get(prevStep.parameters, 'mrf.approvalField')
+  const isPreviousStepMrfApprovalStep = isMrfApprovalStep(prevStep)
 
   /**
    * Case 2: Prev step has no approval config and is not an mrf approval step,
@@ -105,7 +103,7 @@ export async function validateApprovalConfig(
     }
     // For reject branch, find the end of the approval branch and add one to that step
     // first find the next mrf step (if any)
-    const nextMrfStep = await Step.query()
+    const nextMrfStep = await Step.query(trx)
       .where('flow_id', prevStep.flowId)
       .andWhere('type', 'action')
       .andWhere('key', 'mrfSubmission')
@@ -113,7 +111,7 @@ export async function validateApprovalConfig(
       .orderBy('position', 'asc')
       .first()
     // then find the last step in the approve branch (if any)
-    const lastStepOfApproveFlowQuery = Step.query()
+    const lastStepOfApproveFlowQuery = Step.query(trx)
       .where('flow_id', prevStep.flowId)
       .andWhere('position', '>', prevStep.position)
       .andWhereRaw("config -> 'approval' IS NULL")
