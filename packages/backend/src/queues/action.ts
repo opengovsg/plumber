@@ -8,10 +8,8 @@ import {
 
 import apps from '@/apps'
 import {
-  M365_EXCEL_BATCH_ROLLOUT_ALL,
   M365_EXCEL_BATCH_ROLLOUT_FLAG,
-  M365_EXCEL_BATCH_ROLLOUT_OFF,
-  M365_EXCEL_BATCH_ROLLOUT_OGP,
+  type M365ExcelBatchRolloutState,
 } from '@/config/flags'
 import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -113,23 +111,41 @@ for (const [appKey, app] of Object.entries(apps)) {
  * only for m365-excel's createTableRow, the only batch action today), so 'all'
  * and 'off' - the expected steady states - never pay for it.
  *
- * IMPORTANT: unlike a plain flag-value mismatch (which getLdFlagValue itself
- * falls back on), a LaunchDarkly client/network failure rejects the promise.
- * Falling back to 'off' here keeps that from failing every action enqueue,
- * consistent with the flag's own fallback for "can't reach LaunchDarkly".
+ * IMPORTANT: the whole body is wrapped in try/catch, since a LaunchDarkly
+ * client/network failure (unlike a plain flag-value mismatch, which
+ * getLdFlagValue itself falls back on) or a transient DB error would
+ * otherwise reject and fail every action enqueue. Falling back to 'off'
+ * (false) here matches the flag's own fallback for "can't reach
+ * LaunchDarkly".
  */
 async function shouldRouteToBatchQueue(
   appKey: string,
   actionKey: string,
   jobData: IActionJobData,
 ): Promise<boolean> {
-  let rollout: string
   try {
-    rollout = await getLdFlagValue<string>(
+    const rollout = await getLdFlagValue<M365ExcelBatchRolloutState>(
       M365_EXCEL_BATCH_ROLLOUT_FLAG,
       null,
-      M365_EXCEL_BATCH_ROLLOUT_OFF,
+      'off',
     )
+
+    if (rollout === 'all') {
+      return true
+    }
+
+    if (
+      rollout === 'ogp' &&
+      appKey === 'm365-excel' &&
+      actionKey === 'createTableRow'
+    ) {
+      const flow = await Flow.query()
+        .findById(jobData.flowId)
+        .withGraphFetched('user')
+      return flow?.user?.email.toLowerCase().endsWith('@open.gov.sg') ?? false
+    }
+
+    return false
   } catch (error) {
     logger.error({
       event: 'm365-excel-batch-rollout-flag-lookup-failed',
@@ -137,27 +153,6 @@ async function shouldRouteToBatchQueue(
     })
     return false
   }
-
-  if (rollout === M365_EXCEL_BATCH_ROLLOUT_OFF) {
-    return false
-  }
-
-  if (rollout === M365_EXCEL_BATCH_ROLLOUT_ALL) {
-    return true
-  }
-
-  if (
-    rollout === M365_EXCEL_BATCH_ROLLOUT_OGP &&
-    appKey === 'm365-excel' &&
-    actionKey === 'createTableRow'
-  ) {
-    const flow = await Flow.query()
-      .findById(jobData.flowId)
-      .withGraphFetched('user')
-    return flow?.user?.email.toLowerCase().endsWith('@open.gov.sg') ?? false
-  }
-
-  return false
 }
 
 interface EnqueueActionJobParams {

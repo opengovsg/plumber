@@ -23,9 +23,7 @@ export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
  * batching.
  */
 export const M365_EXCEL_BATCH_ROLLOUT_FLAG = 'm365-excel-batch-rollout'
-export const M365_EXCEL_BATCH_ROLLOUT_OGP = 'ogp'
-export const M365_EXCEL_BATCH_ROLLOUT_ALL = 'all'
-export const M365_EXCEL_BATCH_ROLLOUT_OFF = 'off'
+export type M365ExcelBatchRolloutState = 'ogp' | 'all' | 'off'
 
 /**
  * App flags regex
