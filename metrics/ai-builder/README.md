@@ -202,16 +202,17 @@ Pipes with a non-test execution in the window, split by when the pipe was create
 it is AI Builder. Grain is pipes, not users. `archived_execution_count` is ignored. Flowed
 means a live execution whose `created_at` sits in the window.
 
+Grafana: Pie chart. Query format Table. Label field `slice`. Value field `pipes`. Show All values.
+
 Lives in [grafana-time-picker/](grafana-time-picker/), [prev-calendar-quarter/](prev-calendar-quarter/),
 and [current-quarter/](current-quarter/).
 
-- `pipe cohort` — `Created this quarter` if `flows.created_at >= period_start`, else
-  `Created before this quarter`.
-- `builder` — `ai builder` if config contains `aiBuilderConfig`, else `not ai builder`.
+- `slice` — `Created this quarter` or `Created before this quarter`, then `ai builder` or
+  `not ai builder`. `Created this quarter` means `flows.created_at >= period_start`.
   Templates sit in `not ai builder`.
-- `pipes` — count of distinct pipes in that cell.
+- `pipes` — count of distinct pipes in that slice.
 
-Four rows when every combination exists. Empty combinations are omitted.
+Up to four rows. Empty combinations are omitted so the pie has no zero slices.
 
 ## Performance
 

@@ -1,4 +1,5 @@
--- Grafana: query format Table. Bar chart, X-axis = pipe cohort.
+-- Grafana: Pie chart. Query format Table.
+-- Label field = slice. Value field = pipes. Show = All values.
 -- Time picker filters by execution time (flowed in the window).
 -- Pipes are then tagged by when they were created, and by AI Builder.
 -- Templates sit in not ai builder.
@@ -32,8 +33,7 @@ flowed_pipes AS (
   )
 )
 SELECT
-  pipe_cohort AS "pipe cohort",
-  builder,
+  pipe_cohort || ', ' || builder AS slice,
   COUNT(*) AS pipes
 FROM flowed_pipes
 GROUP BY pipe_cohort, builder

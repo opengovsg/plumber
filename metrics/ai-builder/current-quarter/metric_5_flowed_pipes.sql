@@ -1,4 +1,5 @@
--- Grafana: query format Table. Bar chart, X-axis = pipe cohort.
+-- Grafana: Pie chart. Query format Table.
+-- Label field = slice. Value field = pipes. Show = All values.
 -- Window is the current calendar quarter to date in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [quarter start, now). Grafana's time picker is ignored.
@@ -36,8 +37,7 @@ flowed_pipes AS (
   )
 )
 SELECT
-  pipe_cohort AS "pipe cohort",
-  builder,
+  pipe_cohort || ', ' || builder AS slice,
   COUNT(*) AS pipes
 FROM flowed_pipes
 GROUP BY pipe_cohort, builder
