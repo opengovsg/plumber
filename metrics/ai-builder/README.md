@@ -11,11 +11,14 @@ executed by the app and nothing imports them.
   (`$__timeFrom()` / `$__timeTo()`).
 - [prev-calendar-quarter/](prev-calendar-quarter/) — window is always the previous calendar
   quarter in SGT. The time picker is ignored.
+- [current-quarter/](current-quarter/) — window is always the current calendar quarter to date
+  in SGT, `[quarter start, now)`. The time picker is ignored.
 - [prod_sizing_check.sql](prod_sizing_check.sql) — reports the cardinalities that drive panel
   runtime. Run it before debugging a slow panel.
 
-Same filenames in both directories map to the same panel. Only the `params` CTE differs.
-`metric_0_overview_qoq.sql` is identical in both folders. It ignores the time picker.
+The folder sets the window, the filename sets the panel. Same filename across folders means the
+same panel, and only the bounds CTE differs. `metric_0_overview_qoq.sql` is identical in both
+quarter folders because it reads both quarters itself. It ignores the time picker.
 Grafana output aliases use spaces (no underscores) so panel titles wrap.
 
 ## How terms map to tables
@@ -48,6 +51,11 @@ These queries deliberately relax the usual `deleted_at IS NULL` guard in two pla
 
 `steps` keeps the guard for live pipes, and relaxes it for deleted pipes so their steps still
 count.
+
+`executions` has no guard either. Panel 4 needs this: it reads a user's first flow ever, and
+dropping soft-deleted executions would hide early history and push a long-time user into the
+first-timer bucket. The same reasoning keeps deleted pipes in that panel. A pipe that has since
+been deleted still proves the user flowed back then.
 
 For-each iteration rows (`metadata.iteration`) are excluded, so one Check step click is not
 counted many times.
@@ -152,6 +160,33 @@ shrink the gap between `0 errors` and `10+ errors`.
 
 One row per cohort, `app key` and `key`. High `fail pct` together with high `failed attempts`
 is where guidance is needed.
+
+### 4. Newly activated users
+
+Splits the users who flowed in the window into first-timers and returners. Owners only
+(`flows.user_id`), not collaborators. Not split by cohort: a user is not an AI Builder user or a
+manual-editor user, they are one person who may have built both ways.
+
+Lives in [prev-calendar-quarter/](prev-calendar-quarter/) and
+[current-quarter/](current-quarter/). Read them side by side to see whether first-time activation
+is growing, remembering that the current window is a partial quarter.
+
+- `window` — label, e.g. `Q2 2026` or `Q3 2026 to 23 Sep`.
+- `Users who flowed this quarter` — owners with a non-test execution in the window. The
+  denominator, and the glossary's "active user" for the period.
+- `Users who flowed first pipe this quarter` — of those, the ones whose **first ever** non-test
+  execution across all their pipes also sits in the window. This is the activation number.
+- `Users who had pipes that flowed before this quarter` — the returning remainder.
+- `First-time users with archived executions` — the error bar on the activation number, see
+  below. Subtract it for a floor.
+
+The first two counts are exact. The split is not, because of archival. The archival task deletes
+executions older than `ARCHIVE_RETENTION_DAYS` out of Postgres, so "first ever" can only be read
+from surviving rows, and a long-time user whose early executions were purged looks brand new.
+Any pipe of theirs carrying `archived_execution_count > 0` proves activity older than the
+retention cutoff, so the last column counts the first-timers that evidence contradicts. It is a
+floor on the error, not the whole of it: the count also rises for pipes whose archived rows were
+only test runs, which prove nothing about flowing.
 
 ## Performance
 
