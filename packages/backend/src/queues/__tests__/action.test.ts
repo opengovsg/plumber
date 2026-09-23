@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => ({
   })),
   appGetGroupConfig: vi.fn(async () => ({ id: 'file-1' })),
   batchGetGroupConfig: vi.fn(async () => ({ id: 'file-1::table-1' })),
-  // Defaults to 'all', matching the flag's fallback value.
+  // Defaults to 'all' (today's shipped behaviour); tests override per case.
   getLdFlagValue: vi.fn(async () => 'all'),
   // Resolves the flow lookup used by the 'ogp' rollout state.
   flowWithGraphFetched: vi.fn(async () => ({
@@ -225,7 +225,7 @@ describe('enqueueActionJob routing', () => {
     expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
       'm365-excel-batch-rollout',
       null,
-      'all',
+      'off',
     )
     expect(appActionQueues['app-with-batch'].add).toHaveBeenCalledWith(
       'job-1',
@@ -311,7 +311,7 @@ describe('enqueueActionJob routing', () => {
     expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
   })
 
-  it('falls back to the batch queue when the rollout flag lookup rejects', async () => {
+  it('falls back to the per-app queue when the rollout flag lookup rejects', async () => {
     mocks.getLdFlagValue.mockRejectedValue(new Error('Authentication failed'))
 
     await enqueueActionJob({
@@ -322,15 +322,15 @@ describe('enqueueActionJob routing', () => {
       jobOptions,
     })
 
-    expect(actionBatchQueues['app-with-batch'].add).toHaveBeenCalledWith(
+    expect(appActionQueues['app-with-batch'].add).toHaveBeenCalledWith(
       'job-1',
       jobData,
       {
         ...jobOptions,
-        group: { id: 'file-1::table-1' },
+        group: { id: 'file-1' },
       },
     )
-    expect(appActionQueues['app-with-batch'].add).not.toHaveBeenCalled()
+    expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
   })
 
   it('routes a non-batch action of the same app to the per-app queue', async () => {

@@ -18,7 +18,9 @@ export const BLOCK_NEW_LOGINS_FLAG = 'block-new-logins'
  *   queue (internal dogfooding).
  * - 'all': every flow is routed to the batch queue (general availability).
  * - 'off': kill switch; falls back to the per-app queue for everyone.
- * Defaults to 'all', matching the already-shipped (unflagged) behaviour.
+ * Defaults to 'off' when the flag can't be evaluated (missing, or
+ * LaunchDarkly unreachable), so an LD outage can't silently re-enable
+ * batching.
  */
 export const M365_EXCEL_BATCH_ROLLOUT_FLAG = 'm365-excel-batch-rollout'
 export const M365_EXCEL_BATCH_ROLLOUT_OGP = 'ogp'
