@@ -8,7 +8,9 @@ import User from '@/models/user'
 
 import {
   getAdminTokenUser,
+  getLoggedInUser,
   getOrCreateUser,
+  invalidateAuthCookie,
   parseAdminToken,
   sendOnboardingEmail,
   updateLastLogin,
@@ -29,6 +31,10 @@ const mocks = vi.hoisted(() => ({
     where: mockPatchWhere,
   })),
   findById: vi.fn(),
+  redisExists: vi.fn(),
+  redisSet: vi.fn(),
+  createRedisClient: vi.fn(),
+  loggerError: vi.fn(),
 }))
 
 vi.mock('@/models/user', () => ({
@@ -53,6 +59,22 @@ vi.mock('@/config/app', () => ({
     isProd: false,
     onboardingEmailWebhookUrl: 'https://test-webhook.com',
     adminJwtSecretKey: 'test-secret-key',
+    sessionSecretKey: 'test-session-secret',
+  },
+}))
+vi.mock('@/config/redis', () => ({
+  createRedisClient: mocks.createRedisClient.mockReturnValue({
+    exists: mocks.redisExists,
+    set: mocks.redisSet,
+  }),
+  REDIS_DB_INDEX: {
+    AUTH_TOKEN_DENYLIST: 'auth-token-denylist',
+  },
+}))
+vi.mock('../logger', () => ({
+  default: {
+    info: vi.fn(),
+    error: mocks.loggerError,
   },
 }))
 vi.mock('../launch-darkly', () => ({
@@ -353,6 +375,126 @@ describe('Auth helpers', () => {
 
       await sendOnboardingEmail(mockUser)
       expect(axios.post).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('getLoggedInUser', () => {
+    const signToken = (payload: object, options?: jwt.SignOptions) =>
+      jwt.sign(payload, appConfig.sessionSecretKey, options)
+
+    it('returns null when there is no auth cookie', async () => {
+      const req = { cookies: {} } as any
+
+      const result = await getLoggedInUser(req)
+
+      expect(result).toBeNull()
+      expect(mocks.findById).not.toHaveBeenCalled()
+    })
+
+    it('returns the user for a valid, non-revoked token', async () => {
+      const token = signToken({ userId: 'user-1' })
+      const req = { cookies: { 'plumber.sid': token } } as any
+      mocks.redisExists.mockResolvedValueOnce(0)
+      mocks.findById.mockResolvedValueOnce({ id: 'user-1' })
+
+      const result = await getLoggedInUser(req)
+
+      expect(mocks.findById).toHaveBeenCalledWith('user-1')
+      expect(result).toEqual({ id: 'user-1' })
+    })
+
+    it('returns null for a token revoked by a prior logout', async () => {
+      const token = signToken({ userId: 'user-1' })
+      const req = { cookies: { 'plumber.sid': token } } as any
+      mocks.redisExists.mockResolvedValueOnce(1)
+
+      const result = await getLoggedInUser(req)
+
+      expect(result).toBeNull()
+      expect(mocks.findById).not.toHaveBeenCalled()
+      // Same namespaced key scheme as invalidateAuthCookie's write, or a
+      // logout's denylist entry would never be found on lookup.
+      expect(mocks.redisExists).toHaveBeenCalledWith(
+        expect.stringMatching(/^auth-deny:/),
+      )
+    })
+
+    it('fails open and logs when the denylist lookup errors', async () => {
+      const token = signToken({ userId: 'user-1' })
+      const req = { cookies: { 'plumber.sid': token } } as any
+      mocks.redisExists.mockRejectedValueOnce(new Error('redis down'))
+      mocks.findById.mockResolvedValueOnce({ id: 'user-1' })
+
+      const result = await getLoggedInUser(req)
+
+      expect(result).toEqual({ id: 'user-1' })
+      expect(mocks.loggerError).toHaveBeenCalledWith(
+        'Failed to check auth token denylist',
+        expect.objectContaining({
+          event: 'auth-token-denylist-check-error',
+        }),
+      )
+    })
+  })
+
+  describe('invalidateAuthCookie', () => {
+    const signToken = (payload: object, options?: jwt.SignOptions) =>
+      jwt.sign(payload, appConfig.sessionSecretKey, options)
+
+    it('does nothing when there is no auth cookie', async () => {
+      const req = { cookies: {} } as any
+
+      await invalidateAuthCookie(req)
+
+      expect(mocks.redisSet).not.toHaveBeenCalled()
+    })
+
+    it('denylists a namespaced hash of the token, not the raw token, with a TTL matching its remaining lifetime', async () => {
+      const token = signToken({ userId: 'user-1' }, { expiresIn: 120 })
+      const req = { cookies: { 'plumber.sid': token } } as any
+
+      await invalidateAuthCookie(req)
+
+      expect(mocks.redisSet).toHaveBeenCalledOnce()
+      const [key, value, mode, ttl] = mocks.redisSet.mock.calls[0]
+      expect(key).not.toBe(token)
+      expect(key).toMatch(/^auth-deny:/)
+      expect(value).toBe('1')
+      expect(mode).toBe('EX')
+      expect(ttl).toBeGreaterThan(0)
+      expect(ttl).toBeLessThanOrEqual(120)
+    })
+
+    it('does not attempt to denylist an already-expired token', async () => {
+      const token = signToken({ userId: 'user-1' }, { expiresIn: -10 })
+      const req = { cookies: { 'plumber.sid': token } } as any
+
+      await invalidateAuthCookie(req)
+
+      expect(mocks.redisSet).not.toHaveBeenCalled()
+    })
+
+    it('does not attempt to denylist a token with an invalid signature', async () => {
+      const token = jwt.sign({ userId: 'user-1' }, 'a-different-secret', {
+        expiresIn: 120,
+      })
+      const req = { cookies: { 'plumber.sid': token } } as any
+
+      await invalidateAuthCookie(req)
+
+      expect(mocks.redisSet).not.toHaveBeenCalled()
+    })
+
+    it('propagates the error when the denylist write fails, so the caller does not report success', async () => {
+      const token = signToken({ userId: 'user-1' }, { expiresIn: 120 })
+      const req = { cookies: { 'plumber.sid': token } } as any
+      mocks.redisSet.mockRejectedValueOnce(new Error('redis down'))
+
+      await expect(invalidateAuthCookie(req)).rejects.toThrow('redis down')
+      expect(mocks.loggerError).toHaveBeenCalledWith(
+        'Failed to revoke auth token on logout',
+        expect.objectContaining({ event: 'auth-token-revoke-error' }),
+      )
     })
   })
 })

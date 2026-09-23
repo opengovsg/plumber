@@ -11,6 +11,7 @@ export const REDIS_DB_INDEX = {
   RATE_LIMIT: 1,
   PIPE_ERRORS: 2,
   APP_DATA: 3,
+  AUTH_TOKEN_DENYLIST: 4,
 }
 
 function reconnectOnError(err: Error) {
@@ -52,7 +53,15 @@ const UNIT_TEST_CLUSTER_OPTIONS = {
  * it automatically uses the database index 0.
  * We should be using prefixes instead.
  */
-export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) => {
+// Extra per-client overrides (e.g. `commandTimeout`) layered on top of the
+// shared defaults below. Most callers (queues, rate limiters) rely on
+// `maxRetriesPerRequest: null` blocking forever, so this only opts a specific
+// client out where waiting forever is the wrong tradeoff (e.g. an
+// auth-critical read on the request path).
+export const createRedisClient = (
+  db = REDIS_DB_INDEX.JOBS,
+  extraOptions: Partial<RedisOptions> = {},
+) => {
   const client = appConfig.redisClusterMode
     ? new ioRedis.Cluster(
         [
@@ -70,6 +79,7 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) => {
             password: appConfig.redisPassword,
             db,
             reconnectOnError,
+            ...extraOptions,
             ...(isUnitTestRun ? UNIT_TEST_REDIS_OPTIONS : {}),
           },
         },
@@ -84,6 +94,7 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) => {
         maxRetriesPerRequest: null, // commands wait forever until the connection is alive again.
         db,
         reconnectOnError,
+        ...extraOptions,
         ...(isUnitTestRun ? UNIT_TEST_REDIS_OPTIONS : {}),
       })
 
