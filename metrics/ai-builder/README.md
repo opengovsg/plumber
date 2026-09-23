@@ -18,7 +18,7 @@ executed by the app and nothing imports them.
 
 The folder sets the window, the filename sets the panel. Same filename across folders means the
 same panel, and only the bounds CTE differs. Calendar-quarter `metric_0_overview.sql` is identical
-in both quarter folders because it reads both quarters itself. It ignores the time picker.
+in both quarter folders because it returns both quarters as two rows. It ignores the time picker.
 Grafana output aliases use spaces (no underscores) so panel titles wrap.
 
 ## How terms map to tables
@@ -64,41 +64,24 @@ counted many times.
 
 ### 0. Overview
 
-One-row Stat panel. The calendar-quarter files are one query: current QTD values plus change
-versus the previous full quarter. Grafana's time picker is ignored. The picker file is still
-one window (`$__timeFrom()` / `$__timeTo()`) with no QoQ columns.
+Two-row Table panel for the calendar-quarter files: previous full quarter, then current
+quarter to date. Grafana's time picker is ignored. The picker file is still one window
+(`$__timeFrom()` / `$__timeTo()`).
 
-Aliases are quoted with spaces (no underscores) so Grafana Stat titles wrap.
+Aliases are quoted with spaces (no underscores) so Grafana titles wrap.
 
-Calendar-quarter columns (QTD value, then change):
-
-- `window` — label, e.g. `Q3 2026 to 21 Sep vs Q2 2026`.
-- `ai builder pipes created` / `ai builder pipes created qoq pct`
-- `ai builder pipes flowed` / `ai builder pipes flowed qoq pct`
-- `ai builder pipes flowed pct` / `ai builder pipes flowed pct qoq pp`
-- `users who created ai builder pipes` / `users who created ai builder pipes qoq pct`
-- `users who created ai builder pipes that flowed` / `... qoq pct`
-- `ai builder users with first ever flow` / `ai builder users with first ever flow qoq pct`
-- `ai builder share of new pipes` / `ai builder share of new pipes qoq pp`
-- `ai builder share of flowed pipes` / `ai builder share of flowed pipes qoq pp`
-- `manual editor pipes created` / `manual editor pipes created qoq pct`
-- `manual editor pipes flowed` / `manual editor pipes flowed qoq pct`
-- `manual editor pipes flowed pct` / `manual editor pipes flowed pct qoq pp`
-
-`qoq pct` is `(qtd - prev) / prev * 100`. It mixes a partial quarter with a full quarter, so counts
-run negative until the current quarter catches up. Rates use `qoq pp` (percentage points).
-
-Birth-cohort meaning of each base stat:
-
-- `ai builder pipes created` — pipes born in the window whose config contains `aiBuilderConfig`. Includes deleted pipes.
+- `window` — `Q2 2026` on the previous-quarter row, `Q3 2026 to 23 Sep` on the QTD row.
+- `ai builder pipes created` — pipes born in that row's window whose config contains `aiBuilderConfig`. Includes deleted pipes.
 - `ai builder pipes flowed` — those pipes with a live (non-test) execution, or `archived_execution_count > 0`. Ignores `flows.active`.
 - `ai builder pipes flowed pct` — headline conversion. Compare to `manual editor pipes flowed pct`.
 - `users who created ai builder pipes` — unique owners of those pipes.
 - `users who created ai builder pipes that flowed` — unique owners of a flowed AI Builder pipe in the cohort.
-- `ai builder users with first ever flow` — of those, the ones whose first ever non-test execution (all pipes, all time) sits in the window. Same first-ever rule as panel 4.
-- `ai builder share of new pipes` — AI Builder share of all pipes born in the window, including templates.
-- `ai builder share of flowed pipes` — AI Builder share of all flowed pipes in the cohort, including templates.
+- `ai builder users with first ever flow` — of those, the ones whose first ever non-test execution (all pipes, all time) sits in that row's window. Same first-ever rule as panel 4.
+- `ai builder share of new pipes` — AI Builder share of all pipes born in that row's window, including templates.
+- `ai builder share of flowed pipes` — AI Builder share of all flowed pipes in that cohort, including templates.
 - `manual editor pipes created` / `manual editor pipes flowed` / `manual editor pipes flowed pct` — same-window baseline. Excludes templates.
+
+The current row is a partial quarter. Read it next to the previous row with that in mind.
 
 Not in this query: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c). `ran successfully` lives on panel 1. Publish state (`flows.active`) is not a column.
 
