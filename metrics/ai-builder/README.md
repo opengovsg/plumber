@@ -85,22 +85,31 @@ Not in this query, already covered elsewhere: median time-to-configure (panel 2)
 
 ### 0b. Overview QoQ
 
-One-row Stat, six headline numbers. Grafana time picker is ignored. Calendar quarters in SGT.
+One-row Stat. Grafana time picker is ignored. Calendar quarters in SGT.
 
-Compares **current quarter-to-date** with the **previous full quarter**. Same birth-cohort rules as
-panel 0. Values shown are quarter-to-date. The previous quarter appears only inside the change.
+Combines the previous-quarter and current-QTD overview queries. Same eleven stats as
+panel 0. Values shown are quarter-to-date. Each count has a `qoq pct`. Each rate has a
+`qoq pp` (percentage points). The previous quarter appears only inside the change.
 
 - `window` — label, e.g. `Q3 2026 to 21 Sep vs Q2 2026`.
-- `ai builder created` / `ai builder created qoq pct`
-- `ai builder flowed` / `ai builder flowed qoq pct`
-- `manual created` / `manual created qoq pct`
-- `manual flowed` / `manual flowed qoq pct`
-- `total new pipes` / `total new pipes qoq pct` — every cohort, including templates.
+- `ai builder pipes created` / `ai builder pipes created qoq pct`
+- `ai builder pipes flowed` / `ai builder pipes flowed qoq pct`
+- `ai builder pipes flowed pct` / `ai builder pipes flowed pct qoq pp`
+- `users who created ai builder pipes` / `users who created ai builder pipes qoq pct`
+- `users who created ai builder pipes that flowed` / `... qoq pct`
+- `ai builder users with first ever flow` / `ai builder users with first ever flow qoq pct`
 - `ai builder share of new pipes` / `ai builder share of new pipes qoq pp`
+- `ai builder share of flowed pipes` / `ai builder share of flowed pipes qoq pp`
+- `manual editor pipes created` / `manual editor pipes created qoq pct`
+- `manual editor pipes flowed` / `manual editor pipes flowed qoq pct`
+- `manual editor pipes flowed pct` / `manual editor pipes flowed pct qoq pp`
 
 `qoq pct` is `(qtd - prev) / prev * 100`. It mixes a partial quarter with a full quarter, so counts
-run negative until the current quarter catches up. The share uses `qoq pp` (percentage points),
+run negative until the current quarter catches up. Rates use `qoq pp` (percentage points),
 which is length-fair.
+
+Identical copies live in [prev-calendar-quarter/](prev-calendar-quarter/),
+[current-quarter/](current-quarter/), and [grafana-time-picker/](grafana-time-picker/).
 
 ### 1. Configuration funnel
 
