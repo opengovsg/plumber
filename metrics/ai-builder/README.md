@@ -163,24 +163,28 @@ is where guidance is needed.
 ### 4. Newly activated users
 
 Splits the users who flowed in the window into first-timers and returners. Owners only
-(`flows.user_id`), not collaborators. Not split by cohort: a user is not an AI Builder user or a
-manual-editor user, they are one person who may have built both ways.
+(`flows.user_id`), not collaborators. A user is not an AI Builder user or a manual-editor
+user. They are one person who may have built both ways. The first-timer split below tags
+the **pipe of that first-ever flow**, not every pipe they own.
 
 Lives in [prev-calendar-quarter/](prev-calendar-quarter/) and
 [current-quarter/](current-quarter/). Read them side by side to see whether first-time activation
 is growing, remembering that the current window is a partial quarter.
 
-- `window` — label, e.g. `Q2 2026` or `Q3 2026 to 23 Sep`.
+- `window` — label, e.g. `Q2 2026` or `Q3 2026 to 23 Sep`. On the optimized file only.
 - `Users who flowed this quarter` — owners with a non-test execution in the window. The
-  denominator, and the glossary's "active user" for the period.
+  denominator, and the glossary's "active user" for the period. On the optimized file only.
 - `Users who flowed first pipe this quarter` — of those, the ones whose **first ever** non-test
   execution across all their pipes also sits in the window. This is the activation number.
+- `First pipe this quarter with ai builder` / `First pipe this quarter not ai builder` — that
+  activation number split by whether the first-ever flow's pipe has `aiBuilderConfig`. On
+  `metric_4_newly_activated_users_original.sql`. The two columns sum to the activation number.
 - `Users who had pipes that flowed before this quarter` — the returning remainder.
 - `First-time users with archived executions` — the error bar on the activation number, see
   below. Subtract it for a floor.
 
-`metric_4_newly_activated_users_original.sql` is the same two-column query the panel started from, with only the bounds CTE changed.
-`metric_4_newly_activated_users_ai_builder.sql` attributes those first-timers to the pipe that produced the first-ever flow. Two rows: previous quarter, and current quarter to date. Newly activated uses the same all-time `MIN` rule as metric 4. No `users` join and no `deleted_at` guard. The AI Builder flag is resolved with a per-pipe `LATERAL ... LIMIT 1` only for newly activated users, so the query does not sort every live execution.
+`metric_4_newly_activated_users_original.sql` is that panel plus a split of the first-timer count. AI Builder vs not is taken from the pipe that produced the first-ever flow, not from any later pipe. The two split columns sum to `Users who flowed first pipe this quarter`. Templates sit in the not-AI-builder bucket.
+`metric_4_newly_activated_users_ai_builder.sql` is the same attribution as a two-row bar (previous quarter and current quarter to date). Newly activated uses the same all-time `MIN` rule as metric 4. No `users` join and no `deleted_at` guard. The AI Builder flag is resolved with a per-pipe `LATERAL ... LIMIT 1` only for newly activated users, so the query does not sort every live execution.
 
 The first two counts are exact. The split is not, because of archival. The archival task deletes
 executions older than `ARCHIVE_RETENTION_DAYS` out of Postgres, so "first ever" can only be read
