@@ -38,6 +38,11 @@ vi.mock('@/services/mcp/update-step-parameters', () => ({
 vi.mock('@/services/mcp/create-step', () => ({
   createStepService: vi.fn().mockResolvedValue({ id: 's2', appKey: 'slack' }),
 }))
+vi.mock('@/services/mcp/get-flow', () => ({
+  getFlowService: vi
+    .fn()
+    .mockResolvedValue({ id: 'f1', name: 'My Pipe', active: false, steps: [] }),
+}))
 vi.mock('@/services/mcp/delete-step', () => ({
   deleteStepService: vi.fn().mockResolvedValue({ id: 'f1', steps: [] }),
 }))
@@ -73,6 +78,7 @@ import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-step
 import { createStepService } from '@/services/mcp/create-step'
 import { createTileService } from '@/services/mcp/create-tile'
 import { deleteStepService } from '@/services/mcp/delete-step'
+import { getFlowService } from '@/services/mcp/get-flow'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { listColumnsService } from '@/services/mcp/list-columns'
 import { registerConnectionService } from '@/services/mcp/register-connection'
@@ -89,6 +95,7 @@ describe('createMcpBridgeTools', () => {
     expect(Object.keys(tools)).toEqual([
       'list_apps',
       'list_columns',
+      'get_flow',
       'create_tile',
       'add_tile_columns',
       'create_pipe',
@@ -270,6 +277,18 @@ describe('createMcpBridgeTools', () => {
       key: 'sendTransactionalEmail',
       previousStepId: 'mrf-approval-step',
       approvalBranch: { branch: 'reject', stepId: 'mrf-approval-step' },
+    })
+  })
+
+  it('get_flow calls getFlowService with camelCase args', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.get_flow.execute(
+      { pipe_id: 'flow-1' },
+      { toolCallId: 'get_flow', messages: [] },
+    )
+    expect(vi.mocked(getFlowService)).toHaveBeenCalledWith({
+      user: mockUser,
+      pipeId: 'flow-1',
     })
   })
 
