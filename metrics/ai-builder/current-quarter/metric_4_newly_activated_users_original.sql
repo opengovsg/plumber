@@ -2,8 +2,8 @@
 -- Window is the current calendar quarter to date in SGT.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
 -- Half-open [quarter start, now). Grafana's time picker is ignored.
--- Same grain as the original two-column query. First-timers are then split by
--- whether the pipe that produced that first-ever flow has aiBuilderConfig.
+-- First-timers are split by whether the pipe that produced that first-ever
+-- flow has aiBuilderConfig. The combined first-timer count is omitted.
 WITH bounds AS (
   SELECT
     (
@@ -58,10 +58,6 @@ attributed AS (
     AND ff.first_flowed_at <  b.period_end
 )
 SELECT
-  COUNT(*) FILTER (
-    WHERE ff.first_flowed_at >= b.period_start
-      AND ff.first_flowed_at <  b.period_end
-  ) AS "Users who flowed first pipe this quarter",
   COUNT(*) FILTER (
     WHERE a.is_ai_builder
   ) AS "First pipe this quarter with ai builder",

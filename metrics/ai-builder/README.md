@@ -175,15 +175,17 @@ is growing, remembering that the current window is a partial quarter.
 - `Users who flowed this quarter` — owners with a non-test execution in the window. The
   denominator, and the glossary's "active user" for the period. On the optimized file only.
 - `Users who flowed first pipe this quarter` — of those, the ones whose **first ever** non-test
-  execution across all their pipes also sits in the window. This is the activation number.
+  execution across all their pipes also sits in the window. This is the activation number. On
+  the optimized file only.
 - `First pipe this quarter with ai builder` / `First pipe this quarter not ai builder` — that
   activation number split by whether the first-ever flow's pipe has `aiBuilderConfig`. On
-  `metric_4_newly_activated_users_original.sql`. The two columns sum to the activation number.
+  `metric_4_newly_activated_users_original.sql`. Add the two columns to recover the
+  activation number.
 - `Users who had pipes that flowed before this quarter` — the returning remainder.
 - `First-time users with archived executions` — the error bar on the activation number, see
   below. Subtract it for a floor.
 
-`metric_4_newly_activated_users_original.sql` is that panel plus a split of the first-timer count. AI Builder vs not is taken from the pipe that produced the first-ever flow, not from any later pipe. The two split columns sum to `Users who flowed first pipe this quarter`. Templates sit in the not-AI-builder bucket.
+`metric_4_newly_activated_users_original.sql` splits first-timers by whether the pipe that produced the first-ever flow has `aiBuilderConfig`. It does not also emit the combined first-timer count. Templates sit in the not-AI-builder bucket.
 `metric_4_newly_activated_users_ai_builder.sql` is the same attribution as a two-row bar (previous quarter and current quarter to date). Newly activated uses the same all-time `MIN` rule as metric 4. No `users` join and no `deleted_at` guard. The AI Builder flag is resolved with a per-pipe `LATERAL ... LIMIT 1` only for newly activated users, so the query does not sort every live execution.
 
 The first two counts are exact. The split is not, because of archival. The archival task deletes
