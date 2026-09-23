@@ -1,8 +1,11 @@
 -- Grafana: query format Table. Stat panel (one row, many fields).
 -- Quoted aliases use spaces so Stat titles wrap.
--- Window is the previous calendar quarter in SGT, same as metric 4.
+-- Window is the current calendar quarter to date in SGT, same as metric 4.
 -- Q1 Jan-Mar, Q2 Apr-Jun, Q3 Jul-Sep, Q4 Oct-Dec.
--- Half-open [period_start, period_end). Grafana's time picker is ignored.
+-- Half-open [quarter start, now). Grafana's time picker is ignored.
+--
+-- The window is shorter than a full quarter, so read the counts next to the
+-- prev-calendar-quarter twin only with that in mind.
 --
 -- Birth cohort: every pipe with flows.created_at in the window, including
 -- templates and deleted pipes. Manual-editor excludes templateConfig.
@@ -18,14 +21,12 @@
 --  * first_flow runs only for owners of a flowed AI Builder pipe, not for
 --    every user. MIN(...) GROUP BY replaces DISTINCT ON, so there is no sort
 --    of the whole executions table.
-WITH sgt AS (
-  SELECT date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore') AS curr_quarter_naive
-),
-bounds AS (
+WITH bounds AS (
   SELECT
-    (curr_quarter_naive - interval '3 months') AT TIME ZONE 'Asia/Singapore' AS period_start,
-    curr_quarter_naive AT TIME ZONE 'Asia/Singapore' AS period_end
-  FROM sgt
+    (
+      date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore')
+    ) AT TIME ZONE 'Asia/Singapore' AS period_start,
+    now() AS period_end
 ),
 pipes AS (
   SELECT
@@ -77,7 +78,9 @@ first_flow AS (
 )
 SELECT
   (
-    SELECT to_char(period_start AT TIME ZONE 'Asia/Singapore', '"Q"Q YYYY')
+    SELECT
+      to_char(period_start AT TIME ZONE 'Asia/Singapore', '"Q"Q YYYY')
+      || ' to ' || to_char(period_end AT TIME ZONE 'Asia/Singapore', 'DD Mon')
     FROM bounds
   ) AS "window",
   COUNT(*) FILTER (WHERE c.cohort = 'ai_builder')

@@ -64,25 +64,24 @@ counted many times.
 
 ### 0. Overview
 
-One-row Stat panel. Birth cohort in the window.
+One-row Stat panel. Birth cohort in the window. The calendar-quarter files use the same
+bounds as panel 4: previous full quarter, and current quarter to date. The picker file
+uses `$__timeFrom()` / `$__timeTo()`.
 
 Aliases are quoted with spaces (no underscores) so Grafana Stat titles wrap.
 
-Asked-for columns:
-
-- `ai builder created` — pipes born in the window whose config contains `aiBuilderConfig`. Includes deleted pipes.
-- `ai builder flowed` — those pipes with a live (non-test) execution, or `archived_execution_count > 0`. Ignores `flows.active`.
-- `ai builder currently published` — those pipes that are still live and `flows.active = true`. This is publish state, not the glossary "active pipe" (which is flowed-in-period). A pipe can flow then be unpublished, so this is usually smaller than `ai builder flowed`.
-
-Suggested extras, same row:
-
-- `ai builder flowed in window` — a live execution whose `created_at` sits in the same window. Tells you whether the cohort generated traffic during the window, not just ever.
-- `ai builder owners with a flowed pipe` — unique owners of a flowed AI Builder pipe.
-- `ai builder flowed pct` — headline conversion. Compare to `manual editor flowed pct`.
-- `manual editor created` / `manual editor flowed` / `manual editor flowed pct` — same-window baseline.
+- `window` — quarter files only. Label, e.g. `Q2 2026` or `Q3 2026 to 23 Sep`.
+- `ai builder pipes created` — pipes born in the window whose config contains `aiBuilderConfig`. Includes deleted pipes.
+- `ai builder pipes flowed` — those pipes with a live (non-test) execution, or `archived_execution_count > 0`. Ignores `flows.active`.
+- `ai builder pipes flowed pct` — headline conversion. Compare to `manual editor pipes flowed pct`.
+- `users who created ai builder pipes` — unique owners of those pipes.
+- `users who created ai builder pipes that flowed` — unique owners of a flowed AI Builder pipe in the cohort.
+- `ai builder users with first ever flow` — of those, the ones whose first ever non-test execution (all pipes, all time) sits in the window. Same first-ever rule as panel 4. Alias is shortened because Postgres truncates identifiers past 63 bytes.
 - `ai builder share of new pipes` — AI Builder share of all pipes born in the window, including templates.
+- `ai builder share of flowed pipes` — AI Builder share of all flowed pipes in the cohort, including templates.
+- `manual editor pipes created` / `manual editor pipes flowed` / `manual editor pipes flowed pct` — same-window baseline. Excludes templates.
 
-Not in this query, already covered elsewhere: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c). `ran successfully` lives on panel 1.
+Not in this query, already covered elsewhere: median time-to-configure (panel 2), Check step friction (3a), app-action fail rates (3c). `ran successfully` lives on panel 1. Publish state (`flows.active`) is not a column.
 
 ### 0b. Overview QoQ
 
