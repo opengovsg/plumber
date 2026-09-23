@@ -272,7 +272,7 @@ export default function IfThen({
                       <IconButton
                         {...blockActionButtonStyles}
                         onClick={onDuplicate}
-                        aria-label="Duplicate if-then"
+                        aria-label="Duplicate If block"
                         icon={<BiDuplicate />}
                         isLoading={isDuplicatingBranch}
                         isDisabled={isDuplicatingBranch || isDeletingBlock}
@@ -281,7 +281,7 @@ export default function IfThen({
                     <IconButton
                       {...blockActionButtonStyles}
                       onClick={openDeleteConfirmation}
-                      aria-label="Delete if-then"
+                      aria-label="Delete If block"
                       icon={<BiTrash />}
                       isLoading={isDeletingBlock}
                       isDisabled={isDeletingBlock || isDuplicatingBranch}
@@ -348,7 +348,7 @@ export default function IfThen({
               isDialogOpen={deleteConfirmationIsOpen}
               cancelRef={cancelDeleteButton}
               onDialogClose={closeDeleteConfirmation}
-              dialogHeader="If-then"
+              dialogHeader="If"
               dialogType="delete"
               onClick={deleteBlock}
               isLoading={isDeletingBlock}
@@ -358,7 +358,7 @@ export default function IfThen({
               isDialogOpen={duplicateConfirmationIsOpen}
               cancelRef={cancelDuplicateButton}
               onDialogClose={closeDuplicateConfirmation}
-              dialogHeader="If-then"
+              dialogHeader="If"
               dialogType="duplicate-branch"
               onClick={duplicateBranch}
               isLoading={isDuplicatingBranch}

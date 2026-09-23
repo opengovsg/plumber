@@ -3,6 +3,7 @@ import dedent from 'dedent'
 import * as URLS from '@/config/urls'
 
 import ForEachAnimation from './assets/For-EachGraphic.json'
+import IfRepeatAnimation from './assets/If-Repeat.json'
 import IfThenAnimation from './assets/If-ThenGraphic.json'
 import { NewsItemProps } from './NewsItem'
 import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
@@ -10,6 +11,25 @@ import { NEW_ENHANCEMENT_TAG, NEW_FEATURE_TAG } from './NewsItemTag'
 const IF_THEN_EXTERNAL_LINK =
   'https://guide.plumber.gov.sg/user-guides/actions/toolbox'
 export const NEWS_ITEM_LIST: NewsItemProps[] = [
+  {
+    date: '2026-09-22',
+    tag: NEW_FEATURE_TAG,
+    title: 'If-Then & For-Each upgrades',
+    details: dedent`
+      **If-then is now If, and For-each is now Repeat.**
+      Both blocks now show what they are working on without opening them. If
+      shows the condition its steps run under, and Repeat shows the list it
+      repeats over.
+
+      **If no longer has to be the last section of your pipe.**
+      You can now add steps after an If. The condition only applies to steps
+      inside the If, and steps after it always run. 
+    `,
+    multimedia: {
+      animationData: IfRepeatAnimation,
+    },
+    ldFlagKey: 'feature_if_then_then',
+  },
   {
     date: '2026-09-18',
     tag: NEW_ENHANCEMENT_TAG,

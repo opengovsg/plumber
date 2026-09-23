@@ -400,12 +400,12 @@ export function getStepGroupTypeAndCaption(groupedSteps: IStep[][]): {
 
   if (groupKey === TOOLBOX_ACTIONS.IfThen) {
     stepGroupType = TOOLBOX_ACTIONS.IfThen
-    stepGroupCaption = 'If-then'
+    stepGroupCaption = 'If'
   }
 
   if (groupKey === TOOLBOX_ACTIONS.ForEach) {
     stepGroupType = TOOLBOX_ACTIONS.ForEach
-    stepGroupCaption = 'For each'
+    stepGroupCaption = 'Repeat'
   }
 
   return { stepGroupType, stepGroupCaption }

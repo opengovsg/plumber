@@ -37,15 +37,15 @@ export default function getStepName(
     }
 
     return {
-      stepName: customStepName || 'If-then',
-      defaultStepName: 'If-then',
+      stepName: customStepName || 'If',
+      defaultStepName: 'If',
     }
   }
 
   if (checkForEachStep(step)) {
     return {
-      stepName: customStepName || 'For each item',
-      defaultStepName: 'For each item',
+      stepName: customStepName || 'Repeat',
+      defaultStepName: 'Repeat',
     }
   }
 
