@@ -1,8 +1,9 @@
-import ioRedis from 'ioredis'
+import ioRedis, { type ClusterOptions, type RedisOptions } from 'ioredis'
 
 import logger from '@/helpers/logger'
 
 import appConfig from './app'
+import { isUnitTestRun } from './unit-test-mode'
 
 // Maximum of 16; be careful when adding!
 export const REDIS_DB_INDEX = {
@@ -26,13 +27,33 @@ function reconnectOnError(err: Error) {
 }
 
 /**
+ * Never dial out, never queue commands, and never schedule a reconnect. A
+ * retrying client keeps the vitest worker's event loop busy until tinypool
+ * fails to hand it the next test file.
+ *
+ * IMPORTANT: maxRetriesPerRequest must stay falsy. BullMQ throws on a shared
+ * blocking connection that sets it.
+ */
+const UNIT_TEST_REDIS_OPTIONS = {
+  lazyConnect: true,
+  enableOfflineQueue: false,
+  maxRetriesPerRequest: 0,
+  retryStrategy: () => null,
+} satisfies RedisOptions
+
+const UNIT_TEST_CLUSTER_OPTIONS = {
+  lazyConnect: true,
+  clusterRetryStrategy: () => null,
+} satisfies ClusterOptions
+
+/**
  * TODO:
  * database index is actually not supported in cluster mode
  * it automatically uses the database index 0.
  * We should be using prefixes instead.
  */
-export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
-  appConfig.redisClusterMode
+export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) => {
+  const client = appConfig.redisClusterMode
     ? new ioRedis.Cluster(
         [
           {
@@ -42,12 +63,14 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
         ],
         {
           dnsLookup: (address, callback) => callback(null, address),
+          ...(isUnitTestRun ? UNIT_TEST_CLUSTER_OPTIONS : {}),
           redisOptions: {
             tls: appConfig.redisTls ? {} : undefined,
             username: appConfig.redisUsername,
             password: appConfig.redisPassword,
             db,
             reconnectOnError,
+            ...(isUnitTestRun ? UNIT_TEST_REDIS_OPTIONS : {}),
           },
         },
       )
@@ -61,4 +84,14 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
         maxRetriesPerRequest: null, // commands wait forever until the connection is alive again.
         db,
         reconnectOnError,
+        ...(isUnitTestRun ? UNIT_TEST_REDIS_OPTIONS : {}),
       })
+
+  if (isUnitTestRun) {
+    // Without a listener, ioredis logs every refused connection, and vitest
+    // ships each log to the parent over the IPC channel that then fails.
+    client.on('error', () => undefined)
+  }
+
+  return client
+}
