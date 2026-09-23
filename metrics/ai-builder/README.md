@@ -180,6 +180,8 @@ is growing, remembering that the current window is a partial quarter.
 - `First-time users with archived executions` — the error bar on the activation number, see
   below. Subtract it for a floor.
 
+`metric_4_newly_activated_users_original.sql` is the same two-column query the panel started from, with only the bounds CTE changed.
+
 The first two counts are exact. The split is not, because of archival. The archival task deletes
 executions older than `ARCHIVE_RETENTION_DAYS` out of Postgres, so "first ever" can only be read
 from surviving rows, and a long-time user whose early executions were purged looks brand new.
