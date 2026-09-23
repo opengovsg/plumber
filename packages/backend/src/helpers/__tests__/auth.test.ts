@@ -412,6 +412,11 @@ describe('Auth helpers', () => {
 
       expect(result).toBeNull()
       expect(mocks.findById).not.toHaveBeenCalled()
+      // Same namespaced key scheme as invalidateAuthCookie's write, or a
+      // logout's denylist entry would never be found on lookup.
+      expect(mocks.redisExists).toHaveBeenCalledWith(
+        expect.stringMatching(/^auth-deny:/),
+      )
     })
 
     it('fails open and logs when the denylist lookup errors', async () => {
@@ -444,7 +449,7 @@ describe('Auth helpers', () => {
       expect(mocks.redisSet).not.toHaveBeenCalled()
     })
 
-    it('denylists a hash of the token, not the raw token, with a TTL matching its remaining lifetime', async () => {
+    it('denylists a namespaced hash of the token, not the raw token, with a TTL matching its remaining lifetime', async () => {
       const token = signToken({ userId: 'user-1' }, { expiresIn: 120 })
       const req = { cookies: { 'plumber.sid': token } } as any
 
@@ -453,6 +458,7 @@ describe('Auth helpers', () => {
       expect(mocks.redisSet).toHaveBeenCalledOnce()
       const [key, value, mode, ttl] = mocks.redisSet.mock.calls[0]
       expect(key).not.toBe(token)
+      expect(key).toMatch(/^auth-deny:/)
       expect(value).toBe('1')
       expect(mode).toBe('EX')
       expect(ttl).toBeGreaterThan(0)
@@ -468,12 +474,23 @@ describe('Auth helpers', () => {
       expect(mocks.redisSet).not.toHaveBeenCalled()
     })
 
-    it('logs and does not throw when the denylist write fails', async () => {
+    it('does not attempt to denylist a token with an invalid signature', async () => {
+      const token = jwt.sign({ userId: 'user-1' }, 'a-different-secret', {
+        expiresIn: 120,
+      })
+      const req = { cookies: { 'plumber.sid': token } } as any
+
+      await invalidateAuthCookie(req)
+
+      expect(mocks.redisSet).not.toHaveBeenCalled()
+    })
+
+    it('propagates the error when the denylist write fails, so the caller does not report success', async () => {
       const token = signToken({ userId: 'user-1' }, { expiresIn: 120 })
       const req = { cookies: { 'plumber.sid': token } } as any
       mocks.redisSet.mockRejectedValueOnce(new Error('redis down'))
 
-      await expect(invalidateAuthCookie(req)).resolves.toBeUndefined()
+      await expect(invalidateAuthCookie(req)).rejects.toThrow('redis down')
       expect(mocks.loggerError).toHaveBeenCalledWith(
         'Failed to revoke auth token on logout',
         expect.objectContaining({ event: 'auth-token-revoke-error' }),

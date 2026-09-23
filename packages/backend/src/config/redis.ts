@@ -1,4 +1,4 @@
-import ioRedis from 'ioredis'
+import ioRedis, { type RedisOptions } from 'ioredis'
 
 import logger from '@/helpers/logger'
 
@@ -32,7 +32,15 @@ function reconnectOnError(err: Error) {
  * it automatically uses the database index 0.
  * We should be using prefixes instead.
  */
-export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
+// Extra per-client overrides (e.g. `commandTimeout`) layered on top of the
+// shared defaults below. Most callers (queues, rate limiters) rely on
+// `maxRetriesPerRequest: null` blocking forever, so this only opts a specific
+// client out where waiting forever is the wrong tradeoff (e.g. an
+// auth-critical read on the request path).
+export const createRedisClient = (
+  db = REDIS_DB_INDEX.JOBS,
+  extraOptions: Partial<RedisOptions> = {},
+) =>
   appConfig.redisClusterMode
     ? new ioRedis.Cluster(
         [
@@ -49,6 +57,7 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
             password: appConfig.redisPassword,
             db,
             reconnectOnError,
+            ...extraOptions,
           },
         },
       )
@@ -62,4 +71,5 @@ export const createRedisClient = (db = REDIS_DB_INDEX.JOBS) =>
         maxRetriesPerRequest: null, // commands wait forever until the connection is alive again.
         db,
         reconnectOnError,
+        ...extraOptions,
       })

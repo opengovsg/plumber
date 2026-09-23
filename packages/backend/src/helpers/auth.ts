@@ -22,12 +22,26 @@ const ONBOARDING_EMAIL_RELEASE_DATE = new Date('2025-03-10')
 // us reject a specific token before its natural expiry; entries are keyed by
 // hash (never the raw token) and TTLed to the token's remaining lifetime so
 // they clean themselves up.
+//
+// commandTimeout bounds how long a lookup/write can block: this client sits
+// on the request path (every authenticated request checks it), so a Redis
+// outage must fail fast into the catch blocks below rather than hang
+// requests forever (the default client config waits indefinitely).
+const AUTH_DENYLIST_COMMAND_TIMEOUT_MS = 3_000
 const authTokenDenylistClient = createRedisClient(
   REDIS_DB_INDEX.AUTH_TOKEN_DENYLIST,
+  { commandTimeout: AUTH_DENYLIST_COMMAND_TIMEOUT_MS },
 )
 
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
+// Namespaced because cluster mode ignores logical DB indexes (see
+// createRedisClient's TODO) and always uses DB 0, so a bare hash would sit
+// unscoped alongside other runtime data there.
+const AUTH_DENYLIST_KEY_PREFIX = 'auth-deny:'
+
+function denylistKey(token: string): string {
+  return (
+    AUTH_DENYLIST_KEY_PREFIX + createHash('sha256').update(token).digest('hex')
+  )
 }
 
 interface AuthCookiePayload {
@@ -86,12 +100,15 @@ export async function getLoggedInUser(req: Request): Promise<User | null> {
 
 async function isAuthCookieRevoked(token: string): Promise<boolean> {
   try {
-    const denylisted = await authTokenDenylistClient.exists(hashToken(token))
+    const denylisted = await authTokenDenylistClient.exists(denylistKey(token))
     return denylisted === 1
   } catch (error) {
-    // Redis is already load-bearing for queues; treat a lookup failure the
-    // same way the rate limiter does, logging it and letting the request
-    // through rather than locking every user out.
+    // ACCEPTED RISK: fails open. During a Redis outage, a token denylisted by
+    // an earlier logout is treated as "not revoked" until Redis recovers, so
+    // a captured pre-logout token could keep authenticating for that window.
+    // This matches the rate limiter's posture (Redis is already load-bearing
+    // for queues, so an outage already degrades the app broadly) and
+    // prioritises not locking every user out over closing that window.
     logger.error('Failed to check auth token denylist', {
       event: 'auth-token-denylist-check-error',
       error: error.message,
@@ -108,6 +125,14 @@ export function deleteAuthCookie(res: Response) {
  * Revokes the current request's auth token server-side, on top of clearing
  * the cookie client-side, so a captured pre-logout token stops working
  * immediately instead of staying valid until it naturally expires.
+ *
+ * Only denylists the token presented at logout: it revokes this session, not
+ * every session for the user (a later login mints an unrelated token that
+ * this doesn't touch).
+ *
+ * Propagates a denylist-write failure instead of swallowing it, so the
+ * caller (the `logout` mutation) doesn't clear the cookie / report success
+ * when server-side revocation didn't actually happen.
  */
 export async function invalidateAuthCookie(req: Request): Promise<void> {
   const token = getAuthCookie(req)
@@ -115,9 +140,23 @@ export async function invalidateAuthCookie(req: Request): Promise<void> {
     return
   }
 
-  const decoded = jwt.decode(token) as { exp?: number } | null
-  const remainingTtlSec = decoded?.exp
-    ? decoded.exp - Math.floor(Date.now() / 1000)
+  let decoded: { exp?: number }
+  try {
+    // Verify (not just decode) so an expired or tampered token can't be used
+    // to compute a bogus TTL; jwt.verify throws for both.
+    decoded = jwt.verify(token, appConfig.sessionSecretKey) as { exp?: number }
+  } catch {
+    return
+  }
+
+  // Clamp so neither an unexpected `exp` nor clock skew between this host and
+  // whichever host minted the token can produce a TTL outside the token's own
+  // possible lifetime.
+  const remainingTtlSec = decoded.exp
+    ? Math.min(
+        Math.max(decoded.exp - Math.floor(Date.now() / 1000), 0),
+        TOKEN_EXPIRES_IN_SEC,
+      )
     : 0
   if (remainingTtlSec <= 0) {
     return
@@ -125,7 +164,7 @@ export async function invalidateAuthCookie(req: Request): Promise<void> {
 
   try {
     await authTokenDenylistClient.set(
-      hashToken(token),
+      denylistKey(token),
       '1',
       'EX',
       remainingTtlSec,
@@ -135,6 +174,7 @@ export async function invalidateAuthCookie(req: Request): Promise<void> {
       event: 'auth-token-revoke-error',
       error: error.message,
     })
+    throw error
   }
 }
 

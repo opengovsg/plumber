@@ -12,8 +12,8 @@ const logout: MutationResolvers['logout'] = async (
   context,
 ) => {
   const { isSso } = getParsedAuthCookie(context.req)
-  // Revoke server-side in addition to clearing the cookie, so a captured
-  // pre-logout token can't keep authenticating requests.
+  // Server-side revoke before clearing the cookie. If revoke throws, the
+  // cookie is deliberately left uncleared and the mutation reports failure.
   await invalidateAuthCookie(context.req)
   deleteAuthCookie(context.res)
   return {
