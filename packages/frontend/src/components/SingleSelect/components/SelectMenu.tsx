@@ -29,6 +29,7 @@ export const SelectMenu = (): JSX.Element => {
   } = useSelectContext()
 
   const { floatingRef, floatingStyles } = useSelectPopover()
+  const isEmpty = isOpen && items.length === 0
 
   return (
     <Portal>
@@ -60,23 +61,27 @@ export const SelectMenu = (): JSX.Element => {
             }}
           />
         )}
-        {isOpen &&
-        items.length === 0 &&
-        (noOptionsMessage || inputValue?.length) ? (
+        {isEmpty && noOptionsMessage ? (
+          // Mirrors the variables popover's empty state, so both kinds of
+          // "nothing to pick here" guidance read the same.
           <ListItem
             role="option"
-            sx={styles.emptyItem}
-            // Blurring the input closes the menu, which would tear a link in
+            p={4}
+            opacity={0.5}
+            textStyle="body-1"
+            color="base.content.medium"
+            // Blurring the input closes the menu, which would tear the link in
             // the message out from under the click that opens it.
             onMouseDown={(e) => e.preventDefault()}
           >
-            {noOptionsMessage ? (
-              <Markdown linkTarget="_blank" components={infoboxMdComponents}>
-                {noOptionsMessage}
-              </Markdown>
-            ) : (
-              nothingFoundLabel
-            )}
+            <Markdown linkTarget="_blank" components={infoboxMdComponents}>
+              {noOptionsMessage}
+            </Markdown>
+          </ListItem>
+        ) : null}
+        {isEmpty && !noOptionsMessage && inputValue?.length ? (
+          <ListItem role="option" sx={styles.emptyItem}>
+            {nothingFoundLabel}
           </ListItem>
         ) : null}
         {/* Allow reload of dynamic data fields */}
