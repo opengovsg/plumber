@@ -348,4 +348,82 @@ describe('deleteStepService', () => {
       ],
     })
   })
+
+  it('stamps cascaded FormSG MRF and reject-branch deletes', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `delete-step-mrf-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'MRF Cascade Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: 'trace-create',
+    })
+
+    const loadedFlow = await flow.$fetchGraph('steps')
+    const trigger = loadedFlow.steps[0]
+    const mrfStep = await flow.$relatedQuery('steps').insertAndFetch({
+      type: 'action',
+      appKey: 'formsg',
+      key: 'mrfSubmission',
+      position: 2,
+      parameters: {},
+      config: {
+        aiBuilderConfig: [{ traceId: 'trace-create', tool: 'create_pipe' }],
+      },
+    })
+    const rejectStep = await flow.$relatedQuery('steps').insertAndFetch({
+      type: 'action',
+      appKey: 'postman',
+      key: 'sendTransactionalEmail',
+      position: 3,
+      parameters: {},
+      config: {
+        approval: { branch: 'reject', stepId: mrfStep.id },
+      },
+    })
+
+    await deleteStepService({
+      user,
+      pipeId: flow.id,
+      stepId: trigger.id,
+      traceId: 'trace-delete',
+    })
+
+    const storedTrigger = await Step.query()
+      .withSoftDeleted()
+      .findById(trigger.id)
+    const storedMrf = await Step.query().withSoftDeleted().findById(mrfStep.id)
+    const storedReject = await Step.query()
+      .withSoftDeleted()
+      .findById(rejectStep.id)
+
+    expect(storedTrigger?.deletedAt).toBeTruthy()
+    expect(storedMrf?.deletedAt).toBeTruthy()
+    expect(storedReject?.deletedAt).toBeTruthy()
+    expect(storedTrigger?.config.aiBuilderConfig).toEqual([
+      { traceId: 'trace-create', tool: 'create_pipe' },
+      { traceId: 'trace-delete', tool: 'delete_step' },
+    ])
+    expect(storedMrf?.config.aiBuilderConfig).toEqual([
+      { traceId: 'trace-create', tool: 'create_pipe' },
+      { traceId: 'trace-delete', tool: 'delete_step' },
+    ])
+    expect(storedReject?.config.aiBuilderConfig).toEqual([
+      { traceId: 'trace-delete', tool: 'delete_step' },
+    ])
+    expect(storedReject?.config.approval).toEqual({
+      branch: 'reject',
+      stepId: mrfStep.id,
+    })
+  })
 })
