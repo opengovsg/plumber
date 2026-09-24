@@ -41,6 +41,10 @@ import {
   registerConnectionService,
 } from '@/services/mcp/register-connection'
 import {
+  type UnpublishPipeResult,
+  unpublishPipeService,
+} from '@/services/mcp/unpublish-pipe'
+import {
   type McpUpdateStepParametersResult,
   updateStepParametersService,
 } from '@/services/mcp/update-step-parameters'
@@ -221,6 +225,30 @@ export function createMcpBridgeTools(
         })
         onPipeChange?.(flow.id)
         return flow
+      },
+    }),
+
+    unpublish_pipe: tool({
+      description:
+        'Unpublish an existing pipe so it stops running and can be edited. Call ONLY after the user has explicitly confirmed they want to unpublish it. This tool never publishes a pipe.',
+      inputSchema: z.object({
+        pipe_id: z.uuid().describe('ID of the pipe to unpublish'),
+      }),
+      execute: async ({
+        pipe_id,
+      }): Promise<UnpublishPipeResult | { error: string }> => {
+        try {
+          const result = await unpublishPipeService(user, pipe_id)
+          onPipeChange?.(pipe_id)
+          return result
+        } catch (error) {
+          return mcpToolError(
+            error,
+            'Unable to unpublish pipe',
+            'unpublish_pipe',
+            traceId,
+          )
+        }
       },
     }),
 
