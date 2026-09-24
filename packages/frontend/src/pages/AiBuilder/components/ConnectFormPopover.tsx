@@ -5,6 +5,7 @@ import {
   Divider,
   Flex,
   Image,
+  Input,
   Popover,
   PopoverBody,
   PopoverContent,
@@ -42,6 +43,7 @@ export default function ConnectFormPopover({
 }: ConnectFormPopoverProps) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [options, setOptions] = useState<FormConnectionOption[] | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const abortRef = useRef<AbortController | null>(null)
 
   // Closing (Escape, outside click, or picking an option) doesn't unmount
@@ -52,6 +54,7 @@ export default function ConnectFormPopover({
   // act on a stale result.
   const handleClose = useCallback(() => {
     abortRef.current?.abort()
+    setSearchQuery('')
     onClose()
   }, [onClose])
 
@@ -61,6 +64,7 @@ export default function ConnectFormPopover({
     abortRef.current = controller
 
     setOptions(null)
+    setSearchQuery('')
     onOpen()
 
     try {
@@ -90,6 +94,16 @@ export default function ConnectFormPopover({
       onAddNewForm()
     }
   }
+
+  const normalisedQuery = searchQuery.trim().toLowerCase()
+  const filteredOptions = (options ?? []).filter((opt) => {
+    if (!normalisedQuery) {
+      return true
+    }
+    return stripFormIdPrefix(opt.name)
+      .toLowerCase()
+      .includes(normalisedQuery)
+  })
 
   return (
     <Popover isOpen={isOpen} onClose={handleClose} placement="top-start" isLazy>
@@ -135,34 +149,48 @@ export default function ConnectFormPopover({
               <Text textStyle="caption-1" color="gray.500" px={2} py={1}>
                 Choose a form to build with
               </Text>
+              <Input
+                size="sm"
+                mb={1}
+                placeholder="Search forms"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search forms"
+              />
               <Flex direction="column" maxH="240px" overflowY="auto">
-                {options.map((opt, idx) => (
-                  <Box
-                    key={opt.value}
-                    as="button"
-                    type="button"
-                    w="full"
-                    textAlign="left"
-                    px={3}
-                    py={2}
-                    borderRadius="md"
-                    bg={idx % 2 === 0 ? 'gray.50' : 'white'}
-                    _hover={{ bg: 'primary.50' }}
-                    _active={{ bg: 'primary.100' }}
-                    onClick={() => {
-                      handleClose()
-                      onSelectExisting(opt.name, opt.value)
-                    }}
-                  >
-                    <Text
-                      textStyle="body-2"
-                      whiteSpace="normal"
-                      color="gray.800"
+                {filteredOptions.length === 0 ? (
+                  <Text textStyle="body-2" color="gray.400" px={3} py={2}>
+                    No matching forms
+                  </Text>
+                ) : (
+                  filteredOptions.map((opt, idx) => (
+                    <Box
+                      key={opt.value}
+                      as="button"
+                      type="button"
+                      w="full"
+                      textAlign="left"
+                      px={3}
+                      py={2}
+                      borderRadius="md"
+                      bg={idx % 2 === 0 ? 'gray.50' : 'white'}
+                      _hover={{ bg: 'primary.50' }}
+                      _active={{ bg: 'primary.100' }}
+                      onClick={() => {
+                        handleClose()
+                        onSelectExisting(opt.name, opt.value)
+                      }}
                     >
-                      {stripFormIdPrefix(opt.name)}
-                    </Text>
-                  </Box>
-                ))}
+                      <Text
+                        textStyle="body-2"
+                        whiteSpace="normal"
+                        color="gray.800"
+                      >
+                        {stripFormIdPrefix(opt.name)}
+                      </Text>
+                    </Box>
+                  ))
+                )}
               </Flex>
               <Divider my={1} />
               <Box
