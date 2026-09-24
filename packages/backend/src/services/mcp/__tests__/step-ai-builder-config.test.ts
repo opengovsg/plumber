@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { createStepAiBuilderConfig } from '../step-ai-builder-config'
+import {
+  createStepAiBuilderConfig,
+  stampStepDeletedByAi,
+} from '../step-ai-builder-config'
 
 describe('step AI builder config', () => {
   it('stamps create_pipe origin', () => {
@@ -17,6 +20,38 @@ describe('step AI builder config', () => {
       aiBuilderConfig: {
         traceId: 'trace-2',
         tool: 'create_step',
+      },
+    })
+  })
+
+  it('nests deleted on an AI-created step', () => {
+    expect(
+      stampStepDeletedByAi(
+        {
+          aiBuilderConfig: {
+            traceId: 'trace-create',
+            tool: 'create_pipe',
+          },
+        },
+        'trace-delete',
+      ),
+    ).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-create',
+        tool: 'create_pipe',
+        deleted: {
+          traceId: 'trace-delete',
+          tool: 'delete_step',
+        },
+      },
+    })
+  })
+
+  it('stamps delete_step on a user-created step', () => {
+    expect(stampStepDeletedByAi({}, 'trace-delete')).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-delete',
+        tool: 'delete_step',
       },
     })
   })

@@ -178,11 +178,15 @@ export interface IStepApprovalConfig {
   stepId: string
 }
 
-export type IStepAiBuilderTool = 'create_pipe' | 'create_step'
+export type IStepAiBuilderTool = 'create_pipe' | 'create_step' | 'delete_step'
 
 export interface IStepAiBuilderConfig {
   traceId: string
   tool: IStepAiBuilderTool
+  deleted?: {
+    traceId: string
+    tool: 'delete_step'
+  }
 }
 
 export interface IStepConfig {
