@@ -12,12 +12,10 @@ import Markdown from 'react-markdown'
 import { As, Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import {
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   Link,
 } from '@opengovsg/design-system-react'
 
-import { infoboxMdComponents } from '@/components/MarkdownRenderer/CustomMarkdownComponents'
 import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
@@ -224,6 +222,7 @@ function ControlledAutocomplete(
             placeholder={placeholder}
             ref={ref}
             data-test={`${name}-autocomplete`}
+            noOptionsMessage={noOptionsMessage}
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}
@@ -245,13 +244,6 @@ function ControlledAutocomplete(
           />
         </Box>
       </Flex>
-      {noOptionsMessage && (
-        <FormHelperText mt={2} data-test={`${name}-no-options-message`}>
-          <Markdown linkTarget="_blank" components={infoboxMdComponents}>
-            {noOptionsMessage}
-          </Markdown>
-        </FormHelperText>
-      )}
       {isError && <FormErrorMessage>{error?.message}</FormErrorMessage>}
       {/* the input state in the modal is reset on unmount */}
       {addNewOption?.type === 'modal' && isNewOptionModalOpen && (

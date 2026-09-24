@@ -1,8 +1,10 @@
 import { BiRefresh } from 'react-icons/bi'
+import Markdown from 'react-markdown'
 import { Virtuoso } from 'react-virtuoso'
 import { List, ListItem, Portal } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
+import { infoboxMdComponents } from '@/components/MarkdownRenderer/CustomMarkdownComponents'
 import PrimarySpinner from '@/components/PrimarySpinner'
 
 import { useSelectContext } from '../SelectContext'
@@ -17,6 +19,7 @@ export const SelectMenu = (): JSX.Element => {
     isOpen,
     items,
     nothingFoundLabel,
+    noOptionsMessage,
     styles,
     virtualListRef,
     virtualListHeight,
@@ -57,9 +60,23 @@ export const SelectMenu = (): JSX.Element => {
             }}
           />
         )}
-        {isOpen && items.length === 0 && inputValue?.length ? (
-          <ListItem role="option" sx={styles.emptyItem}>
-            {nothingFoundLabel}
+        {isOpen &&
+        items.length === 0 &&
+        (noOptionsMessage || inputValue?.length) ? (
+          <ListItem
+            role="option"
+            sx={styles.emptyItem}
+            // Blurring the input closes the menu, which would tear a link in
+            // the message out from under the click that opens it.
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            {noOptionsMessage ? (
+              <Markdown linkTarget="_blank" components={infoboxMdComponents}>
+                {noOptionsMessage}
+              </Markdown>
+            ) : (
+              nothingFoundLabel
+            )}
           </ListItem>
         ) : null}
         {/* Allow reload of dynamic data fields */}

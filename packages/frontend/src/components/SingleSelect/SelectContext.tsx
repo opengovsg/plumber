@@ -14,6 +14,11 @@ export interface SharedSelectContextReturnProps<
   isClearable?: boolean
   /** Nothing found label. Defaults to "No matching results" */
   nothingFoundLabel?: string
+  /**
+   * Markdown guidance shown in place of the options when the dropdown has
+   * none, e.g. how to create an Excel table. Defaults to null.
+   */
+  noOptionsMessage?: string | null
   /** aria-label for clear button. Defaults to "Clear selection" */
   clearButtonLabel?: string
   /**
