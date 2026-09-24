@@ -1,11 +1,36 @@
-import type { IStepAiBuilderTool, IStepConfig } from '@plumber/types'
+import type { IStepAiBuilderConfig, IStepConfig } from '@plumber/types'
 
 export function createStepAiBuilderConfig(
   traceId: string,
-  tool: IStepAiBuilderTool,
+  tool: IStepAiBuilderConfig['tool'],
 ): Pick<IStepConfig, 'aiBuilderConfig'> {
   return {
     aiBuilderConfig: [{ traceId, tool }],
+  }
+}
+
+export function appendStepAiBuilderEvent(
+  config: IStepConfig | null | undefined,
+  event: IStepAiBuilderConfig,
+  options: { skipIfRecorded?: boolean } = {},
+): IStepConfig {
+  const events = config?.aiBuilderConfig ?? []
+  if (
+    options.skipIfRecorded &&
+    events.some(
+      (existing) =>
+        existing.traceId === event.traceId && existing.tool === event.tool,
+    )
+  ) {
+    return {
+      ...config,
+      aiBuilderConfig: events,
+    }
+  }
+
+  return {
+    ...config,
+    aiBuilderConfig: [...events, event],
   }
 }
 
@@ -13,11 +38,8 @@ export function stampStepDeletedByAi(
   config: IStepConfig | null | undefined,
   traceId: string,
 ): IStepConfig {
-  return {
-    ...config,
-    aiBuilderConfig: [
-      ...(config?.aiBuilderConfig ?? []),
-      { traceId, tool: 'delete_step' },
-    ],
-  }
+  return appendStepAiBuilderEvent(config, {
+    traceId,
+    tool: 'delete_step',
+  })
 }

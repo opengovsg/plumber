@@ -228,6 +228,7 @@ describe('createMcpBridgeTools', () => {
       pipeId: 'flow-1',
       stepId: 'step-1',
       parameters: { subject: 'Hello' },
+      traceId: mockTraceId,
     })
   })
 

@@ -261,6 +261,7 @@ export function createMcpBridgeTools(
           stepId: step_id,
           parameters,
           connectionId: connection_id,
+          traceId,
         })
         onPipeChange?.(pipe_id)
         onStepUpdate?.(step_id, result.step.parameters, parameter_labels)

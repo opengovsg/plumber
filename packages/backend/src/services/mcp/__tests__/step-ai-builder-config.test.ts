@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  appendStepAiBuilderEvent,
   createStepAiBuilderConfig,
   stampStepDeletedByAi,
 } from '../step-ai-builder-config'
@@ -64,5 +65,41 @@ describe('step AI builder config', () => {
         },
       ],
     })
+  })
+
+  it('appends update_step_parameters once per trace', () => {
+    const first = appendStepAiBuilderEvent(
+      {
+        aiBuilderConfig: [
+          {
+            traceId: 'trace-create',
+            tool: 'create_pipe',
+          },
+        ],
+      },
+      { traceId: 'trace-update', tool: 'update_step_parameters' },
+      { skipIfRecorded: true },
+    )
+
+    expect(first).toEqual({
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-create',
+          tool: 'create_pipe',
+        },
+        {
+          traceId: 'trace-update',
+          tool: 'update_step_parameters',
+        },
+      ],
+    })
+
+    expect(
+      appendStepAiBuilderEvent(
+        first,
+        { traceId: 'trace-update', tool: 'update_step_parameters' },
+        { skipIfRecorded: true },
+      ),
+    ).toEqual(first)
   })
 })
