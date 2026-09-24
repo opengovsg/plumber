@@ -10,6 +10,8 @@ import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
 
+import { createStepAiBuilderConfig } from './step-ai-builder-config'
+
 export interface McpStepInput {
   appKey: string
   key?: string | null
@@ -111,7 +113,7 @@ export async function createFlowWithStepsService({
           type: step.type,
           appKey: step.appKey,
           key: step.key ?? null,
-          config: {},
+          config: createStepAiBuilderConfig(traceId, 'create_pipe'),
           parameters: {
             ...defaults,
             ...(step.parameters ?? {}),

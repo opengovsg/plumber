@@ -41,6 +41,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['errorConfig']
     delete prevConfig['maxQps']
     delete prevConfig['isForceClogged']
+    delete prevConfig['aiBuilderConfig']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
@@ -70,6 +71,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
 
       delete prevStepConfig['templateConfig']
       delete prevStepConfig['adminOverride']
+      delete prevStepConfig['aiBuilderConfig']
 
       const duplicatedStep = await duplicatedFlow
         .$relatedQuery('steps', trx)
