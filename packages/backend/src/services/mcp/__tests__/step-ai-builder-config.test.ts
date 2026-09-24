@@ -18,6 +18,10 @@ describe('step AI builder config', () => {
     })
   })
 
+  it('skips empty trace ids', () => {
+    expect(createStepAiBuilderConfig('', 'create_pipe')).toEqual({})
+  })
+
   it('stamps create_step origin', () => {
     expect(createStepAiBuilderConfig('trace-2', 'create_step')).toEqual({
       aiBuilderConfig: [

@@ -274,4 +274,28 @@ describe('createFlowWithStepsService', () => {
       ],
     })
   })
+
+  it('does not stamp step events without a trace id', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-empty-trace-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'Empty Trace Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: '',
+    })
+
+    expect(result.steps[0].config).toEqual({})
+    expect(result.config?.aiBuilderConfig?.traceId).toBe('')
+  })
 })

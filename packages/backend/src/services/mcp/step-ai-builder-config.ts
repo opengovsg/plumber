@@ -3,7 +3,11 @@ import type { IStepAiBuilderConfig, IStepConfig } from '@plumber/types'
 export function createStepAiBuilderConfig(
   traceId: string,
   tool: IStepAiBuilderConfig['tool'],
-): Pick<IStepConfig, 'aiBuilderConfig'> {
+): IStepConfig {
+  if (!traceId) {
+    return {}
+  }
+
   return {
     aiBuilderConfig: [{ traceId, tool }],
   }
