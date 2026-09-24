@@ -240,14 +240,16 @@ describe('deleteStepService', () => {
     const stored = await Step.query().withSoftDeleted().findById(actionStep.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
-      aiBuilderConfig: {
-        traceId: 'trace-create',
-        tool: 'create_pipe',
-        deleted: {
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-create',
+          tool: 'create_pipe',
+        },
+        {
           traceId: 'trace-delete',
           tool: 'delete_step',
         },
-      },
+      ],
     })
   })
 
@@ -291,10 +293,10 @@ describe('deleteStepService', () => {
     const stored = await Step.query().withSoftDeleted().findById(userStep.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
-      aiBuilderConfig: {
+      aiBuilderConfig: [{
         traceId: 'trace-delete',
         tool: 'delete_step',
-      },
+      }],
     })
   })
 
@@ -336,10 +338,10 @@ describe('deleteStepService', () => {
     const stored = await Step.query().withSoftDeleted().findById(actionStep.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
-      aiBuilderConfig: {
+      aiBuilderConfig: [{
         traceId: 'trace-create',
         tool: 'create_pipe',
-      },
+      }],
     })
   })
 })

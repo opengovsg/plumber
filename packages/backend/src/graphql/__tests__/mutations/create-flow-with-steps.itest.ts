@@ -104,10 +104,10 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(steps[0].key).toBe('everyHour')
       expect(steps[0].position).toBe(1)
       expect(steps[0].config).toEqual({
-        aiBuilderConfig: {
+        aiBuilderConfig: [{
           traceId: '123',
           tool: 'create_pipe',
-        },
+        }],
       })
 
       expect(steps[1].type).toBe('action')
@@ -115,10 +115,10 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(steps[1].key).toBe('sendTransactionalEmail')
       expect(steps[1].position).toBe(2)
       expect(steps[1].config).toEqual({
-        aiBuilderConfig: {
+        aiBuilderConfig: [{
           traceId: '123',
           tool: 'create_pipe',
-        },
+        }],
       })
 
       expect(steps[2].type).toBe('action')
@@ -126,10 +126,10 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(steps[2].key).toBe('sendMessageToChannel')
       expect(steps[2].position).toBe(3)
       expect(steps[2].config).toEqual({
-        aiBuilderConfig: {
+        aiBuilderConfig: [{
           traceId: '123',
           tool: 'create_pipe',
-        },
+        }],
       })
     })
 
@@ -196,16 +196,16 @@ describe('createFlowWithSteps mutation integration tests', () => {
         .orderBy('position', 'asc')
 
       expect(steps[0].config).toEqual({
-        aiBuilderConfig: {
+        aiBuilderConfig: [{
           traceId: '123',
           tool: 'create_pipe',
-        },
+        }],
       })
       expect(steps[1].config).toEqual({
-        aiBuilderConfig: {
+        aiBuilderConfig: [{
           traceId: '123',
           tool: 'create_pipe',
-        },
+        }],
       })
     })
 

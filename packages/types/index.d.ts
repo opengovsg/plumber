@@ -183,10 +183,6 @@ export type IStepAiBuilderTool = 'create_pipe' | 'create_step' | 'delete_step'
 export interface IStepAiBuilderConfig {
   traceId: string
   tool: IStepAiBuilderTool
-  deleted?: {
-    traceId: string
-    tool: 'delete_step'
-  }
 }
 
 export interface IStepConfig {
@@ -198,7 +194,7 @@ export interface IStepConfig {
   endStepId?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
-  aiBuilderConfig?: IStepAiBuilderConfig
+  aiBuilderConfig?: IStepAiBuilderConfig[]
 }
 
 export interface IStepTemplateConfig {

@@ -8,51 +8,53 @@ import {
 describe('step AI builder config', () => {
   it('stamps create_pipe origin', () => {
     expect(createStepAiBuilderConfig('trace-1', 'create_pipe')).toEqual({
-      aiBuilderConfig: {
+      aiBuilderConfig: [{
         traceId: 'trace-1',
         tool: 'create_pipe',
-      },
+      }],
     })
   })
 
   it('stamps create_step origin', () => {
     expect(createStepAiBuilderConfig('trace-2', 'create_step')).toEqual({
-      aiBuilderConfig: {
+      aiBuilderConfig: [{
         traceId: 'trace-2',
         tool: 'create_step',
-      },
+      }],
     })
   })
 
-  it('nests deleted on an AI-created step', () => {
+  it('appends delete_step on an AI-created step', () => {
     expect(
       stampStepDeletedByAi(
         {
-          aiBuilderConfig: {
+          aiBuilderConfig: [{
             traceId: 'trace-create',
             tool: 'create_pipe',
-          },
+          }],
         },
         'trace-delete',
       ),
     ).toEqual({
-      aiBuilderConfig: {
-        traceId: 'trace-create',
-        tool: 'create_pipe',
-        deleted: {
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-create',
+          tool: 'create_pipe',
+        },
+        {
           traceId: 'trace-delete',
           tool: 'delete_step',
         },
-      },
+      ],
     })
   })
 
   it('stamps delete_step on a user-created step', () => {
     expect(stampStepDeletedByAi({}, 'trace-delete')).toEqual({
-      aiBuilderConfig: {
+      aiBuilderConfig: [{
         traceId: 'trace-delete',
         tool: 'delete_step',
-      },
+      }],
     })
   })
 })
