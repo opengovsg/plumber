@@ -7,6 +7,8 @@ import Flow from '@/models/flow'
 import type User from '@/models/user'
 import testStep from '@/services/test-step'
 
+import { PublishedPipeError } from './published-pipe-error'
+
 export interface McpExecuteStepResult {
   success: boolean
   pipeId: string
@@ -28,7 +30,7 @@ export async function executeStepService(
     .throwIfNotFound()
 
   if (step.flow.active) {
-    throw new Error('Cannot test a step in an active pipe')
+    throw new PublishedPipeError()
   }
 
   // TODO: MRF redirect when AI builder supports it
