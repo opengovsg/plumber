@@ -314,7 +314,6 @@ export function createMcpBridgeTools(
           user,
           pipeId: pipe_id,
           stepId: step_id,
-          traceId,
         })
         onPipeChange?.(pipe_id)
         return flow

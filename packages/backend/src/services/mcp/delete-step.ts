@@ -6,20 +6,16 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
-import { appendDeletedStepAiBuilderPatch } from './step-ai-builder-config'
-
 export interface DeleteStepInput {
   user: User
   pipeId: string
   stepId: string
-  traceId?: string
 }
 
 export async function deleteStepService({
   user,
   pipeId,
   stepId,
-  traceId,
 }: DeleteStepInput): Promise<Flow> {
   return Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
@@ -34,21 +30,6 @@ export async function deleteStepService({
     }
 
     const flow = step.flow
-
-    if (traceId) {
-      await flow.$query(trx).patch({
-        config: appendDeletedStepAiBuilderPatch({
-          stepId: step.id,
-          appKey: step.appKey ?? null,
-          key: step.key ?? null,
-          position: step.position,
-          traceId,
-          ...(step.config?.aiBuilderConfig?.tool && {
-            createdByTool: step.config.aiBuilderConfig.tool,
-          }),
-        }),
-      })
-    }
 
     if (step.type === 'trigger') {
       if (step.appKey === 'formsg' && step.key === 'newSubmission') {

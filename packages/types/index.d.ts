@@ -236,20 +236,11 @@ export interface IFlowConfig {
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
   aiBuilderConfig?: {
-    traceId?: string // trace id on Rome (Langfuse). Absent if AI later edited a user-created pipe.
+    traceId: string // trace id on Rome (Langfuse)
     suggested?: Array<{
       position: number
       appKey: string | null
       key: string | null
-    }>
-    // AI delete_step log. The step row is gone.
-    deletedSteps?: Array<{
-      stepId: string
-      appKey: string | null
-      key: string | null
-      position: number
-      traceId: string
-      createdByTool?: IStepAiBuilderTool
     }>
   }
   isForceClogged?: boolean
