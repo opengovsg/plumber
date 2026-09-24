@@ -12,10 +12,12 @@ import Markdown from 'react-markdown'
 import { As, Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import {
   FormErrorMessage,
+  FormHelperText,
   FormLabel,
   Link,
 } from '@opengovsg/design-system-react'
 
+import { infoboxMdComponents } from '@/components/MarkdownRenderer/CustomMarkdownComponents'
 import { ComboboxItem, SingleSelect } from '@/components/SingleSelect'
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
@@ -43,6 +45,7 @@ export interface ControlledAutocompleteProps {
   clickableLink?: IFieldDropdown['clickableLink']
   isSearchable?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  noOptionsMessage?: string
 }
 
 const OPTION_ICONS: Record<TFieldDropdownOptionIcon, As> = {
@@ -92,6 +95,7 @@ function ControlledAutocomplete(
     clickableLink,
     isSearchable,
     variableTypes = null,
+    noOptionsMessage,
   } = props
   const { allApps, readOnly, flowId } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
@@ -241,6 +245,13 @@ function ControlledAutocomplete(
           />
         </Box>
       </Flex>
+      {noOptionsMessage && (
+        <FormHelperText mt={2} data-test={`${name}-no-options-message`}>
+          <Markdown linkTarget="_blank" components={infoboxMdComponents}>
+            {noOptionsMessage}
+          </Markdown>
+        </FormHelperText>
+      )}
       {isError && <FormErrorMessage>{error?.message}</FormErrorMessage>}
       {/* the input state in the modal is reset on unmount */}
       {addNewOption?.type === 'modal' && isNewOptionModalOpen && (

@@ -85,6 +85,16 @@ function useDynamicData(
     ],
   )
 
+  const watchedFieldPaths = useMemo(
+    () => Array.from(watchedFormFields.keys()),
+    [watchedFormFields],
+  )
+  // An empty result means "no options" only once every field the source reads
+  // has a value. Subscribe so callers are told the moment that changes.
+  const missingSourceArguments = watch(watchedFieldPaths).some(
+    (value) => value === null || value === undefined || value === '',
+  )
+
   const shouldSkipQuery =
     !stepId || schema.type !== 'dropdown' || !schema.source
   const { called, data, error, loading, refetch } = useQuery(GET_DYNAMIC_DATA, {
@@ -145,6 +155,7 @@ function useDynamicData(
     data: data?.getDynamicData,
     error,
     loading,
+    missingSourceArguments,
     refetch,
   }
 }
