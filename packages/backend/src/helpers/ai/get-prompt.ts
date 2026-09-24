@@ -13,3 +13,18 @@ export const getPrompt = async (
   )
   return prompt
 }
+
+export const getPrompts = async (
+  promptNames: string[],
+  project: LangfuseProject,
+  version?: string,
+) => {
+  const entries = await Promise.all(
+    promptNames.map(async (promptName) => {
+      const prompt = await getPrompt(promptName, project, version)
+      return [promptName, prompt] as const
+    }),
+  )
+
+  return new Map(entries)
+}
