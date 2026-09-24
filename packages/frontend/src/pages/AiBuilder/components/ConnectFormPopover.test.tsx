@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { act } from 'react-dom/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ThemeProvider from '@/components/ThemeProvider'
@@ -173,12 +173,15 @@ describe('ConnectFormPopover search', () => {
     expect(searchInput().value).toBe('workshop')
     expect(optionLabels()).toEqual(['Workshop Registration'])
 
+    const addNew = [...document.body.querySelectorAll('button')].find(
+      (el) => el.textContent?.trim() === 'Add a new form',
+    )
+    expect(addNew).toBeTruthy()
     await act(async () => {
-      document.body.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-      )
+      addNew?.click()
     })
     await waitFor(() => document.body.querySelector('input') === null)
+    expect(onAddNewForm).toHaveBeenCalled()
 
     await openPopover()
     expect(searchInput().value).toBe('')

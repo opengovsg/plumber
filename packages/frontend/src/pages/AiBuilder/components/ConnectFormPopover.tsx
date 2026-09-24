@@ -100,9 +100,7 @@ export default function ConnectFormPopover({
     if (!normalisedQuery) {
       return true
     }
-    return stripFormIdPrefix(opt.name)
-      .toLowerCase()
-      .includes(normalisedQuery)
+    return stripFormIdPrefix(opt.name).toLowerCase().includes(normalisedQuery)
   })
 
   return (
