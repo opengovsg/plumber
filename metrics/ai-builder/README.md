@@ -109,6 +109,11 @@ outcome, including activity after the window.
 `turned on` undercounts pipes that were published, received no live execution, then
 unpublished. There is no durable "ever published" column.
 
+`metric_1_funnel_users.sql` is the same stages with `COUNT(DISTINCT user_id)`. A user
+reaches a stage if any of their birth-cohort pipes in that cohort does. One person with
+two AI Builder pipes still counts as one user. Someone who built both AI Builder and
+manual-editor pipes appears in both cohort rows.
+
 ### 1b. Funnel drop by Check step errors
 
 Same pipes, split by how many Check step failures they hit. Read next to panel 1.
