@@ -28,10 +28,17 @@ export function generateSchema(
 
   const schemas = Object.entries(activeApps)
     .flatMap(([appKey, app]) => {
+      // Hidden triggers/actions (e.g. FormSG's mrfSubmission) are
+      // system-managed — never let the AI Builder fabricate one directly via
+      // create_pipe, same guard as create_step's hiddenFromUser check.
       const keys =
         schemaType === 'action'
-          ? app?.actions?.map((action) => action.key) || []
-          : app?.triggers?.map((trigger) => trigger.key) || []
+          ? app?.actions
+              ?.filter((action) => !action.hiddenFromUser)
+              .map((action) => action.key) || []
+          : app?.triggers
+              ?.filter((trigger) => !trigger.hiddenFromUser)
+              .map((trigger) => trigger.key) || []
 
       if (keys.length === 0) {
         return []
