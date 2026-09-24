@@ -165,6 +165,12 @@ describe('ConnectFormPopover search', () => {
     expect(onSelectExisting).toHaveBeenCalledWith(WORKSHOP_LABEL, WORKSHOP_ID)
   })
 
+  it('focuses the search field once options have loaded', async () => {
+    await renderPopover()
+    await openPopover()
+    await waitFor(() => document.activeElement === searchInput())
+  })
+
   it('clears the search query when the popover closes and when it opens again', async () => {
     await renderPopover()
     await openPopover()

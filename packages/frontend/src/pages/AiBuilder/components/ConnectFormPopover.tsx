@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Box,
   Button,
@@ -45,6 +45,7 @@ export default function ConnectFormPopover({
   const [options, setOptions] = useState<FormConnectionOption[] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const abortRef = useRef<AbortController | null>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Closing (Escape, outside click, or picking an option) doesn't unmount
   // this component — it stays mounted as a persistent composer chip — so a
@@ -94,6 +95,14 @@ export default function ConnectFormPopover({
       onAddNewForm()
     }
   }
+
+  // The list mounts after the fetch, so Popover's open-time focus cannot land here.
+  useEffect(() => {
+    if (options === null || !isOpen) {
+      return
+    }
+    searchInputRef.current?.focus()
+  }, [options, isOpen])
 
   const normalisedQuery = searchQuery.trim().toLowerCase()
   const filteredOptions = (options ?? []).filter((opt) => {
@@ -148,6 +157,7 @@ export default function ConnectFormPopover({
                 Choose a form to build with
               </Text>
               <Input
+                ref={searchInputRef}
                 size="sm"
                 mb={1}
                 placeholder="Search forms"
