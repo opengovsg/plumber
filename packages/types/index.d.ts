@@ -236,15 +236,13 @@ export interface IFlowConfig {
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
   aiBuilderConfig?: {
-    // Present when create_pipe created this pipe. Absent when AI later
-    // edited a user-created pipe.
-    traceId?: string // trace id on Rome (Langfuse)
+    traceId?: string // trace id on Rome (Langfuse). Absent if AI later edited a user-created pipe.
     suggested?: Array<{
       position: number
       appKey: string | null
       key: string | null
     }>
-    // Append-only log of steps the AI builder deleted. The step row is gone.
+    // AI delete_step log. The step row is gone.
     deletedSteps?: Array<{
       stepId: string
       appKey: string | null
