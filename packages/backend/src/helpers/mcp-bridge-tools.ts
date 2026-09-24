@@ -295,6 +295,7 @@ export function createMcpBridgeTools(
           appKey: app_key,
           key: action_key,
           previousStepId: previous_step_id,
+          traceId,
         })
         onPipeChange?.(pipe_id)
         return step
@@ -313,6 +314,7 @@ export function createMcpBridgeTools(
           user,
           pipeId: pipe_id,
           stepId: step_id,
+          traceId,
         })
         onPipeChange?.(pipe_id)
         return flow

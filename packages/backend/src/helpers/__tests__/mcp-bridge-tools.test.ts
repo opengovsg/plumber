@@ -248,6 +248,7 @@ describe('createMcpBridgeTools', () => {
       appKey: 'slack',
       key: 'sendMessageToChannel',
       previousStepId: 'step-0',
+      traceId: mockTraceId,
     })
   })
 
@@ -261,6 +262,7 @@ describe('createMcpBridgeTools', () => {
       user: mockUser,
       pipeId: 'flow-1',
       stepId: 'step-1',
+      traceId: mockTraceId,
     })
   })
 

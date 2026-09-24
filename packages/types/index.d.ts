@@ -178,6 +178,13 @@ export interface IStepApprovalConfig {
   stepId: string
 }
 
+export type IStepAiBuilderTool = 'create_pipe' | 'create_step'
+
+export interface IStepAiBuilderConfig {
+  traceId: string
+  tool: IStepAiBuilderTool
+}
+
 export interface IStepConfig {
   stepName?: string
   approval?: IStepApprovalConfig
@@ -187,6 +194,7 @@ export interface IStepConfig {
   endStepId?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
+  aiBuilderConfig?: IStepAiBuilderConfig
 }
 
 export interface IStepTemplateConfig {
@@ -228,11 +236,22 @@ export interface IFlowConfig {
   attachments?: IFlowAttachmentsConfig[]
   // AI Builder config
   aiBuilderConfig?: {
-    traceId: string // trace id on Rome (Langfuse)
+    // Present when create_pipe created this pipe. Absent when AI later
+    // edited a user-created pipe.
+    traceId?: string // trace id on Rome (Langfuse)
     suggested?: Array<{
       position: number
       appKey: string | null
       key: string | null
+    }>
+    // Append-only log of steps the AI builder deleted. The step row is gone.
+    deletedSteps?: Array<{
+      stepId: string
+      appKey: string | null
+      key: string | null
+      position: number
+      traceId: string
+      createdByTool?: IStepAiBuilderTool
     }>
   }
   isForceClogged?: boolean

@@ -73,6 +73,18 @@ describe('createFlowWithStepsService', () => {
     expect(triggerStep.appKey).toBe('formsg')
     expect(triggerStep.key).toBe('newSubmission')
     expect(triggerStep.position).toBe(1)
+    expect(triggerStep.config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-id-123',
+        tool: 'create_pipe',
+      },
+    })
+    expect(firstActionStep.config).toEqual({
+      aiBuilderConfig: {
+        traceId: 'trace-id-123',
+        tool: 'create_pipe',
+      },
+    })
 
     expect(firstActionStep.type).toBe('action')
     expect(firstActionStep.appKey).toBe('postman')
