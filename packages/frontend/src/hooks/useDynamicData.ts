@@ -85,6 +85,14 @@ function useDynamicData(
     ],
   )
 
+  const watchedFieldPaths = useMemo(
+    () => Array.from(watchedFormFields.keys()),
+    [watchedFormFields],
+  )
+  const missingSourceArguments = watch(watchedFieldPaths).some(
+    (value) => value === null || value === undefined || value === '',
+  )
+
   const shouldSkipQuery =
     !stepId || schema.type !== 'dropdown' || !schema.source
   const { called, data, error, loading, refetch } = useQuery(GET_DYNAMIC_DATA, {
@@ -145,6 +153,7 @@ function useDynamicData(
     data: data?.getDynamicData,
     error,
     loading,
+    missingSourceArguments,
     refetch,
   }
 }

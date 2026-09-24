@@ -10,6 +10,7 @@ import {
   GET_TABLE_ROWS_LIMIT,
   LOOKUP_CONDITIONS_SUBFIELDS,
   MAX_LOOKUP_CONDITIONS,
+  NO_TABLES_MESSAGE,
   TEST_STEP_MAX_COLUMNS,
 } from '../../common/constants'
 import getTopNTableRows from '../../common/get-top-n-table-rows'
@@ -58,6 +59,7 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
+      noOptionsMessage: NO_TABLES_MESSAGE,
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,

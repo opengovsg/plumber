@@ -43,6 +43,7 @@ export interface ControlledAutocompleteProps {
   clickableLink?: IFieldDropdown['clickableLink']
   isSearchable?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  noOptionsMessage?: string
 }
 
 const OPTION_ICONS: Record<TFieldDropdownOptionIcon, As> = {
@@ -92,6 +93,7 @@ function ControlledAutocomplete(
     clickableLink,
     isSearchable,
     variableTypes = null,
+    noOptionsMessage,
   } = props
   const { allApps, readOnly, flowId } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
@@ -220,6 +222,7 @@ function ControlledAutocomplete(
             placeholder={placeholder}
             ref={ref}
             data-test={`${name}-autocomplete`}
+            noOptionsMessage={noOptionsMessage}
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}

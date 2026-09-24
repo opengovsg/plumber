@@ -2,7 +2,10 @@ import type { IGlobalVariable, IRawAction } from '@plumber/types'
 
 import StepError from '@/errors/step'
 
-import { TEST_STEP_MAX_COLUMNS } from '../../common/constants'
+import {
+  NO_TABLES_MESSAGE,
+  TEST_STEP_MAX_COLUMNS,
+} from '../../common/constants'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
@@ -67,6 +70,7 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
+      noOptionsMessage: NO_TABLES_MESSAGE,
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
