@@ -100,10 +100,12 @@ describe('createStepService', () => {
     })
 
     expect(step.config).toEqual({
-      aiBuilderConfig: [{
-        traceId: 'trace-create-step',
-        tool: 'create_step',
-      }],
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-create-step',
+          tool: 'create_step',
+        },
+      ],
     })
   })
 
