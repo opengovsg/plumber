@@ -5,16 +5,11 @@ interface GetNoOptionsMessageParams {
   options: unknown[] | null | undefined
   loading: boolean
   failed: boolean
-  /**
-   * Whether the source query still needs a value from another field, e.g. a
-   * table list that only resolves once a file is picked.
-   */
+  // True until every field the source reads has a value, e.g. file before tables.
   missingSourceArguments: boolean
 }
 
 /**
- * Guidance to show under a source-backed dropdown that resolved to no options.
- *
  * IMPORTANT: a failed query and an unanswered parent field both yield zero
  * options too, so neither shows the message.
  */

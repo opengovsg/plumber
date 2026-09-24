@@ -13,8 +13,6 @@ export const TEST_STEP_MAX_COLUMNS = 100
 
 export const MAX_LOOKUP_CONDITIONS = 3
 
-// Plumber only lists Excel tables, which many users have never created. Point
-// them at Microsoft's guide instead of leaving them with an empty dropdown.
 export const NO_TABLES_MESSAGE =
   'No tables found in this file. Learn how to [create and format an Excel table](https://support.microsoft.com/en-us/excel/get-started/create-and-format-tables), then refresh this list.'
 

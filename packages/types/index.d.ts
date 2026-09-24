@@ -444,9 +444,8 @@ export interface IFieldDropdown extends IBaseField {
   // attachment fields). Distinct from `hiddenIf`, which keys off sibling values.
   hideWhenNoOptions?: boolean
   /**
-   * For source-backed dropdowns: guidance shown under the field when its
-   * dynamic-data source resolves to zero options. Rendered as Markdown, so it
-   * can link the user to a guide.
+   * For source-backed dropdowns: Markdown shown inside the menu when its
+   * dynamic-data source resolves to zero options.
    */
   noOptionsMessage?: string
   variableTypes?: TDataOutMetadatumType[]

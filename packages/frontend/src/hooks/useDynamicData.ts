@@ -89,8 +89,6 @@ function useDynamicData(
     () => Array.from(watchedFormFields.keys()),
     [watchedFormFields],
   )
-  // An empty result means "no options" only once every field the source reads
-  // has a value. Subscribe so callers are told the moment that changes.
   const missingSourceArguments = watch(watchedFieldPaths).some(
     (value) => value === null || value === undefined || value === '',
   )

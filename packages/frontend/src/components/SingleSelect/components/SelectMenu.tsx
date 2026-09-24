@@ -62,8 +62,6 @@ export const SelectMenu = (): JSX.Element => {
           />
         )}
         {isEmpty && noOptionsMessage ? (
-          // Mirrors the variables popover's empty state, so both kinds of
-          // "nothing to pick here" guidance read the same.
           <ListItem
             role="option"
             p={4}
