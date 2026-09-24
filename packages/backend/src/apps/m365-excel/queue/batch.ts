@@ -1,6 +1,7 @@
 import type { IActionBatchQueue } from '@plumber/types'
 
 import { M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS } from '@/config/app-env-vars/m365'
+import { M365_BATCH_SIZE } from '@/config/workers'
 import Step from '@/models/step'
 
 //
@@ -47,7 +48,10 @@ const getGroupConfigForJob: IActionBatchQueue['getGroupConfigForJob'] = async (
 const batchQueueSettings = {
   getGroupConfigForJob,
   queueRateLimit: {
-    max: 1,
+    // One full batch's worth of jobs per window. Must be >= batch.size: the
+    // limiter counts individual jobs, so max: 1 would admit one job per window
+    // and every batch would collapse to size 1.
+    max: M365_BATCH_SIZE,
     duration: M365_EXCEL_INTERVAL_BETWEEN_ACTIONS_MS,
   },
 } satisfies IActionBatchQueue
