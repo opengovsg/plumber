@@ -11,7 +11,15 @@ import { POSTMAN_SUPPORTED_ATTACHMENTS_GUIDE_URL } from './constants'
 // Keep the RFC 5321 mailbox length cap. Skip the 64-char local-part cap so
 // plus-tagged routing addresses still parse.
 const MAX_MAILBOX_LENGTH = 254
-const mailboxSchema = z.email().max(MAX_MAILBOX_LENGTH)
+
+// zod's default email pattern, with the local part widened to the character
+// set email-validator (our previous library) allowed. The other built-in
+// zod email patterns allow that same set, but drop the TLD requirement.
+const MAILBOX_PATTERN =
+  /^(?!\.)(?!.*\.\.)([A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]*)[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]@([A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/
+const mailboxSchema = z
+  .email({ pattern: MAILBOX_PATTERN })
+  .max(MAX_MAILBOX_LENGTH)
 
 function isValidMailbox(email: string): boolean {
   return mailboxSchema.safeParse(email).success
