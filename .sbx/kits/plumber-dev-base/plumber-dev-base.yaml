@@ -1,0 +1,31 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: '3'
+kind: workload
+displayName: Plumber base development workload
+description: >
+  ** Base workload for Plumber development **
+  Sets up Docker sandbox to support running Plumber services (backend, worker,
+  frontend). This should be run from a Plumber source code checkout. Assumes
+  default ports (3000 for backend, 3001 for frontend).
+version: '1.0.0'
+provides: ['plumber-dev-base']
+
+capabilities:
+  - type: com.docker.sandbox/sbx@1
+  - type: com.docker.sandbox/network-policy@2
+    config:
+      runtime:
+        allow:
+          - '*.launchdarkly.com'
+          # Not doing docker-in-docker; this enables connecting to locally (but
+          # separately) hosted postgres & redis containers
+          - localhost:5432
+          - localhost:6379
+  - type: com.docker.sandbox/port@1
+    config:
+      container: 3000
+      name: backend
+  - type: com.docker.sandbox/port@1
+    config:
+      container: 3001
+      name: frontend
