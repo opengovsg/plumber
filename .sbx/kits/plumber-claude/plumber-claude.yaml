@@ -1,0 +1,21 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: '3'
+kind: set
+displayName: Claude with Plumber sbx dev integration
+version: '1.0.0'
+
+kits:
+  - ref: docker.io/docker/sbx-kit-claude-mixin:latest
+
+requires: ['plumber-dev-base']
+
+capabilities:
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: echo "export CLAUDE_CODE_TMUX_TRUECOLOR=1" >> /etc/sandbox-persistent.sh
+          user: '0'
+          description: 'Configure claude for true color in tmux'
+        - command: echo "alias plumber-dev-agent='claude --dangerously-skip-permissions'" >> /home/agent/.bashrc
+          user: '1000'
+          description: 'Alias plumber-dev-agent command to claude'

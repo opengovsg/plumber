@@ -1,0 +1,28 @@
+schemaVersion: '1'
+name: plumber-dev
+agent: plumber-dev-base
+
+workspace: ../../
+additionalWorkspaces:
+  - path: ../../.sbx
+    readOnly: true
+
+args:
+  backendPort:
+    default: 3000
+  frontendPort:
+    default: 3001
+
+kits:
+  - source: .sbx/kits/plumber-dev-base
+  - source: .sbx/kits/plumber-claude
+
+ports:
+  - sandbox: 3000
+    host: ${{ env.args.backendPort }}
+  - sandbox: 3001
+    host: ${{ env.args.frontendPort }}
+
+env:
+  BASE_URL: 'http://localhost:${{ env.args.backendPort }}'
+  WEB_APP_URL: 'http://localhost:${{ env.args.frontendPort }}'
