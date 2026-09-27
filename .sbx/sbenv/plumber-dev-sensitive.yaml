@@ -1,6 +1,7 @@
+schemaVersion: '1'
+
 kits:
-  - source: .sbx/kits/pair-foundry
-  - source: .sbx/kits/pair-rome
+  - source: .sbx/kits/plumber-dev-sensitive
 
 secrets:
   pair-foundry:

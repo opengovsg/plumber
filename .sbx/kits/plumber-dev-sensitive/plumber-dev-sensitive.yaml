@@ -1,0 +1,27 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: '3'
+kind: mixin
+displayName: Plumber dev for sensitive integrations
+description: >
+  Enhances base Plumber dev workload for developing with sensitive integrations.
+
+requires: ['plumber-dev-base']
+
+capabilities:
+  - type: com.docker.sandbox/credential@1
+    config:
+      service: pair-foundry
+      phase: runtime
+      apiKey:
+        name: PAIR_FOUNDRY_API_KEY
+        proxyManaged: true
+        inject:
+          - domain: engine.pair.gov.sg
+            scheme: bearer
+  - type: com.docker.sandbox/network-policy@2
+    config:
+      runtime:
+        allow:
+          - engine.pair.gov.sg
+          - rome.pair.gov.sg
+          - guide.plumber.gov.sg
