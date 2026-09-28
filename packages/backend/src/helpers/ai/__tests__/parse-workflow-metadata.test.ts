@@ -119,6 +119,78 @@ steps:
       })
     })
 
+    it('flattens steps nested under an if-then into an explicit If block', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Urgent Routing
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    stepName: If
+    branchName: Is urgent
+    description: Check urgency
+    steps:
+      - step: 3
+        appKey: slack
+        key: sendMessageToChannel
+        stepName: Alert ops
+        description: Post to the ops channel
+      - step: 4
+        appKey: postman-sms
+        key: sendSms
+        stepName: SMS duty officer
+        description: Text the duty officer
+  - step: 5
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: Send email
+    description: Always email the requester
+-->
+`
+      const result = parseWorkflowMetadata(text)
+      expect(result.actions.map((action) => action.key)).toStrictEqual([
+        'ifThen',
+        'sendMessageToChannel',
+        'sendSms',
+        'sendTransactionalEmail',
+      ])
+      expect(result.actions[0].ifThenChildCount).toBe(2)
+      expect(result.actions[0].parameters).toStrictEqual({
+        depth: 0,
+        branchName: 'Is urgent',
+      })
+      expect(result.actions[1].ifThenChildCount).toBeUndefined()
+      expect(result.actions[3].ifThenChildCount).toBeUndefined()
+    })
+
+    it('leaves a flat if-then without nested steps on the derived extent', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Flat
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    description: Check
+  - step: 3
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->
+`
+      const result = parseWorkflowMetadata(text)
+      expect(result.actions[0].ifThenChildCount).toBeUndefined()
+    })
+
     it('adds templateConfig to each action', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
       for (const action of result.actions) {
@@ -292,7 +364,68 @@ steps:
     key: forEach
     description: For-each after if-then
 -->`),
-      ).toThrow('For-each action cannot be placed after an if-then action')
+      ).toThrow('For-each action cannot be placed inside an If block')
+    })
+
+    it('throws when an if-then is nested inside another if-then block', () => {
+      expect(() =>
+        parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    description: Outer
+    steps:
+      - step: 3
+        appKey: toolbox
+        key: ifThen
+        description: Inner
+        steps:
+          - step: 4
+            appKey: postman
+            key: sendTransactionalEmail
+            description: Action
+-->`),
+      ).toThrow('If blocks cannot be nested inside another If block')
+    })
+
+    it('accepts a for-each after an explicit If block', () => {
+      const result = parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    description: If
+    steps:
+      - step: 3
+        appKey: postman
+        key: sendTransactionalEmail
+        description: Action
+  - step: 4
+    appKey: toolbox
+    key: forEach
+    description: Loop
+  - step: 5
+    appKey: slack
+    key: sendMessageToChannel
+    description: Per item
+-->`)
+      expect(result.actions.map((action) => action.key)).toStrictEqual([
+        'ifThen',
+        'sendTransactionalEmail',
+        'forEach',
+        'sendMessageToChannel',
+      ])
     })
 
     it('throws when a delay action is placed after a for-each', () => {

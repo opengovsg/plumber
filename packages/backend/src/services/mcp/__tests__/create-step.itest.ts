@@ -120,6 +120,219 @@ describe('createStepService', () => {
     expect(positions).toEqual([1, 2, 3, 4])
   })
 
+  describe('If blocks', () => {
+    async function createBlockPipe(label: string) {
+      const user = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `create-step-block-${label}-${randomUUID()}@example.com`,
+      })
+      // trigger → If [ slack ] → email
+      const flow = await createFlowWithStepsService({
+        user,
+        name: 'Block Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'ifThen',
+            type: 'action',
+            position: 2,
+            ifThenChildCount: 1,
+          },
+          {
+            appKey: 'slack',
+            key: 'sendMessageToChannel',
+            type: 'action',
+            position: 3,
+          },
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 4,
+          },
+        ],
+        traceId: `trace-block-${label}`,
+      })
+      const [trigger, ifThen, slack, email] = flow.steps
+      return { user, flow, trigger, ifThen, slack, email }
+    }
+
+    async function loadSteps(flowId: string) {
+      const flow = await Flow.query().findById(flowId).throwIfNotFound()
+      return (await flow.$fetchGraph('steps')).steps
+    }
+
+    it('extends the block when inserting after its last inner step', async () => {
+      const { user, flow, ifThen, slack } = await createBlockPipe('extend')
+
+      const sms = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'postman-sms',
+        key: 'sendSms',
+        previousStepId: slack.id,
+      })
+
+      const steps = await loadSteps(flow.id)
+      expect(steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendSms',
+        'sendTransactionalEmail',
+      ])
+      expect(steps[1].id).toBe(ifThen.id)
+      expect(steps[1].config.endStepId).toBe(sms.id)
+    })
+
+    it('inserts as the first inner step when inserting after the If step', async () => {
+      const { user, flow, ifThen, slack } = await createBlockPipe('first')
+
+      await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'postman-sms',
+        key: 'sendSms',
+        previousStepId: ifThen.id,
+      })
+
+      const steps = await loadSteps(flow.id)
+      expect(steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendSms',
+        'sendMessageToChannel',
+        'sendTransactionalEmail',
+      ])
+      expect(steps[1].config.endStepId).toBe(slack.id)
+    })
+
+    it('places the step outside the block with afterIfThenBlock on the last inner step', async () => {
+      const { user, flow, slack } = await createBlockPipe('after-end')
+
+      const sms = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'postman-sms',
+        key: 'sendSms',
+        previousStepId: slack.id,
+        afterIfThenBlock: true,
+      })
+
+      const steps = await loadSteps(flow.id)
+      expect(steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendSms',
+        'sendTransactionalEmail',
+      ])
+      expect(sms.position).toBe(4)
+      expect(steps[1].config.endStepId).toBe(slack.id)
+    })
+
+    it('places the step outside the block with afterIfThenBlock on the If step', async () => {
+      const { user, flow, ifThen, slack } = await createBlockPipe('after-if')
+
+      const sms = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'postman-sms',
+        key: 'sendSms',
+        previousStepId: ifThen.id,
+        afterIfThenBlock: true,
+      })
+
+      expect(sms.position).toBe(4)
+      const steps = await loadSteps(flow.id)
+      expect(steps[1].config.endStepId).toBe(slack.id)
+    })
+
+    it('rejects afterIfThenBlock when the previous step is not a block boundary', async () => {
+      const { user, flow, email } = await createBlockPipe('bad-boundary')
+
+      await expect(
+        createStepService({
+          user,
+          pipeId: flow.id,
+          appKey: 'postman-sms',
+          key: 'sendSms',
+          previousStepId: email.id,
+          afterIfThenBlock: true,
+        }),
+      ).rejects.toThrow(
+        'after_if_then_block needs previous_step_id to be an If step or the last step inside its If block.',
+      )
+    })
+
+    it('creates a new If as an empty block that the next insert fills', async () => {
+      const { user, flow, email } = await createBlockPipe('new-if')
+
+      const newIfThen = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'toolbox',
+        key: 'ifThen',
+        previousStepId: email.id,
+      })
+      expect(newIfThen.config.endStepId).toBe(newIfThen.id)
+      expect(newIfThen.parameters).toEqual({ depth: 0 })
+
+      const telegram = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'telegram-bot',
+        key: 'sendMessage',
+        previousStepId: newIfThen.id,
+      })
+
+      const steps = await loadSteps(flow.id)
+      expect(steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendTransactionalEmail',
+        'ifThen',
+        'sendMessage',
+      ])
+      expect(steps[4].config.endStepId).toBe(telegram.id)
+    })
+
+    it('rejects an If inside an existing If block', async () => {
+      const { user, flow, slack } = await createBlockPipe('nested')
+
+      await expect(
+        createStepService({
+          user,
+          pipeId: flow.id,
+          appKey: 'toolbox',
+          key: 'ifThen',
+          previousStepId: slack.id,
+        }),
+      ).rejects.toThrow('An If block cannot contain another If.')
+    })
+
+    it('rejects a For-each inside an If block', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('for-each')
+
+      await expect(
+        createStepService({
+          user,
+          pipeId: flow.id,
+          appKey: 'toolbox',
+          key: 'forEach',
+          previousStepId: ifThen.id,
+        }),
+      ).rejects.toThrow('An If block cannot contain a For-each.')
+    })
+  })
+
   it('throws if the trigger or action does not exist', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),

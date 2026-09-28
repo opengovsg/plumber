@@ -1,6 +1,7 @@
 import { raw } from 'objection'
 
 import { removeMrfSteps } from '@/apps/formsg/triggers/new-submission/remove-mrf-steps'
+import { repairEndStepsOnDeleteStep } from '@/apps/toolbox/common/validate-end-step'
 import { hasStepReference } from '@/helpers/check-step-parameters'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -36,6 +37,10 @@ export async function deleteStepService({
     if (flow.active) {
       throw new PublishedPipeError()
     }
+
+    const stepsBeforeDelete = await flow
+      .$relatedQuery('steps', trx)
+      .orderBy('position', 'asc')
 
     if (step.type === 'trigger') {
       if (step.appKey === 'formsg' && step.key === 'newSubmission') {
@@ -85,6 +90,11 @@ export async function deleteStepService({
         .where('position', '>', step.position)
         .patch({ position: raw('position - 1') })
     }
+
+    // Unlike the editor, this deletes only the requested step: removing an
+    // If step leaves its inner steps in place as unconditional steps, and
+    // removing a block's last inner step shrinks that block.
+    await repairEndStepsOnDeleteStep({ trx, flow, stepsBeforeDelete })
 
     await flow.patchLastUpdated({
       flowId: flow.id,
