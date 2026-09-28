@@ -105,6 +105,7 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
         executionId,
         jobId,
         appKey,
+        key,
         metadata,
       } = executionStep
 
@@ -168,6 +169,7 @@ const bulkRetryIterations: MutationResolvers['bulkRetryIterations'] = async (
 
         const newJob = await enqueueActionJob({
           appKey: appKey,
+          actionKey: key,
           jobName: job.name,
           jobData: job.data,
           jobOptions: DEFAULT_JOB_OPTIONS,

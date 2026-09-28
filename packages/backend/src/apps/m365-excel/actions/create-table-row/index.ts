@@ -7,6 +7,7 @@ import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
 import WorkbookSession from '../../common/workbook-session'
 import { RATE_LIMIT_FOR_RELEASE_ONLY_REMOVE_AFTER_JULY_2024 } from '../../FOR_RELEASE_PERIOD_ONLY'
+import batchQueueConfig from '../../queue/batch'
 
 import getDataOutMetadata from './get-data-out-metadata'
 import { parametersSchema } from './schemas'
@@ -278,6 +279,10 @@ const action: IRawAction = {
   },
 
   runBatch,
+
+  // Opt into batch processing: jobs for this action are routed to the m365-excel
+  // batch queue and processed via runBatch (one multi-row insert per batch).
+  batch: batchQueueConfig,
 }
 
 export default action
