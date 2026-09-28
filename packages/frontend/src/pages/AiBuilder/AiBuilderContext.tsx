@@ -8,10 +8,15 @@ import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
-import { getStepGroupTypeAndCaption, getStepStructure } from '@/helpers/toolbox'
 import { extractVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
 import { Message, PipeStatePart } from '@/hooks/useChatStream'
+
+import {
+  buildPreviewItems,
+  type PreviewItem,
+  type PreviewStep,
+} from './components/StepsPreview/helpers/previewItems'
 
 export interface AIBuilderDraftState {
   flowName: string
@@ -39,10 +44,7 @@ interface AIBuilderSharedProps extends AIBuilderDraftState {
   setChatState: (state: AIBuilderDraftState) => void
 }
 
-interface AiBuilderStep extends IStep {
-  description?: string
-  connectionLabel?: string | null
-}
+type AiBuilderStep = PreviewStep
 
 interface AIBuilderContextValue extends AIBuilderSharedProps {
   allApps: IApp[]
@@ -50,10 +52,9 @@ interface AIBuilderContextValue extends AIBuilderSharedProps {
   steps: AiBuilderStep[]
   isMobile: boolean
   actionSteps: IStep[]
-  stepsBeforeGroup: IStep[]
-  groupedSteps: IStep[][]
-  stepGroupType: string | null
-  stepGroupCaption: string | null
+  // The action steps grouped into If blocks and a for-each body, the way the
+  // editor draws them.
+  previewItems: PreviewItem[]
   // DataDog RUM Session ID so we can associate the trace with the RUM
   ddSessionId: string
   // Unique id for this chat session, used as the Langfuse session id
@@ -119,15 +120,12 @@ export const AiBuilderContextProvider = ({
   }, [isMobile])
 
   const { data: allApps, loading: isLoadingAllApps } = useApps()
-  const appsWithActions: IApp[] = allApps.filter(
-    (app: IApp) => !!app.actions?.length,
-  )
 
   /**
    * NOTE: process the steps that have been returned by Pair
    * as if its in the Editor, but a lot simpler
    */
-  const steps = useMemo(() => {
+  const steps = useMemo((): AiBuilderStep[] => {
     // Phase 2b+: DB-backed pipe state — steps already have correct positions
     if (output?.pipeId && Array.isArray(output?.steps)) {
       return (output as PipeStatePart['data'])
@@ -142,15 +140,9 @@ export const AiBuilderContextProvider = ({
       position: index + 1,
     }))
   }, [output])
-  const [triggerStep, stepsBeforeGroup, groupedSteps] = useMemo(
-    () => getStepStructure(appsWithActions, steps),
-    [appsWithActions, steps],
-  )
 
-  const { stepGroupType, stepGroupCaption } = useMemo(
-    () => getStepGroupTypeAndCaption(groupedSteps),
-    [groupedSteps],
-  )
+  const triggerStep = steps[0] ?? null
+  const previewItems = useMemo(() => buildPreviewItems(steps.slice(1)), [steps])
 
   const { data: testExecutionStepsData, refetch: refetchTestExecutionSteps } =
     useQuery<{ getTestExecutionSteps: IExecutionStep[] }>(
@@ -214,10 +206,7 @@ export const AiBuilderContextProvider = ({
               (s: { type: string }) => s.type === 'action',
             )
           : output?.actions || [],
-        stepsBeforeGroup,
-        groupedSteps,
-        stepGroupType,
-        stepGroupCaption,
+        previewItems,
         ddSessionId,
         chatId: chatId ?? '',
         clearPersistedState,
