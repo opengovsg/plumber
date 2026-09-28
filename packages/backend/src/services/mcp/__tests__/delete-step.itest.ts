@@ -327,7 +327,7 @@ describe('deleteStepService', () => {
       expect(updatedIfThen.config.endStepId).toBe(ifThen.id)
     })
 
-    it('keeps the inner steps when the If step itself is deleted', async () => {
+    it('deletes the whole block when the If step is deleted, and keeps the step after it', async () => {
       const { user, flow, ifThen } = await createBlockPipe('unwrap')
 
       const result = await deleteStepService({
@@ -338,11 +338,23 @@ describe('deleteStepService', () => {
 
       expect(result.steps.map((s) => s.key)).toEqual([
         'newSubmission',
-        'sendMessageToChannel',
-        'sendSms',
         'sendTransactionalEmail',
       ])
-      expect(result.steps.map((s) => s.position)).toEqual([1, 2, 3, 4])
+      expect(result.steps.map((s) => s.position)).toEqual([1, 2])
+    })
+
+    it('deletes a legacy If block through its derived extent', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('legacy-block')
+      await Step.query().findById(ifThen.id).patch({ config: {} })
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+      })
+
+      // With no marker the block runs through to the end of the pipe.
+      expect(result.steps.map((s) => s.key)).toEqual(['newSubmission'])
     })
 
     it('pins a legacy If block and shrinks it when its last step is deleted', async () => {
