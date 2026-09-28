@@ -57,6 +57,9 @@ export const FLOW_FIELDS = gql`
         size
         updatedAt
       }
+      aiBuilderConfig {
+        traceId
+      }
     }
     pendingTransfer {
       id

@@ -308,7 +308,7 @@ export default function StepsPreview() {
                     })
                   }
                   window.open(
-                    URLS.FLOW_EDITOR(output.pipeId),
+                    `${URLS.FLOW_EDITOR(output.pipeId)}?from=ai-builder`,
                     '_blank',
                     'noopener,noreferrer',
                   )
