@@ -6,7 +6,7 @@ import {
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 
-import { ifThenParametersSchema } from './actions.zod'
+import { ifThenChildCountSchema, ifThenParametersSchema } from './actions.zod'
 
 function getActiveApps(restrictedAppKeys: string[] = []) {
   return Object.fromEntries(
@@ -50,6 +50,7 @@ export function generateSchema(
 
         if (isIfThenAction) {
           extendedFields.parameters = ifThenParametersSchema.prefault({})
+          extendedFields.ifThenChildCount = ifThenChildCountSchema
         }
 
         return baseSchema.extend(extendedFields)
