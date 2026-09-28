@@ -63,6 +63,7 @@ export const dataOutSchema = z.object({
           }),
         )
         .nullish(),
+      email: z.record(z.string(), z.any()).nullish(),
     })
     .nullish(),
 })
