@@ -26,7 +26,10 @@ vi.mock('@/services/mcp/add-tile-columns', () => ({
     skipped: [],
   }),
 }))
-vi.mock('@/services/mcp/create-flow-with-steps', () => ({
+vi.mock('@/services/mcp/create-flow-with-steps', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/services/mcp/create-flow-with-steps')
+  >()),
   createFlowWithStepsService: vi
     .fn()
     .mockResolvedValue({ id: 'f1', name: 'My Pipe', steps: [] }),
@@ -583,6 +586,68 @@ describe('createMcpBridgeTools', () => {
           type: 'action',
           position: 2,
           parameters: { branchName: 'High Priority' },
+        },
+      ],
+      traceId: mockTraceId,
+    })
+  })
+
+  it('create_pipe flattens the steps nested inside an ifThen into an explicit If block', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_pipe.execute(
+      {
+        name: 'Block Pipe',
+        steps: [
+          { app_key: 'formsg', trigger_key: 'newSubmission' },
+          {
+            app_key: 'toolbox',
+            action_key: 'ifThen',
+            parameters: { branchName: 'Urgent' },
+            steps: [
+              { app_key: 'slack', action_key: 'sendMessageToChannel' },
+              { app_key: 'postman-sms', action_key: 'sendSms' },
+            ],
+          },
+          { app_key: 'postman', action_key: 'sendTransactionalEmail' },
+        ],
+      },
+      { toolCallId: 'create_pipe', messages: [] },
+    )
+    expect(vi.mocked(createFlowWithStepsService)).toHaveBeenCalledWith({
+      user: mockUser,
+      name: 'Block Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+          parameters: { branchName: 'Urgent' },
+          ifThenChildCount: 2,
+        },
+        {
+          appKey: 'slack',
+          key: 'sendMessageToChannel',
+          type: 'action',
+          position: 3,
+        },
+        {
+          appKey: 'postman-sms',
+          key: 'sendSms',
+          type: 'action',
+          position: 4,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 5,
         },
       ],
       traceId: mockTraceId,

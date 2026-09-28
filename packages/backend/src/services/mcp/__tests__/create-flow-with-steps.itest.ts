@@ -191,6 +191,150 @@ describe('createFlowWithStepsService', () => {
     })
   })
 
+  it('pins an explicit If block from ifThenChildCount and leaves later steps outside it', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-block-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'Block Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+          ifThenChildCount: 2,
+        },
+        {
+          appKey: 'slack',
+          key: 'sendMessageToChannel',
+          type: 'action',
+          position: 3,
+        },
+        {
+          appKey: 'postman-sms',
+          key: 'sendSms',
+          type: 'action',
+          position: 4,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 5,
+        },
+      ],
+      traceId: 'trace-block',
+    })
+
+    const [, ifThen, , sms, email] = result.steps
+    expect(ifThen.config.endStepId).toBe(sms.id)
+    expect(email.config.endStepId).toBeUndefined()
+    expect(result.config?.aiBuilderConfig?.suggested).toHaveLength(5)
+  })
+
+  it('pins a flat if-then without ifThenChildCount to its derived extent', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-derived-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'Derived Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 2,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 3,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'ifThen',
+          type: 'action',
+          position: 4,
+        },
+        {
+          appKey: 'postman-sms',
+          key: 'sendSms',
+          type: 'action',
+          position: 5,
+        },
+      ],
+      traceId: 'trace-derived',
+    })
+
+    const [, ifThen1, email, ifThen2, sms] = result.steps
+    expect(ifThen1.config.endStepId).toBe(email.id)
+    expect(ifThen2.config.endStepId).toBe(sms.id)
+  })
+
+  it('rejects a for-each inside an If block with the layout rule message', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-invalid-block-${randomUUID()}@example.com`,
+    })
+
+    await expect(
+      createFlowWithStepsService({
+        user,
+        name: 'Invalid Block Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'ifThen',
+            type: 'action',
+            position: 2,
+            ifThenChildCount: 2,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'forEach',
+            type: 'action',
+            position: 3,
+          },
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 4,
+          },
+        ],
+        traceId: 'trace-invalid-block',
+      }),
+    ).rejects.toThrow(
+      'Pipe contains invalid action steps: For-each action cannot be placed inside an If block.',
+    )
+  })
+
   it('stores null keys when not provided', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
