@@ -23,6 +23,7 @@ import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import BranchStep from './BranchStep'
 import GroupedStepContainer from './GroupedStepContainer'
@@ -301,6 +302,11 @@ export default function StepsPreview() {
                 size="sm"
                 rightIcon={<MdOpenInNew />}
                 onClick={() => {
+                  if (isPostHogConfigured) {
+                    posthog.capture('ai_builder:open_editor', {
+                      pipe_id: output.pipeId,
+                    })
+                  }
                   window.open(
                     URLS.FLOW_EDITOR(output.pipeId),
                     '_blank',

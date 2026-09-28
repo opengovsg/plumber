@@ -16,6 +16,11 @@ if (projectToken && host) {
       capture_unhandled_rejections: true,
       capture_console_errors: false,
     },
+    session_recording: {
+      sampling: {
+        sample_rate: 0.1,
+      },
+    },
   })
 }
 
