@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Connection from '@/models/connection'
+import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
 
@@ -151,5 +152,22 @@ describe('registerConnectionService', () => {
     ).rejects.toThrow('Step not found')
 
     expect(mocks.registerConnection).not.toHaveBeenCalled()
+  })
+
+  it('throws when the pipe is published and does not register', async () => {
+    const step = await Step.query().findById(triggerStepId)
+    await Flow.knex().table('flows').where('id', step?.flowId).update({
+      active: true,
+    })
+
+    await expect(
+      registerConnectionService(user, triggerStepId, connection.id),
+    ).rejects.toThrow(
+      'This pipe is published. Ask the user to unpublish it before making changes.',
+    )
+
+    expect(mocks.registerConnection).not.toHaveBeenCalled()
+    const updatedStep = await Step.query().findById(triggerStepId)
+    expect(updatedStep?.connectionId).toBeNull()
   })
 })
