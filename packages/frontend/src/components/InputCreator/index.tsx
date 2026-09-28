@@ -14,6 +14,7 @@ import RichTextEditorWithPresets from '@/components/RichTextEditorWithPresets'
 import TextField from '@/components/TextField'
 import { EditorContext } from '@/contexts/Editor'
 import { getDefaultValue } from '@/helpers/editor'
+import { getNoOptionsMessage } from '@/helpers/getNoOptionsMessage'
 import {
   shouldHideEmptySourceDropdown,
   useIsFieldHidden,
@@ -76,11 +77,8 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     (Object.keys(flow).length > 0 && flow?.role === 'viewer') || readOnly
 
   const computedName = namePrefix ? `${namePrefix}.${name}` : name
-  const { data, error, loading, refetch } = useDynamicData(
-    stepId,
-    schema,
-    computedName,
-  )
+  const { data, error, loading, missingSourceArguments, refetch } =
+    useDynamicData(stepId, schema, computedName)
 
   // NOTE: we handle visibility in InputCreator instead of in FlowSubStep
   // because MultiRow recursively renders InputCreator.
@@ -122,6 +120,13 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
     ) {
       return <></>
     }
+    const noOptionsMessage = getNoOptionsMessage({
+      field: schema,
+      options: preparedOptions,
+      loading,
+      failed: !!error,
+      missingSourceArguments,
+    })
     return (
       <ControlledAutocomplete
         isSearchable={schema.isSearchable ?? true}
@@ -145,6 +150,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         label={label}
         placeholder={placeholder}
         variableTypes={schema.variableTypes}
+        noOptionsMessage={noOptionsMessage}
       />
     )
   }

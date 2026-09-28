@@ -13,6 +13,9 @@ export const TEST_STEP_MAX_COLUMNS = 100
 
 export const MAX_LOOKUP_CONDITIONS = 3
 
+export const NO_TABLES_MESSAGE =
+  'No tables found in this file. Learn how to [create and format an Excel table](https://support.microsoft.com/en-us/excel/get-started/create-and-format-tables), then refresh this list.'
+
 export const LOOKUP_CONDITIONS_SUBFIELDS = [
   {
     placeholder: 'Lookup column',
