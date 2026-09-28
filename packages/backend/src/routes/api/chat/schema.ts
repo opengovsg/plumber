@@ -165,6 +165,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
           parameters: z.record(z.string(), z.unknown()),
           connectionId: z.string().nullable(),
           connectionLabel: z.string().nullable().optional(),
+          endStepId: z.string().nullable().optional(),
         }),
       ),
     }),

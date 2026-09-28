@@ -1,0 +1,196 @@
+// @vitest-environment jsdom
+import type { IStep } from '@plumber/types'
+
+import { createRoot } from 'react-dom/client'
+import { act } from 'react-dom/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { buildPreviewItems, type PreviewStep } from './helpers/previewItems'
+import PreviewItems from './PreviewItems'
+
+const mocks = vi.hoisted(() => ({
+  output: {} as Record<string, unknown>,
+  completedStepIds: new Set<string>(),
+}))
+
+vi.mock('@/pages/AiBuilder/AiBuilderContext', () => ({
+  useAiBuilderContext: () => ({ output: mocks.output, isMobile: false }),
+}))
+vi.mock('@/pages/AiBuilder/StepConfigContext', () => ({
+  useStepConfigContext: () => ({
+    stepParametersByStepId: {},
+    completedStepIds: mocks.completedStepIds,
+  }),
+}))
+// The real cards pull in Chakra, app icons and step-name lookups. Stand-ins
+// keep this test about the structure PreviewItems produces.
+vi.mock('./Step', () => ({
+  default: ({
+    step,
+    isNested,
+    isLastStep,
+    isActive,
+  }: {
+    step: IStep
+    isNested?: boolean
+    isLastStep?: boolean
+    isActive?: boolean
+  }) => (
+    <div
+      data-testid="step"
+      data-step={step.id}
+      data-nested={String(Boolean(isNested))}
+      data-last={String(Boolean(isLastStep))}
+      data-active={String(Boolean(isActive))}
+    />
+  ),
+}))
+vi.mock('./BranchStep', () => ({
+  default: ({ branchSteps }: { branchSteps: IStep[] }) => (
+    <div
+      data-testid="branch"
+      data-steps={branchSteps.map((step) => step.id).join(',')}
+    />
+  ),
+}))
+vi.mock('./GroupedStepContainer', () => ({
+  default: ({
+    children,
+    stepGroupType,
+    isNested,
+    isPending,
+  }: {
+    children: React.ReactNode
+    stepGroupType: string
+    isNested: boolean
+    isPending?: boolean
+  }) => (
+    <div
+      data-testid="block"
+      data-type={stepGroupType}
+      data-nested={String(isNested)}
+      data-pending={String(Boolean(isPending))}
+    >
+      {children}
+    </div>
+  ),
+}))
+
+function step(id: string, appKey: string, key: string): PreviewStep {
+  return {
+    id,
+    appKey,
+    key,
+    type: 'action',
+    position: 0,
+    parameters: {},
+  } as PreviewStep
+}
+
+let container: HTMLDivElement
+let root: ReturnType<typeof createRoot>
+
+function render(
+  actionSteps: PreviewStep[],
+  effectiveActiveStepId: string | null = null,
+): void {
+  act(() => {
+    root.render(
+      <PreviewItems
+        items={buildPreviewItems(actionSteps)}
+        isNested={false}
+        effectiveActiveStepId={effectiveActiveStepId}
+      />,
+    )
+  })
+}
+
+function attrsOf(selector: string, attribute: string): string[] {
+  return Array.from(container.querySelectorAll(selector)).map(
+    (element) => element.getAttribute(attribute) ?? '',
+  )
+}
+
+describe('PreviewItems', () => {
+  beforeEach(() => {
+    ;(
+      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true
+    mocks.output = {}
+    mocks.completedStepIds = new Set()
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+  })
+
+  afterEach(() => {
+    act(() => root.unmount())
+    container.remove()
+  })
+
+  it('renders an If block between plain steps, with a connector after it', () => {
+    render([
+      step('a', 'postman', 'sendTransactionalEmail'),
+      { ...step('if', 'toolbox', 'ifThen'), endStepId: 'b' },
+      step('b', 'slack', 'sendMessageToChannel'),
+      step('c', 'postman-sms', 'sendSms'),
+    ])
+
+    expect(attrsOf('[data-testid="block"]', 'data-type')).toEqual(['ifThen'])
+    expect(attrsOf('[data-testid="branch"]', 'data-steps')).toEqual(['if,b'])
+    // Plain steps: `a` before the block, `c` after it as the last item.
+    expect(attrsOf('[data-testid="step"]', 'data-step')).toEqual(['a', 'c'])
+    expect(attrsOf('[data-testid="step"]', 'data-last')).toEqual([
+      'false',
+      'true',
+    ])
+    // The block is followed by another item, so a connector separates them.
+    const block = container.querySelector('[data-testid="block"]')
+    expect(block?.nextElementSibling).not.toBeNull()
+    expect(block?.nextElementSibling?.getAttribute('data-testid')).toBeNull()
+  })
+
+  it('nests an If block inside the for-each body', () => {
+    render([
+      step('loop', 'toolbox', 'forEach'),
+      { ...step('if', 'toolbox', 'ifThen'), endStepId: 'b' },
+      step('b', 'slack', 'sendMessageToChannel'),
+      step('c', 'postman', 'sendTransactionalEmail'),
+    ])
+
+    expect(attrsOf('[data-testid="block"]', 'data-type')).toEqual([
+      'forEach',
+      'ifThen',
+    ])
+    expect(attrsOf('[data-testid="block"]', 'data-nested')).toEqual([
+      'false',
+      'true',
+    ])
+    expect(attrsOf('[data-testid="step"]', 'data-step')).toEqual(['loop', 'c'])
+    expect(attrsOf('[data-testid="step"]', 'data-nested')).toEqual([
+      'true',
+      'true',
+    ])
+  })
+
+  it('mutes a block in pipe mode until one of its steps is active or configured', () => {
+    mocks.output = { pipeId: 'pipe-1' }
+    mocks.completedStepIds = new Set(['a'])
+
+    render(
+      [
+        step('a', 'postman', 'sendTransactionalEmail'),
+        { ...step('if', 'toolbox', 'ifThen'), endStepId: 'b' },
+        step('b', 'slack', 'sendMessageToChannel'),
+        { ...step('if2', 'toolbox', 'ifThen'), endStepId: 'c' },
+        step('c', 'postman-sms', 'sendSms'),
+      ],
+      'b',
+    )
+
+    expect(attrsOf('[data-testid="block"]', 'data-pending')).toEqual([
+      'false',
+      'true',
+    ])
+  })
+})
