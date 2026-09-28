@@ -68,6 +68,14 @@ const mocks = vi.hoisted(() => ({
   // this runs inside WorkbookSession.acquire (mocked here), but runBatch calls
   // file-privacy directly (so we mock it).
   validateCanAccessFile: vi.fn(),
+  // enqueueActionJob's rollout check calls this; stub it so these tests don't
+  // depend on a real LaunchDarkly connection. 'all' matches the flag's
+  // fallback value, so every job still routes to the batch queue for real.
+  getLdFlagValue: vi.fn(async () => 'all'),
+}))
+
+vi.mock('@/helpers/launch-darkly', () => ({
+  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 vi.mock('@/apps/m365-excel/common/workbook-session', () => ({
