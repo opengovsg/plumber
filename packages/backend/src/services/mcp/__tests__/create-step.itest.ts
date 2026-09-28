@@ -64,6 +64,49 @@ describe('createStepService', () => {
     expect(step.type).toBe('action')
     expect(step.position).toBe(3)
     expect(step.parameters).toEqual({})
+    expect(step.config).toEqual({})
+  })
+
+  it('stamps the step when a traceId is provided', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-step-stamp-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Stamp Step Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: 'trace-create-pipe',
+    })
+
+    const loadedFlow = await flow.$fetchGraph('steps')
+    const trigger = loadedFlow.steps[0]
+
+    const step = await createStepService({
+      user,
+      pipeId: flow.id,
+      appKey: 'slack',
+      key: 'sendMessageToChannel',
+      previousStepId: trigger.id,
+      traceId: 'trace-create-step',
+    })
+
+    expect(step.config).toEqual({
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-create-step',
+          tool: 'create_step',
+        },
+      ],
+    })
   })
 
   it('inserts a step after a given previousStepId and shifts later steps', async () => {

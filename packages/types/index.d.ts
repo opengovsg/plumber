@@ -178,6 +178,17 @@ export interface IStepApprovalConfig {
   stepId: string
 }
 
+export type IStepAiBuilderTool =
+  | 'create_pipe'
+  | 'create_step'
+  | 'update_step_parameters'
+  | 'delete_step'
+
+export interface IStepAiBuilderConfig {
+  traceId: string
+  tool: IStepAiBuilderTool
+}
+
 export interface IStepConfig {
   stepName?: string
   approval?: IStepApprovalConfig
@@ -187,6 +198,7 @@ export interface IStepConfig {
   endStepId?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
+  aiBuilderConfig?: IStepAiBuilderConfig[]
 }
 
 export interface IStepTemplateConfig {

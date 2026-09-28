@@ -73,6 +73,22 @@ describe('createFlowWithStepsService', () => {
     expect(triggerStep.appKey).toBe('formsg')
     expect(triggerStep.key).toBe('newSubmission')
     expect(triggerStep.position).toBe(1)
+    expect(triggerStep.config).toEqual({
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-id-123',
+          tool: 'create_pipe',
+        },
+      ],
+    })
+    expect(firstActionStep.config).toEqual({
+      aiBuilderConfig: [
+        {
+          traceId: 'trace-id-123',
+          tool: 'create_pipe',
+        },
+      ],
+    })
 
     expect(firstActionStep.type).toBe('action')
     expect(firstActionStep.appKey).toBe('postman')
@@ -257,5 +273,29 @@ describe('createFlowWithStepsService', () => {
         { position: 3, appKey: 'postman', key: 'sendTransactionalEmail' },
       ],
     })
+  })
+
+  it('does not stamp step events without a trace id', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-empty-trace-${randomUUID()}@example.com`,
+    })
+
+    const result = await createFlowWithStepsService({
+      user,
+      name: 'Empty Trace Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: '',
+    })
+
+    expect(result.steps[0].config).toEqual({})
+    expect(result.config?.aiBuilderConfig?.traceId).toBe('')
   })
 })
