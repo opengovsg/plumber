@@ -103,6 +103,8 @@ export type PipeStateStep = {
   parameters: Record<string, unknown>
   connectionId: string | null
   connectionLabel?: string | null
+  // Last step (inclusive) inside this If block; null on any other step.
+  endStepId?: string | null
 }
 
 export type PipeStatePart = {

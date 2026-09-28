@@ -1,6 +1,6 @@
 import { IStepConfig } from '@plumber/types'
 
-import { Fragment, useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { MdOpenInNew } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
@@ -13,19 +13,16 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { Button, useIsMobile } from '@opengovsg/design-system-react'
+import { Button } from '@opengovsg/design-system-react'
 
-import Error from '@/components/FlowStepGroup/Content/Error'
 import PrimarySpinner from '@/components/PrimarySpinner'
 import * as URLS from '@/config/urls'
 import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-steps'
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
-import BranchStep from './BranchStep'
-import GroupedStepContainer from './GroupedStepContainer'
+import PreviewItems from './PreviewItems'
 import Step from './Step'
 
 export default function StepsPreview() {
@@ -35,17 +32,11 @@ export default function StepsPreview() {
     output,
     steps,
     triggerStep,
-    actionSteps,
-    stepsBeforeGroup,
-    groupedSteps,
-    stepGroupType,
-    stepGroupCaption,
+    previewItems,
     clearPersistedState,
   } = useAiBuilderContext()
   const { stepParametersByStepId, completedStepIds, activeStepId } =
     useStepConfigContext()
-
-  const isMobile = useIsMobile()
 
   const isMcpPipeMode = Boolean(output?.pipeId) // Phase 2b+: DB pipe exists
   const isMcpProposalMode = !isMcpPipeMode && Boolean(output?.mcpMode) // Phase 2a: proposal, no DB
@@ -80,29 +71,6 @@ export default function StepsPreview() {
   const [createFlowWithSteps, { loading: isCreatingFlow }] = useMutation(
     CREATE_FLOW_WITH_STEPS,
   )
-
-  /** FOR EACH STEPS COMPUTATION */
-  const forEachSteps = groupedSteps[0]
-  const ifThenSteps = useMemo(() => {
-    if (groupedSteps.length === 1) {
-      return []
-    }
-    return groupedSteps.slice(1)
-  }, [groupedSteps])
-
-  // When in pipe mode, mute the grouped container if none of its steps are active or completed.
-  const isGroupedContainerPending = useMemo(() => {
-    if (!isMcpPipeMode) {
-      return false
-    }
-    const allGroupedSteps = groupedSteps.flat()
-    const hasActiveOrCompleted = allGroupedSteps.some(
-      (s) =>
-        s.id === effectiveActiveStepId ||
-        (s.id != null && completedStepIds.has(s.id)),
-    )
-    return !hasActiveOrCompleted
-  }, [isMcpPipeMode, groupedSteps, effectiveActiveStepId, completedStepIds])
 
   const onCreateFlowWithSteps = useCallback(async () => {
     const { data } = await createFlowWithSteps({
@@ -209,90 +177,11 @@ export default function StepsPreview() {
               : undefined,
           })}
         />
-        {stepsBeforeGroup.map((action) => (
-          <Fragment key={`${action.position}-${action.appKey}`}>
-            <Step
-              key={`${action.position}-${action.appKey}`}
-              step={action}
-              isLastStep={action.position === actionSteps.length + 1}
-              {...(isMcpPipeMode && {
-                isActive: action.id === effectiveActiveStepId,
-                isConfigured: Boolean(
-                  action.id && completedStepIds.has(action.id),
-                ),
-                parameters: action.id
-                  ? stepParametersByStepId[action.id]
-                  : undefined,
-              })}
-            />
-          </Fragment>
-        ))}
-        {groupedSteps.length > 0 && (
-          <GroupedStepContainer
-            stepGroupType={stepGroupType as string}
-            stepGroupCaption={stepGroupCaption as string}
-            isNested={false}
-            isPending={isGroupedContainerPending}
-          >
-            {stepGroupType === TOOLBOX_ACTIONS.IfThen ? (
-              <Flex flexDir="column" w="100%" px={2} gap={4} mt={2}>
-                {groupedSteps.map((branchSteps) => (
-                  <BranchStep
-                    key={String(branchSteps[0].position)}
-                    branchSteps={branchSteps}
-                    isMobile={isMobile}
-                    effectiveActiveStepId={effectiveActiveStepId}
-                  />
-                ))}
-              </Flex>
-            ) : stepGroupType === TOOLBOX_ACTIONS.ForEach ? (
-              <Box w="100%">
-                <Flex flexDir="column" w="100%" px={4} py={3}>
-                  {forEachSteps.map((step, index) => (
-                    <Step
-                      key={String(step.position)}
-                      step={step}
-                      isNested={true}
-                      isLastStep={
-                        forEachSteps.length - 1 === index &&
-                        ifThenSteps.length === 0
-                      }
-                      {...(isMcpPipeMode && {
-                        isActive: step.id === effectiveActiveStepId,
-                        isConfigured: Boolean(
-                          step.id && completedStepIds.has(step.id),
-                        ),
-                        parameters: step.id
-                          ? stepParametersByStepId[step.id]
-                          : undefined,
-                      })}
-                    />
-                  ))}
-                  {ifThenSteps.length > 0 && (
-                    <GroupedStepContainer
-                      stepGroupType={TOOLBOX_ACTIONS.IfThen}
-                      stepGroupCaption="If"
-                      isNested={true}
-                    >
-                      <Flex flexDir="column" w="100%" px={2} gap={4} mt={2}>
-                        {ifThenSteps.map((branchSteps) => (
-                          <BranchStep
-                            key={String(branchSteps[0].position)}
-                            branchSteps={branchSteps}
-                            isMobile={isMobile}
-                            effectiveActiveStepId={effectiveActiveStepId}
-                          />
-                        ))}
-                      </Flex>
-                    </GroupedStepContainer>
-                  )}
-                </Flex>
-              </Box>
-            ) : (
-              <Error />
-            )}
-          </GroupedStepContainer>
-        )}
+        <PreviewItems
+          items={previewItems}
+          isNested={false}
+          effectiveActiveStepId={effectiveActiveStepId}
+        />
         <VStack mt={10} gap={2}>
           <HStack alignItems="center" justifyContent="center" gap={2}>
             {isMcpPipeMode ? (
