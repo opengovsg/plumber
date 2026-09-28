@@ -28,6 +28,7 @@ const actionStepSchema = z.object({
       branchName: z.string(),
     })
     .optional(),
+  ifThenChildCount: z.number().int().min(1).optional(),
 }) satisfies z.ZodType<IFlowStepsAction>
 
 export const flowStepsSchema = z.object({
