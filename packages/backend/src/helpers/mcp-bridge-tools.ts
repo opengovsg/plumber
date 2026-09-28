@@ -16,7 +16,8 @@ import {
 import { listAppsService } from '@/services/mcp/apps'
 import {
   createFlowWithStepsService,
-  type McpStepInput,
+  flattenNestedSteps,
+  type McpNestedStepInput,
 } from '@/services/mcp/create-flow-with-steps'
 import { createStepService } from '@/services/mcp/create-step'
 import {
@@ -79,6 +80,34 @@ function publishedPipeOrThrow(error: unknown): PublishedPipeErrorResult {
     return publishedPipeErrorResult()
   }
   throw error
+}
+
+const pipeStepInputSchema = z.object({
+  app_key: z.string().describe('App key (e.g. "formsg", "slack")'),
+  trigger_key: z
+    .string()
+    .optional()
+    .describe('Trigger key for step 0 (e.g. "newSubmission")'),
+  action_key: z
+    .string()
+    .optional()
+    .describe('Action key for steps 1+ (e.g. "sendMessageToChannel")'),
+  parameters: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe(
+      'Initial parameter values for this step. For toolbox/ifThen and toolbox/onlyContinueIf steps, conditions is an array of OR-groups, each { rows: [...] }, where each row is { field, is: "is"|"not", condition, text }, e.g. conditions: [{ rows: [{ field: "{{1.status}}", is: "is", condition: "equals", text: "done" }] }]. ifThen additionally requires branchName.',
+    ),
+})
+
+function toNestedStepInput(
+  step: z.infer<typeof pipeStepInputSchema>,
+): McpNestedStepInput {
+  return {
+    appKey: step.app_key,
+    key: step.trigger_key ?? step.action_key ?? null,
+    ...(step.parameters && { parameters: step.parameters }),
+  }
 }
 
 export function createMcpBridgeTools(
@@ -194,28 +223,17 @@ export function createMcpBridgeTools(
 
     create_pipe: tool({
       description:
-        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.',
+        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.\n\nA toolbox/ifThen step is an If block: put the steps that should run only when its condition is TRUE inside its own `steps` array (at least one). Steps listed after the ifThen entry in the outer list are outside the block and run regardless of the condition. An If block cannot contain another ifThen or a forEach.',
       inputSchema: z.object({
         name: z.string().describe('Human-readable name for the pipe'),
         steps: z
           .array(
-            z.object({
-              app_key: z.string().describe('App key (e.g. "formsg", "slack")'),
-              trigger_key: z
-                .string()
-                .optional()
-                .describe('Trigger key for step 0 (e.g. "newSubmission")'),
-              action_key: z
-                .string()
+            pipeStepInputSchema.extend({
+              steps: z
+                .array(pipeStepInputSchema)
                 .optional()
                 .describe(
-                  'Action key for steps 1+ (e.g. "sendMessageToChannel")',
-                ),
-              parameters: z
-                .record(z.string(), z.unknown())
-                .optional()
-                .describe(
-                  'Initial parameter values for this step. For toolbox/ifThen and toolbox/onlyContinueIf steps, conditions is an array of OR-groups, each { rows: [...] }, where each row is { field, is: "is"|"not", condition, text }, e.g. conditions: [{ rows: [{ field: "{{1.status}}", is: "is", condition: "equals", text: "done" }] }]. ifThen additionally requires branchName.',
+                  'Only on a toolbox/ifThen step: the steps inside this If block, in order. They run only when the condition is TRUE. Must contain at least one step, and none of them may be another toolbox/ifThen or a toolbox/forEach.',
                 ),
             }),
           )
@@ -228,14 +246,13 @@ export function createMcpBridgeTools(
         const flow = await createFlowWithStepsService({
           user,
           name,
-          steps: steps.map(
-            (s, index): McpStepInput => ({
-              appKey: s.app_key,
-              key: s.trigger_key ?? s.action_key ?? null,
-              type: index === 0 ? 'trigger' : 'action',
-              position: index + 1,
-              ...(s.parameters && { parameters: s.parameters }),
-            }),
+          steps: flattenNestedSteps(
+            steps.map(
+              (s): McpNestedStepInput => ({
+                ...toNestedStepInput(s),
+                ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
+              }),
+            ),
           ),
           traceId,
         })
