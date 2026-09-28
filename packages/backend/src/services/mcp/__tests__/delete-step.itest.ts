@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
+  // The If block flag stays on. Legacy pipes are pinned when a step is deleted.
+  getLdFlagValue: vi.fn().mockResolvedValue(true),
 }))
 
 describe('deleteStepService', () => {
@@ -465,6 +467,127 @@ describe('deleteStepService', () => {
     expect(storedReject?.config.approval).toEqual({
       branch: 'reject',
       stepId: mrfStep.id,
+    })
+  })
+
+  describe('If blocks', () => {
+    async function createBlockPipe(label: string) {
+      const user = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `delete-step-block-${label}-${randomUUID()}@example.com`,
+      })
+      // trigger, If, slack, sms, email. The marker is set here rather than
+      // by pipe creation, so the test stands on its own.
+      const flow = await createFlowWithStepsService({
+        user,
+        name: 'Block Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'ifThen',
+            type: 'action',
+            position: 2,
+          },
+          {
+            appKey: 'slack',
+            key: 'sendMessageToChannel',
+            type: 'action',
+            position: 3,
+          },
+          {
+            appKey: 'postman-sms',
+            key: 'sendSms',
+            type: 'action',
+            position: 4,
+          },
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 5,
+          },
+        ],
+        traceId: `trace-delete-block-${label}`,
+      })
+      const [, ifThen, slack, sms, email] = flow.steps
+      // If [ slack, sms ], with email outside the block.
+      await Step.query()
+        .findById(ifThen.id)
+        .patch({
+          config: { endStepId: sms.id },
+        })
+      return { user, flow, ifThen, slack, sms, email }
+    }
+
+    it('shrinks the block when its last inner step is deleted', async () => {
+      const { user, flow, ifThen, slack, sms } = await createBlockPipe('shrink')
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: sms.id,
+      })
+
+      expect(result.steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendTransactionalEmail',
+      ])
+      const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
+      expect(updatedIfThen.config.endStepId).toBe(slack.id)
+    })
+
+    it('leaves an empty block when the only inner step is deleted', async () => {
+      const { user, flow, ifThen, slack, sms } = await createBlockPipe('empty')
+
+      await deleteStepService({ user, pipeId: flow.id, stepId: sms.id })
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: slack.id,
+      })
+
+      const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
+      expect(updatedIfThen.config.endStepId).toBe(ifThen.id)
+    })
+
+    it('keeps the inner steps when the If step itself is deleted', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('unwrap')
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+      })
+
+      expect(result.steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'sendMessageToChannel',
+        'sendSms',
+        'sendTransactionalEmail',
+      ])
+      expect(result.steps.map((s) => s.position)).toEqual([1, 2, 3, 4])
+    })
+
+    it('pins a legacy If block and shrinks it when its last step is deleted', async () => {
+      const { user, flow, ifThen, email, sms } = await createBlockPipe('legacy')
+      await Step.query().findById(ifThen.id).patch({ config: {} })
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: email.id,
+      })
+
+      const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
+      expect(updatedIfThen?.config.endStepId).toBe(sms.id)
     })
   })
 })
