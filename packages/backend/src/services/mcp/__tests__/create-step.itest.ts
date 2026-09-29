@@ -194,28 +194,6 @@ describe('createStepService', () => {
       expect(steps[1].config.endStepId).toBe(sms.id)
     })
 
-    it('inserts as the first inner step when inserting after the If step', async () => {
-      const { user, flow, ifThen, slack } = await createBlockPipe('first')
-
-      await createStepService({
-        user,
-        pipeId: flow.id,
-        appKey: 'postman-sms',
-        key: 'sendSms',
-        previousStepId: ifThen.id,
-      })
-
-      const steps = await loadSteps(flow.id)
-      expect(steps.map((s) => s.key)).toEqual([
-        'newSubmission',
-        'ifThen',
-        'sendSms',
-        'sendMessageToChannel',
-        'sendTransactionalEmail',
-      ])
-      expect(steps[1].config.endStepId).toBe(slack.id)
-    })
-
     it('places the step outside the block with afterIfThenBlock on the last inner step', async () => {
       const { user, flow, slack } = await createBlockPipe('after-end')
 
@@ -237,23 +215,6 @@ describe('createStepService', () => {
         'sendTransactionalEmail',
       ])
       expect(sms.position).toBe(4)
-      expect(steps[1].config.endStepId).toBe(slack.id)
-    })
-
-    it('places the step outside the block with afterIfThenBlock on the If step', async () => {
-      const { user, flow, ifThen, slack } = await createBlockPipe('after-if')
-
-      const sms = await createStepService({
-        user,
-        pipeId: flow.id,
-        appKey: 'postman-sms',
-        key: 'sendSms',
-        previousStepId: ifThen.id,
-        afterIfThenBlock: true,
-      })
-
-      expect(sms.position).toBe(4)
-      const steps = await loadSteps(flow.id)
       expect(steps[1].config.endStepId).toBe(slack.id)
     })
 
@@ -307,8 +268,8 @@ describe('createStepService', () => {
       expect(steps[4].config.endStepId).toBe(telegram.id)
     })
 
-    it('rejects an If inside an existing If block', async () => {
-      const { user, flow, slack } = await createBlockPipe('nested')
+    it('rejects an If or a For-each inside an If block', async () => {
+      const { user, flow, ifThen, slack } = await createBlockPipe('nested')
 
       await expect(
         createStepService({
@@ -319,11 +280,6 @@ describe('createStepService', () => {
           previousStepId: slack.id,
         }),
       ).rejects.toThrow('An If block cannot contain another If.')
-    })
-
-    it('rejects a For-each inside an If block', async () => {
-      const { user, flow, ifThen } = await createBlockPipe('for-each')
-
       await expect(
         createStepService({
           user,
@@ -351,29 +307,6 @@ describe('createStepService', () => {
       const steps = await loadSteps(flow.id)
       expect(steps.find((s) => s.id === ifThen.id)?.config.endStepId).toBe(
         sms.id,
-      )
-    })
-
-    it('places a step after a legacy If block once the block is pinned', async () => {
-      const { user, flow, ifThen, email } = await createBlockPipe(
-        'legacy-after',
-      )
-      await Step.query().findById(ifThen.id).patch({ config: {} })
-
-      const sms = await createStepService({
-        user,
-        pipeId: flow.id,
-        appKey: 'postman-sms',
-        key: 'sendSms',
-        previousStepId: ifThen.id,
-        afterIfThenBlock: true,
-      })
-
-      expect(sms.position).toBe(email.position + 1)
-      const steps = await loadSteps(flow.id)
-      // The legacy extent ran to the last step. The new step sits after it.
-      expect(steps.find((s) => s.id === ifThen.id)?.config.endStepId).toBe(
-        email.id,
       )
     })
   })

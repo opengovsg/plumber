@@ -25,15 +25,11 @@ export interface CreateStepInput {
   appKey: string
   key: string
   previousStepId: string
-  // Place the new step right after the If block that `previousStepId`
-  // belongs to (as its If step or its last inner step), outside the block.
+  // Place the new step after the whole If block, not inside it.
   afterIfThenBlock?: boolean
 }
 
-/**
- * The If block a caller can insert "after": `step` is either the block's
- * own If step or its last inner step.
- */
+/** `step` must be the block's If step or its last inner step. */
 function findIfThenBlockEndingAt(
   flowSteps: Step[],
   step: Step,
@@ -53,11 +49,7 @@ function findIfThenBlockEndingAt(
   return endStep ? { ifThenStep, endStep } : null
 }
 
-/**
- * Whether a step inserted right after `previousStep` lands inside an If
- * block. Inserting after the If step itself makes the new step its first
- * inner step.
- */
+/** Inserting after the If step itself lands inside its block. */
 function isInsertInsideIfThenBlock(
   flowSteps: Step[],
   previousStep: Step,
@@ -105,9 +97,7 @@ export async function createStepService({
       throw new PublishedPipeError()
     }
 
-    // Legacy If blocks have no end marker, so the editor's block rules cannot
-    // see them. The flag stays on, so pin them before deciding where this
-    // step lands. A no-op when every If block already has a marker.
+    // Legacy If blocks have no end marker, so pin them before placing the step.
     await upgradeIfThenV1BlocksIfEnabled(
       trx,
       flow,
@@ -168,8 +158,7 @@ export async function createStepService({
       version,
     })
 
-    // A new If starts as an empty block (self-referencing marker) that later
-    // create_step calls extend, mirroring the editor's V2 initializer.
+    // A new If starts as an empty block that later inserts extend.
     await fixupEndStepOnCreateStep({
       trx,
       flow,
