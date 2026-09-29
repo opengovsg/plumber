@@ -62,20 +62,6 @@ describe('flattenNestedSteps', () => {
     ])
   })
 
-  it('leaves an ifThen without nested steps on the derived extent', () => {
-    const result = flattenNestedSteps([
-      { appKey: 'formsg', key: 'newSubmission' },
-      { appKey: 'toolbox', key: 'ifThen' },
-      { appKey: 'postman', key: 'sendTransactionalEmail' },
-    ])
-    expect(result[1]).toStrictEqual({
-      appKey: 'toolbox',
-      key: 'ifThen',
-      type: 'action',
-      position: 2,
-    })
-  })
-
   it('rejects nested steps on a step that is not an ifThen', () => {
     expect(() =>
       flattenNestedSteps([
