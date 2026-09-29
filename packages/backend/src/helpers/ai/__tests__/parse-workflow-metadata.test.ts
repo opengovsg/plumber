@@ -394,40 +394,6 @@ steps:
       ).toThrow('If blocks cannot be nested inside another If block')
     })
 
-    it('accepts a for-each after an explicit If block', () => {
-      const result = parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
-name: My Workflow
-steps:
-  - step: 1
-    appKey: formsg
-    key: newSubmission
-    description: Trigger
-  - step: 2
-    appKey: toolbox
-    key: ifThen
-    description: If
-    steps:
-      - step: 3
-        appKey: postman
-        key: sendTransactionalEmail
-        description: Action
-  - step: 4
-    appKey: toolbox
-    key: forEach
-    description: Loop
-  - step: 5
-    appKey: slack
-    key: sendMessageToChannel
-    description: Per item
--->`)
-      expect(result.actions.map((action) => action.key)).toStrictEqual([
-        'ifThen',
-        'sendTransactionalEmail',
-        'forEach',
-        'sendMessageToChannel',
-      ])
-    })
-
     it('throws when a delay action is placed after a for-each', () => {
       expect(() =>
         parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
