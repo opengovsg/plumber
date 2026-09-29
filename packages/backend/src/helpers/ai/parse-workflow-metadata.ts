@@ -58,10 +58,9 @@ function isIfThenMetadataStep(step: any): boolean {
 }
 
 /**
- * Flattens the nested `steps` an if-then entry may carry into the flat list
- * the schemas expect, recording each block's extent as `ifThenChildCount`.
- * Nesting an if-then inside another is left in place for the schema rules to
- * reject, so the error names the offending step.
+ * Flattens the `steps` nested under an if-then, recording the block's extent
+ * as `ifThenChildCount`. A nested if-then is kept so the schema rules reject
+ * it and name the offending step.
  */
 export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
   const flattened: any[] = []
