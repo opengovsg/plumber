@@ -107,8 +107,16 @@ export function validateActionParameters(data: any): boolean {
 }
 
 /**
- * A legacy list has no ifThenChildCount, so its If block runs to the next If.
- * A for-each after that If sits inside the block.
+ * Reusable validation function for action steps that enforces:
+ * 1. Only 1 for-each per pipe
+ * 2. Every If block contains at least one step
+ * 3. If blocks do not nest
+ * 4. For-each cannot sit inside an If block
+ * 5. Delay cannot be after for-each
+ *
+ * An If block's extent comes from `getIfThenChildCount`, so a legacy flat
+ * list (no `ifThenChildCount`) still fails the old way: a for-each after an
+ * if-then is inside that block, and back-to-back if-thens leave one empty.
  */
 export function validateActionStepsRules(
   steps: LayoutStep[],
