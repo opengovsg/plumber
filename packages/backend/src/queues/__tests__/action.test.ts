@@ -191,15 +191,15 @@ describe('enqueueActionJob routing', () => {
 
   it('routes a batch-enabled action to its dedicated batch queue with the batch group config', async () => {
     await enqueueActionJob({
-      appKey: 'app-with-batch',
-      actionKey: 'batchedAction',
+      appKey: 'm365-excel',
+      actionKey: 'createTableRow',
       jobName: 'job-1',
       jobData,
       jobOptions,
     })
 
     expect(mocks.batchGetGroupConfig).toHaveBeenCalledWith(jobData)
-    expect(actionBatchQueues['app-with-batch'].add).toHaveBeenCalledWith(
+    expect(actionBatchQueues['m365-excel'].add).toHaveBeenCalledWith(
       'job-1',
       jobData,
       {
@@ -208,41 +208,11 @@ describe('enqueueActionJob routing', () => {
       },
     )
     // The per-app (non-batch) queue must not receive it.
-    expect(appActionQueues['app-with-batch'].add).not.toHaveBeenCalled()
+    expect(appActionQueues['m365-excel'].add).not.toHaveBeenCalled()
   })
 
   it('falls back to the per-app queue when the rollout flag is off', async () => {
     mocks.getLdFlagValue.mockResolvedValue('off')
-
-    await enqueueActionJob({
-      appKey: 'app-with-batch',
-      actionKey: 'batchedAction',
-      jobName: 'job-1',
-      jobData,
-      jobOptions,
-    })
-
-    expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
-      'm365-excel-batch-rollout',
-      null,
-      'off',
-    )
-    expect(appActionQueues['app-with-batch'].add).toHaveBeenCalledWith(
-      'job-1',
-      jobData,
-      {
-        ...jobOptions,
-        group: { id: 'file-1' },
-      },
-    )
-    expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
-  })
-
-  it('routes createTableRow to the batch queue when rollout is ogp and the flow owner is an OGP user', async () => {
-    mocks.getLdFlagValue.mockResolvedValue('ogp')
-    mocks.flowWithGraphFetched.mockResolvedValue({
-      user: { email: 'Someone@Open.Gov.Sg' },
-    })
 
     await enqueueActionJob({
       appKey: 'm365-excel',
@@ -252,22 +222,24 @@ describe('enqueueActionJob routing', () => {
       jobOptions,
     })
 
-    expect(actionBatchQueues['m365-excel'].add).toHaveBeenCalledWith(
+    expect(mocks.getLdFlagValue).toHaveBeenCalledWith(
+      'm365-excel-batch-rollout',
+      'someone@open.gov.sg',
+      'off',
+    )
+    expect(appActionQueues['m365-excel'].add).toHaveBeenCalledWith(
       'job-1',
       jobData,
       {
         ...jobOptions,
-        group: { id: 'file-1::table-1' },
+        group: { id: 'file-1' },
       },
     )
-    expect(appActionQueues['m365-excel'].add).not.toHaveBeenCalled()
+    expect(actionBatchQueues['m365-excel'].add).not.toHaveBeenCalled()
   })
 
-  it('falls back to the per-app queue when rollout is ogp and the flow owner is not an OGP user', async () => {
-    mocks.getLdFlagValue.mockResolvedValue('ogp')
-    mocks.flowWithGraphFetched.mockResolvedValue({
-      user: { email: 'someone@example.com' },
-    })
+  it('falls back to the per-app queue when the rollout flag lookup rejects', async () => {
+    mocks.getLdFlagValue.mockRejectedValue(new Error('Authentication failed'))
 
     await enqueueActionJob({
       appKey: 'm365-excel',
@@ -288,61 +260,16 @@ describe('enqueueActionJob routing', () => {
     expect(actionBatchQueues['m365-excel'].add).not.toHaveBeenCalled()
   })
 
-  it('falls back to the per-app queue when rollout is ogp for a batch action other than createTableRow', async () => {
-    mocks.getLdFlagValue.mockResolvedValue('ogp')
-
-    await enqueueActionJob({
-      appKey: 'app-with-batch',
-      actionKey: 'batchedAction',
-      jobName: 'job-1',
-      jobData,
-      jobOptions,
-    })
-
-    expect(mocks.flowWithGraphFetched).not.toHaveBeenCalled()
-    expect(appActionQueues['app-with-batch'].add).toHaveBeenCalledWith(
-      'job-1',
-      jobData,
-      {
-        ...jobOptions,
-        group: { id: 'file-1' },
-      },
-    )
-    expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
-  })
-
-  it('falls back to the per-app queue when the rollout flag lookup rejects', async () => {
-    mocks.getLdFlagValue.mockRejectedValue(new Error('Authentication failed'))
-
-    await enqueueActionJob({
-      appKey: 'app-with-batch',
-      actionKey: 'batchedAction',
-      jobName: 'job-1',
-      jobData,
-      jobOptions,
-    })
-
-    expect(appActionQueues['app-with-batch'].add).toHaveBeenCalledWith(
-      'job-1',
-      jobData,
-      {
-        ...jobOptions,
-        group: { id: 'file-1' },
-      },
-    )
-    expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
-  })
-
   it('routes a non-batch action of the same app to the per-app queue', async () => {
     await enqueueActionJob({
-      appKey: 'app-with-batch',
+      appKey: 'm365-excel',
       actionKey: 'nonBatchedAction',
       jobName: 'job-2',
       jobData,
       jobOptions,
     })
 
-    expect(appActionQueues['app-with-batch'].add).toHaveBeenCalledWith(
+    expect(appActionQueues['m365-excel'].add).toHaveBeenCalledWith(
       'job-2',
       jobData,
       {
@@ -350,7 +277,7 @@ describe('enqueueActionJob routing', () => {
         group: { id: 'file-1' },
       },
     )
-    expect(actionBatchQueues['app-with-batch'].add).not.toHaveBeenCalled()
+    expect(actionBatchQueues['m365-excel'].add).not.toHaveBeenCalled()
   })
 
   it('routes an app without a queue config to the main queue', async () => {
