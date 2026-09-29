@@ -88,7 +88,7 @@
     "morgan": "^1.12.0",
     "multer": "2.3.0",
     "nanoid": "3.3.18",
-    "nodemailer": "9.1.1",
+    "nodemailer": "10.0.2",
     "objection": "^3.0.0",
     "openid-client": "5.4.0",
     "p-limit": "3.1.0",
