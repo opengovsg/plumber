@@ -87,6 +87,31 @@ export function buildPreviewItems(actionSteps: PreviewStep[]): PreviewItem[] {
   return items
 }
 
+/**
+ * Whether the block step itself tested successfully.
+ *
+ * The editor withholds the check on an empty block. A lone blank
+ * placeholder counts as empty.
+ */
+export function isTestedPreviewBlock(
+  item: Extract<PreviewItem, { type: 'ifThenBlock' | 'forEachBlock' }>,
+  completedStepIds: ReadonlySet<string>,
+): boolean {
+  const blockStep =
+    item.type === 'ifThenBlock' ? item.ifThenStep : item.forEachStep
+  if (blockStep.id == null || !completedStepIds.has(blockStep.id)) {
+    return false
+  }
+  if (item.type === 'forEachBlock') {
+    return item.children.length > 0
+  }
+  if (item.children.length !== 1) {
+    return item.children.length > 0
+  }
+  const onlyChild = item.children[0]
+  return Boolean(onlyChild.appKey || onlyChild.key)
+}
+
 /** Every step inside `item`, at any depth, in position order. */
 export function flattenPreviewItem(item: PreviewItem): PreviewStep[] {
   switch (item.type) {

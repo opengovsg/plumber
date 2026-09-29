@@ -10,6 +10,7 @@ import {
 } from './helpers/previewBlockTitle'
 import {
   flattenPreviewItem,
+  isTestedPreviewBlock,
   type PreviewItem,
   type PreviewStep,
 } from './helpers/previewItems'
@@ -101,6 +102,10 @@ export default function PreviewItems({
                     badge="IF"
                     title={getIfBlockPreviewTitle(item.ifThenStep)}
                     isPending={isBlockPending(item)}
+                    isCompleted={
+                      isMcpPipeMode &&
+                      isTestedPreviewBlock(item, completedStepIds)
+                    }
                   >
                     {item.children.map((child, childIndex) => (
                       <Step
@@ -127,6 +132,10 @@ export default function PreviewItems({
                   badge="REPEAT"
                   title={getRepeatBlockPreviewTitle(item.forEachStep)}
                   isPending={isBlockPending(item)}
+                  isCompleted={
+                    isMcpPipeMode &&
+                    isTestedPreviewBlock(item, completedStepIds)
+                  }
                 >
                   <PreviewItems
                     items={item.children}
