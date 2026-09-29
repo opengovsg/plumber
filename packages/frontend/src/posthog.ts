@@ -18,7 +18,7 @@ if (projectToken && host) {
     },
     session_recording: {
       sampling: {
-        sample_rate: 0.1,
+        sampleRate: 0.1,
       },
     },
   })

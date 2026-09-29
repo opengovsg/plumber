@@ -178,7 +178,7 @@ export default function DynamicPicker({
   }
 
   const handleOptionClick = (opt: DynamicPickerOption) => {
-    capture('option_clicked', { option_value: opt.value })
+    capture('option_clicked')
     setSelectedOption(opt)
   }
 
@@ -186,7 +186,7 @@ export default function DynamicPicker({
     if (!selectedOption || isStreaming) {
       return
     }
-    capture('submit_clicked', { option_value: selectedOption.value })
+    capture('submit_clicked')
     onSelect(selectedOption.name, selectedOption.value)
   }
 

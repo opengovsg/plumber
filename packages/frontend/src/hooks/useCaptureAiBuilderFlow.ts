@@ -19,13 +19,14 @@ export function useCaptureAiBuilderFlow(flow: IFlow | undefined): void {
     if (!isPostHogConfigured || !aiBuilderTraceId) {
       return
     }
-    posthog.capture('ai_builder:editing_flow')
     posthog.register({
       is_ai_builder_flow: true,
       is_first_edit: !!isFromAiBuilder,
     })
+    posthog.capture('ai_builder:editing_flow')
     return () => {
       posthog.unregister('is_first_edit')
+      posthog.unregister('is_ai_builder_flow')
     }
   }, [aiBuilderTraceId, isFromAiBuilder])
 }

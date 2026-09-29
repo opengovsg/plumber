@@ -144,7 +144,7 @@ export default function StepsPreview() {
     // Clear persisted draft state since we successfully created the flow
     clearPersistedState()
 
-    navigate(URLS.FLOW_EDITOR(flowId), {
+    navigate(`${URLS.FLOW_EDITOR(flowId)}?from=ai-builder`, {
       replace: true,
     })
   }, [
