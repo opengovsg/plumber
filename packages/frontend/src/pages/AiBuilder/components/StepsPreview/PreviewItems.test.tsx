@@ -169,5 +169,31 @@ describe('PreviewItems', () => {
       'false',
       'true',
     ])
+    expect(attrsOf('[data-testid="block"]', 'data-completed')).toEqual([
+      'false',
+      'false',
+    ])
+  })
+
+  it('draws the tested check on an If or Repeat block whose own step completed', () => {
+    mocks.output = { pipeId: 'pipe-1' }
+    mocks.completedStepIds = new Set(['loop', 'if'])
+
+    render([
+      step('loop', 'toolbox', 'forEach'),
+      { ...step('if', 'toolbox', 'ifThen'), endStepId: 'b' },
+      step('b', 'slack', 'sendMessageToChannel'),
+      { ...step('if2', 'toolbox', 'ifThen'), endStepId: 'c' },
+      step('c', 'postman-sms', 'sendSms'),
+    ])
+
+    expect(attrsOf('[data-testid="block"]', 'data-completed')).toEqual([
+      'true',
+      'true',
+      'false',
+    ])
+    expect(
+      container.querySelectorAll('[data-testid="block-tested"]'),
+    ).toHaveLength(2)
   })
 })

@@ -1,14 +1,19 @@
-import { Flex, Text } from '@chakra-ui/react'
+import { BiSolidCheckCircle } from 'react-icons/bi'
+import { Flex, Icon, Text } from '@chakra-ui/react'
 
 import {
   CONDITION_BLOCK_BODY_PB,
   conditionBlockStyles,
 } from '@/components/FlowStepGroup/Content/IfThen/styles'
 
+const COMPLETED_BADGE_SIZE_PX = 16
+const COMPLETED_BADGE_OVERHANG_PX = COMPLETED_BADGE_SIZE_PX / 2
+
 interface PreviewConditionBlockProps {
   badge: string
   title: string
   isPending?: boolean
+  isCompleted?: boolean
   children: React.ReactNode
 }
 
@@ -20,6 +25,7 @@ export default function PreviewConditionBlock({
   badge,
   title,
   isPending = false,
+  isCompleted = false,
   children,
 }: PreviewConditionBlockProps): JSX.Element {
   return (
@@ -28,6 +34,7 @@ export default function PreviewConditionBlock({
       data-badge={badge}
       data-title={title}
       data-pending={String(isPending)}
+      data-completed={String(isCompleted)}
       {...conditionBlockStyles.container}
       borderWidth="1px"
       borderColor="base.divider.medium"
@@ -40,9 +47,13 @@ export default function PreviewConditionBlock({
           noOfLines={2}
           textStyle="body-2"
           color="base.content.medium"
+          // Room for the check, which noOfLines would otherwise cut.
+          pt={`${COMPLETED_BADGE_OVERHANG_PX}px`}
+          mt={`-${COMPLETED_BADGE_OVERHANG_PX}px`}
         >
           <Text
             as="span"
+            position="relative"
             display="inline-flex"
             alignItems="center"
             verticalAlign="text-bottom"
@@ -55,6 +66,25 @@ export default function PreviewConditionBlock({
             textStyle="caption-3"
           >
             {badge}
+            {isCompleted && (
+              <Flex
+                as="span"
+                data-testid="block-tested"
+                position="absolute"
+                top={0}
+                insetEnd={0}
+                boxSize={`${COMPLETED_BADGE_SIZE_PX}px`}
+                transform={`translate(${COMPLETED_BADGE_OVERHANG_PX}px, -${COMPLETED_BADGE_OVERHANG_PX}px)`}
+                borderRadius="full"
+                bg="white"
+              >
+                <Icon
+                  boxSize="full"
+                  color="interaction.success.default"
+                  as={BiSolidCheckCircle}
+                />
+              </Flex>
+            )}
           </Text>
           {title}
         </Text>

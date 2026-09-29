@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildPreviewItems,
   flattenPreviewItem,
+  isTestedPreviewBlock,
+  type PreviewItem,
   type PreviewStep,
 } from './previewItems'
 
@@ -151,5 +153,65 @@ describe('flattenPreviewItem', () => {
       'b',
       'c',
     ])
+  })
+})
+
+function block(
+  items: PreviewItem[],
+  type: 'ifThenBlock' | 'forEachBlock',
+): Extract<PreviewItem, { type: 'ifThenBlock' | 'forEachBlock' }> {
+  const found = items.find((item) => item.type === type)
+  if (
+    !found ||
+    (found.type !== 'ifThenBlock' && found.type !== 'forEachBlock')
+  ) {
+    throw new Error(`missing ${type}`)
+  }
+  return found
+}
+
+describe('isTestedPreviewBlock', () => {
+  it('checks an If block once its own step has tested and it has a child', () => {
+    const items = buildPreviewItems([
+      ifThen('if', { endStepId: 'b' }),
+      email('b'),
+    ])
+
+    expect(
+      isTestedPreviewBlock(block(items, 'ifThenBlock'), new Set(['if'])),
+    ).toBe(true)
+    expect(
+      isTestedPreviewBlock(block(items, 'ifThenBlock'), new Set(['b'])),
+    ).toBe(false)
+  })
+
+  it('leaves an empty If block unchecked', () => {
+    const items = buildPreviewItems([ifThen('if', { endStepId: 'if' })])
+
+    expect(
+      isTestedPreviewBlock(block(items, 'ifThenBlock'), new Set(['if'])),
+    ).toBe(false)
+  })
+
+  it('leaves an If block unchecked when its only step is a blank placeholder', () => {
+    const items = buildPreviewItems([
+      ifThen('if', { endStepId: 'blank' }),
+      step('blank', '', ''),
+    ])
+
+    expect(
+      isTestedPreviewBlock(block(items, 'ifThenBlock'), new Set(['if'])),
+    ).toBe(false)
+  })
+
+  it('checks a Repeat block once its own step has tested and the body has steps', () => {
+    const items = buildPreviewItems([forEach('loop'), email('b')])
+
+    expect(
+      isTestedPreviewBlock(block(items, 'forEachBlock'), new Set(['loop'])),
+    ).toBe(true)
+    expect(
+      isTestedPreviewBlock(block(items, 'forEachBlock'), new Set(['b'])),
+    ).toBe(false)
   })
 })
