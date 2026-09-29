@@ -37,28 +37,48 @@ import {
   listColumnsService,
 } from '@/services/mcp/list-columns'
 import {
+  isPublishedPipeError,
+  type PublishedPipeErrorResult,
+  publishedPipeErrorResult,
+} from '@/services/mcp/published-pipe-error'
+import {
   type RegisterConnectionResult,
   registerConnectionService,
 } from '@/services/mcp/register-connection'
+import {
+  type UnpublishPipeResult,
+  unpublishPipeService,
+} from '@/services/mcp/unpublish-pipe'
 import {
   type McpUpdateStepParametersResult,
   updateStepParametersService,
 } from '@/services/mcp/update-step-parameters'
 
 type ListAppsInput = Record<string, IApp[]>
+type McpToolError = { error: string } | PublishedPipeErrorResult
 
 function mcpToolError(
   error: unknown,
   fallback: string,
   tool: string,
   traceId: string,
-): { error: string } {
+): McpToolError {
+  if (isPublishedPipeError(error)) {
+    return publishedPipeErrorResult()
+  }
   if (error instanceof UserFacingError) {
     return { error: error.message }
   }
   const message = error instanceof Error ? error.message : fallback
   logger.warn('MCP tool failed', { tool, traceId, error: message })
   return { error: fallback }
+}
+
+function publishedPipeOrThrow(error: unknown): PublishedPipeErrorResult {
+  if (isPublishedPipeError(error)) {
+    return publishedPipeErrorResult()
+  }
+  throw error
 }
 
 export function createMcpBridgeTools(
@@ -224,6 +244,30 @@ export function createMcpBridgeTools(
       },
     }),
 
+    unpublish_pipe: tool({
+      description:
+        'Unpublish an existing pipe so it stops running and can be edited. Call ONLY after the user has explicitly confirmed they want to unpublish it. This tool never publishes a pipe.',
+      inputSchema: z.object({
+        pipe_id: z.uuid().describe('ID of the pipe to unpublish'),
+      }),
+      execute: async ({
+        pipe_id,
+      }): Promise<UnpublishPipeResult | { error: string }> => {
+        try {
+          const result = await unpublishPipeService(user, pipe_id)
+          onPipeChange?.(pipe_id)
+          return result
+        } catch (error) {
+          return mcpToolError(
+            error,
+            'Unable to unpublish pipe',
+            'unpublish_pipe',
+            traceId,
+          )
+        }
+      },
+    }),
+
     update_step_parameters: tool({
       description:
         "Save parameter values onto an existing step. Only field keys defined in the step's action/trigger schema are saved — unknown keys are silently dropped. Optionally assign a connection by passing connection_id from the user's picker reply (A: Name (id: …)) or an established conversation connection id; the connection's app must match the step's app. Call after create_pipe to fill in step configuration. appKey and key are immutable after creation; to change the action, delete the step and add a new one.\n\nWhen connection_id is provided for a step whose app uses per-step or global connection registration, registration runs automatically. Inspect the result before proceeding:\n- connectionRegistered: true — registration succeeded; step is fully connected.\n- connectionConflict: true + connectionConflictMessage — webhook already claimed; relay connectionConflictMessage to the user verbatim and call register_connection with the same step_id and connection_id only after explicit confirmation.\n- connectionError — permission or technical error; surface to user. Do not retry.\n- formFields (FormSG only, present on conflict or error) — trimmed field list for wiring downstream steps even when trigger is unconnected.",
@@ -254,17 +298,21 @@ export function createMcpBridgeTools(
         parameters,
         connection_id,
         parameter_labels,
-      }): Promise<McpUpdateStepParametersResult> => {
-        const result = await updateStepParametersService({
-          user,
-          pipeId: pipe_id,
-          stepId: step_id,
-          parameters,
-          connectionId: connection_id,
-        })
-        onPipeChange?.(pipe_id)
-        onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
-        return result
+      }): Promise<McpUpdateStepParametersResult | McpToolError> => {
+        try {
+          const result = await updateStepParametersService({
+            user,
+            pipeId: pipe_id,
+            stepId: step_id,
+            parameters,
+            connectionId: connection_id,
+          })
+          onPipeChange?.(pipe_id)
+          onStepUpdate?.(step_id, result.step.parameters, parameter_labels)
+          return result
+        } catch (error) {
+          return publishedPipeOrThrow(error)
+        }
       },
     }),
 
@@ -288,16 +336,20 @@ export function createMcpBridgeTools(
         app_key,
         action_key,
         previous_step_id,
-      }): Promise<Step> => {
-        const step = await createStepService({
-          user,
-          pipeId: pipe_id,
-          appKey: app_key,
-          key: action_key,
-          previousStepId: previous_step_id,
-        })
-        onPipeChange?.(pipe_id)
-        return step
+      }): Promise<Step | McpToolError> => {
+        try {
+          const step = await createStepService({
+            user,
+            pipeId: pipe_id,
+            appKey: app_key,
+            key: action_key,
+            previousStepId: previous_step_id,
+          })
+          onPipeChange?.(pipe_id)
+          return step
+        } catch (error) {
+          return publishedPipeOrThrow(error)
+        }
       },
     }),
 
@@ -308,14 +360,18 @@ export function createMcpBridgeTools(
         pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
         step_id: z.uuid().describe('ID of the step to delete'),
       }),
-      execute: async ({ pipe_id, step_id }): Promise<Flow> => {
-        const flow = await deleteStepService({
-          user,
-          pipeId: pipe_id,
-          stepId: step_id,
-        })
-        onPipeChange?.(pipe_id)
-        return flow
+      execute: async ({ pipe_id, step_id }): Promise<Flow | McpToolError> => {
+        try {
+          const flow = await deleteStepService({
+            user,
+            pipeId: pipe_id,
+            stepId: step_id,
+          })
+          onPipeChange?.(pipe_id)
+          return flow
+        } catch (error) {
+          return publishedPipeOrThrow(error)
+        }
       },
     }),
 
@@ -325,12 +381,16 @@ export function createMcpBridgeTools(
       inputSchema: z.object({
         step_id: z.uuid().describe('ID of the step to test'),
       }),
-      execute: async ({ step_id }): Promise<McpExecuteStepResult> => {
+      execute: async ({
+        step_id,
+      }): Promise<McpExecuteStepResult | McpToolError> => {
         let pipeId: string | undefined
         try {
           const result = await executeStepService(user, step_id)
           pipeId = result.pipeId
           return result
+        } catch (error) {
+          return publishedPipeOrThrow(error)
         } finally {
           if (pipeId) {
             onPipeChange?.(pipeId)
@@ -376,14 +436,18 @@ export function createMcpBridgeTools(
         pipe_id,
         step_id,
         connection_id,
-      }): Promise<RegisterConnectionResult> => {
-        const result = await registerConnectionService(
-          user,
-          step_id,
-          connection_id,
-        )
-        onPipeChange?.(pipe_id)
-        return result
+      }): Promise<RegisterConnectionResult | PublishedPipeErrorResult> => {
+        try {
+          const result = await registerConnectionService(
+            user,
+            step_id,
+            connection_id,
+          )
+          onPipeChange?.(pipe_id)
+          return result
+        } catch (error) {
+          return publishedPipeOrThrow(error)
+        }
       },
     }),
   }
