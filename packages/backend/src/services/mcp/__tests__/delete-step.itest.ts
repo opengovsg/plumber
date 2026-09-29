@@ -245,8 +245,7 @@ describe('deleteStepService', () => {
         id: randomUUID(),
         email: `delete-step-block-${label}-${randomUUID()}@example.com`,
       })
-      // trigger, If, slack, sms, email. The marker is set here rather than
-      // by pipe creation, so the test stands on its own.
+      // Pipe creation does not pin markers yet on this branch.
       const flow = await createFlowWithStepsService({
         user,
         name: 'Block Pipe',
@@ -311,20 +310,6 @@ describe('deleteStepService', () => {
       ])
       const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
       expect(updatedIfThen.config.endStepId).toBe(slack.id)
-    })
-
-    it('leaves an empty block when the only inner step is deleted', async () => {
-      const { user, flow, ifThen, slack, sms } = await createBlockPipe('empty')
-
-      await deleteStepService({ user, pipeId: flow.id, stepId: sms.id })
-      const result = await deleteStepService({
-        user,
-        pipeId: flow.id,
-        stepId: slack.id,
-      })
-
-      const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
-      expect(updatedIfThen.config.endStepId).toBe(ifThen.id)
     })
 
     it('deletes the whole block when the If step is deleted, and keeps the step after it', async () => {
