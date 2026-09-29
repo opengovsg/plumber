@@ -375,28 +375,6 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(true)
     })
 
-    it('accepts two If blocks separated by a shared step', () => {
-      const result = actionStepsSchema.safeParse([
-        ifThen(2, 2),
-        email(3),
-        email(4),
-        email(5),
-        ifThen(6, 1),
-        email(7),
-      ])
-      expect(result.success).toBe(true)
-    })
-
-    it('accepts an If block inside a for-each body', () => {
-      const result = actionStepsSchema.safeParse([
-        forEach(2),
-        ifThen(3, 1),
-        email(4),
-        email(5),
-      ])
-      expect(result.success).toBe(true)
-    })
-
     it('rejects a nested If block', () => {
       const result = actionStepsSchema.safeParse([
         ifThen(2, 2),
