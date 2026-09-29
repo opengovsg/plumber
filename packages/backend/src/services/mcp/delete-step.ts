@@ -56,9 +56,8 @@ export async function deleteStepService({
       })
     }
 
-    // Pin any other legacy If block before the delete, so the repair pass
-    // can shrink it. The block being deleted is excluded. A legacy If has
-    // no marker, and its extent is resolved below instead.
+    // Pin other legacy If blocks so the repair pass can shrink them. The
+    // deleted If keeps its derived extent, resolved in stepsRemovedWith.
     await upgradeIfThenV1BlocksIfEnabled(
       trx,
       flow,
@@ -138,9 +137,7 @@ export async function deleteStepService({
         .patch({ position: raw(`position - ${stepsToDelete.length}`) })
     }
 
-    // Deleting an If removes its whole block, matching the editor. Deleting a
-    // step inside a block removes only that step, and the repair below shrinks
-    // the block when that step was its end.
+    // Shrinks a block whose end step was deleted.
     await repairEndStepsOnDeleteStep({ trx, flow, stepsBeforeDelete })
 
     await flow.patchLastUpdated({
@@ -180,9 +177,8 @@ async function stampFormSgCascadeDeletes(
 }
 
 /**
- * The editor removes an If block by deleting its If step. A marked block
- * expands through endStepId. A legacy block has no marker, so the same
- * derived extent the editor would have sent is removed instead.
+ * Deleting an If step removes its whole block, matching the editor. A legacy
+ * If has no marker, so its derived extent is used.
  */
 function stepsRemovedWith(
   steps: Step[],
