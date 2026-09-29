@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   getIfBlockPreviewTitle,
   getRepeatBlockPreviewTitle,
-} from './previewBlockTitle'
-import type { PreviewStep } from './previewItems'
+} from '../previewBlockTitle'
+import type { PreviewStep } from '../previewItems'
 
 function step(key: string, extra: Partial<PreviewStep> = {}): PreviewStep {
   return {
@@ -18,8 +18,8 @@ function step(key: string, extra: Partial<PreviewStep> = {}): PreviewStep {
   } as PreviewStep
 }
 
-describe('getIfBlockPreviewTitle', () => {
-  it('uses the branch name before a condition is saved', () => {
+describe('preview block titles', () => {
+  it('uses the branch name until a condition is saved', () => {
     expect(
       getIfBlockPreviewTitle(
         step('ifThen', {
@@ -53,10 +53,8 @@ describe('getIfBlockPreviewTitle', () => {
       ),
     ).toBe('Department is equal to HR')
   })
-})
 
-describe('getRepeatBlockPreviewTitle', () => {
-  it('uses the proposal description before a list is chosen', () => {
+  it('uses the Repeat description until a list is chosen', () => {
     expect(
       getRepeatBlockPreviewTitle(
         step('forEach', { description: 'Loops through each pending case' }),
