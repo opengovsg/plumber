@@ -47,9 +47,8 @@ function isIfThenInput(step: { appKey?: string; key?: string | null }) {
 }
 
 /**
- * Flattens the create_pipe tree into position-ordered steps, recording each
- * If block's extent as `ifThenChildCount` so the layout rules and the
- * endStepId markers see the same block the caller described.
+ * Flattens the create_pipe tree into positioned steps. Each If block's extent
+ * becomes `ifThenChildCount`, which the layout rules and the markers share.
  */
 export function flattenNestedSteps(
   nestedSteps: McpNestedStepInput[],
@@ -201,9 +200,7 @@ export async function createFlowWithStepsService({
       }),
     )
 
-    // Every AI-built If is an explicit V2 block, so steps after it are never
-    // absorbed by the legacy derived extent. Markers are forward references,
-    // hence the separate pass once every step has an id.
+    // Markers point forward, so they need every step's id first.
     for (const [index, step] of steps.entries()) {
       if (!isIfThenInput(step)) {
         continue

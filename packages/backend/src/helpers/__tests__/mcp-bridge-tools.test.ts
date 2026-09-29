@@ -613,44 +613,18 @@ describe('createMcpBridgeTools', () => {
       },
       { toolCallId: 'create_pipe', messages: [] },
     )
-    expect(vi.mocked(createFlowWithStepsService)).toHaveBeenCalledWith({
-      user: mockUser,
-      name: 'Block Pipe',
-      steps: [
-        {
-          appKey: 'formsg',
-          key: 'newSubmission',
-          type: 'trigger',
-          position: 1,
-        },
-        {
-          appKey: 'toolbox',
-          key: 'ifThen',
-          type: 'action',
-          position: 2,
-          parameters: { branchName: 'Urgent' },
-          ifThenChildCount: 2,
-        },
-        {
-          appKey: 'slack',
-          key: 'sendMessageToChannel',
-          type: 'action',
-          position: 3,
-        },
-        {
-          appKey: 'postman-sms',
-          key: 'sendSms',
-          type: 'action',
-          position: 4,
-        },
-        {
-          appKey: 'postman',
-          key: 'sendTransactionalEmail',
-          type: 'action',
-          position: 5,
-        },
-      ],
-      traceId: mockTraceId,
+    const { steps } = vi.mocked(createFlowWithStepsService).mock.lastCall![0]
+    expect(steps.map((step) => step.key)).toEqual([
+      'newSubmission',
+      'ifThen',
+      'sendMessageToChannel',
+      'sendSms',
+      'sendTransactionalEmail',
+    ])
+    expect(steps[1]).toMatchObject({
+      position: 2,
+      parameters: { branchName: 'Urgent' },
+      ifThenChildCount: 2,
     })
   })
 

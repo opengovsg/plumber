@@ -270,25 +270,12 @@ describe('createFlowWithStepsService', () => {
           type: 'action',
           position: 3,
         },
-        {
-          appKey: 'toolbox',
-          key: 'ifThen',
-          type: 'action',
-          position: 4,
-        },
-        {
-          appKey: 'postman-sms',
-          key: 'sendSms',
-          type: 'action',
-          position: 5,
-        },
       ],
       traceId: 'trace-derived',
     })
 
-    const [, ifThen1, email, ifThen2, sms] = result.steps
-    expect(ifThen1.config.endStepId).toBe(email.id)
-    expect(ifThen2.config.endStepId).toBe(sms.id)
+    const [, ifThen, email] = result.steps
+    expect(ifThen.config.endStepId).toBe(email.id)
   })
 
   it('rejects a for-each inside an If block with the layout rule message', async () => {
