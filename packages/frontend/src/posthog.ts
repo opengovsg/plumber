@@ -17,9 +17,7 @@ if (projectToken && host) {
       capture_console_errors: true,
     },
     session_recording: {
-      sampling: {
-        sampleRate: 0.1,
-      },
+      sampleRate: 0.1,
     },
   })
 }
