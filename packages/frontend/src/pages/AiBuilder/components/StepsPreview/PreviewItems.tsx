@@ -1,17 +1,19 @@
 import { Fragment } from 'react'
-import { Box, Divider, Flex } from '@chakra-ui/react'
+import { Divider, Flex } from '@chakra-ui/react'
 
-import { TOOLBOX_ACTIONS } from '@/helpers/toolbox'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
 
+import {
+  getIfBlockPreviewTitle,
+  getRepeatBlockPreviewTitle,
+} from './helpers/previewBlockTitle'
 import {
   flattenPreviewItem,
   type PreviewItem,
   type PreviewStep,
 } from './helpers/previewItems'
-import BranchStep from './BranchStep'
-import GroupedStepContainer from './GroupedStepContainer'
+import PreviewConditionBlock from './PreviewConditionBlock'
 import Step from './Step'
 
 interface PreviewItemsProps {
@@ -49,7 +51,7 @@ export default function PreviewItems({
   isNested,
   effectiveActiveStepId,
 }: PreviewItemsProps) {
-  const { output, isMobile } = useAiBuilderContext()
+  const { output } = useAiBuilderContext()
   const { stepParametersByStepId, completedStepIds } = useStepConfigContext()
 
   const isMcpPipeMode = Boolean(output?.pipeId)
@@ -93,20 +95,25 @@ export default function PreviewItems({
         if (item.type === 'ifThenBlock') {
           return (
             <Fragment key={itemKey(item)}>
-              <GroupedStepContainer
-                stepGroupType={TOOLBOX_ACTIONS.IfThen}
-                stepGroupCaption="If"
-                isNested={isNested}
-                isPending={isBlockPending(item)}
-              >
-                <Flex flexDir="column" w="100%" px={2} gap={4} mt={2}>
-                  <BranchStep
-                    branchSteps={[item.ifThenStep, ...item.children]}
-                    isMobile={isMobile}
-                    effectiveActiveStepId={effectiveActiveStepId}
-                  />
+              <Flex data-testid="block-slot" justifyContent="center" w="100%">
+                <Flex w={isNested ? '100%' : '600px'} maxW="100%">
+                  <PreviewConditionBlock
+                    badge="IF"
+                    title={getIfBlockPreviewTitle(item.ifThenStep)}
+                    isPending={isBlockPending(item)}
+                  >
+                    {item.children.map((child, childIndex) => (
+                      <Step
+                        key={child.id ?? child.position}
+                        step={child}
+                        isNested={true}
+                        isLastStep={childIndex === item.children.length - 1}
+                        {...pipeModeProps(child)}
+                      />
+                    ))}
+                  </PreviewConditionBlock>
                 </Flex>
-              </GroupedStepContainer>
+              </Flex>
               {!isLast && <Connector isNested={isNested} />}
             </Fragment>
           )
@@ -114,28 +121,21 @@ export default function PreviewItems({
 
         return (
           <Fragment key={itemKey(item)}>
-            <GroupedStepContainer
-              stepGroupType={TOOLBOX_ACTIONS.ForEach}
-              stepGroupCaption="Repeat"
-              isNested={isNested}
-              isPending={isBlockPending(item)}
-            >
-              <Box w="100%">
-                <Flex flexDir="column" w="100%" px={4} py={3}>
-                  <Step
-                    step={item.forEachStep}
-                    isNested={true}
-                    isLastStep={item.children.length === 0}
-                    {...pipeModeProps(item.forEachStep)}
-                  />
+            <Flex data-testid="block-slot" justifyContent="center" w="100%">
+              <Flex w={isNested ? '100%' : '600px'} maxW="100%">
+                <PreviewConditionBlock
+                  badge="REPEAT"
+                  title={getRepeatBlockPreviewTitle(item.forEachStep)}
+                  isPending={isBlockPending(item)}
+                >
                   <PreviewItems
                     items={item.children}
                     isNested={true}
                     effectiveActiveStepId={effectiveActiveStepId}
                   />
-                </Flex>
-              </Box>
-            </GroupedStepContainer>
+                </PreviewConditionBlock>
+              </Flex>
+            </Flex>
             {!isLast && <Connector isNested={isNested} />}
           </Fragment>
         )

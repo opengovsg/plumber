@@ -45,36 +45,6 @@ vi.mock('./Step', () => ({
     />
   ),
 }))
-vi.mock('./BranchStep', () => ({
-  default: ({ branchSteps }: { branchSteps: IStep[] }) => (
-    <div
-      data-testid="branch"
-      data-steps={branchSteps.map((step) => step.id).join(',')}
-    />
-  ),
-}))
-vi.mock('./GroupedStepContainer', () => ({
-  default: ({
-    children,
-    stepGroupType,
-    isNested,
-    isPending,
-  }: {
-    children: React.ReactNode
-    stepGroupType: string
-    isNested: boolean
-    isPending?: boolean
-  }) => (
-    <div
-      data-testid="block"
-      data-type={stepGroupType}
-      data-nested={String(isNested)}
-      data-pending={String(Boolean(isPending))}
-    >
-      {children}
-    </div>
-  ),
-}))
 
 function step(id: string, appKey: string, key: string): PreviewStep {
   return {
@@ -136,18 +106,27 @@ describe('PreviewItems', () => {
       step('c', 'postman-sms', 'sendSms'),
     ])
 
-    expect(attrsOf('[data-testid="block"]', 'data-type')).toEqual(['ifThen'])
-    expect(attrsOf('[data-testid="branch"]', 'data-steps')).toEqual(['if,b'])
-    // Plain steps: `a` before the block, `c` after it as the last item.
-    expect(attrsOf('[data-testid="step"]', 'data-step')).toEqual(['a', 'c'])
+    expect(attrsOf('[data-testid="block"]', 'data-badge')).toEqual(['IF'])
+    // The If step is the block header, not a card. Only its child is inside.
+    expect(attrsOf('[data-testid="step"]', 'data-step')).toEqual([
+      'a',
+      'b',
+      'c',
+    ])
+    expect(attrsOf('[data-testid="step"]', 'data-nested')).toEqual([
+      'false',
+      'true',
+      'false',
+    ])
     expect(attrsOf('[data-testid="step"]', 'data-last')).toEqual([
       'false',
       'true',
+      'true',
     ])
     // The block is followed by another item, so a connector separates them.
-    const block = container.querySelector('[data-testid="block"]')
-    expect(block?.nextElementSibling).not.toBeNull()
-    expect(block?.nextElementSibling?.getAttribute('data-testid')).toBeNull()
+    const slot = container.querySelector('[data-testid="block-slot"]')
+    expect(slot?.nextElementSibling).not.toBeNull()
+    expect(slot?.nextElementSibling?.getAttribute('data-testid')).toBeNull()
   })
 
   it('nests an If block inside the for-each body', () => {
@@ -158,15 +137,13 @@ describe('PreviewItems', () => {
       step('c', 'postman', 'sendTransactionalEmail'),
     ])
 
-    expect(attrsOf('[data-testid="block"]', 'data-type')).toEqual([
-      'forEach',
-      'ifThen',
+    expect(attrsOf('[data-testid="block"]', 'data-badge')).toEqual([
+      'REPEAT',
+      'IF',
     ])
-    expect(attrsOf('[data-testid="block"]', 'data-nested')).toEqual([
-      'false',
-      'true',
-    ])
-    expect(attrsOf('[data-testid="step"]', 'data-step')).toEqual(['loop', 'c'])
+    // The Repeat step is the block header. The email inside the If, then the
+    // email after it, are the only cards.
+    expect(attrsOf('[data-testid="step"]', 'data-step')).toEqual(['b', 'c'])
     expect(attrsOf('[data-testid="step"]', 'data-nested')).toEqual([
       'true',
       'true',
