@@ -101,11 +101,13 @@ export default function PreviewItems({
                   <PreviewConditionBlock
                     badge="IF"
                     title={getIfBlockPreviewTitle(item.ifThenStep)}
+                    step={item.ifThenStep}
                     isPending={isBlockPending(item)}
                     isCompleted={
                       isMcpPipeMode &&
                       isTestedPreviewBlock(item, completedStepIds)
                     }
+                    {...pipeModeProps(item.ifThenStep)}
                   >
                     {item.children.map((child, childIndex) => (
                       <Step
@@ -131,11 +133,13 @@ export default function PreviewItems({
                 <PreviewConditionBlock
                   badge="REPEAT"
                   title={getRepeatBlockPreviewTitle(item.forEachStep)}
+                  step={item.forEachStep}
                   isPending={isBlockPending(item)}
                   isCompleted={
                     isMcpPipeMode &&
                     isTestedPreviewBlock(item, completedStepIds)
                   }
+                  {...pipeModeProps(item.forEachStep)}
                 >
                   <PreviewItems
                     items={item.children}

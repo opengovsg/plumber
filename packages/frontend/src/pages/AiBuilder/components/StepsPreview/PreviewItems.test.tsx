@@ -11,16 +11,28 @@ import PreviewItems from './PreviewItems'
 const mocks = vi.hoisted(() => ({
   output: {} as Record<string, unknown>,
   completedStepIds: new Set<string>(),
+  stepParametersByStepId: {} as Record<string, Record<string, unknown>>,
 }))
 
 vi.mock('@/pages/AiBuilder/AiBuilderContext', () => ({
-  useAiBuilderContext: () => ({ output: mocks.output, isMobile: false }),
+  useAiBuilderContext: () => ({
+    output: mocks.output,
+    isMobile: false,
+    allApps: [],
+    steps: [],
+  }),
 }))
 vi.mock('@/pages/AiBuilder/StepConfigContext', () => ({
   useStepConfigContext: () => ({
-    stepParametersByStepId: {},
+    stepParametersByStepId: mocks.stepParametersByStepId,
     completedStepIds: mocks.completedStepIds,
   }),
+}))
+// The real rows query dynamic data and resolve app fields.
+vi.mock('./StepParameterRows', () => ({
+  default: ({ stepId }: { stepId: string }) => (
+    <div data-testid="block-params" data-step={stepId} />
+  ),
 }))
 // The real cards pull in Chakra, app icons and step-name lookups. Stand-ins
 // keep this test about the structure PreviewItems produces.
@@ -88,6 +100,7 @@ describe('PreviewItems', () => {
     ).IS_REACT_ACT_ENVIRONMENT = true
     mocks.output = {}
     mocks.completedStepIds = new Set()
+    mocks.stepParametersByStepId = {}
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
@@ -195,5 +208,73 @@ describe('PreviewItems', () => {
     expect(
       container.querySelectorAll('[data-testid="block-tested"]'),
     ).toHaveLength(2)
+  })
+
+  it("collapses a tested block's parameters behind the header chevron", () => {
+    mocks.output = { pipeId: 'pipe-1' }
+    mocks.completedStepIds = new Set(['if'])
+    mocks.stepParametersByStepId = {
+      if: { branchName: 'Department is HR' },
+      if2: { branchName: 'Department is Finance' },
+    }
+
+    render(
+      [
+        { ...step('if', 'toolbox', 'ifThen'), endStepId: 'b' },
+        step('b', 'slack', 'sendMessageToChannel'),
+        { ...step('if2', 'toolbox', 'ifThen'), endStepId: 'c' },
+        step('c', 'postman-sms', 'sendSms'),
+      ],
+      'c',
+    )
+
+    // Only the tested block offers the toggle. It starts closed.
+    expect(
+      container.querySelectorAll('[data-testid="block-chevron"]'),
+    ).toHaveLength(1)
+    expect(attrsOf('[data-testid="block"]', 'data-expanded')).toEqual([
+      'false',
+      'false',
+    ])
+    expect(
+      container.querySelectorAll('[data-testid="block-params"]'),
+    ).toHaveLength(0)
+
+    const [header] = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-testid="block-header"]'),
+    )
+    act(() => header.click())
+
+    expect(attrsOf('[data-testid="block"]', 'data-expanded')).toEqual([
+      'true',
+      'false',
+    ])
+    expect(attrsOf('[data-testid="block-params"]', 'data-step')).toEqual(['if'])
+
+    act(() => header.click())
+    expect(
+      container.querySelectorAll('[data-testid="block-params"]'),
+    ).toHaveLength(0)
+  })
+
+  it("keeps the active block's parameters open with no chevron", () => {
+    mocks.output = { pipeId: 'pipe-1' }
+    mocks.stepParametersByStepId = { loop: { items: '{{step.x.rows}}' } }
+
+    render(
+      [
+        step('loop', 'toolbox', 'forEach'),
+        step('b', 'slack', 'sendMessageToChannel'),
+      ],
+      'loop',
+    )
+
+    expect(attrsOf('[data-testid="block"]', 'data-expanded')).toEqual(['true'])
+    expect(attrsOf('[data-testid="block-params"]', 'data-step')).toEqual([
+      'loop',
+    ])
+    expect(
+      container.querySelectorAll('[data-testid="block-chevron"]'),
+    ).toHaveLength(0)
   })
 })
