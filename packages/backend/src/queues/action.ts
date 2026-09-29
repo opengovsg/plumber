@@ -124,25 +124,17 @@ async function shouldRouteToBatchQueue(
   jobData: IActionJobData,
 ): Promise<boolean> {
   try {
-    const rollout = await getLdFlagValue<M365ExcelBatchRolloutState>(
-      M365_EXCEL_BATCH_ROLLOUT_FLAG,
-      null,
-      'off',
-    )
-
-    if (rollout === 'all') {
-      return true
-    }
-
-    if (
-      rollout === 'ogp' &&
-      appKey === 'm365-excel' &&
-      actionKey === 'createTableRow'
-    ) {
+    if (appKey === 'm365-excel' && actionKey === 'createTableRow') {
       const flow = await Flow.query()
         .findById(jobData.flowId)
         .withGraphFetched('user')
-      return flow?.user?.email.toLowerCase().endsWith('@open.gov.sg') ?? false
+      return (
+        (await getLdFlagValue<M365ExcelBatchRolloutState>(
+          M365_EXCEL_BATCH_ROLLOUT_FLAG,
+          flow?.user?.email.toLowerCase(),
+          'off',
+        )) === 'all'
+      )
     }
 
     return false
