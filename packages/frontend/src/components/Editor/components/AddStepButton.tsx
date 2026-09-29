@@ -7,9 +7,9 @@ import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import UnsavedChangesAlert from './UnsavedChangesAlert'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 interface AddStepButtonProps {
   isHidden: boolean
