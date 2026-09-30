@@ -52,8 +52,10 @@ export default function PreviewItems({
   isNested,
   effectiveActiveStepId,
 }: PreviewItemsProps) {
-  const { output } = useAiBuilderContext()
+  const { output, variableLabelsByPath } = useAiBuilderContext()
   const { stepParametersByStepId, completedStepIds } = useStepConfigContext()
+
+  const resolveVariableLabel = (id: string) => variableLabelsByPath.get(id)
 
   const isMcpPipeMode = Boolean(output?.pipeId)
 
@@ -100,7 +102,10 @@ export default function PreviewItems({
                 <Flex w={isNested ? '100%' : '600px'} maxW="100%">
                   <PreviewConditionBlock
                     badge="IF"
-                    title={getIfBlockPreviewTitle(item.ifThenStep)}
+                    title={getIfBlockPreviewTitle(
+                      item.ifThenStep,
+                      resolveVariableLabel,
+                    )}
                     step={item.ifThenStep}
                     isPending={isBlockPending(item)}
                     isCompleted={
@@ -132,7 +137,10 @@ export default function PreviewItems({
               <Flex w={isNested ? '100%' : '600px'} maxW="100%">
                 <PreviewConditionBlock
                   badge="REPEAT"
-                  title={getRepeatBlockPreviewTitle(item.forEachStep)}
+                  title={getRepeatBlockPreviewTitle(
+                    item.forEachStep,
+                    resolveVariableLabel,
+                  )}
                   step={item.forEachStep}
                   isPending={isBlockPending(item)}
                   isCompleted={

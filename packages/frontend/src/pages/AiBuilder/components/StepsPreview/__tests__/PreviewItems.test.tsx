@@ -20,6 +20,7 @@ vi.mock('@/pages/AiBuilder/AiBuilderContext', () => ({
     isMobile: false,
     allApps: [],
     steps: [],
+    variableLabelsByPath: new Map(),
   }),
 }))
 vi.mock('@/pages/AiBuilder/StepConfigContext', () => ({
