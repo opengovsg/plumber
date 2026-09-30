@@ -134,7 +134,7 @@ export default function PromptInput({
 
   const doSend = () => {
     if (isPostHogConfigured) {
-      posthog.capture('ai_builder_message_sent')
+      posthog.capture('ai_builder:message_sent')
     }
     sendMessage(input)
     setInput('')
