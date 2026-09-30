@@ -54,6 +54,31 @@ describe('preview block titles', () => {
     ).toBe('Department is equal to HR')
   })
 
+  it('uses a step variable label in the condition', () => {
+    const id = 'step.11111111-1111-4111-8111-111111111111.answer'
+    expect(
+      getIfBlockPreviewTitle(
+        step('ifThen', {
+          parameters: {
+            conditions: [
+              {
+                rows: [
+                  {
+                    field: `{{${id}}}`,
+                    is: 'is',
+                    condition: 'equals',
+                    text: 'HR',
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        (variableId) => (variableId === id ? 'Department' : undefined),
+      ),
+    ).toBe('Department is equal to HR')
+  })
+
   it('uses the Repeat description until a list is chosen', () => {
     expect(
       getRepeatBlockPreviewTitle(
