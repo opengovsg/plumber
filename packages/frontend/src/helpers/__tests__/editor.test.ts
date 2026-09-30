@@ -60,6 +60,17 @@ describe('withDefaultParameters', () => {
     expect(result.parameters.sendMode).toEqual('individual')
   })
 
+  it('replaces a tab value that is no longer one of the options', () => {
+    const result = withDefaultParameters(
+      makeStep({ sendMode: 'removedOption' }),
+      makeSubsteps([RECIPIENT_FIELD]),
+      'sendTransactionalEmail',
+      getFlagValue,
+    )
+
+    expect(result.parameters.sendMode).toEqual('combined')
+  })
+
   it('seeds the tab key even though the field itself has no static value', () => {
     const result = withDefaultParameters(
       makeStep({}),

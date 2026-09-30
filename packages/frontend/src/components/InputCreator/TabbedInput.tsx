@@ -21,6 +21,8 @@ interface TabbedInputProps {
   required?: boolean
   tooltipText?: string
   tabs: IFieldTabs
+  // Field-level read-only state, combined with the editor-wide one.
+  readOnly?: boolean
   children: React.ReactNode
 }
 
@@ -53,9 +55,18 @@ const tabStyle: TabProps = {
  * stored value backwards compatible when a toggle is added to an existing field.
  */
 export default function TabbedInput(props: TabbedInputProps) {
-  const { name, label, required, tooltipText, tabs, children } = props
+  const {
+    name,
+    label,
+    required,
+    tooltipText,
+    tabs,
+    readOnly: fieldReadOnly,
+    children,
+  } = props
   const { control } = useFormContext()
-  const { readOnly } = useContext(EditorContext)
+  const { readOnly: editorReadOnly } = useContext(EditorContext)
+  const readOnly = editorReadOnly || fieldReadOnly
 
   return (
     <Controller
@@ -63,10 +74,11 @@ export default function TabbedInput(props: TabbedInputProps) {
       control={control}
       defaultValue={tabs.value}
       render={({ field: { onChange, value } }) => {
-        // An unrecognised or missing value falls back to the first tab so the
-        // control is never rendered with nothing selected.
+        // withDefaultParameters normalises the form value before the editor
+        // mounts, so this fallback only guards against a bare Controller.
         const selectedIndex = Math.max(
           tabs.options.findIndex((option) => option.value === value),
+          tabs.options.findIndex((option) => option.value === tabs.value),
           0,
         )
         const { description } = tabs.options[selectedIndex]
