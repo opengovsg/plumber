@@ -1206,6 +1206,54 @@ describe('send transactional email', () => {
       })
     })
 
+    it('does not resend CCs on retry when the message carrying them was accepted', async () => {
+      $.step.parameters.destinationEmail =
+        'a@open.gov.sg,b@open.gov.sg,c@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination).toEqual({
+        ToAddresses: ['b@open.gov.sg', 'c@open.gov.sg'],
+      })
+      // dataOut still reports the configured CCs for downstream steps.
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({ cc: ['cc@open.gov.sg'] }),
+      })
+    })
+
+    it('resends CCs on retry when the message carrying them failed', async () => {
+      // 49 To + 1 CC fill the first message; the remaining 11 form the second.
+      $.step.parameters.destinationEmail = emails(60).join(',')
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: [
+            ...Array(49).fill('RATE-LIMITED'),
+            ...Array(11).fill('ACCEPTED'),
+          ],
+          recipient: emails(60),
+        },
+        errorDetails: { name: 'Rate limited' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect(sentCommands()[0].input.Destination).toEqual({
+        ToAddresses: emails(49),
+        CcAddresses: ['cc@open.gov.sg'],
+      })
+    })
+
     it('lists every chunk recipient in the raw MIME To header, with Cc only on the first chunk', async () => {
       $.step.parameters.destinationEmail = emails(51).join(',')
       $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'

@@ -69,6 +69,9 @@ interface Email {
   attachments?: { fileName: string; data: Uint8Array }[]
   replyTo?: string
   ccList?: string[]
+  // Set on a retry whose earlier attempt already carried the CCs. ccList stays
+  // so dataOut keeps reporting it.
+  ccDelivered?: boolean
   sendMode: SendMode
 }
 
@@ -357,7 +360,9 @@ export async function sendTransactionalEmails(
   const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
   // Suppressed CCs are removed from the API call only — dataOut keeps the full
   // ccList (CC status is not tracked per the field's documented behaviour).
-  const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
+  const ccAddressesToSend = email.ccDelivered
+    ? undefined
+    : email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
   const isCombinedSes = useSes && email.sendMode === 'combined'
   if (!useSes && email.sendMode === 'combined' && activeRecipients.length) {
