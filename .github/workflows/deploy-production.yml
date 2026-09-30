@@ -5,9 +5,9 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - production
+  release:
+    types:
+      - released
 
 jobs:
   deploy:
