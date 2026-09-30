@@ -367,6 +367,28 @@ steps:
       ).toThrow('For-each action cannot be placed inside an If block')
     })
 
+    it('throws when an if-then block is explicitly empty', () => {
+      expect(() =>
+        parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
+name: Empty block
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    description: If
+    steps: []
+  - step: 3
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->`),
+      ).toThrow('An If block must contain at least one step.')
+    })
+
     it('throws when an if-then is nested inside another if-then block', () => {
       expect(() =>
         parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
