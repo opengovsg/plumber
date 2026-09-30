@@ -12,7 +12,10 @@ import {
   validateEndStepWrite,
 } from '@/apps/toolbox/common/validate-end-step'
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
-import { getIfThenChildCount } from '@/graphql/mutations/ai/schemas/actions.zod'
+import {
+  getIfThenChildCount,
+  validateActionStepsRules,
+} from '@/graphql/mutations/ai/schemas/actions.zod'
 import { generateSchema } from '@/graphql/mutations/ai/schemas/schema-generator'
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
@@ -44,6 +47,24 @@ export interface McpNestedStepInput {
 
 function isIfThenInput(step: { appKey?: string; key?: string | null }) {
   return step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.IF_THEN
+}
+
+function isNamedLayoutStep(step: { appKey?: string; key?: string | null }) {
+  return (
+    isIfThenInput(step) ||
+    (step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH)
+  )
+}
+
+function layoutRuleError(
+  issues: { code: string; message: string }[],
+): string | null {
+  const messages = issues
+    .filter((issue) => issue.code === 'custom')
+    .map((issue) => issue.message)
+  return messages.length > 0
+    ? `Pipe contains invalid action steps: ${messages.join('. ')}.`
+    : null
 }
 
 /**
@@ -157,6 +178,18 @@ export async function createFlowWithStepsService({
             ? `Pipe contains invalid action steps: ${layoutIssues.join('. ')}.`
             : 'Pipe contains invalid action steps',
         )
+      }
+    }
+  } else if (steps.some(isNamedLayoutStep)) {
+    // A missing key skips the full schema, which also skips these rules.
+    const layout = z
+      .array(z.custom<McpStepInput>())
+      .superRefine(validateActionStepsRules)
+      .safeParse(steps.slice(1))
+    if (!layout.success) {
+      const message = layoutRuleError(layout.error.issues)
+      if (message) {
+        throw new Error(message)
       }
     }
   }

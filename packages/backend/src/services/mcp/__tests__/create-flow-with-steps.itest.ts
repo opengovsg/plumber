@@ -322,6 +322,50 @@ describe('createFlowWithStepsService', () => {
     )
   })
 
+  it('rejects a for-each inside an If block even when another step has no key', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-partial-key-${randomUUID()}@example.com`,
+    })
+
+    await expect(
+      createFlowWithStepsService({
+        user,
+        name: 'Partial key',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'ifThen',
+            type: 'action',
+            position: 2,
+            ifThenChildCount: 2,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'forEach',
+            type: 'action',
+            position: 3,
+          },
+          {
+            appKey: 'postman',
+            key: null,
+            type: 'action',
+            position: 4,
+          },
+        ],
+        traceId: 'trace-partial-key',
+      }),
+    ).rejects.toThrow(
+      'Pipe contains invalid action steps: For-each action cannot be placed inside an If block.',
+    )
+  })
+
   it('stores null keys when not provided', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
