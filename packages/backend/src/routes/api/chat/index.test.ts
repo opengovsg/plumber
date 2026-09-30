@@ -265,7 +265,6 @@ describe('chat handler — data-columnTable emission', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
-        mcpStepConfig: true,
       },
     })
   })
@@ -338,14 +337,12 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // This describe block only exercises the mcpStepConfig (Phase 2b+) path.
     vi.mocked(getAiBuilderFlag).mockReturnValue({
       enabled: true,
       config: {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
-        mcpStepConfig: true,
       },
     })
     // Simulate a create_pipe (or similar) tool call having already set the

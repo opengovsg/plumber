@@ -39,6 +39,5 @@ export const AI_BUILDER_FEATURE_FLAG_FALLBACK = {
     chatPromptName: 'chat',
     chatSummaryPromptName: 'chat-summary',
     version: 'production',
-    mcpStepConfig: false,
   },
 }
