@@ -223,7 +223,7 @@ const handleChatStream = observe(
         })
       }
 
-      let workflowError = 'Unable to generate the workflow.'
+      const workflowError = 'Unable to generate the workflow.'
 
       let activePipeId: string | null = null
 
@@ -343,9 +343,9 @@ const handleChatStream = observe(
                   ]
                   const connectionsById = connectionIds.length
                     ? new Map(
-                        (
-                          await Connection.query().findByIds(connectionIds)
-                        ).map((connection) => [connection.id, connection]),
+                        (await Connection.query().findByIds(connectionIds)).map(
+                          (connection) => [connection.id, connection],
+                        ),
                       )
                     : new Map<string, Connection>()
 
