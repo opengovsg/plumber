@@ -191,7 +191,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
   if (type === 'string' || type === 'multiline') {
     // A tabbed field's label and description belong to the wrapper, so the
     // input itself renders neither.
-    const tabs = 'tabs' in schema ? schema.tabs : undefined
+    const tabs = schema.type === 'string' ? schema.tabs : undefined
 
     const input = variables ? (
       <RichTextEditor
@@ -234,6 +234,7 @@ export default function InputCreator(props: InputCreatorProps): JSX.Element {
         required={required}
         tooltipText={tooltipText}
         tabs={tabs}
+        readOnly={isReadOnly}
       >
         {input}
       </TabbedInput>

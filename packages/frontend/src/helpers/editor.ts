@@ -86,6 +86,7 @@ export function withDefaultParameters(
   getFlagValue: LaunchDarklyContextData['getFlagValue'],
 ): IStep {
   const defaultParameters: IJSONObject = {}
+  const overrideParameters: IJSONObject = {}
 
   for (const substep of substeps ?? []) {
     for (const arg of substep.arguments ?? []) {
@@ -99,10 +100,15 @@ export function withDefaultParameters(
       }
 
       // A tabbed field's selection lives under its own key, so it needs seeding
-      // separately from the field's `value`.
+      // separately from the field's `value`. A stored value outside the current
+      // options is replaced too, so the form never submits a value the pills
+      // cannot show.
       const tabs = 'tabs' in arg ? arg.tabs : undefined
-      if (tabs && step.parameters[tabs.key] === undefined) {
-        defaultParameters[tabs.key] = tabs.value
+      if (
+        tabs &&
+        !tabs.options.some((o) => o.value === step.parameters[tabs.key])
+      ) {
+        overrideParameters[tabs.key] = tabs.value
       }
 
       if (arg.value === undefined || step.parameters[arg.key] !== undefined) {
@@ -113,7 +119,10 @@ export function withDefaultParameters(
     }
   }
 
-  if (Object.keys(defaultParameters).length === 0) {
+  if (
+    Object.keys(defaultParameters).length === 0 &&
+    Object.keys(overrideParameters).length === 0
+  ) {
     return step
   }
 
@@ -122,6 +131,7 @@ export function withDefaultParameters(
     parameters: {
       ...defaultParameters,
       ...step.parameters,
+      ...overrideParameters,
     },
   }
 }

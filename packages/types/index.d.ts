@@ -513,7 +513,8 @@ export interface IFieldTabs {
   key: string
   // Seeded into newly created steps. See withDefaultParameters.
   value: string
-  options: IFieldTabOption[]
+  // Non-empty so the editor can always render a selected pill.
+  options: [IFieldTabOption, ...IFieldTabOption[]]
 }
 
 export interface IFieldTabOption {
