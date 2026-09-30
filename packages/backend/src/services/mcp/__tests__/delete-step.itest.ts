@@ -355,5 +355,20 @@ describe('deleteStepService', () => {
       const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
       expect(updatedIfThen?.config.endStepId).toBe(sms.id)
     })
+
+    it('deletes the derived extent when the If marker points at a missing step', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('dangling')
+      await Step.query()
+        .findById(ifThen.id)
+        .patch({ config: { endStepId: 'missing-step' } })
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+      })
+
+      expect(result.steps.map((s) => s.key)).toEqual(['newSubmission'])
+    })
   })
 })

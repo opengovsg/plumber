@@ -163,7 +163,13 @@ function stepsRemovedWith(
   }
 
   const target = steps.find((candidate) => candidate.id === stepId)
-  if (target && isIfThenStep(target) && !isIfThenV2(target)) {
+  // A dangling marker is not a block. The editor falls back to the derived
+  // extent and deletes those steps. Do the same.
+  if (
+    target &&
+    isIfThenStep(target) &&
+    (!isIfThenV2(target) || danglingIfThenIds.includes(target.id))
+  ) {
     const endStep = deriveIfThenV1EndStep(steps, target)
     for (const member of steps) {
       if (
