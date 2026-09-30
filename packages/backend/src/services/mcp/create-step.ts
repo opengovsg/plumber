@@ -136,7 +136,15 @@ export async function createStepService({
       }
     }
 
-    if (isForEach && flowSteps.some((step) => isForEachStep(step))) {
+    // Publish allows one For-each on each approval branch.
+    const branch = previousStep.config?.approval?.branch
+    if (
+      isForEach &&
+      flowSteps.some(
+        (step) =>
+          isForEachStep(step) && step.config?.approval?.branch === branch,
+      )
+    ) {
       throw new UserFacingError('A pipe can only have one For-each step.')
     }
 

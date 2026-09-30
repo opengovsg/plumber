@@ -311,6 +311,47 @@ describe('createStepService', () => {
     })
   })
 
+  it('allows a For-each when the existing one is on another approval branch', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-step-foreach-branch-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Two loops',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'toolbox',
+          key: 'forEach',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-foreach-branch',
+    })
+    await Step.query()
+      .findById(flow.steps[1].id)
+      .patch({
+        config: { approval: { branch: 'reject', stepId: 'mrf-1' } },
+      })
+
+    const added = await createStepService({
+      user,
+      pipeId: flow.id,
+      appKey: 'toolbox',
+      key: 'forEach',
+      previousStepId: flow.steps[0].id,
+    })
+
+    expect(added.key).toBe('forEach')
+  })
+
   it('throws if the trigger or action does not exist', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
