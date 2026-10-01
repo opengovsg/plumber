@@ -463,7 +463,26 @@ describe('createStep mutation integration tests', async () => {
 
   describe('version assignment', () => {
     it('defaults to version 1 when app has no stepTransformer', async () => {
-      // postman has no stepTransformer - version should default to 1
+      // lettersg has no stepTransformer - version should default to 1
+      const newStep = await createStep(
+        null,
+        {
+          input: {
+            flow: { id: testFlow.id, updatedAt: testFlowTimestampString },
+            previousStep: { id: existingSteps[0].id },
+            key: 'createLetter',
+            appKey: 'lettersg',
+            parameters: {},
+          },
+        },
+        context,
+      )
+
+      expect((newStep as any).version).toBe(1)
+    })
+
+    it('uses the latest version for an app with a real stepTransformer', async () => {
+      // postman pins legacy steps to individual send mode via a v1 → v2 transformer
       const newStep = await createStep(
         null,
         {
@@ -478,7 +497,7 @@ describe('createStep mutation integration tests', async () => {
         context,
       )
 
-      expect((newStep as any).version).toBe(1)
+      expect((newStep as any).version).toBe(2)
     })
 
     it('defaults to version 1 when no appKey is provided', async () => {

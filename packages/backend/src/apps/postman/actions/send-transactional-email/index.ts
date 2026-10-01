@@ -22,6 +22,7 @@ import {
   sendTransactionalEmails,
 } from '../../common/email-helper'
 import {
+  SEND_MODE_KEY,
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
@@ -119,6 +120,7 @@ function getSendEmailParams(
     senderName,
     replyTo,
     attachments = [],
+    [SEND_MODE_KEY]: sendMode,
   } = $.step.parameters
 
   // Production runs must always use the configured recipients. `useConfiguredEmails`
@@ -133,6 +135,7 @@ function getSendEmailParams(
       senderName,
       replyTo,
       attachments,
+      sendMode,
     }
   }
 
@@ -149,6 +152,7 @@ function getSendEmailParams(
     senderName,
     replyTo,
     attachments,
+    sendMode,
   }
 }
 
@@ -164,9 +168,11 @@ async function sendEmail(
     senderName,
     replyTo,
     attachments,
+    sendMode,
   } = getSendEmailParams($, testRunMetadata)
 
   const result = transactionalEmailSchema.safeParse({
+    [SEND_MODE_KEY]: sendMode,
     destinationEmail,
     destinationEmailCc,
     senderName,
@@ -214,9 +220,17 @@ async function sendEmail(
     // Don't do partial retry in test runs! always send to all recipients
     !$.execution.testRun
 
+  // Combined mode carries the CCs on the first SES message only, so a retry
+  // must not send them again once that message was accepted. Its To addresses
+  // are the leading non-blacklisted recipients, so the first non-BLACKLISTED
+  // status is that message's outcome.
+  let ccDelivered = false
   if (isPartialRetry) {
     const { status, recipient } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
+    ccDelivered =
+      result.data[SEND_MODE_KEY] === 'combined' &&
+      status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED'
   }
 
   // Resolve the transport once, on the configured attachments and the actual
@@ -257,9 +271,11 @@ async function sendEmail(
         '<p style="margin: 0">&nbsp;</p>',
       ),
       ccList: result.data.destinationEmailCc,
+      ccDelivered,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
+      sendMode: result.data[SEND_MODE_KEY],
     },
     useSes,
   )

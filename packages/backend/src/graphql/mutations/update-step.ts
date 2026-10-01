@@ -102,11 +102,17 @@ const updateStep: MutationResolvers['updateStep'] = async (
       ? apps[input.appKey]?.stepTransformer
       : undefined
     if (transformer) {
-      parameters = transformer.transformStepParameters(
-        input.key,
-        input.parameters,
-        version,
-      )
+      // A step that just changed app or event has no legacy parameters to
+      // migrate. Its stored version belongs to the previous event, so running
+      // the migrations from it would mislabel a new step as legacy.
+      const isSameEvent = step.appKey === input.appKey && step.key === input.key
+      if (isSameEvent) {
+        parameters = transformer.transformStepParameters(
+          input.key,
+          input.parameters,
+          version,
+        )
+      }
       version = transformer.getLatestStepVersion(input.key)
     }
 
