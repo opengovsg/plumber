@@ -4,6 +4,7 @@ import { MouseEvent, useCallback, useRef, useState } from 'react'
 import {
   BiDotsHorizontalRounded,
   BiDuplicate,
+  BiExport,
   BiShow,
   BiTrash,
 } from 'react-icons/bi'
@@ -25,6 +26,7 @@ import {
 
 import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
+import { CREATE_TEMPLATE_FROM_FLOW } from '@/graphql/mutations/create-template-from-flow'
 import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
 import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
 
@@ -125,6 +127,38 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     [onDialogOpen],
   )
 
+  const [createTemplateFromFlow, { loading: isCreatingTemplate }] = useMutation(
+    CREATE_TEMPLATE_FROM_FLOW,
+  )
+
+  const onConvertToTemplateButtonClick = useCallback(
+    async (event: MouseEvent) => {
+      event.preventDefault()
+      await createTemplateFromFlow({
+        variables: { input: { flowId: flow.id } },
+        onCompleted: () => {
+          toast({
+            title: 'The pipe has been saved as a template.',
+            status: 'success',
+            duration: 3000,
+            isClosable: true,
+            position: 'top',
+          })
+        },
+        onError: () => {
+          toast({
+            title: 'Unable to convert the pipe to a template.',
+            status: 'error',
+            duration: 3000,
+            isClosable: true,
+            position: 'top',
+          })
+        },
+      })
+    },
+    [createTemplateFromFlow, flow.id, toast],
+  )
+
   return (
     <>
       <Menu
@@ -160,6 +194,13 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
             icon={<Icon as={BiDuplicate} boxSize={5} />}
           >
             Duplicate
+          </MenuItem>
+          <MenuItem
+            isDisabled={isCreatingTemplate}
+            onClick={onConvertToTemplateButtonClick}
+            icon={<Icon as={BiExport} boxSize={5} />}
+          >
+            Convert to template
           </MenuItem>
           <TouchableTooltip
             label={
