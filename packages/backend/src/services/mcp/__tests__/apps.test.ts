@@ -112,7 +112,11 @@ vi.mock('@/apps', () => ({
                 key: 'lookupMode',
                 value: 'byId',
                 options: [
-                  { label: 'By row ID', value: 'byId' },
+                  {
+                    label: 'By row ID',
+                    value: 'byId',
+                    description: 'Matches the row with this ID.',
+                  },
                   { label: 'By column value', value: 'byColumn' },
                 ],
               },
@@ -406,14 +410,19 @@ describe('listAppsService', () => {
   })
 
   describe('tabbed fields', () => {
-    it('serializes the tab key and its options', async () => {
+    it('serializes the tab key, default and options with descriptions', async () => {
       const apps = await listAppsService(user)
       const tiles = apps.find((a) => a.key === 'tiles')
       const rowIdField = tiles?.actions[0].fields.find((f) => f.key === 'rowId')
       expect(rowIdField?.tabs).toEqual({
         key: 'lookupMode',
+        defaultValue: 'byId',
         options: [
-          { label: 'By row ID', value: 'byId' },
+          {
+            label: 'By row ID',
+            value: 'byId',
+            description: 'Matches the row with this ID.',
+          },
           { label: 'By column value', value: 'byColumn' },
         ],
       })

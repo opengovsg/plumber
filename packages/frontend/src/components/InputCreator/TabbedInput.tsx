@@ -75,12 +75,15 @@ export default function TabbedInput(props: TabbedInputProps) {
       defaultValue={tabs.value}
       render={({ field: { onChange, value } }) => {
         // withDefaultParameters normalises the form value before the editor
-        // mounts, so this fallback only guards against a bare Controller.
-        const selectedIndex = Math.max(
-          tabs.options.findIndex((option) => option.value === value),
-          tabs.options.findIndex((option) => option.value === tabs.value),
-          0,
+        // mounts, so the fallbacks only guard against a bare Controller.
+        const valueIndex = tabs.options.findIndex(
+          (option) => option.value === value,
         )
+        const defaultIndex = tabs.options.findIndex(
+          (option) => option.value === tabs.value,
+        )
+        const selectedIndex =
+          valueIndex >= 0 ? valueIndex : Math.max(defaultIndex, 0)
         const { description } = tabs.options[selectedIndex]
 
         return (
