@@ -75,7 +75,12 @@ function serializeField(
   if ('tabs' in field && field.tabs) {
     base.tabs = {
       key: field.tabs.key,
-      options: mapOptions(field.tabs.options),
+      defaultValue: field.tabs.value,
+      options: field.tabs.options.map((o) => ({
+        label: o.label,
+        value: o.value,
+        ...(o.description && { description: o.description }),
+      })),
     }
   }
 

@@ -1645,12 +1645,15 @@ export interface IMcpAppField {
   /**
    * Present when this field's behaviour is switched by a separate parameter.
    * The AI must set `tabs.key` to one of `tabs.options` alongside this field.
+   * Each option's description explains the behaviour it selects.
    */
   tabs?: IMcpFieldTabs
 }
 
 export interface IMcpFieldTabs {
   key: string
+  // Value a new step gets when the AI does not set `key`.
+  defaultValue: string
   options: IMcpFieldOption[]
 }
 
@@ -1716,6 +1719,7 @@ export interface IMcpConnection {
 export interface IMcpFieldOption {
   label: string
   value: string
+  description?: string
 }
 
 export interface IMcpIncompleteStep {
