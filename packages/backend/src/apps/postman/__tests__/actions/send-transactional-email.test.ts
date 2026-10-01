@@ -1254,6 +1254,27 @@ describe('send transactional email', () => {
       })
     })
 
+    it('does not resend CCs on a retry routed to Postman once delivered', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(false)
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect($.http.post).toHaveBeenCalledTimes(1)
+      // form-data keeps each appended part's header in `_streams`.
+      const form = ($.http.post as ReturnType<typeof vi.fn>).mock
+        .calls[0][1] as { _streams: unknown[] }
+      expect(JSON.stringify(form._streams)).not.toContain('name="cc"')
+    })
+
     it('lists every chunk recipient in the raw MIME To header, with Cc only on the first chunk', async () => {
       $.step.parameters.destinationEmail = emails(51).join(',')
       $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
