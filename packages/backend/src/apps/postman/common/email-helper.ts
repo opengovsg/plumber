@@ -124,9 +124,11 @@ interface PostmanPromiseRejected {
 
 async function sendViaPostman(
   http: IHttpClient,
-  recipientEmail: string,
+  group: SendGroup,
   email: Email,
 ): Promise<PostmanPromiseFulfilled> {
+  // Postman groups always hold exactly one recipient.
+  const recipientEmail = group.to[0]
   const requestData = new FormData()
   requestData.append('subject', email.subject)
   requestData.append('body', email.body)
@@ -136,8 +138,8 @@ async function sendViaPostman(
     `${email.senderName} <${appConfig.postman.fromAddress}>`,
   )
   requestData.append('disable_tracking', 'true')
-  if (email.ccList?.length > 0) {
-    requestData.append('cc', JSON.stringify(email.ccList))
+  if (group.cc?.length > 0) {
+    requestData.append('cc', JSON.stringify(group.cc))
   }
 
   if (email.replyTo) {
@@ -454,8 +456,7 @@ export async function sendTransactionalEmails(
           group.cc?.length ? rawMessageWithCc : rawMessageWithoutCc,
         )
       }
-      // Postman groups always hold exactly one recipient.
-      const sent = await sendViaPostman(http, group.to[0], email)
+      const sent = await sendViaPostman(http, group, email)
       return sent.params
     } catch (e) {
       // attachmentBuildError is already logged once above; only log genuine

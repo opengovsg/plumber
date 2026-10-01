@@ -544,6 +544,44 @@ describe('updateStep mutation', () => {
       }
     })
 
+    it('does not run migrations when an empty step is given its app and event', async () => {
+      // Steps created without an app, such as if-then branch placeholders,
+      // sit at version 1 until the user picks an event for them.
+      context.currentUser.withAccessibleSteps = createMockWithAccessibleSteps({
+        owner,
+        currentUser: context.currentUser,
+        stepKey: null as unknown as string,
+        stepAppKey: null as unknown as string,
+        stepVersion: 1,
+        stepConnection: { id: mockConnectionId, userId: owner.id },
+        flowUpdatedAt: testFlowISODateString,
+      })
+
+      await updateStep(
+        null,
+        {
+          input: {
+            ...genericInputParams,
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            parameters: {},
+            connection: { id: undefined },
+          },
+        },
+        context,
+      )
+
+      expect(patchAndFetchByIdSpy).toHaveBeenCalledWith(
+        mockStepId,
+        expect.objectContaining({
+          parameters: {},
+          version: apps['postman'].stepTransformer.getLatestStepVersion(
+            'sendTransactionalEmail',
+          ),
+        }),
+      )
+    })
+
     it('uses step.version from DB (not frontend) when transforming — stale frontend fix', async () => {
       const mockTransformStepParameters = vi
         .fn()
