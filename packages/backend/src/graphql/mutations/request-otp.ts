@@ -4,6 +4,7 @@ import appConfig from '@/config/app'
 import BaseError from '@/errors/base'
 import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
+import { OTP_EMAIL_SUBJECT, renderOtpEmailHtml } from '@/helpers/otp-email'
 import { sendEmail } from '@/helpers/send-email'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -51,10 +52,8 @@ const requestOtp: MutationResolvers['requestOtp'] = async (_parent, params) => {
   } else {
     // Send otp
     await sendEmail({
-      subject: 'Your OTP for Plumber',
-      body: `Your OTP is <b>${otp}</b>. It's valid for ${
-        OTP_VALIDITY_IN_MS / 1000 / 60
-      } minutes.`,
+      subject: OTP_EMAIL_SUBJECT,
+      body: renderOtpEmailHtml(otp, OTP_VALIDITY_IN_MS / 1000 / 60),
       recipient: email,
     })
   }
