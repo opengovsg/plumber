@@ -1534,6 +1534,9 @@ export interface IFlowStepsAction {
     templateConfig?: Record<string, string>
   }
   parameters?: { depth: 0; branchName: string }
+  // Number of following actions inside this If block. Only set on if-then
+  // actions laid out with explicit blocks.
+  ifThenChildCount?: number
 }
 
 export interface IFlowSteps {
