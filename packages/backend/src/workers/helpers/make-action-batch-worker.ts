@@ -208,17 +208,18 @@ async function recordFailureSafely(
   }
 }
 
+function joinUnique(values: string[]): string[] {
+  return [...new Set(values)]
+}
+
 /**
  * Up-front span tags describing the batch shape, emitted before any work so a
  * batch stays observable even if it later throws.
  */
-function joinUnique(values: string[]): string {
-  return [...new Set(values)].join(',')
-}
-
 function tagBatchStart(
   ctx: BatchContext,
   batchJobs: JobPro<IActionJobData>[],
+  groupId: JobPro['gid'] | undefined,
 ): void {
   const batchSize = batchJobs.length
   // The longest wait in the batch bounds the latency every member saw.
@@ -234,14 +235,15 @@ function tagBatchStart(
 
   ctx.span?.addTags({
     queueName: ctx.queueName,
+    groupId,
     flowId: joinUnique(batchJobs.map((batchJob) => batchJob.data.flowId)),
     executionId: joinUnique(
       batchJobs.map((batchJob) => batchJob.data.executionId),
     ),
     stepId: joinUnique(batchJobs.map((batchJob) => batchJob.data.stepId)),
-    jobId: batchJobs
-      .map((batchJob) => makeActionJobId(ctx.queueName, batchJob.id))
-      .join(','),
+    jobId: joinUnique(
+      batchJobs.map((batchJob) => makeActionJobId(ctx.queueName, batchJob.id)),
+    ),
     ...longestQueueTiming,
     'batch.size': batchSize,
     'batch.configured_size': M365_BATCH_SIZE,
@@ -621,7 +623,8 @@ async function requeueBatchOnContention(ctx: BatchContext): Promise<void> {
 async function processBatch(ctx: BatchContext): Promise<void> {
   const { span, job } = ctx
   const batchJobs = job.getBatch()
-  tagBatchStart(ctx, batchJobs)
+  // groupAffinity puts one group in each batch. The container job has no gid.
+  tagBatchStart(ctx, batchJobs, batchJobs[0]?.gid)
 
   const { preparedOk, prepareFailed } = await prepareBatch(
     ctx.queueName,
