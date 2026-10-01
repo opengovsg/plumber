@@ -1,5 +1,3 @@
-import { IFlowSteps } from '@plumber/types'
-
 import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp'
 import {
   getActiveTraceId,
@@ -225,7 +223,7 @@ const handleChatStream = observe(
         })
       }
 
-      let workflowError = 'Unable to generate the workflow.'
+      const workflowError = 'Unable to generate the workflow.'
 
       let activePipeId: string | null = null
 
@@ -292,136 +290,93 @@ const handleChatStream = observe(
                 updateActiveObservation({ output: event })
                 updateActiveTrace({ output: event })
 
-                const mcpStepConfig =
-                  aiBuilderFlag.config.mcpStepConfig ?? false
-
-                if (mcpStepConfig) {
-                  // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
-                  const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
-                    event.text,
-                  )
-                  if (hasWorkflowMetadata) {
-                    try {
-                      const parsedWorkflowMetadata = parseWorkflowMetadata(
-                        event.text,
-                        restrictedApps,
-                      )
-                      const flowSteps = { ...parsedWorkflowMetadata, traceId }
-                      writer.write({
-                        type: 'data-isChatReady',
-                        data: { isChatReady: true, flowSteps, mcpMode: true },
-                      })
-                    } catch (error) {
-                      const msg =
-                        error instanceof BadUserInputError
-                          ? error.message
-                          : 'Unable to generate the workflow.'
-                      writer.write({
-                        type: 'data-isChatReady',
-                        data: {
-                          isChatReady: true,
-                          error: msg,
-                          mcpMode: true,
-                        },
-                      })
-                    }
-                  }
-
-                  // Phase 2b+: MCP tools ran this turn — emit fresh pipe state from DB
-                  if (activePipeId) {
-                    const flow = await Flow.query()
-                      .findById(activePipeId)
-                      .where('user_id', context.currentUser.id)
-                    const steps = flow
-                      ? await flow
-                          .$relatedQuery('steps')
-                          .orderBy('position', 'asc')
-                      : []
-
-                    // Resolve connection labels fresh each turn — a step's
-                    // connection can be repointed independently of the step row.
-                    const connectionIds = [
-                      ...new Set(
-                        steps
-                          .map((step) => step.connectionId)
-                          .filter((id): id is string => !!id),
-                      ),
-                    ]
-                    const connectionsById = connectionIds.length
-                      ? new Map(
-                          (
-                            await Connection.query().findByIds(connectionIds)
-                          ).map((connection) => [connection.id, connection]),
-                        )
-                      : new Map<string, Connection>()
-
+                // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
+                const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
+                  event.text,
+                )
+                if (hasWorkflowMetadata) {
+                  try {
+                    const parsedWorkflowMetadata = parseWorkflowMetadata(
+                      event.text,
+                      restrictedApps,
+                    )
+                    const flowSteps = { ...parsedWorkflowMetadata, traceId }
                     writer.write({
-                      type: 'data-pipeState',
+                      type: 'data-isChatReady',
+                      data: { isChatReady: true, flowSteps, mcpMode: true },
+                    })
+                  } catch (error) {
+                    const msg =
+                      error instanceof BadUserInputError
+                        ? error.message
+                        : 'Unable to generate the workflow.'
+                    writer.write({
+                      type: 'data-isChatReady',
                       data: {
-                        pipeId: activePipeId,
-                        steps: steps.map((step) => {
-                          const connection = step.connectionId
-                            ? connectionsById.get(step.connectionId)
-                            : undefined
-                          return {
-                            id: step.id,
-                            appKey: step.appKey,
-                            key: step.key,
-                            type: step.type,
-                            position: step.position,
-                            status: step.status,
-                            parameters: step.parameters,
-                            connectionId: step.connectionId ?? null,
-                            connectionLabel: connection
-                              ? connectionLabel(connection)
-                              : null,
-                          }
-                        }),
+                        isChatReady: true,
+                        error: msg,
+                        mcpMode: true,
                       },
                     })
                   }
+                }
 
-                  // Clarification blocks on both phases
-                  emitTextAnnotations(event.text, writer)
-                } else {
-                  // Old YAML path — unchanged
-                  const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
-                    event.text,
-                  )
+                // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
+                if (activePipeId) {
+                  const flow = await Flow.query()
+                    .findById(activePipeId)
+                    .where('user_id', context.currentUser.id)
+                  const steps = flow
+                    ? await flow
+                        .$relatedQuery('steps')
+                        .orderBy('position', 'asc')
+                    : []
 
-                  let flowSteps: IFlowSteps | undefined = undefined
-
-                  if (hasWorkflowMetadata) {
-                    try {
-                      const parsedWorkflowMetadata = parseWorkflowMetadata(
-                        event.text,
-                        restrictedApps,
+                  // Resolve connection labels fresh each turn. A step's
+                  // connection can be repointed independently of the step row.
+                  const connectionIds = [
+                    ...new Set(
+                      steps
+                        .map((step) => step.connectionId)
+                        .filter((id): id is string => !!id),
+                    ),
+                  ]
+                  const connectionsById = connectionIds.length
+                    ? new Map(
+                        (await Connection.query().findByIds(connectionIds)).map(
+                          (connection) => [connection.id, connection],
+                        ),
                       )
-                      flowSteps = { ...parsedWorkflowMetadata, traceId }
-                    } catch (error) {
-                      workflowError =
-                        error instanceof BadUserInputError
-                          ? error.message
-                          : 'Unable to generate the workflow.'
-                    }
-                  }
+                    : new Map<string, Connection>()
 
-                  // isChatReady: true whenever WORKFLOW_METADATA is present (success or error)
-                  // isChatReady: false only when there is no WORKFLOW_METADATA block
-                  // NOTE: type MUST start with "data-" - SDK enforces this
                   writer.write({
-                    type: 'data-isChatReady',
+                    type: 'data-pipeState',
                     data: {
-                      isChatReady: hasWorkflowMetadata,
-                      ...(hasWorkflowMetadata &&
-                        (flowSteps ? { flowSteps } : { error: workflowError })),
+                      pipeId: activePipeId,
+                      steps: steps.map((step) => {
+                        const connection = step.connectionId
+                          ? connectionsById.get(step.connectionId)
+                          : undefined
+                        return {
+                          id: step.id,
+                          appKey: step.appKey,
+                          key: step.key,
+                          type: step.type,
+                          position: step.position,
+                          status: step.status,
+                          parameters: step.parameters,
+                          connectionId: step.connectionId ?? null,
+                          connectionLabel: connection
+                            ? connectionLabel(connection)
+                            : null,
+                        }
+                      }),
                     },
                   })
-
-                  if (!hasWorkflowMetadata) {
-                    emitTextAnnotations(event.text, writer)
-                  }
                 }
+
+                // Clarification blocks on both phases
+                emitTextAnnotations(event.text, writer)
               } catch (error) {
                 logger.error('Error parsing workflow', {
                   traceId,
