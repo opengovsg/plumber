@@ -35,6 +35,8 @@ import { advanceAfterStep } from './advance-after-step'
 import { handleFailedJob } from './handle-failed-job'
 import { fileLockRequeueDelayMs } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
+import Step from '@/models/step'
+import { getJobQueueTimingTags } from './job-queue-timing'
 
 function convertParamsToBatchWorkerOptions(
   params: MakeActionBatchWorkerParams,
@@ -719,9 +721,25 @@ export function makeActionBatchWorker(
     queueName,
     // Fix the trace service name to workers.action.batch regardless of queue
     // name, so all batch processing is monitored together.
-    tracer.wrap('workers.action.batch', async (job) =>
-      processBatch({ queueName, worker, job, span: tracer.scope().active() }),
-    ),
+    tracer.wrap('workers.action.batch', async (job) => {
+      const span = tracer.scope().active()
+      const jobData = job.data
+      const jobId = makeActionJobId(queueName, job.id)
+      const currStep = await Step.query().findById(jobData.stepId)
+
+      span?.addTags({
+        queueName,
+        flowId: jobData.flowId,
+        executionId: jobData.executionId,
+        stepId: jobData.stepId,
+        actionKey: currStep?.key,
+        appKey: currStep?.appKey,
+        jobId,
+        ...getJobQueueTimingTags(job),
+        workerVersion: appConfig.version,
+      })
+      processBatch({ queueName, worker, job, span: tracer.scope().active() })
+    }),
     workerOptions,
   )
 
