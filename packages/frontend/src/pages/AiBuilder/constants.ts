@@ -16,7 +16,7 @@ export const AI_CHAT_IDEAS = [
     label: 'Schedule recurring email reminders',
     icon: 'BiCalendar',
     input:
-      'I need to remind supervisors who have pending cases to act on them 3 days before the due date. The pending cases are recorded in a table.',
+      'I need to send weekday morning reminders to supervisors with pending cases. We track the cases in a Tiles table. Find rows where Status is Pending and Reminder sent is empty, email each supervisor, then mark Reminder sent as Yes.',
   },
   {
     label: 'Track event attendance with FormSG',
