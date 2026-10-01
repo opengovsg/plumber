@@ -220,17 +220,21 @@ async function sendEmail(
     // Don't do partial retry in test runs! always send to all recipients
     !$.execution.testRun
 
-  // Combined mode carries the CCs on the first SES message only, so a retry
-  // must not send them again once that message was accepted. Its To addresses
-  // are the leading non-blacklisted recipients, so the first non-BLACKLISTED
-  // status is that message's outcome.
-  let ccDelivered = false
+  // Combined mode carries the CCs on one SES message, so a retry must not send
+  // them again once delivered. Attempts without CC tracking fall back to that
+  // message's outcome: its To addresses are the leading non-blacklisted
+  // recipients, so the first non-BLACKLISTED status stands for it.
+  let deliveredCcs: string[] = []
   if (isPartialRetry) {
-    const { status, recipient } = prevDataOutParseResult.data
+    const { status, recipient, cc, ccStatus } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
-    ccDelivered =
-      result.data[SEND_MODE_KEY] === 'combined' &&
-      status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED'
+    if (result.data[SEND_MODE_KEY] === 'combined') {
+      if (cc && ccStatus) {
+        deliveredCcs = cc.filter((_, i) => ccStatus[i] === 'ACCEPTED')
+      } else if (status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED') {
+        deliveredCcs = result.data.destinationEmailCc ?? []
+      }
+    }
   }
 
   // Resolve the transport once, on the configured attachments and the actual
@@ -271,7 +275,7 @@ async function sendEmail(
         '<p style="margin: 0">&nbsp;</p>',
       ),
       ccList: result.data.destinationEmailCc,
-      ccDelivered,
+      deliveredCcs,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
@@ -294,6 +298,9 @@ async function sendEmail(
     })
     dataOut.status = updatedStatus
     dataOut.recipient = prevDataOut.recipient
+    // No CC patch-back: sendTransactionalEmails already reports deliveredCcs
+    // as ACCEPTED. A retry routed to Postman reports no ccStatus, since
+    // Postman cannot track it.
   }
 
   /**
@@ -313,6 +320,8 @@ async function sendEmail(
   const blacklistedRecipients = dataOut.recipient.filter(
     (_, i) => dataOut.status[i] === 'BLACKLISTED',
   )
+  const blacklistedCcs =
+    dataOut.cc?.filter((_, i) => dataOut.ccStatus?.[i] === 'BLACKLISTED') ?? []
 
   const defaultSendEmailParams = {
     flowId: $.flow.id,
@@ -331,11 +340,16 @@ async function sendEmail(
    * Send blacklist notification email if any
    * If there are any invalid attachments, it will be included in this email
    */
-  if (blacklistedRecipients.length > 0 && !$.execution.testRun) {
+  if (
+    (blacklistedRecipients.length > 0 || blacklistedCcs.length > 0) &&
+    !$.execution.testRun
+  ) {
     try {
+      // The removal form and the notification treat every address alike, so
+      // CCs are merged in here rather than threaded through as a second list.
       await sendBlacklistEmail({
         ...defaultSendEmailParams,
-        blacklistedRecipients,
+        blacklistedRecipients: [...blacklistedRecipients, ...blacklistedCcs],
       })
     } catch (e) {
       logger.error(e)
@@ -344,6 +358,7 @@ async function sendEmail(
         flowId: $.flow.id,
         executionId: $.execution.id,
         blacklistedRecipients,
+        blacklistedCcs,
         error: e,
       })
     }
@@ -383,6 +398,7 @@ async function sendEmail(
       error,
       isPartialSuccess: hasAtLeastOneSuccess || invalidAttachments.length > 0,
       blacklistedRecipients,
+      blacklistedCcs,
       invalidAttachments,
       isRetryWithoutAttachments,
     })

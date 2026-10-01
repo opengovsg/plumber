@@ -69,9 +69,9 @@ interface Email {
   attachments?: { fileName: string; data: Uint8Array }[]
   replyTo?: string
   ccList?: string[]
-  // Set on a retry whose earlier attempt already carried the CCs. ccList stays
-  // so dataOut keeps reporting it.
-  ccDelivered?: boolean
+  // CCs an earlier attempt already delivered. Left out of this send and
+  // reported ACCEPTED. ccList stays whole so dataOut keeps reporting it.
+  deliveredCcs?: string[]
   sendMode: SendMode
 }
 
@@ -301,6 +301,60 @@ async function sendViaSes(
 }
 
 /**
+ * Only one error is surfaced per step, so errors are ranked by how actionable
+ * they are. RATE-LIMITED and INTERMITTENT-ERROR auto-retry, and BLACKLISTED is
+ * reported even when attachments also failed.
+ */
+const ERROR_STATUS_PRIORITY: PostmanEmailSendStatus[] = [
+  'RATE-LIMITED',
+  'INVALID-ATTACHMENT',
+  'ATTACHMENT-SIZE-EXCEEDED',
+  'INTERMITTENT-ERROR',
+  'ERROR',
+  'BLACKLISTED',
+]
+
+/**
+ * A CC shares the outcome of the SES messages that carried it, not of every
+ * To send. In combined mode that is one message, so a later chunk succeeding
+ * says nothing about the CCs.
+ *
+ * IMPORTANT: a healthy CC must never come out BLACKLISTED just because every
+ * To recipient was, or it would be reported to the owner as blacklisted itself.
+ */
+function getCcStatuses(
+  email: Email,
+  suppressedSet: Set<string>,
+  sendGroups: SendGroup[],
+  groupResults: PromiseSettledResult<unknown>[],
+  errors: PostmanPromiseRejected[],
+): PostmanEmailSendStatus[] {
+  const carrierResults = groupResults.filter((_, i) => sendGroups[i].cc?.length)
+  const carrierAccepted = carrierResults.some((r) => r.status === 'fulfilled')
+  const carrierFailureStatuses = sortBy(
+    carrierResults.flatMap((r) =>
+      r.status === 'rejected'
+        ? [(r.reason as Omit<PostmanPromiseRejected, 'recipient'>).status]
+        : [],
+    ),
+    (s) => ERROR_STATUS_PRIORITY.indexOf(s),
+  )
+  const topSendError = errors.find((error) => error.status !== 'BLACKLISTED')
+  const undeliveredStatus: PostmanEmailSendStatus =
+    carrierFailureStatuses[0] ?? topSendError?.status ?? 'ERROR'
+
+  return (email.ccList ?? []).map((cc) => {
+    if (suppressedSet.has(cc)) {
+      return 'BLACKLISTED'
+    }
+    if (email.deliveredCcs?.includes(cc)) {
+      return 'ACCEPTED'
+    }
+    return carrierAccepted ? 'ACCEPTED' : undeliveredStatus
+  })
+}
+
+/**
  * Resolve whether to route via SES for the given recipients. SES is used only
  * when `ses_enabled` is true for every recipient; if the email carries
  * attachments, `ses_attachments_enabled` must also be true for every recipient.
@@ -362,9 +416,9 @@ export async function sendTransactionalEmails(
   const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
   // Suppressed CCs are removed from the API call only — dataOut keeps the full
   // ccList (CC status is not tracked per the field's documented behaviour).
-  const ccAddressesToSend = email.ccDelivered
-    ? undefined
-    : email.ccList?.filter((cc) => !suppressedSet.has(cc))
+  const ccAddressesToSend = email.ccList?.filter(
+    (cc) => !suppressedSet.has(cc) && !email.deliveredCcs?.includes(cc),
+  )
 
   const isCombinedSes = useSes && email.sendMode === 'combined'
   if (!useSes && email.sendMode === 'combined' && activeRecipients.length) {
@@ -550,30 +604,39 @@ export async function sendTransactionalEmails(
     }
   })
 
-  /**
-   * Since we can only return one error per postman step, we have to select in terms of priority:
-   * 1. RATE-LIMITED (so we can auto-retry)
-   * 2. INVALID-ATTACHMENT (probably all recipients should fail)
-   * 3. ATTACHMENT-SIZE-EXCEEDED (probably all recipients should fail)
-   * 4. INTERMITTENT-ERROR (some recipients failed, auto-retry)
-   * 5. ERROR (probably all recipients should fail)
-   * 6. BLACKLISTED (blacklisted errors are returned even if there are other errors like invalid attachment)
-   */
+  // Suppressed CCs surface as BLACKLISTED like suppressed To recipients, so the
+  // step reports them even when every To send succeeded.
+  for (const cc of email.ccList ?? []) {
+    if (suppressedSet.has(cc)) {
+      errors.push({
+        status: 'BLACKLISTED',
+        recipient: cc,
+        error: {
+          message: 'CC email address is in suppression list',
+        } as HttpError,
+      })
+    }
+  }
+
   const sortedErrors = sortBy(errors, (error) =>
-    [
-      'RATE-LIMITED',
-      'INVALID-ATTACHMENT',
-      'ATTACHMENT-SIZE-EXCEEDED',
-      'INTERMITTENT-ERROR',
-      'ERROR',
-      'BLACKLISTED',
-    ].indexOf(error.status),
+    ERROR_STATUS_PRIORITY.indexOf(error.status),
   )
 
   const dataOut = {
     status,
     recipient,
     ...params,
+    ...(useSes &&
+      email.ccList?.length && {
+        cc: email.ccList,
+        ccStatus: getCcStatuses(
+          email,
+          suppressedSet,
+          sendGroups,
+          groupResults,
+          errors,
+        ),
+      }),
   } satisfies PostmanEmailDataOut
   return {
     dataOut,

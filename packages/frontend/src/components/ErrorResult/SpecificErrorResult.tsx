@@ -64,7 +64,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
             />
           )}
 
-          {!isTestRun && partialRetry && executionStepId && (
+          {!isTestRun && partialRetry?.buttonMessage && executionStepId && (
             <Button
               variant="link"
               textDecoration="underline"

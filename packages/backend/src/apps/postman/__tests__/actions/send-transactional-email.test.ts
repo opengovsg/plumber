@@ -1000,7 +1000,7 @@ describe('send transactional email', () => {
       expect($.http.post).toHaveBeenCalledTimes(1)
     })
 
-    it('drops a suppressed CC from the SES call but keeps it in dataOut', async () => {
+    it('drops a suppressed CC from the SES call and reports it as BLACKLISTED', async () => {
       mocks.getLdFlagValue.mockResolvedValue(true)
       // Only the CC is suppressed — the To recipient still sends.
       mocks.getSuppressedEmails.mockResolvedValueOnce(['cc-bad@open.gov.sg'])
@@ -1010,7 +1010,9 @@ describe('send transactional email', () => {
         'cc-good@open.gov.sg,cc-bad@open.gov.sg'
       $.step.parameters.attachments = []
 
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        PartialStepError,
+      )
 
       // Sent once for the single (non-suppressed) To recipient, and the
       // suppressed CC is dropped from the actual SES API call.
@@ -1022,15 +1024,141 @@ describe('send transactional email', () => {
         'cc-good@open.gov.sg',
       ])
 
-      // ...but the full CC list (including the suppressed address) is still
-      // reported in dataOut, since CC status is not tracked.
+      // The step still succeeds, and dataOut names the dropped CC.
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: expect.objectContaining({
           status: ['ACCEPTED'],
           recipient: ['recipient@open.gov.sg'],
           cc: ['cc-good@open.gov.sg', 'cc-bad@open.gov.sg'],
+          ccStatus: ['ACCEPTED', 'BLACKLISTED'],
         }),
       })
+    })
+  })
+
+  describe('CC blacklist surfacing', () => {
+    // StepError serialises its fields into `message`.
+    async function runAndParseError() {
+      const error = await sendTransactionalEmail.run($).catch((e) => e)
+      return { error, details: JSON.parse(error.message) }
+    }
+
+    beforeEach(() => {
+      mocks.getLdFlagValue.mockResolvedValue(true)
+      $.step.parameters.attachments = []
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+    })
+
+    it('raises a partial error with no retry button when only a CC is blacklisted', async () => {
+      mocks.getSuppressedEmails.mockResolvedValueOnce(['cc@open.gov.sg'])
+
+      const { error, details } = await runAndParseError()
+
+      expect(error).toBeInstanceOf(PartialStepError)
+      expect(details.name).toEqual('Blacklisted CC email')
+      expect(details.solution).toContain('cc@open.gov.sg')
+      // Nothing to retry, so no removal-form prompt either.
+      expect(details.solution).not.toContain('use this form')
+      expect(details.partialRetry.buttonMessage).toEqual('')
+      expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ blacklistedRecipients: ['cc@open.gov.sg'] }),
+      )
+    })
+
+    it('keeps the retry button and lists both sections when a To recipient is also blacklisted', async () => {
+      mocks.getSuppressedEmails.mockResolvedValueOnce([
+        'b@open.gov.sg',
+        'cc@open.gov.sg',
+      ])
+
+      const { error, details } = await runAndParseError()
+
+      expect(error).toBeInstanceOf(PartialStepError)
+      expect(details.name).toEqual('Blacklisted recipient email')
+      expect(details.solution).toContain('b@open.gov.sg')
+      expect(details.solution).toContain('CC email addresses')
+      expect(details.solution).toContain('cc@open.gov.sg')
+      expect(details.solution).toContain('use this form')
+      expect(details.partialRetry.buttonMessage).toEqual(
+        'Resend to blacklisted recipients',
+      )
+      expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blacklistedRecipients: ['b@open.gov.sg', 'cc@open.gov.sg'],
+        }),
+      )
+    })
+
+    it('does not mark a healthy CC as blacklisted when every To recipient is', async () => {
+      mocks.getSuppressedEmails.mockResolvedValueOnce([
+        'a@open.gov.sg',
+        'b@open.gov.sg',
+      ])
+
+      const { error } = await runAndParseError()
+
+      expect(error).not.toBeInstanceOf(PartialStepError)
+      expect(mocks.sendBlacklistEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          blacklistedRecipients: ['a@open.gov.sg', 'b@open.gov.sg'],
+        }),
+      )
+    })
+
+    it('reports no CC status on the Postman path', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(false)
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      const { raw } = ($.setActionItem as ReturnType<typeof vi.fn>).mock
+        .calls[0][0]
+      expect(raw.cc).toEqual(['cc@open.gov.sg'])
+      expect(raw.ccStatus).toBeUndefined()
+    })
+
+    it('replaces the CC statuses with the retry send result', async () => {
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
+          cc: ['cc@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'ACCEPTED'],
+          cc: ['cc@open.gov.sg'],
+          ccStatus: ['ACCEPTED'],
+        }),
+      })
+    })
+
+    it('drops CC statuses when the retry is routed to Postman, which cannot track them', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(false)
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
+          cc: ['cc@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      const { raw } = ($.setActionItem as ReturnType<typeof vi.fn>).mock
+        .calls[0][0]
+      expect(raw.status).toEqual(['ACCEPTED', 'ACCEPTED'])
+      expect(raw.cc).toEqual(['cc@open.gov.sg'])
+      expect(raw.ccStatus).toBeUndefined()
     })
   })
 
@@ -1252,6 +1380,112 @@ describe('send transactional email', () => {
         ToAddresses: emails(49),
         CcAddresses: ['cc@open.gov.sg'],
       })
+    })
+
+    it('resends a whitelisted CC on retry and reports it ACCEPTED', async () => {
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
+          cc: ['cc@open.gov.sg'],
+          ccStatus: ['BLACKLISTED'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(sentCommands()[0].input.Destination).toEqual({
+        ToAddresses: ['b@open.gov.sg'],
+        CcAddresses: ['cc@open.gov.sg'],
+      })
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'ACCEPTED'],
+          ccStatus: ['ACCEPTED'],
+        }),
+      })
+    })
+
+    it('keeps a delivered CC out of the retry and still reports it ACCEPTED', async () => {
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'BLACKLISTED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
+          cc: ['cc@open.gov.sg'],
+          ccStatus: ['ACCEPTED'],
+        },
+        errorDetails: { name: 'Blacklisted recipient email' },
+      })
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(sentCommands()[0].input.Destination).toEqual({
+        ToAddresses: ['b@open.gov.sg'],
+      })
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'ACCEPTED'],
+          ccStatus: ['ACCEPTED'],
+        }),
+      })
+    })
+
+    it('keeps a delivered CC ACCEPTED when the retry fails again', async () => {
+      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
+        dataOut: {
+          status: ['ACCEPTED', 'RATE-LIMITED'],
+          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
+          cc: ['cc@open.gov.sg'],
+          ccStatus: ['ACCEPTED'],
+        },
+        errorDetails: { name: 'Rate limited' },
+      })
+      const throttled = Object.assign(new Error('Rate exceeded'), {
+        name: 'TooManyRequestsException',
+        $metadata: { httpStatusCode: 429 },
+      })
+      mocks.sesSend.mockRejectedValueOnce(throttled as never)
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        RetriableError,
+      )
+
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: expect.objectContaining({
+          status: ['ACCEPTED', 'RATE-LIMITED'],
+          ccStatus: ['ACCEPTED'],
+        }),
+      })
+    })
+
+    it('reports CCs undelivered when their chunk fails even if a later chunk succeeds', async () => {
+      // 49 To + 1 CC fill the first message; the remaining 11 form the second.
+      $.step.parameters.destinationEmail = emails(60).join(',')
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+      const throttled = Object.assign(new Error('Rate exceeded'), {
+        name: 'TooManyRequestsException',
+        $metadata: { httpStatusCode: 429 },
+      })
+      mocks.sesSend
+        .mockRejectedValueOnce(throttled as never)
+        .mockResolvedValueOnce({})
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        RetriableError,
+      )
+
+      const raw = ($.setActionItem as ReturnType<typeof vi.fn>).mock.calls[0][0]
+        .raw
+      expect(raw.status.slice(0, 49)).toEqual(Array(49).fill('RATE-LIMITED'))
+      expect(raw.status.slice(49)).toEqual(Array(11).fill('ACCEPTED'))
+      expect(raw.ccStatus).toEqual(['RATE-LIMITED'])
     })
 
     it('does not resend CCs on a retry routed to Postman once delivered', async () => {
