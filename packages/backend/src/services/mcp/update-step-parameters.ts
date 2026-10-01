@@ -17,6 +17,7 @@ import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { filterStepParameters } from './filter-step-parameters'
 import { registerConnectionService } from './register-connection'
 import { verifyConnectionRegistrationService } from './verify-connection-registration'
 
@@ -130,13 +131,10 @@ export async function updateStepParametersService({
         : rawApp?.actions?.find((a) => a.key === step.key)
     ) as IRawAction | IRawTrigger | undefined
 
-    // Silently drop any keys not in this action/trigger's declared argument schema
-    const allowedKeys = new Set(
-      (rawTriggerOrAction?.arguments ?? []).map((f) => f.key),
+    const filteredParameters = filterStepParameters(
+      rawTriggerOrAction?.arguments,
+      parameters,
     )
-    const filteredParameters = Object.fromEntries(
-      Object.entries(parameters).filter(([k]) => allowedKeys.has(k)),
-    ) as IJSONObject
 
     let patchedParameters = filteredParameters
     let version = step.version

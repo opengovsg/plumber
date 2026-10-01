@@ -108,6 +108,18 @@ vi.mock('@/apps', () => ({
               type: 'string',
               required: true,
               variableTypes: ['tile_row_id'],
+              tabs: {
+                key: 'lookupMode',
+                value: 'byId',
+                options: [
+                  {
+                    label: 'By row ID',
+                    value: 'byId',
+                    description: 'Matches the row with this ID.',
+                  },
+                  { label: 'By column value', value: 'byColumn' },
+                ],
+              },
             },
             {
               key: 'rowData',
@@ -394,6 +406,35 @@ describe('listAppsService', () => {
         (f) => f.key === 'tableId',
       )
       expect(tableIdField?.variableTypes).toBeUndefined()
+    })
+  })
+
+  describe('tabbed fields', () => {
+    it('serializes the tab key, default and options with descriptions', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const rowIdField = tiles?.actions[0].fields.find((f) => f.key === 'rowId')
+      expect(rowIdField?.tabs).toEqual({
+        key: 'lookupMode',
+        defaultValue: 'byId',
+        options: [
+          {
+            label: 'By row ID',
+            value: 'byId',
+            description: 'Matches the row with this ID.',
+          },
+          { label: 'By column value', value: 'byColumn' },
+        ],
+      })
+    })
+
+    it('omits tabs when the field does not declare them', async () => {
+      const apps = await listAppsService(user)
+      const tiles = apps.find((a) => a.key === 'tiles')
+      const tableIdField = tiles?.actions[0].fields.find(
+        (f) => f.key === 'tableId',
+      )
+      expect(tableIdField?.tabs).toBeUndefined()
     })
   })
 
