@@ -33,10 +33,9 @@ import {
 
 import { advanceAfterStep } from './advance-after-step'
 import { handleFailedJob } from './handle-failed-job'
+import { getJobQueueTimingTags } from './job-queue-timing'
 import { fileLockRequeueDelayMs } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
-import Step from '@/models/step'
-import { getJobQueueTimingTags } from './job-queue-timing'
 
 function convertParamsToBatchWorkerOptions(
   params: MakeActionBatchWorkerParams,
@@ -213,9 +212,37 @@ async function recordFailureSafely(
  * Up-front span tags describing the batch shape, emitted before any work so a
  * batch stays observable even if it later throws.
  */
-function tagBatchStart(ctx: BatchContext, batchSize: number): void {
+function joinUnique(values: string[]): string {
+  return [...new Set(values)].join(',')
+}
+
+function tagBatchStart(
+  ctx: BatchContext,
+  batchJobs: JobPro<IActionJobData>[],
+): void {
+  const batchSize = batchJobs.length
+  // The longest wait in the batch bounds the latency every member saw.
+  const longestQueueTiming = batchJobs
+    .map(getJobQueueTimingTags)
+    .reduce<ReturnType<typeof getJobQueueTimingTags> | undefined>(
+      (longest, timing) =>
+        !longest || timing.timeInJobQueue > longest.timeInJobQueue
+          ? timing
+          : longest,
+      undefined,
+    )
+
   ctx.span?.addTags({
     queueName: ctx.queueName,
+    flowId: joinUnique(batchJobs.map((batchJob) => batchJob.data.flowId)),
+    executionId: joinUnique(
+      batchJobs.map((batchJob) => batchJob.data.executionId),
+    ),
+    stepId: joinUnique(batchJobs.map((batchJob) => batchJob.data.stepId)),
+    jobId: batchJobs
+      .map((batchJob) => makeActionJobId(ctx.queueName, batchJob.id))
+      .join(','),
+    ...longestQueueTiming,
     'batch.size': batchSize,
     'batch.configured_size': M365_BATCH_SIZE,
     'batch.fill_ratio': batchSize / M365_BATCH_SIZE,
@@ -594,12 +621,19 @@ async function requeueBatchOnContention(ctx: BatchContext): Promise<void> {
 async function processBatch(ctx: BatchContext): Promise<void> {
   const { span, job } = ctx
   const batchJobs = job.getBatch()
-  tagBatchStart(ctx, batchJobs.length)
+  tagBatchStart(ctx, batchJobs)
 
   const { preparedOk, prepareFailed } = await prepareBatch(
     ctx.queueName,
     batchJobs,
   )
+
+  if (preparedOk.length > 0) {
+    span?.addTags({
+      appKey: preparedOk[0].prepared.step.appKey,
+      actionKey: preparedOk[0].prepared.step.key,
+    })
+  }
 
   // Every job failed to prepare: nothing to write, no lock needed. Isolate each
   // (setAsFailed + side-effects) and return so the batch completes with every
@@ -721,25 +755,9 @@ export function makeActionBatchWorker(
     queueName,
     // Fix the trace service name to workers.action.batch regardless of queue
     // name, so all batch processing is monitored together.
-    tracer.wrap('workers.action.batch', async (job) => {
-      const span = tracer.scope().active()
-      const jobData = job.data
-      const jobId = makeActionJobId(queueName, job.id)
-      const currStep = await Step.query().findById(jobData.stepId)
-
-      span?.addTags({
-        queueName,
-        flowId: jobData.flowId,
-        executionId: jobData.executionId,
-        stepId: jobData.stepId,
-        actionKey: currStep?.key,
-        appKey: currStep?.appKey,
-        jobId,
-        ...getJobQueueTimingTags(job),
-        workerVersion: appConfig.version,
-      })
-      processBatch({ queueName, worker, job, span: tracer.scope().active() })
-    }),
+    tracer.wrap('workers.action.batch', async (job) =>
+      processBatch({ queueName, worker, job, span: tracer.scope().active() }),
+    ),
     workerOptions,
   )
 
