@@ -220,11 +220,21 @@ async function sendEmail(
     // Don't do partial retry in test runs! always send to all recipients
     !$.execution.testRun
 
-  // CCs are not filtered here. They receive every email sent to a To recipient,
-  // retries included, so they keep a copy of each for audit.
+  // Combined mode carries the CCs on one SES message, so a retry must not send
+  // them again once delivered. Attempts without CC tracking fall back to that
+  // message's outcome: its To addresses are the leading non-blacklisted
+  // recipients, so the first non-BLACKLISTED status stands for it.
+  let deliveredCcs: string[] = []
   if (isPartialRetry) {
-    const { status, recipient } = prevDataOutParseResult.data
+    const { status, recipient, cc, ccStatus } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
+    if (result.data[SEND_MODE_KEY] === 'combined') {
+      if (cc && ccStatus) {
+        deliveredCcs = cc.filter((_, i) => ccStatus[i] === 'ACCEPTED')
+      } else if (status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED') {
+        deliveredCcs = result.data.destinationEmailCc ?? []
+      }
+    }
   }
 
   // Resolve the transport once, on the configured attachments and the actual
@@ -265,6 +275,7 @@ async function sendEmail(
         '<p style="margin: 0">&nbsp;</p>',
       ),
       ccList: result.data.destinationEmailCc,
+      deliveredCcs,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
@@ -287,9 +298,9 @@ async function sendEmail(
     })
     dataOut.status = updatedStatus
     dataOut.recipient = prevDataOut.recipient
-    // No CC patch-back: the full CC list rides along on every send, so the
-    // retry's own cc/ccStatus already stand. A retry routed to Postman reports
-    // no ccStatus, since Postman cannot track it.
+    // No CC patch-back: sendTransactionalEmails already reports deliveredCcs
+    // as ACCEPTED. A retry routed to Postman reports no ccStatus, since
+    // Postman cannot track it.
   }
 
   /**
