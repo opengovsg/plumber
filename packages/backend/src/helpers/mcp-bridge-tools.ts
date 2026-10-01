@@ -355,7 +355,7 @@ export function createMcpBridgeTools(
 
     delete_step: tool({
       description:
-        'Delete a single step from a pipe. Deleting a trigger replaces it with an empty trigger slot; deleting an action removes it and repositions the remaining steps. Steps that reference the deleted step are marked incomplete. Returns the updated pipe with all remaining steps.',
+        'Delete a step from a pipe. Deleting a trigger replaces it with an empty trigger slot. Deleting an action removes it and repositions the remaining steps. Deleting a toolbox/ifThen step removes the whole If block, the If step and every step inside it, the same as deleting the block in the pipe editor. Before calling this on an ifThen step, name the steps inside the block and wait for the user to explicitly confirm. Do not call it on an ifThen step until they confirm. Deleting a step inside the block removes only that step. Steps that reference a deleted step are marked incomplete. Returns the updated pipe with all remaining steps.',
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe that contains the step'),
         step_id: z.uuid().describe('ID of the step to delete'),
