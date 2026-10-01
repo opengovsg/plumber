@@ -24,6 +24,7 @@ export interface StepContext {
 class Step extends Base {
   id!: string
   flowId!: string
+  templateId?: string
   key?: string
   appKey?: string
   type!: IStep['type']
@@ -47,6 +48,7 @@ class Step extends Base {
     properties: {
       id: { type: 'string', format: 'uuid' },
       flowId: { type: 'string', format: 'uuid' },
+      templateId: { type: ['string', 'null'], format: 'uuid' },
       key: { type: ['string', 'null'] },
       appKey: { type: ['string', 'null'], minLength: 1, maxLength: 255 },
       type: { type: 'string', enum: ['action', 'trigger'] },
@@ -300,8 +302,16 @@ class Step extends Base {
     // Footgun: we avoid asFindQuery because some valid inserts start from the
     // root (e.g. Step.query().insert(...)), which results in asFindQuery
     // returning _all_ steps in the DB.
+    // Template steps have no flow.
+    const flowIds = args.inputItems
+      .map((step) => step.flowId)
+      .filter((flowId) => flowId != null)
+    if (flowIds.length === 0) {
+      return
+    }
+
     const numActivePipes = await Flow.query(args.transaction)
-      .findByIds(args.inputItems.map((step) => step.flowId))
+      .findByIds(flowIds)
       .where('active', true)
       .resultSize()
 
