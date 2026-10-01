@@ -57,12 +57,12 @@ export default function MultiRowInput(props: MultiRowInputProps): JSX.Element {
       !!subField.source,
   )
 
+  // Probe only. Binding it to `${computedName}.0.<key>` made the hook
+  // materialise an empty first row whenever a source argument changed.
   const { data, error, loading } = useDynamicData(
     stepId,
     hideProbeSubField ?? schema,
-    hideProbeSubField
-      ? `${computedName}.0.${hideProbeSubField.key}`
-      : computedName,
+    null,
   )
 
   const isHidden =
