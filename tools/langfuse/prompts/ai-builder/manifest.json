@@ -1,0 +1,13 @@
+{
+  "core": "ai-builder/core",
+  "summary": "chat-summary",
+  "skills": [
+    { "id": "align", "prompt": "ai-builder/align", "phases": ["align"] },
+    { "id": "propose", "prompt": "ai-builder/propose", "phases": ["propose"] },
+    { "id": "configure", "prompt": "ai-builder/configure", "phases": ["configure", "edit"] },
+    { "id": "edit", "prompt": "ai-builder/edit", "phases": ["edit"] },
+    { "id": "guide", "prompt": "ai-builder/guide", "phases": ["guide"] },
+    { "id": "unsupported", "prompt": "ai-builder/unsupported", "phases": ["align", "propose"] },
+    { "id": "output-format", "prompt": "ai-builder/output-format", "phases": ["align", "propose", "configure", "edit"] }
+  ]
+}
