@@ -29,11 +29,11 @@ export function convertFlowToTemplate(
     steps: steps.map((step) => ({
       position: step.position,
       appKey: step.appKey ?? undefined,
-      eventKey: step.key ?? undefined,
-      parameters: updateStepVariables(
-        step.parameters ?? {},
-        stepIdToPlaceholderMap,
-      ),
+      eventKey: step.key ?? '',
+      // cast here cos can return `null`
+      parameters:
+        updateStepVariables(step.parameters ?? {}, stepIdToPlaceholderMap) ??
+        undefined,
     })),
   }
 }
