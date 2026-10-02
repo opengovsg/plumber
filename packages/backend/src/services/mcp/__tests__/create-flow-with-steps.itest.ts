@@ -258,4 +258,33 @@ describe('createFlowWithStepsService', () => {
       ],
     })
   })
+
+  it('rejects a hidden, system-managed action like FormSG mrfSubmission', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-pipe-hidden-action-${randomUUID()}@example.com`,
+    })
+
+    await expect(
+      createFlowWithStepsService({
+        user,
+        name: 'MRF Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'formsg',
+            key: 'mrfSubmission',
+            type: 'action',
+            position: 2,
+          },
+        ],
+        traceId: 'trace-hidden-action',
+      }),
+    ).rejects.toThrow('Action can only be created by system')
+  })
 })
