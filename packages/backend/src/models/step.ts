@@ -24,7 +24,6 @@ export interface StepContext {
 class Step extends Base {
   id!: string
   flowId!: string
-  templateId?: string
   key?: string
   appKey?: string
   type!: IStep['type']
@@ -48,7 +47,6 @@ class Step extends Base {
     properties: {
       id: { type: 'string', format: 'uuid' },
       flowId: { type: 'string', format: 'uuid' },
-      templateId: { type: ['string', 'null'], format: 'uuid' },
       key: { type: ['string', 'null'] },
       appKey: { type: ['string', 'null'], minLength: 1, maxLength: 255 },
       type: { type: 'string', enum: ['action', 'trigger'] },
