@@ -16,6 +16,7 @@ import type {
 } from '@/graphql/__generated__/types.generated'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Flow from '@/models/flow'
+import Template from '@/models/template'
 import { createTableRows } from '@/models/tiles/dynamodb/table-row'
 import User from '@/models/user'
 
@@ -164,7 +165,9 @@ export async function createFlowFromTemplate(
   templateId: string,
   user: User,
 ): Promise<Flow> {
-  const template = TEMPLATES.find((template) => template.id === templateId)
+  const template =
+    TEMPLATES.find((template) => template.id === templateId) ??
+    (await Template.findOneForUser(user.id, templateId))
   // prevents user from creating any new template
   if (!template) {
     throw new Error('Invalid template id input')

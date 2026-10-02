@@ -136,6 +136,9 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
       event.preventDefault()
       await createTemplateFromFlow({
         variables: { input: { flowId: flow.id } },
+        update: (cache) => {
+          cache.evict({ fieldName: 'getTemplates' })
+        },
         onCompleted: () => {
           toast({
             title: 'The pipe has been saved as a template.',
