@@ -2,6 +2,7 @@
  * Feature flags
  */
 export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
+export const TEMPLATE_SEARCH_FEATURE_FLAG = 'template-search'
 
 /**
  * Gates first-time logins for domains we need to temporarily turn away. The

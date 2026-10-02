@@ -9,6 +9,7 @@ import { Link } from '@opengovsg/design-system-react'
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
+import { TEMPLATE_SEARCH_FEATURE_FLAG } from '@/config/flags'
 import * as URLS from '@/config/urls'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
@@ -31,6 +32,9 @@ export default function Templates(): JSX.Element {
   // we do this to avoid adding extra flags or parameters into the query
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const isPairEnabled = getFlagValue('app_pair') as boolean
+  const isTemplateSearchEnabled = Boolean(
+    getFlagValue(TEMPLATE_SEARCH_FEATURE_FLAG, false),
+  )
   const templates: ITemplate[] =
     data?.getTemplates?.filter((template: ITemplate) => {
       if (isPairEnabled) {
@@ -77,28 +81,32 @@ export default function Templates(): JSX.Element {
           </Text>
         </Flex>
 
-        <Box
-          pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
-          pr={{ base: '0.5rem', md: '2rem', xl: '8.5rem' }}
-          mb={6}
-        >
-          <DebouncedSearchInput
-            searchValue={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Describe your workflow"
-          />
-        </Box>
+        {isTemplateSearchEnabled && (
+          <>
+            <Box
+              pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
+              pr={{ base: '0.5rem', md: '2rem', xl: '8.5rem' }}
+              mb={6}
+            >
+              <DebouncedSearchInput
+                searchValue={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Describe your workflow"
+              />
+            </Box>
 
-        {isSearching && !isLoading && visibleTemplates.length === 0 && (
-          <Text
-            textStyle="body-1"
-            pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
-            mb={8}
-          >
-            {searchError
-              ? 'Template search is unavailable. Try again later.'
-              : 'No matching templates found.'}
-          </Text>
+            {isSearching && !isLoading && visibleTemplates.length === 0 && (
+              <Text
+                textStyle="body-1"
+                pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
+                mb={8}
+              >
+                {searchError
+                  ? 'Template search is unavailable. Try again later.'
+                  : 'No matching templates found.'}
+              </Text>
+            )}
+          </>
         )}
 
         <Grid

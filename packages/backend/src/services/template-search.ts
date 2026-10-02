@@ -87,9 +87,8 @@ const evaluateWithJev: EvaluateTemplates = async ({ query, templates }) => {
   })
 
   if (!response.ok) {
-    console.log(JSON.stringify(await response.json()))
     // IMPORTANT: omit the response body. It can echo request details.
-    throw new Error(`Jev evaluation failed with status ${response.status}`)
+    throw new Error(`Evaluation failed with status ${response.status}`)
   }
 
   const { answers } = evaluationResponseSchema.parse(await response.json())

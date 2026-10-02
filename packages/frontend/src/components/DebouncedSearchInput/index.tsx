@@ -12,7 +12,7 @@ import debounce from 'lodash/debounce'
 type DebouncedSearchInputProps = {
   onChange: (val: string) => void
   searchValue: string
-  placeholder: string
+  placeholder?: string
 }
 
 export default function DebouncedSearchInput({
