@@ -1,17 +1,20 @@
 import type { ITemplate } from '@plumber/types'
 
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { Flex, Grid, Text } from '@chakra-ui/react'
+import { Box, Flex, Grid, Text } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
 
 import Container from '@/components/Container'
+import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
+import { TEMPLATE_SEARCH_FEATURE_FLAG } from '@/config/flags'
 import * as URLS from '@/config/urls'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { useApps } from '@/hooks/useApps'
+import { useTemplateSearch } from '@/hooks/useTemplateSearch'
 
 import TemplateModal from '../Template'
 
@@ -20,6 +23,7 @@ import TemplateTileSkeleton from './components/TemplateTileSkeleton'
 
 const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
+const SEARCH_RESULTS_COUNT = 5
 
 export default function Templates(): JSX.Element {
   const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
@@ -28,6 +32,9 @@ export default function Templates(): JSX.Element {
   // we do this to avoid adding extra flags or parameters into the query
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const isPairEnabled = getFlagValue('app_pair') as boolean
+  const isTemplateSearchEnabled = Boolean(
+    getFlagValue(TEMPLATE_SEARCH_FEATURE_FLAG, false),
+  )
   const templates: ITemplate[] =
     data?.getTemplates?.filter((template: ITemplate) => {
       if (isPairEnabled) {
@@ -41,6 +48,23 @@ export default function Templates(): JSX.Element {
   const template = templates?.find((template) => template.id === templateId)
 
   const { data: apps, loading: appsLoading } = useApps()
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const isSearching = searchQuery.trim() !== ''
+  const {
+    templateIds: matchedTemplateIds,
+    loading: searchLoading,
+    error: searchError,
+  } = useTemplateSearch(searchQuery)
+  // Ranking runs over every template, so drop the ones this user cannot see
+  // before taking the top results.
+  const matchedTemplates = matchedTemplateIds
+    .flatMap((id) => templates.find((template) => template.id === id) ?? [])
+    .slice(0, SEARCH_RESULTS_COUNT)
+
+  const isLoading = templatesLoading || appsLoading || searchLoading
+  const skeletonCount = isSearching ? SEARCH_RESULTS_COUNT : TEMPLATES_COUNT
+  const visibleTemplates = isSearching ? matchedTemplates : templates
 
   return (
     <>
@@ -57,6 +81,34 @@ export default function Templates(): JSX.Element {
           </Text>
         </Flex>
 
+        {isTemplateSearchEnabled && (
+          <>
+            <Box
+              pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
+              pr={{ base: '0.5rem', md: '2rem', xl: '8.5rem' }}
+              mb={6}
+            >
+              <DebouncedSearchInput
+                searchValue={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Describe your workflow"
+              />
+            </Box>
+
+            {isSearching && !isLoading && visibleTemplates.length === 0 && (
+              <Text
+                textStyle="body-1"
+                pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
+                mb={8}
+              >
+                {searchError
+                  ? 'Template search is unavailable. Try again later.'
+                  : 'No matching templates found.'}
+              </Text>
+            )}
+          </>
+        )}
+
         <Grid
           gridTemplateColumns={{
             base: '1fr',
@@ -69,12 +121,12 @@ export default function Templates(): JSX.Element {
           rowGap={6}
           mb={8}
         >
-          {templatesLoading || appsLoading
-            ? Array.from({ length: TEMPLATES_COUNT }).map((_, index) => (
+          {isLoading
+            ? Array.from({ length: skeletonCount }).map((_, index) => (
                 <TemplateTileSkeleton key={index} />
               ))
-            : templates?.map((template, index) => (
-                <TemplateTile key={index} template={template} />
+            : visibleTemplates.map((template) => (
+                <TemplateTile key={template.id} template={template} />
               ))}
         </Grid>
 

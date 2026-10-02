@@ -12,11 +12,13 @@ import debounce from 'lodash/debounce'
 type DebouncedSearchInputProps = {
   onChange: (val: string) => void
   searchValue: string
+  placeholder?: string
 }
 
 export default function DebouncedSearchInput({
   onChange,
   searchValue,
+  placeholder = 'Search',
 }: DebouncedSearchInputProps): React.ReactElement {
   const [tempSearchValue, setTempSearchValue] = useState(searchValue)
 
@@ -51,7 +53,7 @@ export default function DebouncedSearchInput({
         fontSize="md"
         onChange={onSearchInputChange}
         value={tempSearchValue}
-        placeholder="Search"
+        placeholder={placeholder}
       />
       {tempSearchValue && (
         <InputRightElement h="100%">

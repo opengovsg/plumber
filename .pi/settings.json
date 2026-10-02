@@ -1,0 +1,6 @@
+{
+  "skills": [
+    "../.claude/skills",
+    "../packages/frontend/.claude/skills"
+  ]
+}
