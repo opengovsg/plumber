@@ -16,3 +16,10 @@ process.exit = ((code?: number | string | null): never => {
 
   return undefined as never
 }) as typeof process.exit
+
+// Node's own process.exit calls through to this, so stubbing only the former
+// leaves a second way to kill the worker.
+if (typeof process.reallyExit === 'function') {
+  process.reallyExit = ((_code?: number | null): void =>
+    undefined) as typeof process.reallyExit
+}
