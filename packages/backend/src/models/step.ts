@@ -300,16 +300,8 @@ class Step extends Base {
     // Footgun: we avoid asFindQuery because some valid inserts start from the
     // root (e.g. Step.query().insert(...)), which results in asFindQuery
     // returning _all_ steps in the DB.
-    // Template steps have no flow.
-    const flowIds = args.inputItems
-      .map((step) => step.flowId)
-      .filter((flowId) => flowId != null)
-    if (flowIds.length === 0) {
-      return
-    }
-
     const numActivePipes = await Flow.query(args.transaction)
-      .findByIds(flowIds)
+      .findByIds(args.inputItems.map((step) => step.flowId))
       .where('active', true)
       .resultSize()
 

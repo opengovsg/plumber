@@ -1,5 +1,4 @@
 import { convertFlowToTemplate } from '@/helpers/convert-flow-to-template'
-import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import Template from '@/models/template'
 
@@ -23,15 +22,10 @@ const createTemplateFromFlow: MutationResolvers['createTemplateFromFlow'] =
         description: template.description,
       })
 
-      for (const step of steps) {
-        await template.$relatedQuery('steps', trx).insert({
-          type: step.position === 1 ? 'trigger' : 'action',
-          position: step.position,
-          appKey: step.appKey,
-          key: step.eventKey,
-          parameters: step.parameters,
-          version: getStepVersion(step.appKey, step.eventKey),
-        })
+      if (steps.length > 0) {
+        await template
+          .$relatedQuery('templateSteps', trx)
+          .insert(steps.map((step) => ({ data: step })))
       }
 
       logger.info('Template created from flow', {

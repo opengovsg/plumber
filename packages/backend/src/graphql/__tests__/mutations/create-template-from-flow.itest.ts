@@ -56,7 +56,7 @@ describe('createTemplateFromFlow', () => {
 
     const template = await Template.query()
       .findById(result.id)
-      .withGraphFetched({ steps: true })
+      .withGraphFetched({ templateSteps: true })
       .throwIfNotFound()
 
     expect(template).toMatchObject({
@@ -64,33 +64,20 @@ describe('createTemplateFromFlow', () => {
       description: '',
       userId: owner.id,
     })
-    expect(
-      template.steps.map(({ type, position, appKey, key, flowId }) => ({
-        type,
-        position,
-        appKey,
-        key,
-        flowId,
-      })),
-    ).toEqual([
+    expect(template.templateSteps.map(({ data }) => data)).toEqual([
       {
-        type: 'trigger',
         position: 1,
         appKey: 'formsg',
-        key: 'newSubmission',
-        flowId: null,
+        eventKey: 'newSubmission',
+        parameters: {},
       },
       {
-        type: 'action',
         position: 2,
         appKey: 'postman',
-        key: 'sendTransactionalEmail',
-        flowId: null,
+        eventKey: 'sendTransactionalEmail',
+        parameters: { body: 'Hi {{step.<<step_id_1>>.fields.a.answer}}' },
       },
     ])
-    expect(template.steps[1].parameters).toEqual({
-      body: 'Hi {{step.<<step_id_1>>.fields.a.answer}}',
-    })
   })
 
   async function seedTemplate(): Promise<{ templateId: string }> {
@@ -164,6 +151,33 @@ describe('createTemplateFromFlow', () => {
     expect(steps[1].parameters).toEqual({
       body: `Hi {{step.${steps[0].id}.fields.a.answer}}`,
     })
+  })
+
+  it('stores template steps outside the steps table', async () => {
+    await seedTemplate()
+
+    const stepsWithoutFlow = await Step.query().whereNull('flow_id')
+
+    expect(stepsWithoutFlow).toEqual([])
+  })
+
+  it('saves a template with no steps for an empty flow', async () => {
+    const flow = await owner.$relatedQuery('flows').insertAndFetch({
+      name: 'Empty Flow',
+      updatedBy: owner.id,
+    })
+
+    const result = await createTemplateFromFlow(
+      null,
+      { input: { flowId: flow.id } },
+      context,
+    )
+
+    const template = await Template.query()
+      .findById(result.id)
+      .withGraphFetched({ templateSteps: true })
+      .throwIfNotFound()
+    expect(template.templateSteps).toEqual([])
   })
 
   it('leaves the source flow steps untouched', async () => {

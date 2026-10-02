@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import Base from './base'
 import ExtendedQueryBuilder from './query-builder'
-import Step from './step'
+import TemplateStep from './template-step'
 import User from './user'
 
 class Template extends Base {
@@ -12,7 +12,7 @@ class Template extends Base {
   name!: string
   description!: string
   userId!: string
-  steps!: Step[]
+  templateSteps!: TemplateStep[]
   user!: User
 
   static tableName = 'templates'
@@ -30,19 +30,15 @@ class Template extends Base {
   }
 
   static relationMappings = () => ({
-    steps: {
-      relation: Base.ManyToManyRelation,
-      modelClass: Step,
+    templateSteps: {
+      relation: Base.HasManyRelation,
+      modelClass: TemplateStep,
       join: {
         from: `${this.tableName}.id`,
-        through: {
-          from: 'template_steps.template_id',
-          to: 'template_steps.step_id',
-        },
-        to: `${Step.tableName}.id`,
+        to: `${TemplateStep.tableName}.template_id`,
       },
-      filter(builder: ExtendedQueryBuilder<Step>) {
-        builder.orderBy('position', 'asc')
+      filter(builder: ExtendedQueryBuilder<TemplateStep>) {
+        builder.orderByRaw("(data->>'position')::int asc")
       },
     },
     user: {
@@ -58,7 +54,7 @@ class Template extends Base {
   static async findAllForUser(userId: string): Promise<ITemplate[]> {
     const templates = await this.query()
       .where({ user_id: userId })
-      .withGraphFetched({ steps: true })
+      .withGraphFetched({ templateSteps: true })
       .orderBy('created_at', 'desc')
     return templates.map((template) => template.toTemplateData())
   }
@@ -73,7 +69,7 @@ class Template extends Base {
     }
     const template = await this.query()
       .findOne({ id: templateId, user_id: userId })
-      .withGraphFetched({ steps: true })
+      .withGraphFetched({ templateSteps: true })
     return template?.toTemplateData()
   }
 
@@ -82,12 +78,7 @@ class Template extends Base {
       id: this.id,
       name: this.name,
       description: this.description,
-      steps: this.steps.map((step) => ({
-        position: step.position,
-        appKey: step.appKey ?? undefined,
-        eventKey: step.key ?? undefined,
-        parameters: step.parameters,
-      })),
+      steps: this.templateSteps.map((templateStep) => templateStep.data),
     }
   }
 }
