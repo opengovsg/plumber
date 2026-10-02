@@ -82,7 +82,6 @@ const evaluateWithJev: EvaluateTemplates = async ({ query, templates }) => {
     body: JSON.stringify({
       state: query,
       questions,
-      providerOptions: { gateway: { zeroDataRetention: true } },
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
