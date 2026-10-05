@@ -49,6 +49,10 @@ Mandatory checklist:
   a specific table only if the user explicitly wants deleted rows included there, or a specific
   question intentionally doesn't care about that table's soft-delete state; ask if unsure, and call
   out which table(s) got the guard relaxed and why in the final explanation.
+- **Active-user and active-pipe metrics never filter soft-deleted rows.** Drop the `deleted_at` guard
+  on every table. Deleted pipes that flowed in the period still count. Check which apps ran via
+  `execution_steps`, not `steps`. See [reference/gotchas.md](reference/gotchas.md)'s
+  activity-metrics exception.
 - Exclude `test_run = true` for execution-volume questions, unless the user explicitly wants test
   runs included.
 - Qualify ambiguous columns (e.g. `f.user_id` vs. `u.id`).
@@ -67,8 +71,9 @@ matches one of those shapes, the recipe is the reference implementation.
 ### 4. Grafana output (if applicable)
 
 If the output targets a Grafana panel, follow [reference/grafana.md](reference/grafana.md): cast
-macro expansions explicitly before passing them into any overloaded function or timezone conversion,
-and pick the panel design (single window vs. fixed trailing window of N periods) — **ask the user**
+macro expansions with `::timestamptz`. **Never add `AT TIME ZONE` to a macro used as a comparison
+bound.** Convert to SGT only for `date_trunc` or month arithmetic, then convert back. Pick the panel
+design (single window vs. fixed trailing window of N periods) — **ask the user**
 if it's ambiguous; this is a real design decision, not something inferable from the question alone.
 
 ### 5. Validate locally
