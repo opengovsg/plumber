@@ -68,11 +68,15 @@ export function getIfThenChildCount(
   return count
 }
 
-function getActionSchema(restrictedAppKeys: string[] = []) {
+function getActionSchema(
+  restrictedAppKeys: string[] = [],
+  options: { includeHidden?: boolean } = {},
+) {
   const generatedSchema = generateSchema(
     baseActionSchema,
     'action',
     restrictedAppKeys,
+    options,
   )
 
   return generatedSchema.refine(validateActionParameters, {
@@ -81,9 +85,12 @@ function getActionSchema(restrictedAppKeys: string[] = []) {
   })
 }
 
-export function getActionsSchema(restrictedAppKeys: string[] = []) {
+export function getActionsSchema(
+  restrictedAppKeys: string[] = [],
+  options: { includeHidden?: boolean } = {},
+) {
   return z
-    .array(getActionSchema(restrictedAppKeys))
+    .array(getActionSchema(restrictedAppKeys, options))
     .min(1, 'At least one action step is required.')
     .max(29) // max of 30 steps including trigger
     .superRefine(validateActionStepsRules)
