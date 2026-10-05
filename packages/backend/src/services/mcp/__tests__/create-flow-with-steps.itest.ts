@@ -12,6 +12,7 @@ import {
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
+  fetchPublicForm: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -19,8 +20,53 @@ vi.mock('@/helpers/launch-darkly', () => ({
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
 }))
 
+vi.mock('../fetch-public-form', () => ({
+  fetchPublicForm: mocks.fetchPublicForm,
+}))
+
+const FORM_URL = 'https://form.gov.sg/6abcb1affb28842bc7a9e6ce'
+const APPROVAL_FIELD = '6abcb1d9fb28842bc7a9f48a'
+
+const mrfForm = {
+  formId: '6abcb1affb28842bc7a9e6ce',
+  env: 'prod',
+  form: {
+    _id: '6abcb1affb28842bc7a9e6ce',
+    title: 'DEMO MRF',
+    responseMode: 'multirespondent',
+    workflow: [
+      {
+        _id: '6abcb1ec6a6a5f0aca451656',
+        workflow_type: 'static',
+        edit: ['6abcb1ce3b7c34bb6024cf9e'],
+        step_name: 'Requestor',
+      },
+      {
+        _id: '6abcb1fdbf2f3b7c8dee7e39',
+        workflow_type: 'static',
+        edit: [APPROVAL_FIELD, '6abcb1e4fb28842bc7a9f742'],
+        approval_field: APPROVAL_FIELD,
+        step_name: 'Approval',
+      },
+      {
+        _id: '6ac3462ce792d9142d9c35a3',
+        workflow_type: 'static',
+        edit: ['6ac3461d7afca2c4dea79ad4'],
+      },
+    ],
+  },
+}
+
+const formsgTrigger = {
+  appKey: 'formsg',
+  key: 'newSubmission',
+  type: 'trigger' as const,
+  position: 1,
+}
+
 describe('createFlowWithStepsService', () => {
   beforeEach(async () => {
+    mocks.fetchPublicForm.mockReset()
     mocks.getAllLdFlags.mockResolvedValue({
       'ai-builder': {
         enabled: true,
@@ -489,5 +535,112 @@ describe('createFlowWithStepsService', () => {
         traceId: 'trace-hidden-nested',
       }),
     ).rejects.toThrow('Action can only be created by system')
+  })
+  describe('MRF forms', () => {
+    async function newUser() {
+      return User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `create-pipe-mrf-${randomUUID()}@example.com`,
+      })
+    }
+
+    it("creates the form's stage steps along with the trigger", async () => {
+      mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+
+      const result = await createFlowWithStepsService({
+        user: await newUser(),
+        name: 'MRF Pipe',
+        steps: [formsgTrigger],
+        traceId: 'trace-mrf',
+        formUrl: FORM_URL,
+      })
+
+      expect(result.steps.map((s) => s.position)).toEqual([1, 2, 3])
+      expect(result.steps.map((s) => s.config?.stepName)).toEqual([
+        'Requestor',
+        'Approval',
+        'MRF Step 3',
+      ])
+      expect(result.steps.slice(1).map((s) => [s.appKey, s.key])).toEqual([
+        ['formsg', 'mrfSubmission'],
+        ['formsg', 'mrfSubmission'],
+      ])
+    })
+
+    it('marks only the approval stage as an approval step', async () => {
+      mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+
+      const result = await createFlowWithStepsService({
+        user: await newUser(),
+        name: 'MRF Pipe',
+        steps: [formsgTrigger],
+        traceId: 'trace-mrf-approval',
+        formUrl: FORM_URL,
+      })
+
+      const approvalFields = result.steps.map(
+        (s) =>
+          (s.parameters as { mrf?: { approvalField?: string } }).mrf
+            ?.approvalField,
+      )
+      expect(approvalFields).toEqual([undefined, APPROVAL_FIELD, undefined])
+    })
+
+    it('creates only the trigger when the form is not MRF', async () => {
+      mocks.fetchPublicForm.mockResolvedValue({
+        ...mrfForm,
+        form: { ...mrfForm.form, responseMode: 'encrypt', workflow: [] },
+      })
+
+      const result = await createFlowWithStepsService({
+        user: await newUser(),
+        name: 'Storage Pipe',
+        steps: [formsgTrigger],
+        traceId: 'trace-storage',
+        formUrl: FORM_URL,
+      })
+
+      expect(result.steps).toHaveLength(1)
+    })
+
+    it('fails before creating anything when the form cannot be fetched', async () => {
+      mocks.fetchPublicForm.mockResolvedValue({
+        error:
+          'This form is not public. Ask the user to make the form public and try again.',
+      })
+      const user = await newUser()
+
+      await expect(
+        createFlowWithStepsService({
+          user,
+          name: 'Private Form Pipe',
+          steps: [formsgTrigger],
+          traceId: 'trace-private',
+          formUrl: FORM_URL,
+        }),
+      ).rejects.toThrow('This form is not public')
+
+      expect(await Flow.query().where('user_id', user.id)).toHaveLength(0)
+    })
+
+    it('rejects form_url when the trigger is not FormSG', async () => {
+      await expect(
+        createFlowWithStepsService({
+          user: await newUser(),
+          name: 'Scheduled Pipe',
+          steps: [
+            {
+              appKey: 'scheduler',
+              key: 'everyDay',
+              type: 'trigger',
+              position: 1,
+            },
+          ],
+          traceId: 'trace-scheduler',
+          formUrl: FORM_URL,
+        }),
+      ).rejects.toThrow('form_url only applies to a FormSG trigger.')
+      expect(mocks.fetchPublicForm).not.toHaveBeenCalled()
+    })
   })
 })

@@ -2,6 +2,8 @@ import type { IJSONObject } from '@plumber/types'
 
 import z from 'zod'
 
+import { createMrfSteps } from '@/apps/formsg/triggers/new-submission/create-mrf-steps'
+import { parseMrfWorkflow } from '@/apps/formsg/triggers/new-submission/get-workflow-data'
 import {
   BLOCK_END_STEP_ID,
   TOOLBOX_ACTIONS,
@@ -11,6 +13,7 @@ import {
   pinEndStep,
   validateEndStepWrite,
 } from '@/apps/toolbox/common/validate-end-step'
+import { UserFacingError } from '@/errors/user-facing-error'
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
 import {
   getIfThenChildCount,
@@ -23,6 +26,8 @@ import logger from '@/helpers/logger'
 import App from '@/models/app'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
+
+import { fetchPublicForm } from './fetch-public-form'
 
 export interface McpStepInput {
   appKey: string
@@ -110,16 +115,51 @@ export function flattenNestedSteps(
   return flattened
 }
 
+/**
+ * The workflow of an MRF form, or undefined for any other form. Fetched before
+ * the pipe exists so a bad URL fails without leaving a half-built pipe.
+ */
+async function getMrfWorkflowForTrigger(
+  triggerStep: McpStepInput,
+  formUrl: string,
+) {
+  if (triggerStep.appKey !== 'formsg' || triggerStep.key !== 'newSubmission') {
+    throw new UserFacingError('form_url only applies to a FormSG trigger.')
+  }
+
+  const result = await fetchPublicForm(formUrl)
+  if ('error' in result) {
+    throw new UserFacingError(result.error)
+  }
+
+  const { form } = result
+  // A form left in multirespondent mode with no workflow is a normal form.
+  if (form.responseMode !== 'multirespondent' || !form.workflow?.length) {
+    return undefined
+  }
+
+  try {
+    return parseMrfWorkflow(form.workflow)
+  } catch {
+    throw new UserFacingError(
+      "This form's workflow stages could not be read. Ask the user to check the form in FormSG.",
+    )
+  }
+}
+
 export async function createFlowWithStepsService({
   user,
   name,
   steps,
   traceId,
+  formUrl,
 }: {
   user: User
   name: string
   steps: McpStepInput[]
   traceId: string
+  // Pass the form's URL for an MRF form so its stage steps are created too.
+  formUrl?: string
 }): Promise<Flow> {
   const trimmedName = name.trim()
   if (!trimmedName) {
@@ -212,6 +252,10 @@ export async function createFlowWithStepsService({
     }
   }
 
+  const mrfWorkflow = formUrl
+    ? await getMrfWorkflowForTrigger(steps[0], formUrl)
+    : undefined
+
   const flow = await Flow.transaction(async (trx) => {
     const createdFlow = await Flow.query(trx).insertAndFetch({
       userId: user.id,
@@ -280,6 +324,19 @@ export async function createFlowWithStepsService({
 
     return createdFlow
   })
+
+  if (mrfWorkflow) {
+    const createdSteps = await flow.$relatedQuery('steps')
+    const trigger = createdSteps.find((step) => step.position === 1)
+    await createMrfSteps(
+      { flow: { id: flow.id }, step: { id: trigger.id } },
+      mrfWorkflow,
+    )
+    // Re-read, since createMrfSteps added steps and reordered positions.
+    const withMrfSteps = await flow.$query().withGraphFetched('steps')
+    withMrfSteps.steps.sort((a, b) => a.position - b.position)
+    return withMrfSteps
+  }
 
   return flow.$fetchGraph('steps')
 }

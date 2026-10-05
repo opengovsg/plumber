@@ -595,6 +595,23 @@ describe('createMcpBridgeTools', () => {
     })
   })
 
+  it('create_pipe passes form_url through as formUrl', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_pipe.execute(
+      {
+        name: 'MRF Pipe',
+        steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
+        form_url: 'https://form.gov.sg/6abcb1affb28842bc7a9e6ce',
+      },
+      { toolCallId: 'create_pipe', messages: [] },
+    )
+    expect(vi.mocked(createFlowWithStepsService)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        formUrl: 'https://form.gov.sg/6abcb1affb28842bc7a9e6ce',
+      }),
+    )
+  })
+
   it('create_pipe forwards parameters when present on a step', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.create_pipe.execute(
