@@ -13,7 +13,15 @@ export function parseWorkflowData(
   $: IGlobalVariable,
   formSchema: FormSchema,
 ): ParsedMrfWorkflow | null {
-  const result = mrfWorkflowDataSchema.safeParse(formSchema.form.workflow)
+  return parseMrfWorkflow(formSchema.form.workflow)
+}
+
+/**
+ * Parses a form's raw workflow without needing a connection, so MRF steps
+ * can be created before the trigger is ever tested.
+ */
+export function parseMrfWorkflow(workflow: unknown): ParsedMrfWorkflow {
+  const result = mrfWorkflowDataSchema.safeParse(workflow)
   if (!result.success) {
     throw new StepError(
       'Invalid MRF data',

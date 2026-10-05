@@ -9,6 +9,7 @@ import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import type Flow from '@/models/flow'
 import type Step from '@/models/step'
 import type User from '@/models/user'
+import { MrfPipeStepsError } from '@/services/mcp/add-mrf-actions'
 import {
   type AddTileColumnsResult,
   addTileColumnsService,
@@ -111,6 +112,23 @@ function toNestedStepInput(
   }
 }
 
+const mrfPlacementSchema = z.object({
+  mrf_stage: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      "MRF form only. The stage this action follows, numbered as in get_form_schema's mrfStages (1 is the trigger's stage). Every action of an MRF pipe needs it. Steps inside an If block follow their If step.",
+    ),
+  mrf_branch: z
+    .enum(['approve', 'reject'])
+    .optional()
+    .describe(
+      "MRF form only. 'reject' puts the action on the reject path of an approval stage. Defaults to 'approve'. Only stages with isApproval have a reject path.",
+    ),
+})
+
 export function createMcpBridgeTools(
   user: User,
   traceId: string,
@@ -148,7 +166,7 @@ export function createMcpBridgeTools(
 
     get_flow: tool({
       description:
-        "Get a pipe's current steps in position order, including hidden FormSG MRF steps (appKey 'formsg', key 'mrfSubmission') auto-created after the trigger's last test run — these only exist once the trigger has been tested and are not present in create_pipe's response. Identify an MRF step by its appKey/key; identify an MRF approval step via parameters.mrf.approvalField; an existing reject-branch assignment appears as config.approval ({ branch: 'reject', stepId }). MRF steps are system-managed — never attempt to create, delete, or reorder them (create_step rejects it server-side regardless).",
+        "Get a pipe's current steps in position order. This includes the hidden FormSG MRF stage steps (appKey 'formsg', key 'mrfSubmission'). create_pipe creates them when given form_url, and testing the trigger syncs them with the form. Identify a stage step by its appKey and key. Identify an approval stage by parameters.mrf.approvalField. A step on a reject path has config.approval ({ branch: 'reject', stepId }). Stage steps are system-managed. Never create, delete or reorder them. create_step rejects it.",
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe to fetch'),
       }),
@@ -235,12 +253,12 @@ export function createMcpBridgeTools(
 
     create_pipe: tool({
       description:
-        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.\n\nA toolbox/ifThen step is an If block: put the steps that should run only when its condition is TRUE inside its own `steps` array (at least one). Steps listed after the ifThen entry in the outer list are outside the block and run regardless of the condition. An If block cannot contain another ifThen or a forEach.',
+        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.\n\nA toolbox/ifThen step is an If block: put the steps that should run only when its condition is TRUE inside its own `steps` array (at least one). Steps listed after the ifThen entry in the outer list are outside the block and run regardless of the condition. An If block cannot contain another ifThen or a forEach.\n\nFor a FormSG trigger, pass form_url whenever you know the form URL. If the form is an MRF form, Plumber creates one step per later stage and places each action after its stage. Then every action needs mrf_stage, and mrf_branch "reject" for an action on a reject path. The returned steps include the stage steps. Do not list the stage steps yourself.',
       inputSchema: z.object({
         name: z.string().describe('Human-readable name for the pipe'),
         steps: z
           .array(
-            pipeStepInputSchema.extend({
+            pipeStepInputSchema.extend(mrfPlacementSchema.shape).extend({
               steps: z
                 .array(pipeStepInputSchema)
                 .optional()
@@ -253,21 +271,39 @@ export function createMcpBridgeTools(
           .describe(
             'Ordered list of steps. First element must have trigger_key.',
           ),
-      }),
-      execute: async ({ name, steps }): Promise<Flow> => {
-        const flow = await createFlowWithStepsService({
-          user,
-          name,
-          steps: flattenNestedSteps(
-            steps.map(
-              (s): McpNestedStepInput => ({
-                ...toNestedStepInput(s),
-                ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
-              }),
-            ),
+        form_url: z
+          .string()
+          .optional()
+          .describe(
+            "The FormSG form's URL or ID. Pass it whenever you know it for a FormSG trigger. Plumber uses it to create an MRF form's stage steps. A form that is not MRF is built as a normal pipe.",
           ),
-          traceId,
-        })
+      }),
+      execute: async ({ name, steps, form_url }): Promise<Flow> => {
+        let flow: Flow
+        try {
+          flow = await createFlowWithStepsService({
+            user,
+            name,
+            steps: flattenNestedSteps(
+              steps.map(
+                (s): McpNestedStepInput => ({
+                  ...toNestedStepInput(s),
+                  ...(s.mrf_stage && { mrfStage: s.mrf_stage }),
+                  ...(s.mrf_branch && { mrfBranch: s.mrf_branch }),
+                  ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
+                }),
+              ),
+            ),
+            traceId,
+            ...(form_url && { formUrl: form_url }),
+          })
+        } catch (error) {
+          // The pipe exists already, so the preview must still show it.
+          if (error instanceof MrfPipeStepsError) {
+            onPipeChange?.(error.flowId)
+          }
+          throw error
+        }
         onPipeChange?.(flow.id)
         return flow
       },

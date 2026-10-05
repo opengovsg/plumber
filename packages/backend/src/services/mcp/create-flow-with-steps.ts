@@ -2,6 +2,8 @@ import type { IJSONObject } from '@plumber/types'
 
 import z from 'zod'
 
+import { createMrfSteps } from '@/apps/formsg/triggers/new-submission/create-mrf-steps'
+import { parseMrfWorkflow } from '@/apps/formsg/triggers/new-submission/get-workflow-data'
 import {
   BLOCK_END_STEP_ID,
   TOOLBOX_ACTIONS,
@@ -11,6 +13,7 @@ import {
   pinEndStep,
   validateEndStepWrite,
 } from '@/apps/toolbox/common/validate-end-step'
+import { UserFacingError } from '@/errors/user-facing-error'
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
 import {
   getIfThenChildCount,
@@ -24,6 +27,10 @@ import App from '@/models/app'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
 
+import { addMrfActions, MrfStageStepsError } from './add-mrf-actions'
+import { fetchPublicForm } from './fetch-public-form'
+import { orderMrfPipeSteps, validateMrfPlacements } from './mrf-pipe-layout'
+
 export interface McpStepInput {
   appKey: string
   key?: string | null
@@ -33,6 +40,11 @@ export interface McpStepInput {
   // Number of following steps inside this If block. Only set on
   // toolbox/ifThen steps laid out with explicit blocks.
   ifThenChildCount?: number
+  // MRF forms only, on an action outside any If block. The stage it follows,
+  // numbered as in get_form_schema's mrfStages (1 is the trigger).
+  mrfStage?: number
+  // MRF forms only. Which path of an approval stage the action belongs to.
+  mrfBranch?: 'approve' | 'reject'
 }
 
 /**
@@ -44,6 +56,8 @@ export interface McpNestedStepInput {
   key?: string | null
   parameters?: Record<string, unknown>
   steps?: McpNestedStepInput[]
+  mrfStage?: number
+  mrfBranch?: 'approve' | 'reject'
 }
 
 function isIfThenInput(step: { appKey?: string; key?: string | null }) {
@@ -110,23 +124,68 @@ export function flattenNestedSteps(
   return flattened
 }
 
+/**
+ * The workflow of an MRF form, or undefined for any other form. Fetched before
+ * the pipe exists so a bad URL fails without leaving a half-built pipe.
+ */
+async function getMrfWorkflowForTrigger(
+  triggerStep: McpStepInput,
+  formUrl: string,
+  hasPlacements: boolean,
+) {
+  if (triggerStep.appKey !== 'formsg' || triggerStep.key !== 'newSubmission') {
+    throw new UserFacingError('form_url only applies to a FormSG trigger.')
+  }
+
+  const result = await fetchPublicForm(formUrl)
+  if ('error' in result) {
+    // Without mrf_stage the pipe is built as a normal one, so a form that
+    // cannot be fetched must not block it.
+    if (!hasPlacements) {
+      logger.warn('create_pipe: could not check the form for MRF stages', {
+        error: result.error,
+      })
+      return undefined
+    }
+    throw new UserFacingError(result.error)
+  }
+
+  const { form } = result
+  // A form left in multirespondent mode with no workflow is a normal form.
+  if (form.responseMode !== 'multirespondent' || !form.workflow?.length) {
+    return undefined
+  }
+
+  try {
+    return parseMrfWorkflow(form.workflow)
+  } catch {
+    throw new UserFacingError(
+      "This form's workflow stages could not be read. Ask the user to check the form in FormSG.",
+    )
+  }
+}
+
 export async function createFlowWithStepsService({
   user,
   name,
-  steps,
+  steps: requestedSteps,
   traceId,
+  formUrl,
 }: {
   user: User
   name: string
   steps: McpStepInput[]
   traceId: string
+  // Pass the form's URL for a FormSG trigger so an MRF form's stage steps
+  // are created too.
+  formUrl?: string
 }): Promise<Flow> {
   const trimmedName = name.trim()
   if (!trimmedName) {
     throw new Error('Pipe name needs to have at least 1 character.')
   }
 
-  if (steps.length === 0) {
+  if (requestedSteps.length === 0) {
     throw new Error('At least one step is required.')
   }
 
@@ -134,7 +193,7 @@ export async function createFlowWithStepsService({
   // entirely when any step lacks a key, e.g. an if-then placeholder branch):
   // never let the AI Builder fabricate a hidden, system-managed step (e.g.
   // FormSG's mrfSubmission) directly, same guard as create-step.ts.
-  for (const step of steps) {
+  for (const step of requestedSteps) {
     if (!step.key) {
       continue
     }
@@ -148,15 +207,25 @@ export async function createFlowWithStepsService({
   }
 
   if (
-    !steps.every((step, index) => {
+    !requestedSteps.every((step, index) => {
       if (index === 0) {
         return step.position === 1
       }
-      return step.position === steps[index - 1].position + 1
+      return step.position === requestedSteps[index - 1].position + 1
     })
   ) {
     throw new Error('Must be contiguous steps!')
   }
+
+  const mrfWorkflow = formUrl
+    ? await getMrfWorkflowForTrigger(
+        requestedSteps[0],
+        formUrl,
+        requestedSteps.some((step) => step.mrfStage || step.mrfBranch),
+      )
+    : undefined
+  validateMrfPlacements(requestedSteps, mrfWorkflow)
+  const steps = mrfWorkflow ? orderMrfPipeSteps(requestedSteps) : requestedSteps
 
   // Validate only when all steps have keys
   const allKeysProvided = steps.every((s) => !!s.key)
@@ -212,6 +281,10 @@ export async function createFlowWithStepsService({
     }
   }
 
+  // An MRF pipe's actions wait until its stage steps exist, because the stage
+  // steps are inserted straight after the trigger.
+  const stepsToInsert = mrfWorkflow ? steps.slice(0, 1) : steps
+
   const flow = await Flow.transaction(async (trx) => {
     const createdFlow = await Flow.query(trx).insertAndFetch({
       userId: user.id,
@@ -231,7 +304,7 @@ export async function createFlowWithStepsService({
 
     let ifThenCount = 0
     const insertedSteps = await createdFlow.$relatedQuery('steps', trx).insert(
-      steps.map((step) => {
+      stepsToInsert.map((step) => {
         let defaults: Record<string, unknown> = {}
         if (isIfThenInput(step)) {
           defaults = { branchName: `Branch ${++ifThenCount}`, depth: 0 }
@@ -252,11 +325,11 @@ export async function createFlowWithStepsService({
     )
 
     // Markers point forward, so they need every step's id first.
-    for (const [index, step] of steps.entries()) {
+    for (const [index, step] of stepsToInsert.entries()) {
       if (!isIfThenInput(step)) {
         continue
       }
-      const childCount = getIfThenChildCount(steps, index)
+      const childCount = getIfThenChildCount(stepsToInsert, index)
       if (childCount === 0) {
         continue
       }
@@ -280,6 +353,28 @@ export async function createFlowWithStepsService({
 
     return createdFlow
   })
+
+  if (mrfWorkflow) {
+    try {
+      const createdSteps = await flow.$relatedQuery('steps')
+      const trigger = createdSteps.find((step) => step.position === 1)
+      await createMrfSteps(
+        { flow: { id: flow.id }, step: { id: trigger.id } },
+        mrfWorkflow,
+      )
+    } catch (error) {
+      logger.error('create_pipe: could not create the MRF stage steps', {
+        flowId: flow.id,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw new MrfStageStepsError(flow.id)
+    }
+    await addMrfActions({ user, flowId: flow.id, actions: steps.slice(1) })
+    // Re-read, since createMrfSteps added steps and reordered positions.
+    const withMrfSteps = await flow.$query().withGraphFetched('steps')
+    withMrfSteps.steps.sort((a, b) => a.position - b.position)
+    return withMrfSteps
+  }
 
   return flow.$fetchGraph('steps')
 }

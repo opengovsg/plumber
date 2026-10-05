@@ -17,6 +17,7 @@ import {
   type PreviewItem,
   type PreviewStep,
 } from './components/StepsPreview/helpers/previewItems'
+import { toPreviewStep } from './components/StepsPreview/helpers/toPreviewStep'
 
 export interface AIBuilderDraftState {
   flowName: string
@@ -128,8 +129,7 @@ export const AiBuilderContextProvider = ({
   const steps = useMemo((): AiBuilderStep[] => {
     // Phase 2b+: DB-backed pipe state — steps already have correct positions
     if (output?.pipeId && Array.isArray(output?.steps)) {
-      return (output as PipeStatePart['data'])
-        .steps as unknown as AiBuilderStep[]
+      return (output as PipeStatePart['data']).steps.map(toPreviewStep)
     }
     // Phase 2a (proposal) and legacy path
     return [

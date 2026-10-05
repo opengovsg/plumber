@@ -85,6 +85,7 @@ vi.mock('@/helpers/logger', () => ({
 }))
 
 import { UserFacingError } from '@/errors/user-facing-error'
+import { MrfPipeStepsError } from '@/services/mcp/add-mrf-actions'
 import { addTileColumnsService } from '@/services/mcp/add-tile-columns'
 import { listAppsService } from '@/services/mcp/apps'
 import { createFlowWithStepsService } from '@/services/mcp/create-flow-with-steps'
@@ -593,6 +594,74 @@ describe('createMcpBridgeTools', () => {
       ],
       traceId: mockTraceId,
     })
+  })
+
+  it('create_pipe passes form_url through as formUrl', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_pipe.execute(
+      {
+        name: 'MRF Pipe',
+        steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
+        form_url: 'https://form.gov.sg/6abcb1affb28842bc7a9e6ce',
+      },
+      { toolCallId: 'create_pipe', messages: [] },
+    )
+    expect(vi.mocked(createFlowWithStepsService)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        formUrl: 'https://form.gov.sg/6abcb1affb28842bc7a9e6ce',
+      }),
+    )
+  })
+
+  it('create_pipe passes mrf_stage and mrf_branch through as mrfStage and mrfBranch', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_pipe.execute(
+      {
+        name: 'MRF Pipe',
+        steps: [
+          { app_key: 'formsg', trigger_key: 'newSubmission' },
+          {
+            app_key: 'postman',
+            action_key: 'sendTransactionalEmail',
+            mrf_stage: 2,
+            mrf_branch: 'reject',
+          },
+        ],
+        form_url: 'https://form.gov.sg/6abcb1affb28842bc7a9e6ce',
+      },
+      { toolCallId: 'create_pipe', messages: [] },
+    )
+    expect(vi.mocked(createFlowWithStepsService)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        steps: [
+          expect.objectContaining({ appKey: 'formsg', type: 'trigger' }),
+          expect.objectContaining({
+            appKey: 'postman',
+            mrfStage: 2,
+            mrfBranch: 'reject',
+          }),
+        ],
+      }),
+    )
+  })
+
+  it('create_pipe still reports the pipe when a later MRF step fails', async () => {
+    vi.mocked(createFlowWithStepsService).mockRejectedValueOnce(
+      new MrfPipeStepsError('Could not add a step.', 'f-partial'),
+    )
+    const onPipeChange = vi.fn()
+    const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
+
+    await expect(
+      tools.create_pipe.execute(
+        {
+          name: 'MRF Pipe',
+          steps: [{ app_key: 'formsg', trigger_key: 'newSubmission' }],
+        },
+        { toolCallId: 'create_pipe', messages: [] },
+      ),
+    ).rejects.toThrow('Could not add a step.')
+    expect(onPipeChange).toHaveBeenCalledWith('f-partial')
   })
 
   it('create_pipe forwards parameters when present on a step', async () => {

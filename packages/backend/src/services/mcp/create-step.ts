@@ -1,3 +1,5 @@
+import type { Transaction } from 'objection'
+
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
 import { findEnclosingIfThenV2Block } from '@/apps/toolbox/common/block-execution'
 import {
@@ -65,15 +67,11 @@ function isInsertInsideIfThenBlock(
   )
 }
 
-export async function createStepService({
-  user,
-  pipeId,
-  appKey,
-  key,
-  previousStepId,
-  afterIfThenBlock = false,
-  approvalBranch,
-}: CreateStepInput): Promise<Step> {
+/** Throws unless the app key and action key name a step the AI Builder may create. */
+export async function assertStepCreatable(
+  appKey: string,
+  key: string,
+): Promise<void> {
   const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
 
   if (!triggerOrAction) {
@@ -83,113 +81,134 @@ export async function createStepService({
   if (triggerOrAction.hiddenFromUser) {
     throw new Error('Action can only be created by system')
   }
+}
 
-  const isIfThen = appKey === TOOLBOX_APP_KEY && key === TOOLBOX_ACTIONS.IF_THEN
-  const isForEach =
-    appKey === TOOLBOX_APP_KEY && key === TOOLBOX_ACTIONS.FOR_EACH
+export async function createStepService(input: CreateStepInput): Promise<Step> {
+  await assertStepCreatable(input.appKey, input.key)
 
   return Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
 
-    const flow = await user
-      .withAccessibleFlows({ requiredRole: 'editor', trx })
-      .findOne({ id: pipeId })
-
-    if (!flow) {
-      throw new Error('Pipe not found')
-    }
-
-    if (flow.active) {
-      throw new PublishedPipeError()
-    }
-
-    // Legacy If blocks have no end marker, so pin them before placing the step.
-    await upgradeIfThenV1BlocksIfEnabled(
-      trx,
-      flow,
-      await flow.$relatedQuery('steps', trx).orderBy('position', 'asc'),
-    )
-
-    const flowSteps = await flow
-      .$relatedQuery('steps', trx)
-      .orderBy('position', 'asc')
-
-    let previousStep = flowSteps.find((step) => step.id === previousStepId)
-    if (!previousStep) {
-      throw new Error('Previous step not found')
-    }
-
-    let previousBlockId: string | undefined
-    if (afterIfThenBlock) {
-      const block = findIfThenBlockEndingAt(flowSteps, previousStep)
-      if (!block) {
-        throw new UserFacingError(
-          'after_if_then_block needs previous_step_id to be an If step or the last step inside its If block.',
-        )
-      }
-      previousBlockId = block.ifThenStep.id
-      previousStep = block.endStep
-    } else if (isInsertInsideIfThenBlock(flowSteps, previousStep)) {
-      if (isIfThen) {
-        throw new UserFacingError(
-          'An If block cannot contain another If. Pass after_if_then_block: true to add it after the current block instead.',
-        )
-      }
-      if (isForEach) {
-        throw new UserFacingError(
-          'An If block cannot contain a For-each. Pass after_if_then_block: true to add it after the current block instead.',
-        )
-      }
-    }
-
-    // Publish allows one For-each on each approval branch. The first step of a
-    // reject path follows the approval step, so read the branch off the input.
-    const branch =
-      approvalBranch?.branch ?? previousStep.config?.approval?.branch
-    if (
-      isForEach &&
-      flowSteps.some(
-        (step) =>
-          isForEachStep(step) && step.config?.approval?.branch === branch,
-      )
-    ) {
-      throw new UserFacingError('A pipe can only have one For-each step.')
-    }
-
-    const step = await createActionStepCore({
-      trx,
-      flow,
-      previousStep,
-      appKey,
-      key,
-      parameters: isIfThen ? { depth: 0 } : {},
-      config: approvalBranch
-        ? {
-            approval: {
-              branch: approvalBranch.branch,
-              stepId: approvalBranch.stepId,
-            },
-          }
-        : {},
-    })
-
-    // A new If starts as an empty block that later inserts extend.
-    await fixupEndStepOnCreateStep({
-      trx,
-      flow,
-      previousBlockId,
-      previousStep,
-      newStep: step,
-      wantsSelfEndStep: isIfThen,
-    })
-
-    await flow.patchLastUpdated({
-      flowId: flow.id,
-      updatedBy: user.id,
-      trx,
-    })
-
-    // Re-read so a new If's marker is part of the returned step.
-    return Step.query(trx).findById(step.id).throwIfNotFound()
+    return createStepInTransaction(trx, input)
   })
+}
+
+/**
+ * The caller opens the transaction and sets it to SERIALIZABLE, so several
+ * steps can be created in one.
+ */
+export async function createStepInTransaction(
+  trx: Transaction,
+  {
+    user,
+    pipeId,
+    appKey,
+    key,
+    previousStepId,
+    afterIfThenBlock = false,
+    approvalBranch,
+  }: CreateStepInput,
+): Promise<Step> {
+  const isIfThen = appKey === TOOLBOX_APP_KEY && key === TOOLBOX_ACTIONS.IF_THEN
+  const isForEach =
+    appKey === TOOLBOX_APP_KEY && key === TOOLBOX_ACTIONS.FOR_EACH
+
+  const flow = await user
+    .withAccessibleFlows({ requiredRole: 'editor', trx })
+    .findOne({ id: pipeId })
+
+  if (!flow) {
+    throw new Error('Pipe not found')
+  }
+
+  if (flow.active) {
+    throw new PublishedPipeError()
+  }
+
+  // Legacy If blocks have no end marker, so pin them before placing the step.
+  await upgradeIfThenV1BlocksIfEnabled(
+    trx,
+    flow,
+    await flow.$relatedQuery('steps', trx).orderBy('position', 'asc'),
+  )
+
+  const flowSteps = await flow
+    .$relatedQuery('steps', trx)
+    .orderBy('position', 'asc')
+
+  let previousStep = flowSteps.find((step) => step.id === previousStepId)
+  if (!previousStep) {
+    throw new Error('Previous step not found')
+  }
+
+  let previousBlockId: string | undefined
+  if (afterIfThenBlock) {
+    const block = findIfThenBlockEndingAt(flowSteps, previousStep)
+    if (!block) {
+      throw new UserFacingError(
+        'after_if_then_block needs previous_step_id to be an If step or the last step inside its If block.',
+      )
+    }
+    previousBlockId = block.ifThenStep.id
+    previousStep = block.endStep
+  } else if (isInsertInsideIfThenBlock(flowSteps, previousStep)) {
+    if (isIfThen) {
+      throw new UserFacingError(
+        'An If block cannot contain another If. Pass after_if_then_block: true to add it after the current block instead.',
+      )
+    }
+    if (isForEach) {
+      throw new UserFacingError(
+        'An If block cannot contain a For-each. Pass after_if_then_block: true to add it after the current block instead.',
+      )
+    }
+  }
+
+  // Publish allows one For-each on each approval branch. The first step of a
+  // reject path follows the approval step, so read the branch off the input.
+  const branch = approvalBranch?.branch ?? previousStep.config?.approval?.branch
+  if (
+    isForEach &&
+    flowSteps.some(
+      (step) => isForEachStep(step) && step.config?.approval?.branch === branch,
+    )
+  ) {
+    throw new UserFacingError('A pipe can only have one For-each step.')
+  }
+
+  const step = await createActionStepCore({
+    trx,
+    flow,
+    previousStep,
+    appKey,
+    key,
+    parameters: isIfThen ? { depth: 0 } : {},
+    config: approvalBranch
+      ? {
+          approval: {
+            branch: approvalBranch.branch,
+            stepId: approvalBranch.stepId,
+          },
+        }
+      : {},
+  })
+
+  // A new If starts as an empty block that later inserts extend.
+  await fixupEndStepOnCreateStep({
+    trx,
+    flow,
+    previousBlockId,
+    previousStep,
+    newStep: step,
+    wantsSelfEndStep: isIfThen,
+  })
+
+  await flow.patchLastUpdated({
+    flowId: flow.id,
+    updatedBy: user.id,
+    trx,
+  })
+
+  // Re-read so a new If's marker is part of the returned step.
+  return Step.query(trx).findById(step.id).throwIfNotFound()
 }
