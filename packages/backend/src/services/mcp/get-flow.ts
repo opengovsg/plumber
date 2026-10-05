@@ -67,8 +67,8 @@ function redactCredentials(value: IJSONValue): IJSONValue {
 
 /**
  * Mirrors the getFlow GraphQL query (packages/backend/src/graphql/queries/get-flow.ts)
- * so the AI Builder can discover steps it didn't create itself — notably the
- * hidden FormSG MRF steps that only appear after the trigger has been tested.
+ * so the AI Builder can read a pipe's steps, including the hidden FormSG MRF
+ * stage steps that Plumber creates.
  */
 export async function getFlowService({
   user,
