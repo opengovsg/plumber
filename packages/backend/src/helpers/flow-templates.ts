@@ -45,9 +45,9 @@ function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   }
 
   if (eventKey) {
-    const event = app?.triggers
-      ? app?.triggers.find((trigger) => trigger.key === eventKey)
-      : app?.actions.find((action) => action.key === eventKey)
+    // Matches createFlowFromTemplate, which makes position 1 the trigger.
+    const events = position === 1 ? app?.triggers : app?.actions
+    const event = events?.find((event) => event.key === eventKey)
     if (!event) {
       throw new Error(
         `Invalid event key for ${templateName} template at step ${position}`,

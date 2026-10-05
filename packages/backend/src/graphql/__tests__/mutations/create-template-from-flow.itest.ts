@@ -180,6 +180,83 @@ describe('createTemplateFromFlow', () => {
     expect(template.templateSteps).toEqual([])
   })
 
+  it('creates a flow from a template with an action of an app that also has triggers', async () => {
+    const flow = await owner.$relatedQuery('flows').insertAndFetch({
+      name: 'GatherSG Flow',
+      updatedBy: owner.id,
+    })
+    await flow.$relatedQuery('steps').insert([
+      {
+        key: 'newInstantWorkflow',
+        appKey: 'gathersg',
+        type: 'trigger',
+        position: 1,
+        parameters: {},
+      },
+      {
+        key: 'createCase',
+        appKey: 'gathersg',
+        type: 'action',
+        position: 2,
+        parameters: {},
+      },
+    ])
+    const { id: templateId } = await createTemplateFromFlow(
+      null,
+      { input: { flowId: flow.id } },
+      context,
+    )
+
+    const newFlow = await createFlowFromTemplate(templateId, owner)
+
+    const steps = await newFlow.$relatedQuery('steps').orderBy('position')
+    expect(steps.map(({ type, key }) => ({ type, key }))).toEqual([
+      { type: 'trigger', key: 'newInstantWorkflow' },
+      { type: 'action', key: 'createCase' },
+    ])
+  })
+
+  it.each(TEMPLATES.map((template) => [template.name, template.id]))(
+    'creates a flow from the built-in "%s" template',
+    async (_name, templateId) => {
+      await expect(
+        createFlowFromTemplate(templateId, owner),
+      ).resolves.toBeDefined()
+    },
+  )
+
+  it('rejects a trigger key at an action position', async () => {
+    const flow = await owner.$relatedQuery('flows').insertAndFetch({
+      name: 'Bad Flow',
+      updatedBy: owner.id,
+    })
+    await flow.$relatedQuery('steps').insert([
+      {
+        key: 'newSubmission',
+        appKey: 'formsg',
+        type: 'trigger',
+        position: 1,
+        parameters: {},
+      },
+      {
+        key: 'newSubmission',
+        appKey: 'formsg',
+        type: 'action',
+        position: 2,
+        parameters: {},
+      },
+    ])
+    const { id: templateId } = await createTemplateFromFlow(
+      null,
+      { input: { flowId: flow.id } },
+      context,
+    )
+
+    await expect(createFlowFromTemplate(templateId, owner)).rejects.toThrow(
+      'Invalid event key for Bad Flow template at step 2',
+    )
+  })
+
   it('leaves the source flow steps untouched', async () => {
     const flow = await owner.$relatedQuery('flows').insertAndFetch({
       name: 'Source Flow',
