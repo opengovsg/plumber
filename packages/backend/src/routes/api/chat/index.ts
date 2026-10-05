@@ -378,6 +378,11 @@ const handleChatStream = observe(
                             // Lets the preview draw an If block's extent
                             // the same way the editor does.
                             endStepId: step.config?.endStepId ?? null,
+                            // MRF stage steps are named after the form's stages.
+                            stepName: step.config?.stepName ?? null,
+                            // Set on steps in the reject path of an approval step.
+                            approvalBranch:
+                              step.config?.approval?.branch ?? null,
                           }
                         }),
                       },
