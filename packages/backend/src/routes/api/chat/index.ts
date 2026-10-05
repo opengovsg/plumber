@@ -36,6 +36,10 @@ import {
   parseWorkflowMetadata,
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
+import {
+  repairMalformedStreamedToolNames,
+  repairMalformedToolName,
+} from '@/helpers/ai/repair-tool-call'
 import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -254,9 +258,13 @@ const handleChatStream = observe(
             messages: allMessages,
             tools: { ...gitbookTools, ...mcpTools },
             stopWhen: stepCountIs(10),
-            experimental_transform: smoothStream({
-              chunking: 'word', // Stream word-by-word for typing effect
-            }),
+            experimental_repairToolCall: repairMalformedToolName,
+            experimental_transform: [
+              repairMalformedStreamedToolNames,
+              smoothStream({
+                chunking: 'word', // Stream word-by-word for typing effect
+              }),
+            ],
             experimental_telemetry: {
               isEnabled: true,
               functionId: 'ai-chat-stream',
