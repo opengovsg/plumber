@@ -105,6 +105,10 @@ export type PipeStateStep = {
   connectionLabel?: string | null
   // Last step (inclusive) inside this If block; null on any other step.
   endStepId?: string | null
+  // The step's custom name. For an MRF stage step, the form's stage name.
+  stepName?: string | null
+  // 'reject' on a step in the reject path of an MRF approval step.
+  approvalBranch?: 'reject' | null
 }
 
 export type PipeStatePart = {
