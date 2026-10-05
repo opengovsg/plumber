@@ -18,6 +18,11 @@ export function convertFlowToTemplate(
 ): ITemplate {
   const steps = [...flow.steps].sort((a, b) => a.position - b.position)
 
+  // validate that all steps have event key and app key
+  const hasRequiredAttributes = steps.every(({ key, appKey }) => key && appKey)
+  if (!hasRequiredAttributes)
+    throw new Error('Please ensure that all apps have an event trigger!')
+
   const stepIdToPlaceholderMap = Object.fromEntries(
     steps.map((step) => [step.id, STEP_ID_PLACEHOLDER(step.position)]),
   )
