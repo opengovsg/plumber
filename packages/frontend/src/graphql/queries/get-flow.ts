@@ -25,6 +25,9 @@ export const FLOW_FIELDS = gql`
           screenName
           env
         }
+        environment {
+          id
+        }
       }
       parameters
       config {
