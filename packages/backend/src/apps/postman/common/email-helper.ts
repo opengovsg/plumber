@@ -489,6 +489,8 @@ export async function sendTransactionalEmails(
     logger.error('Email send failed via SES', {
       event: 'postman-step-ses-email-failed',
       recipients: activeRecipients,
+      recipientCount: activeRecipients.length,
+      sendMode: email.sendMode,
       errorName:
         attachmentBuildError instanceof Error
           ? attachmentBuildError.name
@@ -521,6 +523,8 @@ export async function sendTransactionalEmails(
         logger.error('Email send failed via SES', {
           event: 'postman-step-ses-email-failed',
           recipients: group.to,
+          recipientCount: group.to.length,
+          sendMode: email.sendMode,
           errorName: e instanceof Error ? e.name : undefined,
           // The AWS error message is the actual reason (e.g. unverified
           // identity, malformed address/header). e.message is non-enumerable,

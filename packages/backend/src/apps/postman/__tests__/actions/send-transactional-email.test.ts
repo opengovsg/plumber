@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
+import logger from '@/helpers/logger'
 
 import sendTransactionalEmail from '../../actions/send-transactional-email'
 
@@ -1247,6 +1248,48 @@ describe('send transactional email', () => {
           status: Array(120).fill('ACCEPTED'),
         }),
       })
+    })
+
+    it('sends one email per recipient when the combined kill switch is off', async () => {
+      mocks.getLdFlagValue.mockImplementation(
+        async (flag: string) => flag !== 'ses_combined_send_enabled',
+      )
+      $.step.parameters.destinationEmail =
+        'a@open.gov.sg,b@open.gov.sg,c@open.gov.sg'
+      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
+
+      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
+
+      expect(sentCommands().map((c) => c.input.Destination)).toEqual([
+        { ToAddresses: ['a@open.gov.sg'], CcAddresses: ['cc@open.gov.sg'] },
+        { ToAddresses: ['b@open.gov.sg'], CcAddresses: ['cc@open.gov.sg'] },
+        { ToAddresses: ['c@open.gov.sg'], CcAddresses: ['cc@open.gov.sg'] },
+      ])
+    })
+
+    it('logs the send mode and chunk size when a chunk fails', async () => {
+      const errorSpy = vi.spyOn(logger, 'error')
+      $.step.parameters.destinationEmail = emails(60).join(',')
+      const throttled = Object.assign(new Error('Rate exceeded'), {
+        name: 'TooManyRequestsException',
+        $metadata: { httpStatusCode: 429 },
+      })
+      mocks.sesSend
+        .mockResolvedValueOnce({})
+        .mockRejectedValueOnce(throttled as never)
+
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
+        RetriableError,
+      )
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Email send failed via SES',
+        expect.objectContaining({
+          event: 'postman-step-ses-email-failed',
+          sendMode: 'combined',
+          recipientCount: 10,
+        }),
+      )
     })
 
     it('fails every recipient in a chunk together, leaving other chunks intact', async () => {

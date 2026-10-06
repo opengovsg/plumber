@@ -11,6 +11,7 @@ import { fromZodError } from 'zod-validation-error'
 import StepError from '@/errors/step'
 import { TableVariableMarker } from '@/helpers/compute-parameters'
 import { formatTable } from '@/helpers/format-table-variable'
+import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { SES_BLOCKED_EXTENSIONS } from '@/helpers/s3'
 import Step from '@/models/step'
@@ -23,6 +24,7 @@ import {
 } from '../../common/email-helper'
 import {
   SEND_MODE_KEY,
+  SendMode,
   transactionalEmailFields,
   transactionalEmailSchema,
 } from '../../common/parameters'
@@ -198,6 +200,19 @@ async function sendEmail(
     throw new StepError(stepErrorName, stepErrorSolution)
   }
 
+  // Kill switch for combined mode. Serving the flag as false routes every
+  // combined step back to one email per recipient without touching stored
+  // steps. The fallback keeps combined on if LaunchDarkly is unreachable.
+  const combinedEnabled = await getLdFlagValue(
+    'ses_combined_send_enabled',
+    $.user.email,
+    true,
+  )
+  const effectiveSendMode: SendMode =
+    result.data[SEND_MODE_KEY] === 'combined' && !combinedEnabled
+      ? 'individual'
+      : result.data[SEND_MODE_KEY]
+
   let recipientsToSend = result.data.destinationEmail
   /**
    * Logic to handle retries here:
@@ -228,7 +243,7 @@ async function sendEmail(
   if (isPartialRetry) {
     const { status, recipient, cc, ccStatus } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
-    if (result.data[SEND_MODE_KEY] === 'combined') {
+    if (effectiveSendMode === 'combined') {
       if (cc && ccStatus) {
         deliveredCcs = cc.filter((_, i) => ccStatus[i] === 'ACCEPTED')
       } else if (status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED') {
@@ -279,7 +294,7 @@ async function sendEmail(
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,
-      sendMode: result.data[SEND_MODE_KEY],
+      sendMode: effectiveSendMode,
     },
     useSes,
   )
