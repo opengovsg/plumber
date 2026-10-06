@@ -8,7 +8,10 @@ import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 
 import { extractAuthDataWithPlumberFolder } from '../../common/auth-data'
-import { TEST_STEP_MAX_COLUMNS } from '../../common/constants'
+import {
+  NO_TABLES_MESSAGE,
+  TEST_STEP_MAX_COLUMNS,
+} from '../../common/constants'
 import { validateCanAccessFile } from '../../common/file-privacy'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import { constructMsGraphValuesArrayForRowWrite } from '../../common/workbook-helpers/tables'
@@ -335,6 +338,7 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
+      noOptionsMessage: NO_TABLES_MESSAGE,
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,
