@@ -1,6 +1,18 @@
-import { IApp, IExecutionStep, IStep } from '@plumber/types'
+import {
+  IApp,
+  IExecutionStep,
+  IStep,
+  IStepApprovalBranch,
+} from '@plumber/types'
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useQuery } from '@apollo/client'
 import { Center } from '@chakra-ui/react'
 import { datadogRum } from '@datadog/browser-rum'
@@ -8,16 +20,19 @@ import { useIsMobile } from '@opengovsg/design-system-react'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
+import { filterStepsByApprovalBranch } from '@/helpers/formsg'
 import { extractVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
 import { Message, PipeStatePart } from '@/hooks/useChatStream'
 
 import {
   buildPreviewItems,
+  isApprovalPreviewStep,
   type PreviewItem,
   type PreviewStep,
 } from './components/StepsPreview/helpers/previewItems'
 import { toPreviewStep } from './components/StepsPreview/helpers/toPreviewStep'
+import { toProposalSteps } from './components/StepsPreview/helpers/toProposalSteps'
 
 export interface AIBuilderDraftState {
   flowName: string
@@ -50,7 +65,12 @@ type AiBuilderStep = PreviewStep
 interface AIBuilderContextValue extends AIBuilderSharedProps {
   allApps: IApp[]
   triggerStep: IStep | null
+  // Only the steps on the approval path the user selected, numbered the way
+  // the editor numbers them.
   steps: AiBuilderStep[]
+  // The selected path of each MRF approval step. Absent for a pipe without one.
+  approvalBranches: Record<string, IStepApprovalBranch>
+  setApprovalBranch: (stepId: string, branch: IStepApprovalBranch) => void
   isMobile: boolean
   actionSteps: IStep[]
   // The action steps grouped into If blocks and a for-each body, the way the
@@ -126,20 +146,45 @@ export const AiBuilderContextProvider = ({
    * NOTE: process the steps that have been returned by Pair
    * as if its in the Editor, but a lot simpler
    */
-  const steps = useMemo((): AiBuilderStep[] => {
+  const allSteps = useMemo((): AiBuilderStep[] => {
     // Phase 2b+: DB-backed pipe state — steps already have correct positions
     if (output?.pipeId && Array.isArray(output?.steps)) {
       return (output as PipeStatePart['data']).steps.map(toPreviewStep)
     }
     // Phase 2a (proposal) and legacy path
-    return [
-      ...(output?.trigger ? [output.trigger] : []),
-      ...(output?.actions || []),
-    ].map((step, index) => ({
-      ...step,
-      position: index + 1,
-    }))
+    return toProposalSteps(output?.trigger, output?.actions || [])
   }, [output])
+
+  const [selectedApprovalBranches, setSelectedApprovalBranches] = useState<
+    Record<string, IStepApprovalBranch>
+  >({})
+
+  const approvalBranches = useMemo(
+    () =>
+      Object.fromEntries(
+        allSteps
+          .filter(isApprovalPreviewStep)
+          .map((step) => [
+            step.id,
+            selectedApprovalBranches[step.id] ?? 'approve',
+          ]),
+      ),
+    [allSteps, selectedApprovalBranches],
+  )
+
+  const setApprovalBranch = useCallback(
+    (stepId: string, branch: IStepApprovalBranch) =>
+      setSelectedApprovalBranches((prev) => ({ ...prev, [stepId]: branch })),
+    [],
+  )
+
+  const steps = useMemo(
+    () =>
+      filterStepsByApprovalBranch(allSteps, approvalBranches).map(
+        (step, index) => ({ ...step, position: index + 1 }),
+      ),
+    [allSteps, approvalBranches],
+  )
 
   const triggerStep = steps[0] ?? null
   const previewItems = useMemo(() => buildPreviewItems(steps.slice(1)), [steps])
@@ -200,6 +245,8 @@ export const AiBuilderContextProvider = ({
         parameterLabelsByStepId,
         isMobile,
         steps,
+        approvalBranches,
+        setApprovalBranch,
         triggerStep,
         actionSteps: output?.pipeId
           ? (output?.steps || []).filter(

@@ -29,6 +29,17 @@ describe('toPreviewStep', () => {
     expect(toPreviewStep(baseStep).config).toBeUndefined()
   })
 
+  it('exposes the reject path as config.approval', () => {
+    const approval = { branch: 'reject' as const, stepId: 'approval-step' }
+
+    expect(toPreviewStep({ ...baseStep, approval }).config?.approval).toEqual(
+      approval,
+    )
+    expect(
+      toPreviewStep({ ...baseStep, approval: null }).config,
+    ).toBeUndefined()
+  })
+
   it('keeps the other fields the preview reads', () => {
     const step = toPreviewStep({
       ...baseStep,

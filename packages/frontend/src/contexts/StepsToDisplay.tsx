@@ -3,6 +3,7 @@ import type { IApp, IStep } from '@plumber/types'
 import type { ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo } from 'react'
 
+import { filterStepsByApprovalBranch } from '@/helpers/formsg'
 import { extractBranchesWithSteps } from '@/helpers/toolbox'
 
 import { EditorContext } from './Editor'
@@ -42,34 +43,10 @@ export function StepsToDisplayProvider({
 
   const allSteps = flow.steps
 
-  const stepsToDisplay = useMemo(() => {
-    let firstRejectBranchStepId: string | null = null
-    return allSteps.filter((step) => {
-      if (
-        firstRejectBranchStepId != null &&
-        step.config?.approval?.stepId !== firstRejectBranchStepId
-      ) {
-        return false
-      }
-
-      if (!firstRejectBranchStepId && approvalBranches[step.id] === 'reject') {
-        firstRejectBranchStepId = step.id
-        return true
-      }
-
-      if (!step.config?.approval) {
-        return true
-      }
-
-      const approvalConfigStepId = step.config?.approval?.stepId
-      const approvalConfigBranch = step.config?.approval?.branch
-
-      if (approvalBranches[approvalConfigStepId] === approvalConfigBranch) {
-        return true
-      }
-      return false
-    })
-  }, [allSteps, approvalBranches])
+  const stepsToDisplay = useMemo(
+    () => filterStepsByApprovalBranch(allSteps, approvalBranches),
+    [allSteps, approvalBranches],
+  )
 
   // The trigger is always first in the MRF-filtered list, so slice(1) drops
   // it.

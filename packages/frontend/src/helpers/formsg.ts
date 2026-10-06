@@ -1,5 +1,7 @@
 import { IStep, IStepApprovalBranch, IStepApprovalConfig } from '@plumber/types'
 
+import get from 'lodash/get'
+
 import { getItem, setItem } from '@/helpers/storage'
 import { isOnlyContinueIfStep } from '@/helpers/toolbox'
 
@@ -40,6 +42,48 @@ export function shouldWarnMrfOnlyContinueIf({
     isOnlyContinueIfStep(step) &&
     mrfSteps.some((mrfStep) => mrfStep.position > step.position)
   )
+}
+
+export function isMrfApprovalStep(step: IStep): boolean {
+  return (
+    step.appKey === FORMSG_APP_KEY &&
+    step.key === MRF_ACTION_KEY &&
+    !!get(step.parameters, 'mrf.approvalField', false)
+  )
+}
+
+/**
+ * Keeps only the steps on the approval path the user has selected. Selecting
+ * "If rejected" on an approval step hides every later step that is not in that
+ * step's reject path.
+ */
+export function filterStepsByApprovalBranch<T extends IStep>(
+  steps: T[],
+  approvalBranches: Record<string, IStepApprovalBranch>,
+): T[] {
+  let firstRejectBranchStepId: string | null = null
+  return steps.filter((step) => {
+    if (
+      firstRejectBranchStepId != null &&
+      step.config?.approval?.stepId !== firstRejectBranchStepId
+    ) {
+      return false
+    }
+
+    if (!firstRejectBranchStepId && approvalBranches[step.id] === 'reject') {
+      firstRejectBranchStepId = step.id
+      return true
+    }
+
+    if (!step.config?.approval) {
+      return true
+    }
+
+    const approvalConfigStepId = step.config?.approval?.stepId
+    const approvalConfigBranch = step.config?.approval?.branch
+
+    return approvalBranches[approvalConfigStepId] === approvalConfigBranch
+  })
 }
 
 /**

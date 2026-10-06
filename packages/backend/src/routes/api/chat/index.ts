@@ -380,9 +380,9 @@ const handleChatStream = observe(
                             endStepId: step.config?.endStepId ?? null,
                             // MRF stage steps are named after the form's stages.
                             stepName: step.config?.stepName ?? null,
-                            // Set on steps in the reject path of an approval step.
-                            approvalBranch:
-                              step.config?.approval?.branch ?? null,
+                            // Lets the preview hide a reject path the same way
+                            // the editor does.
+                            approval: step.config?.approval ?? null,
                           }
                         }),
                       },

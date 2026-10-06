@@ -1,4 +1,8 @@
-import type { IFlowSteps, IJSONObject } from '@plumber/types'
+import type {
+  IFlowSteps,
+  IJSONObject,
+  IStepApprovalConfig,
+} from '@plumber/types'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -107,8 +111,8 @@ export type PipeStateStep = {
   endStepId?: string | null
   // The step's custom name. For an MRF stage step, the form's stage name.
   stepName?: string | null
-  // 'reject' on a step in the reject path of an MRF approval step.
-  approvalBranch?: 'reject' | null
+  // Set on a step in the reject path of an MRF approval step.
+  approval?: IStepApprovalConfig | null
 }
 
 export type PipeStatePart = {

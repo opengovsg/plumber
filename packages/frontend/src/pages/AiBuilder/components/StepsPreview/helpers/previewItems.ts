@@ -1,5 +1,6 @@
 import type { IStep } from '@plumber/types'
 
+import { isMrfApprovalStep } from '@/helpers/formsg'
 import { isForEachStep, isIfThenStep } from '@/helpers/toolbox'
 
 /**
@@ -11,6 +12,13 @@ export interface PreviewStep extends IStep {
   connectionLabel?: string | null
   endStepId?: string | null
   ifThenChildCount?: number
+  // A proposal has no parameters to read, so its approval stage carries a flag.
+  isApproval?: boolean
+}
+
+/** Whether the step is an MRF approval stage, in a pipe or in a proposal. */
+export function isApprovalPreviewStep(step: PreviewStep): boolean {
+  return step.isApproval === true || isMrfApprovalStep(step)
 }
 
 export type PreviewItem =

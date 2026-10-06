@@ -4,7 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   dismissMrfApprovalHint,
+  filterStepsByApprovalBranch,
   hasSeenMrfApprovalHint,
+  isMrfApprovalStep,
   MRF_APPROVAL_HINT_STORAGE_KEY,
   shouldWarnMrfOnlyContinueIf,
 } from '@/helpers/formsg'
@@ -85,5 +87,70 @@ describe('shouldWarnMrfOnlyContinueIf', () => {
         mrfSteps: [subtriggerAt(1), subtriggerAt(5)],
       }),
     ).toBe(true)
+  })
+})
+
+describe('isMrfApprovalStep', () => {
+  const mrfStep = (parameters: IStep['parameters']) =>
+    ({
+      id: 'mrf',
+      appKey: 'formsg',
+      key: 'mrfSubmission',
+      parameters,
+    } as IStep)
+
+  it('is true for an MRF step with an approval field', () => {
+    expect(
+      isMrfApprovalStep(mrfStep({ mrf: { approvalField: 'field-1' } })),
+    ).toBe(true)
+  })
+
+  it('is false for an MRF step without an approval field', () => {
+    expect(isMrfApprovalStep(mrfStep({ mrf: { type: 'static' } }))).toBe(false)
+  })
+
+  it('is false for a step from another app', () => {
+    expect(
+      isMrfApprovalStep({
+        id: 'x',
+        appKey: 'postman',
+        key: 'sendTransactionalEmail',
+        type: 'action',
+        position: 2,
+        parameters: { mrf: { approvalField: 'field-1' } },
+      } as unknown as IStep),
+    ).toBe(false)
+  })
+})
+
+describe('filterStepsByApprovalBranch', () => {
+  const plain = (id: string) => ({ id, config: {} } as IStep)
+  const rejectOf = (id: string, stepId: string) =>
+    ({ id, config: { approval: { branch: 'reject', stepId } } } as IStep)
+
+  const steps = [
+    plain('trigger'),
+    plain('approval'),
+    plain('approved-email'),
+    rejectOf('rejected-email', 'approval'),
+  ]
+  const ids = (list: IStep[]) => list.map((step) => step.id)
+
+  it('hides the reject path when the approval step is on "approve"', () => {
+    expect(
+      ids(filterStepsByApprovalBranch(steps, { approval: 'approve' })),
+    ).toEqual(['trigger', 'approval', 'approved-email'])
+  })
+
+  it('shows only the approval step and its reject path on "reject"', () => {
+    expect(
+      ids(filterStepsByApprovalBranch(steps, { approval: 'reject' })),
+    ).toEqual(['trigger', 'approval', 'rejected-email'])
+  })
+
+  it('keeps every step when no approval step is selected', () => {
+    expect(
+      ids(filterStepsByApprovalBranch([plain('a'), plain('b')], {})),
+    ).toEqual(['a', 'b'])
   })
 })

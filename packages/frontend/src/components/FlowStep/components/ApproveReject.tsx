@@ -1,3 +1,5 @@
+import type { IStepApprovalBranch } from '@plumber/types'
+
 import { useCallback, useContext, useState } from 'react'
 import {
   Box,
@@ -45,10 +47,22 @@ const tabStyle = (primaryColor: string): TabProps => {
   }
 }
 
-export function ApproveReject({ stepId }: { stepId: string }) {
-  const { approvalBranches, setApprovalBranch } = useContext(MrfContext)
+interface ApproveRejectProps {
+  stepId: string
+  // The AI Builder preview has no MrfContext. It owns the selected branch and
+  // has no "Check step" button for the hint to point at.
+  control?: {
+    branch: IStepApprovalBranch
+    onChange: (branch: IStepApprovalBranch) => void
+  }
+}
 
-  const isApproveBranch = approvalBranches[stepId] === 'approve'
+export function ApproveReject({ stepId, control }: ApproveRejectProps) {
+  const mrf = useContext(MrfContext)
+
+  const isApproveBranch = control
+    ? control.branch === 'approve'
+    : mrf.approvalBranches[stepId] === 'approve'
 
   const [isHintOpen, setIsHintOpen] = useState(false)
 
@@ -60,7 +74,11 @@ export function ApproveReject({ stepId }: { stepId: string }) {
   const onChange = useCallback(
     (index: number) => {
       const branch = index === 0 ? 'approve' : 'reject'
-      setApprovalBranch(stepId, branch)
+      if (control) {
+        control.onChange(branch)
+        return
+      }
+      mrf.setApprovalBranch(stepId, branch)
       // Show the one-way reminder the first time a user reaches for "If rejected",
       // the clearest signal they may think they're configuring the form itself.
       if (branch === 'reject' && !hasSeenMrfApprovalHint()) {
@@ -70,7 +88,7 @@ export function ApproveReject({ stepId }: { stepId: string }) {
         setIsHintOpen(false)
       }
     },
-    [stepId, setApprovalBranch],
+    [stepId, control, mrf],
   )
 
   return (
