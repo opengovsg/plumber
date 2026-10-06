@@ -628,6 +628,28 @@ describe('createMcpBridgeTools', () => {
     })
   })
 
+  it('create_step forwards after_if_then_block', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_step.execute(
+      {
+        pipe_id: 'flow-1',
+        app_key: 'slack',
+        action_key: 'sendMessageToChannel',
+        previous_step_id: 'step-0',
+        after_if_then_block: true,
+      },
+      { toolCallId: 'create_step', messages: [] },
+    )
+    expect(vi.mocked(createStepService)).toHaveBeenCalledWith({
+      user: mockUser,
+      pipeId: 'flow-1',
+      appKey: 'slack',
+      key: 'sendMessageToChannel',
+      previousStepId: 'step-0',
+      afterIfThenBlock: true,
+    })
+  })
+
   describe('onPipeChange callback', () => {
     it('is called with pipeId after create_pipe succeeds', async () => {
       const onPipeChange = vi.fn()
