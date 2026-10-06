@@ -26,7 +26,10 @@ vi.mock('@/services/mcp/add-tile-columns', () => ({
     skipped: [],
   }),
 }))
-vi.mock('@/services/mcp/create-flow-with-steps', () => ({
+vi.mock('@/services/mcp/create-flow-with-steps', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/services/mcp/create-flow-with-steps')
+  >()),
   createFlowWithStepsService: vi
     .fn()
     .mockResolvedValue({ id: 'f1', name: 'My Pipe', steps: [] }),
@@ -586,6 +589,42 @@ describe('createMcpBridgeTools', () => {
         },
       ],
       traceId: mockTraceId,
+    })
+  })
+
+  it('create_pipe flattens the steps nested inside an ifThen into an explicit If block', async () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    await tools.create_pipe.execute(
+      {
+        name: 'Block Pipe',
+        steps: [
+          { app_key: 'formsg', trigger_key: 'newSubmission' },
+          {
+            app_key: 'toolbox',
+            action_key: 'ifThen',
+            parameters: { branchName: 'Urgent' },
+            steps: [
+              { app_key: 'slack', action_key: 'sendMessageToChannel' },
+              { app_key: 'postman-sms', action_key: 'sendSms' },
+            ],
+          },
+          { app_key: 'postman', action_key: 'sendTransactionalEmail' },
+        ],
+      },
+      { toolCallId: 'create_pipe', messages: [] },
+    )
+    const { steps } = vi.mocked(createFlowWithStepsService).mock.lastCall![0]
+    expect(steps.map((step) => step.key)).toEqual([
+      'newSubmission',
+      'ifThen',
+      'sendMessageToChannel',
+      'sendSms',
+      'sendTransactionalEmail',
+    ])
+    expect(steps[1]).toMatchObject({
+      position: 2,
+      parameters: { branchName: 'Urgent' },
+      ifThenChildCount: 2,
     })
   })
 

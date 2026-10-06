@@ -2,7 +2,20 @@ import type { IJSONObject } from '@plumber/types'
 
 import z from 'zod'
 
+import {
+  BLOCK_END_STEP_ID,
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/apps/toolbox/common/constants'
+import {
+  pinEndStep,
+  validateEndStepWrite,
+} from '@/apps/toolbox/common/validate-end-step'
 import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
+import {
+  getIfThenChildCount,
+  validateActionStepsRules,
+} from '@/graphql/mutations/ai/schemas/actions.zod'
 import { generateSchema } from '@/graphql/mutations/ai/schemas/schema-generator'
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
@@ -16,6 +29,84 @@ export interface McpStepInput {
   type: 'trigger' | 'action'
   position: number
   parameters?: Record<string, unknown>
+  // Number of following steps inside this If block. Only set on
+  // toolbox/ifThen steps laid out with explicit blocks.
+  ifThenChildCount?: number
+}
+
+/**
+ * The tree shape the create_pipe tool accepts: an if-then entry carries the
+ * steps inside its block as `steps`.
+ */
+export interface McpNestedStepInput {
+  appKey: string
+  key?: string | null
+  parameters?: Record<string, unknown>
+  steps?: McpNestedStepInput[]
+}
+
+function isIfThenInput(step: { appKey?: string; key?: string | null }) {
+  return step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.IF_THEN
+}
+
+function isNamedLayoutStep(step: { appKey?: string; key?: string | null }) {
+  return (
+    isIfThenInput(step) ||
+    (step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH)
+  )
+}
+
+function layoutRuleError(
+  issues: { code: string; message: string }[],
+): string | null {
+  const messages = issues
+    .filter((issue) => issue.code === 'custom')
+    .map((issue) => issue.message)
+  return messages.length > 0
+    ? `Pipe contains invalid action steps: ${messages.join('. ')}.`
+    : null
+}
+
+/**
+ * Flattens the create_pipe tree into positioned steps. Each If block's extent
+ * becomes `ifThenChildCount`, which the layout rules and the markers share.
+ */
+export function flattenNestedSteps(
+  nestedSteps: McpNestedStepInput[],
+): McpStepInput[] {
+  const flattened: McpStepInput[] = []
+
+  const visit = (steps: McpNestedStepInput[], isTopLevel: boolean) => {
+    for (const [index, step] of steps.entries()) {
+      const { steps: children, ...rest } = step
+      const isIfThen = isIfThenInput(rest)
+
+      if (children !== undefined && !isIfThen) {
+        throw new Error(
+          `Only toolbox/ifThen steps can contain nested steps (found on ${rest.appKey}/${rest.key}).`,
+        )
+      }
+      if (isIfThen && children !== undefined && children.length === 0) {
+        throw new Error('An If block must contain at least one step.')
+      }
+
+      const flattenedStep: McpStepInput = {
+        ...rest,
+        type: isTopLevel && index === 0 ? 'trigger' : 'action',
+        position: flattened.length + 1,
+      }
+      flattened.push(flattenedStep)
+
+      if (isIfThen && children !== undefined) {
+        const lengthBefore = flattened.length
+        visit(children, false)
+        flattenedStep.ifThenChildCount = flattened.length - lengthBefore
+      }
+    }
+  }
+
+  visit(nestedSteps, true)
+  return flattened
 }
 
 export async function createFlowWithStepsService({
@@ -77,7 +168,28 @@ export async function createFlowWithStepsService({
           'Failed to create flow with steps: Pipe contains invalid action steps',
           { error: validatedActions.error.issues },
         )
-        throw new Error('Pipe contains invalid action steps')
+        // The layout rule messages are already user-facing, and the model
+        // needs them to fix its own create_pipe call.
+        const layoutIssues = validatedActions.error.issues
+          .filter((issue) => issue.code === 'custom')
+          .map((issue) => issue.message)
+        throw new Error(
+          layoutIssues.length > 0
+            ? `Pipe contains invalid action steps: ${layoutIssues.join('. ')}.`
+            : 'Pipe contains invalid action steps',
+        )
+      }
+    }
+  } else if (steps.some(isNamedLayoutStep)) {
+    // A missing key skips the full schema, which also skips these rules.
+    const layout = z
+      .array(z.custom<McpStepInput>())
+      .superRefine(validateActionStepsRules)
+      .safeParse(steps.slice(1))
+    if (!layout.success) {
+      const message = layoutRuleError(layout.error.issues)
+      if (message) {
+        throw new Error(message)
       }
     }
   }
@@ -100,10 +212,10 @@ export async function createFlowWithStepsService({
     })
 
     let ifThenCount = 0
-    await createdFlow.$relatedQuery('steps', trx).insert(
+    const insertedSteps = await createdFlow.$relatedQuery('steps', trx).insert(
       steps.map((step) => {
         let defaults: Record<string, unknown> = {}
-        if (step.appKey === 'toolbox' && step.key === 'ifThen') {
+        if (isIfThenInput(step)) {
           defaults = { branchName: `Branch ${++ifThenCount}`, depth: 0 }
         }
         return {
@@ -120,6 +232,33 @@ export async function createFlowWithStepsService({
         }
       }),
     )
+
+    // Markers point forward, so they need every step's id first.
+    for (const [index, step] of steps.entries()) {
+      if (!isIfThenInput(step)) {
+        continue
+      }
+      const childCount = getIfThenChildCount(steps, index)
+      if (childCount === 0) {
+        continue
+      }
+      const ifThenStep = insertedSteps[index]
+      const endStep = insertedSteps[index + childCount]
+      if (!endStep) {
+        throw new Error('If block extends past the last step of the pipe')
+      }
+      validateEndStepWrite({
+        flowSteps: insertedSteps,
+        ifThenStepId: ifThenStep.id,
+        endStepId: endStep.id,
+        flowId: createdFlow.id,
+      })
+      await pinEndStep(trx, ifThenStep.id, endStep.id)
+      ifThenStep.config = {
+        ...ifThenStep.config,
+        [BLOCK_END_STEP_ID]: endStep.id,
+      }
+    }
 
     return createdFlow
   })
