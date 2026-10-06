@@ -383,6 +383,9 @@ const handleChatStream = observe(
                             connectionLabel: connection
                               ? connectionLabel(connection)
                               : null,
+                            // Lets the preview draw an If block's extent
+                            // the same way the editor does.
+                            endStepId: step.config?.endStepId ?? null,
                           }
                         }),
                       },
