@@ -1,7 +1,17 @@
 import { raw } from 'objection'
 
 import { removeMrfSteps } from '@/apps/formsg/triggers/new-submission/remove-mrf-steps'
+import {
+  deriveIfThenV1EndStep,
+  expandIfThenBlockDeletions,
+} from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
+import { isIfThenStep, isIfThenV2 } from '@/apps/toolbox/common/constants'
+import {
+  repairEndStepsOnDeleteStep,
+  upgradeIfThenV1BlocksIfEnabled,
+} from '@/apps/toolbox/common/validate-end-step'
 import { hasStepReference } from '@/helpers/check-step-parameters'
+import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
@@ -37,6 +47,21 @@ export async function deleteStepService({
       throw new PublishedPipeError()
     }
 
+    // Pin other legacy If blocks so the repair pass can shrink them. The
+    // deleted If keeps its derived extent, resolved in stepsRemovedWith.
+    await upgradeIfThenV1BlocksIfEnabled(
+      trx,
+      flow,
+      await flow.$relatedQuery('steps', trx).orderBy('position', 'asc'),
+      new Set([stepId]),
+    )
+
+    const stepsBeforeDelete = await flow
+      .$relatedQuery('steps', trx)
+      .orderBy('position', 'asc')
+
+    const stepsToDelete = stepsRemovedWith(stepsBeforeDelete, stepId, flow.id)
+
     if (step.type === 'trigger') {
       if (step.appKey === 'formsg' && step.key === 'newSubmission') {
         await removeMrfSteps(flow.id, trx)
@@ -65,26 +90,43 @@ export async function deleteStepService({
         connectionId: null,
       })
     } else {
+      if (
+        !stepsToDelete.every(
+          (stepToDelete, index) =>
+            (index === 0 ||
+              stepToDelete.position ===
+                stepsToDelete[index - 1].position + 1) &&
+            stepToDelete.type === 'action',
+        )
+      ) {
+        throw new Error('Must delete contiguous action steps!')
+      }
+
+      const stepIds = stepsToDelete.map((stepToDelete) => stepToDelete.id)
       const allSteps = await flow
         .$relatedQuery('steps', trx)
-        .where('id', '!=', stepId)
+        .whereNotIn('id', stepIds)
         .orderBy('position', 'asc')
 
-      const stepsToInvalidate = getStepsToInvalidate(
-        allSteps,
-        new Set([stepId]),
-      )
+      const stepsToInvalidate = getStepsToInvalidate(allSteps, new Set(stepIds))
       await Step.query(trx)
         .findByIds(stepsToInvalidate)
         .patch({ status: 'incomplete' })
 
-      await Step.query(trx).findById(stepId).delete()
+      await Step.query(trx).findByIds(stepIds).delete()
 
       await flow
         .$relatedQuery('steps', trx)
-        .where('position', '>', step.position)
-        .patch({ position: raw('position - 1') })
+        .where(
+          'position',
+          '>',
+          stepsToDelete[stepsToDelete.length - 1].position,
+        )
+        .patch({ position: raw(`position - ${stepsToDelete.length}`) })
     }
+
+    // Shrinks a block whose end step was deleted.
+    await repairEndStepsOnDeleteStep({ trx, flow, stepsBeforeDelete })
 
     await flow.patchLastUpdated({
       flowId: flow.id,
@@ -97,6 +139,49 @@ export async function deleteStepService({
       .withGraphJoined('steps')
       .orderBy('steps.position', 'asc')
   })
+}
+
+/**
+ * Deleting an If step removes its whole block, matching the editor. A legacy
+ * If has no marker, so its derived extent is used.
+ */
+function stepsRemovedWith(
+  steps: Step[],
+  stepId: string,
+  flowId: string,
+): Step[] {
+  const { expandedIds, danglingIfThenIds } = expandIfThenBlockDeletions(steps, [
+    stepId,
+  ])
+  for (const ifThenStepId of danglingIfThenIds) {
+    logger.error({
+      event: 'if-then-dangling-end-step',
+      mutation: 'deleteStep',
+      ifThenStepId,
+      flowId,
+    })
+  }
+
+  const target = steps.find((candidate) => candidate.id === stepId)
+  // A dangling marker is not a block. The editor falls back to the derived
+  // extent and deletes those steps. Do the same.
+  if (
+    target &&
+    isIfThenStep(target) &&
+    (!isIfThenV2(target) || danglingIfThenIds.includes(target.id))
+  ) {
+    const endStep = deriveIfThenV1EndStep(steps, target)
+    for (const member of steps) {
+      if (
+        member.position >= target.position &&
+        member.position <= endStep.position
+      ) {
+        expandedIds.add(member.id)
+      }
+    }
+  }
+
+  return steps.filter((candidate) => expandedIds.has(candidate.id))
 }
 
 function getStepsToInvalidate(
