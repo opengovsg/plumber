@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { BiInfoCircle } from 'react-icons/bi'
 import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
 
+import { ApproveReject } from '@/components/FlowStep/components/ApproveReject'
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
 import StepNameAndDemo from '@/components/FlowStep/components/StepNameAndDemo'
 import { flowStepStyles } from '@/components/FlowStep/styles'
@@ -30,7 +31,8 @@ interface StepProps {
 export default function Step(props: StepProps) {
   const { step, isNested, isLastStep, isActive, isConfigured, parameters } =
     props
-  const { allApps, steps } = useAiBuilderContext()
+  const { allApps, steps, approvalBranches, setApprovalBranch } =
+    useAiBuilderContext()
   const [isExpanded, setIsExpanded] = useState(false)
 
   const app = allApps?.find(
@@ -52,6 +54,7 @@ export default function Step(props: StepProps) {
   // Only mute when we're in configuration mode (props explicitly set to false)
   // Undefined means proposal mode — show all steps at full opacity
   const isPending = isActive === false && isConfigured === false
+  const approvalBranch = step?.id ? approvalBranches[step.id] : undefined
   const showParams = parameters && (isActive || (isConfigured && isExpanded))
 
   if (!step) {
@@ -165,6 +168,20 @@ export default function Step(props: StepProps) {
               />
             )}
           </Flex>
+
+          {approvalBranch && step.id && (
+            // The rest of the card is inert while the step is pending, but the
+            // user still needs the tabs to look at the reject path.
+            <Box pointerEvents="auto">
+              <ApproveReject
+                stepId={step.id}
+                control={{
+                  branch: approvalBranch,
+                  onChange: (branch) => setApprovalBranch(step.id, branch),
+                }}
+              />
+            </Box>
+          )}
 
           {showParams && (
             <StepParameterRows
