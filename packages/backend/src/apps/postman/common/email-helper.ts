@@ -446,9 +446,12 @@ async function sendGroups(
     !(rawMessage.error instanceof AttachmentSizeExceededError)
   ) {
     const { error } = rawMessage
+    const recipients = groups.flatMap((group) => group.to)
     logger.error('Email send failed via SES', {
       event: 'postman-step-ses-email-failed',
-      recipients: groups.flatMap((group) => group.to),
+      recipients,
+      recipientCount: recipients.length,
+      sendMode,
       errorName: error instanceof Error ? error.name : undefined,
       errorMessage: error instanceof Error ? error.message : String(error),
     })
@@ -476,6 +479,8 @@ async function sendGroups(
           logger.error('Email send failed via SES', {
             event: 'postman-step-ses-email-failed',
             recipients: group.to,
+            recipientCount: group.to.length,
+            sendMode,
             errorName: e instanceof Error ? e.name : undefined,
             // The AWS error message is the actual reason (e.g. unverified
             // identity, malformed address/header). e.message is non-enumerable,
