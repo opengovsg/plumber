@@ -292,7 +292,7 @@ steps:
     key: forEach
     description: For-each after if-then
 -->`),
-      ).toThrow('For-each action cannot be placed after an if-then action')
+      ).toThrow('For-each action cannot be placed inside an If block')
     })
 
     it('throws when a delay action is placed after a for-each', () => {
