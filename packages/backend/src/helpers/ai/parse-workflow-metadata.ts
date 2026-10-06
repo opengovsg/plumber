@@ -161,7 +161,9 @@ function parseWorkflowMetadata(
 
   const schema = z.object({
     trigger: getTriggerSchema(restrictedAppKeys),
-    actions: getActionsSchema(restrictedAppKeys),
+    // A proposal may show an MRF form's stage steps. It only previews them.
+    // create_pipe still rejects hidden steps.
+    actions: getActionsSchema(restrictedAppKeys, { includeHidden: true }),
     name: z.string().max(64).default('Build with AI'),
   })
 

@@ -24,7 +24,46 @@ steps:
 -->
 `
 
+const MRF_PROPOSAL = `
+<!-- WORKFLOW_METADATA
+name: Leave Approval
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    stepName: Requestor
+    description: Leave request submitted
+  - step: 2
+    appKey: formsg
+    key: mrfSubmission
+    stepName: Approval
+    description: The manager approves or rejects
+  - step: 3
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email the applicant
+    description: Tell the applicant the outcome
+-->
+`
+
 describe('parseWorkflowMetadata', () => {
+  describe('MRF stage steps', () => {
+    it('lets a proposal show a stage step so the preview can draw it', () => {
+      const result = parseWorkflowMetadata(MRF_PROPOSAL)
+
+      expect(result.actions.map((a) => [a.appKey, a.key])).toEqual([
+        ['formsg', 'mrfSubmission'],
+        ['postman', 'sendTransactionalEmail'],
+      ])
+    })
+
+    it('keeps the stage name as the step title', () => {
+      const result = parseWorkflowMetadata(MRF_PROPOSAL)
+
+      expect(result.actions[0].config?.stepName).toBe('Approval')
+    })
+  })
+
   describe('valid metadata', () => {
     it('extracts trigger and actions', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
