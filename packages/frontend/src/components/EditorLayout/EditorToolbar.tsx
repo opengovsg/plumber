@@ -16,7 +16,6 @@ import {
 
 import * as URLS from '@/config/urls'
 import { EditorContext } from '@/contexts/Editor'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { tagStyles } from '@/pages/Tiles/components/style'
 
 import PublishButton from './PublishButton'
@@ -200,11 +199,7 @@ interface EditorToolbarProps {
 
 export default function EditorToolbar(props: EditorToolbarProps) {
   const { flow, flowId } = useContext(EditorContext)
-  // TODO: remove this once we open collaborators to all users
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const settingsLink = getFlagValue('collaborators', false)
-    ? URLS.FLOW_EDITOR_SHARE(flowId)
-    : URLS.FLOW_EDITOR_TRANSFERS(flowId)
+  const settingsLink = URLS.FLOW_EDITOR_SHARE(flowId)
 
   return (
     <>

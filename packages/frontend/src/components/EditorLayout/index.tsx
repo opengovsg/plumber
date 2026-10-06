@@ -16,6 +16,7 @@ import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { useCaptureAiBuilderFlow } from '@/hooks/useCaptureAiBuilderFlow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
@@ -162,6 +163,8 @@ export default function EditorLayout() {
       window.removeEventListener('popstate', handlePopState)
     }
   }, [shouldWarnOnLeave, onWarningOpen])
+
+  useCaptureAiBuilderFlow(flow)
 
   // navigate user to not found page if flow does not belong to the user
   if (

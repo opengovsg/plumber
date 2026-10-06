@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import Flow from '@/models/flow'
 import User from '@/models/user'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
@@ -20,6 +21,46 @@ describe('deleteStepService', () => {
   beforeEach(() => {
     mocks.getAllLdFlags.mockResolvedValue({})
     mocks.getRestrictedAppKeys.mockReturnValue([])
+  })
+
+  it('rejects deletion from a published pipe', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `delete-step-published-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Published Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-delete-published',
+    })
+    await Flow.knex().table('flows').where('id', flow.id).update({
+      active: true,
+    })
+    const loadedFlow = await flow.$fetchGraph('steps')
+
+    await expect(
+      deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: loadedFlow.steps[1].id,
+      }),
+    ).rejects.toThrow(
+      'This pipe is published. Ask the user to unpublish it before making changes.',
+    )
   })
 
   it('deletes an action step and repositions remaining steps', async () => {

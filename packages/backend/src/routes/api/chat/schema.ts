@@ -173,6 +173,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
   toolPart('tool-list_apps'),
   toolPart('tool-list_columns'),
   toolPart('tool-create_pipe'),
+  toolPart('tool-unpublish_pipe'),
   toolPart('tool-update_step_parameters'),
   toolPart('tool-create_step'),
   toolPart('tool-delete_step'),

@@ -113,6 +113,15 @@ describe('postman transactional email schema zod validation', () => {
     expect(result.error?.issues[0].message).toEqual('Invalid recipient emails')
   })
 
+  it('accepts local parts with RFC 5322 atext specials that email-validator allowed', () => {
+    // zod's default z.email() local part is narrower than email-validator's; see MAILBOX_PATTERN.
+    const atextSpecialsEmail = "user!#$%&'*+/=?^_`{|}~name@example.com"
+    validPayload.destinationEmail = atextSpecialsEmail
+    const result = transactionalEmailSchema.safeParse(validPayload)
+    assert(result.success === true)
+    expect(result.data.destinationEmail).toEqual([atextSpecialsEmail])
+  })
+
   it('accepts a long plus-tagged reply-to address', () => {
     validPayload.replyTo = longLocalPartEmail
     const result = transactionalEmailSchema.safeParse(validPayload)

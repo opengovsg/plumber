@@ -172,6 +172,24 @@ export function createOptionalNestedMetadata<T extends Record<string, any>>(
   return metadata
 }
 
+// Helper function to create metadata for the "email" object GatherSG attaches
+// when a case is auto-created from an inbound email.
+export function createEmailMetadata(
+  email: unknown,
+): Record<string, any> | { isHidden: true } {
+  if (!email) {
+    return { isHidden: true }
+  }
+
+  return {
+    subject: { label: 'Email subject' },
+    sender: {
+      name: { label: 'Email sender name' },
+      address: { label: 'Email sender address' },
+    },
+  }
+}
+
 // Helper function to create metadata for primitive arrays (with _array property)
 export function createPrimitiveArrayMetadata(
   decodedLabel: string,

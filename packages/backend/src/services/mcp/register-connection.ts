@@ -7,6 +7,8 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { PublishedPipeError } from './published-pipe-error'
+
 export interface RegisterConnectionResult {
   registered: boolean
   message: string
@@ -53,17 +55,21 @@ export async function registerConnectionService(
     throw new UserFacingError('App does not support connection registration')
   }
 
+  const flow = await Flow.query().findById(step.flowId)
+  if (!flow) {
+    throw new UserFacingError('Flow not found')
+  }
+  if (flow.active) {
+    throw new PublishedPipeError()
+  }
+
   // 'global' registration (e.g. m365-excel) is not tied to a specific flow, so
-  // $ is built without one — mirrors makeGlobalVariableForGlobalRegistration in
+  // $ is built without one. Mirrors makeGlobalVariableForGlobalRegistration in
   // the equivalent GraphQL registerConnection mutation.
   let $: IGlobalVariable
   if (connectionRegistrationType === 'global') {
     $ = await globalVariable({ connection, app, user })
   } else {
-    const flow = await Flow.query().findById(step.flowId)
-    if (!flow) {
-      throw new UserFacingError('Flow not found')
-    }
     $ = await globalVariable({ connection, app, flow, user })
   }
 

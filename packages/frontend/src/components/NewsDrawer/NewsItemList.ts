@@ -210,7 +210,6 @@ export const NEWS_ITEM_LIST: NewsItemProps[] = [
     multimedia: {
       url: 'https://file.go.gov.sg/plumber-collaborators-whats-new.png',
     },
-    ldFlagKey: 'collaborators',
   },
   {
     date: '2025-09-22',

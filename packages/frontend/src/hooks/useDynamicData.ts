@@ -56,12 +56,14 @@ function getWatchedFormFieldValues(
  *
  * @param stepId - the id of the step
  * @param schema - the field that needs the dynamic data
- * @
+ * @param fieldName - the form field holding the selected option. Pass null
+ *   when only probing options, so nothing is written to the form when the
+ *   source arguments change.
  */
 function useDynamicData(
   stepId: string | undefined,
   schema: IField,
-  fieldName: string,
+  fieldName: string | null,
 ) {
   const { getValues, watch, setValue } = useFormContext()
   const { nonFormFieldArgs, watchedFormFields } = useMemo(() => {
@@ -126,7 +128,9 @@ function useDynamicData(
 
         // we set the field to null if the parameter(s) to dynamic data query have changed
         // resetField function resets it to the last saved value which is wrong
-        setValue(fieldName, null)
+        if (fieldName !== null) {
+          setValue(fieldName, null)
+        }
 
         const parametersToRefetch = getWatchedFormFieldValues(
           watchedFormFields,
