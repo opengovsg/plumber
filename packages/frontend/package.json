@@ -50,7 +50,7 @@
     "lottie-web": "5.12.2",
     "luxon": "^2.3.1",
     "node-html-parser": "6.1.13",
-    "papaparse": "5.4.1",
+    "papaparse": "5.7.0",
     "posthog-js": "^1.433.5",
     "react-error-boundary": "6.1.1",
     "react-helmet": "6.1.0",
