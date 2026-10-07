@@ -71,6 +71,9 @@ export const TEMPLATES = '/templates'
 export const TEMPLATE_PATTERN = '/templates/:templateId'
 export const TEMPLATE = (id: string): string => `/templates/${id}`
 
+// Hidden route for forms to create automatically
+export const FORM = '/form'
+
 export const DASHBOARD = FLOWS
 
 // external links
