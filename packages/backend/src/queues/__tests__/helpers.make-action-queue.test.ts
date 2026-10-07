@@ -83,7 +83,7 @@ describe('makeActionQueue', () => {
     })
   })
 
-  it('does not exit the vitest worker when redis refuses a connection', () => {
+  it('exits when redis refuses a connection', () => {
     makeActionQueue({ queueName: 'some-queue' })
     const onError = mocks.queueOn.mock.calls.find(
       ([event]) => event === 'error',
@@ -95,6 +95,6 @@ describe('makeActionQueue', () => {
       }),
     )
 
-    expect(mocks.processExit).not.toHaveBeenCalled()
+    expect(mocks.processExit).toHaveBeenCalled()
   })
 })

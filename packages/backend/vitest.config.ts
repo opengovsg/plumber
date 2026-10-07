@@ -22,6 +22,7 @@ export default defineConfig({
     // load env variables
     setupFiles: [
       'dotenv/config',
+      path.resolve(__dirname, './test/mock-redis-setup.ts'),
       path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
     ],
     include: ['src/**/*.test.{js,ts}'],

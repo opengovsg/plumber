@@ -11,27 +11,23 @@ function makeClient(): Redis {
   return client
 }
 
-afterEach(() => {
-  while (clients.length) {
-    clients.pop().disconnect()
-  }
+afterEach(async () => {
+  await Promise.all(clients.splice(0).map((client) => client.quit()))
 })
 
 describe('createRedisClient in unit tests', () => {
-  it('does not connect on creation', () => {
-    expect(makeClient().status).toBe('wait')
-  })
-
-  it('gives up instead of scheduling a reconnect', () => {
-    expect(makeClient().options.retryStrategy(1)).toBeNull()
-  })
-
-  it('swallows connection errors so ioredis does not throw', () => {
+  it('reads and writes without a redis server', async () => {
     const client = makeClient()
 
-    expect(client.listenerCount('error')).toBeGreaterThan(0)
-    expect(() =>
-      client.emit('error', new Error('connect ECONNREFUSED')),
-    ).not.toThrow()
+    await client.set('unit-test-key', 'ok')
+
+    expect(await client.get('unit-test-key')).toBe('ok')
+  })
+
+  it('keeps caller overrides', () => {
+    const client = createRedisClient(0, { commandTimeout: 3000 }) as Redis
+    clients.push(client)
+
+    expect(client.options.commandTimeout).toBe(3000)
   })
 })
