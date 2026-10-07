@@ -25,8 +25,7 @@ import {
 } from '@chakra-ui/react'
 import { Attachment, Button, ButtonProps } from '@opengovsg/design-system-react'
 import { chunk } from 'lodash'
-import Papa, { ParseMeta, ParseResult } from 'papaparse'
-import { SetRequired } from 'type-fest'
+import Papa from 'papaparse'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import { DatabaseType } from '@/graphql/__generated__/graphql'
@@ -34,11 +33,11 @@ import { CREATE_ROWS } from '@/graphql/mutations/tiles/create-rows'
 import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
+import {
+  interpretTileCsvParseResult,
+  tileCsvParseConfig,
+} from '../../helpers/parse-csv'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
-
-interface ValidParseResult extends ParseResult<Record<string, string>> {
-  meta: SetRequired<ParseMeta, 'fields'>
-}
 
 type IMPORT_STATUS =
   | 'ready'
@@ -190,13 +189,6 @@ export const ImportCsvModalContent = ({
 
   const [file, setFile] = useState<File>()
 
-  const isValidParseResult = useCallback(
-    (parseResult: ParseResult<unknown>): parseResult is ValidParseResult => {
-      return !!parseResult.meta.fields && parseResult.meta.fields.length > 0
-    },
-    [],
-  )
-
   useEffect(() => {
     if (!file) {
       setIsParsing(false)
@@ -207,23 +199,24 @@ export const ImportCsvModalContent = ({
       return
     }
     setIsParsing(true)
-    Papa.parse(file, {
-      // transform empty headers to '(empty)'
-      transformHeader: (header) => header.trim() || '(empty)',
-      header: true,
-      skipEmptyLines: true,
+    Papa.parse<Record<string, string>>(file, {
+      ...tileCsvParseConfig,
       complete: (parseResult) => {
         setIsParsing(false)
-        if (isValidParseResult(parseResult)) {
-          setResult(parseResult.data)
-          const columns = parseResult.meta.fields
-          setColumnsToCreate(
-            columns.filter((csvColumn) => !columnNamesSet.has(csvColumn)),
-          )
+        const parsed = interpretTileCsvParseResult(parseResult)
+        if (!parsed.ok) {
+          setResult(null)
+          setColumnsToCreate([])
+          setErrorMsg(parsed.error)
+          return
         }
+        setResult(parsed.rows)
+        setColumnsToCreate(
+          parsed.columns.filter((csvColumn) => !columnNamesSet.has(csvColumn)),
+        )
       },
     })
-  }, [columnNamesSet, file, isValidParseResult])
+  }, [columnNamesSet, file])
 
   const createNewColumns = useCallback(async () => {
     await createColumns(columnsToCreate, onPreImport === undefined)
