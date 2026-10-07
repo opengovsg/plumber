@@ -11,7 +11,8 @@ These are two unrelated concepts that happen to share the word "active":
 - **Published pipe**: `flows.active = true`. A flag the user sets when they publish a pipe. See
   [flow.ts](../../../../packages/backend/src/models/flow.ts).
 - **Active pipe**: a pipe with ≥1 *flowed* execution in a given period (see "Flow (verb)" below). Not
-  a column — a computed, time-scoped property derived from `executions`.
+  a column — a computed, time-scoped property derived from `executions`. Deleted pipes count too.
+  See [gotchas.md](gotchas.md)'s activity-metrics exception.
 
 If a question says "active pipe" without further context, default to the computed definition (flowed
 within a period) when the question is about usage/engagement, and to `flows.active = true` when it's
@@ -30,14 +31,17 @@ through `flows.user_id`:
 ```sql
 SELECT DISTINCT f.user_id
 FROM executions e
-JOIN flows f ON f.id = e.flow_id AND f.deleted_at IS NULL
+JOIN flows f ON f.id = e.flow_id
 WHERE e.test_run = false
-  AND e.deleted_at IS NULL
   AND e.created_at >= <period_start> AND e.created_at < <period_end>
 ```
 
+No `deleted_at` guard on any table. A user who flowed a pipe in the period stays active after
+deleting the pipe or their account. See [gotchas.md](gotchas.md)'s activity-metrics exception.
+
 (Period bounds must be computed in SGT — see [gotchas.md](gotchas.md)'s timezone rule — before being
-compared against `executions.created_at`, which is `timestamptz`.)
+compared against `executions.created_at`, which is `timestamptz`. For Grafana bounds, see
+[grafana.md](grafana.md)'s macro-casting rules.)
 
 ## Quarter
 
@@ -76,6 +80,9 @@ Resolve the app's display name → `app_key` per [resolving-app-keys.md](resolvi
 `AND s.type = 'trigger'` / `'action'` and `AND s.key = '<key>'` if the question names a specific
 trigger/action rather than just the app.
 
+This checks the pipe's current steps. For an active-pipe or active-user query ("ran app X in the
+period"), check `execution_steps.app_key` instead. See [recipes.md](recipes.md) Recipe 1.
+
 ## Execution in period (and the testRun exclusion)
 
 `executions.created_at` within the target window, table-qualified and soft-delete-guarded, **and**
@@ -86,6 +93,8 @@ e.created_at >= <period_start> AND e.created_at < <period_end>
 AND e.test_run = false
 AND e.deleted_at IS NULL
 ```
+
+Drop `e.deleted_at IS NULL` for active-user and active-pipe metrics.
 
 ## Agency
 
