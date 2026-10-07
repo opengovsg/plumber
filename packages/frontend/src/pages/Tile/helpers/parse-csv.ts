@@ -1,4 +1,8 @@
-import Papa, { type ParseError, type ParseResult } from 'papaparse'
+import Papa, {
+  type ParseError,
+  type ParseMeta,
+  type ParseResult,
+} from 'papaparse'
 
 // A blank header would create a column with no name.
 export function transformTileCsvHeader(header: string): string {
@@ -20,30 +24,51 @@ const QUOTE_ERROR_CODES = new Set<ParseError['code']>([
   'InvalidQuotes',
 ])
 
+export interface ValidParseResult extends ParseResult<Record<string, string>> {
+  meta: ParseMeta & { fields: string[] }
+}
+
 export type TileCsvParse =
   | { ok: true; rows: Record<string, string>[]; columns: string[] }
   | { ok: false; error: string }
 
-export function interpretTileCsvParseResult(
+function hasBrokenQuotes(parseResult: ParseResult<Record<string, string>>) {
+  return parseResult.errors.some((error) => QUOTE_ERROR_CODES.has(error.code))
+}
+
+export function isValidParseResult(
   parseResult: ParseResult<Record<string, string>>,
-): TileCsvParse {
+): parseResult is ValidParseResult {
+  return (
+    !hasBrokenQuotes(parseResult) &&
+    !!parseResult.meta.fields &&
+    parseResult.meta.fields.length > 0
+  )
+}
+
+export function csvParseError(
+  parseResult: ParseResult<Record<string, string>>,
+): string {
   const quoteError = parseResult.errors.find((error) =>
     QUOTE_ERROR_CODES.has(error.code),
   )
   if (quoteError) {
-    return { ok: false, error: quoteError.message }
+    return quoteError.message
   }
-
-  const columns = parseResult.meta.fields
-  if (!columns?.length) {
-    return { ok: false, error: 'This CSV has no columns.' }
-  }
-
-  return { ok: true, rows: parseResult.data, columns }
+  return 'This CSV has no columns.'
 }
 
 export function parseTileCsv(input: string): TileCsvParse {
-  return interpretTileCsvParseResult(
-    Papa.parse<Record<string, string>>(input, tileCsvParseConfig),
+  const parseResult = Papa.parse<Record<string, string>>(
+    input,
+    tileCsvParseConfig,
   )
+  if (!isValidParseResult(parseResult)) {
+    return { ok: false, error: csvParseError(parseResult) }
+  }
+  return {
+    ok: true,
+    rows: parseResult.data,
+    columns: parseResult.meta.fields,
+  }
 }

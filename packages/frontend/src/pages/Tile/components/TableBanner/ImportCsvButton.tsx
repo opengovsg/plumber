@@ -34,7 +34,8 @@ import { GET_TABLE } from '@/graphql/queries/tiles/get-table'
 
 import { useTableContext } from '../../contexts/TableContext'
 import {
-  interpretTileCsvParseResult,
+  csvParseError,
+  isValidParseResult,
   tileCsvParseConfig,
 } from '../../helpers/parse-csv'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
@@ -203,16 +204,17 @@ export const ImportCsvModalContent = ({
       ...tileCsvParseConfig,
       complete: (parseResult) => {
         setIsParsing(false)
-        const parsed = interpretTileCsvParseResult(parseResult)
-        if (!parsed.ok) {
+        if (!isValidParseResult(parseResult)) {
           setResult(null)
           setColumnsToCreate([])
-          setErrorMsg(parsed.error)
+          setErrorMsg(csvParseError(parseResult))
           return
         }
-        setResult(parsed.rows)
+        setResult(parseResult.data)
         setColumnsToCreate(
-          parsed.columns.filter((csvColumn) => !columnNamesSet.has(csvColumn)),
+          parseResult.meta.fields.filter(
+            (csvColumn) => !columnNamesSet.has(csvColumn),
+          ),
         )
       },
     })
