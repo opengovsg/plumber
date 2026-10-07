@@ -199,10 +199,15 @@ export const ImportCsvModalContent = ({
       setRowsImported(0)
       return
     }
+    // A file read can finish after the user has chosen another file.
+    let cancelled = false
     setIsParsing(true)
     Papa.parse<Record<string, string>>(file, {
       ...tileCsvParseConfig,
       complete: (parseResult) => {
+        if (cancelled) {
+          return
+        }
         setIsParsing(false)
         if (!isValidParseResult(parseResult)) {
           setResult(null)
@@ -218,6 +223,9 @@ export const ImportCsvModalContent = ({
         )
       },
     })
+    return () => {
+      cancelled = true
+    }
   }, [columnNamesSet, file])
 
   const createNewColumns = useCallback(async () => {
