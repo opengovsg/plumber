@@ -8,6 +8,19 @@ export const FORMSG_APP_KEY = 'formsg'
 export const FORMSG_TRIGGER_KEY = 'newSubmission'
 
 /**
+ * Parses a FormSG connection's `screenName`, which is formatted as
+ * `[ENV] <formId> - <title>` (the `[ENV] ` prefix is absent for prod).
+ */
+export const parseFormsgScreenName = (screenName: string, env: string) => {
+  const [envWithFormId, formTitle] = screenName.split(' - ')
+  const formId =
+    env === 'prod'
+      ? envWithFormId
+      : envWithFormId.substring(envWithFormId.indexOf(']') + 2)
+  return { formId, formTitle }
+}
+
+/**
  * One-time hint shown the first time a user switches to the "If rejected" tab
  * on an MRF approval step, clarifying that the approval is configured in FormSG
  * and that the Plumber connection is read-only. Persisted per-browser.

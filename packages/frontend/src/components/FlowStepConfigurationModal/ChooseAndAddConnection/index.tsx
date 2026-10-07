@@ -6,7 +6,7 @@ import { useQuery } from '@apollo/client'
 import { EditorContext } from '@/contexts/Editor'
 import { MrfContext } from '@/contexts/MrfContext'
 import { GET_APP_CONNECTIONS } from '@/graphql/queries/get-app-connections'
-import { getMrfApprovalConfig } from '@/helpers/formsg'
+import { getMrfApprovalConfig, parseFormsgScreenName } from '@/helpers/formsg'
 
 import { DATABRICKS_APP_KEY, EXCEL_APP_KEY } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
@@ -41,14 +41,7 @@ export const optionGenerator = (
     // old form connections will have env as undefined and be treated as prod
     const env = (connection?.formattedData?.env as string) ?? 'prod'
 
-    // parse the screenName to get the env, formId, and formTitle
-    const [envWithFormId, formTitle] = screenName.split(' - ')
-    let formId = envWithFormId
-    // only if the env is not prod, we need to parse the env from the screenName
-    if (env !== 'prod') {
-      const endIndex = envWithFormId.indexOf(']')
-      formId = envWithFormId.substring(endIndex + 2) // skip "]"
-    }
+    const { formId, formTitle } = parseFormsgScreenName(screenName, env)
 
     return {
       label: `${env === 'prod' ? '' : `[${env.toUpperCase()}] `}${formTitle}`,
