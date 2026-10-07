@@ -272,7 +272,7 @@ const action: IRawAction = {
   },
   doesFileProcessing: (step: Step) =>
     ((step.parameters.attachmentFields as IJSONArray | undefined) ?? []).some(
-      (row) =>
+      (row: unknown) =>
         Array.isArray((row as IJSONObject).attachments) &&
         ((row as IJSONObject).attachments as IJSONArray).length > 0,
     ),

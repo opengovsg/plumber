@@ -36,7 +36,7 @@ export const fetchCaseFields = async ({
   )
 
   const attachmentFields = data.data.fields.filter(
-    ({ type }) => type === 'attachment',
+    ({ type }: GatherSGCaseField) => type === 'attachment',
   )
 
   return {

@@ -289,6 +289,7 @@ allowBuilds:
   "@datadog/native-metrics": true
   "@datadog/pprof": true
   "@swc/core": true
+  "core-js": false
   "cpu-features": true
   "dd-trace": true
   "esbuild": true

@@ -67,7 +67,7 @@ cd ../..
 pnpm run dev
 ```
 
-> **Known gap on Windows:** `npm run dev` goes through `scripts/with-op-env.mjs`, which spawns without a shell, so Windows cannot resolve the `.cmd` shims in `node_modules\.bin`. Nobody has fixed this yet. `npm run dev:sample-env` skips the loader, but boots on `.env-example` placeholders, so calls to real third-party services fail.
+> **Known gap on Windows:** `pnpm run dev` goes through `scripts/with-op-env.mjs`, which spawns without a shell, so Windows cannot resolve the `.cmd` shims in `node_modules\.bin`. Nobody has fixed this yet. `pnpm run dev:sample-env` skips the loader, but boots on `.env-example` placeholders, so calls to real third-party services fail.
 
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3000

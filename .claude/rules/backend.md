@@ -20,7 +20,7 @@ Run from [packages/backend/](../../packages/backend/) or via `pnpm --filter back
 **Creating test data (DynamoDB local only):**
 
 - `pnpm run dynamodb:setup` — create the tile table.
-- `pnpm run dynamodb:seed -- <table-id>` — seed 10k rows into the given table.
+- `pnpm run dynamodb:seed <table-id>` — seed 10k rows into the given table.
 
 ## App plugin model
 
