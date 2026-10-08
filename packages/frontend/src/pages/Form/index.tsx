@@ -18,6 +18,8 @@ import {
   parseFormsgScreenName,
 } from '@/helpers/formsg'
 
+import { findFlowIdByWebhookUrl } from './find-flow-id-by-webhook-url'
+
 interface FormStepModalProps {
   formId: string
   onClose: () => void
@@ -77,9 +79,10 @@ function FormStepModal({ formId, onClose }: FormStepModalProps) {
 interface FormChildProps {
   formId: string
   name: string
+  webhookUrl: string | null
 }
 
-export const FormChild = ({ formId, name }: FormChildProps) => {
+export const FormChild = ({ formId, name, webhookUrl }: FormChildProps) => {
   const navigate = useNavigate()
   const [flowId, setFlowId] = useState<string | null>(null)
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
@@ -94,16 +97,29 @@ export const FormChild = ({ formId, name }: FormChildProps) => {
     }
     hasStartedCreation.current = true
 
-    createFlow({ variables: { input: { flowName: name } } })
-      .then((response) => {
-        const id = response.data?.createFlow?.id
-        if (!id) {
-          throw new Error('Pipe was not created')
+    const start = async () => {
+      // The form is already wired to one of the user's pipes, so open it
+      // instead of creating a duplicate.
+      if (webhookUrl) {
+        const existingFlowId = await findFlowIdByWebhookUrl(webhookUrl)
+        if (existingFlowId) {
+          navigate(URLS.FLOW_EDITOR(existingFlowId), { replace: true })
+          return
         }
-        setFlowId(id)
+      }
+
+      const response = await createFlow({
+        variables: { input: { flowName: name } },
       })
-      .catch(() => navigate(URLS.FLOWS, { replace: true }))
-  }, [createFlow, name, navigate])
+      const id = response.data?.createFlow?.id
+      if (!id) {
+        throw new Error('Pipe was not created')
+      }
+      setFlowId(id)
+    }
+
+    start().catch(() => navigate(URLS.FLOWS, { replace: true }))
+  }, [createFlow, name, navigate, webhookUrl])
 
   const { data } = useQuery(GET_FLOW, {
     variables: { id: flowId },
@@ -135,12 +151,15 @@ export const FormChild = ({ formId, name }: FormChildProps) => {
 
 export const Form = () => {
   const [searchParams] = useSearchParams()
-  const formId = searchParams.get('formId')
+  // NOTE: we need to have these 2 parameters at a minimum
+  const formId = searchParams.get('id')
   const name = searchParams.get('name')
+  // Check against the backend, see if we got any matching
+  const webhookUrl = searchParams.get('webhook')
 
   if (!formId || !name) {
     return <Navigate to={URLS.FLOWS} replace />
   }
 
-  return <FormChild formId={formId} name={name} />
+  return <FormChild formId={formId} name={name} webhookUrl={webhookUrl} />
 }
