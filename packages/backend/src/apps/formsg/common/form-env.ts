@@ -10,8 +10,11 @@ const STAGING_SDK = formsgSdk({
 const PRODUCTION_SDK = formsgSdk({
   mode: 'production',
 })
+const DEVELOPMENT_SDK = formsgSdk({
+  mode: 'development',
+})
 
-export const SUPPORTED_FORM_ENVS = ['prod', 'stg', 'uat'] as const
+export const SUPPORTED_FORM_ENVS = ['prod', 'stg', 'uat', 'dev'] as const
 export type FormEnv = (typeof SUPPORTED_FORM_ENVS)[number]
 
 export function parseFormIdAsUrl(rawUrl: string): URL | null {
@@ -21,7 +24,8 @@ export function parseFormIdAsUrl(rawUrl: string): URL | null {
     )
 
     return url.hostname === 'form.gov.sg' ||
-      url.hostname.endsWith('.form.gov.sg')
+      url.hostname.endsWith('.form.gov.sg') ||
+      url.origin === 'http://localhost:5001'
       ? url
       : null
   } catch {
@@ -54,6 +58,10 @@ export function parseFormEnvFromInput(formId: unknown): FormEnv {
       return 'prod'
     }
 
+    if (url.origin === 'http://localhost:5001') {
+      return 'dev'
+    }
+
     const env = url.hostname.split('.')[0]
     if (isSupportedFormEnv(env)) {
       return env
@@ -74,10 +82,16 @@ export function getSdk(env: FormEnv): ReturnType<typeof formsgSdk> {
   if (env === 'prod') {
     return PRODUCTION_SDK
   }
+  if (env === 'dev') {
+    return DEVELOPMENT_SDK
+  }
   return STAGING_SDK
 }
 
 export function getApiBaseUrl(env: FormEnv): string {
+  if (env === 'dev') {
+    return 'http://localhost:5001/api'
+  }
   if (env === 'prod') {
     return `https://form.gov.sg/api`
   }
