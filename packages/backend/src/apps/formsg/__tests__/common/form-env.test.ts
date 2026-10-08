@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { IGlobalVariable } from '@/../../types'
 
-import { getSdk, parseFormEnv, parseFormIdAsUrl } from '../../common/form-env'
+import {
+  getApiBaseUrl,
+  getSdk,
+  parseFormEnv,
+  parseFormIdAsUrl,
+} from '../../common/form-env'
 
 vi.mock('@opengovsg/formsg-sdk', () => ({
   default: vi.fn((opts) => opts.mode),
@@ -12,6 +17,7 @@ describe('Form environment handling', () => {
   describe('parseFormIdAsUrl', () => {
     it.each([
       'https://form.gov.sg/topkek',
+      'http://localhost:5001/95967305e41b75001293e70c',
       'http://stg.form.gov.sg/hmmm',
       'form.gov.sg/1234',
       'www.form.gov.sg/',
@@ -22,7 +28,14 @@ describe('Form environment handling', () => {
       expect(parseFormIdAsUrl(rawUrl)).toBeInstanceOf(URL)
     })
 
-    it.each(['https://firm.gov.sg', 'not a url', 'httpform.gov.sg', ''])(
+    it.each([
+      'https://firm.gov.sg',
+      'not a url',
+      'httpform.gov.sg',
+      '',
+      'http://localhost:5000/95967305e41b75001293e70c',
+      'http://localhost.evil.test:5001/95967305e41b75001293e70c',
+    ])(
       'returns null on invalid URLs (%s)',
       (rawUrl) => {
         expect(parseFormIdAsUrl(rawUrl)).toBeNull()
@@ -58,6 +71,18 @@ describe('Form environment handling', () => {
       {
         formId: 'https://uat.form.gov.sg/95967305e41b75001293e70c',
         expectedEnv: 'uat',
+      },
+      {
+        formId: 'https://dev.form.gov.sg/95967305e41b75001293e70c',
+        expectedEnv: 'dev',
+      },
+      {
+        formId: 'http://localhost:5001/95967305e41b75001293e70c',
+        expectedEnv: 'dev',
+      },
+      {
+        formId: 'http://localhost:5001/admin/form/95967305e41b75001293e70c',
+        expectedEnv: 'dev',
       },
     ])(
       'returns the appropriate form env when given a valid form ID ($formId = $expectedEnv)',
@@ -100,6 +125,17 @@ describe('Form environment handling', () => {
     )
   })
 
+  describe('getApiBaseUrl', () => {
+    it.each([
+      ['prod', 'https://form.gov.sg/api'],
+      ['stg', 'https://stg.form.gov.sg/api'],
+      ['uat', 'https://uat.form.gov.sg/api'],
+      ['dev', 'http://localhost:5001/api'],
+    ] as const)('returns the API URL for %s', (env, expectedUrl) => {
+      expect(getApiBaseUrl(env)).toEqual(expectedUrl)
+    })
+  })
+
   describe('getSdk', () => {
     // We mock formsgSdk constructor to return the mode, so we just check that.
 
@@ -108,8 +144,12 @@ describe('Form environment handling', () => {
       expect(sdkMode).toEqual('production')
     })
 
+    it('returns development sdk if the input environment is dev', () => {
+      expect(getSdk('dev')).toEqual('development')
+    })
+
     it.each(['stg', 'uat'] as const)(
-      'returns staging sdk if the input environment is not prod',
+      'returns staging sdk if the input environment is $env',
       (env) => {
         const sdkMode = getSdk(env) as unknown as string
         expect(sdkMode).toEqual('staging')
