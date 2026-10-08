@@ -335,7 +335,7 @@ export function createMcpBridgeTools(
 
     create_step: tool({
       description:
-        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.',
+        'Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.',
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe to add the step to'),
         app_key: z.string().describe('App key (e.g. "slack")'),
@@ -347,12 +347,19 @@ export function createMcpBridgeTools(
           .describe(
             "ID of the step after which to insert. Pass the last step's id to append at the end.",
           ),
+        after_if_then_block: z
+          .boolean()
+          .optional()
+          .describe(
+            'Set true to insert after the whole If block that previous_step_id belongs to, outside it, instead of inside. previous_step_id must then be the ifThen step or the last step inside its block.',
+          ),
       }),
       execute: async ({
         pipe_id,
         app_key,
         action_key,
         previous_step_id,
+        after_if_then_block,
       }): Promise<Step | McpToolError> => {
         try {
           const step = await createStepService({
@@ -361,6 +368,7 @@ export function createMcpBridgeTools(
             appKey: app_key,
             key: action_key,
             previousStepId: previous_step_id,
+            ...(after_if_then_block && { afterIfThenBlock: true }),
           })
           onPipeChange?.(pipe_id)
           return step
