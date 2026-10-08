@@ -5,11 +5,17 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 import { computeForEachParameters } from '@/helpers/compute-for-each-parameters'
 import computeParameters from '@/helpers/compute-parameters'
 import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
+import {
+  isCaseRef,
+  readStepErrorName,
+  resolveCaseIdentifier,
+} from '../common/case-identifier'
 import {
   GATHERSG_EMAIL_TYPES,
   GATHERSG_NUMBER_TYPES,
@@ -75,12 +81,25 @@ export async function resolveCaseUuid(
     return ''
   }
 
-  if (caseUuid.match(`^${VARIABLE_REGEX.source}$`)) {
-    const resolved = await getCaseUuidFromVariable($, caseUuid)
-    return typeof resolved === 'string' ? resolved : ''
+  const resolved = caseUuid.match(`^${VARIABLE_REGEX.source}$`)
+    ? await getCaseUuidFromVariable($, caseUuid)
+    : caseUuid
+
+  if (typeof resolved !== 'string') {
+    return ''
   }
 
-  return caseUuid
+  const trimmed = resolved.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  // Field dropdowns call GET /cases/:caseUuid, which rejects a case ref.
+  if (isCaseRef(trimmed)) {
+    return resolveCaseIdentifier($, trimmed)
+  }
+
+  return trimmed
 }
 
 const processCaseFields = (
@@ -150,6 +169,13 @@ const dynamicData: IDynamicData = {
         data: [],
       }
     } catch (error) {
+      if (error instanceof StepError) {
+        return {
+          data: [],
+          error: { message: readStepErrorName(error) },
+        }
+      }
+
       if (error instanceof HttpError) {
         /**
          * error: {
