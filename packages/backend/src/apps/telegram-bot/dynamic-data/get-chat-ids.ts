@@ -4,6 +4,9 @@ import {
   IGlobalVariable,
 } from '@plumber/types'
 
+import { z } from 'zod'
+
+import HttpError from '@/errors/http'
 import logger from '@/helpers/logger'
 
 import {
@@ -13,6 +16,25 @@ import {
 } from './types'
 
 const getUpdatesApi = '/getUpdates'
+
+export const UPDATES_CONFLICT_MESSAGE =
+  'Another service receives the updates for this bot, so Plumber cannot list its chats. Type the chat ID in this field.'
+
+const telegramErrorSchema = z.object({ description: z.string() })
+
+function getErrorMessage(e: unknown): string {
+  if (e instanceof HttpError) {
+    // Telegram returns 409 when a webhook or another client owns the bot's updates.
+    if (e.response?.status === 409) {
+      return UPDATES_CONFLICT_MESSAGE
+    }
+    const parsed = telegramErrorSchema.safeParse(e.response?.data)
+    if (parsed.success) {
+      return parsed.data.description
+    }
+  }
+  return e instanceof Error ? e.message : 'Unknown error'
+}
 
 type ChatInfo = {
   title: string
@@ -80,7 +102,7 @@ const dynamicData: IDynamicData = {
     } catch (e) {
       return {
         data: [],
-        error: e.message,
+        error: { message: getErrorMessage(e) },
       }
     }
   },
