@@ -49,6 +49,7 @@ export interface IConnection {
   createdAt: string
   updatedAt: string
   description?: string
+  environment?: IConnectionEnvironment | null
 }
 
 /**
@@ -974,6 +975,12 @@ export interface SubtriggerData {
   mrfStepId: string
 }
 
+export interface IConnectionEnvironment {
+  // Stable key for client logic, since labels may be reworded.
+  id: string
+  label: string
+}
+
 interface IBaseAuth {
   connectionType: AuthConnectionType
 
@@ -999,6 +1006,9 @@ interface IBaseAuth {
   ): Promise<IVerifyConnectionRegistrationOutput>
   connectionModalLabel?: IConnectionModalLabel
   autoCheckStep?: boolean
+  getConnectionEnvironment?(
+    formattedData?: IJSONObject,
+  ): IConnectionEnvironment | null
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {
@@ -1016,12 +1026,6 @@ interface IUserAddedConnectionAuth extends IBaseAuth {
    * strip those tags here so they are not duplicated on save.
    */
   getEditableConnectionLabel?(formattedData?: IJSONObject): string
-
-  /**
-   * User-facing environment name shown when editing this connection.
-   * Return null when the app has no environment to display.
-   */
-  getConnectionEnvironmentLabel?(formattedData?: IJSONObject): string | null
 }
 
 interface ISystemAddedConnectionAuth extends IBaseAuth {

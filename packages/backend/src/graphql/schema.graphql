@@ -424,7 +424,12 @@ type Connection {
   flowCount: Int
   description: String
   editableLabel: String
-  environmentLabel: String
+  environment: Environment
+}
+
+type Environment {
+  id: String!
+  label: String!
 }
 
 type ConnectionData {

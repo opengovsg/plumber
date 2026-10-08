@@ -1,6 +1,6 @@
 import { IUserAddedConnectionAuth } from '@plumber/types'
 
-import getConnectionEnvironmentLabel from './get-connection-environment-label'
+import getConnectionEnvironment from './get-connection-environment'
 import getEditableConnectionLabel from './get-editable-connection-label'
 import isStillVerified from './is-still-verified'
 import verifyCredentials from './verify-credentials'
@@ -9,7 +9,7 @@ const auth: IUserAddedConnectionAuth = {
   connectionType: 'user-added' as const,
   supportsConnectionEdit: true,
   getEditableConnectionLabel,
-  getConnectionEnvironmentLabel,
+  getConnectionEnvironment,
 
   fields: [
     {
