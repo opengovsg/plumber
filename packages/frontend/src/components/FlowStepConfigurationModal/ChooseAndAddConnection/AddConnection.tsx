@@ -40,7 +40,7 @@ type Response = {
 
 export default function AddConnection(props: AddConnectionProps): JSX.Element {
   const { handleConnectionChange, onCreateOrUpdateStep } = props
-  const { modalState, patchModalState } = useContext(
+  const { modalState, patchModalState, prefilledConnectionFields } = useContext(
     FlowStepConfigurationContext,
   )
   const { flowId } = useContext(EditorContext)
@@ -214,7 +214,17 @@ export default function AddConnection(props: AddConnectionProps): JSX.Element {
             <Form onSubmit={submitHandler}>
               <Flex flexDir="column" gap={4}>
                 {auth?.fields?.map((field: IField) => (
-                  <InputCreator key={field.key} schema={field} />
+                  <InputCreator
+                    key={field.key}
+                    schema={
+                      field.key in (prefilledConnectionFields ?? {})
+                        ? ({
+                            ...field,
+                            value: prefilledConnectionFields?.[field.key],
+                          } as IField)
+                        : field
+                    }
+                  />
                 ))}
 
                 <Button
