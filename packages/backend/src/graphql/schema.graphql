@@ -646,6 +646,8 @@ input CreateTemplatedFlowInput {
 
 input CreateTemplateFromFlowInput {
   flowId: String!
+  name: String
+  description: String
 }
 
 input UpdateFlowInput {

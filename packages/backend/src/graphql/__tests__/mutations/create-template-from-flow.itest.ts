@@ -109,6 +109,32 @@ describe('createTemplateFromFlow', () => {
     return { templateId: id }
   }
 
+  it('saves edited template metadata without renaming the source pipe', async () => {
+    const flow = await owner
+      .$relatedQuery('flows')
+      .insert({ name: 'Source pipe' })
+    const result = await createTemplateFromFlow(
+      null,
+      {
+        input: {
+          flowId: flow.id,
+          name: ' Edited title ',
+          description: ' Edited description ',
+        },
+      },
+      context,
+    )
+    expect(result).toMatchObject({
+      name: 'Edited title',
+      description: 'Edited description',
+    })
+    expect(await Template.query().findById(result.id)).toMatchObject({
+      name: 'Edited title',
+      description: 'Edited description',
+    })
+    expect((await flow.$query()).name).toBe('Source pipe')
+  })
+
   it('lists the user template before the built-in templates', async () => {
     const { templateId } = await seedTemplate()
 
