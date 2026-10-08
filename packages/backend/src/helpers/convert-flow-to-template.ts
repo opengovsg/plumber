@@ -3,8 +3,11 @@ import type { IFlow, IStep, ITemplate } from '@plumber/types'
 import { STEP_ID_PLACEHOLDER } from '@/db/storage/constants'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
 
+import { remapTemplateStepConfig } from './template-step-config'
+
 type ConvertibleFlow = Pick<IFlow, 'name'> & {
-  steps: Pick<IStep, 'id' | 'position' | 'appKey' | 'key' | 'parameters'>[]
+  steps: (Pick<IStep, 'id' | 'position' | 'appKey' | 'key' | 'parameters'> &
+    Partial<Pick<IStep, 'config'>>)[]
 }
 
 /**
@@ -20,8 +23,9 @@ export function convertFlowToTemplate(
 
   // validate that all steps have event key and app key
   const hasRequiredAttributes = steps.every(({ key, appKey }) => key && appKey)
-  if (!hasRequiredAttributes)
+  if (!hasRequiredAttributes) {
     throw new Error('Please ensure that all apps have an event trigger!')
+  }
 
   const stepIdToPlaceholderMap = Object.fromEntries(
     steps.map((step) => [step.id, STEP_ID_PLACEHOLDER(step.position)]),
@@ -35,7 +39,9 @@ export function convertFlowToTemplate(
       position: step.position,
       appKey: step.appKey ?? undefined,
       eventKey: step.key ?? '',
-      // cast here cos can return `null`
+      ...(step.config && {
+        config: remapTemplateStepConfig(step.config, stepIdToPlaceholderMap),
+      }),
       parameters:
         updateStepVariables(step.parameters ?? {}, stepIdToPlaceholderMap) ??
         undefined,
