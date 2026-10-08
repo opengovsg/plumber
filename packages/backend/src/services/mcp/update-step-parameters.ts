@@ -18,6 +18,7 @@ import Step from '@/models/step'
 import type User from '@/models/user'
 
 import { registerConnectionService } from './register-connection'
+import { appendStepAiBuilderEvent } from './step-ai-builder-config'
 import { verifyConnectionRegistrationService } from './verify-connection-registration'
 
 export interface UpdateStepParametersInput {
@@ -26,6 +27,7 @@ export interface UpdateStepParametersInput {
   stepId: string
   parameters: Record<string, unknown>
   connectionId?: string
+  traceId?: string
 }
 
 export interface FormField {
@@ -83,6 +85,7 @@ export async function updateStepParametersService({
   stepId,
   parameters,
   connectionId,
+  traceId,
 }: UpdateStepParametersInput): Promise<McpUpdateStepParametersResult> {
   const { step, rawApp } = await Step.transaction(async (trx) => {
     const accessible = await user
@@ -192,6 +195,13 @@ export async function updateStepParametersService({
       parameters: mergedParameters,
       version,
       status: 'incomplete',
+      ...(traceId && {
+        config: appendStepAiBuilderEvent(
+          step.config,
+          { traceId, tool: 'update_step_parameters' },
+          { skipIfRecorded: true },
+        ),
+      }),
     })
 
     return { step: updatedStep, rawApp }

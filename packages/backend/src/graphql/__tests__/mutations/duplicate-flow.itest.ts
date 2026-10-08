@@ -122,4 +122,44 @@ describe('duplicateFlow endStepId remap', () => {
       }),
     )
   })
+
+  it('does not copy AI builder history onto the duplicated pipe', async () => {
+    const { flow, steps } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+      { key: 'sendTransactionalEmail', appKey: 'postman', type: 'action' },
+    ])
+    await flow.$query().patch({
+      config: {
+        aiBuilderConfig: {
+          traceId: 'trace-source',
+          suggested: [{ position: 1, appKey: 'formsg', key: 'newSubmission' }],
+        },
+      },
+    })
+    await steps[0].$query().patch({
+      config: {
+        stepName: 'Trigger',
+        aiBuilderConfig: [{ traceId: 'trace-source', tool: 'create_pipe' }],
+      },
+    })
+
+    const duplicated = await duplicateFlow(
+      null,
+      { input: { id: flow.id } },
+      context,
+    )
+    const copy = await Flow.query().findById(duplicated.id)
+    const copies = await copiedSteps()
+
+    expect(copy?.config?.aiBuilderConfig).toBeUndefined()
+    expect(copies[0].config.aiBuilderConfig).toBeUndefined()
+    expect(copies[0].config.stepName).toBe('Trigger')
+
+    const original = await Flow.query().findById(flow.id)
+    const originalTrigger = await Step.query().findById(steps[0].id)
+    expect(original.config?.aiBuilderConfig?.traceId).toBe('trace-source')
+    expect(originalTrigger.config.aiBuilderConfig).toEqual([
+      { traceId: 'trace-source', tool: 'create_pipe' },
+    ])
+  })
 })

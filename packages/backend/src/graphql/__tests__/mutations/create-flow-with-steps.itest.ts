@@ -103,19 +103,40 @@ describe('createFlowWithSteps mutation integration tests', () => {
       expect(steps[0].appKey).toBe('scheduler')
       expect(steps[0].key).toBe('everyHour')
       expect(steps[0].position).toBe(1)
-      expect(steps[0].config).toEqual({})
+      expect(steps[0].config).toEqual({
+        aiBuilderConfig: [
+          {
+            traceId: '123',
+            tool: 'create_pipe',
+          },
+        ],
+      })
 
       expect(steps[1].type).toBe('action')
       expect(steps[1].appKey).toBe('postman')
       expect(steps[1].key).toBe('sendTransactionalEmail')
       expect(steps[1].position).toBe(2)
-      expect(steps[1].config).toEqual({})
+      expect(steps[1].config).toEqual({
+        aiBuilderConfig: [
+          {
+            traceId: '123',
+            tool: 'create_pipe',
+          },
+        ],
+      })
 
       expect(steps[2].type).toBe('action')
       expect(steps[2].appKey).toBe('slack')
       expect(steps[2].key).toBe('sendMessageToChannel')
       expect(steps[2].position).toBe(3)
-      expect(steps[2].config).toEqual({})
+      expect(steps[2].config).toEqual({
+        aiBuilderConfig: [
+          {
+            traceId: '123',
+            tool: 'create_pipe',
+          },
+        ],
+      })
     })
 
     it('should trim flow name and create flow', async () => {
@@ -180,8 +201,22 @@ describe('createFlowWithSteps mutation integration tests', () => {
         .where('flow_id', result.id)
         .orderBy('position', 'asc')
 
-      expect(steps[0].config).toEqual({})
-      expect(steps[1].config).toEqual({})
+      expect(steps[0].config).toEqual({
+        aiBuilderConfig: [
+          {
+            traceId: '123',
+            tool: 'create_pipe',
+          },
+        ],
+      })
+      expect(steps[1].config).toEqual({
+        aiBuilderConfig: [
+          {
+            traceId: '123',
+            tool: 'create_pipe',
+          },
+        ],
+      })
     })
 
     it('should allow single trigger with multiple actions', async () => {

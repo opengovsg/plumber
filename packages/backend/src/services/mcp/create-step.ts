@@ -6,6 +6,7 @@ import Step from '@/models/step'
 import type User from '@/models/user'
 
 import { PublishedPipeError } from './published-pipe-error'
+import { createStepAiBuilderConfig } from './step-ai-builder-config'
 
 export interface CreateStepInput {
   user: User
@@ -13,6 +14,7 @@ export interface CreateStepInput {
   appKey: string
   key: string
   previousStepId: string
+  traceId?: string
 }
 
 export async function createStepService({
@@ -21,6 +23,7 @@ export async function createStepService({
   appKey,
   key,
   previousStepId,
+  traceId,
 }: CreateStepInput): Promise<Step> {
   const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
 
@@ -71,6 +74,9 @@ export async function createStepService({
       position: newStepPosition,
       parameters: {},
       version,
+      ...(traceId && {
+        config: createStepAiBuilderConfig(traceId, 'create_step'),
+      }),
     })
 
     await flow.patchLastUpdated({

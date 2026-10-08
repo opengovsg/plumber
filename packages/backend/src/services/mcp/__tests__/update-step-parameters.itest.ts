@@ -277,6 +277,132 @@ describe('updateStepParametersService', () => {
     })
   })
 
+  it('records update_step_parameters once per traceId', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `update-params-stamp-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Stamp Update Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-create',
+    })
+
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    expect(actionStep).toBeDefined()
+
+    const first = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { subject: 'Hello' },
+      traceId: 'trace-update',
+    })
+
+    expect(first.step.config.aiBuilderConfig).toEqual([
+      {
+        traceId: 'trace-create',
+        tool: 'create_pipe',
+      },
+      {
+        traceId: 'trace-update',
+        tool: 'update_step_parameters',
+      },
+    ])
+
+    const second = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { destinationEmail: ['a@b.com'] },
+      traceId: 'trace-update',
+    })
+
+    expect(second.step.config.aiBuilderConfig).toEqual(
+      first.step.config.aiBuilderConfig,
+    )
+
+    const laterSession = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { subject: 'Later' },
+      traceId: 'trace-update-2',
+    })
+
+    expect(laterSession.step.config.aiBuilderConfig).toEqual([
+      {
+        traceId: 'trace-create',
+        tool: 'create_pipe',
+      },
+      {
+        traceId: 'trace-update',
+        tool: 'update_step_parameters',
+      },
+      {
+        traceId: 'trace-update-2',
+        tool: 'update_step_parameters',
+      },
+    ])
+  })
+
+  it('does not stamp update_step_parameters without a traceId', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `update-params-nolog-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'No Stamp Update Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-create',
+    })
+
+    const actionStep = flow.steps.find((s) => s.type === 'action')
+    const result = await updateStepParametersService({
+      user,
+      pipeId: flow.id,
+      stepId: actionStep.id,
+      parameters: { subject: 'Hello' },
+    })
+
+    expect(result.step.config.aiBuilderConfig).toEqual([
+      {
+        traceId: 'trace-create',
+        tool: 'create_pipe',
+      },
+    ])
+  })
+
   it('sets connectionId on the step when a valid connection is provided', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
