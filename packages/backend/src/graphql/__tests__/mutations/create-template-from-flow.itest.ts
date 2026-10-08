@@ -69,12 +69,14 @@ describe('createTemplateFromFlow', () => {
         position: 1,
         appKey: 'formsg',
         eventKey: 'newSubmission',
+        config: {},
         parameters: {},
       },
       {
         position: 2,
         appKey: 'postman',
         eventKey: 'sendTransactionalEmail',
+        config: {},
         parameters: { body: 'Hi {{step.<<step_id_1>>.fields.a.answer}}' },
       },
     ])
@@ -150,6 +152,33 @@ describe('createTemplateFromFlow', () => {
     ])
     expect(steps[1].parameters).toEqual({
       body: `Hi {{step.${steps[0].id}.fields.a.answer}}`,
+    })
+  })
+
+  it('injects template step config alongside generated template guidance', async () => {
+    const { templateId } = await seedTemplate()
+    const templateStep = await Template.relatedQuery('templateSteps')
+      .for(templateId)
+      .whereRaw("(data->>'position')::int = ?", [2])
+      .first()
+      .throwIfNotFound()
+    await templateStep.$query().patch({
+      data: {
+        ...templateStep.data,
+        config: {
+          stepName: 'Notify user',
+          adminOverride: { customApiTimeout: 60000 },
+        },
+      },
+    })
+
+    const flow = await createFlowFromTemplate(templateId, owner)
+    const step = await flow.$relatedQuery('steps').findOne({ position: 2 })
+
+    expect(step.config).toEqual({
+      stepName: 'Notify user',
+      adminOverride: { customApiTimeout: 60000 },
+      templateConfig: { appEventKey: 'postman_sendTransactionalEmail' },
     })
   })
 
