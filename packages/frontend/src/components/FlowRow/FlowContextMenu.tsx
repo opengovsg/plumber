@@ -26,9 +26,10 @@ import {
 
 import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
-import { CREATE_TEMPLATE_FROM_FLOW } from '@/graphql/mutations/create-template-from-flow'
 import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
 import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
+
+import ConvertToTemplateModal from './ConvertToTemplateModal'
 
 interface FlowContextMenuProps {
   flow: IFlow
@@ -127,39 +128,19 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     [onDialogOpen],
   )
 
-  const [createTemplateFromFlow, { loading: isCreatingTemplate }] = useMutation(
-    CREATE_TEMPLATE_FROM_FLOW,
-  )
+  const {
+    isOpen: isTemplateModalOpen,
+    onOpen: onTemplateModalOpen,
+    onClose: onTemplateModalClose,
+  } = useDisclosure()
 
   const onConvertToTemplateButtonClick = useCallback(
-    async (event: MouseEvent) => {
+    (event: MouseEvent) => {
       event.preventDefault()
-      await createTemplateFromFlow({
-        variables: { input: { flowId: flow.id } },
-        update: (cache) => {
-          cache.evict({ fieldName: 'getTemplates' })
-        },
-        onCompleted: () => {
-          toast({
-            title: 'The pipe has been saved as a template.',
-            status: 'success',
-            duration: 3000,
-            isClosable: true,
-            position: 'top',
-          })
-        },
-        onError: () => {
-          toast({
-            title: 'Unable to convert the pipe to a template.',
-            status: 'error',
-            duration: 3000,
-            isClosable: true,
-            position: 'top',
-          })
-        },
-      })
+      onMenuClose()
+      onTemplateModalOpen()
     },
-    [createTemplateFromFlow, flow.id, toast],
+    [onMenuClose, onTemplateModalOpen],
   )
 
   return (
@@ -199,7 +180,6 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
             Duplicate
           </MenuItem>
           <MenuItem
-            isDisabled={isCreatingTemplate}
             onClick={onConvertToTemplateButtonClick}
             icon={<Icon as={BiExport} boxSize={5} />}
           >
@@ -224,6 +204,9 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           </TouchableTooltip>
         </MenuList>
       </Menu>
+      {isTemplateModalOpen && (
+        <ConvertToTemplateModal flow={flow} onClose={onTemplateModalClose} />
+      )}
       <MenuAlertDialog
         isDialogOpen={isDialogOpen}
         cancelRef={cancelRef}
