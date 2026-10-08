@@ -107,6 +107,10 @@ type AppConfig = {
      */
     credentials?: AwsCredentialIdentity
   }
+  templateDescription: {
+    apiKey?: string
+    model: string
+  }
   archiveEnabled: boolean
   aiGateway: {
     apiKey?: string
@@ -126,6 +130,10 @@ webhookUrl = webhookUrl.substring(0, webhookUrl.length - 1) // remove trailing s
 const appEnv = process.env.APP_ENV || 'development'
 
 const appConfig: AppConfig = {
+  templateDescription: {
+    apiKey: process.env.AI_GATEWAY_API_KEY,
+    model: process.env.AI_GATEWAY_MODEL || 'openai/gpt-4o-mini',
+  },
   port,
   appEnv: appEnv,
   isProd: appEnv === 'prod',

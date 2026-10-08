@@ -11,6 +11,7 @@ import chatRouter from './chat'
 import connectionsRouter from './connections'
 import dynamicDataRouter from './dynamic-data'
 import templatesRouter from './templates'
+import templateDescriptionRouter from './template-description'
 
 const router = Router()
 
@@ -30,6 +31,7 @@ router.use('/chat', chatRouter)
 router.use('/connections', connectionsRouter)
 router.use('/dynamic-data', dynamicDataRouter)
 router.use('/templates', templatesRouter)
+router.use('/template-description', templateDescriptionRouter)
 
 // Future routes can be added here:
 // router.use('/users', usersRouter)
