@@ -70,6 +70,35 @@ describe('convertFlowToTemplate', () => {
     })
   })
 
+  it('copies config without sharing nested objects with the source step', () => {
+    const config = {
+      stepName: 'Request',
+      adminOverride: { customApiTimeout: 60000 },
+    }
+    const template = convertFlowToTemplate(
+      {
+        name: 'Flow',
+        steps: [
+          {
+            id: TRIGGER_ID,
+            position: 1,
+            appKey: 'webhook',
+            key: 'catchRawWebhook',
+            parameters: {},
+            config,
+          },
+        ],
+      },
+      { id: 'id', description: '' },
+    )
+
+    expect(template.steps[0].config).toEqual(config)
+    expect(template.steps[0].config).not.toBe(config)
+    expect(template.steps[0].config?.adminOverride).not.toBe(
+      config.adminOverride,
+    )
+  })
+
   it('drops uploaded s3 attachments', () => {
     const template = convertFlowToTemplate(
       {
