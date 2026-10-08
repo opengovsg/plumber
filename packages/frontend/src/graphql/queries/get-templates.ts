@@ -13,6 +13,14 @@ export const GET_TEMPLATES = gql`
         sampleUrl
         sampleUrlDescription
         parameters
+        config {
+          stepName
+          endStepId
+          approval {
+            branch
+            stepId
+          }
+        }
       }
       iconName
       tags
