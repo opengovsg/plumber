@@ -1400,8 +1400,7 @@ export interface IVerifyConnectionRegistrationOutput {
   message: string
 }
 
-export interface ITestConnectionOutput
-  extends Partial<IVerifyConnectionRegistrationOutput> {
+export interface ITestConnectionOutput extends Partial<IVerifyConnectionRegistrationOutput> {
   connectionVerified: boolean
 }
 export interface IStepError {
@@ -1503,6 +1502,7 @@ export interface ITemplate {
 // demo template or for empty flows state
 export type TemplateTagType = 'demo' | 'empty' | 'new'
 
+type ITemplateStepConfig = Omit<IStepConfig, 'templateConfig'>
 export interface ITemplateStep {
   position: number // primary key, no need id for now
   appKey?: string
@@ -1510,6 +1510,7 @@ export interface ITemplateStep {
   sampleUrl?: string // specific to template e.g. form or tile link
   sampleUrlDescription?: string // differs for each step e.g. view a sample form
   parameters?: IJSONObject
+  config?: ITemplateStepConfig
 }
 
 // This is for creation of tile for a template
