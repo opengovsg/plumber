@@ -5,6 +5,7 @@ import App from '@/models/app'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { PublishedPipeError } from './published-pipe-error'
 import { createStepAiBuilderConfig } from './step-ai-builder-config'
 
 export interface CreateStepInput {
@@ -43,6 +44,10 @@ export async function createStepService({
 
     if (!flow) {
       throw new Error('Pipe not found')
+    }
+
+    if (flow.active) {
+      throw new PublishedPipeError()
     }
 
     const previousStep = await flow

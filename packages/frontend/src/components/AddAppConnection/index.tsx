@@ -84,11 +84,11 @@ export default function AddAppConnection(
     (connection: {
       id?: string
       editableLabel?: string | null
-      environmentLabel?: string | null
+      environment?: { label: string } | null
     }) => connection.id === connectionId,
   )
   const labelDefault = editingConnection?.editableLabel ?? ''
-  const envLabel = editingConnection?.environmentLabel
+  const envLabel = editingConnection?.environment?.label
 
   const defaultValues = React.useMemo(() => {
     if (!hasConnection || !labelDefault) {

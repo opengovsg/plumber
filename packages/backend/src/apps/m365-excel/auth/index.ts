@@ -1,5 +1,6 @@
 import { ISystemAddedConnectionAuth } from '@plumber/types'
 
+import getConnectionEnvironment from './get-connection-environment'
 import getSystemAddedConnections from './get-system-added-connections'
 import isStillVerified from './is-still-verified'
 import refreshToken from './refresh-token'
@@ -11,6 +12,7 @@ const auth: ISystemAddedConnectionAuth = {
 
   connectionType: 'system-added',
   getSystemAddedConnections,
+  getConnectionEnvironment,
 
   connectionRegistrationType: 'global',
   isStillVerified,

@@ -6,58 +6,65 @@ generated query for one of these questions looks meaningfully different from its
 as a signal to double-check against [glossary.md](glossary.md)/[gotchas.md](gotchas.md) before
 outputting it.
 
-## Recipe 1: pipes with an execution in the past quarter, containing a specific trigger and action
+## Recipe 1: active pipes in the past quarter that ran a specific trigger and action
 
-**Question**: "How many pipes have ≥1 execution in the past quarter AND contain the gathersg trigger
-AND the slack action?"
+**Question**: "How many pipes flowed in the past quarter using the gathersg trigger AND the slack
+action?"
 
 ```sql
+BEGIN;
+SET LOCAL max_parallel_workers_per_gather = 0;
+SET LOCAL hash_mem_multiplier = 1.0;
+SET LOCAL jit = off;
+SET LOCAL enable_memoize = off;
+
 WITH bounds AS (
   SELECT
-    (date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore') - interval '3 months' AS quarter_start,
-    (date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore') AS quarter_end
+    (date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore') - interval '3 months') AT TIME ZONE 'Asia/Singapore' AS quarter_start,
+    date_trunc('quarter', now() AT TIME ZONE 'Asia/Singapore') AT TIME ZONE 'Asia/Singapore' AS quarter_end
 )
-SELECT COUNT(DISTINCT f.id) AS pipe_count
-FROM flows f, bounds b
-WHERE f.deleted_at IS NULL
-  AND EXISTS (
-    SELECT 1 FROM steps s
-    WHERE s.flow_id = f.id
-      AND s.app_key = 'gathersg'
-      AND s.type = 'trigger'
-      AND s.deleted_at IS NULL
-  )
-  AND EXISTS (
-    SELECT 1 FROM steps s
-    WHERE s.flow_id = f.id
-      AND s.app_key = 'slack'
-      AND s.type = 'action'
-      AND s.deleted_at IS NULL
-  )
-  AND EXISTS (
-    SELECT 1 FROM executions e
-    WHERE e.flow_id = f.id
-      AND e.test_run = false
-      AND e.deleted_at IS NULL
-      AND e.created_at >= b.quarter_start
-      AND e.created_at < b.quarter_end
-  );
+SELECT COUNT(*) AS pipe_count
+FROM (
+  SELECT e.flow_id
+  FROM bounds b
+  JOIN executions e
+    ON e.created_at >= b.quarter_start AND e.created_at < b.quarter_end
+  JOIN execution_steps es ON es.execution_id = e.id
+  JOIN steps s ON s.id = es.step_id
+  WHERE e.test_run = false
+    AND es.app_key IN ('gathersg', 'slack')
+  GROUP BY e.flow_id
+  HAVING bool_or(es.app_key = 'gathersg' AND s.type = 'trigger')
+     AND bool_or(es.app_key = 'slack' AND s.type = 'action')
+) active_pipes;
+
+COMMIT;
 ```
 
 Notes:
 - "gathersg trigger" / "slack action" resolved via [resolving-app-keys.md](resolving-app-keys.md) to
   `app_key='gathersg' AND type='trigger'` and `app_key='slack' AND type='action'`.
-- Each app/trigger/action condition and the execution-in-period condition are separate `EXISTS`
-  subqueries against `flows`, not joins — a pipe can have many matching `steps`/`executions` rows, and
-  joining all three directly would multiply rows and require an extra `DISTINCT` to compensate; `EXISTS`
-  avoids that entirely.
+- The app comes from `execution_steps.app_key`, which records what actually ran. `steps.app_key`
+  shows the pipe's current state. That misses steps removed or switched to another app after they ran.
+- `steps` is joined only for `type`, with no `deleted_at` guard. Deleted steps keep their rows.
+- A pipe counts only if both steps ran in the quarter. A slack action that every execution skipped,
+  e.g. behind an if-then branch, does not count.
+- `execution_steps.app_key` exists only from Mar 2023. `execution_steps.key` exists only from Jun
+  2025. Filter on `es.key` only for periods after that.
+- `GROUP BY e.flow_id` with `bool_or` checks both conditions in one pass over `execution_steps`.
+  Separate `EXISTS` subqueries would scan it twice.
+- The OOM guard wraps the query because it reads `execution_steps`. See [gotchas.md](gotchas.md) §5.
 - "Past quarter" bounds: `now() AT TIME ZONE 'Asia/Singapore'` converts the current instant to a naive
   SGT wall-clock value, `date_trunc('quarter', ...)` truncates it to the current SGT quarter start, and
   the outer `AT TIME ZONE 'Asia/Singapore'` converts that naive value back to `timestamptz` — a single
   conversion each way, per [gotchas.md](gotchas.md)'s timezone rule. `quarter_start`/`quarter_end` are
   therefore `timestamptz`, directly comparable to `executions.created_at` (also `timestamptz`) with no
   further conversion needed.
+- The `- interval '3 months'` applies to the naive SGT value, before converting back. On a
+  `timestamptz` the month math runs in the session timezone and can start the window a day early.
 - `test_run = false` excludes test executions, per [glossary.md](glossary.md).
+- This is an active-pipe count, so no table has a `deleted_at` guard. See
+  [gotchas.md](gotchas.md)'s activity-metrics exception.
 
 ## Recipe 2: agency breakdown of owners of published pipes containing an app
 
@@ -112,15 +119,13 @@ quarterly_active_users AS (
       e.created_at AT TIME ZONE 'Asia/Singapore'
     ) AS quarter
   FROM executions e
-  JOIN flows f ON f.id = e.flow_id AND f.deleted_at IS NULL
-  JOIN users u ON u.id = f.user_id AND u.deleted_at IS NULL
+  JOIN flows f ON f.id = e.flow_id
   CROSS JOIN bounds b
   WHERE e.test_run = false
-    AND e.deleted_at IS NULL
     -- 3 trailing bars, each needing a baseline up to 4 quarters (12 months)
     -- earlier => pull back (3-1)*3 + 12 = 18 months before target_quarter
-    AND e.created_at >= (b.target_quarter AT TIME ZONE 'Asia/Singapore') - interval '18 months'
-    AND e.created_at < (b.target_quarter AT TIME ZONE 'Asia/Singapore') + interval '3 months'
+    AND e.created_at >= (b.target_quarter - interval '18 months') AT TIME ZONE 'Asia/Singapore'
+    AND e.created_at < (b.target_quarter + interval '3 months') AT TIME ZONE 'Asia/Singapore'
 ),
 quarterly_counts AS (
   SELECT quarter, COUNT(DISTINCT user_id) AS active_users
@@ -204,9 +209,12 @@ Notes:
 - `executions.created_at` is `timestamptz` (confirmed against the live schema — see
   [gotchas.md](gotchas.md)'s timezone gotcha), so bucketing uses a **single**
   `e.created_at AT TIME ZONE 'Asia/Singapore'` conversion (not a round-trip through UTC), and the
-  range filter converts `target_quarter` (naive, from the macro-cast `bounds` CTE) back to
-  `timestamptz` once via `AT TIME ZONE 'Asia/Singapore'` before comparing directly against
-  `e.created_at`.
+  range filter offsets `target_quarter` (naive, from the macro-cast `bounds` CTE) by whole months,
+  then converts it back to `timestamptz` once via `AT TIME ZONE 'Asia/Singapore'` before comparing
+  directly against `e.created_at`. The month offset must come before the conversion (see
+  [grafana.md](grafana.md)'s calendar-math rule).
+- No `deleted_at` guard on `executions`, `flows` or `users`. Users who flowed a since-deleted pipe
+  still count as active in that quarter. See [gotchas.md](gotchas.md)'s activity-metrics exception.
 - Each retention gap is pre-aggregated to one row per quarter in its own CTE before the final join —
   this avoids a row-multiplying cross join that would happen if the current-quarter set and each
   gap's base/retained sets were all `LEFT JOIN`ed directly off `bars` in one shot (correct via
@@ -222,3 +230,52 @@ Notes:
   ratio, not a bug.
 - To validate locally, substitute a literal timestamp for `$__timeFrom()` first (see
   [grafana.md](grafana.md)) — `psql` has no macro expansion.
+
+## Recipe 4: quarter-over-quarter active-user growth (Grafana, single window)
+
+**Question**: "How many active users did we have this quarter vs. the previous quarter, and what's
+the growth?" The viewer selects one quarter in the Grafana time picker.
+
+```sql
+WITH periods AS (
+  SELECT
+    $__timeFrom()::timestamptz AS curr_start,
+    $__timeTo()::timestamptz AS curr_end,
+    (($__timeFrom()::timestamptz AT TIME ZONE 'Asia/Singapore') - interval '3 months') AT TIME ZONE 'Asia/Singapore' AS prev_start
+),
+counts AS (
+  SELECT
+    COUNT(DISTINCT f.user_id) FILTER (
+      WHERE e.created_at >= p.prev_start AND e.created_at < p.curr_start
+    ) AS prev_qtr_active_users,
+    COUNT(DISTINCT f.user_id) FILTER (
+      WHERE e.created_at >= p.curr_start AND e.created_at < p.curr_end
+    ) AS curr_qtr_active_users
+  FROM periods p
+  JOIN executions e
+    ON e.created_at >= p.prev_start AND e.created_at < p.curr_end
+  JOIN flows f ON f.id = e.flow_id
+  WHERE e.test_run = false
+)
+SELECT
+  prev_qtr_active_users,
+  curr_qtr_active_users,
+  CASE
+    WHEN prev_qtr_active_users = 0 THEN NULL
+    ELSE round(
+      (curr_qtr_active_users - prev_qtr_active_users)::numeric / prev_qtr_active_users * 100,
+      2
+    )
+  END AS pct_growth
+FROM counts;
+```
+
+Notes:
+- `curr_start` / `curr_end` are the cast macros with no `AT TIME ZONE`. Only `prev_start` converts to
+  SGT, because it needs month arithmetic. See [grafana.md](grafana.md)'s macro-casting rules.
+- No `deleted_at` guard on `executions` or `flows`. See [gotchas.md](gotchas.md)'s activity-metrics
+  exception.
+- Selecting Q2 alone in a single-count panel must give the same number as `prev_qtr_active_users`
+  with Q3 selected. Use this to cross-check panels.
+- Grafana panel config: query format `Table`, visualization `Stat`, unit `Percent (0-100)` on
+  `pct_growth`.

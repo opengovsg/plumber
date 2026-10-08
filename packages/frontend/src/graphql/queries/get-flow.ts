@@ -25,6 +25,9 @@ export const FLOW_FIELDS = gql`
           screenName
           env
         }
+        environment {
+          id
+        }
       }
       parameters
       config {
@@ -56,6 +59,9 @@ export const FLOW_FIELDS = gql`
         value
         size
         updatedAt
+      }
+      aiBuilderConfig {
+        traceId
       }
     }
     pendingTransfer {

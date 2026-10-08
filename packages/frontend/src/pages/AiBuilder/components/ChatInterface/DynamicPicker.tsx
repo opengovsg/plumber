@@ -4,6 +4,7 @@ import { FaCircleStop } from 'react-icons/fa6'
 import { Box, Button, Flex, Icon, Input, Spinner, Text } from '@chakra-ui/react'
 
 import { AI_BUILDER_INLINE_CONNECT_APP_KEYS } from '@/pages/AiBuilder/constants'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 interface DynamicPickerOption {
   name: string
@@ -165,7 +166,19 @@ export default function DynamicPicker({
 
   const hasOptions = !isLoading && options.length > 0
 
+  const capture = (action: string, extra?: Record<string, unknown>) => {
+    if (!isPostHogConfigured) {
+      return
+    }
+    posthog.capture(`ai_builder:dynamic_picker_${action}`, {
+      app_key: appKey,
+      dynamic_key: dynamicKey,
+      ...extra,
+    })
+  }
+
   const handleOptionClick = (opt: DynamicPickerOption) => {
+    capture('option_clicked')
     setSelectedOption(opt)
   }
 
@@ -173,7 +186,33 @@ export default function DynamicPicker({
     if (!selectedOption || isStreaming) {
       return
     }
+    capture('submit_clicked')
     onSelect(selectedOption.name, selectedOption.value)
+  }
+
+  const handleSkip = () => {
+    capture('skip_clicked')
+    onSkip()
+  }
+
+  const handleRetry = () => {
+    capture('retry_clicked')
+    setRetryCount((c) => c + 1)
+  }
+
+  const handleCancel = () => {
+    capture('cancel_clicked')
+    cancelStream()
+  }
+
+  const handleAddConnection = (variant: string) => {
+    capture('add_connection_clicked', { variant })
+    onAddConnection?.()
+  }
+
+  const handleCreateNew = (variant: string) => {
+    capture('create_new_clicked', { variant })
+    onCreateNew?.()
   }
 
   // Zero options — distinct from a fetch error.
@@ -230,7 +269,10 @@ export default function DynamicPicker({
                 </Text>{' '}
                 to connect it.
               </Text>
-              <Button isDisabled={isStreaming} onClick={onAddConnection}>
+              <Button
+                isDisabled={isStreaming}
+                onClick={() => handleAddConnection('known_form')}
+              >
                 Connect your form
               </Button>
             </Flex>
@@ -245,7 +287,7 @@ export default function DynamicPicker({
                   variant="outline"
                   alignSelf="flex-start"
                   isDisabled={isStreaming}
-                  onClick={onAddConnection}
+                  onClick={() => handleAddConnection('empty_state')}
                 >
                   {appKey === 'formsg' ? 'Add your form' : 'Add connection'}
                 </Button>
@@ -260,7 +302,7 @@ export default function DynamicPicker({
                 variant="outline"
                 alignSelf="flex-start"
                 isDisabled={isStreaming}
-                onClick={onCreateNew}
+                onClick={() => handleCreateNew('empty_state')}
               >
                 Create a new tile
               </Button>
@@ -311,7 +353,7 @@ export default function DynamicPicker({
                 as="button"
                 type="button"
                 disabled={isStreaming}
-                onClick={() => setRetryCount((c) => c + 1)}
+                onClick={handleRetry}
                 textDecoration="underline"
                 fontWeight="medium"
                 _disabled={{ opacity: 0.5, cursor: 'not-allowed' }}
@@ -331,7 +373,7 @@ export default function DynamicPicker({
                 size="sm"
                 color="gray.400"
                 isDisabled={isStreaming}
-                onClick={onSkip}
+                onClick={handleSkip}
                 fontWeight="normal"
               >
                 skip this step
@@ -342,7 +384,7 @@ export default function DynamicPicker({
                   size="sm"
                   color="primary.500"
                   isDisabled={isStreaming}
-                  onClick={onAddConnection}
+                  onClick={() => handleAddConnection('footer')}
                   fontWeight="normal"
                 >
                   {appKey === 'formsg'
@@ -356,7 +398,7 @@ export default function DynamicPicker({
                   size="sm"
                   color="primary.500"
                   isDisabled={isStreaming}
-                  onClick={onCreateNew}
+                  onClick={() => handleCreateNew('footer')}
                   fontWeight="normal"
                 >
                   Create a new tile
@@ -370,7 +412,7 @@ export default function DynamicPicker({
                   fontSize="24px"
                   color="red.500"
                   cursor="pointer"
-                  onClick={cancelStream}
+                  onClick={handleCancel}
                   _hover={{ color: 'red.600' }}
                 />
               ) : (

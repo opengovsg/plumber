@@ -156,6 +156,10 @@ input FlowAiBuilderConfigInput {
   traceId: String!
 }
 
+type FlowAiBuilderConfig {
+  traceId: String!
+}
+
 input CreateFlowWithStepsInput {
   flowName: String!
   steps: [StepInput!]!
@@ -420,7 +424,12 @@ type Connection {
   flowCount: Int
   description: String
   editableLabel: String
-  environmentLabel: String
+  environment: Environment
+}
+
+type Environment {
+  id: String!
+  label: String!
 }
 
 type ConnectionData {
@@ -526,6 +535,7 @@ type FlowConfig {
   duplicateCount: Int
   templateConfig: FlowTemplateConfig
   attachments: [FlowAttachmentConfig]
+  aiBuilderConfig: FlowAiBuilderConfig
 }
 
 type FlowErrorConfig {

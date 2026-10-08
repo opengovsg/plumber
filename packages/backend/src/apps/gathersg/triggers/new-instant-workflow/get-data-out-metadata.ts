@@ -1,6 +1,7 @@
 import { IDataOutMetadata, IExecutionStep } from '@plumber/types'
 
 import {
+  createEmailMetadata,
   createFieldMetadata,
   createOptionalNestedMetadata,
 } from '../../common/data-out-metadata-helpers'
@@ -64,6 +65,8 @@ async function getDataOutMetadata(
     },
   )
 
+  const emailMetadata = createEmailMetadata(dataOut?.email)
+
   const attachmentsMetadata: Record<string, any> = {}
   const attachmentKeys: string[] = []
   if (dataOut?.attachments) {
@@ -108,7 +111,7 @@ async function getDataOutMetadata(
 
       caseRef: { label: 'Case ref' },
       createdAt: { label: 'Created at' },
-      email: { isHidden: true }, // hide to avoid confusing user in case there is an email field
+      email: emailMetadata,
       finalisedAt: { label: 'Finalised at' },
       source: { label: 'Source' },
       status: { label: 'Status' },

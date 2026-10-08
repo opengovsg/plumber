@@ -49,6 +49,7 @@ export interface IConnection {
   createdAt: string
   updatedAt: string
   description?: string
+  environment?: IConnectionEnvironment | null
 }
 
 /**
@@ -455,6 +456,11 @@ export interface IFieldDropdown extends IBaseField {
   // dynamic-data source resolves to zero options (e.g. a case type with no
   // attachment fields). Distinct from `hiddenIf`, which keys off sibling values.
   hideWhenNoOptions?: boolean
+  /**
+   * For source-backed dropdowns: Markdown shown inside the menu when its
+   * dynamic-data source resolves to zero options.
+   */
+  noOptionsMessage?: string
   variableTypes?: TDataOutMetadatumType[]
 }
 
@@ -765,6 +771,26 @@ export interface IAppQueue {
   ): Promise<JobsProOptions['group']>
 
   /**
+   * If set, the generic execution path (`processAction` / the batch worker)
+   * acquires a per-resource distributed lock around `run` / `runBatch`, keyed
+   * on the string returned here. This is the cross-queue serialization key,
+   * the counterpart to {@link getGroupConfigForJob}'s grouping key.
+   *
+   * Unlike `getGroupConfigForJob` (which runs at enqueue time with only
+   * `jobData`), this is resolved at execution time from the fully-built `$`, so
+   * it can read computed params and auth (e.g. m365-excel derives
+   * `<tenant>:<fileId>` to serialize all `WorkbookSession` access to a file
+   * across the per-app queue, the batch queue and test runs — restoring the
+   * per-file serialization that splitting `createTableRow` onto its own queue
+   * would otherwise break).
+   *
+   * Return `null` to skip locking (e.g. no file selected, or read-only dynamic
+   * data). Must be cheap (no network calls): it runs on every job before the
+   * action.
+   */
+  getLockKey?($: IGlobalVariable): Promise<string | null>
+
+  /**
    * Set per-group concurrency or rate limits. This is mutually exclusive
    * because BullMQ Pro does not support using both together.
    *
@@ -806,6 +832,39 @@ export interface IAppQueue {
    * The type of worker to use for this queue.
    */
   workerType: 'action' | 'sub-trigger'
+}
+
+/**
+ * Configuration declared by an action that opts into BullMQ Pro batch
+ * processing (see {@link IBaseAction.runBatch}). Jobs for such an action are
+ * routed to a dedicated batch queue instead of the per-app / main action queue.
+ *
+ * Mirrors the relevant parts of {@link IAppQueue}, but for the batch queue: the
+ * group id derived here is the unit a single `runBatch` call serves, and group
+ * affinity (`batch.groupAffinity`) guarantees every job in a batch shares it.
+ */
+export interface IActionBatchQueue {
+  /**
+   * Derives the BullMQ Pro group config for a job about to be enqueued to the
+   * batch queue. Group affinity batches together only jobs sharing this id, so
+   * it must capture everything a single `runBatch` call requires to be correct
+   * (e.g. `${fileId}::${tableId}::${connectionId}` for m365-excel createTableRow
+   * — one table + connection per group, so exactly one multi-row insert per
+   * batch, authorized by a single file-access check under that one connection).
+   *
+   * @see {@link JobsProOptions.group}
+   */
+  getGroupConfigForJob(
+    jobData: IActionJobData,
+  ): Promise<JobsProOptions['group']>
+
+  /**
+   * Rate limit for the entire batch queue, applied between batches so we don't
+   * hammer the upstream API. Retained from the non-batch per-file queue.
+   *
+   * @see {@link IAppQueue.queueRateLimit}
+   */
+  queueRateLimit?: WorkerProOptions['limiter']
 }
 
 export interface IApp {
@@ -928,6 +987,12 @@ export interface SubtriggerData {
   mrfStepId: string
 }
 
+export interface IConnectionEnvironment {
+  // Stable key for client logic, since labels may be reworded.
+  id: string
+  label: string
+}
+
 interface IBaseAuth {
   connectionType: AuthConnectionType
 
@@ -953,6 +1018,9 @@ interface IBaseAuth {
   ): Promise<IVerifyConnectionRegistrationOutput>
   connectionModalLabel?: IConnectionModalLabel
   autoCheckStep?: boolean
+  getConnectionEnvironment?(
+    formattedData?: IJSONObject,
+  ): IConnectionEnvironment | null
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {
@@ -970,12 +1038,6 @@ interface IUserAddedConnectionAuth extends IBaseAuth {
    * strip those tags here so they are not duplicated on save.
    */
   getEditableConnectionLabel?(formattedData?: IJSONObject): string
-
-  /**
-   * User-facing environment name shown when editing this connection.
-   * Return null when the app has no environment to display.
-   */
-  getConnectionEnvironmentLabel?(formattedData?: IJSONObject): string | null
 }
 
 interface ISystemAddedConnectionAuth extends IBaseAuth {
@@ -1108,6 +1170,18 @@ export interface IActionItem {
   meta?: IExecutionStepMetadata
 }
 
+/**
+ * The per-job outcome of {@link IBaseAction.runBatch}, aligned by index to the
+ * jobs passed in. A job that fails its own pre-write validation (e.g. bad params
+ * or a per-user authorization failure) is reported `failed` and excluded from
+ * the shared write, so the batch worker can isolate it while the healthy jobs
+ * commit. `runBatch` THROWS (rather than returning `failed`) for a genuine write
+ * failure, which is all-or-none and retried for the whole batch.
+ */
+export type RunBatchJobResult =
+  | { status: 'success' }
+  | { status: 'failed'; error: unknown }
+
 export interface IBaseAction {
   name: string
   key: string
@@ -1123,6 +1197,37 @@ export interface IBaseAction {
     $: IGlobalVariable,
     testRunMetadata?: TestRunStepMetadata,
   ): Promise<IActionRunResult | void>
+
+  /**
+   * Processes a batch of jobs that all share the same batch group (see
+   * {@link IBaseAction.batch}) in a single underlying operation — e.g. one
+   * multi-row MS Graph insert for many createTableRow jobs that target the same
+   * file + table.
+   *
+   * Each job carries its own `$` (its own step, parameters and execution), and
+   * `runBatch` sets each successful job's output via `$.setActionItem`.
+   *
+   * `runBatch` owns its own per-job pre-write validation (e.g. params and a
+   * per-user authorization check) and returns one {@link RunBatchJobResult} per
+   * input job, aligned by index: a job that fails its validation is reported
+   * `failed` and EXCLUDED from the write (so the caller can isolate it), while
+   * the valid jobs still commit. Running the per-user check for every job (not
+   * just the first) matters because the whole batch is written through a single
+   * session/auth (the first valid job's), so otherwise a job's rows could be
+   * written under another job's authorization.
+   *
+   * A genuine WRITE failure (the shared operation itself failing) THROWS instead
+   * of returning, so the whole batch is failed and retried all-or-none (nothing
+   * was committed).
+   */
+  runBatch?(jobs: Array<{ $: IGlobalVariable }>): Promise<RunBatchJobResult[]>
+
+  /**
+   * If set, this action opts into batch processing: its jobs are routed to a
+   * dedicated batch queue and processed via {@link IBaseAction.runBatch}. The
+   * config derives the batch group id (the unit a single `runBatch` serves).
+   */
+  batch?: IActionBatchQueue
 
   /**
    * Gets metadata for the `dataOut` of this action's execution step.

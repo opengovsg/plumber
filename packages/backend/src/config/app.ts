@@ -108,6 +108,9 @@ type AppConfig = {
     credentials?: AwsCredentialIdentity
   }
   archiveEnabled: boolean
+  aiGateway: {
+    apiKey?: string
+  }
 }
 
 const port = process.env.PORT || '3000'
@@ -228,6 +231,9 @@ const appConfig: AppConfig = {
     sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
   },
   archiveEnabled: process.env.ARCHIVE_ENABLED === 'true',
+  aiGateway: {
+    apiKey: process.env.AI_GATEWAY_API_KEY || undefined,
+  },
 }
 
 if (!appConfig.encryptionKey) {

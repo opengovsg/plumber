@@ -6,6 +6,7 @@ import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
 
+import { PublishedPipeError } from './published-pipe-error'
 import { stampStepDeletedByAi } from './step-ai-builder-config'
 
 export interface DeleteStepInput {
@@ -34,6 +35,10 @@ export async function deleteStepService({
     }
 
     const flow = step.flow
+
+    if (flow.active) {
+      throw new PublishedPipeError()
+    }
 
     if (traceId) {
       await step.$query(trx).patch({

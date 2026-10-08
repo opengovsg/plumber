@@ -89,7 +89,7 @@ export type IsChatReadyPart = {
     isChatReady: boolean
     flowSteps?: IFlowSteps
     error?: string
-    mcpMode?: boolean // true when mcpStepConfig LD flag is on — suppresses the create-pipe mutation button
+    mcpMode?: boolean // Proposal with no pipe yet. Hides the create-pipe button.
   }
 }
 
