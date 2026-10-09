@@ -5,11 +5,13 @@
  *   and step parameters that are not 'sensitive'."
  * - "we don't duplicate any connections"
  * - "drop the config on Editor/Viewer duplicate"
+ * - A collaborator duplicate may change only duplicateCount on the original
+ *   pipe. It must not replace the rest of the owner's config.
  */
 import { IFlowCollabRole } from '@plumber/types'
 
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'
 import Connection from '@/models/connection'
@@ -225,6 +227,42 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
         steps.map((step) => step.connectionId),
       )
       expect(originalSteps[3].parameters.fileId).toBe('file-1')
+    })
+
+    it('does not replace owner config that changed after the pipe was read', async () => {
+      const transaction = Flow.transaction.bind(Flow)
+      const spy = vi.spyOn(Flow, 'transaction').mockImplementation(((
+        callback: (trx: unknown) => Promise<unknown>,
+      ) =>
+        Flow.query()
+          .findById(flow.id)
+          .patch({
+            config: {
+              errorConfig: {
+                notificationFrequency: 'once_per_day',
+                notificationRecipients: ['viewer'],
+              },
+              rejectIfOverMaxQps: false,
+              isForceClogged: true,
+              duplicateCount: 4,
+            },
+          })
+          .then(() => transaction(callback))) as typeof Flow.transaction)
+
+      try {
+        await duplicate()
+      } finally {
+        spy.mockRestore()
+      }
+
+      const original = await Flow.query().findById(flow.id)
+      expect(original.config.duplicateCount).toBe(5)
+      expect(original.config.isForceClogged).toBe(true)
+      expect(original.config.rejectIfOverMaxQps).toBe(false)
+      expect(original.config.errorConfig).toEqual({
+        notificationFrequency: 'once_per_day',
+        notificationRecipients: ['viewer'],
+      })
     })
   },
 )
