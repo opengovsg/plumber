@@ -8,6 +8,7 @@
   "dependencies": {
     "dotenv": "catalog:",
     "knex": "catalog:",
+    "pg": "catalog:pg",
     "uuid": "catalog:"
   }
 }
