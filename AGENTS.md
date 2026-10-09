@@ -14,6 +14,7 @@ These rules apply to all output, including code comments and commit
 messages. Follow them to maintain maximum clarity and eliminate filler:
 
 - ONE CONCEPT PER SENTENCE: Write short, direct sentences.
+
   - Max 20 words for instructions/procedures.
   - Max 25 words for descriptions.
   - Do NOT use semicolons or em-dashes (—). Split them into separate sentences.
@@ -21,14 +22,17 @@ messages. Follow them to maintain maximum clarity and eliminate filler:
 - ONE TERM PER ENTITY: Do not rotate synonyms. Pick one standard name for an object or concept and use it consistently (e.g., choose "user" and do not alternate with "client" or "customer").
 
 - NEVER REPEAT YOURSELF: State each fact or instruction once. Do not restate it in different words later in the same passage.
+
   - WRONG: "Not an exhaustive list — apply this to any case, not just these."
   - RIGHT: "Not an exhaustive list."
 
 - ACTIVE VERBS ONLY: Use direct action verbs instead of normalized nouns.
+
   - WRONG: "Perform an analysis of the logs."
   - RIGHT: "Analyze the logs."
 
 - NO HEDGING OR FILLER: State facts directly.
+
   - WRONG: "It is important to note that this configuration may potentially help improve performance."
   - RIGHT: "This configuration improves performance."
 
@@ -47,18 +51,20 @@ explicitly, e.g. `nvm use && npm run -w backend lint`.
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
 - `npm run setup` — one-time per session; brings up Postgres, Redis, DynamoDB, MinIO, etc. via Docker.
-- `npm run dev` — runs backend + frontend + worker. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
+- `npm run dev` — runs backend + frontend + worker inside a nono sandbox. The human re-runs / restarts this on backend changes; the frontend hot-reloads on its own.
 - `npm run teardown` — tears the Docker services back down when the human is done.
 
 **Secrets:** there is no `packages/backend/.env`. Never create or read one. Never run
 `npm run dev` or `npm run setup` either. Both fetch secrets from 1Password behind a
 biometric prompt that an agent cannot answer.
 
-- `npm run dev:sample-env` — run this instead. It boots backend, worker and frontend on
+- `npm run dev:local` — run this instead. It boots backend, worker and frontend on
   `.env-example` placeholders.
-- **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
-  Those calls fail with third-party authentication errors. That is expected, not a bug to
-  fix.
+- **`dev:local` reaches only non-sensitive integrations, e.g. M365 development tenants.**
+  The set env vars decide which ones. Calls to sensitive integrations fail with
+  third-party authentication errors. That is expected, not a bug to fix.
+- When integration code fails authentication under `dev:local`, ask the human whether the
+  integration is sensitive. Do not assume a bad credential.
 - `lint`, `typecheck`, `test:unit`, `test:integration` and `migrate` need nothing. They
   already read `.env-example`.
 

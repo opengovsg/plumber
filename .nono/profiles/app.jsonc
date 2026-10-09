@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "name": "plumber-app",
+    // We sandbox the app with credential injection to prevent agents from using
+    // code modification as a side channel (e.g. by logging process.env, or
+    // doing filesystem reads/writes through nodejs).
+    "description": "Sandbox for the Plumber app (frontend, backend, workers).",
+    "version": "1.0.0"
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "unsafe_macos_seatbelt_rules": [
+    // Credential injection forcibly enables outbound connection blocking, but
+    // we don't want this.
+    // See https://github.com/nolabs-ai/nono/issues/1031
+    "(allow network-outbound)",
+    // Enable listening on arbitrary ports, to enable config-free port
+    // assignment to different worktrees.
+    "(allow network-bind)",
+    "(allow network-inbound)"
+  ],
+  "network": {
+    "block": false,
+    "allow_domain": ["*"],
+    "credentials": ["pair_foundry"],
+    "custom_credentials": {
+      "pair_foundry": {
+        "upstream": "https://engine.pair.gov.sg",
+        "credential_key": "env://PAIR_FOUNDRY_API_KEY",
+        "inject_mode": "header",
+        "inject_header": "Authorization",
+        "credential_format": "Bearer {}"
+      }
+    }
+  },
+  "environment": {
+    "set_vars": {
+      "PAIR_FOUNDRY_API_KEY": "sk-key-pair-foundry"
+    }
+  },
+  "groups": {
+    "include": ["node_runtime"]
+  },
+  "commands": {
+    // Allow npm scripts to run other scripts
+    "allow": ["npm"]
+  },
+  // For vite's browser open functionality
+  "open_urls": {
+    "allow_localhost": true
+  },
+  "filesystem": {
+    "allow": ["$HOME/.npm/_logs/"],
+    // Stop nono from doing post-launch denial review
+    "suppress_save_prompt": ["/"]
+  },
+  "diagnostics": {
+    // Stop nono from doing post-launch denial review
+    "suppress_system_services": ["user-preference-read"]
+  }
+}
