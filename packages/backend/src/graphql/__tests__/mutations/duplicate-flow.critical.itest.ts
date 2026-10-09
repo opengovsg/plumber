@@ -222,6 +222,9 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
         .$relatedQuery('steps')
         .orderBy('position', 'asc')
       expect(original.config.duplicateCount).toBe(1)
+      expect(new Date(original.updatedAt).getTime()).toBe(
+        new Date(flow.updatedAt).getTime(),
+      )
       expect(original.config.errorConfig?.notificationFrequency).toBe('always')
       expect(originalSteps.map((step) => step.connectionId)).toEqual(
         steps.map((step) => step.connectionId),
