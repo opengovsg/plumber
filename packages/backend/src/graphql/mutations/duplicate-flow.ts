@@ -1,5 +1,4 @@
 import { isEmpty } from 'lodash'
-import { raw } from 'objection'
 
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
 import { getStepVersion } from '@/helpers/get-step-version'
@@ -29,17 +28,19 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
 
   return await Flow.transaction(async (trx) => {
     const prevConfig = { ...flow.config }
-    // A full config write would let a stale read overwrite owner settings.
-    await flow.$query(trx).patch({
-      config: raw(
-        `jsonb_set(
-          COALESCE(config, '{}'::jsonb),
-          '{duplicateCount}',
-          to_jsonb(COALESCE(config->>'duplicateCount', '0')::int + 1),
-          true
-        )`,
-      ),
-    })
+    // Skip the model hook so this counter write does not refresh updated_at or replace the rest of config.
+    await trx('flows')
+      .where('id', flow.id)
+      .update({
+        config: trx.raw(
+          `jsonb_set(
+            COALESCE(config, '{}'::jsonb),
+            '{duplicateCount}',
+            to_jsonb(COALESCE(config->>'duplicateCount', '0')::int + 1),
+            true
+          )`,
+        ),
+      })
 
     // duplicate the flow with the previous config (only keep notification frequency)
     delete prevConfig['duplicateCount']
