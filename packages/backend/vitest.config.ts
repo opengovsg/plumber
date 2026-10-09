@@ -14,9 +14,15 @@ config({
 export default defineConfig({
   test: {
     name: 'backend',
+    // Read by @/config/unit-test-mode. Set here so it is live before any test
+    // file imports a module that would otherwise connect to Redis or Postgres.
+    env: {
+      PLUMBER_UNIT_TESTS: '1',
+    },
     // load env variables
     setupFiles: [
       'dotenv/config',
+      path.resolve(__dirname, './test/mock-redis-setup.ts'),
       path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
     ],
     include: ['src/**/*.test.{js,ts}'],
