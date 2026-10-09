@@ -1,9 +1,18 @@
 import { IRawAction } from '@plumber/types'
 
-import StepError from '@/errors/step'
+import { ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
+
+import HttpError from '@/errors/http'
+import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
 
 import { processAttachments } from '../../common/attachment'
+import {
+  caseIdentifierSchema,
+  resolveCaseIdentifier,
+} from '../../common/case-identifier'
+import throwGatherSGStepError from '../../common/throw-errors'
 import { processFields } from '../../common/utils'
 
 import getDataOutMetadata from './get-data-out-metadata'
@@ -11,13 +20,15 @@ import getDataOutMetadata from './get-data-out-metadata'
 const action: IRawAction = {
   name: 'Get case details',
   key: 'getCaseDetails',
-  description: 'Select the case uuid you want to get case details for.',
+  description:
+    'Select the case uuid or case ref you want to get case details for.',
   arguments: [
     {
-      label: 'Case UUID',
+      label: 'Case UUID or case ref',
       key: 'caseUuid',
       type: 'string' as const,
       required: true,
+      description: 'Select a variable with a case UUID or case ref.',
       variables: true,
       // we intentionally disable typing for case uuid as it is used in
       // to get dynamic data for case fields
@@ -30,7 +41,10 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const { caseUuid } = $.step.parameters
+      const caseIdentifier = caseIdentifierSchema.parse(
+        $.step.parameters.caseUuid,
+      )
+      const caseUuid = await resolveCaseIdentifier($, caseIdentifier)
 
       let rawData
       try {
@@ -76,6 +90,22 @@ const action: IRawAction = {
         },
       })
     } catch (error) {
+      if (error instanceof ZodError) {
+        const firstError = fromZodError(error).details[0]
+        throw new StepError(
+          `${firstError.message}`,
+          GenericSolution.ReconfigureInvalidField,
+        )
+      }
+
+      if (error instanceof StepError) {
+        throw error
+      }
+
+      if (error instanceof HttpError) {
+        throwGatherSGStepError(error)
+      }
+
       logger.error(
         `Failed to get case details for case ${$.step.parameters.caseUuid}:`,
         error,

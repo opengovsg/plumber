@@ -5,7 +5,9 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 
+import { readStepErrorName } from '../common/case-identifier'
 import { fetchCaseFields } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
@@ -40,6 +42,10 @@ const dynamicData: IDynamicData = {
         })),
       }
     } catch (error) {
+      if (error instanceof StepError) {
+        return { data: [], error: { message: readStepErrorName(error) } }
+      }
+
       if (error instanceof HttpError && error.response?.status === 404) {
         const { message, code } =
           (error.response.data.error as GatherSGError) ?? {}
