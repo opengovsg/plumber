@@ -78,7 +78,7 @@ function FlowsList({ isLoading, isSearching, flows }: FlowsInternalProps) {
   return (
     <Box>
       {flows.map((flow) => (
-        <FlowRow key={flow.id} flow={flow} showMenu={flow.role === 'owner'} />
+        <FlowRow key={flow.id} flow={flow} />
       ))}
     </Box>
   )

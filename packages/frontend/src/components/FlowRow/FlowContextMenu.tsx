@@ -55,6 +55,7 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
   const toast = useToast()
   const [deleteFlow, { loading: isDeletingFlow }] = useMutation(DELETE_FLOW)
   const flowTransfer = flow?.pendingTransfer
+  const isOwner = flow.role === 'owner'
 
   const [duplicateFlow, { loading: isDuplicatingFlow }] = useMutation(
     DUPLICATE_FLOW,
@@ -161,23 +162,25 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           >
             Duplicate
           </MenuItem>
-          <TouchableTooltip
-            label={
-              flowTransfer
-                ? 'You cannot delete a pipe with a pending transfer'
-                : ''
-            }
-            aria-label="Delete Flow Warning"
-          >
-            <MenuItem
-              isDisabled={!!flowTransfer}
-              onClick={onDeleteButtonClick}
-              icon={<Icon as={BiTrash} boxSize={5} />}
-              color="interaction.critical.default"
+          {isOwner && (
+            <TouchableTooltip
+              label={
+                flowTransfer
+                  ? 'You cannot delete a pipe with a pending transfer'
+                  : ''
+              }
+              aria-label="Delete Flow Warning"
             >
-              Delete
-            </MenuItem>
-          </TouchableTooltip>
+              <MenuItem
+                isDisabled={!!flowTransfer}
+                onClick={onDeleteButtonClick}
+                icon={<Icon as={BiTrash} boxSize={5} />}
+                color="interaction.critical.default"
+              >
+                Delete
+              </MenuItem>
+            </TouchableTooltip>
+          )}
         </MenuList>
       </Menu>
       <MenuAlertDialog

@@ -3,6 +3,7 @@ import { isEmpty } from 'lodash'
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
+import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
 import Flow from '@/models/flow'
 
@@ -16,11 +17,14 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
 ) => {
   const oldFlowId = params.input.id
   const flow = await context.currentUser
-    .$relatedQuery('flows')
-    .withGraphJoined('[steps.[connection]]')
-    .orderBy('steps.position', 'asc')
+    .withAccessibleFlows({ requiredRole: 'viewer' })
+    .withGraphFetched({ steps: { connection: true } })
     .findOne({ 'flows.id': oldFlowId })
     .throwIfNotFound()
+  flow.steps.sort((a, b) => a.position - b.position)
+
+  // Editors and Viewers must not receive the owner's connections or secrets.
+  const isOwner = flow.role === 'owner'
 
   return await Flow.transaction(async (trx) => {
     const prevConfig = { ...flow.config }
@@ -42,13 +46,14 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
     delete prevConfig['maxQps']
     delete prevConfig['isForceClogged']
     delete prevConfig['aiBuilderConfig']
+    delete prevConfig['archiveDisabled']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
       .insert({
         name: `[COPY] ${flow.name}`,
         active: false,
-        config: !isEmpty(prevConfig) ? prevConfig : undefined,
+        config: isOwner && !isEmpty(prevConfig) ? prevConfig : undefined,
       })
 
     // duplicate the steps and the variables
@@ -57,7 +62,8 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       // NOTE: should not duplicate connections that are shared
       // userId is null in connections if the connection was shared in a Pipe
       // and the pipe was subsequently transferred to another user
-      const shouldDuplicateConnection = oldStep.connection?.userId != null
+      const shouldDuplicateConnection =
+        isOwner && oldStep.connection?.userId != null
 
       const prevStepConfig = {
         ...oldStep.config,
@@ -83,7 +89,12 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
           connection: shouldDuplicateConnection ? oldStep.connection : null,
           position: oldStep.position,
           parameters: updateStepVariables(
-            oldStep.parameters,
+            isOwner
+              ? oldStep.parameters
+              : sanitizeCollaboratorDuplicatedParameters(
+                  oldStep.appKey,
+                  oldStep.parameters,
+                ),
             oldToNewStepIdsMap,
           ),
           config: !isEmpty(prevStepConfig) ? prevStepConfig : undefined,
@@ -105,6 +116,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       event: 'duplicate-flow-request',
       originalFlow: oldFlowId,
       duplicatedFlow: duplicatedFlow.id,
+      role: flow.role,
       stepsMapping: oldToNewStepIdsMap,
     })
 
