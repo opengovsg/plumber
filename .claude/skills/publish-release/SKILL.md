@@ -3,7 +3,7 @@ name: publish-release
 description: >
   Publish a Plumber production release. Prompts the user to choose the version
   bump (patch / minor / major), bumps the version across the root workspace and
-  every package via `npm version`, creates a single conventional `vX.Y.Z` commit
+  the app packages, creates a single conventional `vX.Y.Z` commit
   and git tag, pushes both to origin, then opens a draft GitHub release whose
   notes summarise the changes since the previous release. Use when the user asks
   to cut or publish a release, bump the version and release, tag a release, or
@@ -19,9 +19,10 @@ Ship Plumber to production by publishing a GitHub release from a version tag.
 - Releases ship from `develop-v2` (the trunk). There is no release PR. Nothing
   merges into `production`.
 - The version bump is exactly one commit on `develop-v2`, named `vX.Y.Z`. It
-  bumps the root `package.json`, every workspace `package.json`, and
-  `package-lock.json` together. Bundling them keeps the tag on a tree where all
-  version files agree.
+  bumps the root `package.json` and the four app packages (`backend`,
+  `frontend`, `backend-archive`, `types`) to that same version. `tools/*`
+  stay on their own versions. `pnpm-lock.yaml` does not store the app
+  version, so it is not part of this commit.
 - That commit is tagged `vX.Y.Z`. Both the commit and the tag are pushed to
   origin.
 - The GitHub release is created from that tag as a **draft**. The human
@@ -37,10 +38,12 @@ Ship Plumber to production by publishing a GitHub release from a version tag.
    without `--draft`. Never run `gh release edit --draft=false`.
 2. **Push only `develop-v2` and the `vX.Y.Z` tag.** Never force-push. Never push
    any other branch.
-3. **One clean bump commit.** The commit must touch exactly the root
-   `package.json`, `package-lock.json`, and every `packages/*/package.json`. Its
-   message is `vX.Y.Z` (with the `v` prefix). Do not leave workspace bumps
-   uncommitted. See the gotcha below.
+3. **One clean bump commit.** The commit must touch exactly these five files:
+   the root `package.json`, `packages/backend/package.json`,
+   `packages/frontend/package.json`, `packages/backend-archive/package.json`,
+   and `packages/types/package.json`. Its message is `vX.Y.Z` (with the `v`
+   prefix). Each file's version field must be that same version. Do not leave
+   a workspace bump uncommitted. See the gotcha below.
 4. **Never `git reset --hard`** (a deny rule blocks it anyway). Back a bump out
    with a mixed reset plus `git checkout -- .`.
 5. **Never bump or tag before step 1 passes.** A release must be cut from a
@@ -94,25 +97,70 @@ recommended option first and append " (Recommended)" to its label.
 
 ### 4. Bump, commit, tag
 
-Use `--no-git-tag-version` so npm only rewrites the version files. **You** create
-the commit and tag, so it is a single correctly-named commit (see gotcha).
+Replace only the `version` field in the five app manifests. **You** create the
+commit and tag. Do not use `npm version` or `pnpm version` (see gotcha).
 Replace `<bump>` with the chosen `patch`/`minor`/`major`:
 
 ```bash
-npm version <bump> --workspaces --include-workspace-root --no-git-tag-version
-NEW=$(node -p "require('./package.json').version")
-git add package.json package-lock.json packages/*/package.json
+nvm use
+NEW=$(BUMP=<bump> node << 'EOF'
+const fs = require('fs')
+const files = [
+  'package.json',
+  'packages/backend/package.json',
+  'packages/frontend/package.json',
+  'packages/backend-archive/package.json',
+  'packages/types/package.json',
+]
+const bump = process.env.BUMP
+function nextVersion(version, kind) {
+  const [major, minor, patch] = version.split('.').map(Number)
+  if (kind === 'major') return `${major + 1}.0.0`
+  if (kind === 'minor') return `${major}.${minor + 1}.0`
+  if (kind === 'patch') return `${major}.${minor}.${patch + 1}`
+  throw new Error(`unknown bump ${kind}`)
+}
+const current = JSON.parse(fs.readFileSync('package.json', 'utf8')).version
+const next = nextVersion(current, bump)
+const pattern = new RegExp(`("version"\\s*:\\s*")${current.replaceAll('.', '\\.')}(")`)
+for (const file of files) {
+  const pkg = JSON.parse(fs.readFileSync(file, 'utf8'))
+  if (pkg.version !== current) {
+    throw new Error(`${file} is ${pkg.version}, expected ${current}`)
+  }
+  const text = fs.readFileSync(file, 'utf8')
+  const updated = text.replace(pattern, `$1${next}$2`)
+  if (updated === text) throw new Error(`version field not found in ${file}`)
+  fs.writeFileSync(file, updated)
+}
+process.stdout.write(next)
+EOF
+)
+git add package.json packages/backend/package.json packages/frontend/package.json packages/backend-archive/package.json packages/types/package.json
 git commit -m "v$NEW"
 git tag "v$NEW"
 ```
 
+The server reads `packages/backend/package.json` at startup. If that file stays
+on the old version, production still reports the old version. The script aborts
+when any of the five files has already drifted from the root version.
+
 ### 5. Verify
 
 ```bash
-git show --stat HEAD        # expect: root package.json + every packages/*/package.json + package-lock.json; message "vX.Y.Z"
+git show --stat HEAD
 git tag --points-at HEAD    # expect: vX.Y.Z
 git status --porcelain      # expect: empty
+node -p "
+const files = ['package.json','packages/backend/package.json','packages/frontend/package.json','packages/backend-archive/package.json','packages/types/package.json']
+files.map(f => require('./'+f).version).join(' ')
+"
 ```
+
+`git show --stat` must list only those five `package.json` files, and the
+message must be `vX.Y.Z`. The `node -p` line must print the new version five
+times. `tools/*/package.json` and `pnpm-lock.yaml` must be absent from the
+commit.
 
 If anything is off (workspace bumps missing, wrong message, stray tag), back it
 out and retry. Step 4 creates exactly one commit, so the pre-bump commit is
@@ -161,15 +209,23 @@ Report the draft release URL. State plainly that clicking Publish deploys
 pre-release (`--prerelease`) publishes without deploying. Un-checking
 "pre-release" later fires `released` and deploys then.
 
-## Gotcha: `npm version --workspaces` quirk
+## Gotcha: do not use `npm version` or `pnpm version`
 
-`npm version <bump> --workspaces --include-workspace-root` (with its default git
-tagging) rewrites **all** the `package.json` files in the working tree. It
-commits **only the root** `package.json` and lockfile, leaving the workspace
-bumps uncommitted. A global `message=%s` config also drops the conventional `v`
-prefix. That is why step 4 uses `--no-git-tag-version` and runs `git add`,
-`git commit`, and `git tag` manually. It folds every version file into one
-commit with the correct `vX.Y.Z` message, deterministically.
+`npm version` is rejected by the `preinstall` allow-list, and it writes
+`package-lock.json`, which this repo no longer has. With its default git
+tagging it also commits only the root `package.json`, so the workspace
+versions never land on the tag.
+
+`pnpm version patch` bumps only the root. The running server would keep
+reporting the old version from `packages/backend/package.json`.
+
+`pnpm version patch -r` bumps `tools/*` as well (those stay on `1.0.0`) and
+rewrites each `package.json`, which can reorder dependency keys. The release
+commit would then contain more than the version field.
+
+Step 4 replaces the `version` string in the five app manifests and commits
+those files by hand. The diff is the version field only, and the tag contains
+the version the server actually reads.
 
 ## Gotcha: workflow-created releases do not deploy
 
