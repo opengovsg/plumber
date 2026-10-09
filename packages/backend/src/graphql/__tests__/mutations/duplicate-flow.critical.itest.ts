@@ -1,12 +1,11 @@
 /**
- * Business rules (verbatim from the product owner):
- * - "enable pipe duplication for editors and viewers without duplicating the
- *   connections in the Pipe, but still retain custom step names, variables
- *   and step parameters that are not 'sensitive'."
- * - "we don't duplicate any connections"
- * - "drop the config on Editor/Viewer duplicate"
- * - A collaborator duplicate may change only duplicateCount on the original
- *   pipe. It must not replace the rest of the owner's config.
+ * Collaborator duplicate rules:
+ * - Editors and viewers get their own copy.
+ * - The copy has no connections and no pipe config.
+ * - Step names, variables, and non-sensitive parameters stay.
+ * - File, table, and secret parameters are removed.
+ * - The original pipe changes only duplicateCount.
+ * - Its updated_at stays the same.
  */
 import { IFlowCollabRole } from '@plumber/types'
 
