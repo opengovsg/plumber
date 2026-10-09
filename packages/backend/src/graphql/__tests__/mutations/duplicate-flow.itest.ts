@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'
@@ -161,5 +162,50 @@ describe('duplicateFlow endStepId remap', () => {
     expect(originalTrigger.config.aiBuilderConfig).toEqual([
       { traceId: 'trace-source', tool: 'create_pipe' },
     ])
+  })
+
+  it('does not copy archiveDisabled onto an owner duplicate', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    await flow.$query().patch({
+      config: {
+        archiveDisabled: true,
+        errorConfig: {
+          notificationFrequency: 'always',
+          notificationRecipients: [],
+        },
+        rejectIfOverMaxQps: true,
+      },
+    })
+
+    const duplicated = await duplicateFlow(
+      null,
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const copy = await Flow.query().findById(duplicated.id)
+    expect(copy.config?.archiveDisabled).toBeUndefined()
+    expect(copy.config?.rejectIfOverMaxQps).toBe(true)
+  })
+
+  it('rejects a user who is not the owner or a collaborator', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    const stranger = await User.query().insert({
+      email: `${randomUUID()}@open.gov.sg`,
+    })
+
+    await expect(
+      duplicateFlow(null, { input: { id: flow.id } }, {
+        ...context,
+        currentUser: stranger,
+      } as unknown as Context),
+    ).rejects.toThrow()
+
+    const copy = await Flow.query().where('name', '[COPY] Source Flow').first()
+    expect(copy).toBeUndefined()
   })
 })
