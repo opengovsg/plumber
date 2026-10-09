@@ -43,16 +43,21 @@ describe('isTransientDbError', () => {
     '57P01',
     '57P02',
     '57P03',
+    '25006',
   ])('returns true for postgres SQLSTATE %s', (code) => {
     expect(isTransientDbError(makePgError(code))).toBe(true)
   })
 
-  it.each(['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EPIPE', 'ENOTFOUND'])(
-    'returns true for socket error %s',
-    (code) => {
-      expect(isTransientDbError(makePgError(code))).toBe(true)
-    },
-  )
+  it.each([
+    'ECONNRESET',
+    'ETIMEDOUT',
+    'ECONNREFUSED',
+    'EPIPE',
+    'ENOTFOUND',
+    'EAI_AGAIN',
+  ])('returns true for socket error %s', (code) => {
+    expect(isTransientDbError(makePgError(code))).toBe(true)
+  })
 
   it('returns true when the transient code is on nativeError (Objection DBError)', () => {
     expect(isTransientDbError(makeObjectionWrappedError('57P01'))).toBe(true)
@@ -70,6 +75,8 @@ describe('isTransientDbError', () => {
     'server closed the connection unexpectedly',
     // Case + surrounding context should still match.
     'Error: Connection terminated unexpectedly while idle',
+    'Connection terminated due to connection timeout',
+    'Knex: Timeout acquiring a connection. The pool is probably full. Are you missing a .transacting(trx) call?',
   ])('returns true for transient pg driver message: %s', (message) => {
     expect(isTransientDbError(new Error(message))).toBe(true)
   })
