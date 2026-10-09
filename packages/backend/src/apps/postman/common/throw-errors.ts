@@ -173,6 +173,7 @@ export function throwPostmanStepError({
           blacklistedEmail: recipient,
           stepId: $.step.id,
           executionId: $.execution.id,
+          flowId: $.flow.id,
         })
       })
 
