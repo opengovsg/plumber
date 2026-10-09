@@ -199,11 +199,10 @@ describe('duplicateFlow endStepId remap', () => {
     })
 
     await expect(
-      duplicateFlow(
-        null,
-        { input: { id: flow.id } },
-        { ...context, currentUser: stranger } as unknown as Context,
-      ),
+      duplicateFlow(null, { input: { id: flow.id } }, {
+        ...context,
+        currentUser: stranger,
+      } as unknown as Context),
     ).rejects.toThrow()
 
     const copy = await Flow.query().where('name', '[COPY] Source Flow').first()
