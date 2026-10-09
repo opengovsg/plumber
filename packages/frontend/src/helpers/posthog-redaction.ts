@@ -2,7 +2,7 @@ import type { CaptureResult, Properties } from 'posthog-js'
 
 // Matches both raw and URL-encoded (`%40`) emails.
 const EMAIL_PATTERN =
-  /[A-Za-z0-9._+-]+(?:@|%40)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/gi
+  /[A-Za-z0-9._+-]+(?:@|%40)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g
 
 // Catches $current_url, $pathname, $referrer and their $initial_ /
 // $session_entry_ variants.
@@ -11,6 +11,9 @@ const URL_PROPERTY_PATTERN = /(url|pathname|referrer)$/i
 export const REDACTED_EMAIL = '[redacted-email]'
 
 export function redactEmails(value: string): string {
+  if (!value.includes('@') && !value.includes('%40')) {
+    return value
+  }
   return value.replace(EMAIL_PATTERN, REDACTED_EMAIL)
 }
 
