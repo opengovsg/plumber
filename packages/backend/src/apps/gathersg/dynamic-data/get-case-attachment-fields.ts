@@ -6,7 +6,10 @@ import {
 
 import HttpError from '@/errors/http'
 
-import { fetchCaseFields } from '../common/fetch-case-fields'
+import {
+  fetchCaseFields,
+  type GatherSGCaseField,
+} from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
 import { resolveCaseUuid } from './get-case-fields'
@@ -34,7 +37,7 @@ const dynamicData: IDynamicData = {
       })
 
       return {
-        data: attachmentFields.map((field) => ({
+        data: attachmentFields.map((field: GatherSGCaseField) => ({
           name: field.name,
           value: field.name,
         })),

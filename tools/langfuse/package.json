@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@langfuse/client": "4.2.0"
+    "@langfuse/client": "4.2.0",
+    "@opentelemetry/api": "catalog:"
   }
 }

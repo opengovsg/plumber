@@ -56,7 +56,7 @@ const dynamicData: IDynamicData = {
     )
 
     return {
-      data: results.data.value.map((entry) => ({
+      data: results.data.value.map((entry: { id: string; name: string }) => ({
         name: entry.name,
         value: entry.id,
       })),

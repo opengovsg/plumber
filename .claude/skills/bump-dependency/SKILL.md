@@ -1,6 +1,6 @@
 ---
 name: bump-dependency
-description: Research and safely apply npm dependency version bumps across the Plumber monorepo (root, backend, frontend, types). Use when the user asks to bump/update/upgrade a package, asks whether a version bump has breaking changes, or wants a dependency security patch applied.
+description: Research and safely apply pnpm dependency version bumps across the Plumber monorepo (root, backend, frontend, types). Use when the user asks to bump/update/upgrade a package, asks whether a version bump has breaking changes, or wants a dependency security patch applied.
 ---
 
 # Bump Dependency
@@ -11,27 +11,30 @@ and impact-check steps, even for "just a patch" bumps.
 ## Step 0 — Resolve the package name and target version
 
 The invocation argument (e.g. `/bump-dependency <name>`) is the literal
-package name — take it at face value and confirm it with `grep`/`npm ls`
+package name. Take it at face value and confirm it with `grep`/`pnpm why`
 before interpreting it any other way. Don't let recent conversation
 context reinterpret it (e.g. a bare word that also reads as an ordinary
 English adjective, or resembles a package discussed earlier in the
-session) — verify against `package.json`/`package-lock.json` first.
+session). Verify against `pnpm-workspace.yaml` and `pnpm-lock.yaml` first.
 
 Don't ask the user for a target version up front. Resolve it yourself:
 
-1. Run `npm audit --json` at the repo root. If the package shows up with
+1. Run `pnpm audit --json` at the repo root. If the package shows up with
    a recommended fix (`fixAvailable`), that recommended version is the
-   default target — even if it's a major bump, since it's the minimum
+   default target. A major bump is allowed here, because it is the minimum
    needed to clear the advisory.
-2. If the package isn't flagged by `npm audit`, prefer staying within the
+2. If the package isn't flagged by `pnpm audit`, prefer staying within the
    **current major version line**: use the latest minor/patch release on
-   that line (`npm view <package>@<current-major> version`, or the
-   highest entry for that major from `npm view <package> versions --json`)
+   that line (`pnpm view <package>@<current-major> version`, or the
+   highest entry for that major from `pnpm view <package> versions --json`)
    as the default target, not the absolute latest major. Only reach past
    the current major if the user explicitly asks for the newest version
    or there's a concrete reason the current major can't be kept (e.g. it's
    deprecated/unsupported upstream).
-3. Either way, proceed straight into Step 1–4 research/impact-check using
+3. `minimumReleaseAge` is 2880 minutes. `pnpm install` rejects a version
+   published less than two days ago. If the target is younger than that,
+   wait, or tell the user the install will fail.
+4. Either way, proceed straight into Step 1–4 research/impact-check using
    that resolved target — only surface the version as an explicit
    decision point in Step 4 if it turns out to be a **major** bump over
    the current version (major bumps carry real migration risk and are
@@ -41,12 +44,18 @@ Don't ask the user for a target version up front. Resolve it yourself:
 
 Check whether the package is **direct** or **transitive**:
 
-- Direct: listed in `dependencies`/`devDependencies` of the root or any
-  `packages/*/package.json`, pinned to an exact version (no `^`/`~`).
-- Transitive: only appears in `package-lock.json` (confirm with
-  `npm ls <package> --all`), not declared in any `package.json` — it may
-  already have an entry in the root `package.json` `overrides` block if a
-  prior bump pinned it there.
+- Direct: a workspace `package.json` lists it. The version usually lives
+  in `pnpm-workspace.yaml` under `catalog:` or `catalogs:`, and the
+  `package.json` specifier is `catalog:` or `catalog:<name>`. A few
+  packages (for example `tools/langfuse`) still pin an exact version in
+  their own `package.json`.
+- Transitive: it appears in `pnpm-lock.yaml` and is not declared by any
+  workspace. Confirm with `pnpm why <package>`. It may already have an
+  exact entry under `overrides:` in `pnpm-workspace.yaml`.
+
+An `overrides:` entry wins over the catalog. If you change only the
+catalog, `pnpm install` keeps the override version and the bump does not
+take effect.
 
 ## Step 2 — Research breaking changes
 
@@ -81,38 +90,44 @@ even if the CVE itself sounds scary.
 ## Step 4 — Report and wait
 
 Present to the user: what changed in the version range, whether Plumber
-code is exposed, and recommended verification (`npm run lint`, `npm test`,
+code is exposed, and recommended verification (`pnpm run lint`, `pnpm test`,
 specific manual checks). **Do not proceed to Step 5 without the user
 asking you to apply/bump/commit it.**
 
 ## Step 5 — Apply the bump (only after the user asks)
 
-**Direct dependency:**
-1. Edit the exact `package.json` (root or the owning workspace) to the new
-   version. Always pin exact (`"1.9.0"`, never `"^1.9.0"` or `"~1.9.0"`) —
-   this repo always pins. Use `npm install -E` if installing rather than
-   hand-editing.
-2. Ask explicit confirmation before running `npm install`. Never run it
-   unprompted, even after the user approved the bump itself in Step 4 —
-   approving the bump is not the same as approving the command.
+Write the exact target version (`"1.9.0"`, never `"^1.9.0"` or `"~1.9.0"`).
+
+**Direct dependency declared with `catalog:`:**
+1. Edit that package's entry in `pnpm-workspace.yaml` (`catalog:` or the
+   named catalog it uses). Leave the `package.json` specifier as `catalog:`.
+2. If `overrides:` has a top-level `"<package>"` key, set it to the same
+   version. Skip this and the install still resolves the old pin.
+3. Leave `parent>package` override keys alone unless the user is bumping
+   that one edge. Those keys pin a second copy.
+
+**Direct dependency with a version in `package.json`:**
+1. Edit that `package.json` version.
+2. Update a top-level override for the same package, when one exists.
 
 **Transitive dependency:**
-1. Prefer `npm update <package>` first — it stays within whatever range
-   the parent dependency already declares.
-2. If the target patched version is outside that range (common for
-   security backports), add/update an exact-pinned entry for it under the
-   root `package.json` `"overrides"` block instead, then apply via
-   `npm install`.
-3. `npm update` and `npm install` each require their own explicit
-   confirmation before running — never run either unprompted, and don't
-   treat approval of one as approval of the other.
+1. Add or update an exact `"<package>"` entry under `overrides:` in
+   `pnpm-workspace.yaml`. There is no root `package.json` `overrides` block.
+2. Prefer a version that still satisfies the parent's declared range. If
+   the advisory fix is outside that range, the override is what forces it.
+
+Ask explicit confirmation before `pnpm install`. Never run it unprompted.
+Approving the bump is not the same as approving the install. After it
+finishes, run `pnpm why <package>` and confirm the resolved version is the
+target. If it is still the old version, the override was not updated.
 
 ## Step 6 — Commit (only after explicit confirmation)
 
 - Never commit a dependency bump unprompted, even right after applying it.
 - Before committing, run `git status` + `git diff --stat` and confirm the
-  diff is scoped to exactly the intended `package.json`/`package-lock.json`
-  changes — nothing unrelated got swept in.
+  diff is scoped to `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and any
+  `package.json` whose own specifier changed. Nothing unrelated got swept
+  in. Do not commit `package-lock.json`.
 - Commit message: what was bumped, the CVE/behavior-change summary from
   Step 2, one line on why it's safe (from Step 3). End with
   `Co-Authored-By:` using the *current* session's actual model name — never
@@ -122,7 +137,8 @@ asking you to apply/bump/commit it.**
 
 | Situation | Command |
 |---|---|
-| Confirm direct vs transitive | `npm ls <package> --all` |
-| Bump transitive within existing range | `npm update <package>` |
-| Force transitive past declared range | pin in root `overrides`, then `npm install` |
-| Bump direct dependency | edit exact version in `package.json`, then `npm install` |
+| Confirm direct vs transitive | `pnpm why <package>` |
+| Where the direct version is declared | `catalog:` entry in `pnpm-workspace.yaml` |
+| Make a catalog bump actually install | set the same version on the top-level `overrides:` key, then `pnpm install` |
+| Force a transitive package | pin it under `overrides:` in `pnpm-workspace.yaml`, then `pnpm install` |
+| Confirm the bump took effect | `pnpm why <package>` shows the target version |

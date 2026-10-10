@@ -5,7 +5,7 @@ import { z } from 'zod'
 import logger from '@/helpers/logger'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
-const router = Router()
+const router: Router = Router()
 
 const whitelistRequestSchema = z.object({
   emails: z
