@@ -1,3 +1,4 @@
+import '@/helpers/nodejs-dev-http-interceptor'
 import '@/instrumentation'
 import '@/helpers/tracer'
 import '@/config/app-env-vars'
