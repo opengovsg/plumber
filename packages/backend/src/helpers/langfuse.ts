@@ -1,6 +1,7 @@
 import { LangfuseClient } from '@langfuse/client'
 
 import appConfig from '@/config/app'
+import { PAIR_ROME_PROJECT_HEADER } from '@/helpers/nodejs-dev-http-interceptor/rules/nono-pair-rome-compat/prod-constants'
 
 export type LangfuseProject = 'aiBuilder' | 'pairAction'
 
@@ -36,6 +37,14 @@ export function getLangfuseClient(project: LangfuseProject): LangfuseClient {
     ...BASE_CONFIG,
     publicKey: credentials.publicKey,
     secretKey: credentials.secretKey,
+    ...(appConfig.isDev
+      ? {
+          additionalHeaders: {
+            ...BASE_CONFIG.additionalHeaders,
+            [PAIR_ROME_PROJECT_HEADER]: project,
+          },
+        }
+      : {}),
   })
 
   clients.set(project, client)
