@@ -1,3 +1,5 @@
+export const CONTINUE_PROMPT = 'Please continue from where you stopped.'
+
 export type AiFormIdea = {
   label: string
   icon: string
