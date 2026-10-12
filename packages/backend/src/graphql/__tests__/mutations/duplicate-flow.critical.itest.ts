@@ -47,12 +47,12 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
       })
       const collaboratorConnection = await Connection.query().insert({
         key: 'slack',
-        data: 'collaborator-secret',
+        formattedData: { token: 'collaborator-secret' },
         userId: collaborator.id,
       })
       const ownerConnection = await Connection.query().insert({
         key: 'formsg',
-        data: 'owner-secret',
+        formattedData: { token: 'owner-secret' },
         userId: owner.id,
       })
 
