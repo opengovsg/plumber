@@ -144,6 +144,7 @@ const handleChatStream = observe(
       // Convert UIMessages to ModelMessages
       const messages = convertToModelMessages(
         rawMessages as Parameters<typeof convertToModelMessages>[0],
+        { ignoreIncompleteToolCalls: true },
       )
 
       // Manually capture serializable input for Langfuse
