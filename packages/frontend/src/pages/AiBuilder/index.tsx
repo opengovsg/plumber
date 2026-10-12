@@ -14,6 +14,7 @@ import useAuthentication from '@/hooks/useAuthentication'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import AddFormsgConnectionModal from './components/AddFormsgConnectionModal'
 import ChatInterface from './components/ChatInterface'
@@ -423,6 +424,14 @@ function AiBuilderDraftProvider() {
   const [params] = useSearchParams()
   // NOTE: coerce to undefined to fit typing
   const start = params.get('start') ?? undefined
+  const from = params.get('from')
+
+  useEffect(() => {
+    if (!isPostHogConfigured || !from) {
+      return
+    }
+    posthog.capture('ai_builder:opened', { from })
+  }, [from])
 
   // Persist state to sessionStorage so it survives refresh.
   //
