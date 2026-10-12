@@ -142,18 +142,6 @@ describe('chatRequestSchema', () => {
       })
       expect(result.success).toBe(true)
     })
-
-    it('should accept data-stepLimitReached part', () => {
-      const result = chatRequestSchema.safeParse({
-        messages: [
-          {
-            role: 'assistant',
-            parts: [{ type: 'data-stepLimitReached', data: { stepLimit: 10 } }],
-          },
-        ],
-      })
-      expect(result.success).toBe(true)
-    })
   })
 
   describe('messages validation', () => {

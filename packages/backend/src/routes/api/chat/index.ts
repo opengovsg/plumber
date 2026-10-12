@@ -384,15 +384,6 @@ const handleChatStream = observe(
                   })
                 }
 
-                // The model still wanted to call tools when stopWhen cut it
-                // off. Without this signal the UI looks like it silently hung.
-                if (event.finishReason === 'tool-calls') {
-                  writer.write({
-                    type: 'data-stepLimitReached',
-                    data: { stepLimit: MAX_STEPS_PER_TURN },
-                  })
-                }
-
                 // Clarification blocks on both phases
                 emitTextAnnotations(event.text, writer)
               } catch (error) {
@@ -445,9 +436,14 @@ const handleChatStream = observe(
           writer.merge(
             result.toUIMessageStream({
               onError: getAiChatErrorMessage,
-              messageMetadata: () => ({
+              // finishReason 'tool-calls' means stopWhen cut the model off
+              // mid-task. The UI uses it to offer Continue.
+              messageMetadata: ({ part }) => ({
                 traceId,
                 model: MODEL_TYPE,
+                ...(part.type === 'finish' && {
+                  finishReason: part.finishReason,
+                }),
               }),
             }),
           )
