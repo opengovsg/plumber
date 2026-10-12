@@ -164,13 +164,18 @@ describe('duplicateFlow endStepId remap', () => {
     ])
   })
 
-  it('does not copy archiveDisabled onto an owner duplicate', async () => {
-    const { flow } = await seedFlow([
+  it('does not copy admin config onto an owner duplicate', async () => {
+    const { flow, steps } = await seedFlow([
       { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
     ])
+    await steps[0].$query().patch({
+      config: { adminOverride: { customWebhookResponse: 'ok' } },
+    })
     await flow.$query().patch({
       config: {
         archiveDisabled: true,
+        maxQps: 5,
+        isForceClogged: true,
         errorConfig: {
           notificationFrequency: 'always',
           notificationRecipients: [],
@@ -186,8 +191,12 @@ describe('duplicateFlow endStepId remap', () => {
     )
 
     const copy = await Flow.query().findById(duplicated.id)
+    const [copiedTrigger] = await copiedSteps()
     expect(copy.config?.archiveDisabled).toBeUndefined()
-    expect(copy.config?.rejectIfOverMaxQps).toBe(true)
+    expect(copy.config?.maxQps).toBeUndefined()
+    expect(copy.config?.rejectIfOverMaxQps).toBeUndefined()
+    expect(copy.config?.isForceClogged).toBeUndefined()
+    expect(copiedTrigger.config?.adminOverride).toBeUndefined()
   })
 
   it('rejects a user who is not the owner or a collaborator', async () => {

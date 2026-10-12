@@ -42,14 +42,15 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
         ),
       })
 
-    // duplicate the flow with the previous config (only keep notification frequency)
     delete prevConfig['duplicateCount']
     delete prevConfig['templateConfig']
     delete prevConfig['attachments']
     delete prevConfig['errorConfig']
-    delete prevConfig['maxQps']
-    delete prevConfig['isForceClogged']
     delete prevConfig['aiBuilderConfig']
+    // Admins set these per Pipe, so a copy must not inherit them.
+    delete prevConfig['maxQps']
+    delete prevConfig['rejectIfOverMaxQps']
+    delete prevConfig['isForceClogged']
     delete prevConfig['archiveDisabled']
 
     const duplicatedFlow = await context.currentUser
