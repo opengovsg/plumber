@@ -3,7 +3,7 @@ import type { IApp, IJSONObject } from '@plumber/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiInfoCircle } from 'react-icons/bi'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 
@@ -420,6 +420,9 @@ function AiBuilderContent() {
 
 function AiBuilderDraftProvider() {
   const locationState = useLocation()?.state
+  const [params] = useSearchParams()
+  // NOTE: coerce to undefined to fit typing
+  const start = params.get('start') ?? undefined
 
   // Persist state to sessionStorage so it survives refresh.
   //
@@ -460,7 +463,7 @@ function AiBuilderDraftProvider() {
   return (
     <AiBuilderContextProvider
       flowName={flowName}
-      chatInput={chatInput}
+      chatInput={chatInput || start}
       chatMessages={chatMessages}
       output={output}
       chatId={chatId}
