@@ -1,0 +1,24 @@
+{
+  "extends": "nolabs-ai/claude",
+  "meta": {
+    "name": "plumber-agent",
+    "description": "Sandbox for Claude to develop on Plumber",
+    "version": "1.0.0"
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "network": {
+    "block": false
+  },
+  "security": {
+    // Allows claude to detect IDEs for /ide integration
+    "signal_mode": "allow_all"
+  },
+  "filesystem": {
+    // OGP skills
+    "read": ["$HOME/.agents"],
+    // Stop nono from doing post-launch denial review
+    "suppress_save_prompt": ["/"]
+  }
+}

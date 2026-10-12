@@ -10,6 +10,7 @@
     "setup": "node scripts/with-op-env.mjs --env setup npm run -w backend setup",
     "dev": "node scripts/with-op-env.mjs nono run --profile ./.nono/profiles/app.jsonc --allow-cwd -- npm run dev:local",
     "dev:local": "turbo watch dev worker --continue",
+    "agent:claude": "nono run --profile ./.nono/profiles/claude.jsonc --allow-cwd -- claude",
     "gqlc": "graphql-codegen --config gql-codegen.ts",
     "build": "turbo run build",
     "start": "npm run -w backend start",
