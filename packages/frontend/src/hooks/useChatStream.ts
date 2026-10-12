@@ -130,6 +130,11 @@ export type ClarificationPart = {
   }
 }
 
+export type StepLimitReachedPart = {
+  type: 'data-stepLimitReached'
+  data: { stepLimit: number }
+}
+
 export type StepUpdatePart = {
   type: 'data-stepUpdate'
   data: {
@@ -279,10 +284,13 @@ export function useChatStream(options: UseChatStreamOptions) {
           if (msg.role !== 'assistant') {
             return true
           }
+          // Tool-only turns stay so the model keeps its own tool-call history
+          // after a step-limit stop.
           return (msg.parts ?? []).some(
             (part) =>
-              part.type === 'text' &&
-              !!(part as { type: string; text?: string }).text?.trim(),
+              part.type.startsWith('tool-') ||
+              (part.type === 'text' &&
+                !!(part as { type: string; text?: string }).text?.trim()),
           )
         })
 
@@ -574,6 +582,17 @@ export function useChatStream(options: UseChatStreamOptions) {
     }
   }, [aiMessages])
 
+  const hasHitStepLimit = useMemo(() => {
+    if (status !== 'ready') {
+      return false
+    }
+    const lastMessage = aiMessages[aiMessages.length - 1]
+    return (
+      lastMessage?.role === 'assistant' &&
+      lastMessage.parts.some((part) => part.type === 'data-stepLimitReached')
+    )
+  }, [aiMessages, status])
+
   const resetChat = useCallback(() => {
     setMessages([])
     setIsReady(false)
@@ -603,6 +622,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     cancelStream: stop,
     resetChat,
     hasReachedLimit: messages.length >= MAX_MESSAGES,
+    hasHitStepLimit,
     activeStepId,
     stepParametersByStepId,
     parameterLabelsByStepId,

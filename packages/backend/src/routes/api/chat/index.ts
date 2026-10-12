@@ -63,6 +63,7 @@ import { chatRequestSchema } from './schema'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
 const MAX_MESSAGES = 150
+const MAX_STEPS_PER_TURN = 10
 
 function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
   const questions = parseClarificationBlock(text)
@@ -248,7 +249,7 @@ const handleChatStream = observe(
             model: chatModel,
             messages: allMessages,
             tools: { ...gitbookTools, ...mcpTools },
-            stopWhen: stepCountIs(10),
+            stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
             experimental_repairToolCall: repairMalformedToolName,
             experimental_transform: [
               repairMalformedStreamedToolNames,
@@ -376,6 +377,15 @@ const handleChatStream = observe(
                         }
                       }),
                     },
+                  })
+                }
+
+                // The model still wanted to call tools when stopWhen cut it
+                // off. Without this signal the UI looks like it silently hung.
+                if (event.finishReason === 'tool-calls') {
+                  writer.write({
+                    type: 'data-stepLimitReached',
+                    data: { stepLimit: MAX_STEPS_PER_TURN },
                   })
                 }
 

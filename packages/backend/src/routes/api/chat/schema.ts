@@ -151,6 +151,10 @@ const messagePartSchema = z.discriminatedUnion('type', [
     }),
   }),
   z.object({
+    type: z.literal('data-stepLimitReached'),
+    data: z.object({ stepLimit: z.number() }),
+  }),
+  z.object({
     type: z.literal('data-pipeState'),
     data: z.object({
       pipeId: z.uuid(),
