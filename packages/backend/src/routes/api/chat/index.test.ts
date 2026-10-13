@@ -150,6 +150,35 @@ function makeRes() {
 
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
 
+describe('chat handler — AI Builder access', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('streams the chat when the AI Builder flag is disabled', async () => {
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: false,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        version: 'production',
+      },
+    })
+    vi.mocked(experimental_createMCPClient).mockResolvedValue({
+      tools: vi.fn().mockResolvedValue({}),
+      close: vi.fn(),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+
+    const handler = router.stack[0].route.stack[0].handle
+    const res = makeRes()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await handler(makeReq() as any, res as any, vi.fn())
+
+    expect(res.status).not.toHaveBeenCalledWith(403)
+    expect(streamText).toHaveBeenCalled()
+  })
+})
+
 describe('chat handler — GitBook MCP integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
