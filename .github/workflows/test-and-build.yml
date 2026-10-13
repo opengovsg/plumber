@@ -73,7 +73,10 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
-      - run: VITE_MODE=test pnpm run build
+      - name: Build packages
+        env:
+          VITE_MODE: test
+        run: pnpm run build
       - run: echo "✅ Build check passed."
 
   test-backend-unit:
