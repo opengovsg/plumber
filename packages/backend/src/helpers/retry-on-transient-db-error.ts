@@ -21,6 +21,8 @@ const TRANSIENT_PG_CODES = new Set([
   '57P01', // admin_shutdown
   '57P02', // crash_shutdown
   '57P03', // cannot_connect_now
+  // Old blue instance stays read-only after an RDS blue/green switchover.
+  '25006', // read_only_sql_transaction
 ])
 
 const TRANSIENT_SOCKET_CODES = new Set([
@@ -29,6 +31,7 @@ const TRANSIENT_SOCKET_CODES = new Set([
   'ECONNREFUSED',
   'EPIPE',
   'ENOTFOUND',
+  'EAI_AGAIN',
 ])
 
 // Knex wraps some errors; fall back to message match for the common ones.
@@ -36,6 +39,10 @@ const TRANSIENT_SOCKET_CODES = new Set([
 const TRANSIENT_MESSAGE_FRAGMENTS = [
   'connection terminated unexpectedly',
   'server closed the connection unexpectedly',
+  // node-postgres connectionTimeoutMillis
+  'connection terminated due to connection timeout',
+  // KnexTimeoutError from acquireConnectionTimeout
+  'timeout acquiring a connection',
 ]
 
 function extractErrorCode(err: unknown): string | undefined {
