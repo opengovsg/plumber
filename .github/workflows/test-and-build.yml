@@ -91,7 +91,10 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Generate graphql artifacts
         run: npm run postinstall
-      - run: VITE_MODE=test npm run build
+      - name: Build packages
+        env:
+          VITE_MODE: test
+        run: npm run build
       - run: echo "✅ Build check passed."
 
   test-backend-unit:
