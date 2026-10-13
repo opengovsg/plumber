@@ -1,12 +1,6 @@
 import type { IFlow } from '@plumber/types'
 
-import {
-  ReactElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
+import { ReactElement, useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
@@ -20,9 +14,7 @@ import FlowRow from '@/components/FlowRow'
 import NoResultFound from '@/components/NoResultFound'
 import PageTitle from '@/components/PageTitle'
 import PrimarySpinner from '@/components/PrimarySpinner'
-import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
 import * as URLS from '@/config/urls'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
 
@@ -90,15 +82,9 @@ export default function Flows(): ReactElement {
   const [createMode, setCreateMode] = useState<FLOW_CREATE_MODE | null>(null)
   const navigate = useNavigate()
 
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const isAiBuilderEnabled = getFlagValue(AI_BUILDER_FEATURE_FLAG, {
-    enabled: false,
-  }).enabled
-
   const { hasSeenLatestAnnouncement, dismiss: dismissAnnouncement } =
     useAnnouncementModal()
-  const shouldShowAnnouncement =
-    isAiBuilderEnabled && !hasSeenLatestAnnouncement
+  const shouldShowAnnouncement = !hasSeenLatestAnnouncement
 
   const handleTryAiBuilder = useCallback(() => {
     dismissAnnouncement()
