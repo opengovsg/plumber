@@ -1,4 +1,4 @@
-import { IJSONObject } from '@plumber/types'
+import { IJSONObject, IJSONValue } from '@plumber/types'
 
 import { omit } from 'lodash'
 
@@ -6,15 +6,21 @@ import { isSensitiveHeaderName } from '@/apps/custom-api/common/sensitive-header
 
 type ParameterSanitizer = (parameters: IJSONObject) => IJSONObject
 
+type ClearedColumnRow = IJSONObject & { columnId: '' }
+
 // Tiles column IDs belong to one table, so they can never match the table
 // the user picks for the copy.
-function clearColumnIds(rows: unknown): unknown {
+function clearColumnIds(rows: IJSONValue): ClearedColumnRow[] | undefined {
   if (!Array.isArray(rows)) {
-    return rows
+    return undefined
   }
-  return rows.map((row) =>
-    row && typeof row === 'object' ? { ...row, columnId: '' } : row,
-  )
+  const items: unknown[] = rows
+  return items
+    .filter(
+      (row): row is IJSONObject =>
+        !!row && typeof row === 'object' && !Array.isArray(row),
+    )
+    .map((row) => ({ ...row, columnId: '' as const }))
 }
 
 /**
@@ -28,8 +34,9 @@ const COLLABORATOR_DUPLICATE_SANITIZERS: Record<string, ParameterSanitizer> = {
   tiles: (parameters) => {
     const sanitized: IJSONObject = omit(parameters, ['tableId'])
     for (const key of ['rowData', 'filters']) {
-      if (key in sanitized) {
-        sanitized[key] = clearColumnIds(sanitized[key]) as IJSONObject
+      const cleared = clearColumnIds(sanitized[key])
+      if (cleared) {
+        sanitized[key] = cleared
       }
     }
     return sanitized
