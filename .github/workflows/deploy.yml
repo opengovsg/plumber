@@ -81,7 +81,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Build and load image to ECR
         id: build-image
@@ -89,8 +89,9 @@ jobs:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
           INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
         run: |
-          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
+          docker build . -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
 
       - name: Scan built image with Inspector
         uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@baab69e77b34f244adef1f702d0fd69f2b3bc545 # v1
@@ -106,10 +107,14 @@ jobs:
           high_threshold: 10
 
       - name: Display CycloneDX SBOM (JSON)
-        run: cat ${{ steps.inspector.outputs.artifact_sbom }}
+        env:
+          SBOM_PATH: ${{ steps.inspector.outputs.artifact_sbom }}
+        run: cat "${SBOM_PATH}"
 
       - name: Display Inspector vulnerability scan results (JSON)
-        run: cat ${{ steps.inspector.outputs.inspector_scan_results }}
+        env:
+          SCAN_RESULTS_PATH: ${{ steps.inspector.outputs.inspector_scan_results }}
+        run: cat "${SCAN_RESULTS_PATH}"
 
       - name: Upload Scan Results
         id: upload-scan-results
@@ -135,11 +140,8 @@ jobs:
 
       - name: Push image to ECR after scan passes
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: |
-          docker push ${{ steps.ecr-image-uri.outputs.image }}
+          IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
+        run: docker push "${IMAGE}"
 
       - name: (Archival) Construct ECR image URI
         id: ecr-archival-image-uri
@@ -147,16 +149,17 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}-archival
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: (Archival) Build and push image to ECR
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
           INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE: ${{ steps.ecr-archival-image-uri.outputs.image }}
         run: |
-          docker build . -f Dockerfile.archival -t ${{ steps.ecr-archival-image-uri.outputs.image }} --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
-          docker push ${{ steps.ecr-archival-image-uri.outputs.image }}
+          docker build . -f Dockerfile.archival -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
+          docker push "${IMAGE}"
 
   deploy:
     needs: build
@@ -190,17 +193,24 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Merge ECS task definition templates
         id: merge-ecs-templates
         run: |
           cp ecs/task-definition.json ecs-task-definition.json
-          echo $(jq --argjson environment "$(jq '.environment' ecs/env.json)" '.containerDefinitions[0].environment += $environment' ecs-task-definition.json) > ecs-task-definition.json
-          echo $(jq --argjson secrets "$(jq '.secrets' ecs/env.json)" '.containerDefinitions[0].secrets += $secrets' ecs-task-definition.json) > ecs-task-definition.json
-          echo $(jq --argjson environment "$(jq '.environment' ecs/env.json)" '.containerDefinitions[1].environment += $environment' ecs-task-definition.json) > ecs-task-definition.json
-          echo $(jq --argjson secrets "$(jq '.secrets' ecs/env.json)" '.containerDefinitions[1].secrets += $secrets' ecs-task-definition.json) > ecs-task-definition.json
           cp ecs/appspec.json appspec.json
+          env_json=$(jq -c '.environment' ecs/env.json)
+          secrets_json=$(jq -c '.secrets' ecs/env.json)
+          jq \
+            --argjson environment "${env_json}" \
+            --argjson secrets "${secrets_json}" \
+            '.containerDefinitions[0].environment += $environment |
+             .containerDefinitions[0].secrets += $secrets |
+             .containerDefinitions[1].environment += $environment |
+             .containerDefinitions[1].secrets += $secrets' \
+            ecs-task-definition.json > ecs-task-definition.json.tmp
+          mv ecs-task-definition.json.tmp ecs-task-definition.json
 
       - name: Replace variables in task definition file
         run: |
@@ -245,7 +255,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}-archival
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: (Archival) Replace variables in task definition
         run: |
@@ -265,6 +275,6 @@ jobs:
           image: ${{ steps.ecr-archival-image-uri.outputs.image }}
 
       - name: (Archival) Register task definition
-        run: |
-          aws ecs register-task-definition \
-            --cli-input-json file://${{ steps.archival-task-def.outputs.task-definition }}
+        env:
+          TASK_DEF_FILE: ${{ steps.archival-task-def.outputs.task-definition }}
+        run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"
