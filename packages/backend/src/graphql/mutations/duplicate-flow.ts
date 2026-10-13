@@ -18,29 +18,17 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
   const oldFlowId = params.input.id
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'viewer' })
-    .withGraphFetched({ steps: { connection: true } })
+    .withGraphJoined('[steps.[connection]]')
+    .orderBy('steps.position', 'asc')
     .findOne({ 'flows.id': oldFlowId })
     .throwIfNotFound()
-  flow.steps.sort((a, b) => a.position - b.position)
 
   // Editors and Viewers must not receive the owner's connections or secrets.
   const isOwner = flow.role === 'owner'
 
   return await Flow.transaction(async (trx) => {
     const prevConfig = { ...flow.config }
-    // Skip the model hook so this counter write does not refresh updated_at or replace the rest of config.
-    await trx('flows')
-      .where('id', flow.id)
-      .update({
-        config: trx.raw(
-          `jsonb_set(
-            COALESCE(config, '{}'::jsonb),
-            '{duplicateCount}',
-            to_jsonb(COALESCE(config->>'duplicateCount', '0')::int + 1),
-            true
-          )`,
-        ),
-      })
+    await Flow.incrementDuplicateCount(flow.id, trx)
 
     delete prevConfig['duplicateCount']
     delete prevConfig['templateConfig']
