@@ -7,13 +7,7 @@ import {
 } from '@taskforcesh/bullmq-pro'
 
 import apps from '@/apps'
-import {
-  M365_EXCEL_BATCH_ROLLOUT_FLAG,
-  type M365ExcelBatchRolloutState,
-} from '@/config/flags'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
-import Flow from '@/models/flow'
 import { makeActionQueue } from '@/queues/helpers/make-action-queue'
 
 //
@@ -105,48 +99,6 @@ for (const [appKey, app] of Object.entries(apps)) {
 // Use these functions during actual operation.
 //
 
-/**
- * Resolves the staged batch-rollout flag and, for 'ogp', restricts routing to
- * flows owned by an @open.gov.sg user. The DB lookup only runs for 'ogp' (and
- * only for m365-excel's createTableRow, the only batch action today), so 'all'
- * and 'off' - the expected steady states - never pay for it.
- *
- * IMPORTANT: the whole body is wrapped in try/catch, since a LaunchDarkly
- * client/network failure (unlike a plain flag-value mismatch, which
- * getLdFlagValue itself falls back on) or a transient DB error would
- * otherwise reject and fail every action enqueue. Falling back to 'off'
- * (false) here matches the flag's own fallback for "can't reach
- * LaunchDarkly".
- */
-async function shouldRouteToBatchQueue(
-  appKey: string,
-  actionKey: string,
-  jobData: IActionJobData,
-): Promise<boolean> {
-  try {
-    if (appKey === 'm365-excel' && actionKey === 'createTableRow') {
-      const flow = await Flow.query()
-        .findById(jobData.flowId)
-        .withGraphFetched('user')
-      return (
-        (await getLdFlagValue<M365ExcelBatchRolloutState>(
-          M365_EXCEL_BATCH_ROLLOUT_FLAG,
-          flow?.user?.email.toLowerCase(),
-          'off',
-        )) === 'all'
-      )
-    }
-
-    return false
-  } catch (error) {
-    logger.error({
-      event: 'm365-excel-batch-rollout-flag-lookup-failed',
-      message: (error as Error).message,
-    })
-    return false
-  }
-}
-
 interface EnqueueActionJobParams {
   appKey: string | null
   actionKey: string | null
@@ -162,20 +114,13 @@ export async function enqueueActionJob({
   jobData,
   jobOptions,
 }: EnqueueActionJobParams): Promise<JobPro<IActionJobData>> {
-  // Route batch-enabled actions to their dedicated batch queue. This takes
-  // precedence over the per-app / main queue, gated by a staged rollout flag:
-  // 'off' falls through to the per-app queue below (the pre-batching path)
-  // for everyone, 'ogp' further restricts routing to flows owned by an OGP
-  // user (internal dogfooding), and 'all' routes every flow.
+  // Batch-enabled actions take precedence over the per-app / main queue.
   const batchConfig =
     appKey && actionKey
       ? batchActionsByAppKey.get(appKey)?.get(actionKey)
       : undefined
 
-  if (
-    batchConfig &&
-    (await shouldRouteToBatchQueue(appKey, actionKey, jobData))
-  ) {
+  if (batchConfig) {
     const batchQueue = actionBatchQueues[appKey]
     const groupConfig = await batchConfig.getGroupConfigForJob(jobData)
 
