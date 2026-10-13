@@ -2,6 +2,7 @@ import { LangfuseSpanProcessor } from '@langfuse/otel'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 
 import appConfig from '@/config/app'
+import { PAIR_ROME_PROJECT_HEADER } from '@/helpers/nodejs-dev-http-interceptor/rules/nono-pair-rome-compat/prod-constants'
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
 
@@ -45,6 +46,14 @@ const aiBuilderSpanProcessor = new LangfuseSpanProcessor({
     // Include everything else (other instrumentation, middleware, etc.)
     return true
   },
+  ...(appConfig.isDev
+    ? {
+        additionalHeaders: {
+          ...BASE_CONFIG.additionalHeaders,
+          [PAIR_ROME_PROJECT_HEADER]: 'aiBuilder',
+        },
+      }
+    : {}),
 })
 
 const pairActionSpanProcessor = new LangfuseSpanProcessor({
@@ -58,6 +67,14 @@ const pairActionSpanProcessor = new LangfuseSpanProcessor({
       span.otelSpan.attributes['resource.name'] as string,
     )
   },
+  ...(appConfig.isDev
+    ? {
+        additionalHeaders: {
+          ...BASE_CONFIG.additionalHeaders,
+          [PAIR_ROME_PROJECT_HEADER]: 'pairAction',
+        },
+      }
+    : {}),
 })
 
 const sdk = new NodeSDK({

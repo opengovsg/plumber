@@ -31,7 +31,56 @@
         "inject_mode": "header",
         "inject_header": "Authorization",
         "credential_format": "Bearer {}"
+      },
+      "pair_rome_pair_action": {
+        "upstream": "https://rome.pair.gov.sg",
+        "credential_key": "cmd://pair_rome_pair_action",
+        "env_var": "PAIR_ROME_PAIR_ACTION_CREDENTIALS",
+        "inject_mode": "basic_auth",
+        "endpoint_rules": [
+          {
+            "method": "POST",
+            "path": "/api/public/otel/v1/traces?project_name=pairAction"
+          }
+        ]
+      },
+      "pair_rome_ai_builder": {
+        "upstream": "https://rome.pair.gov.sg",
+        "credential_key": "cmd://pair_rome_ai_builder",
+        // Not used in code; just a placeholder
+        "env_var": "PAIR_ROME_AI_BUILDER_CREDENTIALS",
+        "inject_mode": "basic_auth",
+        "endpoint_rules": [
+          {
+            "method": "POST",
+            "path": "/api/public/otel/v1/traces?project_name=aiBuilder"
+          },
+          {
+            "method": "GET",
+            "path": "/api/public/v2/prompts/**?project_name=aiBuilder"
+          }
+        ]
       }
+    }
+  },
+  "credential_capture": {
+    "pair_rome_ai_builder": {
+      "command": [
+        "sh",
+        "-c",
+        "printf $PAIR_ROME_AI_BUILDER_PUBLIC_KEY:$PAIR_ROME_AI_BUILDER_SECRET_KEY"
+      ],
+      "timeout_secs": 15,
+      "cache_ttl_secs": 0
+    },
+    "pair_rome_pair_action": {
+      "command": [
+        "sh",
+        "-c",
+        "printf $PAIR_ROME_PAIR_ACTION_PUBLIC_KEY:$PAIR_ROME_PAIR_ACTION_SECRET_KEY"
+      ],
+      "timeout_secs": 15,
+      "cache_ttl_secs": 0
     }
   },
   "environment": {
