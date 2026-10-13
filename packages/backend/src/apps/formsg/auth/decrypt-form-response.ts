@@ -250,6 +250,9 @@ export async function decryptFormResponse(
           formField,
           attachments,
         )
+        // The S3 ID in answer is opaque, so users need the original name to
+        // check things like the file extension.
+        rest.filename = attachments?.[formField._id]?.filename ?? ''
       }
 
       if (rest.fieldType === 'address') {

@@ -98,7 +98,8 @@ type PaymentProduct = {
   amount_cents: number
 }
 
-export const MOCK_ATTACHMENT_FILE_PATH = `${COMMON_S3_MOCK_FOLDER_PREFIX}plumber-logo.jpg`
+export const MOCK_ATTACHMENT_FILENAME = 'plumber-logo.jpg'
+export const MOCK_ATTACHMENT_FILE_PATH = `${COMMON_S3_MOCK_FOLDER_PREFIX}${MOCK_ATTACHMENT_FILENAME}`
 const MOCK_NRIC = 'S1234568B'
 const MOCK_UEN = '201612345A'
 
@@ -267,6 +268,7 @@ function patchMockData(
 
       if (mockData.responses[formFields[i]._id].fieldType === 'attachment') {
         mockData.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
+        mockData.responses[formFields[i]._id].filename = MOCK_ATTACHMENT_FILENAME
       }
 
       if (mockData.responses[formFields[i]._id].fieldType === 'nric') {

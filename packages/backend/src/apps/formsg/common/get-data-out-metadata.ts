@@ -410,6 +410,14 @@ async function getDataOutMetadata(
       isHeader: { isHidden: true },
     }
 
+    if (fieldData.fieldType === 'attachment') {
+      fieldMetadata[fieldId].filename = {
+        type: 'text',
+        label: `${fieldData.order}. ${fieldData.question} (Filename)`,
+        order: (fieldData.order as number) + 0.2,
+      }
+    }
+
     if (approvalField && fieldId === approvalField) {
       fieldMetadata[fieldId].answer.type = 'approval'
     }
