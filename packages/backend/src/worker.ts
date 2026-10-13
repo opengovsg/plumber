@@ -1,4 +1,5 @@
 import '@/helpers/tracer'
+import '@/helpers/nodejs-dev-http-interceptor'
 import '@/config/orm'
 import '@/config/dynamodb'
 import '@/helpers/check-worker-readiness'
