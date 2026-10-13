@@ -268,7 +268,8 @@ function patchMockData(
 
       if (mockData.responses[formFields[i]._id].fieldType === 'attachment') {
         mockData.responses[formFields[i]._id].answer = MOCK_ATTACHMENT_FILE_PATH
-        mockData.responses[formFields[i]._id].filename = MOCK_ATTACHMENT_FILENAME
+        mockData.responses[formFields[i]._id].filename =
+          MOCK_ATTACHMENT_FILENAME
       }
 
       if (mockData.responses[formFields[i]._id].fieldType === 'nric') {

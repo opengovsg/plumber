@@ -587,7 +587,10 @@ describe('decrypt form response', () => {
       mocks.storeAttachmentInS3.mockResolvedValueOnce('s3-id')
       mocks.cryptoDecryptWithAttachments.mockResolvedValueOnce({
         attachments: {
-          attachmentField: { filename: 'report.pdf', content: new Uint8Array() },
+          attachmentField: {
+            filename: 'report.pdf',
+            content: new Uint8Array(),
+          },
         },
         content: {
           responses: [

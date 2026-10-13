@@ -237,6 +237,7 @@ export async function decryptFormResponse(
         rest.answer = filteredAnswer
       }
 
+      let attachmentFilename: string | undefined
       if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
         let s3FolderId = data.submissionId
         if (data.workflowContent) {
@@ -252,7 +253,7 @@ export async function decryptFormResponse(
         )
         // The S3 ID in answer is opaque, so users need the original name to
         // check things like the file extension.
-        rest.filename = attachments?.[formField._id]?.filename ?? ''
+        attachmentFilename = attachments?.[formField._id]?.filename ?? ''
       }
 
       if (rest.fieldType === 'address') {
@@ -273,6 +274,9 @@ export async function decryptFormResponse(
       parsedData[_id.replaceAll('.', '_')] = {
         order: index + 1,
         ...rest,
+        ...(attachmentFilename !== undefined && {
+          filename: attachmentFilename,
+        }),
       }
     }
 
