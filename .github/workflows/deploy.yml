@@ -46,18 +46,21 @@ on:
       SLACK_CHANNEL_ID:
         required: true
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 jobs:
   build:
     name: Build and push image to ECR
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout source code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2
@@ -85,8 +88,9 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
+          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
 
       - name: Scan built image with Inspector
         uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@baab69e77b34f244adef1f702d0fd69f2b3bc545 # v1
@@ -149,17 +153,23 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          docker build . -f Dockerfile.archival -t ${{ steps.ecr-archival-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
+          docker build . -f Dockerfile.archival -t ${{ steps.ecr-archival-image-uri.outputs.image }} --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
           docker push ${{ steps.ecr-archival-image-uri.outputs.image }}
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout source code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2
@@ -194,10 +204,13 @@ jobs:
 
       - name: Replace variables in task definition file
         run: |
-          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-task-definition.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-task-definition.json
-          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' appspec.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' appspec.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-task-definition.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' appspec.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' appspec.json
+        env:
+          INPUTS_AWS_ACCOUNT_ID: ${{ inputs.aws-account-id }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
 
       - name: (Server) Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
@@ -237,8 +250,11 @@ jobs:
       - name: (Archival) Replace variables in task definition
         run: |
           cp ecs/archival-task-definition.json ecs-archival-task-definition.json
-          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-archival-task-definition.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-archival-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-archival-task-definition.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-archival-task-definition.json
+        env:
+          INPUTS_AWS_ACCOUNT_ID: ${{ inputs.aws-account-id }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
 
       - name: (Archival) Fill in the new image ID in the Amazon ECS task definition
         id: archival-task-def
