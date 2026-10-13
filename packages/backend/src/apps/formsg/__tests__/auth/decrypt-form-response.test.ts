@@ -617,6 +617,34 @@ describe('decrypt form response', () => {
         }),
       )
     })
+
+    it('exposes the attachment filename when the pipe does not process files', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'attachmentField',
+            fieldType: 'attachment',
+            question: 'Upload a file',
+            answer: 'report.pdf',
+          },
+        ],
+      })
+
+      await decryptFormResponse($)
+
+      expect(mocks.storeAttachmentInS3).not.toBeCalled()
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            attachmentField: expect.objectContaining({
+              answer: 'report.pdf',
+              filename: 'report.pdf',
+            }),
+          },
+        }),
+      )
+    })
   })
 
   describe('form environments', () => {

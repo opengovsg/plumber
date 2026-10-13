@@ -238,22 +238,25 @@ export async function decryptFormResponse(
       }
 
       let attachmentFilename: string | undefined
-      if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
-        let s3FolderId = data.submissionId
-        if (data.workflowContent) {
-          // we add a suffix if it's an mrf step to prevent
-          // overwriting attachments from previous steps
-          s3FolderId += `-${workflowContent.workflowStep}`
+      if (rest.fieldType === 'attachment') {
+        // IMPORTANT: Capture before storeAttachmentInS3 replaces answer with an
+        // opaque S3 ID.
+        attachmentFilename = rest.answer ?? ''
+
+        if (shouldStoreAttachments) {
+          let s3FolderId = data.submissionId
+          if (data.workflowContent) {
+            // we add a suffix if it's an mrf step to prevent
+            // overwriting attachments from previous steps
+            s3FolderId += `-${workflowContent.workflowStep}`
+          }
+          rest.answer = await storeAttachmentInS3(
+            $,
+            s3FolderId,
+            formField,
+            attachments,
+          )
         }
-        rest.answer = await storeAttachmentInS3(
-          $,
-          s3FolderId,
-          formField,
-          attachments,
-        )
-        // The S3 ID in answer is opaque, so users need the original name to
-        // check things like the file extension.
-        attachmentFilename = attachments?.[formField._id]?.filename ?? ''
       }
 
       if (rest.fieldType === 'address') {
