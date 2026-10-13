@@ -237,19 +237,26 @@ export async function decryptFormResponse(
         rest.answer = filteredAnswer
       }
 
-      if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
-        let s3FolderId = data.submissionId
-        if (data.workflowContent) {
-          // we add a suffix if it's an mrf step to prevent
-          // overwriting attachments from previous steps
-          s3FolderId += `-${workflowContent.workflowStep}`
+      let attachmentFilename: string | undefined
+      if (rest.fieldType === 'attachment') {
+        // IMPORTANT: Capture before storeAttachmentInS3 replaces answer with an
+        // opaque S3 ID.
+        attachmentFilename = rest.answer ?? ''
+
+        if (shouldStoreAttachments) {
+          let s3FolderId = data.submissionId
+          if (data.workflowContent) {
+            // we add a suffix if it's an mrf step to prevent
+            // overwriting attachments from previous steps
+            s3FolderId += `-${workflowContent.workflowStep}`
+          }
+          rest.answer = await storeAttachmentInS3(
+            $,
+            s3FolderId,
+            formField,
+            attachments,
+          )
         }
-        rest.answer = await storeAttachmentInS3(
-          $,
-          s3FolderId,
-          formField,
-          attachments,
-        )
       }
 
       if (rest.fieldType === 'address') {
@@ -270,6 +277,9 @@ export async function decryptFormResponse(
       parsedData[_id.replaceAll('.', '_')] = {
         order: index + 1,
         ...rest,
+        ...(attachmentFilename !== undefined && {
+          filename: attachmentFilename,
+        }),
       }
     }
 
