@@ -1,5 +1,6 @@
+import type { ReactNode } from 'react'
 import { useMutation } from '@apollo/client'
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { Button, Infobox, useToast } from '@opengovsg/design-system-react'
 import { IStepError } from '@plumber/types'
 import Markdown from 'react-markdown'
@@ -15,10 +16,13 @@ interface SpecificErrorResultProps {
   errorDetails: IStepError
   isTestRun: boolean
   executionStepId?: string
+  children?: ReactNode
+  titleAction?: ReactNode
 }
 
 export default function SpecificErrorResult(props: SpecificErrorResultProps) {
-  const { errorDetails, isTestRun, executionStepId } = props
+  const { children, errorDetails, isTestRun, executionStepId, titleAction } =
+    props
   const { name, solution, details, partialRetry } = errorDetails
 
   const toast = useToast()
@@ -44,9 +48,15 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
   return (
     <Infobox variant="error" borderRadius="lg">
       <Box minW="0" w="full">
-        <Text mb={0.5} textStyle="subhead-1">
-          {name}
-        </Text>
+        <Flex
+          mb={0.5}
+          gap={3}
+          alignItems="center"
+          justifyContent="space-between"
+        >
+          <Text textStyle="subhead-1">{name}</Text>
+          {titleAction}
+        </Flex>
 
         <Text textStyle="body-1">
           <Markdown linkTarget="_blank" components={infoboxMdComponents}>
@@ -74,6 +84,7 @@ export default function SpecificErrorResult(props: SpecificErrorResultProps) {
             </Button>
           )}
         </Text>
+        {children}
       </Box>
     </Infobox>
   )
