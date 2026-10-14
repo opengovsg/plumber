@@ -55,7 +55,7 @@ full webhook URLs into `m365-batch/pipes.json`:
 | `persistent_failure.js`  | One job id fails on every call, plus a healthy control job       | `failurePath`, `webhookPaths` (control group)    |
 | `single_file_lock.js`    | All writes go to a single file, to stress the per-file redlock   | `singleFilePath`                                 |
 
-`DURATION` overrides the run length (defaults to `5m`).
+`DURATION` overrides the run length (defaults to `2m`, except `persistent_failure.js`, which defaults to `5m`).
 
 ```
 k6 run m365-batch/even_spread.js
