@@ -2,10 +2,13 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import type {
   AddressAnswerV4,
+  AnswerV4,
   AttachmentAnswerV4,
   CheckboxAnswerV4,
   ChildrenAnswerV4,
   FieldResponsesV4,
+  FieldResponseV4,
+  FieldType,
   FormField,
   RadioAnswerV4,
   SignatureAnswerV4,
@@ -22,16 +25,101 @@ import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
 
+// v4 never sends these. They have no answer to restore.
+const NON_ANSWER_FIELD_TYPES = new Set(['statement', 'image', 'section'])
+
+const EMPTY_ANSWERS: Partial<Record<FieldType, AnswerV4>> = {
+  checkbox: { value: [] },
+  table: {},
+  signature: { type: 'draw', value: [] },
+  children: {},
+  radiobutton: { value: '', isOthersInput: false },
+  attachment: { value: '', hasBeenScanned: false },
+  // Blank subfields must be '' so address variables do not become undefined.
+  address: {
+    postalCode: { value: '' },
+    blockNumber: { value: '' },
+    streetName: { value: '' },
+    buildingName: { value: '' },
+    levelNumber: { value: '' },
+    unitNumber: { value: '' },
+  },
+}
+
+function makeEmptyResponse(field: FormSchemaField): FieldResponseV4 {
+  const fieldType = field.fieldType as FieldType
+  return {
+    fieldType,
+    question: field.title,
+    provenance: {},
+    answer: EMPTY_ANSWERS[fieldType] ?? { value: '' },
+  }
+}
+
+/**
+ * Puts back optional fields that v4 left out of the payload.
+ * Pipes expect those variables to exist.
+ */
+function withOmittedFields(
+  responses: FieldResponsesV4,
+  schemaFields: FormSchemaField[],
+  isMultirespondent: boolean,
+): FieldResponsesV4 {
+  if (schemaFields.length === 0) {
+    return responses
+  }
+  // An MRF payload only contains the current step.
+  if (isMultirespondent) {
+    return responses
+  }
+
+  const present = new Set(Object.keys(responses))
+  const insertAfter = new Map<string | null, FormSchemaField[]>()
+  let anchor: string | null = null
+  for (const field of schemaFields) {
+    if (NON_ANSWER_FIELD_TYPES.has(field.fieldType)) {
+      continue
+    }
+    if (present.has(field._id)) {
+      anchor = field._id
+      continue
+    }
+    const pending = insertAfter.get(anchor) ?? []
+    pending.push(field)
+    insertAfter.set(anchor, pending)
+  }
+
+  if (insertAfter.size === 0) {
+    return responses
+  }
+
+  const filled: FieldResponsesV4 = {}
+  for (const field of insertAfter.get(null) ?? []) {
+    filled[field._id] = makeEmptyResponse(field)
+  }
+  for (const [id, response] of Object.entries(responses)) {
+    filled[id] = response
+    for (const field of insertAfter.get(id) ?? []) {
+      filled[field._id] = makeEmptyResponse(field)
+    }
+  }
+  return filled
+}
+
 export async function processResponsesV4(
   $: IGlobalVariable,
   formId: string,
   responses: FieldResponsesV4,
 ): Promise<FormField[]> {
   const formSchemaFields: Record<string, FormSchemaField> = {}
+  let schemaFieldList: FormSchemaField[] = []
+  let isMultirespondent = false
   try {
     const formSchema = await fetchFormSchema($, formId)
     if (formSchema?.form?.form_fields) {
-      for (const field of formSchema.form.form_fields) {
+      schemaFieldList = formSchema.form.form_fields
+      isMultirespondent = formSchema.form.responseMode === 'multirespondent'
+      for (const field of schemaFieldList) {
         formSchemaFields[field._id] = field
       }
     }
@@ -44,7 +132,12 @@ export async function processResponsesV4(
   }
   const mappedResponses: FormField[] = []
   let questionNumber = 0
-  for (const [key, value] of Object.entries(responses)) {
+  const responsesWithOmittedFields = withOmittedFields(
+    responses,
+    schemaFieldList,
+    isMultirespondent,
+  )
+  for (const [key, value] of Object.entries(responsesWithOmittedFields)) {
     questionNumber++
     // we fallback to Question # if the question is not found in the form schema
     let question = formSchemaFields[key]?.title ?? `Question ${questionNumber}`
@@ -160,6 +253,16 @@ export async function processResponsesV4(
       // Currently, v4 responses return the date as DD/MM/YYYY (e.g. 29/03/2026)
       // We need to convert it to the standard FormSG date format (e.g. 29 Mar 2026)
       const originalDateString = (value.answer as StringAnswerV4).value
+      // Formatting an empty date string yields Invalid DateTime.
+      if (!originalDateString) {
+        mappedResponses.push({
+          _id: key,
+          fieldType: value.fieldType,
+          question,
+          answer: '',
+        })
+        continue
+      }
       const originalDate = DateTime.fromFormat(originalDateString, 'dd/MM/yyyy')
       const convertedDateString = originalDate.toPlumberFormat('dd MMM yyyy')
       mappedResponses.push({

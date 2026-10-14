@@ -704,6 +704,20 @@ describe('processResponsesV4', () => {
       expect(result[0].question).toBe('Question 1')
       expect(result[0].answer).toBe('01 Jan 2025')
     })
+
+    it('leaves a blank date empty', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'dt1', title: 'Date of birth', fieldType: 'date' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        dt1: v4Response('date', { value: '' }),
+      })
+
+      expect(result[0].answer).toBe('')
+    })
   })
 
   describe('multiple fields', () => {
@@ -925,6 +939,212 @@ describe('processResponsesV4', () => {
       })
       // attachment maps the filename into answer
       expect(byId('69eedecafd2757b0584e0c54')?.answer).toBe('Screenshot.png')
+    })
+  })
+
+  describe('fields omitted from the payload', () => {
+    it('inserts a blank short answer before a later child record', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+          { _id: 'q2', title: 'Child record', fieldType: 'children' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        q2: v4Response('children', {
+          child0: {
+            value: {
+              name: { value: 'Alice' },
+            },
+          },
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'q1',
+          fieldType: 'textfield',
+          question: 'Short answer',
+          answer: '',
+        },
+        {
+          _id: 'q2',
+          fieldType: 'children',
+          question: 'Child record',
+          answer: {
+            child: [['Alice']],
+            childFields: ['name'],
+          },
+        },
+      ])
+    })
+
+    it('inserts a missing field after the previous schema field', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'a', title: 'A', fieldType: 'textfield' },
+          { _id: 'b', title: 'B', fieldType: 'textfield' },
+          { _id: 'c', title: 'C', fieldType: 'textfield' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        a: v4Response('textfield', { value: 'first' }),
+        c: v4Response('textfield', { value: 'third' }),
+      })
+
+      expect(result.map((field) => field._id)).toEqual(['a', 'b', 'c'])
+      expect(result[1]).toMatchObject({ question: 'B', answer: '' })
+      expect(result[0].answer).toBe('first')
+      expect(result[2].answer).toBe('third')
+    })
+
+    it('keeps payload order when a field is missing', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'a', title: 'A', fieldType: 'textfield' },
+          { _id: 'b', title: 'B', fieldType: 'textfield' },
+          { _id: 'c', title: 'C', fieldType: 'textfield' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        c: v4Response('textfield', { value: 'third' }),
+        a: v4Response('textfield', { value: 'first' }),
+      })
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['c', 'third'],
+        ['a', 'first'],
+        ['b', ''],
+      ])
+    })
+
+    it('does not restore statement, image, or section fields', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'intro', title: 'Read this', fieldType: 'statement' },
+          { _id: 'pic', title: 'Logo', fieldType: 'image' },
+          { _id: 'head', title: 'Details', fieldType: 'section' },
+          { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {})
+
+      expect(result).toEqual([
+        {
+          _id: 'q1',
+          fieldType: 'textfield',
+          question: 'Short answer',
+          answer: '',
+        },
+      ])
+    })
+
+    it('leaves a multi-respondent payload unchanged', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce({
+        form: {
+          responseMode: 'multirespondent',
+          form_fields: [
+            { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+            { _id: 'q2', title: 'Child record', fieldType: 'children' },
+          ],
+        },
+      })
+
+      const result = await processResponsesV4($, 'formId', {
+        q2: v4Response('children', {}),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'q2',
+          fieldType: 'children',
+          question: 'Child record',
+          answer: { child: [], childFields: [] },
+        },
+      ])
+    })
+
+    it('restores an empty answer for each omitted field type', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'text', title: 'Short answer', fieldType: 'textfield' },
+          { _id: 'long', title: 'Long answer', fieldType: 'textarea' },
+          { _id: 'drop', title: 'Dropdown', fieldType: 'dropdown' },
+          { _id: 'num', title: 'Number', fieldType: 'number' },
+          { _id: 'dec', title: 'Decimal', fieldType: 'decimal' },
+          { _id: 'rate', title: 'Rating', fieldType: 'rating' },
+          { _id: 'nric', title: 'NRIC', fieldType: 'nric' },
+          { _id: 'uen', title: 'UEN', fieldType: 'uen' },
+          { _id: 'home', title: 'Home number', fieldType: 'homeno' },
+          { _id: 'country', title: 'Country', fieldType: 'country_region' },
+          { _id: 'yes', title: 'Yes or no', fieldType: 'yes_no' },
+          { _id: 'mail', title: 'Email', fieldType: 'email' },
+          { _id: 'mobile', title: 'Mobile', fieldType: 'mobile' },
+          { _id: 'radio', title: 'Radio', fieldType: 'radiobutton' },
+          { _id: 'file', title: 'File', fieldType: 'attachment' },
+          { _id: 'date', title: 'Date', fieldType: 'date' },
+          { _id: 'checks', title: 'Checks', fieldType: 'checkbox' },
+          {
+            _id: 'table',
+            title: 'Table',
+            fieldType: 'table',
+            columns: [
+              { title: 'Name', _id: 'col1' },
+              { title: 'Qty', _id: 'col2' },
+            ],
+          },
+          { _id: 'sign', title: 'Sign', fieldType: 'signature' },
+          { _id: 'addr', title: 'Address', fieldType: 'address' },
+          { _id: 'kids', title: 'Children', fieldType: 'children' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {})
+      const byId = (id: string) => result.find((field) => field._id === id)
+
+      for (const id of [
+        'text',
+        'long',
+        'drop',
+        'num',
+        'dec',
+        'rate',
+        'nric',
+        'uen',
+        'home',
+        'country',
+        'yes',
+        'mail',
+        'mobile',
+        'radio',
+        'file',
+        'date',
+      ]) {
+        expect(byId(id)).toMatchObject({ answer: '' })
+      }
+      expect(byId('checks')).toMatchObject({ answerArray: [] })
+      expect(byId('table')).toMatchObject({
+        question: 'Table (Name, Qty)',
+        answerArray: [],
+      })
+      expect(byId('sign')).toMatchObject({ answerArray: [] })
+      expect(byId('addr')?.answerArray).toEqual(['', '', '', '', '', ''])
+      expect(byId('kids')?.answer).toEqual({ child: [], childFields: [] })
+      expect(result).toHaveLength(21)
+    })
+
+    it('does not fill omitted fields when the schema cannot be fetched', async () => {
+      mocks.fetchFormSchema.mockRejectedValueOnce(new Error('Network error'))
+
+      const result = await processResponsesV4($, 'formId', {
+        q2: v4Response('children', {}),
+      })
+
+      expect(result.map((field) => field._id)).toEqual(['q2'])
     })
   })
 })

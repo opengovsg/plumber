@@ -32,6 +32,10 @@ async function storeAttachmentInS3(
   formField: Readonly<FormField>,
   attachments: Readonly<DecryptedAttachments> | null,
 ): Promise<string> {
+  // Indexing a null map throws and fails the whole submission.
+  if (!attachments) {
+    return ''
+  }
   const attachment = attachments[formField._id]
   if (!attachment) {
     return ''
