@@ -7,7 +7,7 @@
   },
   "packageManager": "pnpm@12.11.2",
   "scripts": {
-    "preinstall": "pnpm exec only-allow pnpm",
+    "preinstall": "npx --yes only-allow@1.2.2 pnpm",
     "postinstall": "pnpm run gqlc",
     "setup": "node scripts/with-op-env.mjs --env setup pnpm --filter backend run setup",
     "dev": "node scripts/with-op-env.mjs turbo watch dev worker --continue",
