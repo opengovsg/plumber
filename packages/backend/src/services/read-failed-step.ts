@@ -119,6 +119,26 @@ function fieldDefinitions(
   return match?.arguments ?? []
 }
 
+export function replaceParameterKeysWithLabels(
+  summary: string,
+  appKey: string,
+  stepKey: string,
+): string {
+  const fields = [
+    ...fieldDefinitions(appKey, stepKey, 'action'),
+    ...fieldDefinitions(appKey, stepKey, 'trigger'),
+  ].sort((left, right) => right.key.length - left.key.length)
+
+  return fields.reduce((text, field) => {
+    const label = field.label || field.key
+    if (label === field.key) {
+      return text
+    }
+    const key = field.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return text.replace(new RegExp(`\\b${key}\\b`, 'g'), label)
+  }, summary)
+}
+
 export function presentFailedStep(step: ReadableStep): FailedStepView {
   const fields = fieldDefinitions(step.appKey, step.key, step.type).map(
     (field) => ({

@@ -14,6 +14,7 @@ vi.mock('@/helpers/ai/gitbook-mcp', () => ({
 vi.mock('@/services/read-failed-step', () => ({
   readFailedStep: mocks.readFailedStep,
   updateFailedStepParameters: mocks.updateFailedStepParameters,
+  replaceParameterKeysWithLabels: (summary: string) => summary,
 }))
 
 vi.mock('ai', async (importOriginal) => {
