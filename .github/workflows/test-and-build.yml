@@ -22,12 +22,12 @@ jobs:
         with:
           npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       # "@" inside pnpm_config__auth also sets the default registry to that host.
-      # Install stays on the scoped token. /keys is an unscoped URL, so it needs
-      # host auth that does not change registry routing.
+      # /keys is an unscoped URL, so it needs host auth. pnpm 12 only accepts
+      # project or global, and global writes that token to the runner rc.
       - name: Authenticate taskforce.sh for registry key reads
         env:
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
-        run: pnpm config set --location=user "//npm.taskforce.sh/:_authToken" "$NPM_TASKFORCESH_TOKEN"
+        run: pnpm config set --location=global "//npm.taskforce.sh/:_authToken" "$NPM_TASKFORCESH_TOKEN"
       - name: Verify registry signatures
         run: pnpm audit signatures
       - name: Generate SBOM
