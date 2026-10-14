@@ -211,8 +211,7 @@ pre-release (`--prerelease`) publishes without deploying. Un-checking
 
 ## Gotcha: do not use `npm version` or `pnpm version`
 
-`npm version` is rejected by the `preinstall` allow-list, and it writes
-`package-lock.json`, which this repo no longer has. With its default git
+`npm version` writes `package-lock.json`, which this repo no longer has. With its default git
 tagging it also commits only the root `package.json`, so the workspace
 versions never land on the tag.
 
