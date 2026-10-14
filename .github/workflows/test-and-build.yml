@@ -13,7 +13,10 @@ jobs:
   supply-chain:
     name: Supply chain verification
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    env:
+      # Registry-wide "@" auth is required for /-/npm/v1/keys during audit signatures.
+      pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"},"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -22,12 +25,8 @@ jobs:
         with:
           npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       - name: Verify registry signatures
-        env:
-          pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"},"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
         run: pnpm audit signatures
       - name: Generate SBOM
-        env:
-          pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"},"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
         run: pnpm sbom --sbom-format cyclonedx --prod --out sbom.cdx.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
