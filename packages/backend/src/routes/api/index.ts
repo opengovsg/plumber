@@ -12,7 +12,7 @@ import connectionsRouter from './connections'
 import dynamicDataRouter from './dynamic-data'
 import templatesRouter from './templates'
 
-const router = Router()
+const router: Router = Router()
 
 // Apply authentication middleware to ALL API routes
 // This mirrors how GraphQL handles authentication via context

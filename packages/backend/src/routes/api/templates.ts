@@ -10,7 +10,7 @@ import {
 
 import { rateLimitApi } from './middleware/rate-limit'
 
-const router = Router()
+const router: Router = Router()
 
 const searchBodySchema = z.object({
   query: z.string().trim().min(1).max(200),

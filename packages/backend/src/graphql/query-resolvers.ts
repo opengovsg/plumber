@@ -20,7 +20,7 @@ import tilesQueryResolvers from './queries/tiles'
 /**
  * Want to create a new query or modify an existing query?
  * 1. Add/Change your query in graphql.schema
- * 2. Run `npm run gqlc` to trigger codegen
+ * 2. Run `pnpm run gqlc` to trigger codegen
  * 3. Start implementing! You can reference the other query implementations to
  *    see how to type your query function.
  *

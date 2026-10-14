@@ -151,7 +151,7 @@ async function fetchVariables(envName) {
 }
 
 function run(command, env) {
-  // npm already split argv through sh -c, so a shell would re-parse quoted --exec values.
+  // The package manager already split argv through sh -c, so a shell would re-parse quoted --exec values.
   const child = spawn(command[0], command.slice(1), {
     stdio: 'inherit',
     env,
