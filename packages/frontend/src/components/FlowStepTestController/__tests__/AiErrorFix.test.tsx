@@ -98,7 +98,7 @@ describe('AiErrorFix', () => {
         json: async () => ({
           data: {
             fixed: true,
-            summary: 'Updated the Name column mapping.',
+            summary: 'Updated the Name column mapping',
             sources: [
               {
                 title: 'M365 excel',
@@ -112,9 +112,8 @@ describe('AiErrorFix', () => {
     })
 
     expect(document.body.textContent).toContain(
-      'Updated the Name column mapping.',
+      'Updated the Name column mapping. Check step again.',
     )
-    expect(document.body.textContent).toContain('Check step again.')
     expect(document.body.textContent).not.toContain('Guide')
     expect(client.refetchQueries).toHaveBeenCalled()
 

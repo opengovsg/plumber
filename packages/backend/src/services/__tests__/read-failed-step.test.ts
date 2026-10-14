@@ -10,7 +10,11 @@ vi.mock('@/services/mcp/update-step-parameters', () => ({
 
 import type User from '@/models/user'
 
-import { readFailedStep, updateFailedStepParameters } from '../read-failed-step'
+import {
+  readFailedStep,
+  replaceParameterKeysWithLabels,
+  updateFailedStepParameters,
+} from '../read-failed-step'
 
 const stepId = '11111111-1111-4111-8111-111111111111'
 
@@ -41,6 +45,18 @@ const savedStep = {
     formattedData: { screenName: 'Budget workbook' },
   },
 }
+
+describe('replaceParameterKeysWithLabels', () => {
+  it('uses the field label instead of the parameter key', () => {
+    expect(
+      replaceParameterKeysWithLabels(
+        'Changed destinationEmail from semicolons to commas.',
+        'postman',
+        'sendTransactionalEmail',
+      ),
+    ).toBe('Changed Recipient email(s) from semicolons to commas.')
+  })
+})
 
 describe('readFailedStep', () => {
   it('returns the saved fields and redacts secret-like keys', async () => {

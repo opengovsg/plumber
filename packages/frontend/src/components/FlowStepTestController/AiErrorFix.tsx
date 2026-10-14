@@ -203,6 +203,15 @@ function AiErrorFixAction() {
   )
 }
 
+function fixSummary(summary: string): string {
+  const sentence = summary
+    .trim()
+    .replace(/(?:[.?!]\s*)?check step again[.?!]*$/i, '')
+    .trim()
+    .replace(/[.?!]+$/, '')
+  return `${sentence}. Check step again.`
+}
+
 function AiErrorFixStatus() {
   const { failureMessage, phase, result } = useAiErrorFix()
 
@@ -221,7 +230,7 @@ function AiErrorFixStatus() {
   if (result?.fixed) {
     return (
       <Text mt={2} textStyle="body-2" aria-live="polite">
-        {result.summary} Check step again.
+        {fixSummary(result.summary)}
       </Text>
     )
   }
