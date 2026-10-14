@@ -115,7 +115,7 @@ describe('AiErrorFix', () => {
       'Updated the Name column mapping.',
     )
     expect(document.body.textContent).toContain('Check step again.')
-    expect(document.body.textContent).toContain('Guide')
+    expect(document.body.textContent).not.toContain('Guide')
     expect(client.refetchQueries).toHaveBeenCalled()
 
     await act(async () => {

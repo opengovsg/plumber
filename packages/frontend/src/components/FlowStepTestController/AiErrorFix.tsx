@@ -222,19 +222,6 @@ function AiErrorFixStatus() {
     return (
       <Text mt={2} textStyle="body-2" aria-live="polite">
         {result.summary} Check step again.
-        {result.sources[0] && (
-          <Button
-            as="a"
-            href={result.sources[0].url}
-            target="_blank"
-            rel="noreferrer"
-            size="sm"
-            variant="link"
-            ml={2}
-          >
-            Guide
-          </Button>
-        )}
       </Text>
     )
   }
