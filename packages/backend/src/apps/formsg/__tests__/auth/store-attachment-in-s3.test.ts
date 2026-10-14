@@ -24,12 +24,19 @@ const formField = {
 } as FormField
 
 describe('storeAttachmentInS3', () => {
-  it('returns an empty string when the payload has no attachment map', async () => {
+  it('throws when the attachment map is missing', async () => {
+    await expect(
+      storeAttachmentInS3({} as IGlobalVariable, 'submission', formField, null),
+    ).rejects.toThrow('FormSG attachment map is missing')
+    expect(mocks.putObject).not.toHaveBeenCalled()
+  })
+
+  it('returns an empty string when this field has no file', async () => {
     const result = await storeAttachmentInS3(
       {} as IGlobalVariable,
       'submission',
       formField,
-      null,
+      {},
     )
 
     expect(result).toBe('')
