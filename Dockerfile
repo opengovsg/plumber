@@ -6,7 +6,7 @@ ENV VITE_MODE=$APP_ENV
 
 WORKDIR /opt/plumber
 COPY . ./
-RUN npm install -g pnpm@12.1.0
+RUN npm install -g pnpm@12.11.2
 # The token lives only in this RUN's environment, so no layer or config file stores it.
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm_config__auth="{\"https://npm.taskforce.sh\":{\"@taskforcesh\":{\"authToken\":\"$(cat /run/secrets/NPM_TASKFORCESH_TOKEN)\"}}}" \
@@ -16,11 +16,11 @@ RUN pnpm run build
 # package (resolving symlinks and workspace:* deps into real files), unlike
 # npm's flat hoisting where backend's deps lived in the root node_modules.
 # `dist/` is gitignored, so `pnpm deploy` won't carry it — copied separately below.
-# --legacy avoids requiring inject-workspace-packages=true workspace-wide just for this.
+# IMPORTANT: needs pnpm >= 12.2. Older versions re-resolve from the registry instead of using the lockfile.
 # deploy can refetch @taskforcesh packages, and the install step's credentials are gone by now.
 RUN --mount=type=secret,id=NPM_TASKFORCESH_TOKEN \
   pnpm_config__auth="{\"https://npm.taskforce.sh\":{\"@taskforcesh\":{\"authToken\":\"$(cat /run/secrets/NPM_TASKFORCESH_TOKEN)\"}}}" \
-  pnpm --filter backend deploy --legacy --prod ./deploy/backend
+  pnpm --filter backend deploy --prod ./deploy/backend
 
 FROM node:22-alpine AS main
 
