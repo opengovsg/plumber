@@ -24,7 +24,7 @@ runs:
       shell: bash
       env:
         # Passing auth through the environment keeps the token out of every file on the runner.
-        pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ inputs.npm-taskforcesh-token }}"},"@taskforcesh":{"authToken":"${{ inputs.npm-taskforcesh-token }}"}}}'
+        pnpm_config__auth: '{"https://npm.taskforce.sh":{"@taskforcesh":{"authToken":"${{ inputs.npm-taskforcesh-token }}"}}}'
       run: pnpm install --frozen-lockfile
 
     - name: Restore turbo cache
