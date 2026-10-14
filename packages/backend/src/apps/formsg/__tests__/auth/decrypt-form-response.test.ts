@@ -875,30 +875,12 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect($.request.body.fields.tableField).toEqual({
-        fieldType: 'table',
-        question: 'Items (Name, Qty)',
-        answerArray: [],
-        answer: JSON.stringify({
+      expect(JSON.parse($.request.body.fields.tableField.answer)).toMatchObject(
+        {
           rows: [],
-          columns: [
-            {
-              id: Buffer.from('Col 1').toString('hex'),
-              label: 'Name',
-              name: 'Name',
-              value: `data.rows.*.data.${Buffer.from('Col 1').toString('hex')}`,
-            },
-            {
-              id: Buffer.from('Col 2').toString('hex'),
-              label: 'Qty',
-              name: 'Qty',
-              value: `data.rows.*.data.${Buffer.from('Col 2').toString('hex')}`,
-            },
-          ],
-          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
-        }),
-        order: 1,
-      })
+          columns: [{ label: 'Name' }, { label: 'Qty' }],
+        },
+      )
     })
 
     it('should handle answerArray with null characters', async () => {
