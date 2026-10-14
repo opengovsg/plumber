@@ -3,12 +3,10 @@ import { check } from 'k6'
 import http from 'k6/http'
 
 import {
-  BASE_URL,
   JSON_HEADERS,
   pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
-  webhookUrl,
 } from './helpers.js'
 
 // Scenario 3: batch writes with persistent failures to M365. Aim: confirm a
@@ -58,7 +56,7 @@ export const options = {
 
 export function triggerFailingJob() {
   const res = http.post(
-    webhookUrl(BASE_URL, FAILING_PATH),
+    FAILING_PATH,
     triggerPayload(FAILING_PATH, `${__VU}-${__ITER}`),
     JSON_HEADERS,
   )
@@ -67,7 +65,7 @@ export function triggerFailingJob() {
 
 export function triggerHealthyJob() {
   const res = http.post(
-    webhookUrl(BASE_URL, HEALTHY_PATH),
+    HEALTHY_PATH,
     triggerPayload(HEALTHY_PATH, `${__VU}-${__ITER}`),
     JSON_HEADERS,
   )

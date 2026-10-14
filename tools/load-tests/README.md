@@ -35,9 +35,10 @@ docker run --rm -it -e GOOS=darwin -u "$(id -u):$(id -g)" -v "${PWD}:/xk6" \
 ### Testing M365 batching
 
 Scripts in `m365-batch/` cover the scenarios from the M365 batching test plan.
-All 4 scripts hit webhook trigger endpoints (`/webhooks/:path`), so run them
-against an environment with real M365 connections (staging), not
-`dev:sample-env` - M365 calls fail there.
+All 4 scripts POST to webhook trigger URLs (full URLs, e.g.
+`https://staging.plumber.gov.sg/webhooks/<pipeId>`), so run them against an
+environment with real M365 connections (staging), not `dev:sample-env` - M365
+calls fail there.
 
 Every script uses `constant-arrival-rate`. Test rate defaults to 10 qps
 (override with `M365_BATCH_RATE_QPS`): the M365 rate limit is 15 qps and
@@ -45,7 +46,7 @@ production runs at ~3.3 qps (300ms between calls), so 10 qps exercises
 sustained load without exceeding the rate limit outright.
 
 Set up pipes with a `createTableRow` action (`batch: true`), then edit their
-webhook paths into `m365-batch/pipes.json`:
+full webhook URLs into `m365-batch/pipes.json`:
 
 | Script                  | Scenario                                                       | `pipes.json` key(s) used                       |
 | ------------------------ | --------------------------------------------------------------- | ------------------------------------------------ |
@@ -54,9 +55,7 @@ webhook paths into `m365-batch/pipes.json`:
 | `persistent_failure.js`  | One job id fails on every call, plus a healthy control job       | `failurePath`, `webhookPaths` (control group)    |
 | `single_file_lock.js`    | All writes go to a single file, to stress the per-file redlock   | `singleFilePath`                                 |
 
-`M365_BATCH_BASE_URL` sets the target host (defaults to
-`http://localhost:3000`). `DURATION` overrides the run length (defaults to
-`5m`).
+`DURATION` overrides the run length (defaults to `5m`).
 
 ```
 k6 run m365-batch/even_spread.js

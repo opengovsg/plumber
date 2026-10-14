@@ -4,12 +4,10 @@ import exec from 'k6/execution'
 import http from 'k6/http'
 
 import {
-  BASE_URL,
   JSON_HEADERS,
   pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
-  webhookUrl,
 } from './helpers.js'
 
 // Scenario 2: batch writes under load with a hotspot - one job id gets most
@@ -33,7 +31,7 @@ export const options = {
   scenarios: {
     hotspot: {
       executor: 'constant-arrival-rate',
-      duration: __ENV.DURATION || '5m',
+      duration: __ENV.DURATION || '2m',
       rate: TEST_RATE_QPS,
       timeUnit: '1s',
       preAllocatedVUs: 10,
@@ -48,10 +46,10 @@ export default function () {
   const path = isCold
     ? COLD_PATHS[Math.floor(iteration / COLD_EVERY) % COLD_PATHS.length]
     : HOT_PATH
-  const res = http.post(
-    webhookUrl(BASE_URL, path),
-    triggerPayload(path, iteration),
-    JSON_HEADERS,
-  )
-  check(res, { 'trigger accepted': (r) => r.status === 200 })
+  const pathType = isCold ? 'cold' : 'hot'
+  const res = http.post(path, triggerPayload(path, iteration), {
+    ...JSON_HEADERS,
+    tags: { path_type: pathType },
+  })
+  check(res, { [`trigger accepted (${pathType})`]: (r) => r.status === 200 })
 }

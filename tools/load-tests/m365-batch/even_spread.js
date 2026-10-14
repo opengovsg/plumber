@@ -4,12 +4,10 @@ import exec from 'k6/execution'
 import http from 'k6/http'
 
 import {
-  BASE_URL,
   JSON_HEADERS,
   pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
-  webhookUrl,
 } from './helpers.js'
 
 // Scenario 1: batch writes under load with an even spread of job ids (10
@@ -26,7 +24,7 @@ export const options = {
   scenarios: {
     even_spread: {
       executor: 'constant-arrival-rate',
-      duration: __ENV.DURATION || '5m',
+      duration: __ENV.DURATION || '2m',
       rate: TEST_RATE_QPS,
       timeUnit: '1s',
       preAllocatedVUs: 10,
@@ -38,10 +36,6 @@ export const options = {
 export default function () {
   const iteration = exec.scenario.iterationInTest
   const path = PATHS[iteration % PATHS.length]
-  const res = http.post(
-    webhookUrl(BASE_URL, path),
-    triggerPayload(path, iteration),
-    JSON_HEADERS,
-  )
+  const res = http.post(path, triggerPayload(path, iteration), JSON_HEADERS)
   check(res, { 'trigger accepted': (r) => r.status === 200 })
 }

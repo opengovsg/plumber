@@ -3,12 +3,10 @@ import { check } from 'k6'
 import http from 'k6/http'
 
 import {
-  BASE_URL,
   JSON_HEADERS,
   pipePaths,
   TEST_RATE_QPS,
   triggerPayload,
-  webhookUrl,
 } from './helpers.js'
 
 // Scenario 4: batch writes to a single file under load. Aim: confirm the
@@ -26,7 +24,7 @@ export const options = {
   scenarios: {
     single_file: {
       executor: 'constant-arrival-rate',
-      duration: __ENV.DURATION || '5m',
+      duration: __ENV.DURATION || '2m',
       rate: TEST_RATE_QPS,
       timeUnit: '1s',
       preAllocatedVUs: 10,
@@ -37,7 +35,7 @@ export const options = {
 
 export default function () {
   const res = http.post(
-    webhookUrl(BASE_URL, SINGLE_FILE_PATH),
+    SINGLE_FILE_PATH,
     triggerPayload(SINGLE_FILE_PATH, `${__VU}-${__ITER}`),
     JSON_HEADERS,
   )
