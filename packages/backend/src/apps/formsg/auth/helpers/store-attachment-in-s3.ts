@@ -31,7 +31,10 @@ async function storeAttachmentInS3(
   formField: Readonly<FormField>,
   attachments: Readonly<DecryptedAttachments> | null,
 ): Promise<string> {
-  const attachment = attachments?.[formField._id]
+  if (!attachments) {
+    throw new Error('FormSG attachment map is missing')
+  }
+  const attachment = attachments[formField._id]
   if (!attachment) {
     return ''
   }
