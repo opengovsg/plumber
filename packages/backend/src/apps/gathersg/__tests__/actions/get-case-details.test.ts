@@ -19,7 +19,8 @@ vi.mock('@/helpers/s3', async (importOriginal) => {
   }
 })
 
-const MOCK_CASE_UUID = 'case-uuid-123'
+const MOCK_CASE_UUID = 'Aa1Bb2Cc3Dd4Ee5Ff6Gg7H'
+const MOCK_CASE_REF = '261007-00001'
 const MOCK_EXECUTION_ID = 'execution-id-123'
 const MOCK_ATTACHMENT_UUID = 'attach-uuid-1'
 const MOCK_ATTACHMENT_NAME = 'invoice.pdf'
@@ -87,6 +88,9 @@ describe('get case details', () => {
       },
       http: {
         get: httpGet,
+        post: vi.fn(async () => {
+          throw new Error('search should not run for a case uuid')
+        }),
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
     } as unknown as IGlobalVariable
@@ -191,7 +195,7 @@ describe('get case details', () => {
     })
 
     await expect(getCaseDetailsAction.run($)).rejects.toThrow(
-      'Please check that you have configured your step correctly',
+      'Failed to process attachment attach-uuid-1',
     )
   })
 
@@ -298,5 +302,71 @@ describe('get case details', () => {
       name: MOCK_ATTACHMENT_NAME_2,
       mimeType: 'image/png',
     })
+  })
+
+  it('skips search when the value is a case uuid', async () => {
+    await getCaseDetailsAction.run($)
+
+    expect($.http.post).not.toHaveBeenCalled()
+    expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
+      urlPathParams: { caseUuid: MOCK_CASE_UUID },
+    })
+  })
+
+  it('searches by case ref and loads that case uuid', async () => {
+    const httpPost = vi.fn(async () => ({
+      data: {
+        total: 1,
+        data: [{ uuid: MOCK_CASE_UUID }],
+      },
+    }))
+    $.http.post = httpPost as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = MOCK_CASE_REF
+
+    await getCaseDetailsAction.run($)
+
+    expect(httpPost).toHaveBeenCalledWith('/cases/search', {
+      caseRefs: [MOCK_CASE_REF],
+      page: 1,
+      size: 10,
+    })
+    expect(httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
+      urlPathParams: { caseUuid: MOCK_CASE_UUID },
+    })
+  })
+
+  it('throws when a case ref matches more than one case', async () => {
+    $.http.post = vi.fn(async () => ({
+      data: {
+        data: [{ uuid: MOCK_CASE_UUID }, { uuid: 'abcdefghijklmnopqrstuv' }],
+      },
+    })) as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = MOCK_CASE_REF
+
+    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+      'More than one case found for case ref 261007-00001',
+    )
+    expect(httpGet).not.toHaveBeenCalled()
+  })
+
+  it('throws when a case ref matches no case', async () => {
+    $.http.post = vi.fn(async () => ({
+      data: { data: [], total: 0 },
+    })) as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = MOCK_CASE_REF
+
+    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+      'No case found for case ref 261007-00001',
+    )
+    expect(httpGet).not.toHaveBeenCalled()
+  })
+
+  it('throws when the value is neither a case uuid nor a case ref', async () => {
+    $.step.parameters.caseUuid = 'not-a-case'
+
+    await expect(getCaseDetailsAction.run($)).rejects.toThrow(
+      'Please enter a valid case uuid or case ref',
+    )
+    expect(httpGet).not.toHaveBeenCalled()
   })
 })

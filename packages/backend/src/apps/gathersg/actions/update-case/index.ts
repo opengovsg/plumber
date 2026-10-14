@@ -14,6 +14,7 @@ import { ensureZodEnumValue } from '@/helpers/zod-utils'
 import Step from '@/models/step'
 
 import { uploadCaseAttachments } from '../../common/attachment'
+import { resolveCaseIdentifier } from '../../common/case-identifier'
 import {
   fieldTypeEnum,
   GATHER_ATTACHMENT_FIELD_TYPE,
@@ -64,14 +65,14 @@ async function getExistingAttachmentUuids(
 const action: IRawAction = {
   name: 'Update case',
   key: 'updateCase',
-  description: 'Update a case based on the case uuid',
+  description: 'Update a case using a case uuid or case ref',
   preserveArrayVariables: true,
   arguments: [
     {
-      label: 'Case UUID',
+      label: 'Case UUID or case ref',
       key: 'caseUuid',
       type: 'string' as const,
-      description: 'Select the case uuid you want to update.',
+      description: 'Select a variable with a case UUID or case ref.',
       required: true,
       variables: true,
       // we intentionally disable typing for case uuid as it is used in
@@ -279,9 +280,10 @@ const action: IRawAction = {
 
   async run($) {
     try {
-      const { attachmentFields, ...patchBody } = requestSchema.parse(
-        $.step.parameters,
-      )
+      const parsed = requestSchema.parse($.step.parameters)
+      const caseUuid = await resolveCaseIdentifier($, parsed.caseUuid)
+      const { attachmentFields, ...patchBody } = parsed
+      patchBody.caseUuid = caseUuid
 
       if (attachmentFields.length > 0) {
         const uploaded: {
@@ -300,7 +302,7 @@ const action: IRawAction = {
             replaceExisting,
             uuids: await uploadCaseAttachments({
               $,
-              caseUuid: patchBody.caseUuid,
+              caseUuid,
               field,
               fieldType: GATHER_ATTACHMENT_FIELD_TYPE,
               s3Ids: attachments,
@@ -312,11 +314,7 @@ const action: IRawAction = {
           .filter(({ replaceExisting }) => !replaceExisting)
           .map(({ field }) => field)
         const existingUuids = fieldsToAppend.length
-          ? await getExistingAttachmentUuids(
-              $,
-              patchBody.caseUuid,
-              fieldsToAppend,
-            )
+          ? await getExistingAttachmentUuids($, caseUuid, fieldsToAppend)
           : new Map<string, string[]>()
 
         for (const { field, replaceExisting, uuids } of uploaded) {
@@ -333,7 +331,7 @@ const action: IRawAction = {
 
       const rawResponse = await $.http.patch('/cases/:caseUuid', patchBody, {
         urlPathParams: {
-          caseUuid: $.step.parameters.caseUuid,
+          caseUuid,
         },
       })
       const response = responseSchema.parse(rawResponse.data)

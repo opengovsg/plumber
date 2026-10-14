@@ -3,7 +3,7 @@ import type { IApp, IJSONObject } from '@plumber/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiInfoCircle } from 'react-icons/bi'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { CloseButton, Container, Flex, HStack, Text } from '@chakra-ui/react'
 import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 
@@ -14,6 +14,7 @@ import useAuthentication from '@/hooks/useAuthentication'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import AddFormsgConnectionModal from './components/AddFormsgConnectionModal'
 import ChatInterface from './components/ChatInterface'
@@ -420,6 +421,17 @@ function AiBuilderContent() {
 
 function AiBuilderDraftProvider() {
   const locationState = useLocation()?.state
+  const [params] = useSearchParams()
+  // NOTE: coerce to undefined to fit typing
+  const start = params.get('start') ?? undefined
+  const from = params.get('from')
+
+  useEffect(() => {
+    if (!isPostHogConfigured || !from) {
+      return
+    }
+    posthog.capture('ai_builder:opened', { from })
+  }, [from])
 
   // Persist state to sessionStorage so it survives refresh.
   //
@@ -460,7 +472,7 @@ function AiBuilderDraftProvider() {
   return (
     <AiBuilderContextProvider
       flowName={flowName}
-      chatInput={chatInput}
+      chatInput={chatInput || start}
       chatMessages={chatMessages}
       output={output}
       chatId={chatId}

@@ -57,6 +57,9 @@ describe('update case', () => {
       http: {
         patch: mocks.httpPatch,
         get: mocks.httpGet,
+        post: vi.fn(async () => {
+          throw new Error('search should not run for a case uuid')
+        }),
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
@@ -143,15 +146,66 @@ describe('update case', () => {
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please enter a valid case uuid',
+      'Please enter a valid case uuid or case ref',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please do not leave the case uuid empty',
+      'Please do not leave the case uuid or case ref empty',
     )
+  })
+
+  it('skips search when the value is a case uuid', async () => {
+    await updateCaseAction.run($)
+
+    expect($.http.post).not.toHaveBeenCalled()
+  })
+
+  it('searches by case ref and patches that case uuid', async () => {
+    const httpPost = vi.fn(async () => ({
+      data: {
+        total: 1,
+        data: [{ uuid: MOCK_CASE_UUID }],
+      },
+    }))
+    $.http.post = httpPost as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = '261007-00001'
+
+    await updateCaseAction.run($)
+
+    expect(httpPost).toHaveBeenCalledWith('/cases/search', {
+      caseRefs: ['261007-00001'],
+      page: 1,
+      size: 10,
+    })
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      expect.objectContaining({
+        caseUuid: MOCK_CASE_UUID,
+      }),
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('throws when a case ref matches more than one case', async () => {
+    $.http.post = vi.fn(async () => ({
+      data: {
+        data: [{ uuid: MOCK_CASE_UUID }, { uuid: 'abcdefghijklmnopqrstuv' }],
+      },
+    })) as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = '261007-00001'
+    mocks.httpPatch.mockClear()
+
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'More than one case found for case ref 261007-00001',
+    )
+    expect(mocks.httpPatch).not.toHaveBeenCalled()
   })
 
   it('should throw step error for empty field', async () => {

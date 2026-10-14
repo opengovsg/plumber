@@ -1,6 +1,6 @@
 import { IStepConfig } from '@plumber/types'
 
-import { Fragment, useCallback, useMemo } from 'react'
+import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import { MdOpenInNew } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
@@ -156,9 +156,26 @@ export default function StepsPreview() {
     clearPersistedState,
   ])
 
-  const hasNoContent = isMcpPipeMode
-    ? !output?.steps?.length
-    : output?.error || !steps || !(output?.trigger && output?.actions?.length)
+  const hasNoContent = Boolean(
+    isMcpPipeMode
+      ? !output?.steps?.length
+      : output?.error ||
+          !steps ||
+          !(output?.trigger && output?.actions?.length),
+  )
+
+  useEffect(() => {
+    if (hasNoContent || !isPostHogConfigured) {
+      return
+    }
+    posthog.capture('ai_builder:steps_preview_shown', {
+      mode: isMcpPipeMode ? 'pipe' : isMcpProposalMode ? 'proposal' : 'legacy',
+      pipe_id: output?.pipeId,
+      trace_id: output?.traceId,
+    })
+    // Fires once per transition into a renderable preview, not on every streamed step update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasNoContent])
 
   if (hasNoContent) {
     return (

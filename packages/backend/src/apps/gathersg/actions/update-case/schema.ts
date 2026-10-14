@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { parseS3Id } from '@/helpers/s3'
 
 import { caseFieldsSchema } from '../../common/case-fields-schema'
-import { CASE_UUID_REGEX } from '../../common/constants'
+import { caseIdentifierSchema } from '../../common/case-identifier'
 
 const attachmentS3IdsSchema = z
   .array(z.string())
@@ -43,15 +43,7 @@ const attachmentFieldRowSchema = z.object({
 
 export const requestSchema = z
   .object({
-    caseUuid: z
-      .string()
-      .trim()
-      .min(1, {
-        message: 'Please do not leave the case uuid empty',
-      })
-      .regex(CASE_UUID_REGEX, {
-        message: 'Please enter a valid case uuid',
-      }),
+    caseUuid: caseIdentifierSchema,
     caseStatus: z.string().trim().optional(),
     caseFields: caseFieldsSchema.nullish(),
     attachmentFields: z
