@@ -5,8 +5,13 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 
-import { fetchCaseFields } from '../common/fetch-case-fields'
+import { readStepErrorName } from '../common/case-identifier'
+import {
+  fetchCaseFields,
+  type GatherSGCaseField,
+} from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
 import { resolveCaseUuid } from './get-case-fields'
@@ -34,12 +39,16 @@ const dynamicData: IDynamicData = {
       })
 
       return {
-        data: attachmentFields.map((field) => ({
+        data: attachmentFields.map((field: GatherSGCaseField) => ({
           name: field.name,
           value: field.name,
         })),
       }
     } catch (error) {
+      if (error instanceof StepError) {
+        return { data: [], error: { message: readStepErrorName(error) } }
+      }
+
       if (error instanceof HttpError && error.response?.status === 404) {
         const { message, code } =
           (error.response.data.error as GatherSGError) ?? {}

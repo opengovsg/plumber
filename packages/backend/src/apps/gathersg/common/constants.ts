@@ -1,11 +1,17 @@
 import { z } from 'zod'
 
 /**
- * Loose regex to just accept only alphanumeric characters and dashes
- * since there is no proper public documentation with GatherSG.
- * Assumption is that the case uuid is alphanumeric and 22 characters long.
+ * Gather case ids are 22 alphanumeric characters.
+ * They are not RFC 4122 UUIDs (36 hex characters with hyphens).
+ * They are not ULIDs (26 Crockford base32 characters).
  */
 export const CASE_UUID_REGEX = /^[a-zA-Z0-9]{22}$/
+
+/**
+ * Ownself Gather case refs are a date plus a 5-digit running number.
+ * Example: 261007-00001.
+ */
+export const CASE_REF_REGEX = /^\d{6}-\d{5}$/
 
 export const UNSUPPORTED_FIELDS = [
   'table', // array of objects

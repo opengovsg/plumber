@@ -14,6 +14,13 @@ import Step from '@/models/step'
 import { ADDRESS_LABELS } from './constants'
 import { ParsedMrfWorkflowStep } from './types'
 
+// Added to a field's order to place its variables below the question.
+// IMPORTANT: Each variable of a field needs its own offset.
+const FIELD_OFFSET = {
+  answer: 0.1,
+  attachment: 0.2,
+} as const
+
 function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
     type: 'text',
@@ -35,7 +42,9 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
 
 function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
-    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    order: fieldData.order
+      ? (fieldData.order as number) + FIELD_OFFSET.answer
+      : null,
   }
 
   switch (fieldData.fieldType) {
@@ -94,7 +103,7 @@ function buildAnswerArrayForSignature(
 ): IDataOutMetadata {
   const { order, question } = fieldData
   const answerArray = fieldData.answerArray as IJSONArray
-  return answerArray.map((_, index) => ({
+  return answerArray.map((_: IJSONValue, index: number) => ({
     type: 'text',
     label: `${order}.${index + 1}. ${question}`,
     order: order ? `${order}.${index + 1}` : null,
@@ -111,7 +120,7 @@ function buildAnswerArrayForCheckbox(
   return {
     type: 'array',
     label: `${order}. ${question}`,
-    order: order ? (order as number) + 0.1 : null,
+    order: order ? (order as number) + FIELD_OFFSET.answer : null,
   }
 }
 
@@ -177,7 +186,7 @@ function buildAnswerArrayForTable(
       nestedAnswerArray.push({
         type: 'text',
         label,
-        order: order ? (order as number) + 0.1 : null,
+        order: order ? (order as number) + FIELD_OFFSET.answer : null,
         // NOTE: we hide the option if it is empty
         // mock data will have dummy strings in the answerArray
         // actual submissions should contain real data, otherwise the cells should be hidden
@@ -208,7 +217,9 @@ function buildTableMetadatum(fieldData: IJSONObject): IDataOutMetadata {
     label: fieldData.question
       ? `${fieldData.order}. ${fieldData.question}`
       : `Response ${fieldData.order}`,
-    order: fieldData.order ? (fieldData.order as number) + 0.1 : null,
+    order: fieldData.order
+      ? (fieldData.order as number) + FIELD_OFFSET.answer
+      : null,
     type: 'table',
     displayedValue: `${rowsFound} row${rowsFound != 1 ? 's' : ''}`,
     value: tableObject,
@@ -345,9 +356,9 @@ async function getDataOutMetadata(
 
   const fieldMetadata: IDataOutMetadata = Object.create(null)
 
-  const fields = Object.entries(data.fields).sort((a, b) => {
-    const orderA = a[1].order
-    const orderB = b[1].order
+  const fields = Object.entries(data.fields as IJSONObject).sort((a, b) => {
+    const orderA = (a[1] as IJSONObject).order as number | null
+    const orderB = (b[1] as IJSONObject).order as number | null
     if (orderA === null) {
       return 1
     }
@@ -376,7 +387,8 @@ async function getDataOutMetadata(
    */
   let questionOrder = 0
   let headerOrderBetweenQuestions = 0
-  for (const [fieldId, fieldData] of fields) {
+  for (const [fieldId, fieldValue] of fields) {
+    const fieldData = fieldValue as IJSONObject
     // ignore image fields, dont even increment question order
     if (fieldData.fieldType === 'image') {
       fieldMetadata[fieldId] = { isHidden: true }
@@ -408,6 +420,14 @@ async function getDataOutMetadata(
       myInfo: { attr: { isHidden: true } },
       isVisible: { isHidden: true },
       isHeader: { isHidden: true },
+    }
+
+    if (fieldData.fieldType === 'attachment') {
+      fieldMetadata[fieldId].filename = {
+        type: 'text',
+        label: `${fieldData.order}. ${fieldData.question} (Filename)`,
+        order: (fieldData.order as number) + FIELD_OFFSET.attachment,
+      }
     }
 
     if (approvalField && fieldId === approvalField) {

@@ -3,8 +3,10 @@ import '@/types/luxon-extensions'
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { config } from 'dotenv'
 import { Settings as LuxonSettings } from 'luxon'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { URL } from 'node:url'
+import { z } from 'zod'
 
 // Placeholders backstop missing keys. Local dev gets its real values from 1Password,
 // which dotenv never overrides.
@@ -13,6 +15,17 @@ import { URL } from 'node:url'
 if ((process.env.APP_ENV ?? 'development') === 'development') {
   config({ path: path.resolve(__dirname, '../../.env-example') })
 }
+
+// IMPORTANT: ECS runs `node` directly, so npm_package_version is unset there.
+const getVersion = (): string =>
+  process.env.npm_package_version ??
+  z
+    .object({ version: z.string() })
+    .parse(
+      JSON.parse(
+        readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'),
+      ),
+    ).version
 
 type AppConfig = {
   port: string
@@ -130,7 +143,7 @@ const appConfig: AppConfig = {
   appEnv: appEnv,
   isProd: appEnv === 'prod',
   isDev: appEnv === 'development',
-  version: process.env.npm_package_version,
+  version: getVersion(),
   postgresDatabase: process.env.POSTGRES_DATABASE || 'plumber_dev',
   postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),
   postgresHost:

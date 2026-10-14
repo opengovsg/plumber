@@ -16,15 +16,18 @@ const MOCK_CASE_UUID = 'abcdefghijkl1234567890' // have to be 22 characters long
 const MOCK_TAG_VALUE = 'urgent'
 
 const mocks = vi.hoisted(() => ({
-  httpPost: vi.fn(() => ({
-    data: MOCK_RESPONSE,
-  })),
+  httpPost: vi.fn(),
 }))
 
 describe('tag or untag case', () => {
   let $: IGlobalVariable
 
   beforeEach(() => {
+    mocks.httpPost.mockReset()
+    mocks.httpPost.mockImplementation(() => ({
+      data: MOCK_RESPONSE,
+    }))
+
     $ = {
       auth: {
         set: vi.fn(),
@@ -106,15 +109,74 @@ describe('tag or untag case', () => {
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
-      'Please enter a valid case uuid',
+      'Please enter a valid case uuid or case ref',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
-      'Please do not leave the case uuid empty',
+      'Please do not leave the case uuid or case ref empty',
     )
+  })
+
+  it('skips search when the value is a case uuid', async () => {
+    mocks.httpPost.mockClear()
+    await tagOrUntagCaseAction.run($)
+
+    expect(mocks.httpPost).toHaveBeenCalledTimes(1)
+    expect(mocks.httpPost).toHaveBeenCalledWith(
+      '/cases/:caseUuid/tag',
+      expect.anything(),
+      expect.anything(),
+    )
+  })
+
+  it('searches by case ref and tags that case uuid', async () => {
+    mocks.httpPost.mockReset()
+    mocks.httpPost
+      .mockResolvedValueOnce({
+        data: { total: 1, data: [{ uuid: MOCK_CASE_UUID }] },
+      })
+      .mockResolvedValueOnce({ data: MOCK_RESPONSE })
+    $.step.parameters.caseUuid = '261007-00001'
+
+    await tagOrUntagCaseAction.run($)
+
+    expect(mocks.httpPost).toHaveBeenNthCalledWith(1, '/cases/search', {
+      caseRefs: ['261007-00001'],
+      page: 1,
+      size: 10,
+    })
+    expect(mocks.httpPost).toHaveBeenNthCalledWith(
+      2,
+      '/cases/:caseUuid/tag',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        tagOrUntag: true,
+        tag: MOCK_TAG_VALUE,
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('throws when a case ref matches more than one case', async () => {
+    mocks.httpPost.mockReset()
+    mocks.httpPost.mockResolvedValueOnce({
+      data: {
+        data: [{ uuid: MOCK_CASE_UUID }, { uuid: '1234567890abcdefghijkl' }],
+      },
+    })
+    $.step.parameters.caseUuid = '261007-00001'
+
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+      'More than one case found for case ref 261007-00001',
+    )
+    expect(mocks.httpPost).toHaveBeenCalledTimes(1)
   })
 
   it('should throw step error for empty tag value', async () => {
@@ -127,7 +189,7 @@ describe('tag or untag case', () => {
   it('should throw step error for invalid parameters (whitespace only case uuid)', async () => {
     $.step.parameters.caseUuid = '   '
     await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
-      'Please do not leave the case uuid empty',
+      'Please do not leave the case uuid or case ref empty',
     )
   })
 

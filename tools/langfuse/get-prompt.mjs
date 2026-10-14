@@ -1,15 +1,15 @@
 /**
  * Fetches a prompt from Langfuse and saves it to docs/plans/prompts/<name>_v<version>.md
  *
- * Credentials come from the dev 1Password environment, so run it through npm:
- *   npm run get-prompt -- <promptName> [--project=aiBuilder|pairAction] [--label=<label>] [--version=<number>]
+ * Credentials come from the dev 1Password environment, so run it through pnpm:
+ *   pnpm run get-prompt <promptName> [--project=aiBuilder|pairAction] [--label=<label>] [--version=<number>]
  *
  * --label and --version are mutually exclusive. Defaults to --label=latest if neither is given.
  *
  * Examples:
- *   npm run get-prompt -- chat
- *   npm run get-prompt -- chat-summary --project=aiBuilder --label=latest
- *   npm run get-prompt -- chat --version=154
+ *   pnpm run get-prompt chat
+ *   pnpm run get-prompt chat-summary --project=aiBuilder --label=latest
+ *   pnpm run get-prompt chat --version=154
  */
 import { LangfuseClient } from '@langfuse/client'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -22,7 +22,7 @@ function parseArgs(argv) {
   const [promptName, ...rest] = argv
   if (!promptName) {
     throw new Error(
-      'Usage: npm run get-prompt -- <promptName> [--project=aiBuilder|pairAction] [--label=<label>] [--version=<number>]',
+      'Usage: pnpm run get-prompt <promptName> [--project=aiBuilder|pairAction] [--label=<label>] [--version=<number>]',
     )
   }
 
@@ -61,7 +61,7 @@ function buildLangfuseClient(project, env) {
 
   if (!credentials.publicKey || !credentials.secretKey) {
     throw new Error(
-      `Missing Langfuse credentials for project "${project}". Run this through "npm run get-prompt" so 1Password injects them.`,
+      `Missing Langfuse credentials for project "${project}". Run this through "pnpm run get-prompt" so 1Password injects them.`,
     )
   }
 
