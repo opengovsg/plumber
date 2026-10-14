@@ -162,6 +162,10 @@ const trigger: IRawTrigger = {
         internalId: '',
         isMock: shouldUseMockData,
         lastTestSubmissionDate,
+        // The editor uses this to flag variables whose question was deleted.
+        // dataOut cannot prove deletion because submissions omit questions that
+        // were hidden by logic or left unanswered.
+        formFieldIds: formSchema.form.form_fields?.map((field) => field._id),
       },
     })
   },
