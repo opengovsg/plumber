@@ -49,6 +49,10 @@ class ExecutionStep extends Base {
           lastTestSubmissionDate: {
             type: 'string',
           },
+          formFieldIds: {
+            type: 'array',
+            items: { type: 'string' },
+          },
           iteration: {
             type: 'number',
           },
