@@ -45,10 +45,9 @@ Don't ask the user for a target version up front. Resolve it yourself:
 Check whether the package is **direct** or **transitive**:
 
 - Direct: a workspace `package.json` lists it. The version usually lives
-  in `pnpm-workspace.yaml` under `catalog:` or `catalogs:`, and the
-  `package.json` specifier is `catalog:` or `catalog:<name>`. A few
-  packages (for example `tools/langfuse`) still pin an exact version in
-  their own `package.json`.
+  in that `package.json`. Packages shared by several workspaces use the
+  `catalog:` specifier, and their version lives under `catalog:` in
+  `pnpm-workspace.yaml`.
 - Transitive: it appears in `pnpm-lock.yaml` and is not declared by any
   workspace. Confirm with `pnpm why <package>`. It may already have an
   exact entry under `overrides:` in `pnpm-workspace.yaml`.
@@ -99,8 +98,8 @@ asking you to apply/bump/commit it.**
 Write the exact target version (`"1.9.0"`, never `"^1.9.0"` or `"~1.9.0"`).
 
 **Direct dependency declared with `catalog:`:**
-1. Edit that package's entry in `pnpm-workspace.yaml` (`catalog:` or the
-   named catalog it uses). Leave the `package.json` specifier as `catalog:`.
+1. Edit that package's entry under `catalog:` in `pnpm-workspace.yaml`.
+   Leave the `package.json` specifier as `catalog:`.
 2. If `overrides:` has a top-level `"<package>"` key, set it to the same
    version. Skip this and the install still resolves the old pin.
 3. Leave `parent>package` override keys alone unless the user is bumping
@@ -138,7 +137,7 @@ target. If it is still the old version, the override was not updated.
 | Situation | Command |
 |---|---|
 | Confirm direct vs transitive | `pnpm why <package>` |
-| Where the direct version is declared | `catalog:` entry in `pnpm-workspace.yaml` |
+| Where the direct version is declared | the workspace `package.json`, or `catalog:` in `pnpm-workspace.yaml` when shared |
 | Make a catalog bump actually install | set the same version on the top-level `overrides:` key, then `pnpm install` |
 | Force a transitive package | pin it under `overrides:` in `pnpm-workspace.yaml`, then `pnpm install` |
 | Confirm the bump took effect | `pnpm why <package>` shows the target version |

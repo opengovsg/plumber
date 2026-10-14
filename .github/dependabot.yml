@@ -5,8 +5,7 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      # Mirrors the catalogs in pnpm-workspace.yaml — one PR per related
-      # package family (or package + its @types/*) instead of one per package.
+      # One PR per related package family, or a package and its @types/*.
       ai-sdk:
         patterns:
           - "@ai-sdk/*"
