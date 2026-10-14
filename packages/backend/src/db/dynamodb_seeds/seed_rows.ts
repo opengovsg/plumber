@@ -15,7 +15,7 @@ import {
 const TABLE_ID = argv[2]
 if (!TABLE_ID) {
   console.log(
-    'Please provide a table ID e.g. npm run -w backend dynamodb:seed -- <YOUR_TABLE_ID>',
+    'Please provide a table ID e.g. pnpm --filter backend dynamodb:seed <YOUR_TABLE_ID>',
   )
   process.exit(1)
 }

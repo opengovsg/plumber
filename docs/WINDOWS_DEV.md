@@ -10,11 +10,13 @@
 
 ### 1. Install dependencies
 
-Set the BullMQ Pro token **before** running `npm install`. Get a free trial token from [taskforce.sh](https://taskforce.sh/):
+Get a free trial BullMQ Pro token from [taskforce.sh](https://taskforce.sh/). Save it as the `NPM_TASKFORCESH_TOKEN` user environment variable in the "Edit environment variables for your account" dialog. Typing it into a terminal leaves it in your shell history.
+
+Open a new terminal, then point your user-level pnpm config at the variable. pnpm ignores `${...}` references in the committed `.npmrc`, so a malicious repo cannot send your token elsewhere. The single quotes keep `${NPM_TASKFORCESH_TOKEN}` literal, so the token itself never lands in pnpm's config file:
 
 ```powershell
-$env:NPM_TASKFORCESH_TOKEN = "<your-token>"
-npm install
+pnpm config set "//npm.taskforce.sh/:_authToken" '${NPM_TASKFORCESH_TOKEN}'
+pnpm install
 ```
 
 ### 2. Configure environment
@@ -50,24 +52,24 @@ docker compose -f packages/backend/docker-compose.dev.yml up -d
 ### 4. Run DB migrations (first time only)
 
 ```powershell
-npm run migrate
+pnpm run migrate
 ```
 
 The Unix-style env var prefix that used to break this on Windows is gone. If it still fails, run knex directly:
 
 ```powershell
 cd packages/backend
-npx knex migrate:latest
+pnpm exec knex migrate:latest
 cd ../..
 ```
 
 ### 5. Start the app
 
 ```powershell
-npm run dev
+pnpm run dev
 ```
 
-> **Known gap on Windows:** `npm run dev` goes through `scripts/with-op-env.mjs`, which spawns without a shell, so Windows cannot resolve the `.cmd` shims in `node_modules\.bin`. Nobody has fixed this yet. `npm run dev:sample-env` skips the loader, but boots on `.env-example` placeholders, so calls to real third-party services fail.
+> **Known gap on Windows:** `pnpm run dev` goes through `scripts/with-op-env.mjs`, which spawns without a shell, so Windows cannot resolve the `.cmd` shims in `node_modules\.bin`. Nobody has fixed this yet. `pnpm run dev:sample-env` skips the loader, but boots on `.env-example` placeholders, so calls to real third-party services fail.
 
 - Frontend: http://localhost:3001
 - Backend: http://localhost:3000
@@ -85,17 +87,17 @@ The app uses OTP email login, but in local dev the OTP is printed to the termina
 
 ## Daily dev loop
 
-After every computer restart, Docker containers stop and must be restarted before `npm run dev`.
+After every computer restart, Docker containers stop and must be restarted before `pnpm run dev`.
 
 ```powershell
 # Start Docker services (run this after every computer restart)
-npm run setup
+pnpm run setup
 
 # Start the app
-npm run dev
+pnpm run dev
 ```
 
-`npm run setup` is equivalent to `docker compose -f packages/backend/docker-compose.dev.yml up -d` but works from the project root.
+`pnpm run setup` is equivalent to `docker compose -f packages/backend/docker-compose.dev.yml up -d` but works from the project root.
 
 Frontend hot-reloads on changes. Backend requires a terminal restart (or press `rs` + Enter in the dev terminal) after server-side changes.
 
@@ -103,10 +105,10 @@ Frontend hot-reloads on changes. Backend requires a terminal restart (or press `
 
 ```powershell
 # Single unit test file
-npx vitest packages/backend/src/helpers/__tests__/<file>.test.ts
+pnpm exec vitest packages/backend/src/helpers/__tests__/<file>.test.ts
 
 # All backend unit tests
-npm run -w backend test:unit
+pnpm --filter backend run test:unit
 ```
 
 ## Hello World: smoke-test your setup
@@ -174,8 +176,8 @@ A `200 OK` response means the flow was accepted and is now running.
 
 | Issue                                    | Fix                                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------------------- |
-| `'DOTENV_CONFIG_PATH' is not recognized` | Use `$env:VAR=value; command` syntax in PowerShell instead of `npm run migrate` |
-| `401 Unauthorized` from taskforce.sh     | Set `NPM_TASKFORCESH_TOKEN` env var before `npm install`                        |
+| `'DOTENV_CONFIG_PATH' is not recognized` | Use `$env:VAR=value; command` syntax in PowerShell instead of `pnpm run migrate` |
+| `401 Unauthorized` from taskforce.sh     | Set `NPM_TASKFORCESH_TOKEN` as in step 1, then open a new terminal              |
 | Port 6379 bind error                     | Enable WSL2 backend in Docker Desktop settings                                  |
 | `docker-compose` not found               | Use `docker compose` (space, no hyphen)                                         |
 | LaunchDarkly 401 warnings in logs        | Harmless in local dev — feature flags just won't work                           |

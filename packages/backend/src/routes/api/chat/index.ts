@@ -481,7 +481,7 @@ const handleChatStream = observe(
   },
 )
 
-const router = Router()
+const router: Router = Router()
 
 router.post('/', handleChatStream)
 

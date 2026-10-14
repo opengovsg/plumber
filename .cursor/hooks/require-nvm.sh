@@ -3,7 +3,7 @@
 # `nvm use` is anchored to the start because it has to run before npm, and a
 # substring match anywhere would pass `npm install && nvm use`.
 exec jq -c '
-  if (.command | test("\\b(npm|npx|node)\\b") | not) then {permission: "allow"}
+  if (.command | test("\\b(npm|npx|pnpm|node)\\b") | not) then {permission: "allow"}
   elif (.command | test("^\\s*nvm use\\b[^&|;]*&&")) then {permission: "allow"}
   else
     {permission: "deny",
