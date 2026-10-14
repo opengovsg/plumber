@@ -226,7 +226,7 @@ export async function fixStepError(
       prompt: buildPrompt(input),
       tools: tools as Parameters<typeof generateText>[0]['tools'],
       toolChoice: 'auto',
-      stopWhen: stepCountIs(7),
+      stopWhen: [stepCountIs(7), () => Boolean(appliedFixSummary)],
       maxOutputTokens: 400,
       prepareStep: ({ stepNumber }) => {
         if (stepNumber === 0) {
@@ -239,9 +239,6 @@ export async function fixStepError(
               toolName: GUIDE_SEARCH_TOOL,
             },
           }
-        }
-        if (appliedFixSummary) {
-          return { toolChoice: 'none' }
         }
         return { toolChoice: 'auto' }
       },
