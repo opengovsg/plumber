@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ThemeProvider from '@/components/ThemeProvider'
 
-import AiErrorFix from '../AiErrorFix'
+import AiErrorFix, { clearStepFixNotice } from '../AiErrorFix'
 
 const helpProps = {
   stepId: '11111111-1111-4111-8111-111111111111',
@@ -66,6 +66,7 @@ describe('AiErrorFix', () => {
   afterEach(() => {
     root.unmount()
     container.remove()
+    clearStepFixNotice(helpProps.stepId)
     vi.unstubAllGlobals()
   })
 
@@ -113,8 +114,25 @@ describe('AiErrorFix', () => {
     expect(document.body.textContent).toContain(
       'Updated the Name column mapping.',
     )
+    expect(document.body.textContent).toContain('Check step again.')
     expect(document.body.textContent).toContain('Guide')
     expect(client.refetchQueries).toHaveBeenCalled()
+
+    await act(async () => {
+      root.unmount()
+      root = createRoot(container)
+      root.render(
+        <ThemeProvider>
+          <ApolloProvider client={client}>
+            <AiErrorFix.Provider {...helpProps}>
+              <AiErrorFix.Status />
+            </AiErrorFix.Provider>
+          </ApolloProvider>
+        </ThemeProvider>,
+      )
+    })
+
+    expect(document.body.textContent).toContain('Check step again.')
   })
 
   it('shows a failed fix and a retry', async () => {
