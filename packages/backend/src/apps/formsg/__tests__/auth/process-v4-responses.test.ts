@@ -1000,7 +1000,7 @@ describe('processResponsesV4', () => {
       expect(result[2].answer).toBe('third')
     })
 
-    it('keeps payload order when a field is missing', async () => {
+    it('uses schema order when payload order differs', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
           { _id: 'a', title: 'A', fieldType: 'textfield' },
@@ -1015,9 +1015,29 @@ describe('processResponsesV4', () => {
       })
 
       expect(result.map((field) => [field._id, field.answer])).toEqual([
-        ['c', 'third'],
         ['a', 'first'],
         ['b', ''],
+        ['c', 'third'],
+      ])
+    })
+
+    it('appends payload fields missing from the schema', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { _id: 'a', title: 'A', fieldType: 'textfield' },
+          { _id: 'b', title: 'B', fieldType: 'textfield' },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        unknown: v4Response('textfield', { value: 'unknown answer' }),
+        b: v4Response('textfield', { value: 'second' }),
+      })
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['a', ''],
+        ['b', 'second'],
+        ['unknown', 'unknown answer'],
       ])
     })
 

@@ -68,39 +68,51 @@ function withOmittedFields(
   if (schemaFields.length === 0) {
     return responses
   }
-  // An MRF payload only contains the current step.
+  // Filling the full schema would expose fields outside the current MRF step.
   if (isMultirespondent) {
     return responses
   }
 
-  const present = new Set(Object.keys(responses))
-  const insertAfter = new Map<string | null, FormSchemaField[]>()
-  let anchor: string | null = null
+  const schemaFieldIds = new Set(schemaFields.map((field) => field._id))
+  const answerSchemaIds = new Set(
+    schemaFields
+      .filter((field) => !NON_ANSWER_FIELD_TYPES.has(field.fieldType))
+      .map((field) => field._id),
+  )
+  const unknownAfter = new Map<string, Array<[string, FieldResponseV4]>>()
+  const trailingUnknown: Array<[string, FieldResponseV4]> = []
+  let previousKnownId: string | null = null
+  for (const [id, response] of Object.entries(responses)) {
+    if (answerSchemaIds.has(id)) {
+      previousKnownId = id
+      continue
+    }
+    if (schemaFieldIds.has(id)) {
+      continue
+    }
+    if (!previousKnownId) {
+      trailingUnknown.push([id, response])
+      continue
+    }
+    const pending = unknownAfter.get(previousKnownId) ?? []
+    pending.push([id, response])
+    unknownAfter.set(previousKnownId, pending)
+  }
+
+  const filled: FieldResponsesV4 = {}
   for (const field of schemaFields) {
     if (NON_ANSWER_FIELD_TYPES.has(field.fieldType)) {
       continue
     }
-    if (present.has(field._id)) {
-      anchor = field._id
-      continue
+    filled[field._id] = responses[field._id] ?? makeEmptyResponse(field)
+    for (const [id, response] of unknownAfter.get(field._id) ?? []) {
+      filled[id] = response
     }
-    const pending = insertAfter.get(anchor) ?? []
-    pending.push(field)
-    insertAfter.set(anchor, pending)
   }
 
-  if (insertAfter.size === 0) {
-    return responses
-  }
-
-  const filled: FieldResponsesV4 = {}
-  for (const field of insertAfter.get(null) ?? []) {
-    filled[field._id] = makeEmptyResponse(field)
-  }
-  for (const [id, response] of Object.entries(responses)) {
-    filled[id] = response
-    for (const field of insertAfter.get(id) ?? []) {
-      filled[field._id] = makeEmptyResponse(field)
+  for (const [id, response] of trailingUnknown) {
+    if (!schemaFieldIds.has(id)) {
+      filled[id] = response
     }
   }
   return filled
