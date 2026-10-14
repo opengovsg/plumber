@@ -189,7 +189,7 @@ describe('fixStepError', () => {
       >
       expect(stopWhen.some((condition) => condition({ steps: [] }))).toBe(true)
       return {
-        text: 'Updated the Name column mapping.',
+        text: 'I can see the issue. The step configuration shows a long explanation.',
         steps: [],
       } as Awaited<ReturnType<typeof generateText>>
     })

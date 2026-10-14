@@ -62,8 +62,9 @@ Never change the connection.
 Use only what the guide and get_step say.
 If the guide does not support a safe fix, do not update the step.
 If get_step returns an error, say you could not read the step settings.
-After an update, briefly state which fields changed.
-Otherwise, briefly state why no automatic fix was applied.
+After an update, the update summary is one plain sentence. Name the wrong value and the correct value.
+Do not quote the step configuration. Do not mention the guide. Do not say to check the step again.
+If no update is made, use one plain sentence to say why.
 Do not repeat values marked [redacted].
 Do not ask the user to paste secrets, tokens, or request headers.`
 
@@ -192,7 +193,9 @@ export async function fixStepError(
             .trim()
             .min(1)
             .max(300)
-            .describe('One sentence naming the fields changed and why'),
+            .describe(
+              'One plain sentence naming the wrong value and the correct value. No markdown and no step JSON.',
+            ),
         }),
         execute: async ({
           parameters,
@@ -259,8 +262,8 @@ export async function fixStepError(
       steps: result.steps,
     })
     const summary = sanitizeGuideAnswer(
-      result.text ||
-        appliedFixSummary ||
+      appliedFixSummary ||
+        result.text ||
         'AI could not find a safe automatic fix for this step.',
       sources,
     )
