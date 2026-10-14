@@ -15,7 +15,7 @@
     "postinstall": "pnpm run gen:theme-typings"
   },
   "dependencies": {
-    "@ai-sdk/react": "2.0.86",
+    "@ai-sdk/react": "4.0.140",
     "@chakra-ui/anatomy": "2.1.2",
     "@chakra-ui/styled-system": "2.9.0",
     "@chakra-ui/theme-tools": "2.0.17",
