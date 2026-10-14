@@ -10,8 +10,8 @@ on:
       - staging-v2
 
 permissions:
-  id-token: write
   contents: read
+  id-token: write
 
 jobs:
   deploy:
