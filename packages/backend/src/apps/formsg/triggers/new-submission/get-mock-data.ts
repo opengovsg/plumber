@@ -7,23 +7,14 @@ import logger from '@/helpers/logger'
 import { COMMON_S3_MOCK_FOLDER_PREFIX } from '@/helpers/s3'
 
 import { filterNric } from '../../auth/decrypt-form-response'
+import {
+  buildChildSubfieldKey,
+  buildChildSubfieldQuestion,
+  type ChildSubfield,
+  MYINFO_CHILD_SUBFIELD_MAP,
+} from '../../common/myinfo-child-subfields'
 import convertTableAnswerArrayToTableObject from '../../common/process-table-field'
 import { getFormDetailsFromGlobalVariable } from '../../common/webhook-settings'
-
-type ChildSubfield =
-  | 'childname'
-  | 'childbirthcertno'
-  | 'childdateofbirth'
-  | 'childgender'
-  | 'childvaxxstatus'
-  | 'childrace'
-  | 'childsecondaryrace'
-
-type ChildSubfieldDetails = {
-  displayLabel: string
-  mockData: string
-  isMyInfoFieldLabel: boolean
-}
 
 type FormField = {
   _id: string
@@ -34,48 +25,8 @@ type FormField = {
   fieldType: string
   fieldOptions?: string[]
   othersRadioButton?: boolean
-  childrenSubFields?: ChildSubfield[]
+  childrenSubFields?: string[]
   myInfo?: { attr: string }
-}
-
-// Naming of MyInfo child subfields from https://github.com/opengovsg/FormSG/blob/develop/packages/shared/constants/field/myinfo/index.ts
-const myInfoChildSubfieldMap: Record<ChildSubfield, ChildSubfieldDetails> = {
-  childname: {
-    displayLabel: 'Name',
-    mockData: 'Jackson Kim',
-    isMyInfoFieldLabel: true,
-  },
-  childbirthcertno: {
-    displayLabel: 'Birth certificate number',
-    mockData: 'T0700001J',
-    isMyInfoFieldLabel: true,
-  },
-  childdateofbirth: {
-    displayLabel: 'Date of birth',
-    mockData: '23/01/2007', // MyInfo provides child DOB as DD/MM/YYYY...
-    isMyInfoFieldLabel: true,
-  },
-  childgender: {
-    displayLabel: 'Sex',
-    mockData: 'MALE',
-    isMyInfoFieldLabel: true,
-  },
-  childvaxxstatus: {
-    displayLabel: 'Vaccination status',
-    mockData:
-      'MINIMUM VACCINATION REQUIREMENT FOR PRESCHOOL ADMISSION FULFILLED',
-    isMyInfoFieldLabel: true,
-  },
-  childrace: {
-    displayLabel: 'Race',
-    mockData: 'CHINESE',
-    isMyInfoFieldLabel: true,
-  },
-  childsecondaryrace: {
-    displayLabel: 'Secondary race',
-    mockData: 'OTHERS',
-    isMyInfoFieldLabel: false,
-  },
 }
 
 const myInfoSampleResponses: Record<string, string> = {
@@ -156,14 +107,13 @@ function generateMockChildrenSubfieldResponses(
 
   for (let j = 0; j < childrenSubFields.length; j++) {
     const subfieldName = childrenSubFields[j]
-    const subfieldId = `${formField.myInfo?.attr}_${formField._id}_${subfieldName}_0`
-    const subfieldDetails = myInfoChildSubfieldMap[subfieldName]
+    const subfieldId = buildChildSubfieldKey(formField._id, subfieldName, 0)
 
     responses[subfieldId] = {
-      question: `${
-        subfieldDetails.isMyInfoFieldLabel ? '[MyInfo]' : ''
-      } Child ${childrenObjectIndex + 1} ${subfieldDetails.displayLabel}`,
-      answer: subfieldDetails.mockData,
+      question: buildChildSubfieldQuestion(subfieldName, childrenObjectIndex),
+      answer:
+        MYINFO_CHILD_SUBFIELD_MAP[subfieldName as ChildSubfield]?.mockData ??
+        '',
       fieldType: 'children',
       order: `${order}.${j + 1}`,
     }
