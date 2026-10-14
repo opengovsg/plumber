@@ -859,6 +859,48 @@ describe('decrypt form response', () => {
       )
     })
 
+    it('keeps an empty table as a table with its column titles', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'tableField',
+            fieldType: 'table',
+            question: 'Items (Name, Qty)',
+            answerArray: [],
+          },
+        ],
+      })
+
+      await expect(decryptFormResponse($)).resolves.toEqual(
+        SUCCESS_DECRYPT_RESPONSE,
+      )
+      expect($.request.body.fields.tableField).toEqual({
+        fieldType: 'table',
+        question: 'Items (Name, Qty)',
+        answerArray: [],
+        answer: JSON.stringify({
+          rows: [],
+          columns: [
+            {
+              id: Buffer.from('Col 1').toString('hex'),
+              label: 'Name',
+              name: 'Name',
+              value: `data.rows.*.data.${Buffer.from('Col 1').toString('hex')}`,
+            },
+            {
+              id: Buffer.from('Col 2').toString('hex'),
+              label: 'Qty',
+              name: 'Qty',
+              value: `data.rows.*.data.${Buffer.from('Col 2').toString('hex')}`,
+            },
+          ],
+          inputSource: FOR_EACH_INPUT_SOURCE.FORMSG_TABLE,
+        }),
+        order: 1,
+      })
+    })
+
     it('should handle answerArray with null characters', async () => {
       $.flow.hasFileProcessingActions = false
       mocks.cryptoDecrypt.mockReturnValueOnce({

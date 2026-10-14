@@ -224,6 +224,13 @@ export async function decryptFormResponse(
               : answer,
           )
         }
+      } else if (
+        rest.fieldType === 'table' &&
+        Array.isArray(rest.answerArray)
+      ) {
+        // An empty table has no rows. It still needs a table object, or the
+        // variable label is blank.
+        rest.answer = convertTableAnswerArrayToTableObject(rest.question, [])
       }
 
       // delete metadata from fields
