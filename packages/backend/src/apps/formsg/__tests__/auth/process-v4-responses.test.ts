@@ -43,6 +43,7 @@ function makeFormSchema(
     title: string
     fieldType: string
     columns?: Array<{ title: string; _id: string }>
+    childrenSubFields?: string[]
   }>,
 ) {
   return {
@@ -412,103 +413,320 @@ describe('processResponsesV4', () => {
   })
 
   describe('children fields', () => {
-    it('reconstructs the v3 { child, childFields } answer shape', async () => {
+    // Attribute-keyed, matching what the SDK's adaptV3ToV4 emits
+    const childrenSchemaField = {
+      _id: 'ch1',
+      title: 'Child records',
+      fieldType: 'children',
+      childrenSubFields: [
+        'childname',
+        'childbirthcertno',
+        'childdateofbirth',
+        'childvaxxstatus',
+        'childgender',
+        'childrace',
+        'childtype',
+      ],
+    }
+
+    function childEntry(values: Record<string, string>) {
+      return {
+        value: Object.fromEntries(
+          Object.entries(values).map(([attr, value]) => [
+            attr,
+            { value, myInfo: { attr } },
+          ]),
+        ),
+      }
+    }
+
+    it('flattens the children v2 answer into one variable per subfield', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
-        makeFormSchema([
-          { _id: 'ch1', title: 'Your children', fieldType: 'children' },
-        ]),
+        makeFormSchema([childrenSchemaField]),
       )
 
       const result = await processResponsesV4($, 'formId', {
         ch1: v4Response('children', {
-          child0: {
-            value: {
-              name: { value: 'Alice', myInfo: { attr: 'childname' } },
-              dateofbirth: {
-                value: '01/01/2020',
-                myInfo: { attr: 'childdateofbirth' },
-              },
-            },
-          },
-          child1: {
-            value: {
-              name: { value: 'Bob', myInfo: { attr: 'childname' } },
-              dateofbirth: {
-                value: '02/02/2022',
-                myInfo: { attr: 'childdateofbirth' },
-              },
-            },
-          },
+          child0: childEntry({
+            childname: 'ALI LEE',
+            childbirthcertno: 'T2315852Z',
+            childdateofbirth: '03/03/2023',
+            childvaxxstatus: 'MINIMUM VACCINATION REQUIREMENT FULFILLED',
+            childgender: 'MALE',
+            childrace: 'CHINESE',
+            childtype: 'LOCAL',
+          }),
         }),
       })
 
       expect(result).toEqual([
         {
-          _id: 'ch1',
+          _id: 'childrenbirthrecords_ch1_childname_0',
           fieldType: 'children',
-          question: 'Your children',
-          answer: {
-            child: [
-              ['Alice', '01/01/2020'],
-              ['Bob', '02/02/2022'],
-            ],
-            childFields: ['name', 'dateofbirth'],
-          },
+          question: '[MyInfo] Child 1 Name',
+          answer: 'ALI LEE',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childbirthcertno_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Birth certificate number',
+          answer: 'T2315852Z',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childdateofbirth_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Date of birth',
+          answer: '03/03/2023',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childvaxxstatus_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Vaccination status',
+          answer: 'MINIMUM VACCINATION REQUIREMENT FULFILLED',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childgender_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Sex',
+          answer: 'MALE',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childrace_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Race',
+          answer: 'CHINESE',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childtype_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Record type',
+          answer: 'LOCAL',
         },
       ])
     })
 
-    it('handles an empty children answer', async () => {
+    it('keeps SPONSORED record types', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([
-          { _id: 'ch1', title: 'Your children', fieldType: 'children' },
+          { ...childrenSchemaField, childrenSubFields: ['childtype'] },
         ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: childEntry({ childtype: 'SPONSORED' }),
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'childrenbirthrecords_ch1_childtype_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Record type',
+          answer: 'SPONSORED',
+        },
+      ])
+    })
+
+    it('reads the record type off the child entry when there is no childtype subfield', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { ...childrenSchemaField, childrenSubFields: ['childname'] },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: { ...childEntry({ childname: 'ALI LEE' }), type: 'LOCAL' },
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'childrenbirthrecords_ch1_childname_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Name',
+          answer: 'ALI LEE',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childtype_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Record type',
+          answer: 'LOCAL',
+        },
+      ])
+    })
+
+    it('fills subfields missing from the payload with empty strings', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          {
+            ...childrenSchemaField,
+            childrenSubFields: ['childname', 'childrace', 'childtype'],
+          },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: childEntry({ childname: 'ALI LEE' }),
+        }),
+      })
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['childrenbirthrecords_ch1_childname_0', 'ALI LEE'],
+        ['childrenbirthrecords_ch1_childrace_0', ''],
+        ['childrenbirthrecords_ch1_childtype_0', ''],
+      ])
+    })
+
+    it('keeps subfields the form schema does not list', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { ...childrenSchemaField, childrenSubFields: ['childname'] },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: childEntry({
+            childname: 'ALI LEE',
+            childfuturefield: 'SOMETHING NEW',
+          }),
+        }),
+      })
+
+      expect(result.map((field) => [field._id, field.question])).toEqual([
+        ['childrenbirthrecords_ch1_childname_0', '[MyInfo] Child 1 Name'],
+        [
+          'childrenbirthrecords_ch1_childfuturefield_0',
+          ' Child 1 childfuturefield',
+        ],
+      ])
+    })
+
+    it('falls back to the object key when a subfield carries no myInfo attr', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { ...childrenSchemaField, childrenSubFields: ['childname'] },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: { value: { childname: { value: 'ALI LEE' } } },
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'childrenbirthrecords_ch1_childname_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Name',
+          answer: 'ALI LEE',
+        },
+      ])
+    })
+
+    it('numbers children sequentially on the legacy multi-child schema', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { ...childrenSchemaField, childrenSubFields: ['childname'] },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: childEntry({ childname: 'ALI LEE' }),
+          child1: childEntry({ childname: 'SITI LEE' }),
+        }),
+      })
+
+      expect(result).toEqual([
+        {
+          _id: 'childrenbirthrecords_ch1_childname_0',
+          fieldType: 'children',
+          question: '[MyInfo] Child 1 Name',
+          answer: 'ALI LEE',
+        },
+        {
+          _id: 'childrenbirthrecords_ch1_childname_1',
+          fieldType: 'children',
+          question: '[MyInfo] Child 2 Name',
+          answer: 'SITI LEE',
+        },
+      ])
+    })
+
+    it('continues child numbering across two children fields', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { ...childrenSchemaField, childrenSubFields: ['childname'] },
+          {
+            ...childrenSchemaField,
+            _id: 'ch2',
+            childrenSubFields: ['childname'],
+          },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: childEntry({ childname: 'ALI LEE' }),
+        }),
+        ch2: v4Response('children', {
+          child0: childEntry({ childname: 'SITI LEE' }),
+        }),
+      })
+
+      expect(result.map((field) => [field._id, field.question])).toEqual([
+        ['childrenbirthrecords_ch1_childname_0', '[MyInfo] Child 1 Name'],
+        ['childrenbirthrecords_ch2_childname_0', '[MyInfo] Child 2 Name'],
+      ])
+    })
+
+    it('emits nothing for an empty children answer', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([childrenSchemaField]),
       )
 
       const result = await processResponsesV4($, 'formId', {
         ch1: v4Response('children', {}),
       })
 
+      expect(result).toEqual([])
+    })
+
+    it('keeps the raw answer and logs when the children answer does not parse', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([childrenSchemaField]),
+      )
+
+      // the pre-v4 shape, which FormSG sent before the keyed rewrite
+      const legacyAnswer = {
+        child: [['ALI LEE']],
+        childFields: ['childname'],
+      }
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', legacyAnswer),
+      })
+
       expect(result).toEqual([
         {
           _id: 'ch1',
           fieldType: 'children',
-          question: 'Your children',
-          answer: { child: [], childFields: [] },
+          question: 'Child records',
+          answer: legacyAnswer,
         },
       ])
-    })
-
-    it('fills missing child sub-field values with empty strings', async () => {
-      mocks.fetchFormSchema.mockResolvedValueOnce(
-        makeFormSchema([
-          { _id: 'ch1', title: 'Your children', fieldType: 'children' },
-        ]),
-      )
-
-      const result = await processResponsesV4($, 'formId', {
-        ch1: v4Response('children', {
-          child0: {
-            value: {
-              name: { value: 'Alice' },
-              vaxxstatus: { value: 'Vaccinated' },
-            },
-          },
-          child1: {
-            value: {
-              name: { value: 'Bob' },
-            },
-          },
+      expect(mocks.loggerError).toHaveBeenCalledWith(
+        'Unable to parse FormSG children answer',
+        expect.objectContaining({
+          event: 'formsg-unparsable-children-answer',
+          fieldId: 'ch1',
         }),
-      })
-
-      expect(result[0].answer).toEqual({
-        child: [
-          ['Alice', 'Vaccinated'],
-          ['Bob', ''],
-        ],
-        childFields: ['name', 'vaxxstatus'],
-      })
+      )
     })
   })
 
@@ -784,16 +1002,8 @@ describe('processResponsesV4', () => {
           answer: { type: 'draw', value: [[[1, 2, 0.5]]] },
         },
         f10: { fieldType: 'yes_no', answer: 'Yes' },
-        f11: {
-          fieldType: 'children',
-          answer: {
-            child: [
-              ['Alice', '01/01/2020'],
-              ['Bob', '02/02/2022'],
-            ],
-            childFields: ['name', 'dateofbirth'],
-          },
-        },
+        // children deliberately excluded: only processResponsesV4 flattens them
+        // into one response per subfield, so the two can never match
         f12: { fieldType: 'date', answer: '29/03/2026' },
         f13: { fieldType: 'nric', answer: 'S1234567A' },
         f14: {
@@ -828,7 +1038,6 @@ describe('processResponsesV4', () => {
         { _id: 'f8', title: 'Address', fieldType: 'address' },
         { _id: 'f9', title: 'Sign here', fieldType: 'signature' },
         { _id: 'f10', title: 'Agree?', fieldType: 'yes_no' },
-        { _id: 'f11', title: 'Your children', fieldType: 'children' },
         // f12 deliberately missing to also cover the Question N fallback
         { _id: 'f13', title: 'NRIC', fieldType: 'nric' },
         { _id: 'f14', title: 'Pick one (others)', fieldType: 'radiobutton' },

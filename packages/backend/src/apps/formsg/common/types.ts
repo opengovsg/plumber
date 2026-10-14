@@ -23,6 +23,8 @@ export interface FormSchemaField {
   }>
   minimumRows?: number
   maximumRows?: number
+  // for MyInfo children fields, in the order FormSG displays them
+  childrenSubFields?: string[]
 }
 
 export interface FormSchema {

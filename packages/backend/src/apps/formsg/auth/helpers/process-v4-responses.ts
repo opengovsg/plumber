@@ -4,7 +4,6 @@ import type {
   AddressAnswerV4,
   AttachmentAnswerV4,
   CheckboxAnswerV4,
-  ChildrenAnswerV4,
   FieldResponsesV4,
   FormField,
   RadioAnswerV4,
@@ -14,13 +13,95 @@ import type {
   VerifiableAnswerV4,
 } from '@opengovsg/formsg-sdk'
 import { DateTime } from 'luxon'
+import { z } from 'zod'
 
 import logger from '@/helpers/logger'
 
+import {
+  buildChildSubfieldKey,
+  buildChildSubfieldQuestion,
+} from '../../common/myinfo-child-subfields'
 import type { FormSchemaField } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
+
+// Mirrors ChildrenAnswerV4 in @opengovsg/formsg-sdk. Parsed rather than cast
+// because FormSG changed this shape once already.
+const childrenAnswerSchema = z.record(
+  z.string(),
+  z.object({
+    value: z.record(
+      z.string(),
+      z.object({
+        value: z.string(),
+        myInfo: z.object({ attr: z.string() }).optional(),
+      }),
+    ),
+    type: z.string().optional(),
+  }),
+)
+
+type ChildrenAnswer = z.infer<typeof childrenAnswerSchema>
+
+/**
+ * Flattens one MyInfo children answer into one variable per child subfield.
+ *
+ * FormSG nests every subfield under a single `children` response. Pipe authors
+ * need to reference each subfield on its own, so each becomes its own variable.
+ *
+ * @param firstChildNumber 0-based display number of this field's first child.
+ */
+function flattenChildrenAnswer(
+  fieldId: string,
+  childrenAnswer: ChildrenAnswer,
+  schemaSubFields: string[],
+  firstChildNumber: number,
+): FormField[] {
+  const children = Object.values(childrenAnswer)
+
+  // Keyed by attribute so a subfield is found regardless of its position.
+  const valuesByChild = children.map((child) => {
+    const values = new Map<string, string>()
+    for (const [key, subField] of Object.entries(child.value)) {
+      values.set(subField.myInfo?.attr ?? key, subField.value)
+    }
+    // LOCAL or SPONSORED arrives as a childtype subfield. The SDK also allows
+    // it on the entry itself, so accept that rather than drop the value.
+    if (child.type && !values.has('childtype')) {
+      values.set('childtype', child.type)
+    }
+    return values
+  })
+
+  // Every child gets the same subfields, so the variable list stays stable when
+  // MyInfo omits a value for one child but not another.
+  const attrs = [...schemaSubFields]
+  for (const values of valuesByChild) {
+    for (const attr of values.keys()) {
+      if (!attrs.includes(attr)) {
+        attrs.push(attr)
+      }
+    }
+  }
+
+  const responses: FormField[] = []
+  for (const [childIndex, values] of valuesByChild.entries()) {
+    for (const attr of attrs) {
+      responses.push({
+        _id: buildChildSubfieldKey(fieldId, attr, childIndex),
+        fieldType: 'children',
+        question: buildChildSubfieldQuestion(
+          attr,
+          firstChildNumber + childIndex,
+        ),
+        answer: values.get(attr) ?? '',
+      })
+    }
+  }
+
+  return responses
+}
 
 export async function processResponsesV4(
   $: IGlobalVariable,
@@ -44,6 +125,9 @@ export async function processResponsesV4(
   }
   const mappedResponses: FormField[] = []
   let questionNumber = 0
+  // FormSG numbers children across the whole submission, not per children
+  // field, in the rare case that a form has more than one.
+  let childNumber = 0
   for (const [key, value] of Object.entries(responses)) {
     questionNumber++
     // we fallback to Question # if the question is not found in the form schema
@@ -171,25 +255,33 @@ export async function processResponsesV4(
       continue
     }
     if (value.fieldType === 'children') {
-      const childrenAnswer = value.answer as ChildrenAnswerV4
-      // downstream consumers expect the v3 { child, childFields } shape for
-      // MyInfo children, so reconstruct it from the keyed v4 answer
-      const childKeys = Object.keys(childrenAnswer)
-      const childFields =
-        childKeys.length === 0
-          ? []
-          : Object.keys(childrenAnswer[childKeys[0]].value)
-      const child = childKeys.map((childKey) =>
-        childFields.map(
-          (attr) => childrenAnswer[childKey].value[attr]?.value ?? '',
-        ),
+      const parsed = childrenAnswerSchema.safeParse(value.answer)
+      if (!parsed.success) {
+        // Keep the submission flowing as one opaque variable. Only the issues
+        // are logged, since the answer itself holds child PII.
+        logger.error('Unable to parse FormSG children answer', {
+          event: 'formsg-unparsable-children-answer',
+          formId,
+          fieldId: key,
+          issues: parsed.error.issues,
+        })
+        mappedResponses.push({
+          _id: key,
+          fieldType: value.fieldType,
+          question,
+          answer: value.answer as unknown as string,
+        })
+        continue
+      }
+
+      const flattened = flattenChildrenAnswer(
+        key,
+        parsed.data,
+        formSchemaFields[key]?.childrenSubFields ?? [],
+        childNumber,
       )
-      mappedResponses.push({
-        _id: key,
-        fieldType: value.fieldType,
-        question,
-        answer: { child, childFields } as unknown as string,
-      })
+      childNumber += Object.keys(parsed.data).length
+      mappedResponses.push(...flattened)
       continue
     }
     // catch-all: generic string answers ({ value }) and any future field
