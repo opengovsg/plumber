@@ -26,15 +26,19 @@ export default function convertTableAnswerArrayToTableObject(
   answerArray: string[][],
 ) {
   const { content: columnNames } = extractLastTopLevelBracketContent(question)
-  const columnNamesArray = columnNames.split(',').map((name) => name.trim())
+  const columnNamesArray = columnNames
+    ? columnNames.split(',').map((name) => name.trim())
+    : []
+  const firstRow = answerArray[0]
 
   const columns =
-    // make sure that column names do not contain commas
-    columnNamesArray.length === answerArray[0].length
+    // A blank table has no row to measure, so titles come from the question.
+    !firstRow
       ? columnNamesArray.map((column, index) => createColumn(column, index))
-      : answerArray[0].map((_, index) =>
-          createColumn(`Col ${index + 1}`, index),
-        )
+      : // make sure that column names do not contain commas
+      columnNamesArray.length === firstRow.length
+      ? columnNamesArray.map((column, index) => createColumn(column, index))
+      : firstRow.map((_, index) => createColumn(`Col ${index + 1}`, index))
 
   /**
    * NOTE: we do not show table rows that do not have any data
