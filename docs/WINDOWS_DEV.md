@@ -10,10 +10,12 @@
 
 ### 1. Install dependencies
 
-Get a free trial BullMQ Pro token from [taskforce.sh](https://taskforce.sh/), then configure it before running `pnpm install` — pnpm won't expand `${NPM_TASKFORCESH_TOKEN}` from the committed `.npmrc` for security reasons, so it must be set via `pnpm config set` instead:
+Get a free trial BullMQ Pro token from [taskforce.sh](https://taskforce.sh/). Save it as the `NPM_TASKFORCESH_TOKEN` user environment variable in the "Edit environment variables for your account" dialog. Typing it into a terminal leaves it in your shell history.
+
+Open a new terminal, then point your user-level pnpm config at the variable. pnpm ignores `${...}` references in the committed `.npmrc`, so a malicious repo cannot send your token elsewhere. The single quotes keep `${NPM_TASKFORCESH_TOKEN}` literal, so the token itself never lands in pnpm's config file:
 
 ```powershell
-pnpm config set "//npm.taskforce.sh/:_authToken" "<your-token>"
+pnpm config set "//npm.taskforce.sh/:_authToken" '${NPM_TASKFORCESH_TOKEN}'
 pnpm install
 ```
 
@@ -175,7 +177,7 @@ A `200 OK` response means the flow was accepted and is now running.
 | Issue                                    | Fix                                                                             |
 | ---------------------------------------- | ------------------------------------------------------------------------------- |
 | `'DOTENV_CONFIG_PATH' is not recognized` | Use `$env:VAR=value; command` syntax in PowerShell instead of `pnpm run migrate` |
-| `401 Unauthorized` from taskforce.sh     | Run `pnpm config set "//npm.taskforce.sh/:_authToken" "<token>"` before `pnpm install` |
+| `401 Unauthorized` from taskforce.sh     | Set `NPM_TASKFORCESH_TOKEN` as in step 1, then open a new terminal              |
 | Port 6379 bind error                     | Enable WSL2 backend in Docker Desktop settings                                  |
 | `docker-compose` not found               | Use `docker compose` (space, no hyphen)                                         |
 | LaunchDarkly 401 warnings in logs        | Harmless in local dev — feature flags just won't work                           |
