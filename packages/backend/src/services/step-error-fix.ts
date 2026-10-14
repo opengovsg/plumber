@@ -6,6 +6,7 @@ import { repairMalformedToolName } from '@/helpers/ai/repair-tool-call'
 import logger from '@/helpers/logger'
 import { model } from '@/helpers/pair'
 import type User from '@/models/user'
+import { listColumnsService } from '@/services/mcp/list-columns'
 import {
   readFailedStep,
   replaceParameterKeysWithLabels,
@@ -63,12 +64,30 @@ Never change the connection.
 Use only what the guide and get_step say.
 If the guide does not support a safe fix, do not update the step.
 If get_step returns an error, say you could not read the step settings.
-Use the field label from get_step. Never use the parameter key.
+If the saved columns are ids that no longer match, call list_columns and use the column names.
+Never include an id, UUID, tile id, or parameter key in the user sentence.
+If you cannot update the step, call explain_result with one plain sentence.
 After an update, the update summary is one plain sentence. Name the wrong value and the correct value.
 Do not quote the step configuration. Do not mention the guide. Do not say to check the step again.
 If no update is made, use one plain sentence to say why.
 Do not repeat values marked [redacted].
 Do not ask the user to paste secrets, tokens, or request headers.`
+
+export function toUserSentence(summary: string): string {
+  const plain = summary
+    .replace(
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+      '',
+    )
+    .replace(/[*_`#[\]]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const first = plain.split(/(?<=[.!?])\s/)[0] ?? plain
+  return first
+    .replace(/[.?!]+$/, '')
+    .trim()
+    .slice(0, 220)
+}
 
 function isGuideUrl(value: string): boolean {
   try {
@@ -162,6 +181,7 @@ export async function fixStepError(
 ): Promise<StepErrorFixResponse> {
   let gitbook: Awaited<ReturnType<typeof openGitBookMcp>> | null = null
   let appliedFixSummary: string | null = null
+  let explanation: string | null = null
 
   try {
     gitbook = await openGitBookMcp({
@@ -223,6 +243,41 @@ export async function fixStepError(
           return { updated: true }
         },
       }),
+      list_columns: tool({
+        description:
+          'List the human-readable column names for this step. Use the names in the user sentence. Do not mention column ids.',
+        inputSchema: z.object({}),
+        execute: async () => {
+          try {
+            const columns = await listColumnsService({
+              user: meta.user,
+              stepId: input.stepId,
+            })
+            return {
+              columnNames: columns.columns.map((column) => column.name),
+              truncated: columns.truncated,
+            }
+          } catch (error) {
+            return {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Columns could not be listed.',
+            }
+          }
+        },
+      }),
+      explain_result: tool({
+        description:
+          'Record the one sentence shown to the user when the step is not updated. Use field labels and column names. Do not include ids.',
+        inputSchema: z.object({
+          summary: z.string().trim().min(1).max(220),
+        }),
+        execute: async ({ summary }: { summary: string }) => {
+          explanation = summary
+          return { accepted: true }
+        },
+      }),
     }
 
     const result = await generateText({
@@ -231,7 +286,10 @@ export async function fixStepError(
       prompt: buildPrompt(input),
       tools: tools as Parameters<typeof generateText>[0]['tools'],
       toolChoice: 'auto',
-      stopWhen: [stepCountIs(7), () => Boolean(appliedFixSummary)],
+      stopWhen: [
+        stepCountIs(6),
+        () => Boolean(appliedFixSummary || explanation),
+      ],
       maxOutputTokens: 400,
       prepareStep: ({ stepNumber }) => {
         if (stepNumber === 0) {
@@ -244,6 +302,9 @@ export async function fixStepError(
               toolName: GUIDE_SEARCH_TOOL,
             },
           }
+        }
+        if (stepNumber >= 4 && !appliedFixSummary && !explanation) {
+          return { toolChoice: { type: 'tool', toolName: 'explain_result' } }
         }
         return { toolChoice: 'auto' }
       },
@@ -263,15 +324,15 @@ export async function fixStepError(
       text: result.text,
       steps: result.steps,
     })
-    const summary = sanitizeGuideAnswer(
+    const summary = toUserSentence(
       replaceParameterKeysWithLabels(
         appliedFixSummary ||
+          explanation ||
           result.text ||
           'AI could not find a safe automatic fix for this step.',
         input.appKey,
         input.stepKey,
       ),
-      sources,
     )
     const parsed = stepErrorFixResponseSchema.safeParse({
       fixed: Boolean(appliedFixSummary),

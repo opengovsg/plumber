@@ -44,6 +44,7 @@ import {
   GuideUnavailableError,
   sanitizeGuideAnswer,
   stepErrorFixRequestSchema,
+  toUserSentence,
 } from '../step-error-fix'
 
 const request = {
@@ -57,6 +58,16 @@ const request = {
 }
 
 const user = { email: 'user@example.gov.sg' } as User
+
+describe('toUserSentence', () => {
+  it('keeps the first sentence and removes ids', () => {
+    expect(
+      toUserSentence(
+        'The saved columns no longer exist. Tile 60eb454c-4246-464d-a6ff-e41d66555acf changed. **Select the columns again.**',
+      ),
+    ).toBe('The saved columns no longer exist')
+  })
+})
 
 describe('collectGuideLinks', () => {
   it('keeps Plumber guide links and drops other urls', () => {
@@ -148,6 +159,12 @@ describe('fixStepError', () => {
           update_step_parameters: expect.objectContaining({
             execute: expect.any(Function),
           }),
+          list_columns: expect.objectContaining({
+            execute: expect.any(Function),
+          }),
+          explain_result: expect.objectContaining({
+            execute: expect.any(Function),
+          }),
         }),
         prompt: expect.stringContaining('Column not found'),
       }),
@@ -165,6 +182,9 @@ describe('fixStepError', () => {
         type: 'tool',
         toolName: 'searchDocumentation',
       },
+    })
+    expect(prepareStep?.({ stepNumber: 4 })).toEqual({
+      toolChoice: { type: 'tool', toolName: 'explain_result' },
     })
     expect(result.fixed).toBe(false)
     expect(result.sources[0]?.url).toBe(
@@ -209,7 +229,7 @@ describe('fixStepError', () => {
     )
     expect(result).toMatchObject({
       fixed: true,
-      summary: 'Updated the Name column mapping.',
+      summary: 'Updated the Name column mapping',
     })
   })
 

@@ -73,9 +73,13 @@ function presentStepValue(value: unknown, depth = 0): unknown {
     return '[truncated]'
   }
   if (typeof value === 'string') {
-    return value.length > MAX_STRING_LENGTH
-      ? `${value.slice(0, MAX_STRING_LENGTH)}...`
-      : value
+    const withoutIds = value.replace(
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+      '[id]',
+    )
+    return withoutIds.length > MAX_STRING_LENGTH
+      ? `${withoutIds.slice(0, MAX_STRING_LENGTH)}...`
+      : withoutIds
   }
   if (
     typeof value === 'number' ||
