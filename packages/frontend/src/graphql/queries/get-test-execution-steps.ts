@@ -40,6 +40,7 @@ export const GET_TEST_EXECUTION_STEPS = gql`
       metadata {
         isMock
         lastTestSubmissionDate
+        formFieldIds
         iteration
       }
     }

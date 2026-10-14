@@ -166,6 +166,7 @@ describe('new submission trigger', () => {
           internalId: '',
           isMock: true,
           lastTestSubmissionDate: undefined,
+          formFieldIds: [],
         },
       })
     })
@@ -184,6 +185,7 @@ describe('new submission trigger', () => {
           lastTestSubmissionDate: new Date(
             '2025-06-17T14:25:14.195+08:00',
           ).toISOString(),
+          formFieldIds: [],
         },
       })
     })
@@ -197,6 +199,7 @@ describe('new submission trigger', () => {
           internalId: '',
           isMock: true,
           lastTestSubmissionDate: undefined,
+          formFieldIds: [],
         },
       })
     })
@@ -215,6 +218,7 @@ describe('new submission trigger', () => {
           lastTestSubmissionDate: new Date(
             '2025-06-17T14:25:14.195+08:00',
           ).toISOString(),
+          formFieldIds: [],
         },
       })
     })
@@ -233,6 +237,7 @@ describe('new submission trigger', () => {
           lastTestSubmissionDate: new Date(
             '2025-06-17T14:25:14.195+08:00',
           ).toISOString(),
+          formFieldIds: [],
         },
       })
     })
@@ -246,6 +251,7 @@ describe('new submission trigger', () => {
           internalId: '',
           isMock: true,
           lastTestSubmissionDate: undefined,
+          formFieldIds: [],
         },
       })
     })
@@ -265,6 +271,32 @@ describe('new submission trigger', () => {
           lastTestSubmissionDate: new Date(
             '2025-06-16 07:06:30.155+00',
           ).toISOString(),
+          formFieldIds: [],
+        },
+      })
+    })
+
+    it('should record the form field ids so the editor can flag deleted questions', async () => {
+      getLastExecutionStepMock.mockResolvedValue(null)
+      mocks.fetchFormSchema.mockResolvedValueOnce({
+        form: {
+          ...mockFormSchema.form,
+          form_fields: [
+            { _id: 'field-a', fieldType: 'textfield', title: 'Name' },
+            { _id: 'field-b', fieldType: 'textfield', title: 'Age' },
+          ],
+        },
+      })
+
+      await trigger.testRun($, { preferMock: true })
+
+      expect(pushTriggerItemMock).toHaveBeenCalledWith({
+        raw: mockData,
+        meta: {
+          internalId: '',
+          isMock: true,
+          lastTestSubmissionDate: undefined,
+          formFieldIds: ['field-a', 'field-b'],
         },
       })
     })
