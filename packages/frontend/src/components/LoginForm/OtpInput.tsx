@@ -25,7 +25,7 @@ const OtpInput = ({ isLoading, email, otp, setOtp }: Props): JSX.Element => {
           placeholder="ABC123"
           value={otp}
           onChange={(e) => {
-            setOtp(e.target.value?.toUpperCase())
+            setOtp(e.target.value?.toUpperCase().trim())
           }}
         />
       </FormControl>
