@@ -23,11 +23,11 @@ jobs:
           npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
       - name: Verify registry signatures
         env:
-          pnpm_config__auth: '{"https://npm.taskforce.sh":{"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
+          pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"},"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
         run: pnpm audit signatures
       - name: Generate SBOM
         env:
-          pnpm_config__auth: '{"https://npm.taskforce.sh":{"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
+          pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"},"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
         run: pnpm sbom --sbom-format cyclonedx --prod --out sbom.cdx.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
