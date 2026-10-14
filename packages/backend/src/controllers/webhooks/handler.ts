@@ -10,6 +10,7 @@ import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import tracer from '@/helpers/tracer'
 import Flow from '@/models/flow'
 import { enqueueActionJob } from '@/queues/action'
@@ -56,7 +57,10 @@ export default async (request: IRequest, response: Response) => {
     return response.sendStatus(404)
   }
 
-  const flow = await Flow.query().findById(flowId).withGraphJoined('user')
+  const flow = await retryOnTransientDbError(
+    () => Flow.query().findById(flowId).withGraphJoined('user'),
+    { context: { flowId } },
+  )
 
   if (!flow) {
     logger.info(`Flow not found for webhook id ${flowId}`)
@@ -88,7 +92,10 @@ export default async (request: IRequest, response: Response) => {
 
   let internalId: string = randomUUID()
   const testRun = !flow.active
-  const triggerStep = await flow.getTriggerStep()
+  const triggerStep = await retryOnTransientDbError(
+    () => flow.getTriggerStep(),
+    { context: { flowId } },
+  )
 
   const triggerApp = await triggerStep?.getApp()
 
@@ -124,7 +131,10 @@ export default async (request: IRequest, response: Response) => {
   if (triggerApp.auth?.verifyWebhook) {
     const $ = await globalVariable({
       flow,
-      connection: await triggerStep.$relatedQuery('connection'),
+      connection: await retryOnTransientDbError(
+        () => triggerStep.$relatedQuery('connection'),
+        { context: { flowId, stepId: triggerStep.id } },
+      ),
       app: triggerApp,
       step: triggerStep,
       request,
@@ -227,7 +237,10 @@ export default async (request: IRequest, response: Response) => {
     return sendWebhookResponse(response, customWebhookResponse)
   }
 
-  const nextStep = await triggerStep.getNextStep()
+  const nextStep = await retryOnTransientDbError(
+    () => triggerStep.getNextStep(),
+    { context: { flowId, stepId: triggerStep.id } },
+  )
   const jobName = `${executionId}-${nextStep.id}`
 
   const jobData = {

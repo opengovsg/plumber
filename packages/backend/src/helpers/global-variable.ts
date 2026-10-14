@@ -18,6 +18,7 @@ import Step from '@/models/step'
 import User from '@/models/user'
 
 import createHttpClient from './http-client'
+import { retryOnTransientDbError } from './retry-on-transient-db-error'
 
 type GlobalVariableOptions = {
   connection?: Connection
@@ -47,7 +48,12 @@ const globalVariable = async (
   } = options
 
   const isTrigger = step?.isTrigger
-  const nextStep = await step?.getNextStep()
+  const nextStep = await retryOnTransientDbError(
+    async () => step?.getNextStep(),
+    {
+      context: { flowId: flow?.id, stepId: step?.id },
+    },
+  )
 
   const $: IGlobalVariable = {
     auth: {
@@ -78,7 +84,10 @@ const globalVariable = async (
       name: flow?.name,
       userId: flow?.userId,
       hasFileProcessingActions:
-        (await flow?.containsFileProcessingActions()) ?? false,
+        (await retryOnTransientDbError(
+          async () => flow?.containsFileProcessingActions(),
+          { context: { flowId: flow?.id } },
+        )) ?? false,
       isActive: flow?.active ?? false,
     },
     step: {
