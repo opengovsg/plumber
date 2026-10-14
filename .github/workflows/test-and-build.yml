@@ -14,9 +14,6 @@ jobs:
     name: Supply chain verification
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      # Registry-wide "@" auth is required for /-/npm/v1/keys during audit signatures.
-      pnpm_config__auth: '{"https://npm.taskforce.sh":{"@":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"},"@taskforcesh":{"authToken":"${{ secrets.NPM_TASKFORCESH_TOKEN }}"}}}'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -24,6 +21,13 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      # "@" inside pnpm_config__auth also sets the default registry to that host.
+      # Install stays on the scoped token. /keys is an unscoped URL, so it needs
+      # host auth that does not change registry routing.
+      - name: Authenticate taskforce.sh for registry key reads
+        env:
+          NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+        run: pnpm config set --location=user "//npm.taskforce.sh/:_authToken" "$NPM_TASKFORCESH_TOKEN"
       - name: Verify registry signatures
         run: pnpm audit signatures
       - name: Generate SBOM
