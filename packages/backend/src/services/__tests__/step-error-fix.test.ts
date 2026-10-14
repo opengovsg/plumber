@@ -180,6 +180,14 @@ describe('fixStepError', () => {
         parameters: { columnValues: { Name: '{{trigger.name}}' } },
         summary: 'Updated the Name column mapping.',
       })
+      const prepareStep = options.prepareStep as (args: {
+        stepNumber: number
+      }) => { toolChoice: unknown }
+      expect(prepareStep({ stepNumber: 3 })).toEqual({ toolChoice: 'auto' })
+      const stopWhen = options.stopWhen as Array<
+        (args: { steps: unknown[] }) => boolean
+      >
+      expect(stopWhen.some((condition) => condition({ steps: [] }))).toBe(true)
       return {
         text: 'Updated the Name column mapping.',
         steps: [],
