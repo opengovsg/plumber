@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react'
 import { BiSolidMagicWand } from 'react-icons/bi'
 import { useApolloClient } from '@apollo/client'
@@ -38,6 +39,38 @@ type AiErrorFixContextValue = {
   result: StepErrorFixResult | null
 }
 
+const stepFixNotices = new Map<string, StepErrorFixResult>()
+const stepFixNoticeListeners = new Set<() => void>()
+
+function publishStepFixNotice(): void {
+  stepFixNoticeListeners.forEach((listener) => listener())
+}
+
+export function setStepFixNotice(
+  stepId: string,
+  result: StepErrorFixResult,
+): void {
+  stepFixNotices.set(stepId, result)
+  publishStepFixNotice()
+}
+
+export function clearStepFixNotice(stepId: string): void {
+  if (!stepFixNotices.delete(stepId)) {
+    return
+  }
+  publishStepFixNotice()
+}
+
+function useStepFixNotice(stepId: string): StepErrorFixResult | null {
+  return useSyncExternalStore(
+    (listener) => {
+      stepFixNoticeListeners.add(listener)
+      return () => stepFixNoticeListeners.delete(listener)
+    },
+    () => stepFixNotices.get(stepId) ?? null,
+  )
+}
+
 const AiErrorFixContext = createContext<AiErrorFixContextValue | null>(null)
 
 function useAiErrorFix(): AiErrorFixContextValue {
@@ -54,6 +87,7 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
   const { resetForm } = useContext(EditorContext)
   const [phase, setPhase] = useState<FixPhase>('idle')
   const [result, setResult] = useState<StepErrorFixResult | null>(null)
+  const savedNotice = useStepFixNotice(request.stepId)
   const [failureMessage, setFailureMessage] = useState(
     'AI could not fix this step. Your settings were not changed.',
   )
@@ -69,6 +103,7 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
     const controller = new AbortController()
     abortRef.current = controller
     setPhase('loading')
+    clearStepFixNotice(request.stepId)
     if (isPostHogConfigured) {
       posthog.capture('check_step:ai_fix_requested', {
         appKey: request.appKey,
@@ -81,6 +116,7 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
         return
       }
       if (fixResult.fixed) {
+        setStepFixNotice(request.stepId, fixResult)
         await client.refetchQueries({ include: [GET_FLOW] })
         resetForm()
       }
@@ -114,7 +150,12 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
 
   return (
     <AiErrorFixContext.Provider
-      value={{ failureMessage, phase, requestFix, result }}
+      value={{
+        failureMessage,
+        phase,
+        requestFix,
+        result: phase === 'idle' ? savedNotice : result,
+      }}
     >
       {children}
     </AiErrorFixContext.Provider>
@@ -124,7 +165,7 @@ function AiErrorFixProvider(props: AiErrorFixProviderProps) {
 function AiErrorFixAction() {
   const { phase, requestFix, result } = useAiErrorFix()
 
-  if (phase === 'result' && result?.fixed) {
+  if (result?.fixed && phase !== 'loading') {
     return null
   }
 
@@ -165,10 +206,6 @@ function AiErrorFixAction() {
 function AiErrorFixStatus() {
   const { failureMessage, phase, result } = useAiErrorFix()
 
-  if (phase === 'idle') {
-    return null
-  }
-
   if (phase === 'loading') {
     return null
   }
@@ -181,22 +218,34 @@ function AiErrorFixStatus() {
     )
   }
 
+  if (result?.fixed) {
+    return (
+      <Text mt={2} textStyle="body-2" aria-live="polite">
+        {result.summary} Check step again.
+        {result.sources[0] && (
+          <Button
+            as="a"
+            href={result.sources[0].url}
+            target="_blank"
+            rel="noreferrer"
+            size="sm"
+            variant="link"
+            ml={2}
+          >
+            Guide
+          </Button>
+        )}
+      </Text>
+    )
+  }
+
+  if (!result?.summary) {
+    return null
+  }
+
   return (
     <Text mt={2} textStyle="body-2" aria-live="polite">
-      {result?.summary}
-      {result?.sources[0] && (
-        <Button
-          as="a"
-          href={result.sources[0].url}
-          target="_blank"
-          rel="noreferrer"
-          size="sm"
-          variant="link"
-          ml={2}
-        >
-          Guide
-        </Button>
-      )}
+      {result.summary}
     </Text>
   )
 }

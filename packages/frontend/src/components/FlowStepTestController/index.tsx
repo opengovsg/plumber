@@ -35,7 +35,7 @@ import { useStepMetadata } from '@/hooks/useStepMetadata'
 
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
-import AiErrorFix from './AiErrorFix'
+import AiErrorFix, { clearStepFixNotice } from './AiErrorFix'
 import { readCheckStepError } from './step-error-fix'
 import { flowStepTestControllerStyles } from './styles'
 import TestResult from './TestResult'
@@ -240,6 +240,12 @@ export default function FlowStepTestController(
   const checkStepError = lastErrorDetails
     ? readCheckStepError(lastErrorDetails)
     : null
+
+  useEffect(() => {
+    if (isTestExecuting) {
+      clearStepFixNotice(step.id)
+    }
+  }, [isTestExecuting, step.id])
 
   useEffect(() => {
     if (!containerRef.current) {
