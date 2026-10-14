@@ -78,7 +78,7 @@ if it's ambiguous; this is a real design decision, not something inferable from 
 
 ### 5. Validate locally
 
-Validate the query read-only against the Postgres container brought up by `npm run setup` (the human
+Validate the query read-only against the Postgres container brought up by `pnpm run setup` (the human
 runs this themselves — don't start it yourself; if it doesn't seem to be running, ask). Run `psql`
 inside that container via `docker exec`, rather than a locally-installed client — find the running
 container's name with `docker ps` (it's derived from the `postgres` service in

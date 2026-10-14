@@ -126,7 +126,7 @@ target. If it is still the old version, the override was not updated.
 - Before committing, run `git status` + `git diff --stat` and confirm the
   diff is scoped to `pnpm-workspace.yaml`, `pnpm-lock.yaml`, and any
   `package.json` whose own specifier changed. Nothing unrelated got swept
-  in. Do not commit `package-lock.json`.
+  in.
 - Commit message: what was bumped, the CVE/behavior-change summary from
   Step 2, one line on why it's safe (from Step 3). End with
   `Co-Authored-By:` using the *current* session's actual model name — never
