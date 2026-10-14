@@ -243,7 +243,8 @@ export async function decryptFormResponse(
         // opaque S3 ID.
         attachmentFilename = rest.answer ?? ''
 
-        if (shouldStoreAttachments) {
+        // A blank optional attachment has no file. A filename still needs its map.
+        if (shouldStoreAttachments && (attachments || rest.answer)) {
           let s3FolderId = data.submissionId
           if (data.workflowContent) {
             // we add a suffix if it's an mrf step to prevent

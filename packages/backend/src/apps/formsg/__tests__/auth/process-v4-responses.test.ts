@@ -1063,10 +1063,11 @@ describe('processResponsesV4', () => {
       ])
     })
 
-    it('leaves a multi-respondent payload unchanged', async () => {
+    it('restores omitted fields when multi-respondent mode has no workflow', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce({
         form: {
           responseMode: 'multirespondent',
+          workflow: [],
           form_fields: [
             { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
             { _id: 'q2', title: 'Child record', fieldType: 'children' },
@@ -1078,13 +1079,72 @@ describe('processResponsesV4', () => {
         q2: v4Response('children', {}),
       })
 
-      expect(result).toEqual([
+      expect(result.map((field) => field._id)).toEqual(['q1', 'q2'])
+      expect(result[0]).toMatchObject({
+        question: 'Short answer',
+        answer: '',
+      })
+    })
+
+    it('restores only fields accumulated through the current workflow step', async () => {
+      const workflow = [
         {
-          _id: 'q2',
-          fieldType: 'children',
-          question: 'Child record',
-          answer: { child: [], childFields: [] },
+          _id: 'step0',
+          edit: ['q1'],
+          workflow_type: 'static' as const,
         },
+        {
+          _id: 'step1',
+          edit: ['q2'],
+          workflow_type: 'static' as const,
+        },
+        {
+          _id: 'step2',
+          edit: ['q3'],
+          workflow_type: 'static' as const,
+        },
+      ]
+      mocks.fetchFormSchema.mockResolvedValueOnce({
+        form: {
+          responseMode: 'multirespondent',
+          workflow,
+          form_fields: [
+            { _id: 'q1', title: 'Short answer', fieldType: 'textfield' },
+            { _id: 'q2', title: 'Child record', fieldType: 'children' },
+            { _id: 'q3', title: 'Later question', fieldType: 'textfield' },
+          ],
+        },
+      })
+
+      const result = await processResponsesV4(
+        {
+          request: {
+            body: {
+              data: {
+                workflowContent: {
+                  workflow,
+                  workflowStep: 1,
+                  submittedSteps: [],
+                },
+              },
+            },
+          },
+        } as IGlobalVariable,
+        'formId',
+        {
+          q2: v4Response('children', {}),
+        },
+      )
+
+      expect(result.map((field) => [field._id, field.answer])).toEqual([
+        ['q1', ''],
+        [
+          'q2',
+          {
+            child: [],
+            childFields: [],
+          },
+        ],
       ])
     })
 

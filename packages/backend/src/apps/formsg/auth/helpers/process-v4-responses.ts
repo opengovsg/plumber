@@ -20,7 +20,7 @@ import { DateTime } from 'luxon'
 
 import logger from '@/helpers/logger'
 
-import type { FormSchemaField } from '../../common/types'
+import { type FormSchemaField, mrfWorkflowDataSchema } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
@@ -56,20 +56,48 @@ function makeEmptyResponse(field: FormSchemaField): FieldResponseV4 {
   }
 }
 
+function accumulatedFieldIds(
+  workflow: Array<{ edit: string[] }>,
+  workflowStep: number,
+): Set<string> {
+  const lastIndex = Math.min(Math.max(workflowStep, 0), workflow.length - 1)
+  const fieldIds = new Set<string>()
+  for (let index = 0; index <= lastIndex; index++) {
+    for (const fieldId of workflow[index].edit) {
+      fieldIds.add(fieldId)
+    }
+  }
+  return fieldIds
+}
+
+function readSubmissionWorkflow(
+  $: IGlobalVariable,
+): { workflow: Array<{ edit: string[] }>; workflowStep: number } | null {
+  const workflowContent = $.request?.body?.data?.workflowContent
+  const parsed = mrfWorkflowDataSchema.safeParse(workflowContent?.workflow)
+  if (!workflowContent || !parsed.success || parsed.data.length === 0) {
+    return null
+  }
+  const workflowStep = workflowContent.workflowStep
+  return {
+    workflow: parsed.data,
+    workflowStep: typeof workflowStep === 'number' ? workflowStep : 0,
+  }
+}
+
 /**
  * Puts back optional fields that v4 left out of the payload.
  * Pipes expect those variables to exist.
+ *
+ * `allowedFieldIds` limits an MRF delivery to fields reached by its step.
+ * Null means every answer field in the schema.
  */
 function withOmittedFields(
   responses: FieldResponsesV4,
   schemaFields: FormSchemaField[],
-  isMultirespondent: boolean,
+  allowedFieldIds: Set<string> | null,
 ): FieldResponsesV4 {
   if (schemaFields.length === 0) {
-    return responses
-  }
-  // Filling the full schema would expose fields outside the current MRF step.
-  if (isMultirespondent) {
     return responses
   }
 
@@ -104,7 +132,11 @@ function withOmittedFields(
     if (NON_ANSWER_FIELD_TYPES.has(field.fieldType)) {
       continue
     }
-    filled[field._id] = responses[field._id] ?? makeEmptyResponse(field)
+    const present = responses[field._id]
+    if (!present && allowedFieldIds && !allowedFieldIds.has(field._id)) {
+      continue
+    }
+    filled[field._id] = present ?? makeEmptyResponse(field)
     for (const [id, response] of unknownAfter.get(field._id) ?? []) {
       filled[id] = response
     }
@@ -125,12 +157,25 @@ export async function processResponsesV4(
 ): Promise<FormField[]> {
   const formSchemaFields: Record<string, FormSchemaField> = {}
   let schemaFieldList: FormSchemaField[] = []
-  let isMultirespondent = false
+  let allowedFieldIds: Set<string> | null = null
   try {
     const formSchema = await fetchFormSchema($, formId)
     if (formSchema?.form?.form_fields) {
       schemaFieldList = formSchema.form.form_fields
-      isMultirespondent = formSchema.form.responseMode === 'multirespondent'
+      const schemaWorkflow = formSchema.form.workflow ?? []
+      // No workflow means the form is single-respondent, even in that mode.
+      const configuredMrf =
+        formSchema.form.responseMode === 'multirespondent' &&
+        schemaWorkflow.length > 0
+      if (configuredMrf) {
+        const submissionWorkflow = readSubmissionWorkflow($)
+        allowedFieldIds = submissionWorkflow
+          ? accumulatedFieldIds(
+              submissionWorkflow.workflow,
+              submissionWorkflow.workflowStep,
+            )
+          : new Set()
+      }
       for (const field of schemaFieldList) {
         formSchemaFields[field._id] = field
       }
@@ -147,7 +192,7 @@ export async function processResponsesV4(
   const responsesWithOmittedFields = withOmittedFields(
     responses,
     schemaFieldList,
-    isMultirespondent,
+    allowedFieldIds,
   )
   for (const [key, value] of Object.entries(responsesWithOmittedFields)) {
     questionNumber++
