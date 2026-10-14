@@ -6,6 +6,7 @@ import { fromZodError } from 'zod-validation-error'
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 
+import { resolveCaseIdentifier } from '../../common/case-identifier'
 import throwGatherSGStepError from '../../common/throw-errors'
 
 import { requestSchema, responseSchema } from './schema'
@@ -13,13 +14,13 @@ import { requestSchema, responseSchema } from './schema'
 const action: IRawAction = {
   name: 'Tag/Untag case',
   key: 'tagOrUntagCase',
-  description: 'Tag or untag a case based on the case uuid',
+  description: 'Tag or untag a case using a case uuid or case ref',
   arguments: [
     {
-      label: 'Case UUID',
+      label: 'Case UUID or case ref',
       key: 'caseUuid',
       type: 'string' as const,
-      description: 'Enter the case uuid you want to tag or untag',
+      description: 'Select a variable with a case UUID or case ref.',
       required: true,
       variables: true,
       singleVariableSelection: true,
@@ -49,13 +50,15 @@ const action: IRawAction = {
   async run($) {
     try {
       const payload = requestSchema.parse($.step.parameters)
+      const caseUuid = await resolveCaseIdentifier($, payload.caseUuid)
+      payload.caseUuid = caseUuid
       const { tagOrUntag } = payload
       const rawResponse = await $.http.post(
         `/cases/:caseUuid/${tagOrUntag ? 'tag' : 'untag'}`,
         payload,
         {
           urlPathParams: {
-            caseUuid: $.step.parameters.caseUuid,
+            caseUuid,
           },
         },
       )
@@ -73,6 +76,10 @@ const action: IRawAction = {
           `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
         )
+      }
+
+      if (error instanceof StepError) {
+        throw error
       }
 
       if (error instanceof HttpError) {
