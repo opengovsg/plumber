@@ -342,8 +342,7 @@ describe('getDataOutMetadata - children field numbering', () => {
     vi.restoreAllMocks()
   })
 
-  // order is the position in the submission; getDataOutMetadata overwrites it
-  // with the question number it computes
+  // order is the position in the submission. getDataOutMetadata overwrites it.
   function childSubfield(attr: string, order: number, childIndex = 0) {
     return {
       question: `[MyInfo] Child ${childIndex + 1} ${attr}`,

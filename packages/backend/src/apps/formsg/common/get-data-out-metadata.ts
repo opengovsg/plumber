@@ -23,10 +23,8 @@ const FIELD_OFFSET = {
 } as const
 
 /**
- * Ordering of the subfields of one children field.
- *
- * Subfields share a question number, so FIELD_OFFSET.answer is far too wide to
- * separate a subfield's answer from its question.
+ * Children subfields share one question number, so FIELD_OFFSET.answer is far
+ * too wide to separate a subfield's answer from its question.
  *
  * IMPORTANT: the step must stay wider than the offset. Otherwise a subfield's
  * answer sorts below the next subfield's question.
@@ -34,12 +32,7 @@ const FIELD_OFFSET = {
 const CHILD_ORDER_STEP = 0.002
 const CHILD_ANSWER_OFFSET = 0.001
 
-/**
- * Returns the id of the form field a children subfield belongs to, else null.
- *
- * Children fields are flattened into one variable per subfield, keyed
- * `childrenbirthrecords_<fieldId>_<attr>_<childIndex>`.
- */
+// Children subfields are keyed `childrenbirthrecords_<fieldId>_<attr>_<index>`.
 function getChildrenFieldKey(
   fieldId: string,
   fieldData: IJSONObject,
@@ -54,11 +47,6 @@ function getChildrenFieldKey(
   }
 
   return formFieldId
-}
-
-// Labels a children subfield N.1, N.2, ... like the subfields of an address.
-function formatOrder(questionOrder: number, subfieldNumber: number): string {
-  return `${questionOrder}.${subfieldNumber}`
 }
 
 function buildQuestionMetadatum(
@@ -432,8 +420,7 @@ async function getDataOutMetadata(
    */
   let questionOrder = 0
   let headerOrderBetweenQuestions = 0
-  // Subfields of one children field share a question number, so remember it
-  // alongside how many of them have been numbered already.
+  // Every subfield of a children field reuses that field's question number.
   const childrenGroups = new Map<string, { order: number; count: number }>()
   for (const [fieldId, fieldValue] of fields) {
     const fieldData = fieldValue as IJSONObject
@@ -468,7 +455,8 @@ async function getDataOutMetadata(
           childrenGroups.set(childrenFieldKey, group)
         }
         fieldData.order = group.order + group.count * CHILD_ORDER_STEP
-        displayOrder = formatOrder(group.order, group.count + 1)
+        // Labelled N.1, N.2, like the subfields of an address.
+        displayOrder = `${group.order}.${group.count + 1}`
         answerOffset = CHILD_ANSWER_OFFSET
         group.count++
       }
