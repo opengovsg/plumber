@@ -22,4 +22,9 @@ const bedrock = createBedrockAnthropic(
 const model: LanguageModelV2 = bedrock(appConfig.bedrock.model)
 const imageModel: LanguageModelV2 = bedrock(appConfig.bedrock.imageModel)
 
-export { imageModel, model }
+// IMPORTANT: the SDK's default JSON tool forces tool_choice, which Claude Sonnet 5.5 rejects with a 400.
+const structuredOutputProviderOptions = {
+  anthropic: { structuredOutputMode: 'outputFormat' as const },
+}
+
+export { imageModel, model, structuredOutputProviderOptions }
