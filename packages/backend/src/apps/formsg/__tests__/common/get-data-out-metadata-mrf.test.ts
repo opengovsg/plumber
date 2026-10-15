@@ -486,4 +486,48 @@ describe('getDataOutMetadata - children field numbering', () => {
     expect(result.fields.ch1.question.label).toBe('Question 1')
     expect(result.fields.field2.question.label).toBe('Question 2')
   })
+
+  it('sorts a section after every subfield of the children field above it', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      childrenbirthrecords_ch1_childrace_0: childSubfield('Race', 2),
+      childrenbirthrecords_ch1_childtype_0: childSubfield('Record type', 3),
+      section1: { question: 'Declaration', fieldType: 'section', order: 4 },
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 5,
+      },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    const lastSubfieldOrder =
+      result.fields.childrenbirthrecords_ch1_childtype_0.answer.order
+    expect(result.fields.section1.question.order).toBeGreaterThan(
+      lastSubfieldOrder,
+    )
+    // the section still belongs to the children field's question number
+    expect(result.fields.section1.question.order).toBeLessThan(
+      result.fields.field2.question.order,
+    )
+  })
+
+  it('keeps numbering a section normally when a question follows the children field', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 2,
+      },
+      section1: { question: 'Declaration', fieldType: 'section', order: 3 },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(result.fields.section1.question.order).toBeCloseTo(2.001, 5)
+  })
 })

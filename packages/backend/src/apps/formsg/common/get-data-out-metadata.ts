@@ -459,6 +459,9 @@ async function getDataOutMetadata(
         displayOrder = `${group.order}.${group.count + 1}`
         answerOffset = CHILD_ANSWER_OFFSET
         group.count++
+        // Subfields take thousandths from the same space headers draw from.
+        // Claiming what this group used keeps a following header below it.
+        headerOrderBetweenQuestions = group.count * 2
       }
 
       // if this is an MRF step, we only show the fields that are editable
