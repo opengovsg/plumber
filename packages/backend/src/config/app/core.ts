@@ -87,6 +87,7 @@ export type CoreConfig = {
     region: string
     model: string
     imageModel: string
+    fallbackModel: string
     /**
      * Local dev only. Deployed environments authenticate with the ECS task role.
      */
@@ -223,6 +224,10 @@ const coreConfig: CoreConfig = {
     imageModel: requireEnv(
       'BEDROCK_IMAGE_MODEL',
       process.env.BEDROCK_IMAGE_MODEL,
+    ),
+    fallbackModel: requireEnv(
+      'BEDROCK_FALLBACK_MODEL',
+      process.env.BEDROCK_FALLBACK_MODEL,
     ),
     devApiKey: process.env.BEDROCK_API_KEY,
   },
