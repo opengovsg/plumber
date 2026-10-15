@@ -26,8 +26,8 @@ import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
 
-// Mirrors ChildrenAnswerV4 in @opengovsg/formsg-sdk. Parsed rather than cast
-// because FormSG changed this shape once already.
+// Mirrors ChildrenAnswerV4 in @opengovsg/formsg-sdk. Parsed rather than cast,
+// because FormSG has changed this shape once already.
 const childrenAnswerSchema = z.record(
   z.string(),
   z.object({
@@ -45,10 +45,8 @@ const childrenAnswerSchema = z.record(
 type ChildrenAnswer = z.infer<typeof childrenAnswerSchema>
 
 /**
- * Flattens one MyInfo children answer into one variable per child subfield.
- *
- * FormSG nests every subfield under a single `children` response. Pipe authors
- * need to reference each subfield on its own, so each becomes its own variable.
+ * FormSG nests every subfield under one `children` response, which pipe authors
+ * cannot reference individually.
  *
  * @param firstChildNumber 0-based display number of this field's first child.
  */
@@ -60,21 +58,22 @@ function flattenChildrenAnswer(
 ): FormField[] {
   const children = Object.values(childrenAnswer)
 
-  // Keyed by attribute so a subfield is found regardless of its position.
   const valuesByChild = children.map((child) => {
     const values = new Map<string, string>()
     for (const [key, subField] of Object.entries(child.value)) {
+      // The object key is normally the attribute, but myInfo.attr is the
+      // authoritative source.
       values.set(subField.myInfo?.attr ?? key, subField.value)
     }
-    // LOCAL or SPONSORED arrives as a childtype subfield. The SDK also allows
-    // it on the entry itself, so accept that rather than drop the value.
+    // The SDK allows LOCAL or SPONSORED here instead of as a childtype
+    // subfield, so read it rather than drop it.
     if (child.type && !values.has('childtype')) {
       values.set('childtype', child.type)
     }
     return values
   })
 
-  // Every child gets the same subfields, so the variable list stays stable when
+  // Giving every child the same subfields keeps the variable list stable when
   // MyInfo omits a value for one child but not another.
   const attrs = [...schemaSubFields]
   for (const values of valuesByChild) {
@@ -125,8 +124,7 @@ export async function processResponsesV4(
   }
   const mappedResponses: FormField[] = []
   let questionNumber = 0
-  // FormSG numbers children across the whole submission, not per children
-  // field, in the rare case that a form has more than one.
+  // FormSG numbers children across the submission, not per children field.
   let childNumber = 0
   for (const [key, value] of Object.entries(responses)) {
     questionNumber++
@@ -257,12 +255,14 @@ export async function processResponsesV4(
     if (value.fieldType === 'children') {
       const parsed = childrenAnswerSchema.safeParse(value.answer)
       if (!parsed.success) {
-        // Keep the submission flowing as one opaque variable. Only the issues
-        // are logged, since the answer itself holds child PII.
+        // An unrecognised shape degrades to one opaque variable, rather than
+        // failing the whole submission.
         logger.error('Unable to parse FormSG children answer', {
           event: 'formsg-unparsable-children-answer',
           formId,
           fieldId: key,
+          // IMPORTANT: the answer is child PII. Issues name paths and types
+          // only, never values.
           issues: parsed.error.issues,
         })
         mappedResponses.push({
