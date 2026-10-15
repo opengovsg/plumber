@@ -1,9 +1,6 @@
 /**
- * Shared naming for MyInfo child subfields.
- *
- * Mock data and real v4 submissions must produce identical variable keys and
- * questions, otherwise a pipe built against mock data breaks on a real
- * submission.
+ * Shared by mock data and the v4 parser. A pipe built against mock data breaks
+ * on a real submission if the two disagree on a key or a question.
  */
 
 // FormSG prefixes every child subfield id with this MyInfo attribute.
@@ -76,8 +73,6 @@ export const MYINFO_CHILD_SUBFIELD_MAP: Record<
 }
 
 /**
- * Builds the dataOut key for one child subfield.
- *
  * IMPORTANT: the key must never contain a dot. Dots delimit step and variable
  * paths, so a dotted key is unreachable via lodash get.
  */
@@ -92,8 +87,6 @@ export function buildChildSubfieldKey(
 }
 
 /**
- * Builds the question shown against one child subfield.
- *
  * @param childIndex 0-based, and rendered 1-based to match FormSG.
  */
 export function buildChildSubfieldQuestion(
