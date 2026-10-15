@@ -59,6 +59,7 @@ import {
   buildEstablishedConnectionReminder,
   resolveEstablishedFormConnection,
   serializeMessagesForLangfuse,
+  stripReasoningParts,
 } from './helpers'
 import { parseClarificationBlock } from './parse-clarification-block'
 import { parseColumnTableBlock } from './parse-column-table-block'
@@ -146,7 +147,9 @@ const handleChatStream = observe(
 
       // Convert UIMessages to ModelMessages
       const messages = convertToModelMessages(
-        rawMessages as Parameters<typeof convertToModelMessages>[0],
+        stripReasoningParts(rawMessages) as Parameters<
+          typeof convertToModelMessages
+        >[0],
         { ignoreIncompleteToolCalls: true },
       )
 
