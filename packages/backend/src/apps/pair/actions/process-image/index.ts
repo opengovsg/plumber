@@ -5,7 +5,7 @@ import { fromZodError } from 'zod-validation-error'
 
 import StepError, { GenericSolution } from '@/errors/step'
 import logger from '@/helpers/logger'
-import { imageModel } from '@/helpers/pair'
+import { imageModel, structuredOutputProviderOptions } from '@/helpers/pair'
 import Step from '@/models/step'
 
 import getDataOutMetadata from '../../common/get-data-out-metadata'
@@ -121,6 +121,7 @@ const action: IRawAction = {
       const { object } = await generateObject({
         model: imageModel,
         schema: responseSchema,
+        providerOptions: structuredOutputProviderOptions,
         messages: [
           {
             role: 'user',
