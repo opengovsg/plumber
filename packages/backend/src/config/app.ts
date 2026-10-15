@@ -92,10 +92,9 @@ type AppConfig = {
     model: string
     imageModel: string
     /**
-     * Local dev only. Which AWS SSO profile to assume for Bedrock calls,
-     * independent of whatever AWS_PROFILE is set to for other services (e.g. SES).
+     * Local dev only. Deployed environments authenticate with the ECS task role.
      */
-    devAwsProfile?: string
+    devApiKey?: string
   }
   pair: {
     rome: {
@@ -211,7 +210,7 @@ const appConfig: AppConfig = {
     region: process.env.BEDROCK_REGION,
     model: process.env.BEDROCK_MODEL,
     imageModel: process.env.BEDROCK_IMAGE_MODEL,
-    devAwsProfile: process.env.BEDROCK_DEV_AWS_PROFILE,
+    devApiKey: process.env.BEDROCK_API_KEY,
   },
   pair: {
     rome: {
