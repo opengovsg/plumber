@@ -3,9 +3,12 @@ import type { IApp, IJSONObject, ITemplateStep } from '@plumber/types'
 import get from 'lodash.get'
 
 import apps from '@/apps'
+import { isMrfSubmissionStep } from '@/apps/toolbox/common/constants'
+import { validateEndStepWrite } from '@/apps/toolbox/common/validate-end-step'
 import { TEMPLATES } from '@/db/storage'
 import {
   STEP_ID_KEY,
+  STEP_ID_PLACEHOLDER,
   TILE_COL_DATA_KEY,
   TILE_ID_KEY,
   USER_EMAIL_KEY,
@@ -16,10 +19,12 @@ import type {
 } from '@/graphql/__generated__/types.generated'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Flow from '@/models/flow'
+import Template from '@/models/template'
 import { createTableRows } from '@/models/tiles/dynamodb/table-row'
 import User from '@/models/user'
 
 import logger from './logger'
+import { remapTemplateStepConfig } from './template-step-config'
 
 // e.g. <<user_email>>, <<tile_col_data.Email>> to avoid clashes with {{step.}}
 const PLACEHOLDER_REGEX = /<<([a-zA-Z0-9_.? ]+)>>/g
@@ -44,9 +49,9 @@ function validateAppAndEventKey(step: ITemplateStep, templateName: string) {
   }
 
   if (eventKey) {
-    const event = app?.triggers
-      ? app?.triggers.find((trigger) => trigger.key === eventKey)
-      : app?.actions.find((action) => action.key === eventKey)
+    // Matches createFlowFromTemplate, which makes position 1 the trigger.
+    const events = position === 1 ? app?.triggers : app?.actions
+    const event = events?.find((event) => event.key === eventKey)
     if (!event) {
       throw new Error(
         `Invalid event key for ${templateName} template at step ${position}`,
@@ -164,7 +169,9 @@ export async function createFlowFromTemplate(
   templateId: string,
   user: User,
 ): Promise<Flow> {
-  const template = TEMPLATES.find((template) => template.id === templateId)
+  const template =
+    TEMPLATES.find((template) => template.id === templateId) ??
+    (await Template.findOneForUser(user.id, templateId))
   // prevents user from creating any new template
   if (!template) {
     throw new Error('Invalid template id input')
@@ -235,6 +242,8 @@ export async function createFlowFromTemplate(
       } satisfies FlowConfig,
     })
 
+    const templateStepIdMap: Record<string, string> = {}
+
     // step could have app or event key to be null due to if-then
     for (const templateStep of steps) {
       const { position, appKey, eventKey, parameters } = templateStep
@@ -260,10 +269,43 @@ export async function createFlowFromTemplate(
           templateConfig: {
             appEventKey,
           },
+          ...structuredClone(templateStep.config ?? {}),
         } satisfies StepConfig,
       })
 
       placeholderReplacementMap[STEP_ID_KEY(position)] = step.id
+      templateStepIdMap[STEP_ID_PLACEHOLDER(position)] = step.id
+    }
+
+    // Block boundaries can reference later steps or the block itself.
+    const flowSteps = await flow
+      .$relatedQuery('steps', trx)
+      .orderBy('position', 'asc')
+    for (const step of flowSteps) {
+      step.config = remapTemplateStepConfig(step.config, templateStepIdMap)
+    }
+    for (const step of flowSteps) {
+      if (step.config.approval) {
+        const owner = flowSteps.find(
+          (candidate) => candidate.id === step.config.approval.stepId,
+        )
+        if (!isMrfSubmissionStep(owner)) {
+          throw new Error(
+            'Template rejection branch must reference an MRF step',
+          )
+        }
+      }
+      if (step.config.endStepId !== undefined) {
+        validateEndStepWrite({
+          flowSteps,
+          ifThenStepId: step.id,
+          endStepId: step.config.endStepId,
+          flowId: flow.id,
+        })
+      }
+      if (step.config.endStepId !== undefined || step.config.approval) {
+        await step.$query(trx).patch({ config: step.config })
+      }
     }
 
     logger.info('Flow created from template', {
