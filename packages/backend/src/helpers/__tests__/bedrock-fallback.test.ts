@@ -1,7 +1,4 @@
-import type {
-  LanguageModelV2,
-  LanguageModelV2CallWarning,
-} from '@ai-sdk/provider'
+import type { LanguageModelV2 } from '@ai-sdk/provider'
 import {
   APICallError,
   generateText,
@@ -13,14 +10,30 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { fallbackMiddleware } from '../bedrock-fallback'
 
-vi.mock('@/helpers/logger', () => ({
-  default: { warn: vi.fn() },
-}))
+vi.mock('@/helpers/logger', () => ({ default: { warn: vi.fn() } }))
 
 const usage = { inputTokens: 1, outputTokens: 1, totalTokens: 2 }
 
-function apiError(statusCode: number): APICallError {
-  return new APICallError({
+const generated = (text: string, finishReason: 'stop' | 'content-filter') => ({
+  content: [{ type: 'text' as const, text }],
+  finishReason,
+  usage,
+  warnings: [] as never[],
+})
+
+const streamed = (text: string) => ({
+  stream: simulateReadableStream({
+    chunks: [
+      { type: 'text-start' as const, id: '1' },
+      { type: 'text-delta' as const, id: '1', delta: text },
+      { type: 'text-end' as const, id: '1' },
+      { type: 'finish' as const, finishReason: 'stop' as const, usage },
+    ],
+  }),
+})
+
+const fail = (statusCode: number) => async () => {
+  throw new APICallError({
     message: `status ${statusCode}`,
     url: 'https://bedrock.example',
     requestBodyValues: {},
@@ -28,113 +41,49 @@ function apiError(statusCode: number): APICallError {
   })
 }
 
-function textResult(text: string, finishReason: 'stop' | 'content-filter') {
-  return {
-    content: [{ type: 'text' as const, text }],
-    finishReason,
-    usage,
-    warnings: [] as LanguageModelV2CallWarning[],
-  }
-}
+type Call = () => Promise<unknown>
 
-function textStream(text: string) {
-  return {
-    stream: simulateReadableStream({
-      chunks: [
-        { type: 'text-start' as const, id: '1' },
-        { type: 'text-delta' as const, id: '1', delta: text },
-        { type: 'text-end' as const, id: '1' },
-        { type: 'finish' as const, finishReason: 'stop' as const, usage },
-      ],
-    }),
-  }
-}
-
-function mockModel(
-  overrides: Partial<Pick<LanguageModelV2, 'doGenerate' | 'doStream'>>,
-): LanguageModelV2 {
-  return {
+const mockModel = (doGenerate: Call, doStream: Call) =>
+  ({
     specificationVersion: 'v2',
     provider: 'mock',
     modelId: 'mock',
     supportedUrls: {},
-    doGenerate: vi.fn(async () => {
-      throw new Error('doGenerate not mocked')
-    }),
-    doStream: vi.fn(async () => {
-      throw new Error('doStream not mocked')
-    }),
-    ...overrides,
-  }
-}
+    doGenerate: vi.fn(doGenerate),
+    doStream: vi.fn(doStream),
+  } as LanguageModelV2)
 
-function setup(primary: LanguageModelV2) {
-  const fallback = mockModel({
-    doGenerate: vi.fn(async () => textResult('from fallback', 'stop')),
-    doStream: vi.fn(async () => textStream('from fallback')),
-  })
+function setup(primary: { generate?: Call; stream?: Call }) {
+  const fallback = mockModel(
+    async () => generated('fallback', 'stop'),
+    async () => streamed('fallback'),
+  )
   const model = wrapLanguageModel({
-    model: primary,
+    model: mockModel(
+      primary.generate ?? fail(500),
+      primary.stream ?? fail(500),
+    ),
     middleware: fallbackMiddleware(fallback),
   })
   return { fallback, model }
 }
 
 describe('fallbackMiddleware', () => {
-  it('returns the primary result when it succeeds', async () => {
-    const { fallback, model } = setup(
-      mockModel({
-        doGenerate: async () => textResult('from primary', 'stop'),
-      }),
-    )
+  it.each([
+    ['succeeds', async () => generated('primary', 'stop'), 'primary'],
+    ['fails with 429', fail(429), 'fallback'],
+    ['fails with 503', fail(503), 'fallback'],
+    ['refuses', async () => generated('', 'content-filter'), 'fallback'],
+  ])('generate: primary %s → %s', async (_, generate, expected) => {
+    const { model } = setup({ generate })
 
-    const { text } = await generateText({ model, prompt: 'hi' })
+    const { text } = await generateText({ model, prompt: 'hi', maxRetries: 0 })
 
-    expect(text).toBe('from primary')
-    expect(fallback.doGenerate).not.toHaveBeenCalled()
+    expect(text).toBe(expected)
   })
 
-  it.each([429, 503])(
-    'falls back when the primary fails with %i',
-    async (statusCode) => {
-      const { model } = setup(
-        mockModel({
-          doGenerate: async () => {
-            throw apiError(statusCode)
-          },
-        }),
-      )
-
-      const { text } = await generateText({
-        model,
-        prompt: 'hi',
-        maxRetries: 0,
-      })
-
-      expect(text).toBe('from fallback')
-    },
-  )
-
-  it('falls back when the primary refuses', async () => {
-    const { model } = setup(
-      mockModel({
-        doGenerate: async () => textResult('', 'content-filter'),
-      }),
-    )
-
-    const { text } = await generateText({ model, prompt: 'hi' })
-
-    expect(text).toBe('from fallback')
-  })
-
-  it('rethrows non-retryable errors without falling back', async () => {
-    const { fallback, model } = setup(
-      mockModel({
-        doGenerate: async () => {
-          throw apiError(400)
-        },
-      }),
-    )
+  it('generate: rethrows non-retryable errors without falling back', async () => {
+    const { fallback, model } = setup({ generate: fail(400) })
 
     await expect(
       generateText({ model, prompt: 'hi', maxRetries: 0 }),
@@ -142,30 +91,14 @@ describe('fallbackMiddleware', () => {
     expect(fallback.doGenerate).not.toHaveBeenCalled()
   })
 
-  it('falls back when the primary stream fails to start', async () => {
-    const { model } = setup(
-      mockModel({
-        doStream: async () => {
-          throw apiError(503)
-        },
-      }),
-    )
+  it.each([
+    ['starts', async () => streamed('primary'), 'primary'],
+    ['fails to start with 503', fail(503), 'fallback'],
+  ])('stream: primary %s → %s', async (_, stream, expected) => {
+    const { model } = setup({ stream })
 
     const result = streamText({ model, prompt: 'hi', maxRetries: 0 })
 
-    expect(await result.text).toBe('from fallback')
-  })
-
-  it('does not fall back when the primary stream starts', async () => {
-    const { fallback, model } = setup(
-      mockModel({
-        doStream: async () => textStream('from primary'),
-      }),
-    )
-
-    const result = streamText({ model, prompt: 'hi' })
-
-    expect(await result.text).toBe('from primary')
-    expect(fallback.doStream).not.toHaveBeenCalled()
+    expect(await result.text).toBe(expected)
   })
 })
