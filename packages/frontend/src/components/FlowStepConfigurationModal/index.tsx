@@ -27,6 +27,11 @@ interface FlowStepConfigurationModalProps {
   // Set only by launchers whose anchor step misrepresents where their new step
   // lands relative to an if-then block. See AnchorPlacement.
   anchorPlacement?: AnchorPlacement
+  // When set together with `app` and `event`, the modal opens on the
+  // add-connection screen with these values filled in.
+  prefilledConnectionFields?: Record<string, string>
+  // Connection preselected on the choose-connection screen.
+  initialConnectionId?: string
 }
 
 function FlowStepConfigurationModalContent({
@@ -69,6 +74,8 @@ export default function FlowStepConfigurationModal(
     prevStep,
     previousBlockId,
     anchorPlacement,
+    prefilledConnectionFields,
+    initialConnectionId,
   } = props
 
   return (
@@ -80,6 +87,8 @@ export default function FlowStepConfigurationModal(
       prevStep={prevStep}
       previousBlockId={previousBlockId}
       anchorPlacement={anchorPlacement}
+      prefilledConnectionFields={prefilledConnectionFields}
+      initialConnectionId={initialConnectionId}
       step={step}
     >
       <Modal

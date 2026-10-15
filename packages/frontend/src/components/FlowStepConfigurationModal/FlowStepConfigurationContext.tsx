@@ -21,6 +21,8 @@ interface FlowStepConfigurationContextValue {
   // Set only by the affordances whose anchor step misrepresents where their
   // new step lands relative to an if-then block. See AnchorPlacement.
   anchorPlacement?: AnchorPlacement
+  // Initial values for the add-connection form, keyed by auth field key.
+  prefilledConnectionFields?: Record<string, string>
 }
 
 export const FlowStepConfigurationContext =
@@ -63,6 +65,8 @@ interface FlowStepConfigurationContextProps {
   prevStep?: IStep
   previousBlockId?: string
   anchorPlacement?: AnchorPlacement
+  prefilledConnectionFields?: Record<string, string>
+  initialConnectionId?: string
   children: React.ReactNode
 }
 
@@ -75,13 +79,21 @@ export const FlowStepConfigurationContextProvider = ({
   prevStep,
   previousBlockId,
   anchorPlacement,
+  prefilledConnectionFields,
+  initialConnectionId,
   children,
 }: FlowStepConfigurationContextProps) => {
+  const initialScreen: ModalScreen = !(app && event)
+    ? 'choose-app'
+    : prefilledConnectionFields
+    ? 'add-connection'
+    : 'choose-connection'
+
   const [modalState, setModalState] = useState<ModalState>({
-    currentScreen: app && event ? 'choose-connection' : 'choose-app',
+    currentScreen: initialScreen,
     selectedApp: app ?? null,
     selectedEvent: event ?? null,
-    selectedConnectionId: step?.connection?.id ?? '',
+    selectedConnectionId: initialConnectionId ?? step?.connection?.id ?? '',
     isLoading: false,
   })
 
@@ -101,6 +113,7 @@ export const FlowStepConfigurationContextProvider = ({
         step,
         previousBlockId,
         anchorPlacement,
+        prefilledConnectionFields,
       }}
     >
       {children}
