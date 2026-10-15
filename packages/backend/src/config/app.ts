@@ -91,6 +91,7 @@ type AppConfig = {
     region: string
     model: string
     imageModel: string
+    fallbackModel: string
     /**
      * Local dev only. Deployed environments authenticate with the ECS task role.
      */
@@ -210,6 +211,7 @@ const appConfig: AppConfig = {
     region: process.env.BEDROCK_REGION,
     model: process.env.BEDROCK_MODEL,
     imageModel: process.env.BEDROCK_IMAGE_MODEL,
+    fallbackModel: process.env.BEDROCK_FALLBACK_MODEL,
     devApiKey: process.env.BEDROCK_API_KEY,
   },
   pair: {
@@ -311,7 +313,8 @@ if (!appConfig.gathersg.publicKey) {
 if (
   !appConfig.bedrock.region ||
   !appConfig.bedrock.model ||
-  !appConfig.bedrock.imageModel
+  !appConfig.bedrock.imageModel ||
+  !appConfig.bedrock.fallbackModel
 ) {
   throw new Error('Bedrock environment variables need to be set!')
 }
