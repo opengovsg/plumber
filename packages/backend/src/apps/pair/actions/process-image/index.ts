@@ -163,11 +163,7 @@ const action: IRawAction = {
         )
       }
 
-      /**
-       * The error is already logged above, so we don't surface `error.message`
-       * here. litellm's error message is a long, noisy string with repeated
-       * fallback-attempt details tacked on.
-       */
+      // The error is already logged above. Its raw message is not written for users.
       throw new StepError('Failed to process image', 'Please try again.', error)
     }
   },
