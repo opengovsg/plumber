@@ -1,13 +1,12 @@
 import logger from './logger'
 
 /**
-  attempt 1 fails → wait ~1s to 2s
-  attempt 2 fails → wait ~2s to 4s
+  attempt 1 fails → wait 2s to 3s
+  attempt 2 fails → wait 4s to 6s
   attempt 3 → throws
  */
 const DEFAULT_MAX_ATTEMPTS = 3
 const DEFAULT_INITIAL_DELAY_MS = 1000
-const DEFAULT_MAX_DELAY_MS = 5000
 
 // Postgres SQLSTATE codes for connection / shutdown errors that are safe to
 // retry. Application errors (unique violations, NOT NULL, FK, etc.) are
@@ -100,7 +99,6 @@ export function isTransientDbError(err: unknown): boolean {
 export interface RetryOnTransientDbErrorOpts {
   maxAttempts?: number
   initialDelayMs?: number
-  maxDelayMs?: number
   context?: Record<string, unknown>
 }
 
@@ -114,7 +112,6 @@ export async function retryOnTransientDbError<T>(
 ): Promise<T> {
   const maxAttempts = opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS
   const initialDelayMs = opts.initialDelayMs ?? DEFAULT_INITIAL_DELAY_MS
-  const maxDelayMs = opts.maxDelayMs ?? DEFAULT_MAX_DELAY_MS
   const context = opts.context
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -137,16 +134,11 @@ export async function retryOnTransientDbError<T>(
         throw err
       }
 
-      // Jitter style matches helpers/backoff.ts: wait at least the previous
-      // full delay, plus up to that delay again as jitter. Capped at maxDelayMs.
-      const prevFullDelay = Math.min(
-        Math.pow(2, attempt - 1) * initialDelayMs,
-        maxDelayMs,
-      )
-      const delayMs = Math.min(
-        prevFullDelay + Math.round(Math.random() * prevFullDelay),
-        maxDelayMs,
-      )
+      // Jitter spreads out retries from requests that failed together, such as
+      // all pooled connections dropping during an RDS switchover.
+      const delayMs =
+        Math.pow(2, attempt) * initialDelayMs +
+        Math.random() * initialDelayMs * attempt
 
       logger.warn('Retrying DB operation after transient error', {
         event: 'db-retry',

@@ -135,14 +135,13 @@ describe('retryOnTransientDbError', () => {
 
     const promise = retryOnTransientDbError(fn, {
       initialDelayMs: 100,
-      maxDelayMs: 1000,
       context: { flowId: 'flow-1' },
     })
 
     // First attempt rejects synchronously on the microtask queue.
     await vi.advanceTimersByTimeAsync(0)
-    // Backoff of 100ms (Math.random() => 0) before the retry.
-    await vi.advanceTimersByTimeAsync(100)
+    // Backoff of 2^1 * 100ms (Math.random() => 0) before the retry.
+    await vi.advanceTimersByTimeAsync(200)
 
     await expect(promise).resolves.toBe('ok')
     expect(fn).toHaveBeenCalledTimes(2)
@@ -155,7 +154,7 @@ describe('retryOnTransientDbError', () => {
         nextAttempt: 2,
         maxAttempts: 3,
         errorCode: '57P01',
-        delayMs: 100,
+        delayMs: 200,
         flowId: 'flow-1',
       }),
     )
@@ -170,14 +169,13 @@ describe('retryOnTransientDbError', () => {
 
     const promise = retryOnTransientDbError(fn, {
       initialDelayMs: 100,
-      maxDelayMs: 1000,
     })
     // Swallow unhandled rejection while we advance timers.
     promise.catch((): undefined => undefined)
 
     await vi.advanceTimersByTimeAsync(0)
-    await vi.advanceTimersByTimeAsync(100) // first backoff
-    await vi.advanceTimersByTimeAsync(200) // second backoff
+    await vi.advanceTimersByTimeAsync(200) // first backoff
+    await vi.advanceTimersByTimeAsync(400) // second backoff
 
     await expect(promise).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(3)
@@ -207,16 +205,15 @@ describe('retryOnTransientDbError', () => {
     promise.catch((): undefined => undefined)
 
     await vi.advanceTimersByTimeAsync(0)
-    await vi.advanceTimersByTimeAsync(100)
+    await vi.advanceTimersByTimeAsync(200)
 
     await expect(promise).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(2)
     expect(mocks.logWarn).toHaveBeenCalledTimes(1)
   })
 
-  it('caps the actual sleep delay at maxDelayMs even with maximum jitter', async () => {
+  it('adds up to attempt * initialDelayMs of jitter on top of the exponential delay', async () => {
     vi.useFakeTimers()
-    // Max jitter — without a cap on the final delay this would be 2 * prevFullDelay.
     vi.spyOn(Math, 'random').mockReturnValue(1)
 
     const err = makePgError('57P01')
@@ -225,17 +222,16 @@ describe('retryOnTransientDbError', () => {
     const promise = retryOnTransientDbError(fn, {
       maxAttempts: 4,
       initialDelayMs: 100,
-      maxDelayMs: 300,
     })
     promise.catch((): undefined => undefined)
 
     await vi.advanceTimersByTimeAsync(0)
-    // attempt 1: prevFull=100, delay=100+100=200 (below cap)
-    await vi.advanceTimersByTimeAsync(200)
-    // attempt 2: prevFull=200, delay=200+200=400 → capped to 300
+    // attempt 1: 2^1 * 100 + 1 * 100 = 300
     await vi.advanceTimersByTimeAsync(300)
-    // attempt 3: prevFull=300 (capped), delay=300+300=600 → capped to 300
-    await vi.advanceTimersByTimeAsync(300)
+    // attempt 2: 2^2 * 100 + 2 * 100 = 600
+    await vi.advanceTimersByTimeAsync(600)
+    // attempt 3: 2^3 * 100 + 3 * 100 = 1100
+    await vi.advanceTimersByTimeAsync(1100)
 
     await expect(promise).rejects.toBe(err)
     expect(fn).toHaveBeenCalledTimes(4)
@@ -243,10 +239,7 @@ describe('retryOnTransientDbError', () => {
     const loggedDelays = mocks.logWarn.mock.calls.map(
       ([, payload]) => (payload as { delayMs: number }).delayMs,
     )
-    expect(loggedDelays).toEqual([200, 300, 300])
-    for (const delay of loggedDelays) {
-      expect(delay).toBeLessThanOrEqual(300)
-    }
+    expect(loggedDelays).toEqual([300, 600, 1100])
   })
 
   it('unwraps Objection-wrapped transient errors', async () => {
@@ -260,7 +253,7 @@ describe('retryOnTransientDbError', () => {
 
     const promise = retryOnTransientDbError(fn, { initialDelayMs: 100 })
     await vi.advanceTimersByTimeAsync(0)
-    await vi.advanceTimersByTimeAsync(100)
+    await vi.advanceTimersByTimeAsync(200)
 
     await expect(promise).resolves.toBe('ok')
     expect(fn).toHaveBeenCalledTimes(2)
