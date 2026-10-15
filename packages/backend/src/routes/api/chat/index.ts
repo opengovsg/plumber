@@ -63,6 +63,7 @@ import { chatRequestSchema } from './schema'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
 const MAX_MESSAGES = 150
+const MAX_STEPS_PER_TURN = 10
 
 function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
   const questions = parseClarificationBlock(text)
@@ -143,6 +144,7 @@ const handleChatStream = observe(
       // Convert UIMessages to ModelMessages
       const messages = convertToModelMessages(
         rawMessages as Parameters<typeof convertToModelMessages>[0],
+        { ignoreIncompleteToolCalls: true },
       )
 
       // Manually capture serializable input for Langfuse
@@ -255,7 +257,7 @@ const handleChatStream = observe(
             model: chatModel,
             messages: allMessages,
             tools: { ...gitbookTools, ...mcpTools },
-            stopWhen: stepCountIs(10),
+            stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
             experimental_repairToolCall: repairMalformedToolName,
             experimental_transform: [
               repairMalformedStreamedToolNames,
@@ -435,9 +437,14 @@ const handleChatStream = observe(
           writer.merge(
             result.toUIMessageStream({
               onError: getAiChatErrorMessage,
-              messageMetadata: () => ({
+              // finishReason 'tool-calls' means stopWhen cut the model off
+              // mid-task. The UI uses it to offer Continue.
+              messageMetadata: ({ part }) => ({
                 traceId,
                 model: MODEL_TYPE,
+                ...(part.type === 'finish' && {
+                  finishReason: part.finishReason,
+                }),
               }),
             }),
           )

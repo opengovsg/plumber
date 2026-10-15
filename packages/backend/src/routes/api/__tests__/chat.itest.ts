@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   loggerError: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
   createMcpBridgeTools: vi.fn(),
+  convertToModelMessages: vi.fn((msgs) => msgs),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -37,7 +38,7 @@ vi.mock('ai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ai')>()
   return {
     ...actual,
-    convertToModelMessages: vi.fn((msgs) => msgs),
+    convertToModelMessages: mocks.convertToModelMessages,
     smoothStream: vi.fn(() => ({})),
     stepCountIs: vi.fn(() => false),
     streamText: mocks.streamText,
@@ -350,6 +351,53 @@ describe('Chat Route Handler', () => {
       // Schema accepted the payload — streaming was invoked, not a 400
       expect(mockRes.status).not.toHaveBeenCalledWith(400)
       expect(mocks.streamText).toHaveBeenCalled()
+    })
+
+    it('should drop tool calls left without a result by a user stop', async () => {
+      mockReq.body = {
+        messages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'create a pipe' }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              { type: 'step-start' },
+              {
+                type: 'tool-create_pipe',
+                toolCallId: 'call-1',
+                state: 'input-available',
+                input: { name: 'My pipe', steps: [] },
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'try again' }],
+          },
+        ],
+      }
+
+      mocks.getAllLdFlags.mockResolvedValueOnce({
+        'ai-builder': {
+          enabled: true,
+          config: { chatPromptName: 'chat-v0', version: 'production' },
+        },
+      })
+      mocks.getRestrictedAppKeys.mockReturnValueOnce([])
+      mocks.getPrompt.mockResolvedValueOnce({
+        prompt: 'test prompt',
+        toJSON: vi.fn(),
+      })
+      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
+
+      await executeChatPostHandler(mockReq, mockRes)
+
+      expect(mocks.convertToModelMessages).toHaveBeenCalledWith(
+        expect.any(Array),
+        { ignoreIncompleteToolCalls: true },
+      )
     })
 
     it('should throw error when AI Builder is not enabled', async () => {

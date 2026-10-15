@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
+import type { FinishReason } from 'ai'
 import { DefaultChatTransport } from 'ai'
 
 import { NOT_AUTHORISED } from '@/config/errors'
@@ -80,6 +81,7 @@ export interface Message {
 // Custom message type with metadata
 export type CustomUIMessage = UIMessage<{
   traceId?: string
+  finishReason?: FinishReason
 }>
 
 // Type for the step status data annotation
@@ -277,10 +279,14 @@ export function useChatStream(options: UseChatStreamOptions) {
           if (msg.role !== 'assistant') {
             return true
           }
+          // Tool-only turns stay so the model keeps its own tool-call history
+          // after a step-limit stop.
           return (msg.parts ?? []).some(
             (part) =>
-              part.type === 'text' &&
-              !!(part as { type: string; text?: string }).text?.trim(),
+              part.type.startsWith('tool-') ||
+              part.type === 'dynamic-tool' ||
+              (part.type === 'text' &&
+                !!(part as { type: string; text?: string }).text?.trim()),
           )
         })
 
@@ -572,6 +578,17 @@ export function useChatStream(options: UseChatStreamOptions) {
     }
   }, [aiMessages])
 
+  const hasHitStepLimit = useMemo(() => {
+    if (status !== 'ready') {
+      return false
+    }
+    const lastMessage = aiMessages[aiMessages.length - 1]
+    return (
+      lastMessage?.role === 'assistant' &&
+      lastMessage.metadata?.finishReason === 'tool-calls'
+    )
+  }, [aiMessages, status])
+
   const resetChat = useCallback(() => {
     setMessages([])
     setIsReady(false)
@@ -601,6 +618,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     cancelStream: stop,
     resetChat,
     hasReachedLimit: messages.length >= MAX_MESSAGES,
+    hasHitStepLimit,
     activeStepId,
     stepParametersByStepId,
     parameterLabelsByStepId,
