@@ -167,7 +167,7 @@ describe('transient DB retry idempotency (real DB)', () => {
           }
           return row
         },
-        { initialDelayMs: 1, maxDelayMs: 5 },
+        { initialDelayMs: 1 },
       )
 
       expect(attempts).toBe(2)
