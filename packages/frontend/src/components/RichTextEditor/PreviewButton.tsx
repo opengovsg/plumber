@@ -1,7 +1,6 @@
 import type { TFieldPreviewType } from '@plumber/types'
 
 import {
-  lazy,
   type MouseEvent,
   type ReactNode,
   Suspense,
@@ -13,9 +12,13 @@ import { RiEyeLine } from 'react-icons/ri'
 import { Box, Spinner, Tooltip, useDisclosure } from '@chakra-ui/react'
 import { Editor } from '@tiptap/react'
 
+import { lazyWithReload } from '@/helpers/lazyWithReload'
+
 import { substituteForPreview, type VariableInfoMap } from './utils'
 
-const LazyViewAsEmailModal = lazy(() => import('@/components/ViewAsEmailModal'))
+const LazyViewAsEmailModal = lazyWithReload(
+  () => import('@/components/ViewAsEmailModal'),
+)
 
 interface PreviewerProps {
   isOpen: boolean
@@ -27,7 +30,8 @@ function usePreviewer(previewType: TFieldPreviewType | undefined) {
   const preloadPreviewer = useCallback(() => {
     switch (previewType) {
       case 'email':
-        import('@/components/ViewAsEmailModal')
+        // LazyViewAsEmailModal handles load failures when it renders.
+        import('@/components/ViewAsEmailModal').catch(() => undefined)
         break
     }
   }, [previewType])
