@@ -17,8 +17,6 @@ import path from 'node:path'
 import { parse } from 'dotenv'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { AppConfig } from '@/config/app.js'
-
 // BASE_URL is one of the keys .superset/run.sh exports per worktree, and app.ts
 // reads it without a hardcoded default.
 const KEY = 'BASE_URL'
@@ -30,10 +28,10 @@ const placeholders = parse(
 async function loadBaseUrl(value: string | undefined) {
   vi.stubEnv(KEY, value)
   vi.resetModules()
+  // esModuleInterop double-wraps .default on a value-level dynamic import of a
+  // nodenext CJS module; typeof import(...) models it correctly, so cast through it.
   const { default: appConfig } =
-    (await import('@/config/app.js')) as unknown as {
-      default: AppConfig
-    }
+    (await import('@/config/app.js')) as unknown as typeof import('@/config/app.js')
   return appConfig.baseUrl
 }
 
