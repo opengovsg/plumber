@@ -1,5 +1,5 @@
 import { IGlobalVariable } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'
 import {
@@ -15,28 +15,19 @@ import { getTableOperations } from '@/models/tiles/factory'
 import * as pgTableRowFunctions from '@/models/tiles/pg/table-row-functions'
 import { DatabaseType, TableRowFilter } from '@/models/tiles/types'
 import User from '@/models/user'
+import { createStepQueryChain, spyOnStepQuery } from '@/test/spy-on-step-query'
 import Context from '@/types/express/context'
 
 import tiles from '../..'
 import findSingleRowAction from '../../actions/find-single-row'
 
-const mocks = vi.hoisted(() => ({
-  stepQueryResult: vi.fn().mockResolvedValue({
-    config: {
-      adminOverride: {
-        tileScanLimit: 100,
-      },
+const stepQueryResult = vi.fn().mockResolvedValue({
+  config: {
+    adminOverride: {
+      tileScanLimit: 100,
     },
-  }),
-}))
-
-vi.mock('@/models/step', () => ({
-  default: {
-    query: vi.fn().mockReturnThis(),
-    findById: vi.fn().mockReturnThis(),
-    throwIfNotFound: mocks.stepQueryResult,
   },
-}))
+})
 
 describe.each([['ddb'], ['pg']])(
   'tiles find single row action: %s',
@@ -49,6 +40,14 @@ describe.each([['ddb'], ['pg']])(
     let $: IGlobalVariable
 
     beforeEach(async () => {
+      spyOnStepQuery(
+        createStepQueryChain({
+          findById: vi.fn(() => ({
+            throwIfNotFound: stepQueryResult,
+          })),
+        }),
+      )
+
       context = await generateMockContext()
 
       const mockTable = await generateMockTable({
@@ -102,6 +101,11 @@ describe.each([['ddb'], ['pg']])(
         },
         setActionItem: vi.fn(),
       } as unknown as IGlobalVariable
+    })
+
+    afterEach(() => {
+      vi.clearAllMocks()
+      vi.restoreAllMocks()
     })
 
     it('should allow owners to find single row', async () => {

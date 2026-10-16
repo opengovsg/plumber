@@ -118,7 +118,7 @@
   },
   "devDependencies": {
     "@ai-sdk/provider": "2.0.0",
-    "@testcontainers/postgresql": "^11.14.0",
+    "@opengovsg/testcontainers": "^0.2.0",
     "@types/bcrypt": "^5.0.0",
     "@types/big.js": "6.2.2",
     "@types/bull": "^3.15.8",

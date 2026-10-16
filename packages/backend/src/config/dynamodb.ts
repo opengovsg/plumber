@@ -2,7 +2,10 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb'
 
 import appConfig from './app'
 
-export const tableName = `plumber-${appConfig.appEnv}-tiles`
+const tableSuffix = process.env.DYNAMODB_TABLE_SUFFIX
+export const tableName = tableSuffix
+  ? `plumber-${appConfig.appEnv}-tiles-${tableSuffix}`
+  : `plumber-${appConfig.appEnv}-tiles`
 
 const dynamodbEndpoint = appConfig.isDev
   ? `http://localhost:${process.env.LOCAL_DYNAMODB_PORT ?? 8000}`

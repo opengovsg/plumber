@@ -4,35 +4,21 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
+import * as computeParametersModule from '@/helpers/compute-parameters'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import User from '@/models/user'
+import * as actionQueueModule from '@/queues/action'
+import * as getForEachMetadataModule from '@/services/helpers/get-for-each-metadata'
+import { spyOnLogger } from '@/test/spy-on-logger'
 
 import { processAction } from '../action'
 
-const mocks = vi.hoisted(() => ({
-  computeParameters: vi.fn(),
-  getForEachMetadata: vi.fn(),
-  enqueueActionJob: vi.fn(),
-}))
-
-vi.mock('@/helpers/compute-parameters', () => ({
-  default: mocks.computeParameters,
-}))
-
-vi.mock('@/services/helpers/get-for-each-metadata', () => ({
-  default: mocks.getForEachMetadata,
-}))
-
-vi.mock('@/queues/action', () => ({
-  enqueueActionJob: mocks.enqueueActionJob,
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: { error: vi.fn(), info: vi.fn() },
-}))
+const computeParameters = vi.fn()
+const getForEachMetadata = vi.fn()
+const enqueueActionJob = vi.fn()
 
 describe('processAction - priorExecutionSteps filtering', () => {
   let flow: Flow
@@ -44,7 +30,18 @@ describe('processAction - priorExecutionSteps filtering', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    mocks.computeParameters.mockReturnValue({})
+    computeParameters.mockReturnValue({})
+
+    vi.spyOn(computeParametersModule, 'default').mockImplementation(
+      computeParameters as never,
+    )
+    vi.spyOn(getForEachMetadataModule, 'default').mockImplementation(
+      getForEachMetadata as never,
+    )
+    vi.spyOn(actionQueueModule, 'enqueueActionJob').mockImplementation(
+      enqueueActionJob as never,
+    )
+    spyOnLogger()
 
     const user = await User.query().findOne({ email: 'tester@open.gov.sg' })
 
@@ -144,8 +141,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       stepId: actionBeforeStep.id,
     })
 
-    const capturedSteps: ExecutionStep[] =
-      mocks.computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     expect(capturedIds).toEqual(
@@ -172,8 +168,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       metadata: { iteration: 2 },
     })
 
-    const capturedSteps: ExecutionStep[] =
-      mocks.computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     // action-before and for-each (no iteration) + action1 iteration 2 only
@@ -200,8 +195,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
       metadata: { iteration: 2 },
     })
 
-    const capturedSteps: ExecutionStep[] =
-      mocks.computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     // action2 should see: action-before, for-each, and action1 iter 2 only
@@ -228,10 +222,9 @@ describe('processAction - priorExecutionSteps filtering', () => {
       testRun: true,
     })
 
-    expect(mocks.computeParameters).toHaveBeenCalledTimes(1)
+    expect(computeParameters).toHaveBeenCalledTimes(1)
 
-    const capturedSteps: ExecutionStep[] =
-      mocks.computeParameters.mock.calls[0][1]
+    const capturedSteps: ExecutionStep[] = computeParameters.mock.calls[0][1]
     const capturedIds = capturedSteps.map((s) => s.id).sort()
 
     // without an iteration to scope to, the filter should be skipped and all

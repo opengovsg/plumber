@@ -1,5 +1,5 @@
 import type { ITriggerItem, SubtriggerData } from '@plumber/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createMrfActionStep,
@@ -9,6 +9,7 @@ import {
 } from '@/apps/formsg/__tests__/mrf.mock'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
+import { spyOnLogger } from '@/test/spy-on-logger'
 import type Context from '@/types/express/context'
 
 import {
@@ -16,29 +17,22 @@ import {
   type ProcessSubTriggerOptions,
 } from '../sub-trigger'
 
-const mocks = vi.hoisted(() => ({
-  loggerError: vi.fn(),
-  loggerWarn: vi.fn(),
-  loggerInfo: vi.fn(),
-}))
-
-vi.mock('@/helpers/logger', () => ({
-  default: {
-    error: mocks.loggerError,
-    warn: mocks.loggerWarn,
-    info: mocks.loggerInfo,
-  },
-}))
-
 const FLOW_ID = '00000000-0000-0000-0000-000000000001'
 
 describe('processSubTrigger integration', () => {
   let context: Context
+  let loggerSpies: ReturnType<typeof spyOnLogger>
 
   beforeEach(async () => {
-    vi.resetAllMocks()
+    vi.clearAllMocks()
+    loggerSpies = spyOnLogger()
     context = await generateMockContext()
     await generateMockFlow(context, FLOW_ID)
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   async function createExecution(internalId: string, testRun = false) {
@@ -80,7 +74,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).toBeNull()
-      expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect(loggerSpies.error).toHaveBeenCalledWith(
         expect.stringContaining('not MRF'),
         expect.objectContaining({
           event: 'sub-trigger-subtrigger-data-type-not-mrf',
@@ -97,7 +91,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).toBeNull()
-      expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect(loggerSpies.error).toHaveBeenCalledWith(
         expect.stringContaining('No internalId'),
         expect.objectContaining({
           event: 'sub-trigger-no-internal-id',
@@ -113,7 +107,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).toBeNull()
-      expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect(loggerSpies.warn).toHaveBeenCalledWith(
         expect.stringContaining('No existing execution found'),
         expect.objectContaining({
           event: 'sub-trigger-no-execution',
@@ -144,7 +138,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).toBeNull()
-      expect(mocks.loggerWarn).toHaveBeenCalledWith(
+      expect(loggerSpies.warn).toHaveBeenCalledWith(
         expect.stringContaining('No existing execution found'),
         expect.objectContaining({
           event: 'sub-trigger-no-execution',
@@ -167,7 +161,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).toBeNull()
-      expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect(loggerSpies.error).toHaveBeenCalledWith(
         expect.stringContaining('MRF step not found'),
         expect.objectContaining({
           event: 'sub-trigger-mrf-step-not-found',
@@ -220,7 +214,7 @@ describe('processSubTrigger integration', () => {
       const result = await processSubTrigger(options)
 
       expect(result).toBeNull()
-      expect(mocks.loggerError).toHaveBeenCalledWith(
+      expect(loggerSpies.error).toHaveBeenCalledWith(
         expect.stringContaining('MRF step not found'),
         expect.objectContaining({
           event: 'sub-trigger-mrf-step-not-found',
