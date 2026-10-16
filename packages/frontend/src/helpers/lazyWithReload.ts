@@ -27,7 +27,6 @@ export async function importWithReload<T>(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function lazyWithReload<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ) {
