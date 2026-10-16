@@ -46,21 +46,24 @@ on:
       SLACK_CHANNEL_ID:
         required: true
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 jobs:
   build:
     name: Build and push image to ECR
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout source code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2.2.0
         with:
           role-to-assume: ${{ inputs.cicd-role }}
           role-session-name: github-action-application-deploy
@@ -68,7 +71,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1.7.1
         with:
           mask-password: 'true'
 
@@ -78,18 +81,20 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Build and load image to ECR
         id: build-image
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
         run: |
-          docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
+          docker build . -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
 
       - name: Scan built image with Inspector
-        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@baab69e77b34f244adef1f702d0fd69f2b3bc545 # v1
+        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@baab69e77b34f244adef1f702d0fd69f2b3bc545 # v1.6.0
         id: inspector
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -102,14 +107,18 @@ jobs:
           high_threshold: 10
 
       - name: Display CycloneDX SBOM (JSON)
-        run: cat ${{ steps.inspector.outputs.artifact_sbom }}
+        env:
+          SBOM_PATH: ${{ steps.inspector.outputs.artifact_sbom }}
+        run: cat "${SBOM_PATH}"
 
       - name: Display Inspector vulnerability scan results (JSON)
-        run: cat ${{ steps.inspector.outputs.inspector_scan_results }}
+        env:
+          SCAN_RESULTS_PATH: ${{ steps.inspector.outputs.inspector_scan_results }}
+        run: cat "${SCAN_RESULTS_PATH}"
 
       - name: Upload Scan Results
         id: upload-scan-results
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           path: |
             ${{ steps.inspector.outputs.inspector_scan_results }}
@@ -120,7 +129,7 @@ jobs:
 
       - name: Notify Slack if vulnerability threshold is exceeded
         if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -131,11 +140,8 @@ jobs:
 
       - name: Push image to ECR after scan passes
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: |
-          docker push ${{ steps.ecr-image-uri.outputs.image }}
+          IMAGE: ${{ steps.ecr-image-uri.outputs.image }}
+        run: docker push "${IMAGE}"
 
       - name: (Archival) Construct ECR image URI
         id: ecr-archival-image-uri
@@ -143,26 +149,33 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}-archival
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: (Archival) Build and push image to ECR
         env:
           DOCKER_BUILDKIT: 1
           NPM_TASKFORCESH_TOKEN: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
+          IMAGE: ${{ steps.ecr-archival-image-uri.outputs.image }}
         run: |
-          docker build . -f Dockerfile.archival -t ${{ steps.ecr-archival-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
-          docker push ${{ steps.ecr-archival-image-uri.outputs.image }}
+          docker build . -f Dockerfile.archival -t "${IMAGE}" --build-arg APP_ENV="${INPUTS_ENVIRONMENT}" --secret id=NPM_TASKFORCESH_TOKEN
+          docker push "${IMAGE}"
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout source code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2.2.0
         with:
           role-to-assume: ${{ inputs.cicd-role }}
           role-session-name: github-action-application-deploy
@@ -170,7 +183,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1
+        uses: aws-actions/amazon-ecr-login@5a88a04c91d5c6f97aae0d9be790e64d9b1d47b7 # v1.7.1
         with:
           mask-password: 'true'
 
@@ -180,28 +193,38 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Merge ECS task definition templates
         id: merge-ecs-templates
         run: |
           cp ecs/task-definition.json ecs-task-definition.json
-          echo $(jq --argjson environment "$(jq '.environment' ecs/env.json)" '.containerDefinitions[0].environment += $environment' ecs-task-definition.json) > ecs-task-definition.json
-          echo $(jq --argjson secrets "$(jq '.secrets' ecs/env.json)" '.containerDefinitions[0].secrets += $secrets' ecs-task-definition.json) > ecs-task-definition.json
-          echo $(jq --argjson environment "$(jq '.environment' ecs/env.json)" '.containerDefinitions[1].environment += $environment' ecs-task-definition.json) > ecs-task-definition.json
-          echo $(jq --argjson secrets "$(jq '.secrets' ecs/env.json)" '.containerDefinitions[1].secrets += $secrets' ecs-task-definition.json) > ecs-task-definition.json
           cp ecs/appspec.json appspec.json
+          env_json=$(jq -c '.environment' ecs/env.json)
+          secrets_json=$(jq -c '.secrets' ecs/env.json)
+          jq \
+            --argjson environment "${env_json}" \
+            --argjson secrets "${secrets_json}" \
+            '.containerDefinitions[0].environment += $environment |
+             .containerDefinitions[0].secrets += $secrets |
+             .containerDefinitions[1].environment += $environment |
+             .containerDefinitions[1].secrets += $secrets' \
+            ecs-task-definition.json > ecs-task-definition.json.tmp
+          mv ecs-task-definition.json.tmp ecs-task-definition.json
 
       - name: Replace variables in task definition file
         run: |
-          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-task-definition.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-task-definition.json
-          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' appspec.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' appspec.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-task-definition.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' appspec.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' appspec.json
+        env:
+          INPUTS_AWS_ACCOUNT_ID: ${{ inputs.aws-account-id }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
 
       - name: (Server) Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ecs-task-definition.json
           container-name: server
@@ -209,14 +232,14 @@ jobs:
 
       - name: (Worker) Fill in the new image ID in the Amazon ECS task definition
         id: full-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           container-name: worker
           image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Deploy Amazon ECS task definition to server
-        uses: aws-actions/amazon-ecs-deploy-task-definition@69e7aed9b8acdd75a6c585ac669c33831ab1b9a3 # v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@69e7aed9b8acdd75a6c585ac669c33831ab1b9a3 # v1.5.0
         with:
           task-definition: ${{ steps.full-task-def.outputs.task-definition }}
           cluster: ${{ inputs.ecs-cluster-name }}
@@ -232,23 +255,26 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ inputs.ecr-repository }}-archival
           IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        run: echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: (Archival) Replace variables in task definition
         run: |
           cp ecs/archival-task-definition.json ecs-archival-task-definition.json
-          sed -i 's/<AWS_ACCOUNT_ID>/${{ inputs.aws-account-id }}/g' ecs-archival-task-definition.json
-          sed -i 's/<ENVIRONMENT>/${{ inputs.environment }}/g' ecs-archival-task-definition.json
+          sed -i 's/<AWS_ACCOUNT_ID>/'"${INPUTS_AWS_ACCOUNT_ID}"'/g' ecs-archival-task-definition.json
+          sed -i 's/<ENVIRONMENT>/'"${INPUTS_ENVIRONMENT}"'/g' ecs-archival-task-definition.json
+        env:
+          INPUTS_AWS_ACCOUNT_ID: ${{ inputs.aws-account-id }}
+          INPUTS_ENVIRONMENT: ${{ inputs.environment }}
 
       - name: (Archival) Fill in the new image ID in the Amazon ECS task definition
         id: archival-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ecs-archival-task-definition.json
           container-name: archival
           image: ${{ steps.ecr-archival-image-uri.outputs.image }}
 
       - name: (Archival) Register task definition
-        run: |
-          aws ecs register-task-definition \
-            --cli-input-json file://${{ steps.archival-task-def.outputs.task-definition }}
+        env:
+          TASK_DEF_FILE: ${{ steps.archival-task-def.outputs.task-definition }}
+        run: aws ecs register-task-definition --cli-input-json "file://${TASK_DEF_FILE}"

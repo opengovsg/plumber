@@ -9,6 +9,10 @@ on:
     branches:
       - staging-v2
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     name: Deploy

@@ -9,6 +9,10 @@ on:
     types:
       - released
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     name: Deploy
