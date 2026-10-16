@@ -1,6 +1,7 @@
 import posthog from 'posthog-js'
 
 import appConfig from '@/config/app'
+import { redactPostHogEvent } from '@/helpers/posthog-redaction'
 
 const projectToken = appConfig.posthogProjectToken
 const host = appConfig.posthogHost
@@ -19,6 +20,7 @@ if (projectToken && host) {
     session_recording: {
       sampleRate: 0.1,
     },
+    before_send: redactPostHogEvent,
   })
 }
 
