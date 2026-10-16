@@ -41,6 +41,7 @@ describe('convert date time', () => {
     { toFormat: 'yyyy-LL-dd', expectedResult: '2024-04-01' },
     { toFormat: 'hh:mm a', expectedResult: '12:05 pm' },
     { toFormat: 'hh:mm:ss a', expectedResult: '12:05:10 pm' },
+    { toFormat: 'HH:mm', expectedResult: '12:05' },
     { toFormat: 'dd LLL yyyy hh:mm a', expectedResult: '01 Apr 2024 12:05 pm' },
     {
       toFormat: 'dd LLL yyyy hh:mm:ss a',
@@ -113,6 +114,18 @@ describe('convert date time', () => {
     {
       inputFormat: 'hh:mm:ss a',
       inputValue: '11:45:00 pm',
+      toFormat: 'hh:mm a',
+      expectedResult: '11:45 pm',
+    },
+    {
+      inputFormat: 'hh:mm a',
+      inputValue: '11:45 pm',
+      toFormat: 'HH:mm',
+      expectedResult: '23:45',
+    },
+    {
+      inputFormat: 'HH:mm',
+      inputValue: '23:45',
       toFormat: 'hh:mm a',
       expectedResult: '11:45 pm',
     },
@@ -194,6 +207,19 @@ describe('convert date time', () => {
       inputValue: '9:30 am',
       toFormat: 'hh:mm:ss a',
       expectedResult: '09:30:00 am',
+    },
+    // HH:mm accepts both padded and non-padded hour
+    {
+      inputFormat: 'HH:mm',
+      inputValue: '09:30',
+      toFormat: 'hh:mm a',
+      expectedResult: '09:30 am',
+    },
+    {
+      inputFormat: 'HH:mm',
+      inputValue: '9:30',
+      toFormat: 'HH:mm',
+      expectedResult: '09:30',
     },
     // dd LLL yyyy hh:mm a accepts both padded and non-padded
     {
