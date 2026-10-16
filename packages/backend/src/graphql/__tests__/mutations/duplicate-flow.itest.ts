@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'
@@ -161,5 +162,59 @@ describe('duplicateFlow endStepId remap', () => {
     expect(originalTrigger.config.aiBuilderConfig).toEqual([
       { traceId: 'trace-source', tool: 'create_pipe' },
     ])
+  })
+
+  it('does not copy admin config onto an owner duplicate', async () => {
+    const { flow, steps } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    await steps[0].$query().patch({
+      config: { adminOverride: { customWebhookResponse: 'ok' } },
+    })
+    await flow.$query().patch({
+      config: {
+        archiveDisabled: true,
+        maxQps: 5,
+        isForceClogged: true,
+        errorConfig: {
+          notificationFrequency: 'always',
+          notificationRecipients: [],
+        },
+        rejectIfOverMaxQps: true,
+      },
+    })
+
+    const duplicated = await duplicateFlow(
+      null,
+      { input: { id: flow.id } },
+      context,
+    )
+
+    const copy = await Flow.query().findById(duplicated.id)
+    const [copiedTrigger] = await copiedSteps()
+    expect(copy.config?.archiveDisabled).toBeUndefined()
+    expect(copy.config?.maxQps).toBeUndefined()
+    expect(copy.config?.rejectIfOverMaxQps).toBeUndefined()
+    expect(copy.config?.isForceClogged).toBeUndefined()
+    expect(copiedTrigger.config?.adminOverride).toBeUndefined()
+  })
+
+  it('rejects a user who is not the owner or a collaborator', async () => {
+    const { flow } = await seedFlow([
+      { key: 'newSubmission', appKey: 'formsg', type: 'trigger' },
+    ])
+    const stranger = await User.query().insert({
+      email: `${randomUUID()}@open.gov.sg`,
+    })
+
+    await expect(
+      duplicateFlow(null, { input: { id: flow.id } }, {
+        ...context,
+        currentUser: stranger,
+      } as unknown as Context),
+    ).rejects.toThrow()
+
+    const copy = await Flow.query().where('name', '[COPY] Source Flow').first()
+    expect(copy).toBeUndefined()
   })
 })
