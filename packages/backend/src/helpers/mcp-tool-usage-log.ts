@@ -2,7 +2,7 @@ import logger from '@/helpers/logger'
 
 export type McpToolSource = 'plumber' | 'gitbook'
 
-type McpToolUsageMeta = {
+export type McpToolUsageMeta = {
   source: McpToolSource
   traceId: string
   userId?: string
