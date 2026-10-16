@@ -139,6 +139,9 @@ dump.rdb
 .vscode
 tmp/
 
+# Langfuse eval run reports
+tools/langfuse/out/
+
 # Generated GraphQL
 /**/graphql/__generated__
 

@@ -4,7 +4,9 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "get-prompt": "node ../../scripts/with-op-env.mjs node get-prompt.mjs"
+    "get-prompt": "node ../../scripts/with-op-env.mjs node get-prompt.mjs",
+    "eval-dataset": "node ../../scripts/with-op-env.mjs node eval-dataset.mjs",
+    "test": "node --test lib/improve.test.mjs"
   },
   "author": "",
   "license": "ISC",
