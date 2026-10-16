@@ -2,6 +2,7 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
@@ -68,6 +69,15 @@ describe('Flow worker', () => {
     await flowWorker.waitUntilReady()
   })
 
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.processFlow.mockReset()
+    mocks.processFlow.mockResolvedValue({
+      data: [],
+      error: null,
+    })
+  })
+
   afterEach(async () => {
     await flushQueue(flowQueue, flowWorker)
 
@@ -75,6 +85,7 @@ describe('Flow worker', () => {
     // original state after each test
     await restoreWorker(flowWorker, originalWorkerState)
 
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

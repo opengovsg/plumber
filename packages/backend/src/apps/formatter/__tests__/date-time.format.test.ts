@@ -27,6 +27,7 @@ describe('convert date time', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -53,7 +54,7 @@ describe('convert date time', () => {
       }
       spec.transformData($, '2024-04-01T12:05:10.000+08:00')
 
-      expect(mocks.setActionItem).toBeCalledWith({
+      expect(mocks.setActionItem).toHaveBeenCalledWith({
         raw: { result: expectedResult },
       })
     },
@@ -134,7 +135,7 @@ describe('convert date time', () => {
     }
     spec.transformData($, inputValue)
 
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: expectedResult },
     })
   })
@@ -214,7 +215,7 @@ describe('convert date time', () => {
     }
     spec.transformData($, inputValue)
 
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: expectedResult },
     })
   })
@@ -252,7 +253,7 @@ describe('convert date time', () => {
     }
     spec.transformData($, inputValue)
 
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { result: expectedResult },
     })
   })

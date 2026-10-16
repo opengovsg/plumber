@@ -259,7 +259,7 @@ describe('Condition is true', () => {
           condition,
           text,
         }),
-      ).toThrowError()
+      ).toThrow()
     },
   )
 
@@ -271,8 +271,6 @@ describe('Condition is true', () => {
         condition: 'herp derp',
         text: 11,
       }),
-    ).toThrowError(
-      'Conditional logic block contains an unknown operator: herp derp',
-    )
+    ).toThrow('Conditional logic block contains an unknown operator: herp derp')
   })
 })

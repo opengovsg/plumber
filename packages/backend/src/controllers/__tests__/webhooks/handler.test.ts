@@ -94,13 +94,14 @@ describe('webhook handler', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
   describe('webhook body and query param variables', () => {
     it('should support body variables', async () => {
       await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toBeCalledWith(
+      expect(mocks.processTrigger).toHaveBeenCalledWith(
         // PSA from weeloong, expect.objectContaining does not work for nested objects
         expect.objectContaining({
           triggerItem: expect.objectContaining({ raw: BODY }),
@@ -112,7 +113,7 @@ describe('webhook handler', () => {
       delete request.body
 
       await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toBeCalledWith(
+      expect(mocks.processTrigger).toHaveBeenCalledWith(
         expect.objectContaining({
           triggerItem: expect.objectContaining({
             raw: {
@@ -126,7 +127,7 @@ describe('webhook handler', () => {
     it('should support both query and body param variables', async () => {
       request.query = QUERY_PARAMS
       await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toBeCalledWith(
+      expect(mocks.processTrigger).toHaveBeenCalledWith(
         expect.objectContaining({
           triggerItem: expect.objectContaining({
             raw: {
@@ -146,7 +147,7 @@ describe('webhook handler', () => {
         },
       }
       await webhookHandler(request, mocks.response)
-      expect(mocks.processTrigger).toBeCalledWith(
+      expect(mocks.processTrigger).toHaveBeenCalledWith(
         expect.objectContaining({
           triggerItem: expect.objectContaining({
             raw: {

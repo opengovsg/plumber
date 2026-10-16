@@ -136,6 +136,7 @@ describe('send transactional email', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -156,9 +157,7 @@ describe('send transactional email', () => {
   it('should throw step error for invalid parameters', async () => {
     $.step.parameters.body = ''
     // throw partial step error message
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-      'Empty body',
-    )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow('Empty body')
   })
 
   it.each([
@@ -199,9 +198,7 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(error)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-        stepErrorName,
-      )
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(stepErrorName)
     },
   )
 
@@ -235,7 +232,7 @@ describe('send transactional email', () => {
       } as AxiosError
       const httpError = new HttpError(errorUnknown)
       $.http.post = vi.fn().mockRejectedValueOnce(httpError)
-      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
         postmanResponseData.code,
       )
     },
@@ -303,7 +300,7 @@ describe('send transactional email', () => {
           },
         } as AxiosError),
       )
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
       PartialStepError,
     )
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -369,9 +366,7 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
-      RetriableError,
-    )
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'BLACKLISTED', 'RATE-LIMITED'],
@@ -523,7 +518,7 @@ describe('send transactional email', () => {
       },
     })
     await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-    expect($.http.post).toBeCalledTimes(2)
+    expect($.http.post).toHaveBeenCalledTimes(2)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
@@ -562,7 +557,7 @@ describe('send transactional email', () => {
     })
     $.execution.testRun = false
     await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-    expect($.http.post).toBeCalledTimes(4)
+    expect($.http.post).toHaveBeenCalledTimes(4)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED', 'ACCEPTED'],
@@ -600,7 +595,7 @@ describe('send transactional email', () => {
     })
     $.execution.testRun = true
     await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-    expect($.http.post).toBeCalledTimes(1)
+    expect($.http.post).toHaveBeenCalledTimes(1)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED'],
@@ -625,10 +620,10 @@ describe('send transactional email', () => {
       invalidAttachments: ['file-2.svg'],
       submissionId: 'abc',
     })
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
       PartialStepError,
     )
-    expect($.http.post).toBeCalledTimes(2)
+    expect($.http.post).toHaveBeenCalledTimes(2)
     expect(mocks.sendInvalidAttachmentsEmail).toHaveBeenCalledWith({
       flowName: $.flow.name,
       flowId: $.flow.id,
@@ -658,7 +653,7 @@ describe('send transactional email', () => {
       $.execution.testRun = true
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-      expect($.http.post).toBeCalledTimes(1)
+      expect($.http.post).toHaveBeenCalledTimes(1)
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
           status: ['ACCEPTED'],
@@ -700,7 +695,7 @@ describe('send transactional email', () => {
       $.execution.testRun = true
 
       await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-      expect($.http.post).toBeCalledTimes(1)
+      expect($.http.post).toHaveBeenCalledTimes(1)
       expect($.setActionItem).toHaveBeenCalledWith({
         raw: {
           status: ['ACCEPTED'],
@@ -755,7 +750,7 @@ describe('send transactional email', () => {
         await expect(
           sendTransactionalEmail.testRun($, metadata),
         ).resolves.not.toThrow()
-        expect($.http.post).toBeCalledTimes(1)
+        expect($.http.post).toHaveBeenCalledTimes(1)
         expect($.setActionItem).toHaveBeenCalledWith({
           raw: {
             status: ['ACCEPTED'],
@@ -809,10 +804,10 @@ describe('send transactional email', () => {
         } as AxiosError),
       )
 
-    await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+    await expect(sendTransactionalEmail.run($)).rejects.toThrow(
       PartialStepError,
     )
-    expect($.http.post).toBeCalledTimes(2)
+    expect($.http.post).toHaveBeenCalledTimes(2)
     expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         status: ['ACCEPTED', 'BLACKLISTED'],
@@ -978,7 +973,7 @@ describe('send transactional email', () => {
         submissionId: null,
       })
 
-      await expect(sendTransactionalEmail.run($)).rejects.toThrowError(
+      await expect(sendTransactionalEmail.run($)).rejects.toThrow(
         'Total attachment size exceeded',
       )
       // The size guard runs before the SES API call.
