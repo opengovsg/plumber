@@ -46,6 +46,7 @@ const toLenientFormatMap: Record<string, string> = {
   'yyyy-LL-dd': 'yyyy-L-d',
   'hh:mm a': 'h:mm a',
   'hh:mm:ss a': 'h:mm:ss a',
+  'HH:mm': 'H:mm',
   'dd LLL yyyy hh:mm a': 'd LLL yyyy h:mm a',
   'dd LLL yyyy hh:mm:ss a': 'd LLL yyyy h:mm:ss a',
 }
