@@ -2,10 +2,13 @@ import type { IGlobalVariable } from '@plumber/types'
 
 import type {
   AddressAnswerV4,
+  AnswerV4,
   AttachmentAnswerV4,
   CheckboxAnswerV4,
   ChildrenAnswerV4,
   FieldResponsesV4,
+  FieldResponseV4,
+  FieldType,
   FormField,
   RadioAnswerV4,
   SignatureAnswerV4,
@@ -17,10 +20,135 @@ import { DateTime } from 'luxon'
 
 import logger from '@/helpers/logger'
 
-import type { FormSchemaField } from '../../common/types'
+import { type FormSchemaField, mrfWorkflowDataSchema } from '../../common/types'
 import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema'
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
+
+// v4 never sends these. They have no answer to restore.
+const NON_ANSWER_FIELD_TYPES = new Set(['statement', 'image', 'section'])
+
+const EMPTY_ANSWERS: Partial<Record<FieldType, AnswerV4>> = {
+  checkbox: { value: [] },
+  table: {},
+  signature: { type: 'draw', value: [] },
+  children: {},
+  radiobutton: { value: '', isOthersInput: false },
+  attachment: { value: '', hasBeenScanned: false },
+  // Blank subfields must be '' so address variables do not become undefined.
+  address: {
+    postalCode: { value: '' },
+    blockNumber: { value: '' },
+    streetName: { value: '' },
+    buildingName: { value: '' },
+    levelNumber: { value: '' },
+    unitNumber: { value: '' },
+  },
+}
+
+function makeEmptyResponse(field: FormSchemaField): FieldResponseV4 {
+  const fieldType = field.fieldType as FieldType
+  return {
+    fieldType,
+    question: field.title,
+    provenance: {},
+    answer: EMPTY_ANSWERS[fieldType] ?? { value: '' },
+  }
+}
+
+function accumulatedFieldIds(
+  workflow: Array<{ edit: string[] }>,
+  workflowStep: number,
+): Set<string> {
+  const lastIndex = Math.min(Math.max(workflowStep, 0), workflow.length - 1)
+  const fieldIds = new Set<string>()
+  for (let index = 0; index <= lastIndex; index++) {
+    for (const fieldId of workflow[index].edit) {
+      fieldIds.add(fieldId)
+    }
+  }
+  return fieldIds
+}
+
+function readSubmissionWorkflow(
+  $: IGlobalVariable,
+): { workflow: Array<{ edit: string[] }>; workflowStep: number } | null {
+  const workflowContent = $.request?.body?.data?.workflowContent
+  const parsed = mrfWorkflowDataSchema.safeParse(workflowContent?.workflow)
+  if (!workflowContent || !parsed.success || parsed.data.length === 0) {
+    return null
+  }
+  const workflowStep = workflowContent.workflowStep
+  return {
+    workflow: parsed.data,
+    workflowStep: typeof workflowStep === 'number' ? workflowStep : 0,
+  }
+}
+
+/**
+ * Puts back optional fields that v4 left out of the payload.
+ * Pipes expect those variables to exist.
+ *
+ * `allowedFieldIds` limits an MRF delivery to fields reached by its step.
+ * Null means every answer field in the schema.
+ */
+function withOmittedFields(
+  responses: FieldResponsesV4,
+  schemaFields: FormSchemaField[],
+  allowedFieldIds: Set<string> | null,
+): FieldResponsesV4 {
+  if (schemaFields.length === 0) {
+    return responses
+  }
+
+  const schemaFieldIds = new Set(schemaFields.map((field) => field._id))
+  const answerSchemaIds = new Set(
+    schemaFields
+      .filter((field) => !NON_ANSWER_FIELD_TYPES.has(field.fieldType))
+      .map((field) => field._id),
+  )
+  const unknownAfter = new Map<string, Array<[string, FieldResponseV4]>>()
+  const trailingUnknown: Array<[string, FieldResponseV4]> = []
+  let previousKnownId: string | null = null
+  for (const [id, response] of Object.entries(responses)) {
+    if (answerSchemaIds.has(id)) {
+      previousKnownId = id
+      continue
+    }
+    if (schemaFieldIds.has(id)) {
+      continue
+    }
+    if (!previousKnownId) {
+      trailingUnknown.push([id, response])
+      continue
+    }
+    const pending = unknownAfter.get(previousKnownId) ?? []
+    pending.push([id, response])
+    unknownAfter.set(previousKnownId, pending)
+  }
+
+  const filled: FieldResponsesV4 = {}
+  for (const field of schemaFields) {
+    if (NON_ANSWER_FIELD_TYPES.has(field.fieldType)) {
+      continue
+    }
+    const present = responses[field._id]
+    if (!present && allowedFieldIds && !allowedFieldIds.has(field._id)) {
+      continue
+    }
+    filled[field._id] = present ?? makeEmptyResponse(field)
+    for (const [id, response] of unknownAfter.get(field._id) ?? []) {
+      filled[id] = response
+    }
+  }
+
+  for (const [id, response] of trailingUnknown) {
+    if (!schemaFieldIds.has(id)) {
+      filled[id] = response
+    }
+  }
+  return filled
+}
 
 export async function processResponsesV4(
   $: IGlobalVariable,
@@ -28,10 +156,27 @@ export async function processResponsesV4(
   responses: FieldResponsesV4,
 ): Promise<FormField[]> {
   const formSchemaFields: Record<string, FormSchemaField> = {}
+  let schemaFieldList: FormSchemaField[] = []
+  let allowedFieldIds: Set<string> | null = null
   try {
     const formSchema = await fetchFormSchema($, formId)
     if (formSchema?.form?.form_fields) {
-      for (const field of formSchema.form.form_fields) {
+      schemaFieldList = formSchema.form.form_fields
+      const schemaWorkflow = formSchema.form.workflow ?? []
+      // No workflow means the form is single-respondent, even in that mode.
+      const configuredMrf =
+        formSchema.form.responseMode === 'multirespondent' &&
+        schemaWorkflow.length > 0
+      if (configuredMrf) {
+        const submissionWorkflow = readSubmissionWorkflow($)
+        allowedFieldIds = submissionWorkflow
+          ? accumulatedFieldIds(
+              submissionWorkflow.workflow,
+              submissionWorkflow.workflowStep,
+            )
+          : new Set()
+      }
+      for (const field of schemaFieldList) {
         formSchemaFields[field._id] = field
       }
     }
@@ -44,7 +189,12 @@ export async function processResponsesV4(
   }
   const mappedResponses: FormField[] = []
   let questionNumber = 0
-  for (const [key, value] of Object.entries(responses)) {
+  const responsesWithOmittedFields = withOmittedFields(
+    responses,
+    schemaFieldList,
+    allowedFieldIds,
+  )
+  for (const [key, value] of Object.entries(responsesWithOmittedFields)) {
     questionNumber++
     // we fallback to Question # if the question is not found in the form schema
     let question = formSchemaFields[key]?.title ?? `Question ${questionNumber}`
@@ -160,6 +310,16 @@ export async function processResponsesV4(
       // Currently, v4 responses return the date as DD/MM/YYYY (e.g. 29/03/2026)
       // We need to convert it to the standard FormSG date format (e.g. 29 Mar 2026)
       const originalDateString = (value.answer as StringAnswerV4).value
+      // Formatting an empty date string yields Invalid DateTime.
+      if (!originalDateString) {
+        mappedResponses.push({
+          _id: key,
+          fieldType: value.fieldType,
+          question,
+          answer: '',
+        })
+        continue
+      }
       const originalDate = DateTime.fromFormat(originalDateString, 'dd/MM/yyyy')
       const convertedDateString = originalDate.toPlumberFormat('dd MMM yyyy')
       mappedResponses.push({
