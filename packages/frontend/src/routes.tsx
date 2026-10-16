@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { createRoutesFromElements, Route } from 'react-router-dom'
 
 import ErrorPage, {
@@ -9,6 +9,7 @@ import ErrorPage, {
 import Layout from '@/components/Layout'
 import PublicLayout from '@/components/PublicLayout'
 import * as URLS from '@/config/urls'
+import { lazyWithReload } from '@/helpers/lazyWithReload'
 import Application from '@/pages/Application'
 import Applications from '@/pages/Applications'
 import EditorRoutes from '@/pages/Editor/routes'
@@ -29,8 +30,8 @@ import { InvalidTileLink } from '@/pages/UnauthorizedTile'
 
 import UseCasesRoutes from './pages/Landing/UseCasesPages/routes'
 
-const Landing = lazy(() => import('@/pages/Landing'))
-const Tile = lazy(() => import('@/pages/Tile'))
+const Landing = lazyWithReload(() => import('@/pages/Landing'))
+const Tile = lazyWithReload(() => import('@/pages/Tile'))
 
 export default createRoutesFromElements(
   <Route
