@@ -4,8 +4,8 @@
   "scripts": {
     "setup": "docker-compose -f docker-compose.dev.yml up -d",
     "teardown": "docker-compose -f docker-compose.dev.yml down",
-    "dev": "pnpm run build:watch --exec \"ts-node --swc src/server.ts\"",
-    "worker": "pnpm run build:watch --exec \"ts-node --swc src/worker.ts\"",
+    "dev": "pnpm run build:watch --exec \"tsx src/server.ts\"",
+    "worker": "pnpm run build:watch --exec \"tsx src/worker.ts\"",
     "prebuild": "rimraf ./dist",
     "build": "tsc && pnpm run copy-statics && tsc-alias",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
@@ -25,11 +25,11 @@
     "readme:db:rollback": "This command rolls back the last migration BATCH, which might include more than one migration.",
     "db:rollback": "pnpm run db migrate:rollback",
     "db:migrate": "pnpm run db migrate:latest",
-    "postsetup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "postsetup": "tsx src/db/dynamodb_seeds/create_table.ts",
     "readme:dynamodb:seed": "echo 'Seeds the specified table with 10k rows, use with <YOUR_TABLE_ID>'",
-    "dynamodb:seed": "ts-node src/db/dynamodb_seeds/seed_rows.ts",
+    "dynamodb:seed": "tsx src/db/dynamodb_seeds/seed_rows.ts",
     "readme:dynamodb:setup": "echo 'Run this function to create the required tile table in dynamodb locally.'",
-    "dynamodb:setup": "ts-node src/db/dynamodb_seeds/create_table.ts",
+    "dynamodb:setup": "tsx src/db/dynamodb_seeds/create_table.ts",
     "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
@@ -118,7 +118,6 @@
   },
   "devDependencies": {
     "@ai-sdk/provider": "2.0.0",
-    "@swc/core": "^1.13.5",
     "@testcontainers/postgresql": "^11.14.0",
     "@types/bcrypt": "^5.0.0",
     "@types/big.js": "6.2.2",
@@ -126,7 +125,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.12",
     "@types/crypto-js": "^4.0.2",
-    "@types/express": "^5.0.5",
+    "@types/express": "^4.17.21",
     "@types/http-errors": "^1.8.1",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/lodash": "^4.14.182",
@@ -143,8 +142,7 @@
     "ioredis-mock": "8.13.1",
     "nodemon": "^3.1.14",
     "testcontainers": "^11.14.0",
-    "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.23.12",
     "type-fest": "4.10.3"
   },
   "version": "1.96.1"

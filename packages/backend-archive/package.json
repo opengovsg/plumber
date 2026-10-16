@@ -12,10 +12,10 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "typecheck": "tsc --noEmit",
-    "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
-    "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
-    "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
-    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
+    "archive:backfill": "tsx src/scripts/archive-executions.ts",
+    "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival tsx src/scripts/archive-executions.ts",
+    "archive:rehydrate": "tsx src/scripts/rehydrate-execution.ts",
+    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival tsx src/scripts/rehydrate-execution.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "catalog:",
@@ -29,14 +29,12 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@swc/core": "^1.13.5",
     "@types/luxon": "^2.4.0",
     "@types/node": "22.18.0",
     "@types/pg": "^8.6.1",
     "nodemon": "^3.1.14",
     "rimraf": "^4.4.1",
-    "ts-node": "^10.9.1",
-    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.23.12",
     "typescript": "catalog:",
     "vitest": "^3.2.6"
   }
