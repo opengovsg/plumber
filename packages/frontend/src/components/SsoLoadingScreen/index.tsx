@@ -1,5 +1,5 @@
-import { BsArrowRight } from 'react-icons/bs'
 import { Flex, Icon, Image, VStack } from '@chakra-ui/react'
+import { BsArrowRight } from 'react-icons/bs'
 
 import mainLogo from '@/assets/logo.svg'
 // Inline as base64: this page loads right after an SSO redirect, before the

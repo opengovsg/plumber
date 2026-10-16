@@ -1,5 +1,6 @@
-import express, { Application } from 'express'
 import path from 'node:path'
+
+import express, { Application } from 'express'
 
 import apps from '@/apps'
 

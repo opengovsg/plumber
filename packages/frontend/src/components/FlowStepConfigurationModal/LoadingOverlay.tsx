@@ -1,5 +1,5 @@
-import { useContext } from 'react'
 import { Box, Spinner } from '@chakra-ui/react'
+import { useContext } from 'react'
 
 import { useIfThenV1Initializer } from '@/helpers/toolbox'
 

@@ -1,5 +1,4 @@
 import { IGlobalVariable, IStep } from '@plumber/types'
-
 import get from 'lodash.get'
 import { raw, Transaction } from 'objection'
 

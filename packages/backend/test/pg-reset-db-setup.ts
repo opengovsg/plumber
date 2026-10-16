@@ -1,9 +1,9 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 import '../src/config/orm'
-
 import { readdirSync } from 'fs'
-import knex, { Knex } from 'knex'
 import { join } from 'path'
+
+import knex, { Knex } from 'knex'
 import { afterEach, beforeEach } from 'vitest'
 
 import config from '../knexfile'

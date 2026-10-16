@@ -1,5 +1,4 @@
 import { IStep } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from '@/models/app'

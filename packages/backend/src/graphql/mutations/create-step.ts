@@ -1,5 +1,4 @@
 import { IStepConfig } from '@plumber/types'
-
 import { raw } from 'objection'
 
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'

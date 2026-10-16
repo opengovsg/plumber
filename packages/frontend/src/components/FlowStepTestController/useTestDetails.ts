@@ -42,8 +42,8 @@ export function useTestDetails(
   const lastErrorDetails = currentTestExecutionStep?.errorDetails
 
   const testVariables = currentTestExecutionStep
-    ? extractVariables([currentTestExecutionStep], undefined, allApps)[0]
-        ?.output ?? []
+    ? (extractVariables([currentTestExecutionStep], undefined, allApps)[0]
+        ?.output ?? [])
     : null
 
   return {

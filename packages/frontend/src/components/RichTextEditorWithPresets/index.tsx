@@ -1,9 +1,8 @@
-import type { IJSONValue, IPreset, TRteMenuOption } from '@plumber/types'
-
-import { useContext, useMemo, useState } from 'react'
-import { useFormContext } from 'react-hook-form'
 import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { FormLabel } from '@opengovsg/design-system-react'
+import type { IJSONValue, IPreset, TRteMenuOption } from '@plumber/types'
+import { useContext, useMemo, useState } from 'react'
+import { useFormContext } from 'react-hook-form'
 
 import RichTextEditor from '@/components/RichTextEditor'
 import { EditorContext } from '@/contexts/Editor'

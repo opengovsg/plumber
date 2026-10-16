@@ -15,17 +15,17 @@ from.
 
 ### Failure modes (agreed during grilling)
 
-| # | Failure mode | Loud or silent | Severity → signal | Detected by |
-| --- | --- | --- | --- | --- |
-| 1 | \<what goes wrong\> | loud (throws) / silent (wrong-but-quiet) | page / ticket / dashboard-only | monitor #N / existing signal / explicitly not monitored |
+| #   | Failure mode        | Loud or silent                           | Severity → signal              | Detected by                                             |
+| --- | ------------------- | ---------------------------------------- | ------------------------------ | ------------------------------------------------------- |
+| 1   | \<what goes wrong\> | loud (throws) / silent (wrong-but-quiet) | page / ticket / dashboard-only | monitor #N / existing signal / explicitly not monitored |
 
 Include the failure modes the author explicitly ruled out, marked
 "not monitored (agreed)" — the decision should be visible.
 
 ### Existing signals found (code-derived)
 
-| Signal | Kind | Emitted at | Status |
-| --- | --- | --- | --- |
+| Signal                                                   | Kind                | Emitted at                                                   | Status                                                   |
+| -------------------------------------------------------- | ------------------- | ------------------------------------------------------------ | -------------------------------------------------------- |
 | `workers.action` span (`trace.workers.action.*` metrics) | span / trace metric | `packages/backend/src/workers/helpers/make-action-worker.ts` | verified in Datadog / unverified — confirm it is flowing |
 
 With no Datadog MCP connected, every row is "unverified (code-derived)" — a
@@ -48,10 +48,10 @@ failure modes are detectable from existing signals."
 
 ### Proposed monitors
 
-| # | Monitor | Type | Failure mode | Severity | Needs first |
-| --- | --- | --- | --- | --- | --- |
-| 1 | `[Plumber] <feature>: <condition>` | query alert | #1 | ticket (P3) | — |
-| 2 | `[Plumber] <feature>: <condition>` | trace-analytics alert | #2 | page (P2) | retention filter indexing `workers.action` spans; instrumentation change 2 |
+| #   | Monitor                            | Type                  | Failure mode | Severity    | Needs first                                                                |
+| --- | ---------------------------------- | --------------------- | ------------ | ----------- | -------------------------------------------------------------------------- |
+| 1   | `[Plumber] <feature>: <condition>` | query alert           | #1           | ticket (P3) | —                                                                          |
+| 2   | `[Plumber] <feature>: <condition>` | trace-analytics alert | #2           | page (P2)   | retention filter indexing `workers.action` spans; instrumentation change 2 |
 
 Then one fenced `json` block per monitor (Monitor API shape, per
 [references/monitor-types.md](../references/monitor-types.md)), in the same

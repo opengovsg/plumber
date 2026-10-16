@@ -1,5 +1,4 @@
 import type { IGlobalVariable } from '@plumber/types'
-
 import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible'
 
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'

@@ -1,6 +1,6 @@
+import { Box, Flex, Link, Text } from '@chakra-ui/react'
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Box, Flex, Link, Text } from '@chakra-ui/react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import * as URLS from '@/config/urls'

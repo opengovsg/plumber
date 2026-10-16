@@ -6,7 +6,6 @@ import {
   IRequest,
   ITriggerItem,
 } from '@plumber/types'
-
 import { isEqual } from 'lodash'
 
 import appConfig from '@/config/app'

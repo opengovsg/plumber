@@ -1,7 +1,6 @@
 // generate a context for the flow step configuration modal
 
 import { IAction, IApp, IStep, ITrigger } from '@plumber/types'
-
 import { createContext, useCallback, useState } from 'react'
 
 import type { AnchorPlacement } from './helpers/anchor-placement'

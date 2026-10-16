@@ -1,8 +1,7 @@
-import { type IAction, IApp, ITrigger } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
 import { Box, Flex, ModalBody, ModalHeader, Text } from '@chakra-ui/react'
 import { ModalCloseButton } from '@opengovsg/design-system-react'
+import { type IAction, IApp, ITrigger } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
 
 import { getAppActionFlag, getAppTriggerFlag } from '@/config/flags'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
@@ -10,7 +9,6 @@ import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import BackButton from '../BackButton'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
-
 import FeedbackFooter from './FeedbackFooter'
 import NewBadge from './NewBadge'
 
@@ -34,8 +32,8 @@ export default function ChooseEvent(props: ChooseEventProps): JSX.Element {
     }
 
     const triggersOrActions: Array<ITrigger | IAction> = isTrigger
-      ? selectedApp.triggers ?? []
-      : selectedApp.actions ?? []
+      ? (selectedApp.triggers ?? [])
+      : (selectedApp.actions ?? [])
     return triggersOrActions?.filter((triggerOrAction: ITrigger | IAction) => {
       // Filter away triggers or actions hidden behind feature flags
       if (!selectedApp.key) {

@@ -7,7 +7,6 @@ import {
   SG_TIMEZONE,
   type supportedFormats,
 } from '../date-time/common/date-time-format'
-
 import type { compareOpEnum, gapOpEnum, unitEnum } from './fields'
 
 type SupportedFormat = z.infer<typeof supportedFormats>

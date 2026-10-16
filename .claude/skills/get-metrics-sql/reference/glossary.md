@@ -10,7 +10,7 @@ These are two unrelated concepts that happen to share the word "active":
 
 - **Published pipe**: `flows.active = true`. A flag the user sets when they publish a pipe. See
   [flow.ts](../../../../packages/backend/src/models/flow.ts).
-- **Active pipe**: a pipe with ≥1 *flowed* execution in a given period (see "Flow (verb)" below). Not
+- **Active pipe**: a pipe with ≥1 _flowed_ execution in a given period (see "Flow (verb)" below). Not
   a column — a computed, time-scoped property derived from `executions`. Deleted pipes count too.
   See [gotchas.md](gotchas.md)'s activity-metrics exception.
 
@@ -59,7 +59,7 @@ N-quarter retention means the target quarter is **N quarters after** the baselin
 - 3-quarter retention: Q1 → Q4
 - 4-quarter retention: Q1 → Q5
 
-This is a **gap**, not a span — "3-quarter retention" is *not* "a 3-quarter-wide window" (which would
+This is a **gap**, not a span — "3-quarter retention" is _not_ "a 3-quarter-wide window" (which would
 read as Q1→Q3); it's "the quarter 3 quarters after baseline" (Q1→Q4). See
 [recipes.md](recipes.md) for the full worked retention query using this convention.
 

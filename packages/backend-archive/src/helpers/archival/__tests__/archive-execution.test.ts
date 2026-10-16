@@ -76,8 +76,8 @@ function makeMockKnex() {
         table === 'execution_steps'
           ? deleteStepsFn
           : table === 'executions'
-          ? deleteExecFn
-          : vi.fn().mockResolvedValue(0),
+            ? deleteExecFn
+            : vi.fn().mockResolvedValue(0),
       increment:
         table === 'flows' ? incrementFlowsFn : vi.fn().mockResolvedValue(0),
     }

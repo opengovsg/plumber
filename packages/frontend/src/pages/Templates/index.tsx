@@ -1,10 +1,9 @@
-import type { ITemplate } from '@plumber/types'
-
-import { useContext, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { Box, Flex, Grid, Text } from '@chakra-ui/react'
 import { Link } from '@opengovsg/design-system-react'
+import type { ITemplate } from '@plumber/types'
+import { useContext, useState } from 'react'
+import { useParams } from 'react-router-dom'
 
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
@@ -16,7 +15,6 @@ import { useApps } from '@/hooks/useApps'
 import { useTemplateSearch } from '@/hooks/useTemplateSearch'
 
 import TemplateModal from '../Template'
-
 import TemplateTile from './components/TemplateTile'
 import TemplateTileSkeleton from './components/TemplateTileSkeleton'
 

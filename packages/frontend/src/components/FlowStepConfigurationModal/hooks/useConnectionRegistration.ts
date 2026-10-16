@@ -1,8 +1,7 @@
+import { useLazyQuery, useMutation } from '@apollo/client'
 // packages/frontend/src/hooks/useConnectionVerification.ts
 import type { ITestConnectionOutput } from '@plumber/types'
-
 import { useCallback, useContext } from 'react'
-import { useLazyQuery, useMutation } from '@apollo/client'
 
 import { EditorContext } from '@/contexts/Editor'
 import { REGISTER_CONNECTION } from '@/graphql/mutations/register-connection'

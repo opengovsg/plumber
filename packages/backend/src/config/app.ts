@@ -1,11 +1,11 @@
 import '@/types/luxon-extensions'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { URL } from 'node:url'
 
 import type { AwsCredentialIdentity } from '@aws-sdk/types'
 import { config } from 'dotenv'
 import { Settings as LuxonSettings } from 'luxon'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { URL } from 'node:url'
 import { z } from 'zod'
 
 // Placeholders backstop missing keys. Local dev gets its real values from 1Password,

@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -39,7 +38,6 @@ vi.mock('@/helpers/logger', () => ({
   },
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import action from '../../actions/mrf-submission/index'
 
 function createMockGlobalVariable(

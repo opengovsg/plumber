@@ -22,16 +22,19 @@ async function getDataOutMetadata(
     ? rawResponseFields.map((f) => sanitizeOutputFieldName(f.fieldName))
     : Object.keys(dataOut)
 
-  const metadata = orderedKeys.reduce((acc, key, index) => {
-    if (key in dataOut) {
-      acc[key] = {
-        label: key.replace(/_/g, ' '),
-        type: 'ai_response',
-        order: index,
+  const metadata = orderedKeys.reduce(
+    (acc, key, index) => {
+      if (key in dataOut) {
+        acc[key] = {
+          label: key.replace(/_/g, ' '),
+          type: 'ai_response',
+          order: index,
+        }
       }
-    }
-    return acc
-  }, {} as Record<string, IDataOutMetadatum>)
+      return acc
+    },
+    {} as Record<string, IDataOutMetadatum>,
+  )
 
   return metadata
 }

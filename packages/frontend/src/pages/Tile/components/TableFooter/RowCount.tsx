@@ -1,6 +1,6 @@
-import { BiErrorCircle } from 'react-icons/bi'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { Spinner } from '@opengovsg/design-system-react'
+import { BiErrorCircle } from 'react-icons/bi'
 
 import { BORDER_COLOR } from '../../constants'
 import { useTableContext } from '../../contexts/TableContext'

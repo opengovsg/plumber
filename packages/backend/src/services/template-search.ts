@@ -1,5 +1,4 @@
 import type { ITemplate } from '@plumber/types'
-
 import { z } from 'zod'
 
 import appConfig from '@/config/app'

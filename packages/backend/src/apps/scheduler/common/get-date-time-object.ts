@@ -1,5 +1,4 @@
 import { IJSONObject } from '@plumber/types'
-
 import { DateTime } from 'luxon'
 
 export default function getDateTimeObjectRepresentation(dateTime: DateTime) {

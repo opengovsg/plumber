@@ -1,5 +1,6 @@
-import { QueuePro } from '@taskforcesh/bullmq-pro'
 import process from 'process'
+
+import { QueuePro } from '@taskforcesh/bullmq-pro'
 
 import { createRedisClient } from '@/config/redis'
 import logger from '@/helpers/logger'

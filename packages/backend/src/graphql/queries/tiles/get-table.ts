@@ -6,7 +6,6 @@ import InvalidTileViewTokenError from '@/errors/invalid-tile-view-password'
 import logger from '@/helpers/logger'
 
 import type { QueryResolvers } from '../../__generated__/types.generated'
-
 import { fetchTableWithViewOnlyCheck } from './view-only.helper'
 
 const getTable: QueryResolvers['getTable'] = async (

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { useToast } from '@opengovsg/design-system-react'
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import SsoLoadingScreen from '@/components/SsoLoadingScreen'
 import * as URLS from '@/config/urls'

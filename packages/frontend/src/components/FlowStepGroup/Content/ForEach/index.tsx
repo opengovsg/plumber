@@ -1,9 +1,8 @@
-import { IStep } from '@plumber/types'
-
-import { useCallback, useContext, useMemo } from 'react'
-import { BiTrash } from 'react-icons/bi'
 import { Flex } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { useCallback, useContext, useMemo } from 'react'
+import { BiTrash } from 'react-icons/bi'
 
 import {
   buildStepsList,

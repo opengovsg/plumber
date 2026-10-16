@@ -84,31 +84,31 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
     PostHog AI
 
     ```jsx
-    import { StrictMode } from "react";
-    import ReactDOM from "react-dom/client";
-    import { BrowserRouter, Routes, Route } from "react-router";
-    import posthog from 'posthog-js';
+    import { StrictMode } from 'react'
+    import ReactDOM from 'react-dom/client'
+    import { BrowserRouter, Routes, Route } from 'react-router'
+    import posthog from 'posthog-js'
     import { PostHogErrorBoundary, PostHogProvider } from '@posthog/react'
     // Initialize PostHog
     posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
       defaults: '2026-05-30',
-    });
-    const root = document.getElementById("root");
+    })
+    const root = document.getElementById('root')
     ReactDOM.createRoot(root).render(
       <StrictMode>
         {/* Pass PostHog client through PostHogProvider */}
         <PostHogProvider client={posthog}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Root />}>
-            {/* ... Your routes ... */}
-            </Route>
-          </Routes>
-        </BrowserRouter>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Root />}>
+                {/* ... Your routes ... */}
+              </Route>
+            </Routes>
+          </BrowserRouter>
         </PostHogProvider>
       </StrictMode>,
-    );
+    )
     ```
 
     This initializes PostHog and passes it to your app through the `PostHogProvider` context.
@@ -138,7 +138,7 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
 
     Checkpoint
 
-    *Confirm that you can capture client-side events and see them in your PostHog project*
+    _Confirm that you can capture client-side events and see them in your PostHog project_
 
     At this point, you should be able to capture client-side events and see them in your PostHog project. This includes basic events like page views and button clicks that are [autocaptured](/docs/product-analytics/autocapture.md).
 
@@ -152,7 +152,11 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
     import { usePostHog } from '@posthog/react'
     function App() {
       const posthog = usePostHog()
-      return <button onClick={() => posthog?.capture('button_clicked')}>Click me</button>
+      return (
+        <button onClick={() => posthog?.capture('button_clicked')}>
+          Click me
+        </button>
+      )
     }
     ```
 
@@ -174,7 +178,11 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
     import { usePostHog } from '@posthog/react'
     function App() {
       const posthog = usePostHog()
-      return <button onClick={() => posthog?.capture('button_clicked')}>Click me</button>
+      return (
+        <button onClick={() => posthog?.capture('button_clicked')}>
+          Click me
+        </button>
+      )
     }
     ```
 
@@ -236,18 +244,18 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
     ReactDOM.createRoot(root).render(
       <StrictMode>
         <PostHogProvider client={posthog}>
-        <PostHogErrorBoundary>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Root />}>
-              {/* ... Your routes ... */}
-            </Route>
-          </Routes>
-        </BrowserRouter>
-        </PostHogErrorBoundary>
+          <PostHogErrorBoundary>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Root />}>
+                  {/* ... Your routes ... */}
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </PostHogErrorBoundary>
         </PostHogProvider>
       </StrictMode>,
-    );
+    )
     ```
 
     This automatically captures exceptions thrown in your React Router app using the `posthog.captureException()` method.
@@ -271,11 +279,11 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
     ```jsx
     import { PostHogCaptureOnViewed } from '@posthog/react'
     function App() {
-        return (
-            <PostHogCaptureOnViewed name="hero-banner">
-                <div>Your important content here</div>
-            </PostHogCaptureOnViewed>
-        )
+      return (
+        <PostHogCaptureOnViewed name="hero-banner">
+          <div>Your important content here</div>
+        </PostHogCaptureOnViewed>
+      )
     }
     ```
 
@@ -289,14 +297,14 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
 
     ```jsx
     <PostHogCaptureOnViewed
-        name="product-card"
-        properties={{
-            product_id: '123',
-            category: 'electronics',
-            price: 299.99
-        }}
+      name="product-card"
+      properties={{
+        product_id: '123',
+        category: 'electronics',
+        price: 299.99,
+      }}
     >
-        <ProductCard />
+      <ProductCard />
     </PostHogCaptureOnViewed>
     ```
 
@@ -310,13 +318,13 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
 
     ```jsx
     <PostHogCaptureOnViewed
-        name="product-gallery"
-        properties={{ gallery_type: 'featured' }}
-        trackAllChildren
+      name="product-gallery"
+      properties={{ gallery_type: 'featured' }}
+      trackAllChildren
     >
-        <ProductCard id="1" />
-        <ProductCard id="2" />
-        <ProductCard id="3" />
+      <ProductCard id="1" />
+      <ProductCard id="2" />
+      <ProductCard id="3" />
     </PostHogCaptureOnViewed>
     ```
 
@@ -332,13 +340,13 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
 
     ```jsx
     <PostHogCaptureOnViewed
-        name="footer"
-        observerOptions={{
-            threshold: 0.5,  // Element is 50% visible
-            rootMargin: '0px'
-        }}
+      name="footer"
+      observerOptions={{
+        threshold: 0.5, // Element is 50% visible
+        rootMargin: '0px',
+      }}
     >
-        <Footer />
+      <Footer />
     </PostHogCaptureOnViewed>
     ```
 
@@ -362,28 +370,28 @@ This guide walks you through setting up PostHog for React Router V6. If you're u
     posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
       defaults: '2026-05-30',
-      tracing_headers: [ window.location.hostname, 'localhost' ],
-    });
+      tracing_headers: [window.location.hostname, 'localhost'],
+    })
     ```
 
     This adds the `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers to requests sent to the configured hostnames, which you can later use on the server-side.
 
-10.  9
+10. 9
 
-     ## Next steps
+    ## Next steps
 
-     Recommended
+    Recommended
 
-     Now that you've set up PostHog for React Router, you can start capturing events and exceptions in your app.
+    Now that you've set up PostHog for React Router, you can start capturing events and exceptions in your app.
 
-     To get the most out of PostHog, you should familiarize yourself with the following:
+    To get the most out of PostHog, you should familiarize yourself with the following:
 
-     -   [PostHog Web SDK docs](/docs/libraries/js.md): Learn more about the PostHog Web SDK and how to use it on the client-side.
-     -   [PostHog Node SDK docs](/docs/libraries/node.md): Learn more about the PostHog Node SDK and how to use it on the server-side.
-     -   [Identify users](/docs/product-analytics/identify.md): Learn more about how to identify users in your app.
-     -   [Group analytics](/docs/product-analytics/group-analytics.md): Learn more about how to use group analytics in your app.
-     -   [PostHog AI](/docs/posthog-ai.md): After capturing events, use PostHog AI to help you understand your data and build insights.
-     -   [Feature flags and experiments](/docs/libraries/react.md#feature-flags): Feature flag and experiment setup is the same as React. You can find more details in the React integration guide.
+    - [PostHog Web SDK docs](/docs/libraries/js.md): Learn more about the PostHog Web SDK and how to use it on the client-side.
+    - [PostHog Node SDK docs](/docs/libraries/node.md): Learn more about the PostHog Node SDK and how to use it on the server-side.
+    - [Identify users](/docs/product-analytics/identify.md): Learn more about how to identify users in your app.
+    - [Group analytics](/docs/product-analytics/group-analytics.md): Learn more about how to use group analytics in your app.
+    - [PostHog AI](/docs/posthog-ai.md): After capturing events, use PostHog AI to help you understand your data and build insights.
+    - [Feature flags and experiments](/docs/libraries/react.md#feature-flags): Feature flag and experiment setup is the same as React. You can find more details in the React integration guide.
 
 ### Still have questions?
 

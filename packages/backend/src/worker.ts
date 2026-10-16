@@ -5,7 +5,6 @@ import '@/helpers/check-worker-readiness'
 import '@/workers/flow'
 import '@/workers/trigger'
 import '@/workers/action'
-
 import logger from '@/helpers/logger'
 import { startSesConsumer } from '@/helpers/ses-consumer'
 
@@ -22,7 +21,7 @@ process.on('uncaughtException', (err) => {
       err: err.stack,
     })
   } catch (e) {
-    // eslint-disable-next-line no-console
+    // oxlint-disable-next-line no-console
     console.log('Error happened to logger')
     console.error(e)
   }

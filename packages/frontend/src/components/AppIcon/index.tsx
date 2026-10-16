@@ -1,6 +1,6 @@
+import { Avatar, AvatarProps, Icon } from '@chakra-ui/react'
 import { useState } from 'react'
 import { BiPlus, BiSolidBolt } from 'react-icons/bi'
-import { Avatar, AvatarProps, Icon } from '@chakra-ui/react'
 
 export interface IAppIconProps extends Omit<AvatarProps, 'src'> {
   url?: string

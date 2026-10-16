@@ -1,10 +1,9 @@
 // Avoid cyclic imports when importing m365ExcelApp
 import '@/apps'
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import batchQueueConfig from '../queue/batch'
 import m365ExcelApp from '..'
+import batchQueueConfig from '../queue/batch'
 
 const mocks = vi.hoisted(() => ({
   stepQueryResult: vi.fn(),

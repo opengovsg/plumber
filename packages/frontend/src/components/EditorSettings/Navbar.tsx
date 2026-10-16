@@ -1,8 +1,8 @@
+import { HStack, Icon, Text } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import { useContext } from 'react'
 import { BiLeftArrowAlt } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
-import { HStack, Icon, Text } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
 
 import * as URLS from '@/config/urls'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'

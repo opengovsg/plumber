@@ -1,11 +1,10 @@
-import { TDataOutMetadatumType } from '@plumber/types'
-
-import { memo, useCallback, useContext, useRef, useState } from 'react'
-import { Controller, useFormContext } from 'react-hook-form'
-import Markdown from 'react-markdown'
 import { useQuery } from '@apollo/client'
 import { FormControl, useDisclosure, useOutsideClick } from '@chakra-ui/react'
 import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
+import { TDataOutMetadatumType } from '@plumber/types'
+import { memo, useCallback, useContext, useRef, useState } from 'react'
+import { Controller, useFormContext } from 'react-hook-form'
+import Markdown from 'react-markdown'
 
 import { EditorContext } from '@/contexts/Editor'
 import { StepExecutionsContext } from '@/contexts/StepExecutions'
@@ -14,7 +13,6 @@ import { type Variable } from '@/helpers/variables'
 import { useS3Operations } from '@/hooks/useS3Operations'
 
 import MenuAlertDialog from '../MenuAlertDialog'
-
 import { CheckboxVariable } from './components/Checkbox'
 import Suggestions from './components/Suggestions'
 import { useAttachmentOptions } from './hooks/useAttachmentOptions'

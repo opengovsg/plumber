@@ -1,6 +1,6 @@
-import { IFlowCollabRole } from '@plumber/types'
-
 import { randomUUID } from 'crypto'
+
+import { IFlowCollabRole } from '@plumber/types'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { ForbiddenError } from '@/errors/graphql-errors'

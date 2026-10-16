@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
 import { Box, Flex, Heading, Icon, Text } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import type { ReactNode } from 'react'
 
 import { BrokenPipeIcon } from '@/components/Icons'
 

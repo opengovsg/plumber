@@ -1,5 +1,6 @@
 import fs from 'fs'
 import { join } from 'path'
+
 import { describe, expect, it } from 'vitest'
 
 import exportedApps from '@/apps'

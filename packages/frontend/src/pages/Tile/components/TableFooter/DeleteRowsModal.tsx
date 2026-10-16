@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogBody,
@@ -11,6 +10,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { chunk } from 'lodash'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { useDeleteRows } from '../../hooks/useDeleteRows'
@@ -54,7 +54,7 @@ export default function DeleteRowsModal({
     setIsDeletingRows(false)
     setNumDeletedRows(0)
     setNumRowsToDelete(rowIdsToDelete.length)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
   if (isViewMode) {

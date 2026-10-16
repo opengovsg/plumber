@@ -1,8 +1,7 @@
 import './ConfettiSurvey.css'
-
-import { useContext } from 'react'
 import { useQuery } from '@apollo/client'
 import { PopoverConfetti } from '@opengovsg/confetti'
+import { useContext } from 'react'
 
 import appConfig from '@/config/app'
 import { EditorContext } from '@/contexts/Editor'

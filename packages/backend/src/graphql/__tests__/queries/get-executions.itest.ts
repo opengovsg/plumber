@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import appConfig from '@/config/app'

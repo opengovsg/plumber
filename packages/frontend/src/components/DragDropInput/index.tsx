@@ -1,8 +1,8 @@
+import { FormControl, Input, Stack } from '@chakra-ui/react'
+import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 import { useCallback, useContext, useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import Markdown from 'react-markdown'
-import { FormControl, Input, Stack } from '@chakra-ui/react'
-import { FormErrorMessage, FormLabel } from '@opengovsg/design-system-react'
 
 import FileUpload from '@/components/FileUpload'
 import { EditorContext } from '@/contexts/Editor'
@@ -147,7 +147,7 @@ function DragDropInput(props: DragDropInputProps) {
                   placeholder={
                     dragging
                       ? 'Drop your file here'
-                      : placeholder ?? 'Enter or drop your file here'
+                      : (placeholder ?? 'Enter or drop your file here')
                   }
                   transition="padding 0.2s ease-out"
                 />

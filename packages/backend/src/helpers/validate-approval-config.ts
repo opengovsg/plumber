@@ -1,5 +1,4 @@
 import { IStep, IStepConfig } from '@plumber/types'
-
 import get from 'lodash.get'
 
 import { stepApprovalConfigSchema } from '@/apps/formsg/common/types'

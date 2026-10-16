@@ -1,12 +1,4 @@
 import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useState,
-} from 'react'
-import { BiCopy, BiTrash } from 'react-icons/bi'
-import {
   Icon,
   Menu,
   MenuButton,
@@ -15,6 +7,14 @@ import {
   Portal,
 } from '@chakra-ui/react'
 import { useToast } from '@opengovsg/design-system-react'
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from 'react'
+import { BiCopy, BiTrash } from 'react-icons/bi'
 
 import DeleteRowsModal from '../components/TableFooter/DeleteRowsModal'
 
