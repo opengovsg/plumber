@@ -1,11 +1,10 @@
-import type { Router as RouterType } from 'express'
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
 import { listConnectionsService } from '@/services/mcp/list-connections'
 import type { AuthenticatedRequest } from '@/types/express/context'
 
-const router: RouterType = Router()
+const router: Router = Router()
 
 const querySchema = z.object({
   appKey: z.string().min(1),
