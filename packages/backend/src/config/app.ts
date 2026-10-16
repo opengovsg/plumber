@@ -87,12 +87,17 @@ type AppConfig = {
   gathersg: {
     publicKey: string
   }
+  bedrock: {
+    region: string
+    model: string
+    imageModel: string
+    fallbackModel: string
+    /**
+     * Local dev only. Deployed environments authenticate with the ECS task role.
+     */
+    devApiKey?: string
+  }
   pair: {
-    foundry: {
-      apiKey: string
-      model: string
-      imageModel: string
-    }
     rome: {
       baseUrl: string
       cloudflare: {
@@ -202,12 +207,14 @@ const appConfig: AppConfig = {
   gathersg: {
     publicKey: process.env.GATHERSG_PUBLIC_KEY,
   },
+  bedrock: {
+    region: process.env.BEDROCK_REGION,
+    model: process.env.BEDROCK_MODEL,
+    imageModel: process.env.BEDROCK_IMAGE_MODEL,
+    fallbackModel: process.env.BEDROCK_FALLBACK_MODEL,
+    devApiKey: process.env.BEDROCK_API_KEY,
+  },
   pair: {
-    foundry: {
-      apiKey: process.env.PAIR_FOUNDRY_API_KEY,
-      model: process.env.PAIR_FOUNDRY_MODEL,
-      imageModel: process.env.PAIR_FOUNDRY_IMAGE_MODEL,
-    },
     rome: {
       baseUrl: process.env.PAIR_ROME_BASE_URL,
       cloudflare: {
@@ -304,11 +311,12 @@ if (!appConfig.gathersg.publicKey) {
 }
 
 if (
-  !appConfig.pair.foundry.apiKey ||
-  !appConfig.pair.foundry.model ||
-  !appConfig.pair.foundry.imageModel
+  !appConfig.bedrock.region ||
+  !appConfig.bedrock.model ||
+  !appConfig.bedrock.imageModel ||
+  !appConfig.bedrock.fallbackModel
 ) {
-  throw new Error('Pair Foundry environment variables need to be set!')
+  throw new Error('Bedrock environment variables need to be set!')
 }
 
 if (

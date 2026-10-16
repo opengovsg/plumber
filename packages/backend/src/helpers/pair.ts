@@ -1,28 +1,42 @@
-import { createOpenAI } from '@ai-sdk/openai'
+import { createBedrockAnthropic } from '@ai-sdk/amazon-bedrock/anthropic'
 import type { LanguageModelV2 } from '@ai-sdk/provider'
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers'
+import { wrapLanguageModel } from 'ai'
 
 import appConfig from '@/config/app'
 
-import { wrapFetchWithPromptCache } from './pair-prompt-cache'
+import { fallbackMiddleware } from './bedrock-fallback'
 
-const MODEL_TYPE = appConfig.pair.foundry.model
+const bedrock = createBedrockAnthropic(
+  appConfig.isDev
+    ? {
+        region: appConfig.bedrock.region,
+        apiKey: appConfig.bedrock.devApiKey,
+      }
+    : {
+        region: appConfig.bedrock.region,
+        // IMPORTANT: an empty string stops the provider falling back to
+        // AWS_BEARER_TOKEN_BEDROCK, so deployed envs always sign with the task role.
+        apiKey: '',
+        credentialProvider: fromNodeProviderChain(),
+      },
+)
 
-const pairOpenAISettings = {
-  name: 'pair-engine',
-  baseURL: 'https://engine.pair.gov.sg',
-  apiKey: appConfig.pair.foundry.apiKey,
-} as const
+const fallbackModel = bedrock(appConfig.bedrock.fallbackModel)
 
-const engineProvider = createOpenAI(pairOpenAISettings)
-const model: LanguageModelV2 = engineProvider.chat(MODEL_TYPE)
+function withFallback(modelId: string): LanguageModelV2 {
+  return wrapLanguageModel({
+    model: bedrock(modelId),
+    middleware: fallbackMiddleware(fallbackModel),
+  })
+}
 
-/**
- * AI Builder sends a large stable system prompt and tool list across turns.
- * PAIR pipe actions do not, so they use `model` / `engineProvider` instead.
- */
-const chatModel: LanguageModelV2 = createOpenAI({
-  ...pairOpenAISettings,
-  fetch: wrapFetchWithPromptCache(),
-}).chat(MODEL_TYPE)
+const model = withFallback(appConfig.bedrock.model)
+const imageModel = withFallback(appConfig.bedrock.imageModel)
 
-export { chatModel, engineProvider, model, MODEL_TYPE }
+// IMPORTANT: the SDK's default JSON tool forces tool_choice, which Claude Sonnet 5.5 rejects with a 400.
+const structuredOutputProviderOptions = {
+  anthropic: { structuredOutputMode: 'outputFormat' as const },
+}
+
+export { imageModel, model, structuredOutputProviderOptions }

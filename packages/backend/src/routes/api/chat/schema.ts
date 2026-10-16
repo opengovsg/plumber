@@ -61,6 +61,19 @@ const messagePartSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('step-start'),
   }),
+  // Bedrock Claude's extended thinking. The frontend echoes this back on
+  // subsequent turns; the signature must round-trip unmodified or Anthropic
+  // rejects the next request.
+  z.object({
+    type: z.literal('reasoning'),
+    text: z
+      .string()
+      .max(MAX_TEXT_LENGTH, `Text cannot exceed ${MAX_TEXT_LENGTH} characters`),
+    state: z.enum(['streaming', 'done']).optional(),
+    providerMetadata: z
+      .record(z.string(), z.record(z.string(), z.unknown()))
+      .optional(),
+  }),
   z.object({
     type: z.literal('data-isChatReady'),
     data: z.union([
@@ -132,7 +145,7 @@ const messagePartSchema = z.discriminatedUnion('type', [
       columns: z.array(z.string()).min(1),
     }),
   }),
-  // Pair Foundry / AI SDK dynamic tool part — present in assistant messages when
+  // AI SDK dynamic tool part — present in assistant messages when
   // the LLM calls an MCP tool. The frontend echoes these parts back on subsequent turns.
   z.object({
     type: z.literal('dynamic-tool'),

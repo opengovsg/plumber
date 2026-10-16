@@ -23,6 +23,21 @@ export function serializeMessagesForLangfuse(
   }))
 }
 
+/**
+ * Removes echoed reasoning parts from client messages.
+ *
+ * Anthropic binds each thinking signature to the tools list and prompt of the
+ * request that created it. Both change between turns, so replaying them fails.
+ */
+export function stripReasoningParts(
+  messages: ChatRequest['messages'],
+): ChatRequest['messages'] {
+  return messages.map((m) => ({
+    ...m,
+    parts: m.parts.filter((p) => p.type !== 'reasoning'),
+  }))
+}
+
 export interface EstablishedFormConnection {
   connectionId: string
   formId?: string
