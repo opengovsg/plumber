@@ -139,6 +139,13 @@ dump.rdb
 .vscode
 tmp/
 
+# Langfuse eval working files. Datasets live in Langfuse only. Notes and prompts stay local.
+tools/langfuse/out/
+tools/langfuse/datasets/*
+!tools/langfuse/datasets/example/
+tools/langfuse/notes/
+docs/plans/prompts/
+
 # Generated GraphQL
 /**/graphql/__generated__
 
