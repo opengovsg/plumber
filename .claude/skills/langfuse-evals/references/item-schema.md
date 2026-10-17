@@ -1,6 +1,6 @@
 # Item schema
 
-Full example and field rules: the "Item format" section of `tools/langfuse/README.md`. This file holds the decisions an author makes while writing an item.
+Full example and field rules: the "Item format" section of `tools/langfuse/README.md`. Patterns and wire formats: [writing-items.md](writing-items.md). This file holds the decisions an author makes while writing an item.
 
 ## Pick the decision
 

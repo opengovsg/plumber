@@ -1,64 +1,119 @@
 ---
 name: langfuse-evals
 description: >
-  Maintain and run the AI Builder prompt evals in Langfuse. Use when a new
-  app, action, agent tool or prompt rule needs eval coverage, when a Prompt
-  Experiment finished and someone asks whether the new prompt version is
-  working, or when eval failures need triage into judge miss, gold error,
-  flake or regression. Wraps tools/langfuse/eval-dataset.mjs and follows
-  tools/langfuse/README.md.
+  Guide a developer step by step through the AI Builder prompt evals in
+  Langfuse: import the dataset, derive the behaviour inventory from the
+  production prompt, write items to close coverage gaps, run the baseline,
+  triage failures until the gold is trustworthy, calibrate the judge, then
+  compare new prompt versions against the baseline. Use when asked to build
+  or improve the eval dataset, add coverage for a new app, action, tool or
+  prompt rule, judge whether a prompt experiment passed, or triage eval
+  failures. Wraps tools/langfuse/eval-dataset.mjs.
 ---
 
 # Langfuse evals
 
-Two jobs: keep the gold dataset in Langfuse current, and judge whether a new prompt version passes it. The process lives in [tools/langfuse/README.md](../../../tools/langfuse/README.md). Read it before the first run in a session. The production dataset is `ai-builder/chat-20261012`. Its local working copy is `tools/langfuse/datasets/ai-builder/chat-20261012/items.json`, ignored by git. The committed notes are in `tools/langfuse/notes/ai-builder/chat-20261012/`. Pass `--dataset=<name>` and the commands find both.
+You drive a multi-session process. The developer runs the commands that need
+1Password and makes the judgement calls. You prepare, draft, check and report.
+Command reference and flags: [tools/langfuse/README.md](../../../tools/langfuse/README.md).
 
-Hard rules:
+## Hard rules
 
-- **Langfuse holds the dataset. Never commit items.** `pull` before editing, edit the local `items.json`, `push` after. Only `notes/<dataset>/` is committed.
-- **Gold follows the prompt, not the model.** A failing run is never by itself a reason to change gold. Each gold edit needs a line in `notes/<dataset>/CHANGELOG.md` with the reason and a trace id.
-- **Never drop `must_not_tools`.** Never remove a side-effect guard to make a row pass.
-- **Never push with `--archive-missing`, and never `improve --push`, without the user confirming the list first.**
-- **Commands that reach Langfuse need 1Password.** Run them as `pnpm run eval-dataset ...` from `tools/langfuse`. If the credential prompt cannot be answered in this session, hand the exact command to the user and continue with the offline steps.
+- **Langfuse holds the dataset. Never commit items, notes or prompts.** `tools/langfuse/datasets/`, `tools/langfuse/notes/` and `docs/plans/prompts/` are ignored by git. Never move their contents elsewhere in the repo and never paste prompt text into a commit, PR or file outside those folders.
+- **Gold follows the prompt, not the model.** A failing run is never by itself a reason to change gold. Every gold edit gets a line in `notes/<dataset>/CHANGELOG.md` with the reason and a trace id.
+- **Never drop `must_not_tools`** to make a row pass. Never remove a side-effect guard.
+- **Confirm before anything that reaches Langfuse or changes gold.** Show the diff or the list, then wait. `push --archive-missing` and `improve --push` need an explicit yes to the exact list.
+- **Commands that reach Langfuse need 1Password.** They run as `pnpm run eval-dataset ...` from `tools/langfuse`. If the credential prompt cannot be answered in this session, give the developer the exact command and continue with offline steps.
 - **Never copy an item into the prompt as an example.**
+- **Draft, do not decide.** For every item you write, the developer confirms the expected output. Say which prompt rule it pins.
 
-## Workflow A: add coverage for a new app, action, tool or prompt rule
+## Start here: find the current phase
 
-1. Find what changed. For a tool, read its entry in `packages/backend/src/helpers/mcp-bridge-tools.ts`. For an app or action, read its definition under `packages/backend/src/apps/<key>/`. For a prompt rule, read the new prompt version (`pnpm run get-prompt chat --label=latest`) and diff it against the saved production version in `docs/plans/prompts/`.
-2. List the behaviours the change promises. Each becomes at least one item.
-3. Run `node eval-dataset.mjs coverage --items=datasets/<name>/items.json`. Note the gaps for the affected tools and apps.
-4. Write items following [references/item-schema.md](references/item-schema.md). Minimum per new tool: one should-fire, one must-not-fire, and for `execute_step`, `register_connection`, `delete_step` or `unpublish_pipe` one clarify item. Minimum per new prompt rule: one item that obeys it and one that would be tempted to break it.
-5. Write realistic inputs: `message` for the turn under test, `message_history` for earlier turns. Replace personal data with placeholders such as `<EMAIL_1>`.
-6. Set `suite` to `journey`, `safety` or `contract` and `stage` to `capability`. Add `covers` tags in the existing `<tool>:<aspect>` style.
-7. Run `validate`, then `coverage` again. Append a line to `notes/<dataset>/CHANGELOG.md`.
-8. Show the user the new items and the push command. Push only when they agree. The items are not committed. The push is how they persist.
-
-## Workflow B: evaluate an experiment run
-
-1. Ask for, or find, the dataset name, the candidate run name and the baseline run name. The baseline is the latest run on the production prompt version. If a baseline report is missing, `read` it too.
-2. Run:
-   ```bash
-   pnpm run eval-dataset read --dataset=<name> --run=<candidate run>
-   node eval-dataset.mjs compare --baseline=out/<name>/<baseline>.json --candidate=out/<name>/<candidate>.json
-   ```
-3. Triage every `broken` row and every `both fail` row in `stage: regression` using [references/triage.md](references/triage.md). Open the trace in Langfuse when the judge comment is not enough. Run `improve --report=...` to find the two safe gold edits and the judge misses. Treat its `skip` rows as manual work.
-4. Report in this order: verdict, `must_not_tools` violations, broken rows with their bucket, fixed rows, slice table for slices with 20 or more items, flaky rows if two runs exist. Counts, not percentages, for small slices.
-5. Recommend one of: ship, fix the prompt (name the rows and the rule to change), fix the judge, or fix gold (name the rows and the reason). The user decides.
-
-## Workflow C: build or seed a dataset
-
-Follow Part A of the README. The agent runs `pull` or `init --stubs`, `sample`, `adopt`, `validate`, `coverage` and `push`. The human does error analysis, writes gold and labels rows for judge calibration. Do not write `expected_output` for a sampled trace from `metadata.observed` alone. Present the candidate and ask the human what the correct decision is. Do not fill `human` in `judge-labels.json`. That column is the human's.
-
-## Workflow D: check the judge
-
-After a judge prompt or model change, or when a triage finds two or more `judge_miss` rows in one run:
+Run these from `tools/langfuse` (all offline) and read the answers:
 
 ```bash
-node eval-dataset.mjs calibrate --report=out/<safe name>/<run>.json --dataset=<name>
+ls datasets/ai-builder/chat-20261012/items.json notes/ai-builder/chat-20261012/ out/ai-builder_chat-20261012/ 2>&1
+ls ../../docs/plans/prompts/ 2>&1
 ```
 
-Report both rates and the disagreements. Below 90% on either rate, propose a judge prompt change and name the rows that motivated it. If `notes/<dataset>/judge-labels.json` does not exist, write the template with `--write-template` and hand it to the user.
+| Found | Phase |
+| --- | --- |
+| No `items.json` | 1. Import |
+| `items.json` but no `CHANGELOG.md` with a filled "Behaviour inventory" | 2. Inventory |
+| Inventory exists, `coverage` lists gaps or inventory lines have no item | 3. Write items |
+| No report in `out/` | 4. Baseline |
+| Baseline report exists, no `judge-labels.json` with `human` filled | 5. Calibrate |
+| Baseline stable and judge calibrated | 6. Evaluate a new prompt, or 7. Maintain |
 
-## Output
+Tell the developer which phase you are in and what the phase produces before running anything. The dataset is `ai-builder/chat-20261012` unless they name another.
 
-The deliverable for Workflow A is the pushed items in Langfuse plus the diff to `notes/<dataset>/CHANGELOG.md`. The deliverable for Workflow B is the written report in chat with the run names and trace ids. Do not change the prompt in Langfuse from this skill.
+## Phase 1: Import
+
+1. Ask the developer to run `pnpm run eval-dataset pull --dataset=ai-builder/chat-20261012` (add `--force` if a local copy exists). It also creates the notes folder.
+2. Run `node eval-dataset.mjs inspect --dataset=...` and read the shape: input keys, decision counts, `suite` values, judge instruction keys. Learn the dataset's own vocabulary from this. Match it in everything you write.
+3. Run `node eval-dataset.mjs validate --dataset=... --fix`. `--fix` only removes forbidden tools the agent does not have. Report every other error with the fix you propose. Do not edit `items.json` until the developer agrees.
+4. Run `coverage`. Keep the gap list for Phase 3.
+
+Done when `validate` passes.
+
+## Phase 2: Behaviour inventory
+
+1. Ask the developer to run `pnpm run get-prompt chat --label=production`. Read the saved file under `docs/plans/prompts/`. Never quote it in a commit.
+2. Write `notes/<dataset>/CHANGELOG.md` with three sections: **Behaviour inventory**, **Failure taxonomy**, **Changes**. Follow [references/inventory.md](references/inventory.md) for the shape of a rule line and what counts as testable.
+3. Group rules by prompt phase. Give each a stable id `R01`, `R02`, ... Each line names one behaviour the judge could check from one turn: the tool to call, the block to emit, the question to ask, or the thing never to do.
+4. Walk the developer through the list. They strike rules that are not worth an item and add rules you missed. Record the prompt version at the top.
+
+Done when the developer confirms the inventory. It is local only.
+
+## Phase 3: Write items
+
+1. Build the worklist: every `coverage` gap, then every inventory line with no item tagged `rule:<id>`. Order: side-effect tools first, then tools with zero items, then rules.
+2. Optional: ask for `pnpm run eval-dataset sample --from=<iso> --limit=150` to seed from production. Pick candidates across strata, prefer traces with errors or long turns. `adopt` copies one into `items.json` as a draft. Present `metadata.observed_decision` as evidence and ask the developer what the prompt requires. Never set the gold from the observed decision alone.
+3. Draft items following [references/writing-items.md](references/writing-items.md) and [references/item-schema.md](references/item-schema.md). Per tool: one should-fire, one must-not-fire, and for `execute_step`, `register_connection`, `delete_step`, `unpublish_pipe` one confirm-first. Per rule: one item that obeys it and one that would be tempted to break it. New items get `stage: capability`.
+4. Show the developer each batch of up to six items as JSON with the rule each pins. Apply only what they approve. Run `validate` and `coverage` after each batch.
+5. Ask for `pnpm run eval-dataset push --dataset=...`. Add one line per batch to the **Changes** section.
+
+Done when `coverage` reports no gaps and every inventory line kept in Phase 2 has an item.
+
+## Phase 4: Baseline until the gold is trustworthy
+
+The gold is trustworthy when two consecutive runs of the production prompt produce no `gold_error` and no `judge_miss` on triage, and every `stage: regression` item passes on both.
+
+1. Ask the developer to run the experiment twice in the Langfuse UI per [references/langfuse-ui.md](references/langfuse-ui.md), named `chat-v<N>-<yyyymmdd>-a` and `-b`.
+2. Ask for `pnpm run eval-dataset read --dataset=... --run=<name>` for each run.
+3. Run `node eval-dataset.mjs compare --baseline=out/.../<a>.json --candidate=out/.../<b>.json`. Rows that flip between the two are `flaky`.
+4. Run `node eval-dataset.mjs improve --report=out/.../<a>.json`. It marks `judge_miss` rows and proposes the two safe gold edits. Triage every other failure with [references/triage.md](references/triage.md). Open traces in Langfuse when the comment is not enough.
+5. Propose gold edits as a list with reasons. After approval: `improve --apply --dataset=...` for the safe ones, hand edits for the rest, `validate`, `push`, changelog lines.
+6. Items that fail on the production prompt with correct gold are real misses. Move them to `stage: capability` with a changelog line. They stay in the dataset and become the first targets for the next prompt version.
+7. Promote items that passed on both runs to `stage: regression`.
+8. Repeat from step 1 until the criterion holds. Record both run names in the changelog under a **Baseline** heading. Those reports are the baseline for Phase 6.
+
+## Phase 5: Calibrate the judge
+
+1. Run `node eval-dataset.mjs calibrate --report=out/.../<baseline a>.json --dataset=... --write-template`. It writes `notes/<dataset>/judge-labels.json` with up to 50 judge-pass and 50 judge-fail rows.
+2. The developer labels `human` on each row from the trace and the gold without reading the `judge` column. You never fill `human`.
+3. Run `calibrate --report=... --dataset=...`. Both rates must reach 90%. Below that, list the disagreements and propose judge prompt changes. The developer edits the evaluator in Langfuse and re-runs it on the same run. Repeat.
+4. Note the judge model and prompt version in the changelog. Repeat this phase whenever either changes.
+
+## Phase 6: Evaluate a new prompt version
+
+1. Confirm the baseline run names from the changelog. If a baseline report is missing from `out/`, ask for `read` on it first.
+2. Ask for the new experiment twice (`-a`, `-b`), then `read` both.
+3. `compare` baseline-a against candidate-a, and candidate-a against candidate-b for flakiness.
+4. Triage every `broken` row and every `both fail` row in `stage: regression` per [references/triage.md](references/triage.md).
+5. Report in this order: verdict, `must_not_tools` violations, broken rows with bucket and trace id, fixed rows, slices with 20 or more items, flaky rows. Counts, not percentages, for small slices.
+6. Recommend one of: ship, fix the prompt (name rows and rule), fix the judge, fix gold (name rows and reason). The developer decides. Ship only when zero `regression` rows remain in `stage: regression`, no `must_not_tools` violation exists, and the `stage: regression` pass rate is at or above the baseline on both runs.
+7. If the new version ships, its runs become the baseline. Record them in the changelog.
+
+## Phase 7: Maintain
+
+When a new app, action, tool or prompt rule lands, before the prompt change ships:
+
+1. Read the change: the tool entry in `packages/backend/src/helpers/mcp-bridge-tools.ts`, the app under `packages/backend/src/apps/<key>/`, or the diff between the saved prompt versions under `docs/plans/prompts/`.
+2. Add the new rules to the inventory with new ids. Never renumber old ones.
+3. Write items per Phase 3. `coverage` already lists a new tool with zero items because it reads the tool list from the backend.
+4. `validate`, `push`, changelog line. Re-run Phase 4 step 1 to 3 on the production prompt so the new items get a baseline.
+
+## Reporting
+
+End every phase with: what changed in Langfuse (item count, run names), what changed locally (which notes file), and the exact next command for the developer. Deliverables are pushed items and the local notes. Nothing is committed to the repo by this skill.

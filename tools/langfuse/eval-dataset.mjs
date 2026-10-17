@@ -17,7 +17,7 @@
  *
  * --items defaults to datasets/<dataset>/items.json when --dataset is given.
  * datasets/ is a local working copy and is ignored by git. Langfuse holds the dataset.
- * notes/<dataset>/ is committed: CHANGELOG.md and judge-labels.json.
+ * notes/<dataset>/ holds CHANGELOG.md and judge-labels.json. Also ignored by git.
  * sample, push, read and improve --push need 1Password env injection, same as get-prompt.
  * validate, coverage, compare and improve run offline.
  *
@@ -199,7 +199,7 @@ function ensureChangelog(datasetName) {
   }
   mkdirSync(notesDir(datasetName), { recursive: true })
   writeFileSync(path, changelogTemplate(datasetName, today()))
-  console.log(`Created ${path}. Commit it.`)
+  console.log(`Created ${path}.`)
 }
 
 function inspectCommand(flags) {

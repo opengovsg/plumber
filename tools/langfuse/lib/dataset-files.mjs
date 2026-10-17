@@ -25,8 +25,8 @@ export function itemsPath(datasetName) {
 }
 
 /**
- * Committed notes about a dataset: behaviour inventory, taxonomy, gold change
- * log and judge labels. None of it holds item content.
+ * Local notes about a dataset: behaviour inventory, taxonomy, gold change log
+ * and judge labels. Ignored by git like the items.
  */
 export function notesDir(datasetName) {
   return join(__dirname, '..', 'notes', ...nameParts(datasetName))
