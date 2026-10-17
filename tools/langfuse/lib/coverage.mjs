@@ -93,6 +93,9 @@ export function coverageReport(items, options = {}) {
         decisionsSeen.add(option.decision)
       }
     }
+    if (expected?.decision === 'clarify' && expected.required_response_intent) {
+      decisionsSeen.add('respond')
+    }
   }
 
   const gaps = []

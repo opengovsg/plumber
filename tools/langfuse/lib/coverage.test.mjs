@@ -67,3 +67,22 @@ test('counts any_of and trajectory tools as expected', () => {
   assert.equal(report.byTool.create_pipe.expected, 2)
   assert.equal(report.byTool.execute_step.expected, 1)
 })
+
+test('a clarify item with a response intent counts as a plain answer', () => {
+  const report = coverageReport(
+    [
+      {
+        input: {},
+        expected_output: {
+          decision: 'clarify',
+          required_response_intent: 'say no',
+        },
+        metadata: { scenario: 'a', covers: ['x'] },
+      },
+    ],
+    { knownTools: [] },
+  )
+  assert.ok(
+    !report.gaps.includes('no item expects a plain answer with no tool call'),
+  )
+})
