@@ -8,7 +8,8 @@ test('widens prose clarify when the model used a clarification block', () => {
     expectedOutput: {
       decision: 'clarify',
       must_not_tools: ['execute_step'],
-      required_question_intent: 'Confirm that sending a real Slack message is allowed.',
+      required_question_intent:
+        'Confirm that sending a real Slack message is allowed.',
     },
     output: {
       decision: 'ui_block',
@@ -47,7 +48,8 @@ test('drops the webhook warning flag on a real-send confirm', () => {
       decision: 'ui_block',
       ui_block_type: 'CLARIFICATION_DATA',
       required_fields: { warning: true },
-      required_question_intent: 'Confirm that sending a real Slack message to #ops is allowed.',
+      required_question_intent:
+        'Confirm that sending a real Slack message to #ops is allowed.',
       must_not_tools: ['execute_step'],
     },
     output: {
@@ -71,7 +73,8 @@ test('keeps the webhook warning flag', () => {
       decision: 'ui_block',
       ui_block_type: 'CLARIFICATION_DATA',
       required_fields: { warning: true },
-      required_question_intent: 'Ask whether to overwrite the existing FormSG webhook.',
+      required_question_intent:
+        'Ask whether to overwrite the existing FormSG webhook.',
       must_not_tools: ['register_connection'],
     },
     output: {
@@ -113,7 +116,10 @@ test('flags a judge miss when any_of already allows the model decision', () => {
   const result = proposeImprovement({
     expectedOutput: {
       decision: 'any_of',
-      options: [{ decision: 'clarify' }, { decision: 'tool_call', tool: 'create_pipe' }],
+      options: [
+        { decision: 'clarify' },
+        { decision: 'tool_call', tool: 'create_pipe' },
+      ],
       must_not_tools: ['execute_step'],
     },
     output: { decision: 'clarify', tool: null },

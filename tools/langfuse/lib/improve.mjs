@@ -172,7 +172,8 @@ export function proposeImprovement(failure) {
 
   return {
     action: 'skip',
-    reason: 'No safe gold edit. Review the judge comment before changing the row.',
+    reason:
+      'No safe gold edit. Review the judge comment before changing the row.',
   }
 }
 

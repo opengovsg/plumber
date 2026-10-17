@@ -12,7 +12,9 @@ async function listAll(fetchPage) {
 }
 
 function scoreFromTrace(trace, scoreName) {
-  const matches = (trace.scores ?? []).filter((score) => score.name === scoreName)
+  const matches = (trace.scores ?? []).filter(
+    (score) => score.name === scoreName,
+  )
   matches.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
   return matches.at(-1) ?? null
 }
@@ -25,6 +27,11 @@ function scenarioOf(item) {
   return null
 }
 
+function coversOf(item) {
+  const covers = item?.metadata?.covers
+  return Array.isArray(covers) ? covers : []
+}
+
 function modelOutput(trace, observationId) {
   const observations = trace.observations ?? []
   const linked = observationId
@@ -34,7 +41,8 @@ function modelOutput(trace, observationId) {
     return linked.output
   }
   const generations = observations.filter(
-    (observation) => observation.type === 'GENERATION' && observation.output != null,
+    (observation) =>
+      observation.type === 'GENERATION' && observation.output != null,
   )
   if (generations.length > 0) {
     return generations[generations.length - 1].output
@@ -76,9 +84,13 @@ export async function readEvalRun(client, options) {
 
   const run = runName
     ? runs.find((candidate) => candidate.name === runName)
-    : [...runs].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0]
+    : [...runs].sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+      )[0]
   if (!run) {
-    throw new Error(`Run "${runName}" was not found on dataset "${datasetName}".`)
+    throw new Error(
+      `Run "${runName}" was not found on dataset "${datasetName}".`,
+    )
   }
 
   const runWithItems = await client.api.datasets.getRun(datasetName, run.name)
@@ -86,28 +98,33 @@ export async function readEvalRun(client, options) {
 
   const itemsById = new Map(dataset.items.map((item) => [item.id, item]))
 
-  const rows = await mapPool(runWithItems.datasetRunItems, 5, async (runItem) => {
-    const item = itemsById.get(runItem.datasetItemId)
-    const trace = await client.api.trace.get(runItem.traceId)
-    const score = scoreFromTrace(trace, scoreName)
-    return {
-      datasetItemId: runItem.datasetItemId,
-      traceId: runItem.traceId,
-      scenario: scenarioOf(item),
-      input: item?.input ?? null,
-      expectedOutput: item?.expectedOutput ?? null,
-      metadata: item?.metadata ?? null,
-      output: modelOutput(trace, runItem.observationId),
-      score: score
-        ? {
-            name: score.name,
-            value: score.value,
-            stringValue: score.stringValue ?? null,
-            comment: score.comment ?? null,
-          }
-        : null,
-    }
-  })
+  const rows = await mapPool(
+    runWithItems.datasetRunItems,
+    5,
+    async (runItem) => {
+      const item = itemsById.get(runItem.datasetItemId)
+      const trace = await client.api.trace.get(runItem.traceId)
+      const score = scoreFromTrace(trace, scoreName)
+      return {
+        datasetItemId: runItem.datasetItemId,
+        traceId: runItem.traceId,
+        scenario: scenarioOf(item),
+        covers: coversOf(item),
+        input: item?.input ?? null,
+        expectedOutput: item?.expectedOutput ?? null,
+        metadata: item?.metadata ?? null,
+        output: modelOutput(trace, runItem.observationId),
+        score: score
+          ? {
+              name: score.name,
+              value: score.value,
+              stringValue: score.stringValue ?? null,
+              comment: score.comment ?? null,
+            }
+          : null,
+      }
+    },
+  )
 
   const failed = rows.filter((row) => row.score && isFalseScore(row.score))
   const passed = rows.filter((row) => row.score && !isFalseScore(row.score))
@@ -125,6 +142,14 @@ export async function readEvalRun(client, options) {
       failed: failed.length,
       unscored: unscored.length,
     },
+    results: rows.map((row) => ({
+      datasetItemId: row.datasetItemId,
+      scenario: row.scenario,
+      covers: row.covers,
+      traceId: row.traceId,
+      passed: row.score ? !isFalseScore(row.score) : null,
+      comment: row.score?.comment ?? null,
+    })),
     failures: failed,
     unscored: unscored.map((row) => ({
       datasetItemId: row.datasetItemId,
