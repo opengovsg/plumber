@@ -286,4 +286,4 @@ Other rules:
 
 ## Langfuse platform note
 
-The team runs Langfuse v3.167.4. `read` and `pull` use the v3 dataset endpoints and `GET /api/public/traces/{id}`. Langfuse platform v4 deprecates those in favour of `/api/public/experiments` and `/api/public/experiment-items`. If `read` returns 404 or 410 after a Langfuse upgrade, update `lib/read-run.mjs` to the new endpoints and bump `@langfuse/client`. Dataset versioning (the Version toggle on the Items tab, and the `version` filter on item lists) arrived in v3 during late 2025. If the toggle is missing, upgrade before relying on version pins.
+The team runs Langfuse v3.167.4. `read` and `pull` use the v3 dataset endpoints and `GET /api/public/traces/{id}`. Langfuse platform v4 deprecates those in favour of `/api/public/experiments` and `/api/public/experiment-items`. If `read` returns 404 or 410 after a Langfuse upgrade, update `lib/read-run.mjs` to the new endpoints and bump `@langfuse/client`. Dataset versioning is available (the Version toggle on the Items tab, and the `version` filter on item lists). Every `push` is recoverable from there, and each experiment run records the dataset state it ran on.
