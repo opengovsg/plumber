@@ -174,12 +174,7 @@ async function pullCommand(flags) {
     .map(fromLangfuseItem)
     .sort((a, b) => a.metadata.scenario.localeCompare(b.metadata.scenario))
   writeJson(path, converted)
-  if (!existsSync(changelogPath(datasetName))) {
-    writeFileSync(
-      changelogPath(datasetName),
-      changelogTemplate(datasetName, today()),
-    )
-  }
+  ensureChangelog(datasetName)
   console.log(
     `Wrote ${converted.length} items to ${path} (${
       items.length - kept.length
