@@ -5,7 +5,7 @@ The inventory is the list of rules the production prompt promises. It lives in `
 ## Shape of a rule line
 
 ```
-- R27 Steps configure in order, trigger first. Moves on only after `execute_step` succeeds or the user skips explicitly.
+- R12 Calls `<tool>` only after the user picks the confirmation option by name. A plain "go ahead" is not consent.
 ```
 
 - Stable id `Rnn`. Never renumber. New rules append.
