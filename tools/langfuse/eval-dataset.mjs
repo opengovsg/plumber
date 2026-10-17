@@ -2,6 +2,8 @@
  * Maintains the AI Builder gold dataset and reads Langfuse experiment runs.
  *
  *   cd tools/langfuse
+ *   pnpm run eval-dataset pull     --dataset=<langfuse dataset> [--items=<path>] [--include-archived] [--force]
+ *   node eval-dataset.mjs init     --dataset=<langfuse dataset> [--stubs]
  *   pnpm run eval-dataset sample   --tags=ai-builder --from=<iso> [--to=<iso>] [--limit=100] [--environment=production]
  *   pnpm run eval-dataset validate --items=datasets/<name>/items.json
  *   pnpm run eval-dataset coverage --items=datasets/<name>/items.json
@@ -9,18 +11,33 @@
  *   pnpm run eval-dataset read     --dataset=<langfuse dataset> [--run=<run name>] [--score=tool_intent_correctness]
  *   pnpm run eval-dataset compare  --baseline=out/<dataset>/<run-a>.json --candidate=out/<dataset>/<run-b>.json
  *   pnpm run eval-dataset improve  --report=out/<dataset>/<run>.json [--items=<path>] [--apply] [--push --dataset=<name>]
+ *   node eval-dataset.mjs calibrate --report=out/<dataset>/<run>.json --labels=<path> [--min=0.9] [--write-template=<path>]
  *
+ * --items defaults to datasets/<dataset>/items.json when --dataset is given.
  * sample, push, read and improve --push need 1Password env injection, same as get-prompt.
  * validate, coverage, compare and improve run offline.
  *
  * The improver never drops must_not_tools. A forbidden tool call stays a failure.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import {
+  calibrate,
+  formatCalibration,
+  labelTemplate,
+} from './lib/calibrate.mjs'
 import { compareRuns, formatCompare } from './lib/compare.mjs'
 import { coverageReport, formatCoverage } from './lib/coverage.mjs'
+import {
+  changelogPath,
+  changelogTemplate,
+  datasetDir,
+  fromLangfuseItem,
+  itemsPath,
+  stubItems,
+} from './lib/dataset-files.mjs'
 import { applyProposals, proposeAll } from './lib/improve.mjs'
 import { readEvalRun } from './lib/read-run.mjs'
 import { sampleTraces } from './lib/sample.mjs'
@@ -30,7 +47,7 @@ import { knownTools } from './lib/tools.mjs'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const USAGE =
-  'Usage: pnpm run eval-dataset <sample|validate|coverage|push|read|compare|improve> [--flag=value ...]. See the header of eval-dataset.mjs.'
+  'Usage: pnpm run eval-dataset <pull|init|sample|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
 
 function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -77,17 +94,32 @@ function reportPath(datasetName, runName) {
   return join(__dirname, 'out', safe(datasetName), `${safe(runName)}.json`)
 }
 
-function loadItems(flags, command) {
-  const path = requireFlag(flags, 'items', command)
+function today() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function itemsFlag(flags, command) {
+  if (flags.items) {
+    return flags.items
+  }
+  if (flags.dataset) {
+    return itemsPath(flags.dataset)
+  }
+  throw new Error(`${command} requires --items=<path> or --dataset=<name>`)
+}
+
+function loadItems(flags, command, options = {}) {
+  const path = itemsFlag(flags, command)
   const items = readJson(path)
   const tools = knownTools()
   if (!tools) {
     console.warn('Backend tool list not found. Tool names are not checked.')
   }
   const errors = validateItems(items, { knownTools: tools })
-  const drafts = Array.isArray(items)
-    ? items.filter((item) => item?.metadata?.status === 'draft')
-    : []
+  const drafts =
+    Array.isArray(items) && !options.allowDrafts
+      ? items.filter((item) => item?.metadata?.status === 'draft')
+      : []
   for (const draft of drafts) {
     errors.push(
       `items: "${
@@ -104,6 +136,110 @@ function printErrors(errors) {
   }
 }
 
+async function pullCommand(flags) {
+  const datasetName = requireFlag(flags, 'dataset', 'pull')
+  const path = resolve(itemsFlag(flags, 'pull'))
+  if (existsSync(path) && !flags.force) {
+    throw new Error(
+      `${path} exists. Pass --force to overwrite it with the Langfuse copy.`,
+    )
+  }
+  const client = await langfuseClient(flags)
+  const items = []
+  let page = 1
+  let totalPages = 1
+  do {
+    const response = await client.api.datasetItems.list({
+      datasetName,
+      page,
+      limit: 100,
+    })
+    items.push(...response.data)
+    totalPages = response.meta?.totalPages ?? 1
+    page += 1
+  } while (page <= totalPages)
+
+  const kept = items.filter(
+    (item) => flags['include-archived'] || item.status === 'ACTIVE',
+  )
+  const converted = kept
+    .map(fromLangfuseItem)
+    .sort((a, b) => a.metadata.scenario.localeCompare(b.metadata.scenario))
+  writeJson(path, converted)
+  if (!existsSync(changelogPath(datasetName))) {
+    writeFileSync(
+      changelogPath(datasetName),
+      changelogTemplate(datasetName, today()),
+    )
+  }
+  console.log(
+    `Wrote ${converted.length} items to ${path} (${
+      items.length - kept.length
+    } archived skipped).`,
+  )
+  const errors = validateItems(converted, { knownTools: knownTools() })
+  if (errors.length > 0) {
+    console.log(`${errors.length} items need attention before the next push:`)
+    printErrors(errors)
+  }
+}
+
+function initCommand(flags) {
+  const datasetName = requireFlag(flags, 'dataset', 'init')
+  const dir = datasetDir(datasetName)
+  const path = itemsPath(datasetName)
+  if (existsSync(path)) {
+    throw new Error(`${path} exists. Use pull --force or edit it directly.`)
+  }
+  mkdirSync(dir, { recursive: true })
+  const tools = knownTools()
+  const items = flags.stubs ? stubItems(tools ?? [], today()) : []
+  writeJson(path, items)
+  writeFileSync(
+    changelogPath(datasetName),
+    changelogTemplate(datasetName, today()),
+  )
+  console.log(
+    `Created ${path} with ${items.length} items and ${changelogPath(
+      datasetName,
+    )}.`,
+  )
+  if (flags.stubs) {
+    console.log(
+      'Every stub is a draft. Fill in the input, decide the expected output, then remove metadata.status.',
+    )
+  }
+  console.log(
+    `Create the dataset "${datasetName}" in Langfuse before the first push.`,
+  )
+}
+
+function calibrateCommand(flags) {
+  const report = readJson(requireFlag(flags, 'report', 'calibrate'))
+  if (flags['write-template']) {
+    const path = resolve(flags['write-template'])
+    if (existsSync(path) && !flags.force) {
+      throw new Error(`${path} exists. Pass --force to overwrite the labels.`)
+    }
+    const rows = labelTemplate(report, {
+      perClass: flags['per-class'] ? Number(flags['per-class']) : undefined,
+    })
+    writeJson(path, rows)
+    console.log(
+      `Wrote ${rows.length} rows to ${path}. Set "human" to "pass" or "fail" on each.`,
+    )
+    return
+  }
+  const labels = readJson(requireFlag(flags, 'labels', 'calibrate'))
+  const result = calibrate(report, labels, {
+    min: flags.min ? Number(flags.min) : undefined,
+  })
+  console.log(formatCalibration(result))
+  if (!result.ok) {
+    process.exitCode = 1
+  }
+}
+
 async function sampleCommand(flags) {
   const from = requireFlag(flags, 'from', 'sample')
   const client = await langfuseClient(flags)
@@ -114,8 +250,7 @@ async function sampleCommand(flags) {
     limit: Number(flags.limit ?? 100),
     environment: flags.environment,
   })
-  const stamp = new Date().toISOString().slice(0, 10)
-  const path = join(__dirname, 'out', 'candidates', `${stamp}.json`)
+  const path = join(__dirname, 'out', 'candidates', `${today()}.json`)
   writeJson(path, result)
   console.log(
     `Wrote ${path} (${result.candidates.length} candidates from ${result.tracesSeen} traces, ${result.redactions} values redacted)`,
@@ -138,7 +273,9 @@ function validateCommand(flags) {
 }
 
 function coverageCommand(flags) {
-  const { items, tools, errors } = loadItems(flags, 'coverage')
+  const { items, tools, errors } = loadItems(flags, 'coverage', {
+    allowDrafts: true,
+  })
   if (errors.length > 0) {
     console.error('Fix validation errors first:')
     printErrors(errors)
@@ -260,11 +397,16 @@ function improveCommand(flags) {
   )
 
   if (flags.apply) {
-    const itemsPath = resolve(requireFlag(flags, 'items', 'improve --apply'))
-    const items = readJson(itemsPath)
+    const target = resolve(
+      itemsFlag(
+        { ...flags, dataset: flags.dataset ?? report.datasetName },
+        'improve --apply',
+      ),
+    )
+    const items = readJson(target)
     const applied = applyProposals(items, proposals)
-    writeJson(itemsPath, applied.items)
-    console.log(`Updated ${applied.applied} rows in ${itemsPath}`)
+    writeJson(target, applied.items)
+    console.log(`Updated ${applied.applied} rows in ${target}`)
   }
 
   return { report, proposals }
@@ -290,6 +432,9 @@ async function pushProposals(flags, report, proposals) {
 }
 
 const COMMANDS = {
+  pull: pullCommand,
+  init: initCommand,
+  calibrate: calibrateCommand,
   sample: sampleCommand,
   validate: validateCommand,
   coverage: coverageCommand,

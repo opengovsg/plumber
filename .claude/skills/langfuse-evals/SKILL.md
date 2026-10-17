@@ -11,7 +11,7 @@ description: >
 
 # Langfuse evals
 
-Two jobs: keep the gold dataset in `tools/langfuse/datasets/<name>/items.json` current, and judge whether a new prompt version passes it. The process lives in [tools/langfuse/README.md](../../../tools/langfuse/README.md). Read it before the first run in a session.
+Two jobs: keep the gold dataset in `tools/langfuse/datasets/<name>/items.json` current, and judge whether a new prompt version passes it. The process lives in [tools/langfuse/README.md](../../../tools/langfuse/README.md). Read it before the first run in a session. The production dataset is `ai-builder/chat-20261012`, stored at `tools/langfuse/datasets/ai-builder/chat-20261012/`. Pass `--dataset=<name>` and the commands find `items.json` themselves.
 
 Hard rules:
 
@@ -45,9 +45,19 @@ Hard rules:
 4. Report in this order: verdict, `must_not_tools` violations, broken rows with their bucket, fixed rows, slice table for slices with 20 or more items, flaky rows if two runs exist. Counts, not percentages, for small slices.
 5. Recommend one of: ship, fix the prompt (name the rows and the rule to change), fix the judge, or fix gold (name the rows and the reason). The user decides.
 
-## Workflow C: build or seed a dataset from production
+## Workflow C: build or seed a dataset
 
-Follow Part A of the README. The agent runs `sample`, `validate`, `coverage` and `push`. The human does error analysis, writes gold and calibrates the judge. Do not write `expected_output` for a sampled trace from `metadata.observed` alone. Present the candidate and ask the human what the correct decision is.
+Follow Part A of the README. The agent runs `pull` or `init --stubs`, `sample`, `validate`, `coverage` and `push`. The human does error analysis, writes gold and labels rows for judge calibration. Do not write `expected_output` for a sampled trace from `metadata.observed` alone. Present the candidate and ask the human what the correct decision is. Do not fill `human` in `judge-labels.json`. That column is the human's.
+
+## Workflow D: check the judge
+
+After a judge prompt or model change, or when a triage finds two or more `judge_miss` rows in one run:
+
+```bash
+node eval-dataset.mjs calibrate --report=out/<name>/<run>.json --labels=datasets/<name>/judge-labels.json
+```
+
+Report both rates and the disagreements. Below 90% on either rate, propose a judge prompt change and name the rows that motivated it. If the labels file does not exist, write the template with `--write-template` and hand it to the user.
 
 ## Output
 

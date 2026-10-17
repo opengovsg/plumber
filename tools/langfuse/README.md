@@ -8,7 +8,8 @@ Run every command from `tools/langfuse`. Commands that talk to Langfuse go throu
 
 | Path | Purpose |
 | --- | --- |
-| `datasets/<name>/items.json` | Gold items. Git is the source of truth. Langfuse holds a pushed copy. |
+| `datasets/<name>/items.json` | Gold items. Git is the source of truth. Langfuse holds a pushed copy. A `/` in the dataset name becomes a directory, so `ai-builder/chat-20261012` lives at `datasets/ai-builder/chat-20261012/`. |
+| `datasets/<name>/judge-labels.json` | Human labels for judge calibration. |
 | `datasets/<name>/CHANGELOG.md` | One line per gold change with the reason. |
 | `datasets/example/` | Three illustrative items used by the tests. Not a real suite. |
 | `out/` | Run reports, proposals and trace candidates. Ignored by git. |
@@ -20,6 +21,8 @@ Run every command from `tools/langfuse`. Commands that talk to Langfuse go throu
 | Command | Needs Langfuse | What it does |
 | --- | --- | --- |
 | `pnpm run get-prompt chat --label=production` | yes | Saves the prompt to `docs/plans/prompts/chat_v<N>.md`. |
+| `pnpm run eval-dataset pull --dataset=<name> [--include-archived] [--force]` | yes | Imports the Langfuse items into `items.json` and creates `CHANGELOG.md`. |
+| `node eval-dataset.mjs init --dataset=<name> [--stubs]` | no | Creates an empty dataset folder. `--stubs` adds draft items for every agent tool. |
 | `pnpm run eval-dataset sample --from=<iso> [--to=<iso>] [--limit=100] [--environment=production]` | yes | Writes redacted draft items from production traces to `out/candidates/<date>.json`. |
 | `node eval-dataset.mjs validate --items=<path>` | no | Checks item shape, tool names, duplicate ids and leftover drafts. |
 | `node eval-dataset.mjs coverage --items=<path> [--json=<path>]` | no | Counts items per decision, tool, app and tag. Lists gaps. |
@@ -27,9 +30,11 @@ Run every command from `tools/langfuse`. Commands that talk to Langfuse go throu
 | `pnpm run eval-dataset read --dataset=<name> [--run=<run>] [--score=tool_intent_correctness]` | yes | Writes `out/<dataset>/<run>.json` with every item's pass/fail and the failures in full. |
 | `node eval-dataset.mjs compare --baseline=<report> --candidate=<report> [--min-slice=20] [--json=<path>]` | no | Pairs two runs item by item. Exit code 1 on regression. |
 | `node eval-dataset.mjs improve --report=<report> [--items=<path> --apply] [--push --dataset=<name>]` | push only | Proposes safe gold edits for failures. Never drops `must_not_tools`. |
+| `node eval-dataset.mjs calibrate --report=<report> --write-template=<labels path>` | no | Writes up to 50 judge-pass and 50 judge-fail rows for a human to label. |
+| `node eval-dataset.mjs calibrate --report=<report> --labels=<labels path> [--min=0.9]` | no | Compares human labels with the judge. Exit code 1 when either rate is below the minimum. |
 | `pnpm test` | no | Unit tests for `lib/`. |
 
-Pass `--project=pairAction` to any Langfuse command to use the other project. The default is `aiBuilder`.
+Pass `--project=pairAction` to any Langfuse command to use the other project. The default is `aiBuilder`. When `--dataset` is given, `--items` defaults to `datasets/<dataset>/items.json`.
 
 ## Item format
 
@@ -72,13 +77,27 @@ Pass `--project=pairAction` to any Langfuse command to use the other project. Th
 
 ## Part A: build the gold dataset from the production prompt
 
-Each step says who does it and what it produces. Manual steps are marked.
+Each step says who does it and what it produces. Manual steps are marked. The current dataset is `ai-builder/chat-20261012`.
 
-### 1. Create the dataset (manual, once)
+### 1. Bring the dataset under git (once)
 
-1. In Langfuse, open the `aiBuilder` project and create a dataset. Name it after the prompt and purpose, for example `ai-builder-chat-gold`.
-2. Create `datasets/<name>/items.json` with `[]` and `datasets/<name>/CHANGELOG.md`.
-3. Optional: set the dataset's input and expected output JSON schemas in Langfuse so bad items are rejected at upload.
+For the existing dataset:
+
+```bash
+pnpm run eval-dataset pull --dataset=ai-builder/chat-20261012
+node eval-dataset.mjs validate --dataset=ai-builder/chat-20261012
+node eval-dataset.mjs coverage --dataset=ai-builder/chat-20261012
+```
+
+`pull` keeps the Langfuse item ids, so the next `push` updates the same rows. `validate` lists what the imported items lack, usually `covers` tags and `suite`. Fill those in before the first push. Items still carry the gold they had in Langfuse. Review each one against the behaviour inventory in step 2.
+
+For a new dataset:
+
+```bash
+node eval-dataset.mjs init --dataset=<name> --stubs
+```
+
+`init` creates the folder, a `CHANGELOG.md` template and, with `--stubs`, a draft item per tool: one should-fire, one must-not-fire and, for side-effect tools, one confirm-first. Each stub holds a `TODO` input. The author replaces it, decides the expected output and removes `metadata.status`. Create the dataset in Langfuse (Datasets, New dataset, same name) before the first push. Optional: set the dataset's input and expected output JSON schemas in Langfuse so bad items are rejected at upload.
 
 ### 2. Fetch the production prompt
 
@@ -146,8 +165,19 @@ pnpm run eval-dataset push --items=datasets/<name>/items.json --dataset=<name>
 
 1. In Langfuse, create an LLM-as-a-judge evaluator that writes a BOOLEAN score named `tool_intent_correctness`. Map `expected_output` and the model output into the template. Scope it to the dataset.
 2. The judge prompt must check one thing: did the model's decision match the gold. Require a short critique before the verdict. Tell it a call to any `must_not_tools` entry is always a fail, and an `any_of` match is always a pass.
-3. Run the baseline experiment (step 9) once. Hand-label 50 passing and 50 failing rows. Compare with the judge's verdicts. Compute the true positive rate (judge pass when human pass) and true negative rate (judge fail when human fail). Both must be at least 90%. Below that, fix the judge prompt and repeat.
-4. Pin the judge to a dated model version. Re-run this calibration whenever the judge prompt or model changes.
+3. Run the baseline experiment (step 9) once and `read` it. Then:
+   ```bash
+   node eval-dataset.mjs calibrate --report=out/<dataset>/<run>.json --write-template=datasets/<name>/judge-labels.json
+   ```
+   The file holds up to 50 judge-pass and 50 judge-fail rows. A reviewer opens each trace, reads the gold, and sets `human` to `pass` or `fail` without looking at the `judge` field first. Commit the file.
+4. Check agreement:
+   ```bash
+   node eval-dataset.mjs calibrate --report=out/<dataset>/<run>.json --labels=datasets/<name>/judge-labels.json
+   ```
+   The true positive rate (judge pass when human pass) and true negative rate (judge fail when human fail) must both be at least 90%. Judges fail the second rate far more often than the first. Below 90%, fix the judge prompt, re-run the evaluator on the same run, and check again.
+5. Pin the judge to a dated model version. Re-run this calibration whenever the judge prompt or model changes.
+
+Why labels live in the repo and not in a Langfuse annotation queue: the file is reviewable in a pull request, it travels with the gold it judges, and the `calibrate` command reads it directly. Annotation queues suit several annotators labelling live traces in the UI. Move to a queue when more than two people label at once.
 
 ### 9. Baseline run
 
@@ -163,9 +193,19 @@ Triage every failure with the taxonomy in Part B, step 3. A `regression` item th
 
 ### 1. Run the experiment
 
-In Langfuse: Datasets, open the dataset, New experiment. Choose the prompt version under test, the LLM connection and the `tool_intent_correctness` evaluator. Name the run `chat-v<version>-<yyyymmdd>`. Run it twice. Nondeterministic rows show up as rows that flip between the two runs.
+In Langfuse: Datasets, open the dataset, New experiment. Choose the prompt version under test, the LLM connection, the structured output schema and the `tool_intent_correctness` evaluator. Name the run `chat-v<version>-<yyyymmdd>`. Run it twice. Nondeterministic rows show up as rows that flip between the two runs.
 
-Tool definitions in UI prompt experiments are not documented by Langfuse. If the experiment cannot see the agent's tools, the output is prose instead of tool calls and the judge cannot grade `tool_call` items. Confirm this on the first run before trusting any numbers.
+### How the UI experiment differs from production
+
+The UI experiment sends the prompt and the dataset messages to a model and asks for a JSON decision through a structured output schema. Production runs `streamText` with the real tool definitions from `mcp-bridge-tools.ts`, up to 10 tool steps, and a system prompt that `buildSystemPrompt` edits per user. The gaps, in order of how much they move results:
+
+1. **The model declares a decision instead of calling a tool.** Tool choice is driven by the tool descriptions and input schemas the model sees. The UI run sees whatever copy of them sits in the prompt or schema. That copy drifts from `mcp-bridge-tools.ts` every time a tool description changes.
+2. **Multi-step turns are flattened.** Production often calls `list_columns` then `update_step_parameters` in one turn. The UI run grades the first declared decision only.
+3. **The system prompt is not the one users get.** Restricted apps, the support URL and the established-connection reminder are added at request time.
+
+What the UI experiment is good for: regression checks on prompt wording for clarify, respond and must-not decisions, and fast iteration without code. Keep using it for those.
+
+What closes the gaps: an SDK experiment runner in `packages/backend` that calls `langfuse.experiment.run` with the dataset items, builds the system prompt with `buildSystemPrompt`, passes the real tools from `createMcpBridgeTools` with their `execute` functions replaced by recorders, stops after one step, and returns the tool call or text. Code evaluators then score forbidden tool calls and expected tool matches deterministically before the Langfuse judge runs on the same run. This gives one eval path that cannot drift from production. It is the next piece of work after the dataset is under git.
 
 ### 2. Read and compare
 
@@ -214,8 +254,9 @@ Other rules:
 - Retire an item by archiving it, not deleting it. Past runs still reference it.
 - Keep 10% of items in `holdout`. Run them once per quarter. Never tune the prompt against them.
 - When production fails in a new way, turn the trace into an item the same week.
+- Keep the tool descriptions or structured output schema used by the UI experiment in sync with `mcp-bridge-tools.ts` until the SDK runner exists. Check them whenever that file changes.
 - If `knownTools()` in `lib/tools.mjs` cannot read `packages/backend/src/helpers/mcp-bridge-tools.ts`, tool names are not checked. Run from a full checkout.
 
 ## Langfuse platform note
 
-`read` uses the dataset run endpoints and `GET /api/public/traces/{id}`. Langfuse platform v4 deprecates those in favour of `/api/public/experiments` and `/api/public/experiment-items`. If `read` returns 404 or 410 after a Langfuse upgrade, update `lib/read-run.mjs` to the new endpoints and bump `@langfuse/client`.
+The team runs Langfuse v3.167.4. `read` and `pull` use the v3 dataset endpoints and `GET /api/public/traces/{id}`. Langfuse platform v4 deprecates those in favour of `/api/public/experiments` and `/api/public/experiment-items`. If `read` returns 404 or 410 after a Langfuse upgrade, update `lib/read-run.mjs` to the new endpoints and bump `@langfuse/client`. Dataset versioning (the Version toggle on the Items tab, and the `version` filter on item lists) arrived in v3 during late 2025. If the toggle is missing, upgrade before relying on version pins.
