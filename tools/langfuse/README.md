@@ -13,6 +13,8 @@ The step-by-step guide is the `langfuse-evals` skill in `.claude/skills/langfuse
 3. Commands marked **Langfuse** go through `pnpm run eval-dataset ...` so 1Password injects the keys. They prompt for biometrics once. Commands marked **offline** run with `node eval-dataset.mjs ...` and need nothing.
 4. Check Langfuse access: open the `aiBuilder` project and find the dataset `ai-builder/chat-20261012` and the evaluator that writes `tool_intent_correctness`.
 
+**On the dataset name.** The date in `ai-builder/chat-20261012` is the creation date, not a content snapshot. One dataset is the living regression suite for the `chat` prompt across every prompt version. Items are added and gold is corrected in place. Every `push` creates a Langfuse dataset version and every experiment run records the version it ran on, so nothing is lost. `metadata.stage` separates proven rows (`regression`) from new or failing ones (`capability`). Do not create a dataset per prompt version.
+
 ## Layout
 
 | Path | Purpose |
@@ -119,7 +121,7 @@ node eval-dataset.mjs coverage --dataset=ai-builder/chat-20261012
 
 `pull` writes the local copy and creates `notes/ai-builder/chat-20261012/CHANGELOG.md`. It keeps the Langfuse item ids, so the next `push` updates the same rows. On the first pull `validate` reports forbidden tools the agent never had (`get_dynamic_data`, `list_connections`). Run `validate --dataset=ai-builder/chat-20261012 --fix` to remove them, then `push` (step 7). Pull again with `--force` whenever someone may have edited items in the Langfuse UI.
 
-For a brand-new dataset instead:
+A new dataset is warranted only for a different prompt (for example `chat-summary`), a different output schema the existing judge cannot read, or a holdout set that is never tuned against. For a brand-new dataset:
 
 ```bash
 node eval-dataset.mjs init --dataset=<name> --stubs
