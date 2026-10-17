@@ -36,7 +36,7 @@ A model that calls a forbidden tool fails the item even if everything else match
 ## Name and tag
 
 - `scenario` and `id`: `<app>_<app>_<nn>_<intent>`, lowercase, underscores. Example: `formsg_m365excel_04_list_columns_before_fill`.
-- `covers`: `tool:<name>` for every tool the item expects or forbids on purpose, `app:<key>`, `decision:<decision>`, `failure:<taxonomy id>` from `CHANGELOG.md`.
+- `covers`: `tool:<name>` for every tool the item expects or forbids on purpose, `app:<key>`, `decision:<decision>`, `failure:<taxonomy id>` from `notes/<dataset>/CHANGELOG.md`.
 - `suite`: new items start as `capability`.
 - `added`: today's date. `source_trace_id`: the trace or `null` for synthetic.
 - `reason`: one sentence saying which prompt rule the item pins down.

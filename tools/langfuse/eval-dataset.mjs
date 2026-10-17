@@ -4,6 +4,7 @@
  *   cd tools/langfuse
  *   pnpm run eval-dataset pull     --dataset=<langfuse dataset> [--items=<path>] [--include-archived] [--force]
  *   node eval-dataset.mjs init     --dataset=<langfuse dataset> [--stubs]
+ *   node eval-dataset.mjs inspect  --dataset=<langfuse dataset>
  *   pnpm run eval-dataset sample   --tags=ai-builder --from=<iso> [--to=<iso>] [--limit=100] [--environment=production]
  *   node eval-dataset.mjs adopt    --dataset=<name> --candidates=out/candidates/<date>.json --trace=<trace id> --scenario=<name>
  *   pnpm run eval-dataset validate --items=datasets/<name>/items.json
@@ -12,9 +13,11 @@
  *   pnpm run eval-dataset read     --dataset=<langfuse dataset> [--run=<run name>] [--score=tool_intent_correctness]
  *   pnpm run eval-dataset compare  --baseline=out/<dataset>/<run-a>.json --candidate=out/<dataset>/<run-b>.json
  *   pnpm run eval-dataset improve  --report=out/<dataset>/<run>.json [--items=<path>] [--apply] [--push --dataset=<name>]
- *   node eval-dataset.mjs calibrate --report=out/<dataset>/<run>.json --labels=<path> [--min=0.9] [--write-template=<path>]
+ *   node eval-dataset.mjs calibrate --report=out/<dataset>/<run>.json --dataset=<name> [--labels=<path>] [--min=0.9] [--write-template]
  *
  * --items defaults to datasets/<dataset>/items.json when --dataset is given.
+ * datasets/ is a local working copy and is ignored by git. Langfuse holds the dataset.
+ * notes/<dataset>/ is committed: CHANGELOG.md and judge-labels.json.
  * sample, push, read and improve --push need 1Password env injection, same as get-prompt.
  * validate, coverage, compare and improve run offline.
  *
@@ -38,8 +41,11 @@ import {
   datasetDir,
   fromLangfuseItem,
   itemsPath,
+  labelsPath,
+  notesDir,
   stubItems,
 } from './lib/dataset-files.mjs'
+import { formatInspection, inspectItems } from './lib/inspect.mjs'
 import { applyProposals, proposeAll } from './lib/improve.mjs'
 import { readEvalRun } from './lib/read-run.mjs'
 import { sampleTraces } from './lib/sample.mjs'
@@ -49,7 +55,7 @@ import { knownTools } from './lib/tools.mjs'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const USAGE =
-  'Usage: pnpm run eval-dataset <pull|init|sample|adopt|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
+  'Usage: pnpm run eval-dataset <pull|init|inspect|sample|adopt|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
 
 function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -186,6 +192,25 @@ async function pullCommand(flags) {
   }
 }
 
+function ensureChangelog(datasetName) {
+  const path = changelogPath(datasetName)
+  if (existsSync(path)) {
+    return
+  }
+  mkdirSync(notesDir(datasetName), { recursive: true })
+  writeFileSync(path, changelogTemplate(datasetName, today()))
+  console.log(`Created ${path}. Commit it.`)
+}
+
+function inspectCommand(flags) {
+  const path = itemsFlag(flags, 'inspect')
+  const items = readJson(path)
+  if (!Array.isArray(items)) {
+    throw new Error(`${path} must contain a JSON array`)
+  }
+  console.log(formatInspection(inspectItems(items)))
+}
+
 function initCommand(flags) {
   const datasetName = requireFlag(flags, 'dataset', 'init')
   const dir = datasetDir(datasetName)
@@ -197,15 +222,8 @@ function initCommand(flags) {
   const tools = knownTools()
   const items = flags.stubs ? stubItems(tools ?? [], today()) : []
   writeJson(path, items)
-  writeFileSync(
-    changelogPath(datasetName),
-    changelogTemplate(datasetName, today()),
-  )
-  console.log(
-    `Created ${path} with ${items.length} items and ${changelogPath(
-      datasetName,
-    )}.`,
-  )
+  ensureChangelog(datasetName)
+  console.log(`Created ${path} with ${items.length} items.`)
   if (flags.stubs) {
     console.log(
       'Every stub is a draft. Fill in the input, decide the expected output, then remove metadata.status.',
@@ -216,10 +234,23 @@ function initCommand(flags) {
   )
 }
 
+function labelsFlag(flags) {
+  if (typeof flags.labels === 'string') {
+    return resolve(flags.labels)
+  }
+  if (flags.dataset) {
+    return labelsPath(flags.dataset)
+  }
+  throw new Error('calibrate requires --labels=<path> or --dataset=<name>')
+}
+
 function calibrateCommand(flags) {
   const report = readJson(requireFlag(flags, 'report', 'calibrate'))
   if (flags['write-template']) {
-    const path = resolve(flags['write-template'])
+    const path =
+      typeof flags['write-template'] === 'string'
+        ? resolve(flags['write-template'])
+        : labelsFlag(flags)
     if (existsSync(path) && !flags.force) {
       throw new Error(`${path} exists. Pass --force to overwrite the labels.`)
     }
@@ -232,7 +263,7 @@ function calibrateCommand(flags) {
     )
     return
   }
-  const labels = readJson(requireFlag(flags, 'labels', 'calibrate'))
+  const labels = readJson(labelsFlag(flags))
   const result = calibrate(report, labels, {
     min: flags.min ? Number(flags.min) : undefined,
   })
@@ -462,6 +493,7 @@ async function pushProposals(flags, report, proposals) {
 const COMMANDS = {
   pull: pullCommand,
   init: initCommand,
+  inspect: inspectCommand,
   calibrate: calibrateCommand,
   sample: sampleCommand,
   adopt: adoptCommand,

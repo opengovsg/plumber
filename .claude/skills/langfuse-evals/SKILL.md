@@ -11,12 +11,12 @@ description: >
 
 # Langfuse evals
 
-Two jobs: keep the gold dataset in `tools/langfuse/datasets/<name>/items.json` current, and judge whether a new prompt version passes it. The process lives in [tools/langfuse/README.md](../../../tools/langfuse/README.md). Read it before the first run in a session. The production dataset is `ai-builder/chat-20261012`, stored at `tools/langfuse/datasets/ai-builder/chat-20261012/`. Pass `--dataset=<name>` and the commands find `items.json` themselves.
+Two jobs: keep the gold dataset in Langfuse current, and judge whether a new prompt version passes it. The process lives in [tools/langfuse/README.md](../../../tools/langfuse/README.md). Read it before the first run in a session. The production dataset is `ai-builder/chat-20261012`. Its local working copy is `tools/langfuse/datasets/ai-builder/chat-20261012/items.json`, ignored by git. The committed notes are in `tools/langfuse/notes/ai-builder/chat-20261012/`. Pass `--dataset=<name>` and the commands find both.
 
 Hard rules:
 
-- **Git is the source of truth.** Edit `items.json`, then `push`. Never edit items only in the Langfuse UI.
-- **Gold follows the prompt, not the model.** A failing run is never by itself a reason to change gold. Each gold edit needs a `CHANGELOG.md` line with the reason and a trace id.
+- **Langfuse holds the dataset. Never commit items.** `pull` before editing, edit the local `items.json`, `push` after. Only `notes/<dataset>/` is committed.
+- **Gold follows the prompt, not the model.** A failing run is never by itself a reason to change gold. Each gold edit needs a line in `notes/<dataset>/CHANGELOG.md` with the reason and a trace id.
 - **Never drop `must_not_tools`.** Never remove a side-effect guard to make a row pass.
 - **Never push with `--archive-missing`, and never `improve --push`, without the user confirming the list first.**
 - **Commands that reach Langfuse need 1Password.** Run them as `pnpm run eval-dataset ...` from `tools/langfuse`. If the credential prompt cannot be answered in this session, hand the exact command to the user and continue with the offline steps.
@@ -30,8 +30,8 @@ Hard rules:
 4. Write items following [references/item-schema.md](references/item-schema.md). Minimum per new tool: one should-fire, one must-not-fire, and for `execute_step`, `register_connection`, `delete_step` or `unpublish_pipe` one clarify item. Minimum per new prompt rule: one item that obeys it and one that would be tempted to break it.
 5. Write realistic inputs. Reuse the message shapes in existing items. Replace personal data with placeholders such as `<EMAIL_1>`.
 6. Set `suite` to `capability` for new items. Add `covers` tags: `tool:`, `app:`, `decision:`, `failure:`.
-7. Run `validate`, then `coverage` again. Append a `CHANGELOG.md` line.
-8. Show the user the new items and the push command. Push only when they agree.
+7. Run `validate`, then `coverage` again. Append a line to `notes/<dataset>/CHANGELOG.md`.
+8. Show the user the new items and the push command. Push only when they agree. The items are not committed. The push is how they persist.
 
 ## Workflow B: evaluate an experiment run
 
@@ -54,11 +54,11 @@ Follow Part A of the README. The agent runs `pull` or `init --stubs`, `sample`, 
 After a judge prompt or model change, or when a triage finds two or more `judge_miss` rows in one run:
 
 ```bash
-node eval-dataset.mjs calibrate --report=out/<name>/<run>.json --labels=datasets/<name>/judge-labels.json
+node eval-dataset.mjs calibrate --report=out/<safe name>/<run>.json --dataset=<name>
 ```
 
-Report both rates and the disagreements. Below 90% on either rate, propose a judge prompt change and name the rows that motivated it. If the labels file does not exist, write the template with `--write-template` and hand it to the user.
+Report both rates and the disagreements. Below 90% on either rate, propose a judge prompt change and name the rows that motivated it. If `notes/<dataset>/judge-labels.json` does not exist, write the template with `--write-template` and hand it to the user.
 
 ## Output
 
-The deliverable for Workflow A is the diff to `items.json` and `CHANGELOG.md`. The deliverable for Workflow B is the written report in chat with the run names and trace ids. Do not change the prompt in Langfuse from this skill.
+The deliverable for Workflow A is the pushed items in Langfuse plus the diff to `notes/<dataset>/CHANGELOG.md`. The deliverable for Workflow B is the written report in chat with the run names and trace ids. Do not change the prompt in Langfuse from this skill.

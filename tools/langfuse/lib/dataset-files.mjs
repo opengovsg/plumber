@@ -5,31 +5,45 @@ import { SIDE_EFFECT_TOOLS } from './tools.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-/**
- * A Langfuse dataset name can hold "/" for virtual folders. The same path
- * becomes nested directories here, so "ai-builder/chat-20261012" lives at
- * datasets/ai-builder/chat-20261012/.
- */
-export function datasetDir(datasetName) {
-  const parts = datasetName
+function nameParts(datasetName) {
+  return datasetName
     .split('/')
     .map((part) => part.replace(/[^a-zA-Z0-9._-]+/g, '_'))
     .filter(Boolean)
-  return join(__dirname, '..', 'datasets', ...parts)
+}
+
+/**
+ * Local working copy of the items, ignored by git. Langfuse holds the dataset.
+ * A "/" in the name becomes a directory: datasets/ai-builder/chat-20261012/.
+ */
+export function datasetDir(datasetName) {
+  return join(__dirname, '..', 'datasets', ...nameParts(datasetName))
 }
 
 export function itemsPath(datasetName) {
   return join(datasetDir(datasetName), 'items.json')
 }
 
+/**
+ * Committed notes about a dataset: behaviour inventory, taxonomy, gold change
+ * log and judge labels. None of it holds item content.
+ */
+export function notesDir(datasetName) {
+  return join(__dirname, '..', 'notes', ...nameParts(datasetName))
+}
+
 export function changelogPath(datasetName) {
-  return join(datasetDir(datasetName), 'CHANGELOG.md')
+  return join(notesDir(datasetName), 'CHANGELOG.md')
+}
+
+export function labelsPath(datasetName) {
+  return join(notesDir(datasetName), 'judge-labels.json')
 }
 
 export function changelogTemplate(datasetName, today) {
   return `# ${datasetName}
 
-Langfuse dataset: \`${datasetName}\`. Prompt under test: \`chat\`.
+Langfuse dataset: \`${datasetName}\`. Prompt under test: \`chat\`. Items live in Langfuse. This file holds the reasoning.
 
 ## Behaviour inventory
 
@@ -45,7 +59,7 @@ Named failure modes from error analysis. Each becomes a \`failure:<id>\` tag.
 
 ## Changes
 
-One line per gold change: date, scenario, reason, trace id.
+One line per gold change: date, scenario, reason, trace id. Langfuse keeps the item history. This keeps the why.
 
 - ${today}: created.
 `

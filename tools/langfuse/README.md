@@ -1,6 +1,8 @@
 # Langfuse tools
 
-Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a gold dataset in git that pins down what the production `chat` prompt must do, a calibrated judge, and a repeatable way to say whether a new prompt version is better.
+Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a gold dataset in Langfuse that pins down what the production `chat` prompt must do, a calibrated judge, and a repeatable way to say whether a new prompt version is better.
+
+**Langfuse holds the dataset.** Items are never committed. `datasets/` is a local working copy that git ignores: `pull` fills it, you edit it, `push` sends it back. The committed part is `notes/<dataset>/`: the behaviour inventory, the failure taxonomy, the gold change log and the judge labels. None of those hold item content.
 
 ## Before you start
 
@@ -13,23 +15,24 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
 
 | Path | Purpose |
 | --- | --- |
-| `datasets/<name>/items.json` | Gold items. Git is the source of truth. Langfuse holds a pushed copy. A `/` in the dataset name becomes a directory, so `ai-builder/chat-20261012` lives at `datasets/ai-builder/chat-20261012/`. |
-| `datasets/<name>/judge-labels.json` | Human labels for judge calibration. |
-| `datasets/<name>/CHANGELOG.md` | Behaviour inventory, failure taxonomy, and one line per gold change. |
-| `datasets/example/` | Three illustrative items used by the tests. Not a real suite. |
+| `datasets/<name>/items.json` | Local working copy of the Langfuse items. Ignored by git. A `/` in the dataset name becomes a directory, so `ai-builder/chat-20261012` lives at `datasets/ai-builder/chat-20261012/`. |
+| `notes/<name>/CHANGELOG.md` | Committed. Behaviour inventory, failure taxonomy, and one line per gold change. |
+| `notes/<name>/judge-labels.json` | Committed. Human labels for judge calibration. Scenario names and verdicts only. |
+| `datasets/example/` | Three illustrative items used by the tests. The only committed items. |
 | `out/` | Run reports, proposals and trace candidates. Ignored by git. |
 | `lib/` | Pure functions with unit tests. |
 | `../../.claude/skills/langfuse-evals/` | Agent skill that follows this README. |
 
 ## Commands
 
-`--dataset=<name>` is the Langfuse dataset name. With it, `--items` defaults to `datasets/<name>/items.json`. Pass `--project=pairAction` to use the other Langfuse project. The default is `aiBuilder`.
+`--dataset=<name>` is the Langfuse dataset name. With it, `--items` defaults to `datasets/<name>/items.json` and `--labels` to `notes/<name>/judge-labels.json`. Pass `--project=pairAction` to use the other Langfuse project. The default is `aiBuilder`.
 
 | Command | Mode | What it does |
 | --- | --- | --- |
 | `pnpm run get-prompt chat --label=production` | Langfuse | Saves the prompt to `docs/plans/prompts/chat_v<N>.md`. |
 | `pnpm run eval-dataset pull --dataset=<name> [--include-archived] [--force]` | Langfuse | Imports the Langfuse items into `items.json` and creates `CHANGELOG.md`. |
-| `node eval-dataset.mjs init --dataset=<name> [--stubs]` | offline | Creates an empty dataset folder. `--stubs` adds draft items for every agent tool. |
+| `node eval-dataset.mjs init --dataset=<name> [--stubs]` | offline | Creates an empty local copy and the notes folder. `--stubs` adds draft items for every agent tool. |
+| `node eval-dataset.mjs inspect --dataset=<name>` | offline | Prints key names, decision counts, suite values and tags. No item content, safe to paste into a chat. |
 | `pnpm run eval-dataset sample --from=<iso> [--to=<iso>] [--limit=100] [--tags=ai-builder] [--environment=<env>]` | Langfuse | Writes redacted draft items from production traces to `out/candidates/<date>.json`. |
 | `node eval-dataset.mjs adopt --dataset=<name> --candidates=<path> --trace=<trace id> --scenario=<name>` | offline | Copies one candidate into `items.json` as a draft. |
 | `node eval-dataset.mjs validate --dataset=<name>` | offline | Checks item shape, tool names, duplicate ids and leftover drafts. |
@@ -38,8 +41,8 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
 | `pnpm run eval-dataset read --dataset=<name> [--run=<run>] [--score=tool_intent_correctness]` | Langfuse | Writes `out/<dataset>/<run>.json` with every item's pass/fail and the failures in full. Default run: the newest. |
 | `node eval-dataset.mjs compare --baseline=<report> --candidate=<report> [--min-slice=20] [--json=<path>]` | offline | Pairs two runs item by item. Exit code 1 on regression. |
 | `node eval-dataset.mjs improve --report=<report> [--dataset=<name> --apply] [--push]` | offline, push is Langfuse | Proposes safe gold edits for failures. Never drops `must_not_tools`. |
-| `node eval-dataset.mjs calibrate --report=<report> --write-template=<labels path>` | offline | Writes up to 50 judge-pass and 50 judge-fail rows for a human to label. |
-| `node eval-dataset.mjs calibrate --report=<report> --labels=<labels path> [--min=0.9]` | offline | Compares human labels with the judge. Exit code 1 when either rate is below the minimum. |
+| `node eval-dataset.mjs calibrate --report=<report> --dataset=<name> --write-template` | offline | Writes up to 50 judge-pass and 50 judge-fail rows to `notes/<name>/judge-labels.json` for a human to label. |
+| `node eval-dataset.mjs calibrate --report=<report> --dataset=<name> [--min=0.9]` | offline | Compares the labels with the judge. Exit code 1 when either rate is below the minimum. |
 | `pnpm test` | offline | Unit tests for `lib/`. |
 
 ## Item format
@@ -93,7 +96,7 @@ Each step names who does it. Manual steps are marked. Steps 1 to 4 take an after
 - `validate` passes and `push` has run.
 - The judge passed calibration (step 8).
 - The baseline run (step 9) has zero untriaged failures in `suite: regression`.
-- Two reviewers signed off in `CHANGELOG.md`.
+- Two reviewers signed off in `notes/<name>/CHANGELOG.md`.
 
 ### 1. Bring the dataset under git (once)
 
@@ -103,7 +106,7 @@ node eval-dataset.mjs validate --dataset=ai-builder/chat-20261012
 node eval-dataset.mjs coverage --dataset=ai-builder/chat-20261012
 ```
 
-`pull` keeps the Langfuse item ids, so the next `push` updates the same rows. `validate` lists what the imported items lack, usually `covers` tags and `suite`. Add those by hand in `items.json`. Give every imported item `"suite": "regression"` for now. Step 9 moves the ones that fail on the production prompt. Commit `items.json` and `CHANGELOG.md`.
+`pull` writes the local copy and creates `notes/ai-builder/chat-20261012/CHANGELOG.md`. It keeps the Langfuse item ids, so the next `push` updates the same rows. `validate` lists what the items lack. Fix those by hand in `items.json`, then `push` (step 7). Commit only the notes folder. Pull again with `--force` whenever someone may have edited items in the Langfuse UI.
 
 For a brand-new dataset instead:
 
@@ -111,7 +114,7 @@ For a brand-new dataset instead:
 node eval-dataset.mjs init --dataset=<name> --stubs
 ```
 
-`init` creates the folder, a `CHANGELOG.md` template and, with `--stubs`, a draft item per tool. Each stub holds a `TODO` input. The author replaces it, decides the expected output and removes `metadata.status`. Create the dataset in Langfuse (Datasets, New dataset, same name) before the first push.
+`init` creates the local folder, the notes folder with a `CHANGELOG.md` template and, with `--stubs`, a draft item per tool. Each stub holds a `TODO` input. The author replaces it, decides the expected output and removes `metadata.status`. Create the dataset in Langfuse (Datasets, New dataset, same name) before the first push.
 
 ### 2. Fetch the production prompt and write the behaviour inventory (manual)
 
@@ -119,7 +122,7 @@ node eval-dataset.mjs init --dataset=<name> --stubs
 pnpm run get-prompt chat --label=production
 ```
 
-Read the saved file. In `CHANGELOG.md` under "Behaviour inventory", write one line per rule the prompt promises. Examples: "asks before `execute_step` when the step sends a message", "never activates a pipe", "uses `list_columns` before filling multirow fields". Also list every tool from `coverage` with the rule that governs it. Every line becomes at least one item in step 5.
+Read the saved file. In `notes/<name>/CHANGELOG.md` under "Behaviour inventory", write one line per rule the prompt promises. Examples: "asks before `execute_step` when the step sends a message", "never activates a pipe", "uses `list_columns` before filling multirow fields". Also list every tool from `coverage` with the rule that governs it. Every line becomes at least one item in step 5.
 
 ### 3. Sample production traces
 
@@ -177,24 +180,24 @@ node eval-dataset.mjs validate --dataset=ai-builder/chat-20261012
 pnpm run eval-dataset push --dataset=ai-builder/chat-20261012
 ```
 
-`push` upserts by id. Items in Langfuse that are not in the file are listed. Pass `--archive-missing` to archive them. Langfuse records a dataset version on every change, so an experiment always names the item set it ran on. Commit.
+`push` upserts by id. Items in Langfuse that are not in the file are listed. Pass `--archive-missing` to archive them. Langfuse records a dataset version on every change, so an experiment always names the item set it ran on. Commit the notes folder. The local `items.json` stays uncommitted.
 
 ### 8. Check the judge (manual)
 
 1. In Langfuse, open the evaluator that writes `tool_intent_correctness`. It must be a BOOLEAN score scoped to the dataset, with `expected_output` and the model output mapped into the template. The judge prompt must check one thing: did the model's decision match the gold. It should write a short critique before the verdict, treat a call to any `must_not_tools` entry as a fail, and treat an `any_of` match as a pass. Edit it to match if it does not.
 2. Run the baseline experiment and read it (step 9, first two commands). Then:
    ```bash
-   node eval-dataset.mjs calibrate --report=out/ai-builder_chat-20261012/<run>.json --write-template=datasets/ai-builder/chat-20261012/judge-labels.json
+   node eval-dataset.mjs calibrate --report=out/ai-builder_chat-20261012/<run>.json --dataset=ai-builder/chat-20261012 --write-template
    ```
-   The file holds up to 50 judge-pass and 50 judge-fail rows. A reviewer opens each trace, reads the gold, and sets `human` to `pass` or `fail` without looking at the `judge` field first. Commit the file.
+   The file `notes/ai-builder/chat-20261012/judge-labels.json` holds up to 50 judge-pass and 50 judge-fail rows. A reviewer opens each trace, reads the gold, and sets `human` to `pass` or `fail` without looking at the `judge` field first. Commit the file.
 3. Check agreement:
    ```bash
-   node eval-dataset.mjs calibrate --report=out/ai-builder_chat-20261012/<run>.json --labels=datasets/ai-builder/chat-20261012/judge-labels.json
+   node eval-dataset.mjs calibrate --report=out/ai-builder_chat-20261012/<run>.json --dataset=ai-builder/chat-20261012
    ```
    The true positive rate (judge pass when human pass) and true negative rate (judge fail when human fail) must both be at least 90%. Judges fail the second rate far more often than the first. Below 90%, fix the judge prompt, re-run the evaluator on the same run (the evaluator's scope setting for past dataset runs, or a batch evaluation on the run's traces), `read` again, and check again.
 4. Pin the judge to a dated model version. Re-run this calibration whenever the judge prompt or model changes.
 
-Why labels live in the repo and not in a Langfuse annotation queue: the file is reviewable in a pull request, it travels with the gold it judges, and the `calibrate` command reads it directly. Annotation queues suit several annotators labelling live traces in the UI. Move to a queue when more than two people label at once.
+Why labels live in the repo and not in a Langfuse annotation queue: the file is reviewable in a pull request, it holds only scenario names and verdicts, and the `calibrate` command reads it directly. Annotation queues suit several annotators labelling live traces in the UI. Move to a queue when more than two people label at once.
 
 ### 9. Baseline run and triage
 
@@ -251,7 +254,7 @@ Put each failing row into one bucket before touching the prompt:
 | `regression` | Model wrong, gold right, passed on the baseline. | Fix the prompt. |
 | `known_gap` | Model wrong, gold right, also failed on the baseline. | Leave in `capability`. |
 
-`improve` automates the two gold edits that are always safe and marks judge misses. Review its `skip` rows by hand. `improve --apply --dataset=<name>` writes the safe edits into `items.json`. Then `push`.
+`improve` automates the two gold edits that are always safe and marks judge misses. Review its `skip` rows by hand. `improve --apply --dataset=<name>` writes the safe edits into the local `items.json`. Then `push`.
 
 ### 4. Decide
 
@@ -264,7 +267,7 @@ When a new app, action, tool or prompt rule lands:
 1. Add items before the prompt change ships: one should-fire, one must-not-fire, one clarify item for side-effect tools, and one item per new rule in the behaviour inventory. A new tool shows up in `coverage` with zero items as soon as it exists in `mcp-bridge-tools.ts`.
 2. New items start in `capability`. Move them to `regression` after they pass on two consecutive runs.
 3. Run `coverage` and `validate`, then `push`.
-4. Add a `CHANGELOG.md` line.
+4. Add a line to `notes/<name>/CHANGELOG.md` and commit it.
 
 Other rules:
 

@@ -139,8 +139,10 @@ dump.rdb
 .vscode
 tmp/
 
-# Langfuse eval run reports
+# Langfuse eval run reports and local dataset copies. Datasets live in Langfuse only.
 tools/langfuse/out/
+tools/langfuse/datasets/*
+!tools/langfuse/datasets/example/
 
 # Generated GraphQL
 /**/graphql/__generated__
