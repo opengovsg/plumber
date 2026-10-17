@@ -2,6 +2,7 @@
  * Maintains the AI Builder gold dataset and reads Langfuse experiment runs.
  *
  *   cd tools/langfuse
+ *   pnpm run eval-dataset datasets
  *   pnpm run eval-dataset pull     --dataset=<langfuse dataset> [--items=<path>] [--include-archived] [--force]
  *   node eval-dataset.mjs init     --dataset=<langfuse dataset> [--stubs]
  *   node eval-dataset.mjs inspect  --dataset=<langfuse dataset>
@@ -60,7 +61,7 @@ import { knownTools } from './lib/tools.mjs'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const USAGE =
-  'Usage: pnpm run eval-dataset <pull|init|inspect|sample|adopt|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
+  'Usage: pnpm run eval-dataset <datasets|pull|init|inspect|sample|adopt|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
 
 function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -146,6 +147,36 @@ function loadItems(flags, command, options = {}) {
 function printErrors(errors) {
   for (const error of errors) {
     console.error(`- ${error}`)
+  }
+}
+
+async function datasetsCommand(flags) {
+  const client = await langfuseClient(flags)
+  const rows = []
+  let page = 1
+  let totalPages = 1
+  do {
+    const response = await client.api.datasets.list({ page, limit: 50 })
+    rows.push(...response.data)
+    totalPages = response.meta?.totalPages ?? 1
+    page += 1
+  } while (page <= totalPages)
+  if (rows.length === 0) {
+    console.log('No datasets in this Langfuse project.')
+    return
+  }
+  rows.sort((a, b) => a.name.localeCompare(b.name))
+  for (const dataset of rows) {
+    const local = existsSync(itemsPath(dataset.name))
+      ? 'local copy'
+      : 'not pulled'
+    const created = String(dataset.createdAt ?? '').slice(0, 10)
+    console.log(
+      `${dataset.name}  (${local}${created ? `, created ${created}` : ''})`,
+    )
+    if (dataset.description) {
+      console.log(`  ${dataset.description}`)
+    }
   }
 }
 
@@ -513,6 +544,7 @@ async function pushProposals(flags, report, proposals) {
 }
 
 const COMMANDS = {
+  datasets: datasetsCommand,
   pull: pullCommand,
   init: initCommand,
   inspect: inspectCommand,

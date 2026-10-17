@@ -27,12 +27,22 @@ Command reference and flags: [tools/langfuse/README.md](../../../tools/langfuse/
 - **Never copy an item into the prompt as an example.**
 - **Draft, do not decide.** For every item you write, the developer confirms the expected output. Say which prompt rule it pins.
 
-## Start here: find the current phase
+## Start here: pick the dataset, then find the phase
 
-Run these from `tools/langfuse` (all offline) and read the answers:
+**Never assume the dataset.** Ask the developer which Langfuse dataset the session is about. To help them answer, list what exists:
 
 ```bash
-ls datasets/ai-builder/chat-20261012/items.json notes/ai-builder/chat-20261012/ out/ai-builder_chat-20261012/ 2>&1
+cd tools/langfuse
+ls -d datasets/*/*/items.json datasets/*/items.json 2>/dev/null   # local copies, offline
+pnpm run eval-dataset datasets                                     # every dataset in Langfuse, needs 1Password
+```
+
+One local copy and no other answer means that dataset. Several, or none, means ask. A new dataset starts with `init --dataset=<name>` and must also be created in Langfuse before the first push. Use the chosen name as `<dataset>` in every command below. A `/` in the name becomes a directory locally, and `_` in the `out/` report folder.
+
+Then run these (offline) and read the answers:
+
+```bash
+ls datasets/<dataset>/items.json notes/<dataset>/ out/<dataset with / as _>/ 2>&1
 ls ../../docs/plans/prompts/ 2>&1
 ```
 
@@ -45,11 +55,11 @@ ls ../../docs/plans/prompts/ 2>&1
 | Baseline report exists, no `judge-labels.json` with `human` filled | 5. Calibrate |
 | Baseline stable and judge calibrated | 6. Evaluate a new prompt, or 7. Maintain |
 
-Tell the developer which phase you are in and what the phase produces before running anything. The dataset is `ai-builder/chat-20261012` unless they name another.
+Tell the developer which dataset and phase you are in and what the phase produces before running anything.
 
 ## Phase 1: Import
 
-1. Ask the developer to run `pnpm run eval-dataset pull --dataset=ai-builder/chat-20261012` (add `--force` if a local copy exists). It also creates the notes folder.
+1. Ask the developer to run `pnpm run eval-dataset pull --dataset=<dataset>` (add `--force` if a local copy exists). It also creates the notes folder.
 2. Run `node eval-dataset.mjs inspect --dataset=...` and read the shape: input keys, decision counts, `suite` values, judge instruction keys. Learn the dataset's own vocabulary from this. Match it in everything you write.
 3. Run `node eval-dataset.mjs validate --dataset=... --fix`. `--fix` only removes forbidden tools the agent does not have. Report every other error with the fix you propose. Do not edit `items.json` until the developer agrees.
 4. Run `coverage`. Keep the gap list for Phase 3.
@@ -58,7 +68,7 @@ Done when `validate` passes.
 
 ## Phase 2: Behaviour inventory
 
-1. Ask the developer to run `pnpm run get-prompt chat --label=production`. Read the saved file under `docs/plans/prompts/`. Never quote it in a commit.
+1. Ask which Langfuse prompt the dataset tests (`chat` for the AI Builder) and have the developer run `pnpm run get-prompt <prompt> --label=production`. Read the saved file under `docs/plans/prompts/`. Never quote it in a commit.
 2. Write `notes/<dataset>/CHANGELOG.md` with three sections: **Behaviour inventory**, **Failure taxonomy**, **Changes**. Follow [references/inventory.md](references/inventory.md) for the shape of a rule line and what counts as testable.
 3. Group rules by prompt phase. Give each a stable id `R01`, `R02`, ... Each line names one behaviour the judge could check from one turn: the tool to call, the block to emit, the question to ask, or the thing never to do.
 4. Walk the developer through the list. They strike rules that are not worth an item and add rules you missed. Record the prompt version at the top.

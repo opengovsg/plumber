@@ -4,14 +4,14 @@ The developer does these in the browser. Give the steps and the names to use.
 
 ## Run an experiment on the dataset
 
-1. Datasets, open `ai-builder/chat-20261012`, New experiment.
-2. Prompt: `chat`, pick the version under test. Production is the version with the `production` label.
+1. Datasets, open `<dataset>`, New experiment.
+2. Prompt: the one the dataset tests (`chat` for the AI Builder), pick the version under test. Production is the version with the `production` label.
 3. LLM connection: the one the team uses for experiments.
 4. Structured output: the existing decision schema.
 5. Evaluator: `tool_intent_correctness`.
 6. Run name: `chat-v<version>-<yyyymmdd>-a`. Repeat with `-b`.
 
-The experiment maps the item `input` keys `message` and `message_history` into the prompt. Items with other keys fail.
+The experiment maps the item `input` keys into the prompt variables. Run `inspect` to see which keys the dataset uses. Items with other keys fail.
 
 ## Re-run the judge on an existing run
 

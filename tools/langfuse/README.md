@@ -32,6 +32,7 @@ The step-by-step guide is the `langfuse-evals` skill in `.claude/skills/langfuse
 | Command | Mode | What it does |
 | --- | --- | --- |
 | `pnpm run get-prompt chat --label=production` | Langfuse | Saves the prompt to `docs/plans/prompts/chat_v<N>.md`. |
+| `pnpm run eval-dataset datasets` | Langfuse | Lists the datasets in the project and which ones have a local copy. |
 | `pnpm run eval-dataset pull --dataset=<name> [--include-archived] [--force]` | Langfuse | Imports the Langfuse items into `items.json` and creates `CHANGELOG.md`. |
 | `node eval-dataset.mjs init --dataset=<name> [--stubs]` | offline | Creates an empty local copy and the notes folder. `--stubs` adds draft items for every agent tool. |
 | `node eval-dataset.mjs inspect --dataset=<name>` | offline | Prints key names, decision counts, suite values and tags. No item content, safe to paste into a chat. |
@@ -96,7 +97,7 @@ The step-by-step guide is the `langfuse-evals` skill in `.claude/skills/langfuse
 
 ## Part A: build the gold dataset from the production prompt
 
-Each step names who does it. Manual steps are marked. Steps 1 to 4 take an afternoon. Steps 5 to 8 take a few days of reviewer time spread over a week.
+Each step names who does it. Manual steps are marked. Steps 1 to 4 take an afternoon. Steps 5 to 8 take a few days of reviewer time spread over a week. The commands below use `ai-builder/chat-20261012` as the example dataset. Run `pnpm run eval-dataset datasets` to see the real list and substitute the name you work on.
 
 ### Definition of done
 
