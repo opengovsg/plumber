@@ -73,6 +73,27 @@ function isFalseScore(score) {
   return String(score.stringValue ?? '').toLowerCase() === 'false'
 }
 
+// The Langfuse UI appends a timestamp to the run name the user types.
+export function findRunByName(runs, runName, datasetName) {
+  const exact = runs.find((candidate) => candidate.name === runName)
+  if (exact) {
+    return exact
+  }
+  const prefixed = runs.filter((candidate) =>
+    candidate.name.startsWith(runName),
+  )
+  if (prefixed.length === 1) {
+    return prefixed[0]
+  }
+  if (prefixed.length > 1) {
+    const names = prefixed.map((candidate) => `  ${candidate.name}`).join('\n')
+    throw new Error(
+      `Run "${runName}" matches more than one run on dataset "${datasetName}". Use the full name:\n${names}`,
+    )
+  }
+  return undefined
+}
+
 export async function readEvalRun(client, options) {
   const { datasetName, runName, scoreName } = options
   const runs = await listAll((page) =>
@@ -83,13 +104,14 @@ export async function readEvalRun(client, options) {
   }
 
   const run = runName
-    ? runs.find((candidate) => candidate.name === runName)
+    ? findRunByName(runs, runName, datasetName)
     : [...runs].sort(
         (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
       )[0]
   if (!run) {
+    const names = runs.map((candidate) => `  ${candidate.name}`).join('\n')
     throw new Error(
-      `Run "${runName}" was not found on dataset "${datasetName}".`,
+      `Run "${runName}" was not found on dataset "${datasetName}". Runs:\n${names}`,
     )
   }
 

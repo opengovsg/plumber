@@ -9,7 +9,7 @@ The developer does these in the browser. Give the steps and the names to use.
 3. LLM connection: the one the team uses for experiments.
 4. Structured output: the existing decision schema.
 5. Evaluator: `tool_intent_correctness`.
-6. Run name: `chat-v<version>-<yyyymmdd>-a`. Repeat with `-b`.
+6. Run name: `chat-v<version>-<yyyymmdd>-a`. Repeat with `-b`. Langfuse appends a timestamp to the name. `read --run=<name>` accepts the typed prefix when it matches one run.
 
 The experiment maps the item `input` keys into the prompt variables. Run `inspect` to see which keys the dataset uses. Items with other keys fail.
 
