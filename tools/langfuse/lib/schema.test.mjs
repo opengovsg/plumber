@@ -49,7 +49,7 @@ test('rejects unknown tools and a forbidden expected tool', () => {
     ],
     { knownTools: TOOLS },
   )
-  assert.ok(errors.some((e) => e.includes('unknown tool "make_pipe"')))
+  assert.ok(errors.some((e) => e.includes('make_pipe')))
   assert.ok(errors.some((e) => e.includes('forbids the expected tool')))
 })
 

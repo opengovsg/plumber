@@ -193,7 +193,11 @@ export function validateItem(item, index, tools) {
       errors.push(`${path}.metadata.covers: tags must be strings`)
     }
     if (item.metadata.suite != null && !SUITES.includes(item.metadata.suite)) {
-      errors.push(`${path}.metadata.suite: must be one of ${SUITES.join(', ')}`)
+      errors.push(
+        `${path}.metadata.suite: found ${JSON.stringify(
+          item.metadata.suite,
+        )}, must be one of ${SUITES.join(', ')}`,
+      )
     }
   }
   if ('expected_output' in item && 'expectedOutput' in item) {
