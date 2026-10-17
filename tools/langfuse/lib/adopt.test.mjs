@@ -32,10 +32,9 @@ test('adopts a sampled candidate as a draft item', () => {
   assert.equal(item.metadata.observed_decision, 'tool_call')
   assert.equal(item.metadata.observed, undefined)
   assert.equal(item.metadata.last_user_message, undefined)
-  assert.deepEqual(item.input.messages[0], {
-    role: 'user',
-    content: 'Build it',
-  })
+  assert.equal(item.input.message, 'Build it')
+  assert.deepEqual(item.input.message_history, [])
+  assert.equal(item.metadata.stage, 'capability')
 })
 
 test('returns null for an unknown trace', () => {

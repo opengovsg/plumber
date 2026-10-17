@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
-import { validateItems } from './schema.mjs'
+import { pruneUnknownTools, validateItems } from './schema.mjs'
 
 const TOOLS = [
   'create_pipe',
@@ -53,23 +53,81 @@ test('rejects unknown tools and a forbidden expected tool', () => {
   assert.ok(errors.some((e) => e.includes('forbids the expected tool')))
 })
 
-test('requires an intent for clarify and respond', () => {
+test('clarify and respond need some instruction for the judge', () => {
   const errors = validateItems([
-    item({ expected_output: { decision: 'clarify' } }),
     item({
-      id: 'scenario_02',
-      metadata: { scenario: 'scenario_02', covers: ['x'] },
+      expected_output: {
+        decision: 'clarify',
+        must_not_tools: ['execute_step'],
+      },
+    }),
+    item({
+      id: 's2',
+      metadata: { scenario: 's2', covers: ['x'] },
       expected_output: { decision: 'respond' },
+    }),
+    item({
+      id: 's3',
+      metadata: { scenario: 's3', covers: ['x'] },
+      expected_output: { decision: 'clarify', must_relay: 'the error' },
+    }),
+    item({
+      id: 's4',
+      metadata: { scenario: 's4', covers: ['x'] },
+      expected_output: {
+        decision: 'respond',
+        required_response_intent: 'say no',
+      },
     }),
   ])
   assert.equal(
-    errors.filter((e) => e.includes('required_question_intent')).length,
-    1,
+    errors.filter((e) => e.includes('needs an instruction for the judge'))
+      .length,
+    2,
   )
-  assert.equal(
-    errors.filter((e) => e.includes('required_response_intent')).length,
-    1,
+  assert.ok(errors.some((e) => e.startsWith('items[0]')))
+  assert.ok(errors.some((e) => e.startsWith('items[1]')))
+})
+
+test('stage is checked and suite is free text', () => {
+  const errors = validateItems([
+    item({
+      metadata: {
+        scenario: 'scenario_01',
+        covers: ['x'],
+        suite: 'journey',
+        stage: 'regression',
+      },
+    }),
+    item({
+      id: 's2',
+      metadata: {
+        scenario: 's2',
+        covers: ['x'],
+        suite: 'anything',
+        stage: 'later',
+      },
+    }),
+  ])
+  assert.equal(errors.length, 1)
+  assert.match(errors[0], /items\[1\].metadata.stage: found "later"/)
+})
+
+test('prunes forbidden tools the agent does not have', () => {
+  const { items, removed } = pruneUnknownTools(
+    [
+      item({
+        expected_output: {
+          decision: 'clarify',
+          must_relay: 'x',
+          must_not_tools: ['execute_step', 'get_dynamic_data'],
+        },
+      }),
+    ],
+    TOOLS,
   )
+  assert.deepEqual(items[0].expected_output.must_not_tools, ['execute_step'])
+  assert.deepEqual(removed, [{ id: 'scenario_01', tool: 'get_dynamic_data' }])
 })
 
 test('rejects duplicate ids, missing covers and bad scenario names', () => {

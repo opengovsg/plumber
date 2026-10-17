@@ -28,8 +28,8 @@ Hard rules:
 2. List the behaviours the change promises. Each becomes at least one item.
 3. Run `node eval-dataset.mjs coverage --items=datasets/<name>/items.json`. Note the gaps for the affected tools and apps.
 4. Write items following [references/item-schema.md](references/item-schema.md). Minimum per new tool: one should-fire, one must-not-fire, and for `execute_step`, `register_connection`, `delete_step` or `unpublish_pipe` one clarify item. Minimum per new prompt rule: one item that obeys it and one that would be tempted to break it.
-5. Write realistic inputs. Reuse the message shapes in existing items. Replace personal data with placeholders such as `<EMAIL_1>`.
-6. Set `suite` to `capability` for new items. Add `covers` tags: `tool:`, `app:`, `decision:`, `failure:`.
+5. Write realistic inputs: `message` for the turn under test, `message_history` for earlier turns. Replace personal data with placeholders such as `<EMAIL_1>`.
+6. Set `suite` to `journey`, `safety` or `contract` and `stage` to `capability`. Add `covers` tags in the existing `<tool>:<aspect>` style.
 7. Run `validate`, then `coverage` again. Append a line to `notes/<dataset>/CHANGELOG.md`.
 8. Show the user the new items and the push command. Push only when they agree. The items are not committed. The push is how they persist.
 
@@ -41,7 +41,7 @@ Hard rules:
    pnpm run eval-dataset read --dataset=<name> --run=<candidate run>
    node eval-dataset.mjs compare --baseline=out/<name>/<baseline>.json --candidate=out/<name>/<candidate>.json
    ```
-3. Triage every `broken` row and every `both fail` row in `suite: regression` using [references/triage.md](references/triage.md). Open the trace in Langfuse when the judge comment is not enough. Run `improve --report=...` to find the two safe gold edits and the judge misses. Treat its `skip` rows as manual work.
+3. Triage every `broken` row and every `both fail` row in `stage: regression` using [references/triage.md](references/triage.md). Open the trace in Langfuse when the judge comment is not enough. Run `improve --report=...` to find the two safe gold edits and the judge misses. Treat its `skip` rows as manual work.
 4. Report in this order: verdict, `must_not_tools` violations, broken rows with their bucket, fixed rows, slice table for slices with 20 or more items, flaky rows if two runs exist. Counts, not percentages, for small slices.
 5. Recommend one of: ship, fix the prompt (name the rows and the rule to change), fix the judge, or fix gold (name the rows and the reason). The user decides.
 

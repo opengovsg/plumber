@@ -19,7 +19,44 @@ export const UI_BLOCK_TYPES = [
   'TILE_SETUP_DATA',
 ]
 
-export const SUITES = ['regression', 'capability', 'holdout']
+/**
+ * Lifecycle of an item. metadata.suite is the team's own category
+ * (journey, safety, contract) and is not checked.
+ */
+export const STAGES = ['regression', 'capability', 'holdout']
+
+/**
+ * A clarify or respond item is judgeable when it carries at least one
+ * instruction for the judge besides the forbidden tool list.
+ */
+export function hasJudgeInstruction(expected) {
+  return Object.keys(expected).some(
+    (key) => key !== 'must_not_tools' && /^(required_|must_)/.test(key),
+  )
+}
+
+export function pruneUnknownTools(items, tools) {
+  const removed = []
+  const next = items.map((item) => {
+    const key = 'expected_output' in item ? 'expected_output' : 'expectedOutput'
+    const expected = item[key]
+    if (!expected || !Array.isArray(expected.must_not_tools)) {
+      return item
+    }
+    const kept = expected.must_not_tools.filter((tool) => {
+      const known = tools.includes(tool)
+      if (!known) {
+        removed.push({ id: itemId(item), tool })
+      }
+      return known
+    })
+    if (kept.length === expected.must_not_tools.length) {
+      return item
+    }
+    return { ...item, [key]: { ...expected, must_not_tools: kept } }
+  })
+  return { items: next, removed }
+}
 
 function isObject(value) {
   return value != null && typeof value === 'object' && !Array.isArray(value)
@@ -92,19 +129,11 @@ export function validateExpectedOutput(expected, path, tools) {
     }
   }
   if (
-    expected.decision === 'clarify' &&
-    !isNonEmptyString(expected.required_question_intent)
+    ['clarify', 'respond'].includes(expected.decision) &&
+    !hasJudgeInstruction(expected)
   ) {
     errors.push(
-      `${path}.required_question_intent: clarify needs the intent of the question`,
-    )
-  }
-  if (
-    expected.decision === 'respond' &&
-    !isNonEmptyString(expected.required_response_intent)
-  ) {
-    errors.push(
-      `${path}.required_response_intent: respond needs the intent of the answer`,
+      `${path}: ${expected.decision} needs an instruction for the judge, such as required_question_intent or required_response_intent`,
     )
   }
   if (expected.decision === 'any_of') {
@@ -192,11 +221,11 @@ export function validateItem(item, index, tools) {
     } else if (item.metadata.covers.some((tag) => !isNonEmptyString(tag))) {
       errors.push(`${path}.metadata.covers: tags must be strings`)
     }
-    if (item.metadata.suite != null && !SUITES.includes(item.metadata.suite)) {
+    if (item.metadata.stage != null && !STAGES.includes(item.metadata.stage)) {
       errors.push(
-        `${path}.metadata.suite: found ${JSON.stringify(
-          item.metadata.suite,
-        )}, must be one of ${SUITES.join(', ')}`,
+        `${path}.metadata.stage: found ${JSON.stringify(
+          item.metadata.stage,
+        )}, must be one of ${STAGES.join(', ')}`,
       )
     }
   }

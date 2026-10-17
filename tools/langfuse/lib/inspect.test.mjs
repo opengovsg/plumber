@@ -13,11 +13,15 @@ test('summarises shapes without item content', () => {
   )
   const report = inspectItems(items)
   assert.equal(report.items, 3)
-  assert.deepEqual(report.inputKeys, { messages: 3 })
+  assert.deepEqual(report.inputKeys, { message: 3, message_history: 3 })
   assert.equal(report.decisions.any_of, 1)
   assert.equal(report.forbiddenTools.execute_step, 2)
-  assert.deepEqual(report.suites, { '"regression"': 3 })
+  assert.deepEqual(report.suites, {
+    '"journey"': 1,
+    '"safety"': 1,
+    '"contract"': 1,
+  })
   const text = formatInspection(report)
-  assert.match(text, /suite values:\n  "regression": 3/)
+  assert.match(text, /suite values:\n  "journey": 1/)
   assert.doesNotMatch(text, /Facility booking/)
 })

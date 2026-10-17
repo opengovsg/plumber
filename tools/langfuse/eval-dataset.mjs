@@ -49,7 +49,12 @@ import { formatInspection, inspectItems } from './lib/inspect.mjs'
 import { applyProposals, proposeAll } from './lib/improve.mjs'
 import { readEvalRun } from './lib/read-run.mjs'
 import { sampleTraces } from './lib/sample.mjs'
-import { expectedOutputOf, itemId, validateItems } from './lib/schema.mjs'
+import {
+  expectedOutputOf,
+  itemId,
+  pruneUnknownTools,
+  validateItems,
+} from './lib/schema.mjs'
 import { knownTools } from './lib/tools.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -316,6 +321,28 @@ function adoptCommand(flags) {
 }
 
 function validateCommand(flags) {
+  if (flags.fix) {
+    const itemsFile = resolve(itemsFlag(flags, 'validate'))
+    const tools = knownTools()
+    if (!tools) {
+      throw new Error(
+        '--fix needs the backend tool list. Run from a full checkout.',
+      )
+    }
+    const { items: fixed, removed } = pruneUnknownTools(
+      readJson(itemsFile),
+      tools,
+    )
+    if (removed.length > 0) {
+      writeJson(itemsFile, fixed)
+    }
+    for (const entry of removed) {
+      console.log(
+        `Removed "${entry.tool}" from must_not_tools of ${entry.id}. The agent has no such tool.`,
+      )
+    }
+    console.log(`${removed.length} forbidden tool entries removed.`)
+  }
   const { path, items, errors } = loadItems(flags, 'validate')
   if (errors.length > 0) {
     console.error(`${errors.length} problems in ${path}:`)

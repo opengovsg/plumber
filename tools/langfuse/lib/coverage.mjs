@@ -48,6 +48,7 @@ export function coverageReport(items, options = {}) {
   const tools = options.knownTools ?? null
   const byDecision = new Map()
   const bySuite = new Map()
+  const byStage = new Map()
   const byTool = new Map()
   const byApp = new Map()
   const byTag = new Map()
@@ -60,8 +61,10 @@ export function coverageReport(items, options = {}) {
     const expected = expectedOutputOf(item) ?? {}
     const decision = expected.decision ?? 'invalid'
     byDecision.set(decision, (byDecision.get(decision) ?? 0) + 1)
-    const suite = item.metadata?.suite ?? 'regression'
+    const suite = item.metadata?.suite ?? '(none)'
     bySuite.set(suite, (bySuite.get(suite) ?? 0) + 1)
+    const stage = item.metadata?.stage ?? 'regression'
+    byStage.set(stage, (byStage.get(stage) ?? 0) + 1)
 
     for (const tool of expectedTools(expected)) {
       bump(byTool, tool, 'expected')
@@ -112,6 +115,7 @@ export function coverageReport(items, options = {}) {
     total: items.length,
     byDecision: Object.fromEntries(byDecision),
     bySuite: Object.fromEntries(bySuite),
+    byStage: Object.fromEntries(byStage),
     byTool: Object.fromEntries(byTool),
     byApp: Object.fromEntries(byApp),
     byTag: Object.fromEntries(byTag),
@@ -136,6 +140,9 @@ export function formatCoverage(report) {
   )
   sections.push(
     table(Object.entries(report.bySuite).sort(), ['suite', 'items']),
+  )
+  sections.push(
+    table(Object.entries(report.byStage).sort(), ['stage', 'items']),
   )
   sections.push(
     table(

@@ -82,10 +82,8 @@ test('builds a redacted draft with the observed decision in metadata', () => {
   assert.equal(candidate.metadata.prompt_version, 154)
   assert.equal(candidate.expected_output.tool, 'create_pipe')
   assert.deepEqual(candidate.metadata.covers, ['tool:create_pipe'])
-  assert.equal(
-    candidate.input.messages[0].content,
-    'Build me a pipe for <EMAIL_1>',
-  )
+  assert.equal(candidate.input.message, 'Build me a pipe for <EMAIL_1>')
+  assert.deepEqual(candidate.input.message_history, [])
   assert.equal(
     candidate.metadata.observed.tool_calls[0].input.owner,
     '<EMAIL_1>',

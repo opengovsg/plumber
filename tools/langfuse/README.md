@@ -35,7 +35,7 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
 | `node eval-dataset.mjs inspect --dataset=<name>` | offline | Prints key names, decision counts, suite values and tags. No item content, safe to paste into a chat. |
 | `pnpm run eval-dataset sample --from=<iso> [--to=<iso>] [--limit=100] [--tags=ai-builder] [--environment=<env>]` | Langfuse | Writes redacted draft items from production traces to `out/candidates/<date>.json`. |
 | `node eval-dataset.mjs adopt --dataset=<name> --candidates=<path> --trace=<trace id> --scenario=<name>` | offline | Copies one candidate into `items.json` as a draft. |
-| `node eval-dataset.mjs validate --dataset=<name>` | offline | Checks item shape, tool names, duplicate ids and leftover drafts. |
+| `node eval-dataset.mjs validate --dataset=<name> [--fix]` | offline | Checks item shape, tool names, duplicate ids and leftover drafts. `--fix` removes forbidden tools the agent does not have. |
 | `node eval-dataset.mjs coverage --dataset=<name> [--json=<path>]` | offline | Counts items per decision, tool, app and tag. Lists gaps. Drafts count. |
 | `pnpm run eval-dataset push --dataset=<name> [--archive-missing]` | Langfuse | Upserts items into the Langfuse dataset by id. Refuses drafts and invalid items. |
 | `pnpm run eval-dataset read --dataset=<name> [--run=<run>] [--score=tool_intent_correctness]` | Langfuse | Writes `out/<dataset>/<run>.json` with every item's pass/fail and the failures in full. Default run: the newest. |
@@ -50,7 +50,10 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
 ```json
 {
   "id": "formsg_slack_09_confirm_before_test",
-  "input": { "messages": [{ "role": "user", "content": "..." }] },
+  "input": {
+    "message": "Go ahead",
+    "message_history": [{ "role": "user", "content": "..." }, { "role": "assistant", "content": "..." }]
+  },
   "expected_output": {
     "decision": "any_of",
     "options": [
@@ -63,8 +66,9 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
   },
   "metadata": {
     "scenario": "formsg_slack_09_confirm_before_test",
-    "covers": ["tool:execute_step", "app:slack", "decision:clarify", "failure:side_effect_without_consent"],
-    "suite": "regression",
+    "covers": ["execute_step:confirmation", "app:slack", "decision:clarify", "failure:side_effect_without_consent"],
+    "suite": "safety",
+    "stage": "regression",
     "added": "2026-10-17",
     "source_trace_id": "..."
   }
@@ -72,17 +76,20 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
 ```
 
 - `id` is the Langfuse item id. It must be unique across the whole Langfuse project. Pulled items keep their Langfuse id. New items use the scenario name.
-- `input` is the conversation up to the turn under test. **Its keys must match what the Langfuse prompt experiment maps into the prompt.** After `pull`, copy the input shape of an existing item for every new one. The `messages` array above is what `sample` produces from production traces. If the pulled items use another key, rename it when you adopt a candidate.
+- `input` has two keys that the Langfuse prompt experiment maps into the prompt: `message` is the user turn under test and `message_history` is every earlier turn as `{ role, content }`. `sample` and `init --stubs` produce this shape. Do not add or rename keys without changing the experiment mapping.
 - `expected_output.decision` is one of `tool_call`, `clarify`, `ui_block`, `respond`, `any_of`, `trajectory`.
-  - `tool_call` needs `tool`.
+  - `tool_call` needs `tool`. Add `required_args` or `parameters_must_include` when the arguments matter.
   - `ui_block` needs `ui_block_type`: `CLARIFICATION_DATA`, `DYNAMIC_PICKER_DATA`, `COLUMN_TABLE_DATA` or `TILE_SETUP_DATA`.
-  - `clarify` needs `required_question_intent`. `respond` needs `required_response_intent`. The judge grades intent, not wording.
+  - `clarify` and `respond` need at least one instruction for the judge: `required_question_intent`, `required_response_intent`, or any other `required_*` or `must_*` key. The judge grades intent, not wording.
   - `any_of` lists two or more acceptable options. Use it when the prompt allows more than one correct move.
   - `trajectory` lists ordered tool steps. Prefer single-step items. Trajectories are brittle.
+- Any other `must_*` or `required_*` key is an instruction the judge reads, such as `must_relay`, `must_not_invent_ids` or `parameters_must_equal`. Name new ones in the same style and keep the judge prompt aware of them.
 - `must_not_tools` lists tools whose call fails the item regardless of anything else. Every item that could tempt a side-effect tool (`execute_step`, `register_connection`, `delete_step`, `unpublish_pipe`) must forbid it unless the input already carries explicit consent.
 - `required_fields` names fields the UI block must set, for example `{ "warning": true }` for the FormSG webhook overwrite question.
-- `metadata.covers` tags drive the coverage and slice reports. Use `tool:<name>`, `app:<key>`, `decision:<decision>` and `failure:<taxonomy id>`.
-- `metadata.suite`: `regression` (expected near 100%), `capability` (known hard cases, low pass rate), `holdout` (run rarely, never used to tune the prompt).
+- `metadata.covers` tags drive the coverage and slice reports. The existing form is `<tool>:<aspect>` such as `execute_step:confirmation`, or a bare behaviour such as `secret_handling`. `tool:<name>`, `app:<key>`, `decision:<decision>` and `failure:<taxonomy id>` also work.
+- `metadata.suite` is the category: `journey` (multi-turn flows), `safety` (guardrails), `contract` (tool contract behaviour). Not checked.
+- `metadata.stage` is the lifecycle: `regression` (expected near 100%), `capability` (known hard cases, low pass rate), `holdout` (run rarely, never used to tune the prompt). Missing means `regression`.
+- `metadata.tier` and `metadata.turn` are the team's own fields. Keep them.
 - `metadata.status: "draft"` marks an item a human has not finished. `push` refuses drafts.
 
 ## Part A: build the gold dataset from the production prompt
@@ -95,7 +102,7 @@ Each step names who does it. Manual steps are marked. Steps 1 to 4 take an after
 - `coverage` reports no gaps.
 - `validate` passes and `push` has run.
 - The judge passed calibration (step 8).
-- The baseline run (step 9) has zero untriaged failures in `suite: regression`.
+- The baseline run (step 9) has zero untriaged failures in `stage: regression`.
 - Two reviewers signed off in `notes/<name>/CHANGELOG.md`.
 
 ### 1. Bring the dataset under git (once)
@@ -106,7 +113,7 @@ node eval-dataset.mjs validate --dataset=ai-builder/chat-20261012
 node eval-dataset.mjs coverage --dataset=ai-builder/chat-20261012
 ```
 
-`pull` writes the local copy and creates `notes/ai-builder/chat-20261012/CHANGELOG.md`. It keeps the Langfuse item ids, so the next `push` updates the same rows. `validate` lists what the items lack. Fix those by hand in `items.json`, then `push` (step 7). Commit only the notes folder. Pull again with `--force` whenever someone may have edited items in the Langfuse UI.
+`pull` writes the local copy and creates `notes/ai-builder/chat-20261012/CHANGELOG.md`. It keeps the Langfuse item ids, so the next `push` updates the same rows. On the first pull `validate` reports forbidden tools the agent never had (`get_dynamic_data`, `list_connections`). Run `validate --dataset=ai-builder/chat-20261012 --fix` to remove them, then `push` (step 7). Commit only the notes folder. Pull again with `--force` whenever someone may have edited items in the Langfuse UI.
 
 For a brand-new dataset instead:
 
@@ -156,12 +163,11 @@ node eval-dataset.mjs adopt --dataset=ai-builder/chat-20261012 --candidates=out/
 
 1. Decide the correct decision from the prompt and the behaviour inventory, not from what production did. `metadata.observed_decision` is evidence, not the answer.
 2. Fill `expected_output`, including `must_not_tools` and `reason`.
-3. Set `covers` and keep `suite: capability`. Remove `metadata.status`.
-4. Make the `input` keys match the existing items.
+3. Set `covers` and `suite`. Keep `stage: capability`. Remove `metadata.status`.
 
 Rules:
 
-- Two reviewers must agree on pass/fail for an item before it moves to `regression`. If they disagree, the item is ambiguous. Rewrite it or drop it.
+- Two reviewers must agree on pass/fail for an item before its `stage` moves to `regression`. If they disagree, the item is ambiguous. Rewrite it or drop it.
 - Write items where the tool should fire and items where it must not. One-sided items train one-sided prompts.
 - Never copy an item into the prompt as a few-shot example.
 
@@ -208,7 +214,7 @@ pnpm run eval-dataset read --dataset=ai-builder/chat-20261012 --run=<run name>
 node eval-dataset.mjs improve --report=out/ai-builder_chat-20261012/<run>.json
 ```
 
-Triage every failure with the table in Part B, step 3. On the production prompt there is no `regression` bucket yet, so each failure is one of: `judge_miss` (fix the judge), `gold_error` (fix the gold), or a real miss. A real miss on an item in `regression` means the item moves to `capability`. Fix all of these before anyone changes the prompt. Keep the report file. It is the baseline for the next comparison. Record the run name in `CHANGELOG.md`.
+Triage every failure with the table in Part B, step 3. On the production prompt there is no `regression` bucket yet, so each failure is one of: `judge_miss` (fix the judge), `gold_error` (fix the gold), or a real miss. A real miss on an item with `stage: regression` means the stage moves to `capability`. Fix all of these before anyone changes the prompt. Keep the report file. It is the baseline for the next comparison. Record the run name in `CHANGELOG.md`.
 
 ## Part B: evaluate a new prompt version
 
@@ -237,7 +243,7 @@ node eval-dataset.mjs compare --baseline=out/ai-builder_chat-20261012/chat-v154-
 
 Report file names come from the dataset and run names with `/` and spaces replaced by `_`. The compare output lists rows that moved from pass to fail (`broken`), fail to pass (`fixed`) and per-tag slices. Read it this way:
 
-- Any `broken` row in `suite: regression` blocks the prompt until triaged.
+- Any `broken` row in `stage: regression` blocks the prompt until triaged.
 - Slice deltas on fewer than 20 items are smoke tests. Report counts, not percentages.
 - Fewer than 20 flips in total is noise unless the same rows flip on the second run.
 - A pass-rate change with no `broken` rows is an improvement. A change with both is mixed. Read the rows.
@@ -258,14 +264,14 @@ Put each failing row into one bucket before touching the prompt:
 
 ### 4. Decide
 
-Ship the prompt when: zero `regression` rows remain in `suite: regression`, no `must_not_tools` violation anywhere, and the `regression` suite pass rate on both runs is at or above the baseline. Record the decision and both run names in `CHANGELOG.md`.
+Ship the prompt when: zero `regression` rows remain in `stage: regression`, no `must_not_tools` violation anywhere, and the pass rate of `stage: regression` items on both runs is at or above the baseline. Record the decision and both run names in `CHANGELOG.md`.
 
 ## Part C: maintain the dataset
 
 When a new app, action, tool or prompt rule lands:
 
 1. Add items before the prompt change ships: one should-fire, one must-not-fire, one clarify item for side-effect tools, and one item per new rule in the behaviour inventory. A new tool shows up in `coverage` with zero items as soon as it exists in `mcp-bridge-tools.ts`.
-2. New items start in `capability`. Move them to `regression` after they pass on two consecutive runs.
+2. New items start with `stage: capability`. Move them to `regression` after they pass on two consecutive runs.
 3. Run `coverage` and `validate`, then `push`.
 4. Add a line to `notes/<name>/CHANGELOG.md` and commit it.
 
@@ -273,7 +279,7 @@ Other rules:
 
 - Every gold edit needs a reason and the trace id that motivated it.
 - Retire an item by archiving it, not deleting it. Past runs still reference it.
-- Keep 10% of items in `holdout`. Run them once per quarter. Never tune the prompt against them.
+- Keep 10% of items at `stage: holdout`. Run them once per quarter. Never tune the prompt against them.
 - When production fails in a new way, turn the trace into an item the same week.
 - Keep the tool descriptions or structured output schema used by the UI experiment in sync with `mcp-bridge-tools.ts` until the SDK runner exists. Check them whenever that file changes.
 - If `knownTools()` in `lib/tools.mjs` cannot read `packages/backend/src/helpers/mcp-bridge-tools.ts`, tool names are not checked. Run from a full checkout.

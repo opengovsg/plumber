@@ -11,7 +11,8 @@ export function adoptCandidate(candidate, { scenario, today }) {
     metadata: {
       scenario,
       covers: metadata.covers ?? [],
-      suite: 'capability',
+      suite: metadata.suite ?? 'journey',
+      stage: 'capability',
       status: 'draft',
       added: today,
       source_trace_id: metadata.source_trace_id ?? null,

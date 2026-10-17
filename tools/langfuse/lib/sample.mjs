@@ -95,9 +95,12 @@ export function traceToCandidate(trace, redactor = createRedactor()) {
   }
   const observed = observedDecision(trace)
   const metadata = parseMaybeJson(trace.metadata) ?? {}
+  const lastIndex = messages.map((entry) => entry.role).lastIndexOf('user')
+  const message = lastIndex >= 0 ? messages[lastIndex].content : ''
+  const history = lastIndex >= 0 ? messages.slice(0, lastIndex) : messages
   return {
     id: null,
-    input: redactor.redact({ messages }),
+    input: redactor.redact({ message, message_history: history }),
     expected_output: {
       decision: observed.decision,
       ...(observed.tool ? { tool: observed.tool } : {}),

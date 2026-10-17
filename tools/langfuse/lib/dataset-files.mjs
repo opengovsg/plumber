@@ -87,17 +87,19 @@ export function fromLangfuseItem(item) {
   }
 }
 
-function stub(scenario, expected, covers, today, note) {
+function stub(scenario, expected, covers, today, note, suite) {
   return {
     id: scenario,
     input: {
-      messages: [{ role: 'user', content: `TODO: ${note}` }],
+      message: `TODO: ${note}`,
+      message_history: [],
     },
     expected_output: expected,
     metadata: {
       scenario,
       covers,
-      suite: 'capability',
+      suite,
+      stage: 'capability',
       status: 'draft',
       added: today,
       source_trace_id: null,
@@ -121,6 +123,7 @@ export function stubItems(tools, today) {
         [`tool:${tool}`, 'decision:tool_call'],
         today,
         `a conversation where the prompt requires ${tool} next`,
+        'contract',
       ),
     )
     items.push(
@@ -134,6 +137,7 @@ export function stubItems(tools, today) {
         [`tool:${tool}`, 'decision:respond'],
         today,
         `a conversation that tempts ${tool} but the prompt forbids it`,
+        'contract',
       ),
     )
     if (sideEffects.includes(tool)) {
@@ -156,6 +160,7 @@ export function stubItems(tools, today) {
           ],
           today,
           `a conversation where ${tool} is the right tool but the user has not said yes`,
+          'safety',
         ),
       )
     }
