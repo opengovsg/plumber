@@ -5,6 +5,7 @@
  *   pnpm run eval-dataset pull     --dataset=<langfuse dataset> [--items=<path>] [--include-archived] [--force]
  *   node eval-dataset.mjs init     --dataset=<langfuse dataset> [--stubs]
  *   pnpm run eval-dataset sample   --tags=ai-builder --from=<iso> [--to=<iso>] [--limit=100] [--environment=production]
+ *   node eval-dataset.mjs adopt    --dataset=<name> --candidates=out/candidates/<date>.json --trace=<trace id> --scenario=<name>
  *   pnpm run eval-dataset validate --items=datasets/<name>/items.json
  *   pnpm run eval-dataset coverage --items=datasets/<name>/items.json
  *   pnpm run eval-dataset push     --items=datasets/<name>/items.json --dataset=<langfuse dataset> [--archive-missing]
@@ -23,6 +24,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { adoptCandidate, findCandidate } from './lib/adopt.mjs'
 import {
   calibrate,
   formatCalibration,
@@ -47,7 +49,7 @@ import { knownTools } from './lib/tools.mjs'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const USAGE =
-  'Usage: pnpm run eval-dataset <pull|init|sample|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
+  'Usage: pnpm run eval-dataset <pull|init|sample|adopt|validate|coverage|push|read|compare|improve|calibrate> [--flag=value ...]. See the header of eval-dataset.mjs.'
 
 function parseArgs(argv) {
   const [command, ...rest] = argv
@@ -261,6 +263,32 @@ async function sampleCommand(flags) {
   }
 }
 
+function adoptCommand(flags) {
+  const candidatesPath = requireFlag(flags, 'candidates', 'adopt')
+  const traceId = requireFlag(flags, 'trace', 'adopt')
+  const scenario = requireFlag(flags, 'scenario', 'adopt')
+  const target = resolve(itemsFlag(flags, 'adopt'))
+  const { candidates = [] } = readJson(candidatesPath)
+  const candidate = findCandidate(candidates, traceId)
+  if (!candidate) {
+    throw new Error(
+      `No candidate with source_trace_id ${traceId} in ${candidatesPath}`,
+    )
+  }
+  const items = existsSync(target) ? readJson(target) : []
+  if (items.some((item) => itemId(item) === scenario)) {
+    throw new Error(`${target} already has an item "${scenario}"`)
+  }
+  if (items.some((item) => item.metadata?.source_trace_id === traceId)) {
+    throw new Error(`${target} already has an item from trace ${traceId}`)
+  }
+  items.push(adoptCandidate(candidate, { scenario, today: today() }))
+  writeJson(target, items)
+  console.log(
+    `Added draft "${scenario}" to ${target}. Decide expected_output, add covers, then remove metadata.status.`,
+  )
+}
+
 function validateCommand(flags) {
   const { path, items, errors } = loadItems(flags, 'validate')
   if (errors.length > 0) {
@@ -436,6 +464,7 @@ const COMMANDS = {
   init: initCommand,
   calibrate: calibrateCommand,
   sample: sampleCommand,
+  adopt: adoptCommand,
   validate: validateCommand,
   coverage: coverageCommand,
   push: pushCommand,

@@ -27,6 +27,7 @@ A model that calls a forbidden tool fails the item even if everything else match
 
 ## Write inputs
 
+- `input` keys must match the existing items in the dataset, because the Langfuse prompt experiment maps them into the prompt. Copy the shape of a pulled item.
 - `input.messages` carries the conversation up to the turn under test. The last message is the user's.
 - Use the real shapes. Connected-form openers look like `I've connected my FormSG form "<title>" (id: <CONNECTION_1>, form id: <24 hex>)`.
 - Prior assistant turns can be short summaries of what happened. They must mention any tool result the model needs, such as a created pipe id.

@@ -47,7 +47,7 @@ Hard rules:
 
 ## Workflow C: build or seed a dataset
 
-Follow Part A of the README. The agent runs `pull` or `init --stubs`, `sample`, `validate`, `coverage` and `push`. The human does error analysis, writes gold and labels rows for judge calibration. Do not write `expected_output` for a sampled trace from `metadata.observed` alone. Present the candidate and ask the human what the correct decision is. Do not fill `human` in `judge-labels.json`. That column is the human's.
+Follow Part A of the README. The agent runs `pull` or `init --stubs`, `sample`, `adopt`, `validate`, `coverage` and `push`. The human does error analysis, writes gold and labels rows for judge calibration. Do not write `expected_output` for a sampled trace from `metadata.observed` alone. Present the candidate and ask the human what the correct decision is. Do not fill `human` in `judge-labels.json`. That column is the human's.
 
 ## Workflow D: check the judge
 
