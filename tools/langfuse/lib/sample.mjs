@@ -1,6 +1,7 @@
 import { createRedactor } from './redact.mjs'
 
 const UI_BLOCKS = [
+  'WORKFLOW_METADATA',
   'CLARIFICATION_DATA',
   'DYNAMIC_PICKER_DATA',
   'COLUMN_TABLE_DATA',

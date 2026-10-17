@@ -79,14 +79,14 @@ Scripts and a step-by-step process for the AI Builder prompt evals. The goal: a 
 - `input` has two keys that the Langfuse prompt experiment maps into the prompt: `message` is the user turn under test and `message_history` is every earlier turn as `{ role, content }`. `sample` and `init --stubs` produce this shape. Do not add or rename keys without changing the experiment mapping.
 - `expected_output.decision` is one of `tool_call`, `clarify`, `ui_block`, `respond`, `any_of`, `trajectory`.
   - `tool_call` needs `tool`. Add `required_args` or `parameters_must_include` when the arguments matter.
-  - `ui_block` needs `ui_block_type`: `CLARIFICATION_DATA`, `DYNAMIC_PICKER_DATA`, `COLUMN_TABLE_DATA` or `TILE_SETUP_DATA`.
+  - `ui_block` needs `ui_block_type`: `CLARIFICATION_DATA`, `DYNAMIC_PICKER_DATA`, `COLUMN_TABLE_DATA`, `TILE_SETUP_DATA` or `WORKFLOW_METADATA` (a Phase 2a proposal).
   - `clarify` and `respond` need at least one instruction for the judge: `required_question_intent`, `required_response_intent`, or any other `required_*` or `must_*` key. The judge grades intent, not wording.
   - `any_of` lists two or more acceptable options. Use it when the prompt allows more than one correct move.
   - `trajectory` lists ordered tool steps. Prefer single-step items. Trajectories are brittle.
 - Any other `must_*` or `required_*` key is an instruction the judge reads, such as `must_relay`, `must_not_invent_ids` or `parameters_must_equal`. Name new ones in the same style and keep the judge prompt aware of them.
 - `must_not_tools` lists tools whose call fails the item regardless of anything else. Every item that could tempt a side-effect tool (`execute_step`, `register_connection`, `delete_step`, `unpublish_pipe`) must forbid it unless the input already carries explicit consent.
 - `required_fields` names fields the UI block must set, for example `{ "warning": true }` for the FormSG webhook overwrite question.
-- `metadata.covers` tags drive the coverage and slice reports. The existing form is `<tool>:<aspect>` such as `execute_step:confirmation`, or a bare behaviour such as `secret_handling`. `tool:<name>`, `app:<key>`, `decision:<decision>` and `failure:<taxonomy id>` also work.
+- `metadata.covers` tags drive the coverage and slice reports. The existing form is `<tool>:<aspect>` such as `execute_step:confirmation`, or a bare behaviour such as `secret_handling`. `tool:<name>`, `app:<key>`, `decision:<decision>` and `failure:<taxonomy id>` also work. Add `rule:<id>` for the behaviour inventory line in `notes/<name>/CHANGELOG.md` the item pins down.
 - `metadata.suite` is the category: `journey` (multi-turn flows), `safety` (guardrails), `contract` (tool contract behaviour). Not checked.
 - `metadata.stage` is the lifecycle: `regression` (expected near 100%), `capability` (known hard cases, low pass rate), `holdout` (run rarely, never used to tune the prompt). Missing means `regression`.
 - `metadata.tier` and `metadata.turn` are the team's own fields. Keep them.
