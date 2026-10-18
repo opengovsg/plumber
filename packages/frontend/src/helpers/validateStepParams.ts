@@ -22,6 +22,21 @@ function parseVariableReference(placeholder: string): VariableReference | null {
 }
 
 /**
+ * Whether a `fields` key belongs to a question the form still has.
+ *
+ * MyInfo children answers are keyed by a composite ID that FormSG derives from
+ * the parent question, e.g. `childrenbirthrecords_<parentFieldId>_childname_0`,
+ * so only the parent appears in the form schema. Resolving the key back to its
+ * parent keeps those answers valid while a deleted parent still flags.
+ */
+function isCurrentFormsgField(formFieldIds: string[], fieldKey: string) {
+  return (
+    formFieldIds.includes(fieldKey) ||
+    fieldKey.split('_').some((segment) => formFieldIds.includes(segment))
+  )
+}
+
+/**
  * Whether a reference points at a FormSG question that was deleted from the form.
  *
  * `formFieldIds` lists every question the form had when the step was last
@@ -38,8 +53,13 @@ function isDeletedFormsgField(
     return false
   }
 
-  const [fieldId] = path.slice(FORMSG_FIELD_PATH_PREFIX.length).split('.')
-  return !formFieldIds.includes(fieldId)
+  const [fieldKey] = path.slice(FORMSG_FIELD_PATH_PREFIX.length).split('.')
+
+  if (!fieldKey) {
+    return false
+  }
+
+  return !isCurrentFormsgField(formFieldIds, fieldKey)
 }
 
 export function hasMissingStepReference(

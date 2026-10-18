@@ -8,6 +8,10 @@ const TRIGGER_STEP_ID = '11111111-1111-4111-8111-111111111111'
 const ACTION_STEP_ID = '22222222-2222-4222-8222-222222222222'
 const EXISTING_FIELD_ID = 'aaaaaaaaaaaaaaaaaaaaaaaa'
 const DELETED_FIELD_ID = 'bbbbbbbbbbbbbbbbbbbbbbbb'
+// MyInfo children answers are keyed by a composite ID derived from the parent
+// question. Mirrors what get-mock-data.ts and decrypt-form-response.ts produce.
+const CHILD_FIELD_KEY = `childrenbirthrecords_${EXISTING_FIELD_ID}_childname_0`
+const DELETED_CHILD_FIELD_KEY = `childrenbirthrecords_${DELETED_FIELD_ID}_childname_0`
 
 function buildExecutionStep(
   stepId: string,
@@ -143,6 +147,57 @@ describe('validateStepParams', () => {
     )
 
     expect(shouldTestStepAgain).toEqual(false)
+  })
+
+  it('does not flag a MyInfo children answer whose parent question still exists', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${CHILD_FIELD_KEY}.answer}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 1, {
+          formFieldIds: [EXISTING_FIELD_ID],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(false)
+  })
+
+  it('flags a MyInfo children answer whose parent question was deleted', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${DELETED_CHILD_FIELD_KEY}.answer}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 1, {
+          formFieldIds: [EXISTING_FIELD_ID],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(true)
+  })
+
+  it('flags a MyInfo children answer whose parent question was recreated under a new ID', () => {
+    const { shouldTestStepAgain } = validateStepParams(
+      buildActionStep({
+        body: `Hello {{step.${TRIGGER_STEP_ID}.fields.${CHILD_FIELD_KEY}.answer}}`,
+      }),
+      [
+        buildExecutionStep(TRIGGER_STEP_ID, 1, {
+          formFieldIds: ['cccccccccccccccccccccccc'],
+        }),
+        buildExecutionStep(ACTION_STEP_ID, 2),
+      ],
+      SUBSTEPS,
+    )
+
+    expect(shouldTestStepAgain).toEqual(true)
   })
 
   it('still flags references to steps that no longer exist', () => {
