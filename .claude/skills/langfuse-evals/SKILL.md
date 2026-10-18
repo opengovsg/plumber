@@ -108,11 +108,11 @@ The gold is trustworthy when two consecutive runs of the production prompt produ
 ## Phase 6: Evaluate a new prompt version
 
 1. Confirm the baseline run names from the changelog. If a baseline report is missing from `out/`, ask for `read` on it first.
-2. Ask for the new experiment twice (`-a`, `-b`), then `read` both.
-3. `compare` baseline-a against candidate-a, and candidate-a against candidate-b for flakiness.
+2. Ask for one experiment (`-a`), then `read` it. A full run costs about 5 to 6 USD (2026-10-18, 72 items), so iterate on one run. Ask for `-b` only when the candidate is a ship candidate, or when `-a` flips a `stage: regression` row.
+3. `compare` baseline-a against candidate-a. When `-b` exists, also compare candidate-a against candidate-b for flakiness.
 4. Triage every `broken` row and every `both fail` row in `stage: regression` per [references/triage.md](references/triage.md).
-5. Report in this order: verdict, `must_not_tools` violations, broken rows with bucket and trace id, fixed rows, slices with 20 or more items, flaky rows. Counts, not percentages, for small slices.
-6. Recommend one of: ship, fix the prompt (name rows and rule), fix the judge, fix gold (name rows and reason). The developer decides. Ship only when zero `regression` rows remain in `stage: regression`, no `must_not_tools` violation exists, and the `stage: regression` pass rate is at or above the baseline on both runs.
+5. Report in this order: verdict, `must_not_tools` violations, broken rows with bucket and trace id, fixed rows, slices with 20 or more items, flaky rows (two runs only). Counts, not percentages, for small slices.
+6. Recommend one of: ship, fix the prompt (name rows and rule), fix the judge, fix gold (name rows and reason). The developer decides. Ship only when zero `regression` rows remain in `stage: regression`, no `must_not_tools` violation exists, and the `stage: regression` pass rate is at or above the baseline on both runs. The ship gate always needs both runs.
 7. If the new version ships, its runs become the baseline. Record them in the changelog.
 
 ## Phase 7: Maintain

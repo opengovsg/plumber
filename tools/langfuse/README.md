@@ -226,7 +226,7 @@ Triage every failure with the table in Part B, step 3. On the production prompt 
 
 ### 1. Run the experiment
 
-In Langfuse: Datasets, open the dataset, New experiment. Choose the prompt version under test, the LLM connection, the structured output schema and the `tool_intent_correctness` evaluator. Name the run `chat-v<version>-<yyyymmdd>`. Run it twice, with `-a` and `-b` suffixes. Nondeterministic rows show up as rows that flip between the two runs.
+In Langfuse: Datasets, open the dataset, New experiment. Choose the prompt version under test, the LLM connection, the structured output schema and the `tool_intent_correctness` evaluator. Name the run `chat-v<version>-<yyyymmdd>-a`. Iterate on one run; a full run costs about 5 to 6 USD. Add `-b` for a ship candidate or when `-a` flips a `regression` row. Nondeterministic rows show up as rows that flip between the two runs.
 
 ### How the UI experiment differs from production
 
@@ -262,7 +262,7 @@ Put each failing row into one bucket before touching the prompt:
 | --- | --- | --- |
 | `judge_miss` | Gold already allows the output. `improve` reports `judge_miss`. | Fix the judge prompt. Do not edit gold. |
 | `gold_error` | Two reviewers agree the model was right and the gold is wrong. | Edit gold with a `CHANGELOG.md` line and the trace id. |
-| `flaky` | Passes on one of the two runs. | Keep. Count it in the pass^2 figure. Consider a tighter prompt rule. |
+| `flaky` | Passes on one of the two runs (needs `-b`). | Keep. Count it in the pass^2 figure. Consider a tighter prompt rule. |
 | `regression` | Model wrong, gold right, passed on the baseline. | Fix the prompt. |
 | `known_gap` | Model wrong, gold right, also failed on the baseline. | Leave in `capability`. |
 

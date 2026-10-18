@@ -46,8 +46,8 @@ import {
   notesDir,
   stubItems,
 } from './lib/dataset-files.mjs'
-import { formatInspection, inspectItems } from './lib/inspect.mjs'
 import { applyProposals, proposeAll } from './lib/improve.mjs'
+import { formatInspection, inspectItems } from './lib/inspect.mjs'
 import { readEvalRun } from './lib/read-run.mjs'
 import { sampleTraces } from './lib/sample.mjs'
 import {
@@ -103,9 +103,18 @@ async function langfuseClient(flags) {
   return buildLangfuseClient(flags.project ?? 'aiBuilder', process.env)
 }
 
-function reportPath(datasetName, runName) {
+const DEFAULT_SCORE = 'tool_intent_correctness'
+
+function reportPath(datasetName, runName, scoreName = DEFAULT_SCORE) {
   const safe = (value) => value.replace(/[^a-zA-Z0-9._-]+/g, '_')
-  return join(__dirname, 'out', safe(datasetName), `${safe(runName)}.json`)
+  // A second judge on the same run must not overwrite the first judge's report.
+  const suffix = scoreName === DEFAULT_SCORE ? '' : `__${safe(scoreName)}`
+  return join(
+    __dirname,
+    'out',
+    safe(datasetName),
+    `${safe(runName)}${suffix}.json`,
+  )
 }
 
 function today() {
@@ -462,9 +471,9 @@ async function readCommand(flags) {
   const report = await readEvalRun(client, {
     datasetName,
     runName: flags.run,
-    scoreName: flags.score ?? 'tool_intent_correctness',
+    scoreName: flags.score ?? DEFAULT_SCORE,
   })
-  const path = reportPath(report.datasetName, report.runName)
+  const path = reportPath(report.datasetName, report.runName, report.scoreName)
   writeJson(path, report)
   console.log(
     `Wrote ${path} (${report.counts.passed} true, ${report.counts.failed} false, ${report.counts.unscored} unscored)`,
