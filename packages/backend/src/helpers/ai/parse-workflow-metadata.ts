@@ -18,6 +18,20 @@ export const WORKFLOW_METADATA_REGEX =
 
 export type WorkflowData = ReturnType<typeof parseWorkflowMetadata>
 
+const FREE_TEXT_LINE_REGEX =
+  /^([ \t]*(?:-[ \t]+)?(?:name|stepName|description|branchName):[ \t]+)(.*\S)[ \t]*$/gm
+
+// The LLM emits unquoted free text, and YAML rejects any ": " inside it as a nested mapping.
+function quoteFreeTextValues(yamlText: string): string {
+  return yamlText.replace(
+    FREE_TEXT_LINE_REGEX,
+    (line, prefix: string, value: string) =>
+      /^['"]/.test(value) || !/:(\s|$)/.test(value)
+        ? line
+        : prefix + JSON.stringify(value),
+  )
+}
+
 // Converts a ZodError into a user-facing message with workflow-specific context.
 // - invalid_union: the appKey/key combo didn't match any known app, so we report
 //   which step (trigger or action at step N) is invalid.
@@ -59,7 +73,7 @@ function parseRawWorkflowData(text: string): IFlowSteps {
 
   let parsed: any
   try {
-    parsed = parseYaml(match[1].trim())
+    parsed = parseYaml(quoteFreeTextValues(match[1].trim()))
   } catch {
     throw new BadUserInputError('Unable to generate the workflow.')
   }

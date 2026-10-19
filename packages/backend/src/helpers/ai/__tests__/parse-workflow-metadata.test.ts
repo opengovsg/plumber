@@ -65,6 +65,49 @@ steps:
       expect(parseWorkflowMetadata(text).name).toBe('Build with AI')
     })
 
+    it('accepts an unquoted name containing a colon', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: webhook
+    key: catchRawWebhook
+    stepName: Catch raw webhook
+    description: Triggers when the webhook receives a request with a JSON payload
+  - step: 2
+    appKey: tiles
+    key: createTileRow
+    stepName: Create tile row
+    description: Saves the clientId from the webhook payload into the "Client ID" column of your Tile
+-->
+`
+      expect(parseWorkflowMetadata(text).name).toBe(
+        'Webhook to Tiles: Save Client ID',
+      )
+    })
+
+    it('accepts an unquoted step description containing a colon', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: "Notify: applicant"
+    description: Note: send to the applicant
+-->
+`
+      const [action] = parseWorkflowMetadata(text).actions
+      expect(action.config.stepName).toBe('Notify: applicant')
+      expect(action.description).toBe('Note: send to the applicant')
+    })
+
     it('uses stepName for config.stepName', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
       expect(result.actions[0].config.stepName).toBe('Send welcome email')
