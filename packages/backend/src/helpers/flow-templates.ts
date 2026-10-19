@@ -16,7 +16,7 @@ import type {
 } from '@/graphql/__generated__/types.generated'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Flow from '@/models/flow'
-import { createTableRows } from '@/models/tiles/dynamodb/table-row'
+import { getTableOperations } from '@/models/tiles/factory'
 import User from '@/models/user'
 
 import logger from './logger'
@@ -187,9 +187,11 @@ export async function createFlowFromTemplate(
           position: index,
         }))
 
-        const table = await user.$relatedQuery('tables').insertGraph({
+        // Inside trx so a failed Postgres table creation rolls back the metadata.
+        const table = await user.$relatedQuery('tables', trx).insertGraph({
           name,
           role: 'owner',
+          db: 'pg',
           columns: columnsToInsert,
         })
 
@@ -203,8 +205,15 @@ export async function createFlowFromTemplate(
         // replace column names with column ids for each row data and create table rows
         const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
 
-        // TODO: tiles-v2: use table operations to create rows
-        await createTableRows({ tableId, dataArray: newRowData })
+        const tableOperations = getTableOperations('pg')
+        await tableOperations.createTable(
+          tableId,
+          table.columns.map((column) => column.id),
+        )
+        await tableOperations.createTableRows({
+          tableId,
+          dataArray: newRowData,
+        })
       } catch (e) {
         logger.error(e)
         throw new Error('Creation of tile ran into an issue')
