@@ -108,6 +108,26 @@ steps:
       expect(action.description).toBe('Note: send to the applicant')
     })
 
+    it('accepts a value that starts with a quote but is not fully quoted', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Client ID" column: saves the id
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        '"Client ID" column: saves the id',
+      )
+    })
+
     it('uses stepName for config.stepName', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
       expect(result.actions[0].config.stepName).toBe('Send welcome email')

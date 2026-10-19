@@ -18,18 +18,48 @@ export const WORKFLOW_METADATA_REGEX =
 
 export type WorkflowData = ReturnType<typeof parseWorkflowMetadata>
 
-const FREE_TEXT_LINE_REGEX =
-  /^([ \t]*(?:-[ \t]+)?(?:name|stepName|description|branchName):[ \t]+)(.*\S)[ \t]*$/gm
+const FREE_TEXT_KEYS = new Set([
+  'name',
+  'stepName',
+  'description',
+  'branchName',
+])
 
-// The LLM emits unquoted free text, and YAML rejects any ": " inside it as a nested mapping.
-function quoteFreeTextValues(yamlText: string): string {
-  return yamlText.replace(
-    FREE_TEXT_LINE_REGEX,
-    (line, prefix: string, value: string) =>
-      /^['"]/.test(value) || !/:(\s|$)/.test(value)
-        ? line
-        : prefix + JSON.stringify(value),
+function isQuoted(value: string): boolean {
+  const quote = value[0]
+  return (
+    value.length >= 2 &&
+    (quote === '"' || quote === "'") &&
+    value.at(-1) === quote
   )
+}
+
+// The LLM emits unquoted free text, which YAML can misread as syntax (e.g. ": " or " #").
+// This function is a stopgap to best-effort fix wrongly emitted YAML strings.
+function quoteFreeTextValues(yamlText: string): string {
+  return yamlText
+    .split('\n')
+    .map((line) => {
+      // The key ends at the first ": ". Everything after it is the value.
+      const separatorIndex = line.indexOf(': ')
+      if (separatorIndex === -1) {
+        return line
+      }
+
+      // Strip indentation and a leading "- " list marker from the key.
+      const keyPart = line.slice(0, separatorIndex).trim()
+      const key = keyPart.startsWith('- ') ? keyPart.slice(2).trim() : keyPart
+      const value = line.slice(separatorIndex + 2).trim()
+
+      // Skip other keys and quoted values. Empty values stay null so defaults like "Build with AI" apply.
+      if (!FREE_TEXT_KEYS.has(key) || value === '' || isQuoted(value)) {
+        return line
+      }
+
+      // Keep the line up to ": " and rewrite the value as a JSON string, which YAML reads as quoted text.
+      return line.slice(0, separatorIndex + 2) + JSON.stringify(value)
+    })
+    .join('\n')
 }
 
 // Converts a ZodError into a user-facing message with workflow-specific context.
