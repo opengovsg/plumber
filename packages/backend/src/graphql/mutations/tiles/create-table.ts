@@ -1,9 +1,7 @@
 import { MutationResolvers } from '@/graphql/__generated__/types.generated'
 import { addFlowTableConnection } from '@/helpers/add-flow-connection'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
-import { type DatabaseType } from '@/models/tiles/types'
 
 const PLACEHOLDER_COLUMNS = [
   {
@@ -21,9 +19,6 @@ const PLACEHOLDER_COLUMNS = [
 ]
 const PLACEHOLDER_ROWS = new Array(5).fill({})
 
-// DELETE THIS FLAG ONCE IT'S NO LONGER IN USE
-const DATABASE_TYPE_LD_FLAG_KEY = 'tiles-database-type'
-
 const createTable: MutationResolvers['createTable'] = async (
   _parent,
   params,
@@ -35,16 +30,7 @@ const createTable: MutationResolvers['createTable'] = async (
     throw new Error('Table name is required')
   }
 
-  /**
-   * Check which database type user is allowed to create
-   */
-  const databaseType = (await getLdFlagValue(
-    DATABASE_TYPE_LD_FLAG_KEY,
-    context.currentUser.email,
-    'ddb',
-  )) as DatabaseType
-
-  const tableOperations = getTableOperations(databaseType)
+  const tableOperations = getTableOperations('pg')
 
   const table = await TableMetadata.transaction(async (trx) => {
     const pendingTable = await context.currentUser
@@ -52,7 +38,7 @@ const createTable: MutationResolvers['createTable'] = async (
       .insertGraph({
         name: tableName,
         role: 'owner',
-        db: databaseType,
+        db: 'pg',
         columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
       })
 

@@ -1,9 +1,7 @@
 import { UserFacingError } from '@/errors/user-facing-error'
 import { addFlowTableConnection } from '@/helpers/add-flow-connection'
-import { getLdFlagValue } from '@/helpers/launch-darkly'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
-import { type DatabaseType } from '@/models/tiles/types'
 import type User from '@/models/user'
 
 import {
@@ -14,8 +12,6 @@ import {
   parseCreateTileInput,
   type TileColumnResult,
 } from './tile-column-names'
-
-const DATABASE_TYPE_LD_FLAG_KEY = 'tiles-database-type'
 
 export interface CreateTileInput {
   user: User
@@ -55,19 +51,13 @@ export async function createTileService({
     }
   }
 
-  const databaseType = (await getLdFlagValue(
-    DATABASE_TYPE_LD_FLAG_KEY,
-    user.email,
-    'ddb',
-  )) as DatabaseType
-
-  const tableOperations = getTableOperations(databaseType)
+  const tableOperations = getTableOperations('pg')
 
   const table = await TableMetadata.transaction(async (trx) => {
     const pendingTable = await user.$relatedQuery('tables', trx).insertGraph({
       name: tableName,
       role: 'owner',
-      db: databaseType,
+      db: 'pg',
       ...(traceId && { config: createTileAiBuilderConfig(traceId) }),
       columns: columnNames.map((columnName, position) => ({
         name: columnName,

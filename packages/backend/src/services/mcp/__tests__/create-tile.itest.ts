@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { UserFacingError } from '@/errors/user-facing-error'
 import Flow from '@/models/flow'
@@ -15,19 +15,7 @@ import { generateMockContext } from '../../../graphql/__tests__/mutations/tiles/
 import { checkIfTableExists } from '../../../graphql/__tests__/mutations/tiles/tiles-pg-helper'
 import { createTileService } from '../create-tile'
 
-const mocks = vi.hoisted(() => ({
-  getLdFlagValue: vi.fn().mockResolvedValue('pg'),
-}))
-
-vi.mock('@/helpers/launch-darkly', () => ({
-  getLdFlagValue: mocks.getLdFlagValue,
-}))
-
 describe('createTileService', () => {
-  beforeEach(() => {
-    mocks.getLdFlagValue.mockResolvedValue('pg')
-  })
-
   it('creates a tile with named columns and no placeholder rows', async () => {
     const context = await generateMockContext()
     const result = await createTileService({
