@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { parseWorkflowMetadata } from '../parse-workflow-metadata'
+
+const mocks = vi.hoisted(() => ({
+  logInfo: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    info: mocks.logInfo,
+  },
+}))
 
 const VALID_WORKFLOW = `
 <!-- WORKFLOW_METADATA
@@ -25,6 +35,38 @@ steps:
 `
 
 describe('parseWorkflowMetadata', () => {
+  beforeEach(() => {
+    mocks.logInfo.mockClear()
+  })
+
+  describe('invalid YAML logging', () => {
+    it('logs when the LLM emits YAML that only parses after quoting', () => {
+      parseWorkflowMetadata(`
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->
+`)
+      expect(mocks.logInfo).toHaveBeenCalledWith(
+        'AI builder emitted invalid workflow YAML',
+        { event: 'ai-builder-workflow-yaml-invalid' },
+      )
+    })
+
+    it('does not log when the LLM emits valid YAML', () => {
+      parseWorkflowMetadata(VALID_WORKFLOW)
+      expect(mocks.logInfo).not.toHaveBeenCalled()
+    })
+  })
+
   describe('valid metadata', () => {
     it('extracts trigger and actions', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)

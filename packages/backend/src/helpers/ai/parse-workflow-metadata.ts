@@ -11,6 +11,7 @@ import {
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getActionsSchema } from '@/graphql/mutations/ai/schemas/actions.zod'
 import { getTriggerSchema } from '@/graphql/mutations/ai/schemas/triggers.zod'
+import logger from '@/helpers/logger'
 
 export const WORKFLOW_METADATA_MARKER = '<!-- WORKFLOW_METADATA'
 export const WORKFLOW_METADATA_REGEX =
@@ -95,15 +96,32 @@ function formatWorkflowError(
   return fromZodError(error).message
 }
 
+function canParseYaml(yamlText: string): boolean {
+  try {
+    parseYaml(yamlText)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function parseRawWorkflowData(text: string): IFlowSteps {
   const match = text.match(WORKFLOW_METADATA_REGEX)
   if (!match) {
     throw new BadUserInputError('Unable to generate the workflow.')
   }
 
+  const rawYaml = match[1].trim()
+  // Quoting rewrites most valid outputs too, so only a failed raw parse counts as an LLM error.
+  if (!canParseYaml(rawYaml)) {
+    logger.info('AI builder emitted invalid workflow YAML', {
+      event: 'ai-builder-workflow-yaml-invalid',
+    })
+  }
+
   let parsed: any
   try {
-    parsed = parseYaml(quoteFreeTextValues(match[1].trim()))
+    parsed = parseYaml(quoteFreeTextValues(rawYaml))
   } catch {
     throw new BadUserInputError('Unable to generate the workflow.')
   }
