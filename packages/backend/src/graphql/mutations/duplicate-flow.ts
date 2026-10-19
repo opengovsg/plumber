@@ -3,6 +3,7 @@ import { isEmpty } from 'lodash'
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
+import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
 import { updateStepVariables } from '@/helpers/update-duplicated-steps'
 import Flow from '@/models/flow'
 
@@ -16,39 +17,36 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
 ) => {
   const oldFlowId = params.input.id
   const flow = await context.currentUser
-    .$relatedQuery('flows')
+    .withAccessibleFlows({ requiredRole: 'viewer' })
     .withGraphJoined('[steps.[connection]]')
     .orderBy('steps.position', 'asc')
     .findOne({ 'flows.id': oldFlowId })
     .throwIfNotFound()
 
+  // Editors and Viewers must not receive the owner's connections or secrets.
+  const isOwner = flow.role === 'owner'
+
   return await Flow.transaction(async (trx) => {
     const prevConfig = { ...flow.config }
-    // update duplicate count for the original flow
-    await flow.$query(trx).patch({
-      config: {
-        ...prevConfig,
-        duplicateCount: flow.config?.duplicateCount
-          ? flow.config.duplicateCount + 1
-          : 1,
-      },
-    })
+    await Flow.incrementDuplicateCount(flow.id, trx)
 
-    // duplicate the flow with the previous config (only keep notification frequency)
     delete prevConfig['duplicateCount']
     delete prevConfig['templateConfig']
     delete prevConfig['attachments']
     delete prevConfig['errorConfig']
-    delete prevConfig['maxQps']
-    delete prevConfig['isForceClogged']
     delete prevConfig['aiBuilderConfig']
+    // Admins set these per Pipe, so a copy must not inherit them.
+    delete prevConfig['maxQps']
+    delete prevConfig['rejectIfOverMaxQps']
+    delete prevConfig['isForceClogged']
+    delete prevConfig['archiveDisabled']
 
     const duplicatedFlow = await context.currentUser
       .$relatedQuery('flows', trx)
       .insert({
         name: `[COPY] ${flow.name}`,
         active: false,
-        config: !isEmpty(prevConfig) ? prevConfig : undefined,
+        config: isOwner && !isEmpty(prevConfig) ? prevConfig : undefined,
       })
 
     // duplicate the steps and the variables
@@ -57,7 +55,8 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       // NOTE: should not duplicate connections that are shared
       // userId is null in connections if the connection was shared in a Pipe
       // and the pipe was subsequently transferred to another user
-      const shouldDuplicateConnection = oldStep.connection?.userId != null
+      const shouldDuplicateConnection =
+        isOwner && oldStep.connection?.userId != null
 
       const prevStepConfig = {
         ...oldStep.config,
@@ -83,7 +82,12 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
           connection: shouldDuplicateConnection ? oldStep.connection : null,
           position: oldStep.position,
           parameters: updateStepVariables(
-            oldStep.parameters,
+            isOwner
+              ? oldStep.parameters
+              : sanitizeCollaboratorDuplicatedParameters(
+                  oldStep.appKey,
+                  oldStep.parameters,
+                ),
             oldToNewStepIdsMap,
           ),
           config: !isEmpty(prevStepConfig) ? prevStepConfig : undefined,
@@ -105,6 +109,7 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
       event: 'duplicate-flow-request',
       originalFlow: oldFlowId,
       duplicatedFlow: duplicatedFlow.id,
+      role: flow.role,
       stepsMapping: oldToNewStepIdsMap,
     })
 

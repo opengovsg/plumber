@@ -262,6 +262,28 @@ class Flow extends Base {
     return collaborators.length > 0
   }
 
+  /**
+   * IMPORTANT: Bypasses the model so updated_at stays unchanged. A bump would
+   * make assertNotUpdatedSince reject edits from collaborators with the Pipe open.
+   */
+  static async incrementDuplicateCount(
+    flowId: string,
+    trx: Transaction,
+  ): Promise<void> {
+    await trx(this.tableName)
+      .where('id', flowId)
+      .update({
+        config: trx.raw(
+          `jsonb_set(
+            COALESCE(config, '{}'::jsonb),
+            '{duplicateCount}',
+            to_jsonb(COALESCE(config->>'duplicateCount', '0')::int + 1),
+            true
+          )`,
+        ),
+      })
+  }
+
   async patchLastUpdated({
     flowId,
     updatedBy,
