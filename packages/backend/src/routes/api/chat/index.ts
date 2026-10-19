@@ -283,6 +283,7 @@ const handleChatStream = observe(
                     environment: appConfig.appEnv,
                     promptName: chatPromptName,
                     promptVersion: version,
+                    promptSource: prompt.isFallback ? 'local' : 'langfuse',
                     langfusePrompt: prompt.toJSON(),
                     tags: [
                       'ai-builder',
