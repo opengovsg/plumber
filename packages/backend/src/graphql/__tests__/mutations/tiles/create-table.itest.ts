@@ -52,6 +52,7 @@ describe('create table mutation', () => {
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
     expect(table.name).toBe('Test Table')
+    expect(table.db).toBe('pg')
     expect(tableColumnCount).toBe(0)
     expect(pgCreateTableRowsSpy).not.toHaveBeenCalled()
     expect(pgCreateTableSpy).toHaveBeenCalledWith(table.id, [])
@@ -67,6 +68,7 @@ describe('create table mutation', () => {
     )
     const tableColumnCount = await table.$relatedQuery('columns').resultSize()
     expect(table.name).toBe('Test Table')
+    expect(table.db).toBe('pg')
     expect(tableColumnCount).toBe(3)
 
     expect(pgCreateTableRowsSpy).toHaveBeenCalledWith({

@@ -36,6 +36,7 @@ describe('createTileService', () => {
     expect(await checkIfTableExists(result.id)).toBe(true)
 
     const stored = await TableMetadata.query().findById(result.id)
+    expect(stored?.db).toBe('pg')
     expect(stored?.config).toEqual({})
   })
 
