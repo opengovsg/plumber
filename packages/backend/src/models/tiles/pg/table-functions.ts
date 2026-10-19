@@ -9,3 +9,7 @@ export function createTable(tableId: string, columnIds: string[]) {
     table.timestamps(true, true, true)
   })
 }
+
+export function deleteTable(tableId: string) {
+  return tilesClient.schema.dropTableIfExists(tableId)
+}

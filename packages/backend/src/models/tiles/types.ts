@@ -74,6 +74,7 @@ export interface TableOperations {
   }): Promise<TableRowOutput | TableRowOutputWithTimestamps | null>
 
   createTable(tableId: string, columnIds: string[]): Promise<void>
+  deleteTable(tableId: string): Promise<void>
   createTableColumns(tableId: string, columnIds: string[]): Promise<void>
   deleteTableColumns(tableId: string, columnIds: string[]): Promise<void>
 }

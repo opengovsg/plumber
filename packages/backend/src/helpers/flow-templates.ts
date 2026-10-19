@@ -172,6 +172,10 @@ export async function createFlowFromTemplate(
 
   const { name: flowName, steps, tileTemplateData } = template
 
+  // The physical tile table lives in another database, so the metadata
+  // transaction cannot roll it back. Track it to drop it ourselves on failure.
+  let physicalTableId: string | undefined
+
   // transaction will insert flow and steps
   return await Flow.transaction(async (trx) => {
     // create a tile with its columns and rows first if template uses tiles
@@ -206,6 +210,7 @@ export async function createFlowFromTemplate(
         const newRowData = replaceColumnNamesWithIds(rowData, columnNameToIdMap)
 
         const tableOperations = getTableOperations('pg')
+        physicalTableId = tableId
         await tableOperations.createTable(
           tableId,
           table.columns.map((column) => column.id),
@@ -283,5 +288,19 @@ export async function createFlowFromTemplate(
     })
 
     return flow
+  }).catch(async (error) => {
+    if (physicalTableId) {
+      try {
+        await getTableOperations('pg').deleteTable(physicalTableId)
+      } catch (cleanupError) {
+        logger.error('Unable to delete orphaned template tile table', {
+          event: 'templated-flow-tile-cleanup-failed',
+          templateId,
+          tableId: physicalTableId,
+          cleanupError,
+        })
+      }
+    }
+    throw error
   })
 }

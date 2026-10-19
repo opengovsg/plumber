@@ -18,4 +18,5 @@ export class PostgresTableOperations implements TableOperations {
   deleteTableColumns = tableColumnFunctions.deleteTableColumns
 
   createTable = tableFunctions.createTable
+  deleteTable = tableFunctions.deleteTable
 }
