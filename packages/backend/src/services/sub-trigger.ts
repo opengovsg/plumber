@@ -56,13 +56,17 @@ export const processSubTrigger = async (
     return null
   }
   // Find the execution to attach to
-  const execution = await Execution.query()
-    .where({
-      flow_id: flowId,
-      test_run: false,
-      internal_id: internalId,
-    })
-    .first()
+  const execution = await retryOnTransientDbError(
+    () =>
+      Execution.query()
+        .where({
+          flow_id: flowId,
+          test_run: false,
+          internal_id: internalId,
+        })
+        .first(),
+    { context: { flowId, internalId } },
+  )
 
   if (!execution) {
     // No existing execution found - skip processing per requirements
@@ -79,14 +83,18 @@ export const processSubTrigger = async (
   }
 
   // Find all MRF action steps for this flow, ordered by position
-  const mrfSteps = await Step.query()
-    .where({
-      flow_id: flowId,
-      type: 'action',
-      app_key: 'formsg',
-      key: 'mrfSubmission',
-    })
-    .orderBy('position', 'asc')
+  const mrfSteps = await retryOnTransientDbError(
+    () =>
+      Step.query()
+        .where({
+          flow_id: flowId,
+          type: 'action',
+          app_key: 'formsg',
+          key: 'mrfSubmission',
+        })
+        .orderBy('position', 'asc'),
+    { context: { flowId, internalId } },
+  )
 
   // workflowStep is 1-indexed from FormSG, so the Nth MRF step corresponds to workflowStep N
   // (workflowStep 1 = first MRF action step, workflowStep 2 = second MRF action step, etc.)

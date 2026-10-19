@@ -8,6 +8,7 @@ import {
 
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
@@ -285,8 +286,9 @@ export async function decryptFormResponse(
 
     if (verifiedEmails.length > 0) {
       try {
-        const whitelisted = await EmailSuppressionEntry.whitelistEmails(
-          verifiedEmails,
+        const whitelisted = await retryOnTransientDbError(
+          () => EmailSuppressionEntry.whitelistEmails(verifiedEmails),
+          { context: { flowId: $.flow.id, stepId: $.step.id } },
         )
         if (whitelisted.length > 0) {
           logger.info(
