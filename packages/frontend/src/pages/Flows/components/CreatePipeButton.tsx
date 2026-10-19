@@ -1,14 +1,12 @@
-import { useContext, useState } from 'react'
-import { BiSolidMagicWand } from 'react-icons/bi'
+import { useContext } from 'react'
+import { BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
-import { Box, Flex } from '@chakra-ui/react'
-import { Badge, Button, IconButton } from '@opengovsg/design-system-react'
+import { Flex, Tooltip } from '@chakra-ui/react'
+import { Button, IconButton } from '@opengovsg/design-system-react'
 
 import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
 import * as URLS from '@/config/urls'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-
-const LOCAL_STORAGE_AI_BUILDER_NEW_CLICKED = 'ai-builder-new-clicked'
 
 interface CreatePipeButtonProps {
   onOpen: () => void
@@ -26,56 +24,28 @@ export default function CreatePipeButton(props: CreatePipeButtonProps) {
   })
   const canUseAiBuilder = aiBuilderFlag.enabled
 
-  const [showAiBuilderNewBadge, setShowAiBuilderNewBadge] = useState(() => {
-    if (typeof window === 'undefined') {
-      return true
-    }
-    return localStorage.getItem(LOCAL_STORAGE_AI_BUILDER_NEW_CLICKED) !== 'true'
-  })
-
-  // TODO (kevinkim-ogp): can default to button without the new badge once GA
   if (canUseAiBuilder) {
     return (
-      <Flex gap={0.5}>
+      <Flex gap={1}>
         <Button
-          data-test="create-flow-button"
-          onClick={onOpen}
-          borderTopRightRadius={0}
-          borderBottomRightRadius={0}
+          leftIcon={<BiSolidMagicWand />}
+          onClick={() => navigate(`${URLS.EDITOR}/ai`)}
         >
-          Create Pipe
+          Create with AI
         </Button>
-        <Box
-          position="relative"
-          {...(showAiBuilderNewBadge && { mr: '1.25rem' })}
-        >
+        <Tooltip label="Create pipe" hasArrow>
           <IconButton
-            aria-label="Create Pipe"
-            icon={<BiSolidMagicWand />}
-            onClick={() => {
-              localStorage.setItem(LOCAL_STORAGE_AI_BUILDER_NEW_CLICKED, 'true')
-              setShowAiBuilderNewBadge(false)
-              navigate(`${URLS.EDITOR}/ai`)
-            }}
-            borderTopLeftRadius={0}
-            borderBottomLeftRadius={0}
+            data-test="create-flow-button"
+            aria-label="Create pipe"
+            icon={<BiPlus />}
+            onClick={onOpen}
+            bgColor="primary.100"
+            color="primary.500"
+            borderColor="transparent"
+            _hover={{ bgColor: 'primary.200' }}
+            _active={{ bgColor: 'primary.200' }}
           />
-          {showAiBuilderNewBadge && (
-            <Badge
-              position="absolute"
-              top="0"
-              right="0"
-              transform="translate(50%, -50%)"
-              backgroundColor="secondary.700"
-              fontSize="10px"
-              fontWeight={500}
-              borderRadius="12px"
-              pointerEvents="none"
-            >
-              New
-            </Badge>
-          )}
-        </Box>
+        </Tooltip>
       </Flex>
     )
   }

@@ -43,6 +43,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       motionPreset="none"
       closeOnEsc={false}
       isCentered
+      size="3xl"
     >
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent>
@@ -55,7 +56,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
           handleSubmit={handleSubmit}
           onModeSelect={handleModeSelect}
         />
-        <ModalCloseButton mt={3} />
+        <ModalCloseButton top="1.625rem" right={4} />
       </ModalContent>
     </Modal>
   )

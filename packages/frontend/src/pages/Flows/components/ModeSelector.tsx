@@ -44,43 +44,23 @@ export default function ModeSelector({ onModeSelect }: ModeSelectorProps) {
     }
   }
 
+  const modes: FLOW_CREATE_MODE[] =
+    canUseAiBuilder && !skipModeSelection
+      ? ['ai', 'template', 'new']
+      : ['template', 'new']
+
   return (
     <FormControl>
-      {canUseAiBuilder && !skipModeSelection ? (
-        <>
-          <Flex gap={4} direction={{ base: 'column', sm: 'row' }} mb={4}>
-            <ModeTile
-              mode="ai"
-              onClick={() => handleModeClick('ai')}
-              isSelected={createMode === 'ai'}
-            />
-            <ModeTile
-              mode="template"
-              onClick={() => handleModeClick('template')}
-              isSelected={createMode === 'template'}
-            />
-          </Flex>
+      <Flex gap={4} direction={{ base: 'column', md: 'row' }}>
+        {modes.map((mode) => (
           <ModeTile
-            mode="new"
-            onClick={() => handleModeClick('new')}
-            isSelected={createMode === 'new'}
-            w="100%"
+            key={mode}
+            mode={mode}
+            onClick={() => handleModeClick(mode)}
+            isSelected={createMode === mode}
           />
-        </>
-      ) : (
-        <Flex gap={4} direction={{ base: 'column', sm: 'row' }}>
-          <ModeTile
-            mode="template"
-            onClick={() => handleModeClick('template')}
-            isSelected={createMode === 'template'}
-          />
-          <ModeTile
-            mode="new"
-            onClick={() => handleModeClick('new')}
-            isSelected={createMode === 'new'}
-          />
-        </Flex>
-      )}
+        ))}
+      </Flex>
     </FormControl>
   )
 }

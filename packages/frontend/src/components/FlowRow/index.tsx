@@ -103,7 +103,8 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
           }
           flex={1}
           py={6}
-          px={{ base: 3, md: 8 }}
+          pl={{ base: 3, md: 8 }}
+          pr={0}
           display="flex"
           flexDir={{ base: 'column', md: 'row' }}
           alignItems="stretch"
