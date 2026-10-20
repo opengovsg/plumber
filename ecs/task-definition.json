@@ -44,6 +44,32 @@
       }
     },
     {
+      "name": "reconciler",
+      "cpu": 128,
+      "memory": 1024,
+      "command": ["node", "packages/backend/dist/reconciler.js"],
+      "environment": [
+        {
+          "name": "NODE_OPTIONS",
+          "value": "--max-old-space-size=768"
+        }
+      ],
+      "essential": false,
+      "restartPolicy": {
+        "enabled": true,
+        "restartAttemptPeriod": 60
+      },
+      "stopTimeout": 30,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "plumber-<ENVIRONMENT>/ecs/application-reconciler",
+          "awslogs-region": "ap-southeast-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
       "name": "dd-agent",
       "image": "public.ecr.aws/datadog/agent:latest",
       "portMappings": [
