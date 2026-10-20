@@ -11,19 +11,21 @@ import { createStepService } from '../create-step'
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
+  getLdFlagValue: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
-  // The If block flag stays on. Legacy pipes are pinned when a step is added.
-  getLdFlagValue: vi.fn().mockResolvedValue(true),
+  getLdFlagValue: mocks.getLdFlagValue,
 }))
 
 describe('createStepService', () => {
   beforeEach(() => {
     mocks.getAllLdFlags.mockResolvedValue({})
     mocks.getRestrictedAppKeys.mockReturnValue([])
+    // The If block flag is on unless a test turns it off.
+    mocks.getLdFlagValue.mockResolvedValue(true)
   })
 
   it('appends a new action step at the end of the pipe', async () => {
@@ -413,6 +415,32 @@ describe('createStepService', () => {
       expect(steps.find((s) => s.id === ifThen.id)?.config.endStepId).toBe(
         sms.id,
       )
+    })
+
+    it('places a step after a legacy If block when the flag is off', async () => {
+      mocks.getLdFlagValue.mockResolvedValue(false)
+      const { user, flow, ifThen, email } = await createBlockPipe('legacy-off')
+      await Step.query().findById(ifThen.id).patch({ config: {} })
+
+      const sms = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'postman-sms',
+        key: 'sendSms',
+        previousStepId: ifThen.id,
+        afterIfThenBlock: true,
+      })
+
+      const steps = await loadSteps(flow.id)
+      expect(steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendTransactionalEmail',
+        'sendSms',
+      ])
+      expect(sms.position).toBe(5)
+      expect(steps[1].config.endStepId).toBe(email.id)
     })
   })
 

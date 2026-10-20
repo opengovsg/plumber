@@ -1,5 +1,6 @@
 import { raw } from 'objection'
 
+import { deriveIfThenV1EndStep } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
 import { findEnclosingIfThenV2Block } from '@/apps/toolbox/common/block-execution'
 import {
@@ -31,24 +32,29 @@ export interface CreateStepInput {
   afterIfThenBlock?: boolean
 }
 
-/** `step` must be the block's If step or its last inner step. */
+/**
+ * `step` must be the block's If step or its last inner step.
+ *
+ * IMPORTANT: legacy If blocks stay unpinned when the flag is off, so their end is derived.
+ */
 function findIfThenBlockEndingAt(
   flowSteps: Step[],
   step: Step,
 ): { ifThenStep: Step; endStep: Step } | null {
-  const ifThenStep = flowSteps.find(
-    (candidate) =>
-      isIfThenV2(candidate) &&
-      (candidate.id === step.id ||
-        candidate.config[BLOCK_END_STEP_ID] === step.id),
-  )
-  if (!ifThenStep) {
-    return null
+  for (const ifThenStep of flowSteps) {
+    if (!isIfThenStep(ifThenStep)) {
+      continue
+    }
+    const endStep = isIfThenV2(ifThenStep)
+      ? flowSteps.find(
+          (candidate) => candidate.id === ifThenStep.config[BLOCK_END_STEP_ID],
+        )
+      : deriveIfThenV1EndStep(flowSteps, ifThenStep)
+    if (endStep && (ifThenStep.id === step.id || endStep.id === step.id)) {
+      return { ifThenStep, endStep }
+    }
   }
-  const endStep = flowSteps.find(
-    (candidate) => candidate.id === ifThenStep.config[BLOCK_END_STEP_ID],
-  )
-  return endStep ? { ifThenStep, endStep } : null
+  return null
 }
 
 /** Inserting after the If step itself lands inside its block. */
