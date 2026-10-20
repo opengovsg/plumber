@@ -43,6 +43,10 @@
     "worker": {
       "cache": false,
       "persistent": true
+    },
+    "reconciler": {
+      "cache": false,
+      "persistent": true
     }
   }
 }
