@@ -4,7 +4,7 @@ Plumber is a no-code workflow automation tool. Users build "flows" out of trigge
 
 This uses a pnpm workspaces monorepo:
 
-- [packages/backend/](packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](.claude/rules/backend.md).
+- [packages/backend/](packages/backend/) — server + workers. Scoped rules: [.claude/rules/backend.md](.claude/rules/backend.md), [.claude/rules/backend-errors.md](.claude/rules/backend-errors.md).
 - [packages/frontend/](packages/frontend/) — React app. Scoped rules: [.claude/rules/frontend.md](.claude/rules/frontend.md).
 - [packages/types/](packages/types/) — shared `@plumber/types` (linked via `workspace:*` deps).
 
