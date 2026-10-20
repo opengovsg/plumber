@@ -15,6 +15,7 @@ export default defineConfig({
     dts({
       insertTypesEntry: true,
     }),
+    failOnLeakedNodeBuiltins(),
   ],
   build: {
     // disable inline images since we don't allow them in csp
@@ -47,7 +48,6 @@ export default defineConfig({
         'react-router-dom',
         'zod',
       ],
-      onLog: failOnLeakedNodeBuiltins,
     },
   },
 })
