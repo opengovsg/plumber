@@ -334,6 +334,68 @@ describe('createStepService', () => {
       ).rejects.toThrow('An If block cannot contain a For-each.')
     })
 
+    async function moveBlockToRejectionBranch(
+      steps: Step[],
+      endStepId: string,
+    ) {
+      const approval = { branch: 'reject' as const, stepId: 'mrf-1' }
+      for (const step of steps) {
+        await Step.query()
+          .findById(step.id)
+          .patch({
+            config: {
+              ...step.config,
+              approval,
+              ...(step.key === 'ifThen' && { endStepId }),
+            },
+          })
+      }
+      return approval
+    }
+
+    it('keeps the rejection branch when extending or following a rejection If block', async () => {
+      const { user, flow, ifThen, slack, email } = await createBlockPipe(
+        'reject',
+      )
+      const approval = await moveBlockToRejectionBranch(
+        [ifThen, slack, email],
+        slack.id,
+      )
+
+      const sms = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'postman-sms',
+        key: 'sendSms',
+        previousStepId: slack.id,
+        traceId: 'trace-reject-inside',
+      })
+      const telegram = await createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'telegram-bot',
+        key: 'sendMessage',
+        previousStepId: sms.id,
+        afterIfThenBlock: true,
+      })
+
+      const steps = await loadSteps(flow.id)
+      expect(steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendSms',
+        'sendMessage',
+        'sendTransactionalEmail',
+      ])
+      expect(steps[1].config.endStepId).toBe(sms.id)
+      expect(sms.config.approval).toEqual(approval)
+      expect(sms.config.aiBuilderConfig).toEqual([
+        { traceId: 'trace-reject-inside', tool: 'create_step' },
+      ])
+      expect(telegram.config.approval).toEqual(approval)
+    })
+
     it('pins a legacy If block, so a step added after its last step stays inside', async () => {
       const { user, flow, ifThen, email } = await createBlockPipe('legacy-in')
       // A pipe saved before If blocks had an end marker.

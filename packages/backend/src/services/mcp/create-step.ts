@@ -139,13 +139,16 @@ export async function createStepService({
       }
     }
 
+    // The new step joins the previous step's rejection branch. Create_step never starts a branch.
+    const approval = previousStep.config?.approval
+
     // Publish allows one For-each on each approval branch.
-    const branch = previousStep.config?.approval?.branch
     if (
       isForEach &&
       flowSteps.some(
         (step) =>
-          isForEachStep(step) && step.config?.approval?.branch === branch,
+          isForEachStep(step) &&
+          step.config?.approval?.branch === approval?.branch,
       )
     ) {
       throw new UserFacingError('A pipe can only have one For-each step.')
@@ -167,9 +170,10 @@ export async function createStepService({
       position: newStepPosition,
       parameters: isIfThen ? { depth: 0 } : {},
       version,
-      ...(traceId && {
-        config: createStepAiBuilderConfig(traceId, 'create_step'),
-      }),
+      config: {
+        ...(approval && { approval }),
+        ...(traceId && createStepAiBuilderConfig(traceId, 'create_step')),
+      },
     })
 
     // A new If starts as an empty block that later inserts extend.
