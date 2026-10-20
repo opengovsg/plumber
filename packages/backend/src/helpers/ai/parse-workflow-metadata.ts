@@ -70,12 +70,17 @@ export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
       continue
     }
     const { steps: nestedSteps, ...step } = rawStep
-    if (
-      isIfThenMetadataStep(step) &&
-      Array.isArray(nestedSteps) &&
-      nestedSteps.length === 0
-    ) {
-      throw new BadUserInputError('An If block must contain at least one step.')
+    // IMPORTANT: Only an absent `steps` falls back to the legacy flat block.
+    // A malformed one would silently move the If block boundary.
+    if (isIfThenMetadataStep(step) && 'steps' in rawStep) {
+      if (nestedSteps !== null && !Array.isArray(nestedSteps)) {
+        throw new BadUserInputError('An If block must list its steps.')
+      }
+      if (!nestedSteps?.length) {
+        throw new BadUserInputError(
+          'An If block must contain at least one step.',
+        )
+      }
     }
     if (!isIfThenMetadataStep(step) || !Array.isArray(nestedSteps)) {
       flattened.push(step)

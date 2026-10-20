@@ -385,6 +385,54 @@ steps:
       ).toThrow('An If block must contain at least one step.')
     })
 
+    it('throws when an if-then block has a blank steps value', () => {
+      expect(() =>
+        parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
+name: Blank block
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    description: If
+    steps:
+  - step: 3
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->`),
+      ).toThrow('An If block must contain at least one step.')
+    })
+
+    it('throws when an if-then block has a mapping instead of a steps list', () => {
+      expect(() =>
+        parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
+name: Mapping block
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: toolbox
+    key: ifThen
+    description: If
+    steps:
+      step: 3
+      appKey: postman
+      key: sendTransactionalEmail
+      description: Conditional action
+  - step: 4
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action after block
+-->`),
+      ).toThrow('An If block must list its steps.')
+    })
+
     it('throws when an if-then is nested inside another if-then block', () => {
       expect(() =>
         parseWorkflowMetadata(`<!-- WORKFLOW_METADATA
