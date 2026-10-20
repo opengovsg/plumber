@@ -3,7 +3,7 @@ import type { Redis } from 'ioredis'
 import { incrementMetric } from '@/helpers/metrics'
 import { makeRedisAppDataKey } from '@/helpers/redis-app-data'
 
-import { type MissedRun, MISSED_RUN_MARKER_TTL_SECONDS } from './missed-runs'
+import { MISSED_RUN_MARKER_TTL_SECONDS, type MissedRun } from './missed-runs'
 
 interface CountMissedRunsInput {
   markerRedis: Pick<Redis, 'set'>
