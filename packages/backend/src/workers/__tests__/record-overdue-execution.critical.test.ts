@@ -25,8 +25,21 @@ const mocks = vi.hoisted(() => {
     return query
   }
 
+  // Mimics Redis SET with NX, the only Redis behavior the rule depends on.
+  const redisStore = new Map<string, string>()
+  const redisSet = vi.fn(async (key: string, value: string, ...args) => {
+    if (args.includes('NX') && redisStore.has(key)) {
+      return null
+    }
+    redisStore.set(key, value)
+    return 'OK'
+  })
+
   return {
     queryResolving,
+    redisStore,
+    redisSet,
+    incrementMetric: vi.fn(),
     enqueueActionJob: vi.fn(),
     getActionJob: vi.fn(),
     delayAsMilliseconds: vi.fn(),
@@ -37,6 +50,17 @@ const mocks = vi.hoisted(() => {
 vi.mock('@/queues/action', () => ({
   enqueueActionJob: mocks.enqueueActionJob,
   getActionJob: mocks.getActionJob,
+  makeActionJobId: (queueName: string, jobId: string) =>
+    `${queueName}:${jobId}`,
+}))
+
+vi.mock('@/helpers/redis-app-data', () => ({
+  redisAppDataClient: { set: mocks.redisSet },
+  makeRedisAppDataKey: (app: string, key: string) => `${app}:${key}`,
+}))
+
+vi.mock('@/helpers/metrics', () => ({
+  incrementMetric: mocks.incrementMetric,
 }))
 
 vi.mock('@/models/execution', () => ({
@@ -59,6 +83,190 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers()
   vi.clearAllMocks()
+  vi.unstubAllEnvs()
+  mocks.redisStore.clear()
+})
+
+describe('recordOverdueExecution', () => {
+  const QUEUE_NAME = '{app-actions-slack}'
+
+  async function loadRecordOverdueExecution(thresholdSeconds?: string) {
+    vi.stubEnv('OVERDUE_DELAY_STEP_THRESHOLD_SECONDS', thresholdSeconds)
+    vi.resetModules()
+    const { recordOverdueExecution } =
+      await import('../helpers/record-overdue-execution')
+    return recordOverdueExecution
+  }
+
+  function makeJob({
+    id = 'job-1',
+    executionId = 'execution-1',
+    latenessMs,
+    ...data
+  }: {
+    id?: string
+    executionId?: string
+    latenessMs?: number
+    retryTimestamp?: number
+  }) {
+    return {
+      id,
+      data: {
+        flowId: 'flow-1',
+        executionId,
+        stepId: 'step-2',
+        ...(latenessMs === undefined ? {} : { scheduledAt: NOW - latenessMs }),
+        ...data,
+      },
+    } as never
+  }
+
+  function overdueCount(groupLimited = false) {
+    return mocks.incrementMetric.mock.calls.filter(
+      ([name, tags]) =>
+        name === 'plumber.executions.overdue' &&
+        tags.group_limited === String(groupLimited),
+    ).length
+  }
+
+  it('counts a job starting 300,001 ms after scheduledAt once', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+
+    await recordOverdueExecution({
+      job: makeJob({ latenessMs: 300_001 }),
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+
+    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+    expect(overdueCount()).toBe(1)
+  })
+
+  it('does not count a job starting exactly 300,000 ms after scheduledAt', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+
+    await recordOverdueExecution({
+      job: makeJob({ latenessMs: 300_000 }),
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+
+    expect(mocks.incrementMetric).not.toHaveBeenCalled()
+  })
+
+  it('moves both bounds when the threshold changes', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution('600')
+
+    for (const [executionId, latenessMs] of [
+      ['execution-1', 300_001],
+      ['execution-2', 600_000],
+      ['execution-3', 600_001],
+    ] as const) {
+      await recordOverdueExecution({
+        job: makeJob({ id: executionId, executionId, latenessMs }),
+        queueName: QUEUE_NAME,
+        groupLimited: false,
+      })
+    }
+
+    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+    expect(mocks.redisStore.has('delay:overdue-execution:execution-3')).toBe(
+      true,
+    )
+  })
+
+  it('does not count a job without scheduledAt', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+
+    await recordOverdueExecution({
+      job: makeJob({}),
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+
+    expect(mocks.incrementMetric).not.toHaveBeenCalled()
+  })
+
+  it('does not count a job with retryTimestamp', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+
+    await recordOverdueExecution({
+      job: makeJob({ latenessMs: 3_600_000, retryTimestamp: NOW - 1_000 }),
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+
+    expect(mocks.incrementMetric).not.toHaveBeenCalled()
+  })
+
+  it('does not count a second start of the same overdue job', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const job = makeJob({ latenessMs: 400_000 })
+
+    await recordOverdueExecution({
+      job,
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+    vi.advanceTimersByTime(60_000)
+    await recordOverdueExecution({
+      job,
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+
+    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+  })
+
+  it('does not count a late re-run of a job whose first start was on time', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+    const job = makeJob({ latenessMs: 1_000 })
+
+    await recordOverdueExecution({
+      job,
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+    vi.advanceTimersByTime(10 * 60_000)
+    await recordOverdueExecution({
+      job,
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+
+    expect(mocks.incrementMetric).not.toHaveBeenCalled()
+  })
+
+  it('counts a late start on a queue with group limits as group_limited:true', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+
+    await recordOverdueExecution({
+      job: makeJob({ latenessMs: 300_001 }),
+      queueName: QUEUE_NAME,
+      groupLimited: true,
+    })
+
+    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+    expect(overdueCount(true)).toBe(1)
+  })
+
+  it('does not count a second overdue step in the same execution', async () => {
+    const recordOverdueExecution = await loadRecordOverdueExecution()
+
+    await recordOverdueExecution({
+      job: makeJob({ id: 'job-1', latenessMs: 400_000 }),
+      queueName: QUEUE_NAME,
+      groupLimited: false,
+    })
+    await recordOverdueExecution({
+      job: makeJob({ id: 'job-2', latenessMs: 500_000 }),
+      queueName: '{app-actions-m365-excel}',
+      groupLimited: true,
+    })
+
+    expect(mocks.incrementMetric).toHaveBeenCalledOnce()
+    expect(overdueCount()).toBe(1)
+  })
 })
 
 describe('advanceAfterStep', () => {
