@@ -2,12 +2,12 @@
 
 // Configure Vitest (https://vitest.dev/config/)
 
-import { globSync, readFileSync } from 'fs'
+import { existsSync, globSync, readFileSync } from 'fs'
 import { cpus } from 'os'
 import path from 'path'
 
 import { config } from 'dotenv'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type Plugin } from 'vitest/config'
 
 config({
   // .env-example should be in the same directory as our config.
@@ -16,15 +16,51 @@ config({
 
 const UNIT_INCLUDE = 'src/**/*.test.{js,ts}'
 
-// vi.mock() replaces a module in the worker cache. With isolate: false that
-// replacement leaks into later files, so those tests get their own graph.
-function testsWithModuleMocks(): string[] {
-  return globSync(UNIT_INCLUDE, { cwd: __dirname }).filter((file) =>
-    /\bvi\.mock\s*\(/.test(readFileSync(path.join(__dirname, file), 'utf8')),
-  )
+function hasModuleMock(absolutePath: string): boolean {
+  return /\bvi\.mock\s*\(/.test(readFileSync(absolutePath, 'utf8'))
 }
 
-const isolatedTests = testsWithModuleMocks()
+// vi.mock() replaces a module in the worker cache. With isolate: false that
+// replacement leaks into later files, so those tests get their own graph.
+const isolatedTests = globSync(UNIT_INCLUDE, { cwd: __dirname }).filter(
+  (file) => hasModuleMock(path.join(__dirname, file)),
+)
+const isolatedTestPaths = new Set(
+  isolatedTests.map((file) => path.join(__dirname, file)),
+)
+
+const watchedServers = new WeakSet<object>()
+
+// Project include/exclude lists are fixed at config load. Restarting reloads
+// this config, so a watch-mode edit that adds or removes vi.mock() moves the
+// test into the right project.
+const reclassifyMockedTestsOnChange: Plugin = {
+  name: 'plumber:reclassify-mocked-tests',
+  configureVitest({ vitest }) {
+    const server = vitest.vite
+    if (!vitest.config.watch || watchedServers.has(server)) {
+      return
+    }
+    watchedServers.add(server)
+
+    let restarting = false
+    const onTestFileWritten = (file: string): void => {
+      if (
+        restarting ||
+        !existsSync(file) ||
+        !vitest.projects.some((project) => project.matchesTestGlob(file))
+      ) {
+        return
+      }
+      if (hasModuleMock(file) !== isolatedTestPaths.has(file)) {
+        restarting = true
+        void server.restart()
+      }
+    }
+    server.watcher.on('add', onTestFileWritten)
+    server.watcher.on('change', onTestFileWritten)
+  },
+}
 
 const srcAlias = path.resolve(__dirname, './src')
 const graphqlShieldAlias = require.resolve('graphql-shield')
@@ -65,6 +101,7 @@ export default defineConfig({
     disableConsoleIntercept: true,
     projects: [
       {
+        plugins: [reclassifyMockedTestsOnChange],
         resolve: {
           alias: resolveAliases,
         },
@@ -77,6 +114,7 @@ export default defineConfig({
         },
       },
       {
+        plugins: [reclassifyMockedTestsOnChange],
         resolve: {
           alias: resolveAliases,
         },
