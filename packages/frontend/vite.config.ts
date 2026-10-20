@@ -15,13 +15,15 @@ const backendTarget = `http://localhost:${backendPort}`
 // https://vitejs.dev/config/
 export default defineConfig({
   // loadVersion injects package.json version into import.meta.env.PACKAGE_VERSION
-  plugins: [react(), viteTsconfigPaths(), loadVersion()],
+  plugins: [
+    react(),
+    viteTsconfigPaths(),
+    loadVersion(),
+    failOnLeakedNodeBuiltins(),
+  ],
   build: {
     // disable inline images since we don't allow them in csp
     assetsInlineLimit: 0,
-    rolldownOptions: {
-      onLog: failOnLeakedNodeBuiltins,
-    },
   },
   server: {
     open: `http://localhost:${frontendPort}`,

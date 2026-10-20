@@ -1,5 +1,5 @@
 // @ts-check
-import type { Rolldown } from 'vite'
+import type { Plugin } from 'vite'
 
 /**
  * Guardrail for the @emailens/engine tech-debt: the engine declares
@@ -10,25 +10,36 @@ import type { Rolldown } from 'vite'
  * a hard error so CI catches the regression instead of silently
  * shipping a broken bundle.
  *
- * Wire this up as `build.rolldownOptions.onLog` in the Vite config.
+ * IMPORTANT: Rolldown ignores errors thrown from `onLog`, so the build fails
+ * from `buildEnd` instead.
  */
-export const failOnLeakedNodeBuiltins: Rolldown.LogOrStringHandler = (
-  level,
-  log,
-  defaultHandler,
-) => {
-  const msg = typeof log === 'string' ? log : (log.message ?? '')
-  const code = typeof log === 'string' ? undefined : log.code
-  if (
-    (level === 'warn' || level === 'error') &&
-    (msg.includes('has been externalized for browser compatibility') ||
-      code === 'MISSING_NODE_BUILTINS')
-  ) {
-    throw new Error(
-      `[vite-guardrail] A node-only import leaked into the frontend bundle. ` +
-        `This guardrail exists to catch @emailens/engine (and similar libraries) ` +
-        `pulling in backend-only modules. Original warning: ${msg}`,
-    )
+export function failOnLeakedNodeBuiltins(): Plugin {
+  let leaks: string[] = []
+  return {
+    name: 'plumber:fail-on-leaked-node-builtins',
+    apply: 'build',
+    buildStart() {
+      leaks = []
+    },
+    onLog(level, log) {
+      if (
+        level === 'warn' &&
+        (log.message.includes(
+          'has been externalized for browser compatibility',
+        ) ||
+          log.code === 'MISSING_NODE_BUILTINS')
+      ) {
+        leaks.push(log.message)
+      }
+    },
+    buildEnd() {
+      if (leaks.length > 0) {
+        this.error(
+          `[vite-guardrail] A node-only import leaked into the frontend bundle. ` +
+            `This guardrail exists to catch @emailens/engine (and similar libraries) ` +
+            `pulling in backend-only modules. Original warnings:\n${leaks.join('\n')}`,
+        )
+      }
+    },
   }
-  defaultHandler(level, log)
 }
