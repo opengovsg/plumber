@@ -40,11 +40,11 @@ export default function FlowNameAndModeContent({
 
   return (
     <Form onSubmit={handleSubmit}>
-      <ModalHeader p="2.5rem 2rem 1.5rem">
+      <ModalHeader pt={8} pb={8} pl={8} pr={16}>
         <Text textStyle="h4">How do you want to create your workflow?</Text>
       </ModalHeader>
-      <ModalBody pb={createMode === 'new' ? undefined : 8}>
-        <Flex flexDir="column" rowGap={4}>
+      <ModalBody px={8} pt={0} pb={createMode === 'new' ? 6 : 8}>
+        <Flex flexDir="column" rowGap={6}>
           <ModeSelector onModeSelect={onModeSelect} />
 
           {/* Specific form items */}
@@ -58,7 +58,7 @@ export default function FlowNameAndModeContent({
         </Flex>
       </ModalBody>
       {createMode === 'new' && (
-        <ModalFooter>
+        <ModalFooter px={8} pt={0} pb={8}>
           <Button
             type="submit"
             isDisabled={isButtonDisabled}
