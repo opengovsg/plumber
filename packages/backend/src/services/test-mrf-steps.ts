@@ -2,6 +2,7 @@ import type { TestRunStepMetadata } from '@plumber/types'
 
 import { raw } from 'objection'
 
+import type ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
 import testStep from '@/services/test-step'
 
@@ -30,24 +31,31 @@ export async function getMrfTestStartStep(stepToTest: Step): Promise<Step> {
   return stepToTest
 }
 
+export interface MrfStageTestResult {
+  step: Step
+  executionStep: ExecutionStep
+}
+
 /**
  * Test remaining steps in the mrf flow
  */
 export async function testRemainingMrfSteps(
   flowId: string,
   testRunMetadata?: TestRunStepMetadata,
-): Promise<void> {
+): Promise<MrfStageTestResult[]> {
   const remainingSteps = await Step.query()
     .where('app_key', 'formsg')
     .andWhere('flow_id', flowId)
     .andWhere('type', 'action')
     .orderBy('position', 'asc')
 
+  const results: MrfStageTestResult[] = []
   for (const remainingStep of remainingSteps) {
     const { executionStep } = await testStep({
       stepId: remainingStep.id,
       testRunMetadata,
     })
+    results.push({ step: remainingStep, executionStep })
 
     if (!executionStep.isFailed) {
       await remainingStep.$query().patch({
@@ -60,4 +68,6 @@ export async function testRemainingMrfSteps(
       break
     }
   }
+
+  return results
 }

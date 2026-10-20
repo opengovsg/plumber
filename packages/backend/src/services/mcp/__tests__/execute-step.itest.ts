@@ -278,8 +278,81 @@ describe('executeStepService', () => {
       const result = await executeStepService(user, stageIds[1])
 
       expect(mocks.testStep.mock.calls[0][0].stepId).toBe(triggerId)
-      expect(result.stepId).toBe(triggerId)
+      expect(result.stepId).toBe(stageIds[1])
       expect(await statusOf(stageIds[0])).toBe('completed')
+    })
+
+    it('returns the requested stage output and metadata', async () => {
+      const fields = {
+        requestorField: {
+          question: 'Purpose',
+          answer: 'Travel',
+          fieldType: 'textfield',
+          order: 1,
+        },
+        approvalField: {
+          question: 'Approve?',
+          answer: 'Yes',
+          fieldType: 'yes_no',
+          order: 2,
+        },
+      }
+      await Step.query()
+        .findById(triggerId)
+        .patch({
+          parameters: {
+            mrf: { defaultStepName: 'Requestor', fields: ['requestorField'] },
+          },
+        })
+      await Step.query()
+        .findById(stageIds[0])
+        .patch({
+          parameters: {
+            mrf: {
+              defaultStepName: 'Approval',
+              fields: ['approvalField'],
+              approvalField: 'approvalField',
+            },
+          },
+        })
+      const executionStepIds = new Map<string, string>()
+      mocks.testStep.mockImplementation(async ({ stepId }) => {
+        const executionStep = {
+          ...makeExecutionStep({
+            dataOut: { submissionId: `submission-${stepId}`, fields },
+          }),
+          stepId,
+        }
+        executionStepIds.set(stepId, executionStep.id)
+        return { executionStep, executionId } as never
+      })
+
+      const result = await executeStepService(user, stageIds[0])
+
+      expect(result).toMatchObject({
+        success: true,
+        stepId: stageIds[0],
+        executionStepId: executionStepIds.get(stageIds[0]),
+        dataOut: { submissionId: `submission-${stageIds[0]}` },
+      })
+      expect(result.dataOutMetadata.fields).toMatchObject({
+        requestorField: { isHidden: true },
+        approvalField: { answer: { type: 'approval' } },
+      })
+    })
+
+    it('returns the failing stage when an earlier stage blocks the requested one', async () => {
+      mocks.testStep
+        .mockImplementationOnce(async () => succeeds())
+        .mockImplementationOnce(async () => fails())
+
+      const result = await executeStepService(user, stageIds[1])
+
+      expect(result).toMatchObject({
+        success: false,
+        stepId: stageIds[0],
+        errorDetails: { error: 'boom' },
+      })
     })
 
     it('stops at the first stage step that fails', async () => {

@@ -47,7 +47,7 @@ export async function executeStepService(
   // wait on — always prefer mock data (e.g. FormSG's newSubmission trigger)
   // instead of waiting on a real event. Apps that don't recognise
   // `preferMock` in their testRunMetadata schema just ignore it.
-  const { executionStep, executionId } = await testStep({
+  const { executionStep: startExecutionStep, executionId } = await testStep({
     stepId: step.id,
     testRunMetadata: { preferMock: true },
   })
@@ -56,7 +56,9 @@ export async function executeStepService(
     testExecutionId: executionId,
   })
 
-  if (!executionStep.isFailed) {
+  let resultStep = step
+  let executionStep = startExecutionStep
+  if (!startExecutionStep.isFailed) {
     const completedStep = await step.$query().patchAndFetch({
       status: 'completed',
       config: raw(`config - 'templateConfig'`),
@@ -64,20 +66,31 @@ export async function executeStepService(
 
     // Passing the trigger completes every stage step too, as in the editor.
     if (isMrfStep(completedStep)) {
-      await testRemainingMrfSteps(step.flowId, { preferMock: true })
+      const stageResults = await testRemainingMrfSteps(step.flowId, {
+        preferMock: true,
+      })
+      // Each stage has its own submission and field set. The model wires
+      // downstream variables from this output.
+      const stageResult =
+        stageResults.find((result) => result.step.id === requestedStep.id) ??
+        stageResults.find((result) => result.executionStep.isFailed)
+      if (stageResult && requestedStep.id !== step.id) {
+        resultStep = stageResult.step
+        executionStep = stageResult.executionStep
+      }
     }
   }
 
-  const command = step.isAction
-    ? await step.getActionCommand()
-    : await step.getTriggerCommand()
+  const command = resultStep.isAction
+    ? await resultStep.getActionCommand()
+    : await resultStep.getTriggerCommand()
   const dataOutMetadata: IDataOutMetadata | null = await (
     command?.getDataOutMetadata?.(executionStep) ?? Promise.resolve(null)
   ).catch((error: Error): IDataOutMetadata | null => {
     logger.warn('executeStepService: failed to get dataOut metadata', {
-      stepId: step.id,
-      appKey: step.appKey,
-      key: step.key,
+      stepId: resultStep.id,
+      appKey: resultStep.appKey,
+      key: resultStep.key,
       error: error.message,
     })
     return null
@@ -85,8 +98,8 @@ export async function executeStepService(
 
   return {
     success: !executionStep.isFailed,
-    pipeId: step.flowId,
-    stepId: step.id,
+    pipeId: resultStep.flowId,
+    stepId: resultStep.id,
     executionStepId: executionStep.id,
     dataOut: executionStep.dataOut ?? null,
     dataOutMetadata,
