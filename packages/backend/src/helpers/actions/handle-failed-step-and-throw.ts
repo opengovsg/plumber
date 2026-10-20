@@ -9,7 +9,7 @@ import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, { getStepErrorKind } from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -153,6 +153,9 @@ export function handleFailedStepAndThrow(
   const { errorDetails, context } = params
   const { span, job } = context
 
+  // Retrying cannot fix the user's own configuration.
+  const isConfigError = getStepErrorKind(executionError) === 'config'
+
   // Edge case as some actions throw StepError now, but others don't.
   if (executionError instanceof StepError) {
     executionError = executionError.cause
@@ -160,6 +163,9 @@ export function handleFailedStepAndThrow(
 
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
+    if (isConfigError) {
+      throw new UnrecoverableError(JSON.stringify(errorDetails))
+    }
     if (executionError instanceof RetriableError) {
       return handleRetriableError(executionError, context)
     }
