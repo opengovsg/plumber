@@ -32,6 +32,8 @@ describe('gathersg attachment upload helpers', () => {
   })
 
   afterEach(() => {
+    // Vitest 4 restoreAllMocks no longer clears factory mock call history.
+    vi.resetAllMocks()
     vi.restoreAllMocks()
   })
 
