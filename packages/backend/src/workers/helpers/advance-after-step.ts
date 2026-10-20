@@ -110,7 +110,7 @@ export async function advanceAfterStep({
 
   const jobName = `${executionId}-${nextStep.id}`
 
-  const jobPayload = {
+  const jobPayload: IActionJobData = {
     flowId,
     executionId,
     stepId: nextStep.id,
@@ -120,10 +120,13 @@ export async function advanceAfterStep({
   let jobOptions = DEFAULT_JOB_OPTIONS
 
   if (currStep.appKey === 'delay') {
+    const delay = delayAsMilliseconds(currStep.key, executionStep.dataOut)
     jobOptions = {
       ...DEFAULT_JOB_OPTIONS,
-      delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
+      delay,
     }
+    // Marks only user-scheduled starts as SLA-measurable, unlike retry or stagger delays.
+    jobPayload.scheduledAt = Date.now() + Math.max(delay, 0)
   }
 
   try {
