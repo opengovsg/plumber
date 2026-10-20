@@ -9,3 +9,13 @@ export function incrementMetric(
     ...tags,
   })
 }
+
+export function setGaugeMetric(
+  name: string,
+  value: number,
+  tags: Record<string, string> = {},
+): void {
+  tracer.dogstatsd.gauge(name, value, {
+    ...tags,
+  })
+}
