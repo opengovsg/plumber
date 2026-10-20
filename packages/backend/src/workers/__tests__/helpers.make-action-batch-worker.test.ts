@@ -23,8 +23,13 @@ const mocks = vi.hoisted(() => {
     processOn: vi.fn(),
     prepareActionExecution: vi.fn(),
     handleFailedJob: vi.fn(),
+    recordOverdueExecution: vi.fn(),
   }
 })
+
+vi.mock('@/workers/helpers/record-overdue-execution', () => ({
+  recordOverdueExecution: mocks.recordOverdueExecution,
+}))
 
 vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
@@ -53,7 +58,7 @@ vi.mock('@/config/redis', async (importActual) => ({
 vi.mock('@/helpers/tracer', () => ({
   default: {
     wrap: vi.fn((_name: string, processor: unknown) => processor),
-    scope: () => ({ active: (): null => null }),
+    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
   },
 }))
 
@@ -176,5 +181,43 @@ describe('makeActionBatchWorker', () => {
     expect(failedJob).toBe(batchJob)
     expect(failedJobError.cause).toBe(stepError)
     expect(Object.keys(failedJobError)).not.toContain('cause')
+  })
+
+  describe('processor', () => {
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('records overdue executions for every member before preparing the batch', async () => {
+      const members = ['1', '2'].map((id) => ({
+        id,
+        data: {
+          flowId: 'flow-1',
+          executionId: `execution-${id}`,
+          stepId: 'step-1',
+        },
+        opts: {},
+        setAsFailed: vi.fn(),
+      }))
+      mocks.prepareActionExecution.mockRejectedValue(new Error('no step'))
+      makeActionBatchWorker(workerParams)
+      const calls = mocks.workerConstructor.mock.calls as unknown as [
+        string,
+        (job: unknown) => Promise<void>,
+      ][]
+
+      await calls.at(-1)[1]({ getBatch: () => members })
+
+      for (const member of members) {
+        expect(mocks.recordOverdueExecution).toHaveBeenCalledWith({
+          job: member,
+          queueName: '{app-actions-m365-excel-batch}',
+          groupLimited: true,
+        })
+      }
+      expect(mocks.recordOverdueExecution).toHaveBeenCalledBefore(
+        mocks.prepareActionExecution,
+      )
+    })
   })
 })

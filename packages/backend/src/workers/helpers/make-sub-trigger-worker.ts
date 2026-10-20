@@ -20,6 +20,7 @@ import Step from '@/models/step'
 import { enqueueActionJob } from '@/queues/action'
 
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordOverdueExecution } from './record-overdue-execution'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
 interface MakeSubTriggerWorkerParams {
@@ -78,6 +79,8 @@ export function makeSubTriggerWorker(
         ...getJobQueueTimingTags(job),
         workerVersion: appConfig.version,
       })
+
+      await recordOverdueExecution({ job, queueName, groupLimited: false })
 
       const $ = await globalVariable({
         flow,
