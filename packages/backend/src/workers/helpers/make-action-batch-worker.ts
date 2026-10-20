@@ -33,6 +33,7 @@ import {
 import { advanceAfterStep } from './advance-after-step'
 import { handleFailedJob } from './handle-failed-job'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordOverdueExecution } from './record-overdue-execution'
 import { fileLockRequeueDelayMs } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -624,6 +625,16 @@ async function processBatch(ctx: BatchContext): Promise<void> {
   const batchJobs = job.getBatch()
   // groupAffinity puts one group in each batch. The container job has no gid.
   tagBatchStart(ctx, batchJobs, batchJobs[0]?.gid)
+  // Batch workers always cap group concurrency.
+  await Promise.all(
+    batchJobs.map((batchJob) =>
+      recordOverdueExecution({
+        job: batchJob,
+        queueName: ctx.queueName,
+        groupLimited: true,
+      }),
+    ),
+  )
 
   const { preparedOk, prepareFailed } = await prepareBatch(
     ctx.queueName,

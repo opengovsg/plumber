@@ -15,8 +15,30 @@ const mocks = vi.hoisted(() => {
 
     // Misc mocks
     processOn: vi.fn(),
+
+    // Processor mocks
+    findStepById: vi.fn(),
+    processAction: vi.fn(),
+    advanceAfterStep: vi.fn(),
+    recordOverdueExecution: vi.fn(),
   }
 })
+
+vi.mock('@/models/step', () => ({
+  default: { query: () => ({ findById: mocks.findStepById }) },
+}))
+
+vi.mock('@/services/action', () => ({
+  processAction: mocks.processAction,
+}))
+
+vi.mock('@/workers/helpers/advance-after-step', () => ({
+  advanceAfterStep: mocks.advanceAfterStep,
+}))
+
+vi.mock('@/workers/helpers/record-overdue-execution', () => ({
+  recordOverdueExecution: mocks.recordOverdueExecution,
+}))
 
 vi.mock('@/queues/action', () => ({
   enqueueActionJob: vi.fn(),
@@ -44,7 +66,8 @@ vi.mock('@/config/redis', async (importActual) => ({
 
 vi.mock('@/helpers/tracer', () => ({
   default: {
-    wrap: vi.fn(() => ({})),
+    wrap: vi.fn((_name, processor) => processor),
+    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
   },
 }))
 
@@ -188,4 +211,61 @@ describe('makeActionWorker', () => {
       )
     },
   )
+
+  describe('processor', () => {
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    const job = {
+      id: '1',
+      data: { flowId: 'flow-1', executionId: 'execution-1', stepId: 'step-1' },
+      opts: {},
+    }
+
+    function getProcessor() {
+      const calls = mocks.workerConstructor.mock.calls as unknown as [
+        string,
+        (job: unknown) => Promise<void>,
+      ][]
+      return calls.at(-1)[1]
+    }
+
+    it.each([
+      {
+        queueConfig: { isQueueDelayable: false, workerType: 'action' as const },
+        groupLimited: false,
+      },
+      {
+        queueConfig: {
+          isQueueDelayable: false,
+          workerType: 'action' as const,
+          getGroupConfigForJob: vi.fn(),
+          groupLimits: { type: 'concurrency' as const, concurrency: 1 },
+        },
+        groupLimited: true,
+      },
+    ])(
+      'records overdue executions before running the step (groupLimited: $groupLimited)',
+      async ({ queueConfig, groupLimited }) => {
+        mocks.processAction.mockResolvedValueOnce({})
+        makeActionWorker({
+          appKey: 'test-app',
+          queueName: '{test-app-queue}',
+          queueConfig,
+        })
+
+        await getProcessor()(job)
+
+        expect(mocks.recordOverdueExecution).toHaveBeenCalledWith({
+          job,
+          queueName: '{test-app-queue}',
+          groupLimited,
+        })
+        expect(mocks.recordOverdueExecution).toHaveBeenCalledBefore(
+          mocks.processAction,
+        )
+      },
+    )
+  })
 })

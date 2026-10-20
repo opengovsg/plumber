@@ -16,11 +16,11 @@ const NOW = new Date('2026-10-20T00:00:00.000Z').getTime()
 const mocks = vi.hoisted(() => {
   // Stands in for any Objection query chain and resolves to `value` when awaited.
   function queryResolving(value: unknown): unknown {
-    const query: unknown = new Proxy(() => undefined, {
-      get: (_target, prop) =>
+    const query: unknown = new Proxy((): void => undefined, {
+      get: (_target, prop): unknown =>
         prop === 'then'
           ? (resolve: (v: unknown) => void) => resolve(value)
-          : () => query,
+          : (): unknown => query,
     })
     return query
   }
