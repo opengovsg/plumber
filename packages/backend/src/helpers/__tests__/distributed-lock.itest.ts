@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { withLock } from '../distributed-lock'
-import logger from '../logger'
 import { makeRedisAppDataKey, redisAppDataClient } from '../redis-app-data'
 
 //
@@ -23,6 +21,9 @@ function deferred(): { promise: Promise<void>; resolve: () => void } {
 
 describe('withLock (integration)', () => {
   it("returns fn's result when the release fails after fn settled (not routed to onContention)", async () => {
+    vi.resetModules()
+    const logger = (await import('../logger')).default
+    const { withLock } = await import('../distributed-lock')
     const key = 'wl:release-fail'
     const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
 
@@ -51,9 +52,11 @@ describe('withLock (integration)', () => {
       expect.objectContaining({ lockKey: key }),
     )
     errorSpy.mockRestore()
+    vi.resetModules()
   })
 
   it('serializes same-key work: a contender hits onContention while the key is held, then acquires once freed', async () => {
+    const { withLock } = await import('../distributed-lock')
     const key = 'wl:held'
     const holderAcquired = deferred()
     const releaseHolder = deferred()
@@ -98,6 +101,7 @@ describe('withLock (integration)', () => {
   })
 
   it('propagates a genuine fn error (not treated as contention) and releases the lock', async () => {
+    const { withLock } = await import('../distributed-lock')
     const key = 'wl:error'
 
     await expect(
