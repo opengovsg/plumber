@@ -1,10 +1,16 @@
+import { Writable } from 'stream'
+
+import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import type { AxiosError } from 'axios'
 import { describe, expect, it } from 'vitest'
+import * as winston from 'winston'
+
+import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 
 import HttpError from '../http'
 import PartialStepError from '../partial-error'
 import RetriableError from '../retriable-error'
-import StepError, { getStepErrorKind } from '../step'
+import StepError, { attachStepErrorAsCause, getStepErrorKind } from '../step'
 import { UserFacingError } from '../user-facing-error'
 
 const HTTP_ERROR = new HttpError({
@@ -114,5 +120,76 @@ describe('getStepErrorKind', () => {
     { label: 'undefined', error: undefined },
   ])('returns internal for a $label', ({ error }) => {
     expect(getStepErrorKind(error)).toBe('internal')
+  })
+})
+
+describe('attachStepErrorAsCause', () => {
+  const makeStepError = () =>
+    new StepError({
+      name: 'n',
+      solution: 's',
+      kind: 'third-party',
+      cause: HTTP_ERROR,
+    })
+
+  it('attaches a StepError as a non-enumerable cause', () => {
+    const stepError = makeStepError()
+    const target = new UnrecoverableError('step failed')
+
+    attachStepErrorAsCause(target, stepError)
+
+    expect(target.cause).toBe(stepError)
+    expect(Object.keys(target)).not.toContain('cause')
+    expect(getStepErrorKind(target.cause)).toBe('third-party')
+  })
+
+  it('ignores a non-StepError', () => {
+    const target = new UnrecoverableError('step failed')
+
+    attachStepErrorAsCause(target, HTTP_ERROR)
+
+    expect(Object.hasOwn(target, 'cause')).toBe(false)
+  })
+
+  it('never overwrites an existing cause', () => {
+    const existingCause = new Error('existing')
+    const target = new Error('step failed', { cause: existingCause })
+
+    attachStepErrorAsCause(target, makeStepError())
+
+    expect(target.cause).toBe(existingCause)
+  })
+
+  it('keeps the cause out of a redacted log record', async () => {
+    const chunks: string[] = []
+    const logger = winston.createLogger({
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        redactSecrets(),
+        winston.format.json(),
+      ),
+      transports: [
+        new winston.transports.Stream({
+          stream: new Writable({
+            write(chunk, _encoding, callback) {
+              chunks.push(String(chunk))
+              callback()
+            },
+          }),
+        }),
+      ],
+    })
+    const target = new UnrecoverableError('step failed')
+    attachStepErrorAsCause(target, makeStepError())
+
+    logger.error('job failed', { err: target })
+    await new Promise((resolve) => setImmediate(resolve))
+    logger.close()
+
+    const record = JSON.parse(chunks.join(''))
+    expect(record.err.message).toBe('step failed')
+    expect(record.err).not.toHaveProperty('cause')
+    expect(chunks.join('')).not.toContain('bad input')
   })
 })
