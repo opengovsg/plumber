@@ -1401,9 +1401,17 @@ export interface IVerifyConnectionRegistrationOutput {
 export interface ITestConnectionOutput extends Partial<IVerifyConnectionRegistrationOutput> {
   connectionVerified: boolean
 }
+/**
+ * - `config`: the user's configuration caused the failure.
+ * - `third-party`: an external service failed.
+ * - `internal`: a Plumber bug.
+ */
+export type StepErrorKind = 'config' | 'third-party' | 'internal'
+
 export interface IStepError {
   name: string
   solution: string
+  kind?: StepErrorKind
   details?: IJSONObject
   partialRetry?: {
     buttonMessage: string
