@@ -1,11 +1,7 @@
 /* oxlint-disable no-console */
 import 'dotenv/config'
 import { postgres, redis } from '@opengovsg/testcontainers'
-import {
-  createGlobalSetup,
-  type ProvidedContainers,
-  TESTCONTAINERS_CONTEXT_KEY,
-} from '@opengovsg/testcontainers/vitest'
+import { createGlobalSetup } from '@opengovsg/testcontainers/vitest'
 import knex from 'knex'
 import type { TestProject } from 'vitest/node'
 
@@ -49,25 +45,9 @@ const setupContainers = createGlobalSetup([
   },
 ])
 
-// Every integration project loads this file in its own module graph, but
-// globalThis is shared. The projects reuse one set of containers. Only the
-// module instance that started them holds the container handles.
-type ContainersState = {
-  users: number
-  ready: Promise<ProvidedContainers>
-  stop: () => Promise<void>
-}
-const store = globalThis as typeof globalThis & {
-  __plumberItestContainers?: ContainersState
-}
-
-async function startContainers(
-  project: TestProject,
-  state: ContainersState,
-): Promise<ProvidedContainers> {
-  state.stop = await setupContainers(project)
-  const containers = project.getProvidedContext().testcontainers
-  applyContainerEnv(containers)
+export default async (project: TestProject) => {
+  const stopContainers = await setupContainers(project)
+  applyContainerEnv(project.getProvidedContext().testcontainers)
 
   const config = (await import('../knexfile')).default
   const client = knex(config)
@@ -75,31 +55,5 @@ async function startContainers(
   await client.destroy()
   console.info('PostgreSQL base database migrated')
 
-  return containers
-}
-
-export default async (project: TestProject) => {
-  if (!store.__plumberItestContainers) {
-    const state: ContainersState = {
-      users: 0,
-      ready: Promise.resolve({}),
-      stop: async () => undefined,
-    }
-    state.ready = startContainers(project, state)
-    store.__plumberItestContainers = state
-  }
-  const state = store.__plumberItestContainers
-  state.users += 1
-  const containers = await state.ready
-  project.provide(TESTCONTAINERS_CONTEXT_KEY, containers)
-  applyContainerEnv(containers)
-
-  return async () => {
-    state.users -= 1
-    if (state.users > 0) {
-      return
-    }
-    store.__plumberItestContainers = undefined
-    await state.stop()
-  }
+  return stopContainers
 }
