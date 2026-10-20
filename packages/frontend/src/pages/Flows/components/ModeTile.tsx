@@ -1,6 +1,8 @@
 import { BiBookOpen, BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 import { Box, Flex, Text } from '@chakra-ui/react'
-import { Badge, Tile, TileProps } from '@opengovsg/design-system-react'
+import { Tile, TileProps } from '@opengovsg/design-system-react'
+
+import NewBadge from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/NewBadge'
 
 const ICON_SIZE = '1.75rem'
 
@@ -48,21 +50,7 @@ export default function ModeTile(props: ModeTileProps) {
           <Text textStyle="h6" fontWeight={600} color="base.content.strong">
             {title}
           </Text>
-          {isNew && (
-            <Badge
-              h={5}
-              py={0}
-              px={1.5}
-              alignItems="center"
-              bgColor="primary.100"
-              color="primary.500"
-              fontSize="0.625rem"
-              fontWeight={600}
-              letterSpacing="0.08em"
-            >
-              NEW
-            </Badge>
-          )}
+          {isNew && <NewBadge isCompact />}
         </Flex>
         <Text textStyle="body-2" color="base.content.medium" mt={2}>
           {description}

@@ -1,12 +1,11 @@
-import { useContext } from 'react'
 import { BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
 import { Flex, Tooltip } from '@chakra-ui/react'
 import { Button, IconButton } from '@opengovsg/design-system-react'
 
-import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
 import * as URLS from '@/config/urls'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
+
+import { useCreateFlowContext } from '../contexts/CreateFlowContext'
 
 interface CreatePipeButtonProps {
   onOpen: () => void
@@ -16,13 +15,7 @@ export default function CreatePipeButton(props: CreatePipeButtonProps) {
   const { onOpen } = props
 
   const navigate = useNavigate()
-
-  // TODO (kevinkim-ogp): remove the flag value once GA
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const aiBuilderFlag = getFlagValue(AI_BUILDER_FEATURE_FLAG, {
-    enabled: false,
-  })
-  const canUseAiBuilder = aiBuilderFlag.enabled
+  const { canUseAiBuilder } = useCreateFlowContext()
 
   if (canUseAiBuilder) {
     return (
