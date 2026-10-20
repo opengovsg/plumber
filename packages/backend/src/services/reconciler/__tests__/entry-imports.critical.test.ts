@@ -7,6 +7,7 @@
  */
 import fs from 'fs'
 import path from 'path'
+
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 
@@ -81,6 +82,7 @@ describe('reconciler entry imports', () => {
   it('never reaches the worker, server or app entry files', () => {
     const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
 
-    expect(reached).toContain(path.join(SRC_DIR, 'models/step.ts'))    expect([...reached].filter(isForbidden)).toEqual([])
+    expect(reached).toContain(path.join(SRC_DIR, 'models/step.ts'))
+    expect([...reached].filter(isForbidden)).toEqual([])
   })
 })
