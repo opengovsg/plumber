@@ -100,6 +100,16 @@ class ExecutionStep extends Base {
     return `${appConfig.baseUrl}/apps/${this.appKey}/assets/favicon.svg`
   }
 
+  static async getLatestFailedStep(
+    executionId: string,
+  ): Promise<ExecutionStep | undefined> {
+    return ExecutionStep.query()
+      .where('execution_id', executionId)
+      .where('status', 'failure')
+      .orderBy('created_at', 'desc')
+      .first()
+  }
+
   static async patchIterationStatus(
     executionId: string,
     iteration: number,

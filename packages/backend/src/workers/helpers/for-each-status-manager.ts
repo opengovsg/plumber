@@ -4,10 +4,30 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
+import { getErrorDetailsKind } from '@/errors/step'
+import { countExecutionEnd } from '@/helpers/execution-end'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
+
+async function failExecution(executionId: string): Promise<void> {
+  const ended = await Execution.setStatus(executionId, 'failure')
+  if (!ended) {
+    return
+  }
+  let failedStep: ExecutionStep | undefined
+  try {
+    failedStep = await ExecutionStep.getLatestFailedStep(executionId)
+  } catch (err) {
+    // A lost kind must not fail the job that ended the execution.
+    logger.error('Failed to read the failed step of a for-each execution', {
+      err,
+      executionId,
+    })
+  }
+  countExecutionEnd(ended, getErrorDetailsKind(failedStep?.errorDetails))
+}
 
 /**
  * this function helps to patch the execution status of steps in a pipe with for-each
@@ -79,7 +99,7 @@ export default async function processForEachStatus({
       // signals end of the execution: all iterations ran successfully up to the last iteration and last step
       if (isLastIteration) {
         if (!areAllStepsSuccessful) {
-          await Execution.setStatus(executionId, 'failure')
+          await failExecution(executionId)
           return false // Status was set to failure
         }
       }
@@ -92,7 +112,7 @@ export default async function processForEachStatus({
 
       // if all steps are successful, return to let the action worker set to success
       if (!areAllStepsSuccessful) {
-        await Execution.setStatus(executionId, 'failure')
+        await failExecution(executionId)
         return false
       }
     } else {
