@@ -77,18 +77,10 @@ ${rejectedStageLine}
 
 describe('parseWorkflowMetadata', () => {
   describe('MRF approval stages', () => {
-    it('keeps the approval flag on the stage and the reject flag on its actions', () => {
-      const result = parseWorkflowMetadata(
-        approvalProposal('    isApproval: true'),
-      )
-
-      expect(
-        result.actions.map((a) => [a.isApproval, a.approvalBranch]),
-      ).toEqual([
-        [true, undefined],
-        [undefined, undefined],
-        [undefined, 'reject'],
-      ])
+    it('rejects a proposal with a rejected-path action', () => {
+      expect(() =>
+        parseWorkflowMetadata(approvalProposal('    isApproval: true')),
+      ).toThrow('Rejected-path actions are not supported in a proposal yet')
     })
 
     it('keeps the form stage name on the trigger of an MRF proposal', () => {
@@ -101,23 +93,6 @@ describe('parseWorkflowMetadata', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
 
       expect(result.trigger.config).toBeUndefined()
-    })
-
-    it('rejects a rejected-path action when no stage is an approval', () => {
-      expect(() =>
-        parseWorkflowMetadata(approvalProposal('    isApproval: false')),
-      ).toThrow('A rejected-path action must come after an approval stage')
-    })
-
-    it('ignores isApproval on an action that is not an MRF stage', () => {
-      const result = parseWorkflowMetadata(
-        approvalProposal('    isApproval: true').replace(
-          'key: sendTransactionalEmail\n    stepName: Email approved',
-          'key: sendTransactionalEmail\n    isApproval: true\n    stepName: Email approved',
-        ),
-      )
-
-      expect(result.actions[1].isApproval).toBeUndefined()
     })
   })
 
