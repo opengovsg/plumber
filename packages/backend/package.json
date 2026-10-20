@@ -30,8 +30,8 @@
     "copy-statics": "cpy '**/*.{graphql,json,svg}' ../dist --cwd=src"
   },
   "dependencies": {
-    "@ai-sdk/mcp": "0.0.21",
-    "@ai-sdk/openai": "2.0.88",
+    "@ai-sdk/mcp": "2.0.78",
+    "@ai-sdk/openai": "4.0.96",
     "@apollo/server": "5.5.0",
     "@as-integrations/express4": "1.1.2",
     "@aws-sdk/client-dynamodb": "3.1027.0",
@@ -110,7 +110,7 @@
     "zod-validation-error": "5.0.0"
   },
   "devDependencies": {
-    "@ai-sdk/provider": "2.0.0",
+    "@ai-sdk/provider": "4.0.29",
     "@swc/core": "^1.13.5",
     "@testcontainers/postgresql": "^11.14.0",
     "@types/bcrypt": "^5.0.0",
