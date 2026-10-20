@@ -21,19 +21,20 @@ function parseVariableReference(placeholder: string): VariableReference | null {
   return { stepId, path: pathSegments.join('.') }
 }
 
+const CHILDREN_KEY_PREFIX = 'childrenbirthrecords'
+
 /**
  * Whether a `fields` key belongs to a question the form still has.
  *
- * MyInfo children answers are keyed by a composite ID that FormSG derives from
- * the parent question, e.g. `childrenbirthrecords_<parentFieldId>_childname_0`,
- * so only the parent appears in the form schema. Resolving the key back to its
- * parent keeps those answers valid while a deleted parent still flags.
+ * MyInfo children answers are keyed `childrenbirthrecords_<parentFieldId>_...`.
+ * Only the parent appears in the form schema. Mirrors the backend's
+ * `getChildrenFieldKey`.
  */
 function isCurrentFormsgField(formFieldIds: string[], fieldKey: string) {
-  return (
-    formFieldIds.includes(fieldKey) ||
-    fieldKey.split('_').some((segment) => formFieldIds.includes(segment))
-  )
+  const [prefix, parentFieldId] = fieldKey.split('_')
+  const questionId =
+    prefix === CHILDREN_KEY_PREFIX && parentFieldId ? parentFieldId : fieldKey
+  return formFieldIds.includes(questionId)
 }
 
 /**
