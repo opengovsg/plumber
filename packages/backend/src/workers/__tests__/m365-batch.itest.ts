@@ -355,6 +355,7 @@ describe('m365-excel batch worker (integration)', () => {
 
   beforeEach(async () => {
     mocks.acquire.mockResolvedValue({ request: mocks.request })
+    mocks.getLdFlagValue.mockImplementation(async () => 'all')
     // Lock disabled by default; the per-file lock tests opt in per test.
     mocks.getLockKey.mockResolvedValue(null)
     // File access granted by default; the partial-failure tests reject one job.
