@@ -9,6 +9,7 @@ import {
   mainActionQueue,
 } from '@/queues/action'
 import flowQueue from '@/queues/flow'
+import tilesMigrationQueue from '@/queues/tiles-migration'
 import triggerQueue from '@/queues/trigger'
 
 const serverAdapter = new ExpressAdapter()
@@ -23,6 +24,7 @@ const createBullBoardHandler = async (serverAdapter: ExpressAdapter) => {
       new BullMQProAdapter(flowQueue),
       new BullMQProAdapter(triggerQueue),
       new BullMQProAdapter(mainActionQueue),
+      new BullMQProAdapter(tilesMigrationQueue),
       ...Object.values(appActionQueues).map(
         (queue) => new BullMQProAdapter(queue),
       ),
