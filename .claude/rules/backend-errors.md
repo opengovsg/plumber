@@ -30,6 +30,8 @@ The backend has three error families. Do not add a new family.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
 - The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
 - `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` without `kind` and any other error return `internal`.
+- `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) writes one info log per final action job failure: `event: 'action-job-failed'` with `kind`, `flowId` and `appKey`. Monitors read it because logs are not sampled.
+- The log reads `kind` from the failed job's error when it is a `StepError`, else from its `cause`. Code that replaces a `StepError` with another error (e.g. `UnrecoverableError`) calls `attachStepErrorAsCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
 
 ### Choosing `kind`
 
@@ -66,11 +68,7 @@ Until the `UserFacingError` reason table ships, a GraphQL resolver that needs a 
 
 ## Not built yet
 
-Do not call these APIs.
-
-- The `handleFailedJob` failure log (`workers/helpers/handle-failed-job.ts`). It will write one structured log with `kind` per failed action job.
-
-Proposed 2026-10-16, pending team review:
+Proposed 2026-10-16, pending team review. Do not call these APIs.
 
 - The `UserFacingError` reason table. Each reason (e.g. bad input, forbidden, not found, unauthorised, rate limited, tile password required) maps to a GraphQL code for `formatError` and an HTTP status for REST routes. Codes stay identical to today's, so the frontend does not change. Optional data rides along (e.g. `tableName`).
 - Once the reason table ships, never throw GraphQL errors (e.g. `BadUserInputError`, `ForbiddenError`) to carry meaning.
