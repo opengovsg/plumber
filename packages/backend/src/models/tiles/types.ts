@@ -60,6 +60,11 @@ export interface TableOperations {
     columnIds?: string[]
     filters?: TableRowFilter[]
     order?: 'asc' | 'desc'
+    /**
+     * Tiles migrated from DynamoDB keep random UUID row IDs, so rowId order would shuffle them.
+     * DynamoDB ignores this.
+     */
+    orderByCreatedAt?: boolean
     stringifiedCursor?: string | typeof DYNAMODB_DEFAULT_PAGINATION_CURSOR
     scanLimit?: number
   }): Promise<{
