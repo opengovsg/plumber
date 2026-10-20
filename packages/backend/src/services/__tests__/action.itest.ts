@@ -4,11 +4,14 @@ import {
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
+import RequeueWithoutAttemptError from '@/errors/requeue-without-attempt'
+import { generateMockTable } from '@/graphql/__tests__/mutations/tiles/table.mock'
 import * as computeParametersModule from '@/helpers/compute-parameters'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
+import TableMetadata from '@/models/table-metadata'
 import User from '@/models/user'
 import * as actionQueueModule from '@/queues/action'
 import * as getForEachMetadataModule from '@/services/helpers/get-for-each-metadata'
@@ -237,5 +240,95 @@ describe('processAction - priorExecutionSteps filtering', () => {
         action1Iter2.id,
       ].sort(),
     )
+  })
+})
+
+describe('processAction - tile frozen for migration', () => {
+  let flow: Flow
+  let execution: Execution
+  let tableId: string
+
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    const user = await User.query().findOne({ email: 'tester@open.gov.sg' })
+    const { table } = await generateMockTable({
+      userId: user.id,
+      databaseType: 'ddb',
+    })
+    tableId = table.id
+    mocks.computeParameters.mockReturnValue({ tableId, rowData: [] })
+
+    flow = await Flow.query().insertGraphAndFetch({
+      userId: user.id,
+      name: 'test-frozen-tile-flow',
+      steps: [
+        {
+          appKey: 'mock-app',
+          key: 'mock-trigger',
+          type: 'trigger',
+          position: 1,
+          status: 'completed',
+        },
+        {
+          appKey: 'tiles',
+          key: 'createTileRow',
+          type: 'action',
+          position: 2,
+          status: 'completed',
+          parameters: { tableId },
+        },
+      ],
+    })
+    execution = await Execution.query().insertAndFetch({
+      flowId: flow.id,
+      testRun: false,
+    })
+  })
+
+  async function freeze(startedAt: Date | null) {
+    await TableMetadata.query()
+      .patch({ migrationStartedAt: startedAt })
+      .where({ id: tableId })
+  }
+
+  const run = (testRun: boolean) =>
+    processAction({
+      flowId: flow.id,
+      executionId: execution.id,
+      stepId: flow.steps[1].id,
+      testRun,
+    })
+
+  it('re-queues a write without recording an execution step', async () => {
+    await freeze(new Date())
+
+    const error = await run(false).catch((e) => e)
+
+    expect(error).toBeInstanceOf(RequeueWithoutAttemptError)
+    expect(error.delayMs).toBeGreaterThanOrEqual(60_000)
+    expect(error.delayMs).toBeLessThan(90_000)
+    const steps = await ExecutionStep.query().where({
+      execution_id: execution.id,
+    })
+    expect(steps).toHaveLength(0)
+  })
+
+  it('records the friendly error on a test run', async () => {
+    await freeze(new Date())
+
+    const { executionStep } = await run(true)
+
+    expect(executionStep.status).toBe('failure')
+    expect(JSON.stringify(executionStep.errorDetails)).toContain(
+      'This tile is being upgraded.',
+    )
+  })
+
+  it('does not re-queue when the tile is not frozen', async () => {
+    await freeze(null)
+
+    const error = await run(false).catch((e) => e)
+
+    expect(error).not.toBeInstanceOf(RequeueWithoutAttemptError)
   })
 })
