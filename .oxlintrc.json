@@ -95,6 +95,27 @@
           { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
         ]
       }
+    },
+    {
+      // The reconciler must keep running when the worker or web server stalls.
+      "files": [
+        "packages/backend/src/reconciler.ts",
+        "packages/backend/src/services/reconciler/**/*.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              "@/worker",
+              "@/server",
+              "@/app",
+              "@/helpers/check-worker-readiness"
+            ],
+            "patterns": ["@/workers/**", "**/workers/**"]
+          }
+        ]
+      }
     }
   ]
 }
