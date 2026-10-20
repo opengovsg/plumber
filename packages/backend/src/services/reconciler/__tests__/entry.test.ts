@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => {
     runChecksOnce: vi.fn(async (): Promise<boolean> => true),
     createReconcilerChecks: vi.fn(() => ['schedule check']),
     redisQuit: vi.fn(async () => 'OK'),
+    appDataRedisQuit: vi.fn(async () => 'OK'),
+    logReconcilerRedisErrors: vi.fn(),
     knexDestroy: vi.fn(async () => undefined),
     logInfo: vi.fn(),
     logError: vi.fn(),
@@ -48,6 +50,10 @@ vi.mock('@/helpers/logger', () => ({
 }))
 vi.mock('@/services/reconciler/redis', () => ({
   createReconcilerRedisClient: vi.fn(() => ({ quit: mocks.redisQuit })),
+  logReconcilerRedisErrors: mocks.logReconcilerRedisErrors,
+}))
+vi.mock('@/helpers/redis-app-data', () => ({
+  redisAppDataClient: { quit: mocks.appDataRedisQuit },
 }))
 vi.mock('@/services/reconciler/checks', () => ({
   createReconcilerChecks: mocks.createReconcilerChecks,
@@ -114,6 +120,8 @@ describe('reconciler entry', () => {
     expect(processExit).toHaveBeenCalledTimes(1)
     expect(processExit).toHaveBeenCalledWith(0)
 
+    expect(mocks.appDataRedisQuit).toHaveBeenCalled()
+
     const [destroyOrder] = mocks.knexDestroy.mock.invocationCallOrder
     const [quitOrder] = mocks.redisQuit.mock.invocationCallOrder
     const [endOrder] = mocks.logEnd.mock.invocationCallOrder
@@ -151,6 +159,22 @@ describe('reconciler entry', () => {
     expect(mocks.redisQuit).toHaveBeenCalled()
     expect(mocks.logEnd).toHaveBeenCalled()
     expect(processExit).toHaveBeenCalledWith(1)
+  })
+
+  it('counts missed runs on the app data Redis and logs its errors', async () => {
+    await startReconciler()
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(mocks.createReconcilerChecks).toHaveBeenCalledWith(
+      expect.objectContaining({
+        markerRedis: expect.objectContaining({
+          quit: mocks.appDataRedisQuit,
+        }),
+      }),
+    )
+    expect(mocks.logReconcilerRedisErrors).toHaveBeenCalledWith(
+      expect.objectContaining({ quit: mocks.appDataRedisQuit }),
+    )
   })
 
   it('exits after the close wait when closing a connection hangs', async () => {

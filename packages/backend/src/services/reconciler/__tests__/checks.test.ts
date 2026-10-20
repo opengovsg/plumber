@@ -6,13 +6,26 @@ vi.mock('../schedule-check/fetch-published-scheduled-pipes', () => ({
   fetchPublishedScheduledPipes: vi.fn(),
 }))
 
+vi.mock('../schedule-check/fetch-latest-execution-times', () => ({
+  fetchLatestExecutionTimes: vi.fn(),
+}))
+
+vi.mock('@/helpers/redis-app-data', () => ({
+  makeRedisAppDataKey: vi.fn(),
+}))
+
+const REDIS_CLIENTS = {
+  jobsRedis: { zrange: vi.fn(), hmget: vi.fn() },
+  markerRedis: { set: vi.fn() },
+}
+
 describe('createReconcilerChecks', () => {
   afterEach(() => {
     vi.unstubAllEnvs()
   })
 
   it('includes the schedule check', () => {
-    const checks = createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } })
+    const checks = createReconcilerChecks(REDIS_CLIENTS)
 
     expect(checks).toEqual([{ name: 'schedules', run: expect.any(Function) }])
   })
@@ -20,8 +33,6 @@ describe('createReconcilerChecks', () => {
   it('fails fast on an invalid grace period', () => {
     vi.stubEnv('SCHEDULE_MISSED_RUN_GRACE_SECONDS', '0')
 
-    expect(() =>
-      createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } }),
-    ).toThrow()
+    expect(() => createReconcilerChecks(REDIS_CLIENTS)).toThrow()
   })
 })
