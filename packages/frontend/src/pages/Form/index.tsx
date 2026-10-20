@@ -3,7 +3,8 @@ import type { IApp, IFlow } from '@plumber/types'
 import { useContext, useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
-import { Center } from '@chakra-ui/react'
+import { ButtonGroup, Center, Text, VStack } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import PrimarySpinner from '@/components/PrimarySpinner'
@@ -105,11 +106,37 @@ export const FormChild = ({ formId, name }: FormChildProps) => {
       .catch(() => navigate(URLS.FLOWS, { replace: true }))
   }, [createFlow, name, navigate])
 
-  const { data } = useQuery(GET_FLOW, {
+  const { data, error, loading, refetch } = useQuery(GET_FLOW, {
     variables: { id: flowId },
     skip: !flowId,
+    notifyOnNetworkStatusChange: true,
   })
   const flow: IFlow | undefined = data?.getFlow
+
+  // IMPORTANT: Recovery must not rerun CREATE_FLOW because the pipe already exists.
+  if (flowId && error && !loading) {
+    return (
+      <Center h="100vh">
+        <VStack spacing={4}>
+          <Text textStyle="subhead-1">We could not load your new pipe</Text>
+          <ButtonGroup>
+            {/* The error state already shows a failed retry. */}
+            <Button onClick={() => refetch().catch(() => undefined)}>
+              Try again
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                navigate(URLS.FLOW_EDITOR(flowId), { replace: true })
+              }
+            >
+              Open pipe
+            </Button>
+          </ButtonGroup>
+        </VStack>
+      </Center>
+    )
+  }
 
   if (!flowId || !flow) {
     return (
