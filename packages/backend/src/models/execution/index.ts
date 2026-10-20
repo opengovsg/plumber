@@ -1,7 +1,7 @@
 import Base from '../base'
 import ExecutionStep from '../execution-step'
 import Flow from '../flow'
-import BaseExecution, { type ExecutionStatus } from './base'
+import BaseExecution from './base'
 
 class Execution extends BaseExecution {
   flow!: Flow
@@ -26,8 +26,21 @@ class Execution extends BaseExecution {
     },
   })
 
-  static async setStatus(executionId: string, status: ExecutionStatus) {
-    return Execution.query().findById(executionId).patch({ status })
+  /**
+   * Returns the ended execution, or undefined if it had already ended.
+   *
+   * IMPORTANT: only a pending execution changes, so each end is counted once.
+   */
+  static async setStatus(
+    executionId: string,
+    status: 'success' | 'failure',
+  ): Promise<Pick<Execution, 'id' | 'testRun'> | undefined> {
+    const [execution] = await Execution.query()
+      .patch({ status })
+      .where('id', executionId)
+      .whereNull('status')
+      .returning(['id', 'test_run'])
+    return execution
   }
 }
 
