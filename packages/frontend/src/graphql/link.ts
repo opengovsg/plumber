@@ -27,14 +27,17 @@ const createHttpLink = (
   return new HttpLink({ uri, headers })
 }
 
-const createErrorLink = (callback: CreateLinkOptions['onError']): ApolloLink =>
+export const createErrorLink = (
+  callback: CreateLinkOptions['onError'],
+): ApolloLink =>
   onError(({ graphQLErrors, networkError, operation }) => {
     const context = operation.getContext()
     const autoSnackbar = context.autoSnackbar ?? true
 
     // this should catch when user's session has expired or the user is not authorised
     // return early since the status code is enough to identify the error
-    if (context.response.status === 401) {
+    // IMPORTANT: a request that fails before the server responds has no response.
+    if (context.response?.status === 401) {
       if (autoSnackbar) {
         callback?.(NOT_AUTHORISED)
       }
