@@ -2,7 +2,10 @@ import type { AxiosError } from 'axios'
 import { describe, expect, it } from 'vitest'
 
 import HttpError from '../http'
-import StepError from '../step'
+import PartialStepError from '../partial-error'
+import RetriableError from '../retriable-error'
+import StepError, { getStepErrorKind } from '../step'
+import { UserFacingError } from '../user-facing-error'
 
 const HTTP_ERROR = new HttpError({
   message: 'request failed',
@@ -66,5 +69,50 @@ describe('StepError', () => {
       expect(error.kind).toBeUndefined()
       expect(error.cause).toBe(HTTP_ERROR)
     })
+  })
+})
+
+describe('getStepErrorKind', () => {
+  it.each(['config', 'third-party', 'internal'] as const)(
+    'returns the kind of a StepError with kind %s',
+    (kind) => {
+      const error = new StepError({ name: 'n', solution: 's', kind })
+
+      expect(getStepErrorKind(error)).toBe(kind)
+    },
+  )
+
+  it('returns the kind of a PartialStepError', () => {
+    const error = new PartialStepError({
+      name: 'n',
+      solution: 's',
+      kind: 'config',
+      partialRetry: { buttonMessage: '' },
+    })
+
+    expect(getStepErrorKind(error)).toBe('config')
+  })
+
+  it('returns internal for a StepError without kind', () => {
+    expect(getStepErrorKind(new StepError('n', 's'))).toBe('internal')
+  })
+
+  it.each([
+    { label: 'plain Error', error: new Error('{"kind":"config"}') },
+    { label: 'HttpError', error: HTTP_ERROR },
+    {
+      label: 'RetriableError',
+      error: new RetriableError({
+        error: { kind: 'config' },
+        delayInMs: 'default',
+        delayType: 'step',
+      }),
+    },
+    { label: 'UserFacingError', error: new UserFacingError('bad input') },
+    { label: 'object with kind', error: { kind: 'config' } },
+    { label: 'null', error: null },
+    { label: 'undefined', error: undefined },
+  ])('returns internal for a $label', ({ error }) => {
+    expect(getStepErrorKind(error)).toBe('internal')
   })
 })
