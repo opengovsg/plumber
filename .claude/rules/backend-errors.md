@@ -42,7 +42,7 @@ The thrower chooses `kind`. Never derive it later from messages or status codes.
 Special cases:
 
 - A rate limit (429, `RATE-LIMITED`) is `internal`. Plumber must drain its queues fast enough to avoid rate limits.
-- A user's own endpoint failing (custom-api): not decided yet. Ask the user.
+- A user's own endpoint failing (custom-api) is `config`. The user owns the endpoint.
 - Any non-`StepError` thrown from a step counts as `internal`. This includes `UserFacingError`, a plain `Error` and a raw `HttpError`.
 - A wrong `config` hides a real failure from the SLA. Add a unit test at every `config` site.
 
@@ -60,7 +60,7 @@ Use a library's error types only at its boundary:
 - when the library needs them to change its behavior (e.g. `UnrecoverableError` stops BullMQ retries), or
 - when the library creates them itself (e.g. Apollo parse and validation errors).
 
-This applies to Apollo/GraphQL, BullMQ, Zod and Objection. Never throw GraphQL errors (e.g. `BadUserInputError`, `ForbiddenError`) to carry meaning.
+This applies to Apollo/GraphQL, BullMQ, Zod and Objection.
 
 Until the `UserFacingError` reason table ships, a GraphQL resolver that needs a client error code throws a class from `errors/graphql-errors/`.
 
@@ -73,6 +73,7 @@ Do not call these APIs.
 Proposed 2026-10-16, pending team review:
 
 - The `UserFacingError` reason table. Each reason (e.g. bad input, forbidden, not found, unauthorised, rate limited, tile password required) maps to a GraphQL code for `formatError` and an HTTP status for REST routes. Codes stay identical to today's, so the frontend does not change. Optional data rides along (e.g. `tableName`).
+- Once the reason table ships, never throw GraphQL errors (e.g. `BadUserInputError`, `ForbiddenError`) to carry meaning.
 - `formatError` as the only GraphQL adapter. `UserFacingError` maps to its code. Library-generated client errors keep their codes. Anything else maps to `INTERNAL_SERVER_ERROR`.
 - 4 local error classes move into families:
   - `InvalidTileViewKeyError` (`errors/invalid-tile-view-key.ts`) and `InvalidTileViewTokenError` (`errors/invalid-tile-view-password.ts`) become `UserFacingError` with a reason and `tableName`. This replaces the special case at `helpers/graphql-instance.ts:109-123`.
