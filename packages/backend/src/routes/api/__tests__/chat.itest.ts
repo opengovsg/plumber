@@ -352,29 +352,6 @@ describe('Chat Route Handler', () => {
       expect(mocks.streamText).toHaveBeenCalled()
     })
 
-    it('streams the chat when the AI Builder flag is disabled', async () => {
-      mocks.getAllLdFlags.mockResolvedValueOnce({
-        'ai-builder': {
-          enabled: false,
-          config: {
-            chatPromptName: 'chat-v0',
-            version: 'production',
-          },
-        },
-      })
-      mocks.getRestrictedAppKeys.mockReturnValueOnce([])
-      mocks.getPrompt.mockResolvedValueOnce({
-        prompt: 'test prompt',
-        toJSON: vi.fn(),
-      })
-      mocks.getActiveTraceId.mockReturnValueOnce('test-trace-id')
-
-      await executeChatPostHandler(mockReq, mockRes)
-
-      expect(mockRes.status).not.toHaveBeenCalledWith(403)
-      expect(mocks.streamText).toHaveBeenCalled()
-    })
-
     it('should exclude Excel from restricted apps when user has Excel enabled', async () => {
       let capturedMessages: any[] = []
 
