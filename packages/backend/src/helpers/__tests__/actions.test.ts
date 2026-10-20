@@ -407,6 +407,32 @@ describe('action helper functions', () => {
         },
       )
 
+      it('attaches the StepError as a non-enumerable cause of a new RetriableError', () => {
+        const stepError = new StepError({
+          name: 'n',
+          solution: 's',
+          kind: 'third-party',
+          cause: new HttpError({
+            response: { status: 504 },
+          } as unknown as AxiosError),
+        })
+
+        let thrown: unknown
+        try {
+          handleFailedStepAndThrow({
+            errorDetails: {},
+            executionError: stepError,
+            context: MOCK_CONTEXT,
+          })
+        } catch (e) {
+          thrown = e
+        }
+
+        expect(thrown).toBeInstanceOf(RetriableError)
+        expect((thrown as Error).cause).toBe(stepError)
+        expect(Object.keys(thrown as Error)).not.toContain('cause')
+      })
+
       it.each([
         {
           errorDetails: {
