@@ -18,6 +18,7 @@ import {
 import type { Response } from 'express'
 import { Router } from 'express'
 
+import { IF_THEN_THEN_LD_FLAG_KEY } from '@/apps/toolbox/common/validate-end-step'
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
@@ -241,6 +242,10 @@ const handleChatStream = observe(
                 type: 'data-stepUpdate',
                 data: { stepId, parameters, parameterLabels },
               })
+            },
+            {
+              isIfThenThenEnabled:
+                allLdFlags[IF_THEN_THEN_LD_FLAG_KEY] === true,
             },
           )
 

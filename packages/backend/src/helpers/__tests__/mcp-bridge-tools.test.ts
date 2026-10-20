@@ -1,5 +1,6 @@
 import { ValidationError } from 'objection'
 import { describe, expect, it, vi } from 'vitest'
+import type { z } from 'zod/v4'
 
 vi.mock('@/services/mcp/apps', () => ({
   listAppsService: vi.fn().mockReturnValue([]),
@@ -596,7 +597,13 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('create_pipe flattens the steps nested inside an ifThen into an explicit If block', async () => {
-    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    const tools = createMcpBridgeTools(
+      mockUser,
+      mockTraceId,
+      undefined,
+      undefined,
+      { isIfThenThenEnabled: true },
+    )
     await tools.create_pipe.execute(
       {
         name: 'Block Pipe',
@@ -629,6 +636,24 @@ describe('createMcpBridgeTools', () => {
       parameters: { branchName: 'Urgent' },
       ifThenChildCount: 2,
     })
+  })
+
+  it('create_pipe omits If block nesting when the if-then-then flag is off', () => {
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
+    const parsed = (tools.create_pipe.inputSchema as z.ZodType).parse({
+      name: 'Block Pipe',
+      steps: [
+        { app_key: 'formsg', trigger_key: 'newSubmission' },
+        {
+          app_key: 'toolbox',
+          action_key: 'ifThen',
+          steps: [{ app_key: 'slack', action_key: 'sendMessageToChannel' }],
+        },
+      ],
+    }) as { steps: Record<string, unknown>[] }
+
+    expect(parsed.steps[1]).not.toHaveProperty('steps')
+    expect(tools.create_pipe.description).not.toContain('If block')
   })
 
   describe('onPipeChange callback', () => {

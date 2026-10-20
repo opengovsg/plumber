@@ -100,6 +100,15 @@ const pipeStepInputSchema = z.object({
     ),
 })
 
+const nestedPipeStepInputSchema = pipeStepInputSchema.extend({
+  steps: z
+    .array(pipeStepInputSchema)
+    .optional()
+    .describe(
+      'Only on a toolbox/ifThen step: the steps inside this If block, in order. They run only when the condition is TRUE. Must contain at least one step, and none of them may be another toolbox/ifThen or a toolbox/forEach.',
+    ),
+})
+
 function toNestedStepInput(
   step: z.infer<typeof pipeStepInputSchema>,
 ): McpNestedStepInput {
@@ -110,6 +119,12 @@ function toNestedStepInput(
   }
 }
 
+const createPipeDescription =
+  'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.'
+
+const ifBlockGuidance =
+  'A toolbox/ifThen step is an If block: put the steps that should run only when its condition is TRUE inside its own `steps` array (at least one). Steps listed after the ifThen entry in the outer list are outside the block and run regardless of the condition. An If block cannot contain another ifThen or a forEach.'
+
 export function createMcpBridgeTools(
   user: User,
   traceId: string,
@@ -119,6 +134,7 @@ export function createMcpBridgeTools(
     parameters: IJSONObject,
     parameterLabels?: Record<string, string>,
   ) => void,
+  { isIfThenThenEnabled = false }: { isIfThenThenEnabled?: boolean } = {},
 ) {
   const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
@@ -222,20 +238,17 @@ export function createMcpBridgeTools(
     }),
 
     create_pipe: tool({
-      description:
-        'Create a new inactive pipe with an ordered list of steps. First step is the trigger, subsequent steps are actions. Always creates inactive — never activate without explicit user confirmation. For toolbox/ifThen and toolbox/onlyContinueIf steps, include parameters with conditions (and branchName for ifThen) in the step — see the parameters field for the conditions shape.\n\nA toolbox/ifThen step is an If block: put the steps that should run only when its condition is TRUE inside its own `steps` array (at least one). Steps listed after the ifThen entry in the outer list are outside the block and run regardless of the condition. An If block cannot contain another ifThen or a forEach.',
+      description: isIfThenThenEnabled
+        ? `${createPipeDescription}\n\n${ifBlockGuidance}`
+        : createPipeDescription,
       inputSchema: z.object({
         name: z.string().describe('Human-readable name for the pipe'),
         steps: z
           .array(
-            pipeStepInputSchema.extend({
-              steps: z
-                .array(pipeStepInputSchema)
-                .optional()
-                .describe(
-                  'Only on a toolbox/ifThen step: the steps inside this If block, in order. They run only when the condition is TRUE. Must contain at least one step, and none of them may be another toolbox/ifThen or a toolbox/forEach.',
-                ),
-            }),
+            isIfThenThenEnabled
+              ? nestedPipeStepInputSchema
+              : // A flat step parses to a nested step without `steps`.
+                (pipeStepInputSchema as typeof nestedPipeStepInputSchema),
           )
           .min(1)
           .describe(

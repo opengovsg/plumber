@@ -290,7 +290,7 @@ export async function pinEndStep(
 }
 
 // Mirrors packages/frontend/src/config/flags.ts's IF_THEN_THEN_FEATURE_FLAG.
-const IF_THEN_THEN_LD_FLAG_KEY = 'feature_if_then_then'
+export const IF_THEN_THEN_LD_FLAG_KEY = 'feature_if_then_then'
 
 /**
  * Deletes a V1 block's leftover blank placeholder members and closes the
