@@ -8,6 +8,7 @@ import type User from '@/models/user'
 import {
   getMrfTestStartStep,
   isMrfStep,
+  type MrfStageTestResult,
   testRemainingMrfSteps,
 } from '@/services/test-mrf-steps'
 import testStep from '@/services/test-step'
@@ -22,6 +23,8 @@ export interface McpExecuteStepResult {
   dataOut: IJSONObject | null
   dataOutMetadata: IDataOutMetadata | null
   errorDetails: IJSONObject | null
+  // Set when the trigger passed but an MRF stage step failed its test.
+  failedStepId: string | null
 }
 
 export async function executeStepService(
@@ -58,6 +61,7 @@ export async function executeStepService(
 
   let resultStep = step
   let executionStep = startExecutionStep
+  let stageFailure: MrfStageTestResult | undefined
   if (!startExecutionStep.isFailed) {
     const completedStep = await step.$query().patchAndFetch({
       status: 'completed',
@@ -71,9 +75,12 @@ export async function executeStepService(
       })
       // Each stage has its own submission and field set. The model wires
       // downstream variables from this output.
+      stageFailure = stageResults.find(
+        (result) => result.executionStep.isFailed,
+      )
       const stageResult =
         stageResults.find((result) => result.step.id === requestedStep.id) ??
-        stageResults.find((result) => result.executionStep.isFailed)
+        stageFailure
       if (stageResult && requestedStep.id !== step.id) {
         resultStep = stageResult.step
         executionStep = stageResult.executionStep
@@ -97,12 +104,14 @@ export async function executeStepService(
   })
 
   return {
-    success: !executionStep.isFailed,
+    success: !executionStep.isFailed && !stageFailure,
     pipeId: resultStep.flowId,
     stepId: resultStep.id,
     executionStepId: executionStep.id,
     dataOut: executionStep.dataOut ?? null,
     dataOutMetadata,
-    errorDetails: executionStep.errorDetails ?? null,
+    errorDetails:
+      (stageFailure?.executionStep ?? executionStep).errorDetails ?? null,
+    failedStepId: stageFailure?.step.id ?? null,
   }
 }

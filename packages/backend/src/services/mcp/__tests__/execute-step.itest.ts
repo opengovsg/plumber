@@ -261,8 +261,10 @@ describe('executeStepService', () => {
     it('completes every stage step once the trigger passes', async () => {
       mocks.testStep.mockImplementation(async () => succeeds())
 
-      await executeStepService(user, triggerId)
+      const result = await executeStepService(user, triggerId)
 
+      expect(result.success).toBe(true)
+      expect(result.failedStepId).toBeNull()
       expect(mocks.testStep.mock.calls.map(([arg]) => arg.stepId)).toEqual([
         triggerId,
         ...stageIds,
@@ -360,8 +362,11 @@ describe('executeStepService', () => {
         .mockImplementationOnce(async () => succeeds())
         .mockImplementationOnce(async () => fails())
 
-      await executeStepService(user, triggerId)
+      const result = await executeStepService(user, triggerId)
 
+      expect(result.success).toBe(false)
+      expect(result.failedStepId).toBe(stageIds[0])
+      expect(result.errorDetails).toEqual({ error: 'boom' })
       expect(await statusOf(triggerId)).toBe('completed')
       expect(await statusOf(stageIds[0])).not.toBe('completed')
       expect(await statusOf(stageIds[1])).not.toBe('completed')
