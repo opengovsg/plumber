@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   runReconcilerLoop: vi.fn(),
   createReconcilerChecks: vi.fn(() => ['schedule check']),
   redisQuit: vi.fn(async () => 'OK'),
+  appDataRedisQuit: vi.fn(async () => 'OK'),
+  logReconcilerRedisErrors: vi.fn(),
   knexDestroy: vi.fn(async () => undefined),
   logInfo: vi.fn(),
   logError: vi.fn(),
@@ -28,6 +30,10 @@ vi.mock('@/helpers/logger', () => ({
 }))
 vi.mock('@/services/reconciler/redis', () => ({
   createReconcilerRedisClient: vi.fn(() => ({ quit: mocks.redisQuit })),
+  logReconcilerRedisErrors: mocks.logReconcilerRedisErrors,
+}))
+vi.mock('@/helpers/redis-app-data', () => ({
+  redisAppDataClient: { quit: mocks.appDataRedisQuit },
 }))
 vi.mock('@/services/reconciler/checks', () => ({
   createReconcilerChecks: mocks.createReconcilerChecks,
@@ -74,6 +80,19 @@ describe('reconciler entry', () => {
     )
   })
 
+  it('counts missed runs on the app data Redis and logs its errors', () => {
+    expect(mocks.createReconcilerChecks).toHaveBeenCalledWith(
+      expect.objectContaining({
+        markerRedis: expect.objectContaining({
+          quit: mocks.appDataRedisQuit,
+        }),
+      }),
+    )
+    expect(mocks.logReconcilerRedisErrors).toHaveBeenCalledWith(
+      expect.objectContaining({ quit: mocks.appDataRedisQuit }),
+    )
+  })
+
   it('exits with code 1 on an uncaught exception', () => {
     handlers.get('uncaughtException')?.(new Error('boom'))
 
@@ -93,6 +112,7 @@ describe('reconciler entry', () => {
     expect(mocks.loopStop).toHaveBeenCalled()
     expect(mocks.knexDestroy).toHaveBeenCalled()
     expect(mocks.redisQuit).toHaveBeenCalled()
+    expect(mocks.appDataRedisQuit).toHaveBeenCalled()
     expect(processExit).toHaveBeenCalledWith(0)
   })
 })

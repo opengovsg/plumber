@@ -3,16 +3,24 @@ import '@/helpers/tracer'
 import '@/config/orm'
 import { client as knexClient } from '@/config/database'
 import logger from '@/helpers/logger'
+import { redisAppDataClient } from '@/helpers/redis-app-data'
 import { createReconcilerChecks } from '@/services/reconciler/checks'
-import { createReconcilerRedisClient } from '@/services/reconciler/redis'
+import {
+  createReconcilerRedisClient,
+  logReconcilerRedisErrors,
+} from '@/services/reconciler/redis'
 import { runReconcilerLoop } from '@/services/reconciler/run-loop'
 
 const CHECK_TIMEOUT_SECONDS = 60
 const SHUTDOWN_WAIT_SECONDS = 20
 
 const jobsRedis = createReconcilerRedisClient()
+logReconcilerRedisErrors(redisAppDataClient)
 const loop = runReconcilerLoop({
-  checks: createReconcilerChecks({ jobsRedis }),
+  checks: createReconcilerChecks({
+    jobsRedis,
+    markerRedis: redisAppDataClient,
+  }),
   checkTimeoutSeconds: CHECK_TIMEOUT_SECONDS,
 })
 
@@ -37,6 +45,7 @@ async function shutdown(): Promise<void> {
     ])
     await knexClient.destroy()
     await jobsRedis.quit()
+    await redisAppDataClient.quit()
   } catch (error) {
     logger.error('Reconciler shutdown failed', {
       event: 'reconciler-shutdown-failed',
