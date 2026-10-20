@@ -2,7 +2,7 @@ import type { IActionJobData } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
-import { getStepErrorKind } from '@/errors/step'
+import StepError, { getStepErrorKind } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import {
   isErrorEmailAlreadySent,
@@ -31,7 +31,7 @@ async function logActionJobFailure(
 
   logger.info(`Action job failed for flow ID: ${flowId}`, {
     event: 'action-job-failed',
-    kind: getStepErrorKind(err.cause),
+    kind: getStepErrorKind(err instanceof StepError ? err : err.cause),
     flowId,
     appKey,
   })

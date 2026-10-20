@@ -88,6 +88,24 @@ describe('handleFailedJob failure log', () => {
     },
   )
 
+  it('logs the kind of an unwrapped StepError', async () => {
+    const stepError = new StepError({
+      name: 'n',
+      solution: 's',
+      kind: 'config',
+    })
+
+    const lastAttemptJob = { ...JOB, attemptsMade: MAXIMUM_JOB_ATTEMPTS }
+
+    await handleFailedJob(
+      lastAttemptJob as unknown as JobPro<IActionJobData>,
+      stepError,
+      'queue',
+    )
+
+    expect(getFailureLogs()[0][1]).toMatchObject({ kind: 'config' })
+  })
+
   it.each([
     { label: 'a StepError without kind', cause: new StepError('n', 's') },
     { label: 'a non-StepError cause', cause: new Error('boom') },
