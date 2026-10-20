@@ -8,10 +8,11 @@ import {
   generateMockContext,
   generateMockFlow,
 } from '@/apps/formsg/__tests__/mrf.mock'
+import Step from '@/models/step'
 import User from '@/models/user'
 
 import { createFlowWithStepsService } from '../create-flow-with-steps'
-import { getFlowService } from '../get-flow'
+import { getFlowService, REDACTED_VALUE } from '../get-flow'
 
 const mocks = vi.hoisted(() => ({
   getAllLdFlags: vi.fn(),
@@ -131,6 +132,65 @@ describe('getFlowService', () => {
     expect(rejectStep?.config?.approval).toEqual({
       branch: 'reject',
       stepId: approvalStep.id,
+    })
+  })
+
+  it('redacts static credential headers from an existing Custom API step', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `get-flow-redact-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Custom API Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'custom-api',
+          key: 'httpRequest',
+          type: 'action',
+          position: 2,
+        },
+      ],
+      traceId: 'trace-get-flow-redact',
+    })
+    const stepVariable =
+      'Bearer {{step.6e2bb8a2-2c4c-4b8e-9f0a-3f5d2c1b7a90.token}}'
+    const actionStep = await Step.query()
+      .findOne({ flow_id: flow.id, position: 2 })
+      .throwIfNotFound()
+    await actionStep.$query().patch({
+      parameters: {
+        method: 'GET',
+        url: 'https://example.com/api',
+        customHeaders: [
+          { key: 'Authorization', value: 'Bearer sk-live-secret' },
+          { key: 'X-API-Key', value: 'abc123-secret' },
+          { key: 'Authorization', value: stepVariable },
+          { key: 'Accept', value: 'application/json' },
+        ],
+      },
+    })
+
+    const result = await getFlowService({ user, pipeId: flow.id })
+
+    expect(JSON.stringify(result)).not.toContain('sk-live-secret')
+    expect(JSON.stringify(result)).not.toContain('abc123-secret')
+    const returnedStep = result.steps.find((s) => s.id === actionStep.id)
+    expect(returnedStep?.parameters).toEqual({
+      method: 'GET',
+      url: 'https://example.com/api',
+      customHeaders: [
+        { key: 'Authorization', value: REDACTED_VALUE },
+        { key: 'X-API-Key', value: REDACTED_VALUE },
+        { key: 'Authorization', value: stepVariable },
+        { key: 'Accept', value: 'application/json' },
+      ],
     })
   })
 })
