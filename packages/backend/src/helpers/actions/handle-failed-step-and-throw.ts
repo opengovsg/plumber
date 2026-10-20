@@ -197,7 +197,11 @@ export function handleFailedStepAndThrow(
       willRetry: isRetriable ? 'true' : 'false',
     })
 
-    if (finalError instanceof UnrecoverableError) {
+    // A rethrown cause belongs to the app, so only errors created here get the StepError.
+    const isCreatedHere =
+      finalError instanceof UnrecoverableError ||
+      (finalError instanceof RetriableError && finalError !== executionError)
+    if (isCreatedHere) {
       attachStepErrorAsCause(finalError, params.executionError)
     }
 
