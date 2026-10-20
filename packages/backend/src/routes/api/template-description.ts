@@ -8,7 +8,7 @@ import { generateTemplateDescription } from '@/helpers/generate-template-descrip
 import logger from '@/helpers/logger'
 import type { AuthenticatedRequest } from '@/types/express/context'
 
-const router = Router()
+const router: Router = Router()
 const bodySchema = z.object({ flowId: z.string().uuid() })
 const limiter = new RateLimiterRedis({
   points: 5,

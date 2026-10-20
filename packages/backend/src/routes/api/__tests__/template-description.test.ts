@@ -103,9 +103,7 @@ describe('template description endpoint', () => {
   })
 
   it('limits paid generation requests per user', async () => {
-    mocks.consume.mockRejectedValue(
-      new RateLimiterRes(0, 60000, 6, false),
-    )
+    mocks.consume.mockRejectedValue(new RateLimiterRes(0, 60000, 6, false))
     const res = await request({ flowId })
     expect(res.status).toHaveBeenCalledWith(429)
     expect(mocks.generate).not.toHaveBeenCalled()

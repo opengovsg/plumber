@@ -10,8 +10,8 @@ import appsRouter from './apps'
 import chatRouter from './chat'
 import connectionsRouter from './connections'
 import dynamicDataRouter from './dynamic-data'
-import templatesRouter from './templates'
 import templateDescriptionRouter from './template-description'
+import templatesRouter from './templates'
 
 const router: Router = Router()
 
