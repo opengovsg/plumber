@@ -119,12 +119,11 @@ export function validateActionParameters(data: any): boolean {
 
 /**
  * Reusable validation function for action steps that enforces:
- * 1. Only 1 for-each per pipe
- * 2. Every If block contains at least one step
- * 3. If blocks do not nest
- * 4. For-each cannot sit inside an If block
- * 5. Delay cannot be after for-each
- * 6. A rejected-path action follows an approval stage
+ * 1. Every If block contains at least one step
+ * 2. If blocks do not nest
+ * 3. For-each cannot sit inside an If block
+ * 4. A rejected-path action follows an approval stage
+ * 5. The execution path rules in `validateExecutionPathRules`
  *
  * An If block's extent comes from `getIfThenChildCount`, so a legacy flat
  * list (no `ifThenChildCount`) still fails the old way: a for-each after an
@@ -134,11 +133,18 @@ export function validateActionStepsRules(
   steps: LayoutStep[],
   ctx: z.RefinementCtx,
 ) {
+  validateBlockRules(steps, ctx)
+  validateExecutionPathRules(steps, ctx)
+}
+
+/**
+ * The rules that hold however the steps execute. Pair it with
+ * `validateExecutionPathRules` on each path when steps can take separate paths.
+ */
+export function validateBlockRules(steps: LayoutStep[], ctx: z.RefinementCtx) {
   // The latest MRF stage entry decides whether a rejected-path action has an
   // approval stage to belong to.
   let lastStageIsApproval = false
-  let forEachCount = 0
-  let lastForEachIndex = -1
   // Index just past the If block being scanned, or -1 outside any block.
   let blockEndExclusive = -1
 
@@ -188,10 +194,32 @@ export function validateActionStepsRules(
       }
     }
 
+    if (isForEachLayoutStep(step) && isInsideBlock) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'For-each action cannot be placed inside an If block',
+        path: [i],
+      })
+    }
+  }
+}
+
+/**
+ * The rules for steps that run one after another:
+ * 1. Only 1 for-each per pipe
+ * 2. Delay cannot be after for-each
+ */
+export function validateExecutionPathRules(
+  steps: LayoutStep[],
+  ctx: z.RefinementCtx,
+) {
+  let forEachCount = 0
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i]
+
     if (isForEachLayoutStep(step)) {
       forEachCount++
-      lastForEachIndex = i
-
       if (forEachCount > 1) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -199,17 +227,9 @@ export function validateActionStepsRules(
           path: [i],
         })
       }
-
-      if (isInsideBlock) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'For-each action cannot be placed inside an If block',
-          path: [i],
-        })
-      }
     }
 
-    if (step.appKey === 'delay' && lastForEachIndex >= 0) {
+    if (step.appKey === 'delay' && forEachCount > 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Delay action cannot be added after a for-each step',

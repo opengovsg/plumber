@@ -915,6 +915,69 @@ describe('createFlowWithStepsService', () => {
         ).rejects.toThrow('only go on the last stage')
       })
 
+      describe('layout rules on separate approval paths', () => {
+        const loop = {
+          appKey: 'toolbox',
+          key: 'forEach',
+          type: 'action' as const,
+        }
+        const delay = {
+          appKey: 'delay',
+          key: 'delayFor',
+          type: 'action' as const,
+        }
+
+        it('allows a For-each on both the approve and the reject path', async () => {
+          mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+
+          const result = await createFlowWithStepsService({
+            user: await newUser(),
+            name: 'MRF Loops',
+            steps: [
+              formsgTrigger,
+              { ...loop, position: 2, mrfStage: 3 },
+              { ...loop, position: 3, mrfStage: 2, mrfBranch: 'reject' },
+            ],
+            traceId: 'trace-mrf-two-loops',
+            formUrl: FORM_URL,
+          })
+
+          expect(keys(result.steps)).toEqual([
+            'newSubmission',
+            'mrfSubmission',
+            'forEach',
+            'mrfSubmission',
+            'forEach',
+          ])
+          expect(result.steps[2].config?.approval?.branch).toBe('reject')
+          expect(result.steps[4].config?.approval).toBeUndefined()
+        })
+
+        it('allows a Delay on the approve path after a reject path For-each', async () => {
+          mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+
+          const result = await createFlowWithStepsService({
+            user: await newUser(),
+            name: 'MRF Loop and Delay',
+            steps: [
+              formsgTrigger,
+              { ...loop, position: 2, mrfStage: 2, mrfBranch: 'reject' },
+              { ...delay, position: 3, mrfStage: 3 },
+            ],
+            traceId: 'trace-mrf-loop-delay',
+            formUrl: FORM_URL,
+          })
+
+          expect(keys(result.steps)).toEqual([
+            'newSubmission',
+            'mrfSubmission',
+            'forEach',
+            'mrfSubmission',
+            'delayFor',
+          ])
+        })
+      })
+
       it('puts an action for stage 1 right after the trigger', async () => {
         mocks.fetchPublicForm.mockResolvedValue(mrfForm)
 

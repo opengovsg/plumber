@@ -119,3 +119,30 @@ export function orderMrfPipeSteps(steps: McpStepInput[]): McpStepInput[] {
     position: index + 1,
   }))
 }
+
+/**
+ * Splits an MRF pipe's actions into the sequences that can run in one
+ * execution. A rejection at a stage runs the earlier stages' approve path and
+ * that stage's reject path, but never the later stages.
+ */
+export function getMrfExecutionPaths(
+  actions: McpStepInput[],
+): McpStepInput[][] {
+  const units = toUnits(actions)
+  const approveUnits = units.filter(([step]) => branchOf(step) === 'approve')
+  const rejectStages = new Set(
+    units
+      .filter(([step]) => branchOf(step) === 'reject')
+      .map(([step]) => step.mrfStage ?? 0),
+  )
+
+  const rejectPaths = [...rejectStages].map((stage) =>
+    units.filter(
+      ([step]) =>
+        (branchOf(step) === 'approve' && (step.mrfStage ?? 0) < stage) ||
+        (branchOf(step) === 'reject' && step.mrfStage === stage),
+    ),
+  )
+
+  return [approveUnits, ...rejectPaths].map((path) => path.flat())
+}

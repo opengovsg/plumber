@@ -3,6 +3,7 @@ import z from 'zod'
 import {
   validateActionParameters,
   validateActionStepsRules,
+  validateBlockRules,
 } from './actions.zod'
 import { generateSchema } from './schema-generator'
 
@@ -14,7 +15,12 @@ const baseActionStepSchema = z.object({
   config: z.record(z.string(), z.any()).optional(),
 })
 
-export function getActionStepsSchema(restrictedAppKeys: string[] = []) {
+// Pass `checkExecutionPath: false` when the list merges separate execution
+// paths, then check each path with `validateExecutionPathRules`.
+export function getActionStepsSchema(
+  restrictedAppKeys: string[] = [],
+  { checkExecutionPath = true }: { checkExecutionPath?: boolean } = {},
+) {
   const actionStepSchema = generateSchema(
     baseActionStepSchema,
     'action',
@@ -28,7 +34,9 @@ export function getActionStepsSchema(restrictedAppKeys: string[] = []) {
     .array(actionStepSchema)
     .min(1)
     .max(29) // max of 30 steps including trigger
-    .superRefine(validateActionStepsRules)
+    .superRefine(
+      checkExecutionPath ? validateActionStepsRules : validateBlockRules,
+    )
 }
 
 export const actionStepsSchema = getActionStepsSchema()

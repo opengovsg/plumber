@@ -18,6 +18,8 @@ import { getActionStepsSchema } from '@/graphql/mutations/ai/schemas/action-step
 import {
   getIfThenChildCount,
   validateActionStepsRules,
+  validateBlockRules,
+  validateExecutionPathRules,
 } from '@/graphql/mutations/ai/schemas/actions.zod'
 import { generateSchema } from '@/graphql/mutations/ai/schemas/schema-generator'
 import { getStepVersion } from '@/helpers/get-step-version'
@@ -28,7 +30,11 @@ import type User from '@/models/user'
 
 import { addMrfActions, MrfStageStepsError } from './add-mrf-actions'
 import { fetchPublicForm } from './fetch-public-form'
-import { orderMrfPipeSteps, validateMrfPlacements } from './mrf-pipe-layout'
+import {
+  getMrfExecutionPaths,
+  orderMrfPipeSteps,
+  validateMrfPlacements,
+} from './mrf-pipe-layout'
 import { createStepAiBuilderConfig } from './step-ai-builder-config'
 
 export interface McpStepInput {
@@ -74,12 +80,30 @@ function isNamedLayoutStep(step: { appKey?: string; key?: string | null }) {
 function layoutRuleError(
   issues: { code: string; message: string }[],
 ): string | null {
-  const messages = issues
-    .filter((issue) => issue.code === 'custom')
-    .map((issue) => issue.message)
+  const messages = [
+    ...new Set(
+      issues
+        .filter((issue) => issue.code === 'custom')
+        .map((issue) => issue.message),
+    ),
+  ]
   return messages.length > 0
     ? `Pipe contains invalid action steps: ${messages.join('. ')}.`
     : null
+}
+
+/**
+ * Layout rule issues of each MRF execution path. The full action list merges
+ * the approve and reject paths, so it cannot check these rules itself.
+ */
+function getExecutionPathIssues(actions: McpStepInput[]) {
+  return getMrfExecutionPaths(actions).flatMap((path) => {
+    const result = z
+      .array(z.custom<McpStepInput>())
+      .superRefine(validateExecutionPathRules)
+      .safeParse(path)
+    return result.success ? [] : result.error.issues
+  })
 }
 
 /**
@@ -246,36 +270,39 @@ export async function createFlowWithStepsService({
 
     const actionSteps = steps.slice(1)
     if (actionSteps.length > 0) {
-      const actionStepsSchema = getActionStepsSchema(restrictedApps)
+      const actionStepsSchema = getActionStepsSchema(restrictedApps, {
+        checkExecutionPath: !mrfWorkflow,
+      })
       const validatedActions = actionStepsSchema.safeParse(actionSteps)
-      if (!validatedActions.success) {
+      const issues = [
+        ...(validatedActions.success ? [] : validatedActions.error.issues),
+        ...(mrfWorkflow ? getExecutionPathIssues(actionSteps) : []),
+      ]
+      if (issues.length > 0) {
         logger.error(
           'Failed to create flow with steps: Pipe contains invalid action steps',
-          { error: validatedActions.error.issues },
+          { error: issues },
         )
         // The layout rule messages are already user-facing, and the model
         // needs them to fix its own create_pipe call.
-        const layoutIssues = validatedActions.error.issues
-          .filter((issue) => issue.code === 'custom')
-          .map((issue) => issue.message)
         throw new Error(
-          layoutIssues.length > 0
-            ? `Pipe contains invalid action steps: ${layoutIssues.join('. ')}.`
-            : 'Pipe contains invalid action steps',
+          layoutRuleError(issues) ?? 'Pipe contains invalid action steps',
         )
       }
     }
   } else if (steps.some(isNamedLayoutStep)) {
     // A missing key skips the full schema, which also skips these rules.
+    const actionSteps = steps.slice(1)
     const layout = z
       .array(z.custom<McpStepInput>())
-      .superRefine(validateActionStepsRules)
-      .safeParse(steps.slice(1))
-    if (!layout.success) {
-      const message = layoutRuleError(layout.error.issues)
-      if (message) {
-        throw new Error(message)
-      }
+      .superRefine(mrfWorkflow ? validateBlockRules : validateActionStepsRules)
+      .safeParse(actionSteps)
+    const message = layoutRuleError([
+      ...(layout.success ? [] : layout.error.issues),
+      ...(mrfWorkflow ? getExecutionPathIssues(actionSteps) : []),
+    ])
+    if (message) {
+      throw new Error(message)
     }
   }
 

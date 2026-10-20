@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest'
 import type { ParsedMrfWorkflow } from '@/apps/formsg/common/types'
 
 import type { McpStepInput } from '../create-flow-with-steps'
-import { orderMrfPipeSteps, validateMrfPlacements } from '../mrf-pipe-layout'
+import {
+  getMrfExecutionPaths,
+  orderMrfPipeSteps,
+  validateMrfPlacements,
+} from '../mrf-pipe-layout'
 
 const stage = (name: string, approvalField?: string) => ({
   defaultStepName: name,
@@ -150,5 +154,39 @@ describe('orderMrfPipeSteps', () => {
     )
 
     expect(ordered.map((s) => s.position)).toEqual([1, 2, 3])
+  })
+})
+
+describe('getMrfExecutionPaths', () => {
+  it('ends a reject path at its stage and keeps the earlier approve steps', () => {
+    const first = action('first', 1)
+    const approved = action('approved', 2)
+    const rejected = action('rejected', 2, { mrfBranch: 'reject' })
+    const last = action('last', 3)
+
+    expect(
+      getMrfExecutionPaths([first, approved, rejected, last]).map((path) =>
+        path.map((step) => step.key),
+      ),
+    ).toEqual([
+      ['first', 'approved', 'last'],
+      ['first', 'rejected'],
+    ])
+  })
+
+  it('keeps an If block whole on its path', () => {
+    const ifThen = action(
+      'ifThen',
+      2,
+      { mrfBranch: 'reject', ifThenChildCount: 1 },
+      'toolbox',
+    )
+    const inside = action('inside', 0)
+
+    expect(
+      getMrfExecutionPaths([ifThen, inside, action('last', 3)]).map((path) =>
+        path.map((step) => step.key),
+      ),
+    ).toEqual([['last'], ['ifThen', 'inside']])
   })
 })
