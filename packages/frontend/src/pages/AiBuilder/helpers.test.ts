@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
-import { CustomUIMessage } from '@/hooks/useChatStream'
+import { CustomUIMessage, Message } from '@/hooks/useChatStream'
 
-import { extractTextContent, isSilentStreamPhase } from './helpers'
+import { MAX_MESSAGES } from './constants'
+import {
+  buildRequestMessages,
+  extractTextContent,
+  isSilentStreamPhase,
+} from './helpers'
 
 const buildMessage = (parts: CustomUIMessage['parts']): CustomUIMessage =>
   ({
@@ -130,5 +135,92 @@ describe('isSilentStreamPhase', () => {
     ] as unknown as CustomUIMessage['parts'])
 
     expect(isSilentStreamPhase(message)).toBe(false)
+  })
+})
+
+describe('buildRequestMessages', () => {
+  const buildInitialMessages = (count: number): Message[] =>
+    Array.from({ length: count }, (_, i) => ({
+      id: `initial-${i}`,
+      text: `message ${i}`,
+      isUser: i % 2 === 0,
+      isChatReady: false,
+    }))
+
+  const userMessage = (id: string): CustomUIMessage => ({
+    id,
+    role: 'user',
+    parts: [{ type: 'text', text: 'hi' }],
+  })
+
+  const stoppedToolOnlyTurn = (id: string): CustomUIMessage =>
+    ({
+      id,
+      role: 'assistant',
+      parts: [
+        { type: 'step-start' },
+        { type: 'text', text: '' },
+        {
+          type: 'tool-get_form_schema',
+          toolCallId: `${id}-call`,
+          state: 'input-available',
+          input: {},
+        },
+      ],
+    } as unknown as CustomUIMessage)
+
+  it('skips initial messages the AI SDK already tracks', () => {
+    const [first, second] = buildInitialMessages(2)
+    const result = buildRequestMessages({
+      initialMessages: [first, second],
+      messages: [{ ...userMessage(second.id) }],
+    })
+
+    expect(result.map((m) => m.id)).toEqual([first.id, second.id])
+  })
+
+  it('drops empty assistant turns but keeps tool-only turns', () => {
+    const result = buildRequestMessages({
+      messages: [
+        userMessage('u1'),
+        { id: 'a1', role: 'assistant', parts: [] },
+        userMessage('u2'),
+        stoppedToolOnlyTurn('a2'),
+      ],
+    })
+
+    expect(result.map((m) => m.id)).toEqual(['u1', 'u2', 'a2'])
+  })
+
+  it('places pipe context between initial and live messages', () => {
+    const [initial] = buildInitialMessages(1)
+    const pipeContext: CustomUIMessage = {
+      id: 'pipe-context-resync',
+      role: 'assistant',
+      parts: [{ type: 'text', text: 'steps' }],
+    }
+
+    const result = buildRequestMessages({
+      initialMessages: [initial],
+      pipeContextMessages: [pipeContext],
+      messages: [userMessage('u1')],
+    })
+
+    expect(result.map((m) => m.id)).toEqual([
+      initial.id,
+      'pipe-context-resync',
+      'u1',
+    ])
+  })
+
+  it('counts stopped tool-only turns towards the message limit', () => {
+    // Without the stopped turn, only MAX_MESSAGES - 1 messages exist.
+    const result = buildRequestMessages({
+      initialMessages: buildInitialMessages(MAX_MESSAGES - 2),
+      messages: [userMessage('u-last'), stoppedToolOnlyTurn('a-stopped')],
+    })
+
+    expect(result).toHaveLength(MAX_MESSAGES)
+    expect(result.at(-1)?.id).toBe('a-stopped')
   })
 })

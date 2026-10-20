@@ -14,6 +14,7 @@ import { useSessionExpiredToast } from '@/hooks/useSessionExpiredToast'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { MAX_MESSAGES } from '@/pages/AiBuilder/constants'
 import {
+  buildRequestMessages,
   deduplicateMessages,
   extractTextContent,
   isSilentStreamPhase,
@@ -196,9 +197,12 @@ export function useChatStream(options: UseChatStreamOptions) {
   const chatIdRef = useRef(chatId)
   chatIdRef.current = chatId
 
+  const [isLastTurnAborted, setIsLastTurnAborted] = useState(false)
+
   const {
     messages: aiMessages,
     sendMessage,
+    regenerate,
     setMessages,
     status,
     error: aiError,
@@ -218,25 +222,13 @@ export function useChatStream(options: UseChatStreamOptions) {
         return response
       },
       prepareSendMessagesRequest: ({ messages }) => {
-        // Filter out any initialMessages already tracked by the AI SDK to avoid
-        // duplicates (the SDK accumulates messages across exchanges in its own state)
-        const aiMessageIds = new Set(messages.map((m) => m.id))
-        const initialMsgs = (initialMessagesRef.current || [])
-          .filter((msg) => !aiMessageIds.has(msg.id))
-          .map((msg) => ({
-            id: msg.id,
-            role: msg.isUser ? 'user' : 'assistant',
-            parts: [{ type: 'text', text: msg.text }],
-            ...(msg.traceId && { metadata: { traceId: msg.traceId } }),
-          }))
-
         // First request since mount: if a pipe already has real step IDs
         // (data-pipeState survived in the persisted draft) but this mount's
         // own conversation history doesn't carry them (post-refresh), resync
         // the model with just the ID mapping it needs — not the full step
         // config — so it doesn't have to guess a step_id for tool calls like
         // get_dynamic_data.
-        const pipeContextMsgs = []
+        const pipeContextMsgs: CustomUIMessage[] = []
         if (!hasSentPipeContextRef.current) {
           hasSentPipeContextRef.current = true
           const currentSteps = outputRef.current?.pipeId
@@ -269,27 +261,10 @@ export function useChatStream(options: UseChatStreamOptions) {
           }
         }
 
-        // Prepend initial messages to maintain full conversation context.
-        // Filter out assistant messages with no text content — these can be left
-        // behind when the user stops the stream before any output is produced,
-        // and would fail backend schema validation.
-        const allMessages = [
-          ...initialMsgs,
-          ...pipeContextMsgs,
-          ...messages,
-        ].filter((msg) => {
-          if (msg.role !== 'assistant') {
-            return true
-          }
-          // Tool-only turns stay so the model keeps its own tool-call history
-          // after a step-limit stop.
-          return (msg.parts ?? []).some(
-            (part) =>
-              part.type.startsWith('tool-') ||
-              part.type === 'dynamic-tool' ||
-              (part.type === 'text' &&
-                !!(part as { type: string; text?: string }).text?.trim()),
-          )
+        const allMessages = buildRequestMessages({
+          initialMessages: initialMessagesRef.current,
+          pipeContextMessages: pipeContextMsgs,
+          messages,
         })
 
         const body = {
@@ -323,6 +298,7 @@ export function useChatStream(options: UseChatStreamOptions) {
       })
     },
     onFinish: ({ messages, isAbort }) => {
+      setIsLastTurnAborted(isAbort)
       // if the chat stream is cancelled, isAbort will be true
       if (isAbort) {
         return
@@ -591,9 +567,34 @@ export function useChatStream(options: UseChatStreamOptions) {
     )
   }, [aiMessages, status])
 
+  const isStreaming = status === 'submitted' || status === 'streaming'
+
+  // Counts the history the transport sends, since the backend's raw-message ceiling counts tool-only turns too.
+  // Waits for the turn to end so the composer keeps its stop button during the final turn.
+  const hasReachedLimit = useMemo(
+    () =>
+      !isStreaming &&
+      buildRequestMessages({
+        initialMessages: options?.initialMessages,
+        messages: aiMessages,
+      }).length >= MAX_MESSAGES,
+    [aiMessages, isStreaming, options?.initialMessages],
+  )
+
+  // A stopped final turn leaves no summary to carry into New Chat.
+  // Regenerating it resends the same history, which stays within the backend ceiling.
+  const canRetryLastTurn = hasReachedLimit && isLastTurnAborted
+
+  const retryLastTurn = useCallback(() => {
+    setIsLastTurnAborted(false)
+    setIsReady(false)
+    regenerate()
+  }, [regenerate])
+
   const resetChat = useCallback(() => {
     setMessages([])
     setIsReady(false)
+    setIsLastTurnAborted(false)
   }, [setMessages])
 
   // Wrapper for sendMessage that matches the expected signature
@@ -601,6 +602,7 @@ export function useChatStream(options: UseChatStreamOptions) {
     (userPrompt: string) => {
       // Reset isReady when sending a new message
       setIsReady(false)
+      setIsLastTurnAborted(false)
       sendMessage({
         role: 'user',
         parts: [{ type: 'text', text: userPrompt }],
@@ -613,13 +615,15 @@ export function useChatStream(options: UseChatStreamOptions) {
     messages,
     currentResponse,
     isWorking,
-    isStreaming: status === 'submitted' || status === 'streaming',
+    isStreaming,
     isReady,
     error: aiError?.message || null,
     sendMessage: sendMessageWrapper,
     cancelStream: stop,
     resetChat,
-    hasReachedLimit: messages.length >= MAX_MESSAGES,
+    hasReachedLimit,
+    canRetryLastTurn,
+    retryLastTurn,
     hasHitStepLimit,
     activeStepId,
     stepParametersByStepId,

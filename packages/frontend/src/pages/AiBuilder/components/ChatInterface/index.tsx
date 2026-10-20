@@ -30,6 +30,8 @@ interface ChatInterfaceProps {
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
+  /** Set when the final turn before the message limit was stopped and can be resent. */
+  onRetryLastTurn?: () => void
   hasHitStepLimit: boolean
   onAddConnection?: (context: { question: string; appKey: string }) => void
   knownFormUrl?: string
@@ -51,6 +53,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
     cancelStream,
     resetChat,
     hasReachedLimit,
+    onRetryLastTurn,
     hasHitStepLimit,
     onAddConnection,
     knownFormUrl,
@@ -226,7 +229,10 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                 />
               )}
               {hasReachedLimit ? (
-                <MessageLimitBanner onNewChat={handleNewChat} />
+                <MessageLimitBanner
+                  onNewChat={handleNewChat}
+                  onRetry={onRetryLastTurn}
+                />
               ) : (
                 <PromptInput
                   sendMessage={sendMessage}
