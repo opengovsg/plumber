@@ -98,6 +98,24 @@ describe('runNightly', () => {
     await expect(runNightly()).resolves.toBe('ran')
   })
 
+  it('uses the flag fallbacks when LaunchDarkly cannot initialize', async () => {
+    vi.setSystemTime(SGT_14_00)
+    mocks.getLdFlagValue.mockRejectedValue(new Error('Authentication failed'))
+    await expect(runNightly()).resolves.toBe('flag-off')
+  })
+
+  it('uses the isDev window fallback when LaunchDarkly cannot initialize', async () => {
+    vi.setSystemTime(SGT_14_00)
+    mocks.appConfig.isDev = true
+    mocks.getLdFlagValue.mockImplementation(async (flag: string) => {
+      if (flag === 'tiles-ddb-migration') {
+        return 'migrate'
+      }
+      throw new Error('Authentication failed')
+    })
+    await expect(runNightly()).resolves.toBe('ran')
+  })
+
   it('ignores the override flag in production', async () => {
     vi.setSystemTime(SGT_14_00)
     mocks.appConfig.isProd = true
