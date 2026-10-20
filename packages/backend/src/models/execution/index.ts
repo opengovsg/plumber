@@ -29,7 +29,7 @@ class Execution extends BaseExecution {
   /**
    * Returns the ended execution, or undefined if it had already ended.
    *
-   * IMPORTANT: only a pending execution changes, so each end is counted once.
+   * IMPORTANT: only a change from pending returns the execution, so each end is counted once.
    */
   static async setStatus(
     executionId: string,
@@ -40,6 +40,14 @@ class Execution extends BaseExecution {
       .where('id', executionId)
       .whereNull('status')
       .returning(['id', 'test_run'])
+
+    // A for-each retry can succeed after another iteration failed the execution, and users must see that success.
+    if (!execution && status === 'success') {
+      await Execution.query()
+        .patch({ status })
+        .where('id', executionId)
+        .where('status', 'failure')
+    }
     return execution
   }
 }
