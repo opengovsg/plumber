@@ -1,5 +1,5 @@
 import { IExecutionStepMetadata } from '@plumber/types'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   TOOLBOX_ACTIONS,
@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
     },
   ]),
   setStatus: vi.fn(),
+  getLatestFailedStep: vi.fn(),
+  countExecutionEnd: vi.fn(),
 }))
 
 vi.mock('@/models/execution-step', () => ({
@@ -27,7 +29,12 @@ vi.mock('@/models/execution-step', () => ({
     patchIterationStatus: mocks.patchIterationStatus,
     getForEachExecutionState: mocks.getForEachExecutionState,
     getIterationSteps: mocks.getIterationSteps,
+    getLatestFailedStep: mocks.getLatestFailedStep,
   },
+}))
+
+vi.mock('@/helpers/execution-end', () => ({
+  countExecutionEnd: mocks.countExecutionEnd,
 }))
 
 vi.mock('@/models/execution', () => ({
@@ -468,6 +475,81 @@ describe('processForEachStatus', () => {
         1,
         'success',
       )
+    })
+  })
+
+  describe('execution end count', () => {
+    const ended = { id: mockExecutionId, testRun: false }
+
+    beforeEach(() => {
+      mocks.getForEachExecutionState.mockResolvedValue({
+        hasLastIterationRun: true,
+        areAllStepsSuccessful: false,
+      })
+    })
+
+    it.each([
+      { label: 'on the last iteration', isLastIteration: true },
+      { label: 'after the last iteration ran', isLastIteration: false },
+    ])(
+      'counts the kind of the latest failed step $label',
+      async ({ isLastIteration }) => {
+        mocks.setStatus.mockResolvedValue(ended)
+        mocks.getLatestFailedStep.mockResolvedValue({
+          errorDetails: { kind: 'third-party' },
+        })
+
+        await processForEachStatus({
+          executionId: mockExecutionId,
+          currStep: mockRegularStep,
+          nextStepMetadata: { iteration: 2, isLastStep: true, isLastIteration },
+        })
+
+        expect(mocks.countExecutionEnd).toHaveBeenCalledExactlyOnceWith(
+          ended,
+          'third-party',
+        )
+      },
+    )
+
+    it('counts internal when no failed step is found', async () => {
+      mocks.setStatus.mockResolvedValue(ended)
+      mocks.getLatestFailedStep.mockResolvedValue(undefined)
+
+      await processForEachStatus({
+        executionId: mockExecutionId,
+        currStep: mockRegularStep,
+        nextStepMetadata: { iteration: 2, isLastStep: true },
+      })
+
+      expect(mocks.countExecutionEnd).toHaveBeenCalledWith(ended, 'internal')
+    })
+
+    it('counts internal when the failed step lookup fails', async () => {
+      mocks.setStatus.mockResolvedValue(ended)
+      mocks.getLatestFailedStep.mockRejectedValue(new Error('db down'))
+
+      const result = await processForEachStatus({
+        executionId: mockExecutionId,
+        currStep: mockRegularStep,
+        nextStepMetadata: { iteration: 2, isLastStep: true },
+      })
+
+      expect(result).toBe(false)
+      expect(mocks.countExecutionEnd).toHaveBeenCalledWith(ended, 'internal')
+    })
+
+    it('does not count an execution that had already ended', async () => {
+      mocks.setStatus.mockResolvedValue(undefined)
+
+      await processForEachStatus({
+        executionId: mockExecutionId,
+        currStep: mockRegularStep,
+        nextStepMetadata: { iteration: 2, isLastStep: true },
+      })
+
+      expect(mocks.getLatestFailedStep).not.toHaveBeenCalled()
+      expect(mocks.countExecutionEnd).not.toHaveBeenCalled()
     })
   })
 })
