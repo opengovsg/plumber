@@ -1,6 +1,20 @@
 import { IJSONObject, IStepError, StepErrorKind } from '@plumber/types'
+import { z } from 'zod'
 
 import HttpError from './http'
+
+// A Record forces every StepErrorKind to appear here, and nothing else.
+const STEP_ERROR_KINDS: Record<StepErrorKind, true> = {
+  config: true,
+  'third-party': true,
+  internal: true,
+}
+
+const savedKindSchema = z.object({
+  kind: z.enum(
+    Object.keys(STEP_ERROR_KINDS) as [StepErrorKind, ...StepErrorKind[]],
+  ),
+})
 
 //
 // Some generic solutions for common errors
@@ -71,6 +85,14 @@ export function getStepErrorKind(error: unknown): StepErrorKind {
     return error.kind ?? 'internal'
   }
   return 'internal'
+}
+
+/**
+ * Reads the kind a StepError saved into `errorDetails`, for end points that hold no error object.
+ */
+export function getErrorDetailsKind(errorDetails: unknown): StepErrorKind {
+  const result = savedKindSchema.safeParse(errorDetails)
+  return result.success ? result.data.kind : 'internal'
 }
 
 /**
