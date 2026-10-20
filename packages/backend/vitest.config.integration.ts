@@ -30,7 +30,17 @@ function itestsWithModuleMocks(): string[] {
 
 const isolatedItests = itestsWithModuleMocks()
 
+const sharedResolve = {
+  alias: {
+    '@': getPath('./src'),
+  },
+}
+
 const sharedTest = {
+  root: __dirname,
+  // Each project runs its own globalSetup. The setup file shares one set of
+  // containers between them.
+  globalSetup: [getPath('./test/containers-global-setup.ts')],
   setupFiles: [
     'dotenv/config',
     getPath('./test/pg-reset-db-setup.ts'),
@@ -46,45 +56,39 @@ const sharedTest = {
   },
 }
 
-export default defineConfig({
-  test: {
-    // load env variables
-    globalSetup: [getPath('./test/containers-global-setup.ts')],
-    maxWorkers: 1,
-    fileParallelism: false,
-    projects: [
-      {
-        resolve: {
-          alias: {
-            '@': getPath('./src'),
-          },
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend-integration',
-          include: [ITEST_INCLUDE],
-          exclude: isolatedItests,
-          isolate: false,
-        },
-      },
-      {
-        resolve: {
-          alias: {
-            '@': getPath('./src'),
-          },
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend-integration-isolated',
-          include: isolatedItests,
-          isolate: true,
-        },
-      },
-    ],
-  },
-  resolve: {
-    alias: {
-      '@': getPath('./src'),
+// Exported so the root config can register these projects directly. Vitest
+// does not expand projects nested inside a project config.
+// IMPORTANT: Distinct groupOrder values stop both projects, and other root
+// projects, from running in parallel against the shared databases.
+export const integrationProjects = [
+  {
+    resolve: sharedResolve,
+    test: {
+      ...sharedTest,
+      name: 'backend-integration',
+      include: [ITEST_INCLUDE],
+      exclude: isolatedItests,
+      isolate: false,
+      sequence: { groupOrder: 1 },
     },
   },
+  {
+    resolve: sharedResolve,
+    test: {
+      ...sharedTest,
+      name: 'backend-integration-isolated',
+      include: isolatedItests,
+      isolate: true,
+      sequence: { groupOrder: 2 },
+    },
+  },
+]
+
+export default defineConfig({
+  test: {
+    maxWorkers: 1,
+    fileParallelism: false,
+    projects: integrationProjects,
+  },
+  resolve: sharedResolve,
 })
