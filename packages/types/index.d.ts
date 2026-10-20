@@ -1452,6 +1452,8 @@ export interface ITableAiBuilderConfig {
 
 export interface ITableConfig {
   aiBuilderConfig?: ITableAiBuilderConfig
+  migratedFromDdb?: boolean
+  ddbMigrationExcluded?: boolean
 }
 
 export interface ITableColumnMetadata {

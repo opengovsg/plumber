@@ -249,6 +249,7 @@ export const getTableRows = async ({
   columnIds,
   filters,
   order = 'asc',
+  orderByCreatedAt = false,
   scanLimit,
   stringifiedCursor,
 }: {
@@ -256,6 +257,7 @@ export const getTableRows = async ({
   columnIds?: string[]
   filters?: TableRowFilter[]
   order?: 'asc' | 'desc'
+  orderByCreatedAt?: boolean
   /**
    * Optional limit on the total number of rows scanned.
    */
@@ -278,7 +280,15 @@ export const getTableRows = async ({
   }
   try {
     const tableRows = []
-    const stream = query.orderBy('rowId', order).stream()
+    if (orderByCreatedAt) {
+      query.orderBy([
+        { column: 'createdAt', order },
+        { column: 'rowId', order },
+      ])
+    } else {
+      query.orderBy('rowId', order)
+    }
+    const stream = query.stream()
     for await (const row of stream) {
       const { rowId, ...rest } = row
       tableRows.push({ rowId, data: rest })
