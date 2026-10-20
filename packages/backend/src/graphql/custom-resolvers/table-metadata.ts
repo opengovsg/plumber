@@ -1,5 +1,7 @@
 import sortBy from 'lodash/sortBy'
 
+import { isTileMigrating } from '@/models/tiles/migration/lease'
+
 import type { Resolvers } from '../__generated__/types.generated'
 
 type TableMetadataResolver = Resolvers['TableMetadata']
@@ -34,8 +36,12 @@ const collaborators: TableMetadataResolver['collaborators'] = async (
   ) as { email: string; role: string }[]
 }
 
+const isMigrating: TableMetadataResolver['isMigrating'] = async (parent) =>
+  isTileMigrating(parent)
+
 export default {
   columns,
   collaborators,
   databaseType,
+  isMigrating,
 } satisfies TableMetadataResolver

@@ -26,6 +26,11 @@ class TableMetadata extends Base {
   lastAccessedAt?: Date
   db: 'pg' | 'ddb'
   config: ITableConfig
+  /**
+   * Set while the tile is being migrated from DynamoDB to Postgres. See
+   * `models/tiles/migration/lease.ts`.
+   */
+  migrationStartedAt?: Date | null
 
   static tableName = 'table_metadata'
 
