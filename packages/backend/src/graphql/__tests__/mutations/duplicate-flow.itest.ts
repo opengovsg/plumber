@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, MockInstance, vi } from 'vitest'
 
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'

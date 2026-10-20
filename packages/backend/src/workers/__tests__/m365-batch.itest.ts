@@ -662,8 +662,11 @@ describe('m365-excel batch worker (integration)', () => {
         .where('app_key', 'toolbox')
         .where('key', 'forEach')
         .first()
+      if (!forEachStep) {
+        throw new Error(`forEach step not found for execution ${executionId}`)
+      }
       return (
-        forEachStep?.metadata as {
+        forEachStep.metadata as {
           iterationStatus: Record<string, string | null>
         }
       ).iterationStatus
