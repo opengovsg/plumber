@@ -725,7 +725,7 @@ describe('createFlowWithStepsService', () => {
       expect(await Flow.query().where('user_id', user.id)).toHaveLength(0)
     })
 
-    it('leaves the pipe in place and says not to use it when the stage steps fail', async () => {
+    it('creates no pipe when the stage steps fail', async () => {
       mocks.fetchPublicForm.mockResolvedValue(mrfForm)
       mocks.createMrfSteps.mockRejectedValueOnce(new Error('db down'))
       const user = await newUser()
@@ -739,10 +739,32 @@ describe('createFlowWithStepsService', () => {
       }).catch((e: unknown) => e)
 
       expect(error).toBeInstanceOf(MrfStageStepsError)
-      const [flow] = await Flow.query().where('user_id', user.id)
-      expect((error as Error).message).toContain(flow.id)
-      expect((error as Error).message).toContain('Do not use that pipe')
-      expect(flow.deletedAt).toBeFalsy()
+      expect((error as Error).message).toContain('The pipe was not created')
+      expect(await Flow.query().where('user_id', user.id)).toHaveLength(0)
+    })
+
+    it('rolls back the pipe when a stage step write fails partway', async () => {
+      mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+      const real = mocks.createMrfSteps.getMockImplementation()
+      mocks.createMrfSteps.mockImplementationOnce(
+        async (...args: Parameters<typeof real>) => {
+          await real(...args)
+          throw new Error('write failed after the stage steps')
+        },
+      )
+      const user = await newUser()
+
+      await expect(
+        createFlowWithStepsService({
+          user,
+          name: 'MRF Pipe',
+          steps: [formsgTrigger],
+          traceId: 'trace-stage-partial',
+          formUrl: FORM_URL,
+        }),
+      ).rejects.toBeInstanceOf(MrfStageStepsError)
+
+      expect(await Flow.query().where('user_id', user.id)).toHaveLength(0)
     })
 
     describe('actions placed after a stage', () => {

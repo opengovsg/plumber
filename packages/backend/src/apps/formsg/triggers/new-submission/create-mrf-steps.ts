@@ -63,10 +63,12 @@ async function deleteAllStepsInRejectBranch(
 export async function createMrfSteps(
   $: { flow?: { id: string }; step?: { id: string } },
   mrfWorkflow: ParsedMrfWorkflow,
+  // Pass the caller's transaction so the stage steps commit with its writes.
+  outerTrx?: Transaction,
 ) {
   const { trigger, actions } = mrfWorkflow
 
-  await Step.transaction(async (trx) => {
+  const run = async (trx: Transaction) => {
     const triggerStepName = trigger.defaultStepName
     // Update the trigger step parameters
     const updatedTriggerStep = await Step.query(trx).patchAndFetchById(
@@ -227,5 +229,11 @@ export async function createMrfSteps(
 
     // this is to fill the gaps in the step positions
     await Step.resetStepOrdering($.flow.id, trx)
-  })
+  }
+
+  if (outerTrx) {
+    await run(outerTrx)
+    return
+  }
+  await Step.transaction(run)
 }

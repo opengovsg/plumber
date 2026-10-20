@@ -14,14 +14,11 @@ export class MrfPipeStepsError extends UserFacingError {
   }
 }
 
-/**
- * The pipe exists but its stage steps do not, and the model cannot make them.
- * The pipe is left as it is, since deleting it from here is not worth the risk.
- */
+/** The stage steps could not be created, so the whole pipe was rolled back. */
 export class MrfStageStepsError extends UserFacingError {
-  constructor(flowId: string) {
+  constructor() {
     super(
-      `The pipe was created (id ${flowId}) but its stage steps could not be created. Do not use that pipe. Tell the user, then call create_pipe again to make a new one.`,
+      'The pipe was not created because its stage steps could not be created. Tell the user, then call create_pipe again.',
     )
     this.name = 'MrfStageStepsError'
   }
@@ -69,12 +66,13 @@ export async function addMrfActions({
     // Stage 1 is the trigger, so stage N is anchors[N - 1].
     const anchors = [flowSteps[0], ...stageSteps]
     // The steps inside an If block carry no stage of their own.
-    const hasMissingStage = actions.some(
+    const withMissingStage = actions.find(
       (action) =>
         action.mrfStage !== undefined && !anchors[action.mrfStage - 1],
     )
-    if (hasMissingStage) {
-      throw new MrfStageStepsError(flowId)
+    if (withMissingStage) {
+      current = withMissingStage
+      throw new Error(`Stage ${withMissingStage.mrfStage} does not exist.`)
     }
 
     for (let attempt = 1; ; attempt++) {
@@ -147,9 +145,6 @@ export async function addMrfActions({
       }
     }
   } catch (error) {
-    if (error instanceof MrfStageStepsError) {
-      throw error
-    }
     const reason = error instanceof Error ? error.message : String(error)
     throw new MrfPipeStepsError(
       `The pipe was created (id ${flowId}) with its stage steps, but no action was added. ${current?.appKey}/${current?.key} failed: ${reason} Call get_flow, then add the actions with create_step.`,

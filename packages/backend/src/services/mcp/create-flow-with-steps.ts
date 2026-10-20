@@ -349,24 +349,26 @@ export async function createFlowWithStepsService({
       }
     }
 
+    if (mrfWorkflow) {
+      // Same transaction, so a stage failure leaves no half-built pipe behind.
+      try {
+        await createMrfSteps(
+          { flow: { id: createdFlow.id }, step: { id: insertedSteps[0].id } },
+          mrfWorkflow,
+          trx,
+        )
+      } catch (error) {
+        logger.error('create_pipe: could not create the MRF stage steps', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+        throw new MrfStageStepsError()
+      }
+    }
+
     return createdFlow
   })
 
   if (mrfWorkflow) {
-    try {
-      const createdSteps = await flow.$relatedQuery('steps')
-      const trigger = createdSteps.find((step) => step.position === 1)
-      await createMrfSteps(
-        { flow: { id: flow.id }, step: { id: trigger.id } },
-        mrfWorkflow,
-      )
-    } catch (error) {
-      logger.error('create_pipe: could not create the MRF stage steps', {
-        flowId: flow.id,
-        error: error instanceof Error ? error.message : String(error),
-      })
-      throw new MrfStageStepsError(flow.id)
-    }
     await addMrfActions({ user, flowId: flow.id, actions: steps.slice(1) })
     // Re-read, since createMrfSteps added steps and reordered positions.
     const withMrfSteps = await flow.$query().withGraphFetched('steps')
