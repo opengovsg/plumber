@@ -1,5 +1,6 @@
 import type { IActionJobData, IAppQueue } from '@plumber/types'
 import {
+  DelayedError,
   UnrecoverableError,
   WorkerPro,
   type WorkerProOptions,
@@ -9,6 +10,7 @@ import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { WORKER_CONCURRENCY } from '@/config/workers'
 import FileLockContentionError from '@/errors/file-lock-contention'
+import RequeueWithoutAttemptError from '@/errors/requeue-without-attempt'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import tracer from '@/helpers/tracer'
 import Step from '@/models/step'
@@ -124,6 +126,19 @@ export function makeActionWorker(
             // step was recorded, so this contention stays invisible.
             if (err instanceof FileLockContentionError) {
               return requeueOnFileLockContention(worker, job)
+            }
+            // moveToDelayed skips the attempt, and DelayedError stops BullMQ
+            // from failing the job. Tile write jobs have no group to rate limit.
+            if (err instanceof RequeueWithoutAttemptError) {
+              const requeueAt = Date.now() + err.delayMs
+              await job.updateData({
+                ...job.data,
+                requeuesWithoutAttempt:
+                  (job.data.requeuesWithoutAttempt ?? 0) + 1,
+                retryTimestamp: requeueAt,
+              })
+              await job.moveToDelayed(requeueAt, job.token)
+              throw new DelayedError()
             }
             // This happens when the prerequisite steps for the action fails
             // (e.g. db error, missing execution, flow, step, etc...) in such
