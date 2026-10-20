@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import { convertFlowToTemplate } from '@/helpers/convert-flow-to-template'
 import logger from '@/helpers/logger'
+import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
 import Template from '@/models/template'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -20,6 +21,18 @@ const createTemplateFromFlow: MutationResolvers['createTemplateFromFlow'] =
       .findOne({ 'flows.id': params.input.flowId })
       .throwIfNotFound()
 
+    // Editors and Viewers must not keep the owner's files, tables or secrets.
+    const isOwner = flow.role === 'owner'
+    const sourceSteps = isOwner
+      ? flow.steps
+      : flow.steps.map((step) => ({
+          ...step,
+          parameters: sanitizeCollaboratorDuplicatedParameters(
+            step.appKey,
+            step.parameters,
+          ),
+        }))
+
     return await Template.transaction(async (trx) => {
       const template = await context.currentUser
         .$relatedQuery('templates', trx)
@@ -28,10 +41,13 @@ const createTemplateFromFlow: MutationResolvers['createTemplateFromFlow'] =
           description: metadata.description ?? '',
         })
 
-      const { steps } = convertFlowToTemplate(flow, {
-        id: template.id,
-        description: template.description,
-      })
+      const { steps } = convertFlowToTemplate(
+        { name: flow.name, steps: sourceSteps },
+        {
+          id: template.id,
+          description: template.description,
+        },
+      )
 
       if (steps.length > 0) {
         await template
