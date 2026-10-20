@@ -47,10 +47,13 @@ function handleRetriableError(
 
   // Use the error's custom max attempts if it specified one
   const maxAttempts = customMaxAttempts ?? MAXIMUM_JOB_ATTEMPTS
+  // BullMQ counts a no-attempt re-queue in attemptsStarted, so remove those.
+  const attemptsStarted =
+    job.attemptsStarted - (job.data?.requeuesWithoutAttempt ?? 0)
 
   switch (delayType) {
     case 'queue':
-      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
+      checkIfAttemptsExhausted(attemptsStarted, maxAttempts, executionError)
       if (isQueueDelayable) {
         worker.rateLimit(delayInMs)
         throw WorkerPro.RateLimitError()
@@ -64,7 +67,7 @@ function handleRetriableError(
       // off a small alert.
       throw executionError
     case 'group': {
-      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
+      checkIfAttemptsExhausted(attemptsStarted, maxAttempts, executionError)
       const groupId = job.opts?.group?.id
       if (groupId) {
         worker.rateLimitGroup(job, delayInMs)
@@ -77,7 +80,7 @@ function handleRetriableError(
     }
     case 'step':
       // Check if max attempts reached for custom error codes
-      checkIfAttemptsExhausted(job.attemptsStarted, maxAttempts, executionError)
+      checkIfAttemptsExhausted(attemptsStarted, maxAttempts, executionError)
       // OK to pass this through to our worker's retry handler
       throw executionError
   }

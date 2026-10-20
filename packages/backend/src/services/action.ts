@@ -14,6 +14,7 @@ import {
 import FileLockContentionError from '@/errors/file-lock-contention'
 import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
+import RequeueWithoutAttemptError from '@/errors/requeue-without-attempt'
 import StepError from '@/errors/step'
 import {
   ForEachContext,
@@ -435,20 +436,9 @@ export const processAction = async (options: ProcessActionOptions) => {
   const prepared = await prepareActionExecution(options)
   const { $, actionCommand, testRun, metadata, computedParameters } = prepared
 
-  // Acquire the per-resource lock (if the app's queue declares one via
-  // getLockKey) AFTER prepare — so we have the computed params / fileId — but
-  // BEFORE any execution step is recorded. Contention short-circuits via
-  // `onContention` without writing a spurious failure step: the worker
-  // translates FileLockContentionError into a no-attempt group re-queue, and
-  // test runs surface a user-facing StepError. The lock is released once run +
-  // record + resolve are done (inside withLock's `finally`). A null key means
-  // the app declares no lock, so the action runs directly.
-  const lockKey = await resolveLockKey($)
-  const span = tracer.scope().active()
-
   // Record the execution step, resolve the next step, and build the
   // processAction result. Shared by the normal run path AND the test-run
-  // contention path below, so a test run whose file lock is contended surfaces
+  // contention and re-queue paths below, so a test run whose file lock is contended surfaces
   // as a recorded FAILED step (which the editor renders inline) rather than a
   // thrown error - exactly like any other step failure.
   const recordAndResolve = async (
@@ -478,6 +468,33 @@ export const processAction = async (options: ProcessActionOptions) => {
       executionError,
     }
   }
+
+  const requeueDelayMs = $.app.queue?.getRequeueDelayMs
+    ? await $.app.queue.getRequeueDelayMs($)
+    : null
+  if (requeueDelayMs !== null) {
+    // A test run cannot be re-queued, so it records the friendly error inline.
+    if (testRun) {
+      const executionError = new StepError(
+        'This tile is being upgraded.',
+        'Try again in a few minutes.',
+      )
+      setActionOutputError($, executionError)
+      return recordAndResolve({}, executionError)
+    }
+    throw new RequeueWithoutAttemptError(requeueDelayMs)
+  }
+
+  // Acquire the per-resource lock (if the app's queue declares one via
+  // getLockKey) AFTER prepare — so we have the computed params / fileId — but
+  // BEFORE any execution step is recorded. Contention short-circuits via
+  // `onContention` without writing a spurious failure step: the worker
+  // translates FileLockContentionError into a no-attempt group re-queue, and
+  // test runs surface a user-facing StepError. The lock is released once run +
+  // record + resolve are done (inside withLock's `finally`). A null key means
+  // the app declares no lock, so the action runs directly.
+  const lockKey = await resolveLockKey($)
+  const span = tracer.scope().active()
 
   const runAction = async () => {
     let runResult: IActionRunResult = {}
