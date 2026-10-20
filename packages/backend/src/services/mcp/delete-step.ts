@@ -114,6 +114,18 @@ export async function deleteStepService({
         throw new Error('Must delete contiguous action steps!')
       }
 
+      if (traceId) {
+        await Promise.all(
+          stepsToDelete
+            .filter((member) => member.id !== stepId)
+            .map((member) =>
+              member.$query(trx).patch({
+                config: stampStepDeletedByAi(member.config, traceId),
+              }),
+            ),
+        )
+      }
+
       const stepIds = stepsToDelete.map((stepToDelete) => stepToDelete.id)
       const allSteps = await flow
         .$relatedQuery('steps', trx)

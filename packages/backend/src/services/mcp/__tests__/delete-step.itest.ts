@@ -559,6 +559,42 @@ describe('deleteStepService', () => {
       expect(result.steps.map((s) => s.position)).toEqual([1, 2])
     })
 
+    it('stamps delete_step once on every soft-deleted block member', async () => {
+      const { user, flow, ifThen, slack, sms, email } = await createBlockPipe(
+        'stamp',
+      )
+
+      await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+        traceId: 'trace-delete',
+      })
+
+      const storedIfThen = await Step.query()
+        .withSoftDeleted()
+        .findById(ifThen.id)
+      expect(storedIfThen?.deletedAt).toBeTruthy()
+      expect(storedIfThen?.config).toEqual({
+        endStepId: sms.id,
+        aiBuilderConfig: [{ traceId: 'trace-delete', tool: 'delete_step' }],
+      })
+
+      for (const member of [slack, sms]) {
+        const stored = await Step.query().withSoftDeleted().findById(member.id)
+        expect(stored?.deletedAt).toBeTruthy()
+        expect(stored?.config.aiBuilderConfig).toEqual([
+          { traceId: 'trace-delete-block-stamp', tool: 'create_pipe' },
+          { traceId: 'trace-delete', tool: 'delete_step' },
+        ])
+      }
+
+      const storedEmail = await Step.query().findById(email.id)
+      expect(storedEmail?.config.aiBuilderConfig).toEqual([
+        { traceId: 'trace-delete-block-stamp', tool: 'create_pipe' },
+      ])
+    })
+
     it('deletes a legacy If block through its derived extent', async () => {
       const { user, flow, ifThen } = await createBlockPipe('legacy-block')
       await Step.query().findById(ifThen.id).patch({ config: {} })
