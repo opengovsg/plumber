@@ -15,8 +15,24 @@ export function isWithinNightlyWindow(now: Date): boolean {
   return hour >= NIGHTLY_WINDOW_START_HOUR && hour < NIGHTLY_WINDOW_END_HOUR
 }
 
+// getLdFlagValue rejects when the LD client cannot initialize, e.g. on .env-example.
+async function readFlag<T extends string | boolean>(
+  flag: string,
+  fallback: T,
+): Promise<T> {
+  try {
+    return await getLdFlagValue<T>(flag, null, fallback)
+  } catch (err) {
+    logger.warn('tiles-migration.flag.unavailable', {
+      flag,
+      err: (err as Error).message,
+    })
+    return fallback
+  }
+}
+
 export async function runNightly(): Promise<RunNightlyResult> {
-  const mode = await getLdFlagValue<string>('tiles-ddb-migration', null, 'off')
+  const mode = await readFlag<string>('tiles-ddb-migration', 'off')
   if (mode !== 'migrate') {
     logger.info('tiles-migration.run.skipped', { reason: 'flag-off', mode })
     return 'flag-off'
@@ -24,11 +40,7 @@ export async function runNightly(): Promise<RunNightlyResult> {
 
   const ignoreWindow = appConfig.isProd
     ? false
-    : await getLdFlagValue<boolean>(
-        'tiles-ddb-migration-ignore-window',
-        null,
-        appConfig.isDev,
-      )
+    : await readFlag('tiles-ddb-migration-ignore-window', appConfig.isDev)
   if (!ignoreWindow && !isWithinNightlyWindow(new Date())) {
     logger.info('tiles-migration.run.skipped', { reason: 'outside-window' })
     return 'outside-window'
