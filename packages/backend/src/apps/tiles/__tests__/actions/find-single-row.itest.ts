@@ -169,6 +169,7 @@ describe.each([['ddb'], ['pg']])(
         filters: $.step.parameters.filters,
         scanLimit: 100,
         order: 'asc',
+        orderByCreatedAt: false,
       })
     })
 
@@ -189,7 +190,28 @@ describe.each([['ddb'], ['pg']])(
         filters: $.step.parameters.filters,
         scanLimit: 100,
         order: 'desc',
+        orderByCreatedAt: false,
       })
+    })
+
+    it('should order by createdAt for tiles migrated from DynamoDB', async () => {
+      await TableMetadata.query()
+        .patch({ config: { migratedFromDdb: true } })
+        .where({ id: $.step.parameters.tableId })
+      const getTableRowsSpy = vi
+        .spyOn(
+          databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
+          'getTableRows',
+        )
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      $.step.parameters.returnLastRow = true
+      await findSingleRowAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ order: 'desc', orderByCreatedAt: true }),
+      )
     })
   },
 )
