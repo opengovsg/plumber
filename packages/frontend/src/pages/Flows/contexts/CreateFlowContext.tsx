@@ -1,8 +1,5 @@
 import { createContext, ReactNode, useContext, useState } from 'react'
 
-import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-
 interface CreateFlowContextProps {
   canUseAiBuilder: boolean
   createMode: FLOW_CREATE_MODE | null
@@ -34,19 +31,13 @@ export const CreateFlowContextProvider = ({
   setCreateMode: (mode: FLOW_CREATE_MODE) => void
   children: ReactNode
 }) => {
-  // TODO (kevinkim-ogp): remove the flag value once GA
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const aiBuilderFlag = getFlagValue(AI_BUILDER_FEATURE_FLAG, {
-    enabled: false,
-  })
-  const canUseAiBuilder = aiBuilderFlag.enabled
-
   const [skipModeSelection, setSkipModeSelection] = useState<boolean>(false)
 
   return (
     <CreateFlowContext.Provider
       value={{
-        canUseAiBuilder,
+        // AI Builder is available to every user.
+        canUseAiBuilder: true,
         createMode,
         setCreateMode,
         skipModeSelection,

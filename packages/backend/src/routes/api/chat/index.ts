@@ -105,13 +105,6 @@ const handleChatStream = observe(
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
     const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
 
-    if (!aiBuilderFlag.enabled) {
-      res
-        .status(403)
-        .json({ error: 'You do not have permissions to use AI Builder!' })
-      return
-    }
-
     // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
     const restrictedApps = getRestrictedAppKeys(allLdFlags)
 

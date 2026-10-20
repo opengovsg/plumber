@@ -352,18 +352,6 @@ describe('Chat Route Handler', () => {
       expect(mocks.streamText).toHaveBeenCalled()
     })
 
-    it('should throw error when AI Builder is not enabled', async () => {
-      mocks.getAllLdFlags.mockResolvedValueOnce({
-        'ai-builder': { enabled: false },
-      })
-
-      await executeChatPostHandler(mockReq, mockRes)
-      expect(mockRes.status).toHaveBeenCalledWith(403)
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'You do not have permissions to use AI Builder!',
-      })
-    })
-
     it('should exclude Excel from restricted apps when user has Excel enabled', async () => {
       let capturedMessages: any[] = []
 

@@ -18,7 +18,6 @@ export const SGID_FEATURE_FLAG = 'sgid-login'
  */
 export const ONEGOV_FEATURE_FLAG = 'onegov-enabled'
 export const NESTED_IFTHEN_FEATURE_FLAG = 'feature_nested_if_then'
-export const AI_BUILDER_FEATURE_FLAG = 'ai-builder'
 export const IF_THEN_THEN_FEATURE_FLAG = 'feature_if_then_then'
 export const PLUMPRO_FEATURE_FLAG = 'plumpro'
 
