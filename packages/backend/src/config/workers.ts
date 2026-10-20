@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export const WORKER_CONCURRENCY = {
   'm365-excel': 3,
   postman: 3,
@@ -17,3 +19,10 @@ if (!Number.isInteger(M365_BATCH_SIZE) || M365_BATCH_SIZE < 1) {
     'M365_BATCH_SIZE environment variable must be a positive integer!',
   )
 }
+
+export const OVERDUE_DELAY_STEP_THRESHOLD_SECONDS = z.coerce
+  .number()
+  .int()
+  .positive()
+  .default(300)
+  .parse(process.env.OVERDUE_DELAY_STEP_THRESHOLD_SECONDS)
