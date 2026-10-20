@@ -34,8 +34,13 @@ const mocks = vi.hoisted(() => {
     flow,
     execution,
     shouldTriggerProceed: vi.fn(() => ({ shouldExecute: true })),
+    incrementMetric: vi.fn(),
   }
 })
+
+vi.mock('@/helpers/metrics', () => ({
+  incrementMetric: mocks.incrementMetric,
+}))
 
 vi.mock('@/models/step', () => ({
   default: {
@@ -69,6 +74,45 @@ vi.mock('@/models/execution', () => ({
 describe('processTrigger', () => {
   beforeEach(() => {
     mocks.flow.config = null
+    mocks.incrementMetric.mockClear()
+  })
+
+  describe('execution end count', () => {
+    function getCountedOutcomes(): string[] {
+      return mocks.incrementMetric.mock.calls
+        .filter(([name]) => name === 'plumber.executions.ended')
+        .map(([, tags]) => tags.outcome)
+    }
+
+    it.each([
+      { label: 'the saved kind', error: { kind: 'config' }, outcome: 'config' },
+      {
+        label: 'internal without a kind',
+        error: { error: 'boom' },
+        outcome: 'internal',
+      },
+    ])('counts a trigger error with $label', async ({ error, outcome }) => {
+      await processTrigger({ flowId: 'flow-id', stepId: 'step-id', error })
+
+      expect(getCountedOutcomes()).toEqual([outcome])
+    })
+
+    it('does not count a trigger error in a test run', async () => {
+      await processTrigger({
+        flowId: 'flow-id',
+        stepId: 'step-id',
+        error: { kind: 'config' },
+        testRun: true,
+      })
+
+      expect(getCountedOutcomes()).toEqual([])
+    })
+
+    it('does not count a trigger without an error', async () => {
+      await processTrigger({ flowId: 'flow-id', stepId: 'step-id' })
+
+      expect(getCountedOutcomes()).toEqual([])
+    })
   })
 
   describe('Force clogging', () => {
