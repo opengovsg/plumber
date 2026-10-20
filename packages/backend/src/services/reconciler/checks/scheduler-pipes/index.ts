@@ -4,18 +4,23 @@ import logger from '@/helpers/logger'
 
 import type { ReconcilerCheck } from '../../run-checks'
 import { classifySchedules, parseScheduleEntries } from './classify-schedules'
+import { collectMissedRuns } from './collect-missed-runs'
 import type { SchedulerPipesCheckConfig } from './config'
+import { countMissedRuns } from './count-missed-runs'
 import { fetchPublishedScheduledPipes } from './fetch-published-scheduled-pipes'
+import { FLOW_QUEUE_KEY_PREFIX } from './is-run-time-job-pending'
 
-export const SCHEDULE_ENTRIES_KEY = '{flowQ}:flow:repeat'
+export const SCHEDULE_ENTRIES_KEY = `${FLOW_QUEUE_KEY_PREFIX}:repeat`
 
 interface CreateSchedulerPipesCheckInput {
-  jobsRedis: Pick<Redis, 'zrange'>
+  jobsRedis: Pick<Redis, 'zrange' | 'hmget'>
+  markerRedis: Pick<Redis, 'set'>
   config: SchedulerPipesCheckConfig
 }
 
 export function createSchedulerPipesCheck({
   jobsRedis,
+  markerRedis,
   config,
 }: CreateSchedulerPipesCheckInput): ReconcilerCheck {
   return {
@@ -30,11 +35,28 @@ export function createSchedulerPipesCheck({
         'WITHSCORES',
       )
 
+      const scheduleEntryByFlowId = parseScheduleEntries(zrangeWithScores)
+      const nowMillis = Date.now()
+
       const { missingFlowIds, overdueFlowIds } = classifySchedules({
         publishedFlowIds: publishedPipes.map((pipe) => pipe.flowId),
-        scheduleEntryByFlowId: parseScheduleEntries(zrangeWithScores),
-        nowMillis: Date.now(),
+        scheduleEntryByFlowId,
+        nowMillis,
         graceSeconds: config.missedRunGraceSeconds,
+      })
+
+      const missedRuns = await collectMissedRuns({
+        jobsRedis,
+        publishedPipes,
+        scheduleEntryByFlowId,
+        missingFlowIds,
+        overdueFlowIds,
+        nowMillis,
+        graceSeconds: config.missedRunGraceSeconds,
+      })
+      const newlyCountedMissedRuns = await countMissedRuns({
+        markerRedis,
+        missedRuns,
       })
 
       // The heartbeat log goes last, so it marks a completed run.
@@ -43,6 +65,7 @@ export function createSchedulerPipesCheck({
         publishedPipeCount: publishedPipes.length,
         missingCount: missingFlowIds.length,
         overdueCount: overdueFlowIds.length,
+        newlyCountedMissedRunCount: newlyCountedMissedRuns.length,
       }
       if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
         logger.warn('Scheduler pipes check found problem pipes', logDetails)
