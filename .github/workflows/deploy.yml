@@ -123,10 +123,12 @@ jobs:
           scanned=$(jq -r '.scanned' <<< "$report")
           located=$(jq -r '.located' <<< "$report")
           app_malware=$(jq -r '.app_malware' <<< "$report")
+          unresolved=$(jq -r '.unresolved' <<< "$report")
+          unresolved_malware=$(jq -r '.unresolved_malware' <<< "$report")
           critical=$(jq -r '.critical' <<< "$report")
           high=$(jq -r '.high' <<< "$report")
 
-          for value in "$app_components" "$scanned" "$located" "$app_malware" "$critical" "$high"; do
+          for value in "$app_components" "$scanned" "$located" "$app_malware" "$unresolved" "$unresolved_malware" "$critical" "$high"; do
             case "$value" in
               ''|*[!0-9]*)
                 echo "::warning::App vulnerability count produced a non-integer. Review the full scan."
@@ -145,6 +147,16 @@ jobs:
             echo "::warning::Could not map Inspector findings onto $APP_PATH_PATTERN; app-only filter is not working."
             {
               echo "summary=Could not map findings to app packages, so the app-only filter did not run. Review the full scan."
+              echo "threshold_exceeded=1"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A finding with no path may sit in the app tree. Excluding it would hide app CVEs and malware.
+          if [ "$unresolved" -gt 0 ] || [ "$unresolved_malware" -gt 0 ]; then
+            echo "::warning::$unresolved possible app findings and $unresolved_malware malware findings have no path."
+            {
+              echo "summary=$unresolved possible app findings and $unresolved_malware malware findings have no path, so the app-only filter cannot rule them out. Review the full scan."
               echo "threshold_exceeded=1"
             } >> "$GITHUB_OUTPUT"
             exit 0
