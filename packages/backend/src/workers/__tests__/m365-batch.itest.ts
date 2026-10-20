@@ -103,9 +103,8 @@ vi.mock('@/apps/m365-excel/common/auth-data', () => ({
   }),
 }))
 
-// scope/wrap are plain functions (not vi.fn) so vi.restoreAllMocks() in
-// afterEach - which we use to clean per-test spies - cannot wipe them and
-// break tracing in the next test.
+// scope/wrap are plain functions (not vi.fn) so the mock reset and restore in
+// afterEach cannot wipe them and break tracing in the next test.
 vi.mock('@/helpers/tracer', () => ({
   default: {
     scope: () => ({ active: () => ({ addTags: mocks.addSpanTags }) }),
@@ -375,6 +374,8 @@ describe('m365-excel batch worker (integration)', () => {
     await flushQueue(mainActionQueue, mainActionWorker)
     restoreWorker(batchWorker, originalBatchState)
     restoreWorker(mainActionWorker, originalMainState)
+    // Vitest 4 restoreAllMocks no longer clears factory mock call history.
+    vi.resetAllMocks()
     vi.restoreAllMocks()
   })
 
