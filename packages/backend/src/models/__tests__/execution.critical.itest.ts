@@ -3,10 +3,13 @@
  * - "Count an execution only when it ends. Ignore pending executions."
  * - "One count per execution end, even when for-each sets `failure` twice."
  * - "A user retry counts again."
+ * - "`success` may still overwrite `failure`, as today, but emits no count."
  */
 import { randomUUID } from 'crypto'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { countExecutionEnd } from '@/helpers/execution-end'
 
 import Execution from '../execution'
 import Flow from '../flow'
@@ -24,8 +27,15 @@ async function getStatus(executionId: string) {
 
 let flowId: string
 
+const mocks = vi.hoisted(() => ({ incrementMetric: vi.fn() }))
+
+vi.mock('@/helpers/metrics', () => ({
+  incrementMetric: mocks.incrementMetric,
+}))
+
 describe('Execution.setStatus', () => {
   beforeEach(async () => {
+    mocks.incrementMetric.mockClear()
     const user = await User.query().insert({
       id: randomUUID(),
       email: 'test@example.com',
@@ -71,5 +81,33 @@ describe('Execution.setStatus', () => {
     const ended = await Execution.setStatus(executionId, 'success')
 
     expect(ended).toMatchObject({ testRun: true })
+  })
+
+  it('does not let failure overwrite success', async () => {
+    const executionId = await insertExecution()
+    await Execution.setStatus(executionId, 'success')
+
+    const ended = await Execution.setStatus(executionId, 'failure')
+
+    expect(ended).toBeUndefined()
+    expect(await getStatus(executionId)).toBe('success')
+  })
+
+  it('shows success after a for-each retry succeeds on a failed execution, with one count', async () => {
+    const executionId = await insertExecution()
+
+    countExecutionEnd(
+      await Execution.setStatus(executionId, 'failure'),
+      'third-party',
+    )
+    countExecutionEnd(
+      await Execution.setStatus(executionId, 'success'),
+      'success',
+    )
+
+    expect(await getStatus(executionId)).toBe('success')
+    expect(mocks.incrementMetric.mock.calls).toEqual([
+      ['plumber.executions.ended', { outcome: 'third_party' }],
+    ])
   })
 })
