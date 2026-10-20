@@ -387,6 +387,12 @@ async function getDataOutMetadata(
       (parameters.mrf as ParsedMrfWorkflowStep).approvalField ?? null
   }
 
+  // A test run that reuses a past submission still carries answers to
+  // questions deleted since. Hiding them stops the picker offering them.
+  const formFieldIds = executionStep.metadata?.formFieldIds
+    ? new Set(executionStep.metadata.formFieldIds)
+    : undefined
+
   const fieldMetadata: IDataOutMetadata = Object.create(null)
 
   const fields = Object.entries(data.fields as IJSONObject).sort((a, b) => {
@@ -426,6 +432,14 @@ async function getDataOutMetadata(
     const fieldData = fieldValue as IJSONObject
     // ignore image fields, dont even increment question order
     if (fieldData.fieldType === 'image') {
+      fieldMetadata[fieldId] = { isHidden: true }
+      continue
+    }
+
+    if (
+      formFieldIds &&
+      !formFieldIds.has(getChildrenFieldKey(fieldId, fieldData) ?? fieldId)
+    ) {
       fieldMetadata[fieldId] = { isHidden: true }
       continue
     }
