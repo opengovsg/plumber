@@ -32,7 +32,7 @@
   "dependencies": {
     "@ai-sdk/mcp": "0.0.21",
     "@ai-sdk/openai": "2.0.88",
-    "@apollo/server": "5.5.0",
+    "@apollo/server": "5.5.1",
     "@as-integrations/express4": "1.1.2",
     "@aws-sdk/client-dynamodb": "3.1027.0",
     "@aws-sdk/client-s3": "catalog:",

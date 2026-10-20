@@ -297,11 +297,11 @@ importers:
         specifier: 2.0.88
         version: 2.0.88(zod@4.4.3)
       '@apollo/server':
-        specifier: 5.5.0
-        version: 5.5.0(graphql@16.11.0)(supports-color@5.5.0)
+        specifier: 5.5.1
+        version: 5.5.1(graphql@16.11.0)(supports-color@5.5.0)
       '@as-integrations/express4':
         specifier: 1.1.2
-        version: 1.1.2(@apollo/server@5.5.0(graphql@16.11.0)(supports-color@5.5.0))(express@4.22.1(supports-color@5.5.0))
+        version: 1.1.2(@apollo/server@5.5.1(graphql@16.11.0)(supports-color@5.5.0))(express@4.22.1(supports-color@5.5.0))
       '@aws-sdk/client-dynamodb':
         specifier: 3.1027.0
         version: 3.1027.0
@@ -1247,8 +1247,8 @@ packages:
     peerDependencies:
       graphql: 16.11.0
 
-  '@apollo/server@5.5.0':
-    resolution: {integrity: sha512-vWtodBOK/SZwBTJzItECOmLfL8E8pn/IdvP7pnxN5g2tny9iW4+9sxdajE798wV1H2+PYp/rRcl/soSHIBKMPw==}
+  '@apollo/server@5.5.1':
+    resolution: {integrity: sha512-Rn3g5TJQsMSUY23CWZTghWdBWyjX7dP1eaEBPkvmM2RHi82cDcpgTIkSCbGvtTUEGjwopLv1AAooU/n7iIZ20A==}
     engines: {node: '>=20'}
     peerDependencies:
       graphql: 16.11.0
@@ -10707,7 +10707,7 @@ snapshots:
       '@apollo/utils.logger': 3.0.0
       graphql: 16.11.0
 
-  '@apollo/server@5.5.0(graphql@16.11.0)(supports-color@5.5.0)':
+  '@apollo/server@5.5.1(graphql@16.11.0)(supports-color@5.5.0)':
     dependencies:
       '@apollo/cache-control-types': 1.0.3(graphql@16.11.0)
       '@apollo/server-gateway-interface': 2.0.0(graphql@16.11.0)
@@ -10719,7 +10719,7 @@ snapshots:
       '@apollo/utils.logger': 3.0.0
       '@apollo/utils.usagereporting': 2.1.0(graphql@16.11.0)
       '@apollo/utils.withrequired': 3.0.0
-      '@graphql-tools/schema': 10.1.0(graphql@16.11.0)
+      '@graphql-tools/schema': 10.0.25(graphql@16.11.0)
       async-retry: 1.3.3
       body-parser: 2.3.0(supports-color@5.5.0)
       content-type: 1.0.5
@@ -10729,7 +10729,6 @@ snapshots:
       loglevel: 1.9.2
       lru-cache: 11.5.2
       negotiator: 1.1.0
-      uuid: 11.1.1
       whatwg-mimetype: 4.0.0
     transitivePeerDependencies:
       - supports-color
@@ -10807,9 +10806,9 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@as-integrations/express4@1.1.2(@apollo/server@5.5.0(graphql@16.11.0)(supports-color@5.5.0))(express@4.22.1(supports-color@5.5.0))':
+  '@as-integrations/express4@1.1.2(@apollo/server@5.5.1(graphql@16.11.0)(supports-color@5.5.0))(express@4.22.1(supports-color@5.5.0))':
     dependencies:
-      '@apollo/server': 5.5.0(graphql@16.11.0)(supports-color@5.5.0)
+      '@apollo/server': 5.5.1(graphql@16.11.0)(supports-color@5.5.0)
       express: 4.22.1(supports-color@5.5.0)
 
   '@asamuzakjp/css-color@3.2.0':
@@ -20902,7 +20901,7 @@ snapshots:
   resolve@1.22.12:
     dependencies:
       es-errors: 1.3.0
-      is-core-module: 2.16.1
+      is-core-module: 2.17.0
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
 
