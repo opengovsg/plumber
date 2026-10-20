@@ -72,3 +72,20 @@ export function getStepErrorKind(error: unknown): StepErrorKind {
   }
   return 'internal'
 }
+
+/**
+ * Lets `handleFailedJob` read the kind from the error that replaced the StepError.
+ *
+ * IMPORTANT: non-enumerable, so log redaction never walks into the StepError's HTTP cause.
+ */
+export function attachStepErrorAsCause(target: Error, error: unknown): void {
+  if (!(error instanceof StepError) || Object.hasOwn(target, 'cause')) {
+    return
+  }
+  Object.defineProperty(target, 'cause', {
+    value: error,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  })
+}

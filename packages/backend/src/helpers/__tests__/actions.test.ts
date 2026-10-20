@@ -383,6 +383,30 @@ describe('action helper functions', () => {
       )
 
       it.each([
+        new StepError({ name: 'n', solution: 's', kind: 'config' }),
+        new StepError({ name: 'n', solution: 's', kind: 'third-party' }),
+        new StepError('n', 's', EMPTY_HTTP_ERROR),
+      ])(
+        'attaches the StepError as a non-enumerable cause of the UnrecoverableError',
+        (stepError) => {
+          let thrown: unknown
+          try {
+            handleFailedStepAndThrow({
+              errorDetails: {},
+              executionError: stepError,
+              context: MOCK_CONTEXT,
+            })
+          } catch (e) {
+            thrown = e
+          }
+
+          expect(thrown).toBeInstanceOf(UnrecoverableError)
+          expect((thrown as Error).cause).toBe(stepError)
+          expect(Object.keys(thrown as Error)).not.toContain('cause')
+        },
+      )
+
+      it.each([
         {
           errorDetails: {
             status: 500,

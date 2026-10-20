@@ -2,6 +2,7 @@ import type { IActionJobData } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
+import { getStepErrorKind } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import {
   isErrorEmailAlreadySent,
@@ -10,6 +11,31 @@ import {
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
+import Step from '@/models/step'
+
+/**
+ * Monitors read this log rather than spans, because logs are not sampled.
+ */
+async function logActionJobFailure(
+  failedJob: JobPro<IActionJobData>,
+  err: Error,
+): Promise<void> {
+  const { flowId, stepId } = failedJob.data
+
+  let appKey: string | undefined
+  try {
+    appKey = (await Step.query().findById(stepId))?.appKey
+  } catch {
+    // A missing appKey must not stop the execution from being marked failed.
+  }
+
+  logger.info(`Action job failed for flow ID: ${flowId}`, {
+    event: 'action-job-failed',
+    kind: getStepErrorKind(err.cause),
+    flowId,
+    appKey,
+  })
+}
 
 /**
  * Post-failure side-effects for a single (non-batch) action job: mark its
@@ -55,6 +81,8 @@ export async function handleFailedJob(
   if (willRetryJob) {
     return
   }
+
+  await logActionJobFailure(failedJob, err)
 
   try {
     await Execution.setStatus(executionId, 'failure')

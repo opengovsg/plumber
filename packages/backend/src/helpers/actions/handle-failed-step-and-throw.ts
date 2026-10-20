@@ -9,7 +9,10 @@ import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError, { getStepErrorKind } from '@/errors/step'
+import StepError, {
+  attachStepErrorAsCause,
+  getStepErrorKind,
+} from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -193,6 +196,10 @@ export function handleFailedStepAndThrow(
     span?.addTags({
       willRetry: isRetriable ? 'true' : 'false',
     })
+
+    if (finalError instanceof UnrecoverableError) {
+      attachStepErrorAsCause(finalError, params.executionError)
+    }
 
     throw finalError
   }
