@@ -4,6 +4,7 @@ import TableCollaborator from '@/models/table-collaborators'
 import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
+import { isTileMigrating } from '@/models/tiles/migration/lease'
 import type User from '@/models/user'
 
 import { createColumnAiBuilderConfig } from './tile-ai-builder-config'
@@ -49,6 +50,11 @@ export async function addTileColumnsService({
   const table = await TableMetadata.query().findById(parsedTableId)
   if (!table) {
     throw new UserFacingError('Tile not found')
+  }
+  if (isTileMigrating(table)) {
+    throw new UserFacingError(
+      'This tile is being upgraded. Try again in a few minutes.',
+    )
   }
 
   const existing = await table.$relatedQuery('columns')

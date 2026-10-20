@@ -6,6 +6,7 @@ import {
 } from '@/apps/tiles/common/constants'
 import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import { RateLimitedError } from '@/errors/graphql-errors/rate-limited'
+import { TileMigratingError } from '@/errors/graphql-errors/tile-migrating'
 import InvalidTileViewKeyError from '@/errors/invalid-tile-view-key'
 import InvalidTileViewTokenError from '@/errors/invalid-tile-view-password'
 import logger from '@/helpers/logger'
@@ -46,6 +47,15 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
       await table.$relatedQuery('collaborators').patch({
         lastAccessedAt: new Date().toISOString(),
       })
+    }
+
+    // A DynamoDB cursor reaching a Postgres tile means the tile flipped mid-pagination.
+    if (
+      table.db === 'pg' &&
+      stringifiedCursor &&
+      !/^\d+$/.test(stringifiedCursor)
+    ) {
+      throw new TileMigratingError()
     }
 
     const tableOperations = getTableOperations(table.db)
@@ -91,7 +101,8 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     }
     if (
       e instanceof InvalidTileViewKeyError ||
-      e instanceof InvalidTileViewTokenError
+      e instanceof InvalidTileViewTokenError ||
+      e instanceof TileMigratingError
     ) {
       throw e
     }

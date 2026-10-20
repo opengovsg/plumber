@@ -1457,6 +1457,8 @@ export interface ITableConfig {
   aiBuilderConfig?: ITableAiBuilderConfig
   migratedFromDdb?: boolean
   ddbMigrationExcluded?: boolean
+  /** ISO timestamp. See `models/tiles/migration/lease.ts`. */
+  migrationStartedAt?: string
 }
 
 export interface ITableColumnMetadata {
