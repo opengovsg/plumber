@@ -138,6 +138,7 @@ const batchWorker = appActionBatchWorkers['m365-excel']
 const batchQueue = actionBatchQueues['m365-excel']
 
 let userId: string
+let trackedExecutionIds: string[] = []
 
 //
 // Graph stubs
@@ -265,6 +266,7 @@ async function buildCreateRowFlow(options: {
     flowId: flow.id,
     testRun: false,
   })
+  trackedExecutionIds.push(execution.id)
 
   return {
     flow,
@@ -304,7 +306,12 @@ async function enqueueCreateRowJob(options: {
 async function createTableRowSteps(
   status?: 'success' | 'failure',
 ): Promise<ExecutionStep[]> {
-  const query = ExecutionStep.query().where('key', 'createTableRow')
+  if (trackedExecutionIds.length === 0) {
+    return []
+  }
+  const query = ExecutionStep.query()
+    .where('key', 'createTableRow')
+    .whereIn('execution_id', trackedExecutionIds)
   if (status) {
     query.where('status', status)
   }
@@ -354,6 +361,8 @@ describe('m365-excel batch worker (integration)', () => {
   })
 
   beforeEach(async () => {
+    trackedExecutionIds = []
+    mocks.request.mockReset()
     mocks.acquire.mockResolvedValue({ request: mocks.request })
     mocks.getLdFlagValue.mockImplementation(async () => 'all')
     // Lock disabled by default; the per-file lock tests opt in per test.
