@@ -8,7 +8,6 @@ import {
   TOOLBOX_APP_KEY,
 } from '@/apps/toolbox/common/constants'
 import {
-  IF_THEN_THEN_LD_FLAG_KEY,
   pinEndStep,
   validateEndStepWrite,
 } from '@/apps/toolbox/common/validate-end-step'
@@ -144,18 +143,6 @@ export async function createFlowWithStepsService({
   }
 
   const ldFlags = await getAllLdFlags(user.email)
-  // IMPORTANT: without the flag the editor ignores end markers, so a pinned
-  // block would show later steps as conditional while they run regardless.
-  const isIfThenThenEnabled = ldFlags[IF_THEN_THEN_LD_FLAG_KEY] === true
-  if (
-    !isIfThenThenEnabled &&
-    steps.some((step) => step.ifThenChildCount !== undefined)
-  ) {
-    throw new Error(
-      'Nested steps inside a toolbox/ifThen step are not supported. List every step in the top-level steps array.',
-    )
-  }
-
   // Validate only when all steps have keys
   const allKeysProvided = steps.every((s) => !!s.key)
 
@@ -251,7 +238,7 @@ export async function createFlowWithStepsService({
 
     // Markers point forward, so they need every step's id first.
     for (const [index, step] of steps.entries()) {
-      if (!isIfThenThenEnabled || !isIfThenInput(step)) {
+      if (!isIfThenInput(step)) {
         continue
       }
       const childCount = getIfThenChildCount(steps, index)

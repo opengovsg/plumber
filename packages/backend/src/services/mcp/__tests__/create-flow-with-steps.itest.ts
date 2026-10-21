@@ -25,7 +25,6 @@ describe('createFlowWithStepsService', () => {
           version: 'production',
         },
       },
-      feature_if_then_then: true,
     })
   })
 
@@ -293,93 +292,6 @@ describe('createFlowWithStepsService', () => {
 
     const [, ifThen, email] = result.steps
     expect(ifThen.config.endStepId).toBe(email.id)
-  })
-
-  describe('when the if-then-then flag is off', () => {
-    beforeEach(() => {
-      mocks.getAllLdFlags.mockResolvedValue({})
-    })
-
-    it('rejects an explicit If block', async () => {
-      const user = await User.query().insertAndFetch({
-        id: randomUUID(),
-        email: `create-pipe-block-flag-off-${randomUUID()}@example.com`,
-      })
-
-      await expect(
-        createFlowWithStepsService({
-          user,
-          name: 'Block Pipe',
-          steps: [
-            {
-              appKey: 'formsg',
-              key: 'newSubmission',
-              type: 'trigger',
-              position: 1,
-            },
-            {
-              appKey: 'toolbox',
-              key: 'ifThen',
-              type: 'action',
-              position: 2,
-              ifThenChildCount: 1,
-            },
-            {
-              appKey: 'slack',
-              key: 'sendMessageToChannel',
-              type: 'action',
-              position: 3,
-            },
-            {
-              appKey: 'postman',
-              key: 'sendTransactionalEmail',
-              type: 'action',
-              position: 4,
-            },
-          ],
-          traceId: 'trace-block-flag-off',
-        }),
-      ).rejects.toThrow(/Nested steps inside a toolbox\/ifThen step/)
-      expect(await Flow.query().where({ user_id: user.id }).resultSize()).toBe(
-        0,
-      )
-    })
-
-    it('creates a flat if-then without pinning its end marker', async () => {
-      const user = await User.query().insertAndFetch({
-        id: randomUUID(),
-        email: `create-pipe-flat-flag-off-${randomUUID()}@example.com`,
-      })
-
-      const result = await createFlowWithStepsService({
-        user,
-        name: 'Flat Pipe',
-        steps: [
-          {
-            appKey: 'formsg',
-            key: 'newSubmission',
-            type: 'trigger',
-            position: 1,
-          },
-          {
-            appKey: 'toolbox',
-            key: 'ifThen',
-            type: 'action',
-            position: 2,
-          },
-          {
-            appKey: 'postman',
-            key: 'sendTransactionalEmail',
-            type: 'action',
-            position: 3,
-          },
-        ],
-        traceId: 'trace-flat-flag-off',
-      })
-
-      const [, ifThen] = result.steps
-      expect(ifThen.config.endStepId).toBeUndefined()
-    })
   })
 
   it('rejects a for-each inside an If block with the layout rule message', async () => {

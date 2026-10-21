@@ -134,7 +134,6 @@ export function createMcpBridgeTools(
     parameters: IJSONObject,
     parameterLabels?: Record<string, string>,
   ) => void,
-  { isIfThenThenEnabled = false }: { isIfThenThenEnabled?: boolean } = {},
 ) {
   const tools = {
     list_apps: tool<ListAppsInput, IMcpApp[]>({
@@ -238,18 +237,11 @@ export function createMcpBridgeTools(
     }),
 
     create_pipe: tool({
-      description: isIfThenThenEnabled
-        ? `${createPipeDescription}\n\n${ifBlockGuidance}`
-        : createPipeDescription,
+      description: `${createPipeDescription}\n\n${ifBlockGuidance}`,
       inputSchema: z.object({
         name: z.string().describe('Human-readable name for the pipe'),
         steps: z
-          .array(
-            isIfThenThenEnabled
-              ? nestedPipeStepInputSchema
-              : // A flat step parses to a nested step without `steps`.
-                (pipeStepInputSchema as typeof nestedPipeStepInputSchema),
-          )
+          .array(nestedPipeStepInputSchema)
           .min(1)
           .describe(
             'Ordered list of steps. First element must have trigger_key.',

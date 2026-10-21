@@ -597,13 +597,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('create_pipe flattens the steps nested inside an ifThen into an explicit If block', async () => {
-    const tools = createMcpBridgeTools(
-      mockUser,
-      mockTraceId,
-      undefined,
-      undefined,
-      { isIfThenThenEnabled: true },
-    )
+    const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.create_pipe.execute(
       {
         name: 'Block Pipe',
@@ -638,7 +632,7 @@ describe('createMcpBridgeTools', () => {
     })
   })
 
-  it('create_pipe omits If block nesting when the if-then-then flag is off', () => {
+  it('create_pipe exposes If block nesting and guidance by default', () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     const parsed = (tools.create_pipe.inputSchema as z.ZodType).parse({
       name: 'Block Pipe',
@@ -652,8 +646,10 @@ describe('createMcpBridgeTools', () => {
       ],
     }) as { steps: Record<string, unknown>[] }
 
-    expect(parsed.steps[1]).not.toHaveProperty('steps')
-    expect(tools.create_pipe.description).not.toContain('If block')
+    expect(parsed.steps[1].steps).toEqual([
+      { app_key: 'slack', action_key: 'sendMessageToChannel' },
+    ])
+    expect(tools.create_pipe.description).toContain('If block')
   })
 
   describe('onPipeChange callback', () => {
