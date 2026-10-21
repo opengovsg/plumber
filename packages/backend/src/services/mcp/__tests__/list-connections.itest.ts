@@ -201,7 +201,7 @@ describe('listConnectionsService', () => {
     expect(found).not.toHaveProperty('formattedData')
   })
 
-  it('passes an MRF-tagged label through unchanged now that MRF is supported', async () => {
+  it('omits cached MRF type prefixes without fetching live form metadata', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
       email: `mrf-label-${randomUUID()}@example.com`,
@@ -221,7 +221,7 @@ describe('listConnectionsService', () => {
     const result = await listConnectionsService(user, 'formsg')
 
     expect(result.find((c) => c.id === conn.id)?.label).toBe(
-      '[MRF] 654ab1234abc1a012345f1e0 - Some Form',
+      '654ab1234abc1a012345f1e0 - Some Form',
     )
   })
 })

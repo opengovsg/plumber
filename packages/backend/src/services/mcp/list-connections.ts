@@ -15,11 +15,13 @@ export function connectionLabel(c: {
   description?: string
   key: string
 }): string {
-  return (
+  const label =
     (c.formattedData?.screenName as string | undefined) ??
     c.description ??
     c.key
-  )
+
+  // Stored prefixes can outlive the form's MRF workflow. Live form metadata determines its type.
+  return c.key === 'formsg' ? label.replace(/^\[MRF\]\s*/, '') : label
 }
 
 export async function listConnectionsService(
