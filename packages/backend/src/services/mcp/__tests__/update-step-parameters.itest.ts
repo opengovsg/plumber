@@ -1059,3 +1059,105 @@ describe('no connectionRegistrationType — connectionId set directly', () => {
     expect(dbStep?.connectionId).toBe(connection.id)
   })
 })
+
+describe('empty value guard', () => {
+  let user: User
+  let pipeId: string
+  let emailStepId: string
+  let tilesStepId: string
+
+  beforeEach(async () => {
+    mocks.getAllLdFlags.mockResolvedValue({})
+    mocks.getRestrictedAppKeys.mockReturnValue([])
+
+    user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `empty-guard-${randomUUID()}@example.com`,
+    })
+
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Empty Guard Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+        {
+          appKey: 'postman',
+          key: 'sendTransactionalEmail',
+          type: 'action',
+          position: 2,
+        },
+        {
+          appKey: 'tiles',
+          key: 'createTileRow',
+          type: 'action',
+          position: 3,
+        },
+      ],
+      traceId: 'trace-empty-guard',
+    })
+
+    pipeId = flow.id
+    emailStepId = flow.steps.find((s) => s.appKey === 'postman').id
+    tilesStepId = flow.steps.find((s) => s.appKey === 'tiles').id
+  })
+
+  it('rejects an empty required value and saves nothing', async () => {
+    await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: emailStepId,
+      parameters: { subject: 'Thanks' },
+    })
+
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId,
+        stepId: emailStepId,
+        parameters: { destinationEmail: '', body: '<p>Hi</p>' },
+      }),
+    ).rejects.toThrow(/^Recipient email\(s\) has no value yet/)
+
+    const dbStep = await Step.query().findById(emailStepId)
+    expect(dbStep?.parameters).toEqual({ subject: 'Thanks' })
+  })
+
+  it('rejects an empty rowData array on a Tiles step', async () => {
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId,
+        stepId: tilesStepId,
+        parameters: { rowData: [] },
+      }),
+    ).rejects.toThrow(/is empty\. Collect the column values/)
+  })
+
+  it('rejects a call with no values and no connection', async () => {
+    await expect(
+      updateStepParametersService({
+        user,
+        pipeId,
+        stepId: emailStepId,
+        parameters: {},
+      }),
+    ).rejects.toThrow(/^No parameter values were given/)
+  })
+
+  it('still saves a valid partial update', async () => {
+    const result = await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: emailStepId,
+      parameters: { destinationEmail: ['a@b.com'] },
+    })
+    expect(result.step.parameters).toMatchObject({
+      destinationEmail: ['a@b.com'],
+    })
+  })
+})

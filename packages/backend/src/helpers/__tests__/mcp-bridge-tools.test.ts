@@ -101,6 +101,7 @@ import {
 import { PublishedPipeError } from '@/services/mcp/published-pipe-error'
 import { unpublishPipeService } from '@/services/mcp/unpublish-pipe'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
+import { InvalidStepParametersError } from '@/services/mcp/validate-step-parameter-values'
 
 import { createMcpBridgeTools } from '../mcp-bridge-tools'
 
@@ -303,6 +304,33 @@ describe('createMcpBridgeTools', () => {
         { toolCallId: 'update_step_parameters', messages: [] },
       ),
     ).rejects.toThrow('Step not found')
+  })
+
+  it('returns { error } when update_step_parameters rejects an empty value', async () => {
+    vi.mocked(updateStepParametersService).mockRejectedValueOnce(
+      new InvalidStepParametersError('Recipient email has no value yet.'),
+    )
+    const onPipeChange = vi.fn()
+    const onStepUpdate = vi.fn()
+    const tools = createMcpBridgeTools(
+      mockUser,
+      mockTraceId,
+      onPipeChange,
+      onStepUpdate,
+    )
+
+    const result = await tools.update_step_parameters.execute(
+      {
+        pipe_id: 'flow-1',
+        step_id: 'step-1',
+        parameters: { destinationEmail: '' },
+      },
+      { toolCallId: 'update_step_parameters', messages: [] },
+    )
+
+    expect(result).toEqual({ error: 'Recipient email has no value yet.' })
+    expect(onPipeChange).not.toHaveBeenCalled()
+    expect(onStepUpdate).not.toHaveBeenCalled()
   })
 
   it('does not rewrite operational errors from delete_step', async () => {
