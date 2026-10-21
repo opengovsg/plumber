@@ -3,8 +3,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -66,7 +66,22 @@ export function promptPaths(project, name, root = PROMPTS_DIR) {
     throw new Error(`Invalid prompt name: ${name}`)
   }
   const stem = local.slice(0, -'.md'.length)
+  if (stem.endsWith('.base')) {
+    throw new Error(
+      `Invalid prompt name: ${name}. The .base suffix is reserved.`,
+    )
+  }
   return { local, base: `${stem}.base.md`, meta: `${stem}.meta.json` }
+}
+
+export function getPullBlocker(paths, existing) {
+  if (!existing && existsSync(paths.local)) {
+    return 'The local prompt has no metadata. Back it up, then use --force to discard it.'
+  }
+  if (existing && existing.local !== null && existing.local !== existing.base) {
+    return 'The local prompt has edits. Use --merge to keep them, or --force to discard them.'
+  }
+  return null
 }
 
 export function readLocalPrompt(paths) {
