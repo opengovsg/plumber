@@ -11,14 +11,17 @@ import { EditorContext } from '@/contexts/Editor'
 import { CREATE_STEP } from '@/graphql/mutations/create-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 interface DuplicateStepButtonProps {
   isNested?: boolean
   step: IStep
+  /** Skip FlowStep's hover-reveal CSS, since the parent controls visibility. */
+  alwaysVisible?: boolean
 }
 
 export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
-  const { isNested, step } = props
+  const { isNested, step, alwaysVisible = false } = props
 
   const { flow, isMobile, onDrawerOpen, setCurrentStepId } =
     useContext(EditorContext)
@@ -55,6 +58,9 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
     })
 
     const newStep = createdStep.data.createStep
+    if (isPostHogConfigured) {
+      posthog.capture('flow_step_duplicated')
+    }
     setCurrentStepId(newStep.id)
     onDrawerOpen()
   }, [flow, step, createStep, setCurrentStepId, onDrawerOpen])
@@ -84,8 +90,10 @@ export default function DuplicateStepButton(props: DuplicateStepButtonProps) {
           icon={<BiDuplicate />}
           minHeight={isNested ? 6 : 8}
           minWidth={isNested ? 6 : 8}
-          className={isMobile ? undefined : 'hover-remove-button'}
-          visibility={isMobile ? 'visible' : 'hidden'}
+          className={
+            isMobile || alwaysVisible ? undefined : 'hover-remove-button'
+          }
+          visibility={isMobile || alwaysVisible ? 'visible' : 'hidden'}
         />
       </Tooltip>
       <UnsavedChangesAlert

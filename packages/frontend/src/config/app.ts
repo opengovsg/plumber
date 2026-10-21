@@ -4,10 +4,12 @@ interface AppConfig {
   isDev: boolean
   env: string
   version: string
-  ssoClientId: string
-  ssoHostname: string
   confettiSurveyPublishableKey: string
   confettiSurveyId: string
+  confettiAiBuilderSurveyId: string
+  confettiApiBaseUrl: string
+  posthogProjectToken: string
+  posthogHost: string
 }
 
 function getAppConfig(): AppConfig {
@@ -17,10 +19,18 @@ function getAppConfig(): AppConfig {
   const version = import.meta.env.PACKAGE_VERSION
   const confettiSurveyPublishableKey =
     'cfti_pk_dfde134552a318551e05559024f432ba'
+  // Routed through our own domain, since CSP only allows connecting to
+  // plumber.gov.sg domains directly (see packages/backend/src/helpers/csp.ts).
+  const confettiApiBaseUrl = 'https://confetti.plumber.gov.sg'
+  const posthogProjectToken = 'phc_nwcM6rC7WU7CzdW9Z4zvB3dcZWFM9fn2URbqs35FFQQQ'
+  const posthogHost = 'https://a.plumber.gov.sg'
   const commonEnv = {
     env,
     version,
     confettiSurveyPublishableKey,
+    confettiApiBaseUrl,
+    posthogProjectToken,
+    posthogHost,
   }
 
   switch (env) {
@@ -29,9 +39,8 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ae',
         sgidClientId: 'PLUMBER-c24255a5',
         isDev: false,
-        ssoClientId: 'plumber-prod',
-        ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'n1yv6rl15ynq6wazr3x1pdjc',
+        confettiAiBuilderSurveyId: 'he8paxvow3kv4lp0ozdtxw44',
         ...commonEnv,
       }
     case 'uat':
@@ -39,9 +48,8 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-        ssoClientId: 'plumber-uat',
-        ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
+        confettiAiBuilderSurveyId: 'm6g5hm6803jcbgkip7hqoqim',
         ...commonEnv,
       }
     case 'staging':
@@ -49,9 +57,8 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '65016ca0b45b7712e6c95703',
         sgidClientId: 'PLUMBERSTAGING-776896b1',
         isDev: false,
-        ssoClientId: 'plumber-staging',
-        ssoHostname: 'https://sso.open.gov.sg',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
+        confettiAiBuilderSurveyId: 'm6g5hm6803jcbgkip7hqoqim',
         ...commonEnv,
       }
     default:
@@ -59,9 +66,8 @@ function getAppConfig(): AppConfig {
         launchDarklyClientId: '64bf4b539077f112ef24e4ad',
         sgidClientId: 'PLUMBERLOCALDEV-dc1a72f7',
         isDev: true,
-        ssoClientId: 'plumber-local',
-        ssoHostname: 'http://localhost:5354',
         confettiSurveyId: 'i4wpjgv7x45la64coglh6h9p',
+        confettiAiBuilderSurveyId: 'm6g5hm6803jcbgkip7hqoqim',
         ...commonEnv,
       }
   }

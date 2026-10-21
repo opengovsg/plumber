@@ -7,6 +7,7 @@ import StepError from '@/errors/step'
 import {
   LOOKUP_CONDITIONS_SUBFIELDS,
   MAX_LOOKUP_CONDITIONS,
+  NO_TABLES_MESSAGE,
 } from '../../common/constants'
 import { lookupParametersSchema } from '../../common/schema'
 import { convertRowToHexEncodedRowRecord } from '../../common/workbook-helpers/tables'
@@ -54,6 +55,7 @@ const action: IRawAction = {
       type: 'dropdown' as const,
       showOptionValue: false,
       variables: false,
+      noOptionsMessage: NO_TABLES_MESSAGE,
       source: {
         type: 'query' as const,
         name: 'getDynamicData' as const,

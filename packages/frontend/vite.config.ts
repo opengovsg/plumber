@@ -7,7 +7,7 @@ import { failOnLeakedNodeBuiltins } from './vite-config-utils'
 
 // Ports are assigned per Superset worktree by .superset/base_port.sh and exported as
 // DEV_BACKEND_PORT / DEV_FRONTEND_PORT. Fall back to the classic 3000/3001 for a
-// plain, non-Superset `npm run dev`.
+// plain, non-Superset `pnpm run dev`.
 const backendPort = process.env.DEV_BACKEND_PORT || '3000'
 const frontendPort = Number(process.env.DEV_FRONTEND_PORT) || 3001
 const backendTarget = `http://localhost:${backendPort}`
@@ -41,6 +41,11 @@ export default defineConfig({
         secure: false,
       },
       '/apps': {
+        target: backendTarget,
+        changeOrigin: true,
+        secure: false,
+      },
+      '/admin/queues': {
         target: backendTarget,
         changeOrigin: true,
         secure: false,

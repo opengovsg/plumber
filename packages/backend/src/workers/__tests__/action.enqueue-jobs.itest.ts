@@ -1,8 +1,17 @@
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import { mainActionWorker } from '@/workers/action'
+import { actionQueuesByName } from '@/queues/action'
+import { appActionWorkers, mainActionWorker } from '@/workers/action'
 
 import {
   backupWorker,
@@ -84,6 +93,17 @@ describe('Action worker job enqueueing', () => {
     vi.restoreAllMocks()
   })
 
+  // Close workers and queues so they don't linger in the shared test process
+  // and steal jobs from later itest files on the same Redis queue.
+  afterAll(async () => {
+    await Promise.all(
+      [mainActionWorker, ...Object.values(appActionWorkers)].map((w) =>
+        w.close(),
+      ),
+    )
+    await Promise.all(Object.values(actionQueuesByName).map((q) => q.close()))
+  })
+
   it('enqueues the next step to the correct app queue', async () => {
     mocks.processAction.mockResolvedValueOnce({
       executionStep: { isFailed: false, nextStep: null },
@@ -94,12 +114,13 @@ describe('Action worker job enqueueing', () => {
     })
 
     const jobProcessed = new Promise<void>((resolve) => {
-      mainActionWorker.on('completed', async (_) => {
+      mainActionWorker.once('completed', async (_) => {
         resolve()
       })
     })
     await unmockedEnqueueActionJob({
       appKey: null,
+      actionKey: null,
       jobName: 'test-job',
       jobData: {
         flowId: 'test-flow-id',
@@ -128,7 +149,7 @@ describe('Action worker job enqueueing', () => {
     mocks.enqueueActionJob.mockRejectedValueOnce(new Error('test-error'))
 
     const jobProcessed = new Promise<void>((resolve) => {
-      mainActionWorker.on('failed', async (_job, err) => {
+      mainActionWorker.once('failed', async (_job, err) => {
         if (err instanceof UnrecoverableError && err.message === 'test-error') {
           resolve()
         }
@@ -136,6 +157,7 @@ describe('Action worker job enqueueing', () => {
     })
     await unmockedEnqueueActionJob({
       appKey: null,
+      actionKey: null,
       jobName: 'test-job',
       jobData: {
         flowId: 'test-flow-id',

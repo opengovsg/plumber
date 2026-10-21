@@ -1,0 +1,18 @@
+pull_request_rules:
+  - name: Approve and merge non-major version dependabot upgrades
+    conditions:
+      - author~=^dependabot\[bot\]$
+      - check-success~=tests
+      - -dependabot-update-type = version-update:semver-major
+    actions:
+      review:
+        type: APPROVE
+      merge:
+        method: squash
+
+  - name: Automatically mark a PR as draft if [WIP] is in the title
+    conditions:
+      - title~=(?i)\[wip\]
+    actions:
+      edit:
+        draft: true

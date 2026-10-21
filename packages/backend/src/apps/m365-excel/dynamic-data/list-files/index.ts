@@ -33,11 +33,13 @@ const dynamicData: IDynamicData = {
 
     return {
       data: results.data.value
-        .map((entry) => ({
+        .map((entry: { name: string; id: string }) => ({
           name: entry.name,
           value: entry.id,
         }))
-        .filter((entry) => entry.name.endsWith('.xlsx')),
+        .filter((entry: { name: string; value: string }) =>
+          entry.name.endsWith('.xlsx'),
+        ),
     }
   },
 }

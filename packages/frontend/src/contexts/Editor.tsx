@@ -33,12 +33,20 @@ import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-s
 import {
   isForEachStep,
   isIfThenStep,
+  SELF_END_STEP_SENTINEL,
   TOOLBOX_ACTIONS,
   TOOLBOX_APP_KEY,
-  useIfThenInitializer,
+  useIfThenV1Initializer,
 } from '@/helpers/toolbox'
 import { extractVariables, StepWithVariables } from '@/helpers/variables'
 import { useApps } from '@/hooks/useApps'
+
+interface OnCreateStepOptions {
+  previousBlockId?: string
+  // The caller resolves the owner-scoped flag and passes it here; the
+  // provider component can't read it itself.
+  isIfThenV2Enabled?: boolean
+}
 
 interface IEditorContextValue {
   flow: IFlow
@@ -74,6 +82,7 @@ interface IEditorContextValue {
     eventKey: string,
     connectionId?: string,
     config?: IStepConfig,
+    options?: OnCreateStepOptions,
   ) => Promise<IStep>
   onUpdateStep: (step: IStep, onCompleted?: () => void) => Promise<IStep>
   allApps: IApp[]
@@ -198,7 +207,10 @@ export const EditorProvider = ({
     refetchQueries: [GET_FLOW],
   })
 
-  const [initializeIfThen, isInitializingIfThen] = useIfThenInitializer()
+  // The caller (a flag-aware modal consumer) tells onCreateStep which one to
+  // use, since the provider component can't read its own EditorContext to
+  // evaluate the flag.
+  const [initializeIfThenV1, isInitializingIfThenV1] = useIfThenV1Initializer()
 
   // Add a step to the flow with the given appKey and eventKey
   const onCreateStep = useCallback(
@@ -208,11 +220,20 @@ export const EditorProvider = ({
       eventKey: string,
       connectionId?: string,
       config?: IStepConfig,
+      options?: OnCreateStepOptions,
     ) => {
+      const isIfThen =
+        appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen
+      const isIfThenV2Creation = isIfThen && !!options?.isIfThenV2Enabled
+
       const mutationInput = {
         previousStep: {
           id: previousStepId,
         },
+        // Set only from an if-then block's add-after affordance, so the
+        // backend can place the step after the block and pin an if-then V1
+        // block's extent.
+        previousBlockId: options?.previousBlockId,
         flow: {
           id: flowId,
           updatedAt: flow.updatedAt,
@@ -220,7 +241,13 @@ export const EditorProvider = ({
         appKey,
         key: eventKey,
         connection: { id: connectionId },
-        config,
+        // The real id doesn't exist until after insert, so the backend
+        // resolves the sentinel into a self-reference in the same createStep
+        // transaction — no separate updateStep round-trip, no marker-absent
+        // window.
+        config: isIfThenV2Creation
+          ? { ...config, endStepId: SELF_END_STEP_SENTINEL }
+          : config,
       }
 
       const createdStep = await createStep({
@@ -230,16 +257,17 @@ export const EditorProvider = ({
       let newStep = createdStep.data.createStep
       setCurrentStepId(newStep.id)
 
-      // account for the for-each and if-then
-      if (appKey === TOOLBOX_APP_KEY && eventKey === TOOLBOX_ACTIONS.IfThen) {
-        newStep = await initializeIfThen(newStep)
+      // if-then V1 still needs its two-branch setup after creation; V2
+      // self-refs in the same createStep call above.
+      if (isIfThen && !isIfThenV2Creation) {
+        newStep = await initializeIfThenV1(newStep)
       }
       // we refetch GET_FLOW after everything is completed
       await client.refetchQueries({ include: [GET_FLOW] })
 
       return newStep as IStep
     },
-    [createStep, flow, flowId, initializeIfThen],
+    [createStep, flow, flowId, initializeIfThenV1],
   )
 
   /**
@@ -391,7 +419,7 @@ export const EditorProvider = ({
           isLoadingTestExecutionSteps ||
           isCreatingStep ||
           isUpdatingStep ||
-          isInitializingIfThen,
+          isInitializingIfThenV1,
         hasFlowTransfer,
       }}
     >

@@ -79,9 +79,8 @@ export default function ChooseAndAddConnection(
     setCurrentStepId,
     executeTestStep,
   } = useContext(EditorContext)
-  const { modalState, patchModalState, step, prevStep } = useContext(
-    FlowStepConfigurationContext,
-  )
+  const { modalState, patchModalState, step, prevStep, previousBlockId } =
+    useContext(FlowStepConfigurationContext)
 
   const { approvalBranches } = useContext(MrfContext)
   const { currentScreen, selectedApp, selectedEvent } = modalState
@@ -143,6 +142,7 @@ export default function ChooseAndAddConnection(
             selectedEvent.key,
             connectionId,
             approvalConfig && { approval: approvalConfig },
+            { previousBlockId },
           )
           newStepId = createdStep.id
         } else if (step) {
@@ -175,6 +175,7 @@ export default function ChooseAndAddConnection(
       selectedEvent,
       patchModalState,
       prevStep,
+      previousBlockId,
       step,
       onClose,
       onDrawerOpen,

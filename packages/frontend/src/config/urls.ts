@@ -13,7 +13,9 @@ export const FOUR_O_FOUR = '/404'
 
 export const LOGIN = '/login'
 export const LOGIN_SGID_REDIRECT = '/login/sgid/redirect'
+export const LOGIN_SSO = '/login/sso'
 export const LOGIN_SSO_REDIRECT = '/login/sso/redirect'
+export const LOGIN_UNAUTHORIZED = '/login/unauthorized'
 
 export const ADD_REDIRECT_TO_LOGIN = (redirectQueryParam: string): string =>
   `${LOGIN}/?redirect=${redirectQueryParam}`
@@ -29,6 +31,10 @@ export const APP_FLOWS_FOR_CONNECTION = (
   appKey: string,
   connectionId: string,
 ): string => `/app/${appKey}/flows?connectionId=${connectionId}`
+export const APP_EDIT_CONNECTION = (
+  appKey: string,
+  connectionId: string,
+): string => `/app/${appKey}/connections/${connectionId}/edit`
 export const APP_FLOWS_PATTERN = '/app/:appKey/flows'
 
 export const EDITOR = '/editor'

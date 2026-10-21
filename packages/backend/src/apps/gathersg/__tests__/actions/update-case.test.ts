@@ -7,6 +7,7 @@ import HttpError from '@/errors/http'
 
 import app from '../../..'
 import updateCaseAction from '../../actions/update-case'
+import * as attachment from '../../common/attachment'
 
 const MOCK_RESPONSE = {
   traceId: 'trace-123456789',
@@ -23,6 +24,9 @@ const MOCK_CASE_FIELDS = [
 const mocks = vi.hoisted(() => ({
   httpPatch: vi.fn(() => ({
     data: MOCK_RESPONSE,
+  })),
+  httpGet: vi.fn(() => ({
+    data: { data: { fields: {} } },
   })),
 }))
 
@@ -52,6 +56,10 @@ describe('update case', () => {
       },
       http: {
         patch: mocks.httpPatch,
+        get: mocks.httpGet,
+        post: vi.fn(async () => {
+          throw new Error('search should not run for a case uuid')
+        }),
       } as unknown as IGlobalVariable['http'],
       setActionItem: vi.fn(),
       app,
@@ -138,15 +146,66 @@ describe('update case', () => {
   it('should throw step error for invalid regex case uuid', async () => {
     $.step.parameters.caseUuid = 'invalid-uuid-with-dashes'
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please enter a valid case uuid',
+      'Please enter a valid case uuid or case ref',
     )
   })
 
   it('should throw step error for empty case uuid', async () => {
     $.step.parameters.caseUuid = ''
     await expect(updateCaseAction.run($)).rejects.toThrow(
-      'Please do not leave the case uuid empty',
+      'Please do not leave the case uuid or case ref empty',
     )
+  })
+
+  it('skips search when the value is a case uuid', async () => {
+    await updateCaseAction.run($)
+
+    expect($.http.post).not.toHaveBeenCalled()
+  })
+
+  it('searches by case ref and patches that case uuid', async () => {
+    const httpPost = vi.fn(async () => ({
+      data: {
+        total: 1,
+        data: [{ uuid: MOCK_CASE_UUID }],
+      },
+    }))
+    $.http.post = httpPost as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = '261007-00001'
+
+    await updateCaseAction.run($)
+
+    expect(httpPost).toHaveBeenCalledWith('/cases/search', {
+      caseRefs: ['261007-00001'],
+      page: 1,
+      size: 10,
+    })
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      expect.objectContaining({
+        caseUuid: MOCK_CASE_UUID,
+      }),
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('throws when a case ref matches more than one case', async () => {
+    $.http.post = vi.fn(async () => ({
+      data: {
+        data: [{ uuid: MOCK_CASE_UUID }, { uuid: 'abcdefghijklmnopqrstuv' }],
+      },
+    })) as unknown as typeof $.http.post
+    $.step.parameters.caseUuid = '261007-00001'
+    mocks.httpPatch.mockClear()
+
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'More than one case found for case ref 261007-00001',
+    )
+    expect(mocks.httpPatch).not.toHaveBeenCalled()
   })
 
   it('should throw step error for empty field', async () => {
@@ -216,7 +275,7 @@ describe('update case', () => {
     mocks.httpPatch.mockRejectedValueOnce(httpError)
 
     await expect(updateCaseAction.run($)).rejects.toThrowError(
-      'Check that you have provided values for required fields and entered the correct value type (e.g., numbers, strings, etc.) for: age, score',
+      'Check these fields in your step: age, score. Make sure each has a value. If any is a Dropdown, Checkbox, or Radio Button, use a value that exactly matches an option in Ownself Gather. If any is an attachment field, keep the total files at or below the maximum configured in Ownself Gather.',
     )
   })
 
@@ -339,5 +398,499 @@ describe('update case', () => {
         },
       },
     )
+  })
+
+  it('builds the payload correctly with a checkbox field from a FormSG checkbox array', async () => {
+    $.step.parameters.caseFields = [
+      {
+        field: 'categories',
+        fieldType: 'checkbox',
+        value: ['Housing', 'Finance'],
+      },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          categories: ['Housing', 'Finance'],
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('wraps a FormSG dropdown string into a dropdown array', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'priority', fieldType: 'dropdown', value: 'High' },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          priority: ['High'],
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('posts a radio field as a plain string', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'severity', fieldType: 'radio', value: 'High' },
+    ]
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          severity: 'High',
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('should throw step error for an empty checkbox field', async () => {
+    $.step.parameters.caseFields = [
+      { field: 'categories', fieldType: 'checkbox', value: [] },
+    ]
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'List value empty for field: categories',
+    )
+  })
+
+  it('uploads attachments and merges uuids into the patch fields', async () => {
+    const uploadSpy = vi
+      .spyOn(attachment, 'uploadCaseAttachments')
+      .mockResolvedValue(['file-uuid-1', 'file-uuid-2'])
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: [
+          's3:bucket:flow-id-123/a/one.png',
+          's3:bucket:flow-id-123/a/two.png',
+        ],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).toHaveBeenCalledWith({
+      $,
+      caseUuid: MOCK_CASE_UUID,
+      field: 'photos',
+      fieldType: 'attachment',
+      s3Ids: [
+        's3:bucket:flow-id-123/a/one.png',
+        's3:bucket:flow-id-123/a/two.png',
+      ],
+    })
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: { photos: ['file-uuid-1', 'file-uuid-2'] },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it("appends uploaded attachments to the case's existing attachments", async () => {
+    vi.spyOn(attachment, 'uploadCaseAttachments').mockResolvedValue([
+      'new-uuid',
+    ])
+    mocks.httpGet.mockReturnValueOnce({
+      data: {
+        data: { fields: { photos: ['existing-uuid-1', 'existing-uuid-2'] } },
+      },
+    })
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(mocks.httpGet).toHaveBeenCalledWith('/cases/:caseUuid', {
+      urlPathParams: { caseUuid: MOCK_CASE_UUID },
+    })
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: { photos: ['existing-uuid-1', 'existing-uuid-2', 'new-uuid'] },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('replaces existing attachments when replaceExisting is true', async () => {
+    vi.spyOn(attachment, 'uploadCaseAttachments').mockResolvedValue([
+      'new-uuid',
+    ])
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: true,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(mocks.httpGet).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: { photos: ['new-uuid'] },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('reads the case once, after all uploads, when several fields append', async () => {
+    vi.spyOn(attachment, 'uploadCaseAttachments')
+      .mockResolvedValueOnce(['photo-uuid'])
+      .mockResolvedValueOnce(['doc-uuid'])
+    mocks.httpGet.mockReturnValueOnce({
+      data: {
+        data: {
+          fields: {
+            photos: ['existing-photo'],
+            supporting_documents: ['existing-doc'],
+          },
+        },
+      },
+    })
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+      {
+        field: 'supporting_documents',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/two.pdf'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    // A single snapshot keeps the read-modify-write window as narrow as
+    // possible, instead of reading once per field between uploads.
+    expect(mocks.httpGet).toHaveBeenCalledTimes(1)
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: {
+          photos: ['existing-photo', 'photo-uuid'],
+          supporting_documents: ['existing-doc', 'doc-uuid'],
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('uploads attachments to multiple attachment fields in one run', async () => {
+    const uploadSpy = vi
+      .spyOn(attachment, 'uploadCaseAttachments')
+      .mockResolvedValueOnce(['photo-uuid'])
+      .mockResolvedValueOnce(['doc-uuid'])
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+      {
+        field: 'supporting_documents',
+        replaceExisting: true,
+        attachments: ['s3:bucket:flow-id-123/a/two.pdf'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).toHaveBeenCalledTimes(2)
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: {
+          photos: ['photo-uuid'],
+          supporting_documents: ['doc-uuid'],
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('merges uploaded attachments alongside existing case fields', async () => {
+    vi.spyOn(attachment, 'uploadCaseAttachments').mockResolvedValue([
+      'file-uuid-1',
+    ])
+
+    // keep the default MOCK_CASE_FIELDS and add an attachment field
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+          photos: ['file-uuid-1'],
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('skips an attachment field whose attachments are empty, and still updates the rest of the case', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: [],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('skips an attachment field whose file variable resolved to an empty string', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        // What computeParameters leaves behind when the submission had no file
+        // for the selected attachment variable.
+        attachments: [''],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpGet).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('does not wipe existing attachments when a replace-mode field receives no attachments', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: true,
+        attachments: [''],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      { caseUuid: MOCK_CASE_UUID, fields: {} },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('uploads the fields that did receive attachments and skips the ones that did not', async () => {
+    const uploadSpy = vi
+      .spyOn(attachment, 'uploadCaseAttachments')
+      .mockResolvedValue(['doc-uuid'])
+
+    $.step.parameters.caseFields = []
+    delete $.step.parameters.caseStatus
+    $.step.parameters.attachmentFields = [
+      { field: 'photos', replaceExisting: false, attachments: [''] },
+      {
+        field: 'supporting_documents',
+        replaceExisting: true,
+        attachments: ['s3:bucket:flow-id-123/a/two.pdf'],
+      },
+    ]
+
+    await updateCaseAction.run($)
+
+    expect(uploadSpy).toHaveBeenCalledTimes(1)
+    expect(uploadSpy).toHaveBeenCalledWith({
+      $,
+      caseUuid: MOCK_CASE_UUID,
+      field: 'supporting_documents',
+      fieldType: 'attachment',
+      s3Ids: ['s3:bucket:flow-id-123/a/two.pdf'],
+    })
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        fields: { supporting_documents: ['doc-uuid'] },
+      },
+      { urlPathParams: { caseUuid: MOCK_CASE_UUID } },
+    )
+  })
+
+  it('does not call the upload helper when no attachments are set', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    await updateCaseAction.run($)
+    expect(uploadSpy).not.toHaveBeenCalled()
+  })
+
+  it('ignores leftover attachments when the attachment field is cleared', async () => {
+    const uploadSpy = vi.spyOn(attachment, 'uploadCaseAttachments')
+    $.step.parameters.attachmentFields = [
+      {
+        field: '',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+    ]
+    await updateCaseAction.run($)
+    expect(uploadSpy).not.toHaveBeenCalled()
+    expect(mocks.httpPatch).toHaveBeenCalledWith(
+      '/cases/:caseUuid',
+      {
+        caseUuid: MOCK_CASE_UUID,
+        status: MOCK_CASE_STATUS,
+        fields: {
+          name: 'Peter Parker',
+          age: 30,
+          notes: null,
+        },
+      },
+      {
+        urlPathParams: {
+          caseUuid: MOCK_CASE_UUID,
+        },
+      },
+    )
+  })
+
+  it('throws when the same attachment field is repeated', async () => {
+    $.step.parameters.attachmentFields = [
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/one.png'],
+      },
+      {
+        field: 'photos',
+        replaceExisting: false,
+        attachments: ['s3:bucket:flow-id-123/a/two.png'],
+      },
+    ]
+    await expect(updateCaseAction.run($)).rejects.toThrow(
+      'photos attachment field is repeated',
+    )
+  })
+
+  it('reports doesFileProcessing when attachmentFields contain files', () => {
+    expect(
+      updateCaseAction.doesFileProcessing?.({
+        parameters: {
+          attachmentFields: [
+            {
+              field: 'photos',
+              replaceExisting: false,
+              attachments: ['s3:bucket:flow-id-123/a/one.png'],
+            },
+          ],
+        },
+      } as never),
+    ).toBe(true)
+    expect(
+      updateCaseAction.doesFileProcessing?.({
+        parameters: { attachmentFields: [] },
+      } as never),
+    ).toBe(false)
   })
 })

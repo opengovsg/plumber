@@ -8,6 +8,7 @@ import {
 
 import { sha256Hash } from '@/helpers/crypto'
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import EmailSuppressionEntry from '@/models/email-suppression-entry'
 
 import { getSdk, parseFormEnv } from '../common/form-env'
@@ -20,6 +21,7 @@ import { processResponsesV3 } from './helpers/process-v3-responses'
 import { processResponsesV4 } from './helpers/process-v4-responses'
 import storeAttachmentInS3 from './helpers/store-attachment-in-s3'
 import { decryptFormAttachmentsV3OrV4 } from './decrypt-form-attachments-v3-or-v4'
+import { areAttachmentUrlsTrusted } from './trusted-attachment-urls'
 
 const NRIC_VERIFIED_FIELDS = new Set(['sgidUinFin', 'uinFin'])
 
@@ -102,7 +104,8 @@ export async function decryptFormResponse(
     return { verified: false, internalId: null }
   }
 
-  const formSgSdk = getSdk(parseFormEnv($))
+  const formEnv = parseFormEnv($)
+  const formSgSdk = getSdk(formEnv)
 
   const {
     headers,
@@ -149,6 +152,19 @@ export async function decryptFormResponse(
     // shouldStoreAttachments should only consider steps after the mrf step instead of the whole pipe
     // but leaving it as such for now to avoid complexity
     if (shouldStoreAttachments && data.attachmentDownloadUrls) {
+      // Checked before downloading anything, so a forged URL costs us no
+      // requests. Returning here keeps it on the same 401 path as every other
+      // untrusted payload, instead of surfacing a 500 and a stack trace.
+      if (!areAttachmentUrlsTrusted(data.attachmentDownloadUrls, formEnv)) {
+        logger.error({
+          event: 'formsg-untrusted-attachment-url',
+          formId: data.formId,
+          submissionId: data.submissionId,
+          attachmentDownloadUrls: data.attachmentDownloadUrls,
+        })
+        return { verified: false, internalId: null }
+      }
+
       attachments = await decryptFormAttachmentsV3OrV4(
         formSgSdk,
         decryptedSubmission.submissionSecretKey,
@@ -222,19 +238,26 @@ export async function decryptFormResponse(
         rest.answer = filteredAnswer
       }
 
-      if (rest.fieldType === 'attachment' && shouldStoreAttachments) {
-        let s3FolderId = data.submissionId
-        if (data.workflowContent) {
-          // we add a suffix if it's an mrf step to prevent
-          // overwriting attachments from previous steps
-          s3FolderId += `-${workflowContent.workflowStep}`
+      let attachmentFilename: string | undefined
+      if (rest.fieldType === 'attachment') {
+        // IMPORTANT: Capture before storeAttachmentInS3 replaces answer with an
+        // opaque S3 ID.
+        attachmentFilename = rest.answer ?? ''
+
+        if (shouldStoreAttachments) {
+          let s3FolderId = data.submissionId
+          if (data.workflowContent) {
+            // we add a suffix if it's an mrf step to prevent
+            // overwriting attachments from previous steps
+            s3FolderId += `-${workflowContent.workflowStep}`
+          }
+          rest.answer = await storeAttachmentInS3(
+            $,
+            s3FolderId,
+            formField,
+            attachments,
+          )
         }
-        rest.answer = await storeAttachmentInS3(
-          $,
-          s3FolderId,
-          formField,
-          attachments,
-        )
       }
 
       if (rest.fieldType === 'address') {
@@ -255,13 +278,17 @@ export async function decryptFormResponse(
       parsedData[_id.replaceAll('.', '_')] = {
         order: index + 1,
         ...rest,
+        ...(attachmentFilename !== undefined && {
+          filename: attachmentFilename,
+        }),
       }
     }
 
     if (verifiedEmails.length > 0) {
       try {
-        const whitelisted = await EmailSuppressionEntry.whitelistEmails(
-          verifiedEmails,
+        const whitelisted = await retryOnTransientDbError(
+          () => EmailSuppressionEntry.whitelistEmails(verifiedEmails),
+          { context: { flowId: $.flow.id, stepId: $.step.id } },
         )
         if (whitelisted.length > 0) {
           logger.info(

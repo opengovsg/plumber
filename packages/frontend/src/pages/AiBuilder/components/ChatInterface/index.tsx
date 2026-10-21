@@ -1,13 +1,14 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Box, Flex, Text } from '@chakra-ui/react'
+import { Box, Flex, Link, Text } from '@chakra-ui/react'
 import { StickToBottom } from 'use-stick-to-bottom'
 
 import * as URLS from '@/config/urls'
 import { Message } from '@/hooks/useChatStream'
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import ChatMessages from '@/pages/AiBuilder/components/ChatMessages'
-import { PLACEHOLDER_MESSAGES } from '@/pages/AiBuilder/constants'
+import { PLACEHOLDER_MESSAGE } from '@/pages/AiBuilder/constants'
+import { buildSupportFormUrl } from '@/pages/AiBuilder/helpers'
 import { createNewChatDraft } from '@/pages/AiBuilder/new-chat'
 
 import MessageLimitBanner from './MessageLimitBanner'
@@ -18,29 +19,50 @@ import SideDrawer from './SideDrawer'
 interface ChatInterfaceProps {
   messages: Message[]
   currentResponse: string
+  isWorking: boolean
   isStreaming: boolean
   isReadyForPreview: boolean
   sendMessage: (message: string) => void
   cancelStream: () => void
   resetChat: () => void
   hasReachedLimit: boolean
+  onAddConnection?: (context: { question: string; appKey: string }) => void
+  knownFormUrl?: string
+  onConnectForm?: () => void
+  /** Resets any form-connection state that lives outside useChatStream's own reset. */
+  onNewChat?: () => void
+  onSelectExistingForm?: (label: string, connectionId: string) => void
+  attachedForm?: { label: string; isConnected?: boolean } | null
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
   const {
     messages,
     currentResponse,
+    isWorking,
     isStreaming,
     isReadyForPreview,
     sendMessage,
     cancelStream,
     resetChat,
     hasReachedLimit,
+    onAddConnection,
+    knownFormUrl,
+    onConnectForm,
+    onNewChat,
+    onSelectExistingForm,
+    attachedForm,
   } = props
   const navigate = useNavigate()
   const location = useLocation()
-  const { chatInput, isMobile, isDrawerOpen, setIsDrawerOpen, setChatState } =
-    useAiBuilderContext()
+  const {
+    chatId,
+    chatInput,
+    isMobile,
+    isDrawerOpen,
+    setIsDrawerOpen,
+    setChatState,
+  } = useAiBuilderContext()
 
   const hasMessages = messages.length > 0 || isStreaming
 
@@ -50,9 +72,25 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       ? lastMessage.clarification
       : undefined
 
+  const activeDynamicPicker =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.dynamicPicker
+      : undefined
+
+  const activeColumnTable =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.columnTable
+      : undefined
+
+  const activeTileSetup =
+    lastMessage && !lastMessage.isUser && !isStreaming
+      ? lastMessage.tileSetup
+      : undefined
+
   const handleNewChat = useCallback(() => {
     cancelStream()
     resetChat()
+    onNewChat?.()
     setIsDrawerOpen(false)
 
     // Build the new draft from the last assistant message's continuation prompt.
@@ -69,6 +107,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
   }, [
     cancelStream,
     resetChat,
+    onNewChat,
     setIsDrawerOpen,
     setChatState,
     navigate,
@@ -119,9 +158,10 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             cancelStream={cancelStream}
             showIdeas
             initialValue={chatInput}
-            placeholder={
-              PLACEHOLDER_MESSAGES[Date.now() % PLACEHOLDER_MESSAGES.length]
-            }
+            placeholder={PLACEHOLDER_MESSAGE}
+            onConnectForm={onConnectForm}
+            onSelectExistingForm={onSelectExistingForm}
+            attachedForm={attachedForm}
           />
         </Flex>
       </Flex>
@@ -152,6 +192,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
           <ChatMessages
             messages={messages}
             currentResponse={currentResponse}
+            isWorking={isWorking}
             isStreaming={isStreaming}
           />
 
@@ -166,7 +207,7 @@ export default function ChatInterface(props: ChatInterfaceProps) {
             <Box
               maxW="3xl"
               mx="auto"
-              px={4}
+              px={8}
               py={4}
               gap={4}
               display="flex"
@@ -181,6 +222,14 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   isStreaming={isStreaming}
                   cancelStream={cancelStream}
                   clarification={activeClarification}
+                  dynamicPicker={activeDynamicPicker}
+                  columnTable={activeColumnTable}
+                  tileSetup={activeTileSetup}
+                  onAddConnection={onAddConnection}
+                  knownFormUrl={knownFormUrl}
+                  onConnectForm={onConnectForm}
+                  onSelectExistingForm={onSelectExistingForm}
+                  attachedForm={attachedForm}
                 />
               )}
               {!isMobile && (
@@ -190,6 +239,15 @@ export default function ChatInterface(props: ChatInterfaceProps) {
                   textAlign="center"
                 >
                   This feature is new and still improving. It can make mistakes.
+                  Still need help?{' '}
+                  <Link
+                    href={buildSupportFormUrl(chatId)}
+                    isExternal
+                    textDecoration="underline"
+                  >
+                    Contact us here
+                  </Link>
+                  .
                 </Text>
               )}
             </Box>

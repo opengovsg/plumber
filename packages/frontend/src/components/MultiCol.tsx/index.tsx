@@ -1,19 +1,21 @@
 import type { IFieldMultiRowMultiColSubField } from '@plumber/types'
 
 import React, { useContext } from 'react'
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { BiTrash } from 'react-icons/bi'
-import { Divider, Flex } from '@chakra-ui/react'
+import { Box, Divider, Flex, Text } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
+import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 import { applyDynamicPlaceholder } from './utils'
 
 type MultiColProps = {
   name: string
   subFields: IFieldMultiRowMultiColSubField[]
+  visibleColumnKeys?: Set<string>
   canRemoveRow?: boolean
   isEditorReadOnly?: boolean
   remove?: (index?: number | number[]) => void
@@ -24,6 +26,7 @@ export default function MultiCol(props: MultiColProps) {
   const {
     name,
     subFields,
+    visibleColumnKeys,
     canRemoveRow,
     isEditorReadOnly,
     remove,
@@ -33,6 +36,13 @@ export default function MultiCol(props: MultiColProps) {
 
   const { isMobile } = useContext(EditorContext)
   const { getValues } = useFormContext()
+  // Subscribe so switching fieldType (e.g. Text <-> Dropdown) drops the hidden
+  // sibling's flex wrapper instead of leaving an empty gap.
+  const rowParams = useWatch({ name }) ?? {}
+
+  // Desktop table headers sit above the first row only. Mobile stacks columns,
+  // so labels are shown per input instead.
+  const hasColumnHeaders = !isMobile && subFields.some((subF) => subF.label)
 
   const DeleteButton = () => {
     return (
@@ -53,16 +63,18 @@ export default function MultiCol(props: MultiColProps) {
   ) => {
     const { type, variables } = subF
 
-    // Only show labels, descriptions, and tooltips on the first row
-    let schemaWithConditionalLabel =
-      index === 0
-        ? subF
-        : {
-            ...subF,
-            label: undefined,
-            description: undefined,
-            tooltipText: undefined,
-          }
+    // Desktop: labels/descriptions/tooltips only on the first row, and never
+    // once they are rendered as column headers. Mobile: every stacked row
+    // needs its own labels.
+    const shouldShowFieldLabel = isMobile || (index === 0 && !hasColumnHeaders)
+    let schemaWithConditionalLabel = shouldShowFieldLabel
+      ? subF
+      : {
+          ...subF,
+          label: undefined,
+          description: undefined,
+          tooltipText: undefined,
+        }
 
     schemaWithConditionalLabel = applyDynamicPlaceholder(
       schemaWithConditionalLabel,
@@ -83,20 +95,47 @@ export default function MultiCol(props: MultiColProps) {
   return (
     <Flex flexDir={isMobile ? 'column' : 'row'} gap={2} alignItems="flex-end">
       {subFields.map((subF, subFIndex) => {
+        // Skip the flex wrapper entirely when this row hides the sub-field.
+        // Otherwise an empty flex slot (e.g. Text value while type is List)
+        // leaves a gap and pushes the visible value input right.
+        if (isFieldHidden(subF.hiddenIf, rowParams)) {
+          return null
+        }
+
         const showDeleteButton = subFIndex === 0 && canRemoveRow
+        // Index in the key: two sub-fields can share a key (e.g. value for
+        // Text vs List) and must not collide when both are in the map.
+        const subFieldKey = `${name}.${subF.key}.${subFIndex}`
         return isMobile ? (
-          <React.Fragment key={`${name}.${subF.key}`}>
+          <React.Fragment key={subFieldKey}>
             {index !== 0 && subFIndex === 0 && <Divider />}
             <Flex
-              key={`${name}.${subF.key}`}
+              key={subFieldKey}
               style={{ flex: 1, width: '100%', marginTop: 8 }}
             >
               {renderSubFieldInput(subF, subFIndex)}
               {showDeleteButton && <DeleteButton />}
             </Flex>
           </React.Fragment>
+        ) : hasColumnHeaders && index === 0 ? (
+          // Stretching keeps the header pinned to the top and the input to the
+          // bottom, so a hidden input or a wrapped header can't knock the row
+          // out of line.
+          <Flex
+            key={subFieldKey}
+            flexDir="column"
+            alignSelf="stretch"
+            style={subF.customStyle}
+          >
+            {(visibleColumnKeys?.has(subF.key) ?? true) && (
+              <Text textStyle="caption-3" color="base.content.medium" mb={2}>
+                {subF.label}
+              </Text>
+            )}
+            <Box mt="auto">{renderSubFieldInput(subF, subFIndex)}</Box>
+          </Flex>
         ) : (
-          <div key={`${name}.${subF.key}`} style={subF.customStyle}>
+          <div key={subFieldKey} style={subF.customStyle}>
             {renderSubFieldInput(subF, subFIndex)}
           </div>
         )

@@ -44,7 +44,7 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
     case 524: // Cloudflare-specific error
       return handle5xxErrors($, error)
     default:
-      if (error.message === 'read ETIMEDOUT') {
+      if (error.code === 'ETIMEDOUT' || error.message.includes('ETIMEDOUT')) {
         throw new RetriableError({
           error: `Retrying ${error.message} from Postman SMS`,
           // pausing the entire queue here is not a good idea because we wont be able to fully utilize
@@ -54,7 +54,7 @@ const requestErrorHandler: IApp['requestErrorHandler'] = async function (
         })
       }
 
-      if (error.response.data.error?.code === 'parameter_invalid') {
+      if (error.response.data?.error?.code === 'parameter_invalid') {
         throw new StepError(
           'Campaign template was not set up correctly',
           'Ensure that you have followed the instructions in our guide to set up your campaign template.',

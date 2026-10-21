@@ -2,6 +2,11 @@ import { IStepConfig } from '@plumber/types'
 
 import { raw } from 'objection'
 
+import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
+import {
+  extractSelfEndStepIntent,
+  upgradeIfThenV1BlocksIfEnabled,
+} from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
@@ -82,8 +87,11 @@ const createStep: MutationResolvers['createStep'] = async (
       })
       .throwIfNotFound()
 
+    const { config: newStepConfig, wantsSelfEndStep } =
+      extractSelfEndStepIntent(input.config as IStepConfig)
+
     const validationResult = await validateApprovalConfig(
-      input.config as IStepConfig,
+      newStepConfig,
       previousStep,
     )
     if (!validationResult.isApprovalConfigValid) {
@@ -106,8 +114,30 @@ const createStep: MutationResolvers['createStep'] = async (
       position: validationResult.newStepPosition,
       parameters: input.parameters,
       connectionId: input.connection?.id,
-      config: input.config as IStepConfig,
+      config: newStepConfig,
       version,
+    })
+
+    // Opportunistically pins any other legacy if-then block, if the flag is
+    // on for the pipe owner.
+    // IMPORTANT: must run before validateEndStepOnCreateStep. Its rule 2
+    // (tail-extend) only recognizes a block as extendable once it's explicit
+    // V2, so pinning first lets a still-legacy tail-added block see its own
+    // fresh pin and extend, instead of staying unmarked and being skipped.
+    const preInsertSteps = (
+      await flow.$relatedQuery('steps', trx).orderBy('position', 'asc')
+    ).filter((flowStep) => flowStep.id !== step.id)
+    await upgradeIfThenV1BlocksIfEnabled(trx, flow, preInsertSteps)
+
+    // IMPORTANT: throws (and rolls back the whole creation) on any marker
+    // violation.
+    await fixupEndStepOnCreateStep({
+      trx,
+      flow,
+      previousBlockId: input.previousBlockId,
+      previousStep,
+      newStep: step,
+      wantsSelfEndStep,
     })
 
     // NOTE: add flow connection to the flow_connections table

@@ -53,10 +53,14 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
         branchName: 'Officer has not signed up for the mailing list',
         conditions: [
           {
-            is: 'is',
-            text: '0',
-            field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'is',
+                text: '0',
+                field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },
@@ -98,10 +102,14 @@ export const UPDATE_MAILING_LISTS_TEMPLATE: ITemplate = {
         branchName: 'Officer has signed up for the mailing list',
         conditions: [
           {
-            is: 'not',
-            text: '0',
-            field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'not',
+                text: '0',
+                field: CREATE_TEMPLATE_STEP_VARIABLE('rowsFound', 2),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },

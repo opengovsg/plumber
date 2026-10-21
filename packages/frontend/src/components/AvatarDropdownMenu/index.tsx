@@ -21,7 +21,7 @@ export default function AvatarDropdownMenu() {
     if (data?.logout?.isSso) {
       toast({
         title: 'You have been logged out of Plumber',
-        description: 'To log out from SSO, visit https://sso.open.gov.sg',
+        description: 'To log out from one.gov.sg, visit https://one.gov.sg',
         status: 'success',
         isClosable: true,
       })

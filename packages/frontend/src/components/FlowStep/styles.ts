@@ -1,5 +1,10 @@
 import { FlexProps } from '@chakra-ui/react'
 
+// Exported so a container that must align with a nested step it owns — an
+// if-then V2 block levelling its drag handle with its header — stays in sync
+// with the card's real height.
+export const NESTED_FLOW_STEP_HEIGHT = '56px'
+
 export const flowStepStyles = {
   container: {
     alignItems: 'center',

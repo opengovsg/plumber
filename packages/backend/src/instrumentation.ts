@@ -3,7 +3,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 
 import appConfig from '@/config/app'
 
-const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream', 'generate-steps']
+const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
 
 const PAIR_ACTION_RESOURCE_NAMES = [
   'pair-action-generate-object',

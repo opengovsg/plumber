@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Request, RequestHandler, Response } from 'express'
 import morgan from 'morgan'
 
 import logger from './logger'
@@ -36,6 +36,7 @@ morgan.token('graphql-query', (req: Request) => {
 
 const SENSITIVE_MUTATIONS = [
   'createConnection',
+  'replaceConnectionCredentials',
   'updateConnection',
   'verifyTableViewPassword',
   'setTableViewPassword',
@@ -69,6 +70,6 @@ const morganJsonFormat = JSON.stringify({
   'graphql-variables': ':graphql-variables',
 })
 
-const morganMiddleware = morgan(morganJsonFormat, morganOptions)
+const morganMiddleware: RequestHandler = morgan(morganJsonFormat, morganOptions)
 
 export default morganMiddleware

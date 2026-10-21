@@ -16,18 +16,16 @@ import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { useCaptureAiBuilderFlow } from '@/hooks/useCaptureAiBuilderFlow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
 import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 
-import AnnouncementModal, {
-  LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
-  LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
-} from './AnnouncementModal'
 import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
+import UnpublishConfirmationDialog from './UnpublishConfirmationDialog'
 
 export default function EditorLayout() {
   const cancelRef = useRef(null)
@@ -38,9 +36,12 @@ export default function EditorLayout() {
   const [updateFlow] = useMutation(UPDATE_FLOW, {
     refetchQueries: [GET_FLOW], // need to refetch flow to get the latest updatedAt
   })
-  const [updateFlowStatus] = useMutation(UPDATE_FLOW_STATUS, {
-    refetchQueries: [GET_FLOW],
-  })
+  const [updateFlowStatus, { loading: isUpdatingFlowStatus }] = useMutation(
+    UPDATE_FLOW_STATUS,
+    {
+      refetchQueries: [GET_FLOW],
+    },
+  )
   const [shouldWarnOnPublish, setShouldWarnOnPublish] = useState(false)
   const [shouldWarnOnLeave, setShouldWarnOnLeave] = useState(false)
   const [leaveToUrl, setLeaveToUrl] = useState(URLS.FLOWS)
@@ -49,6 +50,12 @@ export default function EditorLayout() {
     onOpen: onWarningOpen,
     onClose: onWarningClose,
   } = useDisclosure()
+  const {
+    isOpen: isUnpublishOpen,
+    onOpen: onUnpublishOpen,
+    onClose: onUnpublishClose,
+  } = useDisclosure()
+  const unpublishCancelRef = useRef(null)
 
   const { data, loading, error } = useQuery(GET_FLOW, {
     variables: { id: flowId },
@@ -59,22 +66,6 @@ export default function EditorLayout() {
     searchParams.delete('showDemo')
     setSearchParams(searchParams, { replace: true })
   }, [searchParams, setSearchParams])
-
-  // for loading announcement modal
-  const [localLatestTimestamp, setLocalLatestTimestamp] = useState(
-    localStorage.getItem(LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY),
-  )
-
-  const handleCloseAnnouncementModal = useCallback(() => {
-    localStorage.setItem(
-      LOCAL_STORAGE_ANNOUNCEMENT_LAST_OPENED_KEY,
-      LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP,
-    )
-    setLocalLatestTimestamp(LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP)
-  }, [])
-
-  const shouldOpenAnnouncementModal =
-    localLatestTimestamp !== LATEST_ANNOUNCEMENT_MODAL_TIMESTAMP
 
   const onFlowNameUpdate = useCallback(
     async (name: string) => {
@@ -105,6 +96,10 @@ export default function EditorLayout() {
     },
     [flow?.updatedAt, flowId, updateFlowStatus],
   )
+
+  const handleUnpublish = useCallback(async () => {
+    await onFlowStatusUpdate(false)
+  }, [onFlowStatusUpdate])
 
   const handleWarningClose = useCallback(() => {
     setShouldWarnOnPublish(false)
@@ -168,6 +163,8 @@ export default function EditorLayout() {
       window.removeEventListener('popstate', handlePopState)
     }
   }, [shouldWarnOnLeave, onWarningOpen])
+
+  useCaptureAiBuilderFlow(flow)
 
   // navigate user to not found page if flow does not belong to the user
   if (
@@ -244,6 +241,7 @@ export default function EditorLayout() {
             shouldWarnOnLeave={shouldWarnOnLeave}
             setShouldWarnOnPublish={setShouldWarnOnPublish}
             onFlowStatusUpdate={onFlowStatusUpdate}
+            onUnpublish={onUnpublishOpen}
             setLeaveToUrl={setLeaveToUrl}
             handleWarnOnLeave={handleWarnOnLeave}
           />
@@ -263,16 +261,8 @@ export default function EditorLayout() {
 
       <EditorSnackbar
         isOpen={!!flow?.active}
-        handleUnpublish={() => onFlowStatusUpdate(!flow.active)}
+        handleUnpublish={onUnpublishOpen}
       />
-
-      {/* hardcoded to false to always hide announcement modal for now*/}
-      {shouldOpenAnnouncementModal && false && (
-        <AnnouncementModal
-          isOpen={shouldOpenAnnouncementModal}
-          onClose={handleCloseAnnouncementModal}
-        />
-      )}
 
       {shouldOpenDemoModal && (
         <DemoFlowModal
@@ -286,6 +276,16 @@ export default function EditorLayout() {
         isOpen={isWarningOpen}
         onClose={handleWarningClose}
         onLeave={onDiscardChanges}
+      />
+
+      <UnpublishConfirmationDialog
+        cancelRef={unpublishCancelRef}
+        flowName={flow.name}
+        isOpen={isUnpublishOpen}
+        isLoading={isUpdatingFlowStatus}
+        onClose={onUnpublishClose}
+        onUnpublish={handleUnpublish}
+        steps={flow.steps}
       />
     </EditorProvider>
   )

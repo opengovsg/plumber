@@ -16,6 +16,17 @@ export const worker = new WorkerPro(
     const { flowId } = job.data
 
     const flow = await Flow.query().findById(flowId).throwIfNotFound()
+
+    // safe guard to prevent processing unpublished flows with scheduler
+    if (!flow.active) {
+      logger.warn({
+        message: 'Flow is not active but scheduled',
+        flowId,
+        jobId: job.id,
+      })
+      return
+    }
+
     const triggerStep = await flow.getTriggerStep()
 
     const { data, error } = await processFlow({ flowId })

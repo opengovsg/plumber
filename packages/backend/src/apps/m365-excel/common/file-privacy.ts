@@ -38,9 +38,15 @@ export function getWriteAccessEmailCandidates(
   emailLowerCase: string,
 ): string[] {
   const [localPart, domain] = emailLowerCase.split('@')
+
   if (localPart && SWDA_LEGACY_DOMAINS.has(domain)) {
     return [emailLowerCase, `${localPart}@${SWDA_DOMAIN}`]
   }
+  // TODO (ogp-weeloong): artisanal late night code cleanup later thx claude.
+  if (localPart && domain === 'mti.gov.sg') {
+    return [emailLowerCase, `${localPart}@meti.gov.sg`]
+  }
+
   return [emailLowerCase]
 }
 

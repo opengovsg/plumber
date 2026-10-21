@@ -2,12 +2,14 @@ import type {
   IFieldDropdown,
   IFieldDropdownOption,
   TDataOutMetadatumType,
+  TFieldDropdownOptionIcon,
 } from '@plumber/types'
 
 import { useCallback, useContext, useMemo } from 'react'
 import { useController, useFormContext } from 'react-hook-form'
+import { BiHash, BiListOl, BiText } from 'react-icons/bi'
 import Markdown from 'react-markdown'
-import { Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
+import { As, Box, Flex, FormControl, useDisclosure } from '@chakra-ui/react'
 import {
   FormErrorMessage,
   FormLabel,
@@ -41,6 +43,13 @@ export interface ControlledAutocompleteProps {
   clickableLink?: IFieldDropdown['clickableLink']
   isSearchable?: boolean
   variableTypes?: TDataOutMetadatumType[]
+  noOptionsMessage?: string
+}
+
+const OPTION_ICONS: Record<TFieldDropdownOptionIcon, As> = {
+  text: BiText,
+  hash: BiHash,
+  'list-ol': BiListOl,
 }
 
 const formComboboxOptions = (
@@ -57,6 +66,7 @@ const formComboboxOptions = (
       description:
         option['description'] ??
         (showOptionValue ? option['value'].toString() : ''),
+      icon: option.icon ? OPTION_ICONS[option.icon] : undefined,
     } satisfies ComboboxItem
     result.push(item)
   }
@@ -83,6 +93,7 @@ function ControlledAutocomplete(
     clickableLink,
     isSearchable,
     variableTypes = null,
+    noOptionsMessage,
   } = props
   const { allApps, readOnly, flowId } = useContext(EditorContext)
   const { priorExecutionSteps } = useContext(StepExecutionsContext)
@@ -211,6 +222,7 @@ function ControlledAutocomplete(
             placeholder={placeholder}
             ref={ref}
             data-test={`${name}-autocomplete`}
+            noOptionsMessage={noOptionsMessage}
             onRefresh={onRefresh}
             isRefreshLoading={loading}
             freeSolo={freeSolo}

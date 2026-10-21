@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   pipeWebResponseToExpress: vi.fn(),
   loggerError: vi.fn(),
   getRestrictedAppKeys: vi.fn(),
+  createMcpBridgeTools: vi.fn(),
 }))
 
 vi.mock('@/helpers/launch-darkly', () => ({
@@ -32,20 +33,28 @@ vi.mock('@langfuse/tracing', () => ({
   updateActiveTrace: mocks.updateActiveTrace,
 }))
 
-vi.mock('ai', () => ({
-  convertToModelMessages: vi.fn((msgs) => msgs),
-  smoothStream: vi.fn(() => ({})),
-  stepCountIs: vi.fn(() => () => false),
-  streamText: mocks.streamText,
-  createUIMessageStream: mocks.createUIMessageStream,
-  createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
-}))
+vi.mock('ai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ai')>()
+  return {
+    ...actual,
+    convertToModelMessages: vi.fn((msgs) => msgs),
+    smoothStream: vi.fn(() => ({})),
+    stepCountIs: vi.fn(() => false),
+    streamText: mocks.streamText,
+    createUIMessageStream: mocks.createUIMessageStream,
+    createUIMessageStreamResponse: mocks.createUIMessageStreamResponse,
+  }
+})
 
 vi.mock('@ai-sdk/mcp', () => ({
   experimental_createMCPClient: vi.fn().mockResolvedValue({
     tools: vi.fn().mockResolvedValue({}),
     close: vi.fn().mockResolvedValue(undefined),
   }),
+}))
+
+vi.mock('jsonwebtoken', () => ({
+  default: { sign: vi.fn().mockReturnValue('mock-internal-token') },
 }))
 
 vi.mock('@/helpers/stream', () => ({
@@ -60,11 +69,16 @@ vi.mock('@/helpers/logger', () => ({
 }))
 
 vi.mock('@/helpers/pair', () => ({
+  chatModel: {},
   model: {},
   MODEL_TYPE: 'test-model',
   engineProvider: {
     chat: vi.fn().mockReturnValue({}),
   },
+}))
+
+vi.mock('@/helpers/mcp-bridge-tools', () => ({
+  createMcpBridgeTools: mocks.createMcpBridgeTools,
 }))
 
 // Helper function to get and execute the POST handler from the chat router
@@ -121,6 +135,8 @@ describe('Chat Route Handler', () => {
 
     // Reset mocks
     vi.clearAllMocks()
+
+    mocks.createMcpBridgeTools.mockReturnValue({})
 
     // Set up default streaming mocks
     setupStreamingMocks()
@@ -334,18 +350,6 @@ describe('Chat Route Handler', () => {
       // Schema accepted the payload — streaming was invoked, not a 400
       expect(mockRes.status).not.toHaveBeenCalledWith(400)
       expect(mocks.streamText).toHaveBeenCalled()
-    })
-
-    it('should throw error when AI Builder is not enabled', async () => {
-      mocks.getAllLdFlags.mockResolvedValueOnce({
-        'ai-builder': { enabled: false },
-      })
-
-      await executeChatPostHandler(mockReq, mockRes)
-      expect(mockRes.status).toHaveBeenCalledWith(403)
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'You do not have permissions to use AI Builder!',
-      })
     })
 
     it('should exclude Excel from restricted apps when user has Excel enabled', async () => {

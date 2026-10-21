@@ -7,6 +7,7 @@ import ChooseConnectionSubstep from '@/components/ChooseConnectionSubstep'
 import FlowSubstep from '@/components/FlowSubstep'
 import Form from '@/components/Form'
 import { EditorContext } from '@/contexts/Editor'
+import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { StepExecutionsProvider } from '@/contexts/StepExecutions'
 import {
   generateValidationSchema,
@@ -32,6 +33,7 @@ export default function Step(props: StepProps): React.ReactElement | null {
   } = useDisclosure()
 
   const { onUpdateStep, resetTimestamp } = useContext(EditorContext)
+  const { getFlagValue } = useContext(LaunchDarklyContext)
 
   const { app, hasConnection, isTrigger, selectedActionOrTrigger, substeps } =
     useStepMetadata(step)
@@ -49,8 +51,14 @@ export default function Step(props: StepProps): React.ReactElement | null {
   )
 
   const stepWithDefaultParameters = useMemo(
-    () => withDefaultParameters(step, substeps),
-    [step, substeps],
+    () =>
+      withDefaultParameters(
+        step,
+        substeps,
+        selectedActionOrTrigger?.key,
+        getFlagValue,
+      ),
+    [step, substeps, selectedActionOrTrigger, getFlagValue],
   )
 
   return (

@@ -1,11 +1,13 @@
 import type { IFlow } from '@plumber/types'
 
 import { ReactElement, useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@apollo/client'
 import { Box, Center, Flex, useDisclosure } from '@chakra-ui/react'
 import { Pagination, useToast } from '@opengovsg/design-system-react'
 
+import AnnouncementModal from '@/components/AnnouncementModal'
+import { useAnnouncementModal } from '@/components/AnnouncementModal/useAnnouncementModal'
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import FlowRow from '@/components/FlowRow'
@@ -16,6 +18,7 @@ import { CREATE_FLOW_FOLDER } from '@/graphql/mutations/create-flow-folder'
 import { DELETE_FLOW_FOLDER } from '@/graphql/mutations/delete-flow-folder'
 import { UPDATE_FLOW_FOLDER } from '@/graphql/mutations/update-flow-folder'
 import { GET_FLOW_FOLDERS } from '@/graphql/queries/get-flow-folders'
+import * as URLS from '@/config/urls'
 import { GET_FLOWS } from '@/graphql/queries/get-flows'
 import { GET_UNFILED_FLOW_COUNT } from '@/graphql/queries/get-unfiled-flow-count'
 import { usePaginationAndFilter } from '@/hooks/usePaginationAndFilter'
@@ -129,12 +132,7 @@ function FlowsList({
   return (
     <Box>
       {flows.map((flow) => (
-        <FlowRow
-          key={flow.id}
-          flow={flow}
-          showMenu={flow.role === 'owner'}
-          showFolderChip={showFolderChip}
-        />
+        <FlowRow key={flow.id} flow={flow} showFolderChip={showFolderChip} />
       ))}
     </Box>
   )
@@ -168,6 +166,17 @@ export default function Flows(): ReactElement {
     },
     [setRawSearchParams],
   )
+
+  const navigate = useNavigate()
+
+  const { hasSeenLatestAnnouncement, dismiss: dismissAnnouncement } =
+    useAnnouncementModal()
+  const shouldShowAnnouncement = !hasSeenLatestAnnouncement
+
+  const handleTryAiBuilder = useCallback(() => {
+    dismissAnnouncement()
+    navigate(`${URLS.EDITOR}/ai`)
+  }, [dismissAnnouncement, navigate])
 
   const { data, loading } = useQuery(GET_FLOWS, {
     variables: {
@@ -483,6 +492,14 @@ export default function Flows(): ReactElement {
           onClose={onDeleteFolderClose}
           onConfirm={handleDeleteFolderConfirm}
         />
+
+        {shouldShowAnnouncement && (
+          <AnnouncementModal
+            isOpen
+            onClose={dismissAnnouncement}
+            onPrimaryAction={handleTryAiBuilder}
+          />
+        )}
       </Container>
     </CreateFlowContextProvider>
   )

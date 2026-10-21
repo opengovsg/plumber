@@ -1,7 +1,12 @@
 import type { IField, IJSONValue } from '@plumber/types'
 
 import { ReactNode, useCallback, useContext, useEffect, useMemo } from 'react'
-import { Controller, useFieldArray, useFormContext } from 'react-hook-form'
+import {
+  Controller,
+  useFieldArray,
+  useFormContext,
+  useWatch,
+} from 'react-hook-form'
 import { BiListPlus, BiPlus, BiTrash } from 'react-icons/bi'
 import Markdown from 'react-markdown'
 import { Flex } from '@chakra-ui/react'
@@ -9,6 +14,7 @@ import { Button, FormLabel, IconButton } from '@opengovsg/design-system-react'
 
 import InputCreator, { InputCreatorProps } from '@/components/InputCreator'
 import { EditorContext } from '@/contexts/Editor'
+import { isFieldHidden } from '@/helpers/isFieldHidden'
 
 import MultiCol from '../MultiCol.tsx'
 
@@ -30,6 +36,8 @@ export type MultiRowProps = {
   defaultValue?: string | IJSONValue
   // See IFieldMultiRowMultiCol.autofillable.
   autofillable?: boolean
+  // See IFieldMultiRowMultiCol.maxAutofillOptions.
+  maxAutofillOptions?: number
   // Optional node rendered beside the "+ And" add-row button (e.g. a wrapper's
   // own controls). Renders even when the add-row button is hidden at maxRows.
   addButtonSuffix?: ReactNode
@@ -54,6 +62,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     maxRows,
     defaultValue,
     autofillable,
+    maxAutofillOptions,
     addButtonSuffix,
     onRequestRemoveLastRow,
     ...forwardedInputCreatorProps
@@ -89,6 +98,23 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     }
   }, [defaultValue, name, setValue])
 
+  // Computed here rather than in MultiCol, which only sees its own row: a
+  // column's header is dropped while every row hides that column.
+  const rowValues = useWatch({ name, control })
+  const visibleColumnKeys = useMemo(() => {
+    const rowsToCheck =
+      Array.isArray(rowValues) && rowValues.length ? rowValues : [{}]
+    return new Set(
+      subFields
+        .filter((subField) =>
+          rowsToCheck.some(
+            (row) => !isFieldHidden(subField.hiddenIf, row ?? {}),
+          ),
+        )
+        .map((subField) => subField.key),
+    )
+  }, [rowValues, subFields])
+
   const handleAddRow = useCallback(() => {
     // NOTE: only need to use this flag to focus on the rte
     // if the first column is a variable-enabled string field
@@ -117,6 +143,7 @@ function MultiRow(props: MultiRowProps): JSX.Element {
     confirm,
   } = useAutofill({
     autofillable,
+    maxAutofillOptions,
     type,
     subFields,
     stepId: forwardedInputCreatorProps.stepId,
@@ -181,13 +208,14 @@ function MultiRow(props: MultiRowProps): JSX.Element {
                   key={`${row.id}-${index}`}
                   flexDir="column"
                   gap={4}
-                  mb={4}
+                  mb={3}
                 >
                   {type === 'multirow-multicol' ? (
                     <>
                       <MultiCol
                         name={namePrefix}
                         subFields={subFields}
+                        visibleColumnKeys={visibleColumnKeys}
                         canRemoveRow={canRemoveRow}
                         isEditorReadOnly={isEditorReadOnly}
                         remove={() => removeRow(index)}

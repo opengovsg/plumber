@@ -14,8 +14,17 @@ config({
 export default defineConfig({
   test: {
     name: 'backend',
+    // Read by @/config/unit-test-mode. Set here so it is live before any test
+    // file imports a module that would otherwise connect to Redis or Postgres.
+    env: {
+      PLUMBER_UNIT_TESTS: '1',
+    },
     // load env variables
-    setupFiles: ['dotenv/config'],
+    setupFiles: [
+      'dotenv/config',
+      path.resolve(__dirname, './test/mock-redis-setup.ts'),
+      path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
+    ],
     include: ['src/**/*.test.{js,ts}'],
     onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
       if (log.startsWith('vite:')) {
@@ -26,6 +35,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // graphql-shield's ESM build imports `isUndefined` from `util`, which
+      // Vite's SSR module resolution fails to resolve. Aliasing straight to
+      // the CJS build sidesteps the broken `exports` condition entirely.
+      'graphql-shield': require.resolve('graphql-shield'),
     },
   },
 })

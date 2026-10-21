@@ -47,12 +47,14 @@ export interface IConnection {
   flowCount?: number
   appData?: IApp
   createdAt: string
+  updatedAt: string
   description?: string
+  environment?: IConnectionEnvironment | null
 }
 
 /**
  * 'array' is currently used only in formSG checkbox field but
- * will be extended to for-each feature handling
+ * will be extended to for-each feature handling.
  */
 export type TDataOutMetadatumType =
   | 'text'
@@ -177,11 +179,27 @@ export interface IStepApprovalConfig {
   stepId: string
 }
 
+export type IStepAiBuilderTool =
+  | 'create_pipe'
+  | 'create_step'
+  | 'update_step_parameters'
+  | 'delete_step'
+
+export interface IStepAiBuilderConfig {
+  traceId: string
+  tool: IStepAiBuilderTool
+}
+
 export interface IStepConfig {
   stepName?: string
   approval?: IStepApprovalConfig
+  // Id of the last step (inclusive) inside an if-then V2 block, absent on
+  // if-then V1 steps. System-owned like `approval`, set only by the backend
+  // and never surfaced in the step form.
+  endStepId?: string
   templateConfig?: IStepTemplateConfig
   adminOverride?: IJSONObject
+  aiBuilderConfig?: IStepAiBuilderConfig[]
 }
 
 export interface IStepTemplateConfig {
@@ -224,8 +242,18 @@ export interface IFlowConfig {
   // AI Builder config
   aiBuilderConfig?: {
     traceId: string // trace id on Rome (Langfuse)
+    suggested?: Array<{
+      position: number
+      appKey: string | null
+      key: string | null
+    }>
   }
   isForceClogged?: boolean
+  // Set to true to prevent the archival job from archiving executions for this
+  // flow. Absence (undefined) means archiving is enabled. Used by the
+  // rehydration CLI to protect restored executions from same-night re-archival;
+  // clear with: UPDATE flows SET config = config - 'archiveDisabled' WHERE id = '<id>'
+  archiveDisabled?: true
 }
 
 export type NotificationRecipients = 'editor' | 'viewer'
@@ -293,7 +321,13 @@ type AutoCompleteValue = 'off' | 'url' | 'email'
 
 // This is synced with FieldVisibilityOp GraphQL enum.
 // Using jank Extract for now until we get typed GraphQL.
-type FieldVisibilityOp = 'always_true' | 'is_empty' | 'equals' | 'not_equals'
+type FieldVisibilityOp =
+  | 'always_true'
+  | 'is_empty'
+  | 'equals'
+  | 'not_equals'
+  | 'in'
+  | 'not_in'
 
 interface IFieldVacuousVisibilityCondition {
   op: Extract<FieldVisibilityOp, 'always_true'>
@@ -312,10 +346,20 @@ interface IFieldComparativeVisibilityCondition {
   fieldValue?: IJSONPrimitive
 }
 
+interface IFieldInVisibilityCondition {
+  op: Extract<FieldVisibilityOp, 'in' | 'not_in'>
+
+  fieldKey: string
+  // `in`: hide when the sibling field's value is one of these.
+  // `not_in`: hide when the sibling field's value is not one of these.
+  fieldValues: IJSONPrimitive[]
+}
+
 export type IFieldVisibilityCondition =
   | IFieldComparativeVisibilityCondition
   | IFieldKeyOnlyVisibilityCondition
   | IFieldVacuousVisibilityCondition
+  | IFieldInVisibilityCondition
 
 /**
  * End field visibility
@@ -348,6 +392,14 @@ export interface IBaseField {
    * other array elements).
    */
   hiddenIf?: IFieldVisibilityCondition
+
+  /**
+   * Allows hiding a field from the AI Builder chat only, while still showing
+   * it in the pipe editor. Shares the same condition shape as `hiddenIf`,
+   * but only `always_true` is currently evaluated by the MCP server (which
+   * has no runtime sibling-field values to check other conditions against).
+   */
+  hiddenFromAiIf?: IFieldVisibilityCondition
 
   // message to show when no variables are available
   noVariablesMessage?: string
@@ -400,6 +452,15 @@ export interface IFieldDropdown extends IBaseField {
   value?: string // for true/false dropdown, use boolean-radio
   options?: IFieldDropdownOption[]
   source?: IFieldDropdownSource
+  // For source-backed dropdowns: when true, the field is hidden entirely if its
+  // dynamic-data source resolves to zero options (e.g. a case type with no
+  // attachment fields). Distinct from `hiddenIf`, which keys off sibling values.
+  hideWhenNoOptions?: boolean
+  /**
+   * For source-backed dropdowns: Markdown shown inside the menu when its
+   * dynamic-data source resolves to zero options.
+   */
+  noOptionsMessage?: string
   variableTypes?: TDataOutMetadatumType[]
 }
 
@@ -418,6 +479,12 @@ export interface IFieldDropdownSource {
   }[]
 }
 
+/**
+ * Referenced by name rather than by component because the field schema is
+ * serialised to JSON over /api/apps; the frontend maps each name back.
+ */
+export type TFieldDropdownOptionIcon = 'text' | 'hash' | 'list-ol'
+
 export interface IFieldDropdownOption {
   label: string
 
@@ -434,6 +501,8 @@ export interface IFieldDropdownOption {
    * false.
    */
   description?: string
+
+  icon?: TFieldDropdownOptionIcon
 }
 
 export interface IFieldText extends IBaseField {
@@ -495,6 +564,12 @@ export interface IFieldMultiRowMultiCol extends IBaseField {
    * user picks a handful of specific conditions.
    */
   autofillable?: boolean
+  /**
+   * When `autofillable` is set, hides the "Autofill" button if subFields[0]'s
+   * dynamic-data source has more options than this. Use when autofilling a
+   * very large number of rows would be unwieldy for the user (or the app).
+   */
+  maxAutofillOptions?: number
 }
 
 export interface IFieldMultiRow extends IBaseField {
@@ -696,6 +771,26 @@ export interface IAppQueue {
   ): Promise<JobsProOptions['group']>
 
   /**
+   * If set, the generic execution path (`processAction` / the batch worker)
+   * acquires a per-resource distributed lock around `run` / `runBatch`, keyed
+   * on the string returned here. This is the cross-queue serialization key,
+   * the counterpart to {@link getGroupConfigForJob}'s grouping key.
+   *
+   * Unlike `getGroupConfigForJob` (which runs at enqueue time with only
+   * `jobData`), this is resolved at execution time from the fully-built `$`, so
+   * it can read computed params and auth (e.g. m365-excel derives
+   * `<tenant>:<fileId>` to serialize all `WorkbookSession` access to a file
+   * across the per-app queue, the batch queue and test runs — restoring the
+   * per-file serialization that splitting `createTableRow` onto its own queue
+   * would otherwise break).
+   *
+   * Return `null` to skip locking (e.g. no file selected, or read-only dynamic
+   * data). Must be cheap (no network calls): it runs on every job before the
+   * action.
+   */
+  getLockKey?($: IGlobalVariable): Promise<string | null>
+
+  /**
    * Set per-group concurrency or rate limits. This is mutually exclusive
    * because BullMQ Pro does not support using both together.
    *
@@ -737,6 +832,39 @@ export interface IAppQueue {
    * The type of worker to use for this queue.
    */
   workerType: 'action' | 'sub-trigger'
+}
+
+/**
+ * Configuration declared by an action that opts into BullMQ Pro batch
+ * processing (see {@link IBaseAction.runBatch}). Jobs for such an action are
+ * routed to a dedicated batch queue instead of the per-app / main action queue.
+ *
+ * Mirrors the relevant parts of {@link IAppQueue}, but for the batch queue: the
+ * group id derived here is the unit a single `runBatch` call serves, and group
+ * affinity (`batch.groupAffinity`) guarantees every job in a batch shares it.
+ */
+export interface IActionBatchQueue {
+  /**
+   * Derives the BullMQ Pro group config for a job about to be enqueued to the
+   * batch queue. Group affinity batches together only jobs sharing this id, so
+   * it must capture everything a single `runBatch` call requires to be correct
+   * (e.g. `${fileId}::${tableId}::${connectionId}` for m365-excel createTableRow
+   * — one table + connection per group, so exactly one multi-row insert per
+   * batch, authorized by a single file-access check under that one connection).
+   *
+   * @see {@link JobsProOptions.group}
+   */
+  getGroupConfigForJob(
+    jobData: IActionJobData,
+  ): Promise<JobsProOptions['group']>
+
+  /**
+   * Rate limit for the entire batch queue, applied between batches so we don't
+   * hammer the upstream API. Retained from the non-batch per-file queue.
+   *
+   * @see {@link IAppQueue.queueRateLimit}
+   */
+  queueRateLimit?: WorkerProOptions['limiter']
 }
 
 export interface IApp {
@@ -834,7 +962,14 @@ export interface DynamicDataOutput {
   data: {
     name: string
     value: string
-    type?: 'string' | 'number' | 'null' | 'email'
+    type?:
+      | 'string'
+      | 'number'
+      | 'null'
+      | 'email'
+      | 'dropdown'
+      | 'checkbox'
+      | 'radio'
   }[]
   error?: IJSONObject
 }
@@ -850,6 +985,12 @@ type IConnectionModalLabel = {
 export interface SubtriggerData {
   type: 'mrf'
   mrfStepId: string
+}
+
+export interface IConnectionEnvironment {
+  // Stable key for client logic, since labels may be reworded.
+  id: string
+  label: string
 }
 
 interface IBaseAuth {
@@ -877,11 +1018,26 @@ interface IBaseAuth {
   ): Promise<IVerifyConnectionRegistrationOutput>
   connectionModalLabel?: IConnectionModalLabel
   autoCheckStep?: boolean
+  getConnectionEnvironment?(
+    formattedData?: IJSONObject,
+  ): IConnectionEnvironment | null
 }
 
 interface IUserAddedConnectionAuth extends IBaseAuth {
   connectionType: 'user-added'
   fields?: IField[]
+
+  // Whether users may overwrite this app's stored credentials from the
+  // connections page. Editing only submits new credentials; existing ones are
+  // never returned to the client.
+  supportsConnectionEdit?: boolean
+
+  /**
+   * Label to prefill when the user edits this connection. Apps that bake env
+   * tags into screenName (e.g. Postman `[TEST] `, LetterSG ` [STAGING]`) should
+   * strip those tags here so they are not duplicated on save.
+   */
+  getEditableConnectionLabel?(formattedData?: IJSONObject): string
 }
 
 interface ISystemAddedConnectionAuth extends IBaseAuth {
@@ -1014,6 +1170,18 @@ export interface IActionItem {
   meta?: IExecutionStepMetadata
 }
 
+/**
+ * The per-job outcome of {@link IBaseAction.runBatch}, aligned by index to the
+ * jobs passed in. A job that fails its own pre-write validation (e.g. bad params
+ * or a per-user authorization failure) is reported `failed` and excluded from
+ * the shared write, so the batch worker can isolate it while the healthy jobs
+ * commit. `runBatch` THROWS (rather than returning `failed`) for a genuine write
+ * failure, which is all-or-none and retried for the whole batch.
+ */
+export type RunBatchJobResult =
+  | { status: 'success' }
+  | { status: 'failed'; error: unknown }
+
 export interface IBaseAction {
   name: string
   key: string
@@ -1031,6 +1199,37 @@ export interface IBaseAction {
   ): Promise<IActionRunResult | void>
 
   /**
+   * Processes a batch of jobs that all share the same batch group (see
+   * {@link IBaseAction.batch}) in a single underlying operation — e.g. one
+   * multi-row MS Graph insert for many createTableRow jobs that target the same
+   * file + table.
+   *
+   * Each job carries its own `$` (its own step, parameters and execution), and
+   * `runBatch` sets each successful job's output via `$.setActionItem`.
+   *
+   * `runBatch` owns its own per-job pre-write validation (e.g. params and a
+   * per-user authorization check) and returns one {@link RunBatchJobResult} per
+   * input job, aligned by index: a job that fails its validation is reported
+   * `failed` and EXCLUDED from the write (so the caller can isolate it), while
+   * the valid jobs still commit. Running the per-user check for every job (not
+   * just the first) matters because the whole batch is written through a single
+   * session/auth (the first valid job's), so otherwise a job's rows could be
+   * written under another job's authorization.
+   *
+   * A genuine WRITE failure (the shared operation itself failing) THROWS instead
+   * of returning, so the whole batch is failed and retried all-or-none (nothing
+   * was committed).
+   */
+  runBatch?(jobs: Array<{ $: IGlobalVariable }>): Promise<RunBatchJobResult[]>
+
+  /**
+   * If set, this action opts into batch processing: its jobs are routed to a
+   * dedicated batch queue and processed via {@link IBaseAction.runBatch}. The
+   * config derives the batch group id (the unit a single `runBatch` serves).
+   */
+  batch?: IActionBatchQueue
+
+  /**
    * Gets metadata for the `dataOut` of this action's execution step.
    *
    * We pass in `executionStep` instead of `executionStep.dataOut` in case other
@@ -1046,6 +1245,13 @@ export interface IBaseAction {
    * Useful for cases where variables needs to be escaped in some way before substitution.
    */
   preprocessVariable?(parameterKey: string, variableValue: unknown): unknown
+
+  /**
+   * When true, FormSG checkbox `string[]` values are not joined before
+   * `preprocessVariable`, and a parameter that is only one such array stays
+   * as `string[]`. Default is false so scalar actions keep joined strings.
+   */
+  preserveArrayVariables?: boolean
 
   /**
    * For optimizing our S3 storage; we won't store files into our S3 unless
@@ -1208,8 +1414,24 @@ export interface IStepError {
 }
 
 // Tiles
+export type ITableColumnAiBuilderTool = 'create_tile' | 'add_tile_columns'
+
+export interface ITableColumnAiBuilderConfig {
+  traceId: string
+  tool: ITableColumnAiBuilderTool
+}
+
 export interface ITableColumnConfig {
   width?: number
+  aiBuilderConfig?: ITableColumnAiBuilderConfig
+}
+
+export interface ITableAiBuilderConfig {
+  traceId: string
+}
+
+export interface ITableConfig {
+  aiBuilderConfig?: ITableAiBuilderConfig
 }
 
 export interface ITableColumnMetadata {
@@ -1340,4 +1562,104 @@ export interface IFlowSteps {
   trigger: IFlowStepsTrigger
   actions: IFlowStepsAction[]
   traceId?: string
+}
+
+// ── MCP Bridge API types ────────────────────────────────────────────────────
+
+export interface IMcpAppField {
+  key: string
+  label: string
+  type: string
+  description?: string
+  required: boolean
+  options?: IMcpFieldOption[]
+  isDynamic?: boolean
+  dynamicDataKey?: string
+  dynamicDataParameters?: Record<string, string>
+  subFields?: IMcpAppField[]
+  maxGroups?: number
+  maxRowsPerGroup?: number
+  /**
+   * If set, this field only accepts a variable reference whose upstream
+   * output is tagged with one of these types (see `IDataOutMetadatum.type`,
+   * surfaced per-step via `execute_step`'s `dataOutMetadata`).
+   */
+  variableTypes?: TDataOutMetadatumType[]
+}
+
+export interface IMcpAppAction {
+  key: string
+  name: string
+  description?: string
+  requiresConnection: boolean
+  fields: IMcpAppField[]
+}
+
+export interface IMcpApp {
+  key: string
+  name: string
+  triggers: IMcpAppAction[]
+  actions: IMcpAppAction[]
+}
+
+export interface IMcpStepDetail {
+  id: string
+  position: number
+  appKey: string
+  key: string
+  type: 'trigger' | 'action'
+  /** Configured parameter values — never contains connection credentials */
+  parameters: Record<string, unknown>
+}
+
+export interface IMcpPipeSummary {
+  id: string
+  name: string
+  active: boolean
+  stepCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpPipeDetail extends IMcpPipeSummary {
+  steps: IMcpStepDetail[]
+}
+
+export interface IMcpExecution {
+  id: string
+  pipeId: string
+  status: 'success' | 'failure' | null
+  testRun: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IMcpVerifyResponse {
+  userId: string
+  email: string
+}
+
+export interface IMcpConnection {
+  id: string
+  appKey: string
+  label: string
+  verified: boolean
+}
+
+export interface IMcpFieldOption {
+  label: string
+  value: string
+}
+
+export interface IMcpIncompleteStep {
+  stepId: string
+  position: number
+  appKey: string | null
+  missingFields: Array<{ key: string; label: string }>
+  missingConnection: boolean
+}
+
+export interface IMcpActivateError {
+  isError: true
+  incompleteSteps: IMcpIncompleteStep[]
 }

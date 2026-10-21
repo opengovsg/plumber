@@ -11,7 +11,15 @@ const mocks = vi.hoisted(() => ({
   processSesEvent: vi.fn(),
   loggerInfo: vi.fn(),
   loggerError: vi.fn(),
+  sqsClient: vi.fn(),
   sqsQueueUrl: 'https://sqs.ap-southeast-1.amazonaws.com/123/ses-events',
+  sesCredentials: undefined as
+    | { accessKeyId: string; secretAccessKey: string }
+    | undefined,
+}))
+
+vi.mock('@aws-sdk/client-sqs', () => ({
+  SQSClient: mocks.sqsClient,
 }))
 
 vi.mock('sqs-consumer', () => ({
@@ -42,6 +50,9 @@ vi.mock('@/config/app', () => ({
       get sqsQueueUrl() {
         return mocks.sqsQueueUrl
       },
+      get credentials() {
+        return mocks.sesCredentials
+      },
     },
   },
 }))
@@ -68,8 +79,10 @@ describe('SES consumer wiring', () => {
     mocks.processSesEvent.mockReset()
     mocks.loggerInfo.mockClear()
     mocks.loggerError.mockClear()
+    mocks.sqsClient.mockClear()
     mocks.sqsQueueUrl =
       'https://sqs.ap-southeast-1.amazonaws.com/123/ses-events'
+    mocks.sesCredentials = undefined
   })
 
   afterEach(() => {
@@ -102,6 +115,35 @@ describe('SES consumer wiring', () => {
     expect(createOptions.batchSize).toBe(10)
     expect(createOptions.waitTimeSeconds).toBe(20)
     expect(typeof createOptions.handleMessage).toBe('function')
+  })
+
+  it('polls with the explicit credentials when they are configured', async () => {
+    mocks.sesCredentials = {
+      accessKeyId: 'AKIAVAPT',
+      secretAccessKey: 'vapt-secret',
+    }
+
+    const { startSesConsumer } = await importFresh()
+    startSesConsumer()
+
+    expect(mocks.sqsClient).toHaveBeenCalledWith({
+      credentials: mocks.sesCredentials,
+      region: 'ap-southeast-1',
+    })
+    expect(mocks.consumerCreate.mock.calls[0][0].sqs).toBeInstanceOf(
+      mocks.sqsClient,
+    )
+  })
+
+  // Undefined credentials are what make the SDK fall back to the default
+  // provider chain (SSO locally, task role in ECS).
+  it('polls with undefined credentials when none are configured', async () => {
+    const { startSesConsumer } = await importFresh()
+    startSesConsumer()
+
+    const sqsOptions = mocks.sqsClient.mock.calls[0][0]
+    expect(sqsOptions).toHaveProperty('credentials', undefined)
+    expect(sqsOptions).toHaveProperty('region', 'ap-southeast-1')
   })
 
   it('is idempotent — second call does not re-create the consumer', async () => {

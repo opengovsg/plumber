@@ -5,6 +5,8 @@ import { SlLoop } from 'react-icons/sl'
 import { Flex, Icon, Text } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
 
+import { LAST_STEP_ONLY_REASON } from '../hooks/useIsAppSelectable'
+
 import { HighlightedText } from './HighlightedText'
 import NewBadge from './NewBadge'
 
@@ -18,14 +20,23 @@ interface ToolboxEventProps {
   action: IAction
   onSelectAppEvent: () => void
   isDisabled: boolean
+  // Defaults to the reason it carried when "last step only" was the toolbox's
+  // only rule.
+  disabledReason?: string
   searchQuery: string
 }
 
 export default function ToolboxEvent(props: ToolboxEventProps): JSX.Element {
-  const { action, isDisabled, onSelectAppEvent, searchQuery } = props
+  const {
+    action,
+    isDisabled,
+    disabledReason = LAST_STEP_ONLY_REASON,
+    onSelectAppEvent,
+    searchQuery,
+  } = props
   return (
     <TouchableTooltip
-      label={isDisabled ? 'This can only be used as the last step' : ''}
+      label={isDisabled ? disabledReason : ''}
       placement="bottom"
       openDelay={100}
       closeDelay={100}

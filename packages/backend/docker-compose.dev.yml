@@ -72,7 +72,8 @@ services:
       mc alias set plumber-minio http://minio:9000 minio-username minio-password &&
       mc alias set local http://minio:9000 minio-username minio-password &&
       mc mb --ignore-existing plumber-minio/plumber-development-common-bucket &&
-      echo 'bucket created' &&
+      mc mb --ignore-existing plumber-minio/plumber-development-archive-bucket &&
+      echo 'buckets created' &&
       mc put /assets/plumber-logo.jpg local/plumber-development-common-bucket/mock/plumber-logo.jpg &&
       echo 'logo uploaded to bucket'
       "

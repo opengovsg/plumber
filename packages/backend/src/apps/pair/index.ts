@@ -5,7 +5,7 @@ import actions from './actions'
 const app: IApp = {
   name: 'Pair',
   key: 'pair',
-  description: 'Summarise, categorise or analyse data with Pair',
+  description: 'Process data using AI',
   iconUrl: '{BASE_URL}/apps/pair/assets/favicon.svg',
   authDocUrl: '',
   baseUrl: '',

@@ -49,6 +49,7 @@ const mocks = vi.hoisted(() => {
     getSdk: vi.fn(() => mockSdk),
     parseFormEnv: vi.fn(),
     whitelistEmails: vi.fn().mockResolvedValue([]),
+    storeAttachmentInS3: vi.fn(),
   }
 })
 
@@ -66,6 +67,10 @@ vi.mock('@/models/email-suppression-entry', () => ({
   default: {
     whitelistEmails: mocks.whitelistEmails,
   },
+}))
+
+vi.mock('../../auth/helpers/store-attachment-in-s3', () => ({
+  default: mocks.storeAttachmentInS3,
 }))
 
 vi.mock('../../common/form-env', () => ({
@@ -576,20 +581,84 @@ describe('decrypt form response', () => {
       )
       expect(mocks.cryptoDecrypt).not.toBeCalled()
     })
+
+    it('exposes the attachment filename next to the S3 ID', async () => {
+      $.flow.hasFileProcessingActions = true
+      mocks.storeAttachmentInS3.mockResolvedValueOnce('s3-id')
+      mocks.cryptoDecryptWithAttachments.mockResolvedValueOnce({
+        attachments: {
+          attachmentField: {
+            filename: 'report.pdf',
+            content: new Uint8Array(),
+          },
+        },
+        content: {
+          responses: [
+            {
+              _id: 'attachmentField',
+              fieldType: 'attachment',
+              question: 'Upload a file',
+              answer: 'report.pdf',
+            },
+          ],
+        },
+      })
+
+      await decryptFormResponse($)
+
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            attachmentField: expect.objectContaining({
+              answer: 's3-id',
+              filename: 'report.pdf',
+            }),
+          },
+        }),
+      )
+    })
+
+    it('exposes the attachment filename when the pipe does not process files', async () => {
+      $.flow.hasFileProcessingActions = false
+      mocks.cryptoDecrypt.mockReturnValueOnce({
+        responses: [
+          {
+            _id: 'attachmentField',
+            fieldType: 'attachment',
+            question: 'Upload a file',
+            answer: 'report.pdf',
+          },
+        ],
+      })
+
+      await decryptFormResponse($)
+
+      expect(mocks.storeAttachmentInS3).not.toBeCalled()
+      expect($.request.body).toEqual(
+        expect.objectContaining({
+          fields: {
+            attachmentField: expect.objectContaining({
+              answer: 'report.pdf',
+              filename: 'report.pdf',
+            }),
+          },
+        }),
+      )
+    })
   })
 
   describe('form environments', () => {
     it('should grab the sdk corresponding to the form environment', async () => {
       $.flow.hasFileProcessingActions = false
       mocks.cryptoDecrypt.mockReturnValueOnce({ responses: [] })
-      mocks.parseFormEnv.mockReturnValue('staging')
+      mocks.parseFormEnv.mockReturnValue('stg')
 
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
 
       expect(mocks.parseFormEnv).toBeCalled()
-      expect(mocks.getSdk).toBeCalledWith('staging')
+      expect(mocks.getSdk).toBeCalledWith('stg')
     })
   })
 

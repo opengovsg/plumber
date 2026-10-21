@@ -32,8 +32,14 @@ const useReorderSteps = (flowId: string) => {
       mrfApprovalSteps: IStep[]
       approvalBranches: { [stepId: string]: IStepApprovalBranch }
     }): StepPositionInput[] => {
-      // we start from 2 because the first step is the trigger step and not part of the sortable list
-      let nextPosition = 2
+      // Seed from the earliest position in the reordered set so a subset that
+      // doesn't begin right after the trigger renumbers from its own start.
+      // The top-level action list starts at position 2 (position 1 is the
+      // trigger, which is not part of the sortable list), so this is
+      // behaviour-identical for the old layout.
+      let nextPosition = reorderedSteps.length
+        ? Math.min(...reorderedSteps.map((step) => step.position))
+        : 2
       let currentApprovalBranch: {
         stepId: string
         branch: 'approve' | 'reject'

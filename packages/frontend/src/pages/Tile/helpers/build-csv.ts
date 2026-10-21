@@ -13,6 +13,10 @@ import type { GenericRowData } from '../types'
  *
  * Values containing commas, quotes, or newlines are escaped per RFC 4180
  * (delegated to papaparse).
+ *
+ * Cell values and column headers that would be interpreted as formulae by
+ * spreadsheet software (leading =, +, -, @, tab, CR) are neutralised via
+ * papaparse's `escapeFormulae` option (CWE-1236 / OWASP CSV Injection).
  */
 export function buildCsv(
   rows: GenericRowData[],
@@ -25,7 +29,7 @@ export function buildCsv(
   const columnNames = columns.map((c) => c.name)
 
   if (rows.length === 0) {
-    return unparse({ fields: columnNames, data: [] })
+    return unparse({ fields: columnNames, data: [] }, { escapeFormulae: true })
   }
 
   const columnIdToNameMap: Record<string, string> = {}
@@ -45,5 +49,5 @@ export function buildCsv(
     return row
   })
 
-  return unparse(mappedData, { columns: columnNames })
+  return unparse(mappedData, { columns: columnNames, escapeFormulae: true })
 }

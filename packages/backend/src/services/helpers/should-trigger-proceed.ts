@@ -1,4 +1,5 @@
 import logger from '@/helpers/logger'
+import { retryOnTransientDbError } from '@/helpers/retry-on-transient-db-error'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 
@@ -27,21 +28,29 @@ const checkDuplicateExecution = async (
    * The lock is based on a composite key: e.g., flowId and internalId (FormSG submissionId),
    * ensuring that only one execution is created per FormSG submission.
    */
-  const lockAcquired = await Execution.knex()
-    .raw(
-      'SELECT pg_try_advisory_xact_lock(hashtext(?), hashtext(?)) as acquired',
-      [flowId, internalId],
-    )
-    .then((result) => result.rows[0].acquired)
+  const lockAcquired = await retryOnTransientDbError(
+    () =>
+      Execution.knex()
+        .raw(
+          'SELECT pg_try_advisory_xact_lock(hashtext(?), hashtext(?)) as acquired',
+          [flowId, internalId],
+        )
+        .then((result) => result.rows[0].acquired),
+    { context: { flowId, internalId } },
+  )
 
   if (lockAcquired) {
-    const execution = await Execution.query()
-      .where({
-        flow_id: flowId,
-        test_run: false,
-        internal_id: internalId,
-      })
-      .first()
+    const execution = await retryOnTransientDbError(
+      () =>
+        Execution.query()
+          .where({
+            flow_id: flowId,
+            test_run: false,
+            internal_id: internalId,
+          })
+          .first(),
+      { context: { flowId, internalId } },
+    )
 
     if (execution && execution.internalId === internalId) {
       logger.error(

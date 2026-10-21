@@ -1,0 +1,40 @@
+{
+  "name": "backend-archive",
+  "version": "1.96.1",
+  "scripts": {
+    "prebuild": "rimraf ./dist",
+    "build": "tsc && tsc-alias",
+    "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
+    "test:unit": "vitest --config ./vitest.config.ts",
+    "lint": "eslint . --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint . --fix --ignore-path ../../.eslintignore",
+    "typecheck": "tsc --noEmit",
+    "archive:backfill": "ts-node --swc src/scripts/archive-executions.ts",
+    "archive:backfill-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/archive-executions.ts",
+    "archive:rehydrate": "ts-node --swc src/scripts/rehydrate-execution.ts",
+    "archive:rehydrate-local": "node ../../scripts/with-op-env.mjs --env archival ts-node --swc src/scripts/rehydrate-execution.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "catalog:",
+    "@plumber/types": "workspace:*",
+    "dotenv": "catalog:",
+    "knex": "catalog:",
+    "luxon": "catalog:",
+    "p-limit": "catalog:",
+    "pg": "catalog:",
+    "winston": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.13.5",
+    "@types/luxon": "^2.4.0",
+    "@types/node": "22.18.0",
+    "@types/pg": "^8.6.1",
+    "nodemon": "^3.1.14",
+    "rimraf": "^4.4.1",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "catalog:",
+    "vitest": "^3.2.6"
+  }
+}

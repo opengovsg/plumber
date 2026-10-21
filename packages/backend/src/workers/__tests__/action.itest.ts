@@ -2,6 +2,7 @@ import type { IActionJobData } from '@plumber/types'
 
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -13,8 +14,12 @@ import {
 
 import RetriableError from '@/errors/retriable-error'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
-import { enqueueActionJob, mainActionQueue } from '@/queues/action'
-import { mainActionWorker } from '@/workers/action'
+import {
+  actionQueuesByName,
+  enqueueActionJob,
+  mainActionQueue,
+} from '@/queues/action'
+import { appActionWorkers, mainActionWorker } from '@/workers/action'
 
 import {
   backupWorker,
@@ -94,6 +99,17 @@ describe('Action worker', () => {
     vi.restoreAllMocks()
   })
 
+  // Close workers and queues so they don't linger in the shared test process
+  // and steal jobs from later itest files on the same Redis queue.
+  afterAll(async () => {
+    await Promise.all(
+      [mainActionWorker, ...Object.values(appActionWorkers)].map((w) =>
+        w.close(),
+      ),
+    )
+    await Promise.all(Object.values(actionQueuesByName).map((q) => q.close()))
+  })
+
   describe('Automatic retries with default job options', () => {
     it('sanity check: default job options has positive retries', () => {
       expect(DEFAULT_JOB_OPTIONS.attempts).toBeGreaterThan(0)
@@ -111,6 +127,7 @@ describe('Action worker', () => {
       })
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',
@@ -149,6 +166,7 @@ describe('Action worker', () => {
       })
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',
@@ -182,6 +200,7 @@ describe('Action worker', () => {
       })
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',
@@ -274,6 +293,7 @@ describe('Action worker', () => {
       })
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',
@@ -323,6 +343,7 @@ describe('Action worker', () => {
 
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',
@@ -369,6 +390,7 @@ describe('Action worker', () => {
 
         await enqueueActionJob({
           appKey: null,
+          actionKey: null,
           jobName: 'test-job',
           jobData: {
             flowId: 'test-flow-id',
@@ -420,6 +442,7 @@ describe('Action worker', () => {
 
       await enqueueActionJob({
         appKey: null,
+        actionKey: null,
         jobName: 'test-job',
         jobData: {
           flowId: 'test-flow-id',

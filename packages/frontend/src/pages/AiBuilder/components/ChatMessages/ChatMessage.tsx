@@ -2,6 +2,11 @@ import { memo } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
+import {
+  formatUserMessageForDisplay,
+  isNoOptionsSignalMessage,
+  prepareAiText,
+} from '@/pages/AiBuilder/helpers'
 import { ChakraStreamdown } from '@/theme/components/Streamdown'
 
 import ChatMessageToolbar from './ChatMessageToolbar'
@@ -16,9 +21,9 @@ const AiMessage = memo(
   ({ message, shouldShowPreview, shouldShowToolbar }: ChatMessageProps) => {
     return (
       <Flex gap={3} w="full" align="start">
-        <Box flex={1} px={2} color="gray.900">
+        <Box flex={1} px={2} pt={5} pb={2} color="gray.900">
           <ChakraStreamdown isAnimating={false}>
-            {message.text || ''}
+            {prepareAiText(message.text || '')}
           </ChakraStreamdown>
           {shouldShowToolbar && (
             <ChatMessageToolbar
@@ -35,6 +40,7 @@ const AiMessage = memo(
 AiMessage.displayName = 'AiMessage'
 
 const UserMessage = memo(({ message }: ChatMessageProps) => {
+  const displayText = formatUserMessageForDisplay(message.text)
   return (
     <Flex justify="flex-end">
       <Box
@@ -45,7 +51,7 @@ const UserMessage = memo(({ message }: ChatMessageProps) => {
         py={3}
         borderRadius="lg"
       >
-        <Text whiteSpace="pre-wrap">{message.text}</Text>
+        <Text whiteSpace="pre-wrap">{displayText}</Text>
       </Box>
     </Flex>
   )
@@ -64,6 +70,10 @@ const ChatMessage = memo(
     shouldShowToolbar: boolean
   }) => {
     if (message.isUser) {
+      // System cue for the LLM, not a real user reply — never rendered.
+      if (isNoOptionsSignalMessage(message.text)) {
+        return null
+      }
       return <UserMessage message={message} />
     }
     return (
@@ -77,27 +87,5 @@ const ChatMessage = memo(
 )
 
 ChatMessage.displayName = 'ChatMessage'
-
-export const WarningMessage = () => {
-  return (
-    <Flex justify="flex-start">
-      <Box
-        bg="utility.feedback.warning-subtle"
-        color="gray.900"
-        px={4}
-        py={3}
-        borderRadius="lg"
-        w="full"
-      >
-        <Text textStyle="subhead-1" whiteSpace="pre-wrap">
-          Your conversation won&apos;t be saved.
-        </Text>
-        <Text textStyle="body-1" whiteSpace="pre-wrap">
-          The only thing you can keep is the workflow you create here.
-        </Text>
-      </Box>
-    </Flex>
-  )
-}
 
 export default ChatMessage

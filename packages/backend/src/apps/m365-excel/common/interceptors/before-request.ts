@@ -2,7 +2,7 @@ import type { TBeforeRequest } from '@plumber/types'
 
 import logger from '@/helpers/logger'
 
-import { MS_GRAPH_OAUTH_BASE_URL } from '../constants'
+import { M365_REQUEST_TIMEOUT_MS, MS_GRAPH_OAUTH_BASE_URL } from '../constants'
 import { getAccessToken } from '../oauth/token-cache'
 
 // This explicitly overcounts - e.g we will log if the request times out, even
@@ -47,4 +47,12 @@ const addAuthToken: TBeforeRequest = async function ($, requestConfig) {
   return requestConfig
 }
 
-export default [usageTracker, addAuthToken]
+// Bound every m365 request so a hung call can't hold the renewed per-file lock
+// indefinitely (axios otherwise waits on the OS TCP timeout). See
+// M365_REQUEST_TIMEOUT_MS.
+const addRequestTimeout: TBeforeRequest = async function ($, requestConfig) {
+  requestConfig.timeout = M365_REQUEST_TIMEOUT_MS
+  return requestConfig
+}
+
+export default [usageTracker, addAuthToken, addRequestTimeout]

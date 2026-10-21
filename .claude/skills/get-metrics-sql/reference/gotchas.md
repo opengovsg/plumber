@@ -29,6 +29,15 @@ soft-delete state. Relax the guard only for the table(s) the question actually c
 unclear which, and say so explicitly in the query's explanation — don't drop it silently, and don't
 drop it for tables the question didn't ask about.
 
+**Exception: activity metrics never filter soft-deleted rows.** For an active-user or active-pipe
+count (see [glossary.md](glossary.md)), drop the `deleted_at` guard on every table. Deleting a pipe
+soft-deletes all its executions and steps
+([delete-flow.ts](../../../../packages/backend/src/graphql/mutations/delete-flow.ts)). A guarded query
+silently drops users who flowed a pipe in the period and deleted it afterwards. Past periods' counts
+then shrink over time. If the query checks which apps a pipe used, read `execution_steps.app_key`
+rather than `steps` (see [recipes.md](recipes.md) Recipe 1). Deleting a pipe or step leaves its
+`execution_steps` rows in place.
+
 All 6 of these tables carry a real `deleted_at` column
 ([20220928162525_soft-delete-base-model.ts](../../../../packages/backend/src/db/migrations/20220928162525_soft-delete-base-model.ts)):
 
@@ -112,6 +121,9 @@ confirmed the specific column you're comparing against is genuinely naive):
 ```sql
 date_trunc('quarter', $__timeFrom()::timestamptz AT TIME ZONE 'Asia/Singapore')
 ```
+
+When a macro is used directly as a comparison bound, the cast alone is correct. Adding
+`AT TIME ZONE` there shifts the bound 8 hours. See [grafana.md](grafana.md).
 
 See [grafana.md](grafana.md) for the full Grafana-specific ruleset.
 

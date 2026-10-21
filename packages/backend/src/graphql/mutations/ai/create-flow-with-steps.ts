@@ -6,6 +6,7 @@ import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import Flow from '@/models/flow'
+import { createStepAiBuilderConfig } from '@/services/mcp/step-ai-builder-config'
 
 import { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -98,7 +99,10 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
         type: step.type,
         appKey: step.appKey,
         key: step.key,
-        config: step?.config || {},
+        config: {
+          ...(step?.config || {}),
+          ...createStepAiBuilderConfig(aiBuilderConfig.traceId, 'create_pipe'),
+        },
         parameters: step?.parameters || {},
         position: step.position,
       }

@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
+import appConfig from '@/config/app'
 import getExecutions from '@/graphql/queries/get-executions'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
@@ -526,6 +527,64 @@ describe('getExecutions', () => {
       const stepIds = executionNode.executionSteps.map((es) => es.stepId)
       const sortedStepIds = [...stepIds].sort()
       expect(stepIds).toEqual(sortedStepIds)
+    })
+  })
+
+  describe('execution history window', () => {
+    const OLD_DATE = '2020-01-01T00:00:00.000Z'
+
+    beforeEach(() => {
+      appConfig.archiveEnabled = true
+    })
+
+    afterEach(() => {
+      appConfig.archiveEnabled = false
+    })
+
+    const createExecutionAt = async (flow: Flow, createdAt: string) => {
+      const execution = await flow
+        .$relatedQuery('executions')
+        .insertAndFetch(
+          createExecutionData({ internalId: `exec-${createdAt}` }),
+        )
+      await execution.$query().patch({ createdAt })
+      return execution
+    }
+
+    it('excludes executions older than 3 months for non-admin requests when archival is enabled', async () => {
+      await createExecutionAt(testFlow, OLD_DATE)
+      const recentExecution = await testFlow
+        .$relatedQuery('executions')
+        .insertAndFetch(createExecutionData({ internalId: 'exec-recent' }))
+
+      const result = await callGetExecutions(testFlow.id, context)
+
+      expect(result.edges).toHaveLength(1)
+      expect(result.edges[0].node.id).toBe(recentExecution.id)
+    })
+
+    it('includes executions older than 3 months when the flow has archival disabled', async () => {
+      await testFlow.$query().patch({ config: { archiveDisabled: true } })
+      await createExecutionAt(testFlow, OLD_DATE)
+      await testFlow
+        .$relatedQuery('executions')
+        .insertAndFetch(createExecutionData({ internalId: 'exec-recent' }))
+
+      const result = await callGetExecutions(testFlow.id, context)
+
+      expect(result.edges).toHaveLength(2)
+    })
+
+    it('includes executions older than 3 months for admin operations regardless of archival config', async () => {
+      await createExecutionAt(testFlow, OLD_DATE)
+      await testFlow
+        .$relatedQuery('executions')
+        .insertAndFetch(createExecutionData({ internalId: 'exec-recent' }))
+
+      const adminContext: Context = { ...context, isAdminOperation: true }
+      const result = await callGetExecutions(testFlow.id, adminContext)
+
+      expect(result.edges).toHaveLength(2)
     })
   })
 

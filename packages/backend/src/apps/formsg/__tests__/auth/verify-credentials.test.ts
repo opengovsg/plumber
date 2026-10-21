@@ -80,10 +80,10 @@ describe('verify credentials', () => {
     it.each([
       'https://form.gov.sg/',
       'https://www.form.gov.sg/',
-      'https://staging.form.gov.sg/',
+      'https://stg.form.gov.sg/',
       'form.gov.sg/',
       'www.form.gov.sg/',
-      'staging.form.gov.sg/admin/',
+      'stg.form.gov.sg/admin/',
     ])('should accept a valid form url (%s)', (url) => {
       const formId = $.auth.data.formId
       $.auth.data.formId = url + formId

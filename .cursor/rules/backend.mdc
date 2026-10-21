@@ -1,0 +1,10 @@
+---
+description: Plumber backend (packages/backend) architecture, commands and conventions
+globs: packages/backend/**/*
+alwaysApply: false
+---
+
+Before reading or changing anything under `packages/backend/`, read the full
+backend rules:
+
+@.claude/rules/backend.md

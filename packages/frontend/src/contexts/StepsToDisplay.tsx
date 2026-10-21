@@ -15,6 +15,8 @@ export type StepToDisplayContextValue = {
   appsWithActions: IApp[]
   groupingActions: Set<string> | null
   stepIdToOrder: Record<string, number>
+  // The MRF-filtered steps to display with the trigger dropped.
+  actionStepsToDisplay: IStep[]
 }
 
 export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
@@ -24,6 +26,7 @@ export const StepsToDisplayContext = createContext<StepToDisplayContextValue>({
   appsWithActions: [],
   groupingActions: null,
   stepIdToOrder: {},
+  actionStepsToDisplay: [],
 })
 
 interface StepExecutionsProviderProps {
@@ -67,6 +70,13 @@ export function StepsToDisplayProvider({
       return false
     })
   }, [allSteps, approvalBranches])
+
+  // The trigger is always first in the MRF-filtered list, so slice(1) drops
+  // it.
+  const actionStepsToDisplay = useMemo(
+    () => stepsToDisplay.slice(1),
+    [stepsToDisplay],
+  )
 
   const appsWithActions: IApp[] = allApps.filter(
     (app: IApp) => !!app.actions?.length,
@@ -147,6 +157,7 @@ export function StepsToDisplayProvider({
         appsWithActions,
         groupingActions,
         stepIdToOrder,
+        actionStepsToDisplay,
       }}
     >
       {children}

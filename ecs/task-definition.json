@@ -3,7 +3,7 @@
     {
       "name": "server",
       "cpu": 512,
-      "command": ["npm", "run", "start"],
+      "command": ["node", "packages/backend/dist/server.js"],
       "environment": [
         {
           "name": "NODE_OPTIONS",
@@ -31,7 +31,7 @@
     {
       "name": "worker",
       "cpu": 1024,
-      "command": ["npm", "run", "start:worker"],
+      "command": ["node", "packages/backend/dist/worker.js"],
       "essential": true,
       "stopTimeout": 120,
       "logConfiguration": {

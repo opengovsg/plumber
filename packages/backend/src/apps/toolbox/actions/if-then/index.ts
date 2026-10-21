@@ -6,13 +6,13 @@ import {
   validateConditionGroupParameters,
 } from '../../common/condition-group-limits'
 import { evaluateConditionGroups } from '../../common/evaluate-condition-groups'
-import { getBranchStepIdToSkipTo } from '../../common/get-branch-step-id-to-skip-to'
 import getConditionArgs from '../../common/get-condition-args'
+import { getStepIdToSkipTo } from '../../common/get-step-id-to-skip-to'
 
 const ACTION_KEY = 'ifThen'
 
 const action: IRawAction = {
-  name: 'If-then',
+  name: 'If',
   key: ACTION_KEY,
   description: 'Run different actions based on certain conditions',
   groupsLaterSteps: true,
@@ -21,7 +21,7 @@ const action: IRawAction = {
       label: 'Branch Name',
       key: 'branchName',
       type: 'string' as const,
-      required: true,
+      required: false,
       variables: false,
     },
     {
@@ -65,7 +65,7 @@ const action: IRawAction = {
       return
     }
 
-    const nextStepId = await getBranchStepIdToSkipTo($)
+    const nextStepId = await getStepIdToSkipTo($)
     return nextStepId
       ? {
           nextStep: {

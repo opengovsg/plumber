@@ -2,6 +2,11 @@ import { timingSafeEqual } from 'crypto'
 
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { generateViewToken, verifyTilePassword } from '@/helpers/auth-tiles'
+import { getClientIp } from '@/helpers/get-client-ip'
+import {
+  clearTilePasswordAttempts,
+  consumeTilePasswordAttempt,
+} from '@/helpers/tiles-password-lockout'
 import TableMetadata from '@/models/table-metadata'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
@@ -21,6 +26,9 @@ const verifyTableViewPassword: MutationResolvers['verifyTableViewPassword'] =
       throw new ForbiddenError("Shareable link or password isn't enabled.")
     }
 
+    const clientIp = getClientIp(context.req)
+    await consumeTilePasswordAttempt(tableId, clientIp)
+
     if (
       // If shareable link view key is not provided
       !context.tilesViewKey ||
@@ -38,6 +46,9 @@ const verifyTableViewPassword: MutationResolvers['verifyTableViewPassword'] =
     ) {
       throw new ForbiddenError('Invalid password')
     }
+
+    await clearTilePasswordAttempts(tableId, clientIp)
+
     const token = generateViewToken(
       table.id,
       table.viewOnlyKey,

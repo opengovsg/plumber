@@ -2,6 +2,11 @@ import helmet, { HelmetOptions } from 'helmet'
 
 import appConfig from '@/config/app'
 
+const posthogHost = 'https://a.plumber.gov.sg'
+const posthogAssetsHost = posthogHost
+  ? `https://*.${new URL(posthogHost).hostname.split('.').slice(-3).join('.')}`
+  : undefined
+
 const helmetOptions: HelmetOptions = {
   contentSecurityPolicy: {
     directives: {
@@ -10,6 +15,7 @@ const helmetOptions: HelmetOptions = {
       blockAllMixedContent: [],
       connectSrc: [
         "'self'",
+        posthogHost,
         // For Datadog RUM
         'https://browser-intake-datadoghq.com',
         'https://*.browser-intake-datadoghq.com',
@@ -24,7 +30,7 @@ const helmetOptions: HelmetOptions = {
         'https://plumber-staging-attachment-bucket-private-ab28487.s3.ap-southeast-1.amazonaws.com',
         'https://plumber-prod-attachment-bucket-private-beb3aa3.s3.ap-southeast-1.amazonaws.com',
         appConfig.baseUrl,
-      ],
+      ].filter(Boolean),
       // for google fonts
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       frameAncestors: ["'none'"],
@@ -46,11 +52,13 @@ const helmetOptions: HelmetOptions = {
       // for google fonts
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       scriptSrcAttr: ["'none'"],
+      // No script is loaded from google-analytics.com or googletagmanager.com;
+      // allow-listing them only exposed a GTM debug endpoint that reflects
+      // attacker-controlled JS (GTA-119-003).
       scriptSrc: [
         "'self'",
-        'https://www.google-analytics.com',
-        'https://www.googletagmanager.com',
         appConfig.isDev && 'https://*.apollographql.com',
+        posthogAssetsHost,
         appConfig.isDev && "'unsafe-inline'",
       ].filter(Boolean),
       manifestSrc: [

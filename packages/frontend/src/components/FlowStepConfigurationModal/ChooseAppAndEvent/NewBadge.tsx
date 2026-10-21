@@ -1,28 +1,29 @@
 import { Badge } from '@opengovsg/design-system-react'
 
-const VARIANTS = {
-  primary: {
-    bgColor: 'interaction.muted.main.active',
-    color: 'primary.500',
-  },
-  secondary: {
-    bgColor: 'secondary.50',
-    color: 'secondary.700',
-  },
+const COMPACT_STYLES = {
+  h: 5,
+  py: 0,
+  px: 1.5,
+  alignItems: 'center',
+  fontSize: '0.625rem',
+  fontWeight: 600,
+  letterSpacing: '0.08em',
 }
 
 interface NewBadgeProps {
-  variant?: keyof typeof VARIANTS
+  isCompact?: boolean
 }
 
 export default function NewBadge(props: NewBadgeProps) {
-  const { variant = 'primary' } = props
-
-  const { bgColor, color } = VARIANTS[variant]
+  const { isCompact = false } = props
 
   return (
-    <Badge bgColor={bgColor} color={color}>
-      New
+    <Badge
+      bgColor="interaction.muted.main.active"
+      color="primary.500"
+      {...(isCompact && COMPACT_STYLES)}
+    >
+      {isCompact ? 'NEW' : 'New'}
     </Badge>
   )
 }

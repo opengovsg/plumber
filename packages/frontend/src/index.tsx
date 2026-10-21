@@ -1,5 +1,6 @@
 import '@fontsource/space-grotesk'
 import '@opengovsg/confetti/confetti.css'
+import './posthog'
 
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'

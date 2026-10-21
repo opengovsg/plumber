@@ -7,6 +7,8 @@ import {
   ITriggerItem,
 } from '@plumber/types'
 
+import { isEqual } from 'lodash'
+
 import appConfig from '@/config/app'
 import EarlyExitError from '@/errors/early-exit'
 import Connection from '@/models/connection'
@@ -16,6 +18,7 @@ import Step from '@/models/step'
 import User from '@/models/user'
 
 import createHttpClient from './http-client'
+import { retryOnTransientDbError } from './retry-on-transient-db-error'
 
 type GlobalVariableOptions = {
   connection?: Connection
@@ -45,22 +48,31 @@ const globalVariable = async (
   } = options
 
   const isTrigger = step?.isTrigger
-  const nextStep = await step?.getNextStep()
+  const nextStep = await retryOnTransientDbError(
+    async () => step?.getNextStep(),
+    {
+      context: { flowId: flow?.id, stepId: step?.id },
+    },
+  )
 
   const $: IGlobalVariable = {
     auth: {
       set: async (args: IJSONObject) => {
-        if (connection) {
-          await connection.$query().patchAndFetch({
-            formattedData: {
-              ...connection.formattedData,
-              ...args,
-            },
-          })
-
-          $.auth.data = connection.formattedData
+        const updatedAuthData = {
+          ...$.auth.data,
+          ...args,
         }
 
+        // Skip the DB write when nothing changed. isStillVerified often calls
+        // set with the same screen name or tokens. A no-op patch still bumps
+        // connection.updatedAt.
+        if (connection && !isEqual(updatedAuthData, $.auth.data)) {
+          await connection.$query().patchAndFetch({
+            formattedData: updatedAuthData,
+          })
+        }
+
+        $.auth.data = updatedAuthData
         return null
       },
       data: connection?.formattedData,
@@ -72,7 +84,10 @@ const globalVariable = async (
       name: flow?.name,
       userId: flow?.userId,
       hasFileProcessingActions:
-        (await flow?.containsFileProcessingActions()) ?? false,
+        (await retryOnTransientDbError(
+          async () => flow?.containsFileProcessingActions(),
+          { context: { flowId: flow?.id } },
+        )) ?? false,
       isActive: flow?.active ?? false,
     },
     step: {

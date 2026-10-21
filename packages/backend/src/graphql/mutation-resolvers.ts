@@ -31,10 +31,12 @@ import loginWithSso from './mutations/login-with-sso'
 import logout from './mutations/logout'
 import moveFlowToFolder from './mutations/move-flow-to-folder'
 import registerConnection from './mutations/register-connection'
+import replaceConnectionCredentials from './mutations/replace-connection-credentials'
 import requestOtp from './mutations/request-otp'
 import resetConnection from './mutations/reset-connection'
 import retryExecutionStep from './mutations/retry-execution-step'
 import retryPartialStep from './mutations/retry-partial-step'
+import startSsoLogin from './mutations/start-sso-login'
 import tilesMutationResolvers from './mutations/tiles'
 import updateConnection from './mutations/update-connection'
 import updateFlow from './mutations/update-flow'
@@ -50,7 +52,7 @@ import verifyOtp from './mutations/verify-otp'
 /**
  * Want to create a new mutation or modify an existing mutation?
  * 1. Add/Change your mutation in graphql.schema.
- * 2. Run `npm run gqlc` to trigger codegen.
+ * 2. Run `pnpm run gqlc` to trigger codegen.
  * 3. Start implementing! You can reference the other mutation implementations
  *    to see how to type your mutation function.
  *
@@ -70,6 +72,7 @@ export default {
   createConnection,
   generateAuthUrl,
   updateConnection,
+  replaceConnectionCredentials,
   resetConnection,
   verifyConnection,
   deleteConnection,
@@ -101,6 +104,7 @@ export default {
   logout,
   loginWithSgid,
   loginWithSelectedSgid,
+  startSsoLogin,
   loginWithSso,
   createFlowTransfer,
   updateFlowTransferStatus,

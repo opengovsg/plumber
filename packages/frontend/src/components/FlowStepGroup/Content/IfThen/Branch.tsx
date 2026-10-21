@@ -165,7 +165,8 @@ export default function Branch(props: BranchProps) {
             color="base.content.default"
             noOfLines={1}
           >
-            {branchSteps[0].parameters.branchName as string}
+            {(branchSteps[0].parameters.branchName as string) ||
+              'If-then Branch'}
           </Text>
 
           {/* Duplicate/delete branch buttons */}

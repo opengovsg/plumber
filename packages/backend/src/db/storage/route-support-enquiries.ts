@@ -31,12 +31,16 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
         branchName: 'Resetting device',
         conditions: [
           {
-            is: 'is',
-            text: 'Resetting device',
-            field: CREATE_TEMPLATE_STEP_VARIABLE(
-              'Replace with response 1 request',
-            ),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'is',
+                text: 'Resetting device',
+                field: CREATE_TEMPLATE_STEP_VARIABLE(
+                  'Replace with response 1 request',
+                ),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },
@@ -67,12 +71,16 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
         branchName: 'Damaged device',
         conditions: [
           {
-            is: 'is',
-            text: 'Damaged device',
-            field: CREATE_TEMPLATE_STEP_VARIABLE(
-              'Replace with response 1 request',
-            ),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'is',
+                text: 'Damaged device',
+                field: CREATE_TEMPLATE_STEP_VARIABLE(
+                  'Replace with response 1 request',
+                ),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },
@@ -103,12 +111,16 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
         branchName: 'Lost device',
         conditions: [
           {
-            is: 'is',
-            text: 'Lost device',
-            field: CREATE_TEMPLATE_STEP_VARIABLE(
-              'Replace with response 1 request',
-            ),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'is',
+                text: 'Lost device',
+                field: CREATE_TEMPLATE_STEP_VARIABLE(
+                  'Replace with response 1 request',
+                ),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },
@@ -139,12 +151,16 @@ export const ROUTE_SUPPORT_ENQUIRIES_TEMPLATE: ITemplate = {
         branchName: 'New device',
         conditions: [
           {
-            is: 'is',
-            text: 'New device',
-            field: CREATE_TEMPLATE_STEP_VARIABLE(
-              'Replace with response 1 request',
-            ),
-            condition: 'equals',
+            rows: [
+              {
+                is: 'is',
+                text: 'New device',
+                field: CREATE_TEMPLATE_STEP_VARIABLE(
+                  'Replace with response 1 request',
+                ),
+                condition: 'equals',
+              },
+            ],
           },
         ],
       },

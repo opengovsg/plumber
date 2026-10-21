@@ -7,6 +7,7 @@ import { Button, useToast } from '@opengovsg/design-system-react'
 import client from '@/graphql/client'
 import { RETRY_EXECUTION_STEP } from '@/graphql/mutations/retry-execution-step'
 import { GET_EXECUTION_STEPS } from '@/graphql/queries/get-execution-steps'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 export type RetryVariant = 'retry' | 'resume'
 
@@ -61,6 +62,11 @@ const RetryButton = ({
       },
     },
     onCompleted: () => {
+      if (isPostHogConfigured) {
+        posthog.capture('execution_step_retry_started', {
+          retry_variant: variant,
+        })
+      }
       toast({
         title: config.successMessage,
         status: 'success',

@@ -15,6 +15,7 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
@@ -24,10 +25,18 @@ interface DeleteStepButtonProps {
   step: IStep
   stepName: string
   displayPosition?: number
+  /** Skip FlowStep's hover-reveal CSS, since the parent controls visibility. */
+  alwaysVisible?: boolean
 }
 
 export default function DeleteStepButton(props: DeleteStepButtonProps) {
-  const { isNested, step, stepName, displayPosition } = props
+  const {
+    isNested,
+    step,
+    stepName,
+    displayPosition,
+    alwaysVisible = false,
+  } = props
   const cancelRef = useRef<HTMLButtonElement>(null)
   const customBody = stepName
     ? `Are you sure you want to delete step **${
@@ -102,6 +111,9 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       await client.refetchQueries({
         include: [GET_FLOW, GET_TEST_EXECUTION_STEPS],
       })
+      if (isPostHogConfigured) {
+        posthog.capture('flow_step_deleted')
+      }
 
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
@@ -139,8 +151,10 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
           icon={<BiTrash />}
           minHeight={isNested ? 6 : 8}
           minWidth={isNested ? 6 : 8}
-          className={isMobile ? undefined : 'hover-remove-button'}
-          visibility={isMobile ? 'visible' : 'hidden'}
+          className={
+            isMobile || alwaysVisible ? undefined : 'hover-remove-button'
+          }
+          visibility={isMobile || alwaysVisible ? 'visible' : 'hidden'}
         />
       </Flex>
 

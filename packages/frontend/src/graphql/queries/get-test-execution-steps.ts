@@ -20,6 +20,7 @@ export const GET_TEST_EXECUTION_STEPS = gql`
             appEventKey
           }
           stepName
+          endStepId
           approval {
             branch
             stepId

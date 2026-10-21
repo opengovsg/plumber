@@ -6,6 +6,7 @@ import { Button, Infobox } from '@opengovsg/design-system-react'
 import singpassLogo from '@/assets/singpass-logo.svg'
 import { SGID_CHECK_ELIGIBILITY_URL } from '@/config/urls'
 import { generateSgidAuthUrl } from '@/helpers/oidc'
+import { storePostLoginRedirect } from '@/helpers/post-login-redirect'
 
 import SgidFailureModal from './SgidFailureModal'
 
@@ -16,25 +17,22 @@ export default function SgidLoginSection(): JSX.Element {
   const [searchParams] = useSearchParams()
   const canUseSgid = !searchParams.get('not_sgid_eligible')
 
-  const handleSgidLogin = useCallback(
-    async () => {
-      setIsRedirectingToSgid(true)
+  const handleSgidLogin = useCallback(async () => {
+    setIsRedirectingToSgid(true)
 
-      // Surround in try-catch to explicitly warn users on funky browsers about
-      // failures to generate PKCE params, instead of letting error bubble up in
-      // console.
-      try {
-        const { url, verifier, nonce } = await generateSgidAuthUrl()
-        sessionStorage.setItem('sgid-verifier', verifier)
-        sessionStorage.setItem('sgid-nonce', nonce)
-        location.assign(url)
-      } catch {
-        setHasError(true)
-      }
-    },
-    // Empty dep list as this is expected to be one-shot.
-    [],
-  )
+    // Surround in try-catch to explicitly warn users on funky browsers about
+    // failures to generate PKCE params, instead of letting error bubble up in
+    // console.
+    try {
+      storePostLoginRedirect(searchParams.get('redirect'))
+      const { url, verifier, nonce } = await generateSgidAuthUrl()
+      sessionStorage.setItem('sgid-verifier', verifier)
+      sessionStorage.setItem('sgid-nonce', nonce)
+      location.assign(url)
+    } catch {
+      setHasError(true)
+    }
+  }, [searchParams])
 
   return canUseSgid ? (
     <>

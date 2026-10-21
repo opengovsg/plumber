@@ -200,7 +200,9 @@ describe('Only continue if', () => {
       version: 2,
     }
 
-    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+    // getStepIdToSkipTo queries to find the governing (legacy) if-then, then
+    // the legacy engine queries again — so both reads need the same flow.
+    mocks.stepQueryResult.mockResolvedValue(MOCK_FLOW)
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toEqual({
@@ -224,7 +226,9 @@ describe('Only continue if', () => {
       version: 2,
     }
 
-    mocks.stepQueryResult.mockResolvedValueOnce(MOCK_FLOW)
+    // getStepIdToSkipTo queries to find the governing (legacy) if-then, then
+    // the legacy engine queries again — so both reads need the same flow.
+    mocks.stepQueryResult.mockResolvedValue(MOCK_FLOW)
 
     const result = await onlyContinueIfAction.run($)
     expect(result).toEqual({

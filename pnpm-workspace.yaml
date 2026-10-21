@@ -1,0 +1,62 @@
+packages:
+  - "packages/*"
+  - "tools/*"
+
+engineStrict: true
+minimumReleaseAge: 2880
+
+publicHoistPattern:
+  - "graphql"
+
+catalog:
+  "@aws-sdk/client-s3": "3.1027.0"
+  "@opentelemetry/api": "1.9.0"
+  "ai": "5.0.81"
+  "dotenv": "16.6.1"
+  "graphql": "16.11.0"
+  "knex": "2.4.2"
+  "lodash": "4.18.1"
+  "luxon": "2.5.2"
+  "p-limit": "3.1.0"
+  "pg": "^8.7.1"
+  "typescript": "^5.5.4"
+  "winston": "^3.7.1"
+  "zod": "4.4.3"
+
+overrides:
+  "axios": "1.20.0"
+  "graphql": "16.11.0"
+  "qs": "6.15.0"
+  "glob": "13.0.6"
+  "minimatch": "10.2.3"
+  "rollup": "4.59.0"
+  "dd-trace>@opentelemetry/core": "2.8.0"
+  "dd-trace>path-to-regexp": "0.1.13"
+  "@opentelemetry/core>@opentelemetry/semantic-conventions": "1.37.0"
+  "lodash": "4.18.1"
+  "lodash-es": "4.18.1"
+  "vite": "6.4.3"
+  "immutable": "4.3.9"
+  "picomatch": "4.0.4"
+  "shell-quote": "1.9.0"
+  "form-data": "4.0.6"
+  # Keep the tested versions. Parents resolved newer than develop-v2 declare ranges that exclude them.
+  "content-type": "1.0.5"
+  "es-module-lexer": "1.7.0"
+  "@smithy/core": "3.24.1"
+  # Match the Node 22 runtime. Packages declaring "*" otherwise get the newest major.
+  "@types/node": "22.18.0"
+allowBuilds:
+  "@apollo/protobufjs": true
+  "@datadog/native-appsec": true
+  "@datadog/native-iast-taint-tracking": true
+  "@datadog/native-metrics": true
+  "@datadog/pprof": true
+  "@swc/core": true
+  "core-js": false
+  "cpu-features": true
+  "dd-trace": true
+  "esbuild": true
+  "msgpackr-extract": true
+  "protobufjs": true
+  "ssh2": true

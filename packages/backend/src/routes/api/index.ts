@@ -8,8 +8,11 @@ import {
 import adminRouter from './admin'
 import appsRouter from './apps'
 import chatRouter from './chat'
+import connectionsRouter from './connections'
+import dynamicDataRouter from './dynamic-data'
+import templatesRouter from './templates'
 
-const router = Router()
+const router: Router = Router()
 
 // Apply authentication middleware to ALL API routes
 // This mirrors how GraphQL handles authentication via context
@@ -24,6 +27,9 @@ router.use('/admin', adminRouter)
 router.use(blockAdminOperations)
 
 router.use('/chat', chatRouter)
+router.use('/connections', connectionsRouter)
+router.use('/dynamic-data', dynamicDataRouter)
+router.use('/templates', templatesRouter)
 
 // Future routes can be added here:
 // router.use('/users', usersRouter)

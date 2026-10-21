@@ -19,6 +19,9 @@ import {
 
 const FLOW_ID = '00000000-0000-0000-0000-000000000001'
 
+// The business-critical gating-rule tests for `hasExecutionReachedMe`
+// (previous-region failure/skip/stop handling) live in
+// `mrf-submission.critical.itest.ts`, not here.
 describe('mrf-submission action (integration)', () => {
   let context: Context
   let flow: Flow
@@ -90,45 +93,6 @@ describe('mrf-submission action (integration)', () => {
   }
 
   describe('run', () => {
-    it('should pause execution when previous execution step is failed', async () => {
-      const mrfStep = await createMrfActionStep(2)
-      const execution = await Execution.query().insertAndFetch({
-        flowId: FLOW_ID,
-        testRun: false,
-      })
-      // Trigger's execution step is failed
-      await ExecutionStep.query().insert({
-        executionId: execution.id,
-        stepId: triggerStep.id,
-        status: 'failure',
-        dataOut: null,
-        appKey: 'formsg',
-      })
-
-      const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
-
-      expect(result).toEqual({
-        nextStep: { command: 'pause-execution' },
-      })
-    })
-
-    it('should pause execution when previous execution step is missing', async () => {
-      const mrfStep = await createMrfActionStep(2)
-      const execution = await Execution.query().insertAndFetch({
-        flowId: FLOW_ID,
-        testRun: false,
-      })
-      // No execution step for the trigger at all
-
-      const $ = createGlobalVariable(mrfStep, execution)
-      const result = await action.run($)
-
-      expect(result).toEqual({
-        nextStep: { command: 'pause-execution' },
-      })
-    })
-
     it('should pause execution when no webhook yet (getLastExecutionStep returns null)', async () => {
       const mrfStep = await createMrfActionStep(2)
       const execution = await Execution.query().insertAndFetch({

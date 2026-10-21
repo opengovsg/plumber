@@ -1,4 +1,9 @@
-import type { IRawAction } from '@plumber/types'
+import type {
+  IGlobalVariable,
+  IJSONArray,
+  IJSONObject,
+  IRawAction,
+} from '@plumber/types'
 
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
@@ -6,22 +11,68 @@ import { fromZodError } from 'zod-validation-error'
 import HttpError from '@/errors/http'
 import StepError, { GenericSolution } from '@/errors/step'
 import { ensureZodEnumValue } from '@/helpers/zod-utils'
+import Step from '@/models/step'
 
-import { fieldTypeEnum } from '../../common/constants'
+import { uploadCaseAttachments } from '../../common/attachment'
+import { resolveCaseIdentifier } from '../../common/case-identifier'
+import {
+  fieldTypeEnum,
+  GATHER_ATTACHMENT_FIELD_TYPE,
+} from '../../common/constants'
 import throwGatherSGStepError from '../../common/throw-errors'
+import { GatherSGCase } from '../../common/types'
 
 import { requestSchema, responseSchema } from './schema'
+
+/**
+ * Read the case's current uuids for each of the given attachment fields.
+ * Gather stores an attachment field as the full array of file uuids, so
+ * appending requires sending the existing values back. Otherwise a PATCH
+ * would replace (delete) the case's existing attachments.
+ *
+ * IMPORTANT: this read-modify-write can still lose a concurrent writer's
+ * attachments, since Gather offers no append or compare-and-set operation.
+ * One snapshot taken immediately before the PATCH keeps that window as
+ * small as we can make it from here.
+ */
+async function getExistingAttachmentUuids(
+  $: IGlobalVariable,
+  caseUuid: string,
+  fields: string[],
+): Promise<Map<string, string[]>> {
+  const { data } = await $.http.get<{ data: GatherSGCase }>(
+    '/cases/:caseUuid',
+    {
+      urlPathParams: { caseUuid },
+    },
+  )
+
+  return new Map(
+    fields.map((field) => {
+      const existing = data.data.fields?.[field]
+      return [
+        field,
+        Array.isArray(existing)
+          ? existing.filter(
+              (value): value is string => typeof value === 'string',
+            )
+          : [],
+      ]
+    }),
+  )
+}
 
 const action: IRawAction = {
   name: 'Update case',
   key: 'updateCase',
-  description: 'Update a case based on the case uuid',
+  description: 'Update a case using a case uuid or case ref',
+  preserveArrayVariables: true,
   arguments: [
     {
-      label: 'Case UUID',
+      label: 'Case UUID or case ref',
       key: 'caseUuid',
       type: 'string' as const,
-      description: 'Select the case uuid you want to update.',
+      description: 'Select a variable with a case UUID or case ref.',
       required: true,
       variables: true,
       // we intentionally disable typing for case uuid as it is used in
@@ -50,7 +101,7 @@ const action: IRawAction = {
       autofillable: true,
       required: false,
       description:
-        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet.',
+        'Specify values for each field you want to update in your case. Note that fields that require an array of objects as a value are not supported yet. Checkbox fields only accept FormSG checkbox variables. Dropdown values are sent to GatherSG as string arrays. Radio Button values are sent as strings.',
 
       subFields: [
         {
@@ -99,11 +150,23 @@ const action: IRawAction = {
               value: ensureZodEnumValue(fieldTypeEnum, 'email'),
             },
             {
+              label: 'Dropdown',
+              value: ensureZodEnumValue(fieldTypeEnum, 'dropdown'),
+            },
+            {
+              label: 'Checkbox',
+              value: ensureZodEnumValue(fieldTypeEnum, 'checkbox'),
+            },
+            {
+              label: 'Radio Button',
+              value: ensureZodEnumValue(fieldTypeEnum, 'radio'),
+            },
+            {
               label: 'Null',
               value: ensureZodEnumValue(fieldTypeEnum, 'null'),
             },
           ],
-          customStyle: { flex: 1, maxWidth: 140 },
+          customStyle: { flex: 1, maxWidth: 160 },
         },
         {
           placeholder: 'Value',
@@ -113,21 +176,162 @@ const action: IRawAction = {
           variables: true,
           hiddenIf: {
             fieldKey: 'fieldType',
-            op: 'equals',
-            fieldValue: 'null',
+            op: 'in',
+            fieldValues: ['null', 'checkbox'],
+          },
+          customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
+        },
+        {
+          placeholder: 'Select a FormSG checkbox',
+          key: 'value',
+          type: 'string' as const,
+          required: true,
+          variables: true,
+          variableTypes: ['array'],
+          singleVariableSelection: true,
+          noVariablesMessage:
+            ' No variables available - include a checkbox field in your FormSG.',
+          hiddenIf: {
+            fieldKey: 'fieldType',
+            op: 'not_equals',
+            fieldValue: 'checkbox',
           },
           customStyle: { flex: 3, minWidth: 0, maxWidth: '60%' },
         },
       ],
     },
+    {
+      label: 'Attachment fields',
+      key: 'attachmentFields',
+      type: 'multirow' as const,
+      required: false,
+      addRowButtonText: 'Add attachment field',
+      description: 'Upload files to one or more attachment fields on the case.',
+      subFields: [
+        {
+          label: 'Field',
+          key: 'field',
+          type: 'dropdown' as const,
+          required: true,
+          variables: false,
+          showOptionValue: false,
+          hideWhenNoOptions: true,
+          source: {
+            type: 'query' as const,
+            name: 'getDynamicData' as const,
+            arguments: [
+              { name: 'key', value: 'getCaseAttachmentFields' },
+              {
+                name: 'parameters.caseUuid',
+                value: '{parameters.caseUuid}',
+              },
+            ],
+          },
+        },
+        {
+          label: 'Update mode',
+          key: 'replaceExisting',
+          type: 'boolean-radio' as const,
+          required: true,
+          value: false,
+          options: [
+            {
+              label: 'Add to existing attachments',
+              value: false,
+            },
+            {
+              label: 'Replace existing attachments',
+              value: true,
+            },
+          ],
+        },
+        {
+          label: 'Attachments',
+          key: 'attachments',
+          type: 'attachment' as const,
+          required: true,
+          variables: true,
+          variableTypes: ['file'],
+          hiddenIf: {
+            fieldKey: 'field',
+            op: 'is_empty',
+          },
+        },
+      ],
+    },
   ],
+
+  preprocessVariable(parameterKey: string, variableValue: unknown) {
+    // Keep FormSG checkbox arrays intact for Checkbox field values.
+    if (parameterKey === 'value' && Array.isArray(variableValue)) {
+      return variableValue
+    }
+    if (Array.isArray(variableValue)) {
+      return variableValue.join(', ')
+    }
+    return variableValue
+  },
+  doesFileProcessing: (step: Step) =>
+    ((step.parameters.attachmentFields as IJSONArray | undefined) ?? []).some(
+      (row: unknown) =>
+        Array.isArray((row as IJSONObject).attachments) &&
+        ((row as IJSONObject).attachments as IJSONArray).length > 0,
+    ),
 
   async run($) {
     try {
-      const payload = requestSchema.parse($.step.parameters)
-      const rawResponse = await $.http.patch('/cases/:caseUuid', payload, {
+      const parsed = requestSchema.parse($.step.parameters)
+      const caseUuid = await resolveCaseIdentifier($, parsed.caseUuid)
+      const { attachmentFields, ...patchBody } = parsed
+      patchBody.caseUuid = caseUuid
+
+      if (attachmentFields.length > 0) {
+        const uploaded: {
+          field: string
+          replaceExisting: boolean
+          uuids: string[]
+        }[] = []
+
+        for (const {
+          field,
+          replaceExisting,
+          attachments,
+        } of attachmentFields) {
+          uploaded.push({
+            field,
+            replaceExisting,
+            uuids: await uploadCaseAttachments({
+              $,
+              caseUuid,
+              field,
+              fieldType: GATHER_ATTACHMENT_FIELD_TYPE,
+              s3Ids: attachments,
+            }),
+          })
+        }
+
+        const fieldsToAppend = uploaded
+          .filter(({ replaceExisting }) => !replaceExisting)
+          .map(({ field }) => field)
+        const existingUuids = fieldsToAppend.length
+          ? await getExistingAttachmentUuids($, caseUuid, fieldsToAppend)
+          : new Map<string, string[]>()
+
+        for (const { field, replaceExisting, uuids } of uploaded) {
+          const finalUuids = replaceExisting
+            ? uuids
+            : [...new Set([...(existingUuids.get(field) ?? []), ...uuids])]
+
+          patchBody.fields = {
+            ...(patchBody.fields ?? {}),
+            [field]: finalUuids,
+          } as Record<string, string | number | null>
+        }
+      }
+
+      const rawResponse = await $.http.patch('/cases/:caseUuid', patchBody, {
         urlPathParams: {
-          caseUuid: $.step.parameters.caseUuid,
+          caseUuid,
         },
       })
       const response = responseSchema.parse(rawResponse.data)
@@ -144,6 +348,10 @@ const action: IRawAction = {
           `${firstError.message}`,
           GenericSolution.ReconfigureInvalidField,
         )
+      }
+
+      if (error instanceof StepError) {
+        throw error
       }
 
       if (error instanceof HttpError) {

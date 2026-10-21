@@ -11,7 +11,7 @@ const PRODUCTION_SDK = formsgSdk({
   mode: 'production',
 })
 
-export const SUPPORTED_FORM_ENVS = ['prod', 'staging', 'uat'] as const
+export const SUPPORTED_FORM_ENVS = ['prod', 'stg', 'uat'] as const
 export type FormEnv = (typeof SUPPORTED_FORM_ENVS)[number]
 
 export function parseFormIdAsUrl(rawUrl: string): URL | null {
@@ -35,9 +35,7 @@ function isSupportedFormEnv(rawEnv: string): rawEnv is FormEnv {
   return envs.includes(rawEnv)
 }
 
-export function parseFormEnv($: IGlobalVariable): FormEnv {
-  const { formId } = $.auth.data
-
+export function parseFormEnvFromInput(formId: unknown): FormEnv {
   if (!formId || typeof formId !== 'string') {
     throw new Error('Provide a valid FormSG URL')
   }
@@ -66,6 +64,10 @@ export function parseFormEnv($: IGlobalVariable): FormEnv {
   // If we are here, then formId is the actual form ID itself without a url.
   // For legacy reasons, we assume that it's prod.
   return 'prod'
+}
+
+export function parseFormEnv($: IGlobalVariable): FormEnv {
+  return parseFormEnvFromInput($.auth.data.formId)
 }
 
 export function getSdk(env: FormEnv): ReturnType<typeof formsgSdk> {

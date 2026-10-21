@@ -14,6 +14,8 @@ export interface SharedSelectContextReturnProps<
   isClearable?: boolean
   /** Nothing found label. Defaults to "No matching results" */
   nothingFoundLabel?: string
+  /** Markdown shown in the menu when the dropdown has no options. */
+  noOptionsMessage?: string | null
   /** aria-label for clear button. Defaults to "Clear selection" */
   clearButtonLabel?: string
   /**

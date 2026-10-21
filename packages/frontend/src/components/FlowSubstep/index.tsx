@@ -6,11 +6,15 @@ import { Box, Stack, useDisclosure, usePrevious } from '@chakra-ui/react'
 
 import FlowStepTestController from '@/components/FlowStepTestController'
 import InputCreator from '@/components/InputCreator'
-import { getInputFlag } from '@/config/flags'
 import { EditorContext } from '@/contexts/Editor'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
-import { hasDirtyFields, validateSubstep } from '@/helpers/editor'
+import {
+  hasDirtyFields,
+  isInputVisibleForStep,
+  validateSubstep,
+} from '@/helpers/editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
+import { useIfThenV2Enabled } from '@/hooks/useIfThenV2Enabled'
 
 type FlowSubstepProps = {
   hasConnection: boolean
@@ -38,6 +42,8 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   } = useDisclosure()
 
   const { arguments: args } = substep
+  const { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading } =
+    useIfThenV2Enabled()
   const [isSaving, setIsSaving] = useState(false)
   const [isValid, setIsValid] = useState<boolean>(
     validateSubstep(substep, formContext.getValues() as IStep),
@@ -61,15 +67,23 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
   // filter inputs hidden behind feature flags based on timestamp
   const argsToDisplay = useMemo(
     () =>
-      args?.filter((arg) => {
-        const inputFlag = getInputFlag(
-          selectedActionOrTrigger?.key ?? '',
+      args?.filter((arg) =>
+        isInputVisibleForStep(
+          selectedActionOrTrigger?.key,
           arg.key,
-        )
-        const flagValue = getFlagValue(inputFlag, false)
-        return !flagValue || +step.createdAt <= flagValue
-      }) || [],
-    [args, step.createdAt, selectedActionOrTrigger, getFlagValue],
+          step,
+          getFlagValue,
+          { isEnabled: isIfThenV2Enabled, isLoading: isIfThenV2Loading },
+        ),
+      ) || [],
+    [
+      args,
+      step,
+      isIfThenV2Enabled,
+      isIfThenV2Loading,
+      selectedActionOrTrigger?.key,
+      getFlagValue,
+    ],
   )
 
   /**
@@ -140,7 +154,7 @@ function FlowSubstep(props: FlowSubstepProps): JSX.Element {
     <Box position="relative" display="flex" flexDirection="column">
       {argsToDisplay.length > 0 && (
         <Box flex="1" p={0} pb={4}>
-          <Stack w="100%" spacing={4}>
+          <Stack w="100%" spacing={7}>
             {argsToDisplay.map((argument) => (
               <InputCreator
                 key={argument.key}

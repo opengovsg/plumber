@@ -1,8 +1,31 @@
-import 'dotenv/config'
 import '@/types/luxon-extensions'
 
+import type { AwsCredentialIdentity } from '@aws-sdk/types'
+import { config } from 'dotenv'
 import { Settings as LuxonSettings } from 'luxon'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { URL } from 'node:url'
+import { z } from 'zod'
+
+// Placeholders backstop missing keys. Local dev gets its real values from 1Password,
+// which dotenv never overrides.
+// IMPORTANT: without the guard, placeholders would satisfy a deployed environment's
+// missing-env-var checks.
+if ((process.env.APP_ENV ?? 'development') === 'development') {
+  config({ path: path.resolve(__dirname, '../../.env-example') })
+}
+
+// IMPORTANT: ECS runs `node` directly, so npm_package_version is unset there.
+const getVersion = (): string =>
+  process.env.npm_package_version ??
+  z
+    .object({ version: z.string() })
+    .parse(
+      JSON.parse(
+        readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8'),
+      ),
+    ).version
 
 type AppConfig = {
   port: string
@@ -58,8 +81,8 @@ type AppConfig = {
   }
   sso: {
     clientId: string
-    clientSecret: string
-    discoveryUrl: string
+    privateKeyPem: string
+    issuer: string
   }
   gathersg: {
     publicKey: string
@@ -92,6 +115,14 @@ type AppConfig = {
     roleArn: string
     configurationSet?: string
     sqsQueueUrl?: string
+    /**
+     * Only used for special scenarios (e.g. no SSO)
+     */
+    credentials?: AwsCredentialIdentity
+  }
+  archiveEnabled: boolean
+  aiGateway: {
+    apiKey?: string
   }
 }
 
@@ -112,7 +143,7 @@ const appConfig: AppConfig = {
   appEnv: appEnv,
   isProd: appEnv === 'prod',
   isDev: appEnv === 'development',
-  version: process.env.npm_package_version,
+  version: getVersion(),
   postgresDatabase: process.env.POSTGRES_DATABASE || 'plumber_dev',
   postgresPort: parseInt(process.env.POSTGRES_PORT || '5432'),
   postgresHost:
@@ -164,8 +195,9 @@ const appConfig: AppConfig = {
   },
   sso: {
     clientId: process.env.SSO_CLIENT_ID,
-    clientSecret: process.env.SSO_CLIENT_SECRET,
-    discoveryUrl: process.env.SSO_DISCOVERY_URL,
+    // Secret managers often store the PEM single-line with literal "\n".
+    privateKeyPem: process.env.SSO_PRIVATE_KEY_PEM?.replace(/\\n/g, '\n'),
+    issuer: process.env.SSO_ISSUER?.replace(/\/$/, ''),
   },
   gathersg: {
     publicKey: process.env.GATHERSG_PUBLIC_KEY,
@@ -196,13 +228,24 @@ const appConfig: AppConfig = {
   },
   // AWS postman SES
   ses: {
-    fromAddress: 'info@plumber.gov.sg',
-    region: 'ap-southeast-2',
+    fromAddress: process.env.SES_FROM_ADDRESS,
+    region: process.env.SES_REGION,
     roleArn: process.env.SES_ROLE_ARN,
     ...(process.env.SES_CONFIGURATION_SET && {
       configurationSet: process.env.SES_CONFIGURATION_SET,
     }),
+    ...(process.env.SES_ACCESS_KEY_ID &&
+      process.env.SES_SECRET_ACCESS_KEY && {
+        credentials: {
+          accessKeyId: process.env.SES_ACCESS_KEY_ID,
+          secretAccessKey: process.env.SES_SECRET_ACCESS_KEY,
+        },
+      }),
     sqsQueueUrl: process.env.SQS_QUEUE_URL || undefined,
+  },
+  archiveEnabled: process.env.ARCHIVE_ENABLED === 'true',
+  aiGateway: {
+    apiKey: process.env.AI_GATEWAY_API_KEY || undefined,
   },
 }
 
@@ -233,8 +276,8 @@ if (
 
 if (
   !appConfig.sso.clientId ||
-  !appConfig.sso.clientSecret ||
-  !appConfig.sso.discoveryUrl
+  !appConfig.sso.privateKeyPem ||
+  !appConfig.sso.issuer
 ) {
   throw new Error('SSO environment variables need to be set!')
 }

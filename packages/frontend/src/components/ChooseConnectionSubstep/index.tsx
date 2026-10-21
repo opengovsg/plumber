@@ -47,8 +47,26 @@ const formLinkGenerator = (connectionOption: ConnectionDropdownOption) => {
   return `https://${env === 'prod' ? '' : `${env}.`}form.gov.sg/${formId}`
 }
 
-const excelFolderLinkGenerator = (userEmail: string) => {
-  return `https://gccprod-my.sharepoint.com/shared?id=%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents%2F${userEmail}&listurl=https%3A%2F%2Fgccprod%2Esharepoint%2Ecom%2Fsites%2FGOVTECH%2Dplumber%2FShared%20Documents`
+// Site names are pre-encoded so links match the ones SharePoint generates.
+const M365_TENANT_SHAREPOINT_SITES: Record<
+  string,
+  { tenantName: string; encodedSiteName: string }
+> = {
+  'sg-govt': { tenantName: 'gccprod', encodedSiteName: 'GOVTECH%2Dplumber' },
+  'sg-moe': { tenantName: 'sgmoe', encodedSiteName: 'ssp%2Dplumber' },
+  'local-dev': { tenantName: 'ogpplumbertest', encodedSiteName: 'Plumber' },
+}
+
+const excelFolderLinkGenerator = (
+  tenantKey: string | undefined,
+  userEmail: string,
+): string | null => {
+  const site = tenantKey ? M365_TENANT_SHAREPOINT_SITES[tenantKey] : undefined
+  if (!site) {
+    return null
+  }
+  const { tenantName, encodedSiteName } = site
+  return `https://${tenantName}-my.sharepoint.com/shared?id=%2Fsites%2F${encodedSiteName}%2FShared%20Documents%2F${userEmail}&listurl=https%3A%2F%2F${tenantName}%2Esharepoint%2Ecom%2Fsites%2F${encodedSiteName}%2FShared%20Documents`
 }
 
 const databricksWorkspaceLinkGenerator = (
@@ -149,7 +167,11 @@ function ChooseConnectionSubstep(
         }
       } else if (application.key === EXCEL_APP_KEY) {
         connectionLink = {
-          url: excelFolderLinkGenerator(currentUser?.email ?? ''),
+          url:
+            excelFolderLinkGenerator(
+              connection.environment?.id,
+              currentUser?.email ?? '',
+            ) ?? '',
           text: '(View folder)',
         }
       } else if (application.key === DATABRICKS_APP_KEY) {

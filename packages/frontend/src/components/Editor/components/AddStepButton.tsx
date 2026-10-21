@@ -7,6 +7,7 @@ import { IconButton, TouchableTooltip } from '@opengovsg/design-system-react'
 import EmptyFlowStepHeader from '@/components/EmptyFlowStepHeader'
 import FlowStepConfigurationModal from '@/components/FlowStepConfigurationModal'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
+import posthog, { isPostHogConfigured } from '@/posthog'
 
 import UnsavedChangesAlert from './UnsavedChangesAlert'
 
@@ -79,7 +80,12 @@ export function AddStepButton(props: AddStepButtonProps): JSX.Element {
             marginX="auto"
           >
             <IconButton
-              onClick={handleProceed}
+              onClick={() => {
+                handleProceed()
+                if (isPostHogConfigured) {
+                  posthog.capture('flow_editor:add_step_clicked')
+                }
+              }}
               aria-label="Add Step"
               isDisabled={isDisabled || showEmptyAction}
               icon={<BiPlus />}

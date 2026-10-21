@@ -1,9 +1,9 @@
-import { Box, Divider, Flex, Hide, Image, Show, Text } from '@chakra-ui/react'
+import { Box, Divider, Flex, Hide, Show, Text } from '@chakra-ui/react'
 import { Button, Link } from '@opengovsg/design-system-react'
 
-import mainLogo from '@/assets/logo.svg'
 import AvatarDropdownMenu from '@/components/AvatarDropdownMenu'
 import NewsDrawer from '@/components/NewsDrawer'
+import PlumberLogo from '@/components/PlumberLogo'
 import * as URLS from '@/config/urls'
 
 import NavigationDrawer from '../Layout/NavigationDrawer'
@@ -28,7 +28,7 @@ export default function AppBar(): React.ReactElement {
       >
         <Box flexGrow="1" flexShrink="0">
           <Show above="sm">
-            <Image src={mainLogo} h={8} w={8} />
+            <PlumberLogo />
           </Show>
           <Hide above="sm">
             <NavigationDrawer />

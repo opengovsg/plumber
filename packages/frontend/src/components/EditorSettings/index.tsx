@@ -1,6 +1,6 @@
 import { IFlow } from '@plumber/types'
 
-import { ElementType, ReactNode, useContext, useMemo, useState } from 'react'
+import { ElementType, ReactNode, useMemo, useState } from 'react'
 import { BiLink, BiMailSend, BiTransfer, BiUserPlus } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 import { ApolloError, useQuery } from '@apollo/client'
@@ -10,7 +10,6 @@ import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
-import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
 import useAuthentication from '@/hooks/useAuthentication'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
@@ -44,10 +43,6 @@ export default function EditorSettingsLayout(
 
   const { currentUser } = useAuthentication()
 
-  // TODO: remove this once we open collaborators to all users
-  const { getFlagValue } = useContext(LaunchDarklyContext)
-  const showCollaborators = getFlagValue('collaborators', false)
-
   const { flowId } = useParams()
   const { data, loading, error } = useQuery(GET_FLOW_WITH_COLLABORATORS, {
     variables: { id: flowId },
@@ -62,7 +57,7 @@ export default function EditorSettingsLayout(
         {
           group: 'Manage',
           links: [
-            showCollaborators && {
+            {
               Icon: BiUserPlus,
               text: 'Collaborators',
               to: URLS.FLOW_EDITOR_SHARE(flowId),
@@ -74,25 +69,29 @@ export default function EditorSettingsLayout(
               to: URLS.FLOW_EDITOR_TRANSFERS(flowId),
               group: 'Manage' as const,
             },
-            flow?.role !== 'viewer' && {
-              Icon: BiLink,
-              text: 'Connections',
-              to: URLS.FLOW_EDITOR_CONNECTIONS(flowId),
-              group: 'Manage' as const,
-            },
+            ...(flow?.role !== 'viewer'
+              ? [
+                  {
+                    Icon: BiLink,
+                    text: 'Connections',
+                    to: URLS.FLOW_EDITOR_CONNECTIONS(flowId),
+                    group: 'Manage' as const,
+                  },
+                ]
+              : []),
             {
               Icon: BiMailSend,
               text: 'Notifications',
               to: URLS.FLOW_EDITOR_NOTIFICATIONS(flowId),
               group: 'Manage' as const,
             },
-          ].filter(Boolean),
+          ],
         },
       ].filter(Boolean),
       () => setDrawerOpen(true),
       () => setDrawerOpen(false),
     ],
-    [flowId, setDrawerOpen, showCollaborators, flow?.role],
+    [flowId, setDrawerOpen, flow?.role],
   )
 
   const mobileDrawerComponent = (

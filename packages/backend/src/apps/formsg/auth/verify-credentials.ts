@@ -56,12 +56,12 @@ export const parseSecretKeyFormat = ($: IGlobalVariable): string => {
   return $.auth.data.privateKey as string
 }
 
-export const parseFormIdFormat = ($: IGlobalVariable): string => {
-  if (!$.auth.data?.formId || typeof $.auth.data.formId !== 'string') {
+export const parseFormIdFromInput = (rawFormId: unknown): string => {
+  if (!rawFormId || typeof rawFormId !== 'string') {
     throw new Error('No form id provided')
   }
 
-  let formId = $.auth.data.formId
+  let formId = rawFormId
 
   if (formId.length < FORM_ID_LENGTH) {
     throw new Error('Invalid form id')
@@ -82,6 +82,10 @@ export const parseFormIdFormat = ($: IGlobalVariable): string => {
   }
 
   return formId
+}
+
+export const parseFormIdFormat = ($: IGlobalVariable): string => {
+  return parseFormIdFromInput($.auth.data?.formId)
 }
 
 const verifyCredentials = async ($: IGlobalVariable) => {

@@ -2,6 +2,10 @@ import { IStepConfig } from '@plumber/types'
 
 import { raw } from 'objection'
 
+import {
+  remapEndStepIdsOnDuplicateBranch,
+  sanitizeServerSideConfig,
+} from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import Step from '@/models/step'
@@ -74,6 +78,11 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
         })
         .where('position', '>=', previousStep.position + 1)
 
+      // A copied endStepId still points at the SOURCE step, not this new
+      // copy. Stripping it here lets the DB-derived post-pass remap set the
+      // correct copied id instead.
+      const sanitizedConfig = sanitizeServerSideConfig(config as IStepConfig)
+
       const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
         key,
         appKey,
@@ -81,7 +90,7 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
         position: previousStep.position + 1,
         parameters,
         connectionId: connection?.id,
-        config: config as IStepConfig,
+        config: sanitizedConfig,
         version: getStepVersion(appKey, key),
       })
 
@@ -93,6 +102,15 @@ const duplicateBranch: MutationResolvers['duplicateBranch'] = async (
       // as the connection would have already been added when the step
       // was created in the original branch
     }
+
+    // Remaps intra-selection endStepId markers onto the copies (DB-derived).
+    // A marker pointing outside the selection leaves the copy marker-less.
+    await remapEndStepIdsOnDuplicateBranch({
+      trx,
+      flow,
+      previousStepId: input.previousStep.id,
+      newSteps,
+    })
 
     const updatedFlow = await flow.patchLastUpdated({
       flowId: flow.id,

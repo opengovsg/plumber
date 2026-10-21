@@ -16,6 +16,7 @@ export function getSesClient(): SESv2Client {
     sesClient = new SESv2Client({
       region: appConfig.ses.region,
       credentials: fromTemporaryCredentials({
+        masterCredentials: appConfig.ses.credentials,
         params: {
           RoleArn: appConfig.ses.roleArn,
           ExternalId: 'plumber-ses-access',

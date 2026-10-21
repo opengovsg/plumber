@@ -12,6 +12,7 @@ export const commonDateFormats = [
   'yyyy-LL-dd',
   'hh:mm a',
   'hh:mm:ss a',
+  'HH:mm',
   'dd LLL yyyy hh:mm a',
   'dd LLL yyyy hh:mm:ss a',
 ] as const
@@ -58,6 +59,11 @@ export const commonDateFormatOptions = [
     label: 'HH:mm:ss (am/pm)',
     description: '12:04:05 pm',
     value: ensureZodEnumValue(formatStringsEnum, 'hh:mm:ss a'),
+  },
+  {
+    label: 'HH:mm (24-hour)',
+    description: '13:04',
+    value: ensureZodEnumValue(formatStringsEnum, 'HH:mm'),
   },
   {
     label: 'DD MMM YYYY HH:mm (am/pm)',

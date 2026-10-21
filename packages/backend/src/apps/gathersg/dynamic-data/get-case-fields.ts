@@ -5,19 +5,27 @@ import {
 } from '@plumber/types'
 
 import HttpError from '@/errors/http'
+import StepError from '@/errors/step'
 import { VARIABLE_REGEX } from '@/helpers/check-step-parameters'
 import { computeForEachParameters } from '@/helpers/compute-for-each-parameters'
 import computeParameters from '@/helpers/compute-parameters'
 import { getTestExecutionSteps } from '@/helpers/get-test-execution-steps'
 
 import {
+  isCaseRef,
+  readStepErrorName,
+  resolveCaseIdentifier,
+} from '../common/case-identifier'
+import {
   GATHERSG_EMAIL_TYPES,
   GATHERSG_NUMBER_TYPES,
+  GATHERSG_SELECTION_TYPES,
+  GatherSGSelectionType,
 } from '../common/constants'
 import { fetchCaseFields, GatherSGCaseField } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
 
-const getCaseUuidFromVariable = async (
+export const getCaseUuidFromVariable = async (
   $: IGlobalVariable,
   variable: string,
 ) => {
@@ -60,16 +68,55 @@ const getCaseUuidFromVariable = async (
   }
 }
 
+/**
+ * Resolves a pasted UUID or a step variable. Returns '' when the source
+ * step is gone so callers skip GET /cases/:caseUuid.
+ * urlcat throws on empty path params and GraphQL turns that into a full-page error.
+ */
+export async function resolveCaseUuid(
+  $: IGlobalVariable,
+  caseUuid: unknown,
+): Promise<string> {
+  if (typeof caseUuid !== 'string' || !caseUuid.trim()) {
+    return ''
+  }
+
+  const resolved = caseUuid.match(`^${VARIABLE_REGEX.source}$`)
+    ? await getCaseUuidFromVariable($, caseUuid)
+    : caseUuid
+
+  if (typeof resolved !== 'string') {
+    return ''
+  }
+
+  const trimmed = resolved.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  // Field dropdowns call GET /cases/:caseUuid, which rejects a case ref.
+  if (isCaseRef(trimmed)) {
+    return resolveCaseIdentifier($, trimmed)
+  }
+
+  return trimmed
+}
+
 const processCaseFields = (
   caseFields: GatherSGCaseField[],
 ): DynamicDataOutput => {
   return {
     data: caseFields.map((field) => {
-      let type: 'string' | 'number' | 'email' = 'string'
+      let type: 'string' | 'number' | 'email' | GatherSGSelectionType = 'string'
       if (GATHERSG_NUMBER_TYPES.includes(field.type)) {
         type = 'number'
       } else if (GATHERSG_EMAIL_TYPES.includes(field.type)) {
         type = 'email'
+      } else if (
+        (GATHERSG_SELECTION_TYPES as readonly string[]).includes(field.type)
+      ) {
+        // Keep Ownself Gather type keys so autofill sets Dropdown/Checkbox/Radio.
+        type = field.type as GatherSGSelectionType
       }
       return {
         name: field.name,
@@ -96,19 +143,9 @@ const dynamicData: IDynamicData = {
 
         return processCaseFields(filteredFields)
       } else if (caseUuid) {
-        // account that case uuid can be pasted in the frontend
-        // and may not always be a variable
-        let computedCaseUuid = caseUuid as string
-
-        if (
-          typeof caseUuid === 'string' &&
-          caseUuid.match(`^${VARIABLE_REGEX.source}$`)
-        ) {
-          // if the case uuid is a variable, we need to compute the value
-          computedCaseUuid = (await getCaseUuidFromVariable(
-            $,
-            caseUuid,
-          )) as string
+        const computedCaseUuid = await resolveCaseUuid($, caseUuid)
+        if (!computedCaseUuid) {
+          return { data: [] }
         }
 
         // use the case uuid to fetch the case data to derive the case type uuid
@@ -132,6 +169,13 @@ const dynamicData: IDynamicData = {
         data: [],
       }
     } catch (error) {
+      if (error instanceof StepError) {
+        return {
+          data: [],
+          error: { message: readStepErrorName(error) },
+        }
+      }
+
       if (error instanceof HttpError) {
         /**
          * error: {

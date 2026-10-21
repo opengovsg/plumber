@@ -1,4 +1,12 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import flowQueue from '@/queues/flow'
 import { worker as flowWorker } from '@/workers/flow'
@@ -17,7 +25,9 @@ const mocks = vi.hoisted(() => ({
   })),
   logInfo: vi.fn(),
   logError: vi.fn(),
+  logWarn: vi.fn(),
   flowQueryResult: vi.fn(() => ({
+    active: true,
     getTriggerStep: vi.fn(async () => ({})),
   })),
 }))
@@ -32,6 +42,7 @@ vi.mock('@/helpers/logger', () => ({
   default: {
     info: mocks.logInfo,
     error: mocks.logError,
+    warn: mocks.logWarn,
   },
 }))
 
@@ -65,6 +76,13 @@ describe('Flow worker', () => {
     await restoreWorker(flowWorker, originalWorkerState)
 
     vi.restoreAllMocks()
+  })
+
+  // Close worker and queue so they don't linger in the shared test process
+  // and steal jobs from later itest files on the same Redis queue.
+  afterAll(async () => {
+    await flowWorker.close()
+    await flowQueue.close()
   })
 
   describe('Event listeners', () => {

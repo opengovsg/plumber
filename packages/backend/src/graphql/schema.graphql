@@ -72,6 +72,9 @@ type Mutation {
   createConnection(input: CreateConnectionInput): Connection
   generateAuthUrl(input: GenerateAuthUrlInput): AuthLink
   updateConnection(input: UpdateConnectionInput): Connection
+  replaceConnectionCredentials(
+    input: ReplaceConnectionCredentialsInput
+  ): Connection
   resetConnection(input: ResetConnectionInput): Connection
   verifyConnection(input: VerifyConnectionInput): Connection
   deleteConnection(input: DeleteConnectionInput): Boolean
@@ -102,7 +105,8 @@ type Mutation {
   dynamicAction(input: DynamicActionInput!): JSONObject!
   logout: LogoutResult
   loginWithSgid(input: OidcLoginInput!): LoginWithSgidResult!
-  loginWithSso(input: OidcLoginInput!): Boolean!
+  startSsoLogin(input: StartSsoLoginInput): StartSsoLoginResult!
+  loginWithSso(input: SsoLoginInput!): Boolean!
   loginWithSelectedSgid(
     input: LoginWithSelectedSgidInput!
   ): LoginWithSelectedSgidResult!
@@ -161,6 +165,10 @@ input FlowAiBuilderConfigInput {
   traceId: String!
 }
 
+type FlowAiBuilderConfig {
+  traceId: String!
+}
+
 input CreateFlowWithStepsInput {
   flowName: String!
   steps: [StepInput!]!
@@ -188,12 +196,16 @@ enum FieldVisibilityOp {
   is_empty
   equals
   not_equals
+  in
+  not_in
 }
 
 type FieldVisibilityCondition {
   op: FieldVisibilityOp!
   fieldKey: String
   fieldValue: JSONPrimitive
+  # Used by the `in` / `not_in` ops: compare the sibling field's value against this set.
+  fieldValues: [JSONPrimitive]
 }
 
 enum SetupMessageVariant {
@@ -380,6 +392,7 @@ type AppAuth {
   reconnectionSteps: [ReconnectionStep]
   connectionModalLabel: ConnectionModalLabel
   autoCheckStep: Boolean
+  supportsConnectionEdit: Boolean
 }
 
 enum ArgumentEnumType {
@@ -416,8 +429,16 @@ type Connection {
   verified: Boolean
   app: App
   createdAt: String
+  updatedAt: String
   flowCount: Int
   description: String
+  editableLabel: String
+  environment: Environment
+}
+
+type Environment {
+  id: String!
+  label: String!
 }
 
 type ConnectionData {
@@ -551,6 +572,7 @@ type FlowConfig {
   duplicateCount: Int
   templateConfig: FlowTemplateConfig
   attachments: [FlowAttachmentConfig]
+  aiBuilderConfig: FlowAiBuilderConfig
 }
 
 type FlowErrorConfig {
@@ -625,6 +647,11 @@ input UpdateConnectionInput {
   id: String!
   formattedData: JSONObject!
   flowId: String!
+}
+
+input ReplaceConnectionCredentialsInput {
+  id: String!
+  formattedData: JSONObject!
 }
 
 input ResetConnectionInput {
@@ -728,6 +755,9 @@ input CreateStepInput {
   parameters: JSONObject
   previousStep: PreviousStepInput
   config: StepConfigInput
+  # The if-then block the new step is being added after.
+  # IMPORTANT: presence triggers a server-side lazy upgrade / marker pin.
+  previousBlockId: ID
 }
 
 input StepApprovalConfigInput {
@@ -743,6 +773,10 @@ input StepConfigInput {
   stepName: String
   approval: StepApprovalConfigInput
   templateConfig: StepTemplateConfigInput
+  # System-owned marker: id of the last step (inclusive) inside a block
+  # (if-then V2 today, possibly for-each later). Only the if-then initializer
+  # writes it, via updateStep.
+  endStepId: String
 }
 
 input UpdateStepInput {
@@ -863,6 +897,7 @@ type StepConfig {
   templateConfig: StepTemplateConfig
   stepName: String
   approval: StepApprovalConfig
+  endStepId: String
 }
 
 type StepTemplateConfig {
@@ -1162,6 +1197,20 @@ input OidcLoginInput {
   authCode: String!
   nonce: String!
   verifier: String!
+}
+
+input StartSsoLoginInput {
+  iss: String
+}
+
+type StartSsoLoginResult {
+  authorizationUrl: String!
+}
+
+input SsoLoginInput {
+  authCode: String!
+  state: String!
+  iss: String!
 }
 
 type LoginWithSgidResult {

@@ -27,6 +27,10 @@ const trigger: IRawTrigger = {
         'Enter the encryption key for your instant workflow and save it.',
       required: false,
       variables: false,
+      // Secret-like value; not something the AI Builder should ask about.
+      hiddenFromAiIf: {
+        op: 'always_true',
+      },
     },
   ],
 

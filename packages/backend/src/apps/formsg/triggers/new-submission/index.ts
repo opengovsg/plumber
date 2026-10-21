@@ -48,6 +48,10 @@ const trigger: IRawTrigger = {
       required: false,
       variables: false,
       value: NricFilter.None,
+      // Advanced setting; not something the AI Builder should ask about.
+      hiddenFromAiIf: {
+        op: 'always_true',
+      },
       options: [
         {
           label: 'Do nothing',

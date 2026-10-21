@@ -24,32 +24,32 @@ export default function EmptyFlows() {
     <Flex
       maxW="800px"
       margin="auto"
-      rowGap={4}
+      rowGap={6}
       flexDir="column"
       pt={{ base: '0', md: '10vh' }}
     >
-      <Flex maxW="800px">
+      <Flex maxW="800px" mb={2}>
         <Text textStyle="h3">How do you want to create your workflow?</Text>
       </Flex>
 
-      <ModeSelector />
+      <ModeSelector onModeSelect={(mode) => handleModeSubmit({ mode })} />
 
       {createMode === 'new' && (
-        <FlowNameInput
-          inputRef={inputRef}
-          flowName={flowName}
-          handleInputChange={handleInputChange}
-        />
-      )}
-
-      {createMode && (
-        <Button
-          onClick={() => handleModeSubmit()}
-          isDisabled={isButtonDisabled}
-          isLoading={loading}
-        >
-          Next <Icon boxSize={6} as={BiRightArrowAlt} />
-        </Button>
+        <>
+          <FlowNameInput
+            inputRef={inputRef}
+            flowName={flowName}
+            handleInputChange={handleInputChange}
+          />
+          <Button
+            alignSelf="flex-end"
+            onClick={() => handleModeSubmit()}
+            isDisabled={isButtonDisabled}
+            isLoading={loading}
+          >
+            Next <Icon boxSize={6} as={BiRightArrowAlt} />
+          </Button>
+        </>
       )}
     </Flex>
   )

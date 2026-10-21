@@ -35,7 +35,10 @@ export function startSesConsumer(): void {
   // Note that N consumers will be polling the same SQS queue with N ECS tasks, but each message goes to exactly one consumer, and the queue's visibility timeout prevents two from processing the same message.
   sesConsumer = Consumer.create({
     queueUrl,
-    sqs: new SQSClient({ region: 'ap-southeast-1' }),
+    sqs: new SQSClient({
+      credentials: appConfig.ses.credentials,
+      region: 'ap-southeast-1',
+    }),
     batchSize: 10,
     waitTimeSeconds: 20,
     // visibilityTimeout intentionally unset — owned by SQS queue config in

@@ -1,5 +1,13 @@
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import triggerQueue from '@/queues/trigger'
 import { worker as triggerWorker } from '@/workers/trigger'
@@ -65,6 +73,13 @@ describe('Trigger worker', () => {
     await restoreWorker(triggerWorker, originalWorkerState)
 
     vi.restoreAllMocks()
+  })
+
+  // Close worker and queue so they don't linger in the shared test process
+  // and steal jobs from later itest files on the same Redis queue.
+  afterAll(async () => {
+    await triggerWorker.close()
+    await triggerQueue.close()
   })
 
   describe('Event listeners', () => {

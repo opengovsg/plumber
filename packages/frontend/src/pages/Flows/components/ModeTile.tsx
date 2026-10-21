@@ -1,38 +1,28 @@
 import { BiBookOpen, BiPlus, BiSolidMagicWand } from 'react-icons/bi'
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Flex, Text } from '@chakra-ui/react'
 import { Tile, TileProps } from '@opengovsg/design-system-react'
 
 import NewBadge from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/NewBadge'
+
+const ICON_SIZE = '1.75rem'
 
 const MODES = {
   ai: {
     title: 'Build with AI',
     description: "Describe your workflow and we'll create the steps for you",
-    icon: (
-      <Box py={2}>
-        <BiSolidMagicWand fontSize="2rem" />
-      </Box>
-    ),
+    icon: <BiSolidMagicWand fontSize={ICON_SIZE} />,
     isNew: true,
   },
   template: {
     title: 'Use a template',
     description: 'Choose from a pre-built workflow to customise',
-    icon: (
-      <Box py={2}>
-        <BiBookOpen fontSize="2rem" />
-      </Box>
-    ),
+    icon: <BiBookOpen fontSize={ICON_SIZE} />,
     isNew: false,
   },
   new: {
     title: 'Start from scratch',
     description: 'Use our builder to create your own workflow',
-    icon: (
-      <Box py={2}>
-        <BiPlus fontSize="2rem" />
-      </Box>
-    ),
+    icon: <BiPlus fontSize={ICON_SIZE} />,
     isNew: false,
   },
 }
@@ -49,14 +39,23 @@ export default function ModeTile(props: ModeTileProps) {
   return (
     <Tile
       icon={() => icon}
-      flex={1}
-      {...(isNew && {
-        badge: <NewBadge variant="secondary" />,
-      })}
+      flex={{ base: '0 0 auto', md: '1 1 0' }}
+      minW={0}
+      minH={{ base: 'auto', md: '15rem' }}
+      css={{ display: 'flex', justifyContent: 'flex-start' }}
       {...rest}
     >
-      <Text textStyle="subhead-1">{title}</Text>
-      <Text textStyle="body-2">{description}</Text>
+      <Box pt={{ base: 6, md: 16 }}>
+        <Flex align="center" gap={2}>
+          <Text textStyle="h6" fontWeight={600} color="base.content.strong">
+            {title}
+          </Text>
+          {isNew && <NewBadge isCompact />}
+        </Flex>
+        <Text textStyle="body-2" color="base.content.medium" mt={2}>
+          {description}
+        </Text>
+      </Box>
     </Tile>
   )
 }

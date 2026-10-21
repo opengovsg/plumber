@@ -1,6 +1,9 @@
 import { IDataOutMetadata, IExecutionStep, IJSONArray } from '@plumber/types'
 
-import { buildAttachmentMetadata } from '../../common/data-out-metadata-helpers'
+import {
+  buildAttachmentMetadata,
+  createEmailMetadata,
+} from '../../common/data-out-metadata-helpers'
 import { decodeFieldName } from '../../common/utils'
 
 import { dataOutSchema } from './schema'
@@ -100,15 +103,10 @@ async function getDataOutMetadata(
       },
       durationSec: { isHidden: true },
       durationPaused: { isHidden: true },
-      email: {
-        subject: { label: 'Email subject' },
-        sender: {
-          name: { label: 'Email sender (name)' },
-          address: { label: 'Email sender (email)' },
-        },
-      },
     },
   }
+
+  const emailMetadata = createEmailMetadata(dataOut.email)
 
   // handle tags if any
   // tags are an array of strings and exist at the top level alongside the
@@ -204,6 +202,7 @@ async function getDataOutMetadata(
       tags: tagsMetadata,
       fields: fieldsMetadata,
       attachments: attachmentsMetadata,
+      email: emailMetadata,
     },
   }
 }

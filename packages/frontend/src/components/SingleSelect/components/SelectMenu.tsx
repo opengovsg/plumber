@@ -1,8 +1,10 @@
 import { BiRefresh } from 'react-icons/bi'
+import Markdown from 'react-markdown'
 import { Virtuoso } from 'react-virtuoso'
 import { List, ListItem, Portal } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
+import { infoboxMdComponents } from '@/components/MarkdownRenderer/CustomMarkdownComponents'
 import PrimarySpinner from '@/components/PrimarySpinner'
 
 import { useSelectContext } from '../SelectContext'
@@ -17,6 +19,7 @@ export const SelectMenu = (): JSX.Element => {
     isOpen,
     items,
     nothingFoundLabel,
+    noOptionsMessage,
     styles,
     virtualListRef,
     virtualListHeight,
@@ -26,6 +29,7 @@ export const SelectMenu = (): JSX.Element => {
   } = useSelectContext()
 
   const { floatingRef, floatingStyles } = useSelectPopover()
+  const isEmpty = isOpen && items.length === 0
 
   return (
     <Portal>
@@ -57,7 +61,23 @@ export const SelectMenu = (): JSX.Element => {
             }}
           />
         )}
-        {isOpen && items.length === 0 && inputValue?.length ? (
+        {isEmpty && noOptionsMessage ? (
+          <ListItem
+            role="option"
+            p={4}
+            opacity={0.5}
+            textStyle="body-1"
+            color="base.content.medium"
+            // Blurring the input closes the menu, which would tear the link in
+            // the message out from under the click that opens it.
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            <Markdown linkTarget="_blank" components={infoboxMdComponents}>
+              {noOptionsMessage}
+            </Markdown>
+          </ListItem>
+        ) : null}
+        {isEmpty && !noOptionsMessage && inputValue?.length ? (
           <ListItem role="option" sx={styles.emptyItem}>
             {nothingFoundLabel}
           </ListItem>

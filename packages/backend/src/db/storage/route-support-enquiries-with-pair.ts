@@ -50,12 +50,16 @@ function createDivisionBranch(
       branchName: division,
       conditions: [
         {
-          is: 'is',
-          text: division,
-          field: CREATE_TEMPLATE_STEP_VARIABLE(
-            'Replace with department from step 2',
-          ),
-          condition: 'equals',
+          rows: [
+            {
+              is: 'is',
+              text: division,
+              field: CREATE_TEMPLATE_STEP_VARIABLE(
+                'Replace with department from step 2',
+              ),
+              condition: 'equals',
+            },
+          ],
         },
       ],
     },

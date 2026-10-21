@@ -21,9 +21,9 @@ import getDataOutMetadata from './get-data-out-metadata'
 import { inputSchema, parameterSchema } from './schema'
 
 const action: IRawAction = {
-  name: 'For each item',
+  name: 'Repeat for each item',
   key: 'forEach',
-  description: 'Repeat actions for each item',
+  description: 'Run the same actions for each item in your list',
   groupsLaterSteps: true,
   linkToGuide:
     'https://guide.plumber.gov.sg/user-guides/actions/for-each-item-coming-soon',

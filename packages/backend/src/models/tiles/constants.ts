@@ -1,0 +1,2 @@
+export const MAX_TILE_NAME_LENGTH = 64
+export const MAX_COLUMN_NAME_LENGTH = 255

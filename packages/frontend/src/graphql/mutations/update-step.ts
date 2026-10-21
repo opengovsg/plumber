@@ -18,6 +18,7 @@ export const UPDATE_STEP = graphql(`
       }
       config {
         stepName
+        endStepId
         templateConfig {
           appEventKey
         }

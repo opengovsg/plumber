@@ -11,7 +11,10 @@ import {
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 
-import { useCreateFlowContext } from '@/pages/Flows/contexts/CreateFlowContext'
+import {
+  FLOW_CREATE_MODE,
+  useCreateFlowContext,
+} from '@/pages/Flows/contexts/CreateFlowContext'
 
 import FlowNameInput from '../FlowNameInput'
 import ModeSelector from '../ModeSelector'
@@ -23,6 +26,7 @@ export default function FlowNameAndModeContent({
   flowName,
   handleInputChange,
   handleSubmit,
+  onModeSelect,
 }: {
   isButtonDisabled: boolean
   loading: boolean
@@ -30,17 +34,18 @@ export default function FlowNameAndModeContent({
   flowName: string
   handleInputChange: () => void
   handleSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onModeSelect: (mode: FLOW_CREATE_MODE) => void
 }) {
   const { createMode } = useCreateFlowContext()
 
   return (
     <Form onSubmit={handleSubmit}>
-      <ModalHeader p="2.5rem 2rem 1.5rem">
+      <ModalHeader pt={8} pb={8} pl={8} pr={16}>
         <Text textStyle="h4">How do you want to create your workflow?</Text>
       </ModalHeader>
-      <ModalBody>
-        <Flex flexDir="column" rowGap={4}>
-          <ModeSelector />
+      <ModalBody px={8} pt={0} pb={createMode === 'new' ? 6 : 8}>
+        <Flex flexDir="column" rowGap={6}>
+          <ModeSelector onModeSelect={onModeSelect} />
 
           {/* Specific form items */}
           {createMode === 'new' && (
@@ -52,8 +57,8 @@ export default function FlowNameAndModeContent({
           )}
         </Flex>
       </ModalBody>
-      <ModalFooter>
-        {createMode && (
+      {createMode === 'new' && (
+        <ModalFooter px={8} pt={0} pb={8}>
           <Button
             type="submit"
             isDisabled={isButtonDisabled}
@@ -61,8 +66,8 @@ export default function FlowNameAndModeContent({
           >
             Next <Icon boxSize={6} as={BiRightArrowAlt} />
           </Button>
-        )}
-      </ModalFooter>
+        </ModalFooter>
+      )}
     </Form>
   )
 }

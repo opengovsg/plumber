@@ -36,7 +36,43 @@ export function isFieldHidden(
           // are empty so we just negate directly.
           !fieldVal
     }
+    case 'in': {
+      const fieldVal = get(siblingParams, hiddenIfCondition.fieldKey)
+      return hiddenIfCondition.fieldValues.includes(
+        fieldVal as (typeof hiddenIfCondition.fieldValues)[number],
+      )
+    }
+    case 'not_in': {
+      const fieldVal = get(siblingParams, hiddenIfCondition.fieldKey)
+      return !hiddenIfCondition.fieldValues.includes(
+        fieldVal as (typeof hiddenIfCondition.fieldValues)[number],
+      )
+    }
   }
+}
+
+/**
+ * Whether a source-backed dropdown should stay hidden: either its dynamic
+ * data is still loading, or it resolved to no options. Staying hidden while
+ * loading avoids a flash of the field appearing and then disappearing once
+ * an empty result comes back.
+ *
+ * IMPORTANT: a failed query leaves options undefined. That means "unknown",
+ * not "no options", so the field stays visible like any other dropdown.
+ */
+export function shouldHideEmptySourceDropdown(
+  field: IField,
+  options: unknown[] | null | undefined,
+  loading: boolean,
+  failed = false,
+): boolean {
+  return (
+    field.type === 'dropdown' &&
+    !!field.hideWhenNoOptions &&
+    !!field.source &&
+    !failed &&
+    (loading || !options?.length)
+  )
 }
 
 export function useIsFieldHidden(

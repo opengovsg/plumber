@@ -4,6 +4,7 @@ import z from 'zod'
 
 import StepError from '@/errors/step'
 
+import { TEST_STEP_MAX_COLUMNS } from '../../common/constants'
 import { sanitiseInputValue } from '../../common/sanitise-formula-input'
 import {
   constructMsGraphValuesArrayForRowWrite,
@@ -38,6 +39,7 @@ const action: IRawAction = {
         'Enter the data to update the row with. Columns not specified will not be updated',
       type: 'multirow-multicol' as const,
       autofillable: true,
+      maxAutofillOptions: TEST_STEP_MAX_COLUMNS,
       required: true,
       hiddenIf: {
         fieldKey: 'tableId',

@@ -1,0 +1,7 @@
+{
+  "setup-worktree-unix": [
+    "pnpm install",
+    "cp \"$ROOT_WORKTREE_PATH/op-dev.json\" op-dev.json",
+    "codegraph init"
+  ]
+}

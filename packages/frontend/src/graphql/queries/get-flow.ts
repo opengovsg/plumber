@@ -25,10 +25,14 @@ export const FLOW_FIELDS = gql`
           screenName
           env
         }
+        environment {
+          id
+        }
       }
       parameters
       config {
         stepName
+        endStepId
         templateConfig {
           appEventKey
           customTemplate
@@ -56,6 +60,9 @@ export const FLOW_FIELDS = gql`
         size
         updatedAt
       }
+      aiBuilderConfig {
+        traceId
+      }
     }
     pendingTransfer {
       id
@@ -78,6 +85,10 @@ export const GET_FLOW = gql`
   query GetFlow($id: String!) {
     getFlow(id: $id) {
       ...DefaultFlowFields
+      collaborators {
+        email
+        role
+      }
     }
   }
   ${FLOW_FIELDS}
