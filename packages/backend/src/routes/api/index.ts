@@ -10,6 +10,7 @@ import appsRouter from './apps'
 import chatRouter from './chat'
 import connectionsRouter from './connections'
 import dynamicDataRouter from './dynamic-data'
+import stepErrorFixRouter from './step-error-fix'
 import templatesRouter from './templates'
 
 const router: Router = Router()
@@ -29,6 +30,7 @@ router.use(blockAdminOperations)
 router.use('/chat', chatRouter)
 router.use('/connections', connectionsRouter)
 router.use('/dynamic-data', dynamicDataRouter)
+router.use('/step-error-fix', stepErrorFixRouter)
 router.use('/templates', templatesRouter)
 
 // Future routes can be added here:

@@ -1,4 +1,3 @@
-import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp'
 import {
   getActiveTraceId,
   observe,
@@ -30,6 +29,7 @@ import {
   getAiChatErrorMessage,
 } from '@/helpers/ai/get-ai-chat-error-message'
 import { getPrompt } from '@/helpers/ai/get-prompt'
+import { openGitBookMcp } from '@/helpers/ai/gitbook-mcp'
 import {
   parseWorkflowMetadata,
   WORKFLOW_METADATA_REGEX,
@@ -42,7 +42,6 @@ import { buildSystemPrompt } from '@/helpers/build-system-prompt'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
 import { createMcpBridgeTools } from '@/helpers/mcp-bridge-tools'
-import { wrapMcpToolsWithUsageLogs } from '@/helpers/mcp-tool-usage-log'
 import { chatModel, MODEL_TYPE } from '@/helpers/pair'
 import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
@@ -190,30 +189,20 @@ const handleChatStream = observe(
       }
       const allMessages = [systemMessage, ...messages]
 
-      let mcpClient: Awaited<ReturnType<typeof createMCPClient>> | null = null
+      let closeGitBook: (() => Promise<void>) | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
 
       try {
-        mcpClient = await createMCPClient({
-          transport: {
-            type: 'http',
-            url: 'https://guide.plumber.gov.sg/~gitbook/mcp',
-          },
+        const gitbook = await openGitBookMcp({
+          source: 'gitbook',
+          traceId,
+          userId: context.currentUser.email,
         })
-        gitbookTools = wrapMcpToolsWithUsageLogs(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (await mcpClient.tools()) as Parameters<
-            typeof streamText
-          >[0]['tools'],
-          {
-            source: 'gitbook',
-            traceId,
-            userId: context.currentUser.email,
-          },
-        )
+        gitbookTools = gitbook.tools as Parameters<
+          typeof streamText
+        >[0]['tools']
+        closeGitBook = gitbook.close
       } catch (error) {
-        await mcpClient?.close()
-        mcpClient = null
         logger.error('Failed to connect to GitBook MCP server', {
           traceId,
           error: error instanceof Error ? error.message : String(error),
@@ -390,7 +379,7 @@ const handleChatStream = observe(
                 })
               } finally {
                 try {
-                  await mcpClient?.close()
+                  await closeGitBook?.()
                 } catch (closeError) {
                   logger.warn('Failed to close GitBook MCP client', {
                     traceId,
@@ -406,8 +395,8 @@ const handleChatStream = observe(
               }
             },
             onError: ({ error }) => {
-              void mcpClient?.close()
-              mcpClient = null
+              void closeGitBook?.()
+              closeGitBook = null
               const errorMessage =
                 error instanceof Error ? error.message : String(error)
 
