@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { parseWorkflowMetadata } from '../parse-workflow-metadata'
+
+const mocks = vi.hoisted(() => ({
+  logInfo: vi.fn(),
+}))
+
+vi.mock('@/helpers/logger', () => ({
+  default: {
+    info: mocks.logInfo,
+  },
+}))
 
 const VALID_WORKFLOW = `
 <!-- WORKFLOW_METADATA
@@ -25,6 +35,38 @@ steps:
 `
 
 describe('parseWorkflowMetadata', () => {
+  beforeEach(() => {
+    mocks.logInfo.mockClear()
+  })
+
+  describe('invalid YAML logging', () => {
+    it('logs when the LLM emits YAML that only parses after quoting', () => {
+      parseWorkflowMetadata(`
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: Action
+-->
+`)
+      expect(mocks.logInfo).toHaveBeenCalledWith(
+        'AI builder emitted invalid workflow YAML',
+        { event: 'ai-builder-workflow-yaml-invalid' },
+      )
+    })
+
+    it('does not log when the LLM emits valid YAML', () => {
+      parseWorkflowMetadata(VALID_WORKFLOW)
+      expect(mocks.logInfo).not.toHaveBeenCalled()
+    })
+  })
+
   describe('valid metadata', () => {
     it('extracts trigger and actions', () => {
       const result = parseWorkflowMetadata(VALID_WORKFLOW)
@@ -63,6 +105,69 @@ steps:
 -->
 `
       expect(parseWorkflowMetadata(text).name).toBe('Build with AI')
+    })
+
+    it('accepts an unquoted name containing a colon', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Webhook to Tiles: Save Client ID
+steps:
+  - step: 1
+    appKey: webhook
+    key: catchRawWebhook
+    stepName: Catch raw webhook
+    description: Triggers when the webhook receives a request with a JSON payload
+  - step: 2
+    appKey: tiles
+    key: createTileRow
+    stepName: Create tile row
+    description: Saves the clientId from the webhook payload into the "Client ID" column of your Tile
+-->
+`
+      expect(parseWorkflowMetadata(text).name).toBe(
+        'Webhook to Tiles: Save Client ID',
+      )
+    })
+
+    it('accepts an unquoted step description containing a colon', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    stepName: "Notify: applicant"
+    description: Note: send to the applicant
+-->
+`
+      const [action] = parseWorkflowMetadata(text).actions
+      expect(action.config.stepName).toBe('Notify: applicant')
+      expect(action.description).toBe('Note: send to the applicant')
+    })
+
+    it('accepts a value that starts with a quote but is not fully quoted', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: My Workflow
+steps:
+  - step: 1
+    appKey: formsg
+    key: newSubmission
+    description: Trigger
+  - step: 2
+    appKey: postman
+    key: sendTransactionalEmail
+    description: "Client ID" column: saves the id
+-->
+`
+      expect(parseWorkflowMetadata(text).actions[0].description).toBe(
+        '"Client ID" column: saves the id',
+      )
     })
 
     it('uses stepName for config.stepName', () => {
