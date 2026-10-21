@@ -500,6 +500,7 @@ describe('createMcpBridgeTools', () => {
       appKey: 'postman',
       key: 'sendTransactionalEmail',
       previousStepId: 'mrf-approval-step',
+      traceId: mockTraceId,
       approvalBranch: { branch: 'reject', stepId: 'mrf-approval-step' },
     })
   })

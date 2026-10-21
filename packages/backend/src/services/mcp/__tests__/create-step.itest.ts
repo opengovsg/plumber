@@ -856,7 +856,7 @@ describe('createStepService', () => {
         expect(rejectStep.position).toBe(inner.position + 1)
       })
 
-      it('rejects an If step in the reject path that omits the approval branch', async () => {
+      it('inherits the reject branch when creating an If step, matching the editor', async () => {
         const { approvalStep, create } = await setUpApprovalStep()
         const first = await create({
           appKey: 'postman',
@@ -865,13 +865,14 @@ describe('createStepService', () => {
           approvalBranch: REJECT(approvalStep.id),
         })
 
-        await expect(
-          create({
-            appKey: 'toolbox',
-            key: 'ifThen',
-            previousStepId: first.id,
-          }),
-        ).rejects.toThrow('Invalid approval config')
+        const step = await create({
+          appKey: 'toolbox',
+          key: 'ifThen',
+          previousStepId: first.id,
+        })
+        expect(step.config.approval).toEqual(REJECT(approvalStep.id))
+        expect(step.position).toBe(first.position + 1)
+        expect(step.config.endStepId).toBe(step.id)
       })
     })
   })

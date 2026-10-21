@@ -341,7 +341,7 @@ export function createMcpBridgeTools(
 
     create_step: tool({
       description:
-        "Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.\n\nTo route a step into an MRF approval step's reject path, pass approval_branch with step_id set to that approval step's own id. Omit it for the default (approve/continue) path. Every step in the reject path needs the same approval_branch. That includes an If step, the steps inside it, and steps added after the block. For a later step in the path, previous_step_id is the last step you created in it.",
+        "Add a new action step to an existing pipe. Validates that the app key and action key exist. Inserts after previousStepId. Returns the created step.\n\nIf blocks: a step inserted after a toolbox/ifThen step, or after any step inside its block, lands inside that block and runs only when the condition is TRUE. To place a step after the whole block (it then always runs), pass after_if_then_block: true with previous_step_id set to the ifThen step (or its last inner step). Creating a toolbox/ifThen makes an empty If block: add its inner steps next with previous_step_id set to the new ifThen id. An If block cannot contain another ifThen or a forEach.\n\nTo route a step into an MRF approval step's reject path, pass approval_branch with step_id set to that approval step's own id. Omit it for the approve/continue path when inserting after an approval step. Later steps inherit the previous step's reject branch, including If steps, their inner steps, and steps after the block. For those steps, set previous_step_id to the last step in that branch. If approval_branch is supplied, its step_id must remain the original approval step's id.",
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe to add the step to'),
         app_key: z.string().describe('App key (e.g. "slack")'),
@@ -366,7 +366,7 @@ export function createMcpBridgeTools(
           })
           .optional()
           .describe(
-            'Route this step into the reject path of the MRF approval step at step_id. Omit to attach to the default (approve/continue) path.',
+            "Start the reject path of the MRF approval step at step_id. Later steps inherit the previous step's branch when omitted. After an approval step, omitting this selects the approve/continue path.",
           ),
       }),
       execute: async ({
