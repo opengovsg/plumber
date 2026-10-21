@@ -88,7 +88,13 @@ export function applyFolderFilter(
 interface PendingFolderBatch {
   flowIds: Set<string>
   scheduled: boolean
-  waiters: Map<string, Array<(folder: FlowFolder | null) => void>>
+  waiters: Map<
+    string,
+    Array<{
+      resolve: (folder: FlowFolder | null) => void
+      reject: (error: unknown) => void
+    }>
+  >
 }
 
 function toFolderSummary(folder: {
@@ -132,9 +138,9 @@ export function loadFlowFolder({
 
   batch.flowIds.add(flowId)
 
-  const promise = new Promise<FlowFolder | null>((resolve) => {
+  const promise = new Promise<FlowFolder | null>((resolve, reject) => {
     const waiters = batch.waiters.get(flowId) ?? []
-    waiters.push(resolve)
+    waiters.push({ resolve, reject })
     batch.waiters.set(flowId, waiters)
   })
 
@@ -143,7 +149,13 @@ export function loadFlowFolder({
     const currentBatch = batch
     queueMicrotask(() => {
       pendingBatches.delete(requestKey)
-      void flushFolderBatch({ userId, batch: currentBatch })
+      flushFolderBatch({ userId, batch: currentBatch }).catch((error) => {
+        // Reject every waiter so the field resolvers fail instead of hanging
+        // forever (and so the rejection is never left unhandled).
+        for (const waiters of currentBatch.waiters.values()) {
+          waiters.forEach(({ reject }) => reject(error))
+        }
+      })
     })
   }
 
@@ -171,7 +183,7 @@ async function flushFolderBatch({
 
   for (const [flowId, waiters] of batch.waiters) {
     const folder = foldersByFlowId.get(flowId) ?? null
-    waiters.forEach((resolve) => resolve(folder))
+    waiters.forEach(({ resolve }) => resolve(folder))
   }
 }
 
