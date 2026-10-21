@@ -477,7 +477,7 @@ describe('createFlowWithStepsService', () => {
     expect(result.config?.aiBuilderConfig?.traceId).toBe('')
   })
 
-  it('rejects a hidden, system-managed action like FormSG mrfSubmission', async () => {
+  it('rejects a hidden action even when a keyless placeholder skips schema validation', async () => {
     const user = await User.query().insertAndFetch({
       id: randomUUID(),
       email: `create-pipe-hidden-action-${randomUUID()}@example.com`,
@@ -500,6 +500,7 @@ describe('createFlowWithStepsService', () => {
             type: 'action',
             position: 2,
           },
+          { appKey: 'slack', type: 'action', position: 3 },
         ],
         traceId: 'trace-hidden-action',
       }),
