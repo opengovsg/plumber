@@ -5,6 +5,7 @@ import { raw, Transaction } from 'objection'
 import {
   deriveIfThenV1EndStep,
   findBlankPlaceholderMemberIds,
+  getIfThenEndStep,
   reassignIfThenEndStepsOnDelete,
   reassignIfThenEndStepsOnReorder,
   remapIfThenEndStepIdsOnDuplicate,
@@ -169,9 +170,7 @@ function checkEndStepWrite({
     if (other.id === ifThenStepId || !isIfThenV2(other)) {
       continue
     }
-    const otherEnd = flowSteps.find(
-      (step) => step.id === other.config?.[BLOCK_END_STEP_ID],
-    )
+    const otherEnd = getIfThenEndStep(flowSteps, other)
     // Skip pre-existing dangling markers — out of scope for this write.
     if (!otherEnd) {
       continue

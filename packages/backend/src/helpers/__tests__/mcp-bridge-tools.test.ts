@@ -671,6 +671,7 @@ describe('createMcpBridgeTools', () => {
       key: 'sendMessageToChannel',
       previousStepId: 'step-0',
       afterIfThenBlock: true,
+      traceId: mockTraceId,
     })
   })
 

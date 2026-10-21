@@ -22,8 +22,7 @@ vi.mock('@/helpers/launch-darkly', () => ({
 
 describe('createStepService', () => {
   beforeEach(() => {
-    // createBlockPipe needs the flag to build an If block in create_pipe.
-    mocks.getAllLdFlags.mockResolvedValue({ feature_if_then_then: true })
+    mocks.getAllLdFlags.mockResolvedValue({})
     mocks.getRestrictedAppKeys.mockReturnValue([])
     // The If block flag is on unless a test turns it off.
     mocks.getLdFlagValue.mockResolvedValue(true)

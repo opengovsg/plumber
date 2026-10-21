@@ -71,6 +71,31 @@ export function deriveIfThenV1EndStep<T extends ExtentStep>(
   return flowSteps[lastIndex]
 }
 
+export function getIfThenEndStep<T extends ExtentStep>(
+  flowSteps: T[],
+  ifThenStep: T,
+): T | undefined {
+  return isIfThenV2(ifThenStep)
+    ? flowSteps.find((step) => step.id === ifThenStep.config[BLOCK_END_STEP_ID])
+    : deriveIfThenV1EndStep(flowSteps, ifThenStep)
+}
+
+export function findIfThenBlockEndingAt<T extends ExtentStep>(
+  flowSteps: T[],
+  step: T,
+): { ifThenStep: T; endStep: T } | null {
+  for (const ifThenStep of flowSteps) {
+    if (!isIfThenStep(ifThenStep)) {
+      continue
+    }
+    const endStep = getIfThenEndStep(flowSteps, ifThenStep)
+    if (endStep && (ifThenStep.id === step.id || endStep.id === step.id)) {
+      return { ifThenStep, endStep }
+    }
+  }
+  return null
+}
+
 /**
  * Finds blank placeholder steps inside a V1 block's derived range, so the
  * V1 -> V2 upgrade can drop them instead of pinning them into a V2 block's
