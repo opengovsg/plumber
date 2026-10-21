@@ -396,7 +396,12 @@ export async function createFlowWithStepsService({
   })
 
   if (mrfWorkflow) {
-    await addMrfActions({ user, flowId: flow.id, actions: steps.slice(1) })
+    await addMrfActions({
+      user,
+      flowId: flow.id,
+      actions: steps.slice(1),
+      traceId,
+    })
     // Re-read, since createMrfSteps added steps and reordered positions.
     const withMrfSteps = await flow.$query().withGraphFetched('steps')
     withMrfSteps.steps.sort((a, b) => a.position - b.position)

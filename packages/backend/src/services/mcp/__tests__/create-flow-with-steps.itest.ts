@@ -1033,6 +1033,9 @@ describe('createFlowWithStepsService', () => {
         ])
         const approvalId = result.steps[1].id
         for (const step of result.steps.slice(2, 5)) {
+          expect(step.config.aiBuilderConfig).toEqual([
+            { traceId: 'trace-mrf-if', tool: 'create_step' },
+          ])
           expect(step.config?.approval).toEqual({
             branch: 'reject',
             stepId: approvalId,

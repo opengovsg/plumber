@@ -783,7 +783,6 @@ describe('createMcpBridgeTools', () => {
       previousStepId: 'step-0',
       traceId: mockTraceId,
       afterIfThenBlock: true,
-      traceId: mockTraceId,
     })
   })
 

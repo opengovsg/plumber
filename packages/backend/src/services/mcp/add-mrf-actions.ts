@@ -44,10 +44,12 @@ export async function addMrfActions({
   user,
   flowId,
   actions,
+  traceId,
 }: {
   user: User
   flowId: string
   actions: McpStepInput[]
+  traceId: string
 }): Promise<void> {
   let current: McpStepInput | undefined
 
@@ -115,6 +117,7 @@ export async function addMrfActions({
                 // The first step after a block must land outside it.
                 afterIfThenBlock: offset === 0 && previous.isInsideBlock,
                 approvalBranch,
+                traceId,
               })
 
               const parameters = {
