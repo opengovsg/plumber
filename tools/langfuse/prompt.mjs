@@ -17,6 +17,7 @@ import { buildLangfuseClient } from './lib/client.mjs'
 import {
   DEFAULT_LABEL,
   devLabel,
+  getPullBlocker,
   getPushBlocker,
   gitEmail,
   listLocalPrompts,
@@ -118,14 +119,9 @@ async function pull(args) {
     return
   }
 
-  const edited =
-    existing && existing.local !== null && existing.local !== existing.base
-  if (edited && !force) {
-    throw new Error(
-      `${displayPath(
-        paths.local,
-      )} has local edits. Use --merge to keep them, or --force to discard them.`,
-    )
+  const blocker = getPullBlocker(paths, existing)
+  if (blocker && !force) {
+    throw new Error(`${displayPath(paths.local)}: ${blocker}`)
   }
 
   const label = args.label ?? DEFAULT_LABEL
