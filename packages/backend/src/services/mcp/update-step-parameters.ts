@@ -18,7 +18,11 @@ import Step from '@/models/step'
 import type User from '@/models/user'
 
 import { registerConnectionService } from './register-connection'
-import { appendStepAiBuilderEvent } from './step-ai-builder-config'
+import {
+  appendStepAiBuilderEvent,
+  clearConnectionConflict,
+  setConnectionConflict,
+} from './step-ai-builder-config'
 import { verifyConnectionRegistrationService } from './verify-connection-registration'
 
 export interface UpdateStepParametersInput {
@@ -77,6 +81,18 @@ async function fetchFormSchemaForStep(
   }
 
   return fetchFormSchema($, formId)
+}
+
+async function patchStepConfig(
+  stepId: string,
+  update: (config: Step['config']) => Step['config'],
+  patch: Partial<Pick<Step, 'connectionId'>> = {},
+): Promise<void> {
+  const current = await Step.query().findById(stepId).throwIfNotFound()
+  await Step.query().patchAndFetchById(stepId, {
+    ...patch,
+    config: update(current.config),
+  })
 }
 
 export async function updateStepParametersService({
@@ -221,18 +237,22 @@ export async function updateStepParametersService({
         )
 
         if (verification.status === 'VERIFIED') {
-          await Step.query()
-            .patchAndFetchById(stepId, { connectionId })
-            .throwIfNotFound()
+          await patchStepConfig(stepId, clearConnectionConflict, {
+            connectionId,
+          })
           result.step.connectionId = connectionId
           result.connectionRegistered = true
         } else if (verification.status === 'UNREGISTERED') {
           await registerConnectionService(user, stepId, connectionId)
+          await patchStepConfig(stepId, clearConnectionConflict)
           result.step.connectionId = connectionId
           result.connectionRegistered = true
         } else {
           result.connectionConflict = true
           result.connectionConflictMessage = verification.message
+          await patchStepConfig(stepId, (config) =>
+            setConnectionConflict(config, connectionId, traceId),
+          )
           try {
             const schema = await fetchFormSchemaForStep(
               user,
