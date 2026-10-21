@@ -238,9 +238,7 @@ steps:
     key: ifThen
     description: If-then at end
 -->`),
-      ).toThrow(
-        'If-then actions must have another action immediately after them',
-      )
+      ).toThrow('Cannot have empty If block')
     })
 
     it('throws when if-then actions are consecutive', () => {
@@ -265,9 +263,7 @@ steps:
     key: sendTransactionalEmail
     description: Action
 -->`),
-      ).toThrow(
-        'If-then actions cannot be consecutive - must alternate with non-if-then actions',
-      )
+      ).toThrow('Cannot have empty If block')
     })
 
     it('throws when for-each is placed after an if-then', () => {

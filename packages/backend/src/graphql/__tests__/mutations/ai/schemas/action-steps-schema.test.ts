@@ -245,7 +245,7 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(false)
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
-          'If-then actions must have another action immediately after them',
+          'Cannot have empty If block',
         )
       }
     })
@@ -280,7 +280,7 @@ describe('actionStepsSchema validation', () => {
       expect(result.success).toBe(false)
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
-          'If-then actions cannot be consecutive',
+          'Cannot have empty If block',
         )
       }
     })

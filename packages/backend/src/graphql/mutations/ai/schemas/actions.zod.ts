@@ -144,10 +144,7 @@ export function validateActionStepsRules(
       if (childCount === 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message:
-            i === steps.length - 1
-              ? 'If-then actions must have another action immediately after them'
-              : 'If-then actions cannot be consecutive - must alternate with non-if-then actions',
+          message: 'Cannot have empty If block',
           path: [i],
         })
       } else if (i + childCount >= steps.length) {
