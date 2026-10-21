@@ -741,6 +741,30 @@ describe('connection registration for FormSG (per-step)', () => {
     expect(dbStep?.config?.aiBuilderConnectionConflict).toBeUndefined()
   })
 
+  it('UNREGISTERED: clears a recorded connection conflict', async () => {
+    await Step.query().patchAndFetchById(triggerStepId, {
+      config: { aiBuilderConnectionConflict: { connectionId } },
+    })
+    mocks.verifyConnectionRegistrationService.mockResolvedValue({
+      status: 'UNREGISTERED',
+    })
+    mocks.registerConnectionService.mockResolvedValue({
+      registered: true,
+      message: 'ok',
+    })
+
+    await updateStepParametersService({
+      user,
+      pipeId,
+      stepId: triggerStepId,
+      parameters: {},
+      connectionId,
+    })
+
+    const dbStep = await Step.query().findById(triggerStepId)
+    expect(dbStep?.config?.aiBuilderConnectionConflict).toBeUndefined()
+  })
+
   it('UNREGISTERED: auto-registers and marks connectionRegistered', async () => {
     mocks.verifyConnectionRegistrationService.mockResolvedValue({
       status: 'UNREGISTERED',
@@ -818,11 +842,18 @@ describe('connection registration for FormSG (per-step)', () => {
       stepId: triggerStepId,
       parameters: {},
       connectionId,
+      traceId: 'trace-conflict',
     })
 
     expect(result.connectionConflict).toBe(true)
     expect(result.connectionConflictMessage).toBe(conflictMsg)
     expect(result.step.connectionId).toBeNull()
+
+    const dbStep = await Step.query().findById(triggerStepId)
+    expect(dbStep?.config?.aiBuilderConnectionConflict).toEqual({
+      connectionId,
+      traceId: 'trace-conflict',
+    })
   })
 
   it('verify throws: sets connectionError, does NOT persist connectionId, returns formFields', async () => {
