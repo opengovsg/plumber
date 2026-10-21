@@ -1,15 +1,16 @@
-import { lazy, Suspense, useCallback, useContext, useTransition } from 'react'
+import { Suspense, useCallback, useContext, useTransition } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { hexEncode } from '@/helpers/hex-encoding'
+import { lazyWithReload } from '@/helpers/lazyWithReload'
 import { TableVariable, Variable } from '@/helpers/variables'
 
 import HtmlVariableModal from './HtmlVariableModal'
 import TableVariableModal from './TableVariableModal'
 import { VariableItem } from '.'
 
-const LazyViewAsEmailModal = lazy(() => import('../ViewAsEmailModal'))
+const LazyViewAsEmailModal = lazyWithReload(() => import('../ViewAsEmailModal'))
 
 interface VariableItemWithModalProps {
   variable: Variable
@@ -42,7 +43,8 @@ export default function VariableItemWithModal(
 
   const preloadModal = useCallback(() => {
     if (variable.type === 'email') {
-      import('../ViewAsEmailModal')
+      // LazyViewAsEmailModal handles load failures when it renders.
+      import('../ViewAsEmailModal').catch(() => undefined)
     }
   }, [variable.type])
 
