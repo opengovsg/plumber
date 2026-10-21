@@ -37,14 +37,15 @@ import {
   listColumnsService,
 } from '@/services/mcp/list-columns'
 import {
+  NoConnectionConflictError,
+  overrideConnectionService,
+} from '@/services/mcp/override-connection'
+import {
   isPublishedPipeError,
   type PublishedPipeErrorResult,
   publishedPipeErrorResult,
 } from '@/services/mcp/published-pipe-error'
-import {
-  type RegisterConnectionResult,
-  registerConnectionService,
-} from '@/services/mcp/register-connection'
+import type { RegisterConnectionResult } from '@/services/mcp/register-connection'
 import {
   type UnpublishPipeResult,
   unpublishPipeService,
@@ -425,7 +426,8 @@ export function createMcpBridgeTools(
       description:
         'Register a FormSG connection on a trigger step, overwriting any existing webhook. ' +
         'Call ONLY after the user has explicitly confirmed they want to overwrite the existing webhook. ' +
-        'On success the connection is persisted to the step.',
+        'On success the connection is persisted to the step. ' +
+        'Returns { error } when this step has no webhook conflict on record for this connection; relay it and ask which pipe or form the user means.',
       inputSchema: z.object({
         pipe_id: z.uuid().describe('ID of the pipe containing the step'),
         step_id: z.uuid().describe('ID of the trigger step to register'),
@@ -439,9 +441,9 @@ export function createMcpBridgeTools(
         pipe_id,
         step_id,
         connection_id,
-      }): Promise<RegisterConnectionResult | PublishedPipeErrorResult> => {
+      }): Promise<RegisterConnectionResult | McpToolError> => {
         try {
-          const result = await registerConnectionService(
+          const result = await overrideConnectionService(
             user,
             step_id,
             connection_id,
@@ -449,6 +451,9 @@ export function createMcpBridgeTools(
           onPipeChange?.(pipe_id)
           return result
         } catch (error) {
+          if (error instanceof NoConnectionConflictError) {
+            return { error: error.message }
+          }
           return publishedPipeOrThrow(error)
         }
       },

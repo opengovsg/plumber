@@ -38,6 +38,28 @@ export function appendStepAiBuilderEvent(
   }
 }
 
+export function setConnectionConflict(
+  config: IStepConfig | null | undefined,
+  connectionId: string,
+  traceId?: string,
+): IStepConfig {
+  return {
+    ...config,
+    aiBuilderConnectionConflict: {
+      connectionId,
+      ...(traceId && { traceId }),
+    },
+  }
+}
+
+export function clearConnectionConflict(
+  config: IStepConfig | null | undefined,
+): IStepConfig {
+  const next: IStepConfig = { ...config }
+  delete next.aiBuilderConnectionConflict
+  return next
+}
+
 export function stampStepDeletedByAi(
   config: IStepConfig | null | undefined,
   traceId: string,

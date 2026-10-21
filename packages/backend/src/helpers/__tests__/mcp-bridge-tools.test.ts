@@ -56,11 +56,19 @@ vi.mock('@/services/mcp/get-form-schema', () => ({
     warnings: [],
   }),
 }))
-vi.mock('@/services/mcp/register-connection', () => ({
-  registerConnectionService: vi
-    .fn()
-    .mockResolvedValue({ connectionRegistered: true }),
-}))
+vi.mock('@/services/mcp/override-connection', () => {
+  class NoConnectionConflictError extends Error {
+    constructor() {
+      super('nothing to override')
+    }
+  }
+  return {
+    NoConnectionConflictError,
+    overrideConnectionService: vi
+      .fn()
+      .mockResolvedValue({ registered: true, message: 'ok' }),
+  }
+})
 vi.mock('@/services/mcp/unpublish-pipe', () => ({
   unpublishPipeService: vi.fn().mockResolvedValue({
     pipeId: 'f1',
@@ -86,8 +94,11 @@ import { deleteStepService } from '@/services/mcp/delete-step'
 import { executeStepService } from '@/services/mcp/execute-step'
 import { getFormSchemaService } from '@/services/mcp/get-form-schema'
 import { listColumnsService } from '@/services/mcp/list-columns'
+import {
+  NoConnectionConflictError,
+  overrideConnectionService,
+} from '@/services/mcp/override-connection'
 import { PublishedPipeError } from '@/services/mcp/published-pipe-error'
-import { registerConnectionService } from '@/services/mcp/register-connection'
 import { unpublishPipeService } from '@/services/mcp/unpublish-pipe'
 import { updateStepParametersService } from '@/services/mcp/update-step-parameters'
 
@@ -238,7 +249,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('returns a structured error when registering a connection on a published pipe', async () => {
-    vi.mocked(registerConnectionService).mockRejectedValueOnce(
+    vi.mocked(overrideConnectionService).mockRejectedValueOnce(
       new PublishedPipeError(),
     )
     const onPipeChange = vi.fn()
@@ -323,7 +334,7 @@ describe('createMcpBridgeTools', () => {
   })
 
   it('does not rewrite operational errors from register_connection', async () => {
-    vi.mocked(registerConnectionService).mockRejectedValueOnce(
+    vi.mocked(overrideConnectionService).mockRejectedValueOnce(
       new Error('Connection is not verified'),
     )
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
@@ -338,6 +349,26 @@ describe('createMcpBridgeTools', () => {
         { toolCallId: 'register_connection', messages: [] },
       ),
     ).rejects.toThrow('Connection is not verified')
+  })
+
+  it('returns { error } when register_connection has no conflict on record', async () => {
+    vi.mocked(overrideConnectionService).mockRejectedValueOnce(
+      new NoConnectionConflictError(),
+    )
+    const onPipeChange = vi.fn()
+    const tools = createMcpBridgeTools(mockUser, mockTraceId, onPipeChange)
+
+    const result = await tools.register_connection.execute(
+      {
+        pipe_id: 'flow-1',
+        step_id: 'step-1',
+        connection_id: 'conn-1',
+      },
+      { toolCallId: 'register_connection', messages: [] },
+    )
+
+    expect(result).toEqual({ error: 'nothing to override' })
+    expect(onPipeChange).not.toHaveBeenCalled()
   })
 
   it('list_columns calls listColumnsService with camelCase args', async () => {
@@ -504,7 +535,7 @@ describe('createMcpBridgeTools', () => {
     expect(result).toMatchObject({ title: 'Test Form' })
   })
 
-  it('register_connection calls registerConnectionService with correct args', async () => {
+  it('register_connection calls overrideConnectionService with correct args', async () => {
     const tools = createMcpBridgeTools(mockUser, mockTraceId)
     await tools.register_connection.execute(
       {
@@ -514,7 +545,7 @@ describe('createMcpBridgeTools', () => {
       },
       { toolCallId: 'register_connection', messages: [] },
     )
-    expect(vi.mocked(registerConnectionService)).toHaveBeenCalledWith(
+    expect(vi.mocked(overrideConnectionService)).toHaveBeenCalledWith(
       mockUser,
       'step-1',
       'conn-1',
