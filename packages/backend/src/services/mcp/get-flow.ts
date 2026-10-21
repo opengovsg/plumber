@@ -14,7 +14,7 @@ export interface McpStep {
   parameters: IJSONObject
   position: number
   status: string
-  config: IStepConfig | null
+  config: Pick<IStepConfig, 'stepName' | 'approval' | 'endStepId'> | null
   connectionId: string | null
 }
 
@@ -94,7 +94,13 @@ export async function getFlowService({
       parameters: redactCredentials(step.parameters ?? {}) as IJSONObject,
       position: step.position,
       status: step.status,
-      config: step.config ?? null,
+      config: step.config
+        ? {
+            stepName: step.config.stepName,
+            approval: step.config.approval,
+            endStepId: step.config.endStepId,
+          }
+        : null,
       connectionId: step.connectionId ?? null,
     })),
   }

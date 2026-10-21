@@ -93,7 +93,7 @@ describe('getFlowService', () => {
     ).rejects.toThrow()
   })
 
-  it('surfaces hidden MRF steps with their raw config and parameters', async () => {
+  it('surfaces MRF branch metadata without internal step config', async () => {
     const context = await generateMockContext()
     const flowId = randomUUID()
     await generateMockFlow(context, flowId)
@@ -112,6 +112,14 @@ describe('getFlowService', () => {
       linkedStepId: approvalStep.id,
     })
 
+    await approvalStep.$query().patch({
+      config: {
+        stepName: 'Manager Approval',
+        adminOverride: { internalSetting: 'not-for-chat' },
+        aiBuilderConfig: [{ traceId: 'internal-trace', tool: 'create_step' }],
+      },
+    })
+
     const result = await getFlowService({
       user: context.currentUser,
       pipeId: flowId,
@@ -122,6 +130,11 @@ describe('getFlowService', () => {
     )
     expect(returnedApprovalStep?.appKey).toBe('formsg')
     expect(returnedApprovalStep?.key).toBe('mrfSubmission')
+    expect(returnedApprovalStep?.config).toEqual({
+      stepName: 'Manager Approval',
+    })
+    expect(JSON.stringify(result)).not.toContain('not-for-chat')
+    expect(JSON.stringify(result)).not.toContain('internal-trace')
     const mrfParams = returnedApprovalStep?.parameters as {
       mrf?: { defaultStepName?: string; approvalField?: string }
     }
