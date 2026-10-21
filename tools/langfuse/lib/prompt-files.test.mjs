@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
 import {
   devLabel,
+  getPullBlocker,
   getPushBlocker,
   hasConflictMarkers,
   listLocalPrompts,
@@ -63,6 +70,52 @@ test('round-trips local files and lists them by name', () => {
     assert.deepEqual(listLocalPrompts(root), [
       { project: 'aiBuilder', name: 'folder/chat' },
     ])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('rejects prompt names that collide with saved bases', () => {
+  for (const name of ['chat.base', 'folder/chat.base', 'chat.base.base']) {
+    assert.throws(() => promptPaths('aiBuilder', name, '/root'), /reserved/)
+  }
+  assert.equal(
+    promptPaths('aiBuilder', 'folder.base/chat', '/root').local,
+    '/root/aiBuilder/folder.base/chat.md',
+  )
+})
+
+test('blocks pulling over a working copy without metadata, including empty files', () => {
+  const root = mkdtempSync(join(tmpdir(), 'prompts-'))
+  try {
+    const paths = promptPaths('aiBuilder', 'chat', root)
+    mkdirSync(join(root, 'aiBuilder'))
+    assert.equal(getPullBlocker(paths, readLocalPrompt(paths)), null)
+    for (const local of ['handwritten prompt', '']) {
+      writeFileSync(paths.local, local)
+      assert.equal(readLocalPrompt(paths), null)
+      assert.match(getPullBlocker(paths, readLocalPrompt(paths)), /--force/)
+      assert.equal(readFileSync(paths.local, 'utf-8'), local)
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+test('blocks edited copies after metadata loss and permits clean or missing copies', () => {
+  const root = mkdtempSync(join(tmpdir(), 'prompts-'))
+  try {
+    const paths = promptPaths('aiBuilder', 'chat', root)
+    writeLocalPrompt(paths, { meta, base: 'base', local: 'base' })
+    assert.equal(getPullBlocker(paths, readLocalPrompt(paths)), null)
+    writeFileSync(paths.local, 'edited')
+    assert.match(getPullBlocker(paths, readLocalPrompt(paths)), /--merge/)
+    rmSync(paths.meta)
+    assert.match(getPullBlocker(paths, readLocalPrompt(paths)), /--force/)
+    assert.equal(readFileSync(paths.local, 'utf-8'), 'edited')
+    writeLocalPrompt(paths, { meta, base: 'base', local: 'base' })
+    rmSync(paths.local)
+    assert.equal(getPullBlocker(paths, readLocalPrompt(paths)), null)
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

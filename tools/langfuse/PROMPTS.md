@@ -32,6 +32,9 @@ Add `--project=pairAction` to use the other Langfuse project. The default is `ai
 
 `prompts/` is ignored by git. Never commit prompt text.
 
+Prompt names cannot end in `.base`. This suffix identifies saved bases.
+Pull also refuses to overwrite working copies without metadata unless you pass `--force`. Back up those copies first.
+
 | File                               | Purpose                                          |
 | ---------------------------------- | ------------------------------------------------ |
 | `prompts/aiBuilder/chat.md`        | The working copy. Edit this one.                 |
