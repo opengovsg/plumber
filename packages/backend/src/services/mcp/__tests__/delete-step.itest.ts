@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/helpers/launch-darkly', () => ({
   getAllLdFlags: mocks.getAllLdFlags,
   getRestrictedAppKeys: mocks.getRestrictedAppKeys,
+  // The If block flag stays on. Legacy pipes are pinned when a step is deleted.
+  getLdFlagValue: vi.fn().mockResolvedValue(true),
 }))
 
 describe('deleteStepService', () => {
@@ -465,6 +467,175 @@ describe('deleteStepService', () => {
     expect(storedReject?.config.approval).toEqual({
       branch: 'reject',
       stepId: mrfStep.id,
+    })
+  })
+
+  describe('If blocks', () => {
+    async function createBlockPipe(label: string) {
+      const user = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `delete-step-block-${label}-${randomUUID()}@example.com`,
+      })
+      // Pipe creation does not pin markers yet on this branch.
+      const flow = await createFlowWithStepsService({
+        user,
+        name: 'Block Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'toolbox',
+            key: 'ifThen',
+            type: 'action',
+            position: 2,
+          },
+          {
+            appKey: 'slack',
+            key: 'sendMessageToChannel',
+            type: 'action',
+            position: 3,
+          },
+          {
+            appKey: 'postman-sms',
+            key: 'sendSms',
+            type: 'action',
+            position: 4,
+          },
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 5,
+          },
+        ],
+        traceId: `trace-delete-block-${label}`,
+      })
+      const [, ifThen, slack, sms, email] = flow.steps
+      // If [ slack, sms ], with email outside the block.
+      await Step.query()
+        .findById(ifThen.id)
+        .patch({
+          config: { endStepId: sms.id },
+        })
+      return { user, flow, ifThen, slack, sms, email }
+    }
+
+    it('shrinks the block when its last inner step is deleted', async () => {
+      const { user, flow, ifThen, slack, sms } = await createBlockPipe('shrink')
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: sms.id,
+      })
+
+      expect(result.steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'ifThen',
+        'sendMessageToChannel',
+        'sendTransactionalEmail',
+      ])
+      const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
+      expect(updatedIfThen.config.endStepId).toBe(slack.id)
+    })
+
+    it('deletes the whole block when the If step is deleted, and keeps the step after it', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('unwrap')
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+      })
+
+      expect(result.steps.map((s) => s.key)).toEqual([
+        'newSubmission',
+        'sendTransactionalEmail',
+      ])
+      expect(result.steps.map((s) => s.position)).toEqual([1, 2])
+    })
+
+    it('stamps delete_step once on every soft-deleted block member', async () => {
+      const { user, flow, ifThen, slack, sms, email } = await createBlockPipe(
+        'stamp',
+      )
+
+      await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+        traceId: 'trace-delete',
+      })
+
+      const storedIfThen = await Step.query()
+        .withSoftDeleted()
+        .findById(ifThen.id)
+      expect(storedIfThen?.deletedAt).toBeTruthy()
+      expect(storedIfThen?.config).toEqual({
+        endStepId: sms.id,
+        aiBuilderConfig: [{ traceId: 'trace-delete', tool: 'delete_step' }],
+      })
+
+      for (const member of [slack, sms]) {
+        const stored = await Step.query().withSoftDeleted().findById(member.id)
+        expect(stored?.deletedAt).toBeTruthy()
+        expect(stored?.config.aiBuilderConfig).toEqual([
+          { traceId: 'trace-delete-block-stamp', tool: 'create_pipe' },
+          { traceId: 'trace-delete', tool: 'delete_step' },
+        ])
+      }
+
+      const storedEmail = await Step.query().findById(email.id)
+      expect(storedEmail?.config.aiBuilderConfig).toEqual([
+        { traceId: 'trace-delete-block-stamp', tool: 'create_pipe' },
+      ])
+    })
+
+    it('deletes a legacy If block through its derived extent', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('legacy-block')
+      await Step.query().findById(ifThen.id).patch({ config: {} })
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+      })
+
+      // With no marker the block runs through to the end of the pipe.
+      expect(result.steps.map((s) => s.key)).toEqual(['newSubmission'])
+    })
+
+    it('pins a legacy If block and shrinks it when its last step is deleted', async () => {
+      const { user, flow, ifThen, email, sms } = await createBlockPipe('legacy')
+      await Step.query().findById(ifThen.id).patch({ config: {} })
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: email.id,
+      })
+
+      const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
+      expect(updatedIfThen?.config.endStepId).toBe(sms.id)
+    })
+
+    it('deletes the derived extent when the If marker points at a missing step', async () => {
+      const { user, flow, ifThen } = await createBlockPipe('dangling')
+      await Step.query()
+        .findById(ifThen.id)
+        .patch({ config: { endStepId: 'missing-step' } })
+
+      const result = await deleteStepService({
+        user,
+        pipeId: flow.id,
+        stepId: ifThen.id,
+      })
+
+      expect(result.steps.map((s) => s.key)).toEqual(['newSubmission'])
     })
   })
 })

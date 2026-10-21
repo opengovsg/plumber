@@ -1,13 +1,9 @@
-import { raw, type Transaction } from 'objection'
-
-import { removeMrfSteps } from '@/apps/formsg/triggers/new-submission/remove-mrf-steps'
-import { hasStepReference } from '@/helpers/check-step-parameters'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { deleteStepsInTransaction } from '@/services/delete-steps'
 
 import { PublishedPipeError } from './published-pipe-error'
-import { stampStepDeletedByAi } from './step-ai-builder-config'
 
 export interface DeleteStepInput {
   user: User
@@ -40,63 +36,13 @@ export async function deleteStepService({
       throw new PublishedPipeError()
     }
 
-    if (traceId) {
-      await step.$query(trx).patch({
-        config: stampStepDeletedByAi(step.config, traceId),
-      })
-    }
-
-    if (step.type === 'trigger') {
-      if (step.appKey === 'formsg' && step.key === 'newSubmission') {
-        if (traceId) {
-          await stampFormSgCascadeDeletes(flow.id, traceId, trx)
-        }
-        await removeMrfSteps(flow.id, trx)
-      }
-
-      const allSteps = await flow
-        .$relatedQuery('steps', trx)
-        .where('id', '!=', stepId)
-        .orderBy('position', 'asc')
-
-      const stepsToInvalidate = getStepsToInvalidate(
-        allSteps,
-        new Set([stepId]),
-      )
-      await Step.query(trx)
-        .findByIds(stepsToInvalidate)
-        .patch({ status: 'incomplete' })
-
-      await step.$query(trx).delete()
-      await flow.$relatedQuery('steps', trx).insert({
-        key: null,
-        appKey: null,
-        type: 'trigger',
-        position: 1,
-        parameters: {},
-        connectionId: null,
-      })
-    } else {
-      const allSteps = await flow
-        .$relatedQuery('steps', trx)
-        .where('id', '!=', stepId)
-        .orderBy('position', 'asc')
-
-      const stepsToInvalidate = getStepsToInvalidate(
-        allSteps,
-        new Set([stepId]),
-      )
-      await Step.query(trx)
-        .findByIds(stepsToInvalidate)
-        .patch({ status: 'incomplete' })
-
-      await Step.query(trx).findById(stepId).delete()
-
-      await flow
-        .$relatedQuery('steps', trx)
-        .where('position', '>', step.position)
-        .patch({ position: raw('position - 1') })
-    }
+    await deleteStepsInTransaction({
+      trx,
+      flow,
+      stepIds: [stepId],
+      traceId,
+      includeLegacyIfBlockMembers: true,
+    })
 
     await flow.patchLastUpdated({
       flowId: flow.id,
@@ -109,40 +55,4 @@ export async function deleteStepService({
       .withGraphJoined('steps')
       .orderBy('steps.position', 'asc')
   })
-}
-
-async function stampFormSgCascadeDeletes(
-  flowId: string,
-  traceId: string,
-  trx: Transaction,
-): Promise<void> {
-  const cascadedSteps = await Step.query(trx)
-    .where('flow_id', flowId)
-    .where('type', 'action')
-    .andWhere((builder) => {
-      void builder
-        .where('key', 'mrfSubmission')
-        .orWhereRaw(`steps.config->'approval'->>'branch' = ?`, ['reject'])
-    })
-
-  await Promise.all(
-    cascadedSteps.map((cascaded) =>
-      cascaded.$query(trx).patch({
-        config: stampStepDeletedByAi(cascaded.config, traceId),
-      }),
-    ),
-  )
-}
-
-function getStepsToInvalidate(
-  steps: Step[],
-  deletedIds: Set<string>,
-): string[] {
-  const stepsToInvalidate = []
-  for (const s of steps) {
-    if (hasStepReference(s.parameters, deletedIds)) {
-      stepsToInvalidate.push(s.id)
-    }
-  }
-  return stepsToInvalidate
 }
