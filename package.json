@@ -21,7 +21,8 @@
     "test": "turbo run test test:unit test:integration",
     "test:ui": "vitest --ui",
     "migrate": "pnpm --filter backend run db:migrate",
-    "teardown": "pnpm --filter backend run teardown"
+    "teardown": "pnpm --filter backend run teardown",
+    "prompt": "node scripts/with-op-env.mjs node tools/langfuse/prompt.mjs"
   },
   "devDependencies": {
     "@1password/sdk": "0.5.0",

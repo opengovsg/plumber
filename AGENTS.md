@@ -122,6 +122,8 @@ There are two kinds of skills, distinguished by whether they are listed in the s
 
 In-repo skills: `setup-production-monitoring` — plan production monitoring for a feature (grills on failure modes, finds existing signals in the code, outputs a plan + Datadog monitor JSON in chat).
 
+In-repo skill `langfuse-prompts`: edit, test and push AI Builder prompts from a local working copy. See [tools/langfuse/PROMPTS.md](tools/langfuse/PROMPTS.md).
+
 ### Skill overrides
 
 - **caveman**: default to `lite` mode (overrides the skill's own default of `full`).
