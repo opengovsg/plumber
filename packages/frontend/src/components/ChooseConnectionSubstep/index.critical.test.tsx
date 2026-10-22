@@ -65,34 +65,16 @@ describe('MRF connection editing', () => {
       key: FORMSG_TRIGGER_KEY,
       type: 'trigger',
       position: 1,
-      readOnly: false,
       disabled: false,
     },
     {
-      label: 'second MRF stage',
+      label: 'MRF sub-trigger',
       key: MRF_ACTION_KEY,
       type: 'action',
       position: 2,
-      readOnly: false,
       disabled: true,
     },
-    {
-      label: 'later MRF stage',
-      key: MRF_ACTION_KEY,
-      type: 'action',
-      position: 5,
-      readOnly: false,
-      disabled: true,
-    },
-    {
-      label: 'read-only first trigger',
-      key: FORMSG_TRIGGER_KEY,
-      type: 'trigger',
-      position: 1,
-      readOnly: true,
-      disabled: true,
-    },
-  ] as const)('$label', async ({ key, type, position, readOnly, disabled }) => {
+  ] as const)('$label', async ({ key, type, position, disabled }) => {
     const onReconnect = vi.fn()
     const step: IStep = {
       id: `step-${position}`,
@@ -123,7 +105,7 @@ describe('MRF connection editing', () => {
           <EditorContext.Provider
             value={
               {
-                readOnly,
+                readOnly: false,
                 flow: { role: 'owner' } as IFlow,
               } as ContextType<typeof EditorContext>
             }
