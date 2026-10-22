@@ -17,6 +17,7 @@ import {
 } from 'ai'
 import type { Response } from 'express'
 import { Router } from 'express'
+import type { z } from 'zod'
 
 import appConfig from '@/config/app'
 import { BadUserInputError } from '@/errors/graphql-errors'
@@ -34,6 +35,7 @@ import {
   parseWorkflowMetadata,
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
+import { withAiBuilderTelemetry } from '@/helpers/ai/posthog-telemetry'
 import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
@@ -99,7 +101,11 @@ function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
 }
 
 const handleChatStream = observe(
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (
+    req: AuthenticatedRequest,
+    res: Response,
+    body: z.infer<typeof chatRequestSchema>,
+  ) => {
     const abortController = new AbortController()
     const context = req.context
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
@@ -112,22 +118,7 @@ const handleChatStream = observe(
       aiBuilderFlag.config
 
     try {
-      const validationResult = chatRequestSchema.safeParse(req.body)
-
-      if (!validationResult.success) {
-        res.status(400).json({
-          error: 'Invalid request body',
-          details: validationResult.error.issues,
-        })
-        return
-      }
-
-      const {
-        messages: rawMessages,
-        chatId,
-        ddRumSessionId,
-        sessionId,
-      } = validationResult.data
+      const { messages: rawMessages, chatId, ddRumSessionId, sessionId } = body
 
       // The RUM session id, preferring the new field but accepting the legacy
       // `sessionId` from clients deployed before the chatId change.
@@ -476,6 +467,23 @@ const handleChatStream = observe(
 
 const router: Router = Router()
 
-router.post('/', handleChatStream)
+router.post('/', (req: AuthenticatedRequest, res: Response) => {
+  const validationResult = chatRequestSchema.safeParse(req.body)
+  if (!validationResult.success) {
+    res.status(400).json({
+      error: 'Invalid request body',
+      details: validationResult.error.issues,
+    })
+    return
+  }
+
+  return withAiBuilderTelemetry(
+    {
+      distinctId: req.context.currentUser.id,
+      sessionId: validationResult.data.chatId || undefined,
+    },
+    () => handleChatStream(req, res, validationResult.data),
+  )
+})
 
 export default router

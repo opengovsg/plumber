@@ -17,10 +17,20 @@ const server: Server = app.listen(port, () => {
 })
 
 function shutdown(server: Server) {
-  server.close()
+  server.close(() => {
+    void import('@/instrumentation')
+      .then(({ shutdownTelemetry }) => shutdownTelemetry())
+      .catch(() => {
+        logger.warn('Failed to flush AI telemetry during shutdown')
+      })
+  })
 }
 
 process.on('SIGTERM', () => {
+  shutdown(server)
+})
+
+process.once('SIGINT', () => {
   shutdown(server)
 })
 

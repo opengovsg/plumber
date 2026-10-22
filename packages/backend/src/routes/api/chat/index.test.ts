@@ -113,9 +113,16 @@ vi.mock('@langfuse/tracing', () => ({
   updateActiveTrace: vi.fn(),
 }))
 
-vi.mock('@opentelemetry/api', () => ({
-  trace: { getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }) },
-}))
+vi.mock('@opentelemetry/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@opentelemetry/api')>()
+  return {
+    ...actual,
+    trace: {
+      ...actual.trace,
+      getActiveSpan: vi.fn().mockReturnValue({ end: vi.fn() }),
+    },
+  }
+})
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
 import { createUIMessageStream, streamText } from 'ai'
