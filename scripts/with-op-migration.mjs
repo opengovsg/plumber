@@ -184,10 +184,14 @@ async function main() {
   }
 
   const rl = createInterface({ input: process.stdin, output: process.stdout })
+  // Ctrl+C or EOF closes rl and strands the pending question, so Node would exit 0.
+  const abortOnClose = () => fail('aborted.')
+  rl.on('close', abortOnClose)
   let variables
   try {
     variables = await loadVariables(rl)
   } finally {
+    rl.off('close', abortOnClose)
     rl.close()
   }
 
