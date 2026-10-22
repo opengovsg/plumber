@@ -99,14 +99,17 @@ function ChooseConnectionSubstep(
   const supportsConnectionRegistration =
     !!application.auth?.connectionRegistrationType
 
+  const isMrfSubtrigger =
+    step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY
   const isEditConnectionDisabled =
     readOnly ||
-    (step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY) ||
+    isMrfSubtrigger ||
     (flow.role !== 'owner' &&
       NON_EDITABLE_APP_CONNECTIONS.includes(application.key))
   const shouldShowReconnectTooltip =
-    flow.role === 'editor' &&
-    NON_EDITABLE_APP_CONNECTIONS.includes(application.key)
+    isMrfSubtrigger ||
+    (flow.role === 'editor' &&
+      NON_EDITABLE_APP_CONNECTIONS.includes(application.key))
 
   const { loading: testResultLoading, data: testConnectionData } = useQuery<{
     testConnection: ITestConnectionOutput
@@ -229,11 +232,15 @@ function ChooseConnectionSubstep(
         </Flex>
 
         <Tooltip
-          label="Only the Pipe owner can reconnect this app"
+          label={
+            isMrfSubtrigger
+              ? "This connection follows the first trigger's form. Reconnect it from the first trigger."
+              : 'Only the Pipe owner can reconnect this app'
+          }
           hasArrow
           isDisabled={!shouldShowReconnectTooltip}
         >
-          <span>
+          <span tabIndex={isMrfSubtrigger ? 0 : undefined}>
             <Button
               variant="clear"
               colorScheme="secondary"
@@ -241,6 +248,10 @@ function ChooseConnectionSubstep(
               leftIcon={connection ? <BiRefresh /> : <BiLink />}
               onClick={onReconnect}
               isDisabled={isEditConnectionDisabled}
+              _disabled={{
+                color: 'interaction.support.disabled-content',
+                cursor: 'not-allowed',
+              }}
             >
               {connection ? 'Reconnect' : 'Connect'}
             </Button>

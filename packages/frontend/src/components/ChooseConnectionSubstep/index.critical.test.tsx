@@ -125,5 +125,20 @@ describe('MRF connection editing', () => {
     expect(button?.disabled).toBe(disabled)
     act(() => button?.click())
     expect(onReconnect).toHaveBeenCalledTimes(disabled ? 0 : 1)
+
+    const tooltipTrigger = button?.parentElement
+    expect(tooltipTrigger?.tabIndex).toBe(disabled ? 0 : -1)
+    await act(async () => {
+      tooltipTrigger?.focus()
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    })
+    const tooltip = document.querySelector('[role="tooltip"]')
+    if (disabled) {
+      expect(tooltip?.textContent).toContain(
+        "This connection follows the first trigger's form. Reconnect it from the first trigger.",
+      )
+    } else {
+      expect(tooltip).toBeNull()
+    }
   })
 })
