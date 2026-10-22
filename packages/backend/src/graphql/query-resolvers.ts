@@ -8,11 +8,13 @@ import getExecutionSteps from './queries/get-execution-steps'
 import getExecutions from './queries/get-executions'
 import getFlow from './queries/get-flow'
 import getFlowConnections from './queries/get-flow-connections'
+import getFlowFolders from './queries/get-flow-folders'
 import getFlowTransferDetails from './queries/get-flow-transfer-details'
 import getFlows from './queries/get-flows'
 import getPendingFlowTransfers from './queries/get-pending-flow-transfers'
 import getTemplates from './queries/get-templates'
 import getTestExecutionSteps from './queries/get-test-execution-steps'
+import getUnfiledFlowCount from './queries/get-unfiled-flow-count'
 import healthcheck from './queries/healthcheck'
 import testConnection from './queries/test-connection'
 import tilesQueryResolvers from './queries/tiles'
@@ -34,6 +36,8 @@ export default {
   testConnection,
   getFlow,
   getFlows,
+  getFlowFolders,
+  getUnfiledFlowCount,
   getTestExecutionSteps,
   getExecution,
   getExecutions,

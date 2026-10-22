@@ -19,15 +19,56 @@ import { DateTime } from 'luxon'
 
 import FlowAppIcons from '@/components/FlowAppIcons'
 import * as URLS from '@/config/urls'
+import { getFolderColorToken } from '@/pages/Flows/components/FolderSidebar/constants'
 
 import FlowContextMenu from './FlowContextMenu'
 
+// `IFlow` (from `@plumber/types`) doesn't carry `folder` yet, so it's
+// intersected in locally rather than widening the shared type for a
+// single-field, GraphQL-only addition.
+export type FlowWithFolder = IFlow & {
+  folder?: { id: string; name: string; color: string } | null
+}
+
 type FlowRowProps = {
-  flow: IFlow
+  flow: FlowWithFolder
   isExecution?: boolean
   showMenu?: boolean
   showTimestamp?: boolean
   isShared?: boolean
+  // Suppress the chip when the pipe list is already scoped to one folder
+  // (e.g. viewing that folder itself) - the chip would be redundant there.
+  showFolderChip?: boolean
+}
+
+function FolderChip({ folder }: { folder: { name: string; color: string } }) {
+  const colorToken = getFolderColorToken(folder.color)
+  return (
+    <Flex
+      align="center"
+      gap={1.5}
+      flexShrink={0}
+      borderRadius="full"
+      bg={colorToken.subtle}
+      px={2.5}
+      py={1}
+    >
+      <Box
+        boxSize="6px"
+        borderRadius="full"
+        bg={colorToken.dot}
+        flexShrink={0}
+      />
+      <Text
+        textStyle="body-2"
+        color="base.content.default"
+        isTruncated
+        maxW="140px"
+      >
+        {folder.name}
+      </Text>
+    </Flex>
+  )
 }
 
 function FlowRowTitle({
@@ -77,6 +118,7 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
     showMenu = true,
     isExecution = false,
     showTimestamp = true,
+    showFolderChip = true,
   } = props
 
   // NOTE: check is for greater than 1 because collaborators includes the owner
@@ -127,6 +169,9 @@ export default function FlowRow(props: FlowRowProps): ReactElement {
             <Spacer />
 
             <Flex alignItems="center" gap={1.5} justifyContent="flex-end">
+              {showFolderChip && flow.folder && (
+                <FolderChip folder={flow.folder} />
+              )}
               {isShared && (
                 <Badge
                   colorScheme="secondary"

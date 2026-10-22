@@ -1,3 +1,7 @@
+import { z } from 'zod'
+
+import { BadUserInputError } from '@/errors/graphql-errors'
+import { applyFolderFilter } from '@/helpers/flow-folders'
 import paginate from '@/helpers/pagination'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
@@ -7,6 +11,15 @@ const getFlows: QueryResolvers['getFlows'] = async (
   params,
   context,
 ) => {
+  // To avoid the gibberish error code if a caller (e.g. a hand-edited
+  // ?folderId= URL) sends a malformed id
+  if (
+    params.folderId != null &&
+    !z.string().uuid().safeParse(params.folderId).success
+  ) {
+    throw new BadUserInputError('Please provide a valid folder ID.')
+  }
+
   // Get the base query with role selection and accessibility filtering
   const baseQuery = context.currentUser.withAccessibleFlows({
     requiredRole: 'viewer',
@@ -24,6 +37,11 @@ const getFlows: QueryResolvers['getFlows'] = async (
         if (params.active !== undefined && params.active !== null) {
           builder.where('active', params.active)
         }
+        applyFolderFilter(builder, {
+          folderId: params.folderId,
+          unfiled: params.unfiled,
+          userId: context.currentUser.id,
+        })
       })
   ).map((f) => f.id)
 
