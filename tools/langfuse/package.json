@@ -1,5 +1,6 @@
 {
   "name": "@plumber/langfuse-tools",
+  "private": true,
   "version": "1.0.0",
   "description": "",
   "type": "module",
