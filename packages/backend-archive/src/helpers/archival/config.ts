@@ -55,7 +55,7 @@ function devString(name: string, devDefault: string): string {
 
 export const archivalConfig = {
   isDev,
-  // Postgres — mirrors the fields used by @/config/database
+  // Postgres: mirrors backend's config/app/db.ts
   postgresHost:
     process.env.RDS_PROXY_HOST ?? devString('POSTGRES_HOST', 'localhost'),
   postgresPort: requireInt('POSTGRES_PORT', 5432),
