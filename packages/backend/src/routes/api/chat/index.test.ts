@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -118,7 +119,7 @@ vi.mock('@opentelemetry/api', () => ({
 }))
 
 import { experimental_createMCPClient } from '@ai-sdk/mcp'
-import { createUIMessageStream, streamText } from 'ai'
+import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import Connection from '@/models/connection'
@@ -251,6 +252,127 @@ describe('chat handler — GitBook MCP integration', () => {
       'Support: https://form.gov.sg/64929532701266001209ac32',
     )
     expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
+  })
+})
+
+describe('chat handler continuation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('retains completed tool results and drops interrupted calls on Continue', async () => {
+    const actual = await vi.importActual<typeof import('ai')>('ai')
+    vi.mocked(convertToModelMessages).mockImplementationOnce(
+      actual.convertToModelMessages,
+    )
+    const pipeId = '123e4567-e89b-12d3-a456-426614174000'
+    const handler = router.stack[0].route.stack[0].handle
+    await handler(
+      makeReq({
+        messages: [
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'Create a pipe' }],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              { type: 'step-start' },
+              {
+                type: 'tool-create_pipe',
+                toolCallId: 'create-1',
+                state: 'output-available',
+                input: { name: 'My pipe', steps: [] },
+                output: { pipeId },
+              },
+              {
+                type: 'tool-get_flow',
+                toolCallId: 'interrupted-1',
+                state: 'input-available',
+                input: { pipeId },
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              { type: 'text', text: 'Please continue from where you stopped.' },
+            ],
+          },
+        ],
+      }) as unknown as Request,
+      makeRes() as unknown as Response,
+      vi.fn(),
+    )
+
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({ role: 'system' }),
+          { role: 'user', content: [{ type: 'text', text: 'Create a pipe' }] },
+          {
+            role: 'assistant',
+            content: [
+              {
+                type: 'tool-call',
+                toolCallId: 'create-1',
+                toolName: 'create_pipe',
+                input: { name: 'My pipe', steps: [] },
+              },
+            ],
+          },
+          {
+            role: 'tool',
+            content: [
+              {
+                type: 'tool-result',
+                toolCallId: 'create-1',
+                toolName: 'create_pipe',
+                output: { type: 'json', value: { pipeId } },
+              },
+            ],
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Please continue from where you stopped.' },
+            ],
+          },
+        ],
+      }),
+    )
+  })
+
+  it('allows 20 model steps and signals tool-call pauses in finish metadata', async () => {
+    const handler = router.stack[0].route.stack[0].handle
+    await handler(
+      makeReq() as unknown as Request,
+      makeRes() as unknown as Response,
+      vi.fn(),
+    )
+
+    const [{ stopWhen }] = vi.mocked(streamText).mock.calls[0]
+    const condition = Array.isArray(stopWhen) ? stopWhen[0] : stopWhen
+    // Only the step count matters to the SDK condition.
+    const steps = Array.from({ length: 19 }, () => ({})) as Parameters<
+      NonNullable<typeof condition>
+    >[0]['steps']
+    expect(await condition?.({ steps })).toBe(false)
+    expect(await condition?.({ steps: [...steps, steps[0]] })).toBe(true)
+
+    const toUIMessageStream =
+      vi.mocked(streamText).mock.results[0].value.toUIMessageStream
+    const { messageMetadata } = toUIMessageStream.mock.calls[0][0]
+    expect(
+      messageMetadata({ part: { type: 'finish', finishReason: 'tool-calls' } }),
+    ).toEqual({
+      traceId: 'trace-123',
+      model: 'mock-model-type',
+      finishReason: 'tool-calls',
+    })
+    expect(
+      messageMetadata({ part: { type: 'text-delta', text: 'Working' } }),
+    ).not.toHaveProperty('finishReason')
   })
 })
 

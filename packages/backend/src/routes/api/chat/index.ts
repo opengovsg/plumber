@@ -63,7 +63,7 @@ import { chatRequestSchema } from './schema'
 
 // Keep in sync with schema.ts and frontend/src/pages/AiBuilder/constants.ts.
 const MAX_MESSAGES = 150
-const MAX_STEPS_PER_TURN = 10
+const MAX_STEPS_PER_TURN = 20
 
 function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
   const questions = parseClarificationBlock(text)

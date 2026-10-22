@@ -2,7 +2,6 @@ import { memo } from 'react'
 import { Box, Flex, Text } from '@chakra-ui/react'
 
 import { Message } from '@/hooks/useChatStream'
-import { CONTINUE_PROMPT } from '@/pages/AiBuilder/constants'
 import {
   formatUserMessageForDisplay,
   isNoOptionsSignalMessage,
@@ -71,11 +70,7 @@ const ChatMessage = memo(
     shouldShowToolbar: boolean
   }) => {
     if (message.isUser) {
-      // System cue for the LLM, not a real user reply — never rendered.
-      if (
-        isNoOptionsSignalMessage(message.text) ||
-        message.text === CONTINUE_PROMPT
-      ) {
+      if (isNoOptionsSignalMessage(message.text)) {
         return null
       }
       return <UserMessage message={message} />
