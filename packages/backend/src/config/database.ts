@@ -1,6 +1,7 @@
+import process from 'process'
+
 import type { Knex } from 'knex'
 import knex from 'knex'
-import process from 'process'
 
 import logger from '../helpers/logger'
 import { config } from './knex-config'
