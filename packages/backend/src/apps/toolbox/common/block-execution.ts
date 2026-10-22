@@ -26,7 +26,7 @@ export interface ConditionalExecutionRecord {
  * if none does. Blocks are depth-0 and pairwise disjoint, so at most one match
  * is possible.
  */
-function findEnclosingIfThenV2Block(
+export function findEnclosingIfThenV2Block(
   flowSteps: BlockScopedStep[],
   step: BlockScopedStep,
 ): { ifThenStep: BlockScopedStep; endStep: BlockScopedStep } | null {
