@@ -17,7 +17,7 @@ export default function CreatePipeButton(props: CreatePipeButtonProps) {
   return (
     <Flex gap={1}>
       <Button
-        leftIcon={<BiSolidMagicWand />}
+        leftIcon={<BiSolidMagicWand fontSize="1.25rem" />}
         onClick={() => navigate(`${URLS.EDITOR}/ai`)}
       >
         Create with AI

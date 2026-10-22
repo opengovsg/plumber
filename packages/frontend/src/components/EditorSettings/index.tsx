@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
+import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
 import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
@@ -17,7 +18,7 @@ import EditorDrawer from './EditorDrawer'
 import EditorSidebar from './EditorSidebar'
 import Navbar from './Navbar'
 
-const NAVBAR_HEIGHT = '65px'
+const NAVBAR_HEIGHT = TOP_NAV_HEIGHT
 const CONTENT_MAX_HEIGHT = `calc(100vh - ${NAVBAR_HEIGHT})`
 
 export type DrawerLink = {

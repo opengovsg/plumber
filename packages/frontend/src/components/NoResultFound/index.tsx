@@ -10,9 +10,11 @@ export default function NoResultFound(props: NoResultFoundProps): ReactElement {
   const { description, action } = props
 
   return (
-    <Stack mt={24} justifyContent="center" alignItems="center" gap={2}>
+    <Stack mt={24} justifyContent="center" alignItems="center" gap={1}>
       <Text textStyle="subhead-1">{description}</Text>
-      <Text>{action}</Text>
+      <Text textStyle="body-2" color="base.content.medium">
+        {action}
+      </Text>
     </Stack>
   )
 }

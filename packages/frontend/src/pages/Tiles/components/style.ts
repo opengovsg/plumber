@@ -17,7 +17,8 @@ export const flexStyles = {
 }
 
 export const linkStyles = {
-  px: 8,
+  pl: 8,
+  pr: 0,
   py: 6,
   w: '100%',
   justifyContent: 'space-between',
