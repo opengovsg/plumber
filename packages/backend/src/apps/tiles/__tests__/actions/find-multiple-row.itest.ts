@@ -163,7 +163,27 @@ describe.each([['ddb'], ['pg']])(
         filters: $.step.parameters.filters,
         scanLimit: mocks.TILE_SCAN_LIMIT,
         order: 'asc',
+        orderByCreatedAt: false,
       })
+    })
+
+    it('should order by createdAt for tiles migrated from DynamoDB', async () => {
+      await TableMetadata.query()
+        .patch({ config: { migratedFromDdb: true } })
+        .where({ id: $.step.parameters.tableId })
+      const getTableRowsSpy = vi
+        .spyOn(
+          databaseType === 'ddb' ? ddbTableRowFunctions : pgTableRowFunctions,
+          'getTableRows',
+        )
+        .mockResolvedValueOnce({
+          rows: [],
+          stringifiedCursor: undefined,
+        })
+      await findMultipleRowsAction.run($)
+      expect(getTableRowsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ orderByCreatedAt: true }),
+      )
     })
 
     it('should limit the returned rows to 500 even if more rows match the conditions', async () => {

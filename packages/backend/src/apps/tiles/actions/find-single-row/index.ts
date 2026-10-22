@@ -128,6 +128,7 @@ const action: IRawAction = {
       tableId,
       filters,
       order: returnLastRow ? 'desc' : 'asc',
+      orderByCreatedAt: table.config.migratedFromDdb === true,
       scanLimit,
     })
 

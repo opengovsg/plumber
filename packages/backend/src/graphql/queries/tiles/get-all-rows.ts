@@ -57,6 +57,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
       await tableOperations.getTableRows({
         tableId,
         columnIds,
+        orderByCreatedAt: table.config.migratedFromDdb === true,
         // If table is postgres, we set pagination limit
         // If table is dynamodb, the pagination size is based on dynamodb query limits
         scanLimit:
