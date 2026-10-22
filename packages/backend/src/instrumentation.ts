@@ -2,13 +2,12 @@ import { LangfuseSpanProcessor } from '@langfuse/otel'
 import { NodeSDK } from '@opentelemetry/sdk-node'
 
 import appConfig from '@/config/app'
+import {
+  createPostHogSpanProcessor,
+  PAIR_ACTION_RESOURCE_NAMES,
+} from '@/helpers/ai/posthog-telemetry'
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
-
-const PAIR_ACTION_RESOURCE_NAMES = [
-  'pair-action-generate-object',
-  'pair-action-process-image',
-]
 
 const BASE_CONFIG = {
   baseUrl: appConfig.pair.rome.baseUrl,
@@ -60,8 +59,21 @@ const pairActionSpanProcessor = new LangfuseSpanProcessor({
   },
 })
 
+const posthogSpanProcessor = createPostHogSpanProcessor(
+  appConfig.posthog,
+  appConfig.appEnv,
+)
+
 const sdk = new NodeSDK({
-  spanProcessors: [aiBuilderSpanProcessor, pairActionSpanProcessor],
+  spanProcessors: [
+    aiBuilderSpanProcessor,
+    pairActionSpanProcessor,
+    ...(posthogSpanProcessor ? [posthogSpanProcessor] : []),
+  ],
 })
 
 sdk.start()
+
+export function shutdownTelemetry(): Promise<void> {
+  return sdk.shutdown()
+}
