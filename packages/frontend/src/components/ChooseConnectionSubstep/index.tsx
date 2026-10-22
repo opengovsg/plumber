@@ -8,7 +8,7 @@ import { Button, Link } from '@opengovsg/design-system-react'
 
 import { EditorContext } from '@/contexts/Editor'
 import { TEST_CONNECTION } from '@/graphql/queries/test-connection'
-import { FORMSG_APP_KEY } from '@/helpers/formsg'
+import { FORMSG_APP_KEY, MRF_ACTION_KEY } from '@/helpers/formsg'
 import useAuthentication from '@/hooks/useAuthentication'
 
 import { NON_EDITABLE_APP_CONNECTIONS } from '../Editor/constants'
@@ -101,6 +101,7 @@ function ChooseConnectionSubstep(
 
   const isEditConnectionDisabled =
     readOnly ||
+    (step.appKey === FORMSG_APP_KEY && step.key === MRF_ACTION_KEY) ||
     (flow.role !== 'owner' &&
       NON_EDITABLE_APP_CONNECTIONS.includes(application.key))
   const shouldShowReconnectTooltip =
