@@ -5,6 +5,7 @@ import '@/helpers/check-worker-readiness'
 import '@/workers/flow'
 import '@/workers/trigger'
 import '@/workers/action'
+import '@/workers/tiles-migration'
 
 import logger from '@/helpers/logger'
 import { startSesConsumer } from '@/helpers/ses-consumer'
