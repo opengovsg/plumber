@@ -331,3 +331,203 @@ describe('getDataOutMetadata - MRF field filtering', () => {
     })
   })
 })
+
+describe('getDataOutMetadata - children field numbering', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    mocks.stepParameters = {}
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // order is the position in the submission. getDataOutMetadata overwrites it.
+  function childSubfield(attr: string, order: number, childIndex = 0) {
+    return {
+      question: `[MyInfo] Child ${childIndex + 1} ${attr}`,
+      answer: 'value',
+      fieldType: 'children',
+      order,
+    }
+  }
+
+  it('gives every subfield of a children field the same question number', async () => {
+    const executionStep = createExecutionStep({
+      field1: {
+        question: 'Q1',
+        answer: 'A1',
+        fieldType: 'textfield',
+        order: 1,
+      },
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 2),
+      childrenbirthrecords_ch1_childrace_0: childSubfield('Race', 3),
+      childrenbirthrecords_ch1_childtype_0: childSubfield('Record type', 4),
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 5,
+      },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(
+      result.fields.childrenbirthrecords_ch1_childname_0.question.label,
+    ).toBe('Question 2.1')
+    expect(
+      result.fields.childrenbirthrecords_ch1_childrace_0.question.label,
+    ).toBe('Question 2.2')
+    expect(
+      result.fields.childrenbirthrecords_ch1_childtype_0.question.label,
+    ).toBe('Question 2.3')
+    // the whole children field consumes a single question number
+    expect(result.fields.field2.question.label).toBe('Question 3')
+  })
+
+  it('labels each subfield answer with its own N.x number', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      childrenbirthrecords_ch1_childtype_0: childSubfield('Record type', 2),
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(
+      result.fields.childrenbirthrecords_ch1_childname_0.answer.label,
+    ).toBe('1.1. [MyInfo] Child 1 Name')
+    expect(
+      result.fields.childrenbirthrecords_ch1_childtype_0.answer.label,
+    ).toBe('1.2. [MyInfo] Child 1 Record type')
+  })
+
+  it('sorts each subfield answer directly below its own question', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      childrenbirthrecords_ch1_childrace_0: childSubfield('Race', 2),
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 3,
+      },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    const name = result.fields.childrenbirthrecords_ch1_childname_0
+    const race = result.fields.childrenbirthrecords_ch1_childrace_0
+
+    expect(name.question.order).toBeLessThan(name.answer.order)
+    expect(name.answer.order).toBeLessThan(race.question.order)
+    expect(race.question.order).toBeLessThan(race.answer.order)
+    // the group never bleeds into the next question number
+    expect(race.answer.order).toBeLessThan(result.fields.field2.question.order)
+  })
+
+  it('numbers two children fields separately', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      childrenbirthrecords_ch2_childname_0: childSubfield('Name', 2, 1),
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(
+      result.fields.childrenbirthrecords_ch1_childname_0.question.label,
+    ).toBe('Question 1.1')
+    expect(
+      result.fields.childrenbirthrecords_ch2_childname_0.question.label,
+    ).toBe('Question 2.1')
+  })
+
+  it('keeps both children of a legacy multi-child field under one number', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      childrenbirthrecords_ch1_childname_1: childSubfield('Name', 2, 1),
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 9,
+      },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(
+      result.fields.childrenbirthrecords_ch1_childname_0.question.label,
+    ).toBe('Question 1.1')
+    expect(
+      result.fields.childrenbirthrecords_ch1_childname_1.question.label,
+    ).toBe('Question 1.2')
+    expect(result.fields.field2.question.label).toBe('Question 2')
+  })
+
+  it('numbers a children field normally when its key is not a subfield key', async () => {
+    const executionStep = createExecutionStep({
+      ch1: {
+        question: 'Child records',
+        answer: 'raw',
+        fieldType: 'children',
+        order: 1,
+      },
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 2,
+      },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(result.fields.ch1.question.label).toBe('Question 1')
+    expect(result.fields.field2.question.label).toBe('Question 2')
+  })
+
+  it('sorts a section after every subfield of the children field above it', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      childrenbirthrecords_ch1_childrace_0: childSubfield('Race', 2),
+      childrenbirthrecords_ch1_childtype_0: childSubfield('Record type', 3),
+      section1: { question: 'Declaration', fieldType: 'section', order: 4 },
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 5,
+      },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    const lastSubfieldOrder =
+      result.fields.childrenbirthrecords_ch1_childtype_0.answer.order
+    expect(result.fields.section1.question.order).toBeGreaterThan(
+      lastSubfieldOrder,
+    )
+    // the section still belongs to the children field's question number
+    expect(result.fields.section1.question.order).toBeLessThan(
+      result.fields.field2.question.order,
+    )
+  })
+
+  it('keeps numbering a section normally when a question follows the children field', async () => {
+    const executionStep = createExecutionStep({
+      childrenbirthrecords_ch1_childname_0: childSubfield('Name', 1),
+      field2: {
+        question: 'Q2',
+        answer: 'A2',
+        fieldType: 'textfield',
+        order: 2,
+      },
+      section1: { question: 'Declaration', fieldType: 'section', order: 3 },
+    })
+
+    const result = await getDataOutMetadata(executionStep)
+
+    expect(result.fields.section1.question.order).toBeCloseTo(2.001, 5)
+  })
+})
