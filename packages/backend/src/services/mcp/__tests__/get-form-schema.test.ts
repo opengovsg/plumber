@@ -260,6 +260,107 @@ describe('getFormSchemaService', () => {
     })
   })
 
+  describe('MRF workflow stages', () => {
+    const REQUEST_FIELD = '6abcb1ce3b7c34bb6024cf9e'
+    const YES_NO_FIELD = '6abcb1d9fb28842bc7a9f48a'
+    const REASON_FIELD = '6abcb1e4fb28842bc7a9f742'
+    const STEP_3_FIELD = '6ac3461d7afca2c4dea79ad4'
+
+    const workflow = [
+      {
+        _id: '6abcb1ec6a6a5f0aca451656',
+        workflow_type: 'static',
+        edit: [REQUEST_FIELD],
+        is_approval_enabled: false,
+        step_name: 'Requestor',
+      },
+      {
+        _id: '6abcb1fdbf2f3b7c8dee7e39',
+        workflow_type: 'static',
+        edit: [YES_NO_FIELD, REASON_FIELD],
+        approval_field: YES_NO_FIELD,
+        is_approval_enabled: true,
+        step_name: 'Approval',
+      },
+      {
+        _id: '6ac3462ce792d9142d9c35a3',
+        workflow_type: 'static',
+        edit: [STEP_3_FIELD],
+        is_approval_enabled: false,
+      },
+    ]
+
+    it('lists every stage in order and flags the approval stage', async () => {
+      vi.mocked(axios.get).mockResolvedValue(
+        mockForm({ responseMode: 'multirespondent', workflow }),
+      )
+
+      const result = await getFormSchemaService(FORM_ID)
+
+      expect(result).toMatchObject({
+        isMrf: true,
+        mrfStages: [
+          { name: 'Requestor', isApproval: false, fieldIds: [REQUEST_FIELD] },
+          {
+            name: 'Approval',
+            isApproval: true,
+            approvalFieldId: YES_NO_FIELD,
+            fieldIds: [YES_NO_FIELD, REASON_FIELD],
+          },
+          { name: 'MRF Step 3', isApproval: false, fieldIds: [STEP_3_FIELD] },
+        ],
+      })
+    })
+
+    it('omits approvalFieldId on a stage that is not an approval stage', async () => {
+      vi.mocked(axios.get).mockResolvedValue(
+        mockForm({ responseMode: 'multirespondent', workflow }),
+      )
+
+      const result = await getFormSchemaService(FORM_ID)
+
+      expect(result).toHaveProperty(['mrfStages', 0])
+      expect(
+        (result as { mrfStages: object[] }).mrfStages[0],
+      ).not.toHaveProperty('approvalFieldId')
+    })
+
+    it('omits mrfStages when the workflow was never set up', async () => {
+      vi.mocked(axios.get).mockResolvedValue(
+        mockForm({ responseMode: 'multirespondent', workflow: [] }),
+      )
+
+      const result = await getFormSchemaService(FORM_ID)
+
+      expect(result).not.toHaveProperty('mrfStages')
+    })
+
+    it('omits mrfStages for a storage mode form', async () => {
+      vi.mocked(axios.get).mockResolvedValue(mockForm())
+
+      const result = await getFormSchemaService(FORM_ID)
+
+      expect(result).not.toHaveProperty('mrfStages')
+    })
+
+    it('flags an unreadable workflow instead of guessing the stages', async () => {
+      vi.mocked(axios.get).mockResolvedValue(
+        mockForm({
+          responseMode: 'multirespondent',
+          workflow: [{ _id: 'step1', workflow_type: 'not-a-real-type' }],
+        }),
+      )
+
+      const result = await getFormSchemaService(FORM_ID)
+
+      expect(result).toMatchObject({
+        isMrf: true,
+        warnings: [expect.stringContaining('could not be read')],
+      })
+      expect(result).not.toHaveProperty('mrfStages')
+    })
+  })
+
   describe('fetch errors returned as data', () => {
     it('reports a non-public form (404 with isPageFound)', async () => {
       vi.mocked(axios.get).mockRejectedValue({

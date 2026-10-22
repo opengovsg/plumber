@@ -6,6 +6,8 @@ import {
   getApiBaseUrl,
   parseFormEnvFromInput,
 } from '@/apps/formsg/common/form-env'
+import { getMrfStepName } from '@/apps/formsg/common/get-mrf-step-name'
+import { mrfWorkflowDataSchema } from '@/apps/formsg/common/types'
 import logger from '@/helpers/logger'
 
 const FORM_ID_REGEX = /^[a-f0-9]{24}$/i
@@ -45,12 +47,23 @@ export interface McpFormField {
   myInfoAttr?: string
 }
 
+export interface McpMrfStage {
+  name: string
+  isApproval: boolean
+  /** Id of the field holding the approve/reject answer. Set when isApproval. */
+  approvalFieldId?: string
+  /** Ids of the form fields this stage fills in. */
+  fieldIds: string[]
+}
+
 export interface McpFormSchema {
   formId: string
   env: FormEnv
   title: string
   isStorageMode: boolean
   isMrf: boolean
+  /** Workflow stages in order. Only present for MRF forms. */
+  mrfStages?: McpMrfStage[]
   fields: McpFormField[]
   warnings: string[]
 }
@@ -182,10 +195,24 @@ export async function getFormSchemaService(
       'This form is not a storage mode form, so it cannot be connected to Plumber.',
     )
   }
+  let mrfStages: McpMrfStage[] | undefined
   if (isMrf) {
-    warnings.push(
-      'This is a multi-respondent (MRF) form, which is not supported by Plumber.',
-    )
+    const workflow = mrfWorkflowDataSchema.safeParse(form.workflow)
+    if (workflow.success) {
+      mrfStages = workflow.data.map((stage, index) => ({
+        name: getMrfStepName(stage.step_name, index),
+        isApproval: Boolean(stage.approval_field),
+        ...(stage.approval_field && { approvalFieldId: stage.approval_field }),
+        fieldIds: stage.edit,
+      }))
+      warnings.push(
+        'This is a multi-respondent (MRF) form. mrfStages lists its workflow stages in order. Plumber creates one step per stage after the trigger is tested.',
+      )
+    } else {
+      warnings.push(
+        "This is a multi-respondent (MRF) form, but its workflow stages could not be read. Don't assume which stages need approval.",
+      )
+    }
   }
 
   const fields = (form.form_fields ?? [])
@@ -198,6 +225,7 @@ export async function getFormSchemaService(
     title: form.title,
     isStorageMode,
     isMrf,
+    ...(mrfStages && { mrfStages }),
     fields,
     warnings,
   }
