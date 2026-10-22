@@ -1,3 +1,8 @@
+import { spawn } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { createInterface } from 'node:readline/promises'
+
 /**
  * Runs a knex command with variables from a 1Password Environment injected.
  *
@@ -8,10 +13,6 @@
  * See README.md for the one-time setup.
  */
 import { createClient, DesktopAuth } from '@1password/sdk'
-import { spawn } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import { createInterface } from 'node:readline/promises'
 
 const CONFIG_FILE = 'op-dev.json'
 const USAGE = 'usage: node scripts/with-op-migration.mjs <command> [args...]'
