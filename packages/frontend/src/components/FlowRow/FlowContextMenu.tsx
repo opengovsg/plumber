@@ -4,6 +4,7 @@ import { MouseEvent, useCallback, useRef, useState } from 'react'
 import {
   BiDotsHorizontalRounded,
   BiDuplicate,
+  BiExport,
   BiShow,
   BiTrash,
 } from 'react-icons/bi'
@@ -27,6 +28,8 @@ import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
 import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
 import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
+
+import ConvertToTemplateModal from './ConvertToTemplateModal'
 
 interface FlowContextMenuProps {
   flow: IFlow
@@ -126,6 +129,21 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
     [onDialogOpen],
   )
 
+  const {
+    isOpen: isTemplateModalOpen,
+    onOpen: onTemplateModalOpen,
+    onClose: onTemplateModalClose,
+  } = useDisclosure()
+
+  const onConvertToTemplateButtonClick = useCallback(
+    (event: MouseEvent) => {
+      event.preventDefault()
+      onMenuClose()
+      onTemplateModalOpen()
+    },
+    [onMenuClose, onTemplateModalOpen],
+  )
+
   return (
     <>
       <Menu
@@ -162,6 +180,12 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           >
             Duplicate
           </MenuItem>
+          <MenuItem
+            onClick={onConvertToTemplateButtonClick}
+            icon={<Icon as={BiExport} boxSize={5} />}
+          >
+            Convert to template
+          </MenuItem>
           {isOwner && (
             <TouchableTooltip
               label={
@@ -183,6 +207,9 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           )}
         </MenuList>
       </Menu>
+      {isTemplateModalOpen && (
+        <ConvertToTemplateModal flow={flow} onClose={onTemplateModalClose} />
+      )}
       <MenuAlertDialog
         isDialogOpen={isDialogOpen}
         cancelRef={cancelRef}

@@ -79,6 +79,7 @@ type Mutation {
   createFlow(input: CreateFlowInput): Flow
   createFlowWithSteps(input: CreateFlowWithStepsInput): Flow
   createTemplatedFlow(input: CreateTemplatedFlowInput): Flow
+  createTemplateFromFlow(input: CreateTemplateFromFlowInput!): Template!
   updateFlow(input: UpdateFlowInput): Flow
   updateFlowStatus(input: UpdateFlowStatusInput): Flow
   updateFlowConfig(input: UpdateFlowConfigInput): Flow
@@ -641,6 +642,12 @@ input CreateFlowInput {
 
 input CreateTemplatedFlowInput {
   templateId: String!
+}
+
+input CreateTemplateFromFlowInput {
+  flowId: String!
+  name: String
+  description: String
 }
 
 input UpdateFlowInput {
@@ -1244,6 +1251,7 @@ type TemplateStep {
   sampleUrl: String # specific to template e.g. form or tile link
   sampleUrlDescription: String # differs for each step e.g. view a sample form
   parameters: JSONObject
+  config: StepConfig
 }
 
 enum TemplateTagType {
