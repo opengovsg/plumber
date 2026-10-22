@@ -1,5 +1,3 @@
-import { raw } from 'objection'
-
 import { findIfThenBlockEndingAt } from '@/apps/toolbox/actions/if-then/infra/end-step-utils'
 import { fixupEndStepOnCreateStep } from '@/apps/toolbox/actions/if-then/infra/handle-create-step'
 import { findEnclosingIfThenV2Block } from '@/apps/toolbox/common/block-execution'
@@ -11,13 +9,18 @@ import {
 } from '@/apps/toolbox/common/constants'
 import { upgradeIfThenV1BlocksIfEnabled } from '@/apps/toolbox/common/validate-end-step'
 import { UserFacingError } from '@/errors/user-facing-error'
-import { getStepVersion } from '@/helpers/get-step-version'
 import App from '@/models/app'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { createActionStepCore } from '@/services/create-action-step'
 
 import { PublishedPipeError } from './published-pipe-error'
 import { createStepAiBuilderConfig } from './step-ai-builder-config'
+
+export interface CreateStepApprovalBranchInput {
+  branch: 'reject'
+  stepId: string
+}
 
 export interface CreateStepInput {
   user: User
@@ -28,6 +31,8 @@ export interface CreateStepInput {
   traceId?: string
   // Place the new step after the whole If block, not inside it.
   afterIfThenBlock?: boolean
+  // Route the new step into the reject path of an MRF approval step.
+  approvalBranch?: CreateStepApprovalBranchInput
 }
 
 /** Inserting after the If step itself lands inside its block. */
@@ -49,6 +54,7 @@ export async function createStepService({
   previousStepId,
   traceId,
   afterIfThenBlock = false,
+  approvalBranch,
 }: CreateStepInput): Promise<Step> {
   const triggerOrAction = await App.findTriggerOrActionByKey(appKey, key)
 
@@ -118,8 +124,11 @@ export async function createStepService({
       }
     }
 
-    // The new step joins the previous step's rejection branch. Create_step never starts a branch.
-    const approval = previousStep.config?.approval
+    // The new step joins the previous step's rejection branch unless the input
+    // starts one. The first step of a reject path follows the approval step.
+    const approval = approvalBranch
+      ? { branch: approvalBranch.branch, stepId: approvalBranch.stepId }
+      : previousStep.config?.approval
 
     // Publish allows one For-each on each approval branch.
     if (
@@ -133,22 +142,13 @@ export async function createStepService({
       throw new UserFacingError('A pipe can only have one For-each step.')
     }
 
-    const newStepPosition = previousStep.position + 1
-
-    await flow
-      .$relatedQuery('steps', trx)
-      .patch({ position: raw('position + 1') })
-      .where('position', '>=', newStepPosition)
-
-    const version = getStepVersion(appKey, key)
-
-    const step = await flow.$relatedQuery('steps', trx).insertAndFetch({
-      key,
+    const step = await createActionStepCore({
+      trx,
+      flow,
+      previousStep,
       appKey,
-      type: 'action',
-      position: newStepPosition,
+      key,
       parameters: isIfThen ? { depth: 0 } : {},
-      version,
       config: {
         ...(approval && { approval }),
         ...(traceId && createStepAiBuilderConfig(traceId, 'create_step')),
