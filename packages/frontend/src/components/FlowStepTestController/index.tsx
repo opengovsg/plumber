@@ -81,7 +81,7 @@ const CheckStepTooltip = forwardRef<HTMLDivElement, CheckStepTooltipProps>(
           isReadOnly
             ? 'Unpublish your pipe to check step'
             : hasDeletedVars
-            ? 'Remove variables from deleted steps to check step'
+            ? 'Remove variables from deleted steps or questions to check step'
             : 'Complete required fields to check step'
         }
         aria-label="check step tooltip"

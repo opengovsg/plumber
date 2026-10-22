@@ -151,6 +151,13 @@ export interface IExecutionStep {
 export interface IExecutionStepMetadata {
   isMock?: boolean
   lastTestSubmissionDate?: string
+  /**
+   * IDs of every question in the FormSG form at the time of the test run.
+   *
+   * Lets the editor tell a deleted question apart from one a submission merely
+   * omitted, e.g. hidden by logic or left unanswered.
+   */
+  formFieldIds?: string[]
   iteration?: number
   iterations?: number
   iterationStatus?: Record<
