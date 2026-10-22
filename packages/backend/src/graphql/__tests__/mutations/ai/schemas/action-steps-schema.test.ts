@@ -6,6 +6,22 @@ import { StepEnumType } from '@/graphql/__generated__/types.generated'
 import { actionStepsSchema } from '@/graphql/mutations/ai/schemas/action-steps-schema'
 
 describe('actionStepsSchema validation', () => {
+  describe('hidden actions', () => {
+    it('should reject a system-managed action like FormSG mrfSubmission', () => {
+      const steps = [
+        {
+          type: 'action' as StepEnumType,
+          appKey: 'formsg',
+          key: 'mrfSubmission',
+          position: 2,
+          config: {},
+        },
+      ]
+
+      expect(actionStepsSchema.safeParse(steps).success).toBe(false)
+    })
+  })
+
   describe('basic validation', () => {
     it('should accept valid action steps', () => {
       const steps = [

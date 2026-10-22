@@ -122,6 +122,18 @@ function parseRawWorkflowData(text: string): IFlowSteps {
     parsed.steps,
   )
 
+  // IMPORTANT: The preview cannot split approved and rejected paths yet. It
+  // would show both outcomes as one sequence.
+  if (remainingSteps.some((step: any) => step?.approvalBranch !== undefined)) {
+    throw new BadUserInputError(
+      'Rejected-path actions are not supported in a proposal yet.',
+    )
+  }
+
+  const hasMrfStage = remainingSteps.some(
+    (step: any) => step?.appKey === 'formsg' && step?.key === 'mrfSubmission',
+  )
+
   return {
     name: String(parsed.name ?? 'Build with AI').slice(0, 64),
     trigger: {
@@ -129,6 +141,11 @@ function parseRawWorkflowData(text: string): IFlowSteps {
       appKey: firstStep.appKey,
       key: firstStep.key,
       description: String(firstStep.description ?? ''),
+      // Other triggers keep the app's own name in the preview.
+      ...(hasMrfStage &&
+        firstStep.stepName && {
+          config: { stepName: String(firstStep.stepName).slice(0, 64) },
+        }),
     },
     actions: remainingSteps.map((step: any) => {
       const isIfThen = isIfThenMetadataStep(step)
@@ -166,7 +183,9 @@ function parseWorkflowMetadata(
 
   const schema = z.object({
     trigger: getTriggerSchema(restrictedAppKeys),
-    actions: getActionsSchema(restrictedAppKeys),
+    // A proposal may show an MRF form's stage steps. It only previews them.
+    // create_pipe still rejects hidden steps.
+    actions: getActionsSchema(restrictedAppKeys, { includeHidden: true }),
     name: z.string().max(64).default('Build with AI'),
   })
 

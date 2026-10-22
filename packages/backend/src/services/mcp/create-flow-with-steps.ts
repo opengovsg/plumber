@@ -2,6 +2,7 @@ import type { IJSONObject } from '@plumber/types'
 
 import z from 'zod'
 
+import apps from '@/apps'
 import {
   BLOCK_END_STEP_ID,
   TOOLBOX_ACTIONS,
@@ -129,6 +130,20 @@ export async function createFlowWithStepsService({
 
   if (steps.length === 0) {
     throw new Error('At least one step is required.')
+  }
+
+  // Keyless placeholders skip schema validation, so hidden actions need a separate guard.
+  for (const step of steps) {
+    if (!step.key) {
+      continue
+    }
+    const app = apps[step.appKey]
+    const triggerOrAction =
+      app?.triggers?.find((trigger) => trigger.key === step.key) ??
+      app?.actions?.find((action) => action.key === step.key)
+    if (triggerOrAction?.hiddenFromUser) {
+      throw new Error('Action can only be created by system')
+    }
   }
 
   if (

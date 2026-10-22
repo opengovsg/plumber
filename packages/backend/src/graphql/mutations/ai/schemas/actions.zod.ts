@@ -14,6 +14,8 @@ const baseActionSchema = z.object({
   config: z.object({
     stepName: z.string().min(1).max(64),
   }),
+  // Preview only. Marks an action that runs when an approval stage rejects.
+  approvalBranch: z.literal('reject').optional(),
 })
 
 export const ifThenParametersSchema = z.object({
@@ -32,6 +34,8 @@ interface LayoutStep {
   appKey?: string | null
   key?: string | null
   ifThenChildCount?: number
+  isApproval?: boolean
+  approvalBranch?: 'reject'
 }
 
 function isIfThenLayoutStep(step: LayoutStep | undefined): boolean {
@@ -68,11 +72,15 @@ export function getIfThenChildCount(
   return count
 }
 
-function getActionSchema(restrictedAppKeys: string[] = []) {
+function getActionSchema(
+  restrictedAppKeys: string[] = [],
+  options: { includeHidden?: boolean } = {},
+) {
   const generatedSchema = generateSchema(
     baseActionSchema,
     'action',
     restrictedAppKeys,
+    options,
   )
 
   return generatedSchema.refine(validateActionParameters, {
@@ -81,9 +89,12 @@ function getActionSchema(restrictedAppKeys: string[] = []) {
   })
 }
 
-export function getActionsSchema(restrictedAppKeys: string[] = []) {
+export function getActionsSchema(
+  restrictedAppKeys: string[] = [],
+  options: { includeHidden?: boolean } = {},
+) {
   return z
-    .array(getActionSchema(restrictedAppKeys))
+    .array(getActionSchema(restrictedAppKeys, options))
     .min(1, 'At least one action step is required.')
     .max(29) // max of 30 steps including trigger
     .superRefine(validateActionStepsRules)
@@ -113,6 +124,7 @@ export function validateActionParameters(data: any): boolean {
  * 3. If blocks do not nest
  * 4. For-each cannot sit inside an If block
  * 5. Delay cannot be after for-each
+ * 6. A rejected-path action follows an approval stage
  *
  * An If block's extent comes from `getIfThenChildCount`, so a legacy flat
  * list (no `ifThenChildCount`) still fails the old way: a for-each after an
@@ -122,6 +134,9 @@ export function validateActionStepsRules(
   steps: LayoutStep[],
   ctx: z.RefinementCtx,
 ) {
+  // The latest MRF stage entry decides whether a rejected-path action has an
+  // approval stage to belong to.
+  let lastStageIsApproval = false
   let forEachCount = 0
   let lastForEachIndex = -1
   // Index just past the If block being scanned, or -1 outside any block.
@@ -130,6 +145,19 @@ export function validateActionStepsRules(
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i]
     const isInsideBlock = i < blockEndExclusive
+
+    if (step.appKey === 'formsg' && step.key === 'mrfSubmission') {
+      lastStageIsApproval = step.isApproval === true
+    }
+
+    if (step.approvalBranch === 'reject' && !lastStageIsApproval) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'A rejected-path action must come after an approval stage of the form',
+        path: [i],
+      })
+    }
 
     if (isIfThenLayoutStep(step)) {
       if (isInsideBlock) {
