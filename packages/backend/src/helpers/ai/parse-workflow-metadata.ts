@@ -51,6 +51,52 @@ function formatWorkflowError(
   return fromZodError(error).message
 }
 
+function isIfThenMetadataStep(step: any): boolean {
+  return (
+    step?.appKey === TOOLBOX_APP_KEY && step?.key === TOOLBOX_ACTIONS.IF_THEN
+  )
+}
+
+/**
+ * Flattens the `steps` nested under an if-then, recording the block's extent
+ * as `ifThenChildCount`. A nested if-then is kept so the schema rules reject
+ * it and name the offending step.
+ */
+export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
+  const flattened: any[] = []
+  for (const rawStep of rawSteps) {
+    if (!rawStep || typeof rawStep !== 'object') {
+      flattened.push(rawStep)
+      continue
+    }
+    const { steps: nestedSteps, ...step } = rawStep
+    // IMPORTANT: Only an absent `steps` falls back to the legacy flat block.
+    // A malformed one would silently move the If block boundary.
+    if (isIfThenMetadataStep(step) && 'steps' in rawStep) {
+      if (nestedSteps !== null && !Array.isArray(nestedSteps)) {
+        throw new BadUserInputError('An If block must list its steps.')
+      }
+      if (!nestedSteps?.length) {
+        throw new BadUserInputError(
+          'An If block must contain at least one step.',
+        )
+      }
+    }
+    if (!isIfThenMetadataStep(step) || !Array.isArray(nestedSteps)) {
+      flattened.push(step)
+      continue
+    }
+    const children = flattenWorkflowMetadataSteps(nestedSteps)
+    flattened.push(
+      children.length > 0
+        ? { ...step, ifThenChildCount: children.length }
+        : step,
+      ...children,
+    )
+  }
+  return flattened
+}
+
 function parseRawWorkflowData(text: string): IFlowSteps {
   const match = text.match(WORKFLOW_METADATA_REGEX)
   if (!match) {
@@ -72,7 +118,9 @@ function parseRawWorkflowData(text: string): IFlowSteps {
     throw new BadUserInputError('Unable to generate the workflow.')
   }
 
-  const [firstStep, ...remainingSteps] = parsed.steps
+  const [firstStep, ...remainingSteps] = flattenWorkflowMetadataSteps(
+    parsed.steps,
+  )
 
   return {
     name: String(parsed.name ?? 'Build with AI').slice(0, 64),
@@ -83,8 +131,7 @@ function parseRawWorkflowData(text: string): IFlowSteps {
       description: String(firstStep.description ?? ''),
     },
     actions: remainingSteps.map((step: any) => {
-      const isIfThen =
-        step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.IF_THEN
+      const isIfThen = isIfThenMetadataStep(step)
 
       return {
         type: 'action' as const,
@@ -102,6 +149,9 @@ function parseRawWorkflowData(text: string): IFlowSteps {
             depth: 0,
             branchName: String(step.branchName ?? 'Branch'),
           },
+          ...(step.ifThenChildCount !== undefined && {
+            ifThenChildCount: step.ifThenChildCount,
+          }),
         }),
       }
     }),
