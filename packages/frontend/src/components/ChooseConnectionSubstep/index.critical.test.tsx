@@ -135,7 +135,7 @@ describe('MRF connection editing', () => {
     const tooltip = document.querySelector('[role="tooltip"]')
     if (disabled) {
       expect(tooltip?.textContent).toContain(
-        "This connection follows the first trigger's form. Reconnect it from the first trigger.",
+        'Reconnect or change the form at step 1',
       )
     } else {
       expect(tooltip).toBeNull()

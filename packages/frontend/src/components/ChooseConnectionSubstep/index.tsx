@@ -234,7 +234,7 @@ function ChooseConnectionSubstep(
         <Tooltip
           label={
             isMrfSubtrigger
-              ? "This connection follows the first trigger's form. Reconnect it from the first trigger."
+              ? 'Reconnect or change the form at step 1'
               : 'Only the Pipe owner can reconnect this app'
           }
           hasArrow
