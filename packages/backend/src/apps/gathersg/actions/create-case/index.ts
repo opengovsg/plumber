@@ -1,5 +1,4 @@
 import { IRawAction } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -11,7 +10,6 @@ import { ensureZodEnumValue } from '@/helpers/zod-utils'
 import { fieldTypeEnum } from '../../common/constants'
 import { fetchCaseFields } from '../../common/fetch-case-fields'
 import throwGatherSGStepError from '../../common/throw-errors'
-
 import getDataOutMetadata from './get-data-out-metadata'
 import { requestSchema, responseSchema } from './schema'
 

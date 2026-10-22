@@ -1,11 +1,11 @@
+import { randomUUID } from 'crypto'
+
 import type {
   IActionRunResult,
   IGlobalVariable,
   TestRunStepMetadata,
 } from '@plumber/types'
-
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
-import { randomUUID } from 'crypto'
 
 import {
   FOR_EACH_ITERATION_DELAY,

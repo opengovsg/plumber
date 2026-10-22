@@ -1,5 +1,4 @@
 import { IStep, IStepConfig } from '@plumber/types'
-
 import type { Transaction } from 'objection'
 
 import { isMrfApprovalStep } from '@/apps/formsg/common/is-mrf-approval-step'

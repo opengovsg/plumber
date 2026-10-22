@@ -98,6 +98,7 @@ asking you to apply/bump/commit it.**
 Write the exact target version (`"1.9.0"`, never `"^1.9.0"` or `"~1.9.0"`).
 
 **Direct dependency declared with `catalog:`:**
+
 1. Edit that package's entry under `catalog:` in `pnpm-workspace.yaml`.
    Leave the `package.json` specifier as `catalog:`.
 2. If `overrides:` has a top-level `"<package>"` key, set it to the same
@@ -106,10 +107,12 @@ Write the exact target version (`"1.9.0"`, never `"^1.9.0"` or `"~1.9.0"`).
    that one edge. Those keys pin a second copy.
 
 **Direct dependency with a version in `package.json`:**
+
 1. Edit that `package.json` version.
 2. Update a top-level override for the same package, when one exists.
 
 **Transitive dependency:**
+
 1. Add or update an exact `"<package>"` entry under `overrides:` in
    `pnpm-workspace.yaml`. There is no root `package.json` `overrides` block.
 2. Prefer a version that still satisfies the parent's declared range. If
@@ -129,15 +132,15 @@ target. If it is still the old version, the override was not updated.
   in.
 - Commit message: what was bumped, the CVE/behavior-change summary from
   Step 2, one line on why it's safe (from Step 3). End with
-  `Co-Authored-By:` using the *current* session's actual model name — never
+  `Co-Authored-By:` using the _current_ session's actual model name — never
   copy this line from a prior commit in git history.
 
 ## Quick reference
 
-| Situation | Command |
-|---|---|
-| Confirm direct vs transitive | `pnpm why <package>` |
+| Situation                            | Command                                                                          |
+| ------------------------------------ | -------------------------------------------------------------------------------- |
+| Confirm direct vs transitive         | `pnpm why <package>`                                                             |
 | Where the direct version is declared | the workspace `package.json`, or `catalog:` in `pnpm-workspace.yaml` when shared |
-| Make a catalog bump actually install | set the same version on the top-level `overrides:` key, then `pnpm install` |
-| Force a transitive package | pin it under `overrides:` in `pnpm-workspace.yaml`, then `pnpm install` |
-| Confirm the bump took effect | `pnpm why <package>` shows the target version |
+| Make a catalog bump actually install | set the same version on the top-level `overrides:` key, then `pnpm install`      |
+| Force a transitive package           | pin it under `overrides:` in `pnpm-workspace.yaml`, then `pnpm install`          |
+| Confirm the bump took effect         | `pnpm why <package>` shows the target version                                    |

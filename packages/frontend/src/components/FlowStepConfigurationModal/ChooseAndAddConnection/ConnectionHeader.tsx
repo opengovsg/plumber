@@ -1,7 +1,6 @@
-import { type IApp } from '@plumber/types'
-
-import { BiQuestionMark, BiTransferAlt } from 'react-icons/bi'
 import { Box, Flex, Icon, Image, Text } from '@chakra-ui/react'
+import { type IApp } from '@plumber/types'
+import { BiQuestionMark, BiTransferAlt } from 'react-icons/bi'
 
 import mainLogo from '@/assets/logo.svg'
 

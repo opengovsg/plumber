@@ -1,5 +1,4 @@
 import type { IJSONObject } from '@plumber/types'
-
 import { createContext, useContext } from 'react'
 
 interface StepConfigContextValue {

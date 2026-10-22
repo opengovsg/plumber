@@ -1,7 +1,6 @@
-import type { IExecutionStepMetadata, IStep } from '@plumber/types'
-
-import type { ComponentType, ReactNode } from 'react'
 import type { ButtonProps } from '@opengovsg/design-system-react'
+import type { IExecutionStepMetadata, IStep } from '@plumber/types'
+import type { ComponentType, ReactNode } from 'react'
 
 export interface CheckStepButtonExtensionProps {
   step: IStep

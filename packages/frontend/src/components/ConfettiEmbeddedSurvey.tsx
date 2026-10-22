@@ -1,13 +1,4 @@
 import './ConfettiEmbeddedSurvey.css'
-
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
 import { Box, Skeleton, VStack } from '@chakra-ui/react'
 import {
   Answer,
@@ -16,6 +7,14 @@ import {
   Question,
   SurveyQuestionFactory,
 } from '@opengovsg/confetti'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import {
   decideSubmit,

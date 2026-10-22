@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto'
+
 /**
  * Collaborator duplicate rules:
  * - Editors and viewers get their own copy.
@@ -8,8 +10,6 @@
  * - Its updated_at stays the same.
  */
 import { IFlowCollabRole } from '@plumber/types'
-
-import { randomUUID } from 'crypto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import duplicateFlow from '@/graphql/mutations/duplicate-flow'
@@ -34,7 +34,7 @@ describe.each<IFlowCollabRole>(['editor', 'viewer'])(
         res: null,
         currentUser: user,
         isAdminOperation: false,
-      } as unknown as Context)
+      }) as unknown as Context
 
     beforeEach(async () => {
       await FlowCollaborator.query().delete()

@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import Flow from '@/models/flow'
@@ -560,9 +561,8 @@ describe('deleteStepService', () => {
     })
 
     it('stamps delete_step once on every soft-deleted block member', async () => {
-      const { user, flow, ifThen, slack, sms, email } = await createBlockPipe(
-        'stamp',
-      )
+      const { user, flow, ifThen, slack, sms, email } =
+        await createBlockPipe('stamp')
 
       await deleteStepService({
         user,

@@ -1,172 +1,172 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7
 
-  - package-ecosystem: "docker"
-    directory: "/"
+  - package-ecosystem: 'docker'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7
 
-  - package-ecosystem: "docker"
-    directory: "/packages/backend"
+  - package-ecosystem: 'docker'
+    directory: '/packages/backend'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7
 
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     cooldown:
       default-days: 7
     groups:
       # One PR per related package family, or a package and its @types/*.
       ai-sdk:
         patterns:
-          - "@ai-sdk/*"
-          - "ai"
+          - '@ai-sdk/*'
+          - 'ai'
       apollo:
         patterns:
-          - "@apollo/*"
-          - "@as-integrations/express4"
+          - '@apollo/*'
+          - '@as-integrations/express4'
       aws-sdk:
         patterns:
-          - "@aws-sdk/*"
+          - '@aws-sdk/*'
       big.js:
         patterns:
-          - "big.js"
-          - "@types/big.js"
+          - 'big.js'
+          - '@types/big.js'
       bull-board:
         patterns:
-          - "@bull-board/*"
+          - '@bull-board/*'
       chakra-ui:
         patterns:
-          - "@chakra-ui/*"
+          - '@chakra-ui/*'
       cookie-parser:
         patterns:
-          - "cookie-parser"
-          - "@types/cookie-parser"
+          - 'cookie-parser'
+          - '@types/cookie-parser'
       cors:
         patterns:
-          - "cors"
-          - "@types/cors"
+          - 'cors'
+          - '@types/cors'
       crypto-js:
         patterns:
-          - "crypto-js"
-          - "@types/crypto-js"
+          - 'crypto-js'
+          - '@types/crypto-js'
       dnd-kit:
         patterns:
-          - "@dnd-kit/*"
+          - '@dnd-kit/*'
       emotion:
         patterns:
-          - "@emotion/*"
+          - '@emotion/*'
       escape-html:
         patterns:
-          - "escape-html"
-          - "@types/escape-html"
+          - 'escape-html'
+          - '@types/escape-html'
       express:
         patterns:
-          - "express"
-          - "@types/express"
+          - 'express'
+          - '@types/express'
       file-saver:
         patterns:
-          - "file-saver"
-          - "@types/file-saver"
+          - 'file-saver'
+          - '@types/file-saver'
       graphql-tools:
         patterns:
-          - "@graphql-tools/*"
+          - '@graphql-tools/*'
       http-errors:
         patterns:
-          - "http-errors"
-          - "@types/http-errors"
+          - 'http-errors'
+          - '@types/http-errors'
       jsonwebtoken:
         patterns:
-          - "jsonwebtoken"
-          - "@types/jsonwebtoken"
+          - 'jsonwebtoken'
+          - '@types/jsonwebtoken'
       langfuse:
         patterns:
-          - "@langfuse/*"
+          - '@langfuse/*'
       launchdarkly:
         patterns:
-          - "@launchdarkly/*"
-          - "launchdarkly-*"
+          - '@launchdarkly/*'
+          - 'launchdarkly-*'
       lodash:
         patterns:
-          - "lodash"
-          - "@types/lodash"
+          - 'lodash'
+          - '@types/lodash'
       lodash.get:
         patterns:
-          - "lodash.get"
-          - "@types/lodash.get"
+          - 'lodash.get'
+          - '@types/lodash.get'
       luxon:
         patterns:
-          - "luxon"
-          - "@types/luxon"
+          - 'luxon'
+          - '@types/luxon'
       morgan:
         patterns:
-          - "morgan"
-          - "@types/morgan"
+          - 'morgan'
+          - '@types/morgan'
       multer:
         patterns:
-          - "multer"
-          - "@types/multer"
+          - 'multer'
+          - '@types/multer'
       nodemailer:
         patterns:
-          - "nodemailer"
-          - "@types/nodemailer"
+          - 'nodemailer'
+          - '@types/nodemailer'
       opengovsg:
         patterns:
-          - "@opengovsg/*"
+          - '@opengovsg/*'
       papaparse:
         patterns:
-          - "papaparse"
-          - "@types/papaparse"
+          - 'papaparse'
+          - '@types/papaparse'
       pg:
         patterns:
-          - "pg"
-          - "@types/pg"
+          - 'pg'
+          - '@types/pg'
       qs:
         patterns:
-          - "qs"
-          - "@types/qs"
+          - 'qs'
+          - '@types/qs'
       react:
         patterns:
-          - "react"
-          - "@types/react"
+          - 'react'
+          - '@types/react'
       react-dom:
         patterns:
-          - "react-dom"
-          - "@types/react-dom"
+          - 'react-dom'
+          - '@types/react-dom'
       react-helmet:
         patterns:
-          - "react-helmet"
-          - "@types/react-helmet"
+          - 'react-helmet'
+          - '@types/react-helmet'
       tanstack:
         patterns:
-          - "@tanstack/*"
+          - '@tanstack/*'
       testcontainers:
         patterns:
-          - "testcontainers"
-          - "@testcontainers/*"
+          - 'testcontainers'
+          - '@testcontainers/*'
       tiptap:
         patterns:
-          - "@tiptap/*"
+          - '@tiptap/*'
       turndown:
         patterns:
-          - "turndown"
-          - "@types/turndown"
+          - 'turndown'
+          - '@types/turndown'
       typescript-eslint:
         patterns:
-          - "@typescript-eslint/*"
+          - '@typescript-eslint/*'
       vitest:
         patterns:
-          - "vitest"
-          - "@vitest/*"
+          - 'vitest'
+          - '@vitest/*'

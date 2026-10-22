@@ -6,7 +6,6 @@ import {
   ISubstep,
   ITrigger,
 } from '@plumber/types'
-
 import { useContext, useMemo } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'

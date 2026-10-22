@@ -1,5 +1,4 @@
 import { IFlowConfig } from '@plumber/types'
-
 import { UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 

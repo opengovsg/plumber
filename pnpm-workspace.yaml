@@ -1,6 +1,6 @@
 packages:
-  - "packages/*"
-  - "tools/*"
+  - 'packages/*'
+  - 'tools/*'
 
 engineStrict: true
 minimumReleaseAge: 2880
@@ -16,10 +16,10 @@ minimumReleaseAgeIgnoreMissingTime: true
 # like a structural gap in that registry's metadata rather than something a token fixes. Excluded
 # from both checks below; revisit if taskforce.sh ever starts serving publish timestamps.
 minimumReleaseAgeExclude:
-  - "@taskforcesh/bullmq-pro@7.44.0"
+  - '@taskforcesh/bullmq-pro@7.44.0'
 
 registries:
-  default: "https://registry.npmjs.org/"
+  default: 'https://registry.npmjs.org/'
 
 blockExoticSubdeps: true
 
@@ -32,88 +32,90 @@ trustPolicyIgnoreAfter: 525600
 # version, not signs of account/package takeover.
 trustPolicyExclude:
   # See minimumReleaseAgeExclude above — same private registry, same missing "time" metadata.
-  - "@taskforcesh/bullmq-pro@7.44.0"
+  - '@taskforcesh/bullmq-pro@7.44.0'
   # cytoscape.js 3.34.0 published via GitHub Actions OIDC; 3.34.1 published manually by the same
   # longtime maintainer (maxkfranz) as a normal 9-commit patch (verified via GitHub compare diff,
   # no script/dependency changes).
-  - "cytoscape@3.34.1"
+  - 'cytoscape@3.34.1'
   # tiptap's 2.27.2 wave was published by _bdbch, a currently-listed @tiptap org maintainer,
   # across ~20 packages simultaneously — the signature of a routine monorepo release, not an
   # isolated account compromise.
-  - "@tiptap/core@2.27.2"
-  - "@tiptap/extension-blockquote@2.27.2"
-  - "@tiptap/extension-bold@2.27.2"
-  - "@tiptap/extension-bubble-menu@2.27.2"
-  - "@tiptap/extension-bullet-list@2.27.2"
-  - "@tiptap/extension-code-block@2.27.2"
-  - "@tiptap/extension-code@2.27.2"
-  - "@tiptap/extension-document@2.27.2"
-  - "@tiptap/extension-dropcursor@2.27.2"
-  - "@tiptap/extension-floating-menu@2.27.2"
-  - "@tiptap/extension-gapcursor@2.27.2"
-  - "@tiptap/extension-heading@2.27.2"
-  - "@tiptap/extension-history@2.27.2"
-  - "@tiptap/extension-horizontal-rule@2.27.2"
-  - "@tiptap/extension-italic@2.27.2"
-  - "@tiptap/extension-list-item@2.27.2"
-  - "@tiptap/extension-ordered-list@2.27.2"
-  - "@tiptap/extension-paragraph@2.27.2"
-  - "@tiptap/extension-strike@2.27.2"
-  - "@tiptap/extension-text@2.27.2"
-  - "@tiptap/pm@2.27.2"
+  - '@tiptap/core@2.27.2'
+  - '@tiptap/extension-blockquote@2.27.2'
+  - '@tiptap/extension-bold@2.27.2'
+  - '@tiptap/extension-bubble-menu@2.27.2'
+  - '@tiptap/extension-bullet-list@2.27.2'
+  - '@tiptap/extension-code-block@2.27.2'
+  - '@tiptap/extension-code@2.27.2'
+  - '@tiptap/extension-document@2.27.2'
+  - '@tiptap/extension-dropcursor@2.27.2'
+  - '@tiptap/extension-floating-menu@2.27.2'
+  - '@tiptap/extension-gapcursor@2.27.2'
+  - '@tiptap/extension-heading@2.27.2'
+  - '@tiptap/extension-history@2.27.2'
+  - '@tiptap/extension-horizontal-rule@2.27.2'
+  - '@tiptap/extension-italic@2.27.2'
+  - '@tiptap/extension-list-item@2.27.2'
+  - '@tiptap/extension-ordered-list@2.27.2'
+  - '@tiptap/extension-paragraph@2.27.2'
+  - '@tiptap/extension-strike@2.27.2'
+  - '@tiptap/extension-text@2.27.2'
+  - '@tiptap/pm@2.27.2'
 
 publicHoistPattern:
-  - "graphql"
+  - 'graphql'
 
 catalog:
-  "@aws-sdk/client-s3": "3.1027.0"
-  "@opentelemetry/api": "1.9.0"
-  "ai": "5.0.81"
-  "dotenv": "16.6.1"
-  "graphql": "16.11.0"
-  "knex": "2.4.2"
-  "lodash": "4.18.1"
-  "luxon": "2.5.2"
-  "p-limit": "3.1.0"
-  "pg": "^8.7.1"
-  "typescript": "^5.5.4"
-  "winston": "^3.7.1"
-  "zod": "4.4.3"
+  '@aws-sdk/client-s3': '3.1027.0'
+  '@opentelemetry/api': '1.9.0'
+  'ai': '5.0.81'
+  'dotenv': '16.6.1'
+  'graphql': '16.11.0'
+  'knex': '2.4.2'
+  'lodash': '4.18.1'
+  'luxon': '2.5.2'
+  'oxfmt': '0.64.0'
+  'oxlint': '1.79.0'
+  'p-limit': '3.1.0'
+  'pg': '^8.7.1'
+  'typescript': '^5.5.4'
+  'winston': '^3.7.1'
+  'zod': '4.4.3'
 
 overrides:
-  "axios": "1.20.0"
-  "graphql": "16.11.0"
-  "qs": "6.15.0"
-  "glob": "13.0.6"
-  "minimatch": "10.2.3"
-  "rollup": "4.59.0"
-  "dd-trace>@opentelemetry/core": "2.8.0"
-  "dd-trace>path-to-regexp": "0.1.13"
-  "@opentelemetry/core>@opentelemetry/semantic-conventions": "1.37.0"
-  "lodash": "4.18.1"
-  "lodash-es": "4.18.1"
-  "vite": "6.4.3"
-  "immutable": "4.3.9"
-  "picomatch": "4.0.4"
-  "shell-quote": "1.9.0"
-  "form-data": "4.0.6"
+  'axios': '1.20.0'
+  'graphql': '16.11.0'
+  'qs': '6.15.0'
+  'glob': '13.0.6'
+  'minimatch': '10.2.3'
+  'rollup': '4.59.0'
+  'dd-trace>@opentelemetry/core': '2.8.0'
+  'dd-trace>path-to-regexp': '0.1.13'
+  '@opentelemetry/core>@opentelemetry/semantic-conventions': '1.37.0'
+  'lodash': '4.18.1'
+  'lodash-es': '4.18.1'
+  'vite': '6.4.3'
+  'immutable': '4.3.9'
+  'picomatch': '4.0.4'
+  'shell-quote': '1.9.0'
+  'form-data': '4.0.6'
   # Keep the tested versions. Parents resolved newer than develop-v2 declare ranges that exclude them.
-  "content-type": "1.0.5"
-  "es-module-lexer": "1.7.0"
-  "@smithy/core": "3.24.1"
+  'content-type': '1.0.5'
+  'es-module-lexer': '1.7.0'
+  '@smithy/core': '3.24.1'
   # Match the Node 22 runtime. Packages declaring "*" otherwise get the newest major.
-  "@types/node": "22.18.0"
+  '@types/node': '22.18.0'
 allowBuilds:
-  "@apollo/protobufjs": true
-  "@datadog/native-appsec": true
-  "@datadog/native-iast-taint-tracking": true
-  "@datadog/native-metrics": true
-  "@datadog/pprof": true
-  "@swc/core": true
-  "core-js": false
-  "cpu-features": true
-  "dd-trace": true
-  "esbuild": true
-  "msgpackr-extract": true
-  "protobufjs": true
-  "ssh2": true
+  '@apollo/protobufjs': true
+  '@datadog/native-appsec': true
+  '@datadog/native-iast-taint-tracking': true
+  '@datadog/native-metrics': true
+  '@datadog/pprof': true
+  '@swc/core': true
+  'core-js': false
+  'cpu-features': true
+  'dd-trace': true
+  'esbuild': true
+  'msgpackr-extract': true
+  'protobufjs': true
+  'ssh2': true

@@ -1,15 +1,13 @@
-import { IGlobalVariable } from '@plumber/types'
-
 import { DBSQLClient, LogLevel } from '@databricks/sql'
 import IDBSQLClient, {
   ConnectionOptions,
 } from '@databricks/sql/dist/contracts/IDBSQLClient'
+import { IGlobalVariable } from '@plumber/types'
 
 import { databricksConfig } from '@/config/app-env-vars/databricks'
 import logger from '@/helpers/logger'
 
 import { constructSchemaName } from '../common/construct-schema-name'
-
 import { getDatabricksToken } from './token-persistence'
 
 interface CreateSessionOptions {

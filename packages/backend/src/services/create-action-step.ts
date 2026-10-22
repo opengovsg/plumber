@@ -1,5 +1,4 @@
 import type { IJSONObject, IStepConfig } from '@plumber/types'
-
 import { raw, type Transaction } from 'objection'
 
 import { getStepVersion } from '@/helpers/get-step-version'

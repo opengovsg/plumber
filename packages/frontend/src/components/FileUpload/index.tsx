@@ -1,7 +1,7 @@
-import { useCallback, useRef } from 'react'
-import { BiUpload } from 'react-icons/bi'
 import { Button, Input } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
+import { useCallback, useRef } from 'react'
+import { BiUpload } from 'react-icons/bi'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 

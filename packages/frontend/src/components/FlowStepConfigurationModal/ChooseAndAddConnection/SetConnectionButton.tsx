@@ -1,6 +1,6 @@
-import { useCallback, useContext, useEffect, useMemo } from 'react'
 import { Alert, AlertIcon } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { useCallback, useContext, useEffect, useMemo } from 'react'
 
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import { useConnectionVerification } from '../hooks/useConnectionRegistration'

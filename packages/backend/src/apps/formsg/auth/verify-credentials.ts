@@ -1,5 +1,4 @@
 import { IGlobalVariable } from '@plumber/types'
-
 import get from 'lodash.get'
 
 import { FORM_ID_LENGTH } from '../common/constants'

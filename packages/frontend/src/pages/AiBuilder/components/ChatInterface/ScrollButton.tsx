@@ -1,5 +1,5 @@
-import { IoChevronDown } from 'react-icons/io5'
 import { IconButton } from '@chakra-ui/react'
+import { IoChevronDown } from 'react-icons/io5'
 import { useStickToBottomContext } from 'use-stick-to-bottom'
 
 export default function ScrollButton() {

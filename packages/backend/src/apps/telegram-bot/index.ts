@@ -2,11 +2,11 @@ import { IApp } from '@plumber/types'
 
 import { getGenericAppQueue } from '@/queues/helpers/get-generic-app-queue'
 
+import actions from './actions'
+import auth from './auth'
 import addAuthHeader from './common/add-auth-header'
 import forceIpv4 from './common/force-ipv4'
 import rateLimitHandler from './common/interceptor/rate-limit'
-import actions from './actions'
-import auth from './auth'
 import dynamicData from './dynamic-data'
 
 const app: IApp = {

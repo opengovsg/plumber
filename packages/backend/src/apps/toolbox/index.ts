@@ -1,7 +1,7 @@
 import { IApp } from '@plumber/types'
 
-import { stepTransformer } from './common/transform-step-parameters'
 import actions from './actions'
+import { stepTransformer } from './common/transform-step-parameters'
 
 const app: IApp = {
   name: 'Toolbox',

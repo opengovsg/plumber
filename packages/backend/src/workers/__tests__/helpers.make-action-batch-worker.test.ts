@@ -1,5 +1,4 @@
 import type { IActionBatchQueue } from '@plumber/types'
-
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { M365_BATCH_SIZE } from '@/config/workers'

@@ -1,5 +1,4 @@
 import { IStep } from '@plumber/types'
-
 import get from 'lodash.get'
 
 /**

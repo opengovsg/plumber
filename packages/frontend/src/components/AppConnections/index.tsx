@@ -1,7 +1,6 @@
-import type { IConnection } from '@plumber/types'
-
-import * as React from 'react'
 import { useQuery } from '@apollo/client'
+import type { IConnection } from '@plumber/types'
+import * as React from 'react'
 
 import AppConnectionRow from '@/components/AppConnectionRow'
 import NoResultFound from '@/components/NoResultFound'

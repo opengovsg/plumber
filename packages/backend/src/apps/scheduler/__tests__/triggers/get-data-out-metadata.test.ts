@@ -1,5 +1,4 @@
 import { IExecutionStep } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import getDataOutMetadata from '../../triggers/get-data-out-metadata'

@@ -1,3 +1,5 @@
+import { Box, Button, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
+import { Badge } from '@opengovsg/design-system-react'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -12,8 +14,6 @@ import {
   FaExclamationTriangle,
 } from 'react-icons/fa'
 import { FaCircleStop } from 'react-icons/fa6'
-import { Box, Button, Flex, Icon, Text, Textarea } from '@chakra-ui/react'
-import { Badge } from '@opengovsg/design-system-react'
 
 import { type ClarificationQuestion } from '@/hooks/useChatStream'
 

@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Navigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@apollo/client'
 import { useToast } from '@opengovsg/design-system-react'
+import { useEffect, useRef, useState } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import SsoLoadingScreen from '@/components/SsoLoadingScreen'
 import { FORBIDDEN } from '@/config/errors'
@@ -104,7 +104,7 @@ export default function SsoCallback(): JSX.Element {
     }
 
     callMutation()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
   if (isForbidden) {

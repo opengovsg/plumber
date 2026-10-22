@@ -13,7 +13,6 @@ import {
   type GatherSGCaseField,
 } from '../common/fetch-case-fields'
 import { GatherSGCase, GatherSGError } from '../common/types'
-
 import { resolveCaseUuid } from './get-case-fields'
 
 const dynamicData: IDynamicData = {

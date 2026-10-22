@@ -1,5 +1,6 @@
-import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
+import { URL } from 'url'
 
+import type { IJSONObject, IStep, IStepConfig } from '@plumber/types'
 import {
   raw,
   RelatedQueryBuilder,
@@ -7,7 +8,6 @@ import {
   Transaction,
   ValidationError,
 } from 'objection'
-import { URL } from 'url'
 
 import apps from '@/apps'
 import appConfig from '@/config/app'

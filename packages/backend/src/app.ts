@@ -1,8 +1,6 @@
 import '@/config/orm'
 import '@/config/dynamodb'
-
 import { IRequest } from '@plumber/types'
-
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { Express } from 'express'
@@ -34,8 +32,7 @@ app.use(cookieParser())
 app.use(
   express.json({
     verify(req, _res, buf) {
-      // eslint-disable-next-line prettier/prettier
-      (req as IRequest).rawBody = buf
+      ;(req as IRequest).rawBody = buf
     },
     limit: appConfig.requestBodySizeLimit,
   }),
@@ -45,8 +42,7 @@ app.use(
     extended: false,
     limit: appConfig.requestBodySizeLimit,
     verify(req, _res, buf) {
-      // eslint-disable-next-line prettier/prettier
-      (req as IRequest).rawBody = buf
+      ;(req as IRequest).rawBody = buf
     },
   }),
 )

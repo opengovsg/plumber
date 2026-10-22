@@ -1,5 +1,5 @@
-import React from 'react'
 import { Box, Grid, Heading, Image, Stack, Text } from '@chakra-ui/react'
+import React from 'react'
 
 import LottieWebAnimation from '@/components/NewsDrawer/LottieWebAnimation'
 

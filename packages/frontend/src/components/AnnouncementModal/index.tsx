@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   Box,
   Flex,
@@ -13,6 +12,7 @@ import {
   useIsMobile,
 } from '@opengovsg/design-system-react'
 import { AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 
 import AnnouncementItem from './AnnouncementItem'
 import { ANNOUNCEMENT_ITEM_LIST } from './AnnouncementItemList'

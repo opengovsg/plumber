@@ -1,7 +1,6 @@
-import { IStep } from '@plumber/types'
-
-import { useContext, useMemo } from 'react'
 import { Flex } from '@chakra-ui/react'
+import { IStep } from '@plumber/types'
+import { useContext, useMemo } from 'react'
 
 import { SortableList } from '@/components/SortableList'
 import { EditorContext } from '@/contexts/Editor'

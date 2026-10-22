@@ -1,6 +1,5 @@
-import type { IGlobalVariable } from '@plumber/types'
-
 import formsgSdk from '@opengovsg/formsg-sdk'
+import type { IGlobalVariable } from '@plumber/types'
 
 import { FORM_ID_LENGTH } from './constants'
 

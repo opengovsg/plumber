@@ -1,6 +1,3 @@
-import type { DropdownAddNewId, ITableColumnMetadata } from '@plumber/types'
-
-import { type FormEvent, useCallback, useContext, useState } from 'react'
 import { useMutation } from '@apollo/client'
 import {
   FormControl,
@@ -18,6 +15,8 @@ import {
   FormLabel,
   Input,
 } from '@opengovsg/design-system-react'
+import type { DropdownAddNewId, ITableColumnMetadata } from '@plumber/types'
+import { type FormEvent, useCallback, useContext, useState } from 'react'
 
 import { removeProblematicWhitespace } from '@/components/RichTextEditor/utils'
 import { EditorContext } from '@/contexts/Editor'
@@ -223,7 +222,7 @@ function AddNewOptionalModal({
   const trimmedInputValue = inputValue.trim()
 
   const validationError = trimmedInputValue
-    ? config?.validate?.(trimmedInputValue) ?? null
+    ? (config?.validate?.(trimmedInputValue) ?? null)
     : null
 
   const onFormSubmit = useCallback(

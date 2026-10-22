@@ -1,7 +1,7 @@
+import { AnnouncementItemProps } from './AnnouncementItem'
 import aiBuilderV2Video1 from './assets/ai_builder_v2_1.mp4'
 import aiBuilderV2Video2 from './assets/ai_builder_v2_2.mp4'
 import aiBuilderV2Video3 from './assets/ai_builder_v2_3.mp4'
-import { AnnouncementItemProps } from './AnnouncementItem'
 
 export const ANNOUNCEMENT_ITEM_LIST: AnnouncementItemProps[] = [
   {

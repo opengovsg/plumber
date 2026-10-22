@@ -1,5 +1,4 @@
 import { type IGlobalVariable } from '@plumber/types'
-
 import z from 'zod'
 
 import HttpError from '@/errors/http'

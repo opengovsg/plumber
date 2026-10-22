@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto'
+
 import jwt, { JsonWebTokenError } from 'jsonwebtoken'
 
 import appConfig from '@/config/app'

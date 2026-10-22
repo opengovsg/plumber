@@ -1,5 +1,4 @@
 import type { IGlobalVariable, IJSONObject } from '@plumber/types'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import replaceConnectionCredentials from '@/graphql/mutations/replace-connection-credentials'
@@ -8,8 +7,8 @@ import Connection from '@/models/connection'
 import User from '@/models/user'
 import Context from '@/types/express/context'
 
-import { generateMockContext } from './tiles/table.mock'
 import { generateMockUser } from './flow.mock'
+import { generateMockContext } from './tiles/table.mock'
 
 const mocks = vi.hoisted(() => ({
   verifyCredentials: vi.fn(),

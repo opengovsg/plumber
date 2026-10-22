@@ -11,18 +11,18 @@ cannot answer.
 
 ## Phase 1 — Derive first
 
-Analyse the feature diff and *propose* a candidate failure-mode table before
+Analyse the feature diff and _propose_ a candidate failure-mode table before
 asking anything. Derive candidates mechanically from what the code does:
 
-| If the diff contains… | Candidate failure modes |
-| --- | --- |
-| External API call (FormSG, M365, Postman, LetterSG, etc.) | timeout, 429 rate-limit, 5xx, auth/token expiry, malformed response |
-| Queue job (BullMQ) | retry exhaustion, queue backlog, poison message, job stuck/delayed |
-| DB write (Postgres/DynamoDB) | constraint violation, partial write, lost update, migration mismatch |
-| Webhook / trigger ingestion | silent drop, duplicate delivery, payload schema drift, signature failure |
-| Frontend mutation / new UI flow | failed request, stuck UI state, RUM error spike, broken redirect |
-| Scheduled / delayed work | missed run, run at wrong time, double run |
-| Feature flag / config branch | wrong branch taken in prod, flag never enabled |
+| If the diff contains…                                     | Candidate failure modes                                                  |
+| --------------------------------------------------------- | ------------------------------------------------------------------------ |
+| External API call (FormSG, M365, Postman, LetterSG, etc.) | timeout, 429 rate-limit, 5xx, auth/token expiry, malformed response      |
+| Queue job (BullMQ)                                        | retry exhaustion, queue backlog, poison message, job stuck/delayed       |
+| DB write (Postgres/DynamoDB)                              | constraint violation, partial write, lost update, migration mismatch     |
+| Webhook / trigger ingestion                               | silent drop, duplicate delivery, payload schema drift, signature failure |
+| Frontend mutation / new UI flow                           | failed request, stuck UI state, RUM error spike, broken redirect         |
+| Scheduled / delayed work                                  | missed run, run at wrong time, double run                                |
+| Feature flag / config branch                              | wrong branch taken in prod, flag never enabled                           |
 
 Then probe the **Plumber domain** specifically — for each candidate, ask
 yourself (and check the code for):
@@ -39,8 +39,8 @@ yourself (and check the code for):
 - Does it break **user-facing notifications** (error emails, Slack messages)
   so failures stop being reported at all?
 
-Present the result as a proposed table: *failure mode → how it manifests →
-loud or silent (best guess) → proposed severity*. Make clear these are
+Present the result as a proposed table: _failure mode → how it manifests →
+loud or silent (best guess) → proposed severity_. Make clear these are
 hypotheses for the author to confirm, not conclusions.
 
 ## Phase 2 — The grill loop
@@ -51,9 +51,9 @@ by one — don't move to a dependent question until its prerequisite is settled.
 For each question, give your recommended answer.
 
 **If a question can be answered from the codebase, investigate instead of
-asking.** Only ask what the code cannot tell you. The code usually *can*
+asking.** Only ask what the code cannot tell you. The code usually _can_
 answer "does this throw or swallow errors", "is there a retry", "what's
-upstream/downstream"; it usually *cannot* answer impact, volume, or urgency.
+upstream/downstream"; it usually _cannot_ answer impact, volume, or urgency.
 
 Dimensions to cover for each candidate failure mode:
 
@@ -90,4 +90,4 @@ recorded as such (they go in the plan's "Open decisions / explicitly not
 monitored" section, so the decision is visible).
 
 Carry the agreed table into step 3 (signal discovery) — the failure modes
-determine *where* to widen the code search and *which* signals matter.
+determine _where_ to widen the code search and _which_ signals matter.

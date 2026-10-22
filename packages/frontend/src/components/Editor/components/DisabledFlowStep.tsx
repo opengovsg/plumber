@@ -1,8 +1,7 @@
-import { IStep } from '@plumber/types'
-
-import { useContext } from 'react'
 import { Flex } from '@chakra-ui/react'
 import { TouchableTooltip } from '@opengovsg/design-system-react'
+import { IStep } from '@plumber/types'
+import { useContext } from 'react'
 
 import StepAppIcon from '@/components/FlowStep/components/StepAppIcon'
 import StepNameAndDemo from '@/components/FlowStep/components/StepNameAndDemo'

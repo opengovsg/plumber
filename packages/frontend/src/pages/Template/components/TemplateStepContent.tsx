@@ -1,7 +1,6 @@
-import type { IApp, ITemplateStep } from '@plumber/types'
-
-import { BiQuestionMark } from 'react-icons/bi'
 import { Card, Flex, Icon, Image, Link, Text } from '@chakra-ui/react'
+import type { IApp, ITemplateStep } from '@plumber/types'
+import { BiQuestionMark } from 'react-icons/bi'
 
 import { TOOLBOX_ACTION_TO_ICON_MAP } from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/ToolboxEvent'
 import { TOOLBOX_ACTIONS, TOOLBOX_APP_KEY } from '@/helpers/toolbox'

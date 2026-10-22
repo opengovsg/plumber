@@ -79,11 +79,12 @@ describe('repairMalformedToolName', () => {
 })
 
 type LanguageModelV2 = Exclude<LanguageModel, string>
-type LanguageModelV2StreamPart = Awaited<
-  ReturnType<LanguageModelV2['doStream']>
->['stream'] extends ReadableStream<infer Part>
-  ? Part
-  : never
+type LanguageModelV2StreamPart =
+  Awaited<
+    ReturnType<LanguageModelV2['doStream']>
+  >['stream'] extends ReadableStream<infer Part>
+    ? Part
+    : never
 
 describe('streamText with a malformed tool name', () => {
   const badName = 'list_apps" />'

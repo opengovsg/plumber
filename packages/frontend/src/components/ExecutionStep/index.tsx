@@ -1,5 +1,3 @@
-import type { IExecution, IExecutionStep } from '@plumber/types'
-
 import {
   Box,
   Card,
@@ -11,6 +9,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Tab, Tabs } from '@opengovsg/design-system-react'
+import type { IExecution, IExecutionStep } from '@plumber/types'
 
 import ErrorResult from '@/components/ErrorResult'
 import JSONViewer from '@/components/JSONViewer'

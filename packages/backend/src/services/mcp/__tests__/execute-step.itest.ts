@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import apps from '@/apps'
@@ -217,7 +218,7 @@ describe('executeStepService', () => {
     let executionId: string
 
     const succeeds = () =>
-      ({ executionStep: makeExecutionStep(), executionId } as never)
+      ({ executionStep: makeExecutionStep(), executionId }) as never
     const fails = () =>
       ({
         executionStep: makeExecutionStep({
@@ -225,7 +226,7 @@ describe('executeStepService', () => {
           errorDetails: { error: 'boom' },
         }),
         executionId,
-      } as never)
+      }) as never
     const statusOf = async (id: string) =>
       (await Step.query().findById(id)).status
 

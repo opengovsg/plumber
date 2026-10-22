@@ -1,9 +1,8 @@
+import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 import type { IJSONObject } from '@plumber/types'
-
 import { useMemo, useState } from 'react'
 import { BiSolidCheckCircle } from 'react-icons/bi'
 import { RiArrowDownSLine, RiArrowUpSLine } from 'react-icons/ri'
-import { Box, Flex, Icon, Text } from '@chakra-ui/react'
 
 import {
   CONDITION_BLOCK_BODY_PB,

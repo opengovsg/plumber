@@ -1,5 +1,4 @@
 import { type IGlobalVariable, type IJSONObject } from '@plumber/types'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import StepError from '@/errors/step'

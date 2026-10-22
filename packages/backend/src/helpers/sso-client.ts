@@ -1,4 +1,5 @@
 import { createPrivateKey } from 'node:crypto'
+
 import { Client, generators, Issuer, type TokenSet } from 'openid-client'
 
 import appConfig from '@/config/app'

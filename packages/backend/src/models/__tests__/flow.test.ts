@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+
 import { describe, expect, it } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors/bad-user-input'

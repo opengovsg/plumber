@@ -1,7 +1,3 @@
-import { ITableCollaborator, ITableCollabRole } from '@plumber/types'
-
-import { FormEventHandler, useCallback, useContext, useState } from 'react'
-import { BiChevronDown, BiTrash } from 'react-icons/bi'
 import { useMutation } from '@apollo/client'
 import {
   Divider,
@@ -22,6 +18,9 @@ import {
   Tag,
   useToast,
 } from '@opengovsg/design-system-react'
+import { ITableCollaborator, ITableCollabRole } from '@plumber/types'
+import { FormEventHandler, useCallback, useContext, useState } from 'react'
+import { BiChevronDown, BiTrash } from 'react-icons/bi'
 
 import { AuthenticationContext } from '@/contexts/Authentication'
 import { DELETE_TABLE_COLLABORATOR } from '@/graphql/mutations/tiles/delete-table-collaborator'

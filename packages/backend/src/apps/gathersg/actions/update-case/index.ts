@@ -4,7 +4,6 @@ import type {
   IJSONObject,
   IRawAction,
 } from '@plumber/types'
-
 import { ZodError } from 'zod'
 import { fromZodError } from 'zod-validation-error'
 
@@ -21,7 +20,6 @@ import {
 } from '../../common/constants'
 import throwGatherSGStepError from '../../common/throw-errors'
 import { GatherSGCase } from '../../common/types'
-
 import { requestSchema, responseSchema } from './schema'
 
 /**

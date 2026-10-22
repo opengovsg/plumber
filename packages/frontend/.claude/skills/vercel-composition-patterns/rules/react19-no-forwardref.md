@@ -22,7 +22,10 @@ const ComposerInput = forwardRef<TextInput, Props>((props, ref) => {
 **Correct (ref as a regular prop):**
 
 ```tsx
-function ComposerInput({ ref, ...props }: Props & { ref?: React.Ref<TextInput> }) {
+function ComposerInput({
+  ref,
+  ...props
+}: Props & { ref?: React.Ref<TextInput> }) {
   return <TextInput ref={ref} {...props} />
 }
 ```

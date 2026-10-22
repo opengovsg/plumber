@@ -1,5 +1,4 @@
 import type { IActionBatchQueue, IActionJobData } from '@plumber/types'
-
 import {
   type JobPro,
   type JobsProOptions,

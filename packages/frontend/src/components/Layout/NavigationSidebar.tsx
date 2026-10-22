@@ -1,11 +1,11 @@
-import { useContext } from 'react'
-import { Link, matchPath, useLocation } from 'react-router-dom'
 import { Box, Divider, Text } from '@chakra-ui/react'
 import {
   Badge,
   SidebarContainer,
   SidebarItem,
 } from '@opengovsg/design-system-react'
+import { useContext } from 'react'
+import { Link, matchPath, useLocation } from 'react-router-dom'
 
 import { LayoutNavigationContext } from '@/contexts/LayoutNavigation'
 

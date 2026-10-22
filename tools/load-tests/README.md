@@ -7,9 +7,11 @@ then
 `k6 run formsg.js`
 
 ### Build k6 with extensions
+
 Since we are using k6 plugins, we need to use xk6 to build k6 with extensions.
 
 We are using the following extensions:
+
 - postgres
 - dotenv
 - dashboard
@@ -48,12 +50,12 @@ sustained load without exceeding the rate limit outright.
 Set up pipes with a `createTableRow` action (`batch: true`), then edit their
 full webhook URLs into `m365-batch/pipes.json`:
 
-| Script                  | Scenario                                                       | `pipes.json` key(s) used                       |
-| ------------------------ | --------------------------------------------------------------- | ------------------------------------------------ |
-| `even_spread.js`         | Even spread of writes across 10 job ids (round-robin)            | `webhookPaths` (10 pipes)                        |
-| `hotspot.js`             | One job id gets most writes, the rest get few                    | `hotspotPath`, `webhookPaths` (cold ids)         |
-| `persistent_failure.js`  | One job id fails on every call, plus a healthy control job       | `failurePath`, `webhookPaths` (control group)    |
-| `single_file_lock.js`    | All writes go to a single file, to stress the per-file redlock   | `singleFilePath`                                 |
+| Script                  | Scenario                                                       | `pipes.json` key(s) used                      |
+| ----------------------- | -------------------------------------------------------------- | --------------------------------------------- |
+| `even_spread.js`        | Even spread of writes across 10 job ids (round-robin)          | `webhookPaths` (10 pipes)                     |
+| `hotspot.js`            | One job id gets most writes, the rest get few                  | `hotspotPath`, `webhookPaths` (cold ids)      |
+| `persistent_failure.js` | One job id fails on every call, plus a healthy control job     | `failurePath`, `webhookPaths` (control group) |
+| `single_file_lock.js`   | All writes go to a single file, to stress the per-file redlock | `singleFilePath`                              |
 
 `DURATION` overrides the run length (defaults to `2m`, except `persistent_failure.js`, which defaults to `5m`).
 

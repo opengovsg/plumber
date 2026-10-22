@@ -5,7 +5,6 @@ import {
   createFieldMetadata,
   createOptionalNestedMetadata,
 } from '../../common/data-out-metadata-helpers'
-
 import { dataOutSchema } from './schema'
 
 async function getDataOutMetadata(

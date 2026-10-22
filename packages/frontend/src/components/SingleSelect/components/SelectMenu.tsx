@@ -1,15 +1,14 @@
+import { List, ListItem, Portal } from '@chakra-ui/react'
+import { Button } from '@opengovsg/design-system-react'
 import { BiRefresh } from 'react-icons/bi'
 import Markdown from 'react-markdown'
 import { Virtuoso } from 'react-virtuoso'
-import { List, ListItem, Portal } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
 
 import { infoboxMdComponents } from '@/components/MarkdownRenderer/CustomMarkdownComponents'
 import PrimarySpinner from '@/components/PrimarySpinner'
 
 import { useSelectContext } from '../SelectContext'
 import { itemToValue } from '../utils/itemUtils'
-
 import { DropdownItem } from './DropdownItem'
 import { useSelectPopover } from './SelectPopover'
 

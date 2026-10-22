@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
 import { chakra, Mark } from '@chakra-ui/react'
 import fuzzysort from 'fuzzysort'
+import { useMemo } from 'react'
 
 interface HighlightedTextProps {
   searchQuery: string

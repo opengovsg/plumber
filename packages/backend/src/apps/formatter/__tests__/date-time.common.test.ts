@@ -1,5 +1,4 @@
 import '@/types/luxon-extensions'
-
 import { DateTime, Settings as LuxonSettings } from 'luxon'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
