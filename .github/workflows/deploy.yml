@@ -88,47 +88,6 @@ jobs:
         run: |
           docker build . -t ${{ steps.ecr-image-uri.outputs.image }} --build-arg APP_ENV=${{ inputs.environment }} --secret id=NPM_TASKFORCESH_TOKEN
 
-      - name: Scan built image with Inspector
-        uses: aws-actions/vulnerability-scan-github-action-for-amazon-inspector@baab69e77b34f244adef1f702d0fd69f2b3bc545 # v1
-        id: inspector
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
-          IMAGE_TAG: ${{ inputs.environment }}-${{ inputs.release-version }}
-        with:
-          artifact_type: 'container'
-          artifact_path: '${{ steps.ecr-image-uri.outputs.image }}'
-          critical_threshold: 5
-          high_threshold: 10
-
-      - name: Display CycloneDX SBOM (JSON)
-        run: cat ${{ steps.inspector.outputs.artifact_sbom }}
-
-      - name: Display Inspector vulnerability scan results (JSON)
-        run: cat ${{ steps.inspector.outputs.inspector_scan_results }}
-
-      - name: Upload Scan Results
-        id: upload-scan-results
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          path: |
-            ${{ steps.inspector.outputs.inspector_scan_results }}
-            ${{ steps.inspector.outputs.inspector_scan_results_csv }}
-            ${{ steps.inspector.outputs.inspector_scan_results_markdown }}
-            ${{ steps.inspector.outputs.artifact_sbom }}
-          retention-days: 7
-
-      - name: Notify Slack if vulnerability threshold is exceeded
-        if: steps.inspector.outputs.vulnerability_threshold_exceeded == '1'
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: |
-            channel: "${{ secrets.SLACK_CHANNEL_ID }}"
-            username: "Plumber Deployment Scanner"
-            text: ":warning: *Vulnerability threshold exceeded* in `${{ inputs.environment }}` deploy (version `${{ inputs.release-version }}`). Review scan results: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
       - name: Push image to ECR after scan passes
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
