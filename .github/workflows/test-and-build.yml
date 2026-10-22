@@ -34,6 +34,14 @@ jobs:
       - run: pnpm run typecheck
       - run: echo "✅ Typecheck passed."
 
+  test-inspector-filter:
+    name: Test (Inspector app filter)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: .github/scripts/inspector-app-vulns.test.sh
+
   build:
     name: Build
     runs-on: ubuntu-latest
