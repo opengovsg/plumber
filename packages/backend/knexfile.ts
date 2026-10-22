@@ -1,4 +1,4 @@
-import { config } from './src/config/database'
+import { config } from './src/config/knex-config'
 
 export default {
   ...config,
