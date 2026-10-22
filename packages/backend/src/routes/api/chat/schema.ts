@@ -27,9 +27,8 @@ const MAX_MESSAGES = 150
 // chat-summary prompt.
 const MAX_RAW_MESSAGES = MAX_MESSAGES + 1
 const MAX_TEXT_LENGTH = 10000 // characters per message part (~2,500 tokens)
-// Tool-use turns can produce many parts (step-start + tool-invocation per call + text),
-// so allow enough headroom for up to ~10 tool calls per assistant turn.
-const MAX_PARTS_PER_MESSAGE = 50
+// A 20-step turn can exceed 50 parts before its tool results return on Continue.
+const MAX_PARTS_PER_MESSAGE = 100
 
 // Tool invocation part shape — shared by all MCP bridge tool entries below.
 // The backend does not process these parts; it only needs to accept them when

@@ -285,6 +285,46 @@ export const deduplicateMessages = (messages: Message[]) => {
   })
 }
 
+/**
+ * Builds the message history the chat transport sends to the backend.
+ *
+ * The message limit counts this same history so it matches the backend's raw-message ceiling.
+ */
+export const buildRequestMessages = ({
+  initialMessages = [],
+  pipeContextMessages = [],
+  messages,
+}: {
+  initialMessages?: Message[]
+  pipeContextMessages?: CustomUIMessage[]
+  messages: CustomUIMessage[]
+}): CustomUIMessage[] => {
+  // The AI SDK accumulates messages across exchanges, so some initial messages may already be tracked.
+  const aiMessageIds = new Set(messages.map((m) => m.id))
+  const initialMsgs: CustomUIMessage[] = initialMessages
+    .filter((msg) => !aiMessageIds.has(msg.id))
+    .map((msg) => ({
+      id: msg.id,
+      role: msg.isUser ? 'user' : 'assistant',
+      parts: [{ type: 'text', text: msg.text }],
+      ...(msg.traceId && { metadata: { traceId: msg.traceId } }),
+    }))
+
+  return [...initialMsgs, ...pipeContextMessages, ...messages].filter((msg) => {
+    if (msg.role !== 'assistant') {
+      return true
+    }
+    // A stream stopped before any output leaves an empty assistant message that fails backend validation.
+    // Tool-only turns stay so the model keeps its own tool-call history after a step-limit stop.
+    return (msg.parts ?? []).some(
+      (part) =>
+        part.type.startsWith('tool-') ||
+        part.type === 'dynamic-tool' ||
+        (part.type === 'text' && !!part.text?.trim()),
+    )
+  })
+}
+
 // Extract text content from a UIMessage. A tool call splits generation into
 // separate text parts (before/after), so join with a blank line rather than
 // '' — otherwise the two chunks glue together mid-sentence. Empty parts are filtered

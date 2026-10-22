@@ -62,6 +62,9 @@ function AiBuilderContent() {
     cancelStream,
     resetChat,
     hasReachedLimit,
+    canRetryLastTurn,
+    retryLastTurn,
+    hasHitStepLimit,
     stepParametersByStepId,
     parameterLabelsByStepId,
     completedStepIds,
@@ -376,6 +379,8 @@ function AiBuilderContent() {
               cancelStream={cancelStream}
               resetChat={resetChat}
               hasReachedLimit={hasReachedLimit}
+              onRetryLastTurn={canRetryLastTurn ? retryLastTurn : undefined}
+              hasHitStepLimit={hasHitStepLimit}
               onAddConnection={flowId ? handleAddConnection : undefined}
               knownFormUrl={prefillFormUrl}
               onConnectForm={pipeCreated ? undefined : handleConnectForm}

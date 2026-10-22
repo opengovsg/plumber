@@ -214,14 +214,22 @@ describe('chatRequestSchema', () => {
       )
     })
 
-    it('should reject more than 50 parts', () => {
-      const parts = Array(51).fill({ type: 'text', text: 'part' })
+    it('should accept exactly 100 parts', () => {
+      const parts = Array(100).fill({ type: 'text', text: 'part' })
+      const result = chatRequestSchema.safeParse({
+        messages: [{ role: 'user', parts }],
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject more than 100 parts', () => {
+      const parts = Array(101).fill({ type: 'text', text: 'part' })
       const result = chatRequestSchema.safeParse({
         messages: [{ role: 'user', parts }],
       })
       expect(result.success).toBe(false)
       expect(result.error?.issues[0].message).toBe(
-        'Message cannot have more than 50 parts',
+        'Message cannot have more than 100 parts',
       )
     })
   })
