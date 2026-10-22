@@ -108,9 +108,9 @@ async function promptForEnvironment(rl) {
   return environment
 }
 
-async function confirmDatabase(rl, environment, database) {
+async function confirmDatabase(rl, environment, database, host) {
   const answer = await rl.question(
-    `\nAbout to migrate database "${database}" (${environment.name}).\n` +
+    `\nAbout to migrate database "${database}" on host "${host}" (${environment.name}).\n` +
       'Continue? [y/N] ',
   )
   if (!/^y(es)?$/i.test(answer.trim())) {
@@ -126,6 +126,7 @@ async function loadVariables(rl) {
       rl,
       environment,
       '.env-example (local Docker Postgres)',
+      'localhost',
     )
     // APP_ENV must win over any stray shell value so db.ts's own dotenv
     // fallback (guarded on APP_ENV) definitely loads .env-example.
@@ -140,6 +141,11 @@ async function loadVariables(rl) {
     rl,
     environment,
     variables.POSTGRES_DATABASE ?? '(not set in this 1Password environment)',
+    // Must match db.ts's host precedence, or the prompt names a different
+    // host than knex dials.
+    variables.RDS_PROXY_HOST ||
+      variables.POSTGRES_HOST ||
+      'localhost (no host set in this 1Password environment)',
   )
   return variables
 }
