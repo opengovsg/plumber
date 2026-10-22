@@ -1,5 +1,4 @@
 import type { IApp, IJSONObject, IMcpApp } from '@plumber/types'
-
 import { tool } from 'ai'
 import { z } from 'zod/v4'
 
@@ -264,12 +263,10 @@ export function createMcpBridgeTools(
           user,
           name,
           steps: flattenNestedSteps(
-            steps.map(
-              (s): McpNestedStepInput => ({
-                ...toNestedStepInput(s),
-                ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
-              }),
-            ),
+            steps.map((s): McpNestedStepInput => ({
+              ...toNestedStepInput(s),
+              ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
+            })),
           ),
           traceId,
         })

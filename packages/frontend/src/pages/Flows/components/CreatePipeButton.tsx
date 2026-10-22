@@ -1,7 +1,7 @@
-import { BiPlus, BiSolidMagicWand } from 'react-icons/bi'
-import { useNavigate } from 'react-router-dom'
 import { Flex, Tooltip } from '@chakra-ui/react'
 import { Button, IconButton } from '@opengovsg/design-system-react'
+import { BiPlus, BiSolidMagicWand } from 'react-icons/bi'
+import { useNavigate } from 'react-router-dom'
 
 import * as URLS from '@/config/urls'
 

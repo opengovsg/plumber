@@ -167,7 +167,7 @@ describe('buildRequestMessages', () => {
           input: {},
         },
       ],
-    } as unknown as CustomUIMessage)
+    }) as unknown as CustomUIMessage
 
   it('skips initial messages the AI SDK already tracks', () => {
     const [first, second] = buildInitialMessages(2)

@@ -1,5 +1,5 @@
-import { Fragment } from 'react'
 import { Divider, Flex } from '@chakra-ui/react'
+import { Fragment } from 'react'
 
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'

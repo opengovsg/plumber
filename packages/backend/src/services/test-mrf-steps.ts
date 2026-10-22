@@ -1,5 +1,4 @@
 import type { TestRunStepMetadata } from '@plumber/types'
-
 import { raw } from 'objection'
 
 import type ExecutionStep from '@/models/execution-step'

@@ -561,9 +561,8 @@ describe('deleteStepService', () => {
     })
 
     it('stamps delete_step once on every soft-deleted block member', async () => {
-      const { user, flow, ifThen, slack, sms, email } = await createBlockPipe(
-        'stamp',
-      )
+      const { user, flow, ifThen, slack, sms, email } =
+        await createBlockPipe('stamp')
 
       await deleteStepService({
         user,

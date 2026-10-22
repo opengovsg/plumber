@@ -363,9 +363,8 @@ describe('createStepService', () => {
     }
 
     it('keeps the rejection branch when extending or following a rejection If block', async () => {
-      const { user, flow, ifThen, slack, email } = await createBlockPipe(
-        'reject',
-      )
+      const { user, flow, ifThen, slack, email } =
+        await createBlockPipe('reject')
       const approval = await moveBlockToRejectionBranch(
         [ifThen, slack, email],
         slack.id,
