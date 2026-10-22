@@ -224,7 +224,7 @@ jobs:
 
       - name: (Server) Fill in the new image ID in the Amazon ECS task definition
         id: server-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
         with:
           task-definition: ecs-task-definition.json
           container-name: server
@@ -232,7 +232,7 @@ jobs:
 
       - name: (Worker) Fill in the new image ID in the Amazon ECS task definition
         id: full-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           container-name: worker
@@ -268,7 +268,7 @@ jobs:
 
       - name: (Archival) Fill in the new image ID in the Amazon ECS task definition
         id: archival-task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        uses: aws-actions/amazon-ecs-render-task-definition@8d79160660ad39c402a16e5fc7cd2a32e8f7d6b7 # v1.9.1
         with:
           task-definition: ecs-archival-task-definition.json
           container-name: archival
