@@ -202,7 +202,6 @@ export function useChatStream(options: UseChatStreamOptions) {
   const {
     messages: aiMessages,
     sendMessage,
-    regenerate,
     setMessages,
     status,
     error: aiError,
@@ -582,14 +581,14 @@ export function useChatStream(options: UseChatStreamOptions) {
   )
 
   // A stopped final turn leaves no summary to carry into New Chat.
-  // Regenerating it resends the same history, which stays within the backend ceiling.
+  // Resend without adding a user message to stay within the backend ceiling and retain completed tool results.
   const canRetryLastTurn = hasReachedLimit && isLastTurnAborted
 
   const retryLastTurn = useCallback(() => {
     setIsLastTurnAborted(false)
     setIsReady(false)
-    regenerate()
-  }, [regenerate])
+    sendMessage()
+  }, [sendMessage])
 
   const resetChat = useCallback(() => {
     setMessages([])
