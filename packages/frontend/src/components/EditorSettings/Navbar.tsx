@@ -1,9 +1,9 @@
-import { HStack, Icon, Text } from '@chakra-ui/react'
-import { Button } from '@opengovsg/design-system-react'
 import { useContext } from 'react'
-import { BiLeftArrowAlt } from 'react-icons/bi'
+import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
+import { Box, HStack, Icon, Text } from '@chakra-ui/react'
 
+import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorSettingsContext } from '@/contexts/EditorSettings'
 
@@ -15,6 +15,7 @@ export default function Navbar() {
 
   return (
     <HStack
+      spacing={0}
       position="fixed"
       top={0}
       left={0}
@@ -23,20 +24,25 @@ export default function Navbar() {
       bg="white"
       justifyContent="flex-start"
       alignItems="center"
-      py={5}
-      px={6}
+      h={TOP_NAV_HEIGHT}
+      px={{ base: 4, md: 8 }}
       borderBottom="1px solid"
       borderColor="base.divider.medium"
-      gap={4}
     >
-      <Button
+      <Box
         as={Link}
         to={URLS.FLOW_EDITOR(flowId)}
-        variant="link"
-        leftIcon={<Icon as={BiLeftArrowAlt} boxSize={5} />}
-        color="primary.500"
-      />
-      <Text textStyle="subhead-1">{flowName}</Text>
+        aria-label="Back to pipe"
+        mt={1}
+        ml="-7px"
+        mr={2}
+        flexShrink={0}
+      >
+        <Icon boxSize={6} color="base.content.default" as={BiChevronLeft} />
+      </Box>
+      <Text fontWeight={500} noOfLines={1}>
+        {flowName}
+      </Text>
     </HStack>
   )
 }

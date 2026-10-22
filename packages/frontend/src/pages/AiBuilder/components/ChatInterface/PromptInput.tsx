@@ -359,7 +359,7 @@ export default function PromptInput({
         border="1px"
         borderColor="gray.200"
         borderRadius="16px"
-        boxShadow="0 2px 4px rgba(0, 0, 0, 0.1)"
+        boxShadow="0 1px 2px rgba(31, 41, 55, 0.04), 0 4px 16px rgba(31, 41, 55, 0.08)"
         p={2}
         w="full"
         minH={showIdeas ? '120px' : '50px'}

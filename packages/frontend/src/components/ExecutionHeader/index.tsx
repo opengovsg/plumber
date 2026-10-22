@@ -6,6 +6,7 @@ import { Fragment, ReactElement, useCallback } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 
 import { StatusType } from '../ExecutionStatusMenu'
@@ -63,13 +64,9 @@ function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
   }, [navigate, id, backToPage, backToStatus])
 
   return (
-    <Flex gap={2} alignItems="center">
+    <Flex gap={2} alignItems="center" ml="-7px">
       <Button as={Link} variant="link" onClick={handleBack}>
-        <Icon
-          boxSize={6}
-          color="interaction.support.disabled-content"
-          as={BiChevronLeft}
-        />
+        <Icon boxSize={6} color="base.content.default" as={BiChevronLeft} />
       </Button>
       <Text textStyle="h4">{name}</Text>
     </Flex>
@@ -79,7 +76,7 @@ function ExecutionName(props: Pick<IExecution['flow'], 'name' | 'id'>) {
 function ExecutionId(props: Pick<IExecution, 'id'>) {
   return (
     <Flex>
-      <Text textStyle="h5">
+      <Text textStyle="subhead-1">
         Execution ID:{' '}
         <Text as="span" textStyle="body-1">
           {props.id}
@@ -115,6 +112,7 @@ export default function ExecutionHeader(
         direction={{ base: 'column', sm: 'row' }}
         justifyContent="space-between"
         alignItems="center"
+        minH={TOP_NAV_HEIGHT}
       >
         <ExecutionName name={flow.name} id={flow.id} />
         <ExecutionId id={execution.id} />

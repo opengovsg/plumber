@@ -15,6 +15,7 @@ interface EditableInputProps {
   componentWrapper?: (children: React.ReactNode) => React.ReactNode
   allowEmpty?: boolean
   placeholder?: string
+  fontWeight?: number | string
 }
 
 export default function EditableInput({
@@ -28,6 +29,7 @@ export default function EditableInput({
   componentWrapper,
   placeholder,
   allowEmpty = false,
+  fontWeight,
 }: EditableInputProps) {
   const isMobile = useIsMobile()
 
@@ -71,6 +73,7 @@ export default function EditableInput({
         w={maxWidth}
         maxLength={maxLength}
         variant="flushed"
+        fontWeight={fontWeight}
         value={inputValue}
         onKeyDown={handleKeyDown}
         onChange={(e) => setInputValue(e.target.value)}
@@ -114,6 +117,7 @@ export default function EditableInput({
         overflow="hidden"
         maxW={maxWidth}
         width="auto"
+        fontWeight={fontWeight}
       >
         {initialValue}
       </Text>

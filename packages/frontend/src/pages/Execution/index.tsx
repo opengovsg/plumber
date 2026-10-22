@@ -54,7 +54,7 @@ export default function Execution() {
   }
 
   return (
-    <Container sx={{ py: 3 }}>
+    <Container pt={0} pb={9}>
       <ExecutionHeader execution={execution} />
 
       <Grid mt={4} mb={{ base: '16px', sm: '40px' }} rowGap={6}>

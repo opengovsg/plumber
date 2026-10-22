@@ -99,7 +99,7 @@ const TileListItem = ({
       <Flex {...linkStyles}>
         <Box>
           <Flex alignItems="center">
-            <Text textStyle="h6">{table.name}</Text>
+            <Text textStyle="subhead-1">{table.name}</Text>
           </Flex>
           <Flex {...flexStyles.container}>
             <Text {...textStyles.lastOpened}>
@@ -119,7 +119,7 @@ const TileListItem = ({
             )}
           </Flex>
         </Box>
-        <Flex alignItems="center" gap={4}>
+        <Flex alignItems="center" gap={4} pr={table.role === 'owner' ? 0 : 8}>
           {table.role === 'viewer' && (
             <Tag {...tagStyles}>
               <TagLeftIcon as={MdOutlineRemoveRedEye} />
@@ -130,6 +130,7 @@ const TileListItem = ({
             <IconButton
               className={isMobile ? undefined : 'hover-remove-button'}
               variant="clear"
+              colorScheme="secondary"
               aria-label="Remove"
               icon={<BiTrash />}
               isDisabled={isConnectionsLoading}

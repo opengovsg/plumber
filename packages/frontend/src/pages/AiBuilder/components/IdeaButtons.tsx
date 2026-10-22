@@ -23,6 +23,7 @@ export default function IdeaButtons({ ideas, onClick }: IdeaButtonsProps) {
             key={idea.label}
             size="sm"
             bgColor="primary.50"
+            borderRadius="lg"
             color="secondary.700"
             variant="clear"
             _hover={{
