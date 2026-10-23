@@ -1,0 +1,9 @@
+node_modules
+.env
+.env.*
+!.env-example
+cookie-auth-state
+cookie-auth-state-*
+playwright-report/
+test-results/
+blob-report/

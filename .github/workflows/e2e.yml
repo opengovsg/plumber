@@ -1,0 +1,87 @@
+name: Plumber E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        required: true
+        description: Which environment to target
+        default: staging
+        options:
+          - staging
+          - uat
+          - production
+  repository_dispatch:
+    types: [plumber-staging-deployed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plumber-e2e
+  cancel-in-progress: false
+
+jobs:
+  playwright:
+    name: Test ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+    runs-on:
+      group: plumber-runners
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: tools/e2e
+    env:
+      E2E_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
+      WEBHOOK_TESTER_HOSTNAME: ${{ vars.WEBHOOK_TESTER_HOSTNAME }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          npm-taskforcesh-token: ${{ secrets.NPM_TASKFORCESH_TOKEN }}
+      - name: Use E2E Node version
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: "tools/e2e/.nvmrc"
+      - name: Validate environment configuration
+        run: pnpm run test:config
+      - name: Validate and mask private fixtures
+        env:
+          E2E_FIXTURE_MANIFEST: ${{ secrets.E2E_FIXTURE_MANIFEST }}
+        run: pnpm exec ts-node scripts/mask-fixtures.ts
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Login
+        env:
+          AUTH_FILE_ENCRYPTION_SECRET: ${{ secrets.AUTH_FILE_ENCRYPTION_SECRET }}
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+          GATHERSG_API_KEY: ${{ secrets.GATHERSG_API_KEY }}
+          E2E_FIXTURE_MANIFEST: ${{ secrets.E2E_FIXTURE_MANIFEST }}
+        run: pnpm run login
+      - name: Run E2E tests
+        env:
+          AUTH_FILE_ENCRYPTION_SECRET: ${{ secrets.AUTH_FILE_ENCRYPTION_SECRET }}
+          GMAIL_CREDENTIALS: ${{ secrets.GMAIL_CREDENTIALS }}
+          GMAIL_TOKEN: ${{ secrets.GMAIL_TOKEN }}
+          GATHERSG_API_KEY: ${{ secrets.GATHERSG_API_KEY }}
+          E2E_FIXTURE_MANIFEST: ${{ secrets.E2E_FIXTURE_MANIFEST }}
+        id: playwright
+        run: pnpm run test:e2e
+      - name: Remove session files
+        if: always()
+        run: rm -f -- cookie-auth-state cookie-auth-state-*
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2
+        with:
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ secrets.SLACK_E2E_CHANNEL_ID }}"
+            username: "Plumber E2E"
+            text: "${{ steps.playwright.outcome == 'success' && ':white_check_mark: *E2E passed*' || ':x: *E2E failed*' }} on `${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}` (triggered by `${{ github.event_name }}`). Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
