@@ -43,6 +43,7 @@ describe('Http client', () => {
     } as unknown as IGlobalVariable
   })
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

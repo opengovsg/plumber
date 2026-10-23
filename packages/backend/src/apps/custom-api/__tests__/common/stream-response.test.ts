@@ -40,6 +40,7 @@ describe('streamResponse', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

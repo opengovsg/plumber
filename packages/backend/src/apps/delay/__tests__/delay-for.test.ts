@@ -37,6 +37,7 @@ describe('Delay for action', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -48,7 +49,7 @@ describe('Delay for action', () => {
 
     const result = await delayForAction.run($)
     expect(result).toBeFalsy()
-    expect(mocks.setActionItem).toBeCalledWith({
+    expect(mocks.setActionItem).toHaveBeenCalledWith({
       raw: { delayForUnit: DELAY_UNIT, delayForValue: DELAY_VALUE },
     })
   })
@@ -60,6 +61,6 @@ describe('Delay for action', () => {
     }
 
     // throw partial step error message
-    await expect(delayForAction.run($)).rejects.toThrowError(StepError)
+    await expect(delayForAction.run($)).rejects.toThrow(StepError)
   })
 })

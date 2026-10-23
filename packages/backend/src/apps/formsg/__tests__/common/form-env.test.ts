@@ -95,7 +95,7 @@ describe('Form environment handling', () => {
       'throws appropriate errors when the form id is invalid ($formId)',
       ({ formId, expectedError }) => {
         $.auth.data.formId = formId
-        expect(() => parseFormEnv($)).toThrowError(expectedError)
+        expect(() => parseFormEnv($)).toThrow(expectedError)
       },
     )
   })

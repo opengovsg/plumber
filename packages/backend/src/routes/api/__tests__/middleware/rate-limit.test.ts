@@ -67,6 +67,7 @@ describe('Rate Limiting Middleware', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

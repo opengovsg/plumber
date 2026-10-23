@@ -55,15 +55,14 @@ describe('verify credentials', () => {
 
   // Reset each mock after tests
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
   describe('verify secret key format', () => {
     it('should throw error if secret key is of invalid format', () => {
       $.auth.data.privateKey = 'invalid string'
-      expect(() => parseSecretKeyFormat($)).toThrowError(
-        'Invalid secret key format',
-      )
+      expect(() => parseSecretKeyFormat($)).toThrow('Invalid secret key format')
     })
 
     it('should not throw error if secret key is of valid format', () => {
@@ -92,13 +91,13 @@ describe('verify credentials', () => {
     it('should throw an error if invalid form url', () => {
       const formId = $.auth.data.formId
       $.auth.data.formId = 'https://firm.gov.sg/' + formId
-      expect(() => parseFormIdFormat($)).toThrowError('Invalid form url')
+      expect(() => parseFormIdFormat($)).toThrow('Invalid form url')
     })
 
     it('should throw an error if invalid form url', () => {
       const formId = $.auth.data.formId
       $.auth.data.formId = 'https://firm.gov.sg/' + formId
-      expect(() => parseFormIdFormat($)).toThrowError('Invalid form url')
+      expect(() => parseFormIdFormat($)).toThrow('Invalid form url')
     })
   })
 
@@ -135,7 +134,7 @@ describe('verify credentials', () => {
           $.auth.data.privateKey as string,
           'prod',
         ),
-      ).rejects.toThrowError('Ensure form is public')
+      ).rejects.toThrow('Ensure form is public')
     })
 
     it('should throw an error if form is not found', async () => {
@@ -151,7 +150,7 @@ describe('verify credentials', () => {
           $.auth.data.privateKey as string,
           'prod',
         ),
-      ).rejects.toThrowError('Unable to fetch form. Form might not exist.')
+      ).rejects.toThrow('Unable to fetch form. Form might not exist.')
     })
 
     it('should throw an error if form is not storage mode', async () => {
@@ -169,7 +168,7 @@ describe('verify credentials', () => {
           $.auth.data.privateKey as string,
           'prod',
         ),
-      ).rejects.toThrowError('Form is not a storage mode form')
+      ).rejects.toThrow('Form is not a storage mode form')
     })
 
     it('should throw an error if form secret key does not match public key', async () => {
@@ -181,7 +180,7 @@ describe('verify credentials', () => {
           $.auth.data.privateKey as string,
           'prod',
         ),
-      ).rejects.toThrowError('Invalid secret key')
+      ).rejects.toThrow('Invalid secret key')
     })
   })
 })

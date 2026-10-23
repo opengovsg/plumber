@@ -68,6 +68,7 @@ vi.mock('jsonwebtoken', () => ({
 
 describe('Login with SGID', () => {
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -121,8 +122,8 @@ describe('Login with SGID', () => {
 
       const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
-      expect(mocks.getOrCreateUser).not.toBeCalled()
-      expect(mocks.setAuthCookie).not.toBeCalled()
+      expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
+      expect(mocks.setAuthCookie).not.toHaveBeenCalled()
       expect(result.publicOfficerEmployments).toEqual([])
     },
   )
@@ -144,10 +145,10 @@ describe('Login with SGID', () => {
 
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
-    expect(mocks.getOrCreateUser).not.toBeCalled()
-    expect(mocks.sendOnboardingEmail).not.toBeCalled()
-    expect(mocks.updateLastLogin).not.toBeCalled()
-    expect(mocks.setAuthCookie).not.toBeCalled()
+    expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
+    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled()
+    expect(mocks.updateLastLogin).not.toHaveBeenCalled()
+    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
     expect(result.publicOfficerEmployments).toEqual([])
   })
 
@@ -238,8 +239,8 @@ describe('Login with SGID', () => {
           },
         ])
       } else {
-        expect(mocks.getOrCreateUser).not.toBeCalled()
-        expect(mocks.setAuthCookie).not.toBeCalled()
+        expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
+        expect(mocks.setAuthCookie).not.toHaveBeenCalled()
         expect(result.publicOfficerEmployments).toEqual([])
       }
     },
@@ -254,19 +255,19 @@ describe('Login with SGID', () => {
 
     await expect(
       loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT),
-    ).rejects.toThrowError('Received malformed data from POCDEX')
+    ).rejects.toThrow('Received malformed data from POCDEX')
 
-    expect(mocks.logError).toBeCalledWith(
+    expect(mocks.logError).toHaveBeenCalledWith(
       'Received malformed data from POCDEX',
       {
         event: 'sgid-login-malformed-pocdex',
         pocdexString: '[Invalid JSON string',
       },
     )
-    expect(mocks.getOrCreateUser).not.toBeCalled()
-    expect(mocks.sendOnboardingEmail).not.toBeCalled()
-    expect(mocks.updateLastLogin).not.toBeCalled()
-    expect(mocks.setAuthCookie).not.toBeCalled()
+    expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
+    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled()
+    expect(mocks.updateLastLogin).not.toHaveBeenCalled()
+    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
   })
 
   it('should log error when user info querying process fails', async () => {
@@ -276,15 +277,15 @@ describe('Login with SGID', () => {
 
     await expect(
       loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT),
-    ).rejects.toThrowError('derp')
+    ).rejects.toThrow('derp')
 
-    expect(mocks.logError).toBeCalledWith('Unable to query user info', {
+    expect(mocks.logError).toHaveBeenCalledWith('Unable to query user info', {
       event: 'sgid-login-failed-user-info',
     })
-    expect(mocks.getOrCreateUser).not.toBeCalled()
-    expect(mocks.sendOnboardingEmail).not.toBeCalled()
-    expect(mocks.updateLastLogin).not.toBeCalled()
-    expect(mocks.setAuthCookie).not.toBeCalled()
+    expect(mocks.getOrCreateUser).not.toHaveBeenCalled()
+    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled()
+    expect(mocks.updateLastLogin).not.toHaveBeenCalled()
+    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
   })
 
   it('should only cookie-fy and return filtered entries if user has multiple POCDEX entries', async () => {
@@ -346,15 +347,15 @@ describe('Login with SGID', () => {
     const result = await loginWithSgid(null, STUB_PARAMS, STUB_CONTEXT)
 
     expect(result.publicOfficerEmployments).toEqual(expectedEntries)
-    expect(mocks.signJwt).toBeCalledWith(
+    expect(mocks.signJwt).toHaveBeenCalledWith(
       {
         publicOfficerEmployments: expectedEntries,
       },
       expect.anything(),
     )
-    expect(mocks.setCookie).toBeCalled()
+    expect(mocks.setCookie).toHaveBeenCalled()
 
-    expect(mocks.setAuthCookie).not.toBeCalled()
+    expect(mocks.setAuthCookie).not.toHaveBeenCalled()
   })
 
   it("should convert non-email 'NA' values to null before returning POCDEX entries", async () => {

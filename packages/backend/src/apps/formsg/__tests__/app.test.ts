@@ -54,6 +54,7 @@ describe('FormSG app', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -63,8 +64,8 @@ describe('FormSG app', () => {
 
     await $.http.get('localhost')
 
-    expect(mocks.parseFormEnv).toBeCalled()
-    expect(mocks.getApiBaseUrl).toBeCalledWith('stg')
+    expect(mocks.parseFormEnv).toHaveBeenCalled()
+    expect(mocks.getApiBaseUrl).toHaveBeenCalledWith('stg')
     expect(mocks.axiosRequestAdapter).toHaveBeenLastCalledWith(
       expect.objectContaining({
         baseURL: 'sample-mock-url',
