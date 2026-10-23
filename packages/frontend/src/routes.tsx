@@ -27,6 +27,7 @@ import Transfers from '@/pages/Transfers'
 import TransfersLayout from '@/pages/Transfers/layouts/TransfersLayout'
 import { InvalidTileLink } from '@/pages/UnauthorizedTile'
 
+import { Form } from './pages/Form'
 import UseCasesRoutes from './pages/Landing/UseCasesPages/routes'
 
 const Landing = lazy(() => import('@/pages/Landing'))
@@ -127,6 +128,15 @@ export default createRoutesFromElements(
       element={
         <Layout>
           <Tiles />
+        </Layout>
+      }
+    />
+
+    <Route
+      path={URLS.FORM}
+      element={
+        <Layout>
+          <Form />
         </Layout>
       }
     />
