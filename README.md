@@ -28,6 +28,47 @@ Plumber doesn't officially support Windows as a dev environment, but some contri
 
 See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup steps and known issues.
 
+## AI Builder observability
+
+AI Builder exports traces to Rome through the existing Langfuse processors and Cloudflare Access headers.
+Set both backend variables to export the same traces to PostHog as well:
+
+```text
+POSTHOG_PROJECT_TOKEN=<project token for the frontend's PostHog project>
+POSTHOG_HOST=https://us.i.posthog.com
+```
+
+Use `https://eu.i.posthog.com` for an EU project.
+Use an ingestion host that accepts `/i/v0/ai/otel` if you configure a proxy.
+Leaving either variable empty disables PostHog export.
+Rome still receives traces regardless of whether PostHog export is enabled.
+
+ECS injects these settings from SSM Parameter Store through `ecs/env.json`.
+Before deploying, create `plumber-posthog-project-token` and `plumber-posthog-host` in each deployment account.
+These shared parameter names apply to every environment.
+Store the project token as a `SecureString` parameter.
+The host can use a `String` parameter.
+Both parameters must exist for ECS to start the task, even when PostHog export is disabled in application configuration.
+Ensure the task execution role can read both parameters and decrypt the token's KMS key.
+
+PostHog receives AI Builder traces, including prompts, responses, and tool calls.
+PAIR action traces continue to export only to Rome.
+PostHog identifies users by their Plumber user ID and groups chat turns by `chatId`.
+Both destinations retain the OpenTelemetry trace ID.
+PostHog receives cache-read token counts when PAIR reports `prompt_tokens_details.cached_tokens`.
+Input token totals include cache reads. PostHog uses the separate cache-read count to calculate the breakdown.
+Missing cache usage remains unknown. The current OpenAI-compatible SDK does not expose cache-write counts.
+The server flushes both destinations after draining HTTP requests during graceful shutdown.
+
+In staging, send a chat that calls a tool and compare both trace timelines.
+Confirm matching trace IDs, tool spans, token usage, and PostHog user attribution.
+Exports use the transport's JSON serializer to split batches below 3.5 MB, leaving room below PostHog's 4 MB limit.
+Splitting batches preserves span content, IDs, timestamps, and trace relationships.
+If a single span exceeds 3.5 MB, PostHog receives its IDs, timing, and key metadata with content-omission notices.
+The span includes `posthog.content_omitted` and `posthog.original_payload_bytes` properties.
+Rome retains the original span content.
+See [PostHog's OpenTelemetry documentation](https://posthog.com/docs/ai-observability/installation/opentelemetry).
+
 ## Acknowledgements
 
 Plumber is a fork of the open source project [Automatisch](https://github.com/automatisch/automatisch). We would like to thank the team for their contributions to the open source community. Please refer to the license files [[1](./LICENSE.md),[2](./LICENSE.agpl)] for more information.
