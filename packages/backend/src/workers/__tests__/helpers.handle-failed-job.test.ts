@@ -2,7 +2,7 @@ import type { IActionJobData, StepErrorKind } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import StepError, { attachStepErrorAsCause } from '@/errors/step'
+import StepError, { attachHiddenCauseIfStepError } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 
 import { handleFailedJob } from '../helpers/handle-failed-job'
@@ -48,7 +48,7 @@ const JOB = {
 
 function makeFailedJobError(cause?: unknown): UnrecoverableError {
   const err = new UnrecoverableError('step failed')
-  attachStepErrorAsCause(err, cause)
+  attachHiddenCauseIfStepError(err, cause)
   return err
 }
 

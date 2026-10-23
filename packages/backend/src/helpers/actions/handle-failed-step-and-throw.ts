@@ -10,7 +10,7 @@ import get from 'lodash.get'
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError, {
-  attachStepErrorAsCause,
+  attachHiddenCauseIfStepError,
   getStepErrorKind,
 } from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
@@ -195,12 +195,12 @@ export function handleFailedStepAndThrow(
       willRetry: isRetriable ? 'true' : 'false',
     })
 
-    // A rethrown cause belongs to the app, so only errors created here get the StepError.
+    // If we threw a different error here, and the original executionError was StepError, attach it as the cause
     const isCreatedHere =
       finalError instanceof UnrecoverableError ||
       (finalError instanceof RetriableError && finalError !== executionError)
     if (isCreatedHere) {
-      attachStepErrorAsCause(finalError, params.executionError)
+      attachHiddenCauseIfStepError(finalError, params.executionError)
     }
 
     throw finalError
