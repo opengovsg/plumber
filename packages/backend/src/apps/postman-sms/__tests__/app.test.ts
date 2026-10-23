@@ -1,5 +1,5 @@
 import type { IActionJobData, IGlobalVariable } from '@plumber/types'
-import type { AxiosPromise } from 'axios'
+import type { AxiosPromise, CreateAxiosDefaults } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import RetriableError from '@/errors/retriable-error'
@@ -52,15 +52,17 @@ vi.mock('@/models/step', () => ({
 
 vi.mock('axios', async (importOriginal) => {
   const actualAxios = await importOriginal<typeof import('axios')>()
-  const mockCreate: typeof actualAxios.default.create = (createConfig) =>
-    actualAxios.default.create({
+  const mockCreate: typeof actualAxios.create = (
+    createConfig?: CreateAxiosDefaults,
+  ) =>
+    actualAxios.create({
       ...createConfig,
       adapter: mocks.axiosRequestAdapter,
     })
 
   return {
     default: {
-      ...actualAxios.default,
+      ...actualAxios,
       create: mockCreate,
     },
   }

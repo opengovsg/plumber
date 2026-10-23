@@ -100,7 +100,7 @@ describe('SsoClient', () => {
   })
 
   it('builds the authorize URL from discovery with PKCE S256 and openid email', async () => {
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     const result = await ssoClient.createAuthorizationRequest()
 
     expect(mocks.authorizationUrl).toHaveBeenCalledWith(
@@ -128,7 +128,7 @@ describe('SsoClient', () => {
       },
     })
 
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
 
     await expect(ssoClient.createAuthorizationRequest()).rejects.toThrow(
       'SSO discovery issuer mismatch',
@@ -137,7 +137,7 @@ describe('SsoClient', () => {
   })
 
   it('authenticates with private_key_jwt using the configured private JWK', async () => {
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     await ssoClient.createAuthorizationRequest()
 
     expect(mocks.clientConstructor).toHaveBeenCalledWith(
@@ -154,7 +154,7 @@ describe('SsoClient', () => {
   })
 
   it('passes nonce, state, and code_verifier checks to client.callback', async () => {
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     await ssoClient.createAuthorizationRequest()
 
     await ssoClient.callback({
@@ -182,7 +182,7 @@ describe('SsoClient', () => {
   })
 
   it('takes identity from the verified id_token and rejects query iss mismatches', async () => {
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     await ssoClient.createAuthorizationRequest()
 
     const identity = await ssoClient.callback({
@@ -220,7 +220,7 @@ describe('SsoClient', () => {
       email: 'officer@agency.gov.sg',
     })
 
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     await ssoClient.createAuthorizationRequest()
 
     await expect(
@@ -245,7 +245,7 @@ describe('SsoClient', () => {
       email: 'officer@agency.gov.sg',
     })
 
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     await ssoClient.createAuthorizationRequest()
 
     await expect(
@@ -270,7 +270,7 @@ describe('SsoClient', () => {
       email: '   ',
     })
 
-    const { ssoClient } = await import('../sso-client')
+    const { ssoClient } = await import('../sso-client.js')
     await ssoClient.createAuthorizationRequest()
 
     await expect(

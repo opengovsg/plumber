@@ -1,7 +1,8 @@
 import knex, { Knex } from 'knex'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import config from '../../../knexfile'
+// knexfile.ts sits outside rootDir. The knex settings now live in knex-config.
+import { config } from '../../config/knex-config.js'
 import {
   down,
   up,
