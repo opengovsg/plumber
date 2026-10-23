@@ -1,4 +1,6 @@
-import knex from 'knex'
+import path from 'node:path'
+
+import knex, { type Knex } from 'knex'
 import pg from 'pg'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -18,7 +20,7 @@ describe('bigint parsing', () => {
   })
 
   it('returns counts as numbers from the app client', async () => {
-    const { client } = await import('@/config/database')
+    const { client } = await import('@/config/database.js')
 
     try {
       const { rows } = await client.raw(COUNT_QUERY)
@@ -29,7 +31,11 @@ describe('bigint parsing', () => {
   })
 
   it('returns counts as numbers from the knexfile config', async () => {
-    const { default: config } = await import('../../../knexfile')
+    // knexfile.ts sits outside rootDir, so a literal import cannot be checked.
+    const specifier = path.join(__dirname, '../../../knexfile.ts')
+    const { default: config } = (await import(specifier)) as {
+      default: Knex.Config
+    }
     const client = knex(config)
 
     try {
