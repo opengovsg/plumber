@@ -1,10 +1,9 @@
+import { Box, Card, CardBody, Flex, Spacer, Text } from '@chakra-ui/react'
+import { IconButton } from '@opengovsg/design-system-react'
 import type { IApp } from '@plumber/types'
-
 import { ReactElement } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
-import { Box, Card, CardBody, Flex, Spacer, Text } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
 
 import AppIcon from '@/components/AppIcon'
 import * as URLS from '@/config/urls'

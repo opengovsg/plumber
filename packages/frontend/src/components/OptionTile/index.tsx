@@ -1,10 +1,12 @@
-import { ReactElement } from 'react'
-import { IconType } from 'react-icons'
 import { Flex, Text } from '@chakra-ui/react'
 import { Tile, TileProps } from '@opengovsg/design-system-react'
+import { ReactElement } from 'react'
+import { IconType } from 'react-icons'
 
-export interface OptionTileProps
-  extends Omit<TileProps, 'icon' | 'title' | 'badge' | 'children'> {
+export interface OptionTileProps extends Omit<
+  TileProps,
+  'icon' | 'title' | 'badge' | 'children'
+> {
   icon: IconType
   title: string
   description: string

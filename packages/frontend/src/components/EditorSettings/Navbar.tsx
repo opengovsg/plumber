@@ -1,7 +1,7 @@
+import { Box, HStack, Icon, Text } from '@chakra-ui/react'
 import { useContext } from 'react'
 import { BiChevronLeft } from 'react-icons/bi'
 import { Link, useParams } from 'react-router-dom'
-import { Box, HStack, Icon, Text } from '@chakra-ui/react'
 
 import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
