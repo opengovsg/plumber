@@ -18,9 +18,8 @@ async function loadSesConfig(env: SesEnv) {
     vi.stubEnv(key, env[key])
   }
   vi.resetModules()
-  const { default: appConfig } = (await import(
-    '@/config/app/index.js'
-  )) as unknown as typeof import('@/config/app/index.js')
+  const { default: appConfig } =
+    (await import('@/config/app/index.js')) as unknown as typeof import('@/config/app/index.js')
   return appConfig.ses
 }
 

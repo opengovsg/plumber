@@ -28,9 +28,8 @@ const placeholders = parse(
 async function loadBaseUrl(value: string | undefined) {
   vi.stubEnv(KEY, value)
   vi.resetModules()
-  const { default: appConfig } = (await import(
-    '@/config/app/index.js'
-  )) as unknown as typeof import('@/config/app/index.js')
+  const { default: appConfig } =
+    (await import('@/config/app/index.js')) as unknown as typeof import('@/config/app/index.js')
   return appConfig.baseUrl
 }
 
