@@ -30,8 +30,8 @@ The backend has three error families. Do not add a new family.
 - `PartialStepError` (`errors/partial-error.ts`) takes the same options plus `partialRetry`.
 - The constructor serializes `kind` into the step's `errorDetails.kind` (`IStepError` in `@plumber/types`).
 - `getStepErrorKind(error)` (`errors/step.ts`) returns the `kind` of any thrown error. A `StepError` without `kind` and any other error return `internal`.
-- `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) writes one info log per final action job failure: `event: 'action-job-failed'` with `kind`, `flowId` and `appKey`. Monitors read it because logs are not sampled.
-- The log reads `kind` from the failed job's error when it is a `StepError`, else from its `cause`. Code that replaces a `StepError` with another error (e.g. `UnrecoverableError`) calls `attachStepErrorAsCause` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
+- `handleFailedJob` (`workers/helpers/handle-failed-job.ts`) adds `event: 'action-job-failed'`, `willRetry`, `kind` and `appKey` to its per-attempt error log. Monitors read it with `@willRetry:false`, because logs are not sampled.
+- The log reads `kind` from the failed job's error when it is a `StepError`, else from its `cause`. Code that replaces a `StepError` with another error (e.g. `UnrecoverableError`) calls `attachHiddenCauseIfStepError` (`errors/step.ts`). It sets `cause` as non-enumerable, so log redaction never walks into it.
 
 ### Choosing `kind`
 
