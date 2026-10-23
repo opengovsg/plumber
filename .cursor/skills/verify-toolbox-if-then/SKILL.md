@@ -1,53 +1,59 @@
 ---
 name: verify-toolbox-if-then
-description: Check that Toolbox if-then blocks in a Plumber pipe obey the end-marker rules. Use when a change touches if-then end markers, block ranges, or publish validation for toolbox actions.
+description: Check that Toolbox If, Repeat, and Delay placement rules agree on the same pipe. Use when a change touches where a toolbox action can be added, or an if-then block's end marker.
 ---
 
-# Verify Toolbox if-then blocks
+# Verify Toolbox placement
 
-A Toolbox if-then block marks where its steps end. A false condition skips to the step after that end. A bad marker skips into another branch or across an MRF submission.
+Toolbox actions share one pipe layout. The check asks, at every insertion point, whether If, Repeat, and Delay are allowed together.
 
 ## Property
 
-A saved if-then end marker is allowed only when all of these hold.
+On the if-then V2 model:
 
-- The marked step is a toolbox if-then in this pipe.
-- The end step is in this pipe and sits at or after the if-then.
-- No MRF submission sits inside the block. The inside is every step after the if-then, up to and including the end step.
-- Every step inside the block is on the same MRF rejection branch as the if-then.
-- The block does not overlap another if-then block whose end marker resolves. A dangling end marker on that other block is not an overlap.
+- An If block can be added anywhere except inside another If block.
+- Repeat for each can be added only as the last step, only once, and not inside an If block.
+- Delay cannot be added inside a Repeat body. Adding it on the Repeat step itself counts as inside that body.
+- A launcher may say the new step lands inside an If block, or after the whole block, when the anchor step alone would say otherwise.
 
-An empty block, whose end marker is the if-then itself, may be saved. Publish rejects it. Publish checks only if-then steps that carry an `endStepId` key.
+Inside an If block means strictly after that if-then and up to its end marker. An earlier If block consumes that range, so a Repeat inside it does not start its own body. A Repeat that is not inside an earlier block owns every later step.
 
-The harm is a false condition jumping into the wrong steps.
+The harm is a Repeat or a nested If landing where later steps run under the wrong condition, or a Delay waiting inside a Repeat.
+
+A saved if-then end marker has its own rules. The end step stays in the pipe at or after the if-then. The block contains no MRF submission, stays on one rejection branch, and does not overlap another if-then block. An empty block may be saved. Publish rejects it.
 
 ## Run
 
 From the repo root:
 
 ```bash
+nvm use && pnpm --filter frontend exec vitest run src/components/FlowStepConfigurationModal/hooks/__tests__/toolbox-placement.critical.test.ts
 nvm use && pnpm --filter backend exec vitest run src/apps/toolbox/__tests__/common/if-then-block-invariant.critical.test.ts
 ```
 
-A pass means every generated pipe agreed with the rules above. A failure prints one pipe and whether the code accepted a forbidden block or rejected an allowed one.
+A pass means every generated pipe agreed with both rule sets. A failure prints one pipe and the If, Repeat, and Delay answers that disagreed, or one forbidden block marker.
 
 ## Bounds
 
-The check builds every pipe of 1 to 4 steps. Each step is a plain action, an MRF submission, a legacy if-then, or an if-then with an end marker. The marker points at a step in the pipe or at a missing id. Each step is on the main flow or on one of two rejection branches. Steps are ordered by position.
+Placement uses action lists of 1 to 4 steps. The trigger is already removed. Each step is a plain action, Delay, Only continue if, Repeat, or an If block whose end marker is on that step or a later one. Each list is checked at every anchor, with and without being the last step, and with each launcher override.
 
-The check calls `validateEndStepWrite` and `validateFlowBlocks`. It does not run a pipe. It does not cover for-each, the truth of an only-continue-if condition, or where a legacy if-then skips.
+Block markers use pipes of 1 to 4 steps, including an MRF submission and two rejection branches. That check does not run a pipe.
+
+Neither check covers whether an Only continue if condition is true, or where a legacy if-then without an end marker skips.
 
 ## Coverage
 
+- `packages/frontend/src/components/FlowStepConfigurationModal/hooks/useIsAppSelectable.ts` function `getIfThenV2Selectability`.
+- `packages/frontend/src/components/FlowStepConfigurationModal/helpers/anchor-placement.ts`.
+- `packages/frontend/src/components/Editor/helpers/steps-utils.ts` functions `buildStepsList`, `isStepInsideIfThenBlock`, and `isStepInsideForEachBody`.
 - `packages/backend/src/apps/toolbox/common/validate-end-step.ts` functions `checkEndStepWrite`, `validateEndStepWrite`, and `validateFlowBlocks`.
-- `packages/backend/src/apps/toolbox/common/constants.ts` functions `isIfThenStep`, `isIfThenV2`, `isMrfSubmissionStep`, and `getRejectionBranchId`. The test states those definitions itself, so a change to them is visible.
 
-Sync commit: `00b53dc0`. The covered functions were last confirmed against that revision. Move this hash forward only after you re-read them and confirm the rules in this skill and in `if-then-block-invariant.critical.test.ts` still describe them.
+Sync commit: `00b53dc0`. The covered functions were last confirmed against that revision. Move this hash forward only after you re-read them and confirm the rules in this skill and in the two critical tests still describe them.
 
 ## How to read a failure
 
-The failure names the pipe. Read `checkEndStepWrite` for that shape.
+The failure names the pipe and the insertion point.
 
-- The code accepted a block this skill forbids, and the comments in `validate-end-step.ts` still state these rules. That is a bug. Report the pipe. Do not weaken the test.
-- The code rejected a block this skill allows, and a commit says the rule changed on purpose. Update the rule text here and in the test header. Then move the sync commit.
-- The code changed and the test's step words no longer match `constants.ts`. Update the test's definitions to the new code, rerun, and then decide bug or intended change.
+- The code allowed Repeat when the new step was not last, or allowed an If inside a block, and the comments in `useIsAppSelectable.ts` still state these rules. That is a bug. Report the pipe. Do not weaken the test.
+- The code rejected a placement this skill allows, and a commit says the rule changed on purpose. Update the rule text here and in the test header. Then move the sync commit.
+- A block-marker failure names a pipe that was accepted or rejected against `validate-end-step.ts`. Treat it the same way.
