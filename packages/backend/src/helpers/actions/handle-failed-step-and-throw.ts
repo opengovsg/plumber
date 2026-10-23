@@ -156,9 +156,6 @@ export function handleFailedStepAndThrow(
   const { errorDetails, context } = params
   const { span, job } = context
 
-  // Retrying cannot fix the user's own configuration.
-  const isConfigError = getStepErrorKind(executionError) === 'config'
-
   // Edge case as some actions throw StepError now, but others don't.
   if (executionError instanceof StepError) {
     executionError = executionError.cause
@@ -166,7 +163,8 @@ export function handleFailedStepAndThrow(
 
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
-    if (isConfigError) {
+    // Retrying cannot fix the user's own configuration.
+    if (getStepErrorKind(params.executionError) === 'config') {
       throw new UnrecoverableError(JSON.stringify(errorDetails))
     }
     if (executionError instanceof RetriableError) {
