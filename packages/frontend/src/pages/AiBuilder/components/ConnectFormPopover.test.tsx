@@ -110,8 +110,8 @@ function optionLabels(): string[] {
 describe('ConnectFormPopover search', () => {
   beforeEach(() => {
     stubMatchMedia()
-    onSelectExisting = vi.fn()
-    onAddNewForm = vi.fn()
+    onSelectExisting = vi.fn<(label: string, connectionId: string) => void>()
+    onAddNewForm = vi.fn<() => void>()
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({

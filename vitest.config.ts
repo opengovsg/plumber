@@ -1,7 +1,5 @@
 import { defineConfig } from 'vitest/config'
 
-import { integrationProjects } from './packages/backend/vitest.config.integration'
-
 export default defineConfig({
   test: {
     reporters: ['default', 'html'],
@@ -19,7 +17,12 @@ export default defineConfig({
       'packages/frontend/vite.config.ts',
       'packages/backend/vitest.config.ts',
       'packages/backend-archive/vitest.config.ts',
-      ...integrationProjects,
+      {
+        extends: 'packages/backend/vitest.config.integration.ts',
+        test: {
+          root: 'packages/backend',
+        },
+      },
     ],
   },
 })

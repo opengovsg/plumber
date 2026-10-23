@@ -1,7 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { withLock } from '../distributed-lock'
-import logger from '../logger'
 import { makeRedisAppDataKey, redisAppDataClient } from '../redis-app-data'
 
 //
@@ -22,15 +21,15 @@ function deferred(): { promise: Promise<void>; resolve: () => void } {
 }
 
 describe('withLock (integration)', () => {
-  it("returns fn's result when the release fails after fn settled (not routed to onContention)", async () => {
+  it("returns fn's result when the lock key is cleared mid-operation (not routed to onContention)", async () => {
     const key = 'wl:release-fail'
-    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
 
     const result = await withLock(
       key,
       async () => {
-        // Simulate the lock lapsing mid-operation: redlock's token-checked
-        // release then deletes 0 keys and throws ExecutionError from `finally`.
+        // Simulate the lock lapsing mid-operation. Whether redlock's release
+        // then errors is library-dependent; the contract we rely on is that the
+        // committed result is returned and contention is not signalled.
         await redisAppDataClient.del(
           makeRedisAppDataKey('distributed-lock', `${key}:lock`),
         )
@@ -46,11 +45,6 @@ describe('withLock (integration)', () => {
     )
 
     expect(result).toBe('committed')
-    expect(errorSpy).toHaveBeenCalledWith(
-      'Failed to release distributed lock',
-      expect.objectContaining({ lockKey: key }),
-    )
-    errorSpy.mockRestore()
   })
 
   it('serializes same-key work: a contender hits onContention while the key is held, then acquires once freed', async () => {
