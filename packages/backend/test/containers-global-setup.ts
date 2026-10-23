@@ -26,14 +26,15 @@ async function stopContainers() {
 
 export async function setup() {
   if (!store.__plumberItestContainers) {
+    // db.ts reads POSTGRES_PORT once, at import. DynamoDB setup imports the
+    // app, so Postgres must publish its port before that import.
+    const ready = (async () => {
+      await pg.setup()
+      await Promise.all([tilesPg.setup(), ddb.setup(), redis.setup()])
+    })()
     store.__plumberItestContainers = {
       users: 0,
-      ready: Promise.all([
-        pg.setup(),
-        tilesPg.setup(),
-        ddb.setup(),
-        redis.setup(),
-      ]).then(() => undefined),
+      ready,
       stop: stopContainers,
     }
   }
