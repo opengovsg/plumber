@@ -42,3 +42,7 @@ See [WINDOWS_DEV.md](./docs/WINDOWS_DEV.md) for their windows-specific setup ste
 ## Acknowledgements
 
 Plumber is a fork of the open source project [Automatisch](https://github.com/automatisch/automatisch). We would like to thank the team for their contributions to the open source community. Please refer to the license files [[1](./LICENSE.md),[2](./LICENSE.agpl)] for more information.
+
+## End-to-end tests
+
+See [the E2E workspace](tools/e2e/README.md) for staging tests, configuration, and the repository migration rollout.
