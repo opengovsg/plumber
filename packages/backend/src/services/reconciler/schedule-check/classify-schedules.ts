@@ -2,16 +2,22 @@
 const SCHEDULE_ENTRY_MEMBER_REGEX =
   /^flow-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?::|$)/i
 
+export interface ScheduleEntry {
+  member: string
+  runTimeMillis: number
+}
+
 /**
- * Maps each flow ID to its next run time, from a `ZRANGE ... WITHSCORES` reply.
+ * Maps each flow ID to its schedule entry, from a `ZRANGE ... WITHSCORES` reply.
  */
 export function parseScheduleEntries(
   zrangeWithScores: string[],
-): Map<string, number> {
-  const nextRunTimeByFlowId = new Map<string, number>()
+): Map<string, ScheduleEntry> {
+  const scheduleEntryByFlowId = new Map<string, ScheduleEntry>()
 
   for (let i = 0; i + 1 < zrangeWithScores.length; i += 2) {
-    const match = SCHEDULE_ENTRY_MEMBER_REGEX.exec(zrangeWithScores[i])
+    const member = zrangeWithScores[i]
+    const match = SCHEDULE_ENTRY_MEMBER_REGEX.exec(member)
     if (!match) {
       continue
     }
@@ -19,18 +25,18 @@ export function parseScheduleEntries(
     const flowId = match[1]
     const runTimeMillis = Number(zrangeWithScores[i + 1])
     // A leftover entry from the older member format must not hide a healthy one.
-    const existing = nextRunTimeByFlowId.get(flowId)
-    if (existing === undefined || runTimeMillis > existing) {
-      nextRunTimeByFlowId.set(flowId, runTimeMillis)
+    const existing = scheduleEntryByFlowId.get(flowId)
+    if (existing === undefined || runTimeMillis > existing.runTimeMillis) {
+      scheduleEntryByFlowId.set(flowId, { member, runTimeMillis })
     }
   }
 
-  return nextRunTimeByFlowId
+  return scheduleEntryByFlowId
 }
 
 interface ClassifySchedulesInput {
   publishedFlowIds: string[]
-  nextRunTimeByFlowId: Map<string, number>
+  scheduleEntryByFlowId: Map<string, ScheduleEntry>
   nowMillis: number
   graceSeconds: number
 }
@@ -42,7 +48,7 @@ export interface ScheduleClassification {
 
 export function classifySchedules({
   publishedFlowIds,
-  nextRunTimeByFlowId,
+  scheduleEntryByFlowId,
   nowMillis,
   graceSeconds,
 }: ClassifySchedulesInput): ScheduleClassification {
@@ -51,10 +57,10 @@ export function classifySchedules({
   const overdueFlowIds: string[] = []
 
   for (const flowId of publishedFlowIds) {
-    const nextRunTimeMillis = nextRunTimeByFlowId.get(flowId)
-    if (nextRunTimeMillis === undefined) {
+    const scheduleEntry = scheduleEntryByFlowId.get(flowId)
+    if (scheduleEntry === undefined) {
       missingFlowIds.push(flowId)
-    } else if (nextRunTimeMillis < overdueBeforeMillis) {
+    } else if (scheduleEntry.runTimeMillis < overdueBeforeMillis) {
       overdueFlowIds.push(flowId)
     }
   }

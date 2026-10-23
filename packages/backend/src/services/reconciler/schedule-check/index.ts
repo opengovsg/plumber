@@ -5,18 +5,23 @@ import { setGaugeMetric } from '@/helpers/metrics'
 
 import type { ReconcilerCheck } from '../run-loop'
 import { classifySchedules, parseScheduleEntries } from './classify-schedules'
+import { collectMissedRuns } from './collect-missed-runs'
 import type { ScheduleCheckConfig } from './config'
+import { countMissedRuns } from './count-missed-runs'
 import { fetchPublishedScheduledPipes } from './fetch-published-scheduled-pipes'
+import { FLOW_QUEUE_KEY_PREFIX } from './is-run-time-job-pending'
 
-export const SCHEDULE_ENTRIES_KEY = '{flowQ}:flow:repeat'
+export const SCHEDULE_ENTRIES_KEY = `${FLOW_QUEUE_KEY_PREFIX}:repeat`
 
 interface CreateScheduleCheckInput {
-  jobsRedis: Pick<Redis, 'zrange'>
+  jobsRedis: Pick<Redis, 'zrange' | 'hmget'>
+  markerRedis: Pick<Redis, 'set'>
   config: ScheduleCheckConfig
 }
 
 export function createScheduleCheck({
   jobsRedis,
+  markerRedis,
   config,
 }: CreateScheduleCheckInput): ReconcilerCheck {
   return {
@@ -32,13 +37,31 @@ export function createScheduleCheck({
         'WITHSCORES',
       )
 
+      const scheduleEntryByFlowId = parseScheduleEntries(zrangeWithScores)
+      const nowMillis = Date.now()
+
       const { missingFlowIds, overdueFlowIds } = classifySchedules({
         publishedFlowIds: publishedPipes.map((pipe) => pipe.flowId),
-        nextRunTimeByFlowId: parseScheduleEntries(zrangeWithScores),
-        nowMillis: Date.now(),
+        scheduleEntryByFlowId,
+        nowMillis,
         graceSeconds: config.missedRunGraceSeconds,
       })
 
+      const missedRuns = await collectMissedRuns({
+        jobsRedis,
+        publishedPipes,
+        scheduleEntryByFlowId,
+        missingFlowIds,
+        overdueFlowIds,
+        nowMillis,
+        graceSeconds: config.missedRunGraceSeconds,
+      })
+      const newlyCountedMissedRuns = await countMissedRuns({
+        markerRedis,
+        missedRuns,
+      })
+
+      // Gauges go last, so a failure anywhere in the check trips the no-data monitor.
       setGaugeMetric('plumber.schedules.missing', missingFlowIds.length)
       setGaugeMetric('plumber.schedules.overdue', overdueFlowIds.length)
 
@@ -49,6 +72,7 @@ export function createScheduleCheck({
         overdueCount: overdueFlowIds.length,
         missingFlowIds,
         overdueFlowIds,
+        newlyCountedMissedRunCount: newlyCountedMissedRuns.length,
       }
       if (missingFlowIds.length > 0 || overdueFlowIds.length > 0) {
         logger.warn('Schedule check found problem pipes', logDetails)

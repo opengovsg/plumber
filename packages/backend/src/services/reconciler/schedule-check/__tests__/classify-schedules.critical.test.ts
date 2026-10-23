@@ -21,11 +21,20 @@ const FLOW_C = '2d7d7c6c-3a9c-4a33-9b17-2d4d1d2c3c33'
 const NOW = Date.UTC(2026, 9, 20, 4, 0, 0)
 const GRACE_SECONDS = 900
 
+function scheduleEntries(runTimes: [string, number][]) {
+  return new Map(
+    runTimes.map(([flowId, runTimeMillis]) => [
+      flowId,
+      { member: `flow-${flowId}`, runTimeMillis },
+    ]),
+  )
+}
+
 describe('classifySchedules', () => {
   it('marks a published pipe with no schedule entry as missing', () => {
     const result = classifySchedules({
       publishedFlowIds: [FLOW_A],
-      nextRunTimeByFlowId: new Map(),
+      scheduleEntryByFlowId: new Map(),
       nowMillis: NOW,
       graceSeconds: GRACE_SECONDS,
     })
@@ -36,7 +45,9 @@ describe('classifySchedules', () => {
   it('marks a pipe whose run time is more than G in the past as overdue', () => {
     const result = classifySchedules({
       publishedFlowIds: [FLOW_A],
-      nextRunTimeByFlowId: new Map([[FLOW_A, NOW - GRACE_SECONDS * 1000 - 1]]),
+      scheduleEntryByFlowId: scheduleEntries([
+        [FLOW_A, NOW - GRACE_SECONDS * 1000 - 1],
+      ]),
       nowMillis: NOW,
       graceSeconds: GRACE_SECONDS,
     })
@@ -47,7 +58,9 @@ describe('classifySchedules', () => {
   it('treats a run time exactly G in the past as healthy', () => {
     const result = classifySchedules({
       publishedFlowIds: [FLOW_A],
-      nextRunTimeByFlowId: new Map([[FLOW_A, NOW - GRACE_SECONDS * 1000]]),
+      scheduleEntryByFlowId: scheduleEntries([
+        [FLOW_A, NOW - GRACE_SECONDS * 1000],
+      ]),
       nowMillis: NOW,
       graceSeconds: GRACE_SECONDS,
     })
@@ -58,7 +71,7 @@ describe('classifySchedules', () => {
   it('treats past run times within G and future run times as healthy', () => {
     const result = classifySchedules({
       publishedFlowIds: [FLOW_A, FLOW_B],
-      nextRunTimeByFlowId: new Map([
+      scheduleEntryByFlowId: scheduleEntries([
         [FLOW_A, NOW - 60_000],
         [FLOW_B, NOW + 3_600_000],
       ]),
@@ -72,7 +85,7 @@ describe('classifySchedules', () => {
   it('ignores schedule entries of pipes that are not published', () => {
     const result = classifySchedules({
       publishedFlowIds: [FLOW_A],
-      nextRunTimeByFlowId: new Map([
+      scheduleEntryByFlowId: scheduleEntries([
         [FLOW_A, NOW + 60_000],
         [FLOW_B, NOW - 86_400_000],
       ]),
@@ -86,7 +99,7 @@ describe('classifySchedules', () => {
   it('classifies several pipes at once', () => {
     const result = classifySchedules({
       publishedFlowIds: [FLOW_A, FLOW_B, FLOW_C],
-      nextRunTimeByFlowId: new Map([
+      scheduleEntryByFlowId: scheduleEntries([
         [FLOW_B, NOW - 3_600_000],
         [FLOW_C, NOW + 60_000],
       ]),
@@ -112,8 +125,8 @@ describe('parseScheduleEntries', () => {
 
     expect(entries).toEqual(
       new Map([
-        [FLOW_A, NOW],
-        [FLOW_B, NOW + 1000],
+        [FLOW_A, { member: `flow-${FLOW_A}`, runTimeMillis: NOW }],
+        [FLOW_B, { member: `flow-${FLOW_B}`, runTimeMillis: NOW + 1000 }],
       ]),
     )
   })
@@ -124,7 +137,17 @@ describe('parseScheduleEntries', () => {
       String(NOW),
     ])
 
-    expect(entries).toEqual(new Map([[FLOW_A, NOW]]))
+    expect(entries).toEqual(
+      new Map([
+        [
+          FLOW_A,
+          {
+            member: `flow-${FLOW_A}:${FLOW_A}:::0 * * * *`,
+            runTimeMillis: NOW,
+          },
+        ],
+      ]),
+    )
   })
 
   it('keeps the latest run time when a pipe has two entries', () => {
@@ -135,7 +158,9 @@ describe('parseScheduleEntries', () => {
       String(NOW),
     ])
 
-    expect(entries).toEqual(new Map([[FLOW_A, NOW]]))
+    expect(entries).toEqual(
+      new Map([[FLOW_A, { member: `flow-${FLOW_A}`, runTimeMillis: NOW }]]),
+    )
   })
 
   it('skips entries that do not belong to a pipe', () => {
