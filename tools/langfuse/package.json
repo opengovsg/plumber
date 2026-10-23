@@ -4,7 +4,10 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "get-prompt": "node ../../scripts/with-op-env.mjs node get-prompt.mjs"
+    "get-prompt": "node ../../scripts/with-op-env.mjs node get-prompt.mjs",
+    "get-judge": "node ../../scripts/with-op-env.mjs node get-judge.mjs",
+    "eval-dataset": "node ../../scripts/with-op-env.mjs node eval-dataset.mjs",
+    "test": "node --test lib/*.test.mjs"
   },
   "author": "",
   "license": "ISC",

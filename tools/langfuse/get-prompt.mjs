@@ -11,10 +11,11 @@
  *   pnpm run get-prompt chat-summary --project=aiBuilder --label=latest
  *   pnpm run get-prompt chat --version=154
  */
-import { LangfuseClient } from '@langfuse/client'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { buildLangfuseClient } from './lib/client.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -45,35 +46,6 @@ function parseArgs(argv) {
     version: flags.version ? Number(flags.version) : undefined,
     outDir: join(__dirname, '../../docs/plans/prompts'),
   }
-}
-
-function buildLangfuseClient(project, env) {
-  const credentials =
-    project === 'aiBuilder'
-      ? {
-          publicKey: env.PAIR_ROME_AI_BUILDER_PUBLIC_KEY,
-          secretKey: env.PAIR_ROME_AI_BUILDER_SECRET_KEY,
-        }
-      : {
-          publicKey: env.PAIR_ROME_PAIR_ACTION_PUBLIC_KEY,
-          secretKey: env.PAIR_ROME_PAIR_ACTION_SECRET_KEY,
-        }
-
-  if (!credentials.publicKey || !credentials.secretKey) {
-    throw new Error(
-      `Missing Langfuse credentials for project "${project}". Run this through "pnpm run get-prompt" so 1Password injects them.`,
-    )
-  }
-
-  return new LangfuseClient({
-    timeout: 10000,
-    baseUrl: env.PAIR_ROME_BASE_URL,
-    additionalHeaders: {
-      'CF-Access-Client-Id': env.PAIR_ROME_CLOUDFLARE_ZERO_TRUST_CLIENT_KEY,
-      'CF-Access-Client-Secret': env.PAIR_ROME_CLOUDFLARE_ZERO_TRUST_SECRET_KEY,
-    },
-    ...credentials,
-  })
 }
 
 async function main() {
