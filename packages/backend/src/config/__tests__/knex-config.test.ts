@@ -45,7 +45,7 @@ describe('knex-config', () => {
     vi.stubEnv('POSTGRES_DATABASE', 'migration_target')
     vi.resetModules()
 
-    const { config } = await import('@/config/knex-config')
+    const { config } = await import('@/config/knex-config.js')
 
     expect(coreLoads.count).toBe(0)
     expect(config.connection.database).toBe('migration_target')
@@ -55,7 +55,7 @@ describe('knex-config', () => {
     vi.stubEnv('APP_ENV', 'development')
     vi.resetModules()
 
-    await import('@/config/knex-config')
+    await import('@/config/knex-config.js')
 
     const envPath = dotenvConfig.mock.calls[0][0].path
     expect(envPath).toBe(path.resolve(__dirname, '../../../.env-example'))
