@@ -281,9 +281,12 @@ describe('Action worker', () => {
       )
       await jobProcessed
 
-      expect(mocks.logError).toHaveBeenCalledWith(
-        `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
-        expect.anything(),
+      // The log waits on the appKey lookup, so it lands after the `failed` event.
+      await vi.waitFor(() =>
+        expect(mocks.logError).toHaveBeenCalledWith(
+          `[action] JOB ID: ${job.id} - FLOW ID: test-flow-id has failed to start with some error`,
+          expect.anything(),
+        ),
       )
     })
 
