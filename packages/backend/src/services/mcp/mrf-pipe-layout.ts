@@ -35,9 +35,7 @@ const branchOf = (step: McpStepInput) => step.mrfBranch ?? 'approve'
 
 /**
  * Checks every action of an MRF pipe before anything is created. Each action
- * needs a stage, since the stage steps decide where it can go. A For-each
- * follows the editor's rule: it covers every later step on its path, so it
- * has to be the last step there.
+ * needs a stage, since the stage steps decide where it can go.
  */
 export function validateMrfPlacements(
   steps: McpStepInput[],
@@ -55,7 +53,7 @@ export function validateMrfPlacements(
   const stageCount = mrfWorkflow.actions.length + 1
   const units = toUnits(steps.slice(1))
 
-  for (const [unitIndex, [step]] of units.entries()) {
+  for (const [step] of units) {
     if (!step.mrfStage) {
       throw new UserFacingError(
         `Every action of an MRF pipe needs mrf_stage, a stage number from 1 to ${stageCount}.`,
@@ -76,24 +74,14 @@ export function validateMrfPlacements(
       )
     }
 
-    if (!isForEach(step)) {
-      continue
-    }
-    if (branchOf(step) === 'approve' && step.mrfStage !== stageCount) {
+    // An approve-path loop body runs on into the next stage's steps.
+    if (
+      isForEach(step) &&
+      branchOf(step) === 'approve' &&
+      step.mrfStage !== stageCount
+    ) {
       throw new UserFacingError(
         `A For-each covers every later step, so on the approve path it can only go on the last stage (${stageCount}).`,
-      )
-    }
-    const hasLaterStepOnSamePath = units
-      .slice(unitIndex + 1)
-      .some(
-        ([later]) =>
-          later.mrfStage === step.mrfStage &&
-          branchOf(later) === branchOf(step),
-      )
-    if (hasLaterStepOnSamePath) {
-      throw new UserFacingError(
-        'A For-each has to be the last action on its path, because it covers every later step.',
       )
     }
   }

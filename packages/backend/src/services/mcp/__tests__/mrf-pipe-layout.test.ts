@@ -69,10 +69,18 @@ describe('validateMrfPlacements', () => {
     )
   })
 
-  it('rejects a step listed after a For-each on the same path', () => {
+  it('accepts steps after a For-each on the same path as its loop body', () => {
     expect(() =>
-      validateMrfPlacements(pipe(forEach(3), action('email', 3)), workflow),
-    ).toThrow('last action on its path')
+      validateMrfPlacements(
+        pipe(
+          forEach(3),
+          action('email', 3),
+          forEach(2, { mrfBranch: 'reject' }),
+          action('sms', 2, { mrfBranch: 'reject' }),
+        ),
+        workflow,
+      ),
+    ).not.toThrow()
   })
 
   it('allows a step on another path after a For-each', () => {

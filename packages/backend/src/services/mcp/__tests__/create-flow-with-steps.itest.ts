@@ -977,6 +977,63 @@ describe('createFlowWithStepsService', () => {
             'delayFor',
           ])
         })
+
+        it('keeps a loop body after a For-each on each path of a last approval stage', async () => {
+          mocks.fetchPublicForm.mockResolvedValue({
+            ...mrfForm,
+            form: {
+              ...mrfForm.form,
+              workflow: mrfForm.form.workflow.slice(0, 2),
+            },
+          })
+
+          const result = await createFlowWithStepsService({
+            user: await newUser(),
+            name: 'MRF Loop Bodies',
+            steps: [
+              formsgTrigger,
+              { ...loop, position: 2, mrfStage: 2, mrfBranch: 'reject' },
+              { ...email, position: 3, mrfStage: 2, mrfBranch: 'reject' },
+              { ...loop, position: 4, mrfStage: 2 },
+              { ...email, position: 5, mrfStage: 2 },
+            ],
+            traceId: 'trace-mrf-loop-bodies',
+            formUrl: FORM_URL,
+          })
+
+          expect(
+            result.steps.map(
+              (s) => `${s.key}${s.config?.approval ? ' (reject)' : ''}`,
+            ),
+          ).toEqual([
+            'newSubmission',
+            'mrfSubmission',
+            'forEach',
+            'sendTransactionalEmail',
+            'forEach (reject)',
+            'sendTransactionalEmail (reject)',
+          ])
+        })
+
+        it('rejects a Delay in a For-each loop body', async () => {
+          mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+
+          await expect(
+            createFlowWithStepsService({
+              user: await newUser(),
+              name: 'MRF Loop Delay',
+              steps: [
+                formsgTrigger,
+                { ...loop, position: 2, mrfStage: 3 },
+                { ...delay, position: 3, mrfStage: 3 },
+              ],
+              traceId: 'trace-mrf-loop-body-delay',
+              formUrl: FORM_URL,
+            }),
+          ).rejects.toThrow(
+            'Delay action cannot be added after a for-each step',
+          )
+        })
       })
 
       it('puts an action for stage 1 right after the trigger', async () => {
