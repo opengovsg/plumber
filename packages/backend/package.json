@@ -7,7 +7,7 @@
     "dev": "pnpm run build:watch --exec \"ts-node --swc src/server.ts\"",
     "worker": "pnpm run build:watch --exec \"ts-node --swc src/worker.ts\"",
     "prebuild": "rimraf ./dist",
-    "build": "tsc && pnpm run copy-statics && tsc-alias",
+    "build": "tsc -p tsconfig.build.json && pnpm run copy-statics && tsc-alias -p tsconfig.build.json && node scripts/assert-dist-entries.mjs",
     "build:watch": "nodemon --watch \"src/**\" --ext \"ts,json\"",
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
