@@ -10,10 +10,12 @@ const mocks = vi.hoisted(() => {
 
   return {
     // BullMQ worker mocks
-    workerConstructor: vi.fn(() => ({
-      on: workerOn,
-      close: vi.fn(),
-    })),
+    workerConstructor: vi.fn(function WorkerPro() {
+      return {
+        on: workerOn,
+        close: vi.fn(),
+      }
+    }),
     workerOn,
 
     // Misc mocks

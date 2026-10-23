@@ -385,6 +385,11 @@ describe('Auth helpers', () => {
     const signToken = (payload: object, options?: jwt.SignOptions) =>
       jwt.sign(payload, appConfig.sessionSecretKey, options)
 
+    beforeEach(() => {
+      mocks.findById.mockReset()
+      mocks.redisExists.mockReset()
+    })
+
     it('returns null when there is no auth cookie', async () => {
       const req = { cookies: {} } as any
 
