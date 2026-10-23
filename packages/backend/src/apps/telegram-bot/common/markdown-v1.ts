@@ -16,9 +16,9 @@ export function sanitizeMarkdown(text: string): string {
   // This function removes all unescapes since current modifier
   // Use this when the current modifier doesnt have a matching closing character
   // to ensure the special chars in between are escaped
-  function undoUnescapesSinceCurrentModifier() {
+  function undoUnescapesSinceCurrentModifier(modifier: MarkdownModifier) {
     let j = toEscapeOrUnescape.length - 1
-    while (j >= 0 && toEscapeOrUnescape[j].index > currentModifier.index) {
+    while (j >= 0 && toEscapeOrUnescape[j].index > modifier.index) {
       toEscapeOrUnescape.pop()
       j--
     }
@@ -48,7 +48,7 @@ export function sanitizeMarkdown(text: string): string {
             // between modifiers e.g. _hello\_world_ does not work
             // So we treat it as an invalid modifier and a normal character
             // All unescapes so far has to be undone
-            undoUnescapesSinceCurrentModifier()
+            undoUnescapesSinceCurrentModifier(currentModifier)
             toEscapeOrUnescape.push({ ...currentModifier, toEscape: true })
           }
           currentModifier = null
@@ -74,7 +74,7 @@ export function sanitizeMarkdown(text: string): string {
     }
   }
   if (currentModifier) {
-    undoUnescapesSinceCurrentModifier()
+    undoUnescapesSinceCurrentModifier(currentModifier)
     toEscapeOrUnescape.push({ ...currentModifier, toEscape: true })
   }
   toEscapeOrUnescape.reverse()
