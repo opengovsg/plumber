@@ -59,15 +59,24 @@ async function buildWithEntry(configFile: string, entry: string) {
 }
 
 describe.each(CONFIGS)('$name build config', ({ file }) => {
-  it('rejects a bundle that imports a Node builtin', async () => {
-    await expect(
-      buildWithEntry(file, join(fixtureDir, 'leaky.ts')),
-    ).rejects.toThrow(/\[vite-guardrail\].*node:path/s)
-  })
+  // The library config runs vite-plugin-dts, which typechecks the package.
+  it(
+    'rejects a bundle that imports a Node builtin',
+    async () => {
+      await expect(
+        buildWithEntry(file, join(fixtureDir, 'leaky.ts')),
+      ).rejects.toThrow(/\[vite-guardrail\].*node:path/s)
+    },
+    120_000,
+  )
 
-  it('builds a browser-safe bundle', async () => {
-    await expect(
-      buildWithEntry(file, join(fixtureDir, 'safe.ts')),
-    ).resolves.toBeDefined()
-  })
+  it(
+    'builds a browser-safe bundle',
+    async () => {
+      await expect(
+        buildWithEntry(file, join(fixtureDir, 'safe.ts')),
+      ).resolves.toBeDefined()
+    },
+    120_000,
+  )
 })
