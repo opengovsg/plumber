@@ -368,9 +368,8 @@ describe('updateFlowTransferStatus', () => {
       })
 
       // Mock hasAccess to throw ForbiddenError (old owner doesn't have access)
-      const { ForbiddenError } = await import(
-        '@/errors/graphql-errors/index.js'
-      )
+      const { ForbiddenError } =
+        await import('@/errors/graphql-errors/index.js')
       const hasAccessSpy = vi
         .spyOn(TableCollaborator, 'hasAccess')
         .mockRejectedValue(
