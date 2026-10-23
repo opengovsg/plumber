@@ -1,0 +1,136 @@
+import type { ParsedMrfWorkflow } from '@/apps/formsg/common/types'
+import {
+  TOOLBOX_ACTIONS,
+  TOOLBOX_APP_KEY,
+} from '@/apps/toolbox/common/constants'
+import { UserFacingError } from '@/errors/user-facing-error'
+import { getIfThenChildCount } from '@/graphql/mutations/ai/schemas/actions.zod'
+
+import type { McpStepInput } from './create-flow-with-steps'
+
+function isIfThen(step: McpStepInput): boolean {
+  return step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.IF_THEN
+}
+
+function isForEach(step: McpStepInput): boolean {
+  return (
+    step.appKey === TOOLBOX_APP_KEY && step.key === TOOLBOX_ACTIONS.FOR_EACH
+  )
+}
+
+/** Groups the actions into units: one action, or an If step with its block. */
+function toUnits(actions: McpStepInput[]): McpStepInput[][] {
+  const units: McpStepInput[][] = []
+  for (let index = 0; index < actions.length; index++) {
+    const blockSize = isIfThen(actions[index])
+      ? getIfThenChildCount(actions, index)
+      : 0
+    units.push(actions.slice(index, index + 1 + blockSize))
+    index += blockSize
+  }
+  return units
+}
+
+const branchOf = (step: McpStepInput) => step.mrfBranch ?? 'approve'
+
+/**
+ * Checks every action of an MRF pipe before anything is created. Each action
+ * needs a stage, since the stage steps decide where it can go.
+ */
+export function validateMrfPlacements(
+  steps: McpStepInput[],
+  mrfWorkflow: ParsedMrfWorkflow | undefined,
+): void {
+  if (!mrfWorkflow) {
+    if (steps.some((step) => step.mrfStage || step.mrfBranch)) {
+      throw new UserFacingError(
+        'mrf_stage and mrf_branch only apply to an MRF form. Pass form_url for an MRF form.',
+      )
+    }
+    return
+  }
+
+  const stageCount = mrfWorkflow.actions.length + 1
+  const units = toUnits(steps.slice(1))
+
+  for (const [step] of units) {
+    if (!step.mrfStage) {
+      throw new UserFacingError(
+        `Every action of an MRF pipe needs mrf_stage, a stage number from 1 to ${stageCount}.`,
+      )
+    }
+    if (step.mrfStage < 1 || step.mrfStage > stageCount) {
+      throw new UserFacingError(
+        `mrf_stage ${step.mrfStage} does not exist. This form has stages 1 to ${stageCount}.`,
+      )
+    }
+    if (
+      step.mrfBranch === 'reject' &&
+      (step.mrfStage === 1 ||
+        !mrfWorkflow.actions[step.mrfStage - 2].approvalField)
+    ) {
+      throw new UserFacingError(
+        `Stage ${step.mrfStage} is not an approval stage, so mrf_branch "reject" does not apply.`,
+      )
+    }
+
+    // An approve-path loop body runs on into the next stage's steps.
+    if (
+      isForEach(step) &&
+      branchOf(step) === 'approve' &&
+      step.mrfStage !== stageCount
+    ) {
+      throw new UserFacingError(
+        `A For-each covers every later step, so on the approve path it can only go on the last stage (${stageCount}).`,
+      )
+    }
+  }
+}
+
+/**
+ * Orders an MRF pipe's steps the way they end up in the pipe: by stage, with
+ * the approve path before the reject path. The layout rules then check the
+ * pipe that gets built, not the order the model listed the steps in.
+ */
+export function orderMrfPipeSteps(steps: McpStepInput[]): McpStepInput[] {
+  const [trigger, ...actions] = steps
+  const rank = (step: McpStepInput) =>
+    (step.mrfStage ?? 0) * 2 + (branchOf(step) === 'reject' ? 1 : 0)
+
+  const ordered = toUnits(actions)
+    .map((unit, index) => ({ unit, index }))
+    .sort((a, b) => rank(a.unit[0]) - rank(b.unit[0]) || a.index - b.index)
+    .flatMap(({ unit }) => unit)
+
+  return [trigger, ...ordered].map((step, index) => ({
+    ...step,
+    position: index + 1,
+  }))
+}
+
+/**
+ * Splits an MRF pipe's actions into the sequences that can run in one
+ * execution. A rejection at a stage runs the earlier stages' approve path and
+ * that stage's reject path, but never the later stages.
+ */
+export function getMrfExecutionPaths(
+  actions: McpStepInput[],
+): McpStepInput[][] {
+  const units = toUnits(actions)
+  const approveUnits = units.filter(([step]) => branchOf(step) === 'approve')
+  const rejectStages = new Set(
+    units
+      .filter(([step]) => branchOf(step) === 'reject')
+      .map(([step]) => step.mrfStage ?? 0),
+  )
+
+  const rejectPaths = [...rejectStages].map((stage) =>
+    units.filter(
+      ([step]) =>
+        (branchOf(step) === 'approve' && (step.mrfStage ?? 0) < stage) ||
+        (branchOf(step) === 'reject' && step.mrfStage === stage),
+    ),
+  )
+
+  return [approveUnits, ...rejectPaths].map((path) => path.flat())
+}

@@ -165,6 +165,11 @@ const messagePartSchema = z.discriminatedUnion('type', [
           connectionId: z.string().nullable(),
           connectionLabel: z.string().nullable().optional(),
           endStepId: z.string().nullable().optional(),
+          stepName: z.string().nullable().optional(),
+          approval: z
+            .object({ branch: z.literal('reject'), stepId: z.string() })
+            .nullable()
+            .optional(),
         }),
       ),
     }),

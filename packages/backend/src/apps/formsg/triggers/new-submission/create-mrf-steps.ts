@@ -1,4 +1,4 @@
-import { IGlobalVariable, IStep } from '@plumber/types'
+import { IStep } from '@plumber/types'
 import get from 'lodash.get'
 import { raw, Transaction } from 'objection'
 
@@ -58,13 +58,17 @@ async function deleteAllStepsInRejectBranch(
     .delete()
 }
 
+// Only the ids are read, so this can run before the trigger has ever been
+// tested (e.g. when the AI Builder creates the pipe).
 export async function createMrfSteps(
-  $: IGlobalVariable,
+  $: { flow?: { id: string }; step?: { id: string } },
   mrfWorkflow: ParsedMrfWorkflow,
+  // Pass the caller's transaction so the stage steps commit with its writes.
+  outerTrx?: Transaction,
 ) {
   const { trigger, actions } = mrfWorkflow
 
-  await Step.transaction(async (trx) => {
+  const run = async (trx: Transaction) => {
     const triggerStepName = trigger.defaultStepName
     // Update the trigger step parameters
     const updatedTriggerStep = await Step.query(trx).patchAndFetchById(
@@ -225,5 +229,11 @@ export async function createMrfSteps(
 
     // this is to fill the gaps in the step positions
     await Step.resetStepOrdering($.flow.id, trx)
-  })
+  }
+
+  if (outerTrx) {
+    await run(outerTrx)
+    return
+  }
+  await Step.transaction(run)
 }

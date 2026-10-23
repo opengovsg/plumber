@@ -143,6 +143,51 @@ describe('chatRequestSchema', () => {
       expect(result.success).toBe(true)
     })
 
+    it('should accept a data-pipeState part with MRF stage fields', () => {
+      const result = chatRequestSchema.safeParse({
+        messages: [
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'data-pipeState',
+                data: {
+                  pipeId: '550e8400-e29b-41d4-a716-446655440000',
+                  steps: [
+                    {
+                      id: '550e8400-e29b-41d4-a716-446655440001',
+                      appKey: 'postman',
+                      key: 'sendTransactionalEmail',
+                      type: 'action',
+                      position: 3,
+                      status: 'incomplete',
+                      parameters: {},
+                      connectionId: null,
+                      stepName: 'Email rejected',
+                      approval: {
+                        branch: 'reject',
+                        stepId: '550e8400-e29b-41d4-a716-446655440002',
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      })
+      expect(result.success).toBe(true)
+      if (result.success) {
+        const part = result.data.messages[0].parts[0] as {
+          data: { steps: Array<{ approval?: unknown }> }
+        }
+        expect(part.data.steps[0].approval).toEqual({
+          branch: 'reject',
+          stepId: '550e8400-e29b-41d4-a716-446655440002',
+        })
+      }
+    })
+
     it('should accept data-stepUpdate part', () => {
       const result = chatRequestSchema.safeParse({
         messages: [

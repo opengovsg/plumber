@@ -1,7 +1,11 @@
 import type { UIMessage } from '@ai-sdk/react'
 import { useChat } from '@ai-sdk/react'
 import { useToast } from '@opengovsg/design-system-react'
-import type { IFlowSteps, IJSONObject } from '@plumber/types'
+import type {
+  IFlowSteps,
+  IJSONObject,
+  IStepApprovalConfig,
+} from '@plumber/types'
 import type { FinishReason } from 'ai'
 import { DefaultChatTransport } from 'ai'
 import { useCallback, useMemo, useRef, useState } from 'react'
@@ -107,6 +111,10 @@ export type PipeStateStep = {
   connectionLabel?: string | null
   // Last step (inclusive) inside this If block; null on any other step.
   endStepId?: string | null
+  // The step's custom name. For an MRF stage step, the form's stage name.
+  stepName?: string | null
+  // Set on a step in the reject path of an MRF approval step.
+  approval?: IStepApprovalConfig | null
 }
 
 export type PipeStatePart = {
