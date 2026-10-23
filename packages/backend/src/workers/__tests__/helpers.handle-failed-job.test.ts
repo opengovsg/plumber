@@ -53,7 +53,7 @@ function makeFailedJobError(cause?: unknown): UnrecoverableError {
 }
 
 function getFailureLogs() {
-  return mocks.loggerInfo.mock.calls.filter(
+  return mocks.loggerError.mock.calls.filter(
     ([, meta]) => meta?.event === 'action-job-failed',
   )
 }
@@ -77,12 +77,13 @@ describe('handleFailedJob failure log', () => {
       expect(getFailureLogs()).toEqual([
         [
           expect.any(String),
-          {
+          expect.objectContaining({
             event: 'action-job-failed',
+            job: JOB.data,
+            willRetry: false,
             kind,
-            flowId: 'flow-1',
             appKey: 'postman',
-          },
+          }),
         ],
       ])
     },
@@ -121,16 +122,15 @@ describe('handleFailedJob failure log', () => {
 
     await handleFailedJob(JOB, makeFailedJobError(), 'queue')
 
-    expect(getFailureLogs()[0][1]).toEqual({
-      event: 'action-job-failed',
+    expect(getFailureLogs()[0][1]).toMatchObject({
+      willRetry: false,
       kind: 'internal',
-      flowId: 'flow-1',
       appKey: undefined,
     })
     expect(mocks.setStatus).toHaveBeenCalledWith('execution-1', 'failure')
   })
 
-  it('does not log a job that will retry', async () => {
+  it('logs a job that will retry without looking up its appKey', async () => {
     const retriedJob = { ...JOB, attemptsMade: MAXIMUM_JOB_ATTEMPTS - 2 }
 
     await handleFailedJob(
@@ -139,6 +139,17 @@ describe('handleFailedJob failure log', () => {
       'queue',
     )
 
-    expect(getFailureLogs()).toEqual([])
+    expect(getFailureLogs()).toEqual([
+      [
+        expect.any(String),
+        expect.objectContaining({
+          willRetry: true,
+          kind: 'internal',
+          appKey: undefined,
+        }),
+      ],
+    ])
+    expect(mocks.findStepById).not.toHaveBeenCalled()
+    expect(mocks.setStatus).not.toHaveBeenCalled()
   })
 })
