@@ -9,10 +9,8 @@ type QueueWithRedisClient = {
 
 describe('queue modules in unit tests', () => {
   it('runs the flow queue against in-memory redis', async () => {
-    const { default: flowQueue } =
-      (await import('@/queues/flow.js')) as unknown as {
-        default: QueueWithRedisClient
-      }
+    const flowQueue = (await import('@/queues/flow'))
+      .default as QueueWithRedisClient
     const client = await flowQueue.client
 
     await client.set('flow-queue-key', 'ok')
@@ -21,10 +19,8 @@ describe('queue modules in unit tests', () => {
   })
 
   it('runs the trigger queue against in-memory redis', async () => {
-    const { default: triggerQueue } =
-      (await import('@/queues/trigger.js')) as unknown as {
-        default: QueueWithRedisClient
-      }
+    const triggerQueue = (await import('@/queues/trigger'))
+      .default as QueueWithRedisClient
     const client = await triggerQueue.client
 
     await client.set('trigger-queue-key', 'ok')
