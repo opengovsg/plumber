@@ -34,6 +34,7 @@ interface MockWithAccessibleStepsOptions {
   flowUpdatedAt?: string
 }
 
+// Vitest 4's spy type is not nameable from this package's declaration emit.
 export function createMockWithAccessibleSteps({
   owner,
   currentUser,
@@ -48,7 +49,7 @@ export function createMockWithAccessibleSteps({
   stepVersion,
   stepNotFound = false,
   flowUpdatedAt = MOCK_FLOW_UPDATED_AT,
-}: MockWithAccessibleStepsOptions) {
+}: MockWithAccessibleStepsOptions): User['withAccessibleSteps'] {
   return vi
     .fn()
     .mockImplementation(
@@ -84,5 +85,5 @@ export function createMockWithAccessibleSteps({
           }),
         }
       },
-    )
+    ) as User['withAccessibleSteps']
 }

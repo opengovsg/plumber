@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { AppConfig } from '@/config/app.js'
-
 // Each test re-imports app.ts, which would otherwise re-run dotenv and restore
 // the .env-example placeholders on top of the stubbed values.
 vi.mock('dotenv', () => ({ config: () => ({}) }))
@@ -20,10 +18,7 @@ async function loadSesConfig(env: SesEnv) {
     vi.stubEnv(key, env[key])
   }
   vi.resetModules()
-  const { default: appConfig } =
-    (await import('@/config/app.js')) as unknown as {
-      default: AppConfig
-    }
+  const { default: appConfig } = await import('@/config/app')
   return appConfig.ses
 }
 
