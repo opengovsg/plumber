@@ -610,9 +610,8 @@ describe('updateStep mutation', () => {
     beforeEach(async () => {
       // esModuleInterop double-wraps .default on a value-level dynamic import of a
       // nodenext CJS module; typeof import(...) models it correctly, so cast through it.
-      const { default: FlowConnections } = (await import(
-        '@/models/flow-connections.js'
-      )) as unknown as typeof import('@/models/flow-connections.js')
+      const { default: FlowConnections } =
+        (await import('@/models/flow-connections.js')) as unknown as typeof import('@/models/flow-connections.js')
       patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
@@ -711,9 +710,8 @@ describe('updateStep mutation', () => {
     })
 
     it('should not call FlowConnections methods when step role is not owner', async () => {
-      const { default: FlowConnections } = (await import(
-        '@/models/flow-connections.js'
-      )) as unknown as typeof import('@/models/flow-connections.js')
+      const { default: FlowConnections } =
+        (await import('@/models/flow-connections.js')) as unknown as typeof import('@/models/flow-connections.js')
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
@@ -755,9 +753,8 @@ describe('updateStep mutation', () => {
     })
 
     it('should not call FlowConnections methods when app does not have connection fields', async () => {
-      const { default: FlowConnections } = (await import(
-        '@/models/flow-connections.js'
-      )) as unknown as typeof import('@/models/flow-connections.js')
+      const { default: FlowConnections } =
+        (await import('@/models/flow-connections.js')) as unknown as typeof import('@/models/flow-connections.js')
       const patchSpy = vi.spyOn(FlowConnections, 'patchFlowConnectionMetadata')
       const addSpy = vi.spyOn(FlowConnections, 'addFlowConnection')
 
@@ -786,9 +783,8 @@ describe('updateStep mutation', () => {
 
     it('should call add to flow_connections and add table collaborator for tiles app with tableId parameter', async () => {
       const mockTableId = randomUUID()
-      const { default: FlowConnections } = (await import(
-        '@/models/flow-connections.js'
-      )) as unknown as typeof import('@/models/flow-connections.js')
+      const { default: FlowConnections } =
+        (await import('@/models/flow-connections.js')) as unknown as typeof import('@/models/flow-connections.js')
       // mock the check that the user has access to the tile
       vi.spyOn(TableCollaborator, 'hasAccess').mockResolvedValue(undefined)
       const addCollaboratorSpy = vi
