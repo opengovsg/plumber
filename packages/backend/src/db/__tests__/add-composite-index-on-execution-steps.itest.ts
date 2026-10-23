@@ -1,8 +1,8 @@
 import knex, { Knex } from 'knex'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-// knexfile lives outside rootDir, which nodenext will not compile into src.
-import { config } from '../../config/database.js'
+// knexfile.ts sits outside rootDir. The knex settings now live in knex-config.
+import { config } from '../../config/knex-config.js'
 import {
   down,
   up,
