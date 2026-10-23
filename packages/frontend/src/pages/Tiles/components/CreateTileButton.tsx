@@ -8,7 +8,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Text,
   useDisclosure,
 } from '@chakra-ui/react'
 import {
@@ -16,13 +15,13 @@ import {
   FormLabel,
   Input,
   ModalCloseButton,
-  Tile,
 } from '@opengovsg/design-system-react'
 import { ITableMetadata } from '@plumber/types'
 import { useCallback, useState } from 'react'
 import { BiSpreadsheet, BiTable } from 'react-icons/bi'
 import { useNavigate } from 'react-router-dom'
 
+import OptionTile from '@/components/OptionTile'
 import * as URLS from '@/config/urls'
 import { DatabaseType } from '@/graphql/__generated__/graphql'
 import { CREATE_TABLE } from '@/graphql/mutations/tiles/create-table'
@@ -61,27 +60,21 @@ const CreateTileForm = ({
         </FormControl>
         <FormControl>
           <FormLabel isRequired>How do you want to start?</FormLabel>
-          <Flex gap={4} direction={{ base: 'column', sm: 'row' }}>
-            <Tile
+          <Flex gap={4} direction={{ base: 'column', md: 'row' }}>
+            <OptionTile
               icon={BiSpreadsheet}
-              flex={1}
+              title="Import CSV"
+              description="Start with data that you have already collected"
               onClick={() => setCreateMode('import')}
               isSelected={createMode === 'import'}
-            >
-              <Text textStyle="h5">Import CSV</Text>
-              <Text textStyle="body-2">
-                Start with data that you have already collected
-              </Text>
-            </Tile>
-            <Tile
+            />
+            <OptionTile
               icon={BiTable}
-              flex={1}
+              title="Start from scratch"
+              description="Start with a blank database"
               onClick={() => setCreateMode('new')}
               isSelected={createMode === 'new'}
-            >
-              <Text textStyle="h5">Start from scratch</Text>
-              <Text textStyle="body-2">Start with a blank database</Text>
-            </Tile>
+            />
           </Flex>
         </FormControl>
       </ModalBody>
@@ -156,7 +149,7 @@ const CreateTileModal = ({ onClose }: { onClose: () => void }): JSX.Element => {
       closeOnOverlayClick={false}
       closeOnEsc={false}
     >
-      <ModalOverlay />
+      <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent>
         {showImportModal ? (
           <TableContextProvider

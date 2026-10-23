@@ -1,3 +1,5 @@
+import { TOP_NAV_HEIGHT } from '@/config/layout'
+
 export const NEW_ROW_ID = 'new-row'
 export const TEMP_ROW_ID_PREFIX = 'temp-'
 
@@ -33,7 +35,7 @@ export const ROW_HEIGHT = {
 export const NEW_COLUMN_ID = 'add-new'
 export const SELECT_COLUMN_ID = 'select'
 
-export const TABLE_BANNER_HEIGHT = '64px'
+export const TABLE_BANNER_HEIGHT = TOP_NAV_HEIGHT
 
 export const ROW_COLOR = {
   EVEN: 'var(--chakra-colors-secondary-50)',

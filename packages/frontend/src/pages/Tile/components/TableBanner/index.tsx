@@ -22,7 +22,7 @@ function TableBanner() {
       <Flex alignItems="center" gap={8}>
         {role ? <BreadCrumb /> : <Text textStyle="subhead-1">{tableName}</Text>}
       </Flex>
-      <Flex gap={2}>
+      <Flex gap={2} mr={{ base: 0, md: '-15px' }}>
         <RefreshButton />
         <EditMode />
         <ImportExportToolbar />

@@ -43,7 +43,7 @@ export default function CreateFlowModal(props: CreateFlowModalProps) {
       motionPreset="none"
       closeOnEsc={false}
       isCentered
-      size="3xl"
+      size="4xl"
     >
       <ModalOverlay bg="base.canvas.overlay" />
       <ModalContent>
