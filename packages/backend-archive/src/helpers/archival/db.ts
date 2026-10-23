@@ -3,7 +3,8 @@ import pg from 'pg'
 
 import { archivalConfig } from './config'
 
-// Parse BIGINT columns as JS numbers, not strings (mirrors @/config/database).
+// Parse BIGINT columns as JS numbers, not strings.
+// Mirrors backend's config/knex-config.ts.
 pg.types.setTypeParser(20, 'text', parseInt)
 
 export const archivalDb: Knex = knex({
