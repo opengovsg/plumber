@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 import dts from 'vite-plugin-dts'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
 
-import { failOnLeakedNodeBuiltins } from './vite-config-utils'
+import { failOnLeakedNodeBuiltins } from './vite-config-utils.ts'
 
 export default defineConfig({
   plugins: [
@@ -15,6 +15,7 @@ export default defineConfig({
     dts({
       insertTypesEntry: true,
     }),
+    failOnLeakedNodeBuiltins(),
   ],
   build: {
     // disable inline images since we don't allow them in csp
@@ -33,7 +34,7 @@ export default defineConfig({
       },
       formats: ['es'],
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         '@apollo/client',
         '@chakra-ui/react',
@@ -47,7 +48,6 @@ export default defineConfig({
         'react-router-dom',
         'zod',
       ],
-      onwarn: failOnLeakedNodeBuiltins,
     },
   },
 })
