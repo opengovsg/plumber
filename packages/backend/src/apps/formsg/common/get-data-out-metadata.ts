@@ -12,6 +12,7 @@ import { parseS3Id } from '@/helpers/s3'
 import Step from '@/models/step'
 
 import { ADDRESS_LABELS } from './constants'
+import { CHILDREN_KEY_PREFIX } from './myinfo-child-subfields'
 import { ParsedMrfWorkflowStep } from './types'
 
 // Added to a field's order to place its variables below the question.
@@ -21,10 +22,40 @@ const FIELD_OFFSET = {
   attachment: 0.2,
 } as const
 
-function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
+/**
+ * Children subfields share one question number, so FIELD_OFFSET.answer is far
+ * too wide to separate a subfield's answer from its question.
+ *
+ * IMPORTANT: the step must stay wider than the offset. Otherwise a subfield's
+ * answer sorts below the next subfield's question.
+ */
+const CHILD_ORDER_STEP = 0.002
+const CHILD_ANSWER_OFFSET = 0.001
+
+// Children subfields are keyed `childrenbirthrecords_<fieldId>_<attr>_<index>`.
+function getChildrenFieldKey(
+  fieldId: string,
+  fieldData: IJSONObject,
+): string | null {
+  if (fieldData.fieldType !== 'children') {
+    return null
+  }
+
+  const [prefix, formFieldId] = fieldId.split('_')
+  if (prefix !== CHILDREN_KEY_PREFIX || !formFieldId) {
+    return null
+  }
+
+  return formFieldId
+}
+
+function buildQuestionMetadatum(
+  fieldData: IJSONObject,
+  displayOrder: IJSONValue,
+): IDataOutMetadatum {
   const question: IDataOutMetadatum = {
     type: 'text',
-    label: fieldData.order ? `Question ${fieldData.order}` : null,
+    label: displayOrder ? `Question ${displayOrder}` : null,
     order: fieldData.order ? (fieldData.order as number) : null,
     isCollapsedByDefault: true,
   }
@@ -40,11 +71,13 @@ function buildQuestionMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
   return question
 }
 
-function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
+function buildAnswerMetadatum(
+  fieldData: IJSONObject,
+  displayOrder: IJSONValue,
+  answerOffset: number = FIELD_OFFSET.answer,
+): IDataOutMetadatum {
   const answer: IDataOutMetadatum = {
-    order: fieldData.order
-      ? (fieldData.order as number) + FIELD_OFFSET.answer
-      : null,
+    order: fieldData.order ? (fieldData.order as number) + answerOffset : null,
   }
 
   switch (fieldData.fieldType) {
@@ -52,7 +85,7 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       answer['type'] = 'file'
       // We encode the question as the label because we hide the actual question
       // as a variable.
-      answer['label'] = `${fieldData.order}. ${fieldData.question}` as string
+      answer['label'] = `${displayOrder}. ${fieldData.question}` as string
       // For attachments, answer is one of:
       // 1. An S3 ID (if we stored the attachment into S3).
       // 2. An empty string (if attachment field is optional).
@@ -68,8 +101,8 @@ function buildAnswerMetadatum(fieldData: IJSONObject): IDataOutMetadatum {
       break
     default:
       answer['type'] = 'text'
-      answer['label'] = fieldData.order
-        ? `${fieldData.order}. ${fieldData.question}`
+      answer['label'] = displayOrder
+        ? `${displayOrder}. ${fieldData.question}`
         : null
   }
 
@@ -387,6 +420,8 @@ async function getDataOutMetadata(
    */
   let questionOrder = 0
   let headerOrderBetweenQuestions = 0
+  // Every subfield of a children field reuses that field's question number.
+  const childrenGroups = new Map<string, { order: number; count: number }>()
   for (const [fieldId, fieldValue] of fields) {
     const fieldData = fieldValue as IJSONObject
     // ignore image fields, dont even increment question order
@@ -395,15 +430,39 @@ async function getDataOutMetadata(
       continue
     }
 
+    let displayOrder: IJSONValue = null
+    let answerOffset: number = FIELD_OFFSET.answer
+
     if (fieldData.fieldType === 'section') {
       headerOrderBetweenQuestions++
       fieldData.order = questionOrder + headerOrderBetweenQuestions / 1000
+      displayOrder = fieldData.order
     } else {
       // reset header order between questions
       headerOrderBetweenQuestions = 0
-      // increment question order for each field
-      questionOrder++
-      fieldData.order = questionOrder
+
+      const childrenFieldKey = getChildrenFieldKey(fieldId, fieldData)
+      if (childrenFieldKey === null) {
+        // increment question order for each field
+        questionOrder++
+        fieldData.order = questionOrder
+        displayOrder = fieldData.order
+      } else {
+        let group = childrenGroups.get(childrenFieldKey)
+        if (!group) {
+          questionOrder++
+          group = { order: questionOrder, count: 0 }
+          childrenGroups.set(childrenFieldKey, group)
+        }
+        fieldData.order = group.order + group.count * CHILD_ORDER_STEP
+        // Labelled N.1, N.2, like the subfields of an address.
+        displayOrder = `${group.order}.${group.count + 1}`
+        answerOffset = CHILD_ANSWER_OFFSET
+        group.count++
+        // Subfields take thousandths from the same space headers draw from.
+        // Claiming what this group used keeps a following header below it.
+        headerOrderBetweenQuestions = group.count * 2
+      }
 
       // if this is an MRF step, we only show the fields that are editable
       if (questionIdsToShowForMrf && !questionIdsToShowForMrf.has(fieldId)) {
@@ -413,8 +472,8 @@ async function getDataOutMetadata(
     }
 
     fieldMetadata[fieldId] = {
-      question: buildQuestionMetadatum(fieldData),
-      answer: buildAnswerMetadatum(fieldData),
+      question: buildQuestionMetadatum(fieldData, displayOrder),
+      answer: buildAnswerMetadatum(fieldData, displayOrder, answerOffset),
       fieldType: { isHidden: true },
       order: { isHidden: true },
       myInfo: { attr: { isHidden: true } },
@@ -425,7 +484,7 @@ async function getDataOutMetadata(
     if (fieldData.fieldType === 'attachment') {
       fieldMetadata[fieldId].filename = {
         type: 'text',
-        label: `${fieldData.order}. ${fieldData.question} (Filename)`,
+        label: `${displayOrder}. ${fieldData.question} (Filename)`,
         order: (fieldData.order as number) + FIELD_OFFSET.attachment,
       }
     }
