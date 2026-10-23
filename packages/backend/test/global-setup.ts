@@ -13,6 +13,13 @@ process.env.AWS_REGION = 'ap-southeast-1'
 process.env.AWS_ACCESS_KEY_ID = 'awsaccesskeyid'
 process.env.AWS_SECRET_ACCESS_KEY = 'awssecretaccesskey'
 
+// Postgres opens its port before the restarted server accepts connections.
+const postgresReady = {
+  type: 'LOG' as const,
+  message: 'database system is ready to accept connections',
+  times: 2,
+}
+
 const setupContainers = createGlobalSetup([
   postgres({
     name: 'postgres',
@@ -22,6 +29,7 @@ const setupContainers = createGlobalSetup([
       POSTGRES_USER: process.env.POSTGRES_USERNAME as string,
       POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD as string,
     },
+    wait: postgresReady,
   }),
   postgres({
     name: 'tiles-postgres',
@@ -31,6 +39,7 @@ const setupContainers = createGlobalSetup([
       POSTGRES_USER: process.env.TILES_POSTGRES_USERNAME as string,
       POSTGRES_PASSWORD: process.env.TILES_POSTGRES_PASSWORD as string,
     },
+    wait: postgresReady,
   }),
   redis({ databases: REDIS_LOGICAL_DATABASES }),
   {
