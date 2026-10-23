@@ -1,5 +1,5 @@
-import { BiBookOpen, BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 import { TileProps } from '@opengovsg/design-system-react'
+import { BiBookOpen, BiPlus, BiSolidMagicWand } from 'react-icons/bi'
 
 import NewBadge from '@/components/FlowStepConfigurationModal/ChooseAppAndEvent/NewBadge'
 import OptionTile from '@/components/OptionTile'

@@ -1,10 +1,10 @@
+import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
+import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 import type { IApp, IJSONObject } from '@plumber/types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiInfoCircle, BiX } from 'react-icons/bi'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
-import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 
 import AddAppConnection from '@/components/AddAppConnection'
 import RedirectToLogin from '@/components/RedirectToLogin'
