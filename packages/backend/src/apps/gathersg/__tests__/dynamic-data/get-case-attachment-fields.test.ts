@@ -42,6 +42,7 @@ describe('getCaseAttachmentFields', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
