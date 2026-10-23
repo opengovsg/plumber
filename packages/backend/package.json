@@ -140,7 +140,7 @@
     "ioredis-mock": "8.13.1",
     "nodemon": "^3.1.14",
     "testcontainers": "^11.14.0",
-    "ts-node": "^10.9.1",
+    "ts-node": "catalog:",
     "tsconfig-paths": "^4.2.0",
     "type-fest": "4.10.3"
   },

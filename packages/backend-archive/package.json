@@ -35,7 +35,7 @@
     "@types/pg": "^8.6.1",
     "nodemon": "^3.1.14",
     "rimraf": "^4.4.1",
-    "ts-node": "^10.9.1",
+    "ts-node": "catalog:",
     "tsconfig-paths": "^4.2.0",
     "typescript": "catalog:",
     "vitest": "^4.1.11"
