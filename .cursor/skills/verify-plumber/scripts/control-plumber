@@ -1,0 +1,494 @@
+#!/usr/bin/env bash
+# Disposable Plumber web app for verification. Does not call 1Password.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+  # shellcheck disable=SC1091
+  . "$NVM_DIR/nvm.sh"
+  nvm use --silent >/dev/null
+fi
+
+STATE_DIR="${PLUMBER_VERIFY_DIR:-/tmp/plumber-verify}"
+STATE_FILE="$STATE_DIR/state.json"
+ARTIFACTS="$STATE_DIR/artifacts"
+PG_NAME="plumber-verify-pg"
+REDIS_NAME="plumber-verify-redis"
+PLAYWRIGHT_VERSION="1.56.1"
+
+docker_cmd() {
+  if docker info >/dev/null 2>&1; then
+    docker "$@"
+  elif sudo docker info >/dev/null 2>&1; then
+    sudo docker "$@"
+  else
+    echo "Docker is not running." >&2
+    exit 1
+  fi
+}
+
+need_state() {
+  if [[ ! -f "$STATE_FILE" ]]; then
+    echo "No verification instance. Run control-plumber launch first." >&2
+    exit 1
+  fi
+}
+
+read_state() {
+  need_state
+  FRONTEND_URL="$(jq -r .frontendUrl "$STATE_FILE")"
+  BACKEND_URL="$(jq -r .backendUrl "$STATE_FILE")"
+  EMAIL="$(jq -r .email "$STATE_FILE")"
+  CDP_PORT="$(jq -r .cdpPort "$STATE_FILE")"
+  BACKEND_PID="$(jq -r .backendPid "$STATE_FILE")"
+  FRONTEND_PID="$(jq -r .frontendPid "$STATE_FILE")"
+  CHROME_PID="$(jq -r .chromePid "$STATE_FILE")"
+  PG_PORT="$(jq -r .pgPort "$STATE_FILE")"
+  REDIS_PORT="$(jq -r .redisPort "$STATE_FILE")"
+}
+
+pid_alive() {
+  local pid="$1"
+  [[ -n "$pid" && "$pid" != "null" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+kill_group() {
+  local pid="$1"
+  if pid_alive "$pid"; then
+    kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true
+  fi
+}
+
+allocate_ports() {
+  local chosen=()
+  local port skip chosen_port
+  for port in $(seq 36000 36200); do
+    skip=0
+    for chosen_port in "${chosen[@]+"${chosen[@]}"}"; do
+      if [[ "$chosen_port" == "$port" ]]; then
+        skip=1
+      fi
+    done
+    if [[ "$skip" -eq 1 ]]; then
+      continue
+    fi
+    if ! (echo >/dev/tcp/127.0.0.1/"$port") >/dev/null 2>&1; then
+      chosen+=("$port")
+      echo "$port"
+      if [[ "${#chosen[@]}" -eq 5 ]]; then
+        return
+      fi
+    fi
+  done
+  echo "No five free ports between 36000 and 36200." >&2
+  return 1
+}
+
+wait_for_http() {
+  local url="$1"
+  local attempt
+  for attempt in $(seq 1 90); do
+    if curl -sf "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Timed out waiting for $url" >&2
+  return 1
+}
+
+wait_for_backend() {
+  local url="$1"
+  local attempt body
+  for attempt in $(seq 1 90); do
+    body="$(curl -sf "$url/graphql" \
+      -H 'content-type: application/json' \
+      -d '{"query":"{ healthcheck { version } }"}' || true)"
+    if [[ "$body" == *'"version"'* ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Timed out waiting for $url/graphql" >&2
+  return 1
+}
+
+ensure_playwright() {
+  local tools="$STATE_DIR/tools"
+  if [[ ! -d "$tools/node_modules/playwright-core" ]]; then
+    mkdir -p "$tools"
+    (
+      cd "$tools"
+      printf '%s\n' '{"name":"plumber-verify-tools","private":true}' > package.json
+      pnpm add -E "playwright-core@${PLAYWRIGHT_VERSION}"
+    )
+  fi
+  export NODE_PATH="$tools/node_modules${NODE_PATH:+:$NODE_PATH}"
+}
+
+start_docker_data() {
+  local pg_port="$1"
+  local redis_port="$2"
+  docker_cmd pull postgres:14-alpine >/dev/null
+  docker_cmd pull redis:6.2.0-alpine >/dev/null
+  docker_cmd rm -f "$PG_NAME" "$REDIS_NAME" >/dev/null 2>&1 || true
+  docker_cmd run -d --name "$PG_NAME" \
+    -e POSTGRES_USER=postgres \
+    -e POSTGRES_PASSWORD=postgres \
+    -e POSTGRES_DB=plumber_dev \
+    -p "127.0.0.1:${pg_port}:5432" \
+    postgres:14-alpine >/dev/null
+  docker_cmd run -d --name "$REDIS_NAME" \
+    -p "127.0.0.1:${redis_port}:6379" \
+    redis:6.2.0-alpine >/dev/null
+  local attempt
+  for attempt in $(seq 1 60); do
+    if docker_cmd exec "$PG_NAME" pg_isready -U postgres >/dev/null 2>&1; then
+      ENGINE=docker
+      echo docker >"$STATE_DIR/engine"
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+start_local_data() {
+  local pg_port="$1"
+  local redis_port="$2"
+  local pg_bin attempt
+  pg_bin="$(ls -d /usr/lib/postgresql/*/bin | sort | tail -n 1)"
+  mkdir -p "$STATE_DIR/pgdata" "$STATE_DIR/pgsock"
+  if [[ ! -f "$STATE_DIR/pgdata/PG_VERSION" ]]; then
+    "$pg_bin/initdb" -D "$STATE_DIR/pgdata" -U postgres --auth=trust --no-instructions
+  fi
+  "$pg_bin/pg_ctl" -D "$STATE_DIR/pgdata" \
+    -o "-p ${pg_port} -k ${STATE_DIR}/pgsock -c listen_addresses=127.0.0.1" \
+    -l "$STATE_DIR/postgres.log" start
+  for attempt in $(seq 1 60); do
+    if "$pg_bin/pg_isready" -h 127.0.0.1 -p "$pg_port" >/dev/null 2>&1; then
+      break
+    fi
+    if [[ "$attempt" -eq 60 ]]; then
+      echo "Local Postgres did not become ready." >&2
+      return 1
+    fi
+    sleep 1
+  done
+  "$pg_bin/psql" -h 127.0.0.1 -p "$pg_port" -U postgres -c "ALTER USER postgres WITH PASSWORD 'postgres';" >/dev/null
+  if ! "$pg_bin/psql" -h 127.0.0.1 -p "$pg_port" -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='plumber_dev'" | grep -q 1; then
+    "$pg_bin/createdb" -h 127.0.0.1 -p "$pg_port" -U postgres plumber_dev
+  fi
+  redis-server --port "$redis_port" --bind 127.0.0.1 --daemonize yes \
+    --dir "$STATE_DIR" --pidfile "$STATE_DIR/redis.pid" --dbfilename dump.rdb
+  ENGINE=local
+  echo local >"$STATE_DIR/engine"
+  echo "$pg_port" >"$STATE_DIR/pg.port"
+  echo "$redis_port" >"$STATE_DIR/redis.port"
+}
+
+cmd_launch() {
+  if [[ -f "$STATE_FILE" ]]; then
+    echo "A verification instance is already recorded. Run control-plumber cleanup first." >&2
+    exit 1
+  fi
+  mkdir -p "$STATE_DIR" "$ARTIFACTS"
+  local pg_port redis_port backend_port frontend_port cdp_port run_id
+  mapfile -t ports < <(allocate_ports)
+  if [[ "${#ports[@]}" -ne 5 ]]; then
+    echo "Could not allocate five ports." >&2
+    exit 1
+  fi
+  pg_port="${ports[0]}"
+  redis_port="${ports[1]}"
+  backend_port="${ports[2]}"
+  frontend_port="${ports[3]}"
+  cdp_port="${ports[4]}"
+  run_id="$(date +%s)"
+  local email="verify-${run_id}@example.gov.sg"
+
+  if ! start_docker_data "$pg_port" "$redis_port"; then
+    echo "Docker images did not start. Using local Postgres and Redis." >&2
+    start_local_data "$pg_port" "$redis_port"
+  fi
+
+  (
+    cd "$ROOT/packages/backend"
+    PORT="$backend_port" \
+      WEB_APP_URL="http://127.0.0.1:${frontend_port}" \
+      BASE_URL="http://127.0.0.1:${backend_port}" \
+      POSTGRES_HOST=127.0.0.1 \
+      POSTGRES_PORT="$pg_port" \
+      POSTGRES_USERNAME=postgres \
+      POSTGRES_PASSWORD=postgres \
+      POSTGRES_DATABASE=plumber_dev \
+      POSTGRES_ENABLE_SSL=false \
+      REDIS_HOST=127.0.0.1 \
+      REDIS_PORT="$redis_port" \
+      APP_ENV=development \
+      pnpm exec knex migrate:latest
+  )
+
+  # A new email checks LaunchDarkly before the user row exists. That call waits
+  # until the SDK connects. Sample keys never connect, so seed the row first.
+  local seed_sql="INSERT INTO users (email) VALUES ('${email}') ON CONFLICT (email) DO NOTHING;"
+  if [[ "$ENGINE" == "docker" ]]; then
+    docker_cmd exec -e PGPASSWORD=postgres "$PG_NAME" \
+      psql -U postgres -d plumber_dev -c "$seed_sql" >/dev/null
+  else
+    PGPASSWORD=postgres psql -h 127.0.0.1 -p "$pg_port" -U postgres -d plumber_dev \
+      -c "$seed_sql" >/dev/null
+  fi
+
+  (
+    cd "$ROOT/packages/backend"
+    PORT="$backend_port" \
+      WEB_APP_URL="http://127.0.0.1:${frontend_port}" \
+      BASE_URL="http://127.0.0.1:${backend_port}" \
+      POSTGRES_HOST=127.0.0.1 \
+      POSTGRES_PORT="$pg_port" \
+      POSTGRES_USERNAME=postgres \
+      POSTGRES_PASSWORD=postgres \
+      POSTGRES_DATABASE=plumber_dev \
+      POSTGRES_ENABLE_SSL=false \
+      REDIS_HOST=127.0.0.1 \
+      REDIS_PORT="$redis_port" \
+      APP_ENV=development \
+      setsid pnpm exec ts-node --swc src/server.ts >"$STATE_DIR/backend.log" 2>&1 &
+    echo $! >"$STATE_DIR/backend.pid"
+  )
+  local backend_pid
+  backend_pid="$(cat "$STATE_DIR/backend.pid")"
+
+  if ! wait_for_backend "http://127.0.0.1:${backend_port}"; then
+    echo "Backend did not become healthy. See $STATE_DIR/backend.log" >&2
+    cmd_cleanup
+    exit 1
+  fi
+
+  (
+    cd "$ROOT/packages/frontend"
+    DEV_BACKEND_PORT="$backend_port" \
+      DEV_FRONTEND_PORT="$frontend_port" \
+      BROWSER=none \
+      setsid pnpm exec vite --host 127.0.0.1 --port "$frontend_port" --strictPort \
+      >"$STATE_DIR/frontend.log" 2>&1 &
+    echo $! >"$STATE_DIR/frontend.pid"
+  )
+  local frontend_pid
+  frontend_pid="$(cat "$STATE_DIR/frontend.pid")"
+
+  if ! wait_for_http "http://127.0.0.1:${frontend_port}/"; then
+    echo "Frontend did not serve. See $STATE_DIR/frontend.log" >&2
+    cmd_cleanup
+    exit 1
+  fi
+
+  local chrome="${CHROME_BIN:-}"
+  if [[ -z "$chrome" ]]; then
+    # The PATH google-chrome on some machines is a wrapper that forces another profile.
+    if [[ -x /usr/bin/google-chrome-stable ]]; then
+      chrome=/usr/bin/google-chrome-stable
+    elif [[ -x /opt/google/chrome/chrome ]]; then
+      chrome=/opt/google/chrome/chrome
+    elif command -v google-chrome >/dev/null 2>&1; then
+      chrome="$(command -v google-chrome)"
+    elif command -v chromium >/dev/null 2>&1; then
+      chrome="$(command -v chromium)"
+    elif command -v chromium-browser >/dev/null 2>&1; then
+      chrome="$(command -v chromium-browser)"
+    else
+      echo "Chrome or Chromium is not installed." >&2
+      cmd_cleanup
+      exit 1
+    fi
+  fi
+
+  setsid "$chrome" \
+    --headless=new \
+    --no-sandbox \
+    --disable-gpu \
+    --disable-dev-shm-usage \
+    --no-first-run \
+    --remote-debugging-port="$cdp_port" \
+    --user-data-dir="$STATE_DIR/chrome" \
+    --window-size=1280,900 \
+    about:blank >"$STATE_DIR/chrome.log" 2>&1 &
+  echo $! >"$STATE_DIR/chrome.pid"
+  local chrome_pid
+  chrome_pid="$(cat "$STATE_DIR/chrome.pid")"
+
+  if ! wait_for_http "http://127.0.0.1:${cdp_port}/json/version"; then
+    echo "Chrome DevTools did not open. See $STATE_DIR/chrome.log" >&2
+    cmd_cleanup
+    exit 1
+  fi
+
+  jq -n \
+    --arg runId "$run_id" \
+    --arg frontendUrl "http://127.0.0.1:${frontend_port}" \
+    --arg backendUrl "http://127.0.0.1:${backend_port}" \
+    --arg email "$email" \
+    --arg artifacts "$ARTIFACTS" \
+    --argjson cdpPort "$cdp_port" \
+    --argjson pgPort "$pg_port" \
+    --argjson redisPort "$redis_port" \
+    --argjson backendPid "$backend_pid" \
+    --argjson frontendPid "$frontend_pid" \
+    --arg engine "$ENGINE" \
+    --argjson chromePid "$chrome_pid" \
+    '{runId:$runId,engine:$engine,frontendUrl:$frontendUrl,backendUrl:$backendUrl,email:$email,artifacts:$artifacts,cdpPort:$cdpPort,pgPort:$pgPort,redisPort:$redisPort,backendPid:$backendPid,frontendPid:$frontendPid,chromePid:$chromePid}' \
+    >"$STATE_FILE"
+
+  echo "Plumber verification is ready at http://127.0.0.1:${frontend_port}"
+  echo "Email $email"
+  echo "Artifacts $ARTIFACTS"
+}
+
+cmd_doctor() {
+  read_state
+  local ok=1
+  if ! pid_alive "$BACKEND_PID"; then
+    echo "Backend pid $BACKEND_PID is not running."
+    ok=0
+  fi
+  if ! pid_alive "$FRONTEND_PID"; then
+    echo "Frontend pid $FRONTEND_PID is not running."
+    ok=0
+  fi
+  if ! pid_alive "$CHROME_PID"; then
+    echo "Chrome pid $CHROME_PID is not running."
+    ok=0
+  fi
+  local engine
+  engine="$(jq -r .engine "$STATE_FILE")"
+  if [[ "$engine" == "docker" ]]; then
+    if ! docker_cmd inspect "$PG_NAME" >/dev/null 2>&1; then
+      echo "Postgres container $PG_NAME is missing."
+      ok=0
+    fi
+  else
+    if ! pg_isready -h 127.0.0.1 -p "$PG_PORT" >/dev/null 2>&1; then
+      echo "Local Postgres on $PG_PORT is not ready."
+      ok=0
+    fi
+    if [[ "$(redis-cli -p "$REDIS_PORT" ping 2>/dev/null || true)" != "PONG" ]]; then
+      echo "Local Redis on $REDIS_PORT did not answer."
+      ok=0
+    fi
+  fi
+  local body
+  body="$(curl -sf "$FRONTEND_URL/" || true)"
+  if [[ "$body" != *"<div id=\"root\"></div>"* && "$body" != *'id="root"'* ]]; then
+    echo "Frontend at $FRONTEND_URL did not return the Plumber shell."
+    ok=0
+  fi
+  local health
+  health="$(curl -sf "$BACKEND_URL/graphql" \
+    -H 'content-type: application/json' \
+    -d '{"query":"{ healthcheck { version } }"}' || true)"
+  if [[ "$health" != *'"version"'* ]]; then
+    echo "Backend healthcheck failed at $BACKEND_URL/graphql"
+    ok=0
+  fi
+  if [[ "$ok" -ne 1 ]]; then
+    exit 1
+  fi
+  echo "healthy $FRONTEND_URL"
+  echo "engine $(jq -r .engine "$STATE_FILE")"
+  echo "email $EMAIL"
+  echo "postgres 127.0.0.1:$PG_PORT"
+  echo "redis 127.0.0.1:$REDIS_PORT"
+  echo "artifacts $ARTIFACTS"
+  echo "version $(jq -r .data.healthcheck.version <<<"$health")"
+}
+
+cmd_browser() {
+  read_state
+  ensure_playwright
+  PLUMBER_VERIFY_STATE="$STATE_FILE" node "$ROOT/.cursor/skills/verify-plumber/scripts/browser.mjs" "$@"
+}
+
+cmd_email() {
+  read_state
+  echo "$EMAIL"
+}
+
+cmd_otp() {
+  read_state
+  local attempt line otp
+  for attempt in $(seq 1 30); do
+    line="$(sed 's/\x1b\[[0-9;]*m//g' "$STATE_DIR/backend.log" | grep "OTP for ${EMAIL}:" | tail -n 1 || true)"
+    if [[ -n "$line" ]]; then
+      otp="${line##*: }"
+      otp="${otp// /}"
+      echo "$otp"
+      return
+    fi
+    sleep 0.5
+  done
+  echo "No OTP for $EMAIL in $STATE_DIR/backend.log" >&2
+  exit 1
+}
+
+cmd_url() {
+  read_state
+  echo "$FRONTEND_URL"
+}
+
+cmd_cleanup() {
+  if [[ -f "$STATE_FILE" ]]; then
+    read_state || true
+    kill_group "${BACKEND_PID:-}"
+    kill_group "${FRONTEND_PID:-}"
+    kill_group "${CHROME_PID:-}"
+  fi
+  if [[ -f "$STATE_DIR/backend.pid" ]]; then
+    kill_group "$(cat "$STATE_DIR/backend.pid")" || true
+  fi
+  if [[ -f "$STATE_DIR/frontend.pid" ]]; then
+    kill_group "$(cat "$STATE_DIR/frontend.pid")" || true
+  fi
+  if [[ -f "$STATE_DIR/chrome.pid" ]]; then
+    kill_group "$(cat "$STATE_DIR/chrome.pid")" || true
+  fi
+  if [[ -f "$STATE_DIR/engine" && "$(cat "$STATE_DIR/engine")" == "local" ]]; then
+    local pg_bin pg_port redis_port
+    pg_bin="$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort | tail -n 1 || true)"
+    if [[ -n "$pg_bin" && -d "$STATE_DIR/pgdata" ]]; then
+      "$pg_bin/pg_ctl" -D "$STATE_DIR/pgdata" stop >/dev/null 2>&1 || true
+    fi
+    if [[ -f "$STATE_DIR/redis.port" ]]; then
+      redis_port="$(cat "$STATE_DIR/redis.port")"
+      redis-cli -p "$redis_port" shutdown >/dev/null 2>&1 || true
+    fi
+  fi
+  if command -v docker >/dev/null 2>&1 || sudo -n docker info >/dev/null 2>&1; then
+    docker_cmd rm -f "$PG_NAME" "$REDIS_NAME" >/dev/null 2>&1 || true
+  fi
+  rm -f "$STATE_FILE" "$STATE_DIR/backend.pid" "$STATE_DIR/frontend.pid" "$STATE_DIR/chrome.pid"
+  echo "Stopped the verification instance. Artifacts remain in $ARTIFACTS"
+}
+
+usage() {
+  echo "Usage: control-plumber launch|doctor|email|otp|url|browser|cleanup" >&2
+  exit 1
+}
+
+main() {
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    launch) cmd_launch ;;
+    doctor) cmd_doctor ;;
+    email) cmd_email ;;
+    otp) cmd_otp ;;
+    url) cmd_url ;;
+    browser) cmd_browser "$@" ;;
+    cleanup) cmd_cleanup ;;
+    *) usage ;;
+  esac
+}
+
+main "$@"
