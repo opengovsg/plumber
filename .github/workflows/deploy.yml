@@ -198,19 +198,16 @@ jobs:
       - name: Merge ECS task definition templates
         id: merge-ecs-templates
         run: |
-          cp ecs/task-definition.json ecs-task-definition.json
           cp ecs/appspec.json appspec.json
           env_json=$(jq -c '.environment' ecs/env.json)
           secrets_json=$(jq -c '.secrets' ecs/env.json)
+          # Merge by container name so dd-agent never receives app env vars or secrets.
           jq \
             --argjson environment "${env_json}" \
             --argjson secrets "${secrets_json}" \
-            '.containerDefinitions[0].environment += $environment |
-             .containerDefinitions[0].secrets += $secrets |
-             .containerDefinitions[1].environment += $environment |
-             .containerDefinitions[1].secrets += $secrets' \
-            ecs-task-definition.json > ecs-task-definition.json.tmp
-          mv ecs-task-definition.json.tmp ecs-task-definition.json
+            '(.containerDefinitions[] | select(.name == "server" or .name == "worker" or .name == "reconciler")) |=
+             (.environment += $environment | .secrets += $secrets)' \
+            ecs/task-definition.json > ecs-task-definition.json
 
       - name: Replace variables in task definition file
         run: |
@@ -231,11 +228,19 @@ jobs:
           image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: (Worker) Fill in the new image ID in the Amazon ECS task definition
-        id: full-task-def
+        id: worker-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
         with:
           task-definition: ${{ steps.server-task-def.outputs.task-definition }}
           container-name: worker
+          image: ${{ steps.ecr-image-uri.outputs.image }}
+
+      - name: (Reconciler) Fill in the new image ID in the Amazon ECS task definition
+        id: full-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@138c24f321fdbdf7edee4a685519d253cae2cdea # v1.9.0
+        with:
+          task-definition: ${{ steps.worker-task-def.outputs.task-definition }}
+          container-name: reconciler
           image: ${{ steps.ecr-image-uri.outputs.image }}
 
       - name: Deploy Amazon ECS task definition to server
