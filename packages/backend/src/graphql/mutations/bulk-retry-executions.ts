@@ -1,4 +1,4 @@
-import { chunk } from 'lodash'
+import { chunk, omit } from 'lodash'
 
 import appConfig from '@/config/app'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
@@ -167,7 +167,8 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
           appKey: appKey,
           actionKey: key,
           jobName: job.name,
-          jobData: job.data,
+          // A retry runs on demand, so the old scheduled time would read as overdue.
+          jobData: omit(job.data, 'scheduledAt'),
           jobOptions: DEFAULT_JOB_OPTIONS,
         })
         await Execution.query().findById(executionId).patch({ status: null })

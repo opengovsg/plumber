@@ -17,6 +17,7 @@ import { processAction } from '@/services/action'
 
 import { advanceAfterStep } from './advance-after-step'
 import { getJobQueueTimingTags } from './job-queue-timing'
+import { recordOverdueExecution } from './record-overdue-execution'
 import { requeueOnFileLockContention } from './requeue-on-file-lock-contention'
 import { registerWorkerEventHandlers } from './worker-event-handlers'
 
@@ -88,6 +89,7 @@ export function makeActionWorker(
 ): WorkerPro<IActionJobData> {
   const { queueName, workerOptions, isQueueDelayable } =
     convertParamsToBullMqOptions(params)
+  const groupLimited = Boolean(params.queueConfig.groupLimits)
   const worker: WorkerPro<IActionJobData> = new WorkerPro<IActionJobData>(
     queueName,
     tracer.wrap(
@@ -116,6 +118,8 @@ export function makeActionWorker(
           ...getJobQueueTimingTags(job),
           workerVersion: appConfig.version,
         })
+
+        await recordOverdueExecution({ job, queueName, groupLimited })
 
         const processResult = await processAction({ ...jobData, jobId }).catch(
           async (err) => {

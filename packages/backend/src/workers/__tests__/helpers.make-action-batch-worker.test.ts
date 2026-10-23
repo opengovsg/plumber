@@ -18,8 +18,25 @@ const mocks = vi.hoisted(() => {
 
     // Misc mocks
     processOn: vi.fn(),
+
+    // Processor mocks
+    prepareActionExecution: vi.fn(),
+    handleFailedJob: vi.fn(),
+    recordOverdueExecution: vi.fn(),
   }
 })
+
+vi.mock('@/services/action', () => ({
+  prepareActionExecution: mocks.prepareActionExecution,
+}))
+
+vi.mock('@/workers/helpers/handle-failed-job', () => ({
+  handleFailedJob: mocks.handleFailedJob,
+}))
+
+vi.mock('@/workers/helpers/record-overdue-execution', () => ({
+  recordOverdueExecution: mocks.recordOverdueExecution,
+}))
 
 vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
@@ -47,7 +64,8 @@ vi.mock('@/config/redis', async (importActual) => ({
 
 vi.mock('@/helpers/tracer', () => ({
   default: {
-    wrap: vi.fn(() => ({})),
+    wrap: vi.fn((_name, processor) => processor),
+    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
   },
 }))
 
@@ -133,5 +151,43 @@ describe('makeActionBatchWorker', () => {
 
     // registerWorkerEventHandlers attaches listeners via worker.on
     expect(mocks.workerOn).toHaveBeenCalled()
+  })
+
+  describe('processor', () => {
+    afterEach(() => {
+      vi.clearAllMocks()
+    })
+
+    it('records overdue executions for every member before preparing the batch', async () => {
+      const members = ['1', '2'].map((id) => ({
+        id,
+        data: {
+          flowId: 'flow-1',
+          executionId: `execution-${id}`,
+          stepId: 'step-1',
+        },
+        opts: {},
+        setAsFailed: vi.fn(),
+      }))
+      mocks.prepareActionExecution.mockRejectedValue(new Error('no step'))
+      makeActionBatchWorker(workerParams)
+      const calls = mocks.workerConstructor.mock.calls as unknown as [
+        string,
+        (job: unknown) => Promise<void>,
+      ][]
+
+      await calls.at(-1)[1]({ getBatch: () => members })
+
+      for (const member of members) {
+        expect(mocks.recordOverdueExecution).toHaveBeenCalledWith({
+          job: member,
+          queueName: '{app-actions-m365-excel-batch}',
+          groupLimited: true,
+        })
+      }
+      expect(mocks.recordOverdueExecution).toHaveBeenCalledBefore(
+        mocks.prepareActionExecution,
+      )
+    })
   })
 })
