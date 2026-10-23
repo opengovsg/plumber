@@ -1,5 +1,4 @@
 import { IStep, IStepApprovalBranch, IStepApprovalConfig } from '@plumber/types'
-
 import get from 'lodash/get'
 
 import { getItem, setItem } from '@/helpers/storage'

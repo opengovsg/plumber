@@ -169,19 +169,20 @@ export default function Step(props: StepProps) {
             )}
           </Flex>
 
-          {approvalBranch && step.id && (
-            // The rest of the card is inert while the step is pending, but the
-            // user still needs the tabs to look at the reject path.
-            <Box pointerEvents="auto">
-              <ApproveReject
-                stepId={step.id}
-                control={{
-                  branch: approvalBranch,
-                  onChange: (branch) => setApprovalBranch(step.id, branch),
-                }}
-              />
-            </Box>
-          )}
+          {approvalBranch &&
+            step.id && (
+              // The rest of the card is inert while the step is pending, but the
+              // user still needs the tabs to look at the reject path.
+              <Box pointerEvents="auto">
+                <ApproveReject
+                  stepId={step.id}
+                  control={{
+                    branch: approvalBranch,
+                    onChange: (branch) => setApprovalBranch(step.id, branch),
+                  }}
+                />
+              </Box>
+            )}
 
           {showParams && (
             <StepParameterRows

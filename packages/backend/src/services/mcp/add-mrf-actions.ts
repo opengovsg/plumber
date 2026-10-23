@@ -8,7 +8,10 @@ import { assertStepCreatable, createStepInTransaction } from './create-step'
 
 /** The pipe exists but no action was added, so the caller still needs its id. */
 export class MrfPipeStepsError extends UserFacingError {
-  constructor(message: string, public readonly flowId: string) {
+  constructor(
+    message: string,
+    public readonly flowId: string,
+  ) {
     super(message)
     this.name = 'MrfPipeStepsError'
   }
@@ -95,7 +98,7 @@ export async function addMrfActions({
                 ? { branch: 'reject' as const, stepId: anchor.id }
                 : undefined
             const blockSize = isIfThenStep(action)
-              ? action.ifThenChildCount ?? 0
+              ? (action.ifThenChildCount ?? 0)
               : 0
 
             const groupKey = `${stage}:${branch}`

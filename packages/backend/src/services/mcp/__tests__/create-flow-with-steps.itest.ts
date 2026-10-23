@@ -31,9 +31,10 @@ vi.mock('../create-step', async (importOriginal) => {
 vi.mock(
   '@/apps/formsg/triggers/new-submission/create-mrf-steps',
   async (importOriginal) => {
-    const actual = await importOriginal<
-      typeof import('@/apps/formsg/triggers/new-submission/create-mrf-steps')
-    >()
+    const actual =
+      await importOriginal<
+        typeof import('@/apps/formsg/triggers/new-submission/create-mrf-steps')
+      >()
     mocks.createMrfSteps.mockImplementation(actual.createMrfSteps)
     return { ...actual, createMrfSteps: mocks.createMrfSteps }
   },

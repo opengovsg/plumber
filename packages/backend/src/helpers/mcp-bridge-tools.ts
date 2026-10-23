@@ -296,14 +296,12 @@ export function createMcpBridgeTools(
             user,
             name,
             steps: flattenNestedSteps(
-              steps.map(
-                (s): McpNestedStepInput => ({
-                  ...toNestedStepInput(s),
-                  ...(s.mrf_stage && { mrfStage: s.mrf_stage }),
-                  ...(s.mrf_branch && { mrfBranch: s.mrf_branch }),
-                  ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
-                }),
-              ),
+              steps.map((s): McpNestedStepInput => ({
+                ...toNestedStepInput(s),
+                ...(s.mrf_stage && { mrfStage: s.mrf_stage }),
+                ...(s.mrf_branch && { mrfBranch: s.mrf_branch }),
+                ...(s.steps && { steps: s.steps.map(toNestedStepInput) }),
+              })),
             ),
             traceId,
             ...(form_url && { formUrl: form_url }),

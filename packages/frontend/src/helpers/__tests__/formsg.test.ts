@@ -96,7 +96,7 @@ describe('isMrfApprovalStep', () => {
       appKey: 'formsg',
       key: 'mrfSubmission',
       parameters,
-    } as IStep)
+    }) as IStep
 
   it('is true for an MRF step with an approval field', () => {
     expect(
@@ -123,9 +123,9 @@ describe('isMrfApprovalStep', () => {
 })
 
 describe('filterStepsByApprovalBranch', () => {
-  const plain = (id: string) => ({ id, config: {} } as IStep)
+  const plain = (id: string) => ({ id, config: {} }) as IStep
   const rejectOf = (id: string, stepId: string) =>
-    ({ id, config: { approval: { branch: 'reject', stepId } } } as IStep)
+    ({ id, config: { approval: { branch: 'reject', stepId } } }) as IStep
 
   const steps = [
     plain('trigger'),

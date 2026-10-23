@@ -1,5 +1,4 @@
 import type { IFlowStepsAction, IFlowStepsTrigger } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import { filterStepsByApprovalBranch } from '@/helpers/formsg'
