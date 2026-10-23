@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { withLock } from '../distributed-lock'
-import logger from '../logger'
-import { makeRedisAppDataKey, redisAppDataClient } from '../redis-app-data'
+import { withLock } from '../distributed-lock.js'
+import logger from '../logger.js'
+import { makeRedisAppDataKey, redisAppDataClient } from '../redis-app-data.js'
 
 //
 // Exercises `withLock` against the REAL app-data Redis (testcontainers). Covers
