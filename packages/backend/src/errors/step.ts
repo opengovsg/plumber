@@ -78,7 +78,10 @@ export function getStepErrorKind(error: unknown): StepErrorKind {
  *
  * IMPORTANT: non-enumerable, so log redaction never walks into the StepError's HTTP cause.
  */
-export function attachStepErrorAsCause(target: Error, error: unknown): void {
+export function attachHiddenCauseIfStepError(
+  target: Error,
+  error: unknown,
+): void {
   if (!(error instanceof StepError) || Object.hasOwn(target, 'cause')) {
     return
   }

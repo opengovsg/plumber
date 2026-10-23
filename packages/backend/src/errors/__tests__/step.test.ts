@@ -10,7 +10,10 @@ import { redactSecrets } from '@/helpers/redaction/redact-log-secrets'
 import HttpError from '../http'
 import PartialStepError from '../partial-error'
 import RetriableError from '../retriable-error'
-import StepError, { attachStepErrorAsCause, getStepErrorKind } from '../step'
+import StepError, {
+  attachHiddenCauseIfStepError,
+  getStepErrorKind,
+} from '../step'
 import { UserFacingError } from '../user-facing-error'
 
 const HTTP_ERROR = new HttpError({
@@ -123,7 +126,7 @@ describe('getStepErrorKind', () => {
   })
 })
 
-describe('attachStepErrorAsCause', () => {
+describe('attachHiddenCauseIfStepError', () => {
   const makeStepError = () =>
     new StepError({
       name: 'n',
@@ -136,7 +139,7 @@ describe('attachStepErrorAsCause', () => {
     const stepError = makeStepError()
     const target = new UnrecoverableError('step failed')
 
-    attachStepErrorAsCause(target, stepError)
+    attachHiddenCauseIfStepError(target, stepError)
 
     expect(target.cause).toBe(stepError)
     expect(Object.keys(target)).not.toContain('cause')
@@ -146,7 +149,7 @@ describe('attachStepErrorAsCause', () => {
   it('ignores a non-StepError', () => {
     const target = new UnrecoverableError('step failed')
 
-    attachStepErrorAsCause(target, HTTP_ERROR)
+    attachHiddenCauseIfStepError(target, HTTP_ERROR)
 
     expect(Object.hasOwn(target, 'cause')).toBe(false)
   })
@@ -155,7 +158,7 @@ describe('attachStepErrorAsCause', () => {
     const existingCause = new Error('existing')
     const target = new Error('step failed', { cause: existingCause })
 
-    attachStepErrorAsCause(target, makeStepError())
+    attachHiddenCauseIfStepError(target, makeStepError())
 
     expect(target.cause).toBe(existingCause)
   })
@@ -181,7 +184,7 @@ describe('attachStepErrorAsCause', () => {
       ],
     })
     const target = new UnrecoverableError('step failed')
-    attachStepErrorAsCause(target, makeStepError())
+    attachHiddenCauseIfStepError(target, makeStepError())
 
     logger.error('job failed', { err: target })
     await new Promise((resolve) => setImmediate(resolve))
