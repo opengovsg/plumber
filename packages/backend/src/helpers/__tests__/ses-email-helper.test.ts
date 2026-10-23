@@ -58,7 +58,7 @@ vi.mock('@/helpers/logger', () => ({
 // getSesClient memoises its client, so every test needs a fresh module.
 async function importFresh() {
   vi.resetModules()
-  return import('../ses-email-helper.js')
+  return import('../ses-email-helper')
 }
 
 describe('formatFromAddress', () => {
