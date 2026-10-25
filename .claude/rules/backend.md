@@ -102,7 +102,6 @@ Special cases:
 ### `UserFacingError`
 
 - It has no `kind`. Its class already means a failure the user sees outside a step.
-- In GraphQL, an error without a code reaches the frontend as `INTERNAL_SERVER_ERROR` (`formatError` in `helpers/graphql-instance.ts`). This includes `UserFacingError` and a direct `new BaseError(...)`.
 
 ### Library error types
 
