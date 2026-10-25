@@ -11,18 +11,21 @@ describe('createReconcilerChecks', () => {
     vi.unstubAllEnvs()
   })
 
-  it('includes the schedule check on its configured interval', () => {
-    vi.stubEnv('RECONCILER_SCHEDULE_CHECK_INTERVAL_SECONDS', '120')
+  it('includes the schedule check on its configured cron pattern', () => {
+    vi.stubEnv('RECONCILER_SCHEDULE_CHECK_CRON', '5 * * * *')
 
     const checks = createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } })
 
     expect(checks).toEqual([
-      expect.objectContaining({ name: 'schedules', intervalSeconds: 120 }),
+      expect.objectContaining({
+        name: 'schedules',
+        cronPattern: '5 * * * *',
+      }),
     ])
   })
 
-  it('fails fast on an invalid interval', () => {
-    vi.stubEnv('RECONCILER_SCHEDULE_CHECK_INTERVAL_SECONDS', '0')
+  it('fails fast on an invalid cron pattern', () => {
+    vi.stubEnv('RECONCILER_SCHEDULE_CHECK_CRON', 'abc')
 
     expect(() =>
       createReconcilerChecks({ jobsRedis: { zrange: vi.fn() } }),

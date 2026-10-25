@@ -21,7 +21,7 @@ export function createScheduleCheck({
 }: CreateScheduleCheckInput): ReconcilerCheck {
   return {
     name: 'schedules',
-    intervalSeconds: config.checkIntervalSeconds,
+    cronPattern: config.checkCronPattern,
     run: async () => {
       // Postgres first: publishing writes the schedule entry before its transaction commits.
       const publishedPipes = await fetchPublishedScheduledPipes()
