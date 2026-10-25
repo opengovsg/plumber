@@ -34,7 +34,7 @@ function makeCheck(
 ): ReconcilerCheck & { run: ReturnType<typeof vi.fn> } {
   return {
     name: 'test-check',
-    intervalSeconds: 60,
+    cronPattern: '* * * * *',
     run: vi.fn(async () => undefined),
     ...overrides,
   } as ReconcilerCheck & { run: ReturnType<typeof vi.fn> }
@@ -45,6 +45,8 @@ describe('runReconcilerLoop', () => {
 
   beforeEach(() => {
     vi.useFakeTimers()
+    // 10:00:00 in Singapore.
+    vi.setSystemTime(new Date('2026-10-26T02:00:00Z'))
     exitSpy = vi.spyOn(process, 'exit')
   })
 
@@ -54,17 +56,45 @@ describe('runReconcilerLoop', () => {
     exitSpy.mockRestore()
   })
 
-  it('runs every check at boot', async () => {
-    const check = makeCheck()
+  it('waits for the first matching time instead of running at boot', async () => {
+    const check = makeCheck({ cronPattern: '18,42 * * * *' })
     const loop = runReconcilerLoop({
       checks: [check],
       checkTimeoutSeconds: 30,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(17 * 60_000 + 59_000)
+    expect(check.run).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(1_000)
+    expect(check.run).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(24 * 60_000)
+    expect(check.run).toHaveBeenCalledTimes(2)
+
+    await loop.stop()
+  })
+
+  it('reads hours in the pattern as Singapore time', async () => {
+    const check = makeCheck({ cronPattern: '0 11 * * *' })
+    const loop = runReconcilerLoop({
+      checks: [check],
+      checkTimeoutSeconds: 30,
+    })
+
+    await vi.advanceTimersByTimeAsync(60 * 60_000)
     expect(check.run).toHaveBeenCalledTimes(1)
 
     await loop.stop()
+  })
+
+  it('throws at start on an invalid cron pattern', () => {
+    expect(() =>
+      runReconcilerLoop({
+        checks: [makeCheck({ cronPattern: 'not a cron pattern' })],
+        checkTimeoutSeconds: 30,
+      }),
+    ).toThrow()
   })
 
   it('keeps running other checks and its own next run when a check throws', async () => {
@@ -80,7 +110,7 @@ describe('runReconcilerLoop', () => {
       checkTimeoutSeconds: 30,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(60_000)
     await vi.advanceTimersByTimeAsync(60_000)
 
     expect(failing.run).toHaveBeenCalledTimes(2)
@@ -103,7 +133,7 @@ describe('runReconcilerLoop', () => {
       checkTimeoutSeconds: 10,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(60_000)
     expect(check.run).toHaveBeenCalledTimes(1)
 
     await vi.advanceTimersByTimeAsync(10_000)
@@ -124,7 +154,7 @@ describe('runReconcilerLoop', () => {
     let inFlight = 0
     let maxInFlight = 0
     const check = makeCheck({
-      intervalSeconds: 1,
+      cronPattern: '* * * * * *',
       run: vi.fn(async () => {
         inFlight += 1
         maxInFlight = Math.max(maxInFlight, inFlight)
@@ -137,7 +167,7 @@ describe('runReconcilerLoop', () => {
       checkTimeoutSeconds: 30,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(1_000)
     await vi.advanceTimersByTimeAsync(5_000)
     expect(check.run).toHaveBeenCalledTimes(1)
 
@@ -149,19 +179,18 @@ describe('runReconcilerLoop', () => {
     await loop.stop()
   })
 
-  it('runs each check on its own interval', async () => {
-    const fast = makeCheck({ name: 'fast', intervalSeconds: 10 })
-    const slow = makeCheck({ name: 'slow', intervalSeconds: 30 })
+  it('runs each check on its own cron pattern', async () => {
+    const fast = makeCheck({ name: 'fast', cronPattern: '*/10 * * * * *' })
+    const slow = makeCheck({ name: 'slow', cronPattern: '*/30 * * * * *' })
     const loop = runReconcilerLoop({
       checks: [fast, slow],
       checkTimeoutSeconds: 5,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
     await vi.advanceTimersByTimeAsync(30_000)
 
-    expect(fast.run).toHaveBeenCalledTimes(4)
-    expect(slow.run).toHaveBeenCalledTimes(2)
+    expect(fast.run).toHaveBeenCalledTimes(3)
+    expect(slow.run).toHaveBeenCalledTimes(1)
 
     await loop.stop()
   })
@@ -181,7 +210,7 @@ describe('runReconcilerLoop', () => {
       checkTimeoutSeconds: 5,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(60_000)
     expect(mocks.gauge).not.toHaveBeenCalled()
 
     shouldFail = false
@@ -205,7 +234,7 @@ describe('runReconcilerLoop', () => {
       checkTimeoutSeconds: 30,
     })
 
-    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(60_000)
     const stopped = loop.stop()
     let stopResolved = false
     void stopped.then(() => {
