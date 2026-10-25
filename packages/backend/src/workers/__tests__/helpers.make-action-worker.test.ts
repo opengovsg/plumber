@@ -1,3 +1,5 @@
+import type { IActionJobData } from '@plumber/types'
+import { type JobPro, WorkerPro } from '@taskforcesh/bullmq-pro'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { makeActionWorker } from '../helpers/make-action-worker'
@@ -13,6 +15,10 @@ const mocks = vi.hoisted(() => {
     })),
     workerOn,
 
+    // Errors the traced processor rejected with, i.e. spans dd-trace marks as errored
+    spanErrors: [] as unknown[],
+    advanceAfterStep: vi.fn(),
+
     // Misc mocks
     processOn: vi.fn(),
   }
@@ -23,8 +29,31 @@ vi.mock('@/queues/action', () => ({
   makeActionJobId: vi.fn(),
 }))
 
-vi.mock('@taskforcesh/bullmq-pro', () => ({
-  WorkerPro: mocks.workerConstructor,
+vi.mock('@taskforcesh/bullmq-pro', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@taskforcesh/bullmq-pro')>()
+  return {
+    ...actual,
+    WorkerPro: Object.assign(mocks.workerConstructor, {
+      RateLimitError: actual.WorkerPro.RateLimitError,
+    }),
+  }
+})
+
+vi.mock('@/models/step', () => ({
+  default: {
+    query: () => ({
+      findById: vi.fn(async () => ({ key: 'test-action', appKey: 'test-app' })),
+    }),
+  },
+}))
+
+vi.mock('@/services/action', () => ({
+  processAction: vi.fn(async () => ({})),
+}))
+
+vi.mock('../helpers/advance-after-step', () => ({
+  advanceAfterStep: mocks.advanceAfterStep,
 }))
 
 vi.mock('process', async () => {
@@ -44,7 +73,19 @@ vi.mock('@/config/redis', async (importActual) => ({
 
 vi.mock('@/helpers/tracer', () => ({
   default: {
-    wrap: vi.fn(() => ({})),
+    // Mirrors dd-trace: a rejected wrapped function marks the span as errored.
+    wrap: vi.fn(
+      (_name: string, fn: (...args: unknown[]) => Promise<unknown>) =>
+        async (...args: unknown[]) => {
+          try {
+            return await fn(...args)
+          } catch (err) {
+            mocks.spanErrors.push(err)
+            throw err
+          }
+        },
+    ),
+    scope: () => ({ active: () => ({ addTags: vi.fn() }) }),
   },
 }))
 
@@ -188,4 +229,47 @@ describe('makeActionWorker', () => {
       )
     },
   )
+
+  describe('processor', () => {
+    const job = {
+      id: 'job-id',
+      data: {
+        flowId: 'flow-id',
+        executionId: 'execution-id',
+        stepId: 'step-id',
+      },
+    } as unknown as JobPro<IActionJobData>
+
+    function makeProcessor() {
+      mocks.spanErrors.length = 0
+      makeActionWorker({
+        appKey: 'test-app',
+        queueName: '{test-app-queue}',
+        queueConfig: { isQueueDelayable: true, workerType: 'action' },
+      })
+      const [, processor] = mocks.workerConstructor.mock.calls.at(
+        -1,
+      ) as unknown as [string, (job: JobPro<IActionJobData>) => Promise<void>]
+      return processor
+    }
+
+    it('re-throws RateLimitError to BullMQ without marking the span as errored', async () => {
+      const processor = makeProcessor()
+      mocks.advanceAfterStep.mockRejectedValueOnce(WorkerPro.RateLimitError())
+
+      await expect(processor(job)).rejects.toThrow(
+        WorkerPro.RateLimitError().message,
+      )
+      expect(mocks.spanErrors).toEqual([])
+    })
+
+    it('marks the span as errored for other failures', async () => {
+      const processor = makeProcessor()
+      const error = new Error('step failed')
+      mocks.advanceAfterStep.mockRejectedValueOnce(error)
+
+      await expect(processor(job)).rejects.toBe(error)
+      expect(mocks.spanErrors).toEqual([error])
+    })
+  })
 })
