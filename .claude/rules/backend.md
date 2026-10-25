@@ -56,7 +56,7 @@ GraphQL schema and resolvers also live here ([packages/backend/src/graphql/](../
 
 ## Errors
 
-Paths are relative to `packages/backend/src/`. Line numbers were checked on 2026-10-20.
+Paths are relative to `packages/backend/src/`.
 
 ### Error families
 
@@ -102,7 +102,7 @@ Special cases:
 ### `UserFacingError`
 
 - It has no `kind`. Its class already means a failure the user sees outside a step.
-- In GraphQL, an error without a code reaches the frontend as `INTERNAL_SERVER_ERROR` (`formatError`, `helpers/graphql-instance.ts:95`). This includes `UserFacingError` and a direct `new BaseError(...)`.
+- In GraphQL, an error without a code reaches the frontend as `INTERNAL_SERVER_ERROR` (`formatError` in `helpers/graphql-instance.ts`). This includes `UserFacingError` and a direct `new BaseError(...)`.
 
 ### Library error types
 
