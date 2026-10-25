@@ -1,9 +1,14 @@
+import cronParser from 'cron-parser'
+
 import logger from '@/helpers/logger'
 import tracer from '@/helpers/tracer'
 
+// Matches the container TZ, so hours in a pattern mean Singapore time on every host.
+const CRON_TIME_ZONE = 'Asia/Singapore'
+
 export interface ReconcilerCheck {
   name: string
-  intervalSeconds: number
+  cronPattern: string
   run: () => Promise<void>
 }
 
@@ -17,6 +22,16 @@ export interface ReconcilerLoop {
    * Resolves once every running check settles or times out.
    */
   stop: () => Promise<void>
+}
+
+function getNextRunMillis(cronPattern: string, afterMillis: number): number {
+  return cronParser
+    .parseExpression(cronPattern, {
+      currentDate: new Date(afterMillis),
+      tz: CRON_TIME_ZONE,
+    })
+    .next()
+    .getTime()
 }
 
 export function runReconcilerLoop({
@@ -56,25 +71,30 @@ export function runReconcilerLoop({
   }
 
   // Chained timeouts instead of setInterval, so runs of one check never overlap.
-  function scheduleCheck(check: ReconcilerCheck, delaySeconds: number): void {
+  function scheduleCheck(check: ReconcilerCheck, afterMillis: number): void {
     if (stopped) {
       return
     }
 
+    // Starting after the last run time stops a timer that fires early from running one time twice.
+    const runAtMillis = getNextRunMillis(
+      check.cronPattern,
+      Math.max(Date.now(), afterMillis),
+    )
     const timer = setTimeout(() => {
       pendingTimers.delete(timer)
       const run = runCheckOnce(check)
       runningChecks.add(run)
       void run.then(() => {
         runningChecks.delete(run)
-        scheduleCheck(check, check.intervalSeconds)
+        scheduleCheck(check, runAtMillis)
       })
-    }, delaySeconds * 1000)
+    }, runAtMillis - Date.now())
     pendingTimers.add(timer)
   }
 
   for (const check of checks) {
-    scheduleCheck(check, 0)
+    scheduleCheck(check, Date.now())
   }
 
   return {
