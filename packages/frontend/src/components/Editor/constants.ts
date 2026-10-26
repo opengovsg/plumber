@@ -1,8 +1,3 @@
-import { TOP_NAV_HEIGHT, TOP_NAV_HEIGHT_NUM } from '@/config/layout'
-
-export const EDITOR_MARGIN_TOP_NUM = TOP_NAV_HEIGHT_NUM
-export const EDITOR_MARGIN_TOP = TOP_NAV_HEIGHT
-export const EDITOR_MAX_HEIGHT = `calc(100vh - ${EDITOR_MARGIN_TOP})`
 export const EDITOR_RIGHT_DRAWER_WIDTH = '60%'
 
 export const MIN_FLOW_STEP_WIDTH = '320px'

@@ -20,7 +20,6 @@ import { useCaptureAiBuilderFlow } from '@/hooks/useCaptureAiBuilderFlow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
-import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
@@ -251,7 +250,7 @@ export default function EditorLayout() {
         <Container
           maxW="full"
           p={0}
-          mt={EDITOR_MARGIN_TOP}
+          mt={TOP_NAV_HEIGHT}
           flex={1}
           overflowY="auto"
         >

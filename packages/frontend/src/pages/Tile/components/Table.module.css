@@ -1,4 +1,4 @@
-/* 61px corresponds to TABLE_BANNER_HEIGHT */
+/* 61px must match TOP_NAV_HEIGHT in config/layout.ts */
 /* using .css to specify fallback url */
 .table {
   height: calc(100vh - 61px);
