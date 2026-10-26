@@ -21,7 +21,7 @@ about publish state. When genuinely ambiguous, ask rather than guess.
 ## Flow (verb): to execute a pipe on non-test data
 
 "Flow" as a verb means: an `executions` row exists with `test_run = false`. This is the building block
-for "active pipe" and "active user" below.
+for "active pipe", "active user", and "usage span" below.
 
 ## Active user
 
@@ -42,6 +42,42 @@ deleting the pipe or their account. See [gotchas.md](gotchas.md)'s activity-metr
 (Period bounds must be computed in SGT — see [gotchas.md](gotchas.md)'s timezone rule — before being
 compared against `executions.created_at`, which is `timestamptz`. For Grafana bounds, see
 [grafana.md](grafana.md)'s macro-casting rules.)
+
+## Usage span
+
+How long a user uses one pipe. One span per pipe (`executions.flow_id`).
+
+The span is the calendar time from that pipe's first flowed execution to its latest flowed
+execution. Quiet days between those two runs count. See "Flow (verb)" above.
+
+"How long does a pipe run?" has two meanings. Use this span when the question is how long the user
+uses the pipe. Use `executions.updated_at - executions.created_at` when the question is how long one
+execution takes. Limit that second reading to terminal executions (`status` of `'success'` or
+`'failure'`). `updated_at` also moves when a retry sets `status` back to null.
+
+```sql
+SELECT
+  e.flow_id,
+  COUNT(*) AS execution_count,
+  MIN(e.created_at) AS first_flowed_at,
+  MAX(e.created_at) AS last_flowed_at,
+  EXTRACT(EPOCH FROM (MAX(e.created_at) - MIN(e.created_at))) / 86400.0 AS usage_days
+FROM executions e
+WHERE e.test_run = false
+GROUP BY e.flow_id
+```
+
+- A pipe with one flowed execution has `usage_days = 0`. In a distribution, keep those pipes in
+  their own bucket. A single run from 60 days ago is still a single run.
+- A pipe whose executions are all `test_run = true` does not appear.
+- Do not filter `executions.deleted_at`. Deleting a pipe soft-deletes its executions. See
+  [gotchas.md](gotchas.md)'s activity-metrics exception. A deleted pipe's span is a finished use.
+- A pipe that is still flowing has an open span. The span ends at the latest flowed execution so
+  far. A quiet cutoff, such as "latest run older than 30 days", is a reporting choice. State that
+  cutoff in the query.
+- The span is per pipe. An ownership change does not split it.
+- A bucket labeled "30 days to under 90 days" means `usage_days >= 30` and `usage_days < 90`.
+  Count only pipes with more than one flowed execution.
 
 ## Quarter
 
