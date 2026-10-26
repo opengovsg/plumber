@@ -1,4 +1,5 @@
-import { IAction } from '@/../../types'
+import type { IRawAction } from '@plumber/types'
+
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
@@ -6,10 +7,10 @@ import {
   addFlowTableConnection,
 } from '@/helpers/add-flow-connection'
 import logger from '@/helpers/logger'
-import App from '@/models/app'
 import Step from '@/models/step'
 import { loadAccessibleStep } from '@/services/access'
 import { getConnection } from '@/services/connection'
+import { lookupStepDefinition } from '@/services/step-definition'
 import { prepareStepParameters } from '@/services/step-parameters'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -21,11 +22,8 @@ const updateStep: MutationResolvers['updateStep'] = async (
 ) => {
   const { input } = params
 
-  const triggerOrAction = await App.findTriggerOrActionByKey(
-    input.appKey,
-    input.key,
-  )
-  if (!triggerOrAction) {
+  const lookup = lookupStepDefinition(input.appKey, input.key)
+  if (lookup.kind === 'unknown') {
     logger.error({
       event: 'updateStep: no such trigger or action',
       appKey: input.appKey,
@@ -77,11 +75,11 @@ const updateStep: MutationResolvers['updateStep'] = async (
     // NOTE: we use this function to first validate the step parameters
     // to avoid misuse and saving invalid step parameters
     if (step.type === 'action') {
-      const action = triggerOrAction as IAction
-      if (action?.hiddenFromUser) {
+      if (lookup.kind === 'hidden') {
         throw new BadUserInputError('Action can only be updated by system')
       }
-      action?.validateStepParameters?.(input.parameters)
+      const action = lookup.definition as IRawAction
+      action.validateStepParameters?.(input.parameters)
     }
 
     const shouldInvalidate =
