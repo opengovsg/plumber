@@ -137,7 +137,7 @@ steps:
       ])
     })
 
-    it('keeps an If block on the rejected path', () => {
+    it("puts an If block's steps on the If block's path", () => {
       const text = `
 <!-- WORKFLOW_METADATA
 name: Rejected If
@@ -161,11 +161,9 @@ steps:
       - appKey: postman
         key: sendTransactionalEmail
         stepName: Email urgent rejection
-        approvalBranch: reject
       - appKey: postman-sms
         key: sendSms
         stepName: SMS urgent rejection
-        approvalBranch: reject
 -->
 `
       const result = parseWorkflowMetadata(text)
@@ -179,6 +177,51 @@ steps:
         'reject',
         'reject',
       ])
+    })
+
+    it('checks the for-each and delay rules on each path separately', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Loop per outcome
+steps:
+  - appKey: formsg
+    key: newSubmission
+  - appKey: formsg
+    key: mrfSubmission
+    isApproval: true
+  - appKey: toolbox
+    key: forEach
+  - appKey: delay
+    key: delayFor
+    approvalBranch: reject
+  - appKey: toolbox
+    key: forEach
+    approvalBranch: reject
+-->
+`
+      expect(parseWorkflowMetadata(text).actions).toHaveLength(4)
+    })
+
+    it('puts the approved steps above a stage on its rejected path', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Loop before approval
+steps:
+  - appKey: formsg
+    key: newSubmission
+  - appKey: toolbox
+    key: forEach
+  - appKey: formsg
+    key: mrfSubmission
+    isApproval: true
+  - appKey: delay
+    key: delayFor
+    approvalBranch: reject
+-->
+`
+      expect(() => parseWorkflowMetadata(text)).toThrow(
+        'Delay action cannot be added after a for-each step',
+      )
     })
 
     it('rejects a rejected-path action with no approval stage above it', () => {

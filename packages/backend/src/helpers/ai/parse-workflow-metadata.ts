@@ -85,7 +85,13 @@ export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
       flattened.push(step)
       continue
     }
-    const children = flattenWorkflowMetadataSteps(nestedSteps)
+    // create_pipe puts every step in an If block on the block's own path.
+    const children = flattenWorkflowMetadataSteps(nestedSteps).map(
+      ({ approvalBranch: _, ...child }) =>
+        step.approvalBranch !== undefined
+          ? { ...child, approvalBranch: step.approvalBranch }
+          : child,
+    )
     flattened.push(
       children.length > 0
         ? { ...step, ifThenChildCount: children.length }
