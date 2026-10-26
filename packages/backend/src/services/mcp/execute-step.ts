@@ -1,16 +1,11 @@
 import type { IDataOutMetadata, IJSONObject } from '@plumber/types'
-import { raw } from 'objection'
+import { NotFoundError } from 'objection'
 
 import logger from '@/helpers/logger'
-import Flow from '@/models/flow'
+import Step from '@/models/step'
 import type User from '@/models/user'
-import {
-  getMrfTestStartStep,
-  isMrfStep,
-  type MrfStageTestResult,
-  testRemainingMrfSteps,
-} from '@/services/test-mrf-steps'
-import testStep from '@/services/test-step'
+import { loadAccessibleStep } from '@/services/access'
+import { runStepTest } from '@/services/run-step-test'
 
 import { PublishedPipeError } from './published-pipe-error'
 
@@ -30,61 +25,44 @@ export async function executeStepService(
   user: User,
   stepId: string,
 ): Promise<McpExecuteStepResult> {
-  const requestedStep = await user
-    .withAccessibleSteps({ requiredRole: 'editor' })
-    .withGraphFetched('flow')
-    .findById(stepId)
-    .throwIfNotFound()
+  const requestedStep = await loadAccessibleStep({
+    user,
+    stepId,
+    role: 'editor',
+    graph: 'flow',
+  })
+
+  if (!requestedStep) {
+    throw new NotFoundError({ modelClass: Step })
+  }
 
   if (requestedStep.flow.active) {
     throw new PublishedPipeError()
   }
 
-  // Same as the editor: an MRF form is tested as a whole, from its trigger.
-  const step = isMrfStep(requestedStep)
-    ? await getMrfTestStartStep(requestedStep)
-    : requestedStep
-
-  // AI Builder testing happens inline in chat, with no real user action to
-  // wait on — always prefer mock data (e.g. FormSG's newSubmission trigger)
-  // instead of waiting on a real event. Apps that don't recognise
-  // `preferMock` in their testRunMetadata schema just ignore it.
-  const { executionStep: startExecutionStep, executionId } = await testStep({
-    stepId: step.id,
+  // Chat has no live form event to wait on, so tests prefer mock submissions.
+  // Apps that do not recognise preferMock ignore it.
+  const {
+    step,
+    executionStep: startExecutionStep,
+    stageResults,
+  } = await runStepTest({
+    step: requestedStep,
     testRunMetadata: { preferMock: true },
-  })
-
-  await Flow.query().patchAndFetchById(step.flowId, {
-    testExecutionId: executionId,
   })
 
   let resultStep = step
   let executionStep = startExecutionStep
-  let stageFailure: MrfStageTestResult | undefined
-  if (!startExecutionStep.isFailed) {
-    const completedStep = await step.$query().patchAndFetch({
-      status: 'completed',
-      config: raw(`config - 'templateConfig'`),
-    })
-
-    // Passing the trigger completes every stage step too, as in the editor.
-    if (isMrfStep(completedStep)) {
-      const stageResults = await testRemainingMrfSteps(step.flowId, {
-        preferMock: true,
-      })
-      // Each stage has its own submission and field set. The model wires
-      // downstream variables from this output.
-      stageFailure = stageResults.find(
-        (result) => result.executionStep.isFailed,
-      )
-      const stageResult =
-        stageResults.find((result) => result.step.id === requestedStep.id) ??
-        stageFailure
-      if (stageResult && requestedStep.id !== step.id) {
-        resultStep = stageResult.step
-        executionStep = stageResult.executionStep
-      }
-    }
+  const stageFailure = stageResults.find(
+    (result) => result.executionStep.isFailed,
+  )
+  // Each stage has its own submission. Downstream variables come from this output.
+  const stageResult =
+    stageResults.find((result) => result.step.id === requestedStep.id) ??
+    stageFailure
+  if (stageResult && requestedStep.id !== step.id) {
+    resultStep = stageResult.step
+    executionStep = stageResult.executionStep
   }
 
   const command = resultStep.isAction

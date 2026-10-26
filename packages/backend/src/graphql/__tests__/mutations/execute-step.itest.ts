@@ -15,6 +15,7 @@ import { NotFoundError } from '@/errors/graphql-errors/not-found'
 import executeStep from '@/graphql/mutations/execute-step'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
+import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
 import { TestStepOptions, TestStepResult } from '@/services/test-step'
@@ -96,15 +97,10 @@ describe('executeStep mutation - access control', () => {
     it('should allow owner to execute step successfully', async () => {
       context.currentUser.withAccessibleSteps = vi
         .fn()
-        .mockImplementation(({ _type, _requiredRole }) => {
+        .mockImplementation(() => {
           return {
-            withGraphFetched: vi.fn().mockReturnValue({
-              findById: vi.fn().mockReturnValue({
-                throwIfNotFound: vi
-                  .fn()
-                  .mockReturnValue(getMockResolvedValue(owner.id)),
-              }),
-            }),
+            withGraphFetched: vi.fn().mockReturnThis(),
+            findOne: vi.fn().mockResolvedValue(getMockResolvedValue(owner.id)),
           }
         })
 
@@ -128,15 +124,10 @@ describe('executeStep mutation - access control', () => {
       context.currentUser = editor
       context.currentUser.withAccessibleSteps = vi
         .fn()
-        .mockImplementation(({ _type, _requiredRole }) => {
+        .mockImplementation(() => {
           return {
-            withGraphFetched: vi.fn().mockReturnValue({
-              findById: vi.fn().mockReturnValue({
-                throwIfNotFound: vi
-                  .fn()
-                  .mockReturnValue(getMockResolvedValue(editor.id)),
-              }),
-            }),
+            withGraphFetched: vi.fn().mockReturnThis(),
+            findOne: vi.fn().mockResolvedValue(getMockResolvedValue(editor.id)),
           }
         })
 
@@ -201,83 +192,49 @@ describe('executeStep mutation - access control', () => {
       testRunMetadata: { testKey: 'testValue' },
     }
 
-    context.currentUser.withAccessibleSteps = vi
-      .fn()
-      .mockImplementation(({ _type, _requiredRole }) => {
-        if (_type === 'step' && _requiredRole === 'editor') {
-          return {
-            withGraphFetched: vi.fn().mockReturnValue({
-              findById: vi.fn().mockReturnValue({
-                throwIfNotFound: vi.fn().mockReturnValue({
-                  id: mockStepId,
-                  key: 'sendTransactionalEmail',
-                  appKey: 'postman',
-                  status: 'completed',
-                  flow: {
-                    id: mockFlowId,
-                    userId: 'owner-user-id',
-                    testExecutionId: null,
-                    $query: vi.fn().mockReturnValue({
-                      patch: vi.fn().mockResolvedValue({}),
-                    }),
-                  },
-                  $query: vi.fn().mockReturnValue({
-                    patch: vi.fn().mockResolvedValue({}),
-                  }),
-                }),
-              }),
-            }),
-          }
-        }
-        return {
-          withGraphFetched: vi.fn().mockReturnValue({
-            findById: vi.fn().mockReturnValue({
-              throwIfNotFound: vi.fn().mockReturnValue(null),
-            }),
-          }),
-        }
-      })
+    context.currentUser.withAccessibleSteps = vi.fn().mockImplementation(() => {
+      return {
+        withGraphFetched: vi.fn().mockReturnThis(),
+        findOne: vi.fn().mockResolvedValue(null),
+      }
+    })
 
     await expect(executeStep(null, { input } as any, context)).rejects.toThrow()
   })
 
   it('should call testStep service with correct parameters', async () => {
-    context.currentUser.withAccessibleSteps = vi
-      .fn()
-      .mockImplementation(({ _type, _requiredRole }) => {
-        return {
-          withGraphFetched: vi.fn().mockReturnValue({
-            findById: vi.fn().mockReturnValue({
-              throwIfNotFound: vi.fn().mockReturnValue({
-                id: mockStepId,
-                key: 'sendTransactionalEmail',
-                appKey: 'postman',
-                status: 'completed',
-                flowId: mockFlowId,
-                flow: {
-                  id: mockFlowId,
-                  userId: 'owner-user-id',
-                  testExecutionId: null,
-                  $query: vi.fn().mockReturnValue({
-                    patch: vi.fn().mockResolvedValue({}),
-                  }),
-                },
-                $query: vi.fn().mockReturnValue({
-                  patch: vi.fn().mockResolvedValue({}),
-                  patchAndFetch: vi.fn().mockResolvedValue({
-                    id: mockStepId,
-                    key: 'sendTransactionalEmail',
-                    appKey: 'postman',
-                    status: 'completed',
-                    flowId: mockFlowId,
-                    parameters: {},
-                  }),
-                }),
-              }),
+    context.currentUser.withAccessibleSteps = vi.fn().mockImplementation(() => {
+      return {
+        withGraphFetched: vi.fn().mockReturnThis(),
+        findOne: vi.fn().mockResolvedValue({
+          id: mockStepId,
+          key: 'sendTransactionalEmail',
+          appKey: 'postman',
+          status: 'completed',
+          flowId: mockFlowId,
+          parameters: {},
+          flow: {
+            id: mockFlowId,
+            userId: 'owner-user-id',
+            testExecutionId: null,
+            $query: vi.fn().mockReturnValue({
+              patch: vi.fn().mockResolvedValue({}),
+            }),
+          },
+          $query: vi.fn().mockReturnValue({
+            patch: vi.fn().mockResolvedValue({}),
+            patchAndFetch: vi.fn().mockResolvedValue({
+              id: mockStepId,
+              key: 'sendTransactionalEmail',
+              appKey: 'postman',
+              status: 'completed',
+              flowId: mockFlowId,
+              parameters: {},
             }),
           }),
-        }
-      })
+        }),
+      }
+    })
 
     const input = {
       stepId: mockStepId,
@@ -298,19 +255,14 @@ describe('executeStep mutation - access control', () => {
       testRunMetadata: { testKey: 'testValue' },
     }
 
-    context.currentUser.withAccessibleSteps = vi
-      .fn()
-      .mockImplementation(({ _type, _requiredRole }) => {
-        return {
-          withGraphFetched: vi.fn().mockReturnValue({
-            findById: vi.fn().mockReturnValue({
-              throwIfNotFound: vi.fn(() => {
-                throw new NotFoundError('Step not found')
-              }),
-            }),
-          }),
-        }
-      })
+    context.currentUser.withAccessibleSteps = vi.fn().mockImplementation(() => {
+      return {
+        withGraphFetched: vi.fn().mockReturnThis(),
+        findOne: vi.fn(() => {
+          throw new NotFoundError('Step not found')
+        }),
+      }
+    })
 
     await expect(executeStep(null, { input }, context)).rejects.toThrow(
       NotFoundError,
@@ -391,5 +343,77 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
 
     expect(testRunSpy).toHaveBeenCalledTimes(1)
     expect(testRunSpy.mock.calls[0][1]).toEqual(testRunMetadata)
+  })
+})
+
+describe('executeStep mutation - editor testRunMetadata', () => {
+  let context: Context
+  let testStepSpy: MockInstance<
+    (options: TestStepOptions) => Promise<TestStepResult>
+  >
+
+  beforeEach(async () => {
+    vi.resetAllMocks()
+    context = await generateMockContext()
+    testStepSpy = vi.spyOn(await import('@/services/test-step'), 'default')
+  })
+
+  it("passes the editor's testRunMetadata to testStep", async () => {
+    const editor = await generateMockUser('editor')
+    const flow = await Flow.query().insertGraphAndFetch({
+      userId: context.currentUser.id,
+      name: 'editor test run',
+      steps: [
+        {
+          key: 'mock-trigger',
+          appKey: 'mock-app',
+          type: 'trigger',
+          position: 1,
+          status: 'incomplete',
+          parameters: {},
+        },
+        {
+          key: 'mock-action',
+          appKey: 'mock-app',
+          type: 'action',
+          position: 2,
+          status: 'incomplete',
+          parameters: {},
+        },
+      ],
+    })
+    await FlowCollaborator.query().insert({
+      flowId: flow.id,
+      userId: editor.id,
+      role: 'editor',
+      updatedBy: context.currentUser.id,
+    })
+    const execution = await Execution.query().insertAndFetch({
+      flowId: flow.id,
+      testRun: true,
+    })
+    const executionStepId = randomUUID()
+    testStepSpy.mockResolvedValueOnce({
+      executionStep: {
+        id: executionStepId,
+        stepId: flow.steps[1].id,
+        isFailed: false,
+      },
+      executionId: execution.id,
+    } as TestStepResult)
+
+    context.currentUser = editor
+    const testRunMetadata = { editorCase: 'metadata-reaches-test-step' }
+    const result = await executeStep(
+      null,
+      { input: { stepId: flow.steps[1].id, testRunMetadata } },
+      context,
+    )
+
+    expect(testStepSpy).toHaveBeenCalledWith({
+      stepId: flow.steps[1].id,
+      testRunMetadata,
+    })
+    expect(result.id).toBe(executionStepId)
   })
 })
