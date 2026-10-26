@@ -8,7 +8,11 @@ import FlowCollaborator from '@/models/flow-collaborators'
 import Step from '@/models/step'
 import User from '@/models/user'
 
-import { loadAccessibleFlow, loadAccessibleStep } from '../access'
+import {
+  loadAccessibleFlow,
+  loadAccessibleStep,
+  loadAccessibleSteps,
+} from '../access'
 
 type Member = 'owner' | 'editor' | 'viewer' | 'stranger'
 
@@ -205,6 +209,102 @@ describe('access loaders', () => {
       })
 
       expect(result?.flow.steps).toHaveLength(3)
+    })
+  })
+
+  describe('loadAccessibleSteps', () => {
+    function captureQueries() {
+      const queries: { sql: string; bindings: unknown[] }[] = []
+      const onQuery = (data: { sql: string; bindings: unknown[] }) => {
+        queries.push(data)
+      }
+      Step.knex().on('query', onQuery)
+      return {
+        queries,
+        stop: () => Step.knex().removeListener('query', onQuery),
+      }
+    }
+
+    it.each(CASES)(
+      '$member at $role floor: allowed=$allowed',
+      async ({ role, member, allowed }) => {
+        const result = await loadAccessibleSteps({
+          user: users[member],
+          stepIds: [steps[0].id, steps[1].id],
+          role,
+        })
+
+        if (allowed) {
+          expect(new Set(result.map((step) => step.id))).toEqual(
+            new Set([steps[0].id, steps[1].id]),
+          )
+          expect(result).toHaveLength(2)
+          for (const step of result) {
+            expect(step.flow.id).toBe(flow.id)
+            expect(step.flow.role).toBe(member)
+          }
+        } else {
+          expect(result).toEqual([])
+        }
+      },
+    )
+
+    it('returns an empty array without querying when no ids are given', async () => {
+      const capture = captureQueries()
+      const result = await loadAccessibleSteps({
+        user: users.owner,
+        stepIds: [],
+        role: 'viewer',
+      }).finally(capture.stop)
+
+      expect(result).toEqual([])
+      expect(capture.queries).toEqual([])
+    })
+
+    it('skips missing ids', async () => {
+      const result = await loadAccessibleSteps({
+        user: users.owner,
+        stepIds: [steps[2].id, randomUUID()],
+        role: 'viewer',
+      })
+
+      expect(result.map((step) => step.id)).toEqual([steps[2].id])
+    })
+
+    it('loads duplicated ids once in a single steps query', async () => {
+      const capture = captureQueries()
+      const result = await loadAccessibleSteps({
+        user: users.owner,
+        stepIds: [steps[0].id, steps[0].id, steps[1].id, steps[0].id],
+        role: 'editor',
+      }).finally(capture.stop)
+
+      expect(result).toHaveLength(2)
+      expect(new Set(result.map((step) => step.id))).toEqual(
+        new Set([steps[0].id, steps[1].id]),
+      )
+      const stepQueries = capture.queries.filter(({ sql }) =>
+        /from "steps"/.test(sql),
+      )
+      expect(stepQueries).toHaveLength(1)
+      expect(stepQueries[0].sql).toMatch(/"steps"\."id" in \(\?, \?\)/)
+      expect(
+        stepQueries[0].bindings.filter((binding) => binding === steps[0].id),
+      ).toHaveLength(1)
+    })
+
+    it('fetches the requested graph', async () => {
+      const result = await loadAccessibleSteps({
+        user: users.owner,
+        stepIds: [steps[1].id, steps[2].id],
+        role: 'viewer',
+        graph: 'flow.steps',
+      })
+
+      expect(result).toHaveLength(2)
+      for (const step of result) {
+        expect(step.flow.steps).toHaveLength(3)
+      }
     })
   })
 })
