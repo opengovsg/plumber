@@ -1,7 +1,7 @@
 import { NotFoundError } from 'objection'
 
 import Step from '@/models/step'
-import { loadAccessibleStep } from '@/services/access'
+import { loadAccessibleSteps } from '@/services/access'
 import { deleteStepsInTransaction } from '@/services/delete-steps'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -19,17 +19,12 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
   return await Step.transaction(async (trx) => {
     await trx.raw('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;')
     // Include SELECTs in transaction too just in case there's concurrent modification.
-    const loadedSteps = await Promise.all(
-      input.ids.map((stepId) =>
-        loadAccessibleStep({
-          user: context.currentUser,
-          stepId,
-          role: 'editor',
-          trx,
-        }),
-      ),
-    )
-    const steps = loadedSteps.filter((step) => step !== undefined)
+    const steps = await loadAccessibleSteps({
+      user: context.currentUser,
+      stepIds: input.ids,
+      role: 'editor',
+      trx,
+    })
     if (steps.length === 0) {
       throw new NotFoundError({
         modelClass: Step,
