@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { filterStepsByApprovalBranch } from '@/helpers/formsg'
 
-import { isApprovalPreviewStep } from '../previewItems'
+import { buildPreviewItems, isApprovalPreviewStep } from '../previewItems'
 import { toProposalSteps } from '../toProposalSteps'
 
 const trigger: IFlowStepsTrigger = {
@@ -66,6 +66,44 @@ describe('toProposalSteps', () => {
 
     expect(steps[2].config?.approval?.stepId).toBe(steps[1].id)
     expect(steps[4].config?.approval?.stepId).toBe(steps[3].id)
+  })
+
+  it('draws an If block on the rejected path only when rejected', () => {
+    const steps = toProposalSteps(trigger, [
+      action('mrfSubmission', { isApproval: true }),
+      action('approvedEmail'),
+      {
+        ...action('ifThen', { approvalBranch: 'reject', ifThenChildCount: 2 }),
+        appKey: 'toolbox',
+        parameters: { depth: 0, branchName: 'Urgent' },
+      },
+      action('urgentEmail', { approvalBranch: 'reject' }),
+      action('urgentSms', { approvalBranch: 'reject' }),
+    ])
+    const approvalId = steps[1].id as string
+    const items = (branch: 'approve' | 'reject') =>
+      buildPreviewItems(
+        filterStepsByApprovalBranch(steps, { [approvalId]: branch }).slice(1),
+      )
+
+    expect(items('approve').map((item) => item.type)).toEqual(['step', 'step'])
+    expect(items('reject')).toMatchObject([
+      { type: 'step', step: { key: 'mrfSubmission' } },
+      {
+        type: 'ifThenBlock',
+        ifThenStep: { key: 'ifThen' },
+        children: [{ key: 'urgentEmail' }, { key: 'urgentSms' }],
+      },
+    ])
+  })
+
+  it('leaves a rejected action with no approval stage above it on the main path', () => {
+    const steps = toProposalSteps(trigger, [
+      action('rejectedEmail', { approvalBranch: 'reject' }),
+    ])
+
+    expect(steps[1].config?.approval).toBeUndefined()
+    expect(filterStepsByApprovalBranch(steps, {})).toHaveLength(2)
   })
 
   it('leaves a proposal without approval stages untouched', () => {

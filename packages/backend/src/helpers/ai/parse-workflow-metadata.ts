@@ -121,14 +121,6 @@ function parseRawWorkflowData(text: string): IFlowSteps {
     parsed.steps,
   )
 
-  // IMPORTANT: The preview cannot split approved and rejected paths yet. It
-  // would show both outcomes as one sequence.
-  if (remainingSteps.some((step: any) => step?.approvalBranch !== undefined)) {
-    throw new BadUserInputError(
-      'Rejected-path actions are not supported in a proposal yet.',
-    )
-  }
-
   const hasMrfStage = remainingSteps.some(
     (step: any) => step?.appKey === 'formsg' && step?.key === 'mrfSubmission',
   )
@@ -168,6 +160,10 @@ function parseRawWorkflowData(text: string): IFlowSteps {
           ...(step.ifThenChildCount !== undefined && {
             ifThenChildCount: step.ifThenChildCount,
           }),
+        }),
+        ...(step.isApproval !== undefined && { isApproval: step.isApproval }),
+        ...(step.approvalBranch !== undefined && {
+          approvalBranch: step.approvalBranch,
         }),
       }
     }),
