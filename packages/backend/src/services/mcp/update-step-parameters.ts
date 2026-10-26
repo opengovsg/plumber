@@ -10,6 +10,7 @@ import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { loadAccessibleStep } from '@/services/access'
 import { lookupStepDefinition } from '@/services/step-definition'
 
 import { registerConnectionService } from './register-connection'
@@ -83,20 +84,21 @@ export async function updateStepParametersService({
   traceId,
 }: UpdateStepParametersInput): Promise<McpUpdateStepParametersResult> {
   const { step, rawApp } = await Step.transaction(async (trx) => {
-    const accessible = await user
-      .withAccessibleSteps({ requiredRole: 'editor', trx })
-      .findOne({
-        'steps.id': stepId,
-        'steps.flow_id': pipeId,
-      })
+    const accessible = await loadAccessibleStep({
+      user,
+      stepId,
+      flowId: pipeId,
+      role: 'editor',
+      trx,
+    })
 
     if (!accessible) {
       throw new Error('Step not found')
     }
 
     // Re-fetch with a row lock to serialise concurrent tool calls for the same
-    // step. forUpdate() cannot be used on the withAccessibleSteps query
-    // directly because it has a LEFT JOIN, which PostgreSQL prohibits locking.
+    // step. forUpdate() cannot be used on the access query directly because it
+    // has a LEFT JOIN, which PostgreSQL prohibits locking.
     const step = await Step.query(trx).forUpdate().findById(stepId)
     if (!step) {
       throw new Error('Step cannot be updated')
