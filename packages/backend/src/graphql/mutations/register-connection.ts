@@ -57,7 +57,7 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
     .throwIfNotFound()
 
   const connection = await getConnection({
-    context,
+    user: context.currentUser,
     connectionId,
     flowId,
     includeOwnConnections: flow.role === 'owner',

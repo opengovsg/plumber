@@ -33,7 +33,7 @@ const testConnection: QueryResolvers['testConnection'] = async (
     userRole = flow.role
 
     connection = await getConnection({
-      context,
+      user: context.currentUser,
       connectionId: params.connectionId,
       flowId: params.flowId,
       includeOwnConnections: userRole === 'owner',
