@@ -30,11 +30,6 @@ export default defineConfig({
     // Vitest 4 can fail the run with EnvironmentTeardownError if a worker
     // shuts down while a console log is still in the reporter RPC channel.
     disableConsoleIntercept: true,
-    onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
-      if (log.startsWith('vite:')) {
-        return false
-      }
-    },
   },
   resolve: {
     alias: {
