@@ -1,10 +1,9 @@
 import { ForbiddenError } from '@/errors/graphql-errors'
 import { UserFacingError } from '@/errors/user-facing-error'
 import TableCollaborator from '@/models/table-collaborators'
-import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
-import { getTableOperations } from '@/models/tiles/factory'
 import type User from '@/models/user'
+import { appendTileColumns } from '@/services/tiles/append-columns'
 
 import { createColumnAiBuilderConfig } from './tile-ai-builder-config'
 import {
@@ -67,29 +66,12 @@ export async function addTileColumnsService({
   }
 
   if (toAdd.length) {
-    const tableOperations = getTableOperations(table.db)
-    await TableColumnMetadata.transaction(async (trx) => {
-      const results = await table
-        .$relatedQuery('columns', trx)
-        .max('position as position')
-      const maxPosition = results[0].position || 0
-      const inserted = await table
-        .$relatedQuery('columns', trx)
-        .insert(
-          toAdd.map((name, i) => ({
-            name,
-            position: maxPosition + i + 1,
-            ...(traceId && {
-              config: createColumnAiBuilderConfig(traceId, 'add_tile_columns'),
-            }),
-          })),
-        )
-        .returning('id')
-
-      await tableOperations.createTableColumns(
-        parsedTableId,
-        inserted.map((column) => column.id),
-      )
+    await appendTileColumns({
+      table,
+      names: toAdd,
+      ...(traceId && {
+        columnConfig: createColumnAiBuilderConfig(traceId, 'add_tile_columns'),
+      }),
     })
   }
 

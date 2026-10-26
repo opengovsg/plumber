@@ -13,6 +13,7 @@ import TableColumnMetadata from '@/models/table-column-metadata'
 import TableMetadata from '@/models/table-metadata'
 import * as pgTableFunctions from '@/models/tiles/pg/table-functions'
 
+import { appendTileColumns } from '../append-columns'
 import { createTileInTransaction } from '../create-tile'
 
 describe('createTileInTransaction', () => {
@@ -131,5 +132,57 @@ describe('createTileInTransaction', () => {
       [],
     )
     expect(await checkIfTableExists(tableId)).toBe(false)
+  })
+})
+
+describe('appendTileColumns', () => {
+  it('appends columns after the existing ones', async () => {
+    const context = await generateMockContext()
+    const columnConfig = {
+      aiBuilderConfig: {
+        traceId: 'trace-add',
+        tool: 'add_tile_columns' as const,
+      },
+    }
+
+    const table = await TableMetadata.transaction(async (trx) => {
+      return createTileInTransaction(trx, {
+        user: context.currentUser,
+        name: `append-${randomUUID()}`,
+        columns: [
+          { name: 'Applicant', position: 0 },
+          { name: 'Start', position: 1 },
+          { name: 'End', position: 2 },
+        ],
+      })
+    })
+
+    await appendTileColumns({
+      table,
+      names: ['Notes', 'Priority'],
+      columnConfig,
+    })
+
+    const stored = await TableMetadata.query()
+      .findById(table.id)
+      .withGraphFetched('columns')
+    const columns = stored?.columns ?? []
+
+    expect(columns.map((column) => column.name)).toEqual([
+      'Applicant',
+      'Start',
+      'End',
+      'Notes',
+      'Priority',
+    ])
+    expect(columns.map((column) => column.position)).toEqual([0, 1, 2, 3, 4])
+    expect(columns[3].config).toEqual(columnConfig)
+    expect(columns[4].config).toEqual(columnConfig)
+    expect(columns[0].config).toEqual({})
+    expect(
+      await Promise.all(
+        columns.map((column) => checkIfTableHasColumn(table.id, column.id)),
+      ),
+    ).toEqual([true, true, true, true, true])
   })
 })
