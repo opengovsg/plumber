@@ -97,8 +97,7 @@ export async function updateStepParametersService({
     }
 
     // Re-fetch with a row lock to serialise concurrent tool calls for the same
-    // step. forUpdate() cannot be used on the access query directly because it
-    // has a LEFT JOIN, which PostgreSQL prohibits locking.
+    // step. PostgreSQL rejects FOR UPDATE on loadAccessibleStep's LEFT JOIN.
     const step = await Step.query(trx).forUpdate().findById(stepId)
     if (!step) {
       throw new Error('Step cannot be updated')
