@@ -19,16 +19,33 @@ config({
 })
 
 const ITEST_INCLUDE = 'src/**/*.itest.{js,ts}'
+const TEST_HELPERS = 'src/**/__tests__/**/*.ts'
 
-// vi.mock() replaces a module in the worker cache. With isolate: false that
-// replacement leaks into later files, so those tests get their own graph.
-function itestsWithModuleMocks(): string[] {
-  return globSync(ITEST_INCLUDE, { cwd: __dirname }).filter((file) =>
-    /\bvi\.mock\s*\(/.test(readFileSync(join(__dirname, file), 'utf8')),
+// With isolate: false, these calls leak module or global state into later
+// files, so files that use them get their own graph.
+// This is a text heuristic. If leaks still slip through, replace it with an
+// explicit list of files allowed to share a graph.
+const MODULE_STATE_CALL =
+  /\bvi\.(mock|doMock|unmock|resetModules|stubGlobal|stubEnv|useFakeTimers|setSystemTime)\s*\(/
+
+function changesModuleState(file: string): boolean {
+  return MODULE_STATE_CALL.test(readFileSync(join(__dirname, file), 'utf8'))
+}
+
+// IMPORTANT: Isolation is decided per test file. A helper making these calls
+// would leak through every test file that imports it.
+const helpersChangingModuleState = globSync(TEST_HELPERS, { cwd: __dirname })
+  .filter((file) => !/\.(test|itest)\.ts$/.test(file))
+  .filter(changesModuleState)
+if (helpersChangingModuleState.length > 0) {
+  throw new Error(
+    `Move these vi calls into the test files: ${helpersChangingModuleState.join(', ')}`,
   )
 }
 
-const isolatedItests = itestsWithModuleMocks()
+const isolatedItests = globSync(ITEST_INCLUDE, { cwd: __dirname }).filter(
+  changesModuleState,
+)
 
 const sharedResolve = {
   alias: {
