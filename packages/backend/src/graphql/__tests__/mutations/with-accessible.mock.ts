@@ -25,6 +25,7 @@ interface MockWithAccessibleStepsOptions {
   stepId?: string
   stepKey: string
   stepAppKey: string
+  stepType?: 'action' | 'trigger'
   stepConnection?: Record<string, any>
   stepStatus?: string
   stepRole?: string
@@ -41,6 +42,7 @@ export function createMockWithAccessibleSteps({
   stepId = MOCK_STEP_ID,
   stepKey,
   stepAppKey,
+  stepType,
   stepConnection = { id: MOCK_CONNECTION_ID, userId: currentUser.id },
   stepStatus = 'completed',
   stepRole = 'owner',
@@ -66,6 +68,7 @@ export function createMockWithAccessibleSteps({
             id: stepId,
             key: stepKey,
             appKey: stepAppKey,
+            type: stepType,
             status: stepStatus,
             role: stepRole,
             flowId,
