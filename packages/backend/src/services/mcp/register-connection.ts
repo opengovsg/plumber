@@ -1,11 +1,10 @@
-import type { IGlobalVariable } from '@plumber/types'
-
 import apps from '@/apps'
 import { UserFacingError } from '@/errors/user-facing-error'
-import globalVariable from '@/helpers/global-variable'
-import Flow from '@/models/flow'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { loadAccessibleStep } from '@/services/access'
+import { isForeignPersonalConnection } from '@/services/connection'
+import { registerConnectionForFlow } from '@/services/connection-registration'
 
 import { PublishedPipeError } from './published-pipe-error'
 
@@ -19,9 +18,11 @@ export async function registerConnectionService(
   stepId: string,
   connectionId: string,
 ): Promise<RegisterConnectionResult> {
-  const step = await user
-    .withAccessibleSteps({ requiredRole: 'editor' })
-    .findOne({ 'steps.id': stepId })
+  const step = await loadAccessibleStep({
+    user,
+    stepId,
+    role: 'editor',
+  })
 
   if (!step) {
     throw new UserFacingError('Step not found')
@@ -35,7 +36,7 @@ export async function registerConnectionService(
     throw new UserFacingError('Connection not found')
   }
 
-  if (connection.userId !== null && connection.userId !== user.id) {
+  if (isForeignPersonalConnection(connection, user.id)) {
     throw new UserFacingError(
       'You cannot use a personal connection that you do not own',
     )
@@ -50,35 +51,24 @@ export async function registerConnectionService(
     throw new UserFacingError('App not found or does not support auth')
   }
 
-  const connectionRegistrationType = app.auth.connectionRegistrationType
-  if (!connectionRegistrationType) {
-    throw new UserFacingError('App does not support connection registration')
-  }
-
-  const flow = await Flow.query().findById(step.flowId)
-  if (!flow) {
-    throw new UserFacingError('Flow not found')
-  }
-  if (flow.active) {
+  if (step.flow.active) {
     throw new PublishedPipeError()
   }
 
-  // 'global' registration (e.g. m365-excel) is not tied to a specific flow, so
-  // $ is built without one. Mirrors makeGlobalVariableForGlobalRegistration in
-  // the equivalent GraphQL registerConnection mutation.
-  let $: IGlobalVariable
-  if (connectionRegistrationType === 'global') {
-    $ = await globalVariable({ connection, app, user })
-  } else {
-    $ = await globalVariable({ connection, app, flow, user })
+  const result = await registerConnectionForFlow({
+    user,
+    app,
+    connection,
+    flow: step.flow,
+  })
+
+  if (result === 'unsupported') {
+    throw new UserFacingError('App does not support connection registration')
   }
 
-  const isVerified = await app.auth.isStillVerified($)
-  if (!isVerified) {
+  if (result === 'unverified') {
     throw new UserFacingError('Connection is not verified')
   }
-
-  await app.auth.registerConnection?.($)
 
   await Step.query().patchAndFetchById(stepId, { connectionId })
 
