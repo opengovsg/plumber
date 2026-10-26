@@ -1,5 +1,4 @@
 import { IAction } from '@/../../types'
-import apps from '@/apps'
 import { getEndStepConfigForUpdateStep } from '@/apps/toolbox/actions/if-then/infra/handle-update-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import {
@@ -11,6 +10,7 @@ import App from '@/models/app'
 import Step from '@/models/step'
 import { loadAccessibleStep } from '@/services/access'
 import { getConnection } from '@/services/connection'
+import { prepareStepParameters } from '@/services/step-parameters'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -101,21 +101,12 @@ const updateStep: MutationResolvers['updateStep'] = async (
       flowId: input.flow.id,
     })
 
-    let parameters = input.parameters
-    let version = step.version
-
-    // transform the parameters if the step has a stepTransformer
-    const transformer = input.key
-      ? apps[input.appKey]?.stepTransformer
-      : undefined
-    if (transformer) {
-      parameters = transformer.transformStepParameters(
-        input.key,
-        input.parameters,
-        version,
-      )
-      version = transformer.getLatestStepVersion(input.key)
-    }
+    const { parameters, version } = prepareStepParameters({
+      appKey: input.appKey,
+      key: input.key,
+      parameters: input.parameters,
+      version: step.version,
+    })
 
     const updatedStep = await Step.query(trx)
       .patchAndFetchById(input.id, {

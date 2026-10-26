@@ -34,6 +34,14 @@ const RULES: SharedRule[] = [
         'GraphQL updateStep moves to lookupStepDefinition in PLU-1098 PR-C',
     },
   },
+  {
+    kind: 'only-in',
+    pattern: /transformStepParameters\(/,
+    use: 'prepareStepParameters from services/step-parameters.ts',
+    allowed: {
+      'services/step-parameters.ts': 'owner',
+    },
+  },
 ]
 
 function listSourceFiles(dir: string): string[] {
