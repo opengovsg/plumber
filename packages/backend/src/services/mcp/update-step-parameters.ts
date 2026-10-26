@@ -1,21 +1,16 @@
-import type {
-  IAction,
-  IJSONObject,
-  IRawAction,
-  IRawTrigger,
-} from '@plumber/types'
+import type { IJSONObject, IRawAction } from '@plumber/types'
 
 import apps from '@/apps'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
 import type { FormSchema } from '@/apps/formsg/common/types'
 import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-form-schema'
 import globalVariable from '@/helpers/global-variable'
-import App from '@/models/app'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
+import { lookupStepDefinition } from '@/services/step-definition'
 
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
@@ -107,17 +102,13 @@ export async function updateStepParametersService({
       throw new Error('Step cannot be updated')
     }
 
-    // Use App.findTriggerOrActionByKey for type/validity checks
-    const triggerOrAction = await App.findTriggerOrActionByKey(
-      step.appKey,
-      step.key,
-    )
+    const lookup = lookupStepDefinition(step.appKey, step.key)
 
-    if (!triggerOrAction) {
+    if (lookup.kind === 'unknown') {
       throw new Error('No such trigger or action')
     }
 
-    if (triggerOrAction.hiddenFromUser) {
+    if (lookup.kind === 'hidden') {
       throw new Error(
         `${
           step.type === 'trigger' ? 'Trigger' : 'Action'
@@ -125,18 +116,11 @@ export async function updateStepParametersService({
       )
     }
 
-    // Get arguments from the raw app registry (before getApp transforms them into substeps)
+    const { definition } = lookup
     const rawApp = apps[step.appKey]
-    const rawTriggerOrAction = (
-      step.type === 'trigger'
-        ? rawApp?.triggers?.find((t) => t.key === step.key)
-        : rawApp?.actions?.find((a) => a.key === step.key)
-    ) as IRawAction | IRawTrigger | undefined
 
     // Silently drop any keys not in this action/trigger's declared argument schema
-    const allowedKeys = new Set(
-      (rawTriggerOrAction?.arguments ?? []).map((f) => f.key),
-    )
+    const allowedKeys = new Set((definition.arguments ?? []).map((f) => f.key))
     const filteredParameters = Object.fromEntries(
       Object.entries(parameters).filter(([k]) => allowedKeys.has(k)),
     ) as IJSONObject
@@ -161,7 +145,7 @@ export async function updateStepParametersService({
     } as IJSONObject
 
     if (step.type === 'action') {
-      const action = triggerOrAction as IAction
+      const action = definition as IRawAction
       action.validateStepParameters?.(mergedParameters)
     }
 
