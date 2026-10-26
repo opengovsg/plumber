@@ -65,10 +65,92 @@ const RULES: SharedRule[] = [
     },
   },
   {
+    kind: 'only-in',
+    pattern: /testStep\(/,
+    use: 'runStepTest from services/run-step-test.ts',
+    allowed: {
+      'services/run-step-test.ts': 'owner',
+      'services/test-mrf-steps.ts': 'testRemainingMrfSteps still calls testStep',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /getMrfTestStartStep\(/,
+    use: 'runStepTest from services/run-step-test.ts',
+    allowed: {
+      'services/run-step-test.ts': 'owner',
+      'services/test-mrf-steps.ts': 'definition',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /testRemainingMrfSteps\(/,
+    use: 'runStepTest from services/run-step-test.ts',
+    allowed: {
+      'services/run-step-test.ts': 'owner',
+      'services/test-mrf-steps.ts': 'definition',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /APP_CONNECTION_FIELDS\[/,
+    use: 'runStepDynamicData or shouldRunDynamicDataAsOwner from services/dynamic-data.ts',
+    allowed: {
+      'services/dynamic-data.ts': 'owner',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /command\.run\(/,
+    use: 'runStepDynamicData from services/dynamic-data.ts',
+    allowed: {
+      'services/dynamic-data.ts': 'owner',
+      'graphql/mutations/dynamic-action.ts':
+        'runs a dynamic action (command.type === action)',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /\.createTable\(/,
+    use: 'createTileInTransaction from services/tiles/create-tile.ts',
+    allowed: {
+      'services/tiles/create-tile.ts': 'owner',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /createTableColumns\(/,
+    use: 'appendTileColumns from services/tiles/append-columns.ts',
+    allowed: {
+      'services/tiles/append-columns.ts': 'owner',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /\$relatedQuery\('tables', trx\)\.insertGraph/,
+    use: 'createTileInTransaction from services/tiles/create-tile.ts',
+    allowed: {
+      'services/tiles/create-tile.ts': 'owner',
+    },
+  },
+  {
     kind: 'never-in',
     pattern: /withAccessibleFlows\(|withAccessibleSteps\(/,
     use: 'loadAccessibleFlow or loadAccessibleStep from services/access.ts',
     files: [
+      'graphql/queries/get-flow.ts',
+      'services/mcp/get-flow.ts',
+      'graphql/mutations/update-flow-status.ts',
+      'services/mcp/unpublish-pipe.ts',
+      'graphql/mutations/delete-step.ts',
+      'services/mcp/delete-step.ts',
+      'graphql/mutations/update-step.ts',
+      'services/mcp/update-step-parameters.ts',
+      'graphql/mutations/execute-step.ts',
+      'services/mcp/execute-step.ts',
+      'graphql/queries/get-dynamic-data.ts',
+      'services/mcp/get-dynamic-data.ts',
+      'services/dynamic-data.ts',
       'graphql/mutations/register-connection.ts',
       'services/mcp/register-connection.ts',
     ],
