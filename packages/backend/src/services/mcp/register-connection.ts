@@ -51,6 +51,11 @@ export async function registerConnectionService(
     throw new UserFacingError('App not found or does not support auth')
   }
 
+  // Unpublishing does not add registration support.
+  if (!app.auth.connectionRegistrationType) {
+    throw new UserFacingError('App does not support connection registration')
+  }
+
   if (step.flow.active) {
     throw new PublishedPipeError()
   }
