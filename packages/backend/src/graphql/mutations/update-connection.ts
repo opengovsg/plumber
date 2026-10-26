@@ -17,7 +17,7 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
     .throwIfNotFound({ message: 'You do not have access to this flow' })
 
   let connection = await getConnection({
-    context,
+    user: context.currentUser,
     connectionId: params.input.id,
     flowId: params.input.flowId,
     includeOwnConnections: flow.role === 'owner',

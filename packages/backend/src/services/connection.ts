@@ -2,10 +2,10 @@ import { Transaction } from 'objection'
 
 import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
-import Context from '@/types/express/context'
+import type User from '@/models/user'
 
 type GetConnectionParams = {
-  context: Context
+  user: User
   connectionId: string
   flowId: string
   includeOwnConnections?: boolean
@@ -18,7 +18,7 @@ type GetConnectionParams = {
  * before this function is called
  */
 export const getConnection = async (params: GetConnectionParams) => {
-  const { context, connectionId, includeOwnConnections, trx, flowId } = params
+  const { user, connectionId, includeOwnConnections, trx, flowId } = params
 
   if (includeOwnConnections) {
     // there are 2 types of connections that an owner can access:
@@ -33,7 +33,7 @@ export const getConnection = async (params: GetConnectionParams) => {
       .findById(connectionId)
       .where(function () {
         // connection is either owned by the user
-        this.where('connections.user_id', context.currentUser.id).orWhereExists(
+        this.where('connections.user_id', user.id).orWhereExists(
           // or accessible via flow_connections table
           FlowConnections.query(trx)
             .whereColumn('flow_connections.connection_id', 'connections.id')
