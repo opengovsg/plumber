@@ -34,9 +34,7 @@ export async function loadAccessibleFlow({
     query.withGraphFetched(graph)
   }
 
-  const flow = await query.findOne({ 'flows.id': flowId })
-  flow?.steps?.sort((a, b) => a.position - b.position)
-  return flow
+  return query.findOne({ 'flows.id': flowId })
 }
 
 export async function loadAccessibleStep({
