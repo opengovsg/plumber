@@ -98,7 +98,6 @@ describe('updateFlowStatus', () => {
     patchSpy = vi.fn().mockResolvedValue(undefined)
     fakeFlow.$query.mockReturnValue({ patch: patchSpy })
 
-    // Fake the chained query methods on context.currentUser.$relatedQuery('flows')
     fakeQuery = {
       withGraphFetched: vi.fn().mockReturnThis(),
       findOne: vi.fn().mockResolvedValue(fakeFlow),
