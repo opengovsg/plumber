@@ -115,6 +115,7 @@ describe('processAction - priorExecutionSteps filtering', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 

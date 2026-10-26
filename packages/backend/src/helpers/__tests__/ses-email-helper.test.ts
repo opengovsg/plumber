@@ -7,8 +7,12 @@ const mocks = vi.hoisted(() => {
   const send = vi.fn(async () => ({}))
   return {
     send,
-    sesV2Client: vi.fn((_config: unknown) => ({ send })),
-    sendEmailCommand: vi.fn((input: unknown) => ({ input })),
+    sesV2Client: vi.fn(function (_config: unknown) {
+      return { send }
+    }),
+    sendEmailCommand: vi.fn(function (input: unknown) {
+      return { input }
+    }),
     fromTemporaryCredentials: vi.fn(
       (_params: unknown) => 'temporary-credentials-provider',
     ),

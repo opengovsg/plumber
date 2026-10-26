@@ -27,11 +27,9 @@ export default defineConfig({
       path.resolve(__dirname, './test/keep-worker-alive-setup.ts'),
     ],
     include: ['src/**/*.test.{js,ts}'],
-    onConsoleLog: (log: string, _type: 'stdout' | 'stderr'): false | void => {
-      if (log.startsWith('vite:')) {
-        return false
-      }
-    },
+    // Vitest 4 can fail the run with EnvironmentTeardownError if a worker
+    // shuts down while a console log is still in the reporter RPC channel.
+    disableConsoleIntercept: true,
   },
   resolve: {
     alias: {

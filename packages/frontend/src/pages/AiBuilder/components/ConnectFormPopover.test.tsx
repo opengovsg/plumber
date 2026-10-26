@@ -1,7 +1,15 @@
 // @vitest-environment jsdom
 import { createRoot } from 'react-dom/client'
 import { act } from 'react-dom/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type Mock,
+  vi,
+} from 'vitest'
 
 import ThemeProvider from '@/components/ThemeProvider'
 
@@ -19,8 +27,8 @@ const CONNECTIONS = [
 
 let container: HTMLDivElement
 let root: ReturnType<typeof createRoot>
-let onSelectExisting: ReturnType<typeof vi.fn>
-let onAddNewForm: ReturnType<typeof vi.fn>
+let onSelectExisting: Mock<(label: string, connectionId: string) => void>
+let onAddNewForm: Mock<() => void>
 
 function flushMacrotask(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 2))

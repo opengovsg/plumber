@@ -42,7 +42,7 @@ Do **not** run these yourself unless the user asks — the human runs the dev se
 
 **Node version:** run `nvm use` (repo `.nvmrc`) before any `pnpm`, `npm`, `npx`, or `node`
 command. Claude Code does this automatically via a hook. Other agents must do it
-explicitly, e.g. `nvm use && pnpm --filter backend lint`.
+explicitly, e.g. `nvm use && pnpm --filter backend run lint`.
 
 **Human dev loop** (for context, so you understand what state the human's environment is in):
 
@@ -59,13 +59,16 @@ biometric prompt that an agent cannot answer.
 - **`dev:sample-env` cannot reach real FormSG, M365, Postman, Databricks, sgID or SSO.**
   Those calls fail with third-party authentication errors. That is expected, not a bug to
   fix.
-- `lint`, `typecheck`, `test:unit`, `test:integration` and `migrate` need nothing. They
-  already read `.env-example`.
+- `lint`, `typecheck` and `migrate` need nothing. They already read `.env-example`.
+- **`test:unit` needs Docker running** (`pnpm run setup`), even though it reads
+  `.env-example` and touches no schema. Backend unit tests create real Redis clients at
+  import time. Without Redis reachable, they retry the connection forever instead of
+  failing fast, and the run hangs with no test output.
 
 **Testing:**
 
 - `pnpm test` — runs frontend tests, backend unit tests, and backend integration tests as separate Turborepo tasks (`turbo run test test:unit test:integration`).
-- `pnpm --filter backend test:unit` — runs backend unit tests only.
+- `pnpm --filter backend run test:unit` — runs backend unit tests only. Requires Docker (see above).
 - `pnpm exec vitest path/to/file.test.ts` — single unit test file; use `-t "<pattern>"` to filter by name.
 - Backend integration tests use the `.itest.ts` suffix and require Docker/testcontainers — see [.claude/rules/backend.md](.claude/rules/backend.md).
 
@@ -76,7 +79,7 @@ biometric prompt that an agent cannot answer.
 - **Package manager**: only use `pnpm`. Never use `npm`, `yarn`, or other package managers.
 - **Installing packages**: always pass the `-E` (exact version) flag, e.g. `pnpm --filter backend add -E <package>`.
 - **Data parsing & validation**: prefer **Zod** whenever parsing or validating data whose shape isn't guaranteed at compile time — HTTP/API responses, form submissions, webhook and queue payloads, env vars, and any external JSON — over hand-written type guards or ad-hoc property checks.
-- **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend lint:fix`; frontend-only → `pnpm --filter frontend lint:fix`; otherwise run the root commands.
+- **Linting**: before committing, run `pnpm run lint:fix` (auto-fixes), then `pnpm run lint` and `pnpm run typecheck`, fixing remaining errors. Scope to the workspace you touched: backend-only changes → `pnpm --filter backend run lint:fix`; frontend-only → `pnpm --filter frontend run lint:fix`; otherwise run the root commands.
 - **Production monitoring**: after completing a backend/frontend feature, offer to run the `setup-production-monitoring` skill to plan Datadog monitoring for it.
 - **Commit messages**: keep the full message under 300 characters.
 - **Branches & PRs**: managed via Graphite (`gt`); use the `graphite` skill.

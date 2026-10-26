@@ -56,6 +56,7 @@ describe('tag or untag case', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
@@ -98,7 +99,7 @@ describe('tag or untag case', () => {
 
   it('parses the raw response correctly', async () => {
     await tagOrUntagCaseAction.run($)
-    expect($.setActionItem).toBeCalledWith({
+    expect($.setActionItem).toHaveBeenCalledWith({
       raw: {
         traceId: MOCK_RESPONSE.traceId,
       },
@@ -194,7 +195,7 @@ describe('tag or untag case', () => {
 
   it('should throw step error for invalid parameters (whitespace only tag value)', async () => {
     $.step.parameters.tagValue = '   '
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow()
   })
 
   it('should throw step error for case not found', async () => {
@@ -213,7 +214,7 @@ describe('tag or untag case', () => {
     const httpError = new HttpError(error)
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError()
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow()
   })
 
   it('should throw step error for invalid tag value', async () => {
@@ -232,7 +233,7 @@ describe('tag or untag case', () => {
     const httpError = new HttpError(error)
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError(
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
       'Please check that you have configured your step correctly',
     )
   })
@@ -250,7 +251,7 @@ describe('tag or untag case', () => {
     const httpError = new HttpError(error)
     mocks.httpPost.mockRejectedValueOnce(httpError)
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrowError(
+    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
       'Please check that you have configured your step correctly',
     )
   })

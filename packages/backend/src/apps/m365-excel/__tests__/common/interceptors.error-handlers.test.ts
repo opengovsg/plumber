@@ -108,6 +108,7 @@ describe('M365 request error handlers', () => {
   })
 
   afterEach(() => {
+    vi.clearAllMocks()
     vi.restoreAllMocks()
   })
 
