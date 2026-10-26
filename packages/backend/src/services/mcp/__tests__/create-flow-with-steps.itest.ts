@@ -576,6 +576,8 @@ describe('createFlowWithStepsService', () => {
         traceId: 'trace-hidden-action',
       }),
     ).rejects.toThrow('Action can only be created by system')
+
+    expect(await Flow.query().where('userId', user.id)).toEqual([])
   })
 
   it('rejects a hidden action nested inside an If block', async () => {
@@ -601,6 +603,8 @@ describe('createFlowWithStepsService', () => {
         traceId: 'trace-hidden-nested',
       }),
     ).rejects.toThrow('Action can only be created by system')
+
+    expect(await Flow.query().where('userId', user.id)).toEqual([])
   })
 
   it('saves a keyless placeholder next to keyed steps', async () => {
