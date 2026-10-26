@@ -290,6 +290,49 @@ describe('getDataOutMetadata - MRF field filtering', () => {
         isHidden: true,
       })
     })
+
+    it('should show children subfields when their children field is in mrf.fields', async () => {
+      const executionStep = createExecutionStep({
+        childrenbirthrecords_field1_childname_0: {
+          question: '[MyInfo] Child 1 Name',
+          answer: 'Jackson Kuan',
+          fieldType: 'children',
+          order: 1,
+        },
+        childrenbirthrecords_field1_childrace_0: {
+          question: '[MyInfo] Child 1 Race',
+          answer: 'CHINESE',
+          fieldType: 'children',
+          order: 2,
+        },
+      })
+
+      const result = await getDataOutMetadata(executionStep)
+
+      expect(
+        result.fields.childrenbirthrecords_field1_childname_0.question.label,
+      ).toBe('Question 1.1')
+      expect(
+        result.fields.childrenbirthrecords_field1_childrace_0.answer.label,
+      ).toBe('1.2. [MyInfo] Child 1 Race')
+    })
+
+    it('should hide children subfields when their children field is not in mrf.fields', async () => {
+      const executionStep = createExecutionStep({
+        childrenbirthrecords_field2_childname_0: {
+          question: '[MyInfo] Child 1 Name',
+          answer: 'Jackson Kuan',
+          fieldType: 'children',
+          order: 1,
+        },
+      })
+
+      const result = await getDataOutMetadata(executionStep)
+
+      expect(result.fields.childrenbirthrecords_field2_childname_0).toEqual({
+        isHidden: true,
+      })
+    })
   })
 
   describe('when parameters.mrf is absent', () => {

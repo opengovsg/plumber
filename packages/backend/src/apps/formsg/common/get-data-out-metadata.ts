@@ -465,7 +465,11 @@ async function getDataOutMetadata(
       }
 
       // if this is an MRF step, we only show the fields that are editable
-      if (questionIdsToShowForMrf && !questionIdsToShowForMrf.has(fieldId)) {
+      // IMPORTANT: MRF workflows list the children field, not its subfields.
+      if (
+        questionIdsToShowForMrf &&
+        !questionIdsToShowForMrf.has(childrenFieldKey ?? fieldId)
+      ) {
         fieldMetadata[fieldId] = { isHidden: true }
         continue
       }
