@@ -25,9 +25,8 @@ import { fetchFormSchema } from '../../triggers/new-submission/fetch-form-schema
 
 const CHECKBOX_OTHERS_MARKER = '!!FORMSG_INTERNAL_CHECKBOX_OTHERS_VALUE!!'
 
-// Mirrors ChildrenAnswerV4 in @opengovsg/formsg-sdk. Parsed rather than cast,
-// because FormSG has changed this shape once already.
-const childrenAnswerSchema = z.record(
+// Mirrors ChildrenAnswerV4 in @opengovsg/formsg-sdk.
+const keyedChildrenAnswerSchema = z.record(
   z.string(),
   z.object({
     value: z.record(
@@ -41,7 +40,63 @@ const childrenAnswerSchema = z.record(
   }),
 )
 
-type ChildrenAnswer = z.infer<typeof childrenAnswerSchema>
+// Mirrors ChildrenCompoundFieldResponsesV3 in FormSG. FormSG rolls out the
+// keyed shape gradually, so v4 submissions can still carry this one.
+const legacyChildrenAnswerSchema = z.object({
+  child: z.array(z.array(z.string())),
+  childFields: z.array(z.string()),
+})
+
+// One map of attr to value per child.
+type ChildValues = Map<string, string>
+
+function readKeyedChildren(
+  fieldId: string,
+  answer: z.infer<typeof keyedChildrenAnswerSchema>,
+): ChildValues[] {
+  return Object.values(answer).map((child) => {
+    const values: ChildValues = new Map()
+    for (const [key, subField] of Object.entries(child.value)) {
+      // The object key is normally the attribute, but myInfo.attr is the
+      // authoritative source.
+      const attr = subField.myInfo?.attr ?? key
+      if (values.has(attr)) {
+        logger.warn('Duplicate FormSG children subfield', {
+          event: 'formsg-duplicate-children-subfield',
+          fieldId,
+          attr,
+        })
+        continue
+      }
+      values.set(attr, subField.value)
+    }
+    // The SDK allows LOCAL or SPONSORED here instead of as a childtype
+    // subfield, so read it rather than drop it.
+    if (child.type && !values.has('childtype')) {
+      values.set('childtype', child.type)
+    }
+    return values
+  })
+}
+
+function readLegacyChildren(
+  answer: z.infer<typeof legacyChildrenAnswerSchema>,
+): ChildValues[] {
+  return answer.child.map(
+    (row) => new Map(answer.childFields.map((attr, i) => [attr, row[i] ?? ''])),
+  )
+}
+
+function parseChildrenAnswer(fieldId: string, answer: unknown) {
+  return z
+    .union([
+      keyedChildrenAnswerSchema.transform((keyed) =>
+        readKeyedChildren(fieldId, keyed),
+      ),
+      legacyChildrenAnswerSchema.transform(readLegacyChildren),
+    ])
+    .safeParse(answer)
+}
 
 /**
  * FormSG nests every subfield under one `children` response, which pipe authors
@@ -51,37 +106,18 @@ type ChildrenAnswer = z.infer<typeof childrenAnswerSchema>
  */
 function flattenChildrenAnswer(
   fieldId: string,
-  childrenAnswer: ChildrenAnswer,
+  valuesByChild: ChildValues[],
   schemaSubFields: string[],
   firstChildNumber: number,
 ): FormField[] {
-  const children = Object.values(childrenAnswer)
-
-  const valuesByChild = children.map((child) => {
-    const values = new Map<string, string>()
-    for (const [key, subField] of Object.entries(child.value)) {
-      // The object key is normally the attribute, but myInfo.attr is the
-      // authoritative source.
-      values.set(subField.myInfo?.attr ?? key, subField.value)
-    }
-    // The SDK allows LOCAL or SPONSORED here instead of as a childtype
-    // subfield, so read it rather than drop it.
-    if (child.type && !values.has('childtype')) {
-      values.set('childtype', child.type)
-    }
-    return values
-  })
-
   // Giving every child the same subfields keeps the variable list stable when
   // MyInfo omits a value for one child but not another.
-  const attrs = [...schemaSubFields]
-  for (const values of valuesByChild) {
-    for (const attr of values.keys()) {
-      if (!attrs.includes(attr)) {
-        attrs.push(attr)
-      }
-    }
-  }
+  const attrs = [
+    ...new Set([
+      ...schemaSubFields,
+      ...valuesByChild.flatMap((values) => [...values.keys()]),
+    ]),
+  ]
 
   const responses: FormField[] = []
   for (const [childIndex, values] of valuesByChild.entries()) {
@@ -252,9 +288,9 @@ export async function processResponsesV4(
       continue
     }
     if (value.fieldType === 'children') {
-      const parsed = childrenAnswerSchema.safeParse(value.answer)
+      const parsed = parseChildrenAnswer(key, value.answer)
       if (!parsed.success) {
-        // An unrecognised shape degrades to one opaque variable, rather than
+        // An unrecognised shape degrades to one empty variable, rather than
         // failing the whole submission.
         logger.error('Unable to parse FormSG children answer', {
           event: 'formsg-unparsable-children-answer',
@@ -268,7 +304,7 @@ export async function processResponsesV4(
           _id: key,
           fieldType: value.fieldType,
           question,
-          answer: value.answer as unknown as string,
+          answer: '',
         })
         continue
       }
@@ -279,7 +315,7 @@ export async function processResponsesV4(
         formSchemaFields[key]?.childrenSubFields ?? [],
         childNumber,
       )
-      childNumber += Object.keys(parsed.data).length
+      childNumber += parsed.data.length
       mappedResponses.push(...flattened)
       continue
     }

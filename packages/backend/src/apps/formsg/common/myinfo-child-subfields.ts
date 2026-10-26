@@ -72,6 +72,13 @@ export const MYINFO_CHILD_SUBFIELD_MAP: Record<
   },
 }
 
+export function isChildSubfield(attr: string): attr is ChildSubfield {
+  return Object.prototype.hasOwnProperty.call(MYINFO_CHILD_SUBFIELD_MAP, attr)
+}
+
+export type ChildSubfieldKey =
+  `${typeof CHILDREN_KEY_PREFIX}_${string}_${string}_${number}`
+
 /**
  * IMPORTANT: the key must never contain a dot. Dots delimit step and variable
  * paths, so a dotted key is unreachable via lodash get.
@@ -80,10 +87,10 @@ export function buildChildSubfieldKey(
   fieldId: string,
   attr: string,
   childIndex: number,
-): string {
+): ChildSubfieldKey {
   return [CHILDREN_KEY_PREFIX, fieldId, attr, childIndex]
     .join('_')
-    .replaceAll('.', '_')
+    .replaceAll('.', '_') as ChildSubfieldKey
 }
 
 /**
@@ -94,7 +101,9 @@ export function buildChildSubfieldQuestion(
   childIndex: number,
 ): string {
   // MyInfo may add attributes before we map them, so fall back to the raw attr.
-  const details = MYINFO_CHILD_SUBFIELD_MAP[attr as ChildSubfield]
+  const details = isChildSubfield(attr)
+    ? MYINFO_CHILD_SUBFIELD_MAP[attr]
+    : undefined
   const displayLabel = details?.displayLabel ?? attr
   const myInfoPrefix = details?.isMyInfoFieldLabel ? '[MyInfo]' : ''
 

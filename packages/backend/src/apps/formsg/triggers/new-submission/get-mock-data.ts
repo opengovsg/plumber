@@ -9,7 +9,7 @@ import { filterNric } from '../../auth/decrypt-form-response'
 import {
   buildChildSubfieldKey,
   buildChildSubfieldQuestion,
-  type ChildSubfield,
+  isChildSubfield,
   MYINFO_CHILD_SUBFIELD_MAP,
 } from '../../common/myinfo-child-subfields'
 import convertTableAnswerArrayToTableObject from '../../common/process-table-field'
@@ -110,9 +110,9 @@ function generateMockChildrenSubfieldResponses(
 
     responses[subfieldId] = {
       question: buildChildSubfieldQuestion(subfieldName, childrenObjectIndex),
-      answer:
-        MYINFO_CHILD_SUBFIELD_MAP[subfieldName as ChildSubfield]?.mockData ??
-        '',
+      answer: isChildSubfield(subfieldName)
+        ? MYINFO_CHILD_SUBFIELD_MAP[subfieldName].mockData
+        : '',
       fieldType: 'children',
       order: `${order}.${j + 1}`,
     }

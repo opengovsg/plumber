@@ -22,11 +22,13 @@ import {
 const mocks = vi.hoisted(() => ({
   fetchFormSchema: vi.fn(),
   loggerError: vi.fn(),
+  loggerWarn: vi.fn(),
 }))
 
 vi.mock('@/helpers/logger', () => ({
   default: {
     error: mocks.loggerError,
+    warn: mocks.loggerWarn,
   },
 }))
 
@@ -694,19 +696,73 @@ describe('processResponsesV4', () => {
       expect(result).toEqual([])
     })
 
-    it('keeps the raw answer and logs when the children answer does not parse', async () => {
+    it('flattens the legacy child/childFields answer like the keyed one', async () => {
+      const formSchema = makeFormSchema([
+        { ...childrenSchemaField, childrenSubFields: ['childname'] },
+      ])
+      mocks.fetchFormSchema
+        .mockResolvedValueOnce(formSchema)
+        .mockResolvedValueOnce(formSchema)
+
+      const legacy = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child: [['ALI LEE', 'CHINESE'], ['BOB LEE']],
+          childFields: ['childname', 'childrace'],
+        }),
+      })
+      const keyed = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: childEntry({ childname: 'ALI LEE', childrace: 'CHINESE' }),
+          child1: childEntry({ childname: 'BOB LEE', childrace: '' }),
+        }),
+      })
+
+      expect(legacy).toEqual(keyed)
+      expect(legacy).toContainEqual({
+        _id: 'childrenbirthrecords_ch1_childrace_1',
+        fieldType: 'children',
+        question: '[MyInfo] Child 2 Race',
+        answer: '',
+      })
+    })
+
+    it('keeps the first value when two subfields resolve to one attr', async () => {
+      mocks.fetchFormSchema.mockResolvedValueOnce(
+        makeFormSchema([
+          { ...childrenSchemaField, childrenSubFields: ['childname'] },
+        ]),
+      )
+
+      const result = await processResponsesV4($, 'formId', {
+        ch1: v4Response('children', {
+          child0: {
+            value: {
+              childname: { value: 'ALI LEE' },
+              other: { value: 'BOB LEE', myInfo: { attr: 'childname' } },
+            },
+          },
+        }),
+      })
+
+      expect(result).toEqual([
+        expect.objectContaining({
+          _id: 'childrenbirthrecords_ch1_childname_0',
+          answer: 'ALI LEE',
+        }),
+      ])
+      expect(mocks.loggerWarn).toHaveBeenCalledWith(
+        'Duplicate FormSG children subfield',
+        expect.objectContaining({ fieldId: 'ch1', attr: 'childname' }),
+      )
+    })
+
+    it('emits an empty answer and logs when the children answer does not parse', async () => {
       mocks.fetchFormSchema.mockResolvedValueOnce(
         makeFormSchema([childrenSchemaField]),
       )
 
-      // the pre-v4 shape, which FormSG sent before the keyed rewrite
-      const legacyAnswer = {
-        child: [['ALI LEE']],
-        childFields: ['childname'],
-      }
-
       const result = await processResponsesV4($, 'formId', {
-        ch1: v4Response('children', legacyAnswer),
+        ch1: v4Response('children', { child: 'ALI LEE' }),
       })
 
       expect(result).toEqual([
@@ -714,7 +770,7 @@ describe('processResponsesV4', () => {
           _id: 'ch1',
           fieldType: 'children',
           question: 'Child records',
-          answer: legacyAnswer,
+          answer: '',
         },
       ])
       expect(mocks.loggerError).toHaveBeenCalledWith(
