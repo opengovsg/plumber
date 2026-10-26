@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/apps', async () => {
-  const { createVersionedStepTransformer } = await import(
-    '@/helpers/transform-step-parameters'
-  )
+  const { createVersionedStepTransformer } =
+    await import('@/helpers/transform-step-parameters')
   return {
     default: {
       appWithTransformer: {
