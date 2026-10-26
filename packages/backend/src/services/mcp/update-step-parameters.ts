@@ -1,4 +1,5 @@
 import type { IJSONObject, IRawAction } from '@plumber/types'
+import { NotFoundError } from 'objection'
 
 import apps from '@/apps'
 import { parseFormIdFormat } from '@/apps/formsg/auth/verify-credentials'
@@ -7,11 +8,12 @@ import { fetchFormSchema } from '@/apps/formsg/triggers/new-submission/fetch-for
 import globalVariable from '@/helpers/global-variable'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
-import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import type User from '@/models/user'
 import { loadAccessibleStep } from '@/services/access'
+import { getConnection } from '@/services/connection'
 import { lookupStepDefinition } from '@/services/step-definition'
+import { prepareStepParameters } from '@/services/step-parameters'
 
 import { registerConnectionService } from './register-connection'
 import { appendStepAiBuilderEvent } from './step-ai-builder-config'
@@ -126,18 +128,12 @@ export async function updateStepParametersService({
       Object.entries(parameters).filter(([k]) => allowedKeys.has(k)),
     ) as IJSONObject
 
-    let patchedParameters = filteredParameters
-    let version = step.version
-
-    const transformer = rawApp?.stepTransformer
-    if (transformer) {
-      patchedParameters = transformer.transformStepParameters(
-        step.key,
-        filteredParameters,
-        version,
-      ) as IJSONObject
-      version = transformer.getLatestStepVersion(step.key)
-    }
+    const { parameters: patchedParameters, version } = prepareStepParameters({
+      appKey: step.appKey,
+      key: step.key,
+      parameters: filteredParameters,
+      version: step.version,
+    })
 
     // Merge so repeated tool calls (one param at a time) accumulate rather than overwrite.
     const mergedParameters = {
@@ -154,19 +150,18 @@ export async function updateStepParametersService({
       // Scoped to this pipe, not "any connection the user can see": a
       // collaborator's broader accessible-connections set spans every flow
       // they touch, which would let them attach another flow's connection here.
-      const connection = await Connection.query(trx)
-        .findById(connectionId)
-        .where(function () {
-          this.where('connections.user_id', user.id).orWhereExists(
-            FlowConnections.query(trx)
-              .whereColumn('flow_connections.connection_id', 'connections.id')
-              .where('flow_connections.flow_id', pipeId),
-          )
-        })
-
-      if (!connection) {
-        throw new Error('Connection not found')
-      }
+      const connection = await getConnection({
+        user,
+        connectionId,
+        flowId: pipeId,
+        includeOwnConnections: true,
+        trx,
+      }).catch((error) => {
+        if (error instanceof NotFoundError) {
+          throw new Error('Connection not found')
+        }
+        throw error
+      })
 
       if (connection.key !== step.appKey) {
         throw new Error(
