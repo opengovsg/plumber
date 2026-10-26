@@ -623,6 +623,39 @@ describe('createStepService', () => {
         previousStepId: loadedFlow.steps[0].id,
       }),
     ).rejects.toThrow('Action can only be created by system')
+    expect(await Step.query().where('flow_id', flow.id)).toHaveLength(1)
+  })
+
+  it('throws if the app does not exist', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `create-step-unknown-app-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Unknown App Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: 'trace-create-unknown-app',
+    })
+    const loadedFlow = await flow.$fetchGraph('steps')
+
+    await expect(
+      createStepService({
+        user,
+        pipeId: flow.id,
+        appKey: 'noSuchApp',
+        key: 'sendMessageToChannel',
+        previousStepId: loadedFlow.steps[0].id,
+      }),
+    ).rejects.toThrow('No such trigger or action')
+    expect(await Step.query().where('flow_id', flow.id)).toHaveLength(1)
   })
 
   describe('approval branching (MRF)', () => {

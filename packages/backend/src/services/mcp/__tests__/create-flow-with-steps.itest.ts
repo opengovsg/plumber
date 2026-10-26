@@ -602,6 +602,71 @@ describe('createFlowWithStepsService', () => {
       }),
     ).rejects.toThrow('Action can only be created by system')
   })
+
+  it('saves a keyless placeholder next to keyed steps', async () => {
+    const result = await createFlowWithStepsService({
+      user: await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `create-pipe-placeholder-${randomUUID()}@example.com`,
+      }),
+      name: 'Placeholder Pipe',
+      steps: [
+        formsgTrigger,
+        { appKey: 'postman', type: 'action', position: 2 },
+      ],
+      traceId: 'trace-placeholder',
+    })
+
+    expect(result.steps.map((s) => [s.appKey, s.key])).toEqual([
+      ['formsg', 'newSubmission'],
+      ['postman', null],
+    ])
+  })
+
+  it('saves an unknown key when a placeholder leaves the pipe incomplete', async () => {
+    const result = await createFlowWithStepsService({
+      user: await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `create-pipe-unknown-incomplete-${randomUUID()}@example.com`,
+      }),
+      name: 'Incomplete Pipe',
+      steps: [
+        formsgTrigger,
+        { appKey: 'postman', key: 'noSuchAction', type: 'action', position: 2 },
+        { appKey: 'slack', type: 'action', position: 3 },
+      ],
+      traceId: 'trace-unknown-incomplete',
+    })
+
+    expect(result.steps.map((s) => s.key)).toEqual([
+      'newSubmission',
+      'noSuchAction',
+      null,
+    ])
+  })
+
+  it('rejects an unknown key at the schema check when every step has a key', async () => {
+    await expect(
+      createFlowWithStepsService({
+        user: await User.query().insertAndFetch({
+          id: randomUUID(),
+          email: `create-pipe-unknown-complete-${randomUUID()}@example.com`,
+        }),
+        name: 'Complete Pipe',
+        steps: [
+          formsgTrigger,
+          {
+            appKey: 'postman',
+            key: 'noSuchAction',
+            type: 'action',
+            position: 2,
+          },
+        ],
+        traceId: 'trace-unknown-complete',
+      }),
+    ).rejects.toThrow('Pipe contains invalid action steps')
+  })
+
   describe('MRF forms', () => {
     async function newUser() {
       return User.query().insertAndFetch({
@@ -1227,6 +1292,32 @@ describe('createFlowWithStepsService', () => {
           const steps = await flow.$relatedQuery('steps')
           expect(keys(steps)).not.toContain('sendTransactionalEmail')
         })
+      })
+
+      it('rejects a hidden action on a stage before creating the pipe', async () => {
+        mocks.fetchPublicForm.mockResolvedValue(mrfForm)
+        const user = await newUser()
+
+        await expect(
+          createFlowWithStepsService({
+            user,
+            name: 'MRF Pipe',
+            steps: [
+              formsgTrigger,
+              { ...email, position: 2, mrfStage: 2 },
+              {
+                appKey: 'formsg',
+                key: 'mrfSubmission',
+                type: 'action',
+                position: 3,
+                mrfStage: 2,
+              },
+            ],
+            traceId: 'trace-mrf-hidden',
+            formUrl: FORM_URL,
+          }),
+        ).rejects.toThrow('Action can only be created by system')
+        expect(await Flow.query().where('user_id', user.id)).toEqual([])
       })
 
       it('reports the pipe id when an action cannot be added', async () => {
