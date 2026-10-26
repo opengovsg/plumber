@@ -1,8 +1,8 @@
 import { UserFacingError } from '@/errors/user-facing-error'
 import { addFlowTableConnection } from '@/helpers/add-flow-connection'
 import TableMetadata from '@/models/table-metadata'
-import { getTableOperations } from '@/models/tiles/factory'
 import type User from '@/models/user'
+import { createTileInTransaction } from '@/services/tiles/create-tile'
 
 import {
   createColumnAiBuilderConfig,
@@ -51,13 +51,10 @@ export async function createTileService({
     }
   }
 
-  const tableOperations = getTableOperations('pg')
-
   const table = await TableMetadata.transaction(async (trx) => {
-    const pendingTable = await user.$relatedQuery('tables', trx).insertGraph({
+    return createTileInTransaction(trx, {
+      user,
       name: tableName,
-      role: 'owner',
-      db: 'pg',
       ...(traceId && { config: createTileAiBuilderConfig(traceId) }),
       columns: columnNames.map((columnName, position) => ({
         name: columnName,
@@ -67,13 +64,6 @@ export async function createTileService({
         }),
       })),
     })
-
-    await tableOperations.createTable(
-      pendingTable.id,
-      pendingTable.columns.map((column) => column.id),
-    )
-
-    return pendingTable
   })
 
   if (flow) {
