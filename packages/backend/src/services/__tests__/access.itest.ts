@@ -287,7 +287,7 @@ describe('access loaders', () => {
         /from "steps"/.test(sql),
       )
       expect(stepQueries).toHaveLength(1)
-      expect(stepQueries[0].sql).toMatch(/"steps"\."id" in \(\?, \?\)/)
+      expect(stepQueries[0].sql).toMatch(/"steps"\."id" in \(\$\d+, \$\d+\)/)
       expect(
         stepQueries[0].bindings.filter((binding) => binding === steps[0].id),
       ).toHaveLength(1)
