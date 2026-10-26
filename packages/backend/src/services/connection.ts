@@ -4,6 +4,14 @@ import Connection from '@/models/connection'
 import FlowConnections from '@/models/flow-connections'
 import type User from '@/models/user'
 
+/** A null userId marks a shared connection. */
+export function isForeignPersonalConnection(
+  connection: { userId: string | null },
+  userId: string,
+): boolean {
+  return connection.userId !== null && connection.userId !== userId
+}
+
 type GetConnectionParams = {
   user: User
   connectionId: string

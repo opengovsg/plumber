@@ -5,6 +5,7 @@ import { FORMSG_WEBHOOK_VERIFICATION_MESSAGE } from '@/apps/formsg/common/webhoo
 import globalVariable from '@/helpers/global-variable'
 import Flow from '@/models/flow'
 import type User from '@/models/user'
+import { isForeignPersonalConnection } from '@/services/connection'
 
 export type VerifyRegistrationStatus =
   | 'VERIFIED'
@@ -38,7 +39,7 @@ export async function verifyConnectionRegistrationService(
     throw new Error('Connection not found')
   }
 
-  if (connection.userId !== null && connection.userId !== user.id) {
+  if (isForeignPersonalConnection(connection, user.id)) {
     throw new Error('You cannot use a personal connection that you do not own')
   }
 
