@@ -1137,6 +1137,10 @@ export interface IActionJobData {
    * of the job's original (potentially very stale) enqueue time.
    */
   retryTimestamp?: number
+  /**
+   * The start time a delay step set for this job, in epoch milliseconds.
+   */
+  scheduledAt?: number
 }
 
 export interface IActionRunResult {
