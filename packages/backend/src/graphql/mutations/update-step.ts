@@ -9,6 +9,7 @@ import {
 import logger from '@/helpers/logger'
 import App from '@/models/app'
 import Step from '@/models/step'
+import { loadAccessibleStep } from '@/services/access'
 import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -34,12 +35,13 @@ const updateStep: MutationResolvers['updateStep'] = async (
   }
 
   const step = await Step.transaction(async (trx) => {
-    const step = await context.currentUser
-      .withAccessibleSteps({ requiredRole: 'editor', trx })
-      .findOne({
-        'steps.id': input.id,
-        'steps.flow_id': input.flow.id,
-      })
+    const step = await loadAccessibleStep({
+      user: context.currentUser,
+      stepId: input.id,
+      flowId: input.flow.id,
+      role: 'editor',
+      trx,
+    })
 
     if (!step) {
       throw new BadUserInputError('Step not found')
