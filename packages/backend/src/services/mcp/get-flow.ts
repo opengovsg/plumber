@@ -1,8 +1,11 @@
 import type { IJSONObject, IJSONValue, IStepConfig } from '@plumber/types'
+import { NotFoundError } from 'objection'
 
 import { hasStepVariable } from '@/apps/custom-api/common/sensitive-headers'
 import { SECRET_KEY_REGEXP } from '@/helpers/redaction/sensitive-keys'
+import Flow from '@/models/flow'
 import type User from '@/models/user'
+import { loadAccessibleFlow } from '@/services/access'
 
 export const REDACTED_VALUE = '[REDACTED]'
 
@@ -74,19 +77,22 @@ export async function getFlowService({
   user,
   pipeId,
 }: GetFlowInput): Promise<McpFlow> {
-  const flow = await user
-    .withAccessibleFlows({ requiredRole: 'viewer' })
-    .withGraphFetched({ steps: true })
-    .findOne({ 'flows.id': pipeId })
-    .throwIfNotFound()
+  const flow = await loadAccessibleFlow({
+    user,
+    flowId: pipeId,
+    role: 'viewer',
+    graph: { steps: true },
+  })
 
-  const steps = [...flow.steps].sort((a, b) => a.position - b.position)
+  if (!flow) {
+    throw new NotFoundError({ modelClass: Flow })
+  }
 
   return {
     id: flow.id,
     name: flow.name,
     active: flow.active,
-    steps: steps.map((step) => ({
+    steps: flow.steps.map((step) => ({
       id: step.id,
       key: step.key,
       appKey: step.appKey,
