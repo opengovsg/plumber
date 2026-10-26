@@ -70,7 +70,8 @@ const RULES: SharedRule[] = [
     use: 'runStepTest from services/run-step-test.ts',
     allowed: {
       'services/run-step-test.ts': 'owner',
-      'services/test-mrf-steps.ts': 'testRemainingMrfSteps still calls testStep',
+      'services/test-mrf-steps.ts':
+        'testRemainingMrfSteps still calls testStep',
     },
   },
   {
