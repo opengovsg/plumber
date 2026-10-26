@@ -66,6 +66,41 @@ describe('getFlowService', () => {
     expect(result.steps.map((s) => s.position)).toEqual([1, 2])
   })
 
+  it('returns steps in position order when inserted out of order', async () => {
+    const user = await User.query().insertAndFetch({
+      id: randomUUID(),
+      email: `get-flow-order-${randomUUID()}@example.com`,
+    })
+    const flow = await createFlowWithStepsService({
+      user,
+      name: 'Out Of Order Pipe',
+      steps: [
+        {
+          appKey: 'formsg',
+          key: 'newSubmission',
+          type: 'trigger',
+          position: 1,
+        },
+      ],
+      traceId: 'trace-get-flow-order',
+    })
+    for (const position of [3, 2]) {
+      await Step.query().insert({
+        key: 'sendTransactionalEmail',
+        appKey: 'postman',
+        type: 'action',
+        flowId: flow.id,
+        position,
+        parameters: {},
+        status: 'completed',
+      })
+    }
+
+    const result = await getFlowService({ user, pipeId: flow.id })
+
+    expect(result.steps.map((s) => s.position)).toEqual([1, 2, 3])
+  })
+
   it('throws when the pipe does not belong to the requesting user', async () => {
     const owner = await User.query().insertAndFetch({
       id: randomUUID(),
