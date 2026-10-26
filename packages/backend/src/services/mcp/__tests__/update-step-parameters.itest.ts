@@ -1,10 +1,12 @@
 import { randomUUID } from 'crypto'
 
+import { NotFoundError } from 'objection'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BadUserInputError } from '@/errors/graphql-errors'
 import Connection from '@/models/connection'
 import FlowCollaborator from '@/models/flow-collaborators'
+import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import User from '@/models/user'
 
@@ -741,6 +743,120 @@ describe('updateStepParametersService', () => {
         connectionId: ownerConnection.id,
       }),
     ).rejects.toThrow('Connection not found')
+  })
+
+  describe('connection ownership', () => {
+    let owner: User
+    let editor: User
+    let pipeId: string
+    let stepId: string
+
+    async function insertPostmanConnection(userId: string) {
+      return Connection.query().insertAndFetch({
+        id: randomUUID(),
+        key: 'postman',
+        userId,
+        verified: true,
+        draft: false,
+        formattedData: {},
+      })
+    }
+
+    beforeEach(async () => {
+      owner = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `ownership-owner-${randomUUID()}@example.com`,
+      })
+      editor = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `ownership-editor-${randomUUID()}@example.com`,
+      })
+      const flow = await createFlowWithStepsService({
+        user: owner,
+        name: 'Connection Ownership Pipe',
+        steps: [
+          {
+            appKey: 'formsg',
+            key: 'newSubmission',
+            type: 'trigger',
+            position: 1,
+          },
+          {
+            appKey: 'postman',
+            key: 'sendTransactionalEmail',
+            type: 'action',
+            position: 2,
+          },
+        ],
+        traceId: 'trace-connection-ownership',
+      })
+      await FlowCollaborator.query().insert({
+        flowId: flow.id,
+        userId: editor.id,
+        role: 'editor',
+        updatedBy: owner.id,
+      })
+      pipeId = flow.id
+      stepId = flow.steps.find((s) => s.type === 'action').id
+    })
+
+    it("attaches the editor's own connection", async () => {
+      const connection = await insertPostmanConnection(editor.id)
+
+      const result = await updateStepParametersService({
+        user: editor,
+        pipeId,
+        stepId,
+        parameters: {},
+        connectionId: connection.id,
+      })
+
+      expect(result.step.connectionId).toBe(connection.id)
+      expect((await Step.query().findById(stepId)).connectionId).toBe(
+        connection.id,
+      )
+    })
+
+    it('attaches a connection shared to the pipe', async () => {
+      const connection = await insertPostmanConnection(owner.id)
+      await FlowConnections.addFlowConnection({
+        flowId: pipeId,
+        connectionId: connection.id,
+        addedBy: owner.id,
+        connectionType: 'connection',
+      })
+
+      const result = await updateStepParametersService({
+        user: editor,
+        pipeId,
+        stepId,
+        parameters: {},
+        connectionId: connection.id,
+      })
+
+      expect(result.step.connectionId).toBe(connection.id)
+    })
+
+    it("rejects a stranger's connection with the plain not-found message", async () => {
+      const stranger = await User.query().insertAndFetch({
+        id: randomUUID(),
+        email: `ownership-stranger-${randomUUID()}@example.com`,
+      })
+      const connection = await insertPostmanConnection(stranger.id)
+
+      const error = await updateStepParametersService({
+        user: owner,
+        pipeId,
+        stepId,
+        parameters: {},
+        connectionId: connection.id,
+      }).catch((e: unknown) => e)
+
+      expect(error).toBeInstanceOf(Error)
+      expect(error).not.toBeInstanceOf(NotFoundError)
+      expect((error as Error).message).toBe('Connection not found')
+      expect((await Step.query().findById(stepId)).connectionId).toBeNull()
+    })
   })
 })
 
