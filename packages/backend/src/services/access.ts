@@ -22,6 +22,27 @@ interface LoadAccessibleStepInput {
   trx?: Transaction
 }
 
+interface LoadAccessibleStepsInput {
+  user: User
+  stepIds: string[]
+  role: IFlowCollabRole
+  graph?: RelationExpression<Step>
+  trx?: Transaction
+}
+
+function accessibleStepsQuery({
+  user,
+  role,
+  graph,
+  trx,
+}: Pick<LoadAccessibleStepsInput, 'user' | 'role' | 'graph' | 'trx'>) {
+  const query = user.withAccessibleSteps({ requiredRole: role, trx })
+  if (graph) {
+    query.withGraphFetched(graph)
+  }
+  return query
+}
+
 export async function loadAccessibleFlow({
   user,
   flowId,
@@ -45,13 +66,26 @@ export async function loadAccessibleStep({
   graph,
   trx,
 }: LoadAccessibleStepInput): Promise<Step | undefined> {
-  const query = user.withAccessibleSteps({ requiredRole: role, trx })
-  if (graph) {
-    query.withGraphFetched(graph)
-  }
-
-  return query.findOne({
+  return accessibleStepsQuery({ user, role, graph, trx }).findOne({
     'steps.id': stepId,
     ...(flowId ? { 'steps.flow_id': flowId } : {}),
   })
+}
+
+export async function loadAccessibleSteps({
+  user,
+  stepIds,
+  role,
+  graph,
+  trx,
+}: LoadAccessibleStepsInput): Promise<Step[]> {
+  const uniqueStepIds = [...new Set(stepIds)]
+  if (uniqueStepIds.length === 0) {
+    return []
+  }
+
+  return accessibleStepsQuery({ user, role, graph, trx }).whereIn(
+    'steps.id',
+    uniqueStepIds,
+  )
 }
