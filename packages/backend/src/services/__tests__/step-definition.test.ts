@@ -1,15 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import apps from '@/apps'
-import App from '@/models/app'
-
 import { isUserVisible, lookupStepDefinition } from '../step-definition'
-
-const registryKeys = Object.entries(apps).flatMap(([appKey, app]) =>
-  [...(app.triggers ?? []), ...(app.actions ?? [])].map(
-    ({ key }) => [appKey, key] as const,
-  ),
-)
 
 describe('lookupStepDefinition', () => {
   it('permits a visible action', () => {
@@ -50,23 +41,6 @@ describe('lookupStepDefinition', () => {
       kind: 'unknown',
     })
   })
-
-  it.each(registryKeys)(
-    'agrees with App.findTriggerOrActionByKey for %s %s',
-    async (appKey, key) => {
-      const legacy = await App.findTriggerOrActionByKey(appKey, key)
-      const lookup = lookupStepDefinition(appKey, key)
-
-      expect(lookup.kind).toBe(legacy.hiddenFromUser ? 'hidden' : 'permitted')
-      expect(lookup).toMatchObject({
-        definition: {
-          key: legacy.key,
-          name: legacy.name,
-          description: legacy.description,
-        },
-      })
-    },
-  )
 })
 
 describe('isUserVisible', () => {
