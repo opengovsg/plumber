@@ -244,7 +244,9 @@ function tagBatchStart(
     ),
     stepId: joinUnique(batchJobs.map((batchJob) => batchJob.data.stepId)),
     jobId: joinUnique(
-      batchJobs.map((batchJob) => makeActionJobId(ctx.queueName, batchJob.id)),
+      batchJobs.map((batchJob) =>
+        makeActionJobId(ctx.queueName, requireBullMqJobId(batchJob)),
+      ),
     ),
     ...longestQueueTiming,
     'batch.size': batchSize,
@@ -373,6 +375,13 @@ async function finalizeSucceededJob(
   }
 }
 
+function requireBullMqJobId(job: JobPro<IActionJobData>): string {
+  if (!job.id) {
+    throw new UnrecoverableError('Batched action job is missing its BullMQ ID')
+  }
+  return job.id
+}
+
 /**
  * Phase A - build each job's execution context (helper A), PER JOB, then
  * partition in batch order (so the shared write preserves row order). A prepare
@@ -389,7 +398,7 @@ async function prepareBatch(
   batchJobs: JobPro<IActionJobData>[],
 ): Promise<{ preparedOk: PreparedJob[]; prepareFailed: FailedJob[] }> {
   const jobIds = batchJobs.map((batchJob) =>
-    makeActionJobId(queueName, batchJob.id),
+    makeActionJobId(queueName, requireBullMqJobId(batchJob)),
   )
 
   const prepareResults = await Promise.all(
@@ -692,6 +701,7 @@ async function processBatch(ctx: BatchContext): Promise<void> {
     }
     throw routingError
   }
+  const runBatch = action.runBatch.bind(action)
 
   // Every prepared job shares one `${fileId}::${tableId}::${connectionId}` group,
   // so one lock key (from the app queue's getLockKey) covers the batch. Taken
@@ -713,7 +723,7 @@ async function processBatch(ctx: BatchContext): Promise<void> {
     let runBatchError: unknown = null
     const runStart = Date.now()
     try {
-      runResults = await action.runBatch(
+      runResults = await runBatch(
         preparedOk.map(({ prepared }) => ({ $: prepared.$ })),
       )
     } catch (error) {

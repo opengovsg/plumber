@@ -287,7 +287,7 @@ describe('chat handler — GitBook MCP disabled', () => {
     const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
     const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     const res = makeRes()
     // oxlint-disable-next-line typescript/no-explicit-any
     await handler(makeReq() as any, res as any, vi.fn())
@@ -317,7 +317,7 @@ describe('chat handler — GitBook MCP disabled', () => {
       actual.convertToModelMessages,
     )
 
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     const res = makeRes()
     await handler(
       makeReq({
@@ -399,7 +399,7 @@ describe('chat handler continuation', () => {
       actual.convertToModelMessages,
     )
     const pipeId = '123e4567-e89b-12d3-a456-426614174000'
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     await handler(
       makeReq({
         messages: [
@@ -477,7 +477,7 @@ describe('chat handler continuation', () => {
   })
 
   it('allows 20 model steps and signals tool-call pauses in finish metadata', async () => {
-    const handler = router.stack[0].route.stack[0].handle
+    const handler = router.stack[0].route!.stack[0].handle
     await handler(
       makeReq() as unknown as Request,
       makeRes() as unknown as Response,
