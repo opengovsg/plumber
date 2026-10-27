@@ -9,7 +9,10 @@ import get from 'lodash.get'
 
 import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
-import StepError from '@/errors/step'
+import StepError, {
+  attachHiddenCauseIfStepError,
+  getStepErrorKind,
+} from '@/errors/step'
 import ExecutionStep from '@/models/execution-step'
 
 import { MAXIMUM_JOB_ATTEMPTS } from '../default-job-configuration'
@@ -160,6 +163,10 @@ export function handleFailedStepAndThrow(
 
   // Inspect the error / failure reason, and determine if we can retry the step.
   try {
+    // Retrying cannot fix the user's own configuration.
+    if (getStepErrorKind(params.executionError) === 'config') {
+      throw new UnrecoverableError(JSON.stringify(errorDetails))
+    }
     if (executionError instanceof RetriableError) {
       return handleRetriableError(executionError, context)
     }
@@ -187,6 +194,14 @@ export function handleFailedStepAndThrow(
     span?.addTags({
       willRetry: isRetriable ? 'true' : 'false',
     })
+
+    // If we threw a different error here, and the original executionError was StepError, attach it as the cause
+    const isCreatedHere =
+      finalError instanceof UnrecoverableError ||
+      (finalError instanceof RetriableError && finalError !== executionError)
+    if (isCreatedHere) {
+      attachHiddenCauseIfStepError(finalError, params.executionError)
+    }
 
     throw finalError
   }

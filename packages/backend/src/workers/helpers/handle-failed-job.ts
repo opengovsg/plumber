@@ -2,6 +2,7 @@ import type { IActionJobData } from '@plumber/types'
 import { type JobPro, UnrecoverableError } from '@taskforcesh/bullmq-pro'
 
 import appConfig from '@/config/app'
+import StepError, { getStepErrorKind } from '@/errors/step'
 import { MAXIMUM_JOB_ATTEMPTS } from '@/helpers/default-job-configuration'
 import {
   isErrorEmailAlreadySent,
@@ -10,6 +11,16 @@ import {
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
 import Flow from '@/models/flow'
+import Step from '@/models/step'
+
+async function findAppKey(stepId: string): Promise<string | undefined> {
+  try {
+    return (await Step.query().findById(stepId))?.appKey
+  } catch {
+    // A missing appKey must not stop the execution from being marked failed.
+    return undefined
+  }
+}
 
 /**
  * Post-failure side-effects for a single (non-batch) action job: mark its
@@ -30,19 +41,7 @@ export async function handleFailedJob(
   err: Error,
   queueName: string,
 ): Promise<void> {
-  const { flowId, executionId } = failedJob.data
-
-  logger.error(
-    `[${queueName}] JOB ID: ${failedJob.id} - FLOW ID: ${flowId} has failed to start with ${err.message}`,
-    {
-      err,
-      queueName,
-      job: failedJob.data,
-      attemptsMade: failedJob.attemptsMade,
-      attemptsStarted: failedJob.attemptsStarted,
-      workerVersion: appConfig.version,
-    },
-  )
+  const { flowId, executionId, stepId } = failedJob.data
 
   // The job will be retried if:
   // 1. The error is not an UnrecoverableError, and
@@ -50,6 +49,23 @@ export async function handleFailedJob(
   const willRetryJob =
     !(err instanceof UnrecoverableError) && // Not an unrecoverable error
     failedJob.attemptsMade < MAXIMUM_JOB_ATTEMPTS // Haven't reached max attempts
+
+  // Monitors read this log rather than spans, because logs are not sampled.
+  logger.error(
+    `[${queueName}] JOB ID: ${failedJob.id} - FLOW ID: ${flowId} has failed to start with ${err.message}`,
+    {
+      event: 'action-job-failed',
+      err,
+      queueName,
+      job: failedJob.data,
+      attemptsMade: failedJob.attemptsMade,
+      attemptsStarted: failedJob.attemptsStarted,
+      workerVersion: appConfig.version,
+      willRetry: willRetryJob,
+      kind: getStepErrorKind(err instanceof StepError ? err : err.cause),
+      appKey: willRetryJob ? undefined : await findAppKey(stepId),
+    },
+  )
 
   // No further post-processing needed if we're retrying.
   if (willRetryJob) {

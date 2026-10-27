@@ -1,13 +1,9 @@
-import HttpError from './http'
-import StepError from './step'
+import StepError, { type StepErrorOptions } from './step'
 
-interface PartialStepErrorArgs {
-  name: string
-  solution: string
+interface PartialStepErrorArgs extends StepErrorOptions {
   partialRetry: {
     buttonMessage: string
   }
-  error?: HttpError
 }
 
 /**
@@ -16,7 +12,7 @@ interface PartialStepErrorArgs {
  */
 export default class PartialStepError extends StepError {
   constructor(props: PartialStepErrorArgs) {
-    const { name, solution, error, partialRetry } = props
-    super(name, solution, error, { partialRetry })
+    const { partialRetry, ...options } = props
+    super(options, { partialRetry })
   }
 }

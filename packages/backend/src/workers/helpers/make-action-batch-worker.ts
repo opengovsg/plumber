@@ -14,6 +14,7 @@ import { type Span } from 'dd-trace'
 import appConfig from '@/config/app'
 import { createRedisClient } from '@/config/redis'
 import { M365_BATCH_SIZE, WORKER_CONCURRENCY } from '@/config/workers'
+import { attachHiddenCauseIfStepError } from '@/errors/step'
 import { handleFailedStepAndThrow } from '@/helpers/actions'
 import { exponentialBackoffWithJitter } from '@/helpers/backoff'
 import { withLock } from '@/helpers/distributed-lock'
@@ -293,6 +294,7 @@ async function isolateFailedJob(
   const permanentError = new UnrecoverableError(
     error instanceof Error ? error.message : String(error),
   )
+  attachHiddenCauseIfStepError(permanentError, error)
   batchJob.setAsFailed(permanentError)
 
   try {
