@@ -351,6 +351,7 @@ function AiBuilderContent() {
                   display="flex"
                   flexShrink={0}
                   ml="-6px"
+                  layerStyle="focusRing.default"
                   onClick={handleClose}
                 >
                   <Icon boxSize={6} color="base.content.default" as={BiX} />

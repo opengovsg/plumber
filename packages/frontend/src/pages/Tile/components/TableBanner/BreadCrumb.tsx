@@ -5,17 +5,22 @@ import {
   Icon,
 } from '@chakra-ui/react'
 import { useCallback } from 'react'
-import { BiChevronLeft } from 'react-icons/bi'
+import { BiChevronLeft, BiTable } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 
 import EditableInput from '@/components/EditableInput'
 import * as URLS from '@/config/urls'
+import { DatabaseType } from '@/graphql/__generated__/graphql'
 
 import { useTableContext } from '../../contexts/TableContext'
 import { useUpdateTable } from '../../hooks/useUpdateTable'
 
 function BreadCrumb() {
-  const { tableName: initialTableName, hasEditPermission } = useTableContext()
+  const {
+    tableName: initialTableName,
+    hasEditPermission,
+    databaseType,
+  } = useTableContext()
   const { updateTableName } = useUpdateTable()
 
   const onSave = useCallback(
@@ -40,6 +45,11 @@ function BreadCrumb() {
           <Icon as={BiChevronLeft} boxSize={6} color="base.content.default" />
         </BreadcrumbLink>
       </BreadcrumbItem>
+      {databaseType === DatabaseType.Pg && (
+        <BreadcrumbItem>
+          <Icon as={BiTable} color="base.content.default" mr={2} />
+        </BreadcrumbItem>
+      )}
       <EditableInput
         value={initialTableName}
         fontWeight={500}
