@@ -88,6 +88,25 @@ describe('runReconcilerLoop', () => {
     await loop.stop()
   })
 
+  it('waits for a run time beyond the setTimeout limit', async () => {
+    // 2027-01-01 00:00 in Singapore, about 66 days away.
+    const check = makeCheck({ cronPattern: '0 0 1 1 *' })
+    const loop = runReconcilerLoop({
+      checks: [check],
+      checkTimeoutSeconds: 30,
+    })
+
+    await vi.advanceTimersByTimeAsync(
+      new Date('2026-12-31T16:00:00Z').getTime() - Date.now() - 1,
+    )
+    expect(check.run).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(check.run).toHaveBeenCalledTimes(1)
+
+    await loop.stop()
+  })
+
   it('throws at start on an invalid cron pattern', () => {
     expect(() =>
       runReconcilerLoop({
