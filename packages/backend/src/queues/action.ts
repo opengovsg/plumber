@@ -101,9 +101,9 @@ for (const [appKey, app] of Object.entries(apps)) {
 //
 
 interface EnqueueActionJobParams {
-  // Callers usually pass a Step's appKey, which is optional on the model.
+  // Callers usually pass a Step's appKey and key, which are optional on the model.
   appKey: string | null | undefined
-  actionKey: string | null
+  actionKey: string | null | undefined
   jobName: string
   jobData: IActionJobData
   jobOptions: Omit<JobsProOptions, 'group'>

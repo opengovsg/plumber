@@ -54,7 +54,6 @@ import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
 
 import { getAuthenticatedContext } from '../middleware/authentication'
-
 import {
   buildEstablishedConnectionReminder,
   resolveEstablishedFormConnection,
@@ -198,14 +197,18 @@ const handleChatStream = observe(
       const allMessages = [systemMessage, ...messages]
 
       let mcpClient: GitbookMcpClient | null = null
-      let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
+      let gitbookTools = {} as NonNullable<
+        Parameters<typeof streamText>[0]['tools']
+      >
 
       try {
         const gitbook = await connectGitbookMcp()
         mcpClient = gitbook.client
         gitbookTools = wrapMcpToolsWithUsageLogs(
           // oxlint-disable-next-line typescript/no-explicit-any
-          gitbook.tools as Parameters<typeof streamText>[0]['tools'],
+          gitbook.tools as NonNullable<
+            Parameters<typeof streamText>[0]['tools']
+          >,
           {
             source: 'gitbook',
             traceId,

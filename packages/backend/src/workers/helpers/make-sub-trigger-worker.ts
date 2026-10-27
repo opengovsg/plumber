@@ -217,7 +217,9 @@ export function makeSubTriggerWorker(
           // already committed, so a retry would read 'success' and enqueue
           // nothing. The execution stalls instead of running the next step
           // twice.
-          throw new UnrecoverableError(error.message)
+          throw new UnrecoverableError(
+            error instanceof Error ? error.message : String(error),
+          )
         }
       } catch (error) {
         const errorMessage =
