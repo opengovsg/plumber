@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import apps from '@/apps'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
@@ -153,6 +154,33 @@ describe('registerConnectionService', () => {
     ).rejects.toThrow('Step not found')
 
     expect(mocks.registerConnection).not.toHaveBeenCalled()
+  })
+
+  it('rejects an app without registration support before the published-pipe error', async () => {
+    const auth = apps.formsg.auth as {
+      connectionRegistrationType?: 'per-step' | 'global'
+    }
+    const originalType = auth.connectionRegistrationType
+    auth.connectionRegistrationType = undefined
+
+    const step = await Step.query().findById(triggerStepId)
+    await Flow.knex().table('flows').where('id', step?.flowId).update({
+      active: true,
+    })
+
+    try {
+      await expect(
+        registerConnectionService(user, triggerStepId, connection.id),
+      ).rejects.toThrow('App does not support connection registration')
+    } finally {
+      auth.connectionRegistrationType = originalType
+    }
+
+    expect(mocks.isStillVerified).not.toHaveBeenCalled()
+    expect(mocks.registerConnection).not.toHaveBeenCalled()
+    expect(mocks.globalVariable).not.toHaveBeenCalled()
+    const updatedStep = await Step.query().findById(triggerStepId)
+    expect(updatedStep?.connectionId).toBeNull()
   })
 
   it('throws when the pipe is published and does not register', async () => {

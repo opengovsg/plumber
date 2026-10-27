@@ -1,5 +1,8 @@
 import { ForbiddenError } from '@/errors/graphql-errors'
-import { getConnection } from '@/services/connection'
+import {
+  getConnection,
+  isForeignPersonalConnection,
+} from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -23,11 +26,7 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
     includeOwnConnections: flow.role === 'owner',
   })
 
-  // GUARD: Prevent updating personal connections owned by others
-  if (
-    connection.userId !== null &&
-    connection.userId !== context.currentUser.id
-  ) {
+  if (isForeignPersonalConnection(connection, context.currentUser.id)) {
     throw new ForbiddenError(
       'You cannot update a personal connection that you do not own',
     )

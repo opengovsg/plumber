@@ -1,46 +1,16 @@
-import type { IApp, IGlobalVariable } from '@plumber/types'
+import { NotFoundError } from 'objection'
 
 import apps from '@/apps'
 import { ForbiddenError } from '@/errors/graphql-errors'
-import globalVariable from '@/helpers/global-variable'
-import type Connection from '@/models/connection'
-import type User from '@/models/user'
-import { getConnection } from '@/services/connection'
+import Flow from '@/models/flow'
+import { loadAccessibleFlow } from '@/services/access'
+import {
+  getConnection,
+  isForeignPersonalConnection,
+} from '@/services/connection'
+import { registerConnectionForFlow } from '@/services/connection-registration'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
-
-async function makeGlobalVariableForGlobalRegistration(
-  currentUser: User,
-  app: IApp,
-  connection: Connection,
-): Promise<IGlobalVariable> {
-  return await globalVariable({
-    connection,
-    app,
-    user: currentUser,
-  })
-}
-
-async function makeGlobalVariableForPerFlowRegistration(
-  currentUser: User,
-  app: IApp,
-  connection: Connection,
-  flowId: string,
-): Promise<IGlobalVariable> {
-  const flow = await currentUser
-    .withAccessibleFlows({ requiredRole: 'editor' })
-    .findOne({
-      id: flowId,
-    })
-    .throwIfNotFound()
-
-  return await globalVariable({
-    connection,
-    app,
-    flow,
-    user: currentUser,
-  })
-}
 
 const registerConnection: MutationResolvers['registerConnection'] = async (
   _parent,
@@ -48,13 +18,19 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
   context,
 ) => {
   const { connectionId, flowId } = params.input
+  if (!flowId) {
+    throw new NotFoundError({ modelClass: Flow })
+  }
 
-  const flow = await context.currentUser
-    .withAccessibleFlows({ requiredRole: 'editor' })
-    .findOne({
-      id: flowId,
-    })
-    .throwIfNotFound()
+  const flow = await loadAccessibleFlow({
+    user: context.currentUser,
+    flowId,
+    role: 'editor',
+  })
+
+  if (!flow) {
+    throw new NotFoundError({ modelClass: Flow })
+  }
 
   const connection = await getConnection({
     user: context.currentUser,
@@ -63,11 +39,7 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
     includeOwnConnections: flow.role === 'owner',
   })
 
-  // GUARD: Prevent updating personal connections owned by others
-  if (
-    connection.userId !== null &&
-    connection.userId !== context.currentUser.id
-  ) {
+  if (isForeignPersonalConnection(connection, context.currentUser.id)) {
     throw new ForbiddenError(
       'You cannot register a personal connection that you do not own',
     )
@@ -78,31 +50,21 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
     throw new Error('Invalid app')
   }
 
-  const connectionRegistrationType = app.auth?.connectionRegistrationType
-  if (!connectionRegistrationType) {
+  const result = await registerConnectionForFlow({
+    user: context.currentUser,
+    app,
+    connection,
+    flow,
+  })
+
+  if (result === 'unsupported') {
     throw new Error('App does not support connection registration.')
   }
 
-  const $ =
-    connectionRegistrationType === 'global'
-      ? await makeGlobalVariableForGlobalRegistration(
-          context.currentUser,
-          app,
-          connection,
-        )
-      : await makeGlobalVariableForPerFlowRegistration(
-          context.currentUser,
-          app,
-          connection,
-          flowId,
-        )
-
-  const connectionStillVerified = await app.auth.isStillVerified($)
-  if (!connectionStillVerified) {
+  if (result === 'unverified') {
     throw new Error('Connection is not verified')
   }
 
-  await app.auth.registerConnection?.($)
   return true
 }
 

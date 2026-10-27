@@ -48,6 +48,31 @@ const RULES: SharedRule[] = [
       'services/mcp/update-step-parameters.ts',
     ],
   },
+  {
+    kind: 'only-in',
+    pattern: /registerConnection\?\.\(/,
+    use: 'registerConnectionForFlow from services/connection-registration.ts',
+    allowed: {
+      'services/connection-registration.ts': 'owner',
+    },
+  },
+  {
+    kind: 'only-in',
+    pattern: /connection\.userId !== null/,
+    use: 'isForeignPersonalConnection from services/connection.ts',
+    allowed: {
+      'services/connection.ts': 'owner',
+    },
+  },
+  {
+    kind: 'never-in',
+    pattern: /withAccessibleFlows\(|withAccessibleSteps\(/,
+    use: 'loadAccessibleFlow or loadAccessibleStep from services/access.ts',
+    files: [
+      'graphql/mutations/register-connection.ts',
+      'services/mcp/register-connection.ts',
+    ],
+  },
 ]
 
 function listSourceFiles(dir: string): string[] {

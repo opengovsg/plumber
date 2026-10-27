@@ -4,7 +4,10 @@ import GenerateAuthUrlError from '@/errors/generate-auth-url'
 import { ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import App from '@/models/app'
-import { getConnection } from '@/services/connection'
+import {
+  getConnection,
+  isForeignPersonalConnection,
+} from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -25,11 +28,7 @@ const generateAuthUrl: MutationResolvers['generateAuthUrl'] = async (
     includeOwnConnections: flow.role === 'owner',
   })
 
-  // GUARD: Prevent updating personal connections owned by others
-  if (
-    connection.userId !== null &&
-    connection.userId !== context.currentUser.id
-  ) {
+  if (isForeignPersonalConnection(connection, context.currentUser.id)) {
     throw new ForbiddenError(
       'You cannot generate an auth URL for a personal connection that you do not own',
     )
