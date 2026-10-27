@@ -70,6 +70,7 @@ The backend has three error families. Do not add a new family.
 
 - A step failure the user sees: throw `StepError` with a `kind`.
 - A user-visible failure outside a step: throw `UserFacingError`, in GraphQL resolvers and REST endpoints (e.g. AI builder) alike.
+- Exception: a GraphQL resolver that needs a client error code (e.g. `BAD_USER_INPUT`) throws a class from `errors/graphql-errors/`. They extend the library type `GraphQLError` (see "Library error types"), so they are not a new family.
 - Anything else counts as a Plumber bug. This includes a raw `RetriableError` or `HttpError` that ran out of retries.
 
 ### `StepError`
@@ -111,5 +112,3 @@ Use a library's error types only at its boundary:
 - when the library creates them itself (e.g. Apollo parse and validation errors).
 
 This applies to Apollo/GraphQL, BullMQ, Zod and Objection.
-
-A GraphQL resolver that needs a client error code throws a class from `errors/graphql-errors/`.
