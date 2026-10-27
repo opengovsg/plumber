@@ -4,13 +4,14 @@ import { type ReconcilerCheck, runReconcilerLoop } from '../run-loop'
 
 const mocks = vi.hoisted(() => ({
   logError: vi.fn(),
+  logWarn: vi.fn(),
   gauge: vi.fn(),
 }))
 
 vi.mock('@/helpers/logger', () => ({
   default: {
     error: mocks.logError,
-    warn: vi.fn(),
+    warn: mocks.logWarn,
     info: vi.fn(),
   },
 }))
@@ -145,7 +146,7 @@ describe('runReconcilerLoop', () => {
 
   it('times out a slow check and schedules its next run', async () => {
     const check = makeCheck({
-      run: vi.fn(() => new Promise<void>(() => undefined)),
+      run: vi.fn(() => new Promise<void>((r) => setTimeout(r, 20_000))),
     })
     const loop = runReconcilerLoop({
       checks: [check],
@@ -161,12 +162,39 @@ describe('runReconcilerLoop', () => {
       expect.objectContaining({ checkName: 'test-check' }),
     )
 
-    await vi.advanceTimersByTimeAsync(60_000)
+    await vi.advanceTimersByTimeAsync(50_000)
     expect(check.run).toHaveBeenCalledTimes(2)
 
     const stopped = loop.stop()
     await vi.advanceTimersByTimeAsync(10_000)
     await stopped
+  })
+
+  it('skips runs while a timed-out run of the check is still running', async () => {
+    const hungRun = deferred()
+    const check = makeCheck({
+      run: vi
+        .fn<() => Promise<void>>()
+        .mockReturnValueOnce(hungRun.promise)
+        .mockResolvedValue(undefined),
+    })
+    const loop = runReconcilerLoop({
+      checks: [check],
+      checkTimeoutSeconds: 10,
+    })
+
+    await vi.advanceTimersByTimeAsync(120_000)
+    expect(check.run).toHaveBeenCalledTimes(1)
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Reconciler check skipped',
+      expect.objectContaining({ checkName: 'test-check' }),
+    )
+
+    hungRun.resolve()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(check.run).toHaveBeenCalledTimes(2)
+
+    await loop.stop()
   })
 
   it('never overlaps runs of one check', async () => {

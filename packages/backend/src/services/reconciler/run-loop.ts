@@ -44,6 +44,8 @@ export function runReconcilerLoop({
   let stopped = false
   const pendingTimers = new Set<NodeJS.Timeout>()
   const runningChecks = new Set<Promise<void>>()
+  // A timeout cannot cancel a run, e.g. a Redis command waiting out an outage.
+  const unsettledChecks = new Set<ReconcilerCheck>()
 
   async function runCheckOnce(check: ReconcilerCheck): Promise<void> {
     let timeoutTimer: NodeJS.Timeout | undefined
@@ -56,12 +58,16 @@ export function runReconcilerLoop({
     })
 
     try {
-      await Promise.race([
-        tracer.trace('reconciler.check', { resource: check.name }, () =>
-          check.run(),
-        ),
-        timeout,
-      ])
+      const run = tracer.trace(
+        'reconciler.check',
+        { resource: check.name },
+        () => check.run(),
+      )
+      unsettledChecks.add(check)
+      const markSettled = () => unsettledChecks.delete(check)
+      void run.then(markSettled, markSettled)
+
+      await Promise.race([run, timeout])
     } catch (error) {
       logger.error('Reconciler check failed', {
         event: 'reconciler-check-failed',
@@ -85,6 +91,14 @@ export function runReconcilerLoop({
       Math.max(Date.now(), afterMillis),
     )
     waitUntil(runAtMillis, () => {
+      if (unsettledChecks.has(check)) {
+        logger.warn('Reconciler check skipped', {
+          event: 'reconciler-check-skipped',
+          checkName: check.name,
+        })
+        scheduleCheck(check, runAtMillis)
+        return
+      }
       const run = runCheckOnce(check)
       runningChecks.add(run)
       void run.then(() => {
