@@ -606,7 +606,7 @@ describe('decrypt form response', () => {
 
       await decryptFormResponse($)
 
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             attachmentField: expect.objectContaining({
@@ -634,7 +634,7 @@ describe('decrypt form response', () => {
       await decryptFormResponse($)
 
       expect(mocks.storeAttachmentInS3).not.toBeCalled()
-      expect($.request.body).toEqual(
+      expect($.request!.body).toEqual(
         expect.objectContaining({
           fields: {
             attachmentField: expect.objectContaining({
@@ -875,7 +875,7 @@ describe('decrypt form response', () => {
       await expect(decryptFormResponse($)).resolves.toEqual(
         SUCCESS_DECRYPT_RESPONSE,
       )
-      expect(JSON.parse($.request.body.fields.tableField.answer)).toMatchObject(
+      expect(JSON.parse($.request!.body.fields.tableField.answer)).toMatchObject(
         {
           rows: [],
           columns: [{ label: 'Name' }, { label: 'Qty' }],

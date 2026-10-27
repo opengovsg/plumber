@@ -120,7 +120,7 @@ describe('tag or untag case', () => {
 
   it('skips search when the value is a case uuid', async () => {
     mocks.httpPost.mockClear()
-    await tagOrUntagCaseAction.run($)
+    await tagOrUntagCaseAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenCalledTimes(1)
     expect(mocks.httpPost).toHaveBeenCalledWith(
@@ -139,7 +139,7 @@ describe('tag or untag case', () => {
       .mockResolvedValueOnce({ data: MOCK_RESPONSE })
     $.step.parameters.caseUuid = '261007-00001'
 
-    await tagOrUntagCaseAction.run($)
+    await tagOrUntagCaseAction.run!($)
 
     expect(mocks.httpPost).toHaveBeenNthCalledWith(1, '/cases/search', {
       caseRefs: ['261007-00001'],
@@ -171,7 +171,7 @@ describe('tag or untag case', () => {
     })
     $.step.parameters.caseUuid = '261007-00001'
 
-    await expect(tagOrUntagCaseAction.run($)).rejects.toThrow(
+    await expect(tagOrUntagCaseAction.run!($)).rejects.toThrow(
       'More than one case found for case ref 261007-00001',
     )
     expect(mocks.httpPost).toHaveBeenCalledTimes(1)
@@ -272,7 +272,7 @@ describe('tag or untag case', () => {
     ])('tags a %s as config', async (_label, parameters) => {
       Object.assign($.step.parameters, parameters)
 
-      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+      await expect(tagOrUntagCaseAction.run!($)).rejects.toMatchObject({
         kind: 'config',
       })
       expect(mocks.httpPost).not.toHaveBeenCalled()
@@ -281,7 +281,7 @@ describe('tag or untag case', () => {
     it('tags a response without traceId as third-party', async () => {
       mocks.httpPost.mockResolvedValueOnce({ data: {} })
 
-      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+      await expect(tagOrUntagCaseAction.run!($)).rejects.toMatchObject({
         kind: 'third-party',
       })
     })
@@ -296,7 +296,7 @@ describe('tag or untag case', () => {
         }),
       )
 
-      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+      await expect(tagOrUntagCaseAction.run!($)).rejects.toMatchObject({
         kind: 'config',
       })
     })
@@ -306,7 +306,7 @@ describe('tag or untag case', () => {
         makeHttpError({ status: 500, data: { message: 'Server error' } }),
       )
 
-      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+      await expect(tagOrUntagCaseAction.run!($)).rejects.toMatchObject({
         kind: 'third-party',
       })
     })
@@ -314,7 +314,7 @@ describe('tag or untag case', () => {
     it('tags an unexpected error as internal', async () => {
       mocks.httpPost.mockRejectedValueOnce(new Error('boom'))
 
-      await expect(tagOrUntagCaseAction.run($)).rejects.toMatchObject({
+      await expect(tagOrUntagCaseAction.run!($)).rejects.toMatchObject({
         kind: 'internal',
         message: expect.stringContaining("An error occurred: 'boom'"),
       })

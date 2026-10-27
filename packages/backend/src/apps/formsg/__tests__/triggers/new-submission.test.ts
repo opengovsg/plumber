@@ -288,7 +288,7 @@ describe('new submission trigger', () => {
         },
       })
 
-      await trigger.testRun($, { preferMock: true })
+      await trigger.testRun!($, { preferMock: true })
 
       expect(pushTriggerItemMock).toHaveBeenCalledWith({
         raw: mockData,

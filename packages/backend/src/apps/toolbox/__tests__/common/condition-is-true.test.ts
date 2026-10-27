@@ -1,5 +1,4 @@
 import type { IJSONValue } from '@plumber/types'
-
 import { describe, expect, it } from 'vitest'
 
 import conditionIsTrue from '../../common/condition-is-true'

@@ -760,12 +760,12 @@ describe('send transactional email', () => {
     it("redirects to the logged-in user's address instead of the pipe owner's", async () => {
       $.step.parameters.destinationEmail = 'recipient@example.com'
       $.step.parameters.destinationEmailCc = 'cc@example.com'
-      $.user.email = 'owner@example.com'
+      $.user!.email = 'owner@example.com'
       $.loggedInUser = { email: 'collaborator@example.com' } as IUser
       $.execution.testRun = true
 
       await expect(
-        sendTransactionalEmail.testRun($, { useConfiguredEmails: false }),
+        sendTransactionalEmail.testRun!($, { useConfiguredEmails: false }),
       ).resolves.not.toThrow()
       expect($.http.post).toBeCalledTimes(1)
       expect($.setActionItem).toHaveBeenCalledWith({
