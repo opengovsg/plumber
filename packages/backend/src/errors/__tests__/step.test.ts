@@ -78,6 +78,20 @@ describe('StepError', () => {
       expect(error.kind).toBeUndefined()
       expect(error.cause).toBe(HTTP_ERROR)
     })
+
+    it('keeps the solution and cause when the name is missing at runtime', () => {
+      const error = new StepError(
+        undefined as unknown as string,
+        's',
+        HTTP_ERROR,
+      )
+
+      expect(JSON.parse(error.message)).toEqual({
+        solution: 's',
+        details: HTTP_ERROR.details,
+      })
+      expect(error.cause).toBe(HTTP_ERROR)
+    })
   })
 })
 

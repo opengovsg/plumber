@@ -37,19 +37,20 @@ export default class StepError extends Error {
     positionalError?: HttpError,
     positionalExtraProperties?: Record<string, unknown>,
   ) {
-    const { name, solution, kind, cause } =
-      typeof nameOrOptions === 'string'
-        ? {
-            name: nameOrOptions,
-            solution: solutionOrExtraProperties as string,
-            kind: undefined,
-            cause: positionalError,
-          }
-        : nameOrOptions
-    const extraProperties =
-      typeof nameOrOptions === 'string'
-        ? positionalExtraProperties
-        : (solutionOrExtraProperties as Record<string, unknown> | undefined)
+    // Unmigrated call sites can pass an undefined name from an API response body.
+    const isPositional =
+      typeof nameOrOptions !== 'object' || nameOrOptions === null
+    const { name, solution, kind, cause } = isPositional
+      ? {
+          name: nameOrOptions as string,
+          solution: solutionOrExtraProperties as string,
+          kind: undefined,
+          cause: positionalError,
+        }
+      : nameOrOptions
+    const extraProperties = isPositional
+      ? positionalExtraProperties
+      : (solutionOrExtraProperties as Record<string, unknown> | undefined)
 
     const stepError: IStepError = {
       name,
