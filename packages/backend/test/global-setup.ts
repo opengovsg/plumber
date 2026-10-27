@@ -54,7 +54,18 @@ const setupContainers = createGlobalSetup([
   },
 ])
 
-export default async (project: TestProject) => {
+const CONTAINERS_KEY = Symbol.for('plumber.integration.containers')
+
+type SharedContainers = {
+  ready: Promise<() => Promise<void>>
+  references: number
+}
+
+type GlobalWithContainers = typeof globalThis & {
+  [CONTAINERS_KEY]?: SharedContainers
+}
+
+async function startContainers(project: TestProject) {
   const stopContainers = await setupContainers(project)
   applyContainerEnv(project.getProvidedContext().testcontainers)
 
@@ -65,4 +76,25 @@ export default async (project: TestProject) => {
   console.info('PostgreSQL base database migrated')
 
   return stopContainers
+}
+
+// IMPORTANT: Each vitest project runs this file, but all projects must share
+// one set of containers. The first caller starts them and the last teardown
+// stops them.
+export default async (project: TestProject) => {
+  const globalState = globalThis as GlobalWithContainers
+  const shared = (globalState[CONTAINERS_KEY] ??= {
+    ready: startContainers(project),
+    references: 0,
+  })
+  shared.references += 1
+  const stopContainers = await shared.ready
+
+  return async () => {
+    shared.references -= 1
+    if (shared.references === 0) {
+      delete globalState[CONTAINERS_KEY]
+      await stopContainers()
+    }
+  }
 }

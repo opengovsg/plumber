@@ -51,6 +51,8 @@ const isolatedItests = globSync(ITEST_INCLUDE, { cwd: __dirname }).filter(
 )
 
 const sharedTest = {
+  root: __dirname,
+  globalSetup: [getPath('./test/global-setup.ts')],
   setupFiles: [
     'dotenv/config',
     getPath('./test/pg-reset-db-setup.ts'),
@@ -70,49 +72,46 @@ const sharedTest = {
   },
 }
 
-export default defineConfig({
-  test: {
-    globalSetup: [getPath('./test/global-setup.ts')],
-    maxWorkers: Math.min(cpus().length, MAX_WORKER_SLOTS),
-    projects: [
-      {
-        resolve: {
-          alias: {
-            '@': getPath('./src'),
-          },
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend-integration',
-          include: [ITEST_INCLUDE],
-          exclude: isolatedItests,
-          isolate: false,
-          env: {
-            PLUMBER_ITEST_PROJECT: 'shared',
-          },
-        },
-      },
-      {
-        resolve: {
-          alias: {
-            '@': getPath('./src'),
-          },
-        },
-        test: {
-          ...sharedTest,
-          name: 'backend-integration-isolated',
-          include: isolatedItests,
-          isolate: true,
-          env: {
-            PLUMBER_ITEST_PROJECT: 'isolated',
-          },
-        },
-      },
-    ],
+const sharedResolve = {
+  alias: {
+    '@': getPath('./src'),
   },
-  resolve: {
-    alias: {
-      '@': getPath('./src'),
+}
+
+// Exported so the root config can register these projects directly. Vitest
+// does not expand projects nested inside a project config.
+export const integrationProjects = [
+  {
+    resolve: sharedResolve,
+    test: {
+      ...sharedTest,
+      name: 'backend-integration',
+      include: [ITEST_INCLUDE],
+      exclude: isolatedItests,
+      isolate: false,
+      env: {
+        PLUMBER_ITEST_PROJECT: 'shared',
+      },
     },
   },
+  {
+    resolve: sharedResolve,
+    test: {
+      ...sharedTest,
+      name: 'backend-integration-isolated',
+      include: isolatedItests,
+      isolate: true,
+      env: {
+        PLUMBER_ITEST_PROJECT: 'isolated',
+      },
+    },
+  },
+]
+
+export default defineConfig({
+  test: {
+    maxWorkers: Math.min(cpus().length, MAX_WORKER_SLOTS),
+    projects: integrationProjects,
+  },
+  resolve: sharedResolve,
 })
