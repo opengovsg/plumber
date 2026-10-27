@@ -1,4 +1,3 @@
-import '@/config/orm'
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -10,9 +9,10 @@ const FLOW_A = '0b9f9a8e-5c1e-4c55-9a39-0f6f3f0a1a11'
 const FLOW_B = '1c8e8b7d-4b0d-4b44-8a28-1e5e2e1b2b22'
 
 describe('buildLatestExecutionTimesQuery', () => {
-  const { sql, bindings } = buildLatestExecutionTimesQuery([FLOW_A, FLOW_B])
-    .toKnexQuery()
-    .toSQL()
+  const { sql, bindings } = buildLatestExecutionTimesQuery([
+    FLOW_A,
+    FLOW_B,
+  ]).toSQL()
 
   it('reads the latest non-test execution of each pipe', () => {
     expect(sql).toContain('max("created_at")')
