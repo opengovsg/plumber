@@ -1,5 +1,13 @@
-import { Box, Card, CardBody, Flex, Spacer, Text } from '@chakra-ui/react'
-import { IconButton } from '@opengovsg/design-system-react'
+import {
+  Box,
+  Card,
+  CardBody,
+  Center,
+  Flex,
+  Icon,
+  Spacer,
+  Text,
+} from '@chakra-ui/react'
 import type { IApp } from '@plumber/types'
 import { ReactElement } from 'react'
 import { BiChevronRight } from 'react-icons/bi'
@@ -51,13 +59,9 @@ function AppRow(props: AppRowProps): ReactElement {
 
             <Spacer />
 
-            <IconButton
-              aria-label="View App"
-              colorScheme="secondary"
-              icon={<BiChevronRight />}
-              variant="clear"
-              _hover={{}}
-            />
+            <Center boxSize={10} color="secondary.500">
+              <Icon as={BiChevronRight} boxSize={6} aria-hidden />
+            </Center>
           </Flex>
         </CardBody>
       </Card>
