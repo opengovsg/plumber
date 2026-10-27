@@ -1,6 +1,7 @@
 import type { IStep } from '@plumber/types'
 import z from 'zod'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
 import logger from '@/helpers/logger'
@@ -16,9 +17,11 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
   params,
   context,
 ) => {
-  const {
-    input: { steps, flowName, aiBuilderConfig },
-  } = params
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const { steps, flowName, aiBuilderConfig } = input
 
   const restrictedApps = getRestrictedAppKeys(
     await getAllLdFlags(context.currentUser.email),
@@ -45,7 +48,8 @@ const createFlowWithSteps: MutationResolvers['createFlowWithSteps'] = async (
       if (index === 0) {
         return step.position === 1
       }
-      return step.position === steps[index - 1].position + 1
+      const previousPosition = steps[index - 1].position
+      return previousPosition != null && step.position === previousPosition + 1
     })
   ) {
     throw new Error('Must be contiguous steps!')

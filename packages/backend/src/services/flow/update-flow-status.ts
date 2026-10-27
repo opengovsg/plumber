@@ -64,6 +64,9 @@ export async function updateFlowStatusService({
 
   const triggerStep = await flow.getTriggerStep()
   const trigger = await triggerStep.getTriggerCommand()
+  if (!trigger) {
+    throw new Error(`Trigger command not found for step: ${triggerStep.id}`)
+  }
   const interval = trigger.getInterval?.(triggerStep.parameters)
   const repeatOptions = {
     pattern: interval || EVERY_15_MINUTES_CRON,

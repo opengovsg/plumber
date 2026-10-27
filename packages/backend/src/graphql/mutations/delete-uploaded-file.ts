@@ -19,7 +19,11 @@ const deleteUploadedFile: MutationResolvers['deleteUploadedFile'] = async (
     throw new Error('Invalid id')
   }
 
-  const { objectKey } = parseS3Id(id)
+  const s3Id = parseS3Id(id)
+  if (!s3Id) {
+    throw new Error('Invalid id')
+  }
+  const { objectKey } = s3Id
 
   // check if user is an editor of the flow
   const flowId = objectKey.split('/')[0]

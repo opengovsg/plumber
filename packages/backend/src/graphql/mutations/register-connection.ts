@@ -1,7 +1,7 @@
 import type { IApp, IGlobalVariable } from '@plumber/types'
 
 import apps from '@/apps'
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import type Connection from '@/models/connection'
 import type User from '@/models/user'
@@ -47,7 +47,14 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
   params,
   context,
 ) => {
-  const { connectionId, flowId } = params.input
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const { connectionId, flowId } = input
+  if (!flowId) {
+    throw new BadUserInputError('Missing flowId')
+  }
 
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
@@ -62,6 +69,10 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
     flowId,
     includeOwnConnections: flow.role === 'owner',
   })
+
+  if (!connection) {
+    throw new BadUserInputError('Connection not found')
+  }
 
   // GUARD: Prevent updating personal connections owned by others
   if (
@@ -78,8 +89,9 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
     throw new Error('Invalid app')
   }
 
-  const connectionRegistrationType = app.auth?.connectionRegistrationType
-  if (!connectionRegistrationType) {
+  const auth = app.auth
+  const connectionRegistrationType = auth?.connectionRegistrationType
+  if (!auth || !connectionRegistrationType) {
     throw new Error('App does not support connection registration.')
   }
 
@@ -97,12 +109,15 @@ const registerConnection: MutationResolvers['registerConnection'] = async (
           flowId,
         )
 
-  const connectionStillVerified = await app.auth.isStillVerified($)
+  if (!auth.isStillVerified) {
+    throw new Error('App does not support connection verification')
+  }
+  const connectionStillVerified = await auth.isStillVerified($)
   if (!connectionStillVerified) {
     throw new Error('Connection is not verified')
   }
 
-  await app.auth.registerConnection?.($)
+  await auth.registerConnection?.($)
   return true
 }
 

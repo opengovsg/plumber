@@ -16,7 +16,7 @@ class ExecutionStep extends Base {
   errorDetails!: IJSONObject | null
   status!: 'success' | 'failure'
   appKey!: string
-  jobId?: string
+  jobId?: string | null
   step!: Step
   metadata!: IExecutionStepMetadata
   key!: string

@@ -1,6 +1,7 @@
 import { isEmpty } from 'lodash'
 
 import { remapEndStepIdsOnDuplicateFlow } from '@/apps/toolbox/common/validate-end-step'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getStepVersion } from '@/helpers/get-step-version'
 import logger from '@/helpers/logger'
 import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
@@ -15,7 +16,12 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
   params,
   context,
 ) => {
-  const oldFlowId = params.input.id
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  const oldFlowId = input.id
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'viewer' })
     .withGraphJoined('[steps.[connection]]')
@@ -79,7 +85,6 @@ const duplicateFlow: MutationResolvers['duplicateFlow'] = async (
           appKey: oldStep.appKey,
           type: oldStep.type,
           connectionId: shouldDuplicateConnection ? oldStep.connectionId : null,
-          connection: shouldDuplicateConnection ? oldStep.connection : null,
           position: oldStep.position,
           parameters: updateStepVariables(
             isOwner

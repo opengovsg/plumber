@@ -27,7 +27,7 @@ class Step extends Base {
   key?: string
   appKey?: string
   type!: IStep['type']
-  connectionId?: string
+  connectionId?: string | null
   status!: 'incomplete' | 'completed'
   position!: number
   parameters!: IJSONObject

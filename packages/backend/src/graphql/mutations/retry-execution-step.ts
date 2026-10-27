@@ -1,5 +1,6 @@
 import { ref } from 'objection'
 
+import { BadUserInputError } from '@/errors/graphql-errors'
 import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import { getActionJob } from '@/queues/action'
@@ -11,8 +12,13 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
   params,
   context,
 ) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   const executionStep = await ExecutionStep.query()
-    .findById(params.input.executionStepId)
+    .findById(input.executionStepId)
     .whereNotNull('job_id')
     .where('status', 'failure')
     .whereExists(
@@ -27,6 +33,10 @@ const retryExecutionStep: MutationResolvers['retryExecutionStep'] = async (
   }
 
   const { jobId } = executionStep
+  if (!jobId) {
+    // The query filters on job_id being non-null.
+    throw new Error(`Execution step ${executionStep.id} has no job id`)
+  }
   const job = await getActionJob(jobId)
   if (!job) {
     // if job cannot be found anymore, remove the job id from the execution step so it cannot be retried again

@@ -56,6 +56,8 @@ const getTableConnections: QueryResolvers['getTableConnections'] = async (
       .select('tileSteps.tableid')
       .countDistinct('flows.id')
       .groupBy('tileSteps.tableid')
+      // The raw select returns aggregate rows, not Flow models.
+      .castTo<ExtendedFlow[]>()
 
     const result = distinctTableFlows.reduce(
       (acc: TableConnection, row: ExtendedFlow) => {
