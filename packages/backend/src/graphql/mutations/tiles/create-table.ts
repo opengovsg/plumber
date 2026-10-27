@@ -2,6 +2,7 @@ import { MutationResolvers } from '@/graphql/__generated__/types.generated'
 import { addFlowTableConnection } from '@/helpers/add-flow-connection'
 import TableMetadata from '@/models/table-metadata'
 import { getTableOperations } from '@/models/tiles/factory'
+import { createTileInTransaction } from '@/services/tiles/create-tile'
 
 const PLACEHOLDER_COLUMNS = [
   {
@@ -30,28 +31,16 @@ const createTable: MutationResolvers['createTable'] = async (
     throw new Error('Table name is required')
   }
 
-  const tableOperations = getTableOperations('pg')
-
   const table = await TableMetadata.transaction(async (trx) => {
-    const pendingTable = await context.currentUser
-      .$relatedQuery('tables', trx)
-      .insertGraph({
-        name: tableName,
-        role: 'owner',
-        db: 'pg',
-        columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
-      })
-
-    await tableOperations.createTable(
-      pendingTable.id,
-      isBlankTable ? [] : pendingTable.columns.map((column) => column.id),
-    )
-
-    return pendingTable
+    return createTileInTransaction(trx, {
+      user: context.currentUser,
+      name: tableName,
+      columns: isBlankTable ? [] : PLACEHOLDER_COLUMNS,
+    })
   })
 
   if (!isBlankTable) {
-    await tableOperations.createTableRows({
+    await getTableOperations('pg').createTableRows({
       tableId: table.id,
       dataArray: PLACEHOLDER_ROWS,
     })

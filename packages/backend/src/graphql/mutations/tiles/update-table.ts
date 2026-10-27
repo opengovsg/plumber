@@ -11,6 +11,7 @@ import {
   MAX_TILE_NAME_LENGTH,
 } from '@/models/tiles/constants'
 import { getTableOperations } from '@/models/tiles/factory'
+import { appendTileColumns } from '@/services/tiles/append-columns'
 
 import type { MutationResolvers } from '../../__generated__/types.generated'
 
@@ -63,26 +64,9 @@ const updateTable: MutationResolvers['updateTable'] = async (
   }
 
   if (addedColumns?.length) {
-    await TableColumnMetadata.transaction(async (trx) => {
-      const results = await table
-        .$relatedQuery('columns', trx)
-        .max('position as position') // aliasing for more convenient typing
-      const maxPosition = results[0].position || 0
-      const tableMetadataColumns = await table
-        .$relatedQuery('columns', trx)
-        .insert(
-          addedColumns.map((name, i) => ({
-            name,
-            position: maxPosition + i + 1,
-          })),
-        )
-        .returning('id')
-
-      // If creation of columns fail, we roll back the creation of table column metadata
-      await tableOperations.createTableColumns(
-        tableId,
-        tableMetadataColumns.map((column) => column.id),
-      )
+    await appendTileColumns({
+      table,
+      names: addedColumns,
     })
   }
 
