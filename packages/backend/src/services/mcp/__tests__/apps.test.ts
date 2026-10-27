@@ -33,6 +33,13 @@ vi.mock('@/apps', () => ({
             },
           ],
         },
+        {
+          key: 'systemTrigger',
+          name: 'System Trigger',
+          description: 'Hidden trigger managed by the system',
+          hiddenFromUser: true,
+          arguments: [],
+        },
       ],
       actions: [
         {
@@ -358,6 +365,12 @@ describe('listAppsService', () => {
       expect(
         formsg?.actions.find((a) => a.key === 'mrfSubmission'),
       ).toBeUndefined()
+    })
+
+    it('excludes a hiddenFromUser trigger and keeps the visible one', async () => {
+      const apps = await listAppsService(user)
+      const formsg = apps.find((a) => a.key === 'formsg')
+      expect(formsg?.triggers.map((t) => t.key)).toEqual(['newSubmission'])
     })
   })
 
