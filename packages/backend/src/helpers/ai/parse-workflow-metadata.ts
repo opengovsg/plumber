@@ -85,7 +85,13 @@ export function flattenWorkflowMetadataSteps(rawSteps: any[]): any[] {
       flattened.push(step)
       continue
     }
-    const children = flattenWorkflowMetadataSteps(nestedSteps)
+    // create_pipe puts every step in an If block on the block's own path.
+    const children = flattenWorkflowMetadataSteps(nestedSteps).map(
+      ({ approvalBranch: _, ...child }) =>
+        step.approvalBranch !== undefined
+          ? { ...child, approvalBranch: step.approvalBranch }
+          : child,
+    )
     flattened.push(
       children.length > 0
         ? { ...step, ifThenChildCount: children.length }
@@ -120,14 +126,6 @@ function parseRawWorkflowData(text: string): IFlowSteps {
   const [firstStep, ...remainingSteps] = flattenWorkflowMetadataSteps(
     parsed.steps,
   )
-
-  // IMPORTANT: The preview cannot split approved and rejected paths yet. It
-  // would show both outcomes as one sequence.
-  if (remainingSteps.some((step: any) => step?.approvalBranch !== undefined)) {
-    throw new BadUserInputError(
-      'Rejected-path actions are not supported in a proposal yet.',
-    )
-  }
 
   const hasMrfStage = remainingSteps.some(
     (step: any) => step?.appKey === 'formsg' && step?.key === 'mrfSubmission',
@@ -168,6 +166,10 @@ function parseRawWorkflowData(text: string): IFlowSteps {
           ...(step.ifThenChildCount !== undefined && {
             ifThenChildCount: step.ifThenChildCount,
           }),
+        }),
+        ...(step.isApproval !== undefined && { isApproval: step.isApproval }),
+        ...(step.approvalBranch !== undefined && {
+          approvalBranch: step.approvalBranch,
         }),
       }
     }),

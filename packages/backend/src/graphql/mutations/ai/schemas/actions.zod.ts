@@ -123,7 +123,8 @@ export function validateActionParameters(data: any): boolean {
  * 2. If blocks do not nest
  * 3. For-each cannot sit inside an If block
  * 4. A rejected-path action follows an approval stage
- * 5. The execution path rules in `validateExecutionPathRules`
+ * 5. The execution path rules in `validateExecutionPathRules`, on each
+ *    approval path
  *
  * An If block's extent comes from `getIfThenChildCount`, so a legacy flat
  * list (no `ifThenChildCount`) still fails the old way: a for-each after an
@@ -134,7 +135,38 @@ export function validateActionStepsRules(
   ctx: z.RefinementCtx,
 ) {
   validateBlockRules(steps, ctx)
-  validateExecutionPathRules(steps, ctx)
+  for (const path of getApprovalPaths(steps)) {
+    validateExecutionPathRules(path, ctx)
+  }
+}
+
+/**
+ * Splits the steps into the paths that can run. A rejected path runs the
+ * approved steps up to its approval stage, then its own rejected steps.
+ */
+function getApprovalPaths(steps: LayoutStep[]): LayoutStep[][] {
+  const approvePath: LayoutStep[] = []
+  const rejectPaths: LayoutStep[][] = []
+  let stagePath: LayoutStep[] = []
+  let rejectPath: LayoutStep[] | undefined
+
+  for (const step of steps) {
+    if (step.approvalBranch === 'reject') {
+      if (!rejectPath) {
+        rejectPath = [...stagePath]
+        rejectPaths.push(rejectPath)
+      }
+      rejectPath.push(step)
+      continue
+    }
+    approvePath.push(step)
+    if (step.isApproval) {
+      stagePath = [...approvePath]
+      rejectPath = undefined
+    }
+  }
+
+  return [approvePath, ...rejectPaths]
 }
 
 /**

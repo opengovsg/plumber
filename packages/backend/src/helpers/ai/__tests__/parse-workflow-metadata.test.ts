@@ -77,10 +77,157 @@ ${rejectedStageLine}
 
 describe('parseWorkflowMetadata', () => {
   describe('MRF approval stages', () => {
-    it('rejects a proposal with a rejected-path action', () => {
-      expect(() =>
-        parseWorkflowMetadata(approvalProposal('    isApproval: true')),
-      ).toThrow('Rejected-path actions are not supported in a proposal yet')
+    it('passes the approval flag and the rejected path to the preview', () => {
+      const result = parseWorkflowMetadata(
+        approvalProposal('    isApproval: true'),
+      )
+
+      expect(
+        result.actions.map((a) => [
+          a.config.stepName,
+          a.isApproval,
+          a.approvalBranch,
+        ]),
+      ).toEqual([
+        ['Approval', true, undefined],
+        ['Email approved', undefined, undefined],
+        ['Email rejected', undefined, 'reject'],
+      ])
+    })
+
+    it('ties each rejected action to the approval stage above it', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Two Approvals
+steps:
+  - appKey: formsg
+    key: newSubmission
+    stepName: Applicant
+  - appKey: formsg
+    key: mrfSubmission
+    stepName: Manager
+    isApproval: true
+  - appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email manager rejected
+    approvalBranch: reject
+  - appKey: formsg
+    key: mrfSubmission
+    stepName: Director
+    isApproval: true
+  - appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email approved
+  - appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email director rejected
+    approvalBranch: reject
+-->
+`
+      const result = parseWorkflowMetadata(text)
+
+      expect(
+        result.actions.map((a) => [a.config.stepName, a.approvalBranch]),
+      ).toEqual([
+        ['Manager', undefined],
+        ['Email manager rejected', 'reject'],
+        ['Director', undefined],
+        ['Email approved', undefined],
+        ['Email director rejected', 'reject'],
+      ])
+    })
+
+    it("puts an If block's steps on the If block's path", () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Rejected If
+steps:
+  - appKey: formsg
+    key: newSubmission
+    stepName: Applicant
+  - appKey: formsg
+    key: mrfSubmission
+    stepName: Approver
+    isApproval: true
+  - appKey: postman
+    key: sendTransactionalEmail
+    stepName: Email approved
+  - appKey: toolbox
+    key: ifThen
+    stepName: Check urgency
+    branchName: Urgent
+    approvalBranch: reject
+    steps:
+      - appKey: postman
+        key: sendTransactionalEmail
+        stepName: Email urgent rejection
+      - appKey: postman-sms
+        key: sendSms
+        stepName: SMS urgent rejection
+-->
+`
+      const result = parseWorkflowMetadata(text)
+
+      expect(result.actions[2]).toMatchObject({
+        key: 'ifThen',
+        approvalBranch: 'reject',
+        ifThenChildCount: 2,
+      })
+      expect(result.actions.slice(3).map((a) => a.approvalBranch)).toEqual([
+        'reject',
+        'reject',
+      ])
+    })
+
+    it('checks the for-each and delay rules on each path separately', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Loop per outcome
+steps:
+  - appKey: formsg
+    key: newSubmission
+  - appKey: formsg
+    key: mrfSubmission
+    isApproval: true
+  - appKey: toolbox
+    key: forEach
+  - appKey: delay
+    key: delayFor
+    approvalBranch: reject
+  - appKey: toolbox
+    key: forEach
+    approvalBranch: reject
+-->
+`
+      expect(parseWorkflowMetadata(text).actions).toHaveLength(4)
+    })
+
+    it('puts the approved steps above a stage on its rejected path', () => {
+      const text = `
+<!-- WORKFLOW_METADATA
+name: Loop before approval
+steps:
+  - appKey: formsg
+    key: newSubmission
+  - appKey: toolbox
+    key: forEach
+  - appKey: formsg
+    key: mrfSubmission
+    isApproval: true
+  - appKey: delay
+    key: delayFor
+    approvalBranch: reject
+-->
+`
+      expect(() => parseWorkflowMetadata(text)).toThrow(
+        'Delay action cannot be added after a for-each step',
+      )
+    })
+
+    it('rejects a rejected-path action with no approval stage above it', () => {
+      expect(() => parseWorkflowMetadata(approvalProposal(''))).toThrow(
+        'A rejected-path action must come after an approval stage of the form',
+      )
     })
 
     it('keeps the form stage name on the trigger of an MRF proposal', () => {
