@@ -20,7 +20,7 @@ const verifyConnection: MutationResolvers['verifyConnection'] = async (
     .throwIfNotFound()
 
   let connection = await getConnection({
-    context,
+    user: context.currentUser,
     connectionId: params.input.id,
     flowId: params.input.flowId,
     includeOwnConnections: flow.role === 'owner',
