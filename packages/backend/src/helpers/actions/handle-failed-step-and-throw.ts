@@ -86,7 +86,7 @@ function handleHttpError(
   // Without strictNullChecks, only `=== true` narrows `retryInfo` for the branch below.
   if (retryInfo.retriable === true) {
     throw new RetriableError({
-      error: errorDetails,
+      error: errorDetails ?? undefined,
       delayInMs: retryInfo.delayInMs,
       delayType: 'step',
     })
