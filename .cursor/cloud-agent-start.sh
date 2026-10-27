@@ -63,7 +63,9 @@ ensure_image() {
 ensure_image postgres:14-alpine public.ecr.aws/docker/library/postgres:14-alpine
 ensure_image postgres:16.6-bookworm public.ecr.aws/docker/library/postgres:16.6-bookworm
 ensure_image redis:6.2.0-alpine public.ecr.aws/docker/library/redis:6.2.0-alpine
-ensure_image amazon/dynamodb-local:latest public.ecr.aws/aws-dynamodb-local/aws-dynamodb-local:latest
+# Compose pins 3.3.1. A missing local tag makes Compose pull Docker Hub.
+ensure_image amazon/dynamodb-local:3.3.1 public.ecr.aws/aws-dynamodb-local/aws-dynamodb-local:latest
+docker tag amazon/dynamodb-local:3.3.1 amazon/dynamodb-local:latest
 
 minio_image="minio/minio:RELEASE.2025-09-07T16-13-09Z"
 mc_image="minio/mc:RELEASE.2025-08-13T08-35-41Z"
@@ -136,7 +138,20 @@ pnpm_config__auth="$(
 )"
 pnpm install --frozen-lockfile
 
-pnpm --filter backend run db:migrate
+# db:migrate prompts for a 1Password environment and aborts without a TTY.
+# knex reads .env-example when APP_ENV is development.
+(
+  cd /workspace/packages/backend
+  APP_ENV=development pnpm exec knex migrate:latest
+)
+
+# A new email checks LaunchDarkly before the user row exists.
+# The sample SDK key never connects, so that call hangs.
+# An existing row skips the check.
+docker compose -f /workspace/packages/backend/docker-compose.dev.yml exec -T postgres \
+  psql -U postgres -d plumber_dev \
+  -c "INSERT INTO users (email) VALUES ('admin@example.gov.sg') ON CONFLICT (email) DO NOTHING;"
+
 pnpm --filter backend run dynamodb:setup
 
 if tmux has-session -t plumber-dev 2>/dev/null; then
