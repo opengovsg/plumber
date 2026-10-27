@@ -310,10 +310,10 @@ describe('getDataOutMetadata - MRF field filtering', () => {
       const result = await getDataOutMetadata(executionStep)
 
       expect(
-        result.fields.childrenbirthrecords_field1_childname_0.question.label,
+        result!.fields.childrenbirthrecords_field1_childname_0.question.label,
       ).toBe('Question 1.1')
       expect(
-        result.fields.childrenbirthrecords_field1_childrace_0.answer.label,
+        result!.fields.childrenbirthrecords_field1_childrace_0.answer.label,
       ).toBe('1.2. [MyInfo] Child 1 Race')
     })
 
@@ -329,7 +329,7 @@ describe('getDataOutMetadata - MRF field filtering', () => {
 
       const result = await getDataOutMetadata(executionStep)
 
-      expect(result.fields.childrenbirthrecords_field2_childname_0).toEqual({
+      expect(result!.fields.childrenbirthrecords_field2_childname_0).toEqual({
         isHidden: true,
       })
     })
@@ -417,16 +417,16 @@ describe('getDataOutMetadata - children field numbering', () => {
     const result = await getDataOutMetadata(executionStep)
 
     expect(
-      result.fields.childrenbirthrecords_ch1_childname_0.question.label,
+      result!.fields.childrenbirthrecords_ch1_childname_0.question.label,
     ).toBe('Question 2.1')
     expect(
-      result.fields.childrenbirthrecords_ch1_childrace_0.question.label,
+      result!.fields.childrenbirthrecords_ch1_childrace_0.question.label,
     ).toBe('Question 2.2')
     expect(
-      result.fields.childrenbirthrecords_ch1_childtype_0.question.label,
+      result!.fields.childrenbirthrecords_ch1_childtype_0.question.label,
     ).toBe('Question 2.3')
     // the whole children field consumes a single question number
-    expect(result.fields.field2.question.label).toBe('Question 3')
+    expect(result!.fields.field2.question.label).toBe('Question 3')
   })
 
   it('labels each subfield answer with its own N.x number', async () => {
@@ -438,10 +438,10 @@ describe('getDataOutMetadata - children field numbering', () => {
     const result = await getDataOutMetadata(executionStep)
 
     expect(
-      result.fields.childrenbirthrecords_ch1_childname_0.answer.label,
+      result!.fields.childrenbirthrecords_ch1_childname_0.answer.label,
     ).toBe('1.1. [MyInfo] Child 1 Name')
     expect(
-      result.fields.childrenbirthrecords_ch1_childtype_0.answer.label,
+      result!.fields.childrenbirthrecords_ch1_childtype_0.answer.label,
     ).toBe('1.2. [MyInfo] Child 1 Record type')
   })
 
@@ -459,14 +459,14 @@ describe('getDataOutMetadata - children field numbering', () => {
 
     const result = await getDataOutMetadata(executionStep)
 
-    const name = result.fields.childrenbirthrecords_ch1_childname_0
-    const race = result.fields.childrenbirthrecords_ch1_childrace_0
+    const name = result!.fields.childrenbirthrecords_ch1_childname_0
+    const race = result!.fields.childrenbirthrecords_ch1_childrace_0
 
     expect(name.question.order).toBeLessThan(name.answer.order)
     expect(name.answer.order).toBeLessThan(race.question.order)
     expect(race.question.order).toBeLessThan(race.answer.order)
     // the group never bleeds into the next question number
-    expect(race.answer.order).toBeLessThan(result.fields.field2.question.order)
+    expect(race.answer.order).toBeLessThan(result!.fields.field2.question.order)
   })
 
   it('numbers two children fields separately', async () => {
@@ -478,10 +478,10 @@ describe('getDataOutMetadata - children field numbering', () => {
     const result = await getDataOutMetadata(executionStep)
 
     expect(
-      result.fields.childrenbirthrecords_ch1_childname_0.question.label,
+      result!.fields.childrenbirthrecords_ch1_childname_0.question.label,
     ).toBe('Question 1.1')
     expect(
-      result.fields.childrenbirthrecords_ch2_childname_0.question.label,
+      result!.fields.childrenbirthrecords_ch2_childname_0.question.label,
     ).toBe('Question 2.1')
   })
 
@@ -500,12 +500,12 @@ describe('getDataOutMetadata - children field numbering', () => {
     const result = await getDataOutMetadata(executionStep)
 
     expect(
-      result.fields.childrenbirthrecords_ch1_childname_0.question.label,
+      result!.fields.childrenbirthrecords_ch1_childname_0.question.label,
     ).toBe('Question 1.1')
     expect(
-      result.fields.childrenbirthrecords_ch1_childname_1.question.label,
+      result!.fields.childrenbirthrecords_ch1_childname_1.question.label,
     ).toBe('Question 1.2')
-    expect(result.fields.field2.question.label).toBe('Question 2')
+    expect(result!.fields.field2.question.label).toBe('Question 2')
   })
 
   it('numbers a children field normally when its key is not a subfield key', async () => {
@@ -526,8 +526,8 @@ describe('getDataOutMetadata - children field numbering', () => {
 
     const result = await getDataOutMetadata(executionStep)
 
-    expect(result.fields.ch1.question.label).toBe('Question 1')
-    expect(result.fields.field2.question.label).toBe('Question 2')
+    expect(result!.fields.ch1.question.label).toBe('Question 1')
+    expect(result!.fields.field2.question.label).toBe('Question 2')
   })
 
   it('sorts a section after every subfield of the children field above it', async () => {
@@ -547,13 +547,13 @@ describe('getDataOutMetadata - children field numbering', () => {
     const result = await getDataOutMetadata(executionStep)
 
     const lastSubfieldOrder =
-      result.fields.childrenbirthrecords_ch1_childtype_0.answer.order
-    expect(result.fields.section1.question.order).toBeGreaterThan(
+      result!.fields.childrenbirthrecords_ch1_childtype_0.answer.order
+    expect(result!.fields.section1.question.order).toBeGreaterThan(
       lastSubfieldOrder,
     )
     // the section still belongs to the children field's question number
-    expect(result.fields.section1.question.order).toBeLessThan(
-      result.fields.field2.question.order,
+    expect(result!.fields.section1.question.order).toBeLessThan(
+      result!.fields.field2.question.order,
     )
   })
 
@@ -571,6 +571,6 @@ describe('getDataOutMetadata - children field numbering', () => {
 
     const result = await getDataOutMetadata(executionStep)
 
-    expect(result.fields.section1.question.order).toBeCloseTo(2.001, 5)
+    expect(result!.fields.section1.question.order).toBeCloseTo(2.001, 5)
   })
 })

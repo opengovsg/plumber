@@ -170,7 +170,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error) =>
         error instanceof StepError &&
         /Image is too large/.test(error.message) &&
@@ -194,7 +194,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error: StepError) => {
         expect(error).toBeInstanceOf(StepError)
         expect(error.message).not.toMatch(/Too many requests/)
