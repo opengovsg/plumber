@@ -28,11 +28,11 @@ import { useFormContext } from 'react-hook-form'
 import { BiChevronDown, BiChevronUp } from 'react-icons/bi'
 
 import { CheckStepButtonExtensionProps, getExtension } from '@/app-extensions'
+import { TOP_NAV_HEIGHT_NUM } from '@/config/layout'
 import { EditorContext } from '@/contexts/Editor'
 import { validateStepParams } from '@/helpers/validateStepParams'
 import { useStepMetadata } from '@/hooks/useStepMetadata'
 
-import { EDITOR_MARGIN_TOP_NUM } from '../Editor/constants'
 import ErrorResult from '../ErrorResult'
 import WebhookUrlInfo from '../WebhookUrlInfo'
 import { flowStepTestControllerStyles } from './styles'
@@ -251,9 +251,8 @@ export default function FlowStepTestController(
         : 0
       const minContentHeight = 108
 
-      const spaceBelow =
-        window.innerHeight - EDITOR_MARGIN_TOP_NUM - rect.bottom
-      const spaceAbove = rect.top + EDITOR_MARGIN_TOP_NUM + 32
+      const spaceBelow = window.innerHeight - TOP_NAV_HEIGHT_NUM - rect.bottom
+      const spaceAbove = rect.top + TOP_NAV_HEIGHT_NUM + 32
 
       // NOTE: all current triggers have a small number of fields
       if (isTrigger) {

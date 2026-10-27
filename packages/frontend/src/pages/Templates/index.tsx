@@ -21,6 +21,8 @@ import TemplateTileSkeleton from './components/TemplateTileSkeleton'
 const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
 const SEARCH_RESULTS_COUNT = 5
+// Matches the left padding of PageTitle so content lines up with the heading.
+const GUTTER = { base: 2, md: 8 }
 
 export default function Templates(): JSX.Element {
   const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
@@ -65,21 +67,13 @@ export default function Templates(): JSX.Element {
       <Container py={9}>
         <Flex flexDir="column" mb={8} rowGap={2}>
           <PageTitle title={TEMPLATES_TITLE} />
-          <Text
-            textStyle="body-1"
-            pl={{ base: 2, md: 8 }}
-            mt={{ base: -10, md: -6 }}
-          >
+          <Text textStyle="body-1" pl={GUTTER} mt={{ base: -10, md: -6 }}>
             Pre-built pipes that you can use as is or customise further for your
             own use case
           </Text>
         </Flex>
 
-        <Box
-          pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
-          pr={{ base: '0.5rem', md: '2rem', xl: '8.5rem' }}
-          mb={6}
-        >
+        <Box px={GUTTER} mb={6}>
           <DebouncedSearchInput
             searchValue={searchQuery}
             onChange={setSearchQuery}
@@ -88,11 +82,7 @@ export default function Templates(): JSX.Element {
         </Box>
 
         {isSearching && !isLoading && visibleTemplates.length === 0 && (
-          <Text
-            textStyle="body-1"
-            pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
-            mb={8}
-          >
+          <Text textStyle="body-1" px={GUTTER} mb={8}>
             {searchError
               ? 'Template search is unavailable. Try again later.'
               : 'No matching templates found.'}
@@ -105,10 +95,8 @@ export default function Templates(): JSX.Element {
             md: '1fr 1fr',
             lg: '1fr 1fr 1fr',
           }}
-          pl={{ base: '0.5rem', md: '2rem', xl: '3.5rem' }}
-          pr={{ base: '0.5rem', md: '2rem', xl: '8.5rem' }}
-          columnGap={10}
-          rowGap={6}
+          px={GUTTER}
+          gap={6}
           mb={8}
         >
           {isLoading

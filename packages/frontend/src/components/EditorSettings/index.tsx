@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom'
 
 import PrimarySpinner from '@/components/PrimarySpinner'
 import RedirectToLogin from '@/components/RedirectToLogin'
+import { CONTENT_MAX_HEIGHT, TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorSettingsProvider } from '@/contexts/EditorSettings'
 import { GET_FLOW_WITH_COLLABORATORS } from '@/graphql/queries/get-flow'
@@ -16,9 +17,6 @@ import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 import EditorDrawer from './EditorDrawer'
 import EditorSidebar from './EditorSidebar'
 import Navbar from './Navbar'
-
-const NAVBAR_HEIGHT = '65px'
-const CONTENT_MAX_HEIGHT = `calc(100vh - ${NAVBAR_HEIGHT})`
 
 export type DrawerLink = {
   Icon: ElementType
@@ -139,7 +137,7 @@ export default function EditorSettingsLayout(
           w="full"
           flex={1}
           flexDir={{ base: 'column', md: 'row' }}
-          mt={NAVBAR_HEIGHT}
+          mt={TOP_NAV_HEIGHT}
           minH="0"
         >
           {/* Mobile: drawer (no sticky) */}
@@ -149,7 +147,7 @@ export default function EditorSettingsLayout(
           <Show above="md">
             <Box
               position="sticky"
-              top={NAVBAR_HEIGHT}
+              top={TOP_NAV_HEIGHT}
               height={CONTENT_MAX_HEIGHT}
               overflowY="auto"
             >

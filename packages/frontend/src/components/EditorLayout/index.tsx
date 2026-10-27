@@ -10,6 +10,7 @@ import Container from '@/components/Container'
 import EditableInput from '@/components/EditableInput'
 import Editor from '@/components/Editor'
 import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
+import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
@@ -19,7 +20,6 @@ import { useCaptureAiBuilderFlow } from '@/hooks/useCaptureAiBuilderFlow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
 import UnsavedChangesAlert from '../Editor/components/UnsavedChangesAlert'
-import { EDITOR_MARGIN_TOP } from '../Editor/constants'
 import { ConfettiSurvey } from './ConfettiSurvey'
 import EditorSnackbar from './EditorSnackbar'
 import EditorToolbar from './EditorToolbar'
@@ -205,7 +205,7 @@ export default function EditorLayout() {
           bg="white"
           justifyContent="space-between"
           alignItems="center"
-          py={2}
+          h={TOP_NAV_HEIGHT}
           px={{ base: 4, md: 8 }}
           borderBottom="1px solid"
           borderColor="base.divider.medium"
@@ -215,13 +215,14 @@ export default function EditorLayout() {
               as={Link}
               to={URLS.FLOWS}
               mt={1}
-              mr={3}
+              ml="-7px"
+              mr={2}
               flexShrink={0}
               onClick={handleWarnOnLeave}
             >
               <Icon
                 boxSize={6}
-                color="interaction.support.disabled-content"
+                color="base.content.default"
                 as={BiChevronLeft}
               ></Icon>
             </Box>
@@ -229,6 +230,7 @@ export default function EditorLayout() {
             <Flex flex={1} minWidth={0}>
               <EditableInput
                 value={flow?.name}
+                fontWeight={500}
                 onSave={onFlowNameUpdate}
                 readOnly={loading || flow?.role === 'viewer'}
               />
@@ -248,7 +250,7 @@ export default function EditorLayout() {
         <Container
           maxW="full"
           p={0}
-          mt={EDITOR_MARGIN_TOP}
+          mt={TOP_NAV_HEIGHT}
           flex={1}
           overflowY="auto"
         >

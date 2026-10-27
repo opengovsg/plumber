@@ -5,8 +5,7 @@ import {
   Icon,
 } from '@chakra-ui/react'
 import { useCallback } from 'react'
-import { BiTable } from 'react-icons/bi'
-import { FaChevronRight } from 'react-icons/fa'
+import { BiChevronLeft, BiTable } from 'react-icons/bi'
 import { Link } from 'react-router-dom'
 
 import EditableInput from '@/components/EditableInput'
@@ -32,23 +31,28 @@ function BreadCrumb() {
   )
 
   return (
-    <Breadcrumb
-      spacing={4}
-      separator={<Icon as={FaChevronRight} color="secondary.300" h={3} />}
-    >
+    <Breadcrumb spacing={0} separator="">
       <BreadcrumbItem>
         <BreadcrumbLink
           as={Link}
           to={URLS.TILES}
           display="flex"
           alignItems="center"
-          gap={2}
+          ml="-8px"
+          mr={2}
+          aria-label="Back to Tiles"
         >
-          {databaseType === DatabaseType.Pg && <Icon as={BiTable} />} Tiles
+          <Icon as={BiChevronLeft} boxSize={6} color="base.content.default" />
         </BreadcrumbLink>
       </BreadcrumbItem>
+      {databaseType === DatabaseType.Pg && (
+        <BreadcrumbItem>
+          <Icon as={BiTable} color="base.content.default" mr={2} />
+        </BreadcrumbItem>
+      )}
       <EditableInput
         value={initialTableName}
+        fontWeight={500}
         onSave={onSave}
         readOnly={!hasEditPermission}
         maxWidth={['140px', '250px', '250px', '500px']}

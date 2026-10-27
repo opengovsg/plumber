@@ -1,6 +1,6 @@
 import { FlexProps } from '@chakra-ui/react'
 
-import { EDITOR_MAX_HEIGHT } from './constants'
+import { CONTENT_MAX_HEIGHT } from '@/config/layout'
 
 export const editorStyles = {
   editorWrapper: {
@@ -13,7 +13,7 @@ export const editorStyles = {
     display: 'block',
     flexDir: 'column' as FlexProps['flexDir'],
     alignItems: 'center',
-    height: EDITOR_MAX_HEIGHT,
+    height: CONTENT_MAX_HEIGHT,
     minH: '100%',
     maxW: 'full',
     overflowY: 'auto' as FlexProps['overflowY'],
@@ -24,8 +24,8 @@ export const editorStyles = {
   },
   dummyRightContainer: {
     pos: 'relative' as FlexProps['pos'],
-    maxHeight: EDITOR_MAX_HEIGHT,
-    h: EDITOR_MAX_HEIGHT,
+    maxHeight: CONTENT_MAX_HEIGHT,
+    h: CONTENT_MAX_HEIGHT,
     overflow: 'hidden' as FlexProps['overflow'],
     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
     border: 'none',
@@ -40,8 +40,8 @@ export const editorStyles = {
     opacity: 0,
     right: 0,
     minWidth: 0,
-    maxHeight: EDITOR_MAX_HEIGHT,
-    h: EDITOR_MAX_HEIGHT,
+    maxHeight: CONTENT_MAX_HEIGHT,
+    h: CONTENT_MAX_HEIGHT,
     overflowY: 'auto' as FlexProps['overflowY'],
     transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
   },

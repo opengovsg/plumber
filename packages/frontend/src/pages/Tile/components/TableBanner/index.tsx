@@ -1,6 +1,7 @@
 import { Flex, Text } from '@chakra-ui/react'
 
-import { TABLE_BANNER_HEIGHT } from '../../constants'
+import { TOP_NAV_HEIGHT } from '@/config/layout'
+
 import { useTableContext } from '../../contexts/TableContext'
 import BreadCrumb from './BreadCrumb'
 import EditMode from './EditMode'
@@ -13,7 +14,7 @@ function TableBanner() {
   return (
     <Flex
       px={{ base: 4, md: 8 }}
-      h={TABLE_BANNER_HEIGHT}
+      h={TOP_NAV_HEIGHT}
       alignItems="center"
       justifyContent="space-between"
       overflow="hidden"
@@ -22,7 +23,7 @@ function TableBanner() {
       <Flex alignItems="center" gap={8}>
         {role ? <BreadCrumb /> : <Text textStyle="subhead-1">{tableName}</Text>}
       </Flex>
-      <Flex gap={2}>
+      <Flex gap={2} mr={{ base: 0, md: '-15px' }}>
         <RefreshButton />
         <EditMode />
         <ImportExportToolbar />
