@@ -274,14 +274,14 @@ describe('deleteStepService', () => {
     await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       traceId: 'trace-delete',
     })
 
-    const visible = await Step.query().findById(actionStep.id)
+    const visible = await Step.query().findById(actionStep!.id)
     expect(visible).toBeUndefined()
 
-    const stored = await Step.query().withSoftDeleted().findById(actionStep.id)
+    const stored = await Step.query().withSoftDeleted().findById(actionStep!.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
       aiBuilderConfig: [
@@ -378,10 +378,10 @@ describe('deleteStepService', () => {
     await deleteStepService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
     })
 
-    const stored = await Step.query().withSoftDeleted().findById(actionStep.id)
+    const stored = await Step.query().withSoftDeleted().findById(actionStep!.id)
     expect(stored?.deletedAt).toBeTruthy()
     expect(stored?.config).toEqual({
       aiBuilderConfig: [
@@ -541,7 +541,7 @@ describe('deleteStepService', () => {
         'sendTransactionalEmail',
       ])
       const updatedIfThen = result.steps.find((s) => s.id === ifThen.id)
-      expect(updatedIfThen.config.endStepId).toBe(slack.id)
+      expect(updatedIfThen!.config.endStepId).toBe(slack.id)
     })
 
     it('deletes the whole block when the If step is deleted, and keeps the step after it', async () => {

@@ -234,13 +234,13 @@ describe('executeStepService', () => {
         executionId,
       }) as never
     const statusOf = async (id: string) =>
-      (await Step.query().findById(id)).status
+      (await Step.query().findById(id))!.status
 
     beforeEach(async () => {
       mocks.testStep.mockReset()
       const trigger = flow.steps.find((s) => s.type === 'trigger')
-      triggerId = trigger.id
-      await trigger.$query().patch({
+      triggerId = trigger!.id
+      await trigger!.$query().patch({
         parameters: { mrf: { defaultStepName: 'Requestor' } },
       })
       stageIds = []
@@ -344,7 +344,7 @@ describe('executeStepService', () => {
         executionStepId: executionStepIds.get(stageIds[0]),
         dataOut: { submissionId: `submission-${stageIds[0]}` },
       })
-      expect(result.dataOutMetadata.fields).toMatchObject({
+      expect(result.dataOutMetadata!.fields).toMatchObject({
         requestorField: { isHidden: true },
         approvalField: { answer: { type: 'approval' } },
       })
