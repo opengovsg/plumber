@@ -6,7 +6,10 @@ import { describe, expect, it } from 'vitest'
 import { collectReachableFiles, SRC_DIR } from './import-graph'
 
 // Unlistened clients print to stderr during the Redis outage this process must report.
-const FILES_ALLOWED_TO_CREATE_REDIS_CLIENTS = ['services/reconciler/redis.ts']
+const FILES_ALLOWED_TO_CREATE_REDIS_CLIENTS = [
+  'helpers/redis-app-data.ts',
+  'services/reconciler/redis.ts',
+]
 
 describe('reconciler Redis clients', () => {
   it('creates Redis clients only in files that log their errors', () => {
