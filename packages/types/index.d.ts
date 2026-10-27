@@ -1098,7 +1098,9 @@ export interface IBaseTrigger {
    *
    * @param executionStep The execution step to get metadata for.
    */
-  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata | null>
+  getDataOutMetadata?(
+    executionStep: IExecutionStep,
+  ): Promise<IDataOutMetadata | null>
 
   /**
    * Triggers specify this if they want to display an additional informative
@@ -1235,7 +1237,9 @@ export interface IBaseAction {
    *
    * @param executionStep The execution step to get metadata for.
    */
-  getDataOutMetadata?(executionStep: IExecutionStep): Promise<IDataOutMetadata | null>
+  getDataOutMetadata?(
+    executionStep: IExecutionStep,
+  ): Promise<IDataOutMetadata | null>
 
   /**
    * Preprocess variables before substituting them into the action's parameters.
