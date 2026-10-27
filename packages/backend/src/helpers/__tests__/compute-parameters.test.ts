@@ -1,7 +1,6 @@
-import type { IJSONObject } from '@plumber/types'
-
 import { randomUUID } from 'crypto'
 
+import type { IJSONObject } from '@plumber/types'
 import { describe, expect, it } from 'vitest'
 
 import ExecutionStep from '@/models/execution-step'
