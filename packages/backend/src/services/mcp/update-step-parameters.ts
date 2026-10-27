@@ -150,11 +150,12 @@ export async function updateStepParametersService({
       // Scoped to this pipe, not "any connection the user can see": a
       // collaborator's broader accessible-connections set spans every flow
       // they touch, which would let them attach another flow's connection here.
+      // Matches GraphQL updateStep: only owners may attach their own connections.
       const connection = await getConnection({
         user,
         connectionId,
         flowId: pipeId,
-        includeOwnConnections: true,
+        includeOwnConnections: accessible.flow.role === 'owner',
         trx,
       }).catch((error) => {
         if (error instanceof NotFoundError) {
