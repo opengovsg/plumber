@@ -35,6 +35,7 @@ const executeStep: MutationResolvers['executeStep'] = async (
   const { executionStep, executionId } = await testStep({
     stepId: stepToTest.id,
     testRunMetadata,
+    loggedInUser: context.currentUser,
   })
 
   await Flow.query().patchAndFetchById(stepToTest.flowId, {
@@ -64,7 +65,11 @@ const executeStep: MutationResolvers['executeStep'] = async (
   /**
    * Test remaining steps in the mrf flow
    */
-  await testRemainingMrfSteps(stepToTest.flowId, testRunMetadata)
+  await testRemainingMrfSteps(
+    stepToTest.flowId,
+    testRunMetadata,
+    context.currentUser,
+  )
 
   return executionStep
 }

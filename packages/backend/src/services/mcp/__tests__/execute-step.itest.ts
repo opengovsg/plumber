@@ -130,6 +130,7 @@ describe('executeStepService', () => {
     expect(mocks.testStep).toHaveBeenCalledWith({
       stepId: actionStep.id,
       testRunMetadata: { preferMock: true },
+      loggedInUser: user,
     })
   })
 

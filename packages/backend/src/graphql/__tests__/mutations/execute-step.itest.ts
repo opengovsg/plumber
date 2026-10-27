@@ -118,6 +118,7 @@ describe('executeStep mutation - access control', () => {
       expect(testStepSpy).toHaveBeenCalledWith({
         stepId: mockStepId,
         testRunMetadata: { testKey: 'testValue' },
+        loggedInUser: context.currentUser,
       })
 
       expect(result).toBeDefined()
@@ -149,6 +150,7 @@ describe('executeStep mutation - access control', () => {
       expect(testStepSpy).toHaveBeenCalledWith({
         stepId: mockStepId,
         testRunMetadata: { testKey: 'testValue' },
+        loggedInUser: context.currentUser,
       })
 
       expect(result).toBeDefined()
@@ -289,6 +291,7 @@ describe('executeStep mutation - access control', () => {
     expect(testStepSpy).toHaveBeenCalledWith({
       stepId: mockStepId,
       testRunMetadata: { testKey: 'testValue' },
+      loggedInUser: context.currentUser,
     })
   })
 
@@ -392,5 +395,25 @@ describe('executeStep mutation - testRunMetadata propagation to actions', () => 
 
     expect(testRunSpy).toHaveBeenCalledTimes(1)
     expect(testRunSpy.mock.calls[0][1]).toEqual(testRunMetadata)
+  })
+
+  it("exposes the logged-in user on the action's $ without replacing the pipe owner", async () => {
+    const { default: realTestStep } = await vi.importActual<
+      typeof import('@/services/test-step')
+    >('@/services/test-step')
+    const collaborator = await User.query().insert({
+      id: randomUUID(),
+      email: `collaborator-${randomUUID()}@plumber.gov.sg`,
+    })
+
+    await realTestStep({
+      stepId: actionStep.id,
+      loggedInUser: collaborator,
+    })
+
+    expect(testRunSpy).toHaveBeenCalledTimes(1)
+    const $ = testRunSpy.mock.calls[0][0]
+    expect($.loggedInUser.id).toBe(collaborator.id)
+    expect($.user.id).toBe(context.currentUser.id)
   })
 })

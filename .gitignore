@@ -156,3 +156,5 @@ docs/superpowers/
 
 # local 1Password environment ids (per-developer, never committed)
 /op-dev.json
+
+.pnpm-store/

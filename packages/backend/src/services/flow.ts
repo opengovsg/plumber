@@ -4,11 +4,13 @@ import EarlyExitError from '@/errors/early-exit'
 import HttpError from '@/errors/http'
 import globalVariable from '@/helpers/global-variable'
 import Flow from '@/models/flow'
+import type User from '@/models/user'
 
 type ProcessFlowOptions = {
   flowId: string
   testRun?: boolean
   testRunMetadata?: TestRunStepMetadata
+  loggedInUser?: User
 }
 
 // TODO(ian): change this function name, it's actually processing trigger
@@ -27,6 +29,7 @@ export const processFlow = async (options: ProcessFlowOptions) => {
     app: await triggerStep.getApp(),
     step: triggerStep,
     testRun: options.testRun,
+    loggedInUser: options.loggedInUser,
   })
 
   try {
