@@ -374,6 +374,17 @@ describe('executeStepService', () => {
       expect(mocks.testStep).toHaveBeenCalledTimes(2)
     })
 
+    it('passes preferMock to the trigger and every stage', async () => {
+      mocks.testStep.mockImplementation(async () => succeeds())
+
+      await executeStepService(user, stageIds[1])
+
+      expect(mocks.testStep.mock.calls.length).toBeGreaterThan(1)
+      for (const [arg] of mocks.testStep.mock.calls) {
+        expect(arg.testRunMetadata).toEqual({ preferMock: true })
+      }
+    })
+
     it('leaves the stage steps alone when the trigger fails', async () => {
       mocks.testStep.mockImplementation(async () => fails())
 
