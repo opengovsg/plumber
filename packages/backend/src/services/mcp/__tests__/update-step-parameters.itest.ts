@@ -800,11 +800,11 @@ describe('updateStepParametersService', () => {
       stepId = flow.steps.find((s) => s.type === 'action').id
     })
 
-    it("attaches the editor's own connection", async () => {
-      const connection = await insertPostmanConnection(editor.id)
+    it("attaches the owner's own connection", async () => {
+      const connection = await insertPostmanConnection(owner.id)
 
       const result = await updateStepParametersService({
-        user: editor,
+        user: owner,
         pipeId,
         stepId,
         parameters: {},
@@ -815,6 +815,21 @@ describe('updateStepParametersService', () => {
       expect((await Step.query().findById(stepId)).connectionId).toBe(
         connection.id,
       )
+    })
+
+    it("rejects the editor's own connection", async () => {
+      const connection = await insertPostmanConnection(editor.id)
+
+      await expect(
+        updateStepParametersService({
+          user: editor,
+          pipeId,
+          stepId,
+          parameters: {},
+          connectionId: connection.id,
+        }),
+      ).rejects.toThrow('Connection not found')
+      expect((await Step.query().findById(stepId)).connectionId).toBeNull()
     })
 
     it('attaches a connection shared to the pipe', async () => {
