@@ -746,7 +746,7 @@ describe('createFlowWithStepsService', () => {
 
     it('rolls back the pipe when a stage step write fails partway', async () => {
       mocks.fetchPublicForm.mockResolvedValue(mrfForm)
-      const real = mocks.createMrfSteps.getMockImplementation()
+      const real = mocks.createMrfSteps.getMockImplementation()!
       mocks.createMrfSteps.mockImplementationOnce(
         async (...args: Parameters<typeof real>) => {
           await real(...args)
@@ -1180,7 +1180,7 @@ describe('createFlowWithStepsService', () => {
         it('adds no action when a later one fails', async () => {
           mocks.fetchPublicForm.mockResolvedValue(mrfForm)
           const user = await newUser()
-          const real = mocks.createStepInTransaction.getMockImplementation()
+          const real = mocks.createStepInTransaction.getMockImplementation()!
           mocks.createStepInTransaction
             .mockImplementationOnce(real)
             .mockRejectedValueOnce(new Error('boom'))
