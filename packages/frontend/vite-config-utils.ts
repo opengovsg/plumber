@@ -1,5 +1,5 @@
 // @ts-check
-import type { Rollup } from 'vite'
+import type { Plugin } from 'vite'
 
 /**
  * Guardrail for the @emailens/engine tech-debt: the engine declares
@@ -10,22 +10,36 @@ import type { Rollup } from 'vite'
  * a hard error so CI catches the regression instead of silently
  * shipping a broken bundle.
  *
- * Wire this up as `build.rollupOptions.onwarn` in the Vite config.
+ * IMPORTANT: Rolldown ignores errors thrown from `onLog`, so the build fails
+ * from `buildEnd` instead.
  */
-export const failOnLeakedNodeBuiltins: Rollup.WarningHandlerWithDefault = (
-  warning,
-  defaultHandler,
-) => {
-  const msg = warning.message ?? ''
-  if (
-    msg.includes('has been externalized for browser compatibility') ||
-    warning.code === 'MISSING_NODE_BUILTINS'
-  ) {
-    throw new Error(
-      `[vite-guardrail] A node-only import leaked into the frontend bundle. ` +
-        `This guardrail exists to catch @emailens/engine (and similar libraries) ` +
-        `pulling in backend-only modules. Original warning: ${msg}`,
-    )
+export function failOnLeakedNodeBuiltins(): Plugin {
+  let leaks: string[] = []
+  return {
+    name: 'plumber:fail-on-leaked-node-builtins',
+    apply: 'build',
+    buildStart() {
+      leaks = []
+    },
+    onLog(level, log) {
+      if (
+        level === 'warn' &&
+        (log.message.includes(
+          'has been externalized for browser compatibility',
+        ) ||
+          log.code === 'MISSING_NODE_BUILTINS')
+      ) {
+        leaks.push(log.message)
+      }
+    },
+    buildEnd() {
+      if (leaks.length > 0) {
+        this.error(
+          `[vite-guardrail] A node-only import leaked into the frontend bundle. ` +
+            `This guardrail exists to catch @emailens/engine (and similar libraries) ` +
+            `pulling in backend-only modules. Original warnings:\n${leaks.join('\n')}`,
+        )
+      }
+    },
   }
-  defaultHandler(warning)
 }
