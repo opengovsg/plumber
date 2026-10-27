@@ -26,9 +26,9 @@ export function updateStepIdForKey(
 export function updateStepVariables(
   parameters: Step['parameters'],
   oldToNewStepIdsMap: Record<string, string>,
-): Step['parameters'] {
+): IJSONObject {
   const entries = Object.entries(parameters ?? {})
-  return entries.reduce((result, [key, value]) => {
+  return entries.reduce<IJSONObject>((result, [key, value]) => {
     if (typeof value === 'string') {
       return {
         ...result,

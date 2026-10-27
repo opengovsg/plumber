@@ -24,6 +24,18 @@ const createStep: MutationResolvers['createStep'] = async (
   context,
 ) => {
   const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const flowId = input.flow?.id
+  const flowUpdatedAt = input.flow?.updatedAt
+  const previousStepId = input.previousStep?.id
+  if (!flowId || !flowUpdatedAt) {
+    throw new BadUserInputError('Missing flow')
+  }
+  if (!previousStepId) {
+    throw new BadUserInputError('Missing previousStep')
+  }
 
   /**
    * appKey and key are optional, we allow creating of empty step for if-then branches
@@ -55,11 +67,11 @@ const createStep: MutationResolvers['createStep'] = async (
     const flow = await context.currentUser
       .withAccessibleFlows({ trx, requiredRole: 'editor' })
       .findOne({
-        id: input.flow.id,
+        id: flowId,
       })
       .throwIfNotFound()
 
-    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     // if connectionId is specified, verify that the connection exists
     // and the user has the appropriate permissions to use it
@@ -83,7 +95,7 @@ const createStep: MutationResolvers['createStep'] = async (
     const previousStep = await flow
       .$relatedQuery('steps', trx)
       .findOne({
-        id: input.previousStep.id,
+        id: previousStepId,
       })
       .throwIfNotFound()
 
@@ -96,11 +108,11 @@ const createStep: MutationResolvers['createStep'] = async (
         trx,
         flow,
         previousStep,
-        appKey: input.appKey,
-        key: input.key,
-        parameters: input.parameters,
+        appKey: input.appKey ?? undefined,
+        key: input.key ?? undefined,
+        parameters: input.parameters ?? undefined,
         config: newStepConfig,
-        connectionId: input.connection?.id,
+        connectionId: input.connection?.id ?? undefined,
       })
     } catch (error) {
       if (error instanceof InvalidApprovalConfigError) {

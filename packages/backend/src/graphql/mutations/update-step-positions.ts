@@ -17,6 +17,9 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
   context,
 ) => {
   const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
   const { stepPositions } = input
 
   if (
@@ -77,7 +80,11 @@ const updateStepPositions: MutationResolvers['updateStepPositions'] = async (
       )
     }
 
-    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+    const flowUpdatedAt = input.flow.updatedAt
+    if (!flowUpdatedAt) {
+      throw new BadUserInputError('Missing flow.updatedAt')
+    }
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     const foundStepIds = stepsFromParams.map((step) => step.id)
     const missingStepIds = stepIds.filter(

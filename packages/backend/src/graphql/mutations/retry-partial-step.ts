@@ -29,6 +29,11 @@ const retryPartialStep: MutationResolvers['retryPartialStep'] = async (
     throw new BadUserInputError('Execution step not partially retriable')
   }
 
+  // withGraphJoined is a left join, so the type cannot guarantee the execution.
+  if (!executionStep.execution) {
+    throw new Error(`Execution step ${executionStep.id} has no execution`)
+  }
+
   try {
     await processAction({
       executionId: executionStep.executionId,

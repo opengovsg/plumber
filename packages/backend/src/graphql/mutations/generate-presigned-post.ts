@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 
 import { PresignedPost } from '@aws-sdk/s3-presigned-post'
 
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import {
   COMMON_S3_BUCKET,
   getPresignedPost,
@@ -15,13 +15,16 @@ import { MutationResolvers } from '../__generated__/types.generated'
 
 const generatePresignedPost: MutationResolvers['generatePresignedPost'] =
   async (_parent, params, context) => {
-    const {
-      flow: flowInput,
-      filename,
-      fileType,
-      size,
-      updatedAt,
-    } = params.input
+    const { input } = params
+    if (!input) {
+      throw new BadUserInputError('Missing input')
+    }
+
+    const { flow: flowInput, filename, fileType, size, updatedAt } = input
+    const { id: flowId, updatedAt: flowUpdatedAt } = flowInput
+    if (!flowId || !flowUpdatedAt) {
+      throw new BadUserInputError('Missing flow')
+    }
 
     if (size > MAX_FILE_SIZE) {
       throw new Error(
@@ -41,14 +44,14 @@ const generatePresignedPost: MutationResolvers['generatePresignedPost'] =
     }
 
     const uuid = randomUUID()
-    const objectKey = `${flowInput.id}/${uuid}/${filename}`
+    const objectKey = `${flowId}/${uuid}/${filename}`
     if (!validateObjectKey(objectKey)) {
       throw new Error('File path cannot be longer than 1024 bytes')
     }
 
     const flow = await context.currentUser
       .withAccessibleFlows({ requiredRole: 'editor' })
-      .findOne({ id: flowInput.id })
+      .findOne({ id: flowId })
 
     if (!flow) {
       throw new ForbiddenError(
@@ -56,14 +59,14 @@ const generatePresignedPost: MutationResolvers['generatePresignedPost'] =
       )
     }
 
-    flow.assertNotUpdatedSince(flowInput.updatedAt, context.currentUser.id)
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     const presignedPost = await getPresignedPost(
       COMMON_S3_BUCKET,
       objectKey,
       fileType,
       {
-        flowId: flowInput.id,
+        flowId: flowId,
         filename,
         size: size.toString(),
         updatedAt,

@@ -26,7 +26,7 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
       throw new BadUserInputError('Cannot change own role')
     }
 
-    let collaboratorUser: User
+    let collaboratorUser: User | undefined
 
     if (role === 'owner') {
       /**
@@ -117,7 +117,9 @@ const upsertTableCollaborator: MutationResolvers['upsertTableCollaborator'] =
         userId: context.currentUser.id,
         error: e,
       })
-      throw new Error(e.message ?? 'Failed to upsert collaborator')
+      throw new Error(
+        e instanceof Error ? e.message : 'Failed to upsert collaborator',
+      )
     }
 
     return true

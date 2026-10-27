@@ -56,7 +56,7 @@ export default function ExecutionStep({
     status,
     errorDetails,
     execution,
-    jobId,
+    jobId: jobId ?? undefined,
   })
 
   const showAlertTab = isDelayPaused
