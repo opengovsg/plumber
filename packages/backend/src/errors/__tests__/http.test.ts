@@ -1,3 +1,4 @@
+import type { InternalAxiosRequestConfig } from 'axios'
 import { AxiosError, AxiosHeaders } from 'axios'
 import { describe, expect, it } from 'vitest'
 
@@ -25,7 +26,9 @@ describe('http error', () => {
         status: 429,
         statusText: 'Too many requests',
         data: '',
-        config: null,
+        // Unused by HttpError (it reads error.config, not error.response.config);
+        // stubbed since AxiosResponse.config is required.
+        config: {} as InternalAxiosRequestConfig,
         headers: responseHeaders,
       },
     )
@@ -34,6 +37,6 @@ describe('http error', () => {
     expect(httpError.response.headers).toStrictEqual({
       'retry-after': '10',
     })
-    expect(httpError.response.config.headers).toBeUndefined()
+    expect(httpError.response.config?.headers).toBeUndefined()
   })
 })
