@@ -162,7 +162,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toThrow(
+    await expect(processImageAction.run!($)).rejects.toThrow(
       /Image is too large/,
     )
   })
@@ -187,7 +187,7 @@ describe('Process image action', () => {
       responseFields,
     }
 
-    await expect(processImageAction.run($)).rejects.toSatisfy(
+    await expect(processImageAction.run!($)).rejects.toSatisfy(
       (error: StepError) => {
         expect(error).toBeInstanceOf(StepError)
         expect(error.message).not.toMatch(/RateLimitError|Model Group/)
