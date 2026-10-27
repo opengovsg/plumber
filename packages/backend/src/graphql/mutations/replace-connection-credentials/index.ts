@@ -48,6 +48,9 @@ const replaceConnectionCredentials: MutationResolvers['replaceConnectionCredenti
     $.auth.connectionId = connection.id
     await $.auth.set(candidate)
 
+    if (!app.auth.verifyCredentials) {
+      throw new Error('App does not support credential verification')
+    }
     await app.auth.verifyCredentials($)
 
     const updatedConnection = await connection.$query().patchAndFetch({

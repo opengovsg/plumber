@@ -136,7 +136,7 @@ export interface IExecutionStep {
   errorDetails?: IJSONObject | null
   status: 'success' | 'failure'
   appKey?: string | null
-  jobId?: string
+  jobId?: string | null
   createdAt: string
   updatedAt: string
   metadata: IExecutionStepMetadata
@@ -222,7 +222,7 @@ export interface IStep {
   iconUrl: string | null
   webhookUrl: string | null
   type: 'action' | 'trigger'
-  connectionId?: string
+  connectionId?: string | null
   status: string
   position: number
   parameters: IJSONObject
@@ -234,7 +234,7 @@ export interface IStep {
   output?: IJSONObject
   appData?: IApp
   retryable?: boolean
-  jobId?: string
+  jobId?: string | null
   createdAt: string
 }
 

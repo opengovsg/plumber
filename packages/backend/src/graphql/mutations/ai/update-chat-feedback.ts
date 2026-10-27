@@ -1,4 +1,5 @@
 import appConfig from '@/config/app'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getLangfuseClient } from '@/helpers/langfuse'
 import logger from '@/helpers/logger'
 
@@ -12,6 +13,10 @@ const updateChatFeedback: MutationResolvers['updateChatFeedback'] = async (
   const { traceId, feedback, score } = params.input
 
   try {
+    // Thrown inside the try so a missing feedback still resolves to false.
+    if (!feedback) {
+      throw new BadUserInputError('Missing feedback')
+    }
     const langfuseClient = getLangfuseClient('aiBuilder')
     langfuseClient.score.create({
       traceId,

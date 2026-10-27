@@ -89,7 +89,9 @@ const deleteFlowCollaborator: MutationResolvers['deleteFlowCollaborator'] =
         userId: context.currentUser.id,
         error: e,
       })
-      throw new Error(e.message ?? 'Failed to delete collaborator')
+      throw new Error(
+        e instanceof Error ? e.message : 'Failed to delete collaborator',
+      )
     }
 
     return true

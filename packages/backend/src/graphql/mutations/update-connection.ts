@@ -1,4 +1,4 @@
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import { getConnection } from '@/services/connection'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -11,17 +11,26 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
   params,
   context,
 ) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   const flow = await context.currentUser
     .withAccessibleFlows({ requiredRole: 'editor' })
-    .findById(params.input.flowId)
+    .findById(input.flowId)
     .throwIfNotFound({ message: 'You do not have access to this flow' })
 
   let connection = await getConnection({
     context,
-    connectionId: params.input.id,
-    flowId: params.input.flowId,
+    connectionId: input.id,
+    flowId: input.flowId,
     includeOwnConnections: flow.role === 'owner',
   })
+
+  if (!connection) {
+    throw new BadUserInputError('Connection not found')
+  }
 
   // GUARD: Prevent updating personal connections owned by others
   if (
@@ -36,7 +45,7 @@ const updateConnection: MutationResolvers['updateConnection'] = async (
   connection = await connection.$query().patchAndFetch({
     formattedData: {
       ...connection.formattedData,
-      ...params.input.formattedData,
+      ...input.formattedData,
     },
   })
 

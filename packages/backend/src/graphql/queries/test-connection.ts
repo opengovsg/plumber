@@ -1,5 +1,5 @@
 import apps from '@/apps'
-import { ForbiddenError } from '@/errors/graphql-errors'
+import { BadUserInputError, ForbiddenError } from '@/errors/graphql-errors'
 import globalVariable from '@/helpers/global-variable'
 import logger from '@/helpers/logger'
 import User from '@/models/user'
@@ -34,8 +34,8 @@ const testConnection: QueryResolvers['testConnection'] = async (
 
     connection = await getConnection({
       context,
-      connectionId: params.connectionId,
-      flowId: params.flowId,
+      connectionId,
+      flowId,
       includeOwnConnections: userRole === 'owner',
     })
   } else {
@@ -46,6 +46,10 @@ const testConnection: QueryResolvers['testConnection'] = async (
       .findOne({ id: connectionId })
       .throwIfNotFound()
     userRole = 'owner'
+  }
+
+  if (!connection) {
+    throw new BadUserInputError('Connection not found')
   }
 
   const app = apps[connection.key]
@@ -73,15 +77,18 @@ const testConnection: QueryResolvers['testConnection'] = async (
   let isStillVerified
   let errorMessage
   try {
+    if (!app.auth?.isStillVerified) {
+      throw new Error('App does not support connection verification')
+    }
     isStillVerified = !!(await app.auth.isStillVerified($))
   } catch (err) {
     isStillVerified = false
-    errorMessage = err.message
+    errorMessage = err instanceof Error ? err.message : String(err)
     logger.error(`Error verifying CONNECTION ID: ${connectionId}`, {
       event: 'test-connection',
       flowId: flowId,
-      errMessage: err.message,
-      errStack: err.stack,
+      errMessage: errorMessage,
+      errStack: err instanceof Error ? err.stack : undefined,
     })
   }
 
