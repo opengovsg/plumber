@@ -112,7 +112,7 @@ function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
 
 const handleChatStream = observe(
   async (
-    req: AuthenticatedRequest,
+    req: Request,
     res: Response,
     body: z.infer<typeof chatRequestSchema>,
   ) => {
@@ -200,7 +200,9 @@ const handleChatStream = observe(
       ]
 
       let mcpClient: GitbookMcpClient | null = null
-      let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
+      let gitbookTools = {} as NonNullable<
+        Parameters<typeof streamText>[0]['tools']
+      >
 
       if (!disabledMcpServerSet.has(GITBOOK_MCP_SERVER)) {
         try {
@@ -208,7 +210,9 @@ const handleChatStream = observe(
           mcpClient = gitbook.client
           gitbookTools = wrapMcpToolsWithUsageLogs(
             // oxlint-disable-next-line typescript/no-explicit-any
-            gitbook.tools as Parameters<typeof streamText>[0]['tools'],
+            gitbook.tools as NonNullable<
+              Parameters<typeof streamText>[0]['tools']
+            >,
             {
               source: 'gitbook',
               traceId,
@@ -495,7 +499,7 @@ const handleChatStream = observe(
 
 const router: Router = Router()
 
-router.post('/', (req: AuthenticatedRequest, res: Response) => {
+router.post('/', (req: Request, res: Response) => {
   const validationResult = chatRequestSchema.safeParse(req.body)
   if (!validationResult.success) {
     res.status(400).json({
