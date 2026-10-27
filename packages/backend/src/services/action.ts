@@ -30,6 +30,7 @@ import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
+import type User from '@/models/user'
 import { enqueueActionJob } from '@/queues/action'
 
 import getForEachMetadata from './helpers/get-for-each-metadata'
@@ -41,6 +42,7 @@ type ProcessActionOptions = {
   jobId?: string
   testRun?: boolean
   metadata?: TestRunStepMetadata
+  loggedInUser?: User
 }
 
 async function enqueueFirstForEachStep({
@@ -176,6 +178,7 @@ export async function prepareActionExecution(
     executionId,
     testRun = false,
     metadata = {},
+    loggedInUser,
   } = options
 
   const step = await Step.query().findById(stepId).throwIfNotFound()
@@ -209,6 +212,7 @@ export async function prepareActionExecution(
     execution: execution,
     testRun,
     metadata,
+    loggedInUser,
   })
 
   const priorExecutionSteps = await ExecutionStep.query()

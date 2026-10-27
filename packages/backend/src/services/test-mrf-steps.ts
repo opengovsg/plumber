@@ -3,6 +3,7 @@ import { raw } from 'objection'
 
 import type ExecutionStep from '@/models/execution-step'
 import Step from '@/models/step'
+import type User from '@/models/user'
 import testStep from '@/services/test-step'
 
 // Moved as-is from the editor's executeStep mutation, so the AI Builder tests
@@ -41,6 +42,7 @@ export interface MrfStageTestResult {
 export async function testRemainingMrfSteps(
   flowId: string,
   testRunMetadata?: TestRunStepMetadata,
+  loggedInUser?: User,
 ): Promise<MrfStageTestResult[]> {
   const remainingSteps = await Step.query()
     .where('app_key', 'formsg')
@@ -53,6 +55,7 @@ export async function testRemainingMrfSteps(
     const { executionStep } = await testStep({
       stepId: remainingStep.id,
       testRunMetadata,
+      loggedInUser,
     })
     results.push({ step: remainingStep, executionStep })
 

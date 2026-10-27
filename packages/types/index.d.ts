@@ -1377,6 +1377,14 @@ export type IGlobalVariable = {
    * always.
    */
   user?: IUser
+
+  /**
+   * User who started this operation from the UI or MCP. Unset for background
+   * runs.
+   *
+   * IMPORTANT: Use `user` for access checks so test runs match production.
+   */
+  loggedInUser?: IUser
 }
 
 declare module 'axios' {

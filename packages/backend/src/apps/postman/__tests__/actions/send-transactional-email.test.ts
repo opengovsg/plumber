@@ -1,4 +1,4 @@
-import { IGlobalVariable } from '@plumber/types'
+import { IGlobalVariable, IUser } from '@plumber/types'
 import { AxiosError } from 'axios'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -763,6 +763,29 @@ describe('send transactional email', () => {
         })
       },
     )
+
+    it("redirects to the logged-in user's address instead of the pipe owner's", async () => {
+      $.step.parameters.destinationEmail = 'recipient@example.com'
+      $.step.parameters.destinationEmailCc = 'cc@example.com'
+      $.user.email = 'owner@example.com'
+      $.loggedInUser = { email: 'collaborator@example.com' } as IUser
+      $.execution.testRun = true
+
+      await expect(
+        sendTransactionalEmail.testRun($, { useConfiguredEmails: false }),
+      ).resolves.not.toThrow()
+      expect($.http.post).toBeCalledTimes(1)
+      expect($.setActionItem).toHaveBeenCalledWith({
+        raw: {
+          status: ['ACCEPTED'],
+          recipient: ['collaborator@example.com'],
+          subject: 'test subject',
+          body: 'test body',
+          from: 'jack',
+          reply_to: 'replyTo@open.gov.sg',
+        },
+      })
+    })
   })
 
   it('should send two emails if there are blacklisted recipients and invalid attachments', async () => {

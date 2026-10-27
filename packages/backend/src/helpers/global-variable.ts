@@ -28,6 +28,7 @@ type GlobalVariableOptions = {
   testRun?: boolean
   request?: IRequest
   user?: User // only required in GraphQL context
+  loggedInUser?: User
   metadata?: IJSONObject
 }
 
@@ -43,6 +44,7 @@ const globalVariable = async (
     request,
     testRun = false,
     user,
+    loggedInUser,
     metadata,
   } = options
 
@@ -151,6 +153,7 @@ const globalVariable = async (
       $.actionOutput.data = actionItem
     },
     user: user ?? flow?.user,
+    loggedInUser,
     metadata,
   }
 

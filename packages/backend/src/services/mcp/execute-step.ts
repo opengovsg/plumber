@@ -52,6 +52,7 @@ export async function executeStepService(
   const { executionStep: startExecutionStep, executionId } = await testStep({
     stepId: step.id,
     testRunMetadata: { preferMock: true },
+    loggedInUser: user,
   })
 
   await Flow.query().patchAndFetchById(step.flowId, {
@@ -69,9 +70,11 @@ export async function executeStepService(
 
     // Passing the trigger completes every stage step too, as in the editor.
     if (isMrfStep(completedStep)) {
-      const stageResults = await testRemainingMrfSteps(step.flowId, {
-        preferMock: true,
-      })
+      const stageResults = await testRemainingMrfSteps(
+        step.flowId,
+        { preferMock: true },
+        user,
+      )
       // Each stage has its own submission and field set. The model wires
       // downstream variables from this output.
       stageFailure = stageResults.find(

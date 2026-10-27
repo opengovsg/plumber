@@ -142,7 +142,9 @@ function getSendEmailParams(
   return {
     subject,
     body,
-    destinationEmail: useConfiguredEmails ? destinationEmail : $.user.email,
+    destinationEmail: useConfiguredEmails
+      ? destinationEmail
+      : ($.loggedInUser ?? $.user).email,
     destinationEmailCc: useConfiguredEmails ? destinationEmailCc : undefined,
     senderName,
     replyTo,

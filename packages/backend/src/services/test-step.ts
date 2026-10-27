@@ -5,6 +5,7 @@ import Execution from '@/models/execution'
 import ExecutionStep from '@/models/execution-step'
 import Flow from '@/models/flow'
 import Step from '@/models/step'
+import type User from '@/models/user'
 import { processAction } from '@/services/action'
 import { processFlow } from '@/services/flow'
 import { processTrigger } from '@/services/trigger'
@@ -12,6 +13,7 @@ import { processTrigger } from '@/services/trigger'
 export interface TestStepOptions {
   stepId: string
   testRunMetadata?: TestRunStepMetadata
+  loggedInUser?: User
 }
 
 export interface TestStepResult {
@@ -92,6 +94,7 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
       executionId: flow.testExecutionId,
       testRun: true,
       metadata: options.testRunMetadata,
+      loggedInUser: options.loggedInUser,
     })
 
     // Delete old execution steps of the same step
@@ -117,6 +120,7 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
       flowId: flow.id,
       testRun: true,
       testRunMetadata: options.testRunMetadata,
+      loggedInUser: options.loggedInUser,
     })
 
     const hasTriggerStepFailed = !!triggerError
