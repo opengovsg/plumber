@@ -6,6 +6,9 @@ import tracer from '@/helpers/tracer'
 // Matches the container TZ, so hours in a pattern mean Singapore time on every host.
 const CRON_TIME_ZONE = 'Asia/Singapore'
 
+// Node fires a longer setTimeout after 1 ms, so a yearly pattern would run nonstop.
+const MAX_TIMER_DELAY_MILLIS = 2 ** 31 - 1
+
 export interface ReconcilerCheck {
   name: string
   cronPattern: string
@@ -81,15 +84,28 @@ export function runReconcilerLoop({
       check.cronPattern,
       Math.max(Date.now(), afterMillis),
     )
-    const timer = setTimeout(() => {
-      pendingTimers.delete(timer)
+    waitUntil(runAtMillis, () => {
       const run = runCheckOnce(check)
       runningChecks.add(run)
       void run.then(() => {
         runningChecks.delete(run)
         scheduleCheck(check, runAtMillis)
       })
-    }, runAtMillis - Date.now())
+    })
+  }
+
+  function waitUntil(atMillis: number, onDue: () => void): void {
+    const timer = setTimeout(
+      () => {
+        pendingTimers.delete(timer)
+        if (Date.now() < atMillis) {
+          waitUntil(atMillis, onDue)
+          return
+        }
+        onDue()
+      },
+      Math.min(atMillis - Date.now(), MAX_TIMER_DELAY_MILLIS),
+    )
     pendingTimers.add(timer)
   }
 
