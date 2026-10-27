@@ -1,7 +1,7 @@
 import type { IJSONObject } from '@plumber/types'
 
 import schedulerApp from '@/apps/scheduler'
-import Step from '@/models/step'
+import { client as knexClient } from '@/config/database'
 
 export interface PublishedScheduledPipe {
   flowId: string
@@ -10,41 +10,43 @@ export interface PublishedScheduledPipe {
   triggerParameters: IJSONObject
 }
 
-type StepWithPublishedAt = Step & { publishedAt: string }
+interface PublishedScheduledPipeRow {
+  flow_id: string
+  published_at: string
+  key: string
+  parameters: IJSONObject
+}
 
+// Not the Step model: it imports every app, and some apps open Redis clients at import.
 export function buildPublishedScheduledPipesQuery() {
-  return (
-    Step.query()
-      .select(
-        'steps.flow_id',
-        'steps.app_key',
-        'steps.key',
-        'steps.parameters',
-        'flow.published_at',
-      )
-      .joinRelated('flow')
-      // The query builder only soft-delete filters the root table, not joins.
-      .whereNull('flow.deleted_at')
-      .where('flow.active', true)
-      .where('steps.type', 'trigger')
-      .where('steps.app_key', schedulerApp.key)
-      .whereIn(
-        'steps.key',
-        schedulerApp.triggers.map((trigger) => trigger.key),
-      )
-  )
+  return knexClient('steps')
+    .join('flows', 'flows.id', 'steps.flow_id')
+    .select<PublishedScheduledPipeRow[]>(
+      'steps.flow_id',
+      'steps.key',
+      'steps.parameters',
+      'flows.published_at',
+    )
+    .whereNull('steps.deleted_at')
+    .whereNull('flows.deleted_at')
+    .where('flows.active', true)
+    .where('steps.type', 'trigger')
+    .where('steps.app_key', schedulerApp.key)
+    .whereIn(
+      'steps.key',
+      schedulerApp.triggers.map((trigger) => trigger.key),
+    )
 }
 
 export async function fetchPublishedScheduledPipes(): Promise<
   PublishedScheduledPipe[]
 > {
-  const steps =
-    (await buildPublishedScheduledPipesQuery()) as StepWithPublishedAt[]
+  const rows = await buildPublishedScheduledPipesQuery()
 
-  return steps.map((step) => ({
-    flowId: step.flowId,
-    publishedAt: step.publishedAt,
-    triggerKey: step.key,
-    triggerParameters: step.parameters,
+  return rows.map((row) => ({
+    flowId: row.flow_id,
+    publishedAt: row.published_at,
+    triggerKey: row.key,
+    triggerParameters: row.parameters,
   }))
 }
