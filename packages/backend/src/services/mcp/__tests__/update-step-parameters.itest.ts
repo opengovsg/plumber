@@ -404,7 +404,7 @@ describe('updateStepParametersService', () => {
     const first = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
       traceId: 'trace-update',
     })
@@ -423,7 +423,7 @@ describe('updateStepParametersService', () => {
     const second = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { destinationEmail: ['a@b.com'] },
       traceId: 'trace-update',
     })
@@ -435,7 +435,7 @@ describe('updateStepParametersService', () => {
     const laterSession = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Later' },
       traceId: 'trace-update-2',
     })
@@ -486,7 +486,7 @@ describe('updateStepParametersService', () => {
     const result = await updateStepParametersService({
       user,
       pipeId: flow.id,
-      stepId: actionStep.id,
+      stepId: actionStep!.id,
       parameters: { subject: 'Hello' },
     })
 

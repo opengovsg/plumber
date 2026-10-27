@@ -178,6 +178,25 @@ describe('processAction', () => {
     })
   })
 
+  describe('Action run', () => {
+    it('runs the action as a method of its action command', async () => {
+      const actionCommand = {
+        run: vi.fn(function (this: unknown) {
+          if (this !== actionCommand) {
+            throw new Error('run was called without its action command')
+          }
+        }),
+        preprocessVariable: undefined as undefined,
+      }
+      mocks.step.getActionCommand.mockReturnValueOnce(actionCommand)
+
+      const result = await processAction(OPTIONS)
+
+      expect(actionCommand.run).toHaveBeenCalledOnce()
+      expect(result.executionError).toBeNull()
+    })
+  })
+
   describe('Test run file lock contention', () => {
     it('records an internal StepError', async () => {
       mocks.globalVariable.mockReturnValueOnce({

@@ -104,8 +104,8 @@ const testStep = async (options: TestStepOptions): Promise<TestStepResult> => {
     // Delete old execution steps of the same step
     await ExecutionStep.query()
       .whereNot('id', newExecutionStep.id)
-      .andWhere('executionId', testExecutionId)
-      .andWhere('stepId', stepToTest.id)
+      .andWhere('execution_id', testExecutionId)
+      .andWhere('step_id', stepToTest.id)
       .delete()
 
     return {
