@@ -220,21 +220,11 @@ async function sendEmail(
     // Don't do partial retry in test runs! always send to all recipients
     !$.execution.testRun
 
-  // Combined mode carries the CCs on one SES message, so a retry must not send
-  // them again once delivered. Attempts without CC tracking fall back to that
-  // message's outcome: its To addresses are the leading non-blacklisted
-  // recipients, so the first non-BLACKLISTED status stands for it.
-  let deliveredCcs: string[] = []
+  // CCs are not filtered here. They receive every email sent to a To recipient,
+  // retries included, so they keep a copy of each for audit.
   if (isPartialRetry) {
-    const { status, recipient, cc, ccStatus } = prevDataOutParseResult.data
+    const { status, recipient } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
-    if (result.data[SEND_MODE_KEY] === 'combined') {
-      if (cc && ccStatus) {
-        deliveredCcs = cc.filter((_, i) => ccStatus[i] === 'ACCEPTED')
-      } else if (status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED') {
-        deliveredCcs = result.data.destinationEmailCc ?? []
-      }
-    }
   }
 
   // Resolve the transport once, on the configured attachments and the actual
@@ -263,26 +253,26 @@ async function sendEmail(
     extensionPolicy,
   })
 
-  const { dataOut, error, errorStatus } = await sendTransactionalEmails(
-    $.http,
-    recipientsToSend,
-    {
-      subject: result.data.subject,
-      // this is to make sure there's at least some content for every new line
-      // so on the email client the new line will have some height and show up
-      body: result.data.body.replace(
-        /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
-        '<p style="margin: 0">&nbsp;</p>',
-      ),
-      ccList: result.data.destinationEmailCc,
-      deliveredCcs,
-      replyTo: result.data.replyTo,
-      senderName: result.data.senderName,
-      attachments: attachmentFiles,
-      sendMode: result.data[SEND_MODE_KEY],
-    },
-    useSes,
-  )
+  const { dataOut, blacklistedCcs, error, errorStatus } =
+    await sendTransactionalEmails(
+      $.http,
+      recipientsToSend,
+      {
+        subject: result.data.subject,
+        // this is to make sure there's at least some content for every new line
+        // so on the email client the new line will have some height and show up
+        body: result.data.body.replace(
+          /(<p\s?((style=")([a-zA-Z0-9:;.\s()\-,]*)("))?>)\s*(<\/p>)/g,
+          '<p style="margin: 0">&nbsp;</p>',
+        ),
+        ccList: result.data.destinationEmailCc,
+        replyTo: result.data.replyTo,
+        senderName: result.data.senderName,
+        attachments: attachmentFiles,
+        sendMode: result.data[SEND_MODE_KEY],
+      },
+      useSes,
+    )
 
   /**
    * Patch the status of the recipients that were sent in the previous execution
@@ -298,9 +288,6 @@ async function sendEmail(
     })
     dataOut.status = updatedStatus
     dataOut.recipient = prevDataOut.recipient
-    // No CC patch-back: sendTransactionalEmails already reports deliveredCcs
-    // as ACCEPTED. A retry routed to Postman reports no ccStatus, since
-    // Postman cannot track it.
   }
 
   /**
@@ -320,8 +307,6 @@ async function sendEmail(
   const blacklistedRecipients = dataOut.recipient.filter(
     (_, i) => dataOut.status[i] === 'BLACKLISTED',
   )
-  const blacklistedCcs =
-    dataOut.cc?.filter((_, i) => dataOut.ccStatus?.[i] === 'BLACKLISTED') ?? []
 
   const defaultSendEmailParams = {
     flowId: $.flow.id,

@@ -34,18 +34,13 @@ async function getDataOutMetadata(
       order: 5,
       type: 'array',
     },
-    ccStatus: {
-      label: 'CC status',
-      order: 6,
-      type: 'array',
-    },
     from: {
       label: 'Sender',
-      order: 7,
+      order: 6,
     },
     reply_to: {
       label: 'Reply-To email',
-      order: 8,
+      order: 7,
     },
   }
 
