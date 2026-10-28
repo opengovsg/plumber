@@ -14,7 +14,7 @@ import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
 import ConfigureDatabricksConnection from './ConfigureDatabricksConnection'
 import ConfigureExcelConnection from './ConfigureExcelConnection'
-import { databricksReconnectConnections } from './databricks-reconnect-connections'
+import { databricksReconnectDropdownConnections } from './databricks-reconnect-connections'
 import { optionGenerator } from './option-generator'
 
 interface ChooseAndAddConnectionProps {
@@ -48,6 +48,9 @@ export default function ChooseAndAddConnection(
     variables: {
       key: selectedApp?.key,
       flowId: flow.id,
+      ...(selectedApp?.key === DATABRICKS_APP_KEY
+        ? { ensureDatabricksNew: true }
+        : {}),
     },
     skip: !selectedApp,
   })
@@ -55,13 +58,14 @@ export default function ChooseAndAddConnection(
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
     const storedConnectionId = step?.connection?.id
+    const listedConnections = appWithConnections?.connections
     const connections =
-      appWithConnections?.key === DATABRICKS_APP_KEY && storedConnectionId
-        ? databricksReconnectConnections(
-            appWithConnections.connections ?? [],
+      appWithConnections?.key === DATABRICKS_APP_KEY
+        ? databricksReconnectDropdownConnections(
+            listedConnections ?? [],
             storedConnectionId,
           )
-        : appWithConnections?.connections
+        : listedConnections
     const options =
       connections?.map((connection) =>
         optionGenerator(connection, appWithConnections.key),
