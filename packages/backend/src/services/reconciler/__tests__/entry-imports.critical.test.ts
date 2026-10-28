@@ -83,7 +83,7 @@ describe('reconciler entry imports', () => {
     const reached = collectReachableFiles(path.join(SRC_DIR, 'reconciler.ts'))
 
     expect(reached).toContain(
-      path.join(SRC_DIR, 'services/reconciler/run-loop.ts'),
+      path.join(SRC_DIR, 'services/reconciler/run-checks.ts'),
     )
     expect([...reached].filter(isForbidden)).toEqual([])
   })
