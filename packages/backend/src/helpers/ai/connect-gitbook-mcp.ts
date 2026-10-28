@@ -12,7 +12,7 @@ export const GITBOOK_CONNECT_TIMEOUT_MS = 10_000
 
 export type GitbookMcpClient = Awaited<ReturnType<typeof createMCPClient>>
 
-function closeQuietly(client: GitbookMcpClient): void {
+export function closeQuietly(client: GitbookMcpClient): void {
   void client.close().catch((): void => undefined)
 }
 
