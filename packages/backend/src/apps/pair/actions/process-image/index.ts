@@ -132,7 +132,9 @@ const action: IRawAction = {
           isEnabled: true,
           functionId: 'pair-action-process-image',
           metadata: {
-            userId: $.user.email,
+            '$ai_session_id': $.execution.id,
+            'posthog.distinct_id': $.user.id,
+            userId: $.user.id,
             executionId: $.execution.id,
             flowId: $.flow.id,
             stepId: $.step.id,

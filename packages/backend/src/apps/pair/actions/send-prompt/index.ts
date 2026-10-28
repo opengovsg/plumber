@@ -130,7 +130,9 @@ const action: IRawAction = {
     const dynamicSchema = generateSchemaFromFields(responseFields)
 
     const response = await generateObject(convertedPrompt, dynamicSchema, {
-      userId: $.user.email,
+      '$ai_session_id': $.execution.id,
+      'posthog.distinct_id': $.user.id,
+      userId: $.user.id,
       flowId: $.flow.id,
       stepId: $.step.id,
       executionId: $.execution.id,
