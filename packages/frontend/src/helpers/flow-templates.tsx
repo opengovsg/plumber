@@ -23,6 +23,48 @@ export const TemplateIcon = ({
   return <IconComponent fontSize={fontSize} />
 }
 
+const COMMUNITY_TEMPLATE_ICONS = [
+  'BiBriefcase',
+  'BiBulb',
+  'BiCompass',
+  'BiCube',
+  'BiExtension',
+  'BiLayer',
+  'BiPaperPlane',
+  'BiPin',
+  'BiRocket',
+  'BiSpreadsheet',
+  'BiTask',
+  'BiTimeFive',
+  'BiTrendingUp',
+  'BiWrench',
+]
+
+/**
+ * Community templates have no icon. Hashing the id keeps each one's icon the
+ * same across renders, visits and views.
+ */
+export function getTemplateIconName({
+  id,
+  iconName,
+  isBuiltIn,
+}: {
+  id: string
+  iconName?: string
+  isBuiltIn?: boolean
+}): string | undefined {
+  if (iconName || isBuiltIn) {
+    return iconName
+  }
+  let hash = 0
+  for (const char of id) {
+    hash = (hash * 31 + char.charCodeAt(0)) | 0
+  }
+  return COMMUNITY_TEMPLATE_ICONS[
+    Math.abs(hash) % COMMUNITY_TEMPLATE_ICONS.length
+  ]
+}
+
 /**
  * chose app_event key since it is unique among all triggers and actions
  * key: app_event key pair, value: help message

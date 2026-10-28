@@ -16,7 +16,7 @@ import { randomUUID } from 'crypto'
  * - Pipes created from that template do not receive them either.
  */
 import { IFlowCollabRole } from '@plumber/types'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import createTemplateFromFlow from '@/graphql/mutations/create-template-from-flow'
 import getTemplates from '@/graphql/queries/get-templates'
@@ -28,6 +28,8 @@ import TableMetadata from '@/models/table-metadata'
 import Template from '@/models/template'
 import User from '@/models/user'
 import Context from '@/types/express/context'
+
+vi.mock('@/helpers/plumpro', () => ({ isPlumPro: async () => true }))
 
 const contextFor = (user: User) =>
   ({

@@ -159,11 +159,7 @@ export default function ConvertToTemplateModal({
           </Stack>
         </ModalBody>
         <ModalFooter gap={3}>
-          <Button
-            colorScheme="secondary"
-            onClick={onClose}
-            isDisabled={isSaving}
-          >
+          <Button variant="clear" onClick={onClose} isDisabled={isSaving}>
             Cancel
           </Button>
           <Button

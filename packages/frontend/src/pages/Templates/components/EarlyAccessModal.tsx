@@ -13,8 +13,13 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
+import { useEffect } from 'react'
 import type { IconType } from 'react-icons'
 import { BiCheck, BiInfoCircle } from 'react-icons/bi'
+
+import { getItem, setItem } from '@/helpers/storage'
+
+const SEEN_STORAGE_KEY = 'community-templates-early-access-modal-seen'
 
 interface EarlyAccessModalProps {
   isLoading?: boolean
@@ -160,7 +165,21 @@ export default function EarlyAccessModal({
   isLoading = false,
   onTurnOn,
 }: EarlyAccessModalProps): JSX.Element {
-  const { isOpen, onClose } = useDisclosure()
+  const { isOpen, onClose } = useDisclosure({
+    defaultIsOpen: getItem(SEEN_STORAGE_KEY) !== 'true',
+  })
+
+  // Marking it seen on open keeps a refresh or "Not now" from showing it again.
+  useEffect(() => {
+    if (isOpen) {
+      setItem(SEEN_STORAGE_KEY, 'true')
+    }
+  }, [isOpen])
+
+  const handleTurnOn = async () => {
+    await onTurnOn()
+    onClose()
+  }
 
   return (
     <Modal
@@ -261,7 +280,7 @@ export default function EarlyAccessModal({
           <Button variant="outline" onClick={onClose} isDisabled={isLoading}>
             Not now
           </Button>
-          <Button onClick={onTurnOn} isLoading={isLoading}>
+          <Button onClick={handleTurnOn} isLoading={isLoading}>
             Turn on
           </Button>
         </ModalFooter>
