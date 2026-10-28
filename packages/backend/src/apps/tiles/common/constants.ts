@@ -1,4 +1,7 @@
-import { IFieldVisibilityCondition } from '@plumber/types'
+import {
+  IFieldMultiRowMultiColSubField,
+  IFieldVisibilityCondition,
+} from '@plumber/types'
 
 import { TableRowFilterOperator } from '@/models/tiles/types'
 
@@ -8,7 +11,7 @@ export const DYNAMODB_DEFAULT_PAGINATION_CURSOR = 'start' as const
 
 export const FIND_MULTIPLE_ROWS_LIMIT = 500
 
-export const LOOKUP_CONDITIONS_SUBFIELDS = [
+export const LOOKUP_CONDITIONS_SUBFIELDS: IFieldMultiRowMultiColSubField[] = [
   {
     placeholder: 'Column',
     key: 'columnId',
