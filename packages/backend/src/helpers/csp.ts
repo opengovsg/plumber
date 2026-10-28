@@ -9,8 +9,8 @@ const posthogAssetsHost = posthogHost
 
 // Array.filter(Boolean) doesn't narrow away `false` from the element type,
 // since Boolean isn't a type predicate.
-function isString(value: string | false | undefined): value is string {
-  return typeof value === 'string'
+function isNonemptyString(value: string | false | undefined): value is string {
+  return typeof value === 'string' && value.trim() !== ''
 }
 
 const helmetOptions: HelmetOptions = {
@@ -44,7 +44,7 @@ const helmetOptions: HelmetOptions = {
         "'self'",
         'https://demo.arcade.software',
         appConfig.isDev && 'https://*.apollographql.com',
-      ].filter(isString),
+      ].filter(isNonemptyString),
       imgSrc: [
         "'self'",
         'data:',
@@ -53,7 +53,7 @@ const helmetOptions: HelmetOptions = {
         'https://www.googletagmanager.com',
         appConfig.isDev && 'https://*.apollographql.com',
         appConfig.baseUrl,
-      ].filter(isString),
+      ].filter(isNonemptyString),
       objectSrc: ["'none'"],
       // for google fonts
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
@@ -66,11 +66,11 @@ const helmetOptions: HelmetOptions = {
         appConfig.isDev && 'https://*.apollographql.com',
         posthogAssetsHost,
         appConfig.isDev && "'unsafe-inline'",
-      ].filter(isString),
+      ].filter(isNonemptyString),
       manifestSrc: [
         "'self'",
         !appConfig.isDev && 'https://*.apollographql.com',
-      ].filter(isString),
+      ].filter(isNonemptyString),
       upgradeInsecureRequests: [],
       workerSrc: ['blob:', "'self'"],
     },
