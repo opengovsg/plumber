@@ -39,6 +39,7 @@ import {
   parseWorkflowMetadata,
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
+import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
 import { withAiBuilderTelemetry } from '@/helpers/ai/posthog-telemetry'
 import {
   repairMalformedStreamedToolNames,
@@ -235,190 +236,196 @@ const handleChatStream = observe(
             },
           )
 
-          const result = streamText({
-            model: chatModel,
-            messages: allMessages,
-            tools: { ...gitbookTools, ...mcpTools },
-            stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
-            experimental_repairToolCall: repairMalformedToolName,
-            experimental_transform: [
-              repairMalformedStreamedToolNames,
-              smoothStream({
-                chunking: 'word', // Stream word-by-word for typing effect
-              }),
-            ],
-            experimental_telemetry: {
-              isEnabled: true,
-              functionId: 'ai-chat-stream',
-              metadata: {
-                name: 'ai-chat-stream',
-                // Langfuse session = the chat session. Falls back to the RUM id for
-                // old clients during rollout, then 'unknown'. The fallbacks are
-                // removed in the cleanup release once old clients have drained.
-                sessionId: chatId || rumSessionId || 'unknown',
-                '$ai_session_id': chatId || rumSessionId || 'unknown',
-                'posthog.distinct_id': context.currentUser.id,
-                // Plain metadata (non-special key) so RUM traces can still be
-                // correlated with Langfuse without driving session grouping.
-                ddRumSessionId: rumSessionId || undefined,
-                userId: context.currentUser.id,
-                environment: appConfig.appEnv,
-                promptName: chatPromptName,
-                promptVersion: version,
-                langfusePrompt: prompt.toJSON(),
-                tags: [
-                  'ai-builder',
-                  'stream',
-                  isAtLimit ? 'chat-summary' : 'chat',
+          const result = withAiTelemetryContext(
+            {
+              distinctId: context.currentUser.id,
+              aiSessionId: chatId || rumSessionId || 'unknown',
+            },
+            () =>
+              streamText({
+                model: chatModel,
+                messages: allMessages,
+                tools: { ...gitbookTools, ...mcpTools },
+                stopWhen: stepCountIs(MAX_STEPS_PER_TURN),
+                experimental_repairToolCall: repairMalformedToolName,
+                experimental_transform: [
+                  repairMalformedStreamedToolNames,
+                  smoothStream({
+                    chunking: 'word', // Stream word-by-word for typing effect
+                  }),
                 ],
-              },
-            },
-            abortSignal: abortController.signal,
-            onFinish: async (event) => {
-              try {
-                logger.info('Stream finished', {
-                  traceId,
-                  textLength: event.text.length,
-                })
-
-                updateActiveObservation({ output: event })
-                updateActiveTrace({ output: event })
-
-                // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
-                const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
-                  event.text,
-                )
-                if (hasWorkflowMetadata) {
+                experimental_telemetry: {
+                  isEnabled: true,
+                  functionId: 'ai-chat-stream',
+                  metadata: {
+                    name: 'ai-chat-stream',
+                    // Langfuse session = the chat session. Falls back to the RUM id for
+                    // old clients during rollout, then 'unknown'. The fallbacks are
+                    // removed in the cleanup release once old clients have drained.
+                    sessionId: chatId || rumSessionId || 'unknown',
+                    // Plain metadata (non-special key) so RUM traces can still be
+                    // correlated with Langfuse without driving session grouping.
+                    ddRumSessionId: rumSessionId || undefined,
+                    userId: context.currentUser.id,
+                    environment: appConfig.appEnv,
+                    promptName: chatPromptName,
+                    promptVersion: version,
+                    langfusePrompt: prompt.toJSON(),
+                    tags: [
+                      'ai-builder',
+                      'stream',
+                      isAtLimit ? 'chat-summary' : 'chat',
+                    ],
+                  },
+                },
+                abortSignal: abortController.signal,
+                onFinish: async (event) => {
                   try {
-                    const parsedWorkflowMetadata = parseWorkflowMetadata(
+                    logger.info('Stream finished', {
+                      traceId,
+                      textLength: event.text.length,
+                    })
+
+                    updateActiveObservation({ output: event })
+                    updateActiveTrace({ output: event })
+
+                    // Phase 2a: LLM proposed a workflow (WORKFLOW_METADATA present, no tools ran)
+                    const hasWorkflowMetadata = WORKFLOW_METADATA_REGEX.test(
                       event.text,
-                      restrictedApps,
                     )
-                    const flowSteps = { ...parsedWorkflowMetadata, traceId }
-                    writer.write({
-                      type: 'data-isChatReady',
-                      data: { isChatReady: true, flowSteps, mcpMode: true },
-                    })
-                  } catch (error) {
-                    const msg =
-                      error instanceof BadUserInputError
-                        ? error.message
-                        : 'Unable to generate the workflow.'
-                    writer.write({
-                      type: 'data-isChatReady',
-                      data: {
-                        isChatReady: true,
-                        error: msg,
-                        mcpMode: true,
-                      },
-                    })
-                  }
-                }
+                    if (hasWorkflowMetadata) {
+                      try {
+                        const parsedWorkflowMetadata = parseWorkflowMetadata(
+                          event.text,
+                          restrictedApps,
+                        )
+                        const flowSteps = { ...parsedWorkflowMetadata, traceId }
+                        writer.write({
+                          type: 'data-isChatReady',
+                          data: { isChatReady: true, flowSteps, mcpMode: true },
+                        })
+                      } catch (error) {
+                        const msg =
+                          error instanceof BadUserInputError
+                            ? error.message
+                            : 'Unable to generate the workflow.'
+                        writer.write({
+                          type: 'data-isChatReady',
+                          data: {
+                            isChatReady: true,
+                            error: msg,
+                            mcpMode: true,
+                          },
+                        })
+                      }
+                    }
 
-                // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
-                if (activePipeId) {
-                  const flow = await Flow.query()
-                    .findById(activePipeId)
-                    .where('user_id', context.currentUser.id)
-                  const steps = flow
-                    ? await flow
-                        .$relatedQuery('steps')
-                        .orderBy('position', 'asc')
-                    : []
+                    // Phase 2b+: MCP tools ran this turn. Emit fresh pipe state from DB.
+                    if (activePipeId) {
+                      const flow = await Flow.query()
+                        .findById(activePipeId)
+                        .where('user_id', context.currentUser.id)
+                      const steps = flow
+                        ? await flow
+                            .$relatedQuery('steps')
+                            .orderBy('position', 'asc')
+                        : []
 
-                  // Resolve connection labels fresh each turn. A step's
-                  // connection can be repointed independently of the step row.
-                  const connectionIds = [
-                    ...new Set(
-                      steps
-                        .map((step) => step.connectionId)
-                        .filter((id): id is string => !!id),
-                    ),
-                  ]
-                  const connectionsById = connectionIds.length
-                    ? new Map(
-                        (await Connection.query().findByIds(connectionIds)).map(
-                          (connection) => [connection.id, connection],
+                      // Resolve connection labels fresh each turn. A step's
+                      // connection can be repointed independently of the step row.
+                      const connectionIds = [
+                        ...new Set(
+                          steps
+                            .map((step) => step.connectionId)
+                            .filter((id): id is string => !!id),
                         ),
-                      )
-                    : new Map<string, Connection>()
+                      ]
+                      const connectionsById = connectionIds.length
+                        ? new Map(
+                            (
+                              await Connection.query().findByIds(connectionIds)
+                            ).map((connection) => [connection.id, connection]),
+                          )
+                        : new Map<string, Connection>()
 
-                  writer.write({
-                    type: 'data-pipeState',
-                    data: {
-                      pipeId: activePipeId,
-                      steps: steps.map((step) => {
-                        const connection = step.connectionId
-                          ? connectionsById.get(step.connectionId)
-                          : undefined
-                        return {
-                          id: step.id,
-                          appKey: step.appKey,
-                          key: step.key,
-                          type: step.type,
-                          position: step.position,
-                          status: step.status,
-                          parameters: step.parameters,
-                          connectionId: step.connectionId ?? null,
-                          connectionLabel: connection
-                            ? connectionLabel(connection)
-                            : null,
-                          // Lets the preview draw an If block's extent
-                          // the same way the editor does.
-                          endStepId: step.config?.endStepId ?? null,
-                          // MRF stage steps are named after the form's stages.
-                          stepName: step.config?.stepName ?? null,
-                          // Lets the preview hide a reject path the same way
-                          // the editor does.
-                          approval: step.config?.approval ?? null,
-                        }
-                      }),
-                    },
+                      writer.write({
+                        type: 'data-pipeState',
+                        data: {
+                          pipeId: activePipeId,
+                          steps: steps.map((step) => {
+                            const connection = step.connectionId
+                              ? connectionsById.get(step.connectionId)
+                              : undefined
+                            return {
+                              id: step.id,
+                              appKey: step.appKey,
+                              key: step.key,
+                              type: step.type,
+                              position: step.position,
+                              status: step.status,
+                              parameters: step.parameters,
+                              connectionId: step.connectionId ?? null,
+                              connectionLabel: connection
+                                ? connectionLabel(connection)
+                                : null,
+                              // Lets the preview draw an If block's extent
+                              // the same way the editor does.
+                              endStepId: step.config?.endStepId ?? null,
+                              // MRF stage steps are named after the form's stages.
+                              stepName: step.config?.stepName ?? null,
+                              // Lets the preview hide a reject path the same way
+                              // the editor does.
+                              approval: step.config?.approval ?? null,
+                            }
+                          }),
+                        },
+                      })
+                    }
+
+                    // Clarification blocks on both phases
+                    emitTextAnnotations(event.text, writer)
+                  } catch (error) {
+                    logger.error('Error parsing workflow', {
+                      traceId,
+                      error:
+                        error instanceof Error ? error.message : String(error),
+                    })
+
+                    writer.write({
+                      type: 'data-isChatReady',
+                      data: { isChatReady: false, error: workflowError },
+                    })
+                  } finally {
+                    // IMPORTANT: awaiting close() holds the finished reply open while GitBook is unresponsive.
+                    if (mcpClient) {
+                      closeQuietly(mcpClient)
+                    }
+
+                    // Manually end the span since we're streaming
+                    trace.getActiveSpan()?.end()
+                  }
+                },
+                onError: ({ error }) => {
+                  if (mcpClient) {
+                    closeQuietly(mcpClient)
+                  }
+                  mcpClient = null
+                  const errorMessage =
+                    error instanceof Error ? error.message : String(error)
+
+                  logger.error('Error generating chat response', {
+                    traceId,
+                    error: errorMessage,
                   })
-                }
 
-                // Clarification blocks on both phases
-                emitTextAnnotations(event.text, writer)
-              } catch (error) {
-                logger.error('Error parsing workflow', {
-                  traceId,
-                  error: error instanceof Error ? error.message : String(error),
-                })
+                  updateActiveObservation({ output: errorMessage })
+                  updateActiveTrace({ output: errorMessage })
 
-                writer.write({
-                  type: 'data-isChatReady',
-                  data: { isChatReady: false, error: workflowError },
-                })
-              } finally {
-                // IMPORTANT: awaiting close() holds the finished reply open while GitBook is unresponsive.
-                if (mcpClient) {
-                  closeQuietly(mcpClient)
-                }
-
-                // Manually end the span since we're streaming
-                trace.getActiveSpan()?.end()
-              }
-            },
-            onError: ({ error }) => {
-              if (mcpClient) {
-                closeQuietly(mcpClient)
-              }
-              mcpClient = null
-              const errorMessage =
-                error instanceof Error ? error.message : String(error)
-
-              logger.error('Error generating chat response', {
-                traceId,
-                error: errorMessage,
-              })
-
-              updateActiveObservation({ output: errorMessage })
-              updateActiveTrace({ output: errorMessage })
-
-              // Manually end the span since we're streaming
-              trace.getActiveSpan()?.end()
-            },
-          })
+                  // Manually end the span since we're streaming
+                  trace.getActiveSpan()?.end()
+                },
+              }),
+          )
 
           // Merge text stream into the response with metadata
           writer.merge(

@@ -3,6 +3,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 import { PostHogSpanProcessor } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
+import { posthogClient } from '@/helpers/ai/posthog-client'
 import { PAIR_ACTION_RESOURCE_NAMES } from '@/helpers/ai/posthog-telemetry'
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
@@ -62,8 +63,8 @@ const { projectToken: posthogProjectToken, host: posthogHost } =
 const missingPostHogConfig = !posthogProjectToken
   ? 'POSTHOG_PROJECT_TOKEN'
   : !posthogHost
-  ? 'POSTHOG_HOST'
-  : undefined
+    ? 'POSTHOG_HOST'
+    : undefined
 
 if (missingPostHogConfig && appConfig.isDev) {
   throw new Error(
@@ -76,6 +77,7 @@ const posthogSpanProcessor = missingPostHogConfig
   : new PostHogSpanProcessor({
       projectToken: posthogProjectToken,
       host: posthogHost,
+      client: posthogClient,
       privacyMode: false,
     })
 

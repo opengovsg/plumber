@@ -360,7 +360,7 @@ importers:
         specifier: workspace:*
         version: link:../types
       '@posthog/ai':
-        specifier: ^8.7.0
+        specifier: 8.16.3
         version: 8.16.3(@ai-sdk/provider@2.0.0)(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-http@0.219.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.8.0(@opentelemetry/api@1.9.0))(posthog-node@5.57.2(@opentelemetry/api@1.9.0)(rxjs@7.8.2))
       '@sesamecare-oss/redlock':
         specifier: 1.4.0
@@ -485,6 +485,9 @@ importers:
       pg-query-stream:
         specifier: 4.9.6
         version: 4.9.6(pg@8.16.3)
+      posthog-node:
+        specifier: 5.57.2
+        version: 5.57.2(@opentelemetry/api@1.9.0)(rxjs@7.8.2)
       qs:
         specifier: 6.15.0
         version: 6.15.0
