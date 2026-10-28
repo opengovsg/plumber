@@ -5,6 +5,7 @@ import { createScheduleCheck, SCHEDULE_ENTRIES_KEY } from '..'
 const mocks = vi.hoisted(() => ({
   fetchPublishedScheduledPipes: vi.fn(),
   gauge: vi.fn(),
+  increment: vi.fn(),
   logInfo: vi.fn(),
   logWarn: vi.fn(),
 }))
@@ -14,7 +15,9 @@ vi.mock('../fetch-published-scheduled-pipes', () => ({
 }))
 
 vi.mock('@/helpers/tracer', () => ({
-  default: { dogstatsd: { gauge: mocks.gauge, increment: vi.fn() } },
+  default: {
+    dogstatsd: { gauge: mocks.gauge, increment: mocks.increment },
+  },
 }))
 
 vi.mock('@/helpers/logger', () => ({
@@ -56,7 +59,7 @@ describe('createScheduleCheck', () => {
     })
   }
 
-  it('emits gauges and logs the IDs of problem pipes', async () => {
+  it('logs the heartbeat with the IDs of problem pipes', async () => {
     mocks.fetchPublishedScheduledPipes.mockResolvedValue([
       pipe(FLOW_HEALTHY),
       pipe(FLOW_OVERDUE),
@@ -77,44 +80,58 @@ describe('createScheduleCheck', () => {
       -1,
       'WITHSCORES',
     )
-    expect(mocks.gauge).toHaveBeenCalledWith('plumber.schedules.missing', 1, {})
-    expect(mocks.gauge).toHaveBeenCalledWith('plumber.schedules.overdue', 1, {})
     expect(mocks.logWarn).toHaveBeenCalledWith(
       'Schedule check found problem pipes',
       expect.objectContaining({
+        event: 'reconciler-schedule-check',
         missingFlowIds: [FLOW_MISSING],
         overdueFlowIds: [FLOW_OVERDUE],
       }),
     )
   })
 
-  it('emits zero gauges when every schedule is healthy', async () => {
+  it('logs the heartbeat when every schedule is healthy', async () => {
     mocks.fetchPublishedScheduledPipes.mockResolvedValue([pipe(FLOW_HEALTHY)])
     zrange.mockResolvedValue([`flow-${FLOW_HEALTHY}`, String(NOW + 60_000)])
 
     await makeCheck().run()
 
-    expect(mocks.gauge).toHaveBeenCalledWith('plumber.schedules.missing', 0, {})
-    expect(mocks.gauge).toHaveBeenCalledWith('plumber.schedules.overdue', 0, {})
     expect(mocks.logWarn).not.toHaveBeenCalled()
     expect(mocks.logInfo).toHaveBeenCalledWith(
       'Schedule check found no problem pipes',
-      expect.objectContaining({ publishedPipeCount: 1 }),
+      expect.objectContaining({
+        event: 'reconciler-schedule-check',
+        publishedPipeCount: 1,
+        missingFlowIds: [],
+        overdueFlowIds: [],
+      }),
     )
   })
 
-  it('emits no gauge when Postgres fails', async () => {
+  it('sends no DogStatsD metrics', async () => {
+    mocks.fetchPublishedScheduledPipes.mockResolvedValue([pipe(FLOW_MISSING)])
+    zrange.mockResolvedValue([])
+
+    await makeCheck().run()
+
+    expect(mocks.gauge).not.toHaveBeenCalled()
+    expect(mocks.increment).not.toHaveBeenCalled()
+  })
+
+  it('logs no heartbeat when Postgres fails', async () => {
     mocks.fetchPublishedScheduledPipes.mockRejectedValue(new Error('pg down'))
 
     await expect(makeCheck().run()).rejects.toThrow('pg down')
-    expect(mocks.gauge).not.toHaveBeenCalled()
+    expect(mocks.logInfo).not.toHaveBeenCalled()
+    expect(mocks.logWarn).not.toHaveBeenCalled()
   })
 
-  it('emits no gauge when Redis fails', async () => {
+  it('logs no heartbeat when Redis fails', async () => {
     mocks.fetchPublishedScheduledPipes.mockResolvedValue([pipe(FLOW_HEALTHY)])
     zrange.mockRejectedValue(new Error('redis down'))
 
     await expect(makeCheck().run()).rejects.toThrow('redis down')
-    expect(mocks.gauge).not.toHaveBeenCalled()
+    expect(mocks.logInfo).not.toHaveBeenCalled()
+    expect(mocks.logWarn).not.toHaveBeenCalled()
   })
 })

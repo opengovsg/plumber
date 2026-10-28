@@ -1,7 +1,6 @@
 import type { Redis } from 'ioredis'
 
 import logger from '@/helpers/logger'
-import { setGaugeMetric } from '@/helpers/metrics'
 
 import type { ReconcilerCheck } from '../run-checks'
 import { classifySchedules, parseScheduleEntries } from './classify-schedules'
@@ -38,9 +37,7 @@ export function createScheduleCheck({
         graceSeconds: config.missedRunGraceSeconds,
       })
 
-      setGaugeMetric('plumber.schedules.missing', missingFlowIds.length)
-      setGaugeMetric('plumber.schedules.overdue', overdueFlowIds.length)
-
+      // The heartbeat log goes last, so it marks a completed run.
       const logDetails = {
         event: 'reconciler-schedule-check',
         publishedPipeCount: publishedPipes.length,
