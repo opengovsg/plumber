@@ -1,6 +1,6 @@
 import type { Redis } from 'ioredis'
 
-import type { ReconcilerCheck } from './run-loop'
+import type { ReconcilerCheck } from './run-checks'
 
 interface CreateReconcilerChecksInput {
   jobsRedis: Pick<Redis, 'zrange'>
