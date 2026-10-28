@@ -5,7 +5,6 @@ import { PostHogSpanProcessor } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
 import { posthogClient } from '@/helpers/ai/posthog-client'
-import { PAIR_ACTION_RESOURCE_NAMES } from '@/helpers/ai/posthog-telemetry'
 import logger from '@/helpers/logger'
 
 // Rejected exports otherwise disappear without a backend log.
@@ -23,6 +22,11 @@ diag.setLogger(
 )
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
+
+const PAIR_ACTION_RESOURCE_NAMES = [
+  'pair-action-generate-object',
+  'pair-action-process-image',
+]
 
 const BASE_CONFIG = {
   baseUrl: appConfig.pair.rome.baseUrl,
