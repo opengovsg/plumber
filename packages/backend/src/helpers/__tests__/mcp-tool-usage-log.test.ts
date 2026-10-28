@@ -12,7 +12,12 @@ vi.mock('@/helpers/logger', () => ({
   },
 }))
 
-import { wrapMcpToolsWithUsageLogs } from '../mcp-tool-usage-log'
+import { UserFacingError } from '@/errors/user-facing-error'
+
+import {
+  GITBOOK_UNAVAILABLE_MESSAGE,
+  wrapMcpToolsWithUsageLogs,
+} from '../mcp-tool-usage-log'
 
 describe('wrapMcpToolsWithUsageLogs', () => {
   beforeEach(() => {
@@ -81,7 +86,7 @@ describe('wrapMcpToolsWithUsageLogs', () => {
           execute: vi.fn().mockRejectedValue(new Error('Must be contiguous')),
         },
       },
-      { source: 'gitbook', traceId: 'trace-3' },
+      { source: 'plumber', traceId: 'trace-3' },
     )
 
     await expect(
@@ -92,7 +97,7 @@ describe('wrapMcpToolsWithUsageLogs', () => {
       expect.objectContaining({
         event: 'mcp-tool',
         tool: 'create_pipe',
-        source: 'gitbook',
+        source: 'plumber',
         status: 'error',
       }),
     )
@@ -100,6 +105,39 @@ describe('wrapMcpToolsWithUsageLogs', () => {
       tool: 'create_pipe',
       traceId: 'trace-3',
       error: 'Must be contiguous',
+    })
+  })
+
+  it('throws UserFacingError and logs the raw error when a gitbook tool throws', async () => {
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        search_documentation: {
+          execute: vi
+            .fn()
+            .mockRejectedValue(new Error('MCP error: socket hang up')),
+        },
+      },
+      { source: 'gitbook', traceId: 'trace-7' },
+    )
+
+    const promise = tools.search_documentation.execute({
+      query: 'how to send sms',
+    } as never)
+
+    await expect(promise).rejects.toBeInstanceOf(UserFacingError)
+    await expect(promise).rejects.toThrow(GITBOOK_UNAVAILABLE_MESSAGE)
+
+    expect(mocks.http).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'search_documentation',
+        source: 'gitbook',
+        status: 'error',
+      }),
+    )
+    expect(mocks.warn).toHaveBeenCalledWith('MCP tool failed', {
+      tool: 'search_documentation',
+      traceId: 'trace-7',
+      error: 'MCP error: socket hang up',
     })
   })
 

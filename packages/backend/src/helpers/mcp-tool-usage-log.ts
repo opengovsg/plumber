@@ -1,3 +1,4 @@
+import { UserFacingError } from '@/errors/user-facing-error'
 import logger from '@/helpers/logger'
 
 export type McpToolSource = 'plumber' | 'gitbook'
@@ -7,6 +8,13 @@ type McpToolUsageMeta = {
   traceId: string
   userId?: string
 }
+
+/**
+ * Shown to the user and the model when a GitBook tool call throws. The raw
+ * error stays in the logs.
+ */
+export const GITBOOK_UNAVAILABLE_MESSAGE =
+  'Documentation lookup is temporarily unavailable. Please try again shortly.'
 
 const SAFE_ARG_KEYS = new Set([
   'pipe_id',
@@ -159,6 +167,10 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
                 traceId: meta.traceId,
                 error: error instanceof Error ? error.message : String(error),
               })
+              // GitBook is a third-party server, so its raw errors are noisy.
+              if (meta.source === 'gitbook') {
+                throw new UserFacingError(GITBOOK_UNAVAILABLE_MESSAGE)
+              }
               throw error
             }
           },
