@@ -1,6 +1,7 @@
 import { Box, Container, Flex, HStack, Icon, Text } from '@chakra-ui/react'
 import { Tag, TagLabel, TagLeftIcon } from '@opengovsg/design-system-react'
 import type { IApp, IJSONObject } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Helmet } from 'react-helmet'
 import { BiInfoCircle, BiX } from 'react-icons/bi'
@@ -14,7 +15,6 @@ import useAuthentication from '@/hooks/useAuthentication'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useNavigationGuard } from '@/hooks/useNavigationGuard'
 import { usePersistedState } from '@/hooks/usePersistedState'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 import {
   AiBuilderContextProvider,
@@ -438,6 +438,7 @@ function AiBuilderContent() {
 }
 
 function AiBuilderDraftProvider() {
+  const posthog = usePostHog()
   const locationState = useLocation()?.state
   const [params] = useSearchParams()
   // NOTE: coerce to undefined to fit typing
@@ -445,11 +446,11 @@ function AiBuilderDraftProvider() {
   const from = params.get('from')
 
   useEffect(() => {
-    if (!isPostHogConfigured || !from) {
+    if (!from) {
       return
     }
     posthog.capture('ai_builder:opened', { from })
-  }, [from])
+  }, [from, posthog])
 
   // Persist state to sessionStorage so it survives refresh.
   //

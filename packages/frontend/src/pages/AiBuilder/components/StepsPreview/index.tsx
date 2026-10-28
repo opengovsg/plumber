@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react'
 import { Button } from '@opengovsg/design-system-react'
 import { IStepConfig } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { MdOpenInNew } from 'react-icons/md'
 import { useNavigate } from 'react-router-dom'
@@ -20,12 +21,12 @@ import { CREATE_FLOW_WITH_STEPS } from '@/graphql/mutations/create-flow-with-ste
 import { useAiBuilderContext } from '@/pages/AiBuilder/AiBuilderContext'
 import aiBuilderErrorImg from '@/pages/AiBuilder/assets/AiBuilderError.svg'
 import { useStepConfigContext } from '@/pages/AiBuilder/StepConfigContext'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 import PreviewItems from './PreviewItems'
 import Step from './Step'
 
 export default function StepsPreview() {
+  const posthog = usePostHog()
   const navigate = useNavigate()
   const {
     flowName,
@@ -132,7 +133,7 @@ export default function StepsPreview() {
   )
 
   useEffect(() => {
-    if (hasNoContent || !isPostHogConfigured) {
+    if (hasNoContent) {
       return
     }
     posthog.capture('ai_builder:steps_preview_shown', {
@@ -207,11 +208,9 @@ export default function StepsPreview() {
                 size="sm"
                 rightIcon={<MdOpenInNew />}
                 onClick={() => {
-                  if (isPostHogConfigured) {
-                    posthog.capture('ai_builder:open_editor', {
-                      pipe_id: output.pipeId,
-                    })
-                  }
+                  posthog.capture('ai_builder:open_editor', {
+                    pipe_id: output.pipeId,
+                  })
                   window.open(
                     `${URLS.FLOW_EDITOR(output.pipeId)}?from=ai-builder`,
                     '_blank',
