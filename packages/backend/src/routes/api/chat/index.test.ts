@@ -78,6 +78,7 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
       chatPromptName: 'chat',
       chatSummaryPromptName: 'chat-summary',
       version: 'production',
+      mcpServers: { gitbook: true },
     },
   }),
 }))
@@ -122,6 +123,7 @@ import { experimental_createMCPClient } from '@ai-sdk/mcp'
 import { convertToModelMessages, createUIMessageStream, streamText } from 'ai'
 
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
+import logger from '@/helpers/logger'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 
@@ -252,6 +254,153 @@ describe('chat handler — GitBook MCP integration', () => {
       'Support: https://form.gov.sg/64929532701266001209ac32',
     )
     expect(systemMessage?.content).not.toContain('6a979221b8ae314641032f5c=')
+  })
+
+  it('logs an empty disabledMcpServers list when GitBook stays available', async () => {
+    const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
+    vi.mocked(experimental_createMCPClient).mockResolvedValue({
+      tools: vi.fn().mockResolvedValue({ search_documentation: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+
+    const handler = router.stack[0].route.stack[0].handle
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    expect(infoSpy).toHaveBeenCalledWith(
+      'Starting AI chat stream',
+      expect.objectContaining({ disabledMcpServers: [] }),
+    )
+    infoSpy.mockRestore()
+  })
+})
+
+describe('chat handler — GitBook MCP disabled', () => {
+  const mockBridgeTools = { plumber_tool: vi.fn() }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(getAiBuilderFlag).mockReturnValue({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        version: 'production',
+        mcpServers: { gitbook: false },
+      },
+    })
+    vi.mocked(createMcpBridgeTools).mockReturnValue(
+      mockBridgeTools as unknown as ReturnType<typeof createMcpBridgeTools>,
+    )
+    vi.mocked(experimental_createMCPClient).mockResolvedValue({
+      tools: vi.fn().mockResolvedValue({ search_documentation: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+  })
+
+  it('does not call the GitBook MCP client and streams with bridge tools only', async () => {
+    const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => logger)
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    const handler = router.stack[0].route.stack[0].handle
+    const res = makeRes()
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq() as any, res as any, vi.fn())
+
+    expect(experimental_createMCPClient).not.toHaveBeenCalled()
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tools: mockBridgeTools,
+      }),
+    )
+    expect(res.status).not.toHaveBeenCalled()
+    expect(infoSpy).toHaveBeenCalledWith(
+      'Starting AI chat stream',
+      expect.objectContaining({ disabledMcpServers: ['gitbook'] }),
+    )
+    expect(errorSpy).not.toHaveBeenCalled()
+    expect(warnSpy).not.toHaveBeenCalled()
+
+    infoSpy.mockRestore()
+    errorSpy.mockRestore()
+    warnSpy.mockRestore()
+  })
+
+  it('streams a conversation that already contains a completed GitBook dynamic-tool part', async () => {
+    const actual = await vi.importActual<typeof import('ai')>('ai')
+    vi.mocked(convertToModelMessages).mockImplementationOnce(
+      actual.convertToModelMessages,
+    )
+
+    const handler = router.stack[0].route.stack[0].handle
+    const res = makeRes()
+    await handler(
+      makeReq({
+        messages: [
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'text',
+                text: 'what data classification can plumber handle?',
+              },
+            ],
+          },
+          {
+            role: 'assistant',
+            parts: [
+              { type: 'step-start' },
+              {
+                type: 'dynamic-tool',
+                toolCallId: 'tool-123',
+                toolName: 'searchDocumentation',
+                state: 'output-available',
+                input: { query: 'data classification' },
+                output: {
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'Plumber handles Restricted and Sensitive-Normal.',
+                    },
+                  ],
+                },
+              },
+              {
+                type: 'text',
+                text: 'Plumber handles Restricted and Sensitive-Normal data.',
+              },
+            ],
+          },
+          {
+            role: 'user',
+            parts: [{ type: 'text', text: 'thanks' }],
+          },
+        ],
+      }) as unknown as Request,
+      res as unknown as Response,
+      vi.fn(),
+    )
+
+    expect(res.status).not.toHaveBeenCalled()
+    expect(experimental_createMCPClient).not.toHaveBeenCalled()
+    expect(streamText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tools: mockBridgeTools,
+        messages: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'tool',
+            content: expect.arrayContaining([
+              expect.objectContaining({
+                type: 'tool-result',
+                toolCallId: 'tool-123',
+                toolName: 'searchDocumentation',
+              }),
+            ]),
+          }),
+        ]),
+      }),
+    )
   })
 })
 
@@ -387,6 +536,7 @@ describe('chat handler — data-columnTable emission', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
+        mcpServers: { gitbook: true },
       },
     })
   })
@@ -465,6 +615,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
+        mcpServers: { gitbook: true },
       },
     })
     // Simulate a create_pipe (or similar) tool call having already set the
