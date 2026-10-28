@@ -4,15 +4,14 @@ import {
   UnrecoverableError,
   WorkerPro,
 } from '@taskforcesh/bullmq-pro'
-import type { AxiosError } from 'axios'
 import { type Span } from 'dd-trace'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
 import RetriableError from '@/errors/retriable-error'
 import StepError from '@/errors/step'
 import Step from '@/models/step'
 
+import { makeHttpError } from '../../../test/utils/make-http-error'
 import { doesActionProcessFiles, handleFailedStepAndThrow } from '../actions'
 
 const mocks = vi.hoisted(() => ({
@@ -109,7 +108,7 @@ describe('action helper functions', () => {
   })
 
   describe('handleFailedStepAndThrow', () => {
-    const EMPTY_HTTP_ERROR = new HttpError({} as unknown as AxiosError)
+    const EMPTY_HTTP_ERROR = makeHttpError()
 
     beforeEach(() => {
       vi.useFakeTimers()
@@ -128,13 +127,11 @@ describe('action helper functions', () => {
         ({ retryAfter, expectedResult }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
 
-          const error = new HttpError({
-            response: {
-              headers: {
-                'retry-after': retryAfter,
-              },
+          const error = makeHttpError({
+            headers: {
+              'retry-after': retryAfter,
             },
-          } as unknown as AxiosError)
+          })
 
           try {
             handleFailedStepAndThrow({
@@ -158,13 +155,11 @@ describe('action helper functions', () => {
         'does not retry Retry-After ($retryAfter) if wait is too long',
         ({ retryAfter }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
-          const error = new HttpError({
-            response: {
-              headers: {
-                'retry-after': retryAfter,
-              },
+          const error = makeHttpError({
+            headers: {
+              'retry-after': retryAfter,
             },
-          } as unknown as AxiosError)
+          })
 
           try {
             handleFailedStepAndThrow({
@@ -189,13 +184,11 @@ describe('action helper functions', () => {
         'does not retry Retry-After if value ("$retryAfter") is invalid',
         ({ retryAfter }) => {
           vi.setSystemTime(new Date('31 Oct 2023 00:00:00 GMT'))
-          const error = new HttpError({
-            response: {
-              headers: {
-                'retry-after': retryAfter,
-              },
+          const error = makeHttpError({
+            headers: {
+              'retry-after': retryAfter,
             },
-          } as unknown as AxiosError)
+          })
 
           expect(() =>
             handleFailedStepAndThrow({
@@ -208,11 +201,9 @@ describe('action helper functions', () => {
       )
 
       it.each([504, 429])('retries some http status codes (%d)', (code) => {
-        const error = new HttpError({
-          response: {
-            status: code,
-          },
-        } as unknown as AxiosError)
+        const error = makeHttpError({
+          status: code,
+        })
         expect(() =>
           handleFailedStepAndThrow({
             errorDetails: {},
@@ -353,13 +344,11 @@ describe('action helper functions', () => {
           stepError: new StepError(
             'http-step-error',
             'test solution',
-            new HttpError({
-              response: {
-                headers: {
-                  'retry-after': '15',
-                },
+            makeHttpError({
+              headers: {
+                'retry-after': '15',
               },
-            } as unknown as AxiosError),
+            }),
           ),
           isRetried: true,
         },
@@ -412,9 +401,7 @@ describe('action helper functions', () => {
           name: 'n',
           solution: 's',
           kind: 'third-party',
-          cause: new HttpError({
-            response: { status: 504 },
-          } as unknown as AxiosError),
+          cause: makeHttpError({ status: 504 }),
         })
 
         let thrown: unknown

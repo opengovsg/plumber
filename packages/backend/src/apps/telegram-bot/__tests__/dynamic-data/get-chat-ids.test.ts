@@ -1,9 +1,7 @@
 import { IGlobalVariable } from '@plumber/types'
-import { AxiosError } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import HttpError from '@/errors/http'
-
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import getChatIds, {
   UPDATES_CONFLICT_MESSAGE,
 } from '../../dynamic-data/get-chat-ids'
@@ -11,13 +9,6 @@ import getChatIds, {
 const mocks = vi.hoisted(() => ({
   httpGet: vi.fn(),
 }))
-
-function makeHttpError(status: number, data: unknown): HttpError {
-  return new HttpError({
-    message: `Request failed with status code ${status}`,
-    response: { status, data },
-  } as AxiosError)
-}
 
 describe('get chat ids', () => {
   let $: IGlobalVariable
@@ -62,11 +53,14 @@ describe('get chat ids', () => {
 
   it('returns a plain message when another service owns the bot updates', async () => {
     mocks.httpGet.mockRejectedValueOnce(
-      makeHttpError(409, {
-        ok: false,
-        error_code: 409,
-        description:
-          "Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first",
+      makeHttpError({
+        status: 409,
+        data: {
+          ok: false,
+          error_code: 409,
+          description:
+            "Conflict: can't use getUpdates method while webhook is active; use deleteWebhook to delete the webhook first",
+        },
       }),
     )
 
@@ -78,10 +72,13 @@ describe('get chat ids', () => {
 
   it('returns the Telegram description for other HTTP errors', async () => {
     mocks.httpGet.mockRejectedValueOnce(
-      makeHttpError(401, {
-        ok: false,
-        error_code: 401,
-        description: 'Unauthorized',
+      makeHttpError({
+        status: 401,
+        data: {
+          ok: false,
+          error_code: 401,
+          description: 'Unauthorized',
+        },
       }),
     )
 

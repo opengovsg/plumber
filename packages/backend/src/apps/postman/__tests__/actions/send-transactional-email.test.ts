@@ -6,6 +6,7 @@ import HttpError from '@/errors/http'
 import PartialStepError from '@/errors/partial-error'
 import RetriableError from '@/errors/retriable-error'
 
+import { makeHttpError } from '../../../../../test/utils/make-http-error'
 import sendTransactionalEmail from '../../actions/send-transactional-email'
 
 const mocks = vi.hoisted(() => ({
@@ -289,16 +290,14 @@ describe('send transactional email', () => {
         },
       })
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: {
-              code: 'invalid_template',
-              message: 'Recipient email is blacklisted',
-            },
-            status: 400,
-            statusText: 'Bad Request',
+        makeHttpError({
+          data: {
+            code: 'invalid_template',
+            message: 'Recipient email is blacklisted',
           },
-        } as AxiosError),
+          status: 400,
+          statusText: 'Bad Request',
+        }),
       )
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(
       PartialStepError,
@@ -342,28 +341,24 @@ describe('send transactional email', () => {
         },
       })
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: {
-              code: 'invalid_template',
-              message: 'Recipient email is blacklisted',
-            },
-            status: 400,
-            statusText: 'Bad Request',
+        makeHttpError({
+          data: {
+            code: 'invalid_template',
+            message: 'Recipient email is blacklisted',
           },
-        } as AxiosError),
+          status: 400,
+          statusText: 'Bad Request',
+        }),
       )
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: {
-              code: 'rate_limit',
-              message: 'Too many requests. Please try again later.',
-            },
-            status: 429,
-            statusText: 'Too Many Requests',
+        makeHttpError({
+          data: {
+            code: 'rate_limit',
+            message: 'Too many requests. Please try again later.',
           },
-        } as AxiosError),
+          status: 429,
+          statusText: 'Too Many Requests',
+        }),
       )
 
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
@@ -409,40 +404,32 @@ describe('send transactional email', () => {
         },
       })
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: '<html>cloudflare error</html>',
-            status: 500,
-            statusText: 'Too Many Requests',
-          },
-        } as AxiosError),
+        makeHttpError({
+          data: '<html>cloudflare error</html>',
+          status: 500,
+          statusText: 'Too Many Requests',
+        }),
       )
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: '<html>cloudflare error</html>',
-            status: 502,
-            statusText: 'Too Many Requests',
-          },
-        } as AxiosError),
+        makeHttpError({
+          data: '<html>cloudflare error</html>',
+          status: 502,
+          statusText: 'Too Many Requests',
+        }),
       )
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: '<html>cloudflare error</html>',
-            status: 520,
-            statusText: 'Web server is returning an unknown error',
-          },
-        } as AxiosError),
+        makeHttpError({
+          data: '<html>cloudflare error</html>',
+          status: 520,
+          statusText: 'Web server is returning an unknown error',
+        }),
       )
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: '<html>cloudflare error</html>',
-            status: 524,
-            statusText: 'A timeout occurred',
-          },
-        } as AxiosError),
+        makeHttpError({
+          data: '<html>cloudflare error</html>',
+          status: 524,
+          statusText: 'A timeout occurred',
+        }),
       )
 
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
@@ -480,13 +467,11 @@ describe('send transactional email', () => {
         },
       })
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: 'socket hang up',
-            status: 400,
-            statusText: 'socket hang up',
-          },
-        } as AxiosError),
+        makeHttpError({
+          data: 'socket hang up',
+          status: 400,
+          statusText: 'socket hang up',
+        }),
       )
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(RetriableError)
     expect($.setActionItem).toHaveBeenCalledWith({
@@ -815,16 +800,14 @@ describe('send transactional email', () => {
         },
       })
       .mockRejectedValueOnce(
-        new HttpError({
-          response: {
-            data: {
-              code: 'invalid_template',
-              message: 'Recipient email is blacklisted',
-            },
-            status: 400,
-            statusText: 'Bad Request',
+        makeHttpError({
+          data: {
+            code: 'invalid_template',
+            message: 'Recipient email is blacklisted',
           },
-        } as AxiosError),
+          status: 400,
+          statusText: 'Bad Request',
+        }),
       )
 
     await expect(sendTransactionalEmail.run($)).rejects.toThrow(
