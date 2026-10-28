@@ -65,6 +65,7 @@ Ensure the task execution role can read both parameters and decrypt the token's 
 PostHog receives AI Builder traces, including prompts, responses, and tool calls.
 PAIR action traces continue to export only to Rome.
 PostHog identifies users by their Plumber user ID and groups chat turns by `chatId`.
+PostHog rejects OTLP exports over 4 MB or over 100 AI spans.
 Both destinations retain the OpenTelemetry trace ID.
 PostHog receives cache-read token counts when PAIR reports `prompt_tokens_details.cached_tokens`.
 Input token totals include cache reads. PostHog uses the separate cache-read count to calculate the breakdown.

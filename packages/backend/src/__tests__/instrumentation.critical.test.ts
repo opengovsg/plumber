@@ -66,6 +66,8 @@ vi.mock('posthog-node', () => ({
 }))
 
 beforeEach(() => {
+  // Each case re-imports instrumentation.ts, which registers the diag logger again.
+  diag.disable()
   vi.resetModules()
   vi.clearAllMocks()
   mocks.config.posthog = { projectToken: '', host: '' }

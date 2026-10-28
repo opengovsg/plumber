@@ -41,7 +41,6 @@ import {
   WORKFLOW_METADATA_REGEX,
 } from '@/helpers/ai/parse-workflow-metadata'
 import { withAiTelemetryContext } from '@/helpers/ai/posthog-client'
-import { withAiBuilderTelemetry } from '@/helpers/ai/posthog-telemetry'
 import {
   repairMalformedStreamedToolNames,
   repairMalformedToolName,
@@ -511,13 +510,7 @@ router.post('/', (req: AuthenticatedRequest, res: Response) => {
     return
   }
 
-  return withAiBuilderTelemetry(
-    {
-      distinctId: req.context.currentUser.id,
-      sessionId: validationResult.data.chatId || undefined,
-    },
-    () => handleChatStream(req, res, validationResult.data),
-  )
+  return handleChatStream(req, res, validationResult.data)
 })
 
 export default router
