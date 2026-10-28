@@ -4,13 +4,13 @@ import { useContext } from 'react'
 
 import { EditorContext } from '@/contexts/Editor'
 
-import { ConnectionDropdownOption } from '.'
 import BackButton from '../BackButton'
 import { DEFAULT_CHOOSE_CONNECTION_LABEL } from '../constants'
 import { FlowStepConfigurationContext } from '../FlowStepConfigurationContext'
 import InvalidModalScreen from '../InvalidModalScreen'
 import ChooseConnectionDropdown from './ChooseConnectionDropdown'
 import ConnectionHeader from './ConnectionHeader'
+import { ConnectionDropdownOption } from './option-generator'
 import SetConnectionButton from './SetConnectionButton'
 
 interface ChooseConnectionProps {
