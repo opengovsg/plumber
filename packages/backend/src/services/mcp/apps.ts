@@ -9,6 +9,7 @@ import type {
 
 import apps from '@/apps'
 import { getAllLdFlags, getRestrictedAppKeys } from '@/helpers/launch-darkly'
+import { isUserVisible } from '@/services/step-definition'
 
 const TOOLBOX_APP_KEY = 'toolbox'
 
@@ -112,7 +113,7 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
       key: app.key,
       name: app.name,
       triggers: (app.triggers ?? [])
-        .filter((t) => !t.hiddenFromUser)
+        .filter(isUserVisible)
         .filter((t) => allLdFlags[`app_${app.key}_trigger_${t.key}`] !== false)
         .map((t) => {
           const raw = t as unknown as IRawTrigger
@@ -129,7 +130,7 @@ export async function listAppsService(user: IUser): Promise<IMcpApp[]> {
           }
         }),
       actions: (app.actions ?? [])
-        .filter((a) => !a.hiddenFromUser)
+        .filter(isUserVisible)
         .filter((a) => allLdFlags[`app_${app.key}_action_${a.key}`] !== false)
         .map((a) => {
           const raw = a as unknown as IRawAction
