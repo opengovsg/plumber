@@ -12,27 +12,35 @@ export const GITBOOK_CONNECT_TIMEOUT_MS = 10_000
 
 export type GitbookMcpClient = Awaited<ReturnType<typeof createMCPClient>>
 
+function closeQuietly(client: GitbookMcpClient): void {
+  void client.close().catch((): void => undefined)
+}
+
 export async function connectGitbookMcp(): Promise<{
   client: GitbookMcpClient
   tools: Awaited<ReturnType<GitbookMcpClient['tools']>>
 }> {
+  let gaveUp = false
   let connectedClient: GitbookMcpClient | undefined
   const connecting = (async () => {
     const client = await createMCPClient({
       transport: { type: 'http', url: GITBOOK_MCP_URL },
     })
     connectedClient = client
+    // IMPORTANT: a client that connects after the timeout would otherwise stay open.
+    if (gaveUp) {
+      closeQuietly(client)
+    }
     return { client, tools: await client.tools() }
   })()
 
   try {
     return await withTimeout(connecting, GITBOOK_CONNECT_TIMEOUT_MS)
   } catch (error) {
-    // IMPORTANT: a connection that completes after the timeout would otherwise stay open.
-    const closing = connectedClient
-      ? connectedClient.close()
-      : connecting.then(({ client }) => client.close())
-    void closing.catch((): void => undefined)
+    gaveUp = true
+    if (connectedClient) {
+      closeQuietly(connectedClient)
+    }
     throw error
   }
 }

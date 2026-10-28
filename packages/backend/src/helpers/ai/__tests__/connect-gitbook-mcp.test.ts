@@ -67,6 +67,26 @@ describe('connectGitbookMcp', () => {
     expect(lateClient.close).toHaveBeenCalledTimes(1)
   })
 
+  it('closes a client that connects after the timeout even if listing tools fails', async () => {
+    let connect: (client: McpClient) => void = () => undefined
+    vi.mocked(experimental_createMCPClient).mockReturnValue(
+      new Promise((resolve) => {
+        connect = resolve
+      }),
+    )
+
+    const result = connectGitbookMcp()
+    const assertion = expect(result).rejects.toThrow()
+    await vi.advanceTimersByTimeAsync(GITBOOK_CONNECT_TIMEOUT_MS)
+    await assertion
+
+    const lateClient = makeClient(() => Promise.reject(new Error('HTTP 504')))
+    connect(lateClient as unknown as McpClient)
+    await vi.runAllTimersAsync()
+
+    expect(lateClient.close).toHaveBeenCalledTimes(1)
+  })
+
   it('times out and closes the client when listing tools hangs', async () => {
     const client = makeClient(() => new Promise(() => undefined))
     vi.mocked(experimental_createMCPClient).mockResolvedValue(
