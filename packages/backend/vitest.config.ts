@@ -16,12 +16,16 @@ config({
 
 const UNIT_INCLUDE = 'src/**/*.test.{js,ts}'
 
+const MODULE_STATE_CALL =
+  /\bvi\.(mock|doMock|unmock|resetModules|stubGlobal|stubEnv|useFakeTimers|setSystemTime)\s*\(/
+
 function hasModuleMock(absolutePath: string): boolean {
-  return /\bvi\.mock\s*\(/.test(readFileSync(absolutePath, 'utf8'))
+  return MODULE_STATE_CALL.test(readFileSync(absolutePath, 'utf8'))
 }
 
-// vi.mock() replaces a module in the worker cache. With isolate: false that
-// replacement leaks into later files, so those tests get their own graph.
+// With isolate: false, these calls leak module or global state into later
+// files. For example, vi.resetModules() can leave a failed import cached for
+// the next file. Those tests get their own graph.
 const isolatedTests = globSync(UNIT_INCLUDE, { cwd: __dirname }).filter(
   (file) => hasModuleMock(path.join(__dirname, file)),
 )
@@ -32,7 +36,7 @@ const isolatedTestPaths = new Set(
 const watchedServers = new WeakSet<object>()
 
 // Project include/exclude lists are fixed at config load. Restarting reloads
-// this config, so a watch-mode edit that adds or removes vi.mock() moves the
+// this config, so a watch-mode edit that adds or removes these calls moves the
 // test into the right project.
 const reclassifyMockedTestsOnChange: Plugin = {
   name: 'plumber:reclassify-mocked-tests',
