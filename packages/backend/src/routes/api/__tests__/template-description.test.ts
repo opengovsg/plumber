@@ -38,6 +38,7 @@ vi.mock('@/helpers/generate-template-description', () => ({
   generateTemplateDescription: mocks.generate,
 }))
 vi.mock('@/helpers/logger', () => ({ default: { error: vi.fn() } }))
+vi.mock('@/helpers/plumpro', () => ({ isPlumPro: async () => true }))
 
 import router from '../template-description'
 

@@ -6,6 +6,7 @@ import appConfig from '@/config/app'
 import { createRedisClient, REDIS_DB_INDEX } from '@/config/redis'
 import { generateTemplateDescription } from '@/helpers/generate-template-description'
 import logger from '@/helpers/logger'
+import { isPlumPro } from '@/helpers/plumpro'
 import type { AuthenticatedRequest } from '@/types/express/context'
 
 const router: Router = Router()
@@ -26,6 +27,13 @@ router.post('/', async (req: AuthenticatedRequest, res) => {
   }
   const user = req.context.currentUser
   try {
+    const isUserPlumPro = await isPlumPro(user.email)
+    if (!isUserPlumPro) {
+      res
+        .status(403)
+        .json({ error: 'Only PlumPros can convert pipes to templates' })
+      return
+    }
     await limiter.consume(user.id)
     const flow = await user
       .withAccessibleFlows({ requiredRole: 'viewer' })

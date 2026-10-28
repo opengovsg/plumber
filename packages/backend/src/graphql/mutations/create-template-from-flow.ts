@@ -1,9 +1,11 @@
 import type { IJSONObject } from '@plumber/types'
 import { z } from 'zod'
 
+import { ForbiddenError } from '@/errors/graphql-errors'
 import { convertFlowToTemplate } from '@/helpers/convert-flow-to-template'
 import logger from '@/helpers/logger'
 import { omitCopiedStepConfig } from '@/helpers/omit-copied-step-config'
+import { isPlumPro } from '@/helpers/plumpro'
 import { sanitizeCollaboratorDuplicatedParameters } from '@/helpers/sanitize-collaborator-duplicated-step'
 import {
   type SourceTile,
@@ -40,6 +42,13 @@ async function fetchSourceTiles(
 
 const createTemplateFromFlow: MutationResolvers['createTemplateFromFlow'] =
   async (_parent, params, context) => {
+    const isUserPlumPro = await isPlumPro(context.currentUser.email)
+
+    // NOTE: For now, restrict only to power users. frontend doesn't show
+    // the option but it is possible a user hits this via API (somehow)
+    if (!isUserPlumPro) {
+      throw new ForbiddenError('Only PlumPros can convert pipes to templates')
+    }
     const metadata = metadataSchema.parse(params.input)
     const flow = await context.currentUser
       .withAccessibleFlows({ requiredRole: 'viewer' })

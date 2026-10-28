@@ -65,6 +65,10 @@ export type CoreConfig = {
     privateKey: string
   }
   launchDarklySdkKey: string
+  posthog: {
+    projectToken: string
+    host: string
+  }
   maxJobAttempts: number
   onboardingEmailWebhookUrl: string
   tilesPostgres: {
@@ -190,6 +194,11 @@ const coreConfig: CoreConfig = {
     'LAUNCH_DARKLY_SDK_KEY',
     process.env.LAUNCH_DARKLY_SDK_KEY,
   ),
+  // Public values that must match the frontend's PostHog config.
+  posthog: {
+    projectToken: 'phc_nwcM6rC7WU7CzdW9Z4zvB3dcZWFM9fn2URbqs35FFQQQ',
+    host: 'https://a.plumber.gov.sg',
+  },
   maxJobAttempts: Number(process.env.MAX_JOB_ATTEMPTS ?? '10'),
   onboardingEmailWebhookUrl: process.env.ONBOARDING_EMAIL_WEBHOOK_URL || '',
   tilesPostgres: {
