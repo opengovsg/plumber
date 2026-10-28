@@ -5,15 +5,16 @@ import logger from '@/helpers/logger'
 import appConfig from './app'
 import { integrationTestIsolation } from './integration-test-isolation'
 
-const redisDbOffset = integrationTestIsolation.REDIS_DB_OFFSET
+const { REDIS_DB_OFFSET: redisDbOffset, REDIS_APP_DATA_DB: redisAppDataDb } =
+  integrationTestIsolation
 
 // Maximum of 16 logical DBs on a default Redis instance; integration tests start
-// Redis with 256 and assign each worker its own contiguous block via REDIS_DB_OFFSET.
+// Redis with 256 and assign each worker its own DBs.
 export const REDIS_DB_INDEX = {
   JOBS: redisDbOffset + 0,
   RATE_LIMIT: redisDbOffset + 1,
   PIPE_ERRORS: redisDbOffset + 2,
-  APP_DATA: redisDbOffset + 3,
+  APP_DATA: redisAppDataDb ?? redisDbOffset + 3,
   AUTH_TOKEN_DENYLIST: redisDbOffset + 4,
 } as const
 

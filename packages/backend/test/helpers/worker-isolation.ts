@@ -3,7 +3,11 @@ import { join } from 'path'
 import { getWorkerDatabaseIndex } from '@opengovsg/testcontainers/vitest'
 import knex, { type Knex } from 'knex'
 
-import { MAX_WORKER_SLOTS, REDIS_DBS_PER_WORKER } from './integration-constants'
+import {
+  MAX_WORKER_SLOTS,
+  REDIS_DBS_PER_WORKER,
+  REDLOCK_DATABASES,
+} from './integration-constants'
 import { runKnexMigrations } from './run-knex-migrations'
 
 const MIGRATIONS_DIRECTORY = join(__dirname, '../../src/db/migrations')
@@ -14,6 +18,7 @@ type WorkerIsolationState = {
   postgresDatabase: string
   tilesDatabase: string
   redisDbOffset: number
+  redisAppDataDb: number
   dynamodbSuffix: string
 }
 
@@ -69,6 +74,7 @@ function applyWorkerEnv(state: WorkerIsolationState): void {
   process.env.POSTGRES_DATABASE = state.postgresDatabase
   process.env.TILES_POSTGRES_DATABASE = state.tilesDatabase
   process.env.REDIS_DB_OFFSET = String(state.redisDbOffset)
+  process.env.REDIS_APP_DATA_DB = String(state.redisAppDataDb)
   process.env.DYNAMODB_TABLE_SUFFIX = state.dynamodbSuffix
 }
 
@@ -92,7 +98,8 @@ async function initializeWorkerIsolation(
   const postgresDatabase = `plumber_test_w${workerSlot}`
   const tilesDatabase = `tiles_test_w${workerSlot}`
   const dynamodbSuffix = `w${workerSlot}`
-  const redisDbOffset = workerSlot * REDIS_DBS_PER_WORKER
+  const redisDbOffset = REDLOCK_DATABASES + workerSlot * REDIS_DBS_PER_WORKER
+  const redisAppDataDb = workerSlot
 
   const postgresAdmin = knex(
     postgresAdminConfig(process.env.POSTGRES_DATABASE as string),
@@ -135,6 +142,7 @@ async function initializeWorkerIsolation(
     postgresDatabase,
     tilesDatabase,
     redisDbOffset,
+    redisAppDataDb,
     dynamodbSuffix,
   }
   // App config snapshots env on first import, so apply isolation before DynamoDB.
@@ -158,5 +166,3 @@ export async function ensureWorkerIsolation(): Promise<void> {
   globalState[WORKER_ISOLATION_KEY] = state
   applyWorkerEnv(state)
 }
-
-export { REDIS_DBS_PER_WORKER as workerRedisDbCount }

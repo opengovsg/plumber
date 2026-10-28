@@ -1,18 +1,15 @@
 /* oxlint-disable no-console */
 import { beforeEach } from 'vitest'
 
-import {
-  ensureWorkerIsolation,
-  workerRedisDbCount,
-} from './helpers/worker-isolation'
+import { ensureWorkerIsolation } from './helpers/worker-isolation'
 
 await ensureWorkerIsolation()
 
-const { createRedisClient } = await import('../src/config/redis')
+const { createRedisClient, REDIS_DB_INDEX } =
+  await import('../src/config/redis')
 
-const redisDbOffset = Number(process.env.REDIS_DB_OFFSET ?? 0)
-const redisClients = Array.from({ length: workerRedisDbCount }, (_, index) =>
-  createRedisClient(redisDbOffset + index),
+const redisClients = [...new Set(Object.values(REDIS_DB_INDEX))].map((db) =>
+  createRedisClient(db),
 )
 
 beforeEach(async () => {
