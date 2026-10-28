@@ -10,12 +10,14 @@ import Container from '@/components/Container'
 import EditableInput from '@/components/EditableInput'
 import Editor from '@/components/Editor'
 import DemoFlowModal from '@/components/FlowRow/DemoFlowModal'
+import { NOT_FOUND } from '@/config/errors'
 import { TOP_NAV_HEIGHT } from '@/config/layout'
 import * as URLS from '@/config/urls'
 import { EditorProvider } from '@/contexts/Editor'
 import { UPDATE_FLOW } from '@/graphql/mutations/update-flow'
 import { UPDATE_FLOW_STATUS } from '@/graphql/mutations/update-flow-status'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
+import { parseGraphqlError } from '@/helpers/parseGraphqlError'
 import { useCaptureAiBuilderFlow } from '@/hooks/useCaptureAiBuilderFlow'
 import InvalidEditorPage from '@/pages/Editor/components/InvalidEditorPage'
 
@@ -165,14 +167,7 @@ export default function EditorLayout() {
   useCaptureAiBuilderFlow(flow)
 
   // navigate user to not found page if flow does not belong to the user
-  if (
-    error instanceof ApolloError &&
-    error?.graphQLErrors?.find(
-      (e) =>
-        e.message === 'NotFoundError' ||
-        e.message === 'You do not have sufficient permissions for this pipe',
-    )
-  ) {
+  if (error instanceof ApolloError && parseGraphqlError(error).code === NOT_FOUND) {
     return <InvalidEditorPage />
   }
 
