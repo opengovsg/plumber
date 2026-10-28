@@ -2,7 +2,6 @@ import { useQuery } from '@apollo/client'
 import { Box, Flex, Grid, Icon, Image, Text } from '@chakra-ui/react'
 import { Badge, Link } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
-import { useFeatureFlagEnabled, usePostHog } from 'posthog-js/react'
 import { useContext, useState } from 'react'
 import { BiGroup } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
@@ -15,6 +14,10 @@ import * as URLS from '@/config/urls'
 import { LaunchDarklyContext } from '@/contexts/LaunchDarkly'
 import { GET_TEMPLATES } from '@/graphql/queries/get-templates'
 import { useApps } from '@/hooks/useApps'
+import {
+  COMMUNITY_TEMPLATES_EARLY_ACCESS,
+  useEarlyAccess,
+} from '@/hooks/useEarlyAccess'
 import { useTemplateSearch } from '@/hooks/useTemplateSearch'
 
 import TemplateModal from '../Template'
@@ -25,6 +28,10 @@ import OptInDialog from './components/OptInDialog'
 import TemplateSection from './components/TemplateSection'
 import TemplateTile from './components/TemplateTile'
 import TemplateTileSkeleton from './components/TemplateTileSkeleton'
+import {
+  getSearchResults,
+  type ListedTemplate,
+} from './helpers/get-search-results'
 
 const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
@@ -32,9 +39,6 @@ const SEARCH_RESULTS_COUNT = 5
 const COMMUNITY_SKELETON_COUNT = 3
 // Matches the left padding of PageTitle so content lines up with the heading.
 const GUTTER = { base: 2, md: 8 }
-const COMMUNITY_TEMPLATES_FLAG = 'templates_early_access'
-
-type ListedTemplate = ITemplate & { isBuiltIn?: boolean }
 
 interface TemplateGridProps {
   templates: ListedTemplate[]
@@ -87,11 +91,12 @@ export default function Templates(): JSX.Element {
   const template = templates?.find((template) => template.id === templateId)
 
   const { data: apps, loading: appsLoading } = useApps()
-  const posthog = usePostHog()
-  const earlyAccessFlag = useFeatureFlagEnabled(COMMUNITY_TEMPLATES_FLAG)
-  const isEarlyAccessEnabled = earlyAccessFlag === true
-  const enrolInEarlyAccess = () =>
-    posthog.updateEarlyAccessFeatureEnrollment(COMMUNITY_TEMPLATES_FLAG, true)
+  const {
+    isEnabled: isEarlyAccessEnabled,
+    isLoading: isEarlyAccessLoading,
+    setEnrolled: setEarlyAccessEnrolled,
+  } = useEarlyAccess(COMMUNITY_TEMPLATES_EARLY_ACCESS)
+  const enrolInEarlyAccess = () => setEarlyAccessEnrolled(true)
 
   const [searchQuery, setSearchQuery] = useState('')
   const isSearching = searchQuery.trim() !== ''
@@ -100,18 +105,18 @@ export default function Templates(): JSX.Element {
     loading: searchLoading,
     error: searchError,
   } = useTemplateSearch(searchQuery)
-  // Ranking runs over every template, so drop the ones this user cannot see
-  // before taking the top results.
-  const matchedTemplates = matchedTemplateIds
-    .flatMap((id) => templates.find((template) => template.id === id) ?? [])
-    .slice(0, SEARCH_RESULTS_COUNT)
-
-  const isLoading = templatesLoading || appsLoading || searchLoading
   const builtInTemplates = templates.filter((template) => template.isBuiltIn)
   const communityTemplates = templates.filter((template) => !template.isBuiltIn)
+  const matchedTemplates = getSearchResults({
+    matchedTemplateIds,
+    templates,
+    limit: SEARCH_RESULTS_COUNT,
+  })
+
+  const isLoading = templatesLoading || appsLoading || searchLoading
   const showCommunity =
     isEarlyAccessEnabled && (isLoading || communityTemplates.length > 0)
-  const showCommunitySkeleton = earlyAccessFlag === false
+  const canOptInToEarlyAccess = !isEarlyAccessLoading && !isEarlyAccessEnabled
 
   return (
     <>
@@ -192,7 +197,7 @@ export default function Templates(): JSX.Element {
                   />
                 </TemplateSection>
               ) : (
-                showCommunitySkeleton && (
+                canOptInToEarlyAccess && (
                   <CommunityTemplatesSkeleton onTurnOn={enrolInEarlyAccess} />
                 )
               )}
@@ -219,7 +224,9 @@ export default function Templates(): JSX.Element {
 
       {template && <TemplateModal template={template} apps={apps} />}
       <OptInDialog onOptIn={enrolInEarlyAccess} />
-      <EarlyAccessModal onTurnOn={enrolInEarlyAccess} />
+      {canOptInToEarlyAccess && (
+        <EarlyAccessModal onTurnOn={enrolInEarlyAccess} />
+      )}
     </>
   )
 }

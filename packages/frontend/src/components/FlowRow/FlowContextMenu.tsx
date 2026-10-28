@@ -27,6 +27,7 @@ import MenuAlertDialog, { AlertDialogType } from '@/components/MenuAlertDialog'
 import * as URLS from '@/config/urls'
 import { DELETE_FLOW } from '@/graphql/mutations/delete-flow'
 import { DUPLICATE_FLOW } from '@/graphql/mutations/duplicate-flow'
+import useIsPlumPro from '@/hooks/useIsPlumPro'
 
 import ConvertToTemplateModal from './ConvertToTemplateModal'
 
@@ -58,6 +59,7 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
   const [deleteFlow, { loading: isDeletingFlow }] = useMutation(DELETE_FLOW)
   const flowTransfer = flow?.pendingTransfer
   const isOwner = flow.role === 'owner'
+  const isPlumPro = useIsPlumPro()
 
   const [duplicateFlow, { loading: isDuplicatingFlow }] = useMutation(
     DUPLICATE_FLOW,
@@ -179,12 +181,14 @@ export default function FlowContextMenu(props: FlowContextMenuProps) {
           >
             Duplicate
           </MenuItem>
-          <MenuItem
-            onClick={onConvertToTemplateButtonClick}
-            icon={<Icon as={BiExport} boxSize={5} />}
-          >
-            Convert to template
-          </MenuItem>
+          {isPlumPro && (
+            <MenuItem
+              onClick={onConvertToTemplateButtonClick}
+              icon={<Icon as={BiExport} boxSize={5} />}
+            >
+              Convert to template
+            </MenuItem>
+          )}
           {isOwner && (
             <TouchableTooltip
               label={
