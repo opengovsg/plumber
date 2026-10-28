@@ -55,10 +55,10 @@ export async function advanceAfterStep({
   context,
 }: {
   processResult: AdvanceAfterStepInput
-  currStep: Step
+  currStep: Step | undefined
   context: {
     isQueueDelayable: boolean
-    span: Span
+    span: Span | null
     worker: WorkerPro<IActionJobData>
     job: JobPro<IActionJobData>
   }
@@ -119,7 +119,7 @@ export async function advanceAfterStep({
 
   let jobOptions = DEFAULT_JOB_OPTIONS
 
-  if (currStep.appKey === 'delay') {
+  if (currStep?.appKey === 'delay' && currStep.key && executionStep.dataOut) {
     jobOptions = {
       ...DEFAULT_JOB_OPTIONS,
       delay: delayAsMilliseconds(currStep.key, executionStep.dataOut),
@@ -137,6 +137,8 @@ export async function advanceAfterStep({
   } catch (error) {
     // Don't retry if we failed to enqueue the next step (e.g. if
     // getGroupConfigForJob throws an error)
-    throw new UnrecoverableError(error.message)
+    throw new UnrecoverableError(
+      error instanceof Error ? error.message : String(error),
+    )
   }
 }

@@ -9,6 +9,12 @@ vi.mock('@/services/mcp/list-connections', () => ({
   listConnectionsService: mocks.listConnectionsService,
 }))
 
+// The route's auth guard lives beside the GraphQL context setter. Loading the
+// real setter pulls in the whole model layer and blows the first test's timeout.
+vi.mock('@/helpers/authentication', () => ({
+  setCurrentUserContext: vi.fn(),
+}))
+
 async function executeGetHandler(
   req: Partial<Request>,
   res: Partial<Response>,

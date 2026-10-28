@@ -146,7 +146,8 @@ interface HandleFailedStepAndThrowParams {
 
   context: {
     isQueueDelayable: boolean
-    span: Span
+    // dd-trace returns null when no span is active.
+    span: Span | null
     worker: WorkerPro<IActionJobData>
     job: JobPro<IActionJobData>
   }

@@ -98,6 +98,11 @@ export function makeActionWorker(
         const span = tracer.scope().active()
 
         const jobData = job.data
+        if (!job.id) {
+          throw new UnrecoverableError(
+            `Job in ${queueName} is missing its BullMQ ID`,
+          )
+        }
         const jobId = makeActionJobId(queueName, job.id)
 
         // The reason why we dont add .throwIfNotFound() here is to prevent job

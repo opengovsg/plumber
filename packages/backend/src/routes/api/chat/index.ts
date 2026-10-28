@@ -14,7 +14,7 @@ import {
   streamText,
   type UIMessageStreamWriter,
 } from 'ai'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import { Router } from 'express'
 
 import appConfig from '@/config/app'
@@ -52,8 +52,8 @@ import { pipeWebResponseToExpress } from '@/helpers/stream'
 import Connection from '@/models/connection'
 import Flow from '@/models/flow'
 import { connectionLabel } from '@/services/mcp/list-connections'
-import { AuthenticatedRequest } from '@/types/express/context'
 
+import { getAuthenticatedContext } from '../middleware/authentication'
 import {
   buildEstablishedConnectionReminder,
   resolveEstablishedFormConnection,
@@ -104,9 +104,9 @@ function emitTextAnnotations(text: string, writer: UIMessageStreamWriter) {
 }
 
 const handleChatStream = observe(
-  async (req: AuthenticatedRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const abortController = new AbortController()
-    const context = req.context
+    const context = getAuthenticatedContext(req)
     const allLdFlags = await getAllLdFlags(context.currentUser.email)
     const aiBuilderFlag = getAiBuilderFlag(allLdFlags)
 
@@ -197,14 +197,18 @@ const handleChatStream = observe(
       const allMessages = [systemMessage, ...messages]
 
       let mcpClient: GitbookMcpClient | null = null
-      let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
+      let gitbookTools = {} as NonNullable<
+        Parameters<typeof streamText>[0]['tools']
+      >
 
       try {
         const gitbook = await connectGitbookMcp()
         mcpClient = gitbook.client
         gitbookTools = wrapMcpToolsWithUsageLogs(
           // oxlint-disable-next-line typescript/no-explicit-any
-          gitbook.tools as Parameters<typeof streamText>[0]['tools'],
+          gitbook.tools as NonNullable<
+            Parameters<typeof streamText>[0]['tools']
+          >,
           {
             source: 'gitbook',
             traceId,
@@ -267,7 +271,7 @@ const handleChatStream = observe(
                 sessionId: chatId || rumSessionId || 'unknown',
                 // Plain metadata (non-special key) so RUM traces can still be
                 // correlated with Langfuse without driving session grouping.
-                ddRumSessionId: rumSessionId || undefined,
+                ...(rumSessionId ? { ddRumSessionId: rumSessionId } : {}),
                 userId: context.currentUser.email,
                 environment: appConfig.appEnv,
                 promptName: chatPromptName,
