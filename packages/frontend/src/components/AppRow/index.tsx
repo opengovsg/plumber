@@ -60,7 +60,7 @@ function AppRow(props: AppRowProps): ReactElement {
             <Spacer />
 
             <Center boxSize={10} color="secondary.500">
-              <Icon as={BiChevronRight} boxSize={6} aria-hidden />
+              <Icon as={BiChevronRight} boxSize={5} aria-hidden />
             </Center>
           </Flex>
         </CardBody>
