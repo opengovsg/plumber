@@ -1242,6 +1242,7 @@ type Template {
   iconName: String # demo templates have no icon
   tags: [TemplateTagType!]
   demoVideoDetails: DemoVideoDetails
+  isBuiltIn: Boolean!
 }
 
 type TemplateStep {

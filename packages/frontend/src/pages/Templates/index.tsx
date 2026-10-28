@@ -1,10 +1,12 @@
 import { useQuery } from '@apollo/client'
-import { Box, Flex, Grid, Text } from '@chakra-ui/react'
-import { Link } from '@opengovsg/design-system-react'
+import { Box, Flex, Grid, Icon, Image, Text } from '@chakra-ui/react'
+import { Badge, Link } from '@opengovsg/design-system-react'
 import type { ITemplate } from '@plumber/types'
 import { useContext, useState } from 'react'
+import { BiGroup } from 'react-icons/bi'
 import { useParams } from 'react-router-dom'
 
+import mainLogo from '@/assets/logo.svg'
 import Container from '@/components/Container'
 import DebouncedSearchInput from '@/components/DebouncedSearchInput'
 import PageTitle from '@/components/PageTitle'
@@ -15,14 +17,53 @@ import { useApps } from '@/hooks/useApps'
 import { useTemplateSearch } from '@/hooks/useTemplateSearch'
 
 import TemplateModal from '../Template'
+import CommunityTemplatesSkeleton from './components/CommunityTemplatesSkeleton'
+import EarlyAccessBanner from './components/EarlyAccessBanner'
+import EarlyAccessModal from './components/EarlyAccessModal'
+import OptInDialog from './components/OptInDialog'
+import TemplateSection from './components/TemplateSection'
 import TemplateTile from './components/TemplateTile'
 import TemplateTileSkeleton from './components/TemplateTileSkeleton'
 
 const TEMPLATES_TITLE = 'Templates'
 const TEMPLATES_COUNT = 9
 const SEARCH_RESULTS_COUNT = 5
+const COMMUNITY_SKELETON_COUNT = 3
 // Matches the left padding of PageTitle so content lines up with the heading.
 const GUTTER = { base: 2, md: 8 }
+
+type ListedTemplate = ITemplate & { isBuiltIn?: boolean }
+
+interface TemplateGridProps {
+  templates: ListedTemplate[]
+  isLoading: boolean
+  skeletonCount: number
+}
+
+function TemplateGrid({
+  templates,
+  isLoading,
+  skeletonCount,
+}: TemplateGridProps): JSX.Element {
+  return (
+    <Grid
+      gridTemplateColumns={{
+        base: '1fr',
+        md: '1fr 1fr',
+        lg: '1fr 1fr 1fr',
+      }}
+      gap={6}
+    >
+      {isLoading
+        ? Array.from({ length: skeletonCount }).map((_, index) => (
+            <TemplateTileSkeleton key={index} />
+          ))
+        : templates.map((template) => (
+            <TemplateTile key={template.id} template={template} />
+          ))}
+    </Grid>
+  )
+}
 
 export default function Templates(): JSX.Element {
   const { data, loading: templatesLoading } = useQuery(GET_TEMPLATES)
@@ -31,7 +72,8 @@ export default function Templates(): JSX.Element {
   // we do this to avoid adding extra flags or parameters into the query
   const { getFlagValue } = useContext(LaunchDarklyContext)
   const isPairEnabled = getFlagValue('app_pair') as boolean
-  const templates: ITemplate[] =
+  const isEarlyAccessEnabled = getFlagValue('templates_early_access') as boolean
+  const templates: ListedTemplate[] =
     data?.getTemplates?.filter((template: ITemplate) => {
       if (isPairEnabled) {
         return template.id !== '2a84e2f6-4806-46a2-890a-0dba1411b12f' // ROUTE_SUPPORT_ENQUIRIES_TEMPLATE
@@ -59,54 +101,95 @@ export default function Templates(): JSX.Element {
     .slice(0, SEARCH_RESULTS_COUNT)
 
   const isLoading = templatesLoading || appsLoading || searchLoading
-  const skeletonCount = isSearching ? SEARCH_RESULTS_COUNT : TEMPLATES_COUNT
-  const visibleTemplates = isSearching ? matchedTemplates : templates
+  const builtInTemplates = templates.filter((template) => template.isBuiltIn)
+  const communityTemplates = templates.filter((template) => !template.isBuiltIn)
+  const showCommunity =
+    isEarlyAccessEnabled && (isLoading || communityTemplates.length > 0)
 
   return (
     <>
       <Container py={9}>
         <Flex flexDir="column" mb={8} rowGap={2}>
-          <PageTitle title={TEMPLATES_TITLE} />
+          <PageTitle
+            title={TEMPLATES_TITLE}
+            searchComponent={
+              <DebouncedSearchInput
+                searchValue={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search templates"
+              />
+            }
+          />
           <Text textStyle="body-1" pl={GUTTER} mt={{ base: -10, md: -6 }}>
-            Pre-built pipes that you can use as is or customise further for your
-            own use case
+            Start from a ready-made pipe, then customise it for your use case
           </Text>
         </Flex>
 
-        <Box px={GUTTER} mb={6}>
-          <DebouncedSearchInput
-            searchValue={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Describe your workflow"
-          />
+        <Box px={GUTTER} mb={8}>
+          {isSearching ? (
+            <>
+              {!isLoading && matchedTemplates.length === 0 && (
+                <Text textStyle="body-1" mb={8}>
+                  {searchError
+                    ? 'Template search is unavailable. Try again later.'
+                    : 'No matching templates found.'}
+                </Text>
+              )}
+              <TemplateGrid
+                templates={matchedTemplates}
+                isLoading={isLoading}
+                skeletonCount={SEARCH_RESULTS_COUNT}
+              />
+            </>
+          ) : (
+            <>
+              <TemplateSection
+                icon={<Image src={mainLogo} alt="" boxSize={5} />}
+                title="Made by Plumber"
+                count={isLoading ? undefined : builtInTemplates.length}
+              >
+                <TemplateGrid
+                  templates={builtInTemplates}
+                  isLoading={isLoading}
+                  skeletonCount={TEMPLATES_COUNT}
+                />
+              </TemplateSection>
+
+              {showCommunity ? (
+                <TemplateSection
+                  icon={
+                    <Icon
+                      as={BiGroup}
+                      boxSize={5}
+                      color="base.content.medium"
+                    />
+                  }
+                  title="From the community"
+                  badge={
+                    <Badge
+                      bg="primary.100"
+                      color="primary.600"
+                      textTransform="uppercase"
+                    >
+                      Early access
+                    </Badge>
+                  }
+                  count={isLoading ? undefined : communityTemplates.length}
+                  description="Templates from other public officers. Review each step before you use it."
+                >
+                  <EarlyAccessBanner />
+                  <TemplateGrid
+                    templates={communityTemplates}
+                    isLoading={isLoading}
+                    skeletonCount={COMMUNITY_SKELETON_COUNT}
+                  />
+                </TemplateSection>
+              ) : (
+                <CommunityTemplatesSkeleton onTurnOn={console.log} />
+              )}
+            </>
+          )}
         </Box>
-
-        {isSearching && !isLoading && visibleTemplates.length === 0 && (
-          <Text textStyle="body-1" px={GUTTER} mb={8}>
-            {searchError
-              ? 'Template search is unavailable. Try again later.'
-              : 'No matching templates found.'}
-          </Text>
-        )}
-
-        <Grid
-          gridTemplateColumns={{
-            base: '1fr',
-            md: '1fr 1fr',
-            lg: '1fr 1fr 1fr',
-          }}
-          px={GUTTER}
-          gap={6}
-          mb={8}
-        >
-          {isLoading
-            ? Array.from({ length: skeletonCount }).map((_, index) => (
-                <TemplateTileSkeleton key={index} />
-              ))
-            : visibleTemplates.map((template) => (
-                <TemplateTile key={template.id} template={template} />
-              ))}
-        </Grid>
 
         <Flex
           flexDir={{ base: 'column', md: 'row' }}
@@ -126,6 +209,8 @@ export default function Templates(): JSX.Element {
       </Container>
 
       {template && <TemplateModal template={template} apps={apps} />}
+      <OptInDialog onOptIn={console.log} />
+      <EarlyAccessModal onTurnOn={console.log} />
     </>
   )
 }
