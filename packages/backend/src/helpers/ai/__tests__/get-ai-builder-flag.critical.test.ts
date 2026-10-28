@@ -29,79 +29,23 @@ function resolveFlag(config: Record<string, unknown>, enabled: boolean) {
   })
 }
 
+const availableFlag = {
+  enabled: true,
+  config: {
+    ...promptConfig,
+    disabledMcpServers: [] as string[],
+  },
+}
+
 describe('getAiBuilderFlag disabledMcpServers', () => {
-  it('lists GitBook as unavailable and keeps the prompt fields', () => {
-    expect(resolveFlag({ disabledMcpServers: ['gitbook'] }, false)).toEqual({
-      enabled: false,
-      config: {
-        ...promptConfig,
-        disabledMcpServers: ['gitbook'],
-      },
-    })
-  })
-
-  it('keeps every server available when the list is empty and keeps the prompt fields', () => {
-    expect(resolveFlag({ disabledMcpServers: [] }, true)).toEqual({
-      enabled: true,
-      config: {
-        ...promptConfig,
-        disabledMcpServers: [],
-      },
-    })
-  })
-
-  it('keeps every server available when the list is missing and keeps the prompt fields', () => {
-    expect(resolveFlag({}, true)).toEqual({
-      enabled: true,
-      config: {
-        ...promptConfig,
-        disabledMcpServers: [],
-      },
-    })
-  })
-
-  it('keeps every server available when the list is not an array and keeps the prompt fields', () => {
-    expect(resolveFlag({ disabledMcpServers: 'off' }, true)).toEqual({
-      enabled: true,
-      config: {
-        ...promptConfig,
-        disabledMcpServers: [],
-      },
-    })
-  })
-
-  it('keeps every server available when the list uses the old object shape', () => {
-    expect(
-      resolveFlag({ disabledMcpServers: { gitbook: false } }, true),
-    ).toEqual({
-      enabled: true,
-      config: {
-        ...promptConfig,
-        disabledMcpServers: [],
-      },
-    })
-  })
-
-  it('keeps every server available when a listed value is not a string', () => {
-    expect(
-      resolveFlag({ disabledMcpServers: ['gitbook', false] }, true),
-    ).toEqual({
-      enabled: true,
-      config: {
-        ...promptConfig,
-        disabledMcpServers: [],
-      },
-    })
-  })
-
-  it('deduplicates listed servers and keeps the prompt fields', () => {
+  it('lists each server once and keeps the prompt fields', () => {
     expect(
       resolveFlag(
-        { disabledMcpServers: ['formsgGitbook', 'gitbook', 'gitbook'] },
-        true,
+        { disabledMcpServers: ['gitbook', 'formsgGitbook', 'gitbook'] },
+        false,
       ),
     ).toEqual({
-      enabled: true,
+      enabled: false,
       config: {
         ...promptConfig,
         disabledMcpServers: ['formsgGitbook', 'gitbook'],
@@ -109,15 +53,27 @@ describe('getAiBuilderFlag disabledMcpServers', () => {
     })
   })
 
-  it('uses the fallback when config is not an object', () => {
-    expect(
-      getAiBuilderFlag({
-        [AI_BUILDER_FEATURE_FLAG]: { enabled: true, config: null },
-      }),
-    ).toEqual(AI_BUILDER_FEATURE_FLAG_FALLBACK)
+  it.each<[string, Record<string, unknown>]>([
+    ['the list is empty', { disabledMcpServers: [] }],
+    ['the list is missing', {}],
+    ['the list is an object', { disabledMcpServers: { gitbook: false } }],
+    ['an entry is not a string', { disabledMcpServers: ['gitbook', false] }],
+    ['an entry is empty', { disabledMcpServers: ['gitbook', ''] }],
+  ])('keeps every server available when %s', (_label, config) => {
+    expect(resolveFlag(config, true)).toEqual(availableFlag)
   })
 
-  it('uses the fallback when the flag is missing', () => {
-    expect(getAiBuilderFlag({})).toEqual(AI_BUILDER_FEATURE_FLAG_FALLBACK)
+  it.each<[string, Record<string, unknown>]>([
+    ['the flag is missing', {}],
+    [
+      'config is null',
+      { [AI_BUILDER_FEATURE_FLAG]: { enabled: true, config: null } },
+    ],
+    [
+      'config is an array',
+      { [AI_BUILDER_FEATURE_FLAG]: { enabled: true, config: [] } },
+    ],
+  ])('uses the fallback when %s', (_label, flags) => {
+    expect(getAiBuilderFlag(flags)).toEqual(AI_BUILDER_FEATURE_FLAG_FALLBACK)
   })
 })
