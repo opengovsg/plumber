@@ -28,7 +28,7 @@ Root lint, format, and typecheck tasks include this workspace.
 
 ## Configuration
 
-Use the existing E2E `.env` configuration in `tools/e2e/.env`.
+Use the existing E2E `.env` configuration in `packages/e2e/.env`.
 The required settings remain `GMAIL_CREDENTIALS`, `GMAIL_TOKEN`, and `GATHERSG_API_KEY`.
 Copy the existing `AUTH_FILE_ENCRYPTION_SECRET` when reusing encrypted session state.
 Its original `'secret'` fallback remains available.
@@ -40,7 +40,7 @@ The populated manifest lives in the trusted Notion consolidation document. Do no
 Each profile contains all 13 `pipes` keys and four `forms` keys from that example.
 The selected profile is required. Missing, malformed, or incomplete manifests stop execution.
 Environment secrets can contain only their matching profile. The legacy production option requires the staging profile.
-For local execution, add the JSON as one single-quoted line in the ignored `tools/e2e/.env`:
+For local execution, add the JSON as one single-quoted line in the ignored `packages/e2e/.env`:
 
 ```dotenv
 E2E_FIXTURE_MANIFEST='<compact JSON from the trusted Notion document>'
@@ -50,7 +50,7 @@ Keep local copies private. Configuration tests use synthetic fixtures and requir
 The UAT profile targets `https://uat.plumber.gov.sg` and supplies 13 pipe IDs and four form IDs.
 Action webhook URLs and editor/execution paths use the selected profile.
 
-For local UAT execution, set `E2E_ENV=uat` in `tools/e2e/.env`, then run login and tests.
+For local UAT execution, set `E2E_ENV=uat` in `packages/e2e/.env`, then run login and tests.
 Login and tests use `cookie-auth-state-uat`. Staging uses `cookie-auth-state-staging`.
 Rerun login after switching environments rather than reusing the previous environment's session.
 

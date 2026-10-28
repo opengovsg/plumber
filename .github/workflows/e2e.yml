@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: tools/e2e
+        working-directory: packages/e2e
     env:
       E2E_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || 'staging' }}
       WEBHOOK_TESTER_HOSTNAME: ${{ vars.WEBHOOK_TESTER_HOSTNAME }}
@@ -46,7 +46,7 @@ jobs:
       - name: Use E2E Node version
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version-file: "tools/e2e/.nvmrc"
+          node-version-file: "packages/e2e/.nvmrc"
       - name: Validate environment configuration
         run: pnpm run test:config
       - name: Validate and mask private fixtures

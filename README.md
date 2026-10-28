@@ -45,4 +45,4 @@ Plumber is a fork of the open source project [Automatisch](https://github.com/au
 
 ## End-to-end tests
 
-See [the E2E workspace](tools/e2e/README.md) for staging tests, configuration, and the repository migration rollout.
+See [the E2E workspace](packages/e2e/README.md) for staging tests, configuration, and the repository migration rollout.
