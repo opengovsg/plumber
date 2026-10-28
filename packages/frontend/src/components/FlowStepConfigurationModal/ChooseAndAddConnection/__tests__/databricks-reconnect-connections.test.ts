@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   databricksGeneration,
   databricksReconnectConnections,
+  databricksReconnectDropdownConnections,
   pickDatabricksConnection,
 } from '../databricks-reconnect-connections'
 
@@ -67,5 +68,25 @@ describe('databricksGeneration', () => {
     expect(databricksGeneration(legacy)).toBe('legacy')
     expect(databricksGeneration({ id: 'x', generation: null })).toBeNull()
     expect(databricksGeneration({ id: 'x', generation: 'v3' })).toBeNull()
+  })
+})
+
+describe('databricksReconnectDropdownConnections', () => {
+  it('lists the legacy row and the new row when the stored id is present', () => {
+    expect(
+      databricksReconnectDropdownConnections([legacy, created], 'legacy-id'),
+    ).toEqual([legacy, created])
+    expect(
+      databricksReconnectDropdownConnections([legacy, created], 'new-id'),
+    ).toEqual([legacy, created])
+  })
+
+  it('returns one row when the stored id is absent', () => {
+    expect(
+      databricksReconnectDropdownConnections(
+        [legacy, created],
+        'transferred-id',
+      ),
+    ).toEqual([created])
   })
 })
