@@ -4,7 +4,9 @@ import { memo, useState } from 'react'
 import VariablesList from '@/components/VariablesList'
 import { StepWithVariables, Variable } from '@/helpers/variables'
 
-import SuggestionsWrapper from '../SuggestionsWrapper'
+import SuggestionsWrapper, {
+  PANEL_LIST_MAX_HEIGHT,
+} from '../SuggestionsWrapper'
 
 interface SuggestionsProps {
   data: StepWithVariables[]
@@ -52,6 +54,7 @@ function Suggestions(props: SuggestionsProps) {
             variables={option.output ?? []}
             onClick={onSuggestionClick}
             supportTableDisplay={supportTableDisplay}
+            customStyles={{ maxH: PANEL_LIST_MAX_HEIGHT }}
           />
         </Collapse>
       ))}

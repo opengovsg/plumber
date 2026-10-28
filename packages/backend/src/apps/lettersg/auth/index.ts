@@ -15,6 +15,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'screenName',
       label: 'Label',
+      placeholder: 'My LetterSG account',
       type: 'string' as const,
       required: true,
       readOnly: false,
@@ -22,6 +23,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'apiKey',
       label: 'API key',
+      placeholder: 'Paste your API key here',
       type: 'string' as const,
       required: true,
       readOnly: false,

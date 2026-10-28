@@ -28,6 +28,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Choose items',
+      placeholder: 'Pick a list from an earlier step',
       description:
         'Items you can choose from: Find multiple rows, Find multiple table rows, or checkboxes/table from your form.',
       key: 'items',

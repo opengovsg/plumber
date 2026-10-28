@@ -30,7 +30,15 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import clsx from 'clsx'
 import escapeHtml from 'escape-html'
-import { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 
 import { EditorContext } from '@/contexts/Editor'
@@ -53,12 +61,20 @@ import { TableVariable } from './TableVariablePlugin'
 import {
   checkAutoFocus,
   genVariableInfoMap,
-  getPopoverPlacement,
   GLOBAL_VARIABLE_REGEX,
   removeProblematicWhitespace,
   singleLineEditorScroll,
   substituteOldTemplates,
 } from './utils'
+import {
+  animateScrollTo,
+  getRevealScrollDelta,
+  getScrollParent,
+  reserveBottomSpace,
+} from './reveal-panel'
+
+// 4px of space plus the 1px input border that sits below the popper's anchor.
+const PANEL_GAP_FROM_INPUT = 5
 
 const RICH_TEXT_EXTENSIONS = [
   Document.configure({
@@ -323,6 +339,91 @@ const Editor = ({
     onClose: closeSuggestions,
   } = useDisclosure()
 
+  // A multi-column panel spans its whole row of inputs instead of the single
+  // input it opened from.
+  const [anchorMetrics, setAnchorMetrics] = useState<{
+    offsetX: number
+    width: number
+  } | null>(null)
+  useLayoutEffect(() => {
+    if (!isSuggestionsOpen || !isMulticol || !editor) {
+      return
+    }
+    const trigger = (editor.view.dom as HTMLElement).closest(
+      '.single-line-editor',
+    )
+    const anchor = trigger?.closest('[data-popover-anchor]')
+    if (!trigger || !anchor) {
+      setAnchorMetrics(null)
+      return
+    }
+    const triggerRect = trigger.getBoundingClientRect()
+    const anchorRect = anchor.getBoundingClientRect()
+    setAnchorMetrics({
+      offsetX: anchorRect.left - triggerRect.left,
+      width: anchorRect.width,
+    })
+  }, [isSuggestionsOpen, isMulticol, editor])
+  const alignedMetrics = isMulticol ? anchorMetrics : null
+
+  // Slides the page up so the whole panel is in view when it opens.
+  const panelRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (!isSuggestionsOpen || !editor) {
+      return
+    }
+    const frames: number[] = []
+    let stopScroll: (() => void) | undefined
+    let releaseSpace: (() => void) | undefined
+
+    // Two frames let the popper place the panel before it is measured.
+    frames.push(
+      requestAnimationFrame(() => {
+        frames.push(
+          requestAnimationFrame(() => {
+            const panel = panelRef.current
+            if (!panel) {
+              return
+            }
+            const editorElement = editor.view.dom as HTMLElement
+            const container = getScrollParent(editorElement)
+            const isPage = container === document.scrollingElement
+            const bounds = isPage
+              ? { top: 0, bottom: window.innerHeight }
+              : container.getBoundingClientRect()
+            const inputRect = (
+              editorElement.closest('.editor') ?? editorElement
+            ).getBoundingClientRect()
+
+            const delta = getRevealScrollDelta({
+              panelBottom: panel.getBoundingClientRect().bottom,
+              viewportBottom: bounds.bottom,
+              inputTop: inputRect.top,
+              viewportTop: bounds.top,
+            })
+            if (delta <= 0) {
+              return
+            }
+            const available =
+              container.scrollHeight -
+              container.clientHeight -
+              container.scrollTop
+            if (delta > available) {
+              releaseSpace = reserveBottomSpace(container, delta - available)
+            }
+            stopScroll = animateScrollTo(container, container.scrollTop + delta)
+          }),
+        )
+      }),
+    )
+
+    return () => {
+      frames.forEach(cancelAnimationFrame)
+      stopScroll?.()
+      releaseSpace?.()
+    }
+  }, [isSuggestionsOpen, editor])
+
   const suggestionsContextValue = useMemo(
     () => ({
       closeSuggestions,
@@ -342,13 +443,22 @@ const Editor = ({
     <RichTextEditorContext.Provider value={suggestionsContextValue}>
       <Popover
         autoFocus={editable ? false : true}
-        gutter={2}
+        // Lines the panel up with the input's outer border, not its inner box.
+        offset={
+          alignedMetrics
+            ? [alignedMetrics.offsetX, PANEL_GAP_FROM_INPUT]
+            : isMulticol
+              ? [0, PANEL_GAP_FROM_INPUT]
+              : [-1, PANEL_GAP_FROM_INPUT]
+        }
         matchWidth={isMulticol ? false : true}
         isLazy
         lazyBehavior="unmount"
         onClose={closeSuggestions}
         isOpen={isSuggestionsOpen && variablesEnabled}
-        placement={getPopoverPlacement(editor)}
+        // IMPORTANT: The panel must never open above the field.
+        placement="bottom-start"
+        flip={false}
       >
         <div
           className={clsx(
@@ -406,7 +516,17 @@ const Editor = ({
               />
               <Portal>
                 <PopoverContent
-                  w={isMobile ? '100%' : isMulticol ? '55vw' : '100%'}
+                  ref={panelRef}
+                  borderRadius="lg"
+                  w={
+                    isMulticol
+                      ? alignedMetrics
+                        ? `${alignedMetrics.width}px`
+                        : isMobile
+                          ? '100%'
+                          : '55vw'
+                      : 'calc(100% + 2px)'
+                  }
                   motionProps={POPOVER_MOTION_PROPS}
                   onFocus={(e) => {
                     // Go back to previous focus when clicking on suggestions to resume typing

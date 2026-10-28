@@ -9,6 +9,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Search Query',
+      placeholder: 'invoice in:#finance',
       key: 'query',
       type: 'string' as const,
       required: true,

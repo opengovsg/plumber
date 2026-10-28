@@ -29,6 +29,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'Delay until (Date)',
+      placeholder: '05 Aug 2026',
       key: 'delayUntil',
       type: 'string' as const,
       required: true,
@@ -37,6 +38,7 @@ const action: IRawAction = {
     },
     {
       label: 'Delay until (Time)',
+      placeholder: '08:00',
       key: 'delayUntilTime',
       type: 'string' as const,
       required: false,

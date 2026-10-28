@@ -17,6 +17,7 @@ export const fieldSchema = z.object({
 export const fields = [
   {
     label: 'Number to transform',
+    placeholder: '250',
     key: ensureZodObjectKey(fieldSchema, 'firstNumber'),
     type: 'string' as const,
     required: true,

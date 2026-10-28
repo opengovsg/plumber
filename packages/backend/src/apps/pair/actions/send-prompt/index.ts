@@ -24,6 +24,7 @@ const action: IRawAction = {
   arguments: [
     {
       label: 'What should Pair do? (prompt)',
+      placeholder: 'Summarise this text in three short points',
       key: 'prompt',
       type: 'rich-text' as const,
       required: true,
@@ -66,7 +67,7 @@ const action: IRawAction = {
       subFields: [
         {
           label: 'Output name',
-          placeholder: 'e.g. Priority level',
+          placeholder: 'Priority level',
           key: 'fieldName',
           type: 'string' as const,
           required: true,

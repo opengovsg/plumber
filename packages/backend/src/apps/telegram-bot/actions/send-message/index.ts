@@ -32,6 +32,7 @@ const action: IRawAction = {
     },
     {
       label: 'Message text',
+      placeholder: 'Type your message',
       key: 'text',
       type: 'string' as const,
       required: true,
@@ -50,6 +51,7 @@ const action: IRawAction = {
     },
     {
       label: 'Channel Topic',
+      placeholder: '12345',
       key: 'topicId',
       type: 'string' as const,
       required: false,

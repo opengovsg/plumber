@@ -142,8 +142,11 @@ export default function Suggestions(props: SuggestionsProps) {
   return (
     <ChakraPopover
       autoFocus={readOnly ? true : false}
-      gutter={0}
+      gutter={4}
       matchWidth={true}
+      // IMPORTANT: The panel must never open above the field.
+      placement="bottom-start"
+      flip={false}
       isLazy
       lazyBehavior="unmount"
       closeOnBlur={false}
@@ -163,6 +166,7 @@ export default function Suggestions(props: SuggestionsProps) {
             />
             <PopoverContent
               w="100%"
+              borderRadius="lg"
               cursor="default"
               motionProps={POPOVER_MOTION_PROPS}
             >

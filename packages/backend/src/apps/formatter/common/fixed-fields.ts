@@ -21,6 +21,7 @@ export const VALUE_TO_TRANSFORM_FIELD_KEY = ensureZodObjectKey(
 
 export const VALUE_TO_TRANSFORM_FIELD = {
   label: 'Value to change',
+  placeholder: 'Pick or type the value to change',
   key: VALUE_TO_TRANSFORM_FIELD_KEY,
   type: 'string' as const,
   required: true,

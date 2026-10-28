@@ -15,6 +15,7 @@ const auth: IUserAddedConnectionAuth = {
     {
       key: 'formId',
       label: 'Form URL',
+      placeholder: 'Paste your form link here',
       type: 'string' as const,
       required: true,
       readOnly: false,

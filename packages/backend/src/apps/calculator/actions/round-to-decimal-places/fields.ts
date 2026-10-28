@@ -21,6 +21,7 @@ export const fieldSchema = z.object({
 export const fields = [
   {
     label: 'Number to round',
+    placeholder: '3.14159',
     key: ensureZodObjectKey(fieldSchema, 'value'),
     type: 'string' as const,
     required: true,
@@ -50,6 +51,7 @@ export const fields = [
   },
   {
     label: 'Decimal places',
+    placeholder: '2',
     key: ensureZodObjectKey(fieldSchema, 'toDecimalPlaces'),
     type: 'string' as const,
     required: true,
