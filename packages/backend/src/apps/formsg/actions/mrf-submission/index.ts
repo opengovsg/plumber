@@ -137,7 +137,7 @@ const action: IRawAction = {
     }
 
     const workflowContent = triggerExecutionStep.dataOut
-      .workflowContent as unknown as FormsgPayloadWorkflowContent
+      ?.workflowContent as unknown as FormsgPayloadWorkflowContent | undefined
 
     /**
      * Dont bother checking fields if it's a mock submission

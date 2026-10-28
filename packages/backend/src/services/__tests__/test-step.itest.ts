@@ -79,7 +79,7 @@ describe('test single step', () => {
 
     const user = await User.query().findOne({ email: 'tester@open.gov.sg' })
     flow = await Flow.query().insertGraphAndFetch({
-      userId: user.id,
+      userId: user!.id,
       name: 'flowName',
       steps: [
         {
