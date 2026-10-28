@@ -683,6 +683,14 @@ describe('m365-excel batch worker (integration)', () => {
       ).iterationStatus
     }
 
+    async function allIterationsAre(
+      executionId: string,
+      status: 'success' | 'failure',
+    ): Promise<boolean> {
+      const iterationStatus = await getForEachIterationStatus(executionId)
+      return Object.values(iterationStatus).every((s) => s === status)
+    }
+
     it('resolves the execution to success exactly once when all iterations succeed', async () => {
       mockGraphSuccess(0)
       const setStatusSpy = vi.spyOn(Execution, 'setStatus')
@@ -700,7 +708,9 @@ describe('m365-excel batch worker (integration)', () => {
         const execution = await Execution.query().findById(flow.execution.id)
         return execution.status === 'success'
       })
-      await sleep(200)
+      await waitFor(
+        async () => (await createTableRowSteps('success')).length === ITERATIONS,
+      )
 
       // One batch -> one POST with all iteration rows.
       const posts = postConfigs()
@@ -743,7 +753,12 @@ describe('m365-excel batch worker (integration)', () => {
         const execution = await Execution.query().findById(flow.execution.id)
         return execution.status === 'failure'
       })
-      await sleep(200)
+      // The execution can fail before every iteration is recorded and patched.
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('failure')).length === ITERATIONS &&
+          (await allIterationsAre(flow.execution.id, 'failure')),
+      )
 
       // Every iteration slot was patched to 'failure' (else the for-each hangs).
       const iterationStatus = await getForEachIterationStatus(flow.execution.id)
@@ -782,7 +797,13 @@ describe('m365-excel batch worker (integration)', () => {
         const execution = await Execution.query().findById(flow.execution.id)
         return execution.status === 'failure'
       })
-      await sleep(200)
+      // The execution fails on the first iteration, before the rest are isolated.
+      await waitFor(
+        async () =>
+          (await createTableRowSteps('failure')).length === ITERATIONS &&
+          (await allIterationsAre(flow.execution.id, 'failure')) &&
+          (await batchQueue.getFailed()).length === ITERATIONS,
+      )
 
       // No POST: runBatch returns before acquiring the session when the shared
       // access check is denied.
