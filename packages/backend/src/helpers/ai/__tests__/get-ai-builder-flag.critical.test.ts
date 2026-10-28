@@ -1,5 +1,6 @@
 /**
- * When config.mcpServers.gitbook is false, the AI Builder does not connect to GitBook. When config.mcpServers.gitbook is true, missing, or not a boolean, GitBook stays available and the prompt configuration is unchanged.
+ * When a config.mcpServers value is false, that MCP server is unavailable.
+ * When a server value is true, missing, or not a boolean, that server stays available and the prompt configuration is unchanged.
  */
 import { describe, expect, it } from 'vitest'
 
@@ -24,7 +25,7 @@ function resolveFlag(config: Record<string, unknown>, enabled: boolean) {
   })
 }
 
-describe('getAiBuilderFlag mcpServers.gitbook', () => {
+describe('getAiBuilderFlag mcpServers', () => {
   it('reports GitBook unavailable when gitbook is false and keeps the prompt fields', () => {
     expect(resolveFlag({ mcpServers: { gitbook: false } }, true)).toEqual({
       enabled: true,
@@ -81,6 +82,31 @@ describe('getAiBuilderFlag mcpServers.gitbook', () => {
       config: {
         ...promptConfig,
         mcpServers: { gitbook: true },
+      },
+    })
+  })
+
+  it('keeps each server value when the flag names more than one server', () => {
+    expect(
+      resolveFlag(
+        {
+          mcpServers: {
+            gitbook: true,
+            formsgGitbook: false,
+            draftServer: 'false',
+          },
+        },
+        true,
+      ),
+    ).toEqual({
+      enabled: true,
+      config: {
+        ...promptConfig,
+        mcpServers: {
+          gitbook: true,
+          formsgGitbook: false,
+          draftServer: true,
+        },
       },
     })
   })

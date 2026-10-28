@@ -273,6 +273,34 @@ describe('chat handler — GitBook MCP integration', () => {
     )
     infoSpy.mockRestore()
   })
+
+  it('connects to GitBook when another MCP server is disabled', async () => {
+    const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => logger)
+    vi.mocked(getAiBuilderFlag).mockReturnValueOnce({
+      enabled: true,
+      config: {
+        chatPromptName: 'chat',
+        chatSummaryPromptName: 'chat-summary',
+        version: 'production',
+        mcpServers: { gitbook: true, formsgGitbook: false },
+      },
+    })
+    vi.mocked(experimental_createMCPClient).mockResolvedValue({
+      tools: vi.fn().mockResolvedValue({ search_documentation: vi.fn() }),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as Awaited<ReturnType<typeof experimental_createMCPClient>>)
+
+    const handler = router.stack[0].route.stack[0].handle
+    // oxlint-disable-next-line typescript/no-explicit-any
+    await handler(makeReq() as any, makeRes() as any, vi.fn())
+
+    expect(experimental_createMCPClient).toHaveBeenCalledTimes(1)
+    expect(infoSpy).toHaveBeenCalledWith(
+      'Starting AI chat stream',
+      expect.objectContaining({ disabledMcpServers: ['formsgGitbook'] }),
+    )
+    infoSpy.mockRestore()
+  })
 })
 
 describe('chat handler — GitBook MCP disabled', () => {

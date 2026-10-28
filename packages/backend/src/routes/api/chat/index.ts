@@ -115,7 +115,10 @@ const handleChatStream = observe(
 
     const { chatPromptName, chatSummaryPromptName, version, mcpServers } =
       aiBuilderFlag.config
-    const disabledMcpServers = mcpServers.gitbook ? [] : ['gitbook']
+    const disabledMcpServers = Object.entries(mcpServers)
+      .filter(([, available]) => !available)
+      .map(([server]) => server)
+      .sort()
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)

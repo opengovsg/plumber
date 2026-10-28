@@ -5,21 +5,50 @@ import {
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
 } from '@/config/flags'
 
-export type AiBuilderLdFlagValue = typeof AI_BUILDER_FEATURE_FLAG_FALLBACK
+export type AiBuilderMcpServers = {
+  gitbook: boolean
+  [server: string]: boolean
+}
 
-const gitbookServerSchema = z.object({
-  gitbook: z.boolean(),
-})
+export type AiBuilderLdFlagValue = Omit<
+  typeof AI_BUILDER_FEATURE_FLAG_FALLBACK,
+  'config'
+> & {
+  config: Omit<
+    (typeof AI_BUILDER_FEATURE_FLAG_FALLBACK)['config'],
+    'mcpServers'
+  > & {
+    mcpServers: AiBuilderMcpServers
+  }
+}
+
+const mcpServerSchema = z.boolean()
 
 /**
- * Existing flag variations omit mcpServers, so a missing or invalid value stays available.
+ * Existing flag variations omit server keys. A missing or non-boolean value stays available.
  */
-function gitbookAvailable(mcpServers: unknown): boolean {
-  const parsed = gitbookServerSchema.safeParse(mcpServers)
+function mcpServerAvailable(value: unknown): boolean {
+  const parsed = mcpServerSchema.safeParse(value)
   if (!parsed.success) {
     return true
   }
-  return parsed.data.gitbook
+  return parsed.data
+}
+
+function readMcpServers(mcpServers: unknown): AiBuilderMcpServers {
+  const servers: AiBuilderMcpServers = { gitbook: true }
+  if (
+    typeof mcpServers !== 'object' ||
+    mcpServers === null ||
+    Array.isArray(mcpServers)
+  ) {
+    return servers
+  }
+
+  for (const [server, value] of Object.entries(mcpServers)) {
+    servers[server] = mcpServerAvailable(value)
+  }
+  return servers
 }
 
 /**
@@ -43,9 +72,7 @@ export function getAiBuilderFlag(
     ...flag,
     config: {
       ...flag.config,
-      mcpServers: {
-        gitbook: gitbookAvailable(flag.config.mcpServers),
-      },
+      mcpServers: readMcpServers(flag.config.mcpServers),
     },
   }
 }
