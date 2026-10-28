@@ -1,6 +1,6 @@
 import type { Redis } from 'ioredis'
 
-import { incrementMetric } from '@/helpers/metrics'
+import logger from '@/helpers/logger'
 import { makeRedisAppDataKey } from '@/helpers/redis-app-data'
 
 import { MISSED_RUN_MARKER_TTL_SECONDS, type MissedRun } from './missed-runs'
@@ -31,7 +31,10 @@ export async function countMissedRuns({
       'NX',
     )
     if (result === 'OK') {
-      incrementMetric('plumber.schedules.missed_runs', {
+      logger.warn('Schedule check counted a missed run', {
+        event: 'reconciler-missed-run',
+        flowId: missedRun.flowId,
+        runTimeMillis: missedRun.runTimeMillis,
         reason: missedRun.reason,
       })
       newlyCounted.push(missedRun)

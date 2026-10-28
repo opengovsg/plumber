@@ -164,20 +164,26 @@ describe('createScheduleCheck', () => {
       604800,
       'NX',
     )
-    expect(mocks.increment).toHaveBeenCalledWith(
-      'plumber.schedules.missed_runs',
-      1,
-      { reason: 'late' },
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      expect.objectContaining({
+        event: 'reconciler-missed-run',
+        reason: 'late',
+      }),
     )
-    expect(mocks.increment).toHaveBeenCalledWith(
-      'plumber.schedules.missed_runs',
-      1,
-      { reason: 'stale-timestamp' },
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      expect.objectContaining({
+        event: 'reconciler-missed-run',
+        reason: 'stale-timestamp',
+      }),
     )
-    expect(mocks.increment).toHaveBeenCalledWith(
-      'plumber.schedules.missed_runs',
-      1,
-      { reason: 'no-redis-entry' },
+    expect(mocks.logWarn).toHaveBeenCalledWith(
+      'Schedule check counted a missed run',
+      expect.objectContaining({
+        event: 'reconciler-missed-run',
+        reason: 'no-redis-entry',
+      }),
     )
     expect(mocks.logWarn).toHaveBeenCalledWith(
       'Schedule check found problem pipes',
