@@ -5,10 +5,14 @@ import { PostHogSpanProcessor, PostHogTraceExporter } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
 import { posthogClient } from '@/helpers/ai/posthog-client'
-import { PAIR_ACTION_RESOURCE_NAMES } from '@/helpers/ai/posthog-telemetry'
 import { ByteLimitedPostHogSpanExporter } from '@/helpers/ai/posthog-span-exporter'
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
+
+const PAIR_ACTION_RESOURCE_NAMES = [
+  'pair-action-generate-object',
+  'pair-action-process-image',
+]
 
 const BASE_CONFIG = {
   baseUrl: appConfig.pair.rome.baseUrl,
