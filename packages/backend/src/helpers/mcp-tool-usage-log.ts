@@ -1,4 +1,5 @@
 import logger from '@/helpers/logger'
+import { withTimeout } from '@/helpers/with-timeout'
 
 export type McpToolSource = 'plumber' | 'gitbook'
 
@@ -20,14 +21,6 @@ export const GITBOOK_UNAVAILABLE_MESSAGE =
  * The MCP client ignores abort signals until a response arrives, so race a timer instead.
  */
 export const GITBOOK_TOOL_TIMEOUT_MS = 30_000
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  let timer: NodeJS.Timeout | undefined
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms)
-  })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
-}
 
 const SAFE_ARG_KEYS = new Set([
   'pipe_id',

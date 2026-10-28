@@ -1,4 +1,3 @@
-import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp'
 import {
   getActiveTraceId,
   observe,
@@ -24,6 +23,10 @@ import {
   buildSupportFormUrl,
   SUPPORT_FORM_URL_PLACEHOLDER,
 } from '@/helpers/ai/build-support-form-url'
+import {
+  connectGitbookMcp,
+  type GitbookMcpClient,
+} from '@/helpers/ai/connect-gitbook-mcp'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 import {
   AI_CHAT_GENERIC_ERROR_MESSAGE,
@@ -192,21 +195,15 @@ const handleChatStream = observe(
       }
       const allMessages = [systemMessage, ...messages]
 
-      let mcpClient: Awaited<ReturnType<typeof createMCPClient>> | null = null
+      let mcpClient: GitbookMcpClient | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
 
       try {
-        mcpClient = await createMCPClient({
-          transport: {
-            type: 'http',
-            url: 'https://guide.plumber.gov.sg/~gitbook/mcp',
-          },
-        })
+        const gitbook = await connectGitbookMcp()
+        mcpClient = gitbook.client
         gitbookTools = wrapMcpToolsWithUsageLogs(
           // oxlint-disable-next-line typescript/no-explicit-any
-          (await mcpClient.tools()) as Parameters<
-            typeof streamText
-          >[0]['tools'],
+          gitbook.tools as Parameters<typeof streamText>[0]['tools'],
           {
             source: 'gitbook',
             traceId,
