@@ -16,25 +16,23 @@ export async function connectGitbookMcp(): Promise<{
   client: GitbookMcpClient
   tools: Awaited<ReturnType<GitbookMcpClient['tools']>>
 }> {
+  let connectedClient: GitbookMcpClient | undefined
   const connecting = (async () => {
     const client = await createMCPClient({
       transport: { type: 'http', url: GITBOOK_MCP_URL },
     })
-    try {
-      return { client, tools: await client.tools() }
-    } catch (error) {
-      await client.close()
-      throw error
-    }
+    connectedClient = client
+    return { client, tools: await client.tools() }
   })()
 
   try {
     return await withTimeout(connecting, GITBOOK_CONNECT_TIMEOUT_MS)
   } catch (error) {
     // IMPORTANT: a connection that completes after the timeout would otherwise stay open.
-    void connecting
-      .then(({ client }) => client.close())
-      .catch((): void => undefined)
+    const closing = connectedClient
+      ? connectedClient.close()
+      : connecting.then(({ client }) => client.close())
+    void closing.catch((): void => undefined)
     throw error
   }
 }

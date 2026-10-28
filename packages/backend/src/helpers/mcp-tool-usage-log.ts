@@ -136,6 +136,9 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
   tools: T,
   meta: McpToolUsageMeta,
 ): T {
+  // One GitBook outage costs one timeout per chat message, not one per call.
+  let gitbookUnavailable = false
+
   return Object.fromEntries(
     Object.entries(tools).map(([name, toolDef]) => {
       if (!hasExecute(toolDef)) {
@@ -150,6 +153,10 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
           execute: async (...executeArgs: never[]) => {
             const startedAt = Date.now()
             const args = executeArgs[0]
+            if (meta.source === 'gitbook' && gitbookUnavailable) {
+              logUsage({ tool: name, args, status: 'error', startedAt, meta })
+              return { error: GITBOOK_UNAVAILABLE_MESSAGE }
+            }
             try {
               const pending = Promise.resolve(execute(...executeArgs))
               const result =
@@ -180,6 +187,7 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
               // GitBook is a third-party server. Return a readable result so
               // the model continues the chat without the docs lookup.
               if (meta.source === 'gitbook') {
+                gitbookUnavailable = true
                 return { error: GITBOOK_UNAVAILABLE_MESSAGE }
               }
               throw error

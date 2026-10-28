@@ -139,6 +139,47 @@ describe('wrapMcpToolsWithUsageLogs', () => {
     })
   })
 
+  it('skips later gitbook calls in the same chat message after one fails', async () => {
+    const getPage = vi.fn()
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        search_documentation: {
+          execute: vi.fn().mockRejectedValue(new Error('HTTP 504')),
+        },
+        get_page: { execute: getPage },
+      },
+      { source: 'gitbook', traceId: 'trace-10' },
+    )
+
+    await tools.search_documentation.execute({} as never)
+
+    await expect(tools.get_page.execute({} as never)).resolves.toEqual({
+      error: GITBOOK_UNAVAILABLE_MESSAGE,
+    })
+    expect(getPage).not.toHaveBeenCalled()
+    expect(mocks.http).toHaveBeenLastCalledWith(
+      expect.objectContaining({ tool: 'get_page', status: 'error' }),
+    )
+  })
+
+  it('keeps calling plumber tools after one fails', async () => {
+    const listApps = vi.fn().mockResolvedValue([])
+    const tools = wrapMcpToolsWithUsageLogs(
+      {
+        create_pipe: {
+          execute: vi.fn().mockRejectedValue(new Error('Must be contiguous')),
+        },
+        list_apps: { execute: listApps },
+      },
+      { source: 'plumber', traceId: 'trace-11' },
+    )
+
+    await expect(tools.create_pipe.execute({} as never)).rejects.toThrow()
+    await tools.list_apps.execute({} as never)
+
+    expect(listApps).toHaveBeenCalledTimes(1)
+  })
+
   describe('gitbook timeout', () => {
     beforeEach(() => {
       vi.useFakeTimers()
