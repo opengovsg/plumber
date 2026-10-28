@@ -8,6 +8,7 @@ import { createReconcilerRedisClient } from '@/services/reconciler/redis'
 import { runReconcilerLoop } from '@/services/reconciler/run-loop'
 
 const CHECK_TIMEOUT_SECONDS = 60
+// Below the container's 30 s stopTimeout, so ECS never kills it mid-cleanup.
 const SHUTDOWN_WAIT_SECONDS = 20
 
 const jobsRedis = createReconcilerRedisClient()
@@ -20,6 +21,12 @@ logger.info('Reconciler started', { event: 'reconciler-started' })
 
 let isShuttingDown = false
 
+async function stopLoopAndCloseConnections(): Promise<void> {
+  await loop.stop()
+  await knexClient.destroy()
+  await jobsRedis.quit()
+}
+
 async function shutdown(): Promise<void> {
   if (isShuttingDown) {
     return
@@ -29,14 +36,13 @@ async function shutdown(): Promise<void> {
 
   let waitTimer: NodeJS.Timeout | undefined
   try {
+    // A hung Redis command can block quit() forever.
     await Promise.race([
-      loop.stop(),
+      stopLoopAndCloseConnections(),
       new Promise<void>((resolve) => {
         waitTimer = setTimeout(resolve, SHUTDOWN_WAIT_SECONDS * 1000)
       }),
     ])
-    await knexClient.destroy()
-    await jobsRedis.quit()
   } catch (error) {
     logger.error('Reconciler shutdown failed', {
       event: 'reconciler-shutdown-failed',

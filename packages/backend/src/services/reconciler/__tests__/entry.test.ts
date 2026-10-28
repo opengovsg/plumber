@@ -1,5 +1,6 @@
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -68,6 +69,10 @@ describe('reconciler entry', () => {
     processExit.mockClear()
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('starts the loop with the reconciler checks', () => {
     expect(mocks.runReconcilerLoop).toHaveBeenCalledWith(
       expect.objectContaining({ checks: ['schedule check'] }),
@@ -92,6 +97,20 @@ describe('reconciler entry', () => {
 
     expect(mocks.loopStop).toHaveBeenCalled()
     expect(mocks.knexDestroy).toHaveBeenCalled()
+    expect(mocks.redisQuit).toHaveBeenCalled()
+    expect(processExit).toHaveBeenCalledWith(0)
+  })
+
+  it('exits after the shutdown wait when closing a connection hangs', async () => {
+    vi.useFakeTimers()
+    mocks.redisQuit.mockReturnValueOnce(new Promise<string>(() => undefined))
+    // Each import gets its own shutdown, which runs only once.
+    vi.resetModules()
+    await import('@/reconciler')
+
+    void handlers.get('SIGTERM')?.()
+    await vi.advanceTimersByTimeAsync(20_000)
+
     expect(mocks.redisQuit).toHaveBeenCalled()
     expect(processExit).toHaveBeenCalledWith(0)
   })
