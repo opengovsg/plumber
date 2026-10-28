@@ -97,13 +97,21 @@ export default function ChooseAndAddConnection(
 
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
+    const storedConnectionId = step?.connection?.id
+    // An existing Databricks step reconnects to the connection it already stores.
+    const connections =
+      appWithConnections?.key === DATABRICKS_APP_KEY && storedConnectionId
+        ? (appWithConnections.connections ?? []).filter(
+            (connection) => connection.id === storedConnectionId,
+          )
+        : appWithConnections?.connections
     const options =
-      appWithConnections?.connections?.map((connection) =>
+      connections?.map((connection) =>
         optionGenerator(connection, appWithConnections.key),
       ) || []
 
     return options
-  }, [data])
+  }, [data, step?.connection?.id])
 
   const handleConnectionChange = useCallback(
     async (connectionId: string, shouldRefetch: boolean) => {
