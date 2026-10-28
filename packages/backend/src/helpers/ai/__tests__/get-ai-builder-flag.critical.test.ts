@@ -1,10 +1,14 @@
 /**
- * When a config.mcpServers value is false, that MCP server is unavailable.
- * When a server value is true, missing, or not a boolean, that server stays available and the prompt configuration is unchanged.
+ * When a server key is listed in config.disabledMcpServers, that MCP server is unavailable.
+ * When the list is missing, empty, or invalid, every server stays available and the prompt configuration is unchanged.
+ * When the flag or its config is not an object, the fallback configuration is used.
  */
 import { describe, expect, it } from 'vitest'
 
-import { AI_BUILDER_FEATURE_FLAG } from '@/config/flags'
+import {
+  AI_BUILDER_FEATURE_FLAG,
+  AI_BUILDER_FEATURE_FLAG_FALLBACK,
+} from '@/config/flags'
 import { getAiBuilderFlag } from '@/helpers/ai/get-ai-builder-flag'
 
 const promptConfig = {
@@ -25,89 +29,95 @@ function resolveFlag(config: Record<string, unknown>, enabled: boolean) {
   })
 }
 
-describe('getAiBuilderFlag mcpServers', () => {
-  it('reports GitBook unavailable when gitbook is false and keeps the prompt fields', () => {
-    expect(resolveFlag({ mcpServers: { gitbook: false } }, true)).toEqual({
-      enabled: true,
-      config: {
-        ...promptConfig,
-        mcpServers: { gitbook: false },
-      },
-    })
-  })
-
-  it('keeps GitBook available when gitbook is true and keeps the prompt fields', () => {
-    expect(resolveFlag({ mcpServers: { gitbook: true } }, false)).toEqual({
+describe('getAiBuilderFlag disabledMcpServers', () => {
+  it('lists GitBook as unavailable and keeps the prompt fields', () => {
+    expect(resolveFlag({ disabledMcpServers: ['gitbook'] }, false)).toEqual({
       enabled: false,
       config: {
         ...promptConfig,
-        mcpServers: { gitbook: true },
+        disabledMcpServers: ['gitbook'],
       },
     })
   })
 
-  it('keeps GitBook available when mcpServers is missing and keeps the prompt fields', () => {
+  it('keeps every server available when the list is empty and keeps the prompt fields', () => {
+    expect(resolveFlag({ disabledMcpServers: [] }, true)).toEqual({
+      enabled: true,
+      config: {
+        ...promptConfig,
+        disabledMcpServers: [],
+      },
+    })
+  })
+
+  it('keeps every server available when the list is missing and keeps the prompt fields', () => {
     expect(resolveFlag({}, true)).toEqual({
       enabled: true,
       config: {
         ...promptConfig,
-        mcpServers: { gitbook: true },
+        disabledMcpServers: [],
       },
     })
   })
 
-  it('keeps GitBook available when gitbook is missing and keeps the prompt fields', () => {
-    expect(resolveFlag({ mcpServers: {} }, true)).toEqual({
+  it('keeps every server available when the list is not an array and keeps the prompt fields', () => {
+    expect(resolveFlag({ disabledMcpServers: 'off' }, true)).toEqual({
       enabled: true,
       config: {
         ...promptConfig,
-        mcpServers: { gitbook: true },
+        disabledMcpServers: [],
       },
     })
   })
 
-  it('keeps GitBook available when gitbook is not a boolean and keeps the prompt fields', () => {
-    expect(resolveFlag({ mcpServers: { gitbook: 'false' } }, true)).toEqual({
+  it('keeps every server available when the list uses the old object shape', () => {
+    expect(
+      resolveFlag({ disabledMcpServers: { gitbook: false } }, true),
+    ).toEqual({
       enabled: true,
       config: {
         ...promptConfig,
-        mcpServers: { gitbook: true },
+        disabledMcpServers: [],
       },
     })
   })
 
-  it('keeps the prompt fields when mcpServers is invalid', () => {
-    expect(resolveFlag({ mcpServers: 'off' }, true)).toEqual({
+  it('keeps every server available when a listed value is not a string', () => {
+    expect(
+      resolveFlag({ disabledMcpServers: ['gitbook', false] }, true),
+    ).toEqual({
       enabled: true,
       config: {
         ...promptConfig,
-        mcpServers: { gitbook: true },
+        disabledMcpServers: [],
       },
     })
   })
 
-  it('keeps each server value when the flag names more than one server', () => {
+  it('deduplicates listed servers and keeps the prompt fields', () => {
     expect(
       resolveFlag(
-        {
-          mcpServers: {
-            gitbook: true,
-            formsgGitbook: false,
-            draftServer: 'false',
-          },
-        },
+        { disabledMcpServers: ['formsgGitbook', 'gitbook', 'gitbook'] },
         true,
       ),
     ).toEqual({
       enabled: true,
       config: {
         ...promptConfig,
-        mcpServers: {
-          gitbook: true,
-          formsgGitbook: false,
-          draftServer: true,
-        },
+        disabledMcpServers: ['formsgGitbook', 'gitbook'],
       },
     })
+  })
+
+  it('uses the fallback when config is not an object', () => {
+    expect(
+      getAiBuilderFlag({
+        [AI_BUILDER_FEATURE_FLAG]: { enabled: true, config: null },
+      }),
+    ).toEqual(AI_BUILDER_FEATURE_FLAG_FALLBACK)
+  })
+
+  it('uses the fallback when the flag is missing', () => {
+    expect(getAiBuilderFlag({})).toEqual(AI_BUILDER_FEATURE_FLAG_FALLBACK)
   })
 })

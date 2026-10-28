@@ -78,7 +78,7 @@ vi.mock('@/helpers/ai/get-ai-builder-flag', () => ({
       chatPromptName: 'chat',
       chatSummaryPromptName: 'chat-summary',
       version: 'production',
-      mcpServers: { gitbook: true },
+      disabledMcpServers: [],
     },
   }),
 }))
@@ -282,7 +282,7 @@ describe('chat handler — GitBook MCP integration', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
-        mcpServers: { gitbook: true, formsgGitbook: false },
+        disabledMcpServers: ['formsgGitbook'],
       },
     })
     vi.mocked(experimental_createMCPClient).mockResolvedValue({
@@ -314,7 +314,7 @@ describe('chat handler — GitBook MCP disabled', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
-        mcpServers: { gitbook: false },
+        disabledMcpServers: ['gitbook'],
       },
     })
     vi.mocked(createMcpBridgeTools).mockReturnValue(
@@ -564,7 +564,7 @@ describe('chat handler — data-columnTable emission', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
-        mcpServers: { gitbook: true },
+        disabledMcpServers: [],
       },
     })
   })
@@ -643,7 +643,7 @@ describe('chat handler — data-pipeState connectionLabel resolution', () => {
         chatPromptName: 'chat',
         chatSummaryPromptName: 'chat-summary',
         version: 'production',
-        mcpServers: { gitbook: true },
+        disabledMcpServers: [],
       },
     })
     // Simulate a create_pipe (or similar) tool call having already set the

@@ -113,12 +113,13 @@ const handleChatStream = observe(
     // NOTE: we pass restricted apps into the system prompt so the assistant knows which apps the user cannot use
     const restrictedApps = getRestrictedAppKeys(allLdFlags)
 
-    const { chatPromptName, chatSummaryPromptName, version, mcpServers } =
-      aiBuilderFlag.config
-    const disabledMcpServers = Object.entries(mcpServers)
-      .filter(([, available]) => !available)
-      .map(([server]) => server)
-      .sort()
+    const {
+      chatPromptName,
+      chatSummaryPromptName,
+      version,
+      disabledMcpServers,
+    } = aiBuilderFlag.config
+    const disabledMcpServerSet = new Set(disabledMcpServers)
 
     try {
       const validationResult = chatRequestSchema.safeParse(req.body)
@@ -204,7 +205,7 @@ const handleChatStream = observe(
       let mcpClient: GitbookMcpClient | null = null
       let gitbookTools = {} as Parameters<typeof streamText>[0]['tools']
 
-      if (mcpServers.gitbook) {
+      if (!disabledMcpServerSet.has('gitbook')) {
         try {
           const gitbook = await connectGitbookMcp()
           mcpClient = gitbook.client

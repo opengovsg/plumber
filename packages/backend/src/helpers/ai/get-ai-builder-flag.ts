@@ -5,50 +5,21 @@ import {
   AI_BUILDER_FEATURE_FLAG_FALLBACK,
 } from '@/config/flags'
 
-export type AiBuilderMcpServers = {
-  gitbook: boolean
-  [server: string]: boolean
-}
+export type AiBuilderLdFlagValue = typeof AI_BUILDER_FEATURE_FLAG_FALLBACK
 
-export type AiBuilderLdFlagValue = Omit<
-  typeof AI_BUILDER_FEATURE_FLAG_FALLBACK,
-  'config'
-> & {
-  config: Omit<
-    (typeof AI_BUILDER_FEATURE_FLAG_FALLBACK)['config'],
-    'mcpServers'
-  > & {
-    mcpServers: AiBuilderMcpServers
-  }
-}
+const disabledMcpServersSchema = z.array(z.string().min(1))
 
-const mcpServerSchema = z.boolean()
-
-/**
- * Existing flag variations omit server keys. A missing or non-boolean value stays available.
- */
-function mcpServerAvailable(value: unknown): boolean {
-  const parsed = mcpServerSchema.safeParse(value)
+/** A malformed list stays empty so a bad edit cannot take a server offline. */
+function readDisabledMcpServers(value: unknown): string[] {
+  const parsed = disabledMcpServersSchema.safeParse(value)
   if (!parsed.success) {
-    return true
+    return []
   }
-  return parsed.data
+  return [...new Set(parsed.data)].sort()
 }
 
-function readMcpServers(mcpServers: unknown): AiBuilderMcpServers {
-  const servers: AiBuilderMcpServers = { gitbook: true }
-  if (
-    typeof mcpServers !== 'object' ||
-    mcpServers === null ||
-    Array.isArray(mcpServers)
-  ) {
-    return servers
-  }
-
-  for (const [server, value] of Object.entries(mcpServers)) {
-    servers[server] = mcpServerAvailable(value)
-  }
-  return servers
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /**
@@ -59,20 +30,18 @@ export function getAiBuilderFlag(
   allLdFlags: Record<string, unknown>,
 ): AiBuilderLdFlagValue {
   const flagValue = allLdFlags[AI_BUILDER_FEATURE_FLAG]
-  if (!flagValue) {
+  if (!isRecord(flagValue) || !isRecord(flagValue.config)) {
     return AI_BUILDER_FEATURE_FLAG_FALLBACK
   }
 
-  const flag = flagValue as AiBuilderLdFlagValue
-  if (typeof flag.config !== 'object' || flag.config === null) {
-    return flag
-  }
+  const { disabledMcpServers: rawDisabledMcpServers, ...config } =
+    flagValue.config
 
   return {
-    ...flag,
+    ...flagValue,
     config: {
-      ...flag.config,
-      mcpServers: readMcpServers(flag.config.mcpServers),
+      ...config,
+      disabledMcpServers: readDisabledMcpServers(rawDisabledMcpServers),
     },
-  }
+  } as AiBuilderLdFlagValue
 }
