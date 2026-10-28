@@ -1,10 +1,12 @@
 import { LangfuseSpanProcessor } from '@langfuse/otel'
 import { NodeSDK } from '@opentelemetry/sdk-node'
-import { PostHogSpanProcessor } from '@posthog/ai/otel'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { PostHogSpanProcessor, PostHogTraceExporter } from '@posthog/ai/otel'
 
 import appConfig from '@/config/app'
 import { posthogClient } from '@/helpers/ai/posthog-client'
 import { PAIR_ACTION_RESOURCE_NAMES } from '@/helpers/ai/posthog-telemetry'
+import { ByteLimitedPostHogSpanExporter } from '@/helpers/ai/posthog-span-exporter'
 
 const AI_BUILDER_RESOURCE_NAMES = ['ai-chat-stream']
 
@@ -79,6 +81,16 @@ const posthogSpanProcessor = missingPostHogConfig
       host: posthogHost,
       client: posthogClient,
       privacyMode: false,
+      // IMPORTANT: `_spanProcessor` is @internal. It is the only way to bound export bytes,
+      // because PostHog rejects exports over 4 MB and the library batches by span count.
+      _spanProcessor: new BatchSpanProcessor(
+        new ByteLimitedPostHogSpanExporter(
+          new PostHogTraceExporter({
+            projectToken: posthogProjectToken,
+            host: posthogHost,
+          }),
+        ),
+      ),
     })
 
 const sdk = new NodeSDK({

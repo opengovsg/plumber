@@ -1,6 +1,8 @@
 /**
  * Business-critical: "i need traces to be sent to Rome (our self-hosted Langfuse) still"
  */
+import { diag } from '@opentelemetry/api'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -10,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   shutdown: vi.fn().mockResolvedValue(undefined),
   posthogProcessor: vi.fn(),
   posthogClient: vi.fn(),
+  posthogExporter: vi.fn(),
   config: {
     appEnv: 'staging',
     posthog: { projectToken: '', host: '' },
@@ -50,6 +53,11 @@ vi.mock('@posthog/ai/otel', () => ({
       mocks.posthogProcessor(options)
     }
   },
+  PostHogTraceExporter: class {
+    constructor(options: unknown) {
+      mocks.posthogExporter(options)
+    }
+  },
 }))
 vi.mock('posthog-node', () => ({
   PostHog: class {
@@ -60,6 +68,8 @@ vi.mock('posthog-node', () => ({
 }))
 
 beforeEach(() => {
+  // Each case re-imports instrumentation.ts, which registers the diag logger again.
+  diag.disable()
   vi.resetModules()
   vi.clearAllMocks()
   mocks.config.posthog = { projectToken: '', host: '' }
@@ -118,6 +128,11 @@ describe('Rome and PostHog instrumentation', () => {
       host: 'https://eu.i.posthog.com/',
       client,
       privacyMode: false,
+      _spanProcessor: expect.any(BatchSpanProcessor),
+    })
+    expect(mocks.posthogExporter).toHaveBeenCalledWith({
+      projectToken: 'phc-test',
+      host: 'https://eu.i.posthog.com/',
     })
 
     await shutdownTelemetry()
