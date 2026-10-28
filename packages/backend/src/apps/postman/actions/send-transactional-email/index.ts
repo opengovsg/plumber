@@ -220,17 +220,11 @@ async function sendEmail(
     // Don't do partial retry in test runs! always send to all recipients
     !$.execution.testRun
 
-  // Combined mode carries the CCs on the first SES message only, so a retry
-  // must not send them again once that message was accepted. Its To addresses
-  // are the leading non-blacklisted recipients, so the first non-BLACKLISTED
-  // status is that message's outcome.
-  let ccDelivered = false
+  // CCs are not filtered here. They receive every email sent to a To recipient,
+  // retries included, so they keep a copy of each for audit.
   if (isPartialRetry) {
     const { status, recipient } = prevDataOutParseResult.data
     recipientsToSend = recipient.filter((_, i) => status[i] !== 'ACCEPTED')
-    ccDelivered =
-      result.data[SEND_MODE_KEY] === 'combined' &&
-      status.find((s) => s !== 'BLACKLISTED') === 'ACCEPTED'
   }
 
   // Resolve the transport once, on the configured attachments and the actual
@@ -271,7 +265,6 @@ async function sendEmail(
         '<p style="margin: 0">&nbsp;</p>',
       ),
       ccList: result.data.destinationEmailCc,
-      ccDelivered,
       replyTo: result.data.replyTo,
       senderName: result.data.senderName,
       attachments: attachmentFiles,

@@ -89,7 +89,7 @@ export const transactionalEmailFields: IField[] = [
           label: 'One email to all',
           value: 'combined' satisfies SendMode,
           description:
-            'Sent as one email with everyone in To/CC. Each recipient will see the full list of who else received it.',
+            'Sent as one email with everyone in To/CC. Large lists are split into emails of up to 50 addresses. CC recipients receive every email.',
         },
         {
           label: 'Individual email to each recipient',

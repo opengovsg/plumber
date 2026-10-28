@@ -69,15 +69,12 @@ interface Email {
   attachments?: { fileName: string; data: Uint8Array }[]
   replyTo?: string
   ccList?: string[]
-  // Set on a retry whose earlier attempt already carried the CCs. ccList stays
-  // so dataOut keeps reporting it.
-  ccDelivered?: boolean
   sendMode: SendMode
 }
 
 /**
  * One SES API call. Individual mode has one To address per group. Combined
- * mode puts a chunk of To addresses in a group, with CCs on the first only.
+ * mode puts a batch of To addresses in a group. Every group carries the CCs.
  */
 interface SendGroup {
   to: string[]
@@ -88,27 +85,17 @@ interface SendGroup {
 const SES_MAX_RECIPIENTS_PER_MESSAGE = 50
 
 /**
- * Splits combined-mode recipients into SES-sized groups. CCs count against the
- * first group's limit and are absent from later groups, so CC recipients get
- * exactly one copy.
+ * Splits combined-mode recipients into SES-sized groups. CCs go on every group
+ * so they receive every email.
  */
 export function buildCombinedSendGroups(
   recipients: string[],
   cc: string[] | undefined,
 ): SendGroup[] {
-  if (recipients.length === 0) {
-    return []
-  }
   const ccCount = cc?.length ?? 0
-  const firstChunkSize = SES_MAX_RECIPIENTS_PER_MESSAGE - ccCount
-  const [first, ...rest] = [
-    recipients.slice(0, firstChunkSize),
-    ...chunk(recipients.slice(firstChunkSize), SES_MAX_RECIPIENTS_PER_MESSAGE),
-  ]
-  return [
-    { to: first, ...(ccCount > 0 && { cc }) },
-    ...rest.map((to) => ({ to })),
-  ]
+  return chunk(recipients, SES_MAX_RECIPIENTS_PER_MESSAGE - ccCount).map(
+    (to) => ({ to, ...(ccCount > 0 && { cc }) }),
+  )
 }
 
 interface PostmanPromiseFulfilled {
@@ -362,9 +349,7 @@ export async function sendTransactionalEmails(
   const activeRecipients = recipients.filter((r) => !suppressedSet.has(r))
   // Suppressed CCs are removed from the API call only — dataOut keeps the full
   // ccList (CC status is not tracked per the field's documented behaviour).
-  const ccAddressesToSend = email.ccDelivered
-    ? undefined
-    : email.ccList?.filter((cc) => !suppressedSet.has(cc))
+  const ccAddressesToSend = email.ccList?.filter((cc) => !suppressedSet.has(cc))
 
   const isCombinedSes = useSes && email.sendMode === 'combined'
   if (!useSes && email.sendMode === 'combined' && activeRecipients.length) {
@@ -381,15 +366,14 @@ export async function sendTransactionalEmails(
     ? buildCombinedSendGroups(activeRecipients, ccAddressesToSend)
     : activeRecipients.map((to) => ({ to: [to], cc: ccAddressesToSend }))
 
-  // Attachments, subject, body and reply-to are identical across groups — only
-  // `To:` and (in combined mode) `Cc:` differ. Build the (potentially large)
-  // base64-encoded MIME message once per Cc variant rather than once per group
-  // inside sendViaSes; `To:` is added cheaply via withRecipient. Any
-  // build/size-cap failure is captured and re-thrown inside each group's own
-  // try/catch below, so per-recipient status/error mapping (e.g.
-  // ATTACHMENT-SIZE-EXCEEDED) is unchanged.
-  let rawMessageWithCc: Buffer | undefined
-  let rawMessageWithoutCc: Buffer | undefined
+  // Attachments, subject, body, cc and reply-to are identical across groups —
+  // only the `To:` header differs. Build the (potentially large)
+  // base64-encoded MIME message once here rather than once per group inside
+  // sendViaSes; `To:` is added cheaply via withRecipient. Any build/size-cap
+  // failure is captured and re-thrown inside each group's own try/catch below,
+  // so per-recipient status/error mapping (e.g. ATTACHMENT-SIZE-EXCEEDED) is
+  // unchanged.
+  let sharedRawMessage: Buffer | undefined
   let attachmentBuildError: unknown
   if (useSes && email.attachments?.length && activeRecipients.length) {
     const totalAttachmentBytes = email.attachments.reduce(
@@ -399,10 +383,10 @@ export async function sendTransactionalEmails(
     if (totalAttachmentBytes > SES_MAX_TOTAL_ATTACHMENT_SIZE) {
       attachmentBuildError = new AttachmentSizeExceededError()
     } else {
-      const buildSharedRawEmail = (cc: string[] | undefined) =>
-        buildRawEmail({
+      try {
+        sharedRawMessage = await buildRawEmail({
           from: formatFromAddress(email.senderName, appConfig.ses.fromAddress),
-          cc,
+          cc: ccAddressesToSend,
           replyTo: email.replyTo,
           subject: email.subject,
           // Sanitise to match the server-side filtering the Postman path gets free.
@@ -410,13 +394,6 @@ export async function sendTransactionalEmails(
           attachments: email.attachments,
           headers: { 'X-Plumber-Transport': 'ses' },
         })
-      try {
-        if (sendGroups.some((group) => group.cc?.length)) {
-          rawMessageWithCc = await buildSharedRawEmail(ccAddressesToSend)
-        }
-        if (sendGroups.some((group) => !group.cc?.length)) {
-          rawMessageWithoutCc = await buildSharedRawEmail(undefined)
-        }
       } catch (e) {
         attachmentBuildError = e
       }
@@ -452,11 +429,7 @@ export async function sendTransactionalEmails(
         if (attachmentBuildError) {
           throw attachmentBuildError
         }
-        return await sendViaSes(
-          group,
-          email,
-          group.cc?.length ? rawMessageWithCc : rawMessageWithoutCc,
-        )
+        return await sendViaSes(group, email, sharedRawMessage)
       }
       const sent = await sendViaPostman(http, group, email)
       return sent.params

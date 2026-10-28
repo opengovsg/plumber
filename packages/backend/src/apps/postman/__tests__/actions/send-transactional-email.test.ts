@@ -1090,22 +1090,6 @@ describe('send transactional email', () => {
       expect(sentCommands()[0].input.Destination.ToAddresses).toHaveLength(2)
     })
 
-    it('chunks at 50 destinations, with CCs counted against the first chunk only', async () => {
-      $.step.parameters.destinationEmail = emails(60).join(',')
-      $.step.parameters.destinationEmailCc = emails(5, 'cc').join(',')
-
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-
-      const [first, second] = sentCommands()
-      expect(mocks.sesSend).toHaveBeenCalledTimes(2)
-      expect(first.input.Destination.ToAddresses).toEqual(
-        emails(60).slice(0, 45),
-      )
-      expect(first.input.Destination.CcAddresses).toEqual(emails(5, 'cc'))
-      expect(second.input.Destination.ToAddresses).toEqual(emails(60).slice(45))
-      expect(second.input.Destination.CcAddresses).toBeUndefined()
-    })
-
     it('chunks 120 recipients with no CC into 50/50/20', async () => {
       $.step.parameters.destinationEmail = emails(120).join(',')
 
@@ -1206,76 +1190,7 @@ describe('send transactional email', () => {
       })
     })
 
-    it('does not resend CCs on retry when the message carrying them was accepted', async () => {
-      $.step.parameters.destinationEmail =
-        'a@open.gov.sg,b@open.gov.sg,c@open.gov.sg'
-      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
-      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
-        dataOut: {
-          status: ['ACCEPTED', 'BLACKLISTED', 'BLACKLISTED'],
-          recipient: ['a@open.gov.sg', 'b@open.gov.sg', 'c@open.gov.sg'],
-        },
-        errorDetails: { name: 'Blacklisted recipient email' },
-      })
-
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-
-      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
-      expect(sentCommands()[0].input.Destination).toEqual({
-        ToAddresses: ['b@open.gov.sg', 'c@open.gov.sg'],
-      })
-      // dataOut still reports the configured CCs for downstream steps.
-      expect($.setActionItem).toHaveBeenCalledWith({
-        raw: expect.objectContaining({ cc: ['cc@open.gov.sg'] }),
-      })
-    })
-
-    it('resends CCs on retry when the message carrying them failed', async () => {
-      // 49 To + 1 CC fill the first message; the remaining 11 form the second.
-      $.step.parameters.destinationEmail = emails(60).join(',')
-      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
-      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
-        dataOut: {
-          status: [
-            ...Array(49).fill('RATE-LIMITED'),
-            ...Array(11).fill('ACCEPTED'),
-          ],
-          recipient: emails(60),
-        },
-        errorDetails: { name: 'Rate limited' },
-      })
-
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-
-      expect(mocks.sesSend).toHaveBeenCalledTimes(1)
-      expect(sentCommands()[0].input.Destination).toEqual({
-        ToAddresses: emails(49),
-        CcAddresses: ['cc@open.gov.sg'],
-      })
-    })
-
-    it('does not resend CCs on a retry routed to Postman once delivered', async () => {
-      mocks.getLdFlagValue.mockResolvedValue(false)
-      $.step.parameters.destinationEmail = 'a@open.gov.sg,b@open.gov.sg'
-      $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
-      ;($.getLastExecutionStep as ReturnType<typeof vi.fn>).mockResolvedValue({
-        dataOut: {
-          status: ['ACCEPTED', 'BLACKLISTED'],
-          recipient: ['a@open.gov.sg', 'b@open.gov.sg'],
-        },
-        errorDetails: { name: 'Blacklisted recipient email' },
-      })
-
-      await expect(sendTransactionalEmail.run($)).resolves.not.toThrow()
-
-      expect($.http.post).toHaveBeenCalledTimes(1)
-      // form-data keeps each appended part's header in `_streams`.
-      const form = ($.http.post as ReturnType<typeof vi.fn>).mock
-        .calls[0][1] as { _streams: unknown[] }
-      expect(JSON.stringify(form._streams)).not.toContain('name="cc"')
-    })
-
-    it('lists every chunk recipient in the raw MIME To header, with Cc only on the first chunk', async () => {
+    it('lists every batch recipient in the raw MIME To header, with Cc on every batch', async () => {
       $.step.parameters.destinationEmail = emails(51).join(',')
       $.step.parameters.destinationEmailCc = 'cc@open.gov.sg'
       mocks.filterAttachments.mockReturnValueOnce({
@@ -1291,12 +1206,12 @@ describe('send transactional email', () => {
       const [first, second] = sentCommands().map((c) =>
         Buffer.from(c.input.Content.Raw!.Data).toString('utf-8'),
       )
-      // 49 To + 1 Cc fills the first message.
+      // 49 To + 1 Cc fills each batch.
       expect(first).toMatch(/^To: r0@open\.gov\.sg, r1@open\.gov\.sg/)
       expect(first).toContain('r48@open.gov.sg')
       expect(first).toContain('Cc: cc@open.gov.sg')
       expect(second).toMatch(/^To: r49@open\.gov\.sg, r50@open\.gov\.sg\r\n/)
-      expect(second).not.toContain('Cc:')
+      expect(second).toContain('Cc: cc@open.gov.sg')
     })
 
     it('falls back to individual Postman sends when LD routes away from SES', async () => {
