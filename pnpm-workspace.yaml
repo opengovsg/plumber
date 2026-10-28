@@ -100,7 +100,6 @@ overrides:
   'shell-quote': '1.9.0'
   'form-data': '4.0.6'
   # Keep the tested versions. Parents resolved newer than develop-v2 declare ranges that exclude them.
-  'content-type': '1.0.5'
   'es-module-lexer': '1.7.0'
   '@smithy/core': '3.24.1'
   # Match the Node 22 runtime. Packages declaring "*" otherwise get the newest major.
