@@ -2,6 +2,7 @@ import { useMutation } from '@apollo/client'
 import { Flex, useDisclosure } from '@chakra-ui/react'
 import { IconButton } from '@opengovsg/design-system-react'
 import { IStep } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { MouseEventHandler, useCallback, useContext, useRef } from 'react'
 import { BiTrash } from 'react-icons/bi'
 
@@ -14,7 +15,6 @@ import { DELETE_STEP } from '@/graphql/mutations/delete-step'
 import { GET_FLOW } from '@/graphql/queries/get-flow'
 import { GET_TEST_EXECUTION_STEPS } from '@/graphql/queries/get-test-execution-steps'
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges'
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 import { findAdjacentSteps, shouldCreateEmptyStep } from '../utils'
 
@@ -29,6 +29,7 @@ interface DeleteStepButtonProps {
 }
 
 export default function DeleteStepButton(props: DeleteStepButtonProps) {
+  const posthog = usePostHog()
   const {
     isNested,
     step,
@@ -110,9 +111,7 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       await client.refetchQueries({
         include: [GET_FLOW, GET_TEST_EXECUTION_STEPS],
       })
-      if (isPostHogConfigured) {
-        posthog.capture('flow_step_deleted')
-      }
+      posthog.capture('flow_step_deleted')
 
       // NOTE: this ensures that the drawer is closed and step headers
       // return to the original width when the drawer is closed
@@ -128,6 +127,7 @@ export default function DeleteStepButton(props: DeleteStepButtonProps) {
       setShouldWarnOnLeave,
       onDrawerClose,
       createStep,
+      posthog,
     ],
   )
 

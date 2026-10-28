@@ -1,8 +1,7 @@
 import type { IFlow } from '@plumber/types'
+import { usePostHog } from 'posthog-js/react'
 import { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-
-import posthog, { isPostHogConfigured } from '@/posthog'
 
 /**
  * Tags every event captured while viewing an AI-builder-created flow, so
@@ -10,12 +9,13 @@ import posthog, { isPostHogConfigured } from '@/posthog'
  * initial AI builder hand-off.
  */
 export function useCaptureAiBuilderFlow(flow: IFlow | undefined): void {
+  const posthog = usePostHog()
   const [searchParams] = useSearchParams()
   const isFromAiBuilder = searchParams.get('from') === 'ai-builder'
   const aiBuilderTraceId = flow?.config?.aiBuilderConfig?.traceId
 
   useEffect(() => {
-    if (!isPostHogConfigured || !aiBuilderTraceId) {
+    if (!aiBuilderTraceId) {
       return
     }
     posthog.register({
@@ -27,5 +27,5 @@ export function useCaptureAiBuilderFlow(flow: IFlow | undefined): void {
       posthog.unregister('is_first_edit')
       posthog.unregister('is_ai_builder_flow')
     }
-  }, [aiBuilderTraceId, isFromAiBuilder])
+  }, [aiBuilderTraceId, isFromAiBuilder, posthog])
 }
