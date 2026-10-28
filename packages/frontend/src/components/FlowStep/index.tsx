@@ -191,6 +191,10 @@ export default function FlowStep(
   // generate help message only if template config exists
   const stepAppEventKey = `${step?.appKey}_${step?.key}`
   const templateStepAppEventKey = step.config.templateConfig?.appEventKey
+  const stepTableId =
+    step.appKey === 'tiles' && typeof step.parameters?.tableId === 'string'
+      ? step.parameters.tableId
+      : undefined
 
   const templateStepHelpMessage = useMemo(() => {
     if (step.config.templateConfig?.customTemplate) {
@@ -200,11 +204,13 @@ export default function FlowStep(
     return replacePlaceholdersForHelpMessage(
       templateStepAppEventKey,
       flow?.config?.templateConfig,
+      stepTableId,
     )
   }, [
     step.config.templateConfig?.customTemplate,
     templateStepAppEventKey,
     flow?.config?.templateConfig,
+    stepTableId,
   ])
 
   // Only show if the template step app key matches the current step app key
