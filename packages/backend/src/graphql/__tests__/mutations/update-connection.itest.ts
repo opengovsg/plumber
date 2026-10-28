@@ -76,7 +76,7 @@ describe('updateConnection', () => {
       // Editor tries to update - should hit ownership guard
       await expect(
         updateConnection(
-          null,
+          {},
           {
             input: {
               id: ownerConnection.id,
@@ -95,7 +95,7 @@ describe('updateConnection', () => {
       context.currentUser = editor
 
       const result = await updateConnection(
-        null,
+        {},
         {
           input: {
             id: collaboratorConnection.id,
@@ -112,7 +112,7 @@ describe('updateConnection', () => {
 
     it('should allow owner to update their own personal connection', async () => {
       const result = await updateConnection(
-        null,
+        {},
         {
           input: {
             id: ownerConnection.id,
@@ -129,7 +129,7 @@ describe('updateConnection', () => {
 
     it('should allow owner to update shared connection in their flow', async () => {
       const result = await updateConnection(
-        null,
+        {},
         {
           input: {
             id: collaboratorConnection.id,

@@ -61,7 +61,7 @@ describe.each([['pg'], ['ddb']])(
       }
 
       await createRows(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -94,7 +94,7 @@ describe.each([['pg'], ['ddb']])(
       }
 
       await createRows(
-        null,
+        {},
         {
           input: {
             tableId: dummyTable.id,
@@ -137,7 +137,7 @@ describe.each([['pg'], ['ddb']])(
       context.currentUser = editor
       await expect(
         createRows(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
@@ -153,7 +153,7 @@ describe.each([['pg'], ['ddb']])(
       context.currentUser = viewer
       await expect(
         createRows(
-          null,
+          {},
           {
             input: {
               tableId: dummyTable.id,
