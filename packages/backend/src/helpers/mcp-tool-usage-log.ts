@@ -15,6 +15,23 @@ type McpToolUsageMeta = {
 export const GITBOOK_UNAVAILABLE_MESSAGE =
   'Documentation lookup is temporarily unavailable. Continue without it and do not retry.'
 
+/**
+ * GitBook can hang until its gateway returns a 504.
+ * The MCP client ignores abort signals until a response arrives, so race a timer instead.
+ */
+export const GITBOOK_TOOL_TIMEOUT_MS = 10_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Timed out after ${ms}ms`)),
+      ms,
+    )
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
 const SAFE_ARG_KEYS = new Set([
   'pipe_id',
   'step_id',
@@ -144,7 +161,11 @@ export function wrapMcpToolsWithUsageLogs<T extends object>(
             const startedAt = Date.now()
             const args = executeArgs[0]
             try {
-              const result = await execute(...executeArgs)
+              const pending = Promise.resolve(execute(...executeArgs))
+              const result =
+                meta.source === 'gitbook'
+                  ? await withTimeout(pending, GITBOOK_TOOL_TIMEOUT_MS)
+                  : await pending
               logUsage({
                 tool: name,
                 args,

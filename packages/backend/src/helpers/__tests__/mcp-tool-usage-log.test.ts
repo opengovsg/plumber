@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   http: vi.fn(),
@@ -13,6 +13,7 @@ vi.mock('@/helpers/logger', () => ({
 }))
 
 import {
+  GITBOOK_TOOL_TIMEOUT_MS,
   GITBOOK_UNAVAILABLE_MESSAGE,
   wrapMcpToolsWithUsageLogs,
 } from '../mcp-tool-usage-log'
@@ -135,6 +136,62 @@ describe('wrapMcpToolsWithUsageLogs', () => {
       tool: 'search_documentation',
       traceId: 'trace-7',
       error: 'MCP error: socket hang up',
+    })
+  })
+
+  describe('gitbook timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('returns a readable result when a gitbook tool call hangs', async () => {
+      const tools = wrapMcpToolsWithUsageLogs(
+        {
+          search_documentation: {
+            execute: vi.fn().mockReturnValue(new Promise(() => undefined)),
+          },
+        },
+        { source: 'gitbook', traceId: 'trace-8' },
+      )
+
+      const result = tools.search_documentation.execute({} as never)
+      await vi.advanceTimersByTimeAsync(GITBOOK_TOOL_TIMEOUT_MS)
+
+      await expect(result).resolves.toEqual({
+        error: GITBOOK_UNAVAILABLE_MESSAGE,
+      })
+      expect(mocks.warn).toHaveBeenCalledWith('MCP tool failed', {
+        tool: 'search_documentation',
+        traceId: 'trace-8',
+        error: `Timed out after ${GITBOOK_TOOL_TIMEOUT_MS}ms`,
+      })
+    })
+
+    it('does not time out plumber tool calls', async () => {
+      let resolve: (value: unknown) => void = () => undefined
+      const tools = wrapMcpToolsWithUsageLogs(
+        {
+          create_pipe: {
+            execute: vi.fn().mockReturnValue(
+              new Promise((r) => {
+                resolve = r
+              }),
+            ),
+          },
+        },
+        { source: 'plumber', traceId: 'trace-9' },
+      )
+
+      const result = tools.create_pipe.execute({} as never)
+      await vi.advanceTimersByTimeAsync(GITBOOK_TOOL_TIMEOUT_MS * 2)
+      resolve({ id: 'flow-1' })
+
+      await expect(result).resolves.toEqual({ id: 'flow-1' })
+      expect(mocks.warn).not.toHaveBeenCalled()
     })
   })
 
