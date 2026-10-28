@@ -3,7 +3,7 @@ import type { Redis } from 'ioredis'
 import logger from '@/helpers/logger'
 import { setGaugeMetric } from '@/helpers/metrics'
 
-import type { ReconcilerCheck } from '../run-loop'
+import type { ReconcilerCheck } from '../run-checks'
 import { classifySchedules, parseScheduleEntries } from './classify-schedules'
 import type { ScheduleCheckConfig } from './config'
 import { fetchPublishedScheduledPipes } from './fetch-published-scheduled-pipes'
@@ -21,7 +21,6 @@ export function createScheduleCheck({
 }: CreateScheduleCheckInput): ReconcilerCheck {
   return {
     name: 'schedules',
-    cronPattern: config.checkCronPattern,
     run: async () => {
       // Postgres first: publishing writes the schedule entry before its transaction commits.
       const publishedPipes = await fetchPublishedScheduledPipes()

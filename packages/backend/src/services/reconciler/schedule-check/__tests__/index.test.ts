@@ -52,16 +52,9 @@ describe('createScheduleCheck', () => {
   function makeCheck() {
     return createScheduleCheck({
       jobsRedis: { zrange },
-      config: {
-        checkCronPattern: '18,42 * * * *',
-        missedRunGraceSeconds: 900,
-      },
+      config: { missedRunGraceSeconds: 900 },
     })
   }
-
-  it('uses the configured cron pattern', () => {
-    expect(makeCheck().cronPattern).toBe('18,42 * * * *')
-  })
 
   it('emits gauges and logs the IDs of problem pipes', async () => {
     mocks.fetchPublishedScheduledPipes.mockResolvedValue([
