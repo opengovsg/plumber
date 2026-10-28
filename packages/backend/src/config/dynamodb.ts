@@ -1,8 +1,9 @@
 import { DynamoDB } from '@aws-sdk/client-dynamodb'
 
 import appConfig from './app'
+import { integrationTestIsolation } from './integration-test-isolation'
 
-const tableSuffix = process.env.DYNAMODB_TABLE_SUFFIX
+const tableSuffix = integrationTestIsolation.DYNAMODB_TABLE_SUFFIX
 export const tableName = tableSuffix
   ? `plumber-${appConfig.appEnv}-tiles-${tableSuffix}`
   : `plumber-${appConfig.appEnv}-tiles`

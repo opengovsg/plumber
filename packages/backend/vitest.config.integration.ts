@@ -72,6 +72,10 @@ const sharedTest = {
   },
 }
 
+// IMPORTANT: Each worker needs its own isolation slot. Configs that run these
+// projects must cap maxWorkers at this value.
+export const integrationMaxWorkers = Math.min(cpus().length, MAX_WORKER_SLOTS)
+
 const sharedResolve = {
   alias: {
     '@': getPath('./src'),
@@ -110,7 +114,7 @@ export const integrationProjects = [
 
 export default defineConfig({
   test: {
-    maxWorkers: Math.min(cpus().length, MAX_WORKER_SLOTS),
+    maxWorkers: integrationMaxWorkers,
     projects: integrationProjects,
   },
   resolve: sharedResolve,

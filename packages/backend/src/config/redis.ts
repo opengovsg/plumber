@@ -3,8 +3,9 @@ import ioRedis, { type RedisOptions } from 'ioredis'
 import logger from '@/helpers/logger'
 
 import appConfig from './app'
+import { integrationTestIsolation } from './integration-test-isolation'
 
-const redisDbOffset = Number(process.env.REDIS_DB_OFFSET ?? 0)
+const redisDbOffset = integrationTestIsolation.REDIS_DB_OFFSET
 
 // Maximum of 16 logical DBs on a default Redis instance; integration tests start
 // Redis with 256 and assign each worker its own contiguous block via REDIS_DB_OFFSET.

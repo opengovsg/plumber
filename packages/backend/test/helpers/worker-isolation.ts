@@ -73,6 +73,13 @@ function applyWorkerEnv(state: WorkerIsolationState): void {
 }
 
 function getIsolationSlot(): number {
+  const poolId = Number(process.env.VITEST_POOL_ID ?? 0)
+  // IMPORTANT: Higher pool IDs wrap onto another worker's databases.
+  if (poolId > MAX_WORKER_SLOTS) {
+    throw new Error(
+      `VITEST_POOL_ID ${poolId} exceeds ${MAX_WORKER_SLOTS} isolation slots. Lower maxWorkers.`,
+    )
+  }
   const projectIndex = process.env.PLUMBER_ITEST_PROJECT === 'isolated' ? 1 : 0
   return (
     projectIndex * MAX_WORKER_SLOTS + getWorkerDatabaseIndex(MAX_WORKER_SLOTS)

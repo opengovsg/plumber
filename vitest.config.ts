@@ -1,10 +1,14 @@
 import { defineConfig } from 'vitest/config'
 
-import { integrationProjects } from './packages/backend/vitest.config.integration'
+import {
+  integrationMaxWorkers,
+  integrationProjects,
+} from './packages/backend/vitest.config.integration'
 
 export default defineConfig({
   test: {
     reporters: ['default', 'html'],
+    maxWorkers: integrationMaxWorkers,
     coverage: {
       enabled: true,
       include: ['packages/{backend,backend-archive,frontend}/src/**/*.{ts,tsx}'],
