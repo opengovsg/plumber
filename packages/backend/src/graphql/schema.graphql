@@ -1244,6 +1244,7 @@ type TemplateStep {
   sampleUrl: String # specific to template e.g. form or tile link
   sampleUrlDescription: String # differs for each step e.g. view a sample form
   parameters: JSONObject
+  config: StepConfig
 }
 
 enum TemplateTagType {
