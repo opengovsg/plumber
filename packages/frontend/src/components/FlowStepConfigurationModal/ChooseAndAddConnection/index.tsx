@@ -14,6 +14,7 @@ import AddConnection from './AddConnection'
 import ChooseConnection from './ChooseConnection'
 import ConfigureDatabricksConnection from './ConfigureDatabricksConnection'
 import ConfigureExcelConnection from './ConfigureExcelConnection'
+import { databricksReconnectConnections } from './databricks-reconnect-connections'
 
 interface ChooseAndAddConnectionProps {
   onClose: () => void
@@ -97,13 +98,21 @@ export default function ChooseAndAddConnection(
 
   const connectionOptions = useMemo(() => {
     const appWithConnections = data?.getApp as IApp
+    const storedConnectionId = step?.connection?.id
+    const connections =
+      appWithConnections?.key === DATABRICKS_APP_KEY && storedConnectionId
+        ? databricksReconnectConnections(
+            appWithConnections.connections ?? [],
+            storedConnectionId,
+          )
+        : appWithConnections?.connections
     const options =
-      appWithConnections?.connections?.map((connection) =>
+      connections?.map((connection) =>
         optionGenerator(connection, appWithConnections.key),
       ) || []
 
     return options
-  }, [data])
+  }, [data, step?.connection?.id])
 
   const handleConnectionChange = useCallback(
     async (connectionId: string, shouldRefetch: boolean) => {

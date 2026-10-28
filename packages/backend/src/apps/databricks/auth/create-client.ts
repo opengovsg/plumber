@@ -6,12 +6,17 @@ import { IGlobalVariable } from '@plumber/types'
 
 import logger from '@/helpers/logger'
 
+import {
+  type DatabricksGeneration,
+  parseDatabricksGeneration,
+} from '../common/connection-generation'
 import { constructSchemaName } from '../common/construct-schema-name'
 import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
 import { getDatabricksToken } from './token-persistence'
 
 interface CreateSessionOptions {
   skipSchema?: boolean
+  generation?: DatabricksGeneration
 }
 
 export const createSession = async (
@@ -33,9 +38,11 @@ export const createSession = async (
     },
   })
 
+  const generation =
+    options?.generation ?? parseDatabricksGeneration($.auth.data?.generation)
   // oxfmt-ignore
-  const credentials = resolveDatabricksWorkspace('legacy') // pragma: allowlist secret
-  const token = await getDatabricksToken()
+  const credentials = resolveDatabricksWorkspace(generation) // pragma: allowlist secret
+  const token = await getDatabricksToken(generation)
   const connectOptions = {
     authType: 'access-token',
     host: credentials.serverHostname,

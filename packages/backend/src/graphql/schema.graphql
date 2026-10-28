@@ -1,5 +1,5 @@
 type Query {
-  getApp(key: String!, flowId: String): App
+  getApp(key: String!, flowId: String, ensureDatabricksNew: Boolean): App
   getConnectedApps: [App]
   testConnection(
     connectionId: String!
@@ -417,6 +417,7 @@ type Connection {
   id: String
   key: String
   formattedData: ConnectionData
+  generation: String
   verified: Boolean
   app: App
   createdAt: String

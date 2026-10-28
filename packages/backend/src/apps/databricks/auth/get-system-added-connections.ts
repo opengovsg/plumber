@@ -1,10 +1,9 @@
 import type { ISystemAddedConnectionAuth } from '@plumber/types'
 
-import { databricksConfig } from '@/config/app-env-vars/databricks'
 import User from '@/models/user'
 
 import { APP_KEY } from '../common/constants'
-import { constructSchemaNameFromEmail } from '../common/construct-schema-name'
+import { ensureDatabricksConnection } from './ensure-new-connection'
 
 const getSystemAddedConnections: NonNullable<
   ISystemAddedConnectionAuth['getSystemAddedConnections']
@@ -15,7 +14,9 @@ const getSystemAddedConnections: NonNullable<
     )
   }
 
-  const connections = await user
+  await ensureDatabricksConnection(user, false)
+
+  return user
     .$relatedQuery('connections')
     .select('connections.*')
     .fullOuterJoinRelated('steps')
@@ -25,30 +26,6 @@ const getSystemAddedConnections: NonNullable<
     .countDistinct('steps.flow_id as flowCount')
     .groupBy('connections.id')
     .orderBy('created_at', 'desc')
-
-  if (connections.length === 0) {
-    const newConnection = await user
-      .$relatedQuery('connections')
-      .insertAndFetch({
-        key: APP_KEY,
-        formattedData: {
-          // Workspace hostname drives the "View workspace" link in the UI.
-          env: JSON.stringify({
-            hostname: databricksConfig.serverHostname,
-            catalog: databricksConfig.catalog,
-          }),
-          screenName: constructSchemaNameFromEmail(user.email),
-        },
-        verified: false,
-        draft: false,
-      })
-      .returning('*')
-
-    newConnection.flowCount = 0
-    connections.push(newConnection)
-  }
-
-  return connections
 }
 
 export default getSystemAddedConnections
