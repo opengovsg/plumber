@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
+import { unitProjects as backendUnitProjects } from './packages/backend/vitest.config'
 import {
   integrationMaxWorkers,
   integrationProjects,
@@ -21,7 +22,7 @@ export default defineConfig({
     },
     projects: [
       'packages/frontend/vite.config.ts',
-      'packages/backend/vitest.config.ts',
+      ...backendUnitProjects,
       'packages/backend-archive/vitest.config.ts',
       ...integrationProjects,
     ],
