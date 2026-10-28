@@ -76,7 +76,9 @@ export function getIfThenEndStep<T extends ExtentStep>(
   ifThenStep: T,
 ): T | undefined {
   return isIfThenV2(ifThenStep)
-    ? flowSteps.find((step) => step.id === ifThenStep.config[BLOCK_END_STEP_ID])
+    ? flowSteps.find(
+        (step) => step.id === ifThenStep.config?.[BLOCK_END_STEP_ID],
+      )
     : deriveIfThenV1EndStep(flowSteps, ifThenStep)
 }
 
