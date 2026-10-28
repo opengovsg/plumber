@@ -12,8 +12,6 @@ vi.mock('@/helpers/logger', () => ({
   },
 }))
 
-import { UserFacingError } from '@/errors/user-facing-error'
-
 import {
   GITBOOK_UNAVAILABLE_MESSAGE,
   wrapMcpToolsWithUsageLogs,
@@ -108,7 +106,7 @@ describe('wrapMcpToolsWithUsageLogs', () => {
     })
   })
 
-  it('throws UserFacingError and logs the raw error when a gitbook tool throws', async () => {
+  it('logs the raw error and returns a readable result when a gitbook tool throws', async () => {
     const tools = wrapMcpToolsWithUsageLogs(
       {
         search_documentation: {
@@ -120,12 +118,11 @@ describe('wrapMcpToolsWithUsageLogs', () => {
       { source: 'gitbook', traceId: 'trace-7' },
     )
 
-    const promise = tools.search_documentation.execute({
-      query: 'how to send sms',
-    } as never)
-
-    await expect(promise).rejects.toBeInstanceOf(UserFacingError)
-    await expect(promise).rejects.toThrow(GITBOOK_UNAVAILABLE_MESSAGE)
+    await expect(
+      tools.search_documentation.execute({
+        query: 'how to send sms',
+      } as never),
+    ).resolves.toEqual({ error: GITBOOK_UNAVAILABLE_MESSAGE })
 
     expect(mocks.http).toHaveBeenCalledWith(
       expect.objectContaining({
