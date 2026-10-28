@@ -7,7 +7,6 @@ import {
 } from '@/apps/toolbox/common/validate-end-step'
 import { BadUserInputError } from '@/errors/graphql-errors'
 import logger from '@/helpers/logger'
-import App from '@/models/app'
 import FlowConnections from '@/models/flow-connections'
 import Step from '@/models/step'
 import { getConnection } from '@/services/connection'
@@ -15,6 +14,7 @@ import {
   createActionStepCore,
   InvalidApprovalConfigError,
 } from '@/services/create-action-step'
+import { lookupStepDefinition } from '@/services/step-definition'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
@@ -29,12 +29,9 @@ const createStep: MutationResolvers['createStep'] = async (
    * appKey and key are optional, we allow creating of empty step for if-then branches
    */
   if (input.appKey && input.key) {
-    const triggerOrAction = await App.findTriggerOrActionByKey(
-      input.appKey,
-      input.key,
-    )
+    const lookup = lookupStepDefinition(input.appKey, input.key)
 
-    if (!triggerOrAction) {
+    if (lookup.kind === 'unknown') {
       logger.error({
         event: 'createStep: no such trigger or action',
         appKey: input.appKey,
@@ -43,7 +40,7 @@ const createStep: MutationResolvers['createStep'] = async (
       throw new BadUserInputError('No such trigger or action')
     }
 
-    if (triggerOrAction?.hiddenFromUser) {
+    if (lookup.kind === 'hidden') {
       throw new BadUserInputError('Action can only be created by system')
     }
   }
