@@ -15,7 +15,7 @@ vi.mock('@/helpers/redis-app-data', () => ({
 }))
 
 const REDIS_CLIENTS = {
-  jobsRedis: { zrange: vi.fn(), hmget: vi.fn() },
+  jobsRedis: { zrange: vi.fn(), hmget: vi.fn(), zcount: vi.fn() },
   markerRedis: { pipeline: vi.fn() },
 }
 
@@ -24,11 +24,12 @@ describe('createReconcilerChecks', () => {
     vi.unstubAllEnvs()
   })
 
-  it('includes the scheduler pipes check', () => {
+  it('includes the scheduler pipes and delayed jobs checks', () => {
     const checks = createReconcilerChecks(REDIS_CLIENTS)
 
     expect(checks).toEqual([
       { name: 'scheduler-pipes', run: expect.any(Function) },
+      { name: 'delayed-jobs', run: expect.any(Function) },
     ])
   })
 
