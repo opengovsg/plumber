@@ -8,7 +8,8 @@
     "noImplicitAny": true,
     "outDir": "dist",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@posthog/ai/otel": ["./node_modules/@posthog/ai/dist/otel/index.d.ts"]
     },
     "skipLibCheck": true,
     "sourceMap": true,

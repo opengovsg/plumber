@@ -62,6 +62,7 @@
     "@opentelemetry/otlp-transformer": "0.219.0",
     "@opentelemetry/sdk-node": "0.219.0",
     "@opentelemetry/sdk-trace-base": "2.8.0",
+    "@posthog/ai": "^8.7.0",
     "@plumber/types": "workspace:*",
     "@sesamecare-oss/redlock": "1.4.0",
     "@taskforcesh/bullmq-pro": "7.44.0",

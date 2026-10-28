@@ -256,10 +256,12 @@ const handleChatStream = observe(
                 // old clients during rollout, then 'unknown'. The fallbacks are
                 // removed in the cleanup release once old clients have drained.
                 sessionId: chatId || rumSessionId || 'unknown',
+                '$ai_session_id': chatId || rumSessionId || 'unknown',
+                'posthog.distinct_id': context.currentUser.id,
                 // Plain metadata (non-special key) so RUM traces can still be
                 // correlated with Langfuse without driving session grouping.
                 ddRumSessionId: rumSessionId || undefined,
-                userId: context.currentUser.email,
+                userId: context.currentUser.id,
                 environment: appConfig.appEnv,
                 promptName: chatPromptName,
                 promptVersion: version,

@@ -1,3 +1,4 @@
+import '@/instrumentation'
 import '@/helpers/tracer'
 import '@/config/orm'
 import '@/config/dynamodb'
