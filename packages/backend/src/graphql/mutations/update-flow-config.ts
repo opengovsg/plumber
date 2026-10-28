@@ -16,11 +16,9 @@ function requireNonNullItems<T>(
   })
 }
 
-const updateFlowConfig: MutationResolvers['updateFlowConfig'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const updateFlowConfig: NonNullable<
+  MutationResolvers['updateFlowConfig']
+> = async (_parent, params, context) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')

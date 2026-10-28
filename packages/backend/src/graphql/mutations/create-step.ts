@@ -18,7 +18,7 @@ import {
 
 import type { MutationResolvers } from '../__generated__/types.generated'
 
-const createStep: MutationResolvers['createStep'] = async (
+const createStep: NonNullable<MutationResolvers['createStep']> = async (
   _parent,
   params,
   context,

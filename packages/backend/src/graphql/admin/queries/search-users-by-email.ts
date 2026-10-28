@@ -4,11 +4,9 @@ import type { AdminQueryResolvers } from '../../__generated__/types.generated'
 
 const MIN_QUERY_CHARS = 3
 
-const searchUsersByEmail: AdminQueryResolvers['searchUsersByEmail'] = async (
-  _parent,
-  params,
-  _context,
-) => {
+const searchUsersByEmail: NonNullable<
+  AdminQueryResolvers['searchUsersByEmail']
+> = async (_parent, params, _context) => {
   const { query } = params
 
   if (!query || query.trim().length < MIN_QUERY_CHARS) {

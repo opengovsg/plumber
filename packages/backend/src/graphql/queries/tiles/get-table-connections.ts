@@ -16,11 +16,9 @@ interface TableConnection {
   [key: string]: number
 }
 
-const getTableConnections: QueryResolvers['getTableConnections'] = async (
-  _parent,
-  params,
-  context,
-) => {
+const getTableConnections: NonNullable<
+  QueryResolvers['getTableConnections']
+> = async (_parent, params, context) => {
   const { tableIds } = params
   if (!tableIds) {
     throw new Error('tableIds is required')

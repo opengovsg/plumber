@@ -7,7 +7,7 @@ import { getConnection } from '@/services/connection'
 
 import type { QueryResolvers } from '../__generated__/types.generated'
 
-const testConnection: QueryResolvers['testConnection'] = async (
+const testConnection: NonNullable<QueryResolvers['testConnection']> = async (
   _parent,
   params,
   context,

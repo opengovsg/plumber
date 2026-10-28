@@ -19,7 +19,10 @@ const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
 // 15 minutes in milliseconds
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
-const requestOtp: MutationResolvers['requestOtp'] = async (_parent, params) => {
+const requestOtp: NonNullable<MutationResolvers['requestOtp']> = async (
+  _parent,
+  params,
+) => {
   const { input } = params
   if (!input) {
     throw new BadUserInputError('Missing input')
