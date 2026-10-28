@@ -5,8 +5,8 @@ import { useCallback } from 'react'
 
 import { SingleSelect } from '@/components/SingleSelect'
 
-import { ConnectionDropdownOption } from '.'
 import { DEFAULT_ADD_CONNECTION_LABEL } from '../constants'
+import { ConnectionDropdownOption } from './option-generator'
 
 interface ChooseConnectionDropdownProps {
   isDisabled: boolean

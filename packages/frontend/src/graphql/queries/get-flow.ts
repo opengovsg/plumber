@@ -20,6 +20,7 @@ export const FLOW_FIELDS = gql`
       connection {
         id
         verified
+        generation
         createdAt
         formattedData {
           screenName
