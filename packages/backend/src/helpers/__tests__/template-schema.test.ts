@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { TEMPLATES } from '@/db/storage'
 
+import { convertFlowToTemplate } from '../convert-flow-to-template'
 import { templateSchema } from '../template-schema'
 
 describe('templateSchema', () => {
@@ -13,6 +14,26 @@ describe('templateSchema', () => {
       expect(templateSchema.safeParse(template).error).toBeUndefined()
     },
   )
+
+  it('accepts a template converted from a flow', () => {
+    const template = convertFlowToTemplate(
+      {
+        name: 'Flow',
+        steps: [
+          {
+            id: randomUUID(),
+            position: 1,
+            appKey: 'formsg',
+            key: 'newSubmission',
+            parameters: {},
+          },
+        ],
+      },
+      { id: randomUUID(), description: '' },
+    )
+
+    expect(templateSchema.safeParse(template).error).toBeUndefined()
+  })
 
   it('preserves step config and defaults missing config to an empty object', () => {
     const template = templateSchema.parse({
