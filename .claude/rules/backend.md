@@ -14,8 +14,16 @@ Run from [packages/backend/](../../packages/backend/) or via `pnpm --filter back
 **Testing:**
 
 - `pnpm run test:unit` — unit tests (`src/**/*.test.ts`, no DB).
-- `pnpm run test:integration` — integration tests (`src/**/*.itest.ts`); uses testcontainers (Docker required) and runs single-threaded.
-- `pnpm exec vitest -c packages/backend/vitest.config.integration.ts path/to/file.itest.ts` — single integration file.
+- `pnpm run test:integration` — integration tests (`src/**/*.itest.ts`). Uses testcontainers (Docker required). Runs in parallel, up to 8 workers.
+- `pnpm exec vitest run path/to/file.itest.ts` — single integration file, from the repo root or `packages/backend/`.
+
+**Integration test isolation:**
+
+- Each worker gets its own Postgres database, Redis DBs and DynamoDB table.
+- Files calling `vi.mock`, `vi.resetModules`, `vi.stubEnv` and similar calls run in the isolated project. All others share one module graph.
+- In shared files, restore every `vi.spyOn` in `afterEach`. Unrestored spies leak into later files.
+- Keep these calls in test files, not shared helpers. The config rejects helpers that make them.
+- IMPORTANT: Each worker's app-data Redis DB must stay within 0-15. Redlock silently falls back to DB 0 above 15.
 
 **Creating test data (DynamoDB local only):**
 
