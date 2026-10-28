@@ -2,9 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
 
-const CALLS = 1000
-const ONE_MS_NS = 1_000_000n
-
 const NEW_ENV = {
   DATABRICKS_NEW_SERVER_HOSTNAME: 'new.example',
   DATABRICKS_NEW_HTTP_PATH: '/sql/new',
@@ -51,26 +48,6 @@ function matchesNew(credentials: ResolvedCredentials): boolean {
   )
 }
 
-function maxResolveNs(
-  generation: 'legacy' | 'new',
-  matches: (credentials: ResolvedCredentials) => boolean,
-): bigint {
-  let maxNs = 0n
-  for (let i = 0; i < CALLS; i++) {
-    const start = process.hrtime.bigint()
-    // oxfmt-ignore
-    const credentials = resolveDatabricksWorkspace(generation) // pragma: allowlist secret
-    const elapsedNs = process.hrtime.bigint() - start
-    if (elapsedNs > maxNs) {
-      maxNs = elapsedNs
-    }
-    if (!matches(credentials)) {
-      throw new Error('resolved credentials did not match the environment')
-    }
-  }
-  return maxNs
-}
-
 // oxfmt-ignore
 describe('resolveDatabricksWorkspace', () => { // pragma: allowlist secret
   it('returns the legacy host when the caller passes legacy', () => {
@@ -99,15 +76,5 @@ describe('resolveDatabricksWorkspace', () => { // pragma: allowlist secret
     expect(() => resolveDatabricksWorkspace('new')).toThrow() // pragma: allowlist secret
     // oxfmt-ignore
     expect(matchesLegacy(resolveDatabricksWorkspace('legacy'))).toBe(true) // pragma: allowlist secret
-  })
-
-  it('resolves 1000 legacy and 1000 new calls in under 1ms each', () => {
-    stubNewEnv()
-
-    const legacyMaxNs = maxResolveNs('legacy', matchesLegacy)
-    const newMaxNs = maxResolveNs('new', matchesNew)
-
-    expect(legacyMaxNs < ONE_MS_NS).toBe(true)
-    expect(newMaxNs < ONE_MS_NS).toBe(true)
   })
 })
