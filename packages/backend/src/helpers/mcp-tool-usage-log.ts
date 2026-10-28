@@ -19,7 +19,7 @@ export const GITBOOK_UNAVAILABLE_MESSAGE =
  * GitBook can hang until its gateway returns a 504.
  * The MCP client ignores abort signals until a response arrives, so race a timer instead.
  */
-export const GITBOOK_TOOL_TIMEOUT_MS = 10_000
+export const GITBOOK_TOOL_TIMEOUT_MS = 30_000
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timer: NodeJS.Timeout | undefined
