@@ -8,7 +8,7 @@ import type {
   Resolvers,
 } from '../__generated__/types.generated'
 
-type FlowResolver = Resolvers['Flow']
+type FlowResolver = NonNullable<Resolvers['Flow']>
 
 const template: FlowResolver['template'] = async (parent) => {
   const templateId = parent?.config?.templateConfig?.templateId
@@ -19,6 +19,10 @@ const template: FlowResolver['template'] = async (parent) => {
 }
 
 const collaborators: FlowResolver['collaborators'] = async (parent) => {
+  if (!parent.id || !parent.userId) {
+    throw new Error('Flow is missing id or userId')
+  }
+
   let collaborators = parent?.collaborators
   if (!collaborators) {
     const flowCollaborators = await FlowCollaborator.query()

@@ -1,3 +1,4 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { COMMON_S3_BUCKET, deleteObjects, parseS3Id } from '@/helpers/s3'
 
 import type { MutationResolvers } from '../__generated__/types.generated'
@@ -7,10 +8,15 @@ const deleteFlow: MutationResolvers['deleteFlow'] = async (
   params,
   context,
 ) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   const flow = await context.currentUser
     .$relatedQuery('flows')
     .findOne({
-      id: params.input.id,
+      id: input.id,
     })
     .throwIfNotFound()
 
@@ -34,9 +40,15 @@ const deleteFlow: MutationResolvers['deleteFlow'] = async (
   if (flow?.config?.attachments) {
     await deleteObjects(
       COMMON_S3_BUCKET,
-      flow.config.attachments.map((attachment) => ({
-        Key: parseS3Id(attachment.value).objectKey,
-      })),
+      flow.config.attachments.map((attachment) => {
+        const s3Id = parseS3Id(attachment.value)
+        if (!s3Id) {
+          throw new Error(
+            `Invalid S3 id for flow attachment: ${attachment.name}`,
+          )
+        }
+        return { Key: s3Id.objectKey }
+      }),
     )
   }
 

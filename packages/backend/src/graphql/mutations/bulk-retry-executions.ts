@@ -1,6 +1,7 @@
 import { chunk } from 'lodash'
 
 import appConfig from '@/config/app'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { DEFAULT_JOB_OPTIONS } from '@/helpers/default-job-configuration'
 import logger from '@/helpers/logger'
 import Execution from '@/models/execution'
@@ -52,18 +53,21 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
   params,
   context,
 ) => {
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
   let latestFailedExecutionSteps = await getAllFailedExecutionSteps(
     context.currentUser.email === appConfig.adminUserEmail
       ? Execution.query()
       : context.currentUser.$relatedQuery('executions'),
-    params.input.flowId,
+    input.flowId,
   )
 
   // Double check that latest steps for each failed execution is a failure and
   // has a valid job ID.
-  const executionIdSet = params.input.executionIds
-    ? new Set(params.input.executionIds)
-    : null
+  const executionIdSet = input.executionIds ? new Set(input.executionIds) : null
   latestFailedExecutionSteps = latestFailedExecutionSteps.filter(
     (executionStep) => {
       const { id: executionStepId, executionId, status, jobId } = executionStep
@@ -116,6 +120,10 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
         appKey,
         key,
       } = executionStep
+      // Steps without a job ID were filtered out above.
+      if (jobId == null) {
+        throw new Error(`Execution step ${executionStepId} has no job ID`)
+      }
 
       const job = await getActionJob(jobId)
       if (!job) {
@@ -202,12 +210,12 @@ const bulkRetryExecutions: MutationResolvers['bulkRetryExecutions'] = async (
     // Actually we can do some more processing to see which IDs failed but nvm.
     logger.warn('Some attempts in bulk execution retry failed', {
       event: 'bulk-retry-some-attempts-failed',
-      flowId: params.input.flowId,
+      flowId: input.flowId,
     })
   } else {
     logger.info('Bulk execution retry succeeded', {
       event: 'bulk-retry-success',
-      flowId: params.input.flowId,
+      flowId: input.flowId,
       numRetried: latestFailedExecutionSteps.length,
     })
   }

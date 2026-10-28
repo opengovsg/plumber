@@ -48,7 +48,12 @@ async function leavePendingStatus(
 
 const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
   async (_parent, params, context) => {
-    const { id, status } = params.input
+    const { input } = params
+    if (!input) {
+      throw new BadUserInputError('Missing input')
+    }
+
+    const { id, status } = input
 
     if (status === 'pending') {
       throw new Error('No updating of pipe transfer back to pending')
@@ -152,7 +157,7 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
         )
         .map((step) => step.id)
       const numExcelNullified = await Step.query(trx)
-        .patch({ connection: null, connectionId: null, status: 'incomplete' })
+        .patch({ connectionId: null, status: 'incomplete' })
         .where('flow_id', flow.id)
         .whereNotNull('connection_id')
         .andWhere('app_key', 'm365-excel')
@@ -271,9 +276,11 @@ const updateFlowTransferStatus: MutationResolvers['updateFlowTransferStatus'] =
               // do nothing if the new owner of the pipe is already the owner of the tile
               if (
                 !(e instanceof BadUserInputError) &&
-                e.message !== 'Cannot change owner role'
+                !(
+                  e instanceof Error && e.message === 'Cannot change owner role'
+                )
               ) {
-                throw new Error(e)
+                throw new Error(String(e))
               }
             }
 

@@ -1,3 +1,4 @@
+import { BadUserInputError } from '@/errors/graphql-errors'
 import Step from '@/models/step'
 import { deleteStepsInTransaction } from '@/services/delete-steps'
 
@@ -9,6 +10,13 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
   context,
 ) => {
   const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+  const flowUpdatedAt = input.flow.updatedAt
+  if (!flowUpdatedAt) {
+    throw new BadUserInputError('Missing flow.updatedAt')
+  }
   if (input.ids.length === 0) {
     throw new Error('Nothing to delete')
   }
@@ -43,7 +51,7 @@ const deleteStep: MutationResolvers['deleteStep'] = async (
     }
 
     const flow = steps[0].flow
-    flow.assertNotUpdatedSince(input.flow.updatedAt, context.currentUser.id)
+    flow.assertNotUpdatedSince(flowUpdatedAt, context.currentUser.id)
 
     await deleteStepsInTransaction({ trx, flow, stepIds: input.ids })
 

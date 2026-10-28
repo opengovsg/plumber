@@ -2,6 +2,7 @@ import { customAlphabet } from 'nanoid/async'
 
 import appConfig from '@/config/app'
 import BaseError from '@/errors/base'
+import { BadUserInputError } from '@/errors/graphql-errors'
 import { getOrCreateUser } from '@/helpers/auth'
 import { validateAndParseEmail } from '@/helpers/email-validator'
 import { OTP_EMAIL_SUBJECT, renderOtpEmailHtml } from '@/helpers/otp-email'
@@ -19,7 +20,12 @@ const OTP_RESEND_TIMEOUT_IN_MS = 1 * 30 * 1000
 const OTP_VALIDITY_IN_MS = 15 * 60 * 1000
 
 const requestOtp: MutationResolvers['requestOtp'] = async (_parent, params) => {
-  const email = await validateAndParseEmail(params.input.email)
+  const { input } = params
+  if (!input) {
+    throw new BadUserInputError('Missing input')
+  }
+
+  const email = await validateAndParseEmail(input.email)
   // validate email
   if (!email) {
     throw new BaseError('Email is invalid or not whitelisted.')

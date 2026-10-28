@@ -133,7 +133,12 @@ const loginWithSgid: MutationResolvers['loginWithSgid'] = async (
 
   // Log user in directly if there is only 1 employment.
   if (publicOfficerEmployments.length === 1) {
-    const user = await getOrCreateUser(publicOfficerEmployments[0].workEmail)
+    const { workEmail } = publicOfficerEmployments[0]
+    // parsePocdexData drops employments without a valid work email.
+    if (!workEmail) {
+      throw new Error('POCDEX employment is missing work email')
+    }
+    const user = await getOrCreateUser(workEmail)
     await sendOnboardingEmail(user)
     await updateLastLogin(user.id)
     setAuthCookie(context.res, { userId: user.id })

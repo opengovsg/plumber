@@ -65,7 +65,7 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
         stringifiedCursor:
           table.db === 'ddb' && !stringifiedCursor
             ? DYNAMODB_DEFAULT_PAGINATION_CURSOR
-            : stringifiedCursor,
+            : (stringifiedCursor ?? undefined),
       })
 
     // Convert data object to csv to minimize payload size
@@ -83,7 +83,10 @@ const getAllRows: QueryResolvers['getAllRows'] = async (
     if (e instanceof ObjectionNotFoundError) {
       throw new NotFoundError('Table does not exist or you do not have access.')
     }
-    if (e.message.includes(DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE)) {
+    if (
+      e instanceof Error &&
+      e.message.includes(DYNAMODB_THROUGHPUT_EXCEEDED_ERROR_MESSAGE)
+    ) {
       throw new RateLimitedError(
         'Unable to fetch rows at the moment. Please retry in a bit.',
       )

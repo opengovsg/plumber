@@ -43,7 +43,7 @@ describe('GraphQL Authentication', () => {
       } as unknown as any)
       expect(mocks.parseAdminToken).toHaveBeenCalled()
       expect(mocks.getAdminTokenUser).toHaveBeenCalled()
-      expect(result.currentUser.id).toEqual('test-user-id')
+      expect(result.currentUser!.id).toEqual('test-user-id')
     })
 
     it('does not invoke admin-related functions if admin header not set', async () => {
