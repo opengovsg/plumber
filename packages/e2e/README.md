@@ -28,7 +28,7 @@ Root lint, format, and typecheck tasks include this workspace.
 
 ## Configuration
 
-The root `login:e2e`, `test:e2e`, and `test:e2e:ui` commands load secrets from the shared `e2e` 1Password Environment.
+The root `login:e2e`, `login:e2e:local`, `test:e2e`, and `test:e2e:ui` commands load secrets from the shared `e2e` 1Password Environment.
 Add its id under `environments.e2e` in your `op-dev.json`. See the root README for the 1Password setup.
 The Environment holds `E2E_FIXTURE_MANIFEST`, `GMAIL_CREDENTIALS`, `GMAIL_TOKEN`, `GATHERSG_API_KEY`, and `AUTH_FILE_ENCRYPTION_SECRET`.
 Shell exports override the Environment. Set `E2E_ENV=uat` in your shell to target UAT.
@@ -68,10 +68,11 @@ It does not provide production-specific fixtures. This migration preserves that 
 Configuration tests run without live credentials or network requests.
 
 Local execution uses real third-party credentials. The application's sample environment does not provide them.
-For an existing localhost session, run this from the repository root:
+For an existing localhost session, pass its `plumber.sid` cookie value from the repository root:
 
 ```sh
-node scripts/with-op-env.mjs --env e2e pnpm --filter @plumber/e2e run login:local <cookie>
+BASE_URL=http://localhost:3001 pnpm run login:e2e:local <cookie>
+BASE_URL=http://localhost:3001 pnpm run test:e2e
 ```
 
 Do not add `--` before the cookie. pnpm forwards it to the script as the first argument.
