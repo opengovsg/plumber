@@ -9,6 +9,7 @@ import { APP_KEY } from '../common/constants'
 import { constructSchemaNameFromEmail } from '../common/construct-schema-name'
 import { ensureDatabricksConnection } from './ensure-new-connection'
 import getSystemAddedConnections from './get-system-added-connections'
+import { listDatabricksConnectionsForNewStep } from './list-for-new-step'
 import { resolveDatabricksWorkspace } from './resolve-workspace' // pragma: allowlist secret
 
 const NEW_ENV = {
@@ -187,6 +188,64 @@ describe('ensureDatabricksConnection', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0].formattedData?.generation).toBe('legacy')
     expect(rows[0].verified).toBe(true)
+  })
+
+  it('lists nothing new from My Apps when a legacy row already exists', async () => {
+    stubGate(true)
+    const user = await createUser()
+    await user.$relatedQuery('connections').insert({
+      key: APP_KEY,
+      formattedData: {
+        screenName: constructSchemaNameFromEmail(user.email),
+        generation: 'legacy',
+        env: JSON.stringify({ hostname: 'kept', catalog: 'kept' }),
+      },
+      verified: true,
+      draft: false,
+    })
+
+    const listed = await getSystemAddedConnections(user)
+    const rows = await rowsFor(user)
+
+    expect(listed).toHaveLength(1)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].formattedData?.generation).toBe('legacy')
+    expect(rows[0].verified).toBe(true)
+    expect(listed[0].id).toBe(rows[0].id)
+  })
+
+  it('returns one new row for a new step when a legacy row already exists', async () => {
+    stubGate(true)
+    const user = await createUser()
+    await user.$relatedQuery('connections').insert({
+      key: APP_KEY,
+      formattedData: {
+        screenName: constructSchemaNameFromEmail(user.email),
+        generation: 'legacy',
+        env: JSON.stringify({ hostname: 'kept', catalog: 'kept' }),
+      },
+      verified: true,
+      draft: false,
+    })
+
+    const first = await listDatabricksConnectionsForNewStep(user)
+    const second = await listDatabricksConnectionsForNewStep(user)
+    const rows = await rowsFor(user)
+    const created = rows.find((row) => row.formattedData?.generation === 'new')
+    const legacy = rows.find(
+      (row) => row.formattedData?.generation === 'legacy',
+    )
+
+    expect(first).toHaveLength(1)
+    expect(second).toHaveLength(1)
+    expect(rows).toHaveLength(2)
+    if (!created || !legacy) {
+      throw new Error('expected a legacy row and a new row')
+    }
+    expect(first[0].id).toBe(created.id)
+    expect(second[0].id).toBe(created.id)
+    expect(legacy.verified).toBe(true)
+    expect(created.verified).toBe(false)
   })
 
   it('inserts nothing on a second ensure and leaves the new row unverified', async () => {

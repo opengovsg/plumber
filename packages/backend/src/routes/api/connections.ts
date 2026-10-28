@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import { z } from 'zod/v4'
 
+import { listDatabricksConnectionsForNewStep } from '@/apps/databricks/auth/list-for-new-step'
+import { APP_KEY as DATABRICKS_APP_KEY } from '@/apps/databricks/common/constants'
 import { listConnectionsService } from '@/services/mcp/list-connections'
 import type { AuthenticatedRequest } from '@/types/express/context'
 
@@ -24,7 +26,10 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
   const { appKey } = parsed.data
 
   try {
-    const connections = await listConnectionsService(user, appKey)
+    const connections =
+      appKey === DATABRICKS_APP_KEY
+        ? await listDatabricksConnectionsForNewStep(user)
+        : await listConnectionsService(user, appKey)
     res.json({
       data: connections.map((c) => ({ name: c.label, value: c.id })),
     })
