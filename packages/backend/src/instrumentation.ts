@@ -57,13 +57,13 @@ const pairActionSpanProcessor = new LangfuseSpanProcessor({
   },
 })
 
-const posthogProjectToken = process.env.POSTHOG_PROJECT_TOKEN
-const posthogHost = process.env.POSTHOG_HOST
+const { projectToken: posthogProjectToken, host: posthogHost } =
+  appConfig.posthog
 const missingPostHogConfig = !posthogProjectToken
   ? 'POSTHOG_PROJECT_TOKEN'
   : !posthogHost
-    ? 'POSTHOG_HOST'
-    : undefined
+  ? 'POSTHOG_HOST'
+  : undefined
 
 if (missingPostHogConfig && appConfig.isDev) {
   throw new Error(
