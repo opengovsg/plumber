@@ -1319,9 +1319,12 @@ export type IGlobalVariable = {
     connectionId?: string
   }
   app: IApp
-  http?: IHttpClient
+  // helpers/global-variable.ts is the sole constructor of $, and it always
+  // populates these as containers (inner fields may still be undefined when
+  // there's no real step/flow, e.g. in auth callbacks).
+  http: IHttpClient
   request?: IRequest
-  flow?: {
+  flow: {
     id: string
     name: string
     hasFileProcessingActions: boolean
@@ -1330,7 +1333,7 @@ export type IGlobalVariable = {
     setRemoteWebhookId?: (remoteWebhookId: string) => Promise<void>
     isActive: boolean
   }
-  step?: {
+  step: {
     id: string
     appKey: string
     key: string
@@ -1338,12 +1341,12 @@ export type IGlobalVariable = {
     parameters: IJSONObject
     version: number
   }
-  nextStep?: {
+  nextStep: {
     id: string
     appKey: string
     parameters: IJSONObject
   }
-  getLastExecutionStep?: (
+  getLastExecutionStep: (
     options?: Partial<{
       sameExecution: boolean
       testRunOnly: boolean
@@ -1353,16 +1356,16 @@ export type IGlobalVariable = {
       iteration?: number
     }>,
   ) => Promise<IExecutionStep | undefined>
-  execution?: {
+  execution: {
     id: string
     testRun: boolean
   }
   metadata?: IJSONObject
   webhookUrl?: string
-  triggerOutput?: ITriggerOutput
-  actionOutput?: IActionOutput
-  pushTriggerItem?: (triggerItem: ITriggerItem) => Promise<void>
-  setActionItem?: (actionItem: IActionItem) => void
+  triggerOutput: ITriggerOutput
+  actionOutput: IActionOutput
+  pushTriggerItem: (triggerItem: ITriggerItem) => Promise<void>
+  setActionItem: (actionItem: IActionItem) => void
 
   /**
    * If this is non-null, it contains details of the pipe owner if this is
