@@ -4,9 +4,9 @@ import HttpError from '@/errors/http'
 
 import { authDataSchema } from './schema'
 
-const isStillVerified: IUserAddedConnectionAuth['isStillVerified'] = async (
-  $: IGlobalVariable,
-) => {
+const isStillVerified: NonNullable<
+  IUserAddedConnectionAuth['isStillVerified']
+> = async ($: IGlobalVariable) => {
   const { campaignId } = authDataSchema.parse($.auth.data)
 
   try {
