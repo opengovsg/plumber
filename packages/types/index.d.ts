@@ -1509,13 +1509,13 @@ export interface ITemplate {
   steps: ITemplateStep[]
   iconName?: string // demo templates have no icons
   tags?: TemplateTagType[]
-  tileTemplateData?: TileTemplateData
   demoVideoDetails?: DemoVideoDetails
 }
 
 // demo template or for empty flows state
 export type TemplateTagType = 'demo' | 'empty' | 'new'
 
+type ITemplateStepConfig = Omit<IStepConfig, 'templateConfig'>
 export interface ITemplateStep {
   position: number // primary key, no need id for now
   appKey?: string
@@ -1523,6 +1523,9 @@ export interface ITemplateStep {
   sampleUrl?: string // specific to template e.g. form or tile link
   sampleUrlDescription?: string // differs for each step e.g. view a sample form
   parameters?: IJSONObject
+  config?: ITemplateStepConfig
+  // Only valid on app events with a template data handler.
+  templateData?: TemplateData
 }
 
 // This is for creation of tile for a template
@@ -1531,6 +1534,9 @@ export type TileTemplateData = {
   columns: string[]
   rowData?: IJSONObject[]
 }
+
+// Union of every app's template data.
+export type TemplateData = TileTemplateData
 
 export type DemoVideoDetails = {
   url: string
